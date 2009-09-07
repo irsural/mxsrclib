@@ -3,7 +3,7 @@
 
 #include <irscalc.h>
 
-#ifndef __ICCAVR__ 
+#ifndef __ICCAVR__
 
 // class calculator_t
 irs::calculator_t::calculator_t():
@@ -87,7 +87,7 @@ bool irs::calculator_t::parser(
 
       cur_index += lexeme_size;
       lexeme_array.push_back(lexeme);
-      // читаем число
+      // Читаем число
     } else if (ch.find_first_of(mstr_character_number) != irs::string::npos) {
       irs::string num_str = ch;
       cur_index++;
@@ -449,4 +449,4 @@ irs::string irs::preprocessing_str(const irs::string& a_str)
   return str;
 }
 
-#endif //__ICCAVR__ 
+#endif //__ICCAVR__
