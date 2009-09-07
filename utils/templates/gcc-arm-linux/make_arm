@@ -1,0 +1,7 @@
+mkdir obj_arm
+make\
+  compiler=arm-linux-g++\
+  out_file_suffix=arm\
+  --directory=obj_arm\
+  --makefile=../makefile\
+  2>&1 | tee make_arm_out

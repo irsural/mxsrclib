@@ -1,0 +1,204 @@
+Библиотека исходников
+// Дата: 4.09.2009
+
+Версия 0.6.10
+Дата 25.07.2007
+Общее
+  Переименован irs_menu в irsmenu
+  Изменены irsdefs, irsstd, irsstdg, mxifar, timer
+cbuilder
+  Изменен irsstdl
+
+Версия 0.6.9
+Дата 23.07.2007
+Общее
+  Изменен irsstd, irsstdg
+cbuilder
+  Изменен irsstdl
+
+Версия 0.6.8
+Дата 12.07.2007
+Общее
+  Изменен mxnetc
+
+Версия 0.6.7
+Дата 5.07.2007
+Общее
+  Изменен irsdefs
+avr128
+  Изменен lirsdefs
+avr
+  Изменен lirsdefs
+cbuilder
+  Изменен lirsdefs
+dos32
+  Изменен lirsdefs
+linux
+  Добавлены counter, irsstdl, lirsdefs, mxifa, mxnetda
+
+Версия 0.6.6
+Дата 4.07.2007
+Общее
+Изменен mxnet, mxnetc, measmul
+Добавлен irs_menu
+AVR128
+Добавлен irs_lcd
+CBuilder
+Изменен mxifa
+
+Версия 0.6.5
+Дата 19.06.2007
+Общее
+Изменен timer, irsstd, mxnetc, mxnet
+Добавлен irsstdg
+AVR128
+Изменен mxifa
+CBuilder
+Изменен mxifa, irsstdl
+
+Версия 0.6.4
+Дата 21.05.2007
+AVR128
+Изменен lirsdefs
+AVR
+Изменен lirsdefs
+
+Версия 0.6.3
+Дата 3.05.2007
+Общее
+Изменен irsdefs
+
+Версия 0.6.2
+Дата 2.05.2007
+Общее
+Исправлены mesdef, mesmul, messup на measdef, measmul, meassup
+
+Версия 0.6.1
+Дата 27.04.2007
+Общее
+Добавлены irsstd, mesdef, mesmul, messup
+Изменен mxnet, irsdefs, mxifa
+CBuilder
+Добавлены irsstdl
+Изменен lirsdefs, mxifa, mxifal
+
+Версия 0.6.0
+Дата 27.03.2007
+Общее
+Добавлены mxifar
+Изменен mxnetc
+AVR128
+Изменены mxifa
+CBuilder
+Изменен mxifa, counter
+
+Версия 0.5.14
+Дата 22.03.2007
+Общее
+Добавлены gdefs, mxifa
+Изменен mxnet, mxnetc, mxnetd, irsdefs, alg, timer 
+AVR128
+Изменены mxifa, mxnetda, rtl8019as, udp_stack
+Удалены mxifa.h
+Добавлены mxifal.h
+CBuilder
+Изменен mxifa, mxnetda, lirsdefs, counter
+Удалены mxifa.h
+Добавлены mxifal.h
+
+Версия 0.5.13
+Дата 19.02.2007
+Общее
+Изменен timer
+AVR128
+Изменены lirsdefs, mxifa, rtl8019as, udp_stack, mxnet
+
+Версия 0.5.12
+Дата 8.02.2007
+Общее
+Изменен timer
+
+Версия 0.5.11
+Дата 30.01.2007
+Общее
+Изменен irsdefs
+CBuilder
+Изменен lirsdefs
+
+Версия 0.5.10
+Дата 29.01.2007
+Общее
+Изменен timer
+
+Версия 0.5.9
+Дата 27.12.2006
+Общее
+Добавлены mxnet
+AVR128
+Добавлены mxifa, mxnet$
+Изменены counter, UDP_stack, RTL8019AS
+
+Версия 0.5.8
+Дата 19.12.2006
+Изменен irsdefs
+
+Версия 0.5.7
+Изменены timer и counter
+
+
+Зависимости
+
+// Глобальные объявления типов и макросов
+irsdefs
+	// Архитектуро-зависимая часть irsdefs
+	lirsdefs
+// Работа с csv-файлами
+csvwork
+	irsdefs
+// Вывод отладочной информации
+dbgprn
+	irsdefs
+// Интерфейс для счетчика
+counter
+	irsdefs
+// Интерфейс для таймера
+timer
+	irsdefs
+  counter
+// UDP/IP-стек Димы Уржумцева
+UDP_stack
+	// Драйвер RTL8019AS Димы Уржумцева
+	RTL8019AS
+MxChart
+	MxBase
+// Протокол mxnet
+mxnet
+  irsdefs
+  // Архитектуро-независимые определения для mxnet
+	mxnetd
+	// Архитектуро-зависимые определения для mxnet
+	mxnetda
+	mxifa
+// Клиентская часть протокола mxnet
+mxnetc
+	irsdefs
+	mxnetd
+	mxnetda
+// Абстракция интерфейса обмена
+mxifa
+  irsdefs
+	UDP_stack
+	// Архитектуро-зависимые определения для mxifa
+	mxifal
+	// Архитектуро-независимые функции (routines)
+	mxifar
+// Библиотека стандартных классов и функций
+irsstd
+	// Архитектуро-зависимые стандартные классы и функции
+	irsstdl
+		// Архитектуро-независимые интерфейсы
+		irsstdg
+// Меню Полякова Максима
+irs_menu
+  // Драйвер LCD Полякова Максима
+  irs_lcd

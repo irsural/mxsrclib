@@ -1,0 +1,8 @@
+#! /bin/sh
+
+pushd ../..
+chmod a-x *.*
+pushd arch/cur/
+chmod a-x *.*
+popd
+popd

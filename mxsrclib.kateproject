@@ -1,0 +1,15 @@
+[Dir arch]
+Dirs=cur
+Files=
+
+[Dir arch/cur]
+Dirs=
+Files=counter.cpp/counter.h/delx.bat/irsstdl.cpp/irsstdl.h/linux info.txt/lirsdefs.h/mxifa.cpp/mxifal.h/mxnetda.h/armio.cpp/armio.h/armmap.h/armspi.cpp/armspi.h/at91_spimode.h
+
+[Project Dir]
+Dirs=arch
+Files=csvwork.h/dbgprn.cpp/dbgprn.h/gdefs.h/irsdefs.h/irsstd.cpp/irsstdg.cpp/irsstdg.h/irsstd.h/measdef.h/measmul.cpp/measmul.h/meassup.cpp/meassup.h/mxifa.h/mxifar.cpp/mxifar.h/mxnetc.cpp/mxnetc.h/mxnet.cpp/mxnetd.h/mxnet.h/timer.cpp/timer.h/alg.cpp/alg.h/csvwork.cpp/info.txt/irscpp.h/irsmbus.cpp/irsmbus.h/irsmenu.cpp/irsmenu.h/irsspi.h
+
+[Project File]
+Name=mxsrclib
+Type=Default

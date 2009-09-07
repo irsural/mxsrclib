@@ -1,0 +1,7 @@
+mkdir avr32
+make\
+  compiler=avr32-linux-g++\
+  out_file_suffix=avr32\
+  --directory=avr32\
+  --makefile=../makefile\
+  2>&1 | tee make_avr32_out

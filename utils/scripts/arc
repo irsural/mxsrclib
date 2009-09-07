@@ -1,0 +1,5 @@
+#! /bin/sh
+
+pushd ../../..
+tar -zcf mxsrclib.tar.gz mxsrclib
+popd

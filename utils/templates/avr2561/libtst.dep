@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\Debug\Obj\main.r90</file>
+      <file>$PROJ_DIR$\Debug\Obj\mainprg.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\main.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\inavr.h</file>
+      <file>$TOOLKIT_DIR$\src\template\cfg5s.xcl</file>
+      <file>$PROJ_DIR$\..\mxsrclib\arch\cur\counter.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\timer.r90</file>
+      <file>$PROJ_DIR$\Debug\List\timer.lst</file>
+      <file>$PROJ_DIR$\Debug\List\config.lst</file>
+      <file>$PROJ_DIR$\mainprg.h</file>
+      <file>$PROJ_DIR$\Debug\List\counter.lst</file>
+      <file>$PROJ_DIR$\main.cpp</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$PROJ_DIR$\..\mxsrclib\arch\cur\lirsdefs.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\mainprg.r90</file>
+      <file>$PROJ_DIR$\config.cpp</file>
+      <file>$PROJ_DIR$\config.h</file>
+      <file>$PROJ_DIR$\Debug\List\mainprg.lst</file>
+      <file>$TOOLKIT_DIR$\inc\iom2561.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\counter.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\libtst.pbd</file>
+      <file>$PROJ_DIR$\Debug\Exe\libtst.a90</file>
+      <file>$PROJ_DIR$\mainprg.cpp</file>
+      <file>$PROJ_DIR$\..\mxsrclib\arch\cur\counter.cpp</file>
+      <file>$PROJ_DIR$\..\mxsrclib\timer.cpp</file>
+      <file>$PROJ_DIR$\Debug\Obj\timer.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\config.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\counter.r90</file>
+      <file>$PROJ_DIR$\Debug\Exe\libtst.d90</file>
+      <file>$TOOLKIT_DIR$\src\template\cfgm2561.xcl</file>
+      <file>$PROJ_DIR$\Debug\List\main.lst</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dlAVR-5s-ec-n.r90</file>
+      <file>$PROJ_DIR$\hard.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\config.r90</file>
+      <file>$PROJ_DIR$\..\mxsrclib\timer.h</file>
+      <file>$PROJ_DIR$\..\mxsrclib\irsdefs.h</file>
+      <file>$TOOLKIT_DIR$\inc\iomacro.h</file>
+    </outputs>
+    <file>
+      <name>$PROJ_DIR$\main.cpp</name>
+      <outputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 0 30</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 2</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 35 13 3 12 9</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 35 13 3 12 9</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\config.cpp</name>
+      <outputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 33 8</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 26</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 16 35 13 3 12</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 16 35 13 3 12</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Obj\libtst.pbd</name>
+      <inputs>
+        <tool>
+          <name>BILINK</name>
+          <file> 26 19 2 1 25</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\libtst.a90</name>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 29 4 33 27 0 14 6 31</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\mainprg.cpp</name>
+      <outputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 14 17</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 1</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 35 13 3 12 34 5 9 16 32 18 36</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 35 13 3 12 34 5 9 16 32 18 36</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\mxsrclib\arch\cur\counter.cpp</name>
+      <outputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 27 10</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 19</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 5 35 13 3 12 18 36</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 5 35 13 3 12 18 36</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\mxsrclib\timer.cpp</name>
+      <outputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 6 7</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 25</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCAVR</name>
+          <file> 34 35 13 3 12 5</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 34 35 13 3 12 5</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 21</file>
+        </tool>
+      </outputs>
+    </file>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <outputs/>
+    <forcedrebuild>
+      <name>[MULTI_TOOL]</name>
+      <tool>XLINK</tool>
+    </forcedrebuild>
+  </configuration>
+</project>
+
+

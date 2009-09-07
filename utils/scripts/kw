@@ -1,0 +1,3 @@
+#! /bin/sh
+
+recode KOI8-R..CP1251 $1

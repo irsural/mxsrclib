@@ -1,0 +1,84 @@
+##############################################################################
+#                                                                            #
+#                                                      13/Jul/2007  11:42:43 #
+# IAR Atmel AVR C/C++ Compiler V4.11A/W32, Evaluation Version                #
+# Copyright 1996-2005 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  S:\Files\ASUTP\U309M\prjs\avr\libtst\config.cpp         #
+#    Command line =  S:\Files\ASUTP\U309M\prjs\avr\libtst\config.cpp         #
+#                    --cpu=m2561 -ms -o S:\Files\ASUTP\U309M\prjs\avr\libtst #
+#                    \Debug\Obj\ -lC S:\Files\ASUTP\U309M\prjs\avr\libtst\De #
+#                    bug\List\ -y --initializers_in_flash -z2 --no_cse       #
+#                    --no_inline --no_code_motion --no_cross_call            #
+#                    --no_clustering --no_tbaa --debug                       #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    S:\Files\ASUTP\U309M\prjs\avr\libtst\..\mxsrclib\arch\c #
+#                    ur\ -I S:\Files\ASUTP\U309M\prjs\avr\libtst\..\mxsrclib #
+#                    \ -I "D:\Program Files\IAR Systems\Embedded Workbench   #
+#                    4.0 Evaluation\avr\INC\" -I "D:\Program Files\IAR       #
+#                    Systems\Embedded Workbench 4.0                          #
+#                    Evaluation\avr\INC\DLIB\" --eeprom_size 4096 --eec++    #
+#                    --dlib_config "D:\Program Files\IAR Systems\Embedded    #
+#                    Workbench 4.0 Evaluation\avr\LIB\DLIB\dlAVR-5s-ec-n.h"  #
+#    List file    =  S:\Files\ASUTP\U309M\prjs\avr\libtst\Debug\List\config. #
+#                    lst                                                     #
+#    Object file  =  S:\Files\ASUTP\U309M\prjs\avr\libtst\Debug\Obj\config.r #
+#                    90                                                      #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+S:\Files\ASUTP\U309M\prjs\avr\libtst\config.cpp
+      1          #include "config.h"
+      2          #include <irsdefs.h>
+      3          
+      4          // Инициализация конфигурации
+
+   \                                 In segment FARCODE, align 2, keep-with-next
+      5          void cfg_init()
+   \                     ??cfg_init:
+      6          {
+      7          }
+   \   00000000   9508               RET
+      8          // Денициализация конфигурации
+
+   \                                 In segment FARCODE, align 2, keep-with-next
+      9          void cfg_deinit()
+   \                     ??cfg_deinit:
+     10          {
+     11          }
+   \   00000000   9508               RET
+     12          // Элементарное действие конфигурации
+
+   \                                 In segment FARCODE, align 2, keep-with-next
+     13          void cfg_tick()
+   \                     ??cfg_tick:
+     14          {
+     15          }
+   \   00000000   9508               RET
+     16          
+
+   Maximum stack usage in bytes:
+
+     Function     CSTACK RSTACK
+     --------     ------ ------
+     cfg_deinit()     0      3
+     cfg_init()       0      3
+     cfg_tick()       0      3
+
+
+   Segment part sizes:
+
+     Function/Label Bytes
+     -------------- -----
+     cfg_init()        2
+     cfg_deinit()      2
+     cfg_tick()        2
+
+ 
+ 6 bytes in segment FARCODE
+ 
+ 6 bytes of CODE memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,7 @@
+[Project Dir]
+Dirs=
+Files=config.cpp/config.h/main.cpp/mainprg.cpp/mainprg.h/makefile/make_pc/make_arm
+
+[Project File]
+Name=tmpllin
+Type=Default

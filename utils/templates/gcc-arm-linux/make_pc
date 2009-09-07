@@ -1,0 +1,7 @@
+mkdir obj_pc
+make\
+  compiler=g++\
+  out_file_suffix=pc\
+  --directory=obj_pc\
+  --makefile=../makefile\
+  2>&1 | tee make_pc_out
