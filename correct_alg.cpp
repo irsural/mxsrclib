@@ -1,10 +1,8 @@
 // Калибровка приборов
 // Дата: 27.03.2009
-//***
 
 #include <correct_alg.h>
 #include <irsalg.h>
-//###
 
 irs::avr::step_correct_t::step_correct_t(correct_map_t *ap_map):
   m_current_error(error_null),
