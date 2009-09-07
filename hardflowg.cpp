@@ -3,7 +3,7 @@
 
 #include <hardflowg.h>
 
-#if defined(IRS_WIN32) || defined(IRS_LINUX)
+#if defined(IRS_WIN32) //|| defined(IRS_LINUX)
 
 //class host_list_t
 irs::hardflow::host_list_t::host_list_t(
