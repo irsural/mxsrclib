@@ -1,6 +1,5 @@
 // Калибровка приборов
 // Дата: 27.03.2009
-//***
 
 #include <correct_alg.h>
 #include <irsalg.h>
