@@ -1,7 +1,6 @@
-// Заголовки
 // Полезные функции
 // C++ Builder
-// Дата: 11.12.2008
+// Дата: 8.09.2008
 //---------------------------------------------------------------------------
 #ifndef MxBaseH
 #define MxBaseH
@@ -336,23 +335,23 @@ public:
   { Double = Value; FType = dtDouble; FCompConv = ccReal; }
   __fastcall TPointer::TPointer(long double* Value)
   { LongDouble = Value; FType = dtLongDouble; FCompConv = ccReal; }
-  __fastcall operator signed char*() { return Char; }
-  __fastcall operator signed short*() { return Short; }
-  __fastcall operator signed int*() { return Int; }
-  __fastcall operator signed long*() { return Long; }
-  __fastcall operator unsigned char*() { return UChar; }
-  __fastcall operator unsigned short*() { return UShort; }
-  __fastcall operator unsigned int*() { return UInt; }
-  __fastcall operator unsigned long*() { return ULong; }
-  __fastcall operator signed __int64*() { return Int64; }
-  __fastcall operator unsigned __int64*() { return UInt64; }
-	__fastcall operator cmp*() { return Complex; }
-  __fastcall operator TDblFunc() { return Function; }
-  __fastcall operator TClassDblFunc() { return Method; }
-  __fastcall operator float*() { return Float; }
-  __fastcall operator double*() { return Double; }
-  __fastcall operator long double*() { return LongDouble; }
-  long double __fastcall operator [](int i)
+  __fastcall operator signed char*() const { return Char; }
+  __fastcall operator signed short*() const { return Short; }
+  __fastcall operator signed int*() const { return Int; }
+  __fastcall operator signed long*() const { return Long; }
+  __fastcall operator unsigned char*() const { return UChar; }
+  __fastcall operator unsigned short*() const { return UShort; }
+  __fastcall operator unsigned int*() const { return UInt; }
+  __fastcall operator unsigned long*() const { return ULong; }
+  __fastcall operator signed __int64*() const { return Int64; }
+  __fastcall operator unsigned __int64*() const { return UInt64; }
+	__fastcall operator cmp*() const { return Complex; }
+  __fastcall operator TDblFunc() const { return Function; }
+  __fastcall operator TClassDblFunc() const { return Method; }
+  __fastcall operator float*() const { return Float; }
+  __fastcall operator double*() const { return Double; }
+  __fastcall operator long double*() const { return LongDouble; }
+  long double __fastcall operator[](int i) const
   {
     switch (FType)
     {

@@ -1,6 +1,6 @@
 // Полезные функции
 // C++ Builder
-// Дата: 1.12.2008
+// Дата: 9.09.2009
 //---------------------------------------------------------------------------
 #include <vcl.h>
 #pragma hdrstop
@@ -186,8 +186,8 @@ void __fastcall DeleteClipRect(TCanvas *Canvas)
 TSize __fastcall TextExtent(TCanvas *Canvas, String Text)
 {
   TSize Size;
-  GetTextExtentPoint32(Canvas->Handle, Text.c_str(), Text.Length(),
-    (LPSIZE)&Size);
+  GetTextExtentPoint32(Canvas->Handle, static_cast<AnsiString>(Text).c_str(),
+    Text.Length(), (LPSIZE)&Size);
   return Size;
 }
 //---------------------------------------------------------------------------
@@ -219,7 +219,8 @@ bool __fastcall GetWaveFormat(String FileName, TWaveFormat &WaveFormat)
   MMCKINFO    mmckinfoSubchunk;   // структура с информацией о подкуске
   int         FmtSize;            // размер куска "fmt"
   WAVEFORMATEX *Format;           // стуктура содержащая формат
-  hmmio = mmioOpen(FileName.c_str(), NULL, MMIO_READ | MMIO_ALLOCBUF);
+  hmmio = mmioOpen(static_cast<AnsiString>(FileName).c_str(), NULL,
+    MMIO_READ | MMIO_ALLOCBUF);
   if(!hmmio) return false;
   mmckinfoParent.fccType = mmioFOURCC('W', 'A', 'V', 'E');
   if (mmioDescend(hmmio, (LPMMCKINFO) &mmckinfoParent, NULL, MMIO_FINDRIFF))
@@ -277,7 +278,8 @@ bool __fastcall GetPCMWaveData(String FileName, TWaveFormat &WaveFormat,
   Data = (short *)realloc(Data, 0);
   Data = (short *)realloc(Data, Size*sizeof(short));
   DataSize = Size*WaveFormat.Sample;
-  hmmio = mmioOpen(FileName.c_str(), NULL, MMIO_READ | MMIO_ALLOCBUF);
+  hmmio = mmioOpen(static_cast<AnsiString>(FileName).c_str(), NULL,
+    MMIO_READ | MMIO_ALLOCBUF);
   if(!hmmio) return false;
 
   unsigned BufSize = 256*1024;

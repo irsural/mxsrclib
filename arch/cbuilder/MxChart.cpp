@@ -1,6 +1,6 @@
 // Построение графиков
 // C++ Builder
-// Дата: 1.12.2008
+// Дата: 8.09.2008
 //---------------------------------------------------------------------------
 #include <vcl.h>
 #pragma hdrstop
@@ -21,6 +21,7 @@ const double DblError = 1e-9;
 //***************************************************************************
 // Глобальные функции
 
+#if __BORLANDC__ <= IRS_CPP_BUILDER2006
 //---------------------------------------------------------------------------
 bool __fastcall operator == (TPoint P1, TPoint P2)
 {
@@ -32,6 +33,7 @@ bool __fastcall operator != (TRect R1, TRect R2)
   return R1.Left != R2.Left || R1.Top != R2.Top || R1.Right != R2.Right ||
     R1.Bottom != R2.Bottom;
 }
+#endif //__BORLANDC__ <= IRS_CPP_BUILDER2006
 //---------------------------------------------------------------------------
 int __fastcall BeginChartRange(TMxChart *Chart, int Index)
 {
@@ -183,26 +185,26 @@ void __fastcall TMxChartItem::Invalidate()
   NeedCalculate = NeedAutoScale = true;
 }
 //---------------------------------------------------------------------------
-TDblPoint __fastcall TMxChartItem::XYFunc(double t)
+TDblPoint __fastcall TMxChartItem::XYFunc(double t) const
 {
   return DblPoint(FFunc[0](t), FFunc[1](t));
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMxChartItem::IntoArea(TDblPoint P)
+bool __fastcall TMxChartItem::IntoArea(TDblPoint P) const
 {
-  return P.x >= ClipArea.Left && P.x <= ClipArea.Right &&
-    P.y >= ClipArea.Bottom && P.y <= ClipArea.Top;
+  return (P.x >= ClipArea.Left) && (P.x <= ClipArea.Right) &&
+    (P.y >= ClipArea.Bottom) && (P.y <= ClipArea.Top);
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMxChartItem::OutArea(TDblPoint P1, TDblPoint P2)
+bool __fastcall TMxChartItem::OutArea(TDblPoint P1, TDblPoint P2) const
 {
-  return P1.x < ClipArea.Left && P2.x < ClipArea.Left ||
-         P1.x > ClipArea.Right && P2.x > ClipArea.Right ||
-         P1.y < ClipArea.Bottom && P2.y < ClipArea.Bottom ||
-         P1.y > ClipArea.Top && P2.y > ClipArea.Top;
+  return (P1.x < ClipArea.Left) && (P2.x < ClipArea.Left) ||
+         (P1.x > ClipArea.Right) && (P2.x > ClipArea.Right) ||
+         (P1.y < ClipArea.Bottom) && (P2.y < ClipArea.Bottom) ||
+         (P1.y > ClipArea.Top && P2.y > ClipArea.Top);
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMxChartItem::ClipLine(TDblPoint &P1, TDblPoint &P2)
+bool __fastcall TMxChartItem::ClipLine(TDblPoint &P1, TDblPoint &P2) const
 {
   if (OutArea(P1, P2)) return false;
   bool P1Into = IntoArea(P1), P2Into = IntoArea(P2);
@@ -413,7 +415,7 @@ void __fastcall TMxChartItem::Paint(int Tag)
       break;
   }
   // Отображение графика
-  if (Lines.size() == 1 && Lines[0].Begin == Lines[0].End)
+  if ((Lines.size() == 1) && (Lines[0].Begin == Lines[0].End))
   {
     LineP(Dev, Line(Lines[0].End.x - 3, Lines[0].End.y - 3,
       Lines[0].End.x + 3, Lines[0].End.y + 3));
@@ -501,7 +503,7 @@ void __fastcall TMxChartItem::PaintMarkerY(int i)
 }
 //---------------------------------------------------------------------------
 // Представление массивов в виде функций
-double TMxChartItem::Func(int i, double x)
+double TMxChartItem::Func(int i, double x) const
 {
   return static_cast<double>(FData[i][static_cast<int>(x + 0.5)]);
 }
@@ -535,7 +537,7 @@ double TMxChartItem::FuncY(double x)
 // Установка данных (массивов или функций) для построения
 void __fastcall TMxChartItem::SetData(int Index, TPointer Value)
 {
-	FData[Index] = Value;
+  FData[Index] = Value;
   if ((double*)Value)
   {
     FHide = false;
@@ -591,7 +593,7 @@ void __fastcall TMxChartItem::DoAutoScale()
   if (ChangeArea) if (FOnChange) FOnChange(this, cctArea);
 }
 //---------------------------------------------------------------------------
-TCompConv __fastcall TMxChartItem::GetCompConv(int Index)
+TCompConv __fastcall TMxChartItem::GetCompConv(int Index) const
 {
   return FData[Index].CompConv;
 }
@@ -620,7 +622,10 @@ void __fastcall TMxChartItem::SetGroup(int Index, int AGroup)
 }
 //---------------------------------------------------------------------------
 // Функция по умолчанию.
-double TMxChartItem::DefFunc(double x) { return x; }
+double TMxChartItem::DefFunc(double x) const
+{
+  return x;
+}
 //---------------------------------------------------------------------------
 void __fastcall TMxChartItem::SetPen(TPen *Value)
 {
@@ -749,7 +754,7 @@ void __fastcall TMxChartItem::SetHeight(int Value)
   BoundsRect = R;
 }
 //---------------------------------------------------------------------------
-TRect __fastcall TMxChartItem::GetBoundsRect()
+TRect __fastcall TMxChartItem::GetBoundsRect() const
 {
   ((TMxChart *)Owner)->PreCalc();
   return FBoundsRect;
@@ -765,22 +770,22 @@ TDblRect __fastcall TMxChartItem::GetArea()
     VArea.Right*ScX + ShX, VArea.Bottom*ScY + ShY);
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChartItem::GetLeft()
+int __fastcall TMxChartItem::GetLeft() const
 {
   return FBoundsRect.Left;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChartItem::GetTop()
+int __fastcall TMxChartItem::GetTop() const
 {
   return FBoundsRect.Top;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChartItem::GetWidth()
+int __fastcall TMxChartItem::GetWidth() const
 {
   return FBoundsRect.Right - FBoundsRect.Left;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChartItem::GetHeight()
+int __fastcall TMxChartItem::GetHeight() const
 {
   return FBoundsRect.Bottom - FBoundsRect.Top;
 }
@@ -811,14 +816,14 @@ void __fastcall TMxChartItem::AddMarkerY(double Value)
   if (FOnChange) FOnChange(this, cctMarker);
 }
 //---------------------------------------------------------------------------
-double __fastcall TMxChartItem::GetMarkerX(int Index)
+double __fastcall TMxChartItem::GetMarkerX(int Index) const
 {
   if (Index == -1) if (IndexMarkerX) return FMarkerX[IndexMarkerX - 1];
   if ((Index >= 0) && (Index < IndexMarkerX)) return FMarkerX[Index];
   return 0;
 }
 //---------------------------------------------------------------------------
-double __fastcall TMxChartItem::GetMarkerY(int Index)
+double __fastcall TMxChartItem::GetMarkerY(int Index) const
 {
   if (Index == -1) if (IndexMarkerY) return FMarkerY[IndexMarkerY - 1];
   if ((Index >= 0) && (Index < IndexMarkerY)) return FMarkerY[Index];
@@ -991,7 +996,7 @@ void __fastcall TMxChartItem::DeleteMarkerY(int Begin, int End)
   }
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMxChartItem::ValidRect()
+bool __fastcall TMxChartItem::ValidRect() const
 {
   return FBoundsRect.Right - FBoundsRect.Left >= 1 &&
     FBoundsRect.Bottom - FBoundsRect.Top >= 1;
@@ -1244,7 +1249,7 @@ void __fastcall TMxChart::SetAutoScaleY(bool Value)
   }
 }
 //---------------------------------------------------------------------------
-String __fastcall TMxChart::SFF(double x, double Step)
+String __fastcall TMxChart::SFF(double x, double Step) const
 {
   if (fabs(x) < DblError) return "0";
   int ex = ( (x == 0)?0:static_cast<int>(floor(log10(fabs(x)))) );
@@ -1546,7 +1551,7 @@ void __fastcall TMxChart::PaintGrid()
   PaintGrid(false);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChart::PaintBounds()
+void __fastcall TMxChart::PaintBounds() const
 {
   if (!FShowBounds) return;
   int TH = FCurCanvas->TextHeight("0");
@@ -1690,12 +1695,11 @@ void __fastcall TMxChart::DoRepaint(int Tag)
   DeleteClipRect(FCurCanvas);
 }
 //---------------------------------------------------------------------------
-TPoint __fastcall TMxChart::ConvCoor(TDblPoint P)
+TPoint __fastcall TMxChart::ConvCoor(TDblPoint P) const
 {
   double k = 0.; int x = 0, y = 0;
   int Width = FGridRect.Right - FGridRect.Left;
   int Height = FGridRect.Bottom - FGridRect.Top;
-  #ifndef NOP
   double wx = FArea.Right - FArea.Left;
   if (0. == wx) wx = 1e-12;
   try {
@@ -1712,21 +1716,12 @@ TPoint __fastcall TMxChart::ConvCoor(TDblPoint P)
     k = 0.;
   }
   y = static_cast<int>(FGridRect.Bottom - (Height - 1)*k - 1);
-  #else
-  k = (P.x - FArea.Left)/(FArea.Right - FArea.Left);
-  x = FGridRect.Left + (Width - 1)*k;
-  k = (P.y - FArea.Bottom)/(FArea.Top - FArea.Bottom);
-  y = FGridRect.Bottom - (Height - 1)*k - 1;
-  #endif
   return Point(x, y);
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::ConvCoorX(double b, double e, double x)
+int __fastcall TMxChart::ConvCoorX(double b, double e, double x) const
 {
   int Width = FGridRect.Right - FGridRect.Left;
-  #ifdef NOP
-  double k = (x - b)/(e - b);
-  #else
   double w = e - b;
   if (0. == w) w = 1e-12;
   double k;
@@ -1735,16 +1730,12 @@ int __fastcall TMxChart::ConvCoorX(double b, double e, double x)
   } catch(...) {
     k = 0.;
   }
-  #endif
   return static_cast<int>(FGridRect.Left + (Width - 1)*k);
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::ConvCoorY(double b, double e, double y)
+int __fastcall TMxChart::ConvCoorY(double b, double e, double y) const
 {
   int Height = FGridRect.Bottom - FGridRect.Top;
-  #ifdef NOP
-  double k = (y - b)/(e - b);
-  #else
   double w = e - b;
   if (0. == w) w = 1e-12;
   double k;
@@ -1753,7 +1744,6 @@ int __fastcall TMxChart::ConvCoorY(double b, double e, double y)
   } catch(...) {
     k = 0.;
   }
-  #endif
   return static_cast<int>(FGridRect.Bottom - (Height - 1)*k - 1);
 }
 //---------------------------------------------------------------------------
@@ -2015,22 +2005,22 @@ TRect __fastcall TMxChart::GetGridRect()
   return FGridRect;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::GetLeft()
+int __fastcall TMxChart::GetLeft() const
 {
   return FBoundsRect.Left;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::GetTop()
+int __fastcall TMxChart::GetTop() const
 {
   return FBoundsRect.Top;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::GetWidth()
+int __fastcall TMxChart::GetWidth() const
 {
   return FBoundsRect.Right - FBoundsRect.Left;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMxChart::GetHeight()
+int __fastcall TMxChart::GetHeight() const
 {
   return FBoundsRect.Bottom - FBoundsRect.Top;
 }
@@ -2062,14 +2052,14 @@ void __fastcall TMxChart::AddMarkerY(double Value)
   if (FOnChange) FOnChange(this, cctMarker);
 }
 //---------------------------------------------------------------------------
-double __fastcall TMxChart::GetMarkerX(int Index)
+double __fastcall TMxChart::GetMarkerX(int Index) const
 {
   if (Index == -1) if (IndexMarkerX) return FMarkerX[IndexMarkerX - 1];
   if ((Index >= 0) && (Index < IndexMarkerX)) return FMarkerX[Index];
   return 0;
 }
 //---------------------------------------------------------------------------
-double __fastcall TMxChart::GetMarkerY(int Index)
+double __fastcall TMxChart::GetMarkerY(int Index) const
 {
   if (Index == -1) if (IndexMarkerY) return FMarkerY[IndexMarkerY - 1];
   if ((Index >= 0) && (Index < IndexMarkerY)) return FMarkerY[Index];
@@ -2277,7 +2267,7 @@ void __fastcall TMxChart::PaintMarkerY(int i)
   DashLine(Dev, P1, P2, 5, 5);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChart::PaintChildMarkerX(TMxChartItem *Sender, int i)
+void __fastcall TMxChart::PaintChildMarkerX(TMxChartItem *Sender, int i) const
 {
   TCanvas *Dev = CurCanvas;
   Dev->Pen = Sender->MarkerPen;
@@ -2288,7 +2278,7 @@ void __fastcall TMxChart::PaintChildMarkerX(TMxChartItem *Sender, int i)
   DashLine(Dev, P1, P2, 5, 5);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChart::PaintChildMarkerY(TMxChartItem *Sender, int i)
+void __fastcall TMxChart::PaintChildMarkerY(TMxChartItem *Sender, int i) const
 {
   TCanvas *Dev = CurCanvas;
   Dev->Pen = Sender->MarkerPen;
@@ -2429,14 +2419,15 @@ void __fastcall TMxChart::NewGroupY()
   CurGroupY++;
 }
 //---------------------------------------------------------------------------
-TMxChartItem *__fastcall TMxChart::GetItem(int Index)
+TMxChartItem *__fastcall TMxChart::GetItem(int Index) const
 {
   if (Index == -1) return FItems[FCount - 1];
   if (Index < 0) Index = 0; if (Index >= FCount) Index = FCount - 1;
   return FItems[Index];
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChart::ChildChange(TObject *Sender, TChartChangeType ChartChangeType)
+void __fastcall TMxChart::ChildChange(TObject *Sender,
+  TChartChangeType ChartChangeType)
 {
   if (!PaintMode)
   switch (ChartChangeType)
@@ -2459,15 +2450,16 @@ void __fastcall TMxChart::ChildChange(TObject *Sender, TChartChangeType ChartCha
   if (FOnChange) FOnChange(Sender, ChartChangeType);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChart::ChildError(TObject *Sender, Exception &e, TDblPoint P,
-  double t, TChartErrorType ChartErrorType)
+void __fastcall TMxChart::ChildError(TObject *Sender, Exception &e,
+  TDblPoint P, double t, TChartErrorType ChartErrorType) const
 {
   if (FOnError) FOnError(Sender, e, P, t, ChartErrorType);
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMxChart::ValidRect()
+bool __fastcall TMxChart::ValidRect() const
 {
-  return FCurRect.Right - FCurRect.Left > 1 && FCurRect.Bottom - FCurRect.Top > 1;
+  return (FCurRect.Right - FCurRect.Left > 1) &&
+    (FCurRect.Bottom - FCurRect.Top > 1);
 }
 //---------------------------------------------------------------------------
 
@@ -2565,7 +2557,7 @@ void __fastcall TMxChartSelect::Disconnect()
   RestoreAutoScales();
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChartSelect::SelectClip(TRect &ARect)
+void __fastcall TMxChartSelect::SelectClip(TRect &ARect) const
 {
   int nLeft = max(min(ARect.Left, ARect.Right), Chart->GridRect.Left);
   int nRight = min(max(ARect.Left, ARect.Right), Chart->GridRect.Right);
@@ -2574,7 +2566,7 @@ void __fastcall TMxChartSelect::SelectClip(TRect &ARect)
   ARect = Rect(nLeft, nTop, nRight, nBottom);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMxChartSelect::SelectRect(TRect Rect)
+void __fastcall TMxChartSelect::SelectRect(TRect Rect) const
 {
   TPoint Points[] = {Point(Rect.Left, Rect.Top), Point(Rect.Right - 1, Rect.Top),
     Point(Rect.Right - 1, Rect.Bottom - 1), Point(Rect.Left, Rect.Bottom - 1),
@@ -2727,7 +2719,8 @@ void __fastcall TMxChartSelect::RestoreAreas()
 void __fastcall TMxChartSelect::SaveAutoScales()
 {
   ValidAutoScales = true;
-  AutoScales.insert(make_pair(Chart, make_pair(Chart->AutoScaleX, Chart->AutoScaleY)));
+  AutoScales.insert(make_pair(Chart,
+    make_pair(Chart->AutoScaleX, Chart->AutoScaleY)));
   for (int i = 0; i < Chart->Count; i++)
     AutoScales.insert(make_pair(Chart->Items[i],
       make_pair(Chart->Items[i]->AutoScaleX, Chart->Items[i]->AutoScaleY)));

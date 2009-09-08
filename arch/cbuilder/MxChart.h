@@ -1,7 +1,6 @@
-// Заголовки
 // Построение графиков
 // C++ Builder
-// Дата: 25.09.2008
+// Дата: 8.09.2008
 //---------------------------------------------------------------------------
 #ifndef MxChartH
 #define MxChartH
@@ -34,8 +33,10 @@ class TMxChartItem;
 //---------------------------------------------------------------------------
 int __fastcall BeginChartRange(TMxChart *Chart, int Index);
 int __fastcall EndChartRange(TMxChart *Chart, int Index);
+#if __BORLANDC__ <= IRS_CPP_BUILDER2006
 bool __fastcall operator == (TPoint P1, TPoint P2);
 bool __fastcall operator != (TRect R1, TRect R2);
+#endif //__BORLANDC__ <= IRS_CPP_BUILDER2006
 //---------------------------------------------------------------------------
 enum TChartChangeType {cctArea, cctBounds, cctBoundsRect, cctCanvas, cctHide,
   cctAutoScale, cctGroup, cctShift, cctScale, cctStep, cctCompConv,
@@ -85,25 +86,25 @@ class TMxChartItem: public TComponent
   __property TChartChange OnChange = {read=FOnChange, write=FOnChange};
   __property TChartError OnError = {read=FOnError, write=FOnError};
   // Методы
-  bool __fastcall IntoArea(TDblPoint P);
-  bool __fastcall OutArea(TDblPoint P1, TDblPoint P2);
-  bool __fastcall ClipLine(TDblPoint &P1, TDblPoint &P2);
-  double DefFunc(double x);
-  double Func(int i, double x);
+  bool __fastcall IntoArea(TDblPoint P) const;
+  bool __fastcall OutArea(TDblPoint P1, TDblPoint P2) const;
+  bool __fastcall ClipLine(TDblPoint &P1, TDblPoint &P2) const;
+  double DefFunc(double x) const;
+  double Func(int i, double x) const;
   double FuncX(double x);
   double FuncY(double x);
   TPoint __fastcall ConvCoor(TDblPoint P);
-  TDblPoint __fastcall XYFunc(double t);
+  TDblPoint __fastcall XYFunc(double t) const;
   void __fastcall FloorAxis();
-  TRect __fastcall GetBoundsRect();
+  TRect __fastcall GetBoundsRect() const;
   TDblRect __fastcall GetArea();
-  int __fastcall GetLeft();
-  int __fastcall GetTop();
-  int __fastcall GetWidth();
-  int __fastcall GetHeight();
-  double __fastcall GetMarkerX(int Index);
-  double __fastcall GetMarkerY(int Index);
-  TCompConv __fastcall GetCompConv(int Index);
+  int __fastcall GetLeft() const;
+  int __fastcall GetTop() const;
+  int __fastcall GetWidth() const;
+  int __fastcall GetHeight() const;
+  double __fastcall GetMarkerX(int Index) const;
+  double __fastcall GetMarkerY(int Index) const;
+  TCompConv __fastcall GetCompConv(int Index) const;
   void __fastcall PaintMarkerX(int i);
   void __fastcall PaintMarkerY(int i);
 	void __fastcall SetArea(TDblRect Area);
@@ -125,7 +126,7 @@ class TMxChartItem: public TComponent
   void __fastcall SetScale(int Index, double Value);
   void __fastcall SetPen(TPen *Value);
   void __fastcall SetMarkerPen(TPen *Value);
-  bool __fastcall ValidRect();
+  bool __fastcall ValidRect() const;
   void __fastcall Paint(int Tag);
   void __fastcall DoAutoScale();
   void __fastcall DoCalculate();
@@ -224,18 +225,18 @@ class TMxChart: public TComponent
   void __fastcall PaintGrid();
   void __fastcall PaintGrid(bool BlackAuxGrid);
   void __fastcall CalcGrid();
-  void __fastcall PaintBounds();
+  void __fastcall PaintBounds() const;
   TDblRect __fastcall GetArea();
   TRect __fastcall GetGridRect();
-  int __fastcall GetLeft();
-  int __fastcall GetTop();
-  int __fastcall GetWidth();
-  int __fastcall GetHeight();
-  double __fastcall GetMarkerX(int Index);
-  double __fastcall GetMarkerY(int Index);
-  TMxChartItem *__fastcall GetItem(int Index);
+  int __fastcall GetLeft() const;
+  int __fastcall GetTop() const;
+  int __fastcall GetWidth() const;
+  int __fastcall GetHeight() const;
+  double __fastcall GetMarkerX(int Index) const;
+  double __fastcall GetMarkerY(int Index) const;
+  TMxChartItem *__fastcall GetItem(int Index) const;
   void __fastcall SetChildRect();
-	void __fastcall SetArea(TDblRect Area);
+  void __fastcall SetArea(TDblRect Area);
   void __fastcall SetPrintRect(TRect Value);
   void __fastcall SetLeft(int Value);
   void __fastcall SetTop(int Value);
@@ -260,22 +261,23 @@ class TMxChart: public TComponent
   void __fastcall DoAutoScale();
   void __fastcall DoCalculate();
   void __fastcall DoRepaint(int Tag);
-  TPoint __fastcall ConvCoor(TDblPoint P);
-  int __fastcall ConvCoorX(double b, double e, double x);
-  int __fastcall ConvCoorY(double b, double e, double y);
+  TPoint __fastcall ConvCoor(TDblPoint P) const;
+  int __fastcall ConvCoorX(double b, double e, double x) const;
+  int __fastcall ConvCoorY(double b, double e, double y) const;
   void __fastcall PaintMarkerX(int i);
   void __fastcall PaintMarkerY(int i);
-  void __fastcall ChildChange(TObject *Sender, TChartChangeType ChartChangeType);
+  void __fastcall ChildChange(TObject *Sender,
+    TChartChangeType ChartChangeType);
   void __fastcall ChildError(TObject *Sender, Exception &e, TDblPoint P,
-    double t, TChartErrorType ChartErrorType);
+    double t, TChartErrorType ChartErrorType) const;
   void __fastcall Constructor();
   double __fastcall StepCalc(double Begin, double End, int Size,
     int MinSize, bool IsWidth, bool AccountText);
   void __fastcall GraphObjChanged(TObject *Sender);
-  String __fastcall SFF(double x, double Step);
-  bool __fastcall ValidRect();
-  void __fastcall PaintChildMarkerX(TMxChartItem *Sender, int i);
-  void __fastcall PaintChildMarkerY(TMxChartItem *Sender, int i);
+  String __fastcall SFF(double x, double Step) const;
+  bool __fastcall ValidRect() const;
+  void __fastcall PaintChildMarkerX(TMxChartItem *Sender, int i) const;
+  void __fastcall PaintChildMarkerY(TMxChartItem *Sender, int i) const;
   void __fastcall SetBaseItem(int AChart);
   // Свойства
   __property TCanvas *CurCanvas = {read=FCurCanvas, write=SetCurCanvas};
@@ -387,7 +389,8 @@ class TMxChartSelect: public TObject
   
   void __fastcall DoMouseDown(TObject *Sender, TMouseButton Button,
     TShiftState Shift, int X, int Y);
-  void __fastcall DoMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
+  void __fastcall DoMouseMove(TObject *Sender, TShiftState Shift, int X,
+    int Y);
   void __fastcall DoMouseUp(TObject *Sender, TMouseButton Button,
     TShiftState Shift, int X, int Y);
   void __fastcall DoDblClick(TObject *Sender);
@@ -397,8 +400,8 @@ class TMxChartSelect: public TObject
   void __fastcall SaveAutoScales();
   void __fastcall RestoreCompConvs();
   void __fastcall SaveCompConvs();
-  void __fastcall SelectClip(TRect &ARect);
-  void __fastcall SelectRect(TRect Rect);
+  void __fastcall SelectClip(TRect &ARect) const;
+  void __fastcall SelectRect(TRect Rect) const;
   void __fastcall SetControl(TControl *AControl);
   void __fastcall SetZoomFactor(double Value);
   void __fastcall SetPositioningMode(bool Value);

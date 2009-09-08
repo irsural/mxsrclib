@@ -1,5 +1,5 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 7.09.2009
+// Дата: 8.09.2009
 
 #include <vcl.h>
 #pragma hdrstop
@@ -99,15 +99,15 @@ void irs::cbuilder::file_xls_table_read(const string_t& a_book_name,
       for (size_type row_i = 0; row_i < row_count; row_i++) {
         Variant Cell = Cells.OlePropertyGet("Item", row_i+1, col_i+1);
         Variant CellValue = Cell.OlePropertyGet("Value");
-        AnsiString CellValueStr =
-          static_cast<AnsiString>(CellValue.AsType(varString));
+        AnsiString CellValueStr = CellValue;
+          //static_cast<AnsiString>(CellValue.AsType(varString));
         ap_table_string->write_cell(col_i, row_i, CellValueStr.c_str());
       }
     }
   } catch (Exception& e) {
     ap_table_string->clear();
     *ap_read_success = false;
-    IRS_LIB_ASSERT_MSG(e.Message.c_str());
+    IRS_LIB_ASSERT_MSG(static_cast<AnsiString>(e.Message).c_str());
   } catch (exception& e) {
     ap_table_string->clear();
     *ap_read_success = false;
@@ -179,7 +179,7 @@ void irs::cbuilder::file_xls_table_write(const string_t& a_book_name,
     }
   } catch (Exception& e) {
     *ap_read_success = false;
-    IRS_LIB_ASSERT_MSG(e.Message.c_str());
+    IRS_LIB_ASSERT_MSG(static_cast<AnsiString>(e.Message).c_str());
   } catch (exception& e) {
     *ap_read_success = false;
     IRS_LIB_ASSERT_MSG(e.what());
