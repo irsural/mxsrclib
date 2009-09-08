@@ -1,5 +1,5 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 10.07.2009
+// Дата: 7.09.2009
 
 #include <vcl.h>
 #pragma hdrstop
@@ -99,7 +99,8 @@ void irs::cbuilder::file_xls_table_read(const string_t& a_book_name,
       for (size_type row_i = 0; row_i < row_count; row_i++) {
         Variant Cell = Cells.OlePropertyGet("Item", row_i+1, col_i+1);
         Variant CellValue = Cell.OlePropertyGet("Value");
-        AnsiString CellValueStr = CellValue.AsType(varString);
+        AnsiString CellValueStr =
+          static_cast<AnsiString>(CellValue.AsType(varString));
         ap_table_string->write_cell(col_i, row_i, CellValueStr.c_str());
       }
     }

@@ -611,8 +611,8 @@ void irs::dac_ad7376_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  if ((mp_buf[0]>>m_rs_bit_position)&1 == 0) m_need_reset = true;
-  if ((mp_buf[0]>>m_shdn_bit_position)&1 == 0) mp_shdn_pin->clear();     
+  if (((mp_buf[0]>>m_rs_bit_position)&1) == 0) m_need_reset = true;
+  if (((mp_buf[0]>>m_shdn_bit_position)&1) == 0) mp_shdn_pin->clear();     
   irs_u8 size = (irs_u8)a_size;
   if (size + a_index > m_size) size = irs_u8(m_size - a_index);
   memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);

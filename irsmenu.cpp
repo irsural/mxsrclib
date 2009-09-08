@@ -1,5 +1,5 @@
 // Текстовое меню
-// Дата: 31.08.2009
+// Дата: 8.09.2009
 
 #include <irsmenu.h>
 #include <irsdefs.h>
@@ -369,8 +369,8 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   f_value_string(empty_str),
   f_len(0),
   f_accur(0),
-  f_min(0.0),
-  f_max(0.0),
+  f_min(0.0f),
+  f_max(0.0f),
   f_parametr(a_parametr),
   f_point_flag(irs_false),
   f_double_trans(IRS_NULL),
@@ -1275,8 +1275,8 @@ bool irs_advanced_tablo_t::creep_stopped()
 
 irs_menu_trimmer_item_t::irs_menu_trimmer_item_t(double *a_parametr,
   irs_bool a_save_after_exit):
-  f_min(0.0),
-  f_max(0.0),
+  f_min(0.0f),
+  f_max(0.0f),
   f_parametr(a_parametr),
   f_value_string(empty_str),
   f_suffix(empty_str),
@@ -1289,7 +1289,7 @@ irs_menu_trimmer_item_t::irs_menu_trimmer_item_t(double *a_parametr,
   f_trim_accur(0),
   f_double_trans(IRS_NULL),
   f_step_count(0),
-  f_trim_value(0.0),
+  f_trim_value(0.0f),
   f_start_value(*a_parametr),
   f_save_after_exit(a_save_after_exit),
   f_first_raz(irs_true),
@@ -1297,7 +1297,7 @@ irs_menu_trimmer_item_t::irs_menu_trimmer_item_t(double *a_parametr,
   f_step_prefix(empty_str),
   f_step_len(0),
   f_step_accur(0),
-  f_begin_step(1.),
+  f_begin_step(1.f),
   f_step(f_begin_step)
 {
   f_master_menu = IRS_NULL;
