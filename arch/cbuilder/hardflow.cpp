@@ -681,7 +681,7 @@ void irs::tcp_server_t::start()
       // Сокет уже создан
     } else {
       m_server_listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-      if (m_server_listen_sock == SOCKET_ERROR) {
+      if (m_server_listen_sock == static_cast<SOCKET>(SOCKET_ERROR)) {
         // Сокет создать не удалось
       } else {
         m_state_info.slsock_created = true;
@@ -928,7 +928,7 @@ void irs::tcp_client_t::start()
       // Сокет уже создан
     } else {
       m_client_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-      if (m_client_sock == SOCKET_ERROR) {
+      if (m_client_sock == static_cast<SOCKET>(SOCKET_ERROR)) {
         // Сокет создать не удалось
       } else {
         m_state_info.csock_created = true;

@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 27.08.2009
+// Дата: 8.09.2009
 
 #include <hardflowg.h>
 
@@ -275,7 +275,7 @@ void irs::hardflow::udp_flow_t::start()
       // Сокет уже создан
     } else {
       m_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-      if (m_sock == m_invalid_socket) {
+      if (m_sock == static_cast<socket_type>(m_invalid_socket)) {
         // Сокет создать не удалось
         SEND_MESSAGE_ERR(m_error_sock.get_last_error());
       } else {

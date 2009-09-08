@@ -21,7 +21,7 @@ const double DblError = 1e-9;
 //***************************************************************************
 // Глобальные функции
 
-#if __BORLANDC__ <= IRS_CPP_BUILDER2006
+#if __BORLANDC__ < IRS_CPP_BUILDER2010
 //---------------------------------------------------------------------------
 bool __fastcall operator == (TPoint P1, TPoint P2)
 {
@@ -33,7 +33,7 @@ bool __fastcall operator != (TRect R1, TRect R2)
   return R1.Left != R2.Left || R1.Top != R2.Top || R1.Right != R2.Right ||
     R1.Bottom != R2.Bottom;
 }
-#endif //__BORLANDC__ <= IRS_CPP_BUILDER2006
+#endif //__BORLANDC__ < IRS_CPP_BUILDER2010
 //---------------------------------------------------------------------------
 int __fastcall BeginChartRange(TMxChart *Chart, int Index)
 {

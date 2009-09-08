@@ -15,6 +15,7 @@
 #define IRS_CPP_BUILDER4    0x0540
 #define IRS_CPP_BUILDER6    0x0560
 #define IRS_CPP_BUILDER2006 0x0580
+#define IRS_CPP_BUILDER2010 0x0620
 
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__)

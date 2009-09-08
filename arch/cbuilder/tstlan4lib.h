@@ -272,7 +272,7 @@ private:
     bool is_saveable_col(int a_col);
     void save_grid_row(int a_row);
     void __fastcall VarsGridGetEditText(
-      TObject *Sender, int ACol, int ARow, AnsiString &Value);
+      TObject *Sender, int ACol, int ARow, String &Value);
     void __fastcall VarsGridKeyDown(
       TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall ChartBtnClick(TObject *Sender);

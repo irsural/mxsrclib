@@ -483,7 +483,7 @@ void irs::tstlan4_t::controls_t::save_grid_row(int a_row)
   m_netconn.connect(mp_data, mp_vars_grid, m_type_col, m_index_col);
 }
 void __fastcall irs::tstlan4_t::controls_t::VarsGridGetEditText(
-  TObject *Sender, int ACol, int ARow, AnsiString &Value)
+  TObject *Sender, int ACol, int ARow, String &Value)
 {
   m_is_grid_edit = true;
   m_grid_edit_col = ACol;
