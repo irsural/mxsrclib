@@ -8,9 +8,9 @@
 #include <time.h>
 
 // Тип счетчика
-typedef clock_t counter_t;
+typedef irs_i32 counter_t;
 // Тип в котором осуществляются целочисленные расчеты
-typedef irs_i32 calccnt_t;
+typedef irs_i64 calccnt_t;
 
 // Максимальное время которое можно измерить
 //#define COUNTER_MAX IRS_I32_MAX

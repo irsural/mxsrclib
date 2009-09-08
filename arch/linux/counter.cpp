@@ -39,8 +39,10 @@ counter_t SECONDS_PER_INTERVAL = 1;
 // Количество отсчетов в секунде
 counter_t COUNTER_PER_INTERVAL = 1000000;
 
-//#define OUTDBG(out) out
-#define OUTDBG(out)
+int init_cnt = 0;
+
+#define OUTDBG(out) out
+//#define OUTDBG(out)
 
 // Регистр AT91
 #define AT91_REG(BASE, OFFSET, REG) \
@@ -61,68 +63,72 @@ irs_bool is_arm = irs_false;
 // Инициализация счетчика
 void counter_init()
 {
-  //char id[] = "armv4l";
-  //irs_u8 *s;
-  OUTDBG(cout << "Init counter\n");
-  struct utsname buf[1000];
-  const int uname_ok = 0;
-  //int uname_status = uname(buf);
-  if (uname(buf) == uname_ok) {
-    OUTDBG(cout << "All OK\n");
-    OUTDBG(cout << "Now we will init counter OK\n");
-    OUTDBG(cout << "System name "<<buf->sysname <<"\n");
-    OUTDBG(cout << "Node name   "<<buf->nodename<<"\n");
-    OUTDBG(cout << "Release     "<<buf->release <<"\n");
-    OUTDBG(cout << "Version     "<<buf->version <<"\n");
-    OUTDBG(cout << "Machine     "<<buf->machine <<"\n");
-    char* machine = strstr(buf->machine, "armv4l");
-    if (machine != IRS_NULL)
-    {
-      OUTDBG(cout << "It is ARM, we can work!!!\n");
-      is_arm = irs_true;
-    }
-  } else {
-    OUTDBG(cout << "ERROR\n");
-    //perror("uname");
-  }
-  if (is_arm)
+  if (init_cnt == 0)
   {
-    COUNTER_MAX = 0x7FFFFFFF & (~((1 << 12) - 1));
-    //IRS_HIWORD(COUNTER_MAX) = IRS_I16_MAX;
-    SECONDS_PER_INTERVAL = 1;
-    COUNTER_PER_INTERVAL = 32768*4096;
-    OUTDBG(cout<<"init timer counter 0\n");
-    int fd = open("/dev/mem", O_RDWR | O_SYNC);
-    if(fd == -1)
-    {
-      OUTDBG(cout<<"gpio: Error opening /dev/mem\n");
-      //return -1;
+    //char id[] = "armv4l";
+    //irs_u8 *s;
+    OUTDBG(cout << "Init counter\n");
+    struct utsname buf[1000];
+    const int uname_ok = 0;
+    //int uname_status = uname(buf);
+    if (uname(buf) == uname_ok) {
+      OUTDBG(cout << "All OK\n");
+      OUTDBG(cout << "Now we will init counter OK\n");
+      OUTDBG(cout << "System name "<<buf->sysname <<"\n");
+      OUTDBG(cout << "Node name   "<<buf->nodename<<"\n");
+      OUTDBG(cout << "Release     "<<buf->release <<"\n");
+      OUTDBG(cout << "Version     "<<buf->version <<"\n");
+      OUTDBG(cout << "Machine     "<<buf->machine <<"\n");
+      char* machine = strstr(buf->machine, "armv4l");
+      if (machine != IRS_NULL)
+      {
+        OUTDBG(cout << "It is ARM, we can work!!!\n");
+        is_arm = irs_true;
+      }
+    } else {
+      OUTDBG(cout << "ERROR\n");
+      //perror("uname");
     }
-    map_base = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
-      fd, AT91_SYS & ~MAP_MASK);
-    //map_tc = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
-      //fd, AT91_TC0 & ~MAP_16_MASK);
-    if(map_base == (void *)(-1))
+    if (is_arm)
     {
-      OUTDBG(cout<< "gpio: Error mapping memory\n");
-      close(fd);
-      //return -1;
+      COUNTER_MAX = 0x7FFFFFFF & (~((1 << 12) - 1));
+      //IRS_HIWORD(COUNTER_MAX) = IRS_I16_MAX;
+      SECONDS_PER_INTERVAL = 1;
+      COUNTER_PER_INTERVAL = 32768*4096;
+      OUTDBG(cout<<"init timer counter 0\n");
+      int fd = open("/dev/mem", O_RDWR | O_SYNC);
+      if(fd == -1)
+      {
+        OUTDBG(cout<<"gpio: Error opening /dev/mem\n");
+        //return -1;
+      }
+      map_base = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+        fd, AT91_SYS & ~MAP_MASK);
+      //map_tc = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+        //fd, AT91_TC0 & ~MAP_16_MASK);
+      if(map_base == (void *)(-1))
+      {
+        OUTDBG(cout<< "gpio: Error mapping memory\n");
+        close(fd);
+        //return -1;
+      }
+      //p_id = TC0_ID;
+      //writeval = 1 << p_id;
+      //unsigned& pmc_pcer = *((unsigned*)((irs_u8*)map_base +
+        //((PMC_OFFSET + PMC_PCER) & MAP_MASK)));
+      AT91_REG(map_base, PMC_OFFSET, PMC_PCER) = (1 << TC0_ID);
+      //unsigned pmc_pcsr = *((unsigned*)((irs_u8*)map_base +
+        //((PMC_OFFSET + PMC_PCSR) & MAP_MASK)));
+      OUTDBG(
+        unsigned pmc_pcsr = AT91_REG(map_base, PMC_OFFSET, PMC_PCSR);
+        cout<<"Peripheral status registr:"<<hex_u32<<pmc_pcsr<<"\n"
+      );
+    } else {
+      SECONDS_PER_INTERVAL = 1;
+      COUNTER_PER_INTERVAL = CLOCKS_PER_SEC;
     }
-    //p_id = TC0_ID;
-    //writeval = 1 << p_id;
-    //unsigned& pmc_pcer = *((unsigned*)((irs_u8*)map_base +
-      //((PMC_OFFSET + PMC_PCER) & MAP_MASK)));
-    AT91_REG(map_base, PMC_OFFSET, PMC_PCER) = (1 << TC0_ID);
-    //unsigned pmc_pcsr = *((unsigned*)((irs_u8*)map_base +
-      //((PMC_OFFSET + PMC_PCSR) & MAP_MASK)));
-    OUTDBG(
-      unsigned pmc_pcsr = AT91_REG(map_base, PMC_OFFSET, PMC_PCSR);
-      cout<<"Peripheral status registr:"<<hex_u32<<pmc_pcsr<<"\n"
-    );
-  } else {
-    SECONDS_PER_INTERVAL = 1;
-    COUNTER_PER_INTERVAL = CLOCKS_PER_SEC;
   }
+  init_cnt++;
 }
 // Чтение счетчика
 counter_t counter_get()
@@ -146,4 +152,8 @@ counter_t counter_get()
 // Деинициализация счетчика
 void counter_deinit()
 {
+  init_cnt--;
+  if(init_cnt == 0)
+  {
+  }
 }
