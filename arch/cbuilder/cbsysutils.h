@@ -1,6 +1,5 @@
-//---------------------------------------------------------------------------
 // Функции для работы с компонентами C++Builder
-// Дата: 2.09.2009
+// Дата: 9.09.2009
 
 #ifndef cbsysutilsH
 #define cbsysutilsH
@@ -20,9 +19,12 @@
 #include <irssysutils.h>
 #include <irstable.h>
 #include <irserror.h>
+#include <irscpp.h>
 
 namespace irs {
+
 namespace cbuilder {
+
 typedef irs::string string_t;
 typedef size_t sizens_t;
 
@@ -78,8 +80,10 @@ void file_xls_table_write(const string_t& a_book_name,
 
 // Вывод в компонент
 //void out_to_tree_view();
+
 }; //namespace cbuilder
+
 }; //namespace irs
 
-//---------------------------------------------------------------------------
 #endif //cbsysutilsH
+

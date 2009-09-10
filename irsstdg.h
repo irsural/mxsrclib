@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 27.08.2009
+// Дата: 9.09.2009
 
 #ifndef irsstdgH
 #define irsstdgH
@@ -12,6 +12,7 @@
 #include <irsexcept.h>
 #include <irslimits.h>
 #include <irsint.h>
+//#include <irserror.h>
 
 //typedef string std_string;
 
@@ -866,6 +867,7 @@ public:
     base = cstr;
     return *this;
   }
+  string& operator=(const wchar_t *cstr);
   string& operator=(const bool& val)
   {
     return string_assign(*this, val);
@@ -947,6 +949,7 @@ public:
   {
     *this = cstr;
   }
+  string(const wchar_t *cstr);
 
   string(const bool& val)
   {

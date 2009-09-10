@@ -1,8 +1,9 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 27.08.2009
+// Дата: 9.09.2009
 
 #include <irsstdg.h>
 #include <ctype.h>
+#include <irserror.h>
 
 //---------------------------------------------------------------------------
 // Класс для приложения
@@ -800,6 +801,17 @@ void irs::local_data_t::tick()
 }
 //---------------------------------------------------------------------------
 // Добавление операций ввода/вывода для типа string
+irs::string& irs::string::operator=(const wchar_t *cstr)
+{
+  IRS_LIB_ERROR(irs::ec_standard,
+    "Инициализация irs::string типом wchar_t* недопустима");
+  return *this;
+}
+irs::string::string(const wchar_t *cstr)
+{
+  IRS_LIB_ERROR(irs::ec_standard,
+    "Инициализация irs::string типом wchar_t* недопустима");
+}
 istream& irs::operator>>(istream& strm, irs::string& strg)
 {
   strg = "";

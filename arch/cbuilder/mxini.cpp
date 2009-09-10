@@ -5,6 +5,8 @@
 #pragma hdrstop
 #pragma link "cspin"
 
+#include <cbsysutils.h>
+
 #include "mxini.h"
 //---------------------------------------------------------------------------
 // Работа с ini-файлами
@@ -22,7 +24,15 @@ irs::ini_file_t::ini_file_t():
   String ExeName = Application->ExeName;
   int Length = ExeName.Length();
   if (Length < 3) throw bad_exe_path();
-  m_ini_name = ExeName.SubString(1, Length - 3).c_str();
+
+  String x = ExeName.SubString(1, Length - 3).c_str();
+  AnsiString x1 = "hello";
+  String y = x1;
+  m_ini_name = irs::to_cstr(x);
+  //AnsiString y = x;
+  //m_ini_name = y.c_str();
+
+  //m_ini_name = ExeName.SubString(1, Length - 3).c_str();
   m_ini_name += "ini";
 }
 irs::ini_file_t::~ini_file_t()
@@ -61,7 +71,9 @@ void irs::ini_file_t::add(const String& a_name, irs_u8* a_control)
 {
   irs::string name = a_name.c_str();
   irs_u8_t irs_u8_var(m_section, name, a_control);
-  if(find(mv_irs_u8s.begin(), mv_irs_u8s.end(), irs_u8_var) == mv_irs_u8s.end()) {
+  if(find(mv_irs_u8s.begin(), mv_irs_u8s.end(),
+    irs_u8_var) == mv_irs_u8s.end())
+  {
     mv_irs_u8s.push_back(irs_u8_var);
   }
 }
@@ -69,7 +81,9 @@ void irs::ini_file_t::add(const String& a_name, irs_i8* a_control)
 {
   irs::string name = a_name.c_str();
   irs_i8_t irs_i8_var(m_section, name, a_control);
-  if(find(mv_irs_i8s.begin(), mv_irs_i8s.end(), irs_i8_var) == mv_irs_i8s.end()) {
+  if(find(mv_irs_i8s.begin(), mv_irs_i8s.end(),
+    irs_i8_var) == mv_irs_i8s.end())
+  {
     mv_irs_i8s.push_back(irs_i8_var);
   }
 }

@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 4.08.2009
+// Дата: 7.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
@@ -148,3 +148,4 @@ typedef void (*irs_vfunc)();
 #endif //__BCPLUSPLUS__
 
 #endif //IRSDEFSH
+

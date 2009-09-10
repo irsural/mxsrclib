@@ -6,7 +6,6 @@
 
 #include <cbsysutils.h>
 
-
 // Запрос версии файла
 bool irs::cbuilder::get_file_version(
   const irs::string& a_file_name, irs::cbuilder::file_version_t& a_version)
