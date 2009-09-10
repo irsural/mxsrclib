@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 9.09.2009
+// Дата: 10.09.2009
 
 #ifndef irsstdgH
 #define irsstdgH
@@ -12,7 +12,6 @@
 #include <irsexcept.h>
 #include <irslimits.h>
 #include <irsint.h>
-//#include <irserror.h>
 
 //typedef string std_string;
 
@@ -548,6 +547,7 @@ public:
   irs_uarc index() const;
 
   const T &operator=(const T &a_elem);
+  const conn_data_t& operator=(const conn_data_t& a_conn_data);
   operator T();
 private:
   irs_uarc m_index;
@@ -606,6 +606,15 @@ const T& conn_data_t<T, size, check>::operator=(const T &a_elem)
   //if (check) if (!m_connected) return m_elem;
   m_data->write(reinterpret_cast<const irs_u8 *>(&a_elem), m_index, size);
   return a_elem;
+}
+template <class T, int size, bool check>
+const conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator=(
+  const conn_data_t<T, size, check>& a_conn_data)
+{
+  T elem = a_conn_data;
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->write(p_elem_u8, m_index, size);
+  return elem;
 }
 template <class T, int size, bool check>
 conn_data_t<T, size, check>::operator T()
