@@ -22,9 +22,6 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
     TForm *src_form = a_tstlan4.mp_form_auto.get();
     irs::mxcopy(mp_form, src_form);
   }
-  //mp_controls.reset(new controls_t(*a_tstlan4.mp_controls.get(), mp_form));
-  //mp_controls.reset(new controls_t(mp_form, m_ini_name,
-    //m_ini_section_prefix));
   init(mp_form_auto.get());
 }
 irs::tstlan4_t::tstlan4_t(form_type_t a_form_type,
