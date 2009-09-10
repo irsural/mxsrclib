@@ -1,5 +1,5 @@
 // Работа с ini-файлами
-// Дата: 8.09.2009
+// Дата: 10.09.2009
 
 #include <vcl.h>
 #pragma hdrstop
@@ -24,15 +24,7 @@ irs::ini_file_t::ini_file_t():
   String ExeName = Application->ExeName;
   int Length = ExeName.Length();
   if (Length < 3) throw bad_exe_path();
-
-  String x = ExeName.SubString(1, Length - 3).c_str();
-  AnsiString x1 = "hello";
-  String y = x1;
-  m_ini_name = irs::to_cstr(x);
-  //AnsiString y = x;
-  //m_ini_name = y.c_str();
-
-  //m_ini_name = ExeName.SubString(1, Length - 3).c_str();
+  m_ini_name = ExeName.SubString(1, Length - 3).c_str();
   m_ini_name += "ini";
 }
 irs::ini_file_t::~ini_file_t()
