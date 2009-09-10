@@ -107,7 +107,7 @@ void irs::avr::mem_out_pin_t::clear()
   buf_value &= ((1 << m_bit)^0xFF);
   mp_write_register->set_value(buf_value);
 }
-void irs::avr::mem_out_pin_t::set_dir(dir_t a_dir)
+void irs::avr::mem_out_pin_t::set_dir(dir_t /*a_dir*/)
 {
   return;
 }

@@ -267,7 +267,7 @@ struct float_limits_by_size:
 
   enum {
     sign_idx = 3,
-    sign_bitsize = 1,
+    sign_bitsize = 1
   };
   
   enum {
@@ -470,15 +470,15 @@ struct numeric_limits: numeric_limits_base
   {
     return reinterpret_cast<const fraction_type&>(*ap_val);
   }
-  static bool is_inf_or_nan(const irs_u8* ap_val)
+  static bool is_inf_or_nan(const irs_u8* /*ap_val*/)
   {
     return false;
   }
-  static bool is_nan(const irs_u8* ap_val)
+  static bool is_nan(const irs_u8* /*ap_val*/)
   {
     return false;
   }
-  static bool is_inf(const irs_u8* ap_val)
+  static bool is_inf(const irs_u8* /*ap_val*/)
   {
     return false;
   }
@@ -495,15 +495,15 @@ struct numeric_limits: numeric_limits_base
   {
     return reinterpret_cast<const sign_type&>(a_val);
   }
-  static bool is_inf_or_nan(const value_type& a_val)
+  static bool is_inf_or_nan(const value_type& /*a_val*/)
   {
     return false;
   }
-  static bool is_nan(const value_type& a_val)
+  static bool is_nan(const value_type& /*a_val*/)
   {
     return false;
   }
-  static bool is_inf(const value_type& a_val)
+  static bool is_inf(const value_type& /*a_val*/)
   {
     return false;
   }

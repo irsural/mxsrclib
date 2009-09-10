@@ -181,8 +181,8 @@ irs_menu_base_t::size_type irs_menu_t::get_items_count()
 irs_menu_base_t::size_type irs_menu_t::get_parametr_string(
   char *a_parametr_string,
   size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -209,7 +209,7 @@ irs_menu_base_t::size_type irs_menu_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_menu_t::get_dynamic_string(char *a_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   a_buffer = a_buffer;
   return 0;
@@ -536,7 +536,7 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_menu_double_item_t::get_dynamic_string(char *a_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   a_buffer = a_buffer;
   return 0;
@@ -907,7 +907,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
 
             mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));
-            mxdisp_pos_t suff_len = mxdisp_pos_t(strlen(f_suffix));
+            //mxdisp_pos_t suff_len = mxdisp_pos_t(strlen(f_suffix));
             mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string));
             mxdisp_pos_t space = 1;
             mxdisp_pos_t val_pos_x =
@@ -983,9 +983,9 @@ void irs_tablo_t::set_slave_menu(irs_menu_base_t *a_slave_menu)
 
 irs_menu_base_t::size_type irs_tablo_t::get_parametr_string(
   char *a_parametr_string,
-  irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_base_t::size_type /*a_length*/,
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -995,7 +995,7 @@ irs_menu_base_t::size_type irs_tablo_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_tablo_t::get_dynamic_string(char *a_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   a_buffer = a_buffer;
   return 0;
@@ -1139,9 +1139,9 @@ void irs_advanced_tablo_t::set_slave_menu(irs_menu_base_t *ap_slave_menu)
 
 irs_menu_base_t::size_type irs_advanced_tablo_t::get_parametr_string(
   char *a_parametr_string,
-  irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_base_t::size_type /*a_length*/,
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -1151,7 +1151,7 @@ irs_menu_base_t::size_type irs_advanced_tablo_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_advanced_tablo_t::get_dynamic_string(char *a_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   a_buffer = a_buffer;
   return 0;
@@ -1466,7 +1466,7 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_parametr_string(
   char *a_parametr_string,
   irs_menu_base_t::size_type a_length,
   irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -1874,8 +1874,8 @@ void irs_menu_ip_item_t::set_extra_parametr(irs_menu_base_t *a_extra_parametr)
 irs_menu_base_t::size_type irs_menu_ip_item_t::get_parametr_string(
   char *a_parametr_string,
   irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -2143,7 +2143,7 @@ irs_menu_base_t::size_type irs_menu_bool_item_t::get_parametr_string(
   char *a_parametr_string,
   irs_menu_base_t::size_type a_length,
   irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_param_update_t /*a_update*/)
 {
   if (a_parametr_string)
   {
@@ -2199,7 +2199,7 @@ irs_menu_base_t::size_type irs_menu_bool_item_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_menu_bool_item_t::get_dynamic_string(char *a_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   a_buffer = a_buffer;
   return 0;
@@ -2351,9 +2351,9 @@ void irs_menu_string_item_t::set_parametr_string(char *ap_parametr_string)
 }
 irs_menu_base_t::size_type irs_menu_string_item_t::get_parametr_string(
   char *ap_parametr_string,
-  irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_base_t::size_type /*a_length*/,
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if (ap_parametr_string)
   if (mp_string) {
@@ -2365,7 +2365,7 @@ irs_menu_base_t::size_type irs_menu_string_item_t::get_parametr_string(
   return 0;
 }
 irs_menu_base_t::size_type irs_menu_string_item_t::get_dynamic_string(char *ap_buffer,
-  irs_menu_base_t::size_type a_length)
+  irs_menu_base_t::size_type /*a_length*/)
 {
   ap_buffer = ap_buffer;
   return 0;
@@ -2379,7 +2379,7 @@ void irs_menu_string_item_t::draw(irs_menu_base_t **ap_cur_menu)
 
 irs_menu_progress_bar_t::irs_menu_progress_bar_t(
   irs_menu_base_t::size_type a_symbol,
-  irs_menu_base_t::size_type a_length,
+  irs_menu_base_t::size_type /*a_length*/,
   float a_max_value):
 
   mp_bar(0),
@@ -2443,8 +2443,8 @@ void irs_menu_progress_bar_t::set_max_value(float a_max_value)
 irs_menu_base_t::size_type irs_menu_progress_bar_t::get_parametr_string(
   char *a_parametr_string,
   irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   if ((a_length > 0) && (a_length < m_length))
   {
@@ -2672,17 +2672,17 @@ void irs_menu_2param_master_item_t::set_stop_key(irskey_t a_stop_key)
 }
 
 irs_menu_base_t::size_type irs_menu_2param_master_item_t::get_parametr_string(
-  char *a_parametr_string,
-  irs_menu_base_t::size_type a_length,
-  irs_menu_param_show_mode_t a_show_mode,
-  irs_menu_param_update_t a_update)
+  char */*a_parametr_string*/,
+  irs_menu_base_t::size_type /*a_length*/,
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
 {
   return 0;
 }
 
 irs_menu_base_t::size_type irs_menu_2param_master_item_t::get_dynamic_string(
-  char *ap_buffer,
-  irs_menu_base_t::size_type a_length)
+  char */*ap_buffer*/,
+  irs_menu_base_t::size_type /*a_length*/)
 {
   return 0;
 }

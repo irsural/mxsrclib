@@ -1,5 +1,5 @@
 // Работа с таймером
-// Дата: 16.12.2008
+// Дата: 10.09.2009
 
 #ifndef TIMERH
 #define TIMERH
@@ -91,18 +91,23 @@ inline counter_t make_cnt_us(const int& a_time_us)
   return TIME_TO_CNT(a_time_us, 1000000);
 }
 
-#define irs_timer_num_def 0
-#define irs_timer_denom_def 1000
+//#define irs_timer_num_def 0
+//#define irs_timer_denom_def 1000
+enum {
+  timer_num_def = 0,
+  timer_denom_def = 1000
+};
   
 // Класс таймера
 class timer_t
 {
 public:
-  timer_t(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+
+  timer_t(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   timer_t(const counter_t& a_time);
-  void set(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+  void set(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
   inline counter_t get();
   void start();
@@ -123,11 +128,11 @@ inline counter_t timer_t::get()
 class loop_timer_t
 {
 public:
-  loop_timer_t(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+  loop_timer_t(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   loop_timer_t(const counter_t& a_time);
-  void set(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+  void set(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
   inline counter_t get();
   void start();
@@ -145,11 +150,11 @@ inline counter_t loop_timer_t::get()
 class strong_loop_timer_t
 {
 public:
-  strong_loop_timer_t(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+  strong_loop_timer_t(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   strong_loop_timer_t(const counter_t& a_time);
-  void set(const int& num = irs_timer_num_def,
-    const int& denom = irs_timer_denom_def);
+  void set(const int& num = timer_num_def,
+    const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
   inline counter_t get();
   void start();

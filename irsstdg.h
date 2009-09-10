@@ -73,7 +73,7 @@ typedef enum _irskey_t {
   irskey_up       = 13,
   irskey_down     = 14,
   irskey_backspace= 15,
-  irskey_escape   = 16,
+  irskey_escape   = 16
 } irskey_t;
 
 // Класс для функций обработки
@@ -162,7 +162,7 @@ class mxantibounce_t
   typedef enum _mode_t{
     mode_start,
     mode_wait_change,
-    mode_wait_time,
+    mode_wait_time
   } mode_t;
 
   irs_pin_t f_pin;

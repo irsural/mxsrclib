@@ -106,7 +106,7 @@ inline event_t* make_event(
   return new event_function_t<owner_type>(ap_owner, ap_function);
 }
 
-}; // namespace irs
+} // namespace irs
 //#endif // NOP
 
 // Класс событий

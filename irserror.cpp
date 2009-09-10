@@ -113,7 +113,7 @@ const  void* irs::spec_assert(const char *assert_str,
 class zerobuf: public streambuf
 {
 public:
-  virtual int overflow(int c = EOF)
+  virtual int overflow(int /*c*/ = EOF)
   {
     return 0;
   }

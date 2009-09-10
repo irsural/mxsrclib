@@ -1,5 +1,5 @@
 // Функции для mxifa (mxifa routines)
-// Дата: 5.05.2008
+// Дата: 10.09.2009
 
 //---------------------------------------------------------------------------
 //#include <vcl.h>
@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <irscpp.h>
 
 //---------------------------------------------------------------------------
 // Нулевой IP
@@ -29,9 +30,15 @@ irs_bool operator !=(mxip_t ip1, mxip_t ip2)
 }
 //---------------------------------------------------------------------------
 // Преобразование IP в строку
-void mxip_to_cstr(char *ip_in_str, mxip_t ip) {
-  sprintf(ip_in_str, "%hd.%hd.%hd.%hd", irs_u16(ip.val[0]),
-    irs_u16(ip.val[1]), irs_u16(ip.val[2]), irs_u16(ip.val[3]));
+void mxip_to_cstr(char *ip_in_str, mxip_t ip) 
+{
+  // Когда исп
+  ostrstream strm(ip_in_str, IPSTR_LEN);
+  strm << ip.val[0] << "." << ip.val[1] << ".";
+  strm << ip.val[2] << "." << ip.val[3] << "\0";
+  ip_in_str[IPSTR_LEN - 1] = 0;
+  //sprintf(ip_in_str, "%hd.%hd.%hd.%hd", irs_u16(ip.val[0]),
+    //irs_u16(ip.val[1]), irs_u16(ip.val[2]), irs_u16(ip.val[3]));
 }
 // Определение является ли символ цифрой
 irs_bool is_digit(irs_u8 ch)

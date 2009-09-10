@@ -801,13 +801,13 @@ void irs::local_data_t::tick()
 }
 //---------------------------------------------------------------------------
 // Добавление операций ввода/вывода для типа string
-irs::string& irs::string::operator=(const wchar_t *cstr)
+irs::string& irs::string::operator=(const wchar_t */*cstr*/)
 {
   IRS_LIB_ERROR(irs::ec_standard,
     "Инициализация irs::string типом wchar_t* недопустима");
   return *this;
 }
-irs::string::string(const wchar_t *cstr)
+irs::string::string(const wchar_t */*cstr*/)
 {
   IRS_LIB_ERROR(irs::ec_standard,
     "Инициализация irs::string типом wchar_t* недопустима");

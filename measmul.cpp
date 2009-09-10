@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 27.02.2009
+// Дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
 //#define RESMEAS // Сброс перед измерением
@@ -384,17 +384,22 @@ void mx_agilent_3458a_t::get_voltage(double *voltage)
   f_status = meas_status_busy;
 }
 // Чтение усредненного сдвира фаз
-void mx_agilent_3458a_t::get_phase_average(double *phase_average)
-{}
+void mx_agilent_3458a_t::get_phase_average(double */*phase_average*/)
+{
+}
 // Чтение фазового сдвига
-void mx_agilent_3458a_t::get_phase(double *phase)
-{}
+void mx_agilent_3458a_t::get_phase(double */*phase*/)
+{
+}
 // Чтение временного интервала
-void mx_agilent_3458a_t::get_time_interval(double *time_interval)
-{}
+void mx_agilent_3458a_t::get_time_interval(double */*time_interval*/)
+{
+}
 // Чтение усредненного временного интервала
-void mx_agilent_3458a_t::get_time_interval_average(double *ap_time_interval)
-{}
+void mx_agilent_3458a_t::get_time_interval_average(
+  double */*ap_time_interval*/)
+{
+}
 // Чтения силы тока
 void mx_agilent_3458a_t::get_current(double *current)
 {
@@ -629,10 +634,12 @@ void mx_agilent_3458a_t::set_aperture(double aperture)
 void mx_agilent_3458a_t::set_bandwidth(double /*bandwidth*/)
 {
 }
-void mx_agilent_3458a_t::set_input_impedance(double impedance)
-{}
-void mx_agilent_3458a_t::set_start_level(double level)
-{}
+void mx_agilent_3458a_t::set_input_impedance(double /*impedance*/)
+{
+}
+void mx_agilent_3458a_t::set_start_level(double /*level*/)
+{
+}
 void mx_agilent_3458a_t::set_range(
   type_meas_t a_type_meas, double a_range)
 {
@@ -899,17 +906,21 @@ void irs::v7_78_1_t::get_voltage(double *voltage)
   f_status = meas_status_busy;
 }
 // Чтение усредненного сдвира фаз
-void irs::v7_78_1_t::get_phase_average(double *phase_average)
-{}
+void irs::v7_78_1_t::get_phase_average(double */*phase_average*/)
+{
+}
 // Чтение фазового сдвига
-void irs::v7_78_1_t::get_phase(double *phase)
-{}
+void irs::v7_78_1_t::get_phase(double */*phase*/)
+{
+}
 // Чтение временного интервала
-void irs::v7_78_1_t::get_time_interval(double *time_interval)
-{}
+void irs::v7_78_1_t::get_time_interval(double */*time_interval*/)
+{
+}
 // Чтение усредненного временного интервала
-void irs::v7_78_1_t::get_time_interval_average(double *ap_time_interval)
-{}
+void irs::v7_78_1_t::get_time_interval_average(double */*ap_time_interval*/)
+{
+}
 // Чтения силы тока
 void irs::v7_78_1_t::get_current(double *current)
 {
@@ -1233,11 +1244,13 @@ void irs::v7_78_1_t::set_bandwidth(double bandwidth)
   m_get_voltage_ac_commands[m_band_width_voltage_ac_index] =
     bandwidth_volt_ac_str;
 }
-void irs::v7_78_1_t::set_input_impedance(double impedance)
-{}
-void irs::v7_78_1_t::set_start_level(double level)
-{}
-void irs::v7_78_1_t::set_range(type_meas_t a_type_meas, double a_range)
+void irs::v7_78_1_t::set_input_impedance(double /*impedance*/)
+{
+}
+void irs::v7_78_1_t::set_start_level(double /*level*/)
+{
+}
+void irs::v7_78_1_t::set_range(type_meas_t /*a_type_meas*/, double /*a_range*/)
 {
 }
 void irs::v7_78_1_t::set_range_auto()
@@ -1456,17 +1469,21 @@ void irs::akip_ch3_85_3r_t::get_value(double *ap_value)
   }else
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
-void irs::akip_ch3_85_3r_t::get_voltage(double *ap_voltage)
-{}
+void irs::akip_ch3_85_3r_t::get_voltage(double */*ap_voltage*/)
+{
+}
 // Чтения силы тока
-void irs::akip_ch3_85_3r_t::get_current(double *ap_current)
-{}
+void irs::akip_ch3_85_3r_t::get_current(double */*ap_current*/)
+{
+}
 // Чтение сопротивления по двухпроводной схеме
-void irs::akip_ch3_85_3r_t::get_resistance2x(double *ap_resistance)
-{}
+void irs::akip_ch3_85_3r_t::get_resistance2x(double */*ap_resistance*/)
+{
+}
 // Чтение сопротивления по четырехпроводной схеме
-void irs::akip_ch3_85_3r_t::get_resistance4x(double *ap_resistance)
-{}
+void irs::akip_ch3_85_3r_t::get_resistance4x(double */*ap_resistance*/)
+{
+}
 void irs::akip_ch3_85_3r_t::get_frequency(double *ap_frequency)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
@@ -1595,7 +1612,7 @@ void irs::akip_ch3_85_3r_t::tick()
         m_buf_cmd.push(reinterpret_cast<const irs_u8*>(p_command_str),
           byte_count);
         md_buf_cmds.pop_front();
-        irs_u32 size_buf_cmd = m_buf_cmd.size();
+        /*irs_u32*/ size_buf_cmd = m_buf_cmd.size();
         irs_u32 size_wr =
           mp_hardflow->write(ch, m_buf_cmd.ptr_data(), size_buf_cmd);
         m_buf_cmd.pop_front(size_wr);
@@ -1697,7 +1714,8 @@ void irs::akip_ch3_85_3r_t::set_start_level(double a_level)
   }else
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
-void irs::akip_ch3_85_3r_t::set_range(type_meas_t a_type_meas, double a_range)
+void irs::akip_ch3_85_3r_t::set_range(type_meas_t /*a_type_meas*/, 
+  double /*a_range*/)
 {
 }
 
@@ -1705,8 +1723,9 @@ void irs::akip_ch3_85_3r_t::set_range_auto()
 {
 }
 
-void irs::akip_ch3_85_3r_t::set_nplc(double a_nplc)
-{}
+void irs::akip_ch3_85_3r_t::set_nplc(double /*a_nplc*/)
+{
+}
 
 // Установка полосы фильтра
 void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
