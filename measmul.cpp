@@ -1589,16 +1589,16 @@ void irs::akip_ch3_85_3r_t::abort()
 void irs::akip_ch3_85_3r_t::tick()
 {
   irs_uarc ch = 0;
-  if(mp_hardflow != NULL){
+  if(mp_hardflow != NULL) {
     static const irs_u32 size_buf_rd = 1024;
     bool big_cmd = false;
-    if(m_time_interval.check()){
-      irs_u32 size_buf_cmd = m_buf_cmd.size();
-      if(size_buf_cmd > 0){
+    if(m_time_interval.check()) {
+      const irs_u32 size_buf_cmd = m_buf_cmd.size();
+      if(size_buf_cmd > 0) {
         irs_u32 size_wr =
           mp_hardflow->write(ch, m_buf_cmd.ptr_data(), size_buf_cmd);
         m_buf_cmd.pop_front(size_wr);
-      }else if(md_buf_cmds.size() > 0){
+      } else if(md_buf_cmds.size() > 0) {
         const char* p_command_str = md_buf_cmds[0].c_str();
         irs_u32 size_big_time_cmds = mv_big_time_commands.size();
         for(irs_u32 i = 0; i < size_big_time_cmds; i++){
@@ -1612,12 +1612,11 @@ void irs::akip_ch3_85_3r_t::tick()
         m_buf_cmd.push(reinterpret_cast<const irs_u8*>(p_command_str),
           byte_count);
         md_buf_cmds.pop_front();
-        /*irs_u32*/ size_buf_cmd = m_buf_cmd.size();
         irs_u32 size_wr =
-          mp_hardflow->write(ch, m_buf_cmd.ptr_data(), size_buf_cmd);
+          mp_hardflow->write(ch, m_buf_cmd.ptr_data(), m_buf_cmd.size());
         m_buf_cmd.pop_front(size_wr);
 
-      }else{
+      } else {
         m_send_command_stat = CS_SUCCESS;
       }
 
