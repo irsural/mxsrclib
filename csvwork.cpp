@@ -258,9 +258,9 @@ void csv_file::clear_pars()
 #ifndef __embedded_cplusplus
 
 //class csv_file_t
-const char irs::csv_file_t::m_delimiter_row = '\n';
-const char irs::csv_file_t::m_quote = '"';
-irs::csv_file_t::csv_file_t(const irs::string& a_filename
+const char irs::csvwork::csv_file_t::m_delimiter_row = '\n';
+const char irs::csvwork::csv_file_t::m_quote = '"';
+irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
 ):
   m_delimiter_col(';'),
   m_filename(a_filename.c_str()),
@@ -296,12 +296,12 @@ irs::csv_file_t::csv_file_t(const irs::string& a_filename
       static_cast<irs::string>(m_quote);
 }
 
-irs::csv_file_t::~csv_file_t()
+irs::csvwork::csv_file_t::~csv_file_t()
 {
   m_file.close();
 }
 
-void irs::csv_file_t::tick()
+void irs::csvwork::csv_file_t::tick()
 {
   switch (m_processing_status) {
     case ps_busy_command: {
@@ -818,7 +818,7 @@ void irs::csv_file_t::tick()
   }
 }
 
-bool irs::csv_file_t::open(const irs::string& a_filename)
+bool irs::csvwork::csv_file_t::open(const irs::string& a_filename)
 {
   bool fsuccess = true;
   IRS_LIB_ASSERT(m_command == cmd_none_command);
@@ -833,7 +833,7 @@ bool irs::csv_file_t::open(const irs::string& a_filename)
   }
   return fsuccess;
 }
-void irs::csv_file_t::close()
+void irs::csvwork::csv_file_t::close()
 {
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
@@ -843,7 +843,7 @@ void irs::csv_file_t::close()
   }
 }
 
-bool irs::csv_file_t::reset_file(const irs::string& a_filename)
+bool irs::csvwork::csv_file_t::reset_file(const irs::string& a_filename)
 {
   bool fsuccess = true;
   IRS_LIB_ASSERT(m_command == cmd_none_command);
@@ -862,7 +862,7 @@ bool irs::csv_file_t::reset_file(const irs::string& a_filename)
   return fsuccess;
 }
 
-void irs::csv_file_t::get_col_count(size_type* ap_col_count)
+void irs::csvwork::csv_file_t::get_col_count(size_type* ap_col_count)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) && (ap_col_count != IRS_NULL));
   if ((m_command == cmd_none_command) && (ap_col_count != IRS_NULL)) {
@@ -873,7 +873,7 @@ void irs::csv_file_t::get_col_count(size_type* ap_col_count)
   }
 }
 
-void irs::csv_file_t::get_row_count(size_type* ap_row_count)
+void irs::csvwork::csv_file_t::get_row_count(size_type* ap_row_count)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) && (ap_row_count != IRS_NULL));
   if ((m_command == cmd_none_command) && (ap_row_count != IRS_NULL)) {
@@ -884,7 +884,8 @@ void irs::csv_file_t::get_row_count(size_type* ap_row_count)
   }
 }
 
-void irs::csv_file_t::row_push_back(std::vector<irs::string>* const ap_row)
+void irs::csvwork::csv_file_t::row_push_back(
+  std::vector<irs::string>* const ap_row)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) && (ap_row != IRS_NULL));
   if (m_command == cmd_none_command) {
@@ -895,7 +896,7 @@ void irs::csv_file_t::row_push_back(std::vector<irs::string>* const ap_row)
   }
 }
 
-void irs::csv_file_t::row_push_back(std::vector<irs::string>& a_row)
+void irs::csvwork::csv_file_t::row_push_back(std::vector<irs::string>& a_row)
 {
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
@@ -907,7 +908,7 @@ void irs::csv_file_t::row_push_back(std::vector<irs::string>& a_row)
   }
 }
 
-void irs::csv_file_t::save(table_string_t* const ap_table_user)
+void irs::csvwork::csv_file_t::save(table_string_t* const ap_table_user)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) &&
     (ap_table_user != IRS_NULL));
@@ -922,7 +923,7 @@ void irs::csv_file_t::save(table_string_t* const ap_table_user)
   }
 }
 
-void irs::csv_file_t::load(table_string_t* ap_table_user)
+void irs::csvwork::csv_file_t::load(table_string_t* ap_table_user)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) &&
     (ap_table_user != IRS_NULL));
@@ -934,7 +935,7 @@ void irs::csv_file_t::load(table_string_t* ap_table_user)
   }
 }
 
-bool irs::csv_file_t::clear()
+bool irs::csvwork::csv_file_t::clear()
 {
   bool fsuccess = true;
   IRS_LIB_ASSERT(m_command == cmd_none_command);
@@ -951,7 +952,7 @@ bool irs::csv_file_t::clear()
   return fsuccess;
 }
 
-void irs::csv_file_t::get_row(
+void irs::csvwork::csv_file_t::get_row(
   std::vector<irs::string>* ap_row,
   const int a_row_index,
   const pos_mode_t a_pos_mode)
@@ -985,7 +986,8 @@ void irs::csv_file_t::get_row(
 
 //class csv_file_synchro_t
 
-irs::csv_file_synchro_t::csv_file_synchro_t(const irs::string& a_filename):
+irs::csvwork::csv_file_synchro_t::csv_file_synchro_t(
+  const irs::string& a_filename):
   m_delimiter_col(';'),
   m_delimiter_row('\n'),
   m_delimiter_cell('"'),
@@ -1001,12 +1003,13 @@ irs::csv_file_synchro_t::csv_file_synchro_t(const irs::string& a_filename):
   }
 }
 
-irs::csv_file_synchro_t::~csv_file_synchro_t()
+irs::csvwork::csv_file_synchro_t::~csv_file_synchro_t()
 {
   m_file.close();
 }
 
-bool irs::csv_file_synchro_t::save(const table_string_t& a_table_string)
+bool irs::csvwork::csv_file_synchro_t::save(
+  const table_string_t& a_table_string)
 {
   typedef table_string_t::size_type size_type;
   bool fsuccess = true;
@@ -1072,7 +1075,7 @@ bool irs::csv_file_synchro_t::save(const table_string_t& a_table_string)
   return fsuccess;
 }
 
-bool irs::csv_file_synchro_t::load(table_string_t& a_table_string)
+bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
 {
   typedef table_string_t::size_type size_type;
   IRS_LIB_ASSERT(m_status_file == stat_file_open);

@@ -13,7 +13,6 @@
 #include <irsdefs.h>
 #include <irserror.h>
 
-namespace csvwork {
 //---------------------------------------------------------------------------
 // typedef-определения
 typedef irs_u32 csv_int;
@@ -116,11 +115,10 @@ public:
   void clear_pars();
 }; //csv_file
 //---------------------------------------------------------------------------
-} // namespace csvwork
-
-using namespace csvwork;
 
 namespace irs {
+
+namespace csvwork {
 
 // В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
 #ifndef __embedded_cplusplus
@@ -221,12 +219,12 @@ public:
 
 };
 
-inline double irs::csv_file_t::get_progress()
+inline double csv_file_t::get_progress()
 {
   return m_progress;
 }
 
-inline csv_file_status_t irs::csv_file_t::get_status()
+inline csv_file_status_t csv_file_t::get_status()
 {
   return m_status;
 }
@@ -295,6 +293,8 @@ inline void csv_file_synchro_t::close()
 }
 
 #endif //__embedded_cplusplus
+
+} // namespace csvwork
 
 } // namespace irs
 
