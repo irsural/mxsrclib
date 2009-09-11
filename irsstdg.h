@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 10.09.2009
+// Дата: 11.09.2009
 
 #ifndef irsstdgH
 #define irsstdgH
@@ -548,7 +548,7 @@ public:
 
   const T &operator=(const T &a_elem);
   const conn_data_t& operator=(const conn_data_t& a_conn_data);
-  operator T();
+  operator T() const;
 private:
   irs_uarc m_index;
   irs::mxdata_t *m_data;
@@ -614,10 +614,10 @@ const conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator=(
   T elem = a_conn_data;
   irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
   m_data->write(p_elem_u8, m_index, size);
-  return elem;
+  return *this;
 }
 template <class T, int size, bool check>
-conn_data_t<T, size, check>::operator T()
+conn_data_t<T, size, check>::operator T() const
 {
   //if (check) if (!m_connected) return m_elem;
   T elem = T();
