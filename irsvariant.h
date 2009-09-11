@@ -23,6 +23,8 @@ namespace irs {
 namespace variant {
 //#ifdef NOP
 
+#ifndef __ICCAVR__
+
 enum var_type_t {
   var_type_unknown,
   var_type_bool,
@@ -479,6 +481,24 @@ bool operator<=(const variant_t& a_first_variant,
 bool operator>=(const variant_t& a_first_variant,
   const variant_t& a_second_variant);
 
+template <class T>
+bool operator==(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
+
+template <class T>
+bool operator==(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_equal,
+    variant_t(a_value), a_variant, IRS_NULL, &result);
+  return result;
+}
+
 /*variant_t operator+(const variant_t& a_first_variant,
   const variant_t& a_second_variant);
 
@@ -769,6 +789,8 @@ void test_variant();
 #endif // IRS_LIB_DEBUG
 
 //#endif // NOP
+
+#endif // __ICCAVR__
 
 } // namespace variant
 

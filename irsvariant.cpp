@@ -1,5 +1,7 @@
 #include <irsvariant.h>
 
+#ifndef __ICCAVR__
+
 //#ifdef NOP
 irs::variant::variant_t::variant_t():
   m_value(),
@@ -797,6 +799,7 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT((first_variant <= second_variant) == false);
   IRS_LIB_ASSERT((first_variant >= second_variant) == true);
 
+  first_variant == variant_t(second_double_var);
   IRS_LIB_ASSERT((first_variant == second_double_var) == false);
   IRS_LIB_ASSERT((first_variant != second_double_var) == true);
   IRS_LIB_ASSERT((first_variant < second_double_var) == false);
@@ -872,3 +875,5 @@ void irs::variant::test_variant()
 #endif // IRS_LIB_DEBUG
 
 //#endif // NOP
+
+#endif // __ICCAVR__
