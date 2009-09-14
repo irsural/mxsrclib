@@ -1,2 +1,31 @@
-AVR128
-IAR EWAVR; AVR128
+Linux
+GCC; ARM, AVR32, NIOS, x86, x64
+
+
+
+http://www.niosftp.com/pub/uclinux/nios2-linux-20090730.tar
+
+Монтирование дисков samba
+mount -t smbfs -o
+port=139,username=guest,password=,codepage=cp866,iocharset=koi8-r
+//10.0.0.106/Audio /mnt/Audio
+mount -t cifs //server/share /mnt --verbose -o user=username
+
+mount -t cifs -o port=139,username=net,password=462,codepage=cp866,iocharset=koi8-r //Maxpc/mxsrclib /home/maxim/work/1/mxsrclib
+smbmount //maxpc/mxsrclib /home/maxim/work/1/mxsrclib -o rw,iocharset=utf8,codepage=cp8 66
+mount -t cifs //maxpc/mxsrclib /home/maxim/work/1/mxsrclib --verbose -o user=net
+
+
+
+mount -t cifs //192.168.75.1/mxsrclib /home/maxim/work/prjs/mxsrclib -o user=net,password=462
+umount /home/maxim/work/1/mxsrclib
+
+/etc/fstab:
+//192.168.75.1/mxsrclib /home/maxim/work/prjs cifs auto,users,rw 0 0
+
+/etc/fstab:
+//192.168.0.10/ShareDocs /home/yourusername/Share cifs auto,users,rw 0 0
+/etc/rc.d: Скрипты, срабатывающие при запуске системы.
+
+Документация cifs
+man mount.cifs

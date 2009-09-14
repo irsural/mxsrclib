@@ -1,5 +1,5 @@
 Библиотека исходников
-// Дата: 4.09.2009
+// Дата: 13.09.2009
 
 Версия 0.6.10
 Дата 25.07.2007
@@ -96,7 +96,7 @@ CBuilder
 Дата 22.03.2007
 Общее
 Добавлены gdefs, mxifa
-Изменен mxnet, mxnetc, mxnetd, irsdefs, alg, timer 
+Изменен mxnet, mxnetc, mxnetd, irsdefs, alg, timer
 AVR128
 Изменены mxifa, mxnetda, rtl8019as, udp_stack
 Удалены mxifa.h

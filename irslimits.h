@@ -1,20 +1,107 @@
 // Характеристики чисел
-// Дата: 4.02.2008
+// Дата: 13.09.2009
 
 #ifndef IRSLIMITSH
 #define IRSLIMITSH
 
 #include <float.h>
+#include <string.h>
 
 #include <irsdefs.h>
+#include <irscpp.h>
 
 namespace irs {
+
+// Глобальные константы
+struct global_limits_t
+{
+  enum {
+    bits_in_byte = 8
+  };
+};
+
+// Преобразование из bool в C-строку
+inline const char* bool_to_cstr(bool a_value)
+{
+  const char* ret = "false";
+  if (a_value) {
+    ret = "true";
+  }
+  return ret;
+}
 
 template <class T>
 const char* type_to_string()
 {
   return "unknown";
 }
+template <>
+inline const char* type_to_string<void>()
+{
+  return "void";
+}
+template <>
+inline const char* type_to_string<char>()
+{
+  return "char";
+}
+template <>
+inline const char* type_to_string<wchar_t>()
+{
+  return "wchar_t";
+}
+template <>
+inline const char* type_to_string<signed char>()
+{
+  return "signed char";
+}
+template <>
+inline const char* type_to_string<unsigned char>()
+{
+  return "unsigned char";
+}
+template <>
+inline const char* type_to_string<signed short>()
+{
+  return "signed short";
+}
+template <>
+inline const char* type_to_string<unsigned short>()
+{
+  return "unsigned short";
+}
+template <>
+inline const char* type_to_string<signed int>()
+{
+  return "signed int";
+}
+template <>
+inline const char* type_to_string<unsigned int>()
+{
+  return "unsigned int";
+}
+template <>
+inline const char* type_to_string<signed long>()
+{
+  return "signed long";
+}
+template <>
+inline const char* type_to_string<unsigned long>()
+{
+  return "unsigned long";
+}
+#ifdef IRSDEFS_I64
+template <>
+inline const char* type_to_string<irs_i64>()
+{
+  return "irs_i64";
+}
+template <>
+inline const char* type_to_string<irs_u64>()
+{
+  return "irs_u64";
+}
+#endif //IRSDEFS_I64
 template <>
 inline const char* type_to_string<float>()
 {
@@ -30,6 +117,11 @@ inline const char* type_to_string<long double>()
 {
   return "long double";
 }
+template <class T>
+inline const char* type_to_string(T)
+{
+  return type_to_string<T>();
+}
 
 enum {
   float_size = 4,
@@ -42,7 +134,7 @@ enum {
   int32_size = 4,
   int64_size = 8
 };
-enum sign_t {
+enum signed_t {
   signed_idx,
   unsigned_idx
 };
@@ -60,6 +152,312 @@ enum std_type_idx_t {
   double_idx,
   long_double_idx
 };
+
+// Определение знаковости типа
+struct signed_type_tag {};
+struct unsigned_type_tag {};
+template <bool s>
+struct integer_signed_detect_base_t
+{
+};
+template <>
+struct integer_signed_detect_base_t<true>
+{
+  typedef signed_type_tag sign_type;
+  enum {
+    signed_value = signed_idx
+  };
+};
+template <>
+struct integer_signed_detect_base_t<false>
+{
+  typedef unsigned_type_tag sign_type;
+  enum {
+    signed_value = unsigned_idx
+  };
+};
+template <class T>
+struct integer_sign_detect_t:
+  integer_signed_detect_base_t<T(-1) < 0>
+{
+};
+template <class T>
+bool is_type_signed()
+{
+  signed_t signT =
+    static_cast<signed_t>(integer_sign_detect_t<T>::signed_value);
+  return signT == signed_idx;
+}
+
+// Взятие типов относительно указанного по размеру
+template <size_t size_of_type, class sign_of_type>
+struct type_relative_by_size_t
+{
+};
+template <>
+struct type_relative_by_size_t<int8_size, signed_type_tag>
+{
+  typedef irs_i16 larger_type;
+  typedef irs_i8 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int8_size, unsigned_type_tag>
+{
+  typedef irs_u16 larger_type;
+  typedef irs_u8 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int16_size, signed_type_tag>
+{
+  typedef irs_i32 larger_type;
+  typedef irs_i8 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int16_size, unsigned_type_tag>
+{
+  typedef irs_u32 larger_type;
+  typedef irs_u8 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int32_size, signed_type_tag>
+{
+  #ifdef IRSDEFS_I64
+  typedef irs_i64 larger_type;
+  #else //IRSDEFS_I64
+  typedef irs_i32 larger_type;
+  #endif //IRSDEFS_I64
+  typedef irs_i16 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int32_size, unsigned_type_tag>
+{
+  #ifdef IRSDEFS_I64
+  typedef irs_u64 larger_type;
+  #else //IRSDEFS_I64
+  typedef irs_u32 larger_type;
+  #endif //IRSDEFS_I64
+  typedef irs_u16 smaller_type;
+};
+#ifdef IRSDEFS_I64
+template <>
+struct type_relative_by_size_t<int64_size, signed_type_tag>
+{
+  typedef irs_i64 larger_type;
+  typedef irs_i32 smaller_type;
+};
+template <>
+struct type_relative_by_size_t<int64_size, unsigned_type_tag>
+{
+  typedef irs_u64 larger_type;
+  typedef irs_u32 smaller_type;
+};
+#endif //IRSDEFS_I64
+
+// Взятие типов относительно указанного
+template <class T>
+struct type_relative_t
+{
+  typedef void signed_type;
+  typedef void unsigned_type;
+  typedef void opposite_signed_type;
+  typedef void larger_type;
+  typedef void smaller_type;
+};
+template <class T>
+struct char_relative_t
+{
+};
+template <>
+struct char_relative_t<signed_type_tag>
+{
+  typedef signed char signed_type;
+  typedef unsigned char unsigned_type;
+  typedef unsigned char opposite_signed_type;
+};
+template <>
+struct char_relative_t<unsigned_type_tag>
+{
+  typedef signed char signed_type;
+  typedef unsigned char unsigned_type;
+  typedef signed char opposite_signed_type;
+};
+template <>
+struct type_relative_t<char>:
+  public char_relative_t<integer_sign_detect_t<char>::sign_type >,
+  type_relative_by_size_t<
+    sizeof(char),
+    integer_sign_detect_t<char>::sign_type
+  >
+{
+  typedef char_relative_t<integer_sign_detect_t<char>::sign_type >
+    base_type;
+
+  typedef base_type::signed_type signed_type;
+  typedef base_type::unsigned_type unsigned_type;
+  typedef base_type::opposite_signed_type opposite_signed_type;
+};
+template <>
+struct type_relative_t<signed char>:
+  type_relative_by_size_t<
+    sizeof(signed char),
+    integer_sign_detect_t<signed char>::sign_type
+  >
+{
+  typedef signed char signed_type;
+  typedef unsigned char unsigned_type;
+  typedef unsigned char opposite_signed_type;
+};
+template <>
+struct type_relative_t<unsigned char>:
+  type_relative_by_size_t<
+    sizeof(unsigned char),
+    integer_sign_detect_t<unsigned char>::sign_type
+  >
+{
+  typedef signed char signed_type;
+  typedef unsigned char unsigned_type;
+  typedef signed char opposite_signed_type;
+};
+template <>
+struct type_relative_t<signed short>:
+  type_relative_by_size_t<
+    sizeof(signed short),
+    integer_sign_detect_t<signed short>::sign_type
+  >
+{
+  typedef signed short signed_type;
+  typedef unsigned short unsigned_type;
+  typedef unsigned short opposite_signed_type;
+};
+template <>
+struct type_relative_t<unsigned short>:
+  type_relative_by_size_t<
+    sizeof(unsigned short),
+    integer_sign_detect_t<unsigned short>::sign_type
+  >
+{
+  typedef signed short signed_type;
+  typedef unsigned short unsigned_type;
+  typedef signed short opposite_signed_type;
+};
+template <>
+struct type_relative_t<signed int>:
+  type_relative_by_size_t<
+    sizeof(signed int),
+    integer_sign_detect_t<signed int>::sign_type
+  >
+{
+  typedef signed int signed_type;
+  typedef unsigned int unsigned_type;
+  typedef unsigned int opposite_signed_type;
+};
+template <>
+struct type_relative_t<unsigned int>:
+  type_relative_by_size_t<
+    sizeof(unsigned int),
+    integer_sign_detect_t<unsigned int>::sign_type
+  >
+{
+  typedef signed int signed_type;
+  typedef unsigned int unsigned_type;
+  typedef signed int opposite_signed_type;
+};
+template <>
+struct type_relative_t<signed long>:
+  type_relative_by_size_t<
+    sizeof(signed long),
+    integer_sign_detect_t<signed long>::sign_type
+  >
+{
+  typedef signed long signed_type;
+  typedef unsigned long unsigned_type;
+  typedef unsigned long opposite_signed_type;
+};
+template <>
+struct type_relative_t<unsigned long>:
+  type_relative_by_size_t<
+    sizeof(unsigned long),
+    integer_sign_detect_t<unsigned long>::sign_type
+  >
+{
+  typedef signed long signed_type;
+  typedef unsigned long unsigned_type;
+  typedef signed long opposite_signed_type;
+};
+#ifdef IRSDEFS_I64
+template <>
+struct type_relative_t<irs_i64>:
+  type_relative_by_size_t<
+    sizeof(irs_i64),
+    integer_sign_detect_t<irs_i64>::sign_type
+  >
+{
+  typedef irs_i64 signed_type;
+  typedef irs_u64 unsigned_type;
+  typedef irs_u64 opposite_signed_type;
+};
+template <>
+struct type_relative_t<irs_u64>:
+  type_relative_by_size_t<
+    sizeof(irs_u64),
+    integer_sign_detect_t<irs_u64>::sign_type
+  >
+{
+  typedef irs_i64 signed_type;
+  typedef irs_u64 unsigned_type;
+  typedef irs_i64 opposite_signed_type;
+};
+#endif //IRSDEFS_I64
+
+// Функция для тестирования type_relative_t
+template <class T>
+void type_relative_test(ostream& a_strm)
+{
+  a_strm << "test of type \"irs::type_relative_t\"" << endl;
+  a_strm << "original_type: ";
+  a_strm << type_to_string<T>();
+  a_strm << endl;
+  a_strm << "signed_type: ";
+  a_strm << type_to_string<typename type_relative_t<T>::signed_type>();
+  a_strm << endl;
+  a_strm << "unsigned_type: ";
+  a_strm << type_to_string<typename type_relative_t<T>::unsigned_type>();
+  a_strm << endl;
+  a_strm << "opposite_signed_type: ";
+  a_strm << type_to_string<typename type_relative_t<T>::
+    opposite_signed_type>();
+  a_strm << endl;
+  a_strm << "larger_type: ";
+  a_strm << type_to_string<typename type_relative_t<T>::larger_type>();
+  a_strm << endl;
+  a_strm << "smaller_type: ";
+  a_strm << type_to_string<typename type_relative_t<T>::smaller_type>();
+  a_strm << endl;
+  a_strm << endl;
+}
+
+// Отображение параметров встроенных типов
+inline void display_parametrs_of_built_in_types(ostream &strm)
+{
+  strm << "char is signed: " << bool_to_cstr(is_type_signed<char>());
+  strm << endl;
+  strm << "size of char: " << sizeof(char) << endl;
+  strm << "wchar_t is signed: " << bool_to_cstr(is_type_signed<wchar_t>());
+  strm << endl;
+  strm << "size of wchar_t: " << sizeof(wchar_t) << endl;
+  strm << "size of short: " << sizeof(short) << endl;
+  strm << "size of int: " << sizeof(int) << endl;
+  strm << "size of long: " << sizeof(long) << endl;
+  #ifdef IRSDEFS_I64
+  strm << "size of irs_i64: " << sizeof(irs_i64) << endl;
+  #endif //IRSDEFS_I64
+  strm << "size of float: " << sizeof(float) << endl;
+  strm << "size of double: " << sizeof(double) << endl;
+  strm << "size of long double: " << sizeof(long double) << endl;
+  strm << "size_t is " << irs::type_to_string<size_t>() << endl;
+  strm << "ptrdiff_t is " << irs::type_to_string<ptrdiff_t>() << endl;
+  strm << endl;
+}
 
 // ENUM float_denorm_style
 enum float_denorm_style
@@ -269,7 +667,7 @@ struct float_limits_by_size:
     sign_idx = 3,
     sign_bitsize = 1
   };
-  
+
   enum {
     exponent_idx = base_type::exponent_idx,
     fraction_idx = base_type::fraction_idx,
@@ -378,7 +776,7 @@ struct float_limits_by_type: float_limits_by_size<sizeof(T)>
   {
     return base_type::is_inf(ap_val);
   }
-  
+
   static const sign_type& sign(const value_type& a_val)
   {
     return base_type::sign(reinterpret_cast<const irs_u8*>(&a_val));
@@ -482,7 +880,7 @@ struct numeric_limits: numeric_limits_base
   {
     return false;
   }
-  
+
   static const sign_type& sign(const value_type& a_val)
   {
     return reinterpret_cast<const sign_type&>(a_val);
@@ -543,12 +941,12 @@ struct numeric_limits<float>: float_limits_by_type<float>
     return (_FDenorm._Float);
   }
 
-  static value_type infinity() 
+  static value_type infinity()
   {	// return positive infinity
     return (_FInf._Float);
   }
 
-  static value_type quiet_NaN() 
+  static value_type quiet_NaN()
   {	// return non-signaling NaN
     return (_FNan._Float);
   }
@@ -613,3 +1011,4 @@ bool is_inf(const T& a_val)
 } //namespace irs
 
 #endif //IRSLIMITSH
+

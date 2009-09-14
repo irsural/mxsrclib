@@ -1,5 +1,6 @@
 // Модуль счетчика
-// Дата: 12.02.2009
+// Linux
+// Дата: 13.09.2009
 
 #include <counter.h>
 #include <armmap.h>
@@ -18,26 +19,24 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdio.h>
-//#include <iostream.h>
 #include <irscpp.h>
+// Заголовок limits.h включается из-за того что это аппаратно-зависимый код
+#include <limits>
 #include <stdarg.h>
 #include <irsdefs.h>
 
-
-//#include <time.h>
-
-// Структура в которую считывается счетчик процессора
-//typedef long long counter_t;
-
-// Время калибровки в тиках
-//const clock_t time_int_calibr = 18;
-
-counter_t COUNTER_MAX = IRS_I32_MAX;
-
+// Максимальное время которое можно измерить
+counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();
 // Число секунд в интервале
 counter_t SECONDS_PER_INTERVAL = 1;
 // Количество отсчетов в секунде
 counter_t COUNTER_PER_INTERVAL = 1000000;
+
+// Разрядность счетчика ARM
+const int arm_counter_digits = 20;
+// Необходимая величина сдвига для значения счетчика ARM
+const int arm_counter_shift =
+  std::numeric_limits<counter_t>::digits - arm_counter_digits;
 
 int init_cnt = 0;
 
@@ -51,13 +50,11 @@ int init_cnt = 0;
 ostream &hex_u32(ostream &s)
 {
   s.setf(ios::hex, ios::basefield);
-  s<<setw(8)<<setfill('0');
+  s << setw(8) << setfill('0');
   return s;
 }
 
-//void *map_base, *map_tc;
 void *map_base = IRS_NULL;
-//unsigned int readval,r0, writeval, data,fd, p_id;
 irs_bool is_arm = irs_false;
 
 // Инициализация счетчика
@@ -65,12 +62,9 @@ void counter_init()
 {
   if (init_cnt == 0)
   {
-    //char id[] = "armv4l";
-    //irs_u8 *s;
     OUTDBG(cout << "Init counter\n");
     struct utsname buf[1000];
     const int uname_ok = 0;
-    //int uname_status = uname(buf);
     if (uname(buf) == uname_ok) {
       OUTDBG(cout << "All OK\n");
       OUTDBG(cout << "Now we will init counter OK\n");
@@ -87,12 +81,10 @@ void counter_init()
       }
     } else {
       OUTDBG(cout << "ERROR\n");
-      //perror("uname");
     }
     if (is_arm)
     {
       COUNTER_MAX = 0x7FFFFFFF & (~((1 << 12) - 1));
-      //IRS_HIWORD(COUNTER_MAX) = IRS_I16_MAX;
       SECONDS_PER_INTERVAL = 1;
       COUNTER_PER_INTERVAL = 32768*4096;
       OUTDBG(cout<<"init timer counter 0\n");
@@ -100,25 +92,15 @@ void counter_init()
       if(fd == -1)
       {
         OUTDBG(cout<<"gpio: Error opening /dev/mem\n");
-        //return -1;
       }
       map_base = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
         fd, AT91_SYS & ~MAP_MASK);
-      //map_tc = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
-        //fd, AT91_TC0 & ~MAP_16_MASK);
       if(map_base == (void *)(-1))
       {
         OUTDBG(cout<< "gpio: Error mapping memory\n");
         close(fd);
-        //return -1;
       }
-      //p_id = TC0_ID;
-      //writeval = 1 << p_id;
-      //unsigned& pmc_pcer = *((unsigned*)((irs_u8*)map_base +
-        //((PMC_OFFSET + PMC_PCER) & MAP_MASK)));
       AT91_REG(map_base, PMC_OFFSET, PMC_PCER) = (1 << TC0_ID);
-      //unsigned pmc_pcsr = *((unsigned*)((irs_u8*)map_base +
-        //((PMC_OFFSET + PMC_PCSR) & MAP_MASK)));
       OUTDBG(
         unsigned pmc_pcsr = AT91_REG(map_base, PMC_OFFSET, PMC_PCSR);
         cout<<"Peripheral status registr:"<<hex_u32<<pmc_pcsr<<"\n"
@@ -133,21 +115,27 @@ void counter_init()
 // Чтение счетчика
 counter_t counter_get()
 {
-  // irs_u16 cnt = 0;
-  // counter_t cnt32 = 0;
-  //считывание cnt
-  if(is_arm)
-  {
-    //r0 = *((unsigned int*)((irs_u8*)map_base +
-      //((ST_OFFSET + ST_CRTR) & MAP_16_MASK)));
+  if (is_arm) {
     unsigned st_crtr = AT91_REG(map_base, ST_OFFSET, ST_CRTR);
-    //OUTDBG(cout << r0<<"\n");
-    //cnt = r0<<12;
-    //IRS_HIWORD(cnt32) = cnt;
-    return st_crtr << 12;
-  }
-  else
+    #ifndef NOP
+    counter_t counter_ret = 0;
+    if (std::numeric_limits<counter_t>::digits > arm_counter_digits) {
+      counter_ret = static_cast<counter_t>(st_crtr);
+      typedef irs::type_relative_t<counter_t>::unsigned_type
+        unsigned_counter_t;
+      reinterpret_cast<unsigned_counter_t&>(counter_ret) <<=
+        arm_counter_shift;
+    } else {
+      st_crtr <<= arm_counter_shift;
+      counter_ret = reinterpret_cast<counter_t&>(st_crtr);
+    }
+    return counter_ret;
+    #else //NOP
+    return st_crtr << arm_counter_shift;
+    #endif //NOP
+  } else {
     return clock();    //  Отсчитанное количество тактов
+  }
 }
 // Деинициализация счетчика
 void counter_deinit()
