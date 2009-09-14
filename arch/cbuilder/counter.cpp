@@ -1,12 +1,15 @@
 // Модуль счетчика
 // C++ Builder
 // Используем встроенный счетчик процессора
-// Дата 17.11.2008
+// Дата: 14.09.2009
 
 #include <windows.h>
 #include <time.h>
 #include <counter.h>
+#include <limits>
 
+// Максимальное время которое можно измерить
+counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();
 // Число секунд в интервале
 counter_t SECONDS_PER_INTERVAL = 1;
 // Количество отсчетов в секунде
