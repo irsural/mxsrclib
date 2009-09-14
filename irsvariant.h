@@ -21,7 +21,7 @@
 namespace irs {
 
 namespace variant {
-//#ifdef NOP
+#ifdef NOP
 
 #ifndef __ICCAVR__
 
@@ -788,7 +788,7 @@ void binary_operation(
 void test_variant();
 #endif // IRS_LIB_DEBUG
 
-//#endif // NOP
+#endif // NOP
 
 #endif // __ICCAVR__
 

@@ -2,7 +2,7 @@
 
 #ifndef __ICCAVR__
 
-//#ifdef NOP
+#ifdef NOP
 irs::variant::variant_t::variant_t():
   m_value(),
   m_type(var_type_int)
@@ -874,6 +874,6 @@ void irs::variant::test_variant()
 }
 #endif // IRS_LIB_DEBUG
 
-//#endif // NOP
+#endif // NOP
 
 #endif // __ICCAVR__
