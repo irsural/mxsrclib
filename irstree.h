@@ -32,8 +32,8 @@
 namespace irs {
 
 #if (defined(__BORLANDC__) && ((__BORLANDC__ == IRS_CPP_BUILDER6) ||\
-    (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
-  defined(IRS_LINUX) //|| defined(__ICCAVR__)
+      (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
+    defined(IRS_LINUX) //|| defined(__ICCAVR__)
 
 template<class T>
 class tree_t;
