@@ -104,7 +104,7 @@ irs::string irs::avr::spi_master_flow_t::param(const irs::string &a_name)
 }
 
 void irs::avr::spi_master_flow_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+  const irs::string &/*a_value*/)
 {
   string name = a_name;
   if (name == "sclk_div")
@@ -121,7 +121,7 @@ void irs::avr::spi_master_flow_t::set_param(const irs::string &a_name,
   return;
 }
 
-irs_uarc irs::avr::spi_master_flow_t::read(irs_uarc &a_channel_id,
+irs_uarc irs::avr::spi_master_flow_t::read(irs_uarc &/*a_channel_id*/,
   irs_u8 *ap_buf, irs_uarc a_size)
 {
   if (m_rb_new_data)
@@ -422,13 +422,13 @@ irs::string irs::avr::spi_slave_flow_t::param(const irs::string &a_name)
   return answer;
 }
 
-void irs::avr::spi_slave_flow_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::avr::spi_slave_flow_t::set_param(const irs::string &/*a_name*/,
+  const irs::string &/*a_value*/)
 {
   return;
 }
 
-irs_uarc irs::avr::spi_slave_flow_t::read(irs_uarc &a_channel_id,
+irs_uarc irs::avr::spi_slave_flow_t::read(irs_uarc &/*a_channel_id*/,
   irs_u8 *ap_buf, irs_uarc a_size)
 {
   if (m_rb_new_data)
