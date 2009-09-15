@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 11.09.2009
+// Дата: 15.09.2009
 
 #ifndef irsstdgH
 #define irsstdgH
@@ -1159,6 +1159,16 @@ inline ostream& operator<<(ostream& strm, const irs::string& strg)
   return strm << strg.c_str();
 }
 istream& operator>>(istream& strm, irs::string& strg);
+
+#ifdef IRS_UNICODE
+typedef wchar_t char_t;
+typedef wstring string_t;
+#define irst(cstr) L##cstr
+#else //IRS_UNICODE
+typedef char char_t;
+typedef irs::string string_t;
+#define irst(cstr) cstr
+#endif //IRS_UNICODE
 
 // Переносимые манипуляторы
 inline ostream& operator<<(ostream& strm, ios& (*f)(ios&, int))

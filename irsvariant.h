@@ -22,6 +22,10 @@ namespace irs {
 
 namespace variant {
 
+typedef size_t sizens_t;
+typedef char_t charns_t;
+typedef string_t stringns_t;
+
 enum var_type_t {
   var_type_unknown,
   var_type_bool,
@@ -100,7 +104,7 @@ class variant_t
 {
 public:
   typedef size_t size_type;
-  typedef char char_type;
+  typedef char_t char_type;
   typedef irs::string string_type;
   typedef vector<variant_t> vector_variant_type;
   #ifdef IRSDEFS_I64

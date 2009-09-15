@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 7.09.2009
+// Дата: 15.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
@@ -16,6 +16,9 @@
 #define IRS_CPP_BUILDER6    0x0560
 #define IRS_CPP_BUILDER2006 0x0580
 #define IRS_CPP_BUILDER2010 0x0620
+
+// Включение Unicode
+//#define IRS_UNICODE
 
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__)

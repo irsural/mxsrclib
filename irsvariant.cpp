@@ -981,7 +981,7 @@ void irs::variant::test_variant()
   unsigned int var_unsigned_int_type = 13;
   long var_long_type = 14;
   unsigned long var_unsigned_long_type = 15;
-  float var_float_type = 0.16;
+  float var_float_type = 0.16f;
   double var_double_type = 0.17;
   long double var_long_double_type = 0.18;
   variant_t::long_long_type var_long_long_type = 19;
