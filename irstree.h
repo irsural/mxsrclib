@@ -1,5 +1,5 @@
 //  Component Tree
-//  Data: 19.08.09
+//  Data: 15.09.2009
 //
 //  Copyright (c) 2009
 //  IRS Company
@@ -31,7 +31,9 @@
 
 namespace irs {
 
-#ifdef IRS_WIN32
+#if (defined(__BORLANDC__) && ((__BORLANDC__ == IRS_CPP_BUILDER6) ||\
+    (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
+  defined(IRS_LINUX) //|| defined(__ICCAVR__)
 
 template<class T>
 class tree_t;
@@ -53,7 +55,7 @@ public:
   typedef ptrdiff_t difference_type;
   typedef NODE_PTR_T pointer;
   typedef NODE_REF_T reference;
-  typedef tree_node_t<T>::children_type::iterator local_iterator_type;
+  typedef typename tree_node_t<T>::children_type::iterator local_iterator_type;
   tree_node_child_iterator_t(
   ):
     m_local_it_child()
@@ -159,7 +161,7 @@ public:
   }
 private:
   local_iterator_type m_local_it_child;
-  friend tree_node_t<T>;
+  friend class tree_node_t<T>;
 }; // class tree_node_child_iterator_t
 
 template<class T>
@@ -177,10 +179,14 @@ public:
   typedef const tree_node_t<T>& node_const_reference;
   typedef tree_node_t<T>* node_pointer;
   typedef const tree_node_t<T>* node_const_pointer;
-  typedef list<tree_node_t<T> >::iterator node_iterator;
+  //typedef list<tree_node_t<T> > list_tree_node;
+  //typedef typename list_tree_node::iterator node_iterator;
+  typedef typename list<tree_node_t<T> >:: iterator node_iterator;
   typedef node_iterator parent_type;
-  typedef node_iterator child_type;
+  typedef node_iterator child_type;   
   typedef vector<child_type> children_type;
+  typedef typename vector<child_type>::iterator children_iterator;
+  typedef typename vector<child_type>::iterator children_const_iterator;
   typedef tree_node_child_iterator_t<T, node_pointer, node_reference>
     iterator;
   typedef tree_node_child_iterator_t<T, node_const_pointer,
@@ -201,19 +207,19 @@ public:
     m_it_this_node(a_it_this_node),
     m_parent(a_parent),
     m_children(),
-    m_object()
+    m_value()
   {
   }
   tree_node_t(tree_t<T>* ap_tree,
      node_iterator a_it_this_node,
-    child_type ap_parent,
-    const_reference a_object
+    child_type a_parent,
+    const_reference a_value
   ):
     mp_tree(ap_tree),
     m_it_this_node(a_it_this_node),
     m_parent(a_parent),
     m_children(),
-    m_object(a_object)
+    m_value(a_value)
   {
   }
   ~tree_node_t()
@@ -238,7 +244,7 @@ public:
   inline void pop_back()
   {
     IRS_LIB_TREE_ASSERT(size() > 0);
-    children_type::iterator it_children = m_children.end();
+    children_iterator it_children = m_children.end();
     it_children--;
     mp_tree->m_nodes.erase(*it_children);
     m_children.erase(it_children);
@@ -256,7 +262,7 @@ public:
   }
   inline void clear()
   {
-    child_type::iterator it_child = m_children.begin();
+    children_iterator it_child = m_children.begin();
     while (it_child != m_children.end()) {
       mp_tree->m_nodes.erase(*it_child);
       it_child++;
@@ -305,13 +311,13 @@ public:
   }
   inline node_reference operator[](size_type a_index)
   {
-    children_type::iterator it_children = m_children.begin();
+    children_iterator it_children = m_children.begin();
     advance(it_children, a_index);
     return *(*it_children);
   }
   inline node_const_reference operator[](size_type a_index) const
   {
-    children_type::const_iterator it_children = m_children.begin();
+    children_const_iterator it_children = m_children.begin();
     advance(it_children, a_index);
     return *(*it_children);
   }
@@ -341,7 +347,7 @@ private:
   parent_type m_parent;
   children_type m_children;
   value_type m_value;
-  friend tree_t<T>;
+  friend class tree_t<T>;
   node_iterator create_node(const_reference a_value)
   {
     tree_node_t<T> child_node;
@@ -363,17 +369,16 @@ public:
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
   typedef list<tree_node_t<T> > nodes_type;
-  typedef nodes_type::iterator iterator;
+  typedef typename nodes_type::iterator iterator;
+  typedef typename nodes_type::const_iterator const_iterator;
   typedef const T* const_pointer;
-  typedef ptrdiff_t difference_type;
   typedef T& reference;
   typedef const T& const_reference;
   typedef tree_node_t<T> node_type;
   typedef tree_node_t<T>* node_pointer;
   typedef tree_node_t<T>& node_reference;
   typedef const tree_node_t<T>& node_const_reference;
-  typedef nodes_type::iterator iterator;
-  typedef nodes_type::const_iterator const_iterator;
+
 public:
   tree_t(): m_nodes()
   {
@@ -428,15 +433,15 @@ public:
   }
   inline iterator end()
   {
-    m_nodes.end()
+    m_nodes.end();
   }
   inline const_iterator end() const
   {
-    m_nodes.end()
+    m_nodes.end();
   }
 private:
   nodes_type m_nodes;
-  friend tree_node_t<T>;
+  friend class tree_node_t<T>;
 };
 
 void test_tree()
@@ -507,7 +512,9 @@ void test_tree()
   int size_list_iterator = sizeof(it_l);
 }
 
-#endif // IRS_WIN32
+#endif /*(defined(__BORLANDC__) && ((__BORLANDC__ == IRS_CPP_BUILDER6) ||\
+        (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
+        defined(IRS_LINUX) //|| defined(__ICCAVR__)*/
 
 }; // namespace irs
 
