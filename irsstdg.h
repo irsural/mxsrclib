@@ -1057,6 +1057,103 @@ public:
     else return irs_false;
   }
 };
+
+inline bool operator==(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) ==
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator!=(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) !=
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator<(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) <
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator>(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) >
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator<=(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) <=
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator>=(const string& a_first_strg, const string& a_second_strg)
+{
+  return static_cast<const ::string&>(a_first_strg) >=
+    static_cast<const ::string&>(a_second_strg);
+}
+
+inline bool operator==(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) == ap_cstr;
+}
+
+inline bool operator==(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr == static_cast<const ::string&>(a_strg);
+}
+
+inline bool operator!=(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) != ap_cstr;
+}
+
+inline bool operator!=(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr != static_cast<const ::string&>(a_strg);
+}
+
+inline bool operator<(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) < ap_cstr;
+}
+
+inline bool operator<(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr < static_cast<const ::string&>(a_strg);
+}
+
+inline bool operator>(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) > ap_cstr;
+}
+
+inline bool operator>(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr > static_cast<const ::string&>(a_strg);
+}
+
+inline bool operator<=(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) <= ap_cstr;
+}
+
+inline bool operator<=(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr <= static_cast<const ::string&>(a_strg);
+}
+
+inline bool operator>=(const string& a_strg, const char* ap_cstr)
+{
+  return static_cast<const ::string&>(a_strg) >= ap_cstr;
+}
+
+inline bool operator>=(const char* ap_cstr, const string& a_strg)
+{
+  return ap_cstr >= static_cast<const ::string&>(a_strg);
+}
+
 inline ostream& operator<<(ostream& strm, const irs::string& strg)
 {
   return strm << strg.c_str();

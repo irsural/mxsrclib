@@ -1,6 +1,6 @@
 #include <irsvariant.h>
 
-#ifndef __ICCAVR__
+//#ifndef __ICCAVR__
 
 #ifdef NOP
 irs::variant::variant_t::variant_t():
@@ -53,19 +53,19 @@ void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
   switch(a_variant_type) {
     case var_type_bool:
     case var_type_char:
-    case var_type_schar:
-    case var_type_uchar:
+    case var_type_singned_char:
+    case var_type_unsigned_char:
     case var_type_short:
-    case var_type_ushort:
+    case var_type_unsigned_short:
     case var_type_int:
-    case var_type_uint:
+    case var_type_unsigned_int:
     case var_type_long:
-    case var_type_ulong:
+    case var_type_unsigned_long:
     case var_type_float:
     case var_type_double:
     case var_type_long_double:
     case var_type_long_long:
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       m_type = a_variant_type;
     } break;
     case var_type_string: {
@@ -106,28 +106,28 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
     case var_type_char: {
       m_value.val_char_type = a_variant.m_value.val_char_type;
     } break;
-    case var_type_schar: {
+    case var_type_singned_char: {
       m_value.val_schar_type = a_variant.m_value.val_schar_type;
     } break;
-    case var_type_uchar: {
+    case var_type_unsigned_char: {
       m_value.val_uchar_type = a_variant.m_value.val_uchar_type;
     } break;
     case var_type_short: {
       m_value.val_short_type = a_variant.m_value.val_short_type;
     } break;
-    case var_type_ushort: {
+    case var_type_unsigned_short: {
       m_value.val_ushort_type = a_variant.m_value.val_ushort_type;
     } break;
     case var_type_int: {
       m_value.val_int_type = a_variant.m_value.val_int_type;
     } break;
-    case var_type_uint: {
+    case var_type_unsigned_int: {
       m_value.val_uint_type = a_variant.m_value.val_uint_type;
     } break;
     case var_type_long: {
       m_value.val_long_type = a_variant.m_value.val_long_type;
     } break;
-    case var_type_ulong: {
+    case var_type_unsigned_long: {
       m_value.val_ulong_type = a_variant.m_value.val_ulong_type;
     } break;
     case var_type_float: {
@@ -143,7 +143,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
     case var_type_long_long: {
       m_value.val_long_long_type = a_variant.m_value.val_long_long_type;
     } break;
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       m_value.val_ulong_long_type = a_variant.m_value.val_ulong_long_type;
     } break;
     #endif // IRSDEFS_I64
@@ -178,7 +178,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(const char a_value)
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const signed char a_value)
 {
-  type_change(var_type_schar);
+  type_change(var_type_singned_char);
   m_value.val_schar_type = a_value;
   return *this;
 }
@@ -186,7 +186,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const unsigned char a_value)
 {
-  type_change(var_type_uchar);
+  type_change(var_type_unsigned_char);
   m_value.val_uchar_type = a_value;
   return *this;
 }
@@ -202,7 +202,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const unsigned short a_value)
 {
-  type_change(var_type_ushort);
+  type_change(var_type_unsigned_short);
   m_value.val_ushort_type = a_value;
   return *this;
 }
@@ -217,7 +217,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(const int a_value)
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const unsigned int a_value)
 {
-  type_change(var_type_uint);
+  type_change(var_type_unsigned_int);
   m_value.val_uint_type = a_value;
   return *this;
 }
@@ -232,7 +232,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(const long a_value)
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const unsigned long a_value)
 {
-  type_change(var_type_ulong);
+  type_change(var_type_unsigned_long);
   m_value.val_ulong_type = a_value;
   return *this;
 }
@@ -282,6 +282,229 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   type_change(var_type_string);
   *m_value.p_val_string_type = a_value;
   return *this;
+}
+
+char irs::variant::variant_t::is_char() const
+{
+  char value;
+  value_get(&value);
+  return value;
+}
+
+
+signed char irs::variant::variant_t::is_signed_char() const
+{
+  signed char value;
+  value_get(&value);
+  return value;
+}
+
+unsigned char irs::variant::variant_t::is_unsigned_char() const
+{
+  unsigned char value;
+  value_get(&value);
+  return value;
+}
+
+short irs::variant::variant_t::is_short() const
+{
+  short value;
+  value_get(&value);
+  return value;
+}
+
+unsigned short irs::variant::variant_t::is_unsigned_short() const
+{
+  unsigned short value;
+  value_get(&value);
+  return value;
+}
+
+int irs::variant::variant_t::is_int() const
+{
+  int value;
+  value_get(&value);
+  return value;
+}
+
+unsigned int irs::variant::variant_t::is_unsigned_int() const
+{
+  unsigned int value;
+  value_get(&value);
+  return value;
+}
+
+long irs::variant::variant_t::is_long() const
+{
+  long value;
+  value_get(&value);
+  return value;
+}
+
+unsigned long irs::variant::variant_t::is_unsigned_long() const
+{
+  unsigned long value;
+  value_get(&value);
+  return value;
+}
+
+float irs::variant::variant_t::is_float() const
+{
+  float value;
+  value_get(&value);
+  return value;
+}
+
+double irs::variant::variant_t::is_double() const
+{
+  double value;
+  value_get(&value);
+  return value;
+}
+
+long double irs::variant::variant_t::is_long_double() const
+{
+  long double value;
+  value_get(&value);
+  return value;
+}
+
+#ifdef IRSDEFS_I64
+irs::variant::variant_t::long_long_type
+irs::variant::variant_t::is_long_long() const
+{
+  long_long_type value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::unsigned_long_long_type
+irs::variant::variant_t::is_unsigned_long_long() const
+{
+  unsigned_long_long_type value;
+  value_get(&value);
+  return value;
+}
+#endif // IRSDEFS_I64
+
+irs::variant::variant_t::string_type
+irs::variant::variant_t::is_string() const
+{
+  string value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator char() const
+{
+  char value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator signed char() const
+{
+  signed char value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator unsigned char() const
+{
+  unsigned char value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator short() const
+{
+  short value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator unsigned short() const
+{
+  unsigned short value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator int() const
+{
+  int value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator unsigned int() const
+{
+  unsigned int value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator long() const
+{
+  long value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator unsigned long() const
+{
+  unsigned long value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator float() const
+{
+  float value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator double() const
+{
+  double value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator long double() const
+{
+  long double value;
+  value_get(&value);
+  return value;
+}
+
+#ifdef IRSDEFS_I64
+irs::variant::variant_t::operator long_long_type() const
+{
+  long_long_type value;
+  value_get(&value);
+  return value;
+}
+
+irs::variant::variant_t::operator unsigned_long_long_type() const
+{
+  unsigned_long_long_type value;
+  value_get(&value);
+  return value;
+}
+#endif // IRSDEFS_I64
+
+/*irs::variant::variant_t::operator const char_type*() const
+{
+  return m_value.p_val_string_type->c_str();
+}*/
+
+irs::variant::variant_t::operator const string_type() const
+{
+  string_type value;
+  value_get(&value);
+  return value;
 }
 
 irs::variant::variant_t& irs::variant::variant_t::operator+=(
@@ -366,18 +589,18 @@ void irs::variant::binary_operation(
     (a_second_variant.m_type <= var_type_int))
   {
     operation_vars_type = var_type_int;
-  } else if ((a_first_variant.m_type <= var_type_uint) &&
-    (a_second_variant.m_type <= var_type_uint))
+  } else if ((a_first_variant.m_type <= var_type_unsigned_int) &&
+    (a_second_variant.m_type <= var_type_unsigned_int))
   {
-    operation_vars_type = var_type_uint;
+    operation_vars_type = var_type_unsigned_int;
   } else if ((a_first_variant.m_type <= var_type_long) &&
     (a_second_variant.m_type <= var_type_long))
   {
     operation_vars_type = var_type_long;
-  } else if ((a_first_variant.m_type <= var_type_ulong) &&
-    (a_second_variant.m_type <= var_type_ulong))
+  } else if ((a_first_variant.m_type <= var_type_unsigned_long) &&
+    (a_second_variant.m_type <= var_type_unsigned_long))
   {
-    operation_vars_type = var_type_ulong;
+    operation_vars_type = var_type_unsigned_long;
   } else if ((a_first_variant.m_type <= var_type_float) &&
     (a_second_variant.m_type <= var_type_float))
   {
@@ -394,21 +617,21 @@ void irs::variant::binary_operation(
     var_type first_var_type = var_type_unknown;
     var_type second_var_type = var_type_unknown;
 
-    if ((a_first_variant.m_type <= var_type_ulong) ||
+    if ((a_first_variant.m_type <= var_type_unsigned_long) ||
       (a_first_variant.m_type == var_type_long_long))
     {
       first_var_type = var_type_long_long;
-    } else if (a_first_variant.m_type == var_type_ulong_long) {
-      first_var_type = var_type_ulong_long;
+    } else if (a_first_variant.m_type == var_type_unsigned_long_long) {
+      first_var_type = var_type_unsigned_long_long;
     } else {
       // Тип переменной не является стандартным
     }
-    if ((a_second_variant.m_type <= var_type_ulong) ||
+    if ((a_second_variant.m_type <= var_type_unsigned_long) ||
       (a_second_variant.m_type == var_type_long_long))
     {
       second_var_type = var_type_long_long;
-    } else if (a_first_variant.m_type == var_type_ulong_long) {
-      second_var_type = var_type_ulong_long;
+    } else if (a_first_variant.m_type == var_type_unsigned_long_long) {
+      second_var_type = var_type_unsigned_long_long;
     } else {
       // Тип операции определить не удалось
     }
@@ -419,7 +642,7 @@ void irs::variant::binary_operation(
         (first_var_type == var_type_long_long)) {
         operation_vars_type = var_type_long_long;
       } else {
-        operation_vars_type = var_type_ulong_long;
+        operation_vars_type = var_type_unsigned_long_long;
       }
     } else {
       // Тип операции не определен
@@ -463,68 +686,95 @@ void irs::variant::binary_operation(
     case var_type_int: {
       int first_var = a_first_variant.value_get<int>();
       int second_var = a_second_variant.value_get<int>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_int_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_int_type),
+        ap_result_bool);
     } break;
-    case var_type_uint: {
+    case var_type_unsigned_int: {
       unsigned int first_var = a_first_variant.value_get<unsigned int>();
       unsigned int second_var = a_second_variant.value_get<unsigned int>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_uint_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_uint_type),
+        ap_result_bool);
     } break;
     case var_type_long: {
       long first_var = a_first_variant.value_get<long>();
       long second_var = a_second_variant.value_get<long>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_long_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_long_type),
+        ap_result_bool);
     } break;
-    case var_type_ulong: {
+    case var_type_unsigned_long: {
       unsigned long first_var = a_first_variant.value_get<unsigned long>();
       unsigned long second_var = a_second_variant.value_get<unsigned long>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_ulong_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_ulong_type),
+        ap_result_bool);
     } break;
     case var_type_float: {
       float first_var = a_first_variant.value_get<float>();
       float second_var = a_second_variant.value_get<float>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_float_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_float_type),
+        ap_result_bool);
     } break;
     case var_type_double: {
       double first_var = a_first_variant.value_get<double>();
       double second_var = a_second_variant.value_get<double>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_double_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_double_type),
+        ap_result_bool);
     } break;
     case var_type_long_double: {
       long double first_var = a_first_variant.value_get<long double>();
       long double second_var = a_second_variant.value_get<long double>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_long_double_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_long_double_type),
+        ap_result_bool);
     } break;
     #ifdef IRSDEFS_I64
     case var_type_long_long: {
       long_long_type first_var = a_first_variant.value_get<long_long_type>();
       long_long_type second_var = a_second_variant.value_get<long_long_type>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_long_long_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_long_long_type),
+        ap_result_bool);
     } break;
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       unsigned_long_long_type first_var =
         a_first_variant.value_get<unsigned_long_long_type>();
       unsigned_long_long_type second_var =
         a_second_variant.value_get<unsigned_long_long_type>();
-      operation_helper(a_operation_type, first_var,
-        second_var, &(ap_result_variant->m_value.val_ulong_long_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.val_ulong_long_type),
+        ap_result_bool);
     } break;
     #endif // IRSDEFS_I64
     case var_type_string: {
@@ -532,19 +782,24 @@ void irs::variant::binary_operation(
         a_first_variant.value_get<string_type>();
       string_type second_var =
         a_second_variant.value_get<string_type>();
-      operation_helper(a_operation_type, first_var,
-        second_var, (ap_result_variant->m_value.p_val_string_type),
-          ap_result_bool);
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : (ap_result_variant->m_value.p_val_string_type),
+        ap_result_bool);
     } break;
     case var_type_array: {
       vector_variant_type first_var =
         a_first_variant.value_get<vector_variant_type>();
       vector_variant_type second_var =
-        a_second_variant.value_get<vector_variant_type>();
-      //vector_variant_type result_var;
-      /*operation_helper(a_operation_type, first_var,
-        second_var, (ap_result_variant->m_value.p_val_vector_variant),
-          ap_result_bool);*/
+        a_second_variant.value_get<vector_variant_type>();  
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : (ap_result_variant->m_value.p_val_vector_variant),
+        ap_result_bool);
 
     } break;
     default : {
@@ -563,28 +818,28 @@ void irs::variant::variant_t::prefix_operation(
     case var_type_char: {
       prefix_operation(a_unary_operation_type, &m_value.val_char_type);
     } break;
-    case var_type_schar: {
+    case var_type_singned_char: {
       prefix_operation(a_unary_operation_type, &m_value.val_schar_type);
     } break;
-    case var_type_uchar: {
+    case var_type_unsigned_char: {
       prefix_operation(a_unary_operation_type, &m_value.val_uchar_type);
     } break;
     case var_type_short: {
       prefix_operation(a_unary_operation_type, &m_value.val_short_type);
     } break;
-    case var_type_ushort: {
+    case var_type_unsigned_short: {
       prefix_operation(a_unary_operation_type, &m_value.val_ushort_type);
     } break;
     case var_type_int: {
       prefix_operation(a_unary_operation_type, &m_value.val_int_type);
     } break;
-    case var_type_uint: {
+    case var_type_unsigned_int: {
       prefix_operation(a_unary_operation_type, &m_value.val_uint_type);
     } break;
     case var_type_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_long_type);
     } break;
-    case var_type_ulong: {
+    case var_type_unsigned_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_ulong_type);
     } break;
     case var_type_float: {
@@ -600,7 +855,7 @@ void irs::variant::variant_t::prefix_operation(
     case var_type_long_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_long_long_type);
     } break;
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_ulong_long_type);
     } break;
     #endif // IRSDEFS_I64
@@ -784,6 +1039,7 @@ void irs::variant::test_variant()
     var_unsigned_long_long_type_result_read);
   variant = var_string_type;
   variant_t::string_type var_string_type_result_read = variant;
+  
   IRS_LIB_ASSERT(var_string_type == var_string_type_result_read);
 
   // Тест операторов сравнения
@@ -791,21 +1047,20 @@ void irs::variant::test_variant()
   double second_double_var = 12.097;
   variant_t first_variant = first_var;
   variant_t second_variant = second_double_var;
+  first_variant == second_variant;
+  IRS_LIB_ASSERT(!(first_variant == second_variant));
+  IRS_LIB_ASSERT(first_variant != second_variant);
+  IRS_LIB_ASSERT(!(first_variant < second_variant));
+  IRS_LIB_ASSERT(first_variant > second_variant);
+  IRS_LIB_ASSERT(!(first_variant <= second_variant));
+  IRS_LIB_ASSERT(first_variant >= second_variant);
 
-  IRS_LIB_ASSERT((first_variant == second_variant) == false);
-  IRS_LIB_ASSERT((first_variant != second_variant) == true);
-  IRS_LIB_ASSERT((first_variant < second_variant) == false);
-  IRS_LIB_ASSERT((first_variant > second_variant) == true);
-  IRS_LIB_ASSERT((first_variant <= second_variant) == false);
-  IRS_LIB_ASSERT((first_variant >= second_variant) == true);
-
-  first_variant == variant_t(second_double_var);
-  IRS_LIB_ASSERT((first_variant == second_double_var) == false);
-  IRS_LIB_ASSERT((first_variant != second_double_var) == true);
-  IRS_LIB_ASSERT((first_variant < second_double_var) == false);
-  IRS_LIB_ASSERT((first_variant > second_double_var) == true);
-  IRS_LIB_ASSERT((first_variant <= second_double_var) == false);
-  IRS_LIB_ASSERT((first_variant >= second_double_var) == true);
+  IRS_LIB_ASSERT(!(second_double_var == first_variant));
+  IRS_LIB_ASSERT(first_variant != second_double_var);
+  IRS_LIB_ASSERT(!(first_variant < second_double_var));
+  IRS_LIB_ASSERT(first_variant > second_double_var);
+  IRS_LIB_ASSERT(!(first_variant <= second_double_var));
+  IRS_LIB_ASSERT(first_variant >= second_double_var);
 
   // Тест унарных и бинарных арифметических операторов
   int first_int_var = 232;
@@ -837,7 +1092,7 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT(++first_variant == ++first_int_var);
   IRS_LIB_ASSERT(first_variant++ == first_int_var++);
   IRS_LIB_ASSERT(--first_variant == --first_int_var);
-  IRS_LIB_ASSERT(first_variant-- == first_int_var--);  
+  IRS_LIB_ASSERT(first_variant-- == first_int_var--);
 
   // Проверка на совместимость с типом string
   variant_t::string_type s1 = "test ";
@@ -846,7 +1101,7 @@ void irs::variant::test_variant()
   first_variant = s1;
   second_variant = s2;
   first_variant += second_variant;
-  IRS_LIB_ASSERT(first_variant.operator irs::string() == sum_s1_and_s2);
+  IRS_LIB_ASSERT(first_variant == sum_s1_and_s2);
   //IRS_LIB_ASSERT(static_cast<variant_t::string_type>(first_variant) ==
     //sum_s1_and_s2);
 
@@ -876,4 +1131,4 @@ void irs::variant::test_variant()
 
 #endif // NOP
 
-#endif // __ICCAVR__
+//#endif // __ICCAVR__

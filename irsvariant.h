@@ -23,27 +23,28 @@ namespace irs {
 namespace variant {
 #ifdef NOP
 
-#ifndef __ICCAVR__
+//#ifndef __ICCAVR__
 
 enum var_type_t {
   var_type_unknown,
   var_type_bool,
   var_type_char,
-  var_type_schar,
-  var_type_uchar,
+  var_type_singned_char,
+  var_type_unsigned_char,
   var_type_short,
-  var_type_ushort,
+  var_type_unsigned_short,
   var_type_int,
-  var_type_uint,
+  var_type_unsigned_int,
   var_type_long,
-  var_type_ulong,
+  var_type_unsigned_long,
   var_type_float,
   var_type_double,
   var_type_long_double,
   #ifdef IRSDEFS_I64
   var_type_long_long,
-  var_type_ulong_long,
+  var_type_unsigned_long_long,
   #endif // IRSDEFS_I64
+  var_type_ptr_char,
   var_type_string,
   var_type_array
 };
@@ -102,6 +103,7 @@ class variant_t
 {
 public:
   typedef size_t size_type;
+  typedef char char_type;
   typedef irs::string string_type;
   typedef vector<variant_t> vector_variant_type;
   #ifdef IRSDEFS_I64
@@ -140,8 +142,47 @@ public:
   #ifdef IRSDEFS_I64
   variant_t& operator=(const long_long_type a_value);
   variant_t& operator=(const unsigned_long_long_type a_value);
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_I64   
   variant_t& operator=(const string_type& a_value);
+
+  char is_char() const;
+  signed char is_signed_char() const;
+  unsigned char is_unsigned_char() const;
+  short is_short() const;
+  unsigned short is_unsigned_short() const;
+  int is_int() const;
+  unsigned int is_unsigned_int() const;
+  long is_long() const;
+  unsigned long is_unsigned_long() const;
+  float is_float() const;
+  double is_double() const;
+  long double is_long_double() const;
+  #ifdef IRSDEFS_I64
+  long_long_type is_long_long() const;
+  unsigned_long_long_type is_unsigned_long_long() const;
+  #endif // IRSDEFS_I64
+  string_type is_string() const;
+  //signed char is_array() const;
+
+  operator char() const;
+  operator signed char() const;
+  operator unsigned char() const;
+  operator short() const;
+  operator unsigned short() const;
+  operator int() const;
+  operator unsigned int() const;
+  operator long() const;
+  operator unsigned long() const;
+  operator float() const;
+  operator double() const;
+  operator long double() const;
+  #ifdef IRSDEFS_I64
+  operator long_long_type() const;
+  operator unsigned_long_long_type() const;
+  #endif // IRSDEFS_I64
+  //operator const char_type*() const;
+  operator const string_type() const;
+
   variant_t& operator+=(const variant_t& a_variant);
   variant_t& operator-=(const variant_t& a_variant);
   variant_t& operator*=(const variant_t& a_variant);
@@ -151,15 +192,10 @@ public:
   variant_t operator++(int);
   variant_t& operator--();
   variant_t operator--(int);
-  
-  template<class T>
-  operator T()const;
-  /*{
-    T value;
-    value_get(&value);
-    return value;
-  }*/
 
+  /*template<class T>
+  operator T()const;
+  */
   template<class T>
   variant_t& assign_no_cast(const T& a_value);  
 
@@ -222,13 +258,13 @@ inline var_type_t variant_t::type() const
   return m_type;
 }
 
-template<class T>
+/*template<class T>
 variant_t::operator T()const
 {
   T value;
   value_get(&value);
   return value;
-}   
+}*/
 
 template<class T>
 variant_t& variant_t::assign_no_cast(const T& a_value)
@@ -240,28 +276,28 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
     case var_type_char: {
       m_value.val_char_type = static_cast<char>(a_value);
     } break;
-    case var_type_schar: {
+    case var_type_singned_char: {
       m_value.val_schar_type = static_cast<signed char>(a_value);
     } break;
-    case var_type_uchar: {
+    case var_type_unsigned_char: {
       m_value.val_uchar_type = static_cast<unsigned char>(a_value);
     } break;
     case var_type_short: {
       m_value.val_short_type = static_cast<short>(a_value);
     } break;
-    case var_type_ushort: {
+    case var_type_unsigned_short: {
       m_value.val_ushort_type = static_cast<unsigned short>(a_value);
     } break;
     case var_type_int: {
       m_value.val_int_type = static_cast<int>(a_value);
     } break;
-    case var_type_uint: {
+    case var_type_unsigned_int: {
       m_value.val_uint_type = static_cast<unsigned int>(a_value);
     } break;
     case var_type_long: {
       m_value.val_long_type = static_cast<long>(a_value);
     } break;
-    case var_type_ulong: {
+    case var_type_unsigned_long: {
       m_value.val_ulong_type = static_cast<unsigned long>(a_value);
     } break;
     case var_type_float: {
@@ -277,7 +313,7 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
     case var_type_long_long: {
       m_value.val_long_long_type = static_cast<long_long_type>(a_value);
     } break;
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       m_value.val_ulong_long_type =
           static_cast<unsigned_long_long_type>(a_value);
     } break;
@@ -371,28 +407,28 @@ T variant_t::value_get() const
     case var_type_char: {
       value = static_cast<T>(m_value.val_char_type);
     } break;
-    case var_type_schar: {
+    case var_type_singned_char: {
       value = static_cast<T>(m_value.val_schar_type);
     } break;
-    case var_type_uchar: {
+    case var_type_unsigned_char: {
       value = static_cast<T>(m_value.val_uchar_type);
     } break;
     case var_type_short: {
       value = static_cast<T>(m_value.val_short_type);
     } break;
-    case var_type_ushort: {
+    case var_type_unsigned_short: {
       value = static_cast<T>(m_value.val_ushort_type);
     } break;
     case var_type_int: {
       value = static_cast<T>(m_value.val_int_type);
     } break;
-    case var_type_uint: {
+    case var_type_unsigned_int: {
       value = static_cast<T>(m_value.val_uint_type);
     } break;
     case var_type_long: {
       value = static_cast<T>(m_value.val_long_type);
     } break;
-    case var_type_ulong: {
+    case var_type_unsigned_long: {
       value = static_cast<T>(m_value.val_ulong_type);
     } break;
     case var_type_float: {
@@ -408,7 +444,7 @@ T variant_t::value_get() const
     case var_type_long_long: {
       value = static_cast<T>(m_value.val_long_long_type);
     } break;
-    case var_type_ulong_long: {
+    case var_type_unsigned_long_long: {
       value = static_cast<T>(m_value.val_ulong_long_type);
     } break;
     #endif // IRSDEFS_I64
@@ -452,15 +488,12 @@ void variant_t::prefix_operation(const operation_type_t a_unary_operation_type,
 
 template<>
 inline void variant_t::prefix_operation(
-  const operation_type_t a_unary_operation_type, bool* ap_value)
+  const operation_type_t /*a_unary_operation_type*/, bool* /*ap_value*/)
 {
-  // Операция декремента для типа bool запрещена
-  // по стандарту ANSI.ISO.IEC.14882.2003
-  if (a_unary_operation_type == operation_prefix_increment) {
-    ++(*ap_value);
-  } else {
-    IRS_LIB_ASSERT_MSG("Недопустимая операция");
-  }
+  // По стандарту ANSI.ISO.IEC.14882.2003 операция декремента для типа bool
+  // запрещена. Операция инкремента считается устаревшей и не рекомендуется к
+  // применению в новых программах
+  IRS_LIB_ASSERT_MSG("Недопустимая операция");
 }
 
 bool operator==(const variant_t& a_first_variant,
@@ -481,7 +514,968 @@ bool operator<=(const variant_t& a_first_variant,
 bool operator>=(const variant_t& a_first_variant,
   const variant_t& a_second_variant);
 
-template <class T>
+// Comparisons  (type char)
+inline bool operator==(const variant_t& a_variant, const char& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const char& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const char& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const char& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const char& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const char& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const char& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const char& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const char& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const char& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const char& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const char& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type unsigned char)
+inline bool operator==(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const unsigned char& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const unsigned char& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type signed char)
+inline bool operator==(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const signed char& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const signed char& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type short)
+inline bool operator==(const variant_t& a_variant, const short& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const short& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const short& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const short& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const short& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const short& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const short& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const short& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const short& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const short& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const short& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const short& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type unsigned short)
+inline bool operator==(const variant_t& a_variant,
+  const unsigned short& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const unsigned short& a_value,
+  const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant,
+  const unsigned short& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const unsigned short& a_value,
+  const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const unsigned short& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const unsigned short& a_value,
+  const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const unsigned short& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const unsigned short& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant,
+  const unsigned short& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const unsigned short& a_value,
+  const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant,
+  const unsigned short& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const unsigned short& a_value,
+  const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type int)
+inline bool operator==(const variant_t& a_variant, const int& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const int& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const int& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const int& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const int& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const int& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const int& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const int& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const int& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const int& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const int& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const int& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type unsigned int)
+inline bool operator==(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const unsigned int& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const unsigned int& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type long)
+inline bool operator==(const variant_t& a_variant, const long& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const long& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const long& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const long& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const long& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const long& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const long& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const long& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const long& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const long& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const long& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const long& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type unsigned long)
+inline bool operator==(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const unsigned long& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const unsigned long& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type float)
+inline bool operator==(const variant_t& a_variant, const float& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const float& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const float& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const float& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const float& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const float& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const float& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const float& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const float& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const float& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const float& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const float& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type double)
+inline bool operator==(const variant_t& a_variant, const double& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const double& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const double& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const double& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const double& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const double& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const double& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const double& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const double& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const double& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const double& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const double& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type long double)
+inline bool operator==(const variant_t& a_variant, const long double& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const long double& a_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const long double& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const long double& a_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const long double& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const long double& a_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const long double& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const long double& a_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const long double& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const long double& a_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const long double& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const long double& a_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type long long)
+inline bool operator==(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant,
+  const variant_t::long_long_type& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t::long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type unsigned_long_long_type)
+inline bool operator==(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant,
+  const variant_t::unsigned_long_long_type& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t::unsigned_long_long_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+// Comparisons  (type string_type)
+inline bool operator==(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator==(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator!=(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator<(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator>(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator<=(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t& a_variant,
+  const variant_t::string_type& a_value)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+inline bool operator>=(const variant_t::string_type& a_value,
+  const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(a_value));
+}
+
+
+/*template <class T>
 bool operator==(const variant_t& a_variant, const T& a_value)
 {
   bool result = false;
@@ -495,25 +1489,99 @@ bool operator==(const T& a_value, const variant_t& a_variant)
 {
   bool result = false;
   binary_operation(operation_equal,
-    variant_t(a_value), a_variant, IRS_NULL, &result);
+    a_variant, variant_t(a_value), IRS_NULL, &result);
   return result;
 }
 
-/*variant_t operator+(const variant_t& a_first_variant,
-  const variant_t& a_second_variant);
+template <class T>
+bool operator!=(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_not_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
 
-variant_t operator-(const variant_t& a_first_variant,
-  const variant_t& a_second_variant);
+template <class T>
+bool operator!=(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_not_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
 
-variant_t operator*(const variant_t& a_first_variant,
-  const variant_t& a_second_variant);
+template <class T>
+bool operator<(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_less,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
 
-variant_t operator/(const variant_t& a_first_variant,
-  const variant_t& a_second_variant);
+template <class T>
+bool operator<(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_less,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
 
-variant_t operator%(const variant_t& a_first_variant,
-  const variant_t& a_second_variant);*/
+template <class T>
+bool operator>(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_more,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
 
+template <class T>
+bool operator>(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_more,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
+
+template <class T>
+bool operator<=(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_less_or_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
+
+template <class T>
+bool operator<=(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_less_or_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
+
+template <class T>
+bool operator>=(const variant_t& a_variant, const T& a_value)
+{
+  bool result = false;
+  binary_operation(operation_more_or_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}
+
+template <class T>
+bool operator>=(const T& a_value, const variant_t& a_variant)
+{
+  bool result = false;
+  binary_operation(operation_more_or_equal,
+    a_variant, variant_t(a_value), IRS_NULL, &result);
+  return result;
+}*/     
 
 struct var_unknown_type_tag
 {
@@ -524,6 +1592,10 @@ struct var_integer_type_tag
 };
 
 struct var_floating_type_tag
+{
+};
+
+struct var_string_type_tag
 {
 };
 
@@ -540,7 +1612,7 @@ struct var_type_traits_t
 template <>
 struct var_type_traits_t<variant_t::string_type>
 {
-  typedef var_container_type_tag group_type;
+  typedef var_string_type_tag group_type;
 };
 
 template <>
@@ -673,11 +1745,24 @@ bool variant_compare(const operation_type_t a_var_operation_type,
 
 template <class T>
 bool binary_operation_helper(
+  const operation_type_t /*a_var_operation_type*/,
+  const T& /*a_first_var*/,
+  const T& /*a_second_var*/,
+  T* /*ap_result*/,
+  var_container_type_tag)
+{
+  bool operation_is_executed = false;
+  // Игнорируем все операции
+  return operation_is_executed;
+}
+
+template <class T>
+bool binary_operation_helper(
   const operation_type_t a_var_operation_type,
   const T& a_first_var,
   const T& a_second_var,
   T* ap_result,
-  var_container_type_tag)
+  var_string_type_tag)
 {
   bool operation_is_executed = false;
   if (a_var_operation_type == operation_sum) {
@@ -699,8 +1784,9 @@ bool binary_operation_helper(
 {
   bool operation_is_executed =
     binary_operation_helper(a_var_operation_type, a_first_var,
-      a_second_var, ap_result, var_container_type_tag());
+      a_second_var, ap_result, var_string_type_tag());
   if (!operation_is_executed) {
+    operation_is_executed = true;
     switch (a_var_operation_type) {
       case operation_difference: {
         *ap_result = a_first_var - a_second_var;
@@ -751,7 +1837,7 @@ void operation_helper(
   const operation_type_t a_var_operation_type,
   const T& a_first_variant,
   const T& a_second_variant,
-  T* ap_result_variant,
+  T* ap_result_value,
   bool* ap_result_bool)
 {
   if ((a_var_operation_type >= operation_equal) &&
@@ -763,9 +1849,9 @@ void operation_helper(
   } else if ((a_var_operation_type >= operation_sum) &&
       (a_var_operation_type <= operation_integer_division))
   {
-    IRS_LIB_ASSERT(ap_result_variant != IRS_NULL);
+    IRS_LIB_ASSERT(ap_result_value != IRS_NULL);
     binary_operation(a_var_operation_type, a_first_variant,
-      a_second_variant, ap_result_variant);
+      a_second_variant, ap_result_value);
   } else {
     IRS_LIB_ASSERT_MSG("Неучтенный тип операции");
   }
@@ -779,9 +1865,9 @@ void binary_operation(
   T* ap_result)
 {
   typedef typename var_type_traits_t<T>::group_type group_type;
-  binary_operation_helper(
+  IRS_LIB_ASSERT(binary_operation_helper(
     a_var_operation_type, a_first_var, a_second_var, ap_result,
-      group_type());
+      group_type()));
 }
 
 #ifdef IRS_LIB_DEBUG
@@ -790,7 +1876,7 @@ void test_variant();
 
 #endif // NOP
 
-#endif // __ICCAVR__
+//#endif // __ICCAVR__
 
 } // namespace variant
 
