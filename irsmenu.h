@@ -12,6 +12,41 @@
 #define CUR_BLINK 500//ms
 #define EDIT_LINE 2
 
+// --------------------  À¿—— ¡≈√”ŸŸ≈… —“–Œ » ƒÀﬂ Ã≈Õﬁ ------------------------
+
+class irs_menu_creep_t
+{
+  typedef size_t size_type;
+  char *f_buffer;
+  //char f_line[LINE_LEN+1];
+  char *f_line;
+  size_type f_line_len;
+  size_type f_buffer_len;
+  size_type f_static_len;
+  size_type f_message_len;
+  size_type f_dynamic_len;
+  counter_t f_creeptimer;
+  counter_t f_creeptime;
+  irs_bool end_of_line;
+  size_type f_position;
+public:
+  irs_menu_creep_t(char *a_buffer, size_type a_buffer_len, size_type a_line_len,
+    size_type a_static_len, size_type a_message_len, irs_u8 time_num,
+    irs_u8 time_denom);
+  ~irs_menu_creep_t();
+  void reset();
+  void shift();
+  void clear_dynamic();
+  void soft_clear_dynamic();
+  void change_static(char *a_static);
+  void change_message(char *a_message);
+  char *get_creep_buffer();
+  char *get_line();
+  irs_bool eol();
+};
+
+//------------------------------------------------------------------------------
+
 typedef enum _irs_menu_state_t{
   ims_hide,
   ims_edit,
@@ -96,7 +131,8 @@ public:
     size_type a_length = 0,
     irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
     irs_menu_param_update_t a_update = IMU_UPDATE) = 0;
-  virtual size_type get_dynamic_string(char *a_buffer, size_type a_length = 0) = 0;
+  virtual size_type get_dynamic_string(char *a_buffer, 
+    size_type a_length = 0) = 0;
   virtual bool is_updated();
   virtual void draw(irs_menu_base_t **a_cur_menu) = 0;
 };
@@ -154,6 +190,7 @@ class irs_advanced_tablo_t: public irs_menu_base_t
     size_type x;
     size_type y;
     irs_menu_param_show_mode_t show_mode;
+    bool is_hidden;
   };
   vector<tablo_item_t> m_parametr_vector;
   char *mp_lcd_string;
@@ -177,6 +214,10 @@ public:
   void creep_start();
   void creep_stop();
   bool creep_stopped();
+  size_type get_last_item_number();
+  void hide_item(size_type a_item_number);
+  void show_item(size_type a_item_number);
+  bool item_is_hidden(size_type a_item_number);
 };
 
 class irs_menu_double_item_t: public irs_menu_base_t
@@ -224,6 +265,221 @@ public:
   virtual bool is_updated();
 };
 
+//------------------------- SIMPLY ITEM ---------------------------------------
+
+template <class T>
+class irs_menu_simply_item_t: public irs_menu_base_t
+{
+  char *mp_prefix;
+  char *mp_suffix;
+  char *mp_value_string;
+  char *mp_copy_parametr_string;
+  size_type m_len;
+  size_type m_accur;
+  T *mp_parametr;
+  T m_copy_parametr;
+public:
+  irs_menu_simply_item_t(T *ap_parametr);
+  ~irs_menu_simply_item_t();
+  void set_str(char *ap_value_string, char *ap_prefix, char *ap_suffix,
+    size_type a_len, size_type a_accur);
+  virtual void draw(irs_menu_base_t **a_cur_menu);
+  T *get_parametr();
+  virtual size_type get_parametr_string(
+    char *a_parametr_string,
+    size_type a_length = 0,
+    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
+    irs_menu_param_update_t a_update = IMU_UPDATE);
+  virtual size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
+  virtual bool is_updated();
+};
+
+template <class T>
+irs_menu_simply_item_t<T>::irs_menu_simply_item_t(T *ap_parametr):
+  mp_prefix(IRS_NULL),
+  mp_suffix(IRS_NULL),
+  mp_value_string(IRS_NULL),
+  mp_copy_parametr_string(IRS_NULL),
+  m_len(0),
+  m_accur(0),
+  mp_parametr(ap_parametr),
+  m_copy_parametr(*ap_parametr)
+{
+}
+
+template <class T>
+irs_menu_simply_item_t<T>::~irs_menu_simply_item_t()
+{
+  delete []mp_copy_parametr_string;
+}
+
+template <class T>
+void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix, 
+  char *ap_suffix, size_type a_len, size_type a_accur)
+{
+  mp_value_string = ap_value_string;
+  m_len = a_len;
+  m_accur = a_accur;
+  mp_prefix = ap_prefix;
+  mp_suffix = ap_suffix;
+  size_type space = 1;
+  size_type full_len 
+    = m_len + space + strlen(mp_prefix) + space + strlen(mp_suffix);
+  delete []mp_copy_parametr_string;
+  mp_copy_parametr_string = new char [full_len + 1];
+  m_copy_parametr = *mp_parametr;
+  
+  ostrstream strm(mp_value_string, m_len + 1);
+  strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+  strm << m_copy_parametr << '\0';
+  mp_value_string[m_len] = '\0';
+  
+  strcpy(mp_copy_parametr_string, mp_value_string);
+  m_updated = true;
+}
+
+template <class T>
+void irs_menu_simply_item_t<T>::draw(irs_menu_base_t **a_cur_menu)
+{
+  irskey_t a_key = irskey_none;
+  if (f_key_event) a_key = f_key_event->check();
+  
+  if (a_key == irskey_escape || a_key == irskey_enter)
+  {
+    if (f_master_menu != IRS_NULL)
+    {
+      *a_cur_menu = f_master_menu;
+    }
+    else
+    {
+      mp_disp_drv->clear();
+      mp_disp_drv->outtextpos(0, 0, f_header);
+      
+      ostrstream strm(mp_value_string, m_len + 1);
+      strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+      strm << m_copy_parametr << '\0';
+      mp_value_string[m_len] = '\0';
+      
+      mxdisp_pos_t space = 1;
+      mxdisp_pos_t prf_x_pos = 0;
+      mxdisp_pos_t val_x_pos = strlen(mp_prefix) + space;
+      mxdisp_pos_t suf_x_pos = val_x_pos + strlen(mp_value_string) + space;
+      mxdisp_pos_t y_pos = 1;
+      
+      mp_disp_drv->outtextpos(prf_x_pos, y_pos, mp_prefix);
+      mp_disp_drv->outtextpos(val_x_pos, y_pos, mp_value_string);
+      mp_disp_drv->outtextpos(suf_x_pos, y_pos, mp_suffix);
+      
+      if (f_creep != IRS_NULL)
+      {
+        f_creep->shift();
+        mxdisp_pos_t creep_x_pos = 0;
+        mxdisp_pos_t creep_y_pos = mp_disp_drv->get_height() - 1;
+        mp_disp_drv->outtextpos(creep_x_pos, creep_y_pos, f_creep->get_line());
+      }
+    }
+  }
+}
+
+template <class T>
+T* irs_menu_simply_item_t<T>::get_parametr()
+{
+  return mp_parametr;
+}
+
+template <class T>
+irs_menu_base_t::size_type irs_menu_simply_item_t<T>::get_parametr_string(
+  char *a_parametr_string,
+  size_type a_length,
+  irs_menu_param_show_mode_t a_show_mode,
+  irs_menu_param_update_t a_update)
+{
+  if (!a_parametr_string) return 0;
+
+  if (m_copy_parametr != *mp_parametr)
+  {
+    m_updated = true;
+
+    if (a_update == IMU_UPDATE)
+    {
+      m_copy_parametr = *mp_parametr;
+      ostrstream strm(mp_value_string, m_len + 1);
+      strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+      strm << m_copy_parametr << '\0';
+      mp_value_string[m_len] = '\0';
+      strcpy(mp_copy_parametr_string, mp_value_string);
+    }
+    else
+    {
+      strcpy(mp_value_string, mp_copy_parametr_string);
+    }
+  }
+  else
+  {
+    strcpy(mp_value_string, mp_copy_parametr_string);
+  }
+  
+  const char *space_str = " ";
+  
+  switch (a_show_mode)
+  {
+    case IMM_WITHOUT_PREFIX:
+    {
+      strcat(mp_value_string, space_str);
+      strcat(mp_value_string, mp_suffix);
+      break;
+    }
+    case IMM_WITHOUT_SUFFIX:
+    {
+      strcpy(mp_value_string, mp_prefix);
+      strcat(mp_value_string, space_str);
+      strcat(mp_value_string, mp_copy_parametr_string);
+      break;
+    }
+    case IMM_FULL:
+    {
+      strcpy(mp_value_string, mp_prefix);
+      strcat(mp_value_string, space_str);
+      strcat(mp_value_string, mp_copy_parametr_string);
+      strcat(mp_value_string, space_str);
+      strcat(mp_value_string, mp_suffix);
+      break;
+    }
+  }
+  
+  size_type param_str_len = strlen(mp_value_string);
+  
+  if (a_length < param_str_len)
+  {
+    memcpy(a_parametr_string, mp_value_string, a_length);
+    return a_length;
+  }
+  strcpy(a_parametr_string, mp_value_string);
+  return param_str_len;
+}
+
+template <class T>
+irs_menu_base_t::size_type irs_menu_simply_item_t<T>::get_dynamic_string(
+  char *a_buffer, size_type a_length)
+{
+  return get_parametr_string(a_buffer, a_length);
+}
+
+template <class T>
+bool irs_menu_simply_item_t<T>::is_updated()
+{
+  if (m_copy_parametr != *mp_parametr)
+  {
+    m_updated = false;
+    return true;
+  }
+  bool updated = m_updated;
+  m_updated = false;
+  return updated;
+}
+
+//------------------------------------------------------------------------------
+
 class irs_menu_bool_item_t: public irs_menu_base_t
 {
   char *f_true_string;
@@ -252,7 +508,8 @@ class irs_menu_ip_item_t: public irs_menu_base_t
   irs_u8 *f_parametr;
   ip_trans_t f_ip_trans;
 public:
-  irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string, irs_bool a_can_edit);
+  irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string, 
+    irs_bool a_can_edit);
   void reset_str();
   virtual void draw(irs_menu_base_t **a_cur_menu);
   irs_u8 *get_parametr();
@@ -300,8 +557,8 @@ public:
   irs_menu_trimmer_item_t(double *a_parametr, irs_bool a_save_after_exit);
   void set_str(char *a_value_string, char *a_prefix, char *a_start_prefix,
     char *a_trim_prefix, char *a_step_prefix, char *a_suffix, size_type a_len,
-    size_type a_accur, size_type a_trim_len, size_type a_trim_accur, size_type a_step_len,
-    size_type a_step_accur);
+    size_type a_accur, size_type a_trim_len, size_type a_trim_accur, 
+    size_type a_step_len, size_type a_step_accur);
   void reset_str();
   void set_min_value(float a_min_value);
   float get_min_value();
@@ -448,7 +705,8 @@ class irs_menu_progress_bar_t: public irs_menu_base_t
   float m_value;
   void fill_bar();
 public:
-  irs_menu_progress_bar_t(size_type a_symbol, size_type a_length, float a_max_value);
+  irs_menu_progress_bar_t(size_type a_symbol, size_type a_length, 
+    float a_max_value);
   ~irs_menu_progress_bar_t();
   void set_length(size_type a_length);
   void set_value(float a_value);
@@ -461,39 +719,5 @@ public:
   virtual size_type get_dynamic_string(char *ap_buffer, size_type a_length = 0);
   virtual void draw(irs_menu_base_t **ap_cur_menu);
 };
-
-// --------------------  À¿—— ¡≈√”ŸŸ≈… —“–Œ » ƒÀﬂ Ã≈Õﬁ ------------------------
-
-class irs_menu_creep_t
-{
-  typedef size_t size_type;
-  char *f_buffer;
-  //char f_line[LINE_LEN+1];
-  char *f_line;
-  size_type f_line_len;
-  size_type f_buffer_len;
-  size_type f_static_len;
-  size_type f_message_len;
-  size_type f_dynamic_len;
-  counter_t f_creeptimer;
-  counter_t f_creeptime;
-  irs_bool end_of_line;
-  size_type f_position;
-public:
-  irs_menu_creep_t(char *a_buffer, size_type a_buffer_len, size_type a_line_len,
-    size_type a_static_len, size_type a_message_len, irs_u8 time_num,
-    irs_u8 time_denom);
-  ~irs_menu_creep_t();
-  void reset();
-  void shift();
-  void clear_dynamic();
-  void soft_clear_dynamic();
-  void change_static(char *a_static);
-  void change_message(char *a_message);
-  char *get_creep_buffer();
-  char *get_line();
-  irs_bool eol();
-};
-
 
 #endif //IRSMENUH

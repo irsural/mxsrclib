@@ -33,7 +33,7 @@ irs_menu_base_t::irs_menu_base_t():
   f_cursor_symbol('_'),
   mp_disp_drv(IRS_NULL),
   mp_event(IRS_NULL),
-  m_updated(false)
+  m_updated(true)
 {
   f_cursor[0] = f_cursor_symbol;
   f_cursor[1] = 0;
@@ -421,8 +421,13 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   f_accur = a_accur;
   f_prefix = a_prefix;
   f_suffix = a_suffix;
+  
+  size_type space = 1;
+  size_type full_len 
+    = f_len + space + strlen(f_prefix) + space + strlen(f_suffix);
+  
   delete []f_copy_parametr_string;
-  f_copy_parametr_string = new char [f_len + 1];
+  f_copy_parametr_string = new char [full_len + 1];
   f_copy_parametr = *f_parametr;
   afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
   strcpy(f_copy_parametr_string, f_value_string);
@@ -680,8 +685,6 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
     }
   case ims_edit:
     {
-      //if (f_value_string[0] == ' ') PORTG_PORTG0 = 1;
-      //else PORTG_PORTG0 = 0;
       switch (f_key_type)
       {
         case IMK_DIGITS:
@@ -697,17 +700,14 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             }
             else
             {
-             // show();
               *a_cur_menu = f_master_menu;
               f_show_needed = irs_true;
-              //f_master_menu->show();
             }
           }
           if (a_key == irskey_escape)
           {
             *a_cur_menu = f_master_menu;
             f_show_needed = irs_true;
-            //f_master_menu->show();
           }
           if (a_key == irskey_enter)
           {
@@ -722,11 +722,8 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               m_updated = true;
               mp_disp_drv->outtextpos(0, 0, f_value_string);
             }
-            //show();
             *a_cur_menu = f_master_menu;
             f_show_needed = irs_true;
-            //f_master_menu->show();
-            //data_pointer->freq = irs_u64(user_freq*INV_F_COEF + 0.5);
           }
           if (f_creep)
           {
@@ -853,19 +850,35 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               *a_cur_menu = f_master_menu;
               f_show_needed = irs_true;
+              if (f_apply_immediately)
+              {
+                *f_parametr = f_copy_parametr;
+              }
+              else
+              {
+                f_copy_parametr = *f_parametr;
+              }
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              strcpy(f_copy_parametr_string, f_value_string);
+              if (f_double_trans) f_double_trans(f_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
               break;
             }
             case irskey_enter:
             {
-              double temp_parametr = *f_parametr;
-              *f_parametr = f_copy_parametr;
-              f_copy_parametr = temp_parametr;
-              //afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
-              f_want_redraw = false;
-
               *a_cur_menu = f_master_menu;
               f_show_needed = irs_true;
-
+              if (f_apply_immediately)
+              {
+                f_copy_parametr = *f_parametr;
+              }
+              else
+              {
+                *f_parametr = f_copy_parametr;
+              }
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              strcpy(f_copy_parametr_string, f_value_string);
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
               m_updated = true;
@@ -873,30 +886,38 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             }
             case irskey_up:
             {
-              f_copy_parametr += f_step;
-              if (f_copy_parametr > f_max) f_copy_parametr = f_max;
-              f_want_redraw = true;
               if (f_apply_immediately)
               {
-                *f_parametr = f_copy_parametr;
+                *f_parametr += f_step;
+                if (*f_parametr > f_max) *f_parametr = f_max;
                 if (f_double_trans) f_double_trans(f_parametr);
                 if (mp_event) mp_event->exec();
                 m_updated = true;
               }
+              else
+              {
+                f_copy_parametr += f_step;
+                if (f_copy_parametr > f_max) f_copy_parametr = f_max;
+              }
+              f_want_redraw = true;
               break;
             }
             case irskey_down:
             {
-              f_copy_parametr -= f_step;
-              if (f_copy_parametr < f_min) f_copy_parametr = f_min;
-              f_want_redraw = true;
               if (f_apply_immediately)
               {
-                *f_parametr = f_copy_parametr;
+                *f_parametr -= f_step;
+                if (*f_parametr < f_min) *f_parametr = f_min;
                 if (f_double_trans) f_double_trans(f_parametr);
                 if (mp_event) mp_event->exec();
                 m_updated = true;
               }
+              else
+              {
+                f_copy_parametr -= f_step;
+                if (f_copy_parametr < f_min) f_copy_parametr = f_min;
+              }
+              f_want_redraw = true;
               break;
             }
           }
@@ -904,10 +925,16 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
           {
             f_want_redraw = false;
 
-            afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
+            if (f_apply_immediately)
+            {
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+            }
+            else
+            {
+              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
+            }
 
             mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));
-            //mxdisp_pos_t suff_len = mxdisp_pos_t(strlen(f_suffix));
             mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string));
             mxdisp_pos_t space = 1;
             mxdisp_pos_t val_pos_x =
@@ -928,6 +955,8 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
     }
   }
 }
+
+//------------------------------------------------------------------------------
 
 irs_tablo_t::irs_tablo_t():
   f_slave_menu(IRS_NULL),
@@ -1123,6 +1152,7 @@ bool irs_advanced_tablo_t::add(irs_menu_base_t *ap_parametr,
   new_item.x = a_x;
   new_item.y = a_y;
   new_item.show_mode = a_show_mode;
+  new_item.is_hidden = false;
   m_parametr_vector.push_back(new_item);
   return true;
 }
@@ -1199,6 +1229,7 @@ void irs_advanced_tablo_t::draw(irs_menu_base_t **a_cur_menu)
           irs_menu_param_update_t update_current_item = IMU_NO_UPDATE;
           for (size_t i = 0; i < m_parametr_vector.size(); i++)
           {
+            if (m_parametr_vector[i].is_hidden) continue;
             update_current_item = IMU_NO_UPDATE;
             if ((m_parametr_vector[i].y < creep_y_pos) || m_creep_stopped)
             {
@@ -1268,6 +1299,37 @@ void irs_advanced_tablo_t::creep_stop()
 bool irs_advanced_tablo_t::creep_stopped()
 {
   return m_creep_stopped;
+}
+
+irs_menu_base_t::size_type irs_advanced_tablo_t::get_last_item_number()
+{
+  if (m_parametr_vector.size() > 0) return m_parametr_vector.size() - 1;
+  return 0;
+}
+
+void irs_advanced_tablo_t::hide_item(size_type a_item_number)
+{
+  if (a_item_number < m_parametr_vector.size())
+  {
+    m_parametr_vector[a_item_number].is_hidden = true;
+  }
+}
+
+void irs_advanced_tablo_t::show_item(size_type a_item_number)
+{
+  if (a_item_number < m_parametr_vector.size())
+  {
+    m_parametr_vector[a_item_number].is_hidden = false;
+  }
+}
+
+bool irs_advanced_tablo_t::item_is_hidden(size_type a_item_number)
+{
+  if (a_item_number < m_parametr_vector.size())
+  {
+    return m_parametr_vector[a_item_number].is_hidden;
+  }
+  return false;
 }
 
 //------------------------------------------------------------------------------
@@ -1642,9 +1704,9 @@ void irs_menu_trimmer_item_t::draw(irs_menu_base_t **a_cur_menu)
           get_dynamic_string(f_creep->get_creep_buffer());
         }
         f_creep->shift();
-        const size_type x_pos = 0;
-        const size_type y_pos = mp_disp_drv->get_height() - 1;
-        mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+        const size_type creep_x_pos = 0;
+        const size_type creep_y_pos = mp_disp_drv->get_height() - 1;
+        mp_disp_drv->outtextpos(creep_x_pos, creep_y_pos, f_creep->get_line());
       }
       else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
 

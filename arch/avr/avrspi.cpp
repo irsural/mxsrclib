@@ -417,6 +417,7 @@ void irs::avr::avr_spi_t::read(irs_u8 *ap_buf,irs_uarc a_size)
 
 void irs::avr::avr_spi_t::tick()
 {
+  /*
   static counter_t cnt = 0;
   static counter_t time = MS_TO_CNT(0);
   static bool first = true;
@@ -427,15 +428,16 @@ void irs::avr::avr_spi_t::tick()
     counter_t time = MS_TO_CNT(0);
     set_to_cnt(cnt, time);
   }
+  */
   switch (m_status)
   {
   case SPI_WRITE:
     {
-      if (test_to_cnt(cnt))
+      //if (test_to_cnt(cnt))
       {
         if (transfer_complete())
         {
-          set_to_cnt(cnt, time);
+          //set_to_cnt(cnt, time);
           if (m_current_byte >= m_packet_size)
           {
             memset((void*)mp_buf, 0, m_buffer_size);
