@@ -21,9 +21,6 @@
 namespace irs {
 
 namespace variant {
-#ifdef NOP
-
-//#ifndef __ICCAVR__
 
 enum var_type_t {
   var_type_unknown,
@@ -1873,10 +1870,6 @@ void binary_operation(
 #ifdef IRS_LIB_DEBUG
 void test_variant();
 #endif // IRS_LIB_DEBUG
-
-#endif // NOP
-
-//#endif // __ICCAVR__
 
 } // namespace variant
 
