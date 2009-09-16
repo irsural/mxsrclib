@@ -84,7 +84,7 @@
         (__GNUC__ < 3) ||\
         ( (__GNUC__ == 3) && (__GNUC_MINOR__ < 4) )\
       )\
-    )\
+    )
     // Эта константа у меня пока отсутствует
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\

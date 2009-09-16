@@ -937,7 +937,7 @@ irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
       linux_tcpip_cl->can_write = irs_true;
       if(dest == IRS_NULL)
       {
-        if(linux_tcpip_cl->is_broadcast == irs_true)
+        if(linux_tcpip_cl->is_broadcast)
         {
           linux_tcpip_cl->dest_addr.sin_addr.s_addr =
             inet_addr("255.255.255.255");
@@ -975,7 +975,7 @@ irs_bool mxifa_write_end(void *pchdata, irs_bool abort)
         linux_tcpip->can_write = irs_false;
         return irs_true;
       }
-      if (linux_tcpip->can_write == irs_true)
+      if (linux_tcpip->can_write)
         return irs_false;
       else
         return irs_true;
@@ -989,7 +989,7 @@ irs_bool mxifa_write_end(void *pchdata, irs_bool abort)
         linux_tcpip_cl->can_write = irs_false;
         return irs_true;
       }
-      if (linux_tcpip_cl->can_write == irs_true)
+      if (linux_tcpip_cl->can_write)
         return irs_false;
       else
         return irs_true;
@@ -1248,7 +1248,7 @@ void mxifa_tick()
             OUTDBG(cout<<"1074 SERVER - port dest: "<< r <<"\n");
           }
         }
-        if((linux_tcpip->can_read == irs_true)&&(!linux_tcpip->HD.empty()))
+        if((linux_tcpip->can_read)&&(!linux_tcpip->HD.empty()))
         {
           mxifa_find_read_sock();
           if(linux_tcpip->sock_finded)
@@ -1286,7 +1286,7 @@ void mxifa_tick()
             }
             else
             {
-              if((linux_tcpip->first_read == irs_true)&&(linux_tcpip->can_rany == irs_true))
+              if((linux_tcpip->first_read)&&(linux_tcpip->can_rany))
               {
                 linux_tcpip->read_address->mxifa_linux_dest.port =
                   ntohs((*(linux_tcpip->r_it)).get_hport());
@@ -1312,8 +1312,9 @@ void mxifa_tick()
             }
           }
         }
-        if(linux_tcpip->can_write == irs_true)
+        if(linux_tcpip->can_write)
         {
+          //cout << "can_write = true" << endl;
           mxifa_sz_t nbytes_wr = 0;
           if(linux_tcpip->is_broadcast)
           {
@@ -1395,7 +1396,7 @@ void mxifa_tick()
       mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
        (mxifa_linux_tcpip_cl_t *)pchdatas->ch_spec;
       mxifa_reconect_cl_socket(pchdatas);
-      if(linux_tcpip_cl->sock_open == irs_false)
+      if(!linux_tcpip_cl->sock_open)
       {
         mxifa_open_cl_socket(pchdatas);
       }
@@ -1426,22 +1427,22 @@ void mxifa_tick()
         //OUTDBG(cout"1331 Socket fd: %d\n",linux_tcpip_cl->socket_fd);
         if(wer)
         {
-          if(linux_tcpip_cl->can_read == irs_true)
+          if(linux_tcpip_cl->can_read)
           {
-             // OUTDBG(cout"1336 CLIENT - read data\n");
-              mxifa_read_cl_socket(pchdatas);
+           // OUTDBG(cout"1336 CLIENT - read data\n");
+            mxifa_read_cl_socket(pchdatas);
           }
         }
         if(FD_ISSET(linux_tcpip_cl->socket_fd,
           &(linux_tcpip_cl->write_fds)))
         {
-
-            if(linux_tcpip_cl->can_write == irs_true)
-            {
-//           puts("1346 Client test point 5");
-              //OUTDBG(cout"1347 CLIENT - send data\n");
-              mxifa_write_cl_socket(pchdatas);
-            }
+          if(linux_tcpip_cl->can_write)
+          {
+            //puts("1346 Client test point 5");
+            //OUTDBG(cout"1347 CLIENT - send data\n");
+            mxifa_write_cl_socket(pchdatas);
+            //cout << "can_write = true" << endl;
+          }
         }
        }
         //puts("1352 Client test point end!");
@@ -1527,7 +1528,7 @@ void mxifa_set_config(void *pchdata, void *config)
       if(linux_tcpip_cl->dest_addr.sin_port != htons(cfg_cl->dest_port))
       {
         is_noteq = irs_true;
-        if(linux_tcpip_cl->sock_open == irs_true)
+        if(linux_tcpip_cl->sock_open)
         {
           close(linux_tcpip_cl->socket_fd);
           linux_tcpip_cl->sock_open = irs_false;
@@ -1569,7 +1570,7 @@ void mxifa_set_config(void *pchdata, void *config)
 
       //socklen_t addrlen  = sizeof(linux_tcpip_cl->dest_addr);
 
-      if(is_noteq == irs_true)
+      if(is_noteq)
       {
         mxifa_open_cl_socket(pchdatas);
         is_noteq = irs_false;

@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 15.09.2009
+// Дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
@@ -45,6 +45,16 @@
 // Макросы удаления
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
+// Макрос __FUNC__
+#ifndef __FUNC__ 
+#if defined(__FUNCTION__)
+#define __FUNC__ __FUNCTION__
+#elif defined(__func__)
+#define __FUNC__ __func__
+#else
+#define __FUNC__ ""
+#endif //defined(__FUNCTION__)
+#endif //__FUNC__
 
 // Макросы для работы c DLL
 // Объявление внешней функции
