@@ -974,7 +974,7 @@ void irs::variant::test_variant()
   char var_char_type = 'q';
   signed char var_signed_char_type = 'w';
   unsigned char var_unsigned_char_type = 'e';
-  bool var_bool_type = false;
+  //bool var_bool_type = false;
   short var_short_type = 10;
   unsigned short var_unsigned_short_type = 11;
   int var_int_type = 12;
@@ -1120,7 +1120,7 @@ void irs::variant::test_variant()
   first_variant.type(var_type_array);
   const size_type new_size = 10;
   first_variant.resize(new_size);
-  size_type cur_size = first_variant.size();
+  //size_type cur_size = first_variant.size();
   const size_type elem_index = 1;
   second_variant = first_variant[elem_index];
 }
