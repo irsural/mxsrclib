@@ -1,6 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 12.02.2009
+// Дата: 16.09.2009
 
 #include <mxifa.h>
 #include <unistd.h>
@@ -1429,7 +1429,7 @@ void mxifa_tick()
         {
           if(linux_tcpip_cl->can_read)
           {
-           // OUTDBG(cout"1336 CLIENT - read data\n");
+            // OUTDBG(cout"1336 CLIENT - read data\n");
             mxifa_read_cl_socket(pchdatas);
           }
         }
@@ -1539,7 +1539,7 @@ void mxifa_set_config(void *pchdata, void *config)
       FD_ZERO(&(linux_tcpip_cl->master));
       FD_ZERO(&(linux_tcpip_cl->read_fds));
       FD_ZERO(&(linux_tcpip_cl->write_fds));
-/*      linux_tcpip_cl->socket_fd = socket(PF_INET,SOCK_STREAM,0);
+      /*linux_tcpip_cl->socket_fd = socket(PF_INET,SOCK_STREAM,0);
       if(linux_tcpip_cl->socket_fd == -1)
         OUTDBG(cout"1446 CLIENT - Can't open socket!\n");
       else

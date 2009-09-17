@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 30.08.2009
+// Дата: 14.09.2009
 
 #ifndef IRSSTRMH
 #define IRSSTRMH
@@ -305,6 +305,27 @@ inline ~linux_terminal_buf()
 int underflow()
 {
 }
+
+class console_t
+{
+public:
+  console_t(mxdisplay_drv_t* mp_display_drv,
+    mxkey_drv_t* ap_key_drv = IRS_NULL);
+  console_t(streambuf* ap_out_buf,
+    streambuf* ap_in_buf = IRS_NULL);
+  void tick();
+  void pos(size_t a_horizontal, size_t a_vertical);
+  void in_start(size_t a_max_chars);
+  void in_stop();
+  bool in_ready();
+private:
+  mxdisplay_drv_t* mp_display_drv;
+  mxkey_drv_t* mp_key_drv;
+  streambuf* mp_out_buf;
+  streambuf* mp_in_buf;
+  ostream m_out;
+  istream m_in;
+};
 #endif //NEW
 #endif //IRS_LINUX
 

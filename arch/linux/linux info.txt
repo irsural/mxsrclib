@@ -17,8 +17,10 @@ mount -t cifs //maxpc/mxsrclib /home/maxim/work/1/mxsrclib --verbose -o user=net
 
 
 
-mount -t cifs //192.168.75.1/mxsrclib /home/maxim/work/prjs/mxsrclib -o user=net,password=462
-umount /home/maxim/work/1/mxsrclib
+mount -t cifs //192.168.75.1/mxsrclib /home/maxim/work/prjs/mxsrclib -o user=net,password=462,iocharset=utf8,codepage=cp866
+mount -t cifs //192.168.75.1/share /home/maxim/work/share -o user=net,password=462,iocharset=utf8,codepage=cp866
+umount /home/maxim/work/prjs/mxsrclib
+umount /home/maxim/work/share
 
 /etc/fstab:
 //192.168.75.1/mxsrclib /home/maxim/work/prjs cifs auto,users,rw 0 0
@@ -26,6 +28,7 @@ umount /home/maxim/work/1/mxsrclib
 /etc/fstab:
 //192.168.0.10/ShareDocs /home/yourusername/Share cifs auto,users,rw 0 0
 /etc/rc.d: Скрипты, срабатывающие при запуске системы.
+/etc/rc.d/rc.local
 
 Документация cifs
 man mount.cifs

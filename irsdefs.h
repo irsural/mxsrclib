@@ -51,9 +51,9 @@
 #define __FUNC__ __FUNCTION__
 #elif defined(__func__)
 #define __FUNC__ __func__
-#else
+#else // другие варианты __FUNC__
 #define __FUNC__ ""
-#endif //defined(__FUNCTION__)
+#endif // другие варианты __FUNC__
 #endif //__FUNC__
 
 // Макросы для работы c DLL

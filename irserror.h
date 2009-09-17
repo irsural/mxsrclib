@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 4.08.2009
+// Дата: 16.09.2009
 
 #ifndef IRSERRORH
 #define IRSERRORH
