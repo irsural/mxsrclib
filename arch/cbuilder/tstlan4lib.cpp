@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 6.08.2009
+// Дата: 17.09.2009
 
 #include <vcl.h>
 #pragma hdrstop
@@ -7,6 +7,7 @@
 #include <tstlan4lib.h>
 #include <irstime.h>
 #include <MxBase.h>
+#include <irserror.h>
 
 irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
   m_form_type(a_tstlan4.m_form_type),
@@ -14,7 +15,10 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
   mp_form(IRS_NULL),
   mp_controls(IRS_NULL),
   m_ini_name(a_tstlan4.m_ini_name),
-  m_ini_section_prefix(a_tstlan4.m_ini_section_prefix)
+  m_ini_section_prefix(a_tstlan4.m_ini_section_prefix),
+  m_log_buf(a_tstlan4.m_log_buf),
+  m_update_time_cnt(a_tstlan4.m_update_time_cnt),
+  m_global_log_connect(a_tstlan4.m_global_log_connect)
 {
   if (m_form_type == ft_internal) {
     mp_form_auto.reset(new TForm(IRS_NULL, 1));
@@ -24,14 +28,22 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
   }
   init(mp_form_auto.get());
 }
-irs::tstlan4_t::tstlan4_t(form_type_t a_form_type,
-  const irs::string& a_ini_name, const irs::string& a_ini_section_prefix):
+irs::tstlan4_t::tstlan4_t(
+  form_type_t a_form_type,
+  const irs::string& a_ini_name,
+  const irs::string& a_ini_section_prefix,
+  counter_t a_update_time_cnt,
+  global_log_connect_t a_global_log_connect
+):
   m_form_type(a_form_type),
   mp_form_auto(IRS_NULL),
   mp_form(IRS_NULL),
   mp_controls(IRS_NULL),
   m_ini_name(a_ini_name),
-  m_ini_section_prefix(a_ini_section_prefix)
+  m_ini_section_prefix(a_ini_section_prefix),
+  m_log_buf(IRS_NULL, 100),
+  m_update_time_cnt(a_update_time_cnt),
+  m_global_log_connect(a_global_log_connect)
 {
   if (m_form_type == ft_internal) {
     mp_form_auto.reset(new TForm(IRS_NULL, 1));
@@ -55,7 +67,11 @@ void irs::tstlan4_t::init(TForm *ap_form)
   }
   mp_form = ap_form;
   mp_controls.reset(new controls_t(mp_form, m_ini_name, m_ini_section_prefix,
-    stay_on_top));
+    stay_on_top, m_update_time_cnt));
+  if (m_global_log_connect == global_log_connect) {
+    m_log_buf.connect(mp_controls->log());
+    irs::mlog().rdbuf(&m_log_buf);
+  }
 }
 // Уничтожение всех компонентов формы
 void irs::tstlan4_t::deinit()
@@ -66,6 +82,7 @@ void irs::tstlan4_t::tick()
 {
   mp_controls->tick();
 }
+
 void irs::tstlan4_t::show()
 {
   mp_form->ShowModal();
@@ -92,10 +109,13 @@ void irs::tstlan4_t::save_conf()
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
-irs::tstlan4_t::controls_t::controls_t(TForm *ap_form,
+irs::tstlan4_t::controls_t::controls_t(
+  TForm *ap_form,
   const irs::string& a_ini_name,
   const irs::string& a_ini_section_prefix,
-  irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top):
+  irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
+  counter_t a_update_time_cnt
+):
   mp_form(ap_form),
   mp_top_panel(new TPanel(mp_form)),
   mp_start_btn(new TButton(mp_form)),
@@ -110,7 +130,7 @@ irs::tstlan4_t::controls_t::controls_t(TForm *ap_form,
   mp_read_on_text("Пуск"),
   mp_read_off_text("Стоп"),
 
-  m_read_loop_timer(200),
+  m_read_loop_timer(a_update_time_cnt),
   m_buf(),
   m_out(&m_buf),
   m_ini_file(),
@@ -150,6 +170,7 @@ irs::tstlan4_t::controls_t::controls_t(TForm *ap_form,
 
   mp_top_panel->Align = alTop;
   mp_top_panel->Parent = mp_form;
+  mp_top_panel->Top = 0;
 
   mp_start_btn->Left = btn_gap;
   mp_start_btn->Top = mp_top_panel->Height/2 - mp_start_btn->Height/2;
@@ -166,9 +187,10 @@ irs::tstlan4_t::controls_t::controls_t(TForm *ap_form,
   mp_log_memo->Align = alTop;
   mp_log_memo->Height = 100;
   mp_log_memo->Parent = mp_form;
+  mp_log_memo->Top = mp_top_panel->Top + mp_log_memo->Height;
 
   mp_splitter->Align = alTop;
-  mp_splitter->Top = mp_chart_btn->Top + mp_chart_btn->Height;
+  mp_splitter->Top = mp_log_memo->Top + mp_log_memo->Height;
   //mp_splitter->Height = 10;
   mp_splitter->Parent = mp_form;
 
@@ -588,5 +610,10 @@ void __fastcall irs::tstlan4_t::controls_t::FormShow(TObject *Sender)
   m_is_lock = false;
   m_refresh_grid = true;
   m_ini_file.load();
+}
+// Консоль внутри tstlan4
+TMemo* irs::tstlan4_t::controls_t::log()
+{
+  return mp_log_memo;
 }
 

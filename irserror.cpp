@@ -130,4 +130,12 @@ ostream& irs::mlog()
   return mlog_obj;
 }
 
+class ostream_buf_init_t
+{
+public:
+  ostream_buf_init_t(ostream* ap_strm, streambuf *ap_buf)
+  {
+    ap_strm->rdbuf(ap_buf);
+  }
+};
 

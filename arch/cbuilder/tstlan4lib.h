@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 25.09.2008
+// Дата: 17.09.2009
 
 #ifndef tstlan4libH
 #define tstlan4libH
@@ -19,17 +19,26 @@ class tstlan4_t: public tstlan4_base_t
 {
 public:
   enum form_type_t { ft_internal, ft_external };
+  enum global_log_connect_t {
+    global_log_connect,
+    global_log_unchange
+  };
 
   tstlan4_t(const tstlan4_t& a_tstlan4);
-  tstlan4_t(form_type_t a_form_type = ft_internal,
+  tstlan4_t(
+    form_type_t a_form_type = ft_internal,
     const irs::string& a_ini_name = "tstlan3.ini",
-    const irs::string& a_ini_section_prefix = "");
+    const irs::string& a_ini_section_prefix = "",
+    counter_t a_update_time_cnt = irs::make_cnt_ms(200),
+    global_log_connect_t a_global_log_connect = global_log_unchange
+  );
   // Подключение к форме и создание элементов управления
   // Можно переподключать к другой форме без вызова deinit
   // На предыдущей форме все компоненты уничтожаются
   void init(TForm *ap_form);
   // Уничтожение всех компонентов формы
   void deinit();
+
   virtual void tick();
   virtual void show();
   virtual void hide();
@@ -42,12 +51,18 @@ private:
   {
   public:
     //controls_t(const controls_t& a_controls, TForm *ap_form);
-    controls_t(TForm *ap_form, const irs::string& a_ini_name,
+    controls_t(
+      TForm *ap_form,
+      const irs::string& a_ini_name,
       const irs::string& a_ini_section_prefix,
-      irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top);
+      irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
+      counter_t a_update_time_cnt
+    );
     virtual __fastcall ~controls_t();
     void connect(mxdata_t *ap_data);
     void save_conf();
+    // Консоль внутри tstlan4
+    TMemo* log();
     void tick();
   private:
     struct netconn_t {
@@ -288,6 +303,9 @@ private:
   auto_ptr<controls_t> mp_controls;
   const irs::string m_ini_name;
   const irs::string m_ini_section_prefix;
+  irs::memobuf m_log_buf;
+  counter_t m_update_time_cnt;
+  global_log_connect_t m_global_log_connect;
 }; //tstlan4_t
 
 } //namespace irs
