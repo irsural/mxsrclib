@@ -590,7 +590,7 @@ void irs::irsmb_se::status()
   {
       IRS_MBUS_DBG_MSG_DETAIL(m_coils[i]);
   }
-  IRS_MBUS_DBG_MSG_DETAIL("**************************'
+  IRS_MBUS_DBG_MSG_DETAIL("**************************"
     "***************************");
   IRS_MBUS_DBG_MSG_DETAIL("**************Holding registers"
     "***********************");
