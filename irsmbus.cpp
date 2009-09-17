@@ -652,7 +652,7 @@ void irs::irsmb_se::tick()
           IRS_MBUS_DBG_MSG_DETAIL("MBAP header");
           for(irs_u16 t = 0; t<size_of_MBAP;t++)
             IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(mess[t])) << ' ');
-          IRS_MBUS_DBG_MSG_DETAIL();
+          IRS_MBUS_DBG_MSG_DETAIL("");
           pack_d8_t &raw_bytes = *(pack_d8_t *)(mess+size_of_MBAP);
           mxifa_read_begin(mp_handle,&m_mbchdata,raw_bytes.value,
             m_cmb_head.length);
@@ -694,13 +694,13 @@ void irs::irsmb_se::tick()
         //OUTDBG(cout <<"Recieved message: \n");
         for(irs_u16 t = 0; t<12;t++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(mess[t])) << ' ');
-        IRS_MBUS_DBG_MSG_DETAIL();
+        IRS_MBUS_DBG_MSG_DETAIL("");
         //convert(mess,0,size_of_MBAP);
         convert(mess,8,size_of_read_header);
         IRS_MBUS_DBG_MSG_DETAIL("\nRecieved Message after convert: ");
         for(irs_u16 t = 0; t<12;t++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(mess[t])) << ' ');
-        IRS_MBUS_DBG_MSG_DETAIL();
+        IRS_MBUS_DBG_MSG_DETAIL("");
         complex_modbus_header_t &m_cmb_head = *(complex_modbus_header_t *)mess;
         request_read_t &m_sec_head = *(request_read_t *)(mess+size_of_header);
         pack_tb_t &m_ssec_head = *(pack_tb_t *)(mess+size_of_header);
@@ -709,7 +709,7 @@ void irs::irsmb_se::tick()
         m_nregs = m_trec_head.value[0];
         for(irs_u16 t=0; t<(m_cmb_head.length+size_of_MBAP);t++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<<(int)mess[t]<< ' ');
-        IRS_MBUS_DBG_MSG_DETAIL();
+        IRS_MBUS_DBG_MSG_DETAIL("");
         IRS_MBUS_DBG_MSG_DETAIL("Recieved header - transaction_id:    " <<
           hex_u16<<m_cmb_head.transaction_id);
         IRS_MBUS_DBG_MSG_DETAIL("Recieved header - proto_id:          " <<
@@ -809,7 +809,7 @@ void irs::irsmb_se::tick()
                 //m_packet_hr.value[i] = m_data16[i];
                 IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< (int)m_dop_head.value[i]<<'|');
               }
-              IRS_MBUS_DBG_MSG_DETAIL();
+              IRS_MBUS_DBG_MSG_DETAIL("");
               //OUTDBG(cout <<dec<<noshowbase<< "\n");
               IRS_MBUS_DBG_MSG_DETAIL("Byte count: "<< hex_u8 <<
                 (int)m_dop_head.byte_count);
@@ -845,12 +845,12 @@ void irs::irsmb_se::tick()
               IRS_MBUS_DBG_MSG_DETAIL("before convert" );
               for(irs_u16 t=0; t<(size_of_header+1+m_dop_head.byte_count);t++)
               IRS_MBUS_DBG_MSG_DETAIL(hex_u8<<(int)mess[t]<< ' ');
-              IRS_MBUS_DBG_MSG_DETAIL();
+              IRS_MBUS_DBG_MSG_DETAIL("");
               convert(mess,size_of_header+1,m_dop_head.byte_count);
               IRS_MBUS_DBG_MSG_DETAIL("after convert" );
               for(irs_u16 t=0; t<(size_of_header+1+m_dop_head.byte_count);t++)
               IRS_MBUS_DBG_MSG_DETAIL(hex_u8<<(int)mess[t]<< ' ');
-              IRS_MBUS_DBG_MSG_DETAIL();
+              IRS_MBUS_DBG_MSG_DETAIL("");
               convert(mess,0,size_of_MBAP);
               //convert(mess,8,size_of_read_header);
             }
@@ -878,10 +878,10 @@ void irs::irsmb_se::tick()
               *(packet_data_8_t*)(mess+size_of_header+size_of_read_header);
             for(irs_u16 t=0; t<(size_of_MBAP + m_cmb_head.length);t++)
               IRS_MBUS_DBG_MSG_DETAIL((int)mess[t]<< ' ');
-            IRS_MBUS_DBG_MSG_DETAIL();
+            IRS_MBUS_DBG_MSG_DETAIL("");
             for(irs_u8 i = 0;i<m_dop_head.byte_count;i++)
               IRS_MBUS_DBG_MSG_DETAIL((int) m_dop_head.value[i]<< ' ');
-            IRS_MBUS_DBG_MSG_DETAIL();
+            IRS_MBUS_DBG_MSG_DETAIL("");
             IRS_MBUS_DBG_MSG_DETAIL("Byte count: "<<(int)m_dop_head.byte_count);
             IRS_MBUS_DBG_MSG_DETAIL("Starting address: "
               << m_sec_head.starting_address);
@@ -1876,7 +1876,7 @@ void irs::irsmb_cl::tick()
             //OUTDBG(cout<<"\n");
             //for(irs_u16 i = 0;i<(m_packet_hr.byte_count);i++)
               //OUTDBG(cout<<hex_u8<<(int)m_packet_hr.value[i]<<' ');
-            IRS_MBUS_DBG_MSG_DETAIL();
+            IRS_MBUS_DBG_MSG_DETAIL("");
             IRS_MBUS_DBG_MSG_DETAIL("Start position: "<<m_stpos);
             IRS_MBUS_DBG_MSG_DETAIL("Count of regs: "
               <<(int)m_packet_hr.byte_count);
