@@ -253,6 +253,17 @@ inline T reset_val(T* p_val, T zero_val = T())
   return val_save;
 }
 
+template <class T>
+void memsetex(T* ap_data, const T& a_fill_elem, size_t a_size)
+{
+  fill_n(ap_data, a_size, a_fill_elem);
+}
+template <class T>
+void memsetex(T* ap_data, size_t a_size)
+{
+  memset(reinterpret_cast<void*>(ap_data), 0, a_size*sizeof(T));
+}
+
 // —ырые данные
 template <class T>
 class raw_data_t

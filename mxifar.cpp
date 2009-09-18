@@ -1,16 +1,11 @@
 // Функции для mxifa (mxifa routines)
-// Дата: 10.09.2009
-
-//---------------------------------------------------------------------------
-//#include <vcl.h>
-//#pragma hdrstop
+// Дата: 17.09.2009
 
 #include <mxifar.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <irscpp.h>
-
 //---------------------------------------------------------------------------
 // Нулевой IP
 const mxip_t zero_ip = {{0, 0, 0, 0}};
@@ -46,7 +41,7 @@ irs_bool is_digit(irs_u8 ch)
   return (ch >= '0') && (ch <= '9');
 }
 // Преобразование, если возможно строки в IP
-irs_bool cstr_to_mxip(mxip_t &ip, char *a_str_ip)
+irs_bool cstr_to_mxip(mxip_t &ip, const char *a_str_ip)
 {
   irs_u8 *str_ip = (irs_u8 *)a_str_ip;
   irs_i32 len = strlen((char *)str_ip);
@@ -133,4 +128,4 @@ irs_bool cstr_to_mxip(mxip_t &ip, char *a_str_ip)
     }
   }
 }
-//#pragma package(smart_init)
+

@@ -1,5 +1,5 @@
 //  Component Variant
-//  Data: 17.09.2009
+//  Data: 18.09.2009
 //
 //  Copyright (c) 2009
 //  IRS Company
@@ -17,6 +17,7 @@
 #include <irsstd.h>
 #include <mxdata.h>
 #include <irserror.h>
+#include <irsstrdefs.h>
 
 namespace irs {
 

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 // Калькулятор
-// Дата: 17.09.2009
+// Дата: 18.09.2009
 
 #ifndef irscalcH
 #define irscalcH
@@ -9,6 +9,7 @@
 #include <irsstdg.h>
 #include <irserror.h>
 #include <math.h>
+#include <irsstrdefs.h>
 
 #define new_calculator_valid
 

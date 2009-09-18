@@ -800,45 +800,6 @@ void irs::local_data_t::tick()
 {
 }
 //---------------------------------------------------------------------------
-// Добавление операций ввода/вывода для типа string
-irs::string& irs::string::operator=(const wchar_t */*cstr*/)
-{
-  IRS_LIB_ERROR(irs::ec_standard,
-    "Инициализация irs::string типом wchar_t* недопустима");
-  return *this;
-}
-irs::string::string(const wchar_t */*cstr*/)
-{
-  IRS_LIB_ERROR(irs::ec_standard,
-    "Инициализация irs::string типом wchar_t* недопустима");
-}
-istream& irs::operator>>(istream& strm, irs::string& strg)
-{
-  strg = "";
-  streambuf &sbuf = *strm.rdbuf();
-  // Пропускаем пробельные символы
-  int c = sbuf.sgetc();
-  for (;;) {
-    if (c == EOF) {
-      strm.clear(strm.rdstate()|ios::eofbit);
-      return strm;
-    }
-    if (!isspace(c)) break;
-    c = sbuf.snextc();
-  }
-  // Считываем до пробельного символа
-  for (;;) {
-    if (c == EOF) {
-      strm.clear(strm.rdstate()|ios::eofbit);
-      break;
-    }
-    if (isspace(c)) break;
-    strg += static_cast<char>(c);
-    c = sbuf.snextc();
-  }
-  return strm;
-}
-//---------------------------------------------------------------------------
 // Общая конфигурация консоли
 irs::conio_cfg_t::
 conio_cfg_t(mxkey_drv_t& a_key_drv, mxdisplay_drv_t& a_display_drv):
