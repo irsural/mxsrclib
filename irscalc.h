@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 // Калькулятор
-// Дата: 18.09.2009
+// Дата: 17.09.2009
 
 #ifndef irscalcH
 #define irscalcH
@@ -9,12 +9,10 @@
 #include <irsstdg.h>
 #include <irserror.h>
 #include <math.h>
-#include <irsstrdefs.h>
+#include <irsvariant.h>
 
-#define new_calculator_valid
-
-//---------------------------------------------------------------------------
 namespace irs {
+
 enum type_function_t {
   tf_first = 1,
   tf_r_int_a_int = tf_first,
@@ -30,14 +28,13 @@ enum type_function_t {
 // заменяет табуляции на пробелы.
 irs::string preprocessing_str(const irs::string& a_str);
 
-// Новая версия калькулятора, замена более старому class calculator_t
-#ifdef new_calculator_valid
 namespace calc {
-typedef size_t size_type;
-typedef irs::char_t charns_t;
-typedef irs::string str_type;
-typedef irs::string_t stringns_t;
-typedef double num_type;
+
+typedef size_t sizens_t;
+typedef char_t charns_t;
+typedef string_t stringns_t;
+typedef variant::variant_t valuens_t;
+
 typedef int (*func_r_int_a_int_ptr)(int);
 typedef float (*func_r_float_a_float_ptr)(float);
 typedef double (*func_r_double_a_double_ptr)(double);
@@ -83,24 +80,24 @@ struct function_t
     long double (*func_r_ldouble_a_ldouble_ptr)(long double);
   };
 };
-template<class num_t>
+
 class list_identifier_t
 {
 public:
-  typedef num_t value_type;
-  typedef size_t size_type;
+  typedef valuens_t value_type;
+  typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef map<string_type, num_t> num_const_list_type;
-  typedef typename map<string_type, num_t>::iterator
+  typedef map<string_type, value_type> num_const_list_type;
+  typedef map<string_type, value_type>::iterator
     num_const_list_iterator;
-  typedef typename map<string_type, num_t>::const_iterator
+  typedef map<string_type, value_type>::const_iterator
     num_const_list_const_iterator;
-  typedef vector<num_t> array_type;
-  typedef map<string_type, vector<num_t> > array_list_type;
-  typedef typename map<string_type, vector<num_t> >::iterator
+  typedef vector<value_type> array_type;
+  typedef map<string_type, vector<value_type> > array_list_type;
+  typedef map<string_type, vector<value_type> >::iterator
     array_list_iterator;
-  typedef typename map<string_type, vector<num_t> >::const_iterator
+  typedef map<string_type, vector<value_type> >::const_iterator
     array_list_const_iterator;
   list_identifier_t();
   int find_function(const string_type& a_function_name) const;
@@ -113,11 +110,12 @@ public:
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
   inline void num_const_add(
-    const pair<string_type, num_t>& a_num_const_pair);
+    const pair<string_type, value_type>& a_num_const_pair);
   inline void num_const_del(const string_type& a_num_const_name);
   inline void num_const_clear();
   inline bool num_const_is_exists(const string_type& a_num_const_name) const;
-  inline bool num_const_find(const string_type& a_name, num_t* ap_value) const;
+  inline bool num_const_find(const string_type& a_name,
+    value_type* ap_value) const;
   inline void array_add(
     const pair<string_type, array_type>& a_array_pair);
   inline void array_del(const string_type& a_array_name);
@@ -139,24 +137,21 @@ private:
     void* ap_function);
 };
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::add_func_r_int_a_int(
+inline bool list_identifier_t::add_func_r_int_a_int(
   const string_type& a_name, func_r_int_a_int_ptr ap_function)
 {
   return add_func(a_name, tf_r_int_a_int, reinterpret_cast<void*>(ap_function));
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::add_func_r_float_a_float(
+inline bool list_identifier_t::add_func_r_float_a_float(
   const string_type& a_name, func_r_float_a_float_ptr ap_function)
 {
   return add_func(a_name, tf_r_float_a_float,
     reinterpret_cast<void*>(ap_function));
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::num_const_add(const pair<string_type,
-  num_t>& a_num_const_pair)
+inline void list_identifier_t::num_const_add(const pair<string_type,
+  value_type>& a_num_const_pair)
 {
   IRS_LIB_ASSERT(find_function(a_num_const_pair.first) == irs::npos);
   IRS_LIB_ASSERT(m_num_const_list.find(a_num_const_pair.first) ==
@@ -164,8 +159,7 @@ inline void list_identifier_t<num_t>::num_const_add(const pair<string_type,
   m_num_const_list.insert(a_num_const_pair);
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::num_const_del(
+inline void list_identifier_t::num_const_del(
   const string_type& a_num_const_name)
 {
   num_const_list_iterator it_num_const =
@@ -174,22 +168,19 @@ inline void list_identifier_t<num_t>::num_const_del(
   m_num_const_list.erase(it_num_const);
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::num_const_clear()
+inline void list_identifier_t::num_const_clear()
 {
   m_num_const_list.clear();
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::num_const_is_exists(
+inline bool list_identifier_t::num_const_is_exists(
   const string_type& a_num_const_name) const
 {
   return m_num_const_list.find(a_num_const_name) != m_num_const_list.end();
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::num_const_find(
-  const string_type& a_name, num_t* ap_value) const
+inline bool list_identifier_t::num_const_find(
+  const string_type& a_name, value_type* ap_value) const
 {
   num_const_list_const_iterator it_num_const =
     m_num_const_list.find(a_name);
@@ -202,8 +193,7 @@ inline bool list_identifier_t<num_t>::num_const_find(
   return num_const_is_exists;
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::array_add(
+inline void list_identifier_t::array_add(
   const pair<string_type, array_type>& a_array_pair)
 {
   IRS_LIB_ASSERT(find_function(a_array_pair.first) == irs::npos);
@@ -214,8 +204,7 @@ inline void list_identifier_t<num_t>::array_add(
   m_array_list.insert(a_array_pair);
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::array_del(
+inline void list_identifier_t::array_del(
   const string_type& a_array_name)
 {
   array_list_iterator it_array =
@@ -224,21 +213,18 @@ inline void list_identifier_t<num_t>::array_del(
   m_array_list.erase(it_array);
 }
 
-template<class num_t>
-inline void list_identifier_t<num_t>::array_clear()
+inline void list_identifier_t::array_clear()
 {
   m_array_list.clear();
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::array_is_exists(
+inline bool list_identifier_t::array_is_exists(
   const string_type& a_array_name) const
 {
   return m_array_list.find(a_array_name) != m_array_list.end();
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::array_find(const string_type& a_name,
+inline bool list_identifier_t::array_find(const string_type& a_name,
   const array_type** ap_p_array) const
 {
   array_list_const_iterator it_array =
@@ -252,38 +238,33 @@ inline bool list_identifier_t<num_t>::array_find(const string_type& a_name,
   return array_is_exists;
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::add_func_r_double_a_double(
+inline bool list_identifier_t::add_func_r_double_a_double(
   const string_type& a_name, func_r_double_a_double_ptr ap_function)
 {
   return add_func(a_name, tf_r_double_a_double,
     reinterpret_cast<void*>(ap_function));
 }
 
-template<class num_t>
-inline bool list_identifier_t<num_t>::add_func_r_ldouble_a_ldouble(
+inline bool list_identifier_t::add_func_r_ldouble_a_ldouble(
   const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function)
 {
   return add_func(a_name, tf_r_ldouble_a_ldouble,
     reinterpret_cast<void*>(ap_function));
 }
 
-template<class num_t>
-inline const function_t& list_identifier_t<num_t>::
+inline const function_t& list_identifier_t::
   get_func(size_type a_id_func) const
 {
   return m_func_array[a_id_func];
 }
 
-template<class num_t>
-list_identifier_t<num_t>::list_identifier_t(
+list_identifier_t::list_identifier_t(
 ):
   m_func_array(),
   m_num_const_list()
 { }
 
-template<class num_t>
-int list_identifier_t<num_t>::
+int list_identifier_t::
   find_function(const string_type& a_function_name) const
 {
   int position = irs::npos;
@@ -296,8 +277,7 @@ int list_identifier_t<num_t>::
   }
   return position;
 }
-template<class num_t>
-bool list_identifier_t<num_t>::add_func(
+bool list_identifier_t::add_func(
   const string_type& a_name,
   const type_function_t a_type,
   void* ap_function)
@@ -317,8 +297,7 @@ bool list_identifier_t<num_t>::add_func(
   return fsuccess;
 }
 
-template<class num_t>
-bool list_identifier_t<num_t>::del_func(const string_type& a_name)
+bool list_identifier_t::del_func(const string_type& a_name)
 {
   bool fsuccess = true;
   int position = find_function(a_name);
@@ -330,30 +309,29 @@ bool list_identifier_t<num_t>::del_func(const string_type& a_name)
   return fsuccess;
 }
 
-template<class num_t>
-void list_identifier_t<num_t>::clear_func()
+void list_identifier_t::clear_func()
 {
   m_func_array.clear();
 }
 
-/*template<class num_t>
-void list_identifier_t<num_t>::clear_num_const()
+/*
+void list_identifier_t::clear_num_const()
 {
   m_num_const_array.clear();
 }*/
 
-template<class num_t>
 class token_t
 {
 public:
-  typedef size_t size_type;
+  typedef valuens_t value_type;
+  typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef typename list_identifier_t<num_t>::array_type array_type;
+  typedef list_identifier_t::array_type array_type;
   //static const int m_none_id_func = -1;
 private:
   token_type_t m_token_type;
-  num_t m_num;
+  value_type m_num;
   delimiter_t m_delimiter;
   size_type m_id_function;
   const array_type* mp_array;
@@ -366,7 +344,7 @@ public:
     m_id_function(0),
     mp_array(IRS_NULL)
   {}
-  void set_number(const num_t& a_num)
+  void set_number(const value_type& a_num)
   {
     m_token_type = tt_number;
     m_num = a_num;
@@ -430,23 +408,23 @@ public:
   {
     return mp_array;
   }
-  num_t get_number() const
+  value_type get_number() const
   {
     return m_num;
   }
 };
 
 // Детектор лексем
-template<class num_t>
 class detector_token_t
 {
 public:
-  typedef size_t size_type;
+  typedef valuens_t value_type;
+  typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef typename list_identifier_t<num_t>::array_type array_type;
+  typedef list_identifier_t::array_type array_type;
   detector_token_t(
-    list_identifier_t<num_t>& a_list_identifier):
+    list_identifier_t& a_list_identifier):
     m_list_identifier(a_list_identifier),
     m_cur_token_data(),
     mp_prog(IRS_NULL),
@@ -459,14 +437,13 @@ public:
   void set_prog(const string_type* ap_prog);
   bool next_token();
   //bool back_token();
-  inline bool get_token(token_t<num_t>* const ap_token);
+  inline bool get_token(token_t* const ap_token);
 private:
   // Список идентификаторов
-  const list_identifier_t<num_t>& m_list_identifier;
-  template<class td_num_t>
+  const list_identifier_t& m_list_identifier;
   struct token_data_t
   {
-    token_t<td_num_t> token;
+    token_t token;
     size_type length;
     bool valid;
     token_data_t():
@@ -475,7 +452,7 @@ private:
       valid(false)
     {}
   };
-  token_data_t<num_t> m_cur_token_data;
+  token_data_t m_cur_token_data;
   // Указатель на текст программы
   const string_type* mp_prog;
   // Текущая позиция в тексте программы
@@ -492,8 +469,7 @@ private:
   bool detect_token();
 };
 
-template<class num_t>
-inline bool detector_token_t<num_t>::ch_is_digit(const char_type a_ch)
+inline bool detector_token_t::ch_is_digit(const char_type a_ch)
 {
   bool isdigit_status = false;
   if (strchr("0123456789", a_ch)) {
@@ -504,8 +480,7 @@ inline bool detector_token_t<num_t>::ch_is_digit(const char_type a_ch)
   return isdigit_status;
 }
 
-template<class num_t>
-inline bool detector_token_t<num_t>::ch_is_first_char_name(const char_type a_ch)
+inline bool detector_token_t::ch_is_first_char_name(const char_type a_ch)
 {
   bool ch_valid = false;
   // Заглавная буква латинскаго алфавита
@@ -521,8 +496,7 @@ inline bool detector_token_t<num_t>::ch_is_first_char_name(const char_type a_ch)
   return ch_valid;
 }
 
-template<class num_t>
-bool detector_token_t<num_t>::detect_token()
+bool detector_token_t::detect_token()
 {
   bool detected_token = false;
   //bool fsuccess = true;
@@ -750,7 +724,7 @@ bool detector_token_t<num_t>::detect_token()
         m_cur_token_data.valid = true;
         detected_token = true;
       } else {
-        num_t num;
+        value_type num;
         if (m_list_identifier.num_const_find(identifier_str, &num)) {
           m_cur_token_data.token.set_number(num);
           m_cur_token_data.length = pos - pos_begin_name;
@@ -773,16 +747,14 @@ bool detector_token_t<num_t>::detect_token()
   return detected_token;
 }
 
-template<class num_t>
-void detector_token_t<num_t>::set_prog(const string_type* ap_prog)
+void detector_token_t::set_prog(const string_type* ap_prog)
 {
   mp_prog = ap_prog;
   m_prog_pos = 0;
   m_cur_token_data.valid = false;
 }
 
-template<class num_t>
-inline bool detector_token_t<num_t>::
+inline bool detector_token_t::
   next_token()
 {
   bool fsuccess = true;
@@ -801,9 +773,8 @@ inline bool detector_token_t<num_t>::
   return fsuccess;
 }
 
-template<class num_t>
-inline bool detector_token_t<num_t>::
-  get_token(token_t<num_t>* const ap_token)
+inline bool detector_token_t::
+  get_token(token_t* const ap_token)
 {
   bool fsuccess = true;
   if (!m_cur_token_data.valid) {
@@ -815,18 +786,18 @@ inline bool detector_token_t<num_t>::
   return fsuccess;
 }
 
-template<class num_t>
 class calculator_t
 {
 public:
-  typedef size_t size_type;
+  typedef valuens_t value_type;
+  typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef typename list_identifier_t<num_t>::array_type array_type;
+  typedef list_identifier_t::array_type array_type;
   calculator_t();
-  bool calc(const string_type* ap_prog, num_t* ap_num);
+  bool calc(const string_type* ap_prog, value_type* ap_num);
   int find_function(const string_type& a_function_name) const;
-  int find_num_const(const string_type& a_num_const_name) const;
+  //int find_num_const(const string_type& a_num_const_name) const;
   inline bool add_func_r_int_a_int(
     const string_type& a_name, func_r_int_a_int_ptr ap_function);
   inline bool add_func_r_float_a_float(
@@ -835,7 +806,8 @@ public:
     const string_type& a_name, func_r_double_a_double_ptr ap_function);
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
-  inline void num_const_add(const string_type& a_name, const num_t& a_value);
+  inline void num_const_add(const string_type& a_name,
+    const value_type& a_value);
   inline bool del_func(const string_type& a_name);
   inline void num_const_del(const string_type& a_name);
   void clear_func();
@@ -846,36 +818,35 @@ public:
   inline void array_del(const string_type& a_name);
   void array_clear();
 private:
-  list_identifier_t<num_t> m_list_identifier;
-  detector_token_t<num_t> m_detector_token;
-  bool interp(num_t* ap_value);
+  list_identifier_t m_list_identifier;
+  detector_token_t m_detector_token;
+  bool interp(value_type* ap_value);
   // Обрабатывает квадратные скобки
-  bool eval_exp_square_brackets(num_t* a_value);
+  bool eval_exp_square_brackets(value_type* a_value);
   // Обрабатывает операции отношения
-  bool eval_exp_compare(num_t* a_value);
+  bool eval_exp_compare(value_type* a_value);
   // Обрабатывает сложение и вычитание
-  bool eval_exp_arithmetic_leve1(num_t* a_value);
+  bool eval_exp_arithmetic_leve1(value_type* a_value);
   // Обрабатывает умножение, деление, целочисленное деление
-  bool eval_exp_arithmetic_leve2(num_t* a_value);
+  bool eval_exp_arithmetic_leve2(value_type* a_value);
   // Обрабатывает возведение в степень
-  bool eval_exp_power(num_t* a_value);
+  bool eval_exp_power(value_type* a_value);
   // Обрабатывает скобки
-  bool eval_exp_brackets(num_t* a_value);
+  bool eval_exp_brackets(value_type* a_value);
   // Обрабатывает функции и числа
-  bool atom(num_t* a_value);
+  bool atom(value_type* a_value);
   // Выполнение функцию
   void func_exec(
     const function_t& a_function,
-    const num_t a_in_param,
-    num_t* ap_out_param);
+    const value_type a_in_param,
+    value_type* ap_out_param);
   // Чтение элемента массива
   bool array_elem_read(const array_type* ap_array,
     const size_type a_elem_index,
-    num_t* ap_array_elem) const;
+    value_type* ap_array_elem) const;
 };
 
-template<class num_t>
-calculator_t<num_t>::calculator_t():
+calculator_t::calculator_t():
   m_list_identifier(),
   m_detector_token(m_list_identifier)
 {
@@ -909,11 +880,10 @@ calculator_t<num_t>::calculator_t():
   
 }
 
-template<class num_t>
-bool calculator_t<num_t>::interp(
-  num_t* ap_value)
+bool calculator_t::interp(
+  value_type* ap_value)
 {
-  num_t value = 0;
+  value_type value = 0;
   // m_cur_lexeme_index = 0;
   bool fsuccess = eval_exp_compare(&value);
   if (fsuccess) {
@@ -922,11 +892,10 @@ bool calculator_t<num_t>::interp(
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_square_brackets(num_t* ap_value)
+bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
 {
   bool fsuccess = true;
-  token_t<num_t> token;
+  token_t token;
   fsuccess = m_detector_token.get_token(&token);
   const delimiter_t delim = token.delimiter();
   if (fsuccess) {
@@ -960,14 +929,13 @@ bool calculator_t<num_t>::eval_exp_square_brackets(num_t* ap_value)
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_compare(num_t* ap_value)
+bool calculator_t::eval_exp_compare(value_type* ap_value)
 {
   bool fsuccess = true;
-  num_t partial_value = 0;
+  value_type partial_value = 0;
   fsuccess = eval_exp_arithmetic_leve1(ap_value);
   if (fsuccess) {
-    token_t<num_t> token;
+    token_t token;
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
       delimiter_t delim = token.delimiter();
@@ -1017,15 +985,14 @@ bool calculator_t<num_t>::eval_exp_compare(num_t* ap_value)
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_arithmetic_leve1(num_t* ap_value)
+bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
 {
   bool fsuccess = true;
-  num_t partial_value = 0;
+  value_type partial_value = 0;
   fsuccess = eval_exp_arithmetic_leve2(ap_value);
   if (fsuccess) {
     //token_t token = m_lexeme_array[m_cur_lexeme_index];
-    token_t<num_t> token;
+    token_t token;
     fsuccess = m_detector_token.get_token(&token);
     delimiter_t delim = token.delimiter();
     if (fsuccess) {
@@ -1056,14 +1023,13 @@ bool calculator_t<num_t>::eval_exp_arithmetic_leve1(num_t* ap_value)
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_arithmetic_leve2(num_t* ap_value)
+bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
 {
   bool fsuccess = true;
-  num_t partial_value = 0;
+  value_type partial_value = 0;
   fsuccess = eval_exp_power(ap_value);
   if (fsuccess) {
-    token_t<num_t> token;
+    token_t token;
     fsuccess = m_detector_token.get_token(&token);
     delimiter_t delim = token.delimiter();
     if (fsuccess) {
@@ -1101,14 +1067,13 @@ bool calculator_t<num_t>::eval_exp_arithmetic_leve2(num_t* ap_value)
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_power(num_t* ap_value)
+bool calculator_t::eval_exp_power(value_type* ap_value)
 {
   bool fsuccess = true;
-  num_t partial_value = 0;
+  value_type partial_value = 0;
   fsuccess = eval_exp_brackets(ap_value);
   if (fsuccess) {
-    token_t<num_t> token;
+    token_t token;
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
       while(fsuccess && (token == d_involution)) {
@@ -1129,11 +1094,10 @@ bool calculator_t<num_t>::eval_exp_power(num_t* ap_value)
 }
 
 // обрабатывает выражения со скобками
-template<class num_t>
-bool calculator_t<num_t>::eval_exp_brackets(num_t* ap_value)
+bool calculator_t::eval_exp_brackets(value_type* ap_value)
 {
   bool fsuccess = true;
-  token_t<num_t> token;
+  token_t token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
     const delimiter_t delim = token.delimiter();
@@ -1167,17 +1131,16 @@ bool calculator_t<num_t>::eval_exp_brackets(num_t* ap_value)
 }
 
 
-template<class num_t>
-bool calculator_t<num_t>::atom(num_t* ap_value)
+bool calculator_t::atom(value_type* ap_value)
 {
   bool fsuccess = true;
-  token_t<num_t> token;
+  token_t token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
     if (token == tt_function) {
       const int id_func = token.get_id_function();
       fsuccess = m_detector_token.next_token();
-      num_t arg_func = 0;
+      value_type arg_func = 0;
       if (fsuccess) {
         fsuccess = eval_exp_power(&arg_func);
       } else {
@@ -1215,7 +1178,7 @@ bool calculator_t<num_t>::atom(num_t* ap_value)
       } else {
         // Произошла ошибка
       }
-      num_t elem_index;
+      value_type elem_index;
       if (fsuccess) {
 
         fsuccess = eval_exp_square_brackets(&elem_index);
@@ -1261,11 +1224,10 @@ bool calculator_t<num_t>::atom(num_t* ap_value)
   return fsuccess;
 }
 
-template<class num_t>
-void calculator_t<num_t>::func_exec(
+void calculator_t::func_exec(
   const function_t& a_function,
-  const num_t a_in_param,
-  num_t* ap_out_param)
+  const value_type a_in_param,
+  value_type* ap_out_param)
 {
   void* ptr_function = a_function.ptr;
   switch(a_function.type) {
@@ -1288,10 +1250,9 @@ void calculator_t<num_t>::func_exec(
   }
 }
 
-template<class num_t>
-bool calculator_t<num_t>::array_elem_read(const array_type* ap_array,
+bool calculator_t::array_elem_read(const array_type* ap_array,
   const size_type a_elem_index,
-  num_t* ap_array_elem) const
+  value_type* ap_array_elem) const
 {
   bool fsuccess = true;
   if (a_elem_index < ap_array->size()) {
@@ -1302,109 +1263,93 @@ bool calculator_t<num_t>::array_elem_read(const array_type* ap_array,
   return fsuccess;
 }
 
-template<class num_t>
-bool calculator_t<num_t>::
-  calc(const string_type* ap_prog, num_t* ap_num)
+bool calculator_t::
+  calc(const string_type* ap_prog, value_type* ap_num)
 {
   m_detector_token.set_prog(ap_prog);
   return interp(ap_num);
 }
 
-template<class num_t>
-inline int calculator_t<num_t>::find_function(
+inline int calculator_t::find_function(
   const string_type& a_function_name) const
 {
   return m_list_identifier.find_function(a_function_name);
 }
 
-template<class num_t>
-inline int calculator_t<num_t>::find_num_const(
-  const string& a_num_const_name) const
+/*inline int calculator_t::find_num_const(
+  const string_type& a_num_const_name) const
 {
   return m_list_identifier.find_num_const(a_num_const_name);
-}
+}*/
 
-template<class num_t>
-inline bool calculator_t<num_t>::add_func_r_int_a_int(
+inline bool calculator_t::add_func_r_int_a_int(
   const string_type& a_name, func_r_int_a_int_ptr ap_function)
 {
   return m_list_identifier.add_func_r_int_a_int(a_name, ap_function);
 }
 
-template<class num_t>
-inline bool calculator_t<num_t>::add_func_r_float_a_float(
+inline bool calculator_t::add_func_r_float_a_float(
   const string_type& a_name, func_r_float_a_float_ptr ap_function)
 {
   return m_list_identifier.add_func_r_float_a_float(a_name, ap_function);
 }
 
-template<class num_t>
-inline bool calculator_t<num_t>::add_func_r_double_a_double(
+inline bool calculator_t::add_func_r_double_a_double(
   const string_type& a_name, func_r_double_a_double_ptr ap_function)
 {
   return m_list_identifier.add_func_r_double_a_double(a_name, ap_function);
 }
 
-template<class num_t>
-inline bool calculator_t<num_t>::add_func_r_ldouble_a_ldouble(
+inline bool calculator_t::add_func_r_ldouble_a_ldouble(
   const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function)
 {
   return m_list_identifier.add_func_r_ldouble_a_ldouble(a_name, ap_function);
 }
 
-template<class num_t>
-inline void calculator_t<num_t>::num_const_add(
-  const string_type& a_name, const num_t& a_value)
+inline void calculator_t::num_const_add(
+  const string_type& a_name, const value_type& a_value)
 {
   m_list_identifier.num_const_add(make_pair(a_name, a_value));
 }
 
-template<class num_t>
-inline bool calculator_t<num_t>::del_func(const string_type& a_name)
+inline bool calculator_t::del_func(const string_type& a_name)
 {
   return m_list_identifier.del_func(a_name);
 }
 
-template<class num_t>
-inline void calculator_t<num_t>::num_const_del(const string_type& a_name)
+inline void calculator_t::num_const_del(const string_type& a_name)
 {
   m_list_identifier.num_const_del(a_name);
 }
 
-template<class num_t>
-void calculator_t<num_t>::clear_func()
+void calculator_t::clear_func()
 {
   m_list_identifier.clear_func();
 }
 
-template<class num_t>
-void calculator_t<num_t>::num_const_clear()
+void calculator_t::num_const_clear()
 {
   m_list_identifier.num_const_clear();
 }
 
-template<class num_t>
-inline void calculator_t<num_t>::array_add(const string_type& a_name,
+inline void calculator_t::array_add(const string_type& a_name,
   const array_type& a_array)
 {
   m_list_identifier.array_add(make_pair(a_name, a_array));
 }
 
-template<class num_t>
-inline void calculator_t<num_t>::array_del(const string_type& a_name)
+inline void calculator_t::array_del(const string_type& a_name)
 {
   m_list_identifier.array_del(a_name);
 }
 
-template<class num_t>
-void calculator_t<num_t>::array_clear()
+void calculator_t::array_clear()
 {
   m_list_identifier.array_clear();
 }
 
 }; // namespace calc
 
-#endif // new_calculator_valid
 }; // namespace irs
 
 #endif
