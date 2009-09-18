@@ -33,7 +33,7 @@ typedef istream istream_t;
 
 } //namespace irs
 
-#ifdef NOP
+#ifndef NOP
 inline irs::raw_data_t<char> char_from_wchar_str(
   const irs::raw_data_t<wchar_t>& ins)
 {

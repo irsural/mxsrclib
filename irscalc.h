@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 // Калькулятор
-// Дата: 17.09.2009
+// Дата: 18.09.2009
 
 #ifndef irscalcH
 #define irscalcH
@@ -99,8 +99,8 @@ public:
     array_list_iterator;
   typedef map<string_type, vector<value_type> >::const_iterator
     array_list_const_iterator;
-  list_identifier_t();
-  int find_function(const string_type& a_function_name) const;
+  inline list_identifier_t();
+  inline int find_function(const string_type& a_function_name) const;
   inline bool add_func_r_int_a_int(
     const string_type& a_name, func_r_int_a_int_ptr ap_function);
   inline bool add_func_r_float_a_float(
@@ -123,15 +123,15 @@ public:
   inline bool array_is_exists(const string_type& a_array_name) const;
   inline bool array_find(const string_type& a_name,
     const array_type** ap_p_array) const;
-  bool del_func(const string_type& a_name);
-  void clear_func();
+  inline bool del_func(const string_type& a_name);
+  inline void clear_func();
   //void clear_num_const();
   inline const function_t& get_func(size_type a_id_func) const; 
 private:
   vector<function_t> m_func_array;
   num_const_list_type m_num_const_list;
   array_list_type m_array_list;
-  bool add_func(
+  inline bool add_func(
     const string_type& a_name,
     const type_function_t a_type,
     void* ap_function);
@@ -264,7 +264,7 @@ list_identifier_t::list_identifier_t(
   m_num_const_list()
 { }
 
-int list_identifier_t::
+inline int list_identifier_t::
   find_function(const string_type& a_function_name) const
 {
   int position = irs::npos;
@@ -277,7 +277,7 @@ int list_identifier_t::
   }
   return position;
 }
-bool list_identifier_t::add_func(
+inline bool list_identifier_t::add_func(
   const string_type& a_name,
   const type_function_t a_type,
   void* ap_function)
@@ -297,7 +297,7 @@ bool list_identifier_t::add_func(
   return fsuccess;
 }
 
-bool list_identifier_t::del_func(const string_type& a_name)
+inline bool list_identifier_t::del_func(const string_type& a_name)
 {
   bool fsuccess = true;
   int position = find_function(a_name);
@@ -309,7 +309,7 @@ bool list_identifier_t::del_func(const string_type& a_name)
   return fsuccess;
 }
 
-void list_identifier_t::clear_func()
+inline void list_identifier_t::clear_func()
 {
   m_func_array.clear();
 }
@@ -434,8 +434,8 @@ public:
       "abcdefghijklmnopqrstuvwxyz")
   { }
   // Установить указатель на текст программы
-  void set_prog(const string_type* ap_prog);
-  bool next_token();
+  inline void set_prog(const string_type* ap_prog);
+  inline bool next_token();
   //bool back_token();
   inline bool get_token(token_t* const ap_token);
 private:
@@ -466,7 +466,7 @@ private:
   // Проверка символа на пригодность в качестве первого символа имени
   inline bool ch_is_first_char_name(const char_type a_ch);
   // Идентифицировать лексему в текущей позиции программы
-  bool detect_token();
+  inline bool detect_token();
 };
 
 inline bool detector_token_t::ch_is_digit(const char_type a_ch)
@@ -496,7 +496,7 @@ inline bool detector_token_t::ch_is_first_char_name(const char_type a_ch)
   return ch_valid;
 }
 
-bool detector_token_t::detect_token()
+inline bool detector_token_t::detect_token()
 {
   bool detected_token = false;
   //bool fsuccess = true;
@@ -747,7 +747,7 @@ bool detector_token_t::detect_token()
   return detected_token;
 }
 
-void detector_token_t::set_prog(const string_type* ap_prog)
+inline void detector_token_t::set_prog(const string_type* ap_prog)
 {
   mp_prog = ap_prog;
   m_prog_pos = 0;
@@ -794,9 +794,9 @@ public:
   typedef charns_t char_type;
   typedef stringns_t string_type;
   typedef list_identifier_t::array_type array_type;
-  calculator_t();
-  bool calc(const string_type* ap_prog, value_type* ap_num);
-  int find_function(const string_type& a_function_name) const;
+  inline calculator_t();
+  inline bool calc(const string_type* ap_prog, value_type* ap_num);
+  inline int find_function(const string_type& a_function_name) const;
   //int find_num_const(const string_type& a_num_const_name) const;
   inline bool add_func_r_int_a_int(
     const string_type& a_name, func_r_int_a_int_ptr ap_function);
@@ -810,43 +810,43 @@ public:
     const value_type& a_value);
   inline bool del_func(const string_type& a_name);
   inline void num_const_del(const string_type& a_name);
-  void clear_func();
-  void num_const_clear();
+  inline void clear_func();
+  inline void num_const_clear();
 
   inline void array_add(const string_type& a_name,
     const array_type& a_array);
   inline void array_del(const string_type& a_name);
-  void array_clear();
+  inline void array_clear();
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
-  bool interp(value_type* ap_value);
+  inline bool interp(value_type* ap_value);
   // Обрабатывает квадратные скобки
-  bool eval_exp_square_brackets(value_type* a_value);
+  inline bool eval_exp_square_brackets(value_type* a_value);
   // Обрабатывает операции отношения
-  bool eval_exp_compare(value_type* a_value);
+  inline bool eval_exp_compare(value_type* a_value);
   // Обрабатывает сложение и вычитание
-  bool eval_exp_arithmetic_leve1(value_type* a_value);
+  inline bool eval_exp_arithmetic_leve1(value_type* a_value);
   // Обрабатывает умножение, деление, целочисленное деление
-  bool eval_exp_arithmetic_leve2(value_type* a_value);
+  inline bool eval_exp_arithmetic_leve2(value_type* a_value);
   // Обрабатывает возведение в степень
-  bool eval_exp_power(value_type* a_value);
+  inline bool eval_exp_power(value_type* a_value);
   // Обрабатывает скобки
-  bool eval_exp_brackets(value_type* a_value);
+  inline bool eval_exp_brackets(value_type* a_value);
   // Обрабатывает функции и числа
-  bool atom(value_type* a_value);
+  inline bool atom(value_type* a_value);
   // Выполнение функцию
-  void func_exec(
+  inline void func_exec(
     const function_t& a_function,
     const value_type a_in_param,
     value_type* ap_out_param);
   // Чтение элемента массива
-  bool array_elem_read(const array_type* ap_array,
+  inline bool array_elem_read(const array_type* ap_array,
     const size_type a_elem_index,
     value_type* ap_array_elem) const;
 };
 
-calculator_t::calculator_t():
+inline calculator_t::calculator_t():
   m_list_identifier(),
   m_detector_token(m_list_identifier)
 {
@@ -880,7 +880,7 @@ calculator_t::calculator_t():
   
 }
 
-bool calculator_t::interp(
+inline bool calculator_t::interp(
   value_type* ap_value)
 {
   value_type value = 0;
@@ -892,7 +892,7 @@ bool calculator_t::interp(
   return fsuccess;
 }
 
-bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
+inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
 {
   bool fsuccess = true;
   token_t token;
@@ -929,7 +929,7 @@ bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
   return fsuccess;
 }
 
-bool calculator_t::eval_exp_compare(value_type* ap_value)
+inline bool calculator_t::eval_exp_compare(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
@@ -985,7 +985,7 @@ bool calculator_t::eval_exp_compare(value_type* ap_value)
   return fsuccess;
 }
 
-bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
+inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
@@ -1023,7 +1023,7 @@ bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
   return fsuccess;
 }
 
-bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
+inline bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
@@ -1067,7 +1067,7 @@ bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
   return fsuccess;
 }
 
-bool calculator_t::eval_exp_power(value_type* ap_value)
+inline bool calculator_t::eval_exp_power(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
@@ -1094,7 +1094,7 @@ bool calculator_t::eval_exp_power(value_type* ap_value)
 }
 
 // обрабатывает выражения со скобками
-bool calculator_t::eval_exp_brackets(value_type* ap_value)
+inline bool calculator_t::eval_exp_brackets(value_type* ap_value)
 {
   bool fsuccess = true;
   token_t token;
@@ -1131,7 +1131,7 @@ bool calculator_t::eval_exp_brackets(value_type* ap_value)
 }
 
 
-bool calculator_t::atom(value_type* ap_value)
+inline bool calculator_t::atom(value_type* ap_value)
 {
   bool fsuccess = true;
   token_t token;
@@ -1224,7 +1224,7 @@ bool calculator_t::atom(value_type* ap_value)
   return fsuccess;
 }
 
-void calculator_t::func_exec(
+inline void calculator_t::func_exec(
   const function_t& a_function,
   const value_type a_in_param,
   value_type* ap_out_param)
@@ -1250,7 +1250,7 @@ void calculator_t::func_exec(
   }
 }
 
-bool calculator_t::array_elem_read(const array_type* ap_array,
+inline bool calculator_t::array_elem_read(const array_type* ap_array,
   const size_type a_elem_index,
   value_type* ap_array_elem) const
 {
@@ -1263,7 +1263,7 @@ bool calculator_t::array_elem_read(const array_type* ap_array,
   return fsuccess;
 }
 
-bool calculator_t::
+inline bool calculator_t::
   calc(const string_type* ap_prog, value_type* ap_num)
 {
   m_detector_token.set_prog(ap_prog);
@@ -1322,12 +1322,12 @@ inline void calculator_t::num_const_del(const string_type& a_name)
   m_list_identifier.num_const_del(a_name);
 }
 
-void calculator_t::clear_func()
+inline void calculator_t::clear_func()
 {
   m_list_identifier.clear_func();
 }
 
-void calculator_t::num_const_clear()
+inline void calculator_t::num_const_clear()
 {
   m_list_identifier.num_const_clear();
 }
@@ -1343,7 +1343,7 @@ inline void calculator_t::array_del(const string_type& a_name)
   m_list_identifier.array_del(a_name);
 }
 
-void calculator_t::array_clear()
+inline void calculator_t::array_clear()
 {
   m_list_identifier.array_clear();
 }

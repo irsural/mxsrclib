@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 30.08.2009
+// Дата: 18.09.2009
 
 #ifndef mxdataH
 #define mxdataH
@@ -253,15 +253,34 @@ inline T reset_val(T* p_val, T zero_val = T())
   return val_save;
 }
 
+// Приведение некоторых C-функций к шаблонному типу
 template <class T>
-void memsetex(T* ap_data, const T& a_fill_elem, size_t a_size)
+inline void memsetex(T* ap_data, const T& a_fill_elem, size_t a_size)
 {
   fill_n(ap_data, a_size, a_fill_elem);
 }
 template <class T>
-void memsetex(T* ap_data, size_t a_size)
+inline void memsetex(T* ap_data, size_t a_size)
 {
   memset(reinterpret_cast<void*>(ap_data), 0, a_size*sizeof(T));
+}
+template <class T>
+inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
+{
+  memcpy(
+    reinterpret_cast<void*>(ap_dest),
+    reinterpret_cast<const void*>(ap_src),
+    a_size*sizeof(T)
+  );
+}
+template <class T>
+inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
+{
+  memmove(
+    reinterpret_cast<void*>(ap_dest),
+    reinterpret_cast<const void*>(ap_src),
+    a_size*sizeof(T)
+  );
 }
 
 // Сырые данные
@@ -293,13 +312,11 @@ public:
   void erase(pointer ap_first, pointer ap_last);
   inline void clear();
 private:
-  //static const int m_capacity_delta;
   enum {
     m_capacity_min = 16
   };
 
   size_type m_size;
-  //bool m_is_capacity_delta_on;
   size_type m_capacity;
   pointer mp_data;
 
@@ -308,20 +325,18 @@ private:
 template <class T>
 irs::raw_data_t<T>::raw_data_t(size_type a_size):
   m_size(a_size),
-  //m_is_capacity_delta_on(true),
   m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
   mp_data(new value_type[m_capacity])
 {
-  memset(mp_data, 0, m_size);
+  memsetex(mp_data, m_size);
 }
 template <class T>
 irs::raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
   m_size(a_raw_data.m_size),
-  //m_is_capacity_delta_on(a_raw_data.m_is_capacity_delta_on),
   m_capacity(a_raw_data.m_capacity),
   mp_data(new value_type[m_capacity])
 {
-  memcpy(mp_data, a_raw_data.mp_data, m_size);
+  memcpyex(mp_data, a_raw_data.mp_data, m_size);
 }
 template <class T>
 irs::raw_data_t<T>::~raw_data_t()
@@ -345,11 +360,10 @@ const typename irs::raw_data_t<T>&
   irs::raw_data_t<T>::operator=(const raw_data_t<T>& a_raw_data)
 {
   m_size = a_raw_data.m_size;
-  //m_is_capacity_delta_on = a_raw_data.m_is_capacity_delta_on;
   m_capacity = a_raw_data.m_capacity;
   delete []mp_data;
   mp_data = new value_type[m_capacity];
-  memcpy(mp_data, a_raw_data.mp_data, m_size);
+  memcpyex(mp_data, a_raw_data.mp_data, m_size);
   return *this;
 }
 template <class T>
@@ -387,16 +401,6 @@ void irs::raw_data_t<T>::reserve(size_type a_capacity)
   size_type capacity_norm = max(a_capacity, (size_type)m_capacity_min);
   size_type capacity_new = max(capacity_norm, m_size);
   reserve_raw(capacity_new);
-  #ifdef NOP
-  if (a_capacity <= 0) {
-    //m_is_capacity_delta_on = false;
-    reserve_raw(m_size);
-  } else if (a_capacity < m_size) {
-    reserve_raw(m_size);
-  } else {
-    reserve_raw(a_capacity);
-  }
-  #endif //NOP
 }
 template <class T>
 void irs::raw_data_t<T>::reserve_raw(size_type a_capacity)
@@ -410,7 +414,7 @@ void irs::raw_data_t<T>::reserve_raw(size_type a_capacity)
   size_type new_capacity = a_capacity;
   pointer new_data = new value_type[new_capacity];
   size_type new_size = min(new_capacity, m_size);
-  memcpy(new_data, mp_data, new_size);
+  memcpyex(new_data, mp_data, new_size);
   delete []mp_data;
   mp_data = new_data;
   m_capacity = new_capacity;
@@ -424,11 +428,11 @@ void irs::raw_data_t<T>::resize(size_type a_size)
     size_type new_capacity = m_capacity*2;
     reserve_raw(new_capacity);
     size_type delta = new_size - m_size;
-    memset(mp_data + m_size, 0, delta);
+    memsetex(mp_data + m_size, delta);
   } else {
     if (new_size > m_size) {
       size_type delta = new_size - m_size;
-      memset(mp_data + m_size, 0, delta);
+      memsetex(mp_data + m_size, delta);
     }
   }
   m_size = new_size;
@@ -448,9 +452,9 @@ void irs::raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   // Смещаем данные на размер вставляемого блока вправо
   pointer p_pos = data() + pos;
   pointer dest = p_pos + insert_bloc_size;
-  memmove(dest, p_pos, move_bloc_size);
+  memmoveex(dest, p_pos, move_bloc_size);
   // Вставляем блок
-  memcpy(p_pos, ap_first, insert_bloc_size);
+  memcpyex(p_pos, ap_first, insert_bloc_size);
 }
 template <class T>
 void irs::raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
@@ -459,7 +463,7 @@ void irs::raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
   IRS_LIB_ASSERT((ap_last >= data()) && (ap_last <= (data()+size())));
   size_type new_size = size() - (ap_last - ap_first);
   const size_type move_bloc_size = (data()+size()) - ap_last;
-  memmove(ap_first, ap_last, move_bloc_size);
+  memmoveex(ap_first, ap_last, move_bloc_size);
   resize(new_size);
 }
 template <class T>
