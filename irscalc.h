@@ -41,13 +41,14 @@ typedef int (*func_r_int_a_int_ptr)(int);
 typedef float (*func_r_float_a_float_ptr)(float);
 typedef double (*func_r_double_a_double_ptr)(double);
 typedef long double (*func_r_ldouble_a_ldouble_ptr)(long double);
-enum token_type_t{
+enum token_type_t {
   tt_none,
   tt_number,
   tt_delimiter,
-  tt_identifier};
+  tt_function,
+  tt_array};
 // Список идентификаторов
-enum delimiter_t{
+enum delimiter_t {
   d_none,
   d_plus,
   d_minus,
@@ -67,6 +68,7 @@ enum delimiter_t{
   d_compare_less_or_equal,
   d_compare_greater_or_equal,
   d_end};
+
 struct function_t
 {
   typedef stringns_t string_type;
@@ -84,14 +86,21 @@ template<class num_t>
 class list_identifier_t
 {
 public:
+  typedef num_t value_type;
   typedef size_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
   typedef map<string_type, num_t> num_const_list_type;
   typedef typename map<string_type, num_t>::iterator
-    num_const_list_iterator_type;
+    num_const_list_iterator;
   typedef typename map<string_type, num_t>::const_iterator
-    num_const_list_const_iterator_type;
+    num_const_list_const_iterator;
+  typedef vector<num_t> array_type;
+  typedef map<string_type, vector<num_t> > array_list_type;
+  typedef typename map<string_type, vector<num_t> >::iterator
+    array_list_iterator;
+  typedef typename map<string_type, vector<num_t> >::const_iterator
+    array_list_const_iterator;
   list_identifier_t();
   int find_function(const string_type& a_function_name) const;
   inline bool add_func_r_int_a_int(
@@ -102,20 +111,27 @@ public:
     const string_type& a_name, func_r_double_a_double_ptr ap_function);
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
-  inline void num_const_insert(
+  inline void num_const_add(
     const pair<string_type, num_t>& a_num_const_pair);
-  inline void num_const_erase(const string_type& a_num_const_name);
+  inline void num_const_del(const string_type& a_num_const_name);
   inline void num_const_clear();
   inline bool num_const_is_exists(const string_type& a_num_const_name) const;
   inline bool num_const_find(const string_type& a_name, num_t* ap_value) const;
+  inline void array_add(
+    const pair<string_type, array_type>& a_array_pair);
+  inline void array_del(const string_type& a_array_name);
+  inline void array_clear();
+  inline bool array_is_exists(const string_type& a_array_name) const;
+  inline bool array_find(const string_type& a_name,
+    const array_type** ap_p_array) const;
   bool del_func(const string_type& a_name);
   void clear_func();
   //void clear_num_const();
-  inline const function_t& get_func(size_type a_id_func) const;
-
+  inline const function_t& get_func(size_type a_id_func) const; 
 private:
   vector<function_t> m_func_array;
   num_const_list_type m_num_const_list;
+  array_list_type m_array_list;
   bool add_func(
     const string_type& a_name,
     const type_function_t a_type,
@@ -138,7 +154,7 @@ inline bool list_identifier_t<num_t>::add_func_r_float_a_float(
 }
 
 template<class num_t>
-inline void list_identifier_t<num_t>::num_const_insert(const pair<string_type,
+inline void list_identifier_t<num_t>::num_const_add(const pair<string_type,
   num_t>& a_num_const_pair)
 {
   IRS_LIB_ASSERT(find_function(a_num_const_pair.first) == irs::npos);
@@ -148,10 +164,10 @@ inline void list_identifier_t<num_t>::num_const_insert(const pair<string_type,
 }
 
 template<class num_t>
-inline void list_identifier_t<num_t>::num_const_erase(
+inline void list_identifier_t<num_t>::num_const_del(
   const string_type& a_num_const_name)
 {
-  num_const_list_iterator_type it_num_const =
+  num_const_list_iterator it_num_const =
     m_num_const_list.find(a_num_const_name);
   IRS_LIB_ASSERT(it_num_const != m_num_const_list.end());
   m_num_const_list.erase(it_num_const);
@@ -174,7 +190,7 @@ template<class num_t>
 inline bool list_identifier_t<num_t>::num_const_find(
   const string_type& a_name, num_t* ap_value) const
 {
-  num_const_list_const_iterator_type it_num_const =
+  num_const_list_const_iterator it_num_const =
     m_num_const_list.find(a_name);
   bool num_const_is_exists = it_num_const != m_num_const_list.end();
   if (num_const_is_exists) {
@@ -183,6 +199,56 @@ inline bool list_identifier_t<num_t>::num_const_find(
     // Константа с таким именем отсутсвует
   }
   return num_const_is_exists;
+}
+
+template<class num_t>
+inline void list_identifier_t<num_t>::array_add(
+  const pair<string_type, array_type>& a_array_pair)
+{
+  IRS_LIB_ASSERT(find_function(a_array_pair.first) == irs::npos);
+  IRS_LIB_ASSERT(m_num_const_list.find(a_array_pair.first) ==
+    m_num_const_list.end());
+  IRS_LIB_ASSERT(m_array_list.find(a_array_pair.first) ==
+    m_array_list.end());
+  m_array_list.insert(a_array_pair);
+}
+
+template<class num_t>
+inline void list_identifier_t<num_t>::array_del(
+  const string_type& a_array_name)
+{
+  array_list_iterator it_array =
+    m_array_list.find(a_array_name);
+  IRS_LIB_ASSERT(it_array != m_array_list.end());
+  m_array_list.erase(it_array);
+}
+
+template<class num_t>
+inline void list_identifier_t<num_t>::array_clear()
+{
+  m_array_list.clear();
+}
+
+template<class num_t>
+inline bool list_identifier_t<num_t>::array_is_exists(
+  const string_type& a_array_name) const
+{
+  return m_array_list.find(a_array_name) != m_array_list.end();
+}
+
+template<class num_t>
+inline bool list_identifier_t<num_t>::array_find(const string_type& a_name,
+  const array_type** ap_p_array) const
+{
+  array_list_const_iterator it_array =
+    m_array_list.find(a_name);
+  bool array_is_exists = it_array != m_array_list.end();
+  if (array_is_exists) {
+    *ap_p_array = &it_array->second;
+  } else {
+    // Константа с таким именем отсутсвует
+  }
+  return array_is_exists;
 }
 
 template<class num_t>
@@ -282,19 +348,22 @@ public:
   typedef size_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
+  typedef typename list_identifier_t<num_t>::array_type array_type;
   //static const int m_none_id_func = -1;
 private:
   token_type_t m_token_type;
   num_t m_num;
   delimiter_t m_delimiter;
   size_type m_id_function;
+  const array_type* mp_array;
 public:
   token_t(
   ):
     m_token_type(tt_none),
     m_num(0),
     m_delimiter(d_none),
-    m_id_function(0)
+    m_id_function(0),
+    mp_array(IRS_NULL)
   {}
   void set_number(const num_t& a_num)
   {
@@ -312,10 +381,18 @@ public:
   }
   void set_id_function(const int a_id_function)
   {
-    m_token_type = tt_identifier;
+    m_token_type = tt_function;
     m_num = 0;
     m_delimiter = d_none;
     m_id_function = a_id_function;
+  }
+  void set_array(const array_type* ap_array)
+  {
+    m_token_type = tt_array;
+    m_num = 0;
+    m_delimiter = d_none;
+    m_id_function = 0;
+    mp_array = ap_array;
   }
   void set_not_a_token_type()
   {
@@ -327,6 +404,10 @@ public:
   delimiter_t delimiter() const
   {
     return m_delimiter;
+  }
+  token_type_t token_type_get() const
+  {
+    return m_token_type;
   }
   bool operator==(const token_type_t a_token_type)
   {
@@ -344,6 +425,10 @@ public:
   {
     return m_id_function;
   }
+  const array_type* get_array() const
+  {
+    return mp_array;
+  }
   num_t get_number() const
   {
     return m_num;
@@ -358,6 +443,7 @@ public:
   typedef size_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
+  typedef typename list_identifier_t<num_t>::array_type array_type;
   detector_token_t(
     list_identifier_t<num_t>& a_list_identifier):
     m_list_identifier(a_list_identifier),
@@ -635,8 +721,8 @@ bool detector_token_t<num_t>::detect_token()
           break;
         }
       }
-      num_str = mp_prog->substr(num_begin_ch, pos);
-      num_t number;
+      num_str = mp_prog->substr(num_begin_ch, (pos - num_begin_ch));
+      double number;
       if (num_str.to_number(number)) {
         m_cur_token_data.token.set_number(number);
         m_cur_token_data.length = pos - num_begin_ch;
@@ -654,7 +740,8 @@ bool detector_token_t<num_t>::detect_token()
       if (pos == string_type::npos) {
         pos = mp_prog->size();
       }
-      string_type identifier_str = mp_prog->substr(pos_begin_name, pos);
+      string_type identifier_str =
+        mp_prog->substr(pos_begin_name, (pos - pos_begin_name));
       int func_pos = m_list_identifier.find_function(identifier_str);
       if (func_pos != irs::npos) {
         m_cur_token_data.token.set_id_function(func_pos);
@@ -669,7 +756,15 @@ bool detector_token_t<num_t>::detect_token()
           m_cur_token_data.valid = true;
           detected_token = true;
         } else {
-          // Константа с таким именем не найдена
+          const array_type* p_array = IRS_NULL;
+          if (m_list_identifier.array_find(identifier_str, &p_array)) {
+            m_cur_token_data.token.set_array(p_array);
+            m_cur_token_data.length = pos - pos_begin_name;
+            m_cur_token_data.valid = true;
+            detected_token = true;
+          } else {
+            // Массив с таким именем не найден
+          }
         }
       }
     }
@@ -726,6 +821,7 @@ public:
   typedef size_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
+  typedef typename list_identifier_t<num_t>::array_type array_type;
   calculator_t();
   bool calc(const string_type* ap_prog, num_t* ap_num);
   int find_function(const string_type& a_function_name) const;
@@ -738,15 +834,22 @@ public:
     const string_type& a_name, func_r_double_a_double_ptr ap_function);
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
-  inline void num_const_insert(const string_type& a_name, const num_t& a_value);
+  inline void num_const_add(const string_type& a_name, const num_t& a_value);
   inline bool del_func(const string_type& a_name);
-  inline void num_const_erase(const string_type& a_name);
+  inline void num_const_del(const string_type& a_name);
   void clear_func();
-  void clear_num_const();
+  void num_const_clear();
+
+  inline void array_add(const string_type& a_name,
+    const array_type& a_array);
+  inline void array_del(const string_type& a_name);
+  void array_clear();
 private:
   list_identifier_t<num_t> m_list_identifier;
   detector_token_t<num_t> m_detector_token;
   bool interp(num_t* ap_value);
+  // Обрабатывает квадратные скобки
+  bool eval_exp_square_brackets(num_t* a_value);
   // Обрабатывает операции отношения
   bool eval_exp_compare(num_t* a_value);
   // Обрабатывает сложение и вычитание
@@ -764,6 +867,10 @@ private:
     const function_t& a_function,
     const num_t a_in_param,
     num_t* ap_out_param);
+  // Чтение элемента массива
+  bool array_elem_read(const array_type* ap_array,
+    const size_type a_elem_index,
+    num_t* ap_array_elem) const;
 };
 
 template<class num_t>
@@ -788,8 +895,17 @@ calculator_t<num_t>::calculator_t():
   add_func_r_double_a_double("tan", tan);
   add_func_r_double_a_double("tanh", tanh);
 
-  num_const_insert("e", IRS_E);
-  num_const_insert("pi", IRS_PI);
+  num_const_add("e", IRS_E);
+  num_const_add("pi", IRS_PI);
+
+  array_type test_array;
+  test_array.push_back(0);
+  test_array.push_back(1);
+  test_array.push_back(2);
+  test_array.push_back(3);
+  test_array.push_back(4);
+  array_add("arr", test_array);
+  
 }
 
 template<class num_t>
@@ -801,6 +917,44 @@ bool calculator_t<num_t>::interp(
   bool fsuccess = eval_exp_compare(&value);
   if (fsuccess) {
     *ap_value = value;
+  }
+  return fsuccess;
+}
+
+template<class num_t>
+bool calculator_t<num_t>::eval_exp_square_brackets(num_t* ap_value)
+{
+  bool fsuccess = true;
+  token_t<num_t> token;
+  fsuccess = m_detector_token.get_token(&token);
+  const delimiter_t delim = token.delimiter();
+  if (fsuccess) {
+    if (delim == d_left_square_bracket) {
+      fsuccess = m_detector_token.next_token();
+      if (fsuccess) {
+        fsuccess = eval_exp_compare(ap_value);
+      } else {
+        // Произошла ошибка
+      }
+      if (fsuccess) {
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }
+      if (fsuccess) {
+        if (token == d_right_square_bracket) {
+          // Закрывающая квадратная скобка присутсвует
+          fsuccess = m_detector_token.next_token();
+        } else {
+          fsuccess = false;
+        }
+      } else {
+        // Произошла ошибка
+      }
+    } else {
+      // Квадратная левая скобка не обнаружена
+      fsuccess = false;
+    }
   }
   return fsuccess;
 }
@@ -872,9 +1026,9 @@ bool calculator_t<num_t>::eval_exp_arithmetic_leve1(num_t* ap_value)
     //token_t token = m_lexeme_array[m_cur_lexeme_index];
     token_t<num_t> token;
     fsuccess = m_detector_token.get_token(&token);
+    delimiter_t delim = token.delimiter();
     if (fsuccess) {
-      while(((token == d_plus) || (token == d_minus)) && fsuccess) {
-        //next_lexeme();
+      while(((delim == d_plus) || (delim == d_minus)) && fsuccess) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = eval_exp_arithmetic_leve2(&partial_value);
@@ -882,16 +1036,17 @@ bool calculator_t<num_t>::eval_exp_arithmetic_leve1(num_t* ap_value)
           // Произошла ошибка
         }
         if (fsuccess) {
-          if (token == d_plus) {
+          if (delim == d_plus) {
             *ap_value = *ap_value + partial_value;
-          } else if (token == d_minus) {
+          } else if (delim == d_minus) {
             *ap_value = *ap_value - partial_value;
           }
           //token = m_lexeme_array[m_cur_lexeme_index];
           fsuccess = m_detector_token.get_token(&token);
         } else {
           // Произошла ошибка
-        } 
+        }
+        delim = token.delimiter();
       }
     } else {
       // Произошла ошибка при извлечении лексемы
@@ -955,20 +1110,16 @@ bool calculator_t<num_t>::eval_exp_power(num_t* ap_value)
     token_t<num_t> token;
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
-      while(token == d_involution) {
-        // next_lexeme();
+      while(fsuccess && (token == d_involution)) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = eval_exp_brackets(&partial_value);
         }
         if (fsuccess) {
           if (token == d_involution) {
-            *ap_value = pow(*ap_value, partial_value);
+            *ap_value = pow(*ap_value, static_cast<double>(partial_value));
           }
           fsuccess = m_detector_token.get_token(&token);
-        }
-        if (!fsuccess) {
-          break;
         }
       }
     }
@@ -984,13 +1135,28 @@ bool calculator_t<num_t>::eval_exp_brackets(num_t* ap_value)
   token_t<num_t> token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
-    if (token == d_left_parenthesis) {
+    const delimiter_t delim = token.delimiter();
+    if (delim == d_left_parenthesis) {
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
         fsuccess = eval_exp_compare(ap_value);
+      } else {
+        // Произошла ошибка
       }
       if (fsuccess) {
-        fsuccess = m_detector_token.next_token();
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }
+      if (fsuccess) {
+        if (token == d_right_parenthesis) {
+          // Закрывающая круглая скобка присутсвует
+          fsuccess = m_detector_token.next_token();
+        } else {
+          fsuccess = false;
+        }
+      } else {
+        // Произошла ошибка
       }
     } else {
       fsuccess = atom(ap_value);
@@ -1007,19 +1173,63 @@ bool calculator_t<num_t>::atom(num_t* ap_value)
   token_t<num_t> token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
-    if (token == tt_identifier) {
+    if (token == tt_function) {
+      const int id_func = token.get_id_function();
       fsuccess = m_detector_token.next_token();
-      num_t result = 0;
+      num_t arg_func = 0;
       if (fsuccess) {
-        fsuccess = eval_exp_power(&result);
+        fsuccess = eval_exp_power(&arg_func);
+      } else {
+        // Произошла ошибка
       }
+      /*if (fsuccess) {
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }*/
+      if (fsuccess) {
+        func_exec(m_list_identifier.get_func(id_func),
+          arg_func, ap_value);
+      } else {
+        // Произошла ошибка
+      }
+    } else if (token == tt_array) {
+      const array_type* p_array = token.get_array();
+      fsuccess = m_detector_token.next_token();
       if (fsuccess) {
         fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
       }
       if (fsuccess) {
-        func_exec(m_list_identifier.get_func(token.get_id_function()),
-          result,
-          ap_value);
+        if (token.token_type_get() != tt_delimiter) {
+          fsuccess = false;
+        } else {
+          if (token.delimiter() != d_left_square_bracket) {
+            fsuccess = false;
+          } else {
+            // Следующая лексема является квадратной скобкой
+          }
+        }
+      } else {
+        // Произошла ошибка
+      }
+      num_t elem_index;
+      if (fsuccess) {
+
+        fsuccess = eval_exp_square_brackets(&elem_index);
+      } else {
+        // Произошла ошибка
+      }
+      /*if (fsuccess) {
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }*/
+      if (fsuccess) {
+        fsuccess = array_elem_read(p_array, elem_index, ap_value);
+      } else {
+        // Произошла ошибка
       }
     } else if (token == tt_number) {
       *ap_value = token.get_number();
@@ -1029,12 +1239,16 @@ bool calculator_t<num_t>::atom(num_t* ap_value)
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = atom(ap_value);
+        } else {
+          // Произошла ошибка
         }
       } else if (token == d_minus) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = atom(ap_value);
           *ap_value *= -1;
+        } else {
+          // Произошла ошибка
         }
       } else {
         fsuccess = false;
@@ -1071,6 +1285,20 @@ void calculator_t<num_t>::func_exec(
         (*((func_r_ldouble_a_ldouble_ptr)(ptr_function)))(a_in_param);
     } break;
   }
+}
+
+template<class num_t>
+bool calculator_t<num_t>::array_elem_read(const array_type* ap_array,
+  const size_type a_elem_index,
+  num_t* ap_array_elem) const
+{
+  bool fsuccess = true;
+  if (a_elem_index < ap_array->size()) {
+    *ap_array_elem = (*ap_array)[a_elem_index];
+  } else {
+    fsuccess = false;
+  }
+  return fsuccess;
 }
 
 template<class num_t>
@@ -1124,10 +1352,10 @@ inline bool calculator_t<num_t>::add_func_r_ldouble_a_ldouble(
 }
 
 template<class num_t>
-inline void calculator_t<num_t>::num_const_insert(
+inline void calculator_t<num_t>::num_const_add(
   const string_type& a_name, const num_t& a_value)
 {
-  m_list_identifier.num_const_insert(make_pair(a_name, a_value));
+  m_list_identifier.num_const_add(make_pair(a_name, a_value));
 }
 
 template<class num_t>
@@ -1137,9 +1365,9 @@ inline bool calculator_t<num_t>::del_func(const string_type& a_name)
 }
 
 template<class num_t>
-inline void calculator_t<num_t>::num_const_erase(const string_type& a_name)
+inline void calculator_t<num_t>::num_const_del(const string_type& a_name)
 {
-  m_list_identifier.num_const_erase(a_name);
+  m_list_identifier.num_const_del(a_name);
 }
 
 template<class num_t>
@@ -1149,9 +1377,28 @@ void calculator_t<num_t>::clear_func()
 }
 
 template<class num_t>
-void calculator_t<num_t>::clear_num_const()
+void calculator_t<num_t>::num_const_clear()
 {
-  m_list_identifier.clear_num_const();
+  m_list_identifier.num_const_clear();
+}
+
+template<class num_t>
+inline void calculator_t<num_t>::array_add(const string_type& a_name,
+  const array_type& a_array)
+{
+  m_list_identifier.array_add(make_pair(a_name, a_array));
+}
+
+template<class num_t>
+inline void calculator_t<num_t>::array_del(const string_type& a_name)
+{
+  m_list_identifier.array_del(a_name);
+}
+
+template<class num_t>
+void calculator_t<num_t>::array_clear()
+{
+  m_list_identifier.array_clear();
 }
 
 }; // namespace calc
