@@ -1,5 +1,5 @@
 // Прерывания
-// Дата: 7.08.2009
+// Дата: 17.09.2009
 
 #ifndef irsintH
 #define irsintH
@@ -21,7 +21,19 @@ public:
 //#ifdef NOP
 namespace irs {
 
-class event_t;
+// Базовый класс событий
+class event_t
+{
+  bool m_occurred;
+public:
+  event_t();
+  virtual ~event_t();
+  virtual void exec();
+  virtual bool check();
+  virtual void reset();
+};
+
+// Генератор событий
 class generator_events_t
 {
 public:
@@ -58,18 +70,6 @@ inline generator_events_t& operator >> (generator_events_t& a_generator_events,
   a_generator_events.erase(&p_event);
   return a_generator_events;
 }
-
-// Базовый класс событий
-class event_t
-{
-  bool m_occurred;
-public:
-  event_t();
-  virtual ~event_t();
-  virtual void exec();
-  virtual bool check();
-  virtual void reset();
-};
 
 template<class owner_type>
 class event_function_t: public event_t

@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 13.09.2009
+// Дата: 17.09.2009
 
 #ifndef IRSLIMITSH
 #define IRSLIMITSH
@@ -30,92 +30,61 @@ inline const char* bool_to_cstr(bool a_value)
   return ret;
 }
 
-template <class T>
-const char* type_to_string()
-{
-  return "unknown";
-}
-template <>
-inline const char* type_to_string<void>()
-{
-  return "void";
-}
-template <>
-inline const char* type_to_string<char>()
+// Преобразование из типа в строку
+inline const char* type_to_string_helper(char)
 {
   return "char";
 }
-template <>
-inline const char* type_to_string<wchar_t>()
+inline const char* type_to_string_helper(wchar_t)
 {
   return "wchar_t";
 }
-template <>
-inline const char* type_to_string<signed char>()
+inline const char* type_to_string_helper(signed char)
 {
   return "signed char";
 }
-template <>
-inline const char* type_to_string<unsigned char>()
+inline const char* type_to_string_helper(unsigned char)
 {
   return "unsigned char";
 }
-template <>
-inline const char* type_to_string<signed short>()
+inline const char* type_to_string_helper(signed short)
 {
   return "signed short";
 }
-template <>
-inline const char* type_to_string<unsigned short>()
-{
-  return "unsigned short";
-}
-template <>
-inline const char* type_to_string<signed int>()
-{
-  return "signed int";
-}
-template <>
-inline const char* type_to_string<unsigned int>()
+inline const char* type_to_string_helper(unsigned short)
 {
   return "unsigned int";
 }
-template <>
-inline const char* type_to_string<signed long>()
+inline const char* type_to_string_helper(signed int)
+{
+  return "signed int";
+}
+inline const char* type_to_string_helper(unsigned int)
+{
+  return "unsigned int";
+}
+inline const char* type_to_string_helper(signed long)
 {
   return "signed long";
 }
-template <>
-inline const char* type_to_string<unsigned long>()
+inline const char* type_to_string_helper(unsigned long)
 {
   return "unsigned long";
 }
 #ifdef IRSDEFS_I64
-template <>
-inline const char* type_to_string<irs_i64>()
+inline const char* type_to_string_helper(irs_i64)
 {
   return "irs_i64";
 }
-template <>
-inline const char* type_to_string<irs_u64>()
+inline const char* type_to_string_helper(irs_u64)
 {
   return "irs_u64";
 }
 #endif //IRSDEFS_I64
-template <>
-inline const char* type_to_string<float>()
+template <class T>
+const char* type_to_string()
 {
-  return "float";
-}
-template <>
-inline const char* type_to_string<double>()
-{
-  return "double";
-}
-template <>
-inline const char* type_to_string<long double>()
-{
-  return "long double";
+  return "unknown";
 }
 template <class T>
 inline const char* type_to_string(T)
@@ -461,7 +430,7 @@ inline void display_parametrs_of_built_in_types(ostream &strm)
 
 // ENUM float_denorm_style
 enum float_denorm_style
-{	// constants for different IEEE float denormalization styles
+{ // constants for different IEEE float denormalization styles
   denorm_indeterminate = -1,
   denorm_absent = 0,
   denorm_present = 1
@@ -469,7 +438,7 @@ enum float_denorm_style
 
 // ENUM float_round_style
 enum float_round_style
-{	// constants for different IEEE rounding styles
+{ // constants for different IEEE rounding styles
   round_indeterminate = -1,
   round_toward_zero = 0,
   round_to_nearest = 1,
@@ -479,7 +448,7 @@ enum float_round_style
 
 // STRUCT _Num_base
 struct numeric_limits_base
-{	// base for all types, with common defaults
+{ // base for all types, with common defaults
   static const float_denorm_style has_denorm = denorm_absent;
   static const bool has_denorm_loss = false;
   static const bool has_infinity = false;
@@ -507,7 +476,7 @@ struct numeric_limits_base
 };
 
 struct numeric_limits_float_base: public numeric_limits_base
-{	// base for floating-point types
+{ // base for floating-point types
   static const float_denorm_style has_denorm = denorm_present;
   static const bool has_denorm_loss = true;
   static const bool has_infinity = true;
@@ -729,7 +698,7 @@ struct float_limits_by_size:
 
   #ifdef NOP
   static int unknown_quiet_NaN()
-  {	// return non-signaling NaN
+  { // return non-signaling NaN
     unknown_value_type qnan = unknown_value_type();
     irs_u8* p_qnan_u8 = reinterpret_cast<irs_u8*>(&qnan);
     exponent_type& exp_ref =
@@ -817,42 +786,42 @@ struct numeric_limits: numeric_limits_base
   typedef irs_u8 fraction_type;
 
   static value_type (min)()
-  {	// return minimum value
+  { // return minimum value
     return (value_type(0));
   }
 
   static value_type (max)()
-  {	// return maximum value
+  { // return maximum value
     return (value_type(0));
   }
 
   static value_type epsilon()
-  {	// return smallest effective increment from 1.0
+  { // return smallest effective increment from 1.0
     return (value_type(0));
   }
 
   static value_type round_error()
-  {	// return largest rounding error
+  { // return largest rounding error
     return (value_type(0));
   }
 
   static value_type denorm_min()
-  {	// return minimum denormalized value
+  { // return minimum denormalized value
     return (value_type(0));
   }
 
   static value_type infinity()
-  {	// return positive infinity
+  { // return positive infinity
     return (value_type(0));
   }
 
   static value_type quiet_NaN()
-  {	// return non-signaling NaN
+  { // return non-signaling NaN
     return (value_type(0));
   }
 
   static value_type signaling_NaN()
-  {	// return signaling NaN
+  { // return signaling NaN
     return (value_type(0));
   }
 
@@ -914,45 +883,45 @@ struct numeric_limits: numeric_limits_base
 // CLASS numeric_limits<float>
 template<>
 struct numeric_limits<float>: float_limits_by_type<float>
-{	// limits for type float
+{ // limits for type float
   static value_type (min)()
-  {	// return minimum value
+  { // return minimum value
     return (FLT_MIN);
   }
 
   static value_type (max)()
-  {	// return maximum value
+  { // return maximum value
     return (FLT_MAX);
   }
 
   static value_type epsilon()
-  {	// return smallest effective increment from 1.0
+  { // return smallest effective increment from 1.0
     return (FLT_EPSILON);
   }
 
   static value_type round_error()
-  {	// return largest rounding error
+  { // return largest rounding error
     return (0.5f);
   }
 
   #ifdef NOP
   static value_type denorm_min()
-  {	// return minimum denormalized value
+  { // return minimum denormalized value
     return (_FDenorm._Float);
   }
 
   static value_type infinity()
-  {	// return positive infinity
+  { // return positive infinity
     return (_FInf._Float);
   }
 
   static value_type quiet_NaN()
-  {	// return non-signaling NaN
+  { // return non-signaling NaN
     return (_FNan._Float);
   }
 
   static value_type signaling_NaN()
-  {	// return signaling NaN
+  { // return signaling NaN
     return (_FSnan._Float);
   }
 

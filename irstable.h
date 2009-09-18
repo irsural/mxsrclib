@@ -1,5 +1,5 @@
 // Абстракция таблицы Лящова Максима
-// Дата: 27.03.2009
+// Дата: 17.09.2009
 
 #ifndef tablegH
 #define tablegH
@@ -17,6 +17,8 @@
 //---------------------------------------------------------------------------
 
 namespace irs {
+
+#ifndef __WATCOMC__
 
 class table_size_read_only_t
 {
@@ -1116,7 +1118,10 @@ struct test3_t
 };
 
 //test2_t<ex_t<int>, ex_t<int>::set_metod> test2;
+
+#endif //__WATCOMC__
+
 }; // namespace irs
 
-#endif
+#endif //tablegH
 

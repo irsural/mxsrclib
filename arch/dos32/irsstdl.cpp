@@ -1,6 +1,7 @@
 // Стандартаная библиотека ИРС локальная часть
 // Для watcom
-// Дата 3.12.2007
+// Дата: 17.09.2009
+// Дата ранее: 3.12.2007
 
 #include <irsstdl.h>
 #include <stdlib.h>
@@ -51,8 +52,8 @@ void irs_win32_console_display_t::outtextpos(
     (a_top < m_BufInfo.srWindow.Bottom+1))
   {
     irs_u32 width=get_width();
-    m_Coord.X=a_left;
-    m_Coord.Y=static_cast<short>(a_top+m_top_displey);
+    m_Coord.X = static_cast<SHORT>(a_left);
+    m_Coord.Y = static_cast<SHORT>(a_top+m_top_displey);
     irs_u32 lentext=min(strlen(text), static_cast<unsigned int>(width-a_left));
     WriteConsoleOutputCharacter(
       m_OutHandle,              // screen buffer handle

@@ -1,5 +1,5 @@
 // Работа с csv-файлами
-// Дата: 4.08.2009
+// Дата: 17.09.2009
 
 #ifndef csvworkH
 #define csvworkH
@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <irsstd.h>
 #include <irstable.h>
-#include <irscpp.h>
+//#include <irscpp.h>
 
-#include <irsdefs.h>
-#include <irserror.h>
+//#include <irsdefs.h>
+//#include <irserror.h>
 
 //---------------------------------------------------------------------------
 // typedef-определения
@@ -121,7 +121,8 @@ namespace irs {
 namespace csvwork {
 
 // В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
-#ifndef __embedded_cplusplus
+// Watcom не переваривает irstable.h в котором определен тип table_string_t
+#if !defined(__embedded_cplusplus) && !defined(__WATCOMC__)
 
 enum csv_file_status_t {cfs_success = 0, cfs_busy = 1, cfs_error = 2};
 class csv_file_t
@@ -132,7 +133,7 @@ public:
 private:
   char m_delimiter_col;
   static const char m_delimiter_row;
-  irs::string m_filename;
+  string m_filename;
   fstream m_file;
   double m_progress;
   csv_file_status_t m_status;
@@ -166,10 +167,10 @@ private:
   size_type m_ch_count_row_mean;
   size_type* mp_col_count_user;
   size_type* mp_row_count_user;
-  vector<irs::string>* mp_row_user;
-  vector<irs::string> m_row_user_buf;
+  vector<string>* mp_row_user;
+  vector<string> m_row_user_buf;
   table_string_t* mp_table_user;
-  irs::string m_cell_buf;
+  string m_cell_buf;
   size_type m_table_uses_col_count;
   size_type m_table_uses_row_count;
   size_type m_table_uses_cell_count;
@@ -182,36 +183,36 @@ private:
   size_type m_row_pos_file;
   static const char m_quote;
   size_type m_quote_count;
-  irs::string m_special_character;
+  string m_special_character;
   //csv_file_t();
 
 public:
 
-  csv_file_t(const irs::string& a_filename = "");
+  csv_file_t(const string& a_filename = "");
   ~csv_file_t();
   // Выдает текущее состояние выполняемой операции. Значения от 0 до 1
   inline double get_progress();
   inline csv_file_status_t get_status();
   void tick();
-  bool open(const irs::string& a_filename);
+  bool open(const string& a_filename);
   void close();
-  bool reset_file(const irs::string& a_filename);
+  bool reset_file(const string& a_filename);
   void get_col_count(size_type* ap_col_count);
   void get_row_count(size_type* ap_row_count);
   // Добавить строку в конец CSV файла
   // Буфер внутрь не копируется, а считываюется прямо из буфера пользователя
-  void row_push_back(vector<irs::string>* const  ap_row);
+  void row_push_back(vector<string>* const  ap_row);
 
   // Добавить строку в конец CSV файла
   // Буфер строк копируется во внутренний буфер
-  void row_push_back(vector<irs::string>& a_row);
+  void row_push_back(vector<string>& a_row);
   // Сохранение в файл таблицы. Старое содержимое удаляется
   // Таблица внутрь не копируется
   void save(table_string_t* const ap_table_user);
   void load(table_string_t* const ap_table_user);
   // Прочитать строку
   void get_row(
-    vector<irs::string>* ap_row,
+    vector<string>* ap_row,
     const int a_row_index,
     const pos_mode_t a_pos_mode = pos_mode_beg);
   bool clear();
@@ -234,18 +235,18 @@ class csv_file_synchro_t
   char m_delimiter_col;
   char m_delimiter_row;
   char m_delimiter_cell;
-  irs::string m_special_character;
-  irs::string m_filename;
+  string m_special_character;
+  string m_filename;
   fstream m_file;
   enum status_file_t {stat_file_close, stat_file_open};
   status_file_t m_status_file;
 public:
-  csv_file_synchro_t(const irs::string& a_filename = "");
+  csv_file_synchro_t(const string& a_filename = "");
   ~csv_file_synchro_t();
   inline void set_delimiter_col(char a_delimiter_col);
   inline void set_delimiter_row(char a_delimiter_row);
   inline void set_delimiter_coll(char a_delimiter_cell);
-  inline void open(const irs::string& a_filename);
+  inline void open(const string& a_filename);
   void close();
   bool save(const table_string_t& a_table_string);
   bool load(table_string_t& a_table_string);
@@ -256,8 +257,8 @@ inline void csv_file_synchro_t::set_delimiter_col(char a_delimiter_col)
   IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_row);
   IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_cell);
   m_delimiter_col = a_delimiter_col;
-  m_special_character = static_cast<irs::string>(m_delimiter_col) +
-    static_cast<irs::string>(m_delimiter_cell);
+  m_special_character = static_cast<string>(m_delimiter_col) +
+    static_cast<string>(m_delimiter_cell);
 }
 
 inline void csv_file_synchro_t::set_delimiter_row(char a_delimiter_row)
@@ -272,11 +273,11 @@ inline void csv_file_synchro_t::set_delimiter_coll(char a_delimiter_cell)
   IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_col);
   IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_row);
   m_delimiter_cell = a_delimiter_cell;
-  m_special_character = static_cast<irs::string>(m_delimiter_col) +
-    static_cast<irs::string>(m_delimiter_cell);
+  m_special_character = static_cast<string>(m_delimiter_col) +
+    static_cast<string>(m_delimiter_cell);
 }
 
-inline void csv_file_synchro_t::open(const irs::string& a_filename)
+inline void csv_file_synchro_t::open(const string& a_filename)
 {
   //bool fsuccess = true;
   m_filename = a_filename;
@@ -292,7 +293,7 @@ inline void csv_file_synchro_t::close()
 
 }
 
-#endif //__embedded_cplusplus
+#endif //!defined(__embedded_cplusplus) && !defined(__WATCOMC__)
 
 } // namespace csvwork
 

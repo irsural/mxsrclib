@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 27.08.2009
+// Дата: 17.09.2009
 
 #ifndef irssysutilsH
 #define irssysutilsH
@@ -140,7 +140,7 @@ public:
       elem_str += a_id_str[id_str_index];
       if (elem_str.size() == need_elem_str_size) {
         int elem_num = 0;
-        istrstream istr(elem_str.c_str());
+        istrstream istr(const_cast<char*>(elem_str.c_str()));
         istr >> setbase(num_base) >> elem_num;
         m_id.push_back(static_cast<irs_u8>(elem_num));
         elem_str.clear();

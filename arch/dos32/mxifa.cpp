@@ -1,15 +1,16 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Для Borland C++ Builder
 // Max Interface Abstraction
-// Версия 0.7
+// Дата: 17.09.2009
 
+#ifdef NOP
 #include <string.h>
 #include <windows.h>
 
 #include <mxifa.h>
 #include <irsdefs.h>
 #include <timer.h>
-#include <alg.h>
+#include <irsalg.h>
 // Прямой доступ к gpib-32.dll
 #define GPIB_DIRECT_ACCESS
 extern "C" {
@@ -1683,4 +1684,4 @@ static void win32_ni_usb_gpib_write(void *pchdata)
   }
 }
 //---------------------------------------------------------------------------
-
+#endif //NOP

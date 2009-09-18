@@ -1,5 +1,5 @@
 // Работа с csv-файлами
-// Дата: 27.02.2009
+// Дата: 17.09.2009
 
 #include <assert.h>
 #include <csvwork.h>
@@ -191,7 +191,7 @@ irs_bool csv_file::write_line()
           char *send = sbeg + strm.pcount();
           replace(sbeg, send, '.', ',');
           fprintf(f_ini_file, sbeg);
-          strm.freeze(false);
+          strm.rdbuf()->freeze(false);
         } break;
         case ec_str_type: {
           fprintf(f_ini_file, ";%s\n", it->second.val.uf_str_type.c_str());
@@ -224,7 +224,7 @@ irs_bool csv_file::write_line()
         char *send = sbeg + strm.pcount();
         replace(sbeg, send, '.', ',');
         fprintf(f_ini_file, sbeg);
-        strm.freeze(false);
+        strm.rdbuf()->freeze(false);
       } break;
       case ec_str_type: {
         fprintf(f_ini_file, "%s;", it->second.val.uf_str_type.c_str());
@@ -253,9 +253,9 @@ void csv_file::clear_pars()
 }
 //---------------------------------------------------------------------------
 
-
 // В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
-#ifndef __embedded_cplusplus
+// Watcom не переваривает irstable.h в котором определен тип table_string_t
+#if !defined(__embedded_cplusplus) && !defined(__WATCOMC__)
 
 //class csv_file_t
 const char irs::csvwork::csv_file_t::m_delimiter_row = '\n';
@@ -1198,4 +1198,4 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
   return fsuccess;
 }
 
-#endif //__embedded_cplusplus
+#endif //!defined(__embedded_cplusplus) && !defined(__WATCOMC__)
