@@ -736,17 +736,9 @@ inline bool detector_token_t::detect_token()
           m_cur_token_data.length = pos - pos_begin_name;
           m_cur_token_data.valid = true;
           detected_token = true;
-        } /*else {
-          const array_type* p_array = IRS_NULL;
-          if (m_list_identifier.array_find(identifier_str, &p_array)) {
-            m_cur_token_data.token.set_array(p_array);
-            m_cur_token_data.length = pos - pos_begin_name;
-            m_cur_token_data.valid = true;
-            detected_token = true;
-          } else { 
-            // Массив с таким именем не найден
-          }
-        }*/
+        } else {
+          // Констранта с таким именем не найдена
+        }
       }
     }
   }   
