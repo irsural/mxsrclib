@@ -813,22 +813,9 @@ public:
     const value_type& a_value);
   inline bool del_func(const string_type& a_name);
   inline void constant_del(const string_type& a_name);
-<<<<<<< .mine
-  void clear_func();
-  void constant_clear();
-=======
   inline void clear_func();
-  inline void num_const_clear();
->>>>>>> .r86
+  inline void constant_clear();
 
-  /*inline void array_add(const string_type& a_name,
-    const array_type& a_array);
-  inline void array_del(const string_type& a_name);
-<<<<<<< .mine
-  void array_clear();*/
-=======
-  inline void array_clear();
->>>>>>> .r86
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
@@ -1363,11 +1350,7 @@ inline void calculator_t::clear_func()
   m_list_identifier.clear_func();
 }
 
-<<<<<<< .mine
-void calculator_t::constant_clear()
-=======
-inline void calculator_t::num_const_clear()
->>>>>>> .r86
+inline void calculator_t::constant_clear()
 {
   m_list_identifier.constant_clear();
 }

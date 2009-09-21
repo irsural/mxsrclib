@@ -31,6 +31,143 @@ typedef istream istream_t;
 
 #endif //IRS_UNICODE
 
+#ifdef IRS_UNICODE
+
+inline bool isalnumt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::alnum, a_ch);
+}
+
+inline bool isalphat(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::alpha, a_ch);
+}
+
+inline bool iscntrlt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::cntrl, a_ch);
+}
+
+inline bool isdigitt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::digit, a_ch);
+}
+
+inline bool isgrapht(int a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::graph, a_ch);
+}
+
+inline bool islowert(int a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::lower, a_ch);
+}
+
+inline bool isprintt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::print, a_ch);
+}
+
+inline bool ispunctt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::punct, a_ch);
+}
+
+inline bool isspacet(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::space, a_ch);
+}
+
+inline bool isuppert(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::upper, a_ch);
+}
+
+inline bool isxdigitt(wint_t a_ch)
+{
+  locale loc;
+  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::xdigit, a_ch);
+}
+
+inline const char_t* strchrt(const char_t* a_str, int a_ch)
+{
+  return wcschr(a_str, a_ch);
+}
+
+#else //IRS_UNICODE
+
+inline bool isalnumt(int a_ch)
+{
+  return ::isalnum(a_ch);
+}
+
+inline bool isalphat(int a_ch)
+{
+  return ::isalpha(a_ch);
+}
+
+inline bool iscntrlt(int a_ch)
+{
+  return ::iscntrl(a_ch);
+}
+
+inline bool isdigitt(int a_ch)
+{
+  return ::isdigit(a_ch);
+}
+
+inline bool isgrapht(int a_ch)
+{
+  return ::isgraph(a_ch);
+}
+
+inline bool islowert(int a_ch)
+{
+  return ::islower(a_ch);
+}
+
+inline bool isprintt(int a_ch)
+{
+  return ::isprint(a_ch);
+}
+
+inline bool ispunctt(int a_ch)
+{
+  return ::ispunct(a_ch);
+}
+
+inline bool isspacet(int a_ch)
+{
+  return ::isspace(a_ch);
+}
+
+inline bool isuppert(int a_ch)
+{
+  return ::isupper(a_ch);
+}
+
+inline bool isxdigitt(int a_ch)
+{
+  return ::isxdigit(a_ch);
+}
+
+inline const char_t* strchrt(const char_t* a_str, int a_ch)
+{
+  return strchr(a_str, a_ch);
+}
+
+#endif //IRS_UNICODE
+
 } //namespace irs
 
 #ifndef NOP
