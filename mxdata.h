@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 18.09.2009
+// Дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
@@ -267,7 +267,7 @@ inline void memsetex(T* ap_data, size_t a_size)
 template <class T>
 inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 {
-  memcpy(
+  return memcpy(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
@@ -276,7 +276,7 @@ inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 template <class T>
 inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
 {
-  memmove(
+  return memmove(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
