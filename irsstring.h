@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 17.09.2009
+// Дата: 20.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -80,7 +80,7 @@ public:
     base = cstr;
     return *this;
   }
-  string& operator=(const wchar_t *cstr)
+  string& operator=(const wchar_t*)
   {
     //IRS_LIB_ERROR(irs::ec_standard,
       //"Инициализация irs::string типом wchar_t* недопустима");
@@ -168,7 +168,7 @@ public:
   {
     *this = cstr;
   }
-  string(const wchar_t *cstr)
+  string(const wchar_t*)
   {
     //IRS_LIB_ERROR(irs::ec_standard,
       //"Инициализация irs::string типом wchar_t* недопустима");
@@ -237,17 +237,17 @@ public:
   }
 
   template <class T>
-  irs_bool to_number(T& val) const
+  bool to_number(T& val) const
   {
     auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());
     ::replace(buf.get(), buf.get() + size(), ',', '.');
     istrstream strm(buf.get(), size());
     strm >> val;
-    if (strm) return irs_true;
-    else return irs_false;
+    if (strm) return true;
+    else return false;
   }
-  irs_bool to_number(irs_u8& val) const
+  bool to_number(irs_u8& val) const
   {
     auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());
@@ -256,10 +256,10 @@ public:
     int val_int = 0;
     strm >> val_int;
     val = static_cast<irs_u8>(val_int);
-    if (strm) return irs_true;
-    else return irs_false;
+    if (strm) return true;
+    else return false;
   }
-  irs_bool to_number(irs_i8& val) const
+  bool to_number(irs_i8& val) const
   {
     auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());
@@ -268,8 +268,8 @@ public:
     int val_int = 0;
     strm >> val_int;
     val = static_cast<irs_u8>(val_int);
-    if (strm) return irs_true;
-    else return irs_false;
+    if (strm) return true;
+    else return false;
   }
 };
 

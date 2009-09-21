@@ -1,5 +1,6 @@
 // Обработка ошибок
-// Дата: 16.09.2009
+// Дата: 20.09.2009
+// Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
 #define IRSERRORH
@@ -148,6 +149,35 @@ error_trans_base_t *error_trans();
 //  (Считывание указателя на экземпляр)
 const void *spec_assert(const char *assert_str,
   const char *message);
+
+class zerobuf: public streambuf
+{
+public:
+  virtual int overflow(int = EOF)
+  {
+    return 0;
+  }
+  virtual int underflow()
+  {
+    return 0;
+  }
+  virtual int sync()
+  {
+    return overflow();
+  }
+};
+
+#ifndef __WATCOMC__
+// Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf
+class ostream_buf_init_t
+{
+public:
+  ostream_buf_init_t(ostream* ap_strm, streambuf *ap_buf)
+  {
+    ap_strm->rdbuf(ap_buf);
+  }
+};
+#endif //__WATCOMC__
 
 ostream& mlog();
 

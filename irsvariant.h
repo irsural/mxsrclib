@@ -330,6 +330,7 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
   return *this;
 }
 
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 template<>
 inline variant_t& variant_t::assign_no_cast<variant_t::string_type>(
   const string_type& a_value)
@@ -341,6 +342,7 @@ inline variant_t& variant_t::assign_no_cast<variant_t::string_type>(
   }
   return *this;
 }
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 inline variant_t::size_type variant_t::size() const
 {
@@ -461,6 +463,7 @@ T variant_t::value_get() const
   return value;
 }
 
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 template<>
 inline variant_t::string_type
 variant_t::value_get<variant_t::string_type>() const
@@ -474,6 +477,7 @@ variant_t::value_get<variant_t::vector_variant_type>() const
 {
   return *(m_value.p_val_vector_variant);
 }
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 template<class T>
 void variant_t::prefix_operation(const operation_type_t a_unary_operation_type,
@@ -488,8 +492,9 @@ void variant_t::prefix_operation(const operation_type_t a_unary_operation_type,
   }
 }
 
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 template<>
-inline void variant_t::prefix_operation(
+inline void variant_t::prefix_operation<bool>(
   const operation_type_t /*a_unary_operation_type*/, bool* /*ap_value*/)
 {
   // По стандарту ANSI.ISO.IEC.14882.2003 операция декремента для типа bool
@@ -497,6 +502,7 @@ inline void variant_t::prefix_operation(
   // применению в новых программах
   IRS_LIB_ASSERT_MSG("Недопустимая операция");
 }
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 bool operator==(const variant_t& a_first_variant,
   const variant_t& a_second_variant);

@@ -1,5 +1,9 @@
 // Калькулятор
-// Дата: 01.10.2008
+// Дата: 19.09.2009
+// Ранняя дата: 01.10.2008
+
+// В Watcom C++ есть только не-const версия функции map::find
+#ifndef __WATCOMC__
 
 #include <irscalc.h>
 
@@ -33,3 +37,4 @@ irs::string irs::preprocessing_str(const irs::string& a_str)
   return str;
 }
 
+#endif //__WATCOMC__

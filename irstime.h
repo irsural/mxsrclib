@@ -1,9 +1,11 @@
 // Работа со временем
-// Дата: 10.07.2009
+// Дата: 20.09.2009
+// Ранняя дата: 10.07.2009
 
 #ifndef irstimeH
 #define irstimeH
 
+#include <irsdefs.h>
 #include <irsstd.h>
 
 namespace irs {
@@ -23,7 +25,7 @@ irs::string cnt_to_strtime(counter_t cnt, bool show_ms = false);
 
 millisecond_t system_time();
 // Запись в поток текущего времени
-ostream &stime(ostream &a_strm);
+IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
 
 } //namespace irs
 

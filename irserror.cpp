@@ -1,7 +1,6 @@
 // Обработка ошибок
-// Дата: 4.08.2009
-
-//#pragma hdrstop
+// Дата: 20.09.2009
+// Ранняя дата: 4.08.2009
 
 #include <irserror.h>
 
@@ -110,32 +109,9 @@ const  void* irs::spec_assert(const char *assert_str,
   return static_cast<const  void*>(&spec_assert_i);
 }
 
-class zerobuf: public streambuf
-{
-public:
-  virtual int overflow(int /*c*/ = EOF)
-  {
-    return 0;
-  }
-  virtual int sync()
-  {
-    return overflow();
-  }
-};
-
 ostream& irs::mlog()
 {
-  static zerobuf buf;
+  static irs::zerobuf buf;
   static ostream mlog_obj(&buf);
   return mlog_obj;
 }
-
-class ostream_buf_init_t
-{
-public:
-  ostream_buf_init_t(ostream* ap_strm, streambuf *ap_buf)
-  {
-    ap_strm->rdbuf(ap_buf);
-  }
-};
-

@@ -1,5 +1,6 @@
 // Цифровая обработка сигналов
-// Дата: 27.08.2009
+// Дата: 20.09.2009
+// Ранняя дата: 27.08.2009
 
 #ifndef irsdspH
 #define irsdspH
@@ -11,7 +12,6 @@
 #include <irsstd.h>
 
 namespace irs {
-
 
 #ifdef NEW
 template <class T>
@@ -410,8 +410,15 @@ T bound(T in, T min, T max)
 template <class T> T sqr(T x) { return x*x; }
 
 // БПФ от комплексного массива
+#ifdef __WATCOMC__
+// По какой-то причине Watcom C++ не поддерживает передачу аргументов
+// контейнеров напрямую
+template <class T, class V = vector<complex<T> > >
+void fft(V& signal)
+#else //__WATCOMC__
 template <class T>
-void fft(vector<complex<T> > &signal)
+void fft(vector<complex<T> >& signal)
+#endif //__WATCOMC__
 {
   if (signal.empty()) return;
   int degree = 1;
@@ -454,9 +461,17 @@ void fft(vector<complex<T> > &signal)
     butterfly_size *= 2;
   }
 }
+
 // Обратное БПФ от комплексного массива
+#ifdef __WATCOMC__
+// По какой-то причине Watcom C++ не поддерживает передачу аргументов
+// контейнеров напрямую
+template <class T, class V = vector<complex<T> > >
+void ifft(V& freq_charact)
+#else //__WATCOMC__
 template <class T>
 void ifft(vector<complex<T> > &freq_charact)
+#endif //__WATCOMC__
 {
   typedef typename vector<complex<T> >::size_type vsize_t;
 
@@ -473,8 +488,15 @@ void ifft(vector<complex<T> > &freq_charact)
 }
 
 //  Приведение результатов БПФ к божескому виду
+#ifdef __WATCOMC__
+// По какой-то причине Watcom C++ не поддерживает передачу аргументов
+// контейнеров напрямую
+template <class T, class V = vector<complex<T> > >
+void fft_cast(V& fft_result)
+#else //__WATCOMC__
 template <class T>
 void fft_cast(vector<complex<T> > &fft_result)
+#endif //__WATCOMC__
 {
   typedef typename vector<complex<T> >::size_type vsize_t;
   vsize_t divider = 0.5 * fft_result.size();
@@ -487,8 +509,15 @@ void fft_cast(vector<complex<T> > &fft_result)
 }
 
 //  Вычисление коэффициента нелинейных искажений
+#ifdef __WATCOMC__
+// По какой-то причине Watcom C++ не поддерживает передачу аргументов
+// контейнеров напрямую
+template <class T, class V = vector<T> >
+T thd_calc(V& spectrum, irs_uarc num_of_points)
+#else //__WATCOMC__
 template <class T>
 T thd_calc(vector<T> &spectrum, irs_uarc num_of_points)
+#endif //__WATCOMC__
 {
   if (num_of_points > spectrum.size()) num_of_points = spectrum.size();
   T thd = 0;

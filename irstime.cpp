@@ -1,8 +1,8 @@
 // Работа со временем
-// Дата: 10.07.2009
+// Дата: 20.09.2009
+// Ранняя дата: 10.07.2009
 
 #include <irstime.h>
-#include <irsdefs.h>
 #include <irscpp.h>
 #include <time.h>
 
@@ -28,7 +28,7 @@ irs::string irs::ms_to_strtime(irs::millisecond_t ms, bool show_ms)
   }
   time_strm << '\0';
   irs::string time_strg = time_strm.str();
-  time_strm.freeze(false);
+  time_strm.rdbuf()->freeze(false);
   return time_strg;
 }
 // Счетчика ИРС в строку в формате: ЧЧ:ММ:СС.МСЕ
@@ -58,10 +58,10 @@ irs::millisecond_t irs::system_time()
 }
 
 // Запись в поток текущего времени
-ostream &irs::stime(ostream &a_strm)
+IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_strm)
 {
   irs::string time_strg = irs::ms_to_strtime(irs::system_time());
-  a_strm << time_strg << ' ';
+  a_strm << time_strg.c_str() << ' ';
   return a_strm;
 }
 

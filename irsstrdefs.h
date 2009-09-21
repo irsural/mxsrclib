@@ -170,6 +170,7 @@ inline const char_t* strchrt(const char_t* a_str, int a_ch)
 
 } //namespace irs
 
+#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 #ifndef NOP
 inline irs::raw_data_t<char> char_from_wchar_str(
   const irs::raw_data_t<wchar_t>& ins)
@@ -224,5 +225,6 @@ inline irs::raw_data_t<char> char_from_wchar_str(
   #endif //NOP
 }
 #endif //NOP
+#endif //__WATCOMC__
 
 #endif //IRSSTRDEFSH

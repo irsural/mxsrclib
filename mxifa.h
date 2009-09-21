@@ -1,7 +1,7 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 12.02.2009
-// Испорчен 06.03.2008
+// Дата: 20.09.2009
+// Ранняя дата: 06.03.2008
 
 #ifndef MXIFAH
 #define MXIFAH
@@ -196,6 +196,36 @@ typedef struct _mxifa_hardflow_cfg {
   irs::hardflow_t *user_hardflow;
 } mxifa_hardflow_cfg;
 
+#if defined(__WATCOMC__)
+// Определение функций для компиляторов для которых нет реализации mxifa
+inline void mxifa_init() {}
+inline void mxifa_deinit() {}
+inline void mxifa_tick() {}
+inline void *mxifa_open(mxifa_ch_t, irs_bool) {  return IRS_NULL; }
+inline void *mxifa_open_begin(mxifa_ch_t, irs_bool) {  return IRS_NULL; }
+inline irs_bool mxifa_open_end(void*, bool) { return irs_false; }
+inline irs_bool mxifa_close(void *) { return irs_false; }
+inline irs_bool mxifa_close_begin(void*) { return irs_false; }
+inline irs_bool mxifa_close_end(void*, bool) { return irs_false; }
+inline irs_bool mxifa_write_begin(void*, mxifa_dest_t*, irs_u8*, 
+  mxifa_sz_t) { return irs_false; }
+inline irs_bool mxifa_write_end(void*, irs_bool) { return irs_false; }
+inline irs_bool mxifa_read_begin(void*, mxifa_dest_t*, irs_u8*, 
+  mxifa_sz_t) { return irs_false; }
+inline irs_bool mxifa_read_end(void*, irs_bool) { return irs_false; }
+inline mxifa_ei_t mxifa_get_channel_type(void*) { return mxifa_ei_unknown; }
+inline irs_bool mxifa_set_config(void*, void *) { return irs_false; }
+inline irs_bool mxifa_get_config(void *, void *) { return irs_false; }
+inline mxifa_sz_t mxifa_fast_read(void *, mxifa_dest_t *, irs_u8 *,
+  mxifa_sz_t) { return 0; }
+inline irs_bool *mxifa_open_ex(mxifa_ch_t, void *, irs_bool) 
+{ return IRS_NULL; }
+inline irs_bool *mxifa_open_begin_ex(mxifa_ch_t, void *, irs_bool)
+{ return IRS_NULL; }
+inline irs_bool mxifa_open_end_ex(void *, bool) { return irs_false; }
+inline mxifa_ei_t mxifa_get_channel_type_ex(mxifa_ch_t) 
+{ return mxifa_ei_unknown; }
+#else //defined(__WATCOMC__)
 // Инициализация mxifa
 void mxifa_init();
 // Деинициализация mxifa
@@ -315,4 +345,6 @@ irs_bool mxifa_open_end_ex(void *pchdata, bool abort);
 //   mxifa_open_begin
 // Возврат - тип канала
 mxifa_ei_t mxifa_get_channel_type_ex(mxifa_ch_t channel);
+#endif //defined(__WATCOMC__)
+
 #endif //MXIFAH

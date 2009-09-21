@@ -1,10 +1,11 @@
 // Свойства
-// Дата: 17.08.2009
+// Дата: 20.09.2009
+// Ранняя дата: 17.08.2009
 
 #ifndef irspropH
 #define irspropH
 
-#ifndef __ICCAVR__
+#if !defined(__ICCAVR__) && !defined(__WATCOMC__)
 
 #include <irscpp.h>
 
@@ -939,8 +940,6 @@ inline bool testing_property()
 }
 #endif // example_propety
 
-#endif //__ICCAVR__
+#endif //!defined(__ICCAVR__) && !defined(__WATCOMC__)
 
 #endif //irspropH
-
-

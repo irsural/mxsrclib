@@ -1,5 +1,6 @@
 // Классы для работы с мультиметрами
-// Дата: 10.09.2009
+// Дата: 20.09.2009
+// Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
 //#define RESMEAS // Сброс перед измерением
@@ -1630,8 +1631,8 @@ void irs::akip_ch3_85_3r_t::tick()
         irs::string message;
         msg_status_t msg_stat = m_string_msgs.get_message(message);
         if(msg_stat == MSG_SUCCESS){
-          double value = 0;
-          bool fsuccess = 0;
+          double value = 0.;
+          bool fsuccess = false;
           fsuccess = message.to_number(value);
           if(fsuccess){
             *mp_result = value;

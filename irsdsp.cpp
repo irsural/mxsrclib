@@ -1,11 +1,11 @@
 // Цифровая обработка сигналов
-// Дата: 27.08.2009
+// Дата: 20.09.2009
+// Ранняя Дата: 27.08.2009
 
 #include <math.h>
 #pragma hdrstop
 
 #include <irsdsp.h>
-//#include <irsdefs.h>
 
 #ifndef NEW
 // ПИД-регулятор

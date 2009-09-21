@@ -1,5 +1,6 @@
 // Глобальные объявления типов
-// Дата: 16.09.2009
+// Дата: 20.09.2009
+// Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
@@ -26,6 +27,19 @@
 #elif defined(__GNUC__)
 #define IRS_LINUX // Платформа Linux
 #endif // Определения платформы
+
+// Возможности компиляторов
+#if !defined(__WATCOMC__)
+// Поддержка частичной специализации для функций
+#define IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+#endif //compilers
+
+// Специальные описатели для манипуляторов в различных компиляторах
+#if defined(__WATCOMC__)
+#define IRS_STREAMSPECDECL _WPRTLINK
+#else //compilers
+#define IRS_STREAMSPECDECL
+#endif //compilers
 
 // Вычисление размера статического массива
 #define IRS_ARRAYOFSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))

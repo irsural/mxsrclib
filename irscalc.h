@@ -1,9 +1,12 @@
 //---------------------------------------------------------------------------
 // Калькулятор
-// Дата: 18.09.2009
+// Дата: 19.09.2009
 
 #ifndef irscalcH
 #define irscalcH
+
+// В Watcom C++ есть только не-const версия функции map::find
+#ifndef __WATCOMC__
 
 #include <iostream>
 #include <irsstdg.h>
@@ -1375,4 +1378,6 @@ inline void calculator_t::array_clear()
 
 }; // namespace irs
 
-#endif
+#endif //__WATCOMC__
+
+#endif //irscalcH
