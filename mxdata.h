@@ -267,7 +267,7 @@ inline void memsetex(T* ap_data, size_t a_size)
 template <class T>
 inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 {
-  return memcpy(
+  return reinterpret_cast<T*>memcpy(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)

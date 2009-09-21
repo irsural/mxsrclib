@@ -136,6 +136,7 @@ irs_bool irs::irsmb_se::connected()
 void irs::irsmb_se::write_bytes(vector<irs_u16> &vec,irs_u32 index,irs_u32
 size,const irs_u8 *buf,irs_u32 start)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("write_bytes ..................");
   if(((index%2) == 0)&&((size%2)==0))
   {
     IRS_MBUS_DBG_MSG_DETAIL(" OK");
@@ -163,19 +164,19 @@ size,const irs_u8 *buf,irs_u32 start)
     copy(head.value,head.value + size/2,
       vec.begin()+index/2+1);
   }
-  #if IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
+  #ifdef NOP//IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
   for(irs_u16 i = (index/2); i<(size/2+index/2);i++)
   {
     IRS_MBUS_DBG_MSG_DETAIL(dec<<"Vector["<<(int)i<<"] = "<< hex<<showbase<<
       (int)vec[i]);
   }
-  IRS_MBUS_DBG_MSG_DETAIL();
+  IRS_MBUS_DBG_MSG_DETAIL("");
   for(irs_u16 i = (start); i<(size+start);i++)
   {
     IRS_MBUS_DBG_MSG_DETAIL(dec<<"Buf["<<(int)i<<"] = "<<hex<<showbase <<
       (int)buf[i]);
   }
-  IRS_MBUS_DBG_MSG_DETAIL();
+  IRS_MBUS_DBG_MSG_DETAIL("");
   #endif
 }
 
@@ -183,14 +184,14 @@ void irs::irsmb_se::get_bytes(vector<irs_u16> &vec,irs_u32 index,
   irs_u32 size,irs_u8 *buf,irs_u32 start)
 {
   //irs_u16 mass[vec.size()];
-
+  IRS_MBUS_DBG_MSG_DETAIL("get_bytes.............................");
   if(((index%2) == 0)&&((size%2)==0))
   {
     IRS_MBUS_DBG_MSG_DETAIL(" OK");
     pack_tb_t &head = *(pack_tb_t *)(buf+start);
     //copy(vec.begin()+index/2,vec.begin()+index/2+size/2,mass);
     copy(vec.begin()+index/2,vec.begin()+index/2+size/2,head.value);
-    #if IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
+    #ifdef NOP//IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
     for(irs_u16 i = 0; i<size/2;i++)
     {
       head.value[i] = mass[i];
@@ -235,6 +236,7 @@ void irs::irsmb_se::get_bytes(vector<irs_u16> &vec,irs_u32 index,
 void irs::irsmb_se::range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
 irs_u32 *num,irs_u32 *start)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("range..................");
   irs_u32 var = index + size;
   if((index>=M1)&&(index<M2)&&(var>M1)&&(var <= M2))
   {
@@ -260,14 +262,20 @@ irs_u32 *num,irs_u32 *start)
 //Чтение из массива данных в буфер размером size с позиции index
 void irs::irsmb_se::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("read..................");
   irs_u32 di_size = 0, di_start = 0;
   irs_u32 coils_size = 0, coils_start = 0;
   irs_u32 hr_size = 0, hr_start = 0;
   irs_u32 ir_size = 0, ir_start = 0;
-  range(index,a_size,0,di_end,&di_size,&di_start);
+  range(index,a_size,di_start,di_end,&di_size,&di_start);
+  IRS_MBUS_DBG_MSG_DETAIL("di_start: " << di_start << "  di_end: " <<di_end);
   range(index,a_size,di_end,coils_end,&coils_size,&coils_start);
+  IRS_MBUS_DBG_MSG_DETAIL("coils_start: " << coils_start 
+    << "  coils_end: " <<coils_end);
   range(index,a_size,coils_end,hr_end,&hr_size,&hr_start);
+  IRS_MBUS_DBG_MSG_DETAIL("hr_start: " << hr_start << "  hr_end: " <<hr_end);
   range(index,a_size,hr_end,ir_end,&ir_size,&ir_start);
+  IRS_MBUS_DBG_MSG_DETAIL("ir_start: " << ir_start << "  ir_end: " <<ir_end);
   irs_u32 i = 0;
   IRS_MBUS_DBG_MSG_DETAIL("Index: " << index);
   if((di_size != 0)||(di_start != 0))
@@ -311,11 +319,12 @@ void irs::irsmb_se::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
 
 void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("write..................");
   irs_u32 di_size = 0, di_start = 0;
   irs_u32 coils_size = 0, coils_start = 0;
   irs_u32 hr_size = 0, hr_start = 0;
   irs_u32 ir_size = 0, ir_start = 0;
-  range(index,size,0,di_end,&di_size,&di_start);
+  range(index,size,di_start,di_end,&di_size,&di_start);
   range(index,size,di_end,coils_end,&coils_size,&coils_start);
   range(index,size,coils_end,hr_end,&hr_size,&hr_start);
   range(index,size,hr_end,ir_end,&ir_size,&ir_start);
@@ -365,12 +374,13 @@ void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
 
 irs_bool irs::irsmb_se::bit(irs_uarc index, irs_uarc bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("bit..................");
   irs_u32 di_size = 0, di_start = 0;
   irs_u32 coils_size = 0, coils_start = 0;
   irs_u32 hr_size = 0, hr_start = 0;
   irs_u32 ir_size = 0, ir_start = 0;
   // irs_uarc byte = 0;
-  range(index,1,0,di_end,&di_size,&di_start);
+  range(index,1,di_start,di_end,&di_size,&di_start);
   range(index,1,di_end,coils_end,&coils_size,&coils_start);
   range(index,1,coils_end,hr_end,&hr_size,&hr_start);
   range(index,1,hr_end,ir_end,&ir_size,&ir_start);
@@ -404,6 +414,7 @@ irs_bool irs::irsmb_se::bit(irs_uarc index, irs_uarc bit_index)
 
 void irs::irsmb_se::set_bit(irs_uarc index, irs_uarc bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("set_bit..................");
   irs_uarc byte = 0;
   irs_u32 di_size = 0, di_start = 0;
   irs_u32 coils_size = 0, coils_start = 0;
@@ -443,6 +454,7 @@ void irs::irsmb_se::set_bit(irs_uarc index, irs_uarc bit_index)
 
 void irs::irsmb_se::clear_bit(irs_uarc index, irs_uarc bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("clear_bit..................");
   irs_u16 byte = 0;
   irs_u32 di_size = 0, di_start = 0;
   irs_u32 coils_size = 0, coils_start = 0;
@@ -484,6 +496,7 @@ void irs::irsmb_se::clear_bit(irs_uarc index, irs_uarc bit_index)
 void irs::irsmb_se::DectoBin(vector<bool> &bits,irs_u32 index,const
 packet_data_8_t &data)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("DectoBin..................");
   irs_u8 copy = 0;
 
   request_read_t &m_dop_head =
@@ -509,6 +522,7 @@ packet_data_8_t &data)
 void irs::irsmb_se::DectoBin(vector<bool> &bits,irs_u32 index,
   const pack_d8_t &data,irs_u16 bcount)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("DectoBin..................");
   irs_u8 copy = 0;
   //OUTDBG(cout << "---------------Function Dec to Bin---------------------\n");
   //OUTDBG(cout <<"Start position:"<< index<<"\n");
@@ -529,6 +543,7 @@ void irs::irsmb_se::DectoBin(vector<bool> &bits,irs_u32 index,
 void irs::irsmb_se::BintoDec(vector<bool> &bits,irs_u32 index,
   packet_data_8_t &data)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("BintoDec..................");
   irs_u8 mass = 0;
   //unsigned e = 1;
   irs_u8 tmp = 0;
@@ -558,6 +573,7 @@ void irs::irsmb_se::BintoDec(vector<bool> &bits,irs_u32 index,
 
 void irs::irsmb_se::Error_response(irs_u8 error_code)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("Error_response..................");
   complex_modbus_header_t &m_cmb_head = *(complex_modbus_header_t *)mess;
   pack_d8_t &m_ercode = *(pack_d8_t *)(mess+size_of_header);
   m_cmb_head.function_code += irs_u8(0x80);
@@ -566,6 +582,7 @@ void irs::irsmb_se::Error_response(irs_u8 error_code)
 
 void irs::irsmb_se::convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("convert..................");
   irs_u8 var = 0;
   for(irs_u8 i = a_start; i < irs_u8(a_length+a_start);i+=irs_u8(2))
   {
@@ -577,6 +594,7 @@ void irs::irsmb_se::convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
 
 void irs::irsmb_se::status()
 {
+  IRS_MBUS_DBG_MSG_DETAIL("status()..................");
   IRS_MBUS_DBG_MSG_DETAIL("*******************Discret Inputs"
     "*********************");
   for(irs_u16 i = 0; i< di_inbits;i++)
@@ -1041,6 +1059,7 @@ irs::irsmb_cl::irsmb_cl(
   m_hold_regs_r(a_hold_regs),
   m_hold_regs_w(a_hold_regs)
 {
+  IRS_MBUS_DBG_MSG_BASE("irs::irsmb_cl::irsmb_cl");
   di_size         = 0;
   di_start        = 0;
   coils_size      = 0;
@@ -1086,12 +1105,18 @@ irs::irsmb_cl::irsmb_cl(
   memset(m_rpacket,0,sizeof(m_rpacket));
   memset(in_str,0,sizeof(in_str));
   mxifa_init();
+  mxifa_linux_tcp_ip_cl_cfg cfg;
+  cfg.dest_port = m_dport;
+  cfg.dest_ip = m_dip;
+  mp_handle = mxifa_open_ex(channel,(void *)&cfg, irs_false);
+  #ifdef NOP
   mp_handle = mxifa_open(channel,irs_false);
   mxifa_linux_tcp_ip_cl_cfg cfg;
   mxifa_get_config(mp_handle, (void *)&cfg);
   cfg.dest_port = m_dport;
   cfg.dest_ip = m_dip;
   mxifa_set_config(mp_handle, (void *)&cfg);
+  #endif //NOP
 }
 
 irs::irsmb_cl::~irsmb_cl()
@@ -1123,7 +1148,8 @@ irs_bool irs::irsmb_cl::connected_1()
 
 void irs::irsmb_cl::write_bytes(vector<irs_u16> &vec,irs_u32 index,
   irs_u32 size,const irs_u8 *buf,irs_u32 start)
-{
+{ 
+  IRS_MBUS_DBG_MSG_DETAIL("write_bytes....................");
   //OUTDBG(cout <<"Start " <<start<<'\n');
   //OUTDBG(cout << "**************************Write bytes************************\n");
   if(((index%2) == 0)&&((size%2)==0))
@@ -1153,7 +1179,7 @@ void irs::irsmb_cl::write_bytes(vector<irs_u16> &vec,irs_u32 index,
     copy(head.value,head.value + size/2,
       vec.begin()+index/2+1);
   }
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
+  #ifdef NOP//(IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   for(irs_u16 i = (index/2); i<(size/2+index/2);i++)
   {
     IRS_MBUS_DBG_MSG_DETAIL(dec<<"Vector["<<(int)i<<"] = "<< hex<<showbase 
@@ -1170,6 +1196,7 @@ void irs::irsmb_cl::write_bytes(vector<irs_u16> &vec,irs_u32 index,
 void irs::irsmb_cl::get_bytes(vector<irs_u16> &vec,irs_u32 index,irs_u32 size,
   irs_u8 *buf,irs_u32 start)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("get_bytes....................");
   if(((index%2) == 0)&&((size%2)==0))
   {
     //OUTDBG(cout << " OK\n");
@@ -1195,7 +1222,7 @@ void irs::irsmb_cl::get_bytes(vector<irs_u16> &vec,irs_u32 index,irs_u32 size,
     buf[start] = IRS_HIBYTE(vec[index/2]);
     copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2+1,head.value);
   }
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
+  #ifdef NOP//(IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   IRS_MBUS_DBG_MSG_DETAIL("**************************Get bytes"
     "************************");
   for(irs_u16 i = (index/2); i<(size/2+index/2);i++)
@@ -1227,6 +1254,7 @@ void irs::irsmb_cl::get_bytes(vector<irs_u16> &vec,irs_u32 index,irs_u32 size,
 void irs::irsmb_cl::range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
   irs_u32 *num,irs_u32 *start)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("range....................");
   irs_u32 var = index + size;
   if((index>=M1)&&(index<M2)&&(var>M1)&&(var <= M2))
   {
@@ -1252,6 +1280,7 @@ void irs::irsmb_cl::range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
 
 void irs::irsmb_cl::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("read....................");
   di_size = 0; di_start = 0;
   coils_size = 0; coils_start = 0;
   hr_size = 0; hr_start = 0;
@@ -1305,6 +1334,7 @@ void irs::irsmb_cl::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
 }
 void irs::irsmb_cl::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("write....................");
   irs_u32 coils_size = 0, coils_start = 0;
   irs_u32 hr_size = 0, hr_start = 0;
   range(index,size,di_end,coils_end,&coils_size,&coils_start);
@@ -1357,6 +1387,7 @@ void irs::irsmb_cl::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
 
 irs_bool irs::irsmb_cl::bit(irs_uarc index, irs_uarc a_bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("bit....................");
   hr_size = 0;hr_start = 0;
   coils_size = 0;coils_start = 0;
   di_start = 0; di_size = 0;
@@ -1399,6 +1430,7 @@ irs_bool irs::irsmb_cl::bit(irs_uarc index, irs_uarc a_bit_index)
 
 void irs::irsmb_cl::set_bit(irs_uarc index, irs_uarc a_bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("set_bit....................");
   hr_size = 0;
   hr_start = 0;
   coils_size = 0;
@@ -1431,6 +1463,7 @@ void irs::irsmb_cl::set_bit(irs_uarc index, irs_uarc a_bit_index)
 
 void irs::irsmb_cl::clear_bit(irs_uarc index, irs_uarc a_bit_index)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("clear_bit....................");
   hr_size = 0;
   hr_start = 0;
   coils_size = 0;
@@ -1464,6 +1497,7 @@ void irs::irsmb_cl::clear_bit(irs_uarc index, irs_uarc a_bit_index)
 void irs::irsmb_cl::BintoDec(vector<bool> &bits,irs_u32 index,
   packet_data_8_t &data)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("BintoDec....................");
   irs_u8 mass = 0;
   //unsigned e = 1;
   irs_u8 tmp = 0;
@@ -1489,6 +1523,7 @@ void irs::irsmb_cl::BintoDec(vector<bool> &bits,irs_u32 index,
 void irs::irsmb_cl::DectoBin(vector<bool> &bits,irs_u32 index,
   const packet_data_8_t &data)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("DectoBin....................");
   irs_u8 copy = 0;
   //OUTDBG(cout << "---------------Function Dec to Bin---------------------\n");
   //OUTDBG(cout <<"Start position:"<< index<<"\n");
@@ -1508,6 +1543,7 @@ void irs::irsmb_cl::DectoBin(vector<bool> &bits,irs_u32 index,
 
 void irs::irsmb_cl::make_packet(irs_uarc a_index, irs_u16 a_size)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("make_packet....................");
   complex_modbus_header_t &m_cmb_head = *(complex_modbus_header_t *)m_spacket;
   request_read_t &m_sec_head = *(request_read_t *)(m_spacket+size_of_header);
   m_bytes = 0;
@@ -1554,6 +1590,7 @@ void irs::irsmb_cl::make_packet(irs_uarc a_index, irs_u16 a_size)
 
 void irs::irsmb_cl::convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
 {
+  IRS_MBUS_DBG_MSG_DETAIL("convert....................");
   irs_u8 var = 0;
   for(irs_u8 i = a_start; i < (a_length+a_start);i+=irs_u8(2))
   {
@@ -1570,8 +1607,8 @@ void irs::irsmb_cl::set_delay_time(double time)
 
 void irs::irsmb_cl::tick()
 {
-  if(connected_1()) //if(connected_1())
-  {
+  if(connected_1()) 
+  { 
     switch(m_mode)
     {
       case get_table:
@@ -1758,7 +1795,8 @@ void irs::irsmb_cl::tick()
       }
       break;
       case r_pack_mode:
-      {
+      { 
+        //IRS_MBUS_DBG_MSG_BASE("wend_r .........");
         if(mxifa_read_end(mp_handle,irs_false))
         {
           convert(m_rpacket,0,size_of_MBAP);
