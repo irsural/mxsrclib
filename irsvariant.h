@@ -1,5 +1,5 @@
 //  Component Variant
-//  Data: 18.09.2009
+//  Data: 21.09.2009
 //
 //  Copyright (c) 2009
 //  IRS Company
@@ -12,6 +12,8 @@
 
 #ifndef irsvariantH
 #define irsvariantH
+
+#ifndef __WATCOMC__
 
 #include <irscpp.h>
 #include <irsstd.h>
@@ -1885,4 +1887,7 @@ void test_variant();
 } // namespace variant
 
 } // namespace irs
-#endif
+
+#endif //__WATCOMC__
+
+#endif //irsvariantH

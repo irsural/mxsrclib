@@ -1,4 +1,9 @@
+//  Component Variant
+//  Data: 21.09.2009
+
 #include <irsvariant.h>
+
+#ifndef __WATCOMC__
 
 irs::variant::variant_t::variant_t():
   m_value(),
@@ -1126,3 +1131,4 @@ void irs::variant::test_variant()
 }
 #endif // IRS_LIB_DEBUG
 
+#endif //__WATCOMC__
