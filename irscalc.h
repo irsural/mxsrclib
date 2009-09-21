@@ -43,8 +43,9 @@ enum token_type_t {
   tt_none,
   tt_number,
   tt_delimiter,
-  tt_function,
-  tt_array};
+  tt_constant,
+  tt_function/*,
+  tt_array*/};
 // Список идентификаторов
 enum delimiter_t {
   d_none,
@@ -88,11 +89,11 @@ public:
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef map<string_type, value_type> num_const_list_type;
+  typedef map<string_type, value_type> constant_list_type;
   typedef map<string_type, value_type>::iterator
-    num_const_list_iterator;
+    constant_list_iterator;
   typedef map<string_type, value_type>::const_iterator
-    num_const_list_const_iterator;
+    constant_list_const_iterator;
   typedef vector<value_type> array_type;
   typedef map<string_type, vector<value_type> > array_list_type;
   typedef map<string_type, vector<value_type> >::iterator
@@ -109,27 +110,27 @@ public:
     const string_type& a_name, func_r_double_a_double_ptr ap_function);
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
-  inline void num_const_add(
-    const pair<string_type, value_type>& a_num_const_pair);
-  inline void num_const_del(const string_type& a_num_const_name);
-  inline void num_const_clear();
-  inline bool num_const_is_exists(const string_type& a_num_const_name) const;
-  inline bool num_const_find(const string_type& a_name,
-    value_type* ap_value) const;
-  inline void array_add(
+  inline void constant_add(
+    const pair<string_type, value_type>& a_constant_pair);
+  inline void constant_del(const string_type& a_constant_name);
+  inline void constant_clear();
+  inline bool constant_is_exists(const string_type& a_constant_name) const;
+  inline bool constant_find(const string_type& a_name,
+    const value_type** ap_p_constant) const;
+  /*inline void array_add(
     const pair<string_type, array_type>& a_array_pair);
   inline void array_del(const string_type& a_array_name);
   inline void array_clear();
   inline bool array_is_exists(const string_type& a_array_name) const;
   inline bool array_find(const string_type& a_name,
-    const array_type** ap_p_array) const;
+    const array_type** ap_p_array) const;*/
   inline bool del_func(const string_type& a_name);
   inline void clear_func();
-  //void clear_num_const();
-  inline const function_t& get_func(size_type a_id_func) const; 
+  //void clear_constant();
+  inline const function_t& get_func(size_type a_id_func) const;
 private:
   vector<function_t> m_func_array;
-  num_const_list_type m_num_const_list;
+  constant_list_type m_constant_list;
   array_list_type m_array_list;
   inline bool add_func(
     const string_type& a_name,
@@ -150,55 +151,55 @@ inline bool list_identifier_t::add_func_r_float_a_float(
     reinterpret_cast<void*>(ap_function));
 }
 
-inline void list_identifier_t::num_const_add(const pair<string_type,
-  value_type>& a_num_const_pair)
+inline void list_identifier_t::constant_add(const pair<string_type,
+  value_type>& a_constant_pair)
 {
-  IRS_LIB_ASSERT(find_function(a_num_const_pair.first) == irs::npos);
-  IRS_LIB_ASSERT(m_num_const_list.find(a_num_const_pair.first) ==
-    m_num_const_list.end());     
-  m_num_const_list.insert(a_num_const_pair);
+  IRS_LIB_ASSERT(find_function(a_constant_pair.first) == irs::npos);
+  IRS_LIB_ASSERT(m_constant_list.find(a_constant_pair.first) ==
+    m_constant_list.end());     
+  m_constant_list.insert(a_constant_pair);
 }
 
-inline void list_identifier_t::num_const_del(
-  const string_type& a_num_const_name)
+inline void list_identifier_t::constant_del(
+  const string_type& a_constant_name)
 {
-  num_const_list_iterator it_num_const =
-    m_num_const_list.find(a_num_const_name);
-  IRS_LIB_ASSERT(it_num_const != m_num_const_list.end());
-  m_num_const_list.erase(it_num_const);
+  constant_list_iterator it_constant =
+    m_constant_list.find(a_constant_name);
+  IRS_LIB_ASSERT(it_constant != m_constant_list.end());
+  m_constant_list.erase(it_constant);
 }
 
-inline void list_identifier_t::num_const_clear()
+inline void list_identifier_t::constant_clear()
 {
-  m_num_const_list.clear();
+  m_constant_list.clear();
 }
 
-inline bool list_identifier_t::num_const_is_exists(
-  const string_type& a_num_const_name) const
+inline bool list_identifier_t::constant_is_exists(
+  const string_type& a_constant_name) const
 {
-  return m_num_const_list.find(a_num_const_name) != m_num_const_list.end();
+  return m_constant_list.find(a_constant_name) != m_constant_list.end();
 }
 
-inline bool list_identifier_t::num_const_find(
-  const string_type& a_name, value_type* ap_value) const
+inline bool list_identifier_t::constant_find(
+  const string_type& a_name, const value_type** ap_p_constant) const
 {
-  num_const_list_const_iterator it_num_const =
-    m_num_const_list.find(a_name);
-  bool num_const_is_exists = it_num_const != m_num_const_list.end();
-  if (num_const_is_exists) {
-    *ap_value = it_num_const->second;
+  constant_list_const_iterator it_constant =
+    m_constant_list.find(a_name);
+  bool constant_is_exists = it_constant != m_constant_list.end();
+  if (constant_is_exists) {
+    *ap_p_constant = &it_constant->second;
   } else {
     // Константа с таким именем отсутсвует
   }
-  return num_const_is_exists;
+  return constant_is_exists;
 }
 
-inline void list_identifier_t::array_add(
+/*inline void list_identifier_t::array_add(
   const pair<string_type, array_type>& a_array_pair)
 {
   IRS_LIB_ASSERT(find_function(a_array_pair.first) == irs::npos);
-  IRS_LIB_ASSERT(m_num_const_list.find(a_array_pair.first) ==
-    m_num_const_list.end());
+  IRS_LIB_ASSERT(m_constant_list.find(a_array_pair.first) ==
+    m_constant_list.end());
   IRS_LIB_ASSERT(m_array_list.find(a_array_pair.first) ==
     m_array_list.end());
   m_array_list.insert(a_array_pair);
@@ -228,7 +229,7 @@ inline bool list_identifier_t::array_find(const string_type& a_name,
   const array_type** ap_p_array) const
 {
   array_list_const_iterator it_array =
-    m_array_list.find(a_name);
+    m_array_list.find (a_name);
   bool array_is_exists = it_array != m_array_list.end();
   if (array_is_exists) {
     *ap_p_array = &it_array->second;
@@ -236,7 +237,7 @@ inline bool list_identifier_t::array_find(const string_type& a_name,
     // Константа с таким именем отсутсвует
   }
   return array_is_exists;
-}
+}*/
 
 inline bool list_identifier_t::add_func_r_double_a_double(
   const string_type& a_name, func_r_double_a_double_ptr ap_function)
@@ -261,7 +262,7 @@ inline const function_t& list_identifier_t::
 list_identifier_t::list_identifier_t(
 ):
   m_func_array(),
-  m_num_const_list()
+  m_constant_list()
 { }
 
 inline int list_identifier_t::
@@ -285,7 +286,7 @@ inline bool list_identifier_t::add_func(
   bool fsuccess = true;
   if (find_function(a_name) != irs::npos) {
     fsuccess = false;
-  } else if (num_const_is_exists(a_name)) {
+  } else if (constant_is_exists(a_name)) {
     fsuccess = false;
   } else {
     function_t function;
@@ -315,9 +316,9 @@ inline void list_identifier_t::clear_func()
 }
 
 /*
-void list_identifier_t::clear_num_const()
+void list_identifier_t::clear_constant()
 {
-  m_num_const_array.clear();
+  m_constant_array.clear();
 }*/
 
 class token_t
@@ -334,7 +335,8 @@ private:
   value_type m_num;
   delimiter_t m_delimiter;
   size_type m_id_function;
-  const array_type* mp_array;
+  const value_type* mp_constant;
+  //const array_type* mp_array;
 public:
   token_t(
   ):
@@ -342,7 +344,8 @@ public:
     m_num(0),
     m_delimiter(d_none),
     m_id_function(0),
-    mp_array(IRS_NULL)
+    mp_constant(IRS_NULL)
+    //mp_array(IRS_NULL)
   {}
   void set_number(const value_type& a_num)
   {
@@ -365,13 +368,13 @@ public:
     m_delimiter = d_none;
     m_id_function = a_id_function;
   }
-  void set_array(const array_type* ap_array)
+  void set_constant(const value_type* ap_constant)
   {
-    m_token_type = tt_array;
+    m_token_type = tt_constant;
     m_num = 0;
     m_delimiter = d_none;
     m_id_function = 0;
-    mp_array = ap_array;
+    mp_constant = ap_constant;
   }
   void set_not_a_token_type()
   {
@@ -404,9 +407,9 @@ public:
   {
     return m_id_function;
   }
-  const array_type* get_array() const
+  const value_type* get_constant() const
   {
-    return mp_array;
+    return mp_constant;
   }
   value_type get_number() const
   {
@@ -724,23 +727,23 @@ inline bool detector_token_t::detect_token()
         m_cur_token_data.valid = true;
         detected_token = true;
       } else {
-        value_type num;
-        if (m_list_identifier.num_const_find(identifier_str, &num)) {
-          m_cur_token_data.token.set_number(num);
+        const value_type* p_constant = IRS_NULL; 
+        if (m_list_identifier.constant_find(identifier_str, &p_constant)) {
+          m_cur_token_data.token.set_constant(p_constant);
           m_cur_token_data.length = pos - pos_begin_name;
           m_cur_token_data.valid = true;
           detected_token = true;
-        } else {
+        } /*else {
           const array_type* p_array = IRS_NULL;
           if (m_list_identifier.array_find(identifier_str, &p_array)) {
             m_cur_token_data.token.set_array(p_array);
             m_cur_token_data.length = pos - pos_begin_name;
             m_cur_token_data.valid = true;
             detected_token = true;
-          } else {
+          } else { 
             // Массив с таким именем не найден
           }
-        }
+        }*/
       }
     }
   }   
@@ -797,7 +800,7 @@ public:
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline int find_function(const string_type& a_function_name) const;
-  //int find_num_const(const string_type& a_num_const_name) const;
+  //int find_constant(const string_type& a_constant_name) const;
   inline bool add_func_r_int_a_int(
     const string_type& a_name, func_r_int_a_int_ptr ap_function);
   inline bool add_func_r_float_a_float(
@@ -806,17 +809,26 @@ public:
     const string_type& a_name, func_r_double_a_double_ptr ap_function);
   inline bool add_func_r_ldouble_a_ldouble(
     const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
-  inline void num_const_add(const string_type& a_name,
+  inline void constant_add(const string_type& a_name,
     const value_type& a_value);
   inline bool del_func(const string_type& a_name);
-  inline void num_const_del(const string_type& a_name);
+  inline void constant_del(const string_type& a_name);
+<<<<<<< .mine
+  void clear_func();
+  void constant_clear();
+=======
   inline void clear_func();
   inline void num_const_clear();
+>>>>>>> .r86
 
-  inline void array_add(const string_type& a_name,
+  /*inline void array_add(const string_type& a_name,
     const array_type& a_array);
   inline void array_del(const string_type& a_name);
+<<<<<<< .mine
+  void array_clear();*/
+=======
   inline void array_clear();
+>>>>>>> .r86
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
@@ -867,17 +879,25 @@ inline calculator_t::calculator_t():
   add_func_r_double_a_double("tan", tan);
   add_func_r_double_a_double("tanh", tanh);
 
-  num_const_add("e", IRS_E);
-  num_const_add("pi", IRS_PI);
+  constant_add("e", IRS_E);
+  constant_add("pi", IRS_PI);
 
-  array_type test_array;
-  test_array.push_back(0);
-  test_array.push_back(1);
-  test_array.push_back(2);
-  test_array.push_back(3);
-  test_array.push_back(4);
-  array_add("arr", test_array);
-  
+  value_type arr;
+  arr.type(variant::var_type_array);
+  arr.resize(5);
+  for (int i = 0; i < 5; i++) {
+    arr[i].type(variant::var_type_array);
+    arr[i].resize(5);
+  }
+  int cnt = 0;
+  for (int x = 0; x < 5; x++) {
+    for (int y = 0; y < 5; y++) {
+      arr[x][y].type(variant::var_type_int);
+      arr[x][y] = cnt*100;
+      cnt++;
+    }
+  }
+  constant_add("arr", arr);   
 }
 
 inline bool calculator_t::interp(
@@ -1009,7 +1029,6 @@ inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
           } else if (delim == d_minus) {
             *ap_value = *ap_value - partial_value;
           }
-          //token = m_lexeme_array[m_cur_lexeme_index];
           fsuccess = m_detector_token.get_token(&token);
         } else {
           // Произошла ошибка
@@ -1157,10 +1176,27 @@ inline bool calculator_t::atom(value_type* ap_value)
       } else {
         // Произошла ошибка
       }
-    } else if (token == tt_array) {
-      const array_type* p_array = token.get_array();
+    } else if (token == tt_constant) {
+      const value_type* p_constant = token.get_constant();
       fsuccess = m_detector_token.next_token();
-      if (fsuccess) {
+      while (fsuccess && (p_constant->type() == variant::var_type_array)) {
+        value_type elem_index;
+        if (fsuccess) {       
+          fsuccess = eval_exp_square_brackets(&elem_index);
+        } else {
+          // Произошла ошибка
+        }
+        if (fsuccess) {
+          if (elem_index < p_constant->size()) {
+            p_constant = &(*p_constant)[elem_index];
+          } else {
+            fsuccess = false;
+          }                  
+        } else {
+          // Произошла ошибка
+        }
+      }
+      /*if (fsuccess) {
         fsuccess = m_detector_token.get_token(&token);
       } else {
         // Произошла ошибка
@@ -1177,21 +1213,21 @@ inline bool calculator_t::atom(value_type* ap_value)
         }
       } else {
         // Произошла ошибка
-      }
-      value_type elem_index;
+      }*/
+      /*value_type elem_index;
       if (fsuccess) {
 
         fsuccess = eval_exp_square_brackets(&elem_index);
       } else {
         // Произошла ошибка
-      }
+      }*/
       /*if (fsuccess) {
         fsuccess = m_detector_token.get_token(&token);
       } else {
         // Произошла ошибка
       }*/
       if (fsuccess) {
-        fsuccess = array_elem_read(p_array, elem_index, ap_value);
+        *ap_value = *p_constant;
       } else {
         // Произошла ошибка
       }
@@ -1276,10 +1312,10 @@ inline int calculator_t::find_function(
   return m_list_identifier.find_function(a_function_name);
 }
 
-/*inline int calculator_t::find_num_const(
-  const string_type& a_num_const_name) const
+/*inline int calculator_t::find_constant(
+  const string_type& a_constant_name) const
 {
-  return m_list_identifier.find_num_const(a_num_const_name);
+  return m_list_identifier.find_constant(a_constant_name);
 }*/
 
 inline bool calculator_t::add_func_r_int_a_int(
@@ -1306,10 +1342,10 @@ inline bool calculator_t::add_func_r_ldouble_a_ldouble(
   return m_list_identifier.add_func_r_ldouble_a_ldouble(a_name, ap_function);
 }
 
-inline void calculator_t::num_const_add(
+inline void calculator_t::constant_add(
   const string_type& a_name, const value_type& a_value)
 {
-  m_list_identifier.num_const_add(make_pair(a_name, a_value));
+  m_list_identifier.constant_add(make_pair(a_name, a_value));
 }
 
 inline bool calculator_t::del_func(const string_type& a_name)
@@ -1317,9 +1353,9 @@ inline bool calculator_t::del_func(const string_type& a_name)
   return m_list_identifier.del_func(a_name);
 }
 
-inline void calculator_t::num_const_del(const string_type& a_name)
+inline void calculator_t::constant_del(const string_type& a_name)
 {
-  m_list_identifier.num_const_del(a_name);
+  m_list_identifier.constant_del(a_name);
 }
 
 inline void calculator_t::clear_func()
@@ -1327,12 +1363,16 @@ inline void calculator_t::clear_func()
   m_list_identifier.clear_func();
 }
 
+<<<<<<< .mine
+void calculator_t::constant_clear()
+=======
 inline void calculator_t::num_const_clear()
+>>>>>>> .r86
 {
-  m_list_identifier.num_const_clear();
+  m_list_identifier.constant_clear();
 }
 
-inline void calculator_t::array_add(const string_type& a_name,
+/*inline void calculator_t::array_add(const string_type& a_name,
   const array_type& a_array)
 {
   m_list_identifier.array_add(make_pair(a_name, a_array));
@@ -1346,7 +1386,7 @@ inline void calculator_t::array_del(const string_type& a_name)
 inline void calculator_t::array_clear()
 {
   m_list_identifier.array_clear();
-}
+}*/
 
 }; // namespace calc
 
