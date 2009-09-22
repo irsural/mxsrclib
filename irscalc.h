@@ -13,6 +13,7 @@
 #include <irserror.h>
 #include <math.h>
 #include <irsvariant.h>
+#include <irscpp.h>
 
 namespace irs {
 
@@ -42,6 +43,7 @@ typedef int (*func_r_int_a_int_ptr)(int);
 typedef float (*func_r_float_a_float_ptr)(float);
 typedef double (*func_r_double_a_double_ptr)(double);
 typedef long double (*func_r_ldouble_a_ldouble_ptr)(long double);
+
 enum token_type_t {
   tt_none,
   tt_number,
@@ -50,6 +52,7 @@ enum token_type_t {
   tt_function/*,
   tt_array*/};
 // Список идентификаторов
+
 enum delimiter_t {
   d_none,
   d_plus,
@@ -63,6 +66,9 @@ enum delimiter_t {
   d_left_square_bracket,
   d_right_square_bracket,
   d_comma,
+  d_and,
+  d_or,
+  d_not,
   d_compare_equal,
   d_compare_not_equal,
   d_compare_less,
@@ -70,6 +76,88 @@ enum delimiter_t {
   d_compare_less_or_equal,
   d_compare_greater_or_equal,
   d_end};
+
+enum keyword_t {
+  keyword_and,
+  keyword_and_eq,
+  keyword_asm,
+  keyword_auto,
+  keyword_bitand,
+  keyword_bitor,
+  keyword_bool,
+  keyword_break,
+  keyword_case,
+  keyword_catch,
+  keyword_char,
+  keyword_class,
+  keyword_compl,
+  keyword_const,
+  keyword_const_cast,
+  keyword_continue,
+  keyword_default,
+  keyword_delete,
+  keyword_do,
+  keyword_double,
+  keyword_dynamic_cast,
+  keyword_else,
+  keyword_enum,
+  keyword_explicit,
+  keyword_export,
+  keyword_extern,
+  keyword_false,
+  keyword_float,
+  keyword_for,
+  keyword_friend,
+  keyword_goto,
+  keyword_if,
+  keyword_inline,
+  keyword_int,
+  keyword_long,
+  keyword_mutable,
+  keyword_namespace,
+  keyword_new,
+  keyword_not,
+  keyword_not_eq,
+  keyword_operator,
+  keyword_or,
+  keyword_or_eq,
+  keyword_private,
+  keyword_protected,
+  keyword_public,
+  keyword_register,
+  keyword_reinterpret_cast,
+  keyword_return,
+  keyword_short,
+  keyword_signed,
+  keyword_sizeof,
+  keyword_static,
+  keyword_static_cast,
+  keyword_struct,
+  keyword_switch,
+  keyword_template,
+  keyword_this,
+  keyword_throw,
+  keyword_true,
+  keyword_try,
+  keyword_typedef,
+  keyword_typeid,
+  keyword_typename,
+  keyword_union,
+  keyword_unsigned,
+  keyword_using,
+  keyword_virtual,
+  keyword_void,
+  keyword_volatile,
+  keyword_wchar_t,
+  keyword_while,
+  keyword_xor,
+  keyword_xor_eq};
+
+typedef map<stringns_t, keyword_t> keyword_map_type;
+typedef map<stringns_t, keyword_t> keyword_map_iterator;
+typedef map<stringns_t, keyword_t> keyword_map_const_iterator;
+
+void create_keyword_map(keyword_map_type* ap_keyword_map);
 
 struct function_t
 {
@@ -97,7 +185,6 @@ public:
     constant_list_iterator;
   typedef map<string_type, value_type>::const_iterator
     constant_list_const_iterator;
-  typedef vector<value_type> array_type;
   typedef map<string_type, vector<value_type> > array_list_type;
   typedef map<string_type, vector<value_type> >::iterator
     array_list_iterator;
@@ -120,21 +207,13 @@ public:
   inline bool constant_is_exists(const string_type& a_constant_name) const;
   inline bool constant_find(const string_type& a_name,
     const value_type** ap_p_constant) const;
-  /*inline void array_add(
-    const pair<string_type, array_type>& a_array_pair);
-  inline void array_del(const string_type& a_array_name);
-  inline void array_clear();
-  inline bool array_is_exists(const string_type& a_array_name) const;
-  inline bool array_find(const string_type& a_name,
-    const array_type** ap_p_array) const;*/
   inline bool del_func(const string_type& a_name);
   inline void clear_func();
-  //void clear_constant();
   inline const function_t& get_func(size_type a_id_func) const;
 private:
+  keyword_map_type m_keyword_map;
   vector<function_t> m_func_array;
   constant_list_type m_constant_list;
-  array_list_type m_array_list;
   inline bool add_func(
     const string_type& a_name,
     const type_function_t a_type,
@@ -157,6 +236,8 @@ inline bool list_identifier_t::add_func_r_float_a_float(
 inline void list_identifier_t::constant_add(const pair<string_type,
   value_type>& a_constant_pair)
 {
+  IRS_LIB_ASSERT(m_keyword_map.find(a_constant_pair.first) ==
+    m_keyword_map.end());
   IRS_LIB_ASSERT(find_function(a_constant_pair.first) == irs::npos);
   IRS_LIB_ASSERT(m_constant_list.find(a_constant_pair.first) ==
     m_constant_list.end());     
@@ -197,51 +278,6 @@ inline bool list_identifier_t::constant_find(
   return constant_is_exists;
 }
 
-/*inline void list_identifier_t::array_add(
-  const pair<string_type, array_type>& a_array_pair)
-{
-  IRS_LIB_ASSERT(find_function(a_array_pair.first) == irs::npos);
-  IRS_LIB_ASSERT(m_constant_list.find(a_array_pair.first) ==
-    m_constant_list.end());
-  IRS_LIB_ASSERT(m_array_list.find(a_array_pair.first) ==
-    m_array_list.end());
-  m_array_list.insert(a_array_pair);
-}
-
-inline void list_identifier_t::array_del(
-  const string_type& a_array_name)
-{
-  array_list_iterator it_array =
-    m_array_list.find(a_array_name);
-  IRS_LIB_ASSERT(it_array != m_array_list.end());
-  m_array_list.erase(it_array);
-}
-
-inline void list_identifier_t::array_clear()
-{
-  m_array_list.clear();
-}
-
-inline bool list_identifier_t::array_is_exists(
-  const string_type& a_array_name) const
-{
-  return m_array_list.find(a_array_name) != m_array_list.end();
-}
-
-inline bool list_identifier_t::array_find(const string_type& a_name,
-  const array_type** ap_p_array) const
-{
-  array_list_const_iterator it_array =
-    m_array_list.find (a_name);
-  bool array_is_exists = it_array != m_array_list.end();
-  if (array_is_exists) {
-    *ap_p_array = &it_array->second;
-  } else {
-    // Константа с таким именем отсутсвует
-  }
-  return array_is_exists;
-}*/
-
 inline bool list_identifier_t::add_func_r_double_a_double(
   const string_type& a_name, func_r_double_a_double_ptr ap_function)
 {
@@ -265,8 +301,11 @@ inline const function_t& list_identifier_t::
 list_identifier_t::list_identifier_t(
 ):
   m_func_array(),
-  m_constant_list()
-{ }
+  m_constant_list(),
+  m_keyword_map()
+{
+  create_keyword_map(&m_keyword_map);
+}
 
 inline int list_identifier_t::
   find_function(const string_type& a_function_name) const
@@ -287,7 +326,11 @@ inline bool list_identifier_t::add_func(
   void* ap_function)
 {
   bool fsuccess = true;
-  if (find_function(a_name) != irs::npos) {
+  if (m_keyword_map.find(a_name) !=
+    m_keyword_map.end())
+  {
+    fsuccess = false;
+  } else if (find_function(a_name) != irs::npos) {
     fsuccess = false;
   } else if (constant_is_exists(a_name)) {
     fsuccess = false;
@@ -318,28 +361,17 @@ inline void list_identifier_t::clear_func()
   m_func_array.clear();
 }
 
-/*
-void list_identifier_t::clear_constant()
-{
-  m_constant_array.clear();
-}*/
-
 class token_t
 {
-public:
   typedef valuens_t value_type;
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef list_identifier_t::array_type array_type;
-  //static const int m_none_id_func = -1;
-private:
   token_type_t m_token_type;
   value_type m_num;
   delimiter_t m_delimiter;
   size_type m_id_function;
   const value_type* mp_constant;
-  //const array_type* mp_array;
 public:
   token_t(
   ):
@@ -348,30 +380,29 @@ public:
     m_delimiter(d_none),
     m_id_function(0),
     mp_constant(IRS_NULL)
-    //mp_array(IRS_NULL)
   {}
-  void set_number(const value_type& a_num)
+  inline void set_number(const value_type& a_num)
   {
     m_token_type = tt_number;
     m_num = a_num;
     m_delimiter = d_none;
     m_id_function = 0;
   }
-  void set_delimiter(const delimiter_t a_delimiter)
+  inline void set_delimiter(const delimiter_t a_delimiter)
   {
     m_token_type = tt_delimiter;
     m_num = 0;
     m_delimiter = a_delimiter;
     m_id_function = 0;
   }
-  void set_id_function(const int a_id_function)
+  inline void set_id_function(const int a_id_function)
   {
     m_token_type = tt_function;
     m_num = 0;
     m_delimiter = d_none;
     m_id_function = a_id_function;
   }
-  void set_constant(const value_type* ap_constant)
+  inline void set_constant(const value_type* ap_constant)
   {
     m_token_type = tt_constant;
     m_num = 0;
@@ -379,46 +410,66 @@ public:
     m_id_function = 0;
     mp_constant = ap_constant;
   }
-  void set_not_a_token_type()
+  inline void set_not_a_token_type()
   {
     m_token_type = tt_none;
     m_num = 0;
     m_delimiter = d_none;
     m_id_function = 0;
   }
-  delimiter_t delimiter() const
+  inline delimiter_t delimiter() const
   {
     return m_delimiter;
   }
-  token_type_t token_type_get() const
+  inline token_type_t token_type() const
   {
     return m_token_type;
   }
-  bool operator==(const token_type_t a_token_type)
-  {
-    return (m_token_type == a_token_type);
-  }
-  bool operator==(const delimiter_t a_delimiter)
-  {
-    return (m_delimiter == a_delimiter);
-  }
-  bool operator!=(const delimiter_t a_delimiter)
-  {
-    return (m_delimiter != a_delimiter);
-  }
-  size_type get_id_function() const
+  inline size_type get_id_function() const
   {
     return m_id_function;
   }
-  const value_type* get_constant() const
+  inline const value_type* get_constant() const
   {
     return mp_constant;
   }
-  value_type get_number() const
+  inline value_type get_number() const
   {
     return m_num;
   }
 };
+
+inline bool is_token_operator_logical(const token_t& a_token)
+{
+  bool is_operator_logical = false;
+  if (a_token.token_type() == tt_delimiter) {
+    const delimiter_t delim = a_token.delimiter();
+    if ((delim >= d_and) && (delim <= d_not)) {
+      is_operator_logical = true;
+    } else {
+      // Это не логический оператор
+    }
+  } else {
+    // Это не ограничитель
+  }
+  return is_operator_logical;
+}
+
+inline bool is_token_operator_compare(const token_t& a_token)
+{
+  bool is_operator_compare = false;
+  if (a_token.token_type() == tt_delimiter) {
+    const delimiter_t delim = a_token.delimiter();
+    if ((delim >= d_compare_equal) && (delim <= d_compare_greater_or_equal)) {
+      is_operator_compare = true;
+    } else {
+      // Это не оператор сравнения
+    }
+  } else {
+    // Это не ограничитель
+  }
+  return is_operator_compare;
+}
 
 // Детектор лексем
 class detector_token_t
@@ -428,7 +479,7 @@ public:
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef list_identifier_t::array_type array_type;
+  //typedef list_identifier_t::array_type array_type;
   detector_token_t(
     list_identifier_t& a_list_identifier):
     m_list_identifier(a_list_identifier),
@@ -495,7 +546,7 @@ inline bool detector_token_t::ch_is_first_char_name(const char_type a_ch)
   bool ch_latin_small = (a_ch >= 'a') && (a_ch <= 'z');
   // Символ подчеркивания
   bool ch_underscore = (a_ch == '_');
-
+ 
   if (ch_latin_capital || ch_latin_small || ch_underscore) {
     ch_valid = true;
   }
@@ -541,6 +592,24 @@ inline bool detector_token_t::detect_token()
       // Следующий символ отсутсвует
     }
     switch(ch) {
+      case '&': {
+        if (next_ch_not_end_prog && (next_ch == '&')) {
+          m_cur_token_data.token.set_delimiter(d_and);
+          detected_token = true;
+          pos += 2;
+        } else {
+          // Не удалось распознать ограничитель
+        }
+      } break;
+      case '|': {
+        if (next_ch_not_end_prog && (next_ch == '|')) {
+          m_cur_token_data.token.set_delimiter(d_or);
+          detected_token = true;
+          pos += 2;
+        } else {
+          // Не удалось распознать ограничитель
+        }
+      } break;
       case '=': {
         if (next_ch_not_end_prog && (next_ch == '=')) {
           m_cur_token_data.token.set_delimiter(d_compare_equal);
@@ -556,7 +625,9 @@ inline bool detector_token_t::detect_token()
           detected_token = true;
           pos += 2;
         } else {
-          // Не удалось распознать ограничитель
+          m_cur_token_data.token.set_delimiter(d_not);
+          detected_token = true;
+          pos ++;
         }
       } break;
       case '<': {
@@ -706,38 +777,56 @@ inline bool detector_token_t::detect_token()
       double number;
       if (num_str.to_number(number)) {
         m_cur_token_data.token.set_number(number);
-        m_cur_token_data.length = pos - num_begin_ch;
+        m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
         detected_token = true;
       }
     }
   }
 
-  // Читаем идентификатор
+  // Читаем идентификатор или ключевое слово
   if (!detected_token) {
     if (ch_is_first_char_name(ch)) {
       size_type pos_begin_name = pos;
       pos = mp_prog->find_first_not_of(m_ch_valid_name, pos);
       if (pos == string_type::npos) {
         pos = mp_prog->size();
+      } else {
+        // Символ, не принадлежащий группе символов, допустимых в имени,
+        // не найден
       }
       string_type identifier_str =
         mp_prog->substr(pos_begin_name, (pos - pos_begin_name));
-      int func_pos = m_list_identifier.find_function(identifier_str);
-      if (func_pos != irs::npos) {
-        m_cur_token_data.token.set_id_function(func_pos);
-        m_cur_token_data.length = pos - pos_begin_name;
+
+      if (identifier_str == "and") {
+        m_cur_token_data.token.set_delimiter(d_and);
+        m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
-        detected_token = true;
+      } else if (identifier_str == "or") {
+        m_cur_token_data.token.set_delimiter(d_or);
+        m_cur_token_data.length = pos - m_prog_pos;
+        m_cur_token_data.valid = true;
+      } else if (identifier_str == "not") {
+        m_cur_token_data.token.set_delimiter(d_not);
+        m_cur_token_data.length = pos - m_prog_pos;
+        m_cur_token_data.valid = true;
       } else {
-        const value_type* p_constant = IRS_NULL; 
-        if (m_list_identifier.constant_find(identifier_str, &p_constant)) {
-          m_cur_token_data.token.set_constant(p_constant);
-          m_cur_token_data.length = pos - pos_begin_name;
+        int func_pos = m_list_identifier.find_function(identifier_str);
+        if (func_pos != irs::npos) {
+          m_cur_token_data.token.set_id_function(func_pos);
+          m_cur_token_data.length = pos - m_prog_pos;
           m_cur_token_data.valid = true;
           detected_token = true;
         } else {
-          // Констранта с таким именем не найдена
+          const value_type* p_constant = IRS_NULL;
+          if (m_list_identifier.constant_find(identifier_str, &p_constant)) {
+            m_cur_token_data.token.set_constant(p_constant);
+            m_cur_token_data.length = pos - m_prog_pos;
+            m_cur_token_data.valid = true;
+            detected_token = true;
+          } else {
+            // Констранта с таким именем не найдена
+          }
         }
       }
     }
@@ -761,12 +850,24 @@ inline bool detector_token_t::
   }
   if (fsuccess) {
     if ((m_prog_pos + m_cur_token_data.length) > mp_prog->size()) {
+      IRS_LIB_ASSERT_MSG("Ошибка при перемещении к следующему сиволу");
       fsuccess = false;
+    } else {
+      // Перемещение к следующему не приводит к выходу за пределы программы
     }
+  } else {
+    // Произошла ошибка
   }
   if (fsuccess) {
     m_prog_pos += m_cur_token_data.length;
     m_cur_token_data.valid = false;
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    fsuccess = detect_token();
+  } else {
+    // Произошла ошибка
   }
   return fsuccess;
 }
@@ -791,11 +892,9 @@ public:
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  typedef list_identifier_t::array_type array_type;
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline int find_function(const string_type& a_function_name) const;
-  //int find_constant(const string_type& a_constant_name) const;
   inline bool add_func_r_int_a_int(
     const string_type& a_name, func_r_int_a_int_ptr ap_function);
   inline bool add_func_r_float_a_float(
@@ -810,34 +909,31 @@ public:
   inline void constant_del(const string_type& a_name);
   inline void clear_func();
   inline void constant_clear();
-
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
   inline bool interp(value_type* ap_value);
   // Обрабатывает квадратные скобки
-  inline bool eval_exp_square_brackets(value_type* a_value);
+  inline bool eval_exp_square_brackets(value_type* ap_value);
+  // Обрабатывает логические операции
+  inline bool eval_exp_logical(value_type* ap_value);
   // Обрабатывает операции отношения
-  inline bool eval_exp_compare(value_type* a_value);
+  inline bool eval_exp_compare(value_type* ap_value);
   // Обрабатывает сложение и вычитание
-  inline bool eval_exp_arithmetic_leve1(value_type* a_value);
+  inline bool eval_exp_arithmetic_leve1(value_type* ap_value);
   // Обрабатывает умножение, деление, целочисленное деление
-  inline bool eval_exp_arithmetic_leve2(value_type* a_value);
+  inline bool eval_exp_arithmetic_leve2(value_type* ap_value);
   // Обрабатывает возведение в степень
-  inline bool eval_exp_power(value_type* a_value);
+  inline bool eval_exp_power(value_type* ap_value);
   // Обрабатывает скобки
-  inline bool eval_exp_brackets(value_type* a_value);
+  inline bool eval_exp_brackets(value_type* ap_value);
   // Обрабатывает функции и числа
-  inline bool atom(value_type* a_value);
+  inline bool atom(value_type* ap_value);
   // Выполнение функцию
   inline void func_exec(
     const function_t& a_function,
     const value_type a_in_param,
     value_type* ap_out_param);
-  // Чтение элемента массива
-  inline bool array_elem_read(const array_type* ap_array,
-    const size_type a_elem_index,
-    value_type* ap_array_elem) const;
 };
 
 inline calculator_t::calculator_t():
@@ -887,9 +983,26 @@ inline bool calculator_t::interp(
 {
   value_type value = 0;
   // m_cur_lexeme_index = 0;
-  bool fsuccess = eval_exp_compare(&value);
+  bool fsuccess = eval_exp_logical(&value);
   if (fsuccess) {
-    *ap_value = value;
+    token_t token;
+    fsuccess = m_detector_token.get_token(&token);
+    if (fsuccess) {
+      if (token.token_type() == tt_delimiter) {
+        delimiter_t delim = token.delimiter();
+        if (delim == d_end) {
+          *ap_value = value;
+        } else {
+          // Текущим ограничителем должен быть конец программы
+          fsuccess = false;
+        }
+      } else {
+        // Текущей лексемой должен быть ограничитель
+        fsuccess = false;
+      }
+    } else {
+      // Произошла ошибка
+    }
   }
   return fsuccess;
 }
@@ -904,7 +1017,7 @@ inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
     if (delim == d_left_square_bracket) {
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
-        fsuccess = eval_exp_compare(ap_value);
+        fsuccess = eval_exp_logical(ap_value);
       } else {
         // Произошла ошибка
       }
@@ -914,7 +1027,7 @@ inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
         // Произошла ошибка
       }
       if (fsuccess) {
-        if (token == d_right_square_bracket) {
+        if (token.delimiter() == d_right_square_bracket) {
           // Закрывающая квадратная скобка присутсвует
           fsuccess = m_detector_token.next_token();
         } else {
@@ -931,6 +1044,53 @@ inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
   return fsuccess;
 }
 
+inline bool calculator_t::eval_exp_logical(value_type* ap_value)
+{
+  bool fsuccess = true;
+  fsuccess = eval_exp_compare(ap_value);
+  if (fsuccess) {
+    token_t token;
+    fsuccess = m_detector_token.get_token(&token);
+    if (fsuccess) {
+      delimiter_t delim = token.delimiter();
+      while(is_token_operator_logical(token) && fsuccess) { 
+        fsuccess = m_detector_token.next_token();
+        if (fsuccess) {
+          if ((delim == d_and) || (delim == d_or)) {
+            value_type partial_value = 0;
+            fsuccess = eval_exp_compare(&partial_value);
+            if (fsuccess) {
+              if (delim == d_and) {
+                *ap_value = ap_value->as_bool() && partial_value.as_bool();
+              } else {
+                *ap_value = ap_value->as_bool() || partial_value.as_bool();
+              }
+              fsuccess = m_detector_token.get_token(&token);
+            } else {
+              // Произошла ошибка
+            }
+          } else {
+            *ap_value = !ap_value->as_bool();
+            fsuccess = m_detector_token.get_token(&token);
+          }
+        } else {
+          // Произошла ошибка
+        }
+        if (fsuccess) {
+          delim = token.delimiter();
+        } else {
+          // Произошла ошибка
+        }
+      }
+    } else {
+      // Произошла ошибка
+    }
+  } else {
+    // Произошла ошибка
+  }
+  return fsuccess;
+}
+
 inline bool calculator_t::eval_exp_compare(value_type* ap_value)
 {
   bool fsuccess = true;
@@ -939,17 +1099,13 @@ inline bool calculator_t::eval_exp_compare(value_type* ap_value)
   if (fsuccess) {
     token_t token;
     fsuccess = m_detector_token.get_token(&token);
-    if (fsuccess) {
-      delimiter_t delim = token.delimiter();
-      if ((delim >= d_compare_equal) && (delim <= d_compare_greater_or_equal)) {
-        fsuccess = m_detector_token.next_token();
-        if (fsuccess) {
-          fsuccess = eval_exp_arithmetic_leve1(&partial_value);
-        } else {
-          // Произошла ошибка
-        }
+    delimiter_t delim = token.delimiter();
+    while (is_token_operator_compare(token) && fsuccess) {
+      fsuccess = m_detector_token.next_token();
+      if (fsuccess) {
+        fsuccess = eval_exp_arithmetic_leve1(&partial_value);
       } else {
-        // Лексема не является операцией сравнения
+        // Произошла ошибка
       }
       if (fsuccess) {
         switch (delim) {
@@ -972,14 +1128,18 @@ inline bool calculator_t::eval_exp_compare(value_type* ap_value)
             *ap_value = (*ap_value >= partial_value);
           } break;
           default : {
-            // Лексема не является операцией сравнения
+            IRS_LIB_ASSERT_MSG("Лексема должна быть операцией сравнения");
           }
+          fsuccess = m_detector_token.get_token(&token);
         }
       } else {
         // Произошла ошибка
       }
-    } else {
-      // Произошла ошибка
+      if (fsuccess) {
+        delim = token.delimiter();
+      } else {
+        // Произошла ошибка
+      }
     }
   } else {
     // Произошла ошибка
@@ -1015,7 +1175,11 @@ inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
         } else {
           // Произошла ошибка
         }
-        delim = token.delimiter();
+        if (fsuccess) {
+          delim = token.delimiter();
+        } else {
+          // Произошла ошибка
+        }
       }
     } else {
       // Произошла ошибка при извлечении лексемы
@@ -1043,15 +1207,15 @@ inline bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
           // Произошла ошибка
         }
         if (fsuccess) {
-          if (token == d_multiply) {
+          if (token.delimiter() == d_multiply) {
             *ap_value = *ap_value * partial_value;
-          } else if (token == d_division) {
+          } else if (token.delimiter() == d_division) {
             if (partial_value != 0) {
               *ap_value = *ap_value / partial_value;
             } else {
               fsuccess = false;
             }
-          } else if (token == d_integer_division) {
+          } else if (token.delimiter() == d_integer_division) {
             *ap_value =
               static_cast<int>(*ap_value) % static_cast<int>(partial_value);
           }
@@ -1077,19 +1241,25 @@ inline bool calculator_t::eval_exp_power(value_type* ap_value)
     token_t token;
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
-      while(fsuccess && (token == d_involution)) {
+      while(fsuccess && (token.delimiter() == d_involution)) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = eval_exp_brackets(&partial_value);
         }
         if (fsuccess) {
-          if (token == d_involution) {
+          if (token.delimiter() == d_involution) {
             *ap_value = pow(*ap_value, static_cast<double>(partial_value));
-          }
+          } 
           fsuccess = m_detector_token.get_token(&token);
+        } else {
+          // Произошла ошибка
         }
       }
+    } else {
+      // Произошла ошибка
     }
+  } else {
+    // Произошла ошибка
   }
   return fsuccess;
 }
@@ -1105,7 +1275,7 @@ inline bool calculator_t::eval_exp_brackets(value_type* ap_value)
     if (delim == d_left_parenthesis) {
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
-        fsuccess = eval_exp_compare(ap_value);
+        fsuccess = eval_exp_logical(ap_value);
       } else {
         // Произошла ошибка
       }
@@ -1115,7 +1285,7 @@ inline bool calculator_t::eval_exp_brackets(value_type* ap_value)
         // Произошла ошибка
       }
       if (fsuccess) {
-        if (token == d_right_parenthesis) {
+        if (token.delimiter() == d_right_parenthesis) {
           // Закрывающая круглая скобка присутсвует
           fsuccess = m_detector_token.next_token();
         } else {
@@ -1138,7 +1308,7 @@ inline bool calculator_t::atom(value_type* ap_value)
   token_t token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
-    if (token == tt_function) {
+    if (token.token_type() == tt_function) {
       const int id_func = token.get_id_function();
       fsuccess = m_detector_token.next_token();
       value_type arg_func = 0;
@@ -1147,18 +1317,13 @@ inline bool calculator_t::atom(value_type* ap_value)
       } else {
         // Произошла ошибка
       }
-      /*if (fsuccess) {
-        fsuccess = m_detector_token.get_token(&token);
-      } else {
-        // Произошла ошибка
-      }*/
       if (fsuccess) {
         func_exec(m_list_identifier.get_func(id_func),
           arg_func, ap_value);
       } else {
         // Произошла ошибка
       }
-    } else if (token == tt_constant) {
+    } else if (token.token_type() == tt_constant) {
       const value_type* p_constant = token.get_constant();
       fsuccess = m_detector_token.next_token();
       while (fsuccess && (p_constant->type() == variant::var_type_array)) {
@@ -1178,53 +1343,23 @@ inline bool calculator_t::atom(value_type* ap_value)
           // Произошла ошибка
         }
       }
-      /*if (fsuccess) {
-        fsuccess = m_detector_token.get_token(&token);
-      } else {
-        // Произошла ошибка
-      }
-      if (fsuccess) {
-        if (token.token_type_get() != tt_delimiter) {
-          fsuccess = false;
-        } else {
-          if (token.delimiter() != d_left_square_bracket) {
-            fsuccess = false;
-          } else {
-            // Следующая лексема является квадратной скобкой
-          }
-        }
-      } else {
-        // Произошла ошибка
-      }*/
-      /*value_type elem_index;
-      if (fsuccess) {
-
-        fsuccess = eval_exp_square_brackets(&elem_index);
-      } else {
-        // Произошла ошибка
-      }*/
-      /*if (fsuccess) {
-        fsuccess = m_detector_token.get_token(&token);
-      } else {
-        // Произошла ошибка
-      }*/
       if (fsuccess) {
         *ap_value = *p_constant;
       } else {
         // Произошла ошибка
       }
-    } else if (token == tt_number) {
+    } else if (token.token_type() == tt_number) {
       *ap_value = token.get_number();
       fsuccess = m_detector_token.next_token();
-    } else if (token == tt_delimiter) {
-      if (token == d_plus) {
+    } else if (token.token_type() == tt_delimiter) {
+      if (token.delimiter() == d_plus) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = atom(ap_value);
         } else {
           // Произошла ошибка
         }
-      } else if (token == d_minus) {
+      } else if (token.delimiter() == d_minus) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           fsuccess = atom(ap_value);
@@ -1268,19 +1403,6 @@ inline void calculator_t::func_exec(
   }
 }
 
-inline bool calculator_t::array_elem_read(const array_type* ap_array,
-  const size_type a_elem_index,
-  value_type* ap_array_elem) const
-{
-  bool fsuccess = true;
-  if (a_elem_index < ap_array->size()) {
-    *ap_array_elem = (*ap_array)[a_elem_index];
-  } else {
-    fsuccess = false;
-  }
-  return fsuccess;
-}
-
 inline bool calculator_t::
   calc(const string_type* ap_prog, value_type* ap_num)
 {
@@ -1293,12 +1415,6 @@ inline int calculator_t::find_function(
 {
   return m_list_identifier.find_function(a_function_name);
 }
-
-/*inline int calculator_t::find_constant(
-  const string_type& a_constant_name) const
-{
-  return m_list_identifier.find_constant(a_constant_name);
-}*/
 
 inline bool calculator_t::add_func_r_int_a_int(
   const string_type& a_name, func_r_int_a_int_ptr ap_function)
@@ -1349,22 +1465,6 @@ inline void calculator_t::constant_clear()
 {
   m_list_identifier.constant_clear();
 }
-
-/*inline void calculator_t::array_add(const string_type& a_name,
-  const array_type& a_array)
-{
-  m_list_identifier.array_add(make_pair(a_name, a_array));
-}
-
-inline void calculator_t::array_del(const string_type& a_name)
-{
-  m_list_identifier.array_del(a_name);
-}
-
-inline void calculator_t::array_clear()
-{
-  m_list_identifier.array_clear();
-}*/
 
 }; // namespace calc
 

@@ -149,23 +149,24 @@ public:
   #endif // IRSDEFS_I64   
   variant_t& operator=(const string_type& a_value);
 
-  char is_char() const;
-  signed char is_signed_char() const;
-  unsigned char is_unsigned_char() const;
-  short is_short() const;
-  unsigned short is_unsigned_short() const;
-  int is_int() const;
-  unsigned int is_unsigned_int() const;
-  long is_long() const;
-  unsigned long is_unsigned_long() const;
-  float is_float() const;
-  double is_double() const;
-  long double is_long_double() const;
+  bool as_bool() const;
+  char as_char() const;
+  signed char as_signed_char() const;
+  unsigned char as_unsigned_char() const;
+  short as_short() const;
+  unsigned short as_unsigned_short() const;
+  int as_int() const;
+  unsigned int as_unsigned_int() const;
+  long as_long() const;
+  unsigned long as_unsigned_long() const;
+  float as_float() const;
+  double as_double() const;
+  long double as_long_double() const;
   #ifdef IRSDEFS_I64
-  long_long_type is_long_long() const;
-  unsigned_long_long_type is_unsigned_long_long() const;
+  long_long_type as_long_long() const;
+  unsigned_long_long_type as_unsigned_long_long() const;
   #endif // IRSDEFS_I64
-  string_type is_string() const;
+  string_type as_string() const;
   //signed char is_array() const;
 
   operator char() const;

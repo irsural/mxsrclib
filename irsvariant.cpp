@@ -286,85 +286,91 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   return *this;
 }
 
-char irs::variant::variant_t::is_char() const
+bool irs::variant::variant_t::as_bool() const
+{
+  bool value;
+  value_get(&value);
+  return value;
+}
+
+char irs::variant::variant_t::as_char() const
 {
   char value;
   value_get(&value);
   return value;
 }
 
-
-signed char irs::variant::variant_t::is_signed_char() const
+signed char irs::variant::variant_t::as_signed_char() const
 {
   signed char value;
   value_get(&value);
   return value;
 }
 
-unsigned char irs::variant::variant_t::is_unsigned_char() const
+unsigned char irs::variant::variant_t::as_unsigned_char() const
 {
   unsigned char value;
   value_get(&value);
   return value;
 }
 
-short irs::variant::variant_t::is_short() const
+short irs::variant::variant_t::as_short() const
 {
   short value;
   value_get(&value);
   return value;
 }
 
-unsigned short irs::variant::variant_t::is_unsigned_short() const
+unsigned short irs::variant::variant_t::as_unsigned_short() const
 {
   unsigned short value;
   value_get(&value);
   return value;
 }
 
-int irs::variant::variant_t::is_int() const
+int irs::variant::variant_t::as_int() const
 {
   int value;
   value_get(&value);
   return value;
 }
 
-unsigned int irs::variant::variant_t::is_unsigned_int() const
+unsigned int irs::variant::variant_t::as_unsigned_int() const
 {
   unsigned int value;
   value_get(&value);
   return value;
 }
 
-long irs::variant::variant_t::is_long() const
+long irs::variant::variant_t::as_long() const
 {
   long value;
   value_get(&value);
   return value;
 }
 
-unsigned long irs::variant::variant_t::is_unsigned_long() const
+unsigned long irs::variant::variant_t::as_unsigned_long() const
 {
   unsigned long value;
   value_get(&value);
   return value;
 }
 
-float irs::variant::variant_t::is_float() const
+float irs::variant::variant_t::as_float() const
 {
   float value;
   value_get(&value);
   return value;
 }
 
-double irs::variant::variant_t::is_double() const
+double irs::variant::variant_t::as_double() const
 {
   double value;
   value_get(&value);
   return value;
 }
 
-long double irs::variant::variant_t::is_long_double() const
+long double irs::variant::variant_t::as_long_double() const
 {
   long double value;
   value_get(&value);
@@ -373,7 +379,7 @@ long double irs::variant::variant_t::is_long_double() const
 
 #ifdef IRSDEFS_I64
 irs::variant::variant_t::long_long_type
-irs::variant::variant_t::is_long_long() const
+irs::variant::variant_t::as_long_long() const
 {
   long_long_type value;
   value_get(&value);
@@ -381,7 +387,7 @@ irs::variant::variant_t::is_long_long() const
 }
 
 irs::variant::variant_t::unsigned_long_long_type
-irs::variant::variant_t::is_unsigned_long_long() const
+irs::variant::variant_t::as_unsigned_long_long() const
 {
   unsigned_long_long_type value;
   value_get(&value);
@@ -390,7 +396,7 @@ irs::variant::variant_t::is_unsigned_long_long() const
 #endif // IRSDEFS_I64
 
 irs::variant::variant_t::string_type
-irs::variant::variant_t::is_string() const
+irs::variant::variant_t::as_string() const
 {
   string value;
   value_get(&value);
@@ -974,6 +980,17 @@ irs::variant::variant_t irs::variant::operator%(
 #ifdef IRS_LIB_DEBUG
 void irs::variant::test_variant()
 {
+  /*#pragma pack(push, 1)
+  struct test_struct_t{
+    char ch;
+    short s;
+    int i;
+    double d;
+    long double ld;
+  } test_struct;
+  #pragma pack(pop)
+
+  int test_struct_size = sizeof(test_struct);*/
   typedef variant_t::size_type size_type;
   // Поддерживаемые типы
   char var_char_type = 'q';

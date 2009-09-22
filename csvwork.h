@@ -11,7 +11,7 @@
 //#include <irscpp.h>
 
 //#include <irsdefs.h>
-//#include <irserror.h>
+//#include <irserror.h>  
 
 //---------------------------------------------------------------------------
 // typedef-определения

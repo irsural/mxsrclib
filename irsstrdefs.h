@@ -15,6 +15,7 @@ namespace irs {
 
 #define irst(cstr) L##cstr
 
+typedef wint_t char_int_t;
 typedef wchar_t char_t;
 typedef wstring string_t;
 typedef wostream ostream_t;
@@ -24,6 +25,7 @@ typedef wistream istream_t;
 
 #define irst(cstr) cstr
 
+typedef int char_int_t;
 typedef char char_t;
 typedef irs::string string_t;
 typedef ostream ostream_t;
@@ -31,132 +33,135 @@ typedef istream istream_t;
 
 #endif //IRS_UNICODE
 
-#ifdef IRS_UNICODE
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-inline bool isalnumt(wint_t a_ch)
+inline bool isalnumt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::alnum, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alnum,
+    static_cast<char_t>(a_ch));
+}
+                                              
+inline bool isalphat(char_int_t a_ch, const locale& a_loc = locale())
+{
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alpha,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isalphat(wint_t a_ch)
+inline bool iscntrlt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::alpha, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::cntrl,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool iscntrlt(wint_t a_ch)
+inline bool isdigitt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::cntrl, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::digit,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isdigitt(wint_t a_ch)
+inline bool isgrapht(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::digit, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::graph,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isgrapht(int a_ch)
+inline bool islowert(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::graph, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::lower,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool islowert(int a_ch)
+inline bool isprintt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::lower, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::print,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isprintt(wint_t a_ch)
+inline bool ispunctt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::print, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::punct,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool ispunctt(wint_t a_ch)
+inline bool isspacet(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::punct, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::space,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isspacet(wint_t a_ch)
+inline bool isuppert(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::space, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::upper,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isuppert(wint_t a_ch)
+inline bool isxdigitt(char_int_t a_ch, const locale& a_loc = locale())
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::upper, a_ch);
+  return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::xdigit,
+    static_cast<char_t>(a_ch));
 }
 
-inline bool isxdigitt(wint_t a_ch)
+inline const char_t* strchrt(const char_t* a_str, char_int_t a_ch)
 {
-  locale loc;
-  return use_facet<ctype<wint_t> >(loc).is(ctype<wint_t>::xdigit, a_ch);
-}
-
-inline const char_t* strchrt(const char_t* a_str, int a_ch)
-{
+  #ifdef IRS_UNICODE
   return wcschr(a_str, a_ch);
+  #else //IRS_UNICODE
+  return strchr(a_str, a_ch);
+  #endif //IRS_UNICODE
 }
 
-#else //IRS_UNICODE
-
-inline bool isalnumt(int a_ch)
+#else //IRS_FULL_STDCPPLIB_SUPPORT
+inline bool isalnumt(char_int_t a_ch)
 {
   return ::isalnum(a_ch);
 }
 
-inline bool isalphat(int a_ch)
+inline bool isalphat(char_int_t a_ch)
 {
   return ::isalpha(a_ch);
 }
 
-inline bool iscntrlt(int a_ch)
+inline bool iscntrlt(char_int_t a_ch)
 {
   return ::iscntrl(a_ch);
 }
 
-inline bool isdigitt(int a_ch)
+inline bool isdigitt(char_int_t a_ch)
 {
   return ::isdigit(a_ch);
 }
 
-inline bool isgrapht(int a_ch)
+inline bool isgrapht(char_int_t a_ch)
 {
   return ::isgraph(a_ch);
 }
 
-inline bool islowert(int a_ch)
+inline bool islowert(char_int_t a_ch)
 {
   return ::islower(a_ch);
 }
 
-inline bool isprintt(int a_ch)
+inline bool isprintt(char_int_t a_ch)
 {
   return ::isprint(a_ch);
 }
 
-inline bool ispunctt(int a_ch)
+inline bool ispunctt(char_int_t a_ch)
 {
   return ::ispunct(a_ch);
 }
 
-inline bool isspacet(int a_ch)
+inline bool isspacet(char_int_t a_ch)
 {
   return ::isspace(a_ch);
 }
 
-inline bool isuppert(int a_ch)
+inline bool isuppert(char_int_t a_ch)
 {
   return ::isupper(a_ch);
 }
 
-inline bool isxdigitt(int a_ch)
+inline bool isxdigitt(char_int_t a_ch)
 {
   return ::isxdigit(a_ch);
 }
@@ -166,7 +171,7 @@ inline const char_t* strchrt(const char_t* a_str, int a_ch)
   return strchr(a_str, a_ch);
 }
 
-#endif //IRS_UNICODE
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 } //namespace irs
 

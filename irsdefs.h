@@ -32,7 +32,14 @@
 #if !defined(__WATCOMC__)
 // Поддержка частичной специализации для функций
 #define IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
-#endif //compilers
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+//IRS_FULL_LOCALE_SUPPORT
+#if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) ||\
+  (defined(__GNUC__) && (__GNUC__ >= 4))
+#define IRS_FULL_STDCPPLIB_SUPPORT
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+
 
 // Специальные описатели для манипуляторов в различных компиляторах
 #if defined(__WATCOMC__)
