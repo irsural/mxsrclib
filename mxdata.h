@@ -276,11 +276,11 @@ inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 template <class T>
 inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
 {
-  return memmove(
+  return reinterpret_cast<T*>(memmove(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
-  );
+  ));
 }
 
 // —ырые данные
