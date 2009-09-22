@@ -41,7 +41,7 @@ typedef variant::variant_t valuens_t;
 
 typedef int (*func_r_int_a_int_ptr)(int);
 typedef float (*func_r_float_a_float_ptr)(float);
-typedef double (*func_r_double_a_double_ptr)(double);
+//typedef double (*func_r_double_a_double_ptr)(double);
 typedef long double (*func_r_ldouble_a_ldouble_ptr)(long double);
 
 enum token_type_t {
@@ -49,8 +49,7 @@ enum token_type_t {
   tt_number,
   tt_delimiter,
   tt_constant,
-  tt_function/*,
-  tt_array*/};
+  tt_function};
 // Список идентификаторов
 
 enum delimiter_t {
@@ -159,18 +158,79 @@ typedef map<stringns_t, keyword_t> keyword_map_const_iterator;
 
 void create_keyword_map(keyword_map_type* ap_keyword_map);
 
-struct function_t
+class function_t
 {
-  typedef stringns_t string_type;
-  string_type name;
-  type_function_t type;
-  void* ptr;
-  union{
-    int (*func_r_int_a_int_ptr)(int);
-    float (*func_r_float_a_float_ptr)(float);
-    double (*func_r_double_a_double_ptr)(double);
-    long double (*func_r_ldouble_a_ldouble_ptr)(long double);
-  };
+public:
+  inline virtual ~function_t()
+  {
+  }
+  virtual void exec(variant::variant_t* ap_parameters,
+    variant::variant_t* ap_returned_parameter) const = 0;
+};
+
+class func_r_int_a_int_t: public function_t
+{
+public:
+  typedef int (*func_r_int_a_int_ptr)(int);
+  inline func_r_int_a_int_t(func_r_int_a_int_ptr ap_func
+  ):
+    mp_func(ap_func)
+  {
+  }
+  inline virtual void exec(variant::variant_t* ap_parameters,
+    variant::variant_t* ap_returned_parameter) const
+  {
+    IRS_LIB_ASSERT(ap_parameters->type() == variant::var_type_array);
+    if (ap_parameters->size() == 1) {
+      *ap_returned_parameter = (*mp_func)((*ap_parameters)[0].as_int());
+    } else {
+      // Недопустимое количество параметров
+    }
+  }
+private:
+  func_r_int_a_int_ptr mp_func;
+  func_r_int_a_int_t();
+};
+
+class func_r_double_a_double_t: public function_t
+{
+public:
+  typedef double (*func_r_double_a_double_ptr_type)(double);
+  inline explicit func_r_double_a_double_t(
+    func_r_double_a_double_ptr_type ap_func
+  ):
+    mp_func(ap_func)
+  {
+  }
+  inline virtual void exec(variant::variant_t* ap_parameters,
+    variant::variant_t* ap_returned_parameter) const
+  {
+    IRS_LIB_ASSERT(ap_parameters->type() == variant::var_type_array);
+    if (ap_parameters->size() == 1) {
+      *ap_returned_parameter = (*mp_func)((*ap_parameters)[0].as_double());
+    } else {
+      // Недопустимое количество параметров
+    }
+  }
+private:
+  func_r_double_a_double_ptr_type mp_func;
+  func_r_double_a_double_t();
+};
+
+class pow_t: public function_t
+{
+public:
+  inline virtual void exec(variant::variant_t* ap_parameters,
+    variant::variant_t* ap_returned_parameter) const
+  {
+    IRS_LIB_ASSERT(ap_parameters->type() == variant::var_type_array);
+    if (ap_parameters->size() == 2) {
+      *ap_returned_parameter = pow((*ap_parameters)[0].as_double(),
+        (*ap_parameters)[1].as_double());
+    } else {
+      // Недопустимое количество параметров
+    }
+  }
 };
 
 class list_identifier_t
@@ -185,21 +245,12 @@ public:
     constant_list_iterator;
   typedef map<string_type, value_type>::const_iterator
     constant_list_const_iterator;
-  typedef map<string_type, vector<value_type> > array_list_type;
-  typedef map<string_type, vector<value_type> >::iterator
-    array_list_iterator;
-  typedef map<string_type, vector<value_type> >::const_iterator
-    array_list_const_iterator;
+  typedef map<string_type, handle_t<function_t> > function_map_type;
+  typedef map<string_type, handle_t<function_t> >::iterator
+    function_map_iterator;
+  typedef map<string_type, handle_t<function_t> >::const_iterator
+    function_map_const_iterator;
   inline list_identifier_t();
-  inline int find_function(const string_type& a_function_name) const;
-  inline bool add_func_r_int_a_int(
-    const string_type& a_name, func_r_int_a_int_ptr ap_function);
-  inline bool add_func_r_float_a_float(
-    const string_type& a_name, func_r_float_a_float_ptr ap_function);
-  inline bool add_func_r_double_a_double(
-    const string_type& a_name, func_r_double_a_double_ptr ap_function);
-  inline bool add_func_r_ldouble_a_ldouble(
-    const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
   inline void constant_add(
     const pair<string_type, value_type>& a_constant_pair);
   inline void constant_del(const string_type& a_constant_name);
@@ -207,40 +258,37 @@ public:
   inline bool constant_is_exists(const string_type& a_constant_name) const;
   inline bool constant_find(const string_type& a_name,
     const value_type** ap_p_constant) const;
+  inline void function_add(const pair<string_type,
+    handle_t<function_t> >& a_function_pair);
+  inline void function_del(const string_type& a_function_name);
+  inline void function_clear();
+  inline bool is_function_exists(const string_type& a_function_name);
+  inline bool function_find(const string_type& a_function_name,
+    const function_t** ap_p_function) const;
+
   inline bool del_func(const string_type& a_name);
   inline void clear_func();
-  inline const function_t& get_func(size_type a_id_func) const;
+  //inline const function_t& get_func(size_type a_id_func) const;
 private:
   keyword_map_type m_keyword_map;
   vector<function_t> m_func_array;
   constant_list_type m_constant_list;
+  function_map_type m_function_map;
   inline bool add_func(
     const string_type& a_name,
     const type_function_t a_type,
     void* ap_function);
 };
 
-inline bool list_identifier_t::add_func_r_int_a_int(
-  const string_type& a_name, func_r_int_a_int_ptr ap_function)
-{
-  return add_func(a_name, tf_r_int_a_int, reinterpret_cast<void*>(ap_function));
-}
-
-inline bool list_identifier_t::add_func_r_float_a_float(
-  const string_type& a_name, func_r_float_a_float_ptr ap_function)
-{
-  return add_func(a_name, tf_r_float_a_float,
-    reinterpret_cast<void*>(ap_function));
-}
-
 inline void list_identifier_t::constant_add(const pair<string_type,
   value_type>& a_constant_pair)
 {
   IRS_LIB_ASSERT(m_keyword_map.find(a_constant_pair.first) ==
     m_keyword_map.end());
-  IRS_LIB_ASSERT(find_function(a_constant_pair.first) == irs::npos);
   IRS_LIB_ASSERT(m_constant_list.find(a_constant_pair.first) ==
-    m_constant_list.end());     
+    m_constant_list.end());
+  IRS_LIB_ASSERT(m_function_map.find(a_constant_pair.first) ==
+    m_function_map.end());    
   m_constant_list.insert(a_constant_pair);
 }
 
@@ -278,87 +326,57 @@ inline bool list_identifier_t::constant_find(
   return constant_is_exists;
 }
 
-inline bool list_identifier_t::add_func_r_double_a_double(
-  const string_type& a_name, func_r_double_a_double_ptr ap_function)
+inline void list_identifier_t::function_add(const pair<string_type,
+  handle_t<function_t> >& a_function_pair)
 {
-  return add_func(a_name, tf_r_double_a_double,
-    reinterpret_cast<void*>(ap_function));
+  IRS_LIB_ASSERT(m_keyword_map.find(a_function_pair.first) ==
+    m_keyword_map.end());
+  IRS_LIB_ASSERT(m_constant_list.find(a_function_pair.first) ==
+    m_constant_list.end());
+  IRS_LIB_ASSERT(m_function_map.find(a_function_pair.first) ==
+    m_function_map.end());
+  m_function_map.insert(a_function_pair);
 }
 
-inline bool list_identifier_t::add_func_r_ldouble_a_ldouble(
-  const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function)
+inline void list_identifier_t::function_del(const string_type& a_function_name)
 {
-  return add_func(a_name, tf_r_ldouble_a_ldouble,
-    reinterpret_cast<void*>(ap_function));
+  function_map_iterator it_function = m_function_map.find(a_function_name);
+  IRS_LIB_ASSERT(it_function != m_function_map.end());
+  m_function_map.erase(it_function);
 }
 
-inline const function_t& list_identifier_t::
-  get_func(size_type a_id_func) const
+inline void list_identifier_t::function_clear()
 {
-  return m_func_array[a_id_func];
+  m_function_map.clear();
+}
+
+inline bool list_identifier_t::is_function_exists(
+  const string_type& a_function_name)
+{
+  return m_function_map.find(a_function_name) != m_function_map.end();
+}
+
+inline bool list_identifier_t::function_find(const string_type& a_function_name,
+  const function_t** ap_p_function) const
+{
+  function_map_const_iterator it_function =
+    m_function_map.find(a_function_name);
+  bool function_is_exists = it_function != m_function_map.end();
+  if (function_is_exists) {
+    *ap_p_function = it_function->second.get();
+  } else {
+    // Константа с таким именем отсутсвует
+  }
+  return function_is_exists;
 }
 
 list_identifier_t::list_identifier_t(
 ):
-  m_func_array(),
+  m_keyword_map(),
   m_constant_list(),
-  m_keyword_map()
+  m_function_map()
 {
   create_keyword_map(&m_keyword_map);
-}
-
-inline int list_identifier_t::
-  find_function(const string_type& a_function_name) const
-{
-  int position = irs::npos;
-  int function_count = m_func_array.size();
-  for (int index_func = 0; index_func < function_count; index_func++) {
-    if (m_func_array[index_func].name == a_function_name) {
-      position = index_func;
-      break;
-    }
-  }
-  return position;
-}
-inline bool list_identifier_t::add_func(
-  const string_type& a_name,
-  const type_function_t a_type,
-  void* ap_function)
-{
-  bool fsuccess = true;
-  if (m_keyword_map.find(a_name) !=
-    m_keyword_map.end())
-  {
-    fsuccess = false;
-  } else if (find_function(a_name) != irs::npos) {
-    fsuccess = false;
-  } else if (constant_is_exists(a_name)) {
-    fsuccess = false;
-  } else {
-    function_t function;
-    function.name = a_name;
-    function.type = a_type;
-    function.ptr = ap_function;
-    m_func_array.push_back(function);
-  }
-  return fsuccess;
-}
-
-inline bool list_identifier_t::del_func(const string_type& a_name)
-{
-  bool fsuccess = true;
-  int position = find_function(a_name);
-  if (position == irs::npos) {
-    fsuccess = false;
-  } else {
-    m_func_array.erase(m_func_array.begin() + position);
-  }
-  return fsuccess;
-}
-
-inline void list_identifier_t::clear_func()
-{
-  m_func_array.clear();
 }
 
 class token_t
@@ -372,6 +390,7 @@ class token_t
   delimiter_t m_delimiter;
   size_type m_id_function;
   const value_type* mp_constant;
+  const function_t* mp_function;
 public:
   token_t(
   ):
@@ -379,35 +398,36 @@ public:
     m_num(0),
     m_delimiter(d_none),
     m_id_function(0),
-    mp_constant(IRS_NULL)
+    mp_constant(IRS_NULL),
+    mp_function(IRS_NULL)
   {}
   inline void set_number(const value_type& a_num)
   {
     m_token_type = tt_number;
     m_num = a_num;
     m_delimiter = d_none;
-    m_id_function = 0;
+    mp_function = IRS_NULL;
   }
   inline void set_delimiter(const delimiter_t a_delimiter)
   {
     m_token_type = tt_delimiter;
     m_num = 0;
     m_delimiter = a_delimiter;
-    m_id_function = 0;
+    mp_function = IRS_NULL;
   }
-  inline void set_id_function(const int a_id_function)
+  inline void set_function(const function_t* ap_function)
   {
     m_token_type = tt_function;
     m_num = 0;
     m_delimiter = d_none;
-    m_id_function = a_id_function;
+    mp_function = ap_function;
   }
   inline void set_constant(const value_type* ap_constant)
   {
     m_token_type = tt_constant;
     m_num = 0;
     m_delimiter = d_none;
-    m_id_function = 0;
+    mp_function = IRS_NULL;
     mp_constant = ap_constant;
   }
   inline void set_not_a_token_type()
@@ -415,7 +435,7 @@ public:
     m_token_type = tt_none;
     m_num = 0;
     m_delimiter = d_none;
-    m_id_function = 0;
+    mp_function = IRS_NULL;
   }
   inline delimiter_t delimiter() const
   {
@@ -425,9 +445,9 @@ public:
   {
     return m_token_type;
   }
-  inline size_type get_id_function() const
+  inline const function_t* get_function() const
   {
-    return m_id_function;
+    return mp_function;
   }
   inline const value_type* get_constant() const
   {
@@ -486,7 +506,7 @@ public:
     m_cur_token_data(),
     mp_prog(IRS_NULL),
     m_prog_pos(0),
-    m_exponent_ch('E'),
+    m_exponent_ch(irst('E')),
     m_ch_valid_name("_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "abcdefghijklmnopqrstuvwxyz")
   { }
@@ -541,11 +561,11 @@ inline bool detector_token_t::ch_is_first_char_name(const char_type a_ch)
 {
   bool ch_valid = false;
   // Заглавная буква латинскаго алфавита
-  bool ch_latin_capital = (a_ch >= 'A') && (a_ch <= 'Z');
+  bool ch_latin_capital = (a_ch >= irst('A')) && (a_ch <= irst('Z'));
   // Строчная буква латинского алфавита
-  bool ch_latin_small = (a_ch >= 'a') && (a_ch <= 'z');
+  bool ch_latin_small = (a_ch >= irst('a')) && (a_ch <= irst('z'));
   // Символ подчеркивания
-  bool ch_underscore = (a_ch == '_');
+  bool ch_underscore = (a_ch == irst('_'));
  
   if (ch_latin_capital || ch_latin_small || ch_underscore) {
     ch_valid = true;
@@ -564,7 +584,7 @@ inline bool detector_token_t::detect_token()
     detected_token = true;
   }
   size_type pos;
-  char_type ch = '\0';
+  char_type ch = irst('\0');
   if (!detected_token) {
     // Пропускаем пробелы, табуляции и переходы на новую строку
     pos = mp_prog->find_first_not_of(" \r\t", m_prog_pos);
@@ -584,7 +604,7 @@ inline bool detector_token_t::detect_token()
     // Читаем ограничитель
     bool next_ch_not_end_prog = false;
     const size_type begin_ch_pos = pos;
-    char_type next_ch = '\0';
+    char_type next_ch = irst('\0');
     if ((pos+1) < mp_prog->size()) {
       next_ch_not_end_prog = true;
       next_ch = (*mp_prog)[pos+1];
@@ -592,8 +612,8 @@ inline bool detector_token_t::detect_token()
       // Следующий символ отсутсвует
     }
     switch(ch) {
-      case '&': {
-        if (next_ch_not_end_prog && (next_ch == '&')) {
+      case irst('&'): {
+        if (next_ch_not_end_prog && (next_ch == irst('&'))) {
           m_cur_token_data.token.set_delimiter(d_and);
           detected_token = true;
           pos += 2;
@@ -601,8 +621,8 @@ inline bool detector_token_t::detect_token()
           // Не удалось распознать ограничитель
         }
       } break;
-      case '|': {
-        if (next_ch_not_end_prog && (next_ch == '|')) {
+      case irst('|'): {
+        if (next_ch_not_end_prog && (next_ch == irst('|'))) {
           m_cur_token_data.token.set_delimiter(d_or);
           detected_token = true;
           pos += 2;
@@ -610,8 +630,8 @@ inline bool detector_token_t::detect_token()
           // Не удалось распознать ограничитель
         }
       } break;
-      case '=': {
-        if (next_ch_not_end_prog && (next_ch == '=')) {
+      case irst('='): {
+        if (next_ch_not_end_prog && (next_ch == irst('='))) {
           m_cur_token_data.token.set_delimiter(d_compare_equal);
           detected_token = true;
           pos += 2;
@@ -619,8 +639,8 @@ inline bool detector_token_t::detect_token()
           // Не удалось распознать ограничитель
         }
       } break;
-      case '!': {
-        if (next_ch_not_end_prog && (next_ch == '=')) {
+      case irst('!'): {
+        if (next_ch_not_end_prog && (next_ch == irst('='))) {
           m_cur_token_data.token.set_delimiter(d_compare_not_equal);
           detected_token = true;
           pos += 2;
@@ -630,8 +650,8 @@ inline bool detector_token_t::detect_token()
           pos ++;
         }
       } break;
-      case '<': {
-        if (next_ch_not_end_prog && (next_ch == '=')) {
+      case irst('<'): {
+        if (next_ch_not_end_prog && (next_ch == irst('='))) {
           m_cur_token_data.token.set_delimiter(d_compare_less_or_equal);
           detected_token = true;
           pos += 2;
@@ -641,8 +661,8 @@ inline bool detector_token_t::detect_token()
           pos++;
         }
       } break;
-      case '>': {
-        if (next_ch_not_end_prog && (next_ch == '=')) {
+      case irst('>'): {
+        if (next_ch_not_end_prog && (next_ch == irst('='))) {
           m_cur_token_data.token.set_delimiter(d_compare_greater_or_equal);
           detected_token = true;
           pos += 2;
@@ -652,52 +672,52 @@ inline bool detector_token_t::detect_token()
           pos++;
         }
       } break;
-      case '+': {
+      case irst('+'): {
         m_cur_token_data.token.set_delimiter(d_plus);
         detected_token = true;
         pos++;
       } break;
-      case '-': {
+      case irst('-'): {
         m_cur_token_data.token.set_delimiter(d_minus);
         detected_token = true;
         pos++;
       } break;
-      case '*': {
+      case irst('*'): {
         m_cur_token_data.token.set_delimiter(d_multiply);
         detected_token = true;
         pos++;
       } break;
-      case '/': {
+      case irst('/'): {
         m_cur_token_data.token.set_delimiter(d_division);
         detected_token = true;
         pos++;
       } break;
-      case '%': {
+      case irst('%'): {
         m_cur_token_data.token.set_delimiter(d_integer_division);
         detected_token = true;
         pos++;
       } break;
-      case '^': {
+      /*case irst('^'): {
         m_cur_token_data.token.set_delimiter(d_involution);
         detected_token = true;
         pos++;
-      } break;
-      case '(': {
+      } break;*/
+      case irst('('): {
         m_cur_token_data.token.set_delimiter(d_left_parenthesis);
         detected_token = true;
         pos++;
       } break;
-      case ')': {
+      case irst(')'): {
         m_cur_token_data.token.set_delimiter(d_right_parenthesis);
         detected_token = true;
         pos++;
       } break;
-      case '[': {
+      case irst('['): {
         m_cur_token_data.token.set_delimiter(d_left_square_bracket);
         detected_token = true;
         pos++;
       } break;
-      case ']': {
+      case irst(']'): {
         m_cur_token_data.token.set_delimiter(d_right_square_bracket);
         detected_token = true;
         pos++;
@@ -715,11 +735,11 @@ inline bool detector_token_t::detect_token()
   }
 
   if (!detected_token) {
-    // Читаем число
+    // Читаем число       
     if (ch_is_digit(ch)) {
-      string_type num_str;
       // Запоминаем позицию первого символа числа
       const size_type num_begin_ch = pos;
+      string_type num_str;
       pos++;
       // Статус обнаружения символа показателя степени
       bool detected_exponent_ch = false;
@@ -734,7 +754,7 @@ inline bool detector_token_t::detect_token()
           break;
         }
         const char_type ch_number = (*mp_prog)[pos];
-        if ((ch_number == ',') || (ch_number == '.')) {
+        if (ch_number == irst('.')) {
           if ((!detected_exponent_ch) && (!detected_int_part_delim_ch)) {
             detected_exponent_ch = true;
             pos++;
@@ -748,7 +768,7 @@ inline bool detector_token_t::detect_token()
           if ((pos + 1) >= mp_prog->size()) {
             break;
           }
-          char_type ch_next = (*mp_prog)[pos+1];
+          char_type ch_next = (*mp_prog)[pos + 1];
           if (strchr("0123456789", ch_next)) {
             detected_exponent_ch = true;
             pos++;
@@ -780,14 +800,23 @@ inline bool detector_token_t::detect_token()
         m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
         detected_token = true;
+      } else {
+        // Строку не удалось преобразовать в число
       }
+      if (!detected_token) {
+        pos = num_begin_ch;
+      } else {
+        // Лексема детектирована
+      }
+    } else {
+      // Символ не принадлежит группе символов, допустимых при написании чисел
     }
   }
 
   // Читаем идентификатор или ключевое слово
   if (!detected_token) {
     if (ch_is_first_char_name(ch)) {
-      size_type pos_begin_name = pos;
+      const size_type pos_begin_name = pos;
       pos = mp_prog->find_first_not_of(m_ch_valid_name, pos);
       if (pos == string_type::npos) {
         pos = mp_prog->size();
@@ -798,22 +827,25 @@ inline bool detector_token_t::detect_token()
       string_type identifier_str =
         mp_prog->substr(pos_begin_name, (pos - pos_begin_name));
 
-      if (identifier_str == "and") {
+      if (identifier_str == irst("and")) {
         m_cur_token_data.token.set_delimiter(d_and);
         m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
-      } else if (identifier_str == "or") {
+        detected_token = true;
+      } else if (identifier_str == irst("or")) {
         m_cur_token_data.token.set_delimiter(d_or);
         m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
-      } else if (identifier_str == "not") {
+        detected_token = true;
+      } else if (identifier_str == irst("not")) {
         m_cur_token_data.token.set_delimiter(d_not);
         m_cur_token_data.length = pos - m_prog_pos;
         m_cur_token_data.valid = true;
+        detected_token = true;
       } else {
-        int func_pos = m_list_identifier.find_function(identifier_str);
-        if (func_pos != irs::npos) {
-          m_cur_token_data.token.set_id_function(func_pos);
+        const function_t* p_function = IRS_NULL;
+        if (m_list_identifier.function_find(identifier_str, &p_function)) {
+          m_cur_token_data.token.set_function(p_function);
           m_cur_token_data.length = pos - m_prog_pos;
           m_cur_token_data.valid = true;
           detected_token = true;
@@ -829,6 +861,13 @@ inline bool detector_token_t::detect_token()
           }
         }
       }
+      if (!detected_token) {
+        pos = pos_begin_name;
+      } else {
+        // Лексема детектирована
+      }
+    } else {
+      // Символ не принадлежит группе символов, допустимых в имени
     }
   }   
   return detected_token;
@@ -841,33 +880,20 @@ inline void detector_token_t::set_prog(const string_type* ap_prog)
   m_cur_token_data.valid = false;
 }
 
-inline bool detector_token_t::
-  next_token()
+inline bool detector_token_t::next_token()
 {
   bool fsuccess = true;
-  if (!m_cur_token_data.valid) {
-    fsuccess = detect_token();
-  }
-  if (fsuccess) {
-    if ((m_prog_pos + m_cur_token_data.length) > mp_prog->size()) {
+  if (m_cur_token_data.valid) {
+    if ((m_prog_pos + m_cur_token_data.length) <= mp_prog->size()) {
+      m_prog_pos += m_cur_token_data.length;
+      m_cur_token_data.valid = false;
+      fsuccess = detect_token();
+    } else {
       IRS_LIB_ASSERT_MSG("Ошибка при перемещении к следующему сиволу");
       fsuccess = false;
-    } else {
-      // Перемещение к следующему не приводит к выходу за пределы программы
     }
   } else {
-    // Произошла ошибка
-  }
-  if (fsuccess) {
-    m_prog_pos += m_cur_token_data.length;
-    m_cur_token_data.valid = false;
-  } else {
-    // Произошла ошибка
-  }
-  if (fsuccess) {
     fsuccess = detect_token();
-  } else {
-    // Произошла ошибка
   }
   return fsuccess;
 }
@@ -878,10 +904,14 @@ inline bool detector_token_t::
   bool fsuccess = true;
   if (!m_cur_token_data.valid) {
     fsuccess = detect_token();
+  } else {
+    // Лексема уже детектирована
   }
   if (fsuccess) {
     *ap_token = m_cur_token_data.token;
-  }
+  } else {
+    // Произошла ошибка
+  }         
   return fsuccess;
 }
 
@@ -894,21 +924,14 @@ public:
   typedef stringns_t string_type;
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
-  inline int find_function(const string_type& a_function_name) const;
-  inline bool add_func_r_int_a_int(
-    const string_type& a_name, func_r_int_a_int_ptr ap_function);
-  inline bool add_func_r_float_a_float(
-    const string_type& a_name, func_r_float_a_float_ptr ap_function);
-  inline bool add_func_r_double_a_double(
-    const string_type& a_name, func_r_double_a_double_ptr ap_function);
-  inline bool add_func_r_ldouble_a_ldouble(
-    const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function);
   inline void constant_add(const string_type& a_name,
     const value_type& a_value);
-  inline bool del_func(const string_type& a_name);
   inline void constant_del(const string_type& a_name);
-  inline void clear_func();
   inline void constant_clear();
+  inline void function_add(const string_type& a_name,
+    const handle_t<function_t> ap_function);
+  inline void function_del(const string_type& a_name);
+  inline void function_clear();
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
@@ -920,9 +943,11 @@ private:
   // Обрабатывает операции отношения
   inline bool eval_exp_compare(value_type* ap_value);
   // Обрабатывает сложение и вычитание
-  inline bool eval_exp_arithmetic_leve1(value_type* ap_value);
+  inline bool eval_exp_arithmetic_level1(value_type* ap_value);
   // Обрабатывает умножение, деление, целочисленное деление
-  inline bool eval_exp_arithmetic_leve2(value_type* ap_value);
+  inline bool eval_exp_arithmetic_level2(value_type* ap_value);
+  // Обрабатывает унарную логическую операцию "не"
+  inline bool eval_exp_not(value_type* ap_value);  
   // Обрабатывает возведение в степень
   inline bool eval_exp_power(value_type* ap_value);
   // Обрабатывает скобки
@@ -940,22 +965,41 @@ inline calculator_t::calculator_t():
   m_list_identifier(),
   m_detector_token(m_list_identifier)
 {
-  add_func_r_double_a_double("acos", acos);
-  add_func_r_double_a_double("asin", asin);
-  add_func_r_double_a_double("atan", atan);
-  add_func_r_double_a_double("ceil", ceil);
-  add_func_r_double_a_double("cos", cos);
-  add_func_r_double_a_double("cosh", cosh);
-  add_func_r_double_a_double("exp", exp);
-  add_func_r_double_a_double("fabs", fabs);
-  add_func_r_double_a_double("floor", floor);
-  add_func_r_double_a_double("ln", log);
-  add_func_r_double_a_double("log", log10);
-  add_func_r_double_a_double("sin", sin);
-  add_func_r_double_a_double("sinh", sinh);
-  add_func_r_double_a_double("sqrt", sqrt);
-  add_func_r_double_a_double("tan", tan);
-  add_func_r_double_a_double("tanh", tanh);
+  func_r_double_a_double_t::func_r_double_a_double_ptr_type
+    func_r_dbl_a_dbl_ptr = IRS_NULL;
+  func_r_dbl_a_dbl_ptr = acos;
+  function_add("acos", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = asin;
+  function_add("asin", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = atan;
+  function_add("atan", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = ceil;
+  function_add("ceil", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = cos;
+  function_add("cos", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = cosh;
+  function_add("cosh", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = exp;
+  function_add("exp", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = fabs;
+  function_add("fabs", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = floor;
+  function_add("floor", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = log;
+  function_add("log", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = log10;
+  function_add("log10", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = sin;
+  function_add("sin", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = sinh;
+  function_add("sinh", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = sqrt;
+  function_add("sqrt", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = tan;
+  function_add("tan", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  func_r_dbl_a_dbl_ptr = tanh;
+  function_add("tanh", new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+  function_add("pow", new pow_t());
 
   constant_add("e", IRS_E);
   constant_add("pi", IRS_PI);
@@ -1070,8 +1114,7 @@ inline bool calculator_t::eval_exp_logical(value_type* ap_value)
               // Произошла ошибка
             }
           } else {
-            *ap_value = !ap_value->as_bool();
-            fsuccess = m_detector_token.get_token(&token);
+            // Лексема не является логической бинарной операцией
           }
         } else {
           // Произошла ошибка
@@ -1095,15 +1138,16 @@ inline bool calculator_t::eval_exp_compare(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
-  fsuccess = eval_exp_arithmetic_leve1(ap_value);
+  fsuccess = eval_exp_arithmetic_level1(ap_value);
   if (fsuccess) {
     token_t token;
     fsuccess = m_detector_token.get_token(&token);
-    delimiter_t delim = token.delimiter();
+    delimiter_t delim;// = token.delimiter();
     while (is_token_operator_compare(token) && fsuccess) {
+      delim = token.delimiter();
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
-        fsuccess = eval_exp_arithmetic_leve1(&partial_value);
+        fsuccess = eval_exp_arithmetic_level1(&partial_value);
       } else {
         // Произошла ошибка
       }
@@ -1130,16 +1174,16 @@ inline bool calculator_t::eval_exp_compare(value_type* ap_value)
           default : {
             IRS_LIB_ASSERT_MSG("Лексема должна быть операцией сравнения");
           }
-          fsuccess = m_detector_token.get_token(&token);
         }
+        fsuccess = m_detector_token.get_token(&token);
       } else {
         // Произошла ошибка
       }
-      if (fsuccess) {
+      /*if (fsuccess) {
         delim = token.delimiter();
       } else {
         // Произошла ошибка
-      }
+      }*/
     }
   } else {
     // Произошла ошибка
@@ -1147,11 +1191,11 @@ inline bool calculator_t::eval_exp_compare(value_type* ap_value)
   return fsuccess;
 }
 
-inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
+inline bool calculator_t::eval_exp_arithmetic_level1(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
-  fsuccess = eval_exp_arithmetic_leve2(ap_value);
+  fsuccess = eval_exp_arithmetic_level2(ap_value);
   if (fsuccess) {
     //token_t token = m_lexeme_array[m_cur_lexeme_index];
     token_t token;
@@ -1161,7 +1205,7 @@ inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
       while(((delim == d_plus) || (delim == d_minus)) && fsuccess) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
-          fsuccess = eval_exp_arithmetic_leve2(&partial_value);
+          fsuccess = eval_exp_arithmetic_level2(&partial_value);
         } else {
           // Произошла ошибка
         }
@@ -1188,11 +1232,12 @@ inline bool calculator_t::eval_exp_arithmetic_leve1(value_type* ap_value)
   return fsuccess;
 }
 
-inline bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
+inline bool calculator_t::eval_exp_arithmetic_level2(value_type* ap_value)
 {
   bool fsuccess = true;
   value_type partial_value = 0;
-  fsuccess = eval_exp_power(ap_value);
+  fsuccess = eval_exp_not(ap_value);
+  //fsuccess = eval_exp_power(ap_value);
   if (fsuccess) {
     token_t token;
     fsuccess = m_detector_token.get_token(&token);
@@ -1202,7 +1247,8 @@ inline bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
       {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
-          fsuccess = eval_exp_power(&partial_value);
+          fsuccess = eval_exp_not(&partial_value);
+          //fsuccess = eval_exp_power(&partial_value);
         } else {
           // Произошла ошибка
         }
@@ -1232,6 +1278,43 @@ inline bool calculator_t::eval_exp_arithmetic_leve2(value_type* ap_value)
   return fsuccess;
 }
 
+inline bool calculator_t::eval_exp_not(value_type* ap_value)
+{
+  bool fsuccess = true;
+  token_t token;
+  fsuccess = m_detector_token.get_token(&token);
+  if (fsuccess) {
+    size_type operation_not_cnt = 0;
+    while(fsuccess && (token.delimiter() == d_not)) {
+      operation_not_cnt++;
+      fsuccess = m_detector_token.next_token();
+      if (fsuccess) {
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }
+    }
+    if (operation_not_cnt == 0) {
+      fsuccess = eval_exp_brackets(ap_value);
+    } else {
+      value_type partial_value = 0;
+      fsuccess = eval_exp_brackets(&partial_value);
+      if (fsuccess) {
+        if (operation_not_cnt % 2 == 0) {
+          *ap_value = partial_value.as_bool();
+        } else {
+          *ap_value = !partial_value.as_bool();
+        }
+      } else {
+        // Произошла ошибка
+      }
+    }
+  } else {
+    // Произошла ошибка
+  }
+  return fsuccess;
+}
+
 inline bool calculator_t::eval_exp_power(value_type* ap_value)
 {
   bool fsuccess = true;
@@ -1249,7 +1332,7 @@ inline bool calculator_t::eval_exp_power(value_type* ap_value)
         if (fsuccess) {
           if (token.delimiter() == d_involution) {
             *ap_value = pow(*ap_value, static_cast<double>(partial_value));
-          } 
+          }
           fsuccess = m_detector_token.get_token(&token);
         } else {
           // Произошла ошибка
@@ -1309,17 +1392,21 @@ inline bool calculator_t::atom(value_type* ap_value)
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
     if (token.token_type() == tt_function) {
-      const int id_func = token.get_id_function();
+      const function_t* p_func = token.get_function();
       fsuccess = m_detector_token.next_token();
       value_type arg_func = 0;
       if (fsuccess) {
-        fsuccess = eval_exp_power(&arg_func);
+        fsuccess = eval_exp_arithmetic_level1(&arg_func);
+        //fsuccess = eval_exp_power(&arg_func);
       } else {
         // Произошла ошибка
       }
       if (fsuccess) {
-        func_exec(m_list_identifier.get_func(id_func),
-          arg_func, ap_value);
+        value_type parameters;
+        parameters.type(irs::variant::var_type_array);
+        parameters.resize(1);
+        parameters[0] = arg_func;  
+        p_func->exec(&parameters, ap_value);
       } else {
         // Произошла ошибка
       }
@@ -1377,67 +1464,11 @@ inline bool calculator_t::atom(value_type* ap_value)
   return fsuccess;
 }
 
-inline void calculator_t::func_exec(
-  const function_t& a_function,
-  const value_type a_in_param,
-  value_type* ap_out_param)
-{
-  void* ptr_function = a_function.ptr;
-  switch(a_function.type) {
-    case tf_r_int_a_int: {
-      *ap_out_param =
-        (*((func_r_int_a_int_ptr)(ptr_function)))(a_in_param);
-    } break;
-    case tf_r_float_a_float: {
-      *ap_out_param =
-        (*((func_r_float_a_float_ptr)(ptr_function)))(a_in_param);
-    } break;
-    case tf_r_double_a_double: {
-      *ap_out_param =
-        (*((func_r_double_a_double_ptr)(ptr_function)))(a_in_param);
-    } break;
-    case tf_r_ldouble_a_ldouble: {
-      *ap_out_param =
-        (*((func_r_ldouble_a_ldouble_ptr)(ptr_function)))(a_in_param);
-    } break;
-  }
-}
-
 inline bool calculator_t::
   calc(const string_type* ap_prog, value_type* ap_num)
 {
   m_detector_token.set_prog(ap_prog);
   return interp(ap_num);
-}
-
-inline int calculator_t::find_function(
-  const string_type& a_function_name) const
-{
-  return m_list_identifier.find_function(a_function_name);
-}
-
-inline bool calculator_t::add_func_r_int_a_int(
-  const string_type& a_name, func_r_int_a_int_ptr ap_function)
-{
-  return m_list_identifier.add_func_r_int_a_int(a_name, ap_function);
-}
-
-inline bool calculator_t::add_func_r_float_a_float(
-  const string_type& a_name, func_r_float_a_float_ptr ap_function)
-{
-  return m_list_identifier.add_func_r_float_a_float(a_name, ap_function);
-}
-
-inline bool calculator_t::add_func_r_double_a_double(
-  const string_type& a_name, func_r_double_a_double_ptr ap_function)
-{
-  return m_list_identifier.add_func_r_double_a_double(a_name, ap_function);
-}
-
-inline bool calculator_t::add_func_r_ldouble_a_ldouble(
-  const string_type& a_name, func_r_ldouble_a_ldouble_ptr ap_function)
-{
-  return m_list_identifier.add_func_r_ldouble_a_ldouble(a_name, ap_function);
 }
 
 inline void calculator_t::constant_add(
@@ -1446,29 +1477,35 @@ inline void calculator_t::constant_add(
   m_list_identifier.constant_add(make_pair(a_name, a_value));
 }
 
-inline bool calculator_t::del_func(const string_type& a_name)
-{
-  return m_list_identifier.del_func(a_name);
-}
-
 inline void calculator_t::constant_del(const string_type& a_name)
 {
   m_list_identifier.constant_del(a_name);
-}
-
-inline void calculator_t::clear_func()
-{
-  m_list_identifier.clear_func();
-}
+}    
 
 inline void calculator_t::constant_clear()
 {
   m_list_identifier.constant_clear();
 }
 
-}; // namespace calc
+inline void calculator_t::function_add(const string_type& a_name,
+  const handle_t<function_t> ap_function)
+{
+  m_list_identifier.function_add(make_pair(a_name, ap_function));
+}
 
-}; // namespace irs
+inline void calculator_t::function_del(const string_type& a_name)
+{
+  m_list_identifier.function_del(a_name);
+}
+
+inline void calculator_t::function_clear()
+{
+  m_list_identifier.function_clear();
+}
+
+} // namespace calc
+
+} // namespace irs
 
 #endif //__WATCOMC__
 

@@ -46,7 +46,7 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
   (*ap_keyword_map)["auto"] = keyword_auto;
   (*ap_keyword_map)["bitand"] = keyword_bitand;
   (*ap_keyword_map)["bitor"] = keyword_bitor;
-  (*ap_keyword_map)["bool"] = keyword_bool;
+  (*ap_keyword_map)["bool"] = keyword_bool;             
   (*ap_keyword_map)["break"] = keyword_break;
   (*ap_keyword_map)["case"] = keyword_case;
   (*ap_keyword_map)["catch"] = keyword_catch;
