@@ -173,8 +173,6 @@ inline const char_t* strchrt(const char_t* a_str, int a_ch)
 
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-} //namespace irs
-
 #if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 #ifndef NOP
 inline irs::raw_data_t<char> char_from_wchar_str(
@@ -197,5 +195,7 @@ inline irs::raw_data_t<char> char_from_wchar_str(
 }
 #endif //NOP
 #endif //__WATCOMC__
+
+} //namespace irs
 
 #endif //IRSSTRDEFSH
