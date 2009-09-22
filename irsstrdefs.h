@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 17.09.2009
+// Дата: 22.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -180,54 +180,20 @@ inline const char_t* strchrt(const char_t* a_str, int a_ch)
 inline irs::raw_data_t<char> char_from_wchar_str(
   const irs::raw_data_t<wchar_t>& ins)
 {
-  irs::raw_data_t<char> outs(ins.size());
   irs::raw_data_t<wchar_t>::const_pointer in_it = ins.data();
+
+  irs::raw_data_t<char> outs(ins.size());
   irs::raw_data_t<char>::pointer out_it = outs.data();
-  const codecvt<wchar_t, char, mbstate_t>& cdcvt =
-    use_facet<codecvt<wchar_t, char, mbstate_t> >(locale());
+
+  typedef codecvt<wchar_t, char, mbstate_t> convert_t;
+  //typedef codecvt<char, wchar_t, mbstate_t> convert_t;
+  const convert_t& cdcvt = use_facet<convert_t>(locale());
 
   mbstate_t state;
   cdcvt.out(state, ins.data(), ins.data() + ins.size(), in_it,
     outs.data(), outs.data() + outs.size(), out_it);
 
   return outs;
-
-  #ifdef NOP
-  using namespace std;
-  mbstate_t state;
-  string ins("\xfc \xcc \xcd \x61 \xe1 \xd9 \xc6 \xf5");
-  string ins2(ins.size(),'.');
-  string outs(ins.size(),'.');
-  // Print initial contents of buffers
-  cout << "Before:\n" << ins << endl;
-  cout << ins2 << endl;
-  cout << outs << endl << endl;
-  // Initialize buffers
-  string::iterator in_it = ins.begin();
-  string::iterator out_it = outs.begin();
-  locale loc(locale(),new ex_codecvt);
-  // Now get the facet from the locale 
-  const codecvt<char,char,mbstate_t>& cdcvt = 
-    use_facet<codecvt<char,char,mbstate_t> >(loc);
-
-  // convert the buffer
-  cdcvt.in(state,ins.begin(),ins.end(),in_it,
-    outs.begin(),outs.end(),out_it);
-  cout << "After in:\n" << ins << endl;
-  cout << ins2 << endl;
-  cout << outs << endl << endl;
-  
-  // Lastly, convert back to the original codeset
-  in_it = ins.begin();
-  out_it = outs.begin();
-  cdcvt.out(state, outs.begin(),outs.end(),out_it,
-    ins2.begin(),ins2.end(),in_it);
-  cout << "After out:\n" << ins << endl;
-  cout << ins2 << endl;
-  cout << outs << endl;
-  
-  return 0;
-  #endif //NOP
 }
 #endif //NOP
 #endif //__WATCOMC__
