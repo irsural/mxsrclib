@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 20.09.2009
+// Дата: 23.09.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -19,7 +19,14 @@
 #define IRS_CPP_BUILDER2010 0x0620
 
 // Включение Unicode
+//#define IRS_UNICODE_GLOBAL
+#ifdef IRS_UNICODE_GLOBAL
+#if defined(__ICCAVR__)
 //#define IRS_UNICODE
+#else //compilers
+//#define IRS_UNICODE
+#endif //compilers
+#endif //IRS_UNICODE_GLOBAL
 
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__)
@@ -29,17 +36,21 @@
 #endif // Определения платформы
 
 // Возможности компиляторов
-#if !defined(__WATCOMC__)
+// __ICCAVR__ - Компилятор IAR для AVR
+// __WATCOMC__ - Компилятор Open Watcom
+// __GNUC__ - Компилятор GNU
+// __BORLANDC__ - Компилятор Borland
+
 // Поддержка частичной специализации для функций
+#if !defined(__WATCOMC__)
 #define IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
-//IRS_FULL_LOCALE_SUPPORT
+
+// Полная поддержка библиотеки C++
 #if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) ||\
   (defined(__GNUC__) && (__GNUC__ >= 4))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
-
-
 
 // Специальные описатели для манипуляторов в различных компиляторах
 #if defined(__WATCOMC__)
@@ -49,7 +60,8 @@
 #endif //compilers
 
 // Вычисление размера статического массива
-#define IRS_ARRAYOFSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
+#define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
+#define IRS_ARRAYOFSIZE(_ARRAY_) IRS_ARRAYSIZE(_ARRAY_)
 // Определение для нулевого указателя
 #define IRS_NULL 0
 // Макросы выделения из переменных их частей

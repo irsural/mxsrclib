@@ -313,7 +313,11 @@ public:
   inline void clear();
 private:
   enum {
+    #ifdef __ICCAVR__
+    m_capacity_min = 1
+    #else //__ICCAVR__
     m_capacity_min = 16
+    #endif //__ICCAVR__
   };
 
   size_type m_size;

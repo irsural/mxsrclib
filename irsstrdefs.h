@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 22.09.2009
+// Дата: 23.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -101,15 +101,6 @@ inline bool isxdigitt(char_int_t a_ch, const locale& a_loc = locale())
     static_cast<char_t>(a_ch));
 }
 
-inline const char_t* strchrt(const char_t* a_str, char_int_t a_ch)
-{
-  #ifdef IRS_UNICODE
-  return wcschr(a_str, a_ch);
-  #else //IRS_UNICODE
-  return strchr(a_str, a_ch);
-  #endif //IRS_UNICODE
-}
-
 #else //IRS_FULL_STDCPPLIB_SUPPORT
 inline bool isalnumt(char_int_t a_ch)
 {
@@ -166,12 +157,25 @@ inline bool isxdigitt(char_int_t a_ch)
   return ::isxdigit(a_ch);
 }
 
-inline const char_t* strchrt(const char_t* a_str, int a_ch)
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+inline const char_t* strchrt(const char_t* a_str, char_int_t a_ch)
 {
+  #ifdef IRS_UNICODE
+  return wcschr(a_str, a_ch);
+  #else //IRS_UNICODE
   return strchr(a_str, a_ch);
+  #endif //IRS_UNICODE
 }
 
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+inline size_t strlent(const char_t* a_str)
+{
+  #ifdef IRS_UNICODE
+  return wcslen(a_str);
+  #else //IRS_UNICODE
+  return strlen(a_str);
+  #endif //IRS_UNICODE
+}
 
 #if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 #ifndef NOP

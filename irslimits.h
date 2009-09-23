@@ -1,5 +1,6 @@
 // Характеристики чисел
-// Дата: 17.09.2009
+// Дата: 23.09.2009
+// Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
 #define IRSLIMITSH
@@ -84,7 +85,7 @@ inline const char* type_to_string_helper(irs_u64)
 template <class T>
 const char* type_to_string()
 {
-  return "unknown";
+  return type_to_string_helper(T());
 }
 template <class T>
 inline const char* type_to_string(T)
@@ -109,6 +110,7 @@ enum signed_t {
 };
 enum std_type_idx_t {
   char_idx,
+  wchar_idx,
   signed_char_idx,
   unsigned_char_idx,
   signed_short_idx,
@@ -117,10 +119,88 @@ enum std_type_idx_t {
   unsigned_int_idx,
   signed_long_idx,
   unsigned_long_idx,
+  #ifdef IRSDEFS_I64
+  i64_idx,
+  u64_idx,
+  #endif //IRSDEFS_I64
   float_idx,
   double_idx,
   long_double_idx
 };
+
+// Преобразование тип в индекс
+inline std_type_idx_t type_to_index_helper(char)
+{
+  return char_idx;
+}
+inline std_type_idx_t type_to_index_helper(wchar_t)
+{
+  return wchar_idx;
+}
+inline std_type_idx_t type_to_index_helper(signed char)
+{
+  return signed_char_idx;
+}
+inline std_type_idx_t type_to_index_helper(unsigned char)
+{
+  return unsigned_char_idx;
+}
+inline std_type_idx_t type_to_index_helper(signed short)
+{
+  return signed_short_idx;
+}
+inline std_type_idx_t type_to_index_helper(unsigned short)
+{
+  return unsigned_short_idx;
+}
+inline std_type_idx_t type_to_index_helper(signed int)
+{
+  return signed_int_idx;
+}
+inline std_type_idx_t type_to_index_helper(unsigned int)
+{
+  return unsigned_int_idx;
+}
+inline std_type_idx_t type_to_index_helper(signed long)
+{
+  return signed_long_idx;
+}
+inline std_type_idx_t type_to_index_helper(unsigned long)
+{
+  return unsigned_long_idx;
+}
+#ifdef IRSDEFS_I64
+inline std_type_idx_t type_to_index_helper(irs_i64&)
+{
+  return i64_idx;
+}
+inline std_type_idx_t type_to_index_helper(irs_u64&)
+{
+  return u64_idx;
+}
+#endif //IRSDEFS_I64
+inline std_type_idx_t type_to_index_helper(float)
+{
+  return float_idx;
+}
+inline std_type_idx_t type_to_index_helper(double)
+{
+  return double_idx;
+}
+inline std_type_idx_t type_to_index_helper(long double)
+{
+  return long_double_idx;
+}
+template <class T>
+std_type_idx_t type_to_index()
+{
+  return type_to_index_helper(T());
+}
+template <class T>
+std_type_idx_t type_to_index(T)
+{
+  return type_to_index<T>();
+}
 
 // Определение знаковости типа
 struct signed_type_tag {};

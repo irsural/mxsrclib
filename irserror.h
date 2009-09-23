@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 20.09.2009
+// Дата: 23.09.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -10,8 +10,16 @@
 #include <irstime.h>
 #include <irscpp.h>
 
-#define IRS_LIB_DEBUG
+#define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK
+
+#ifdef IRS_LIB_DEBUG_GLOBAL
+#if defined(__ICCAVR__)
+//#define IRS_LIB_DEBUG
+#else //compilers
+#define IRS_LIB_DEBUG
+#endif //compilers
+#endif //IRS_LIB_DEBUG_GLOBAL
 
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
