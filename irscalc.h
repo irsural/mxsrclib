@@ -900,7 +900,7 @@ inline bool detector_token_t::detect_token()
             // Преобразование в число прошло неудачно
           }
         } else if (detected_suffix_float) {
-          float number = 0.;
+          float number = 0.f;
           convert_str_to_number_success = num_str.to_number(number);
           if (convert_str_to_number_success) {
             m_cur_token_data.token.set_number(number);
@@ -1165,7 +1165,7 @@ inline calculator_t::calculator_t():
       cnt++;
     }
   }
-  constant_add("arr", arr);   
+  constant_add(irst("arr"), arr);   
 }
 
 inline bool calculator_t::interp(
