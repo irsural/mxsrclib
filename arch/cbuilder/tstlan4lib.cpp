@@ -188,6 +188,7 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_log_memo->Height = 100;
   mp_log_memo->Parent = mp_form;
   mp_log_memo->Top = mp_top_panel->Top + mp_log_memo->Height;
+  mp_log_memo->ScrollBars = ssVertical;
 
   mp_splitter->Align = alTop;
   mp_splitter->Top = mp_log_memo->Top + mp_log_memo->Height;

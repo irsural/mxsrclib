@@ -201,6 +201,117 @@ std_type_idx_t type_to_index(T)
 {
   return type_to_index<T>();
 }
+template <class T>
+struct type_detect_t
+{
+};
+template <>
+struct type_detect_t<char>
+{
+  enum {
+    index = char_idx
+  };
+};
+template <>
+struct type_detect_t<wchar_t>
+{
+  enum {
+    index = wchar_idx
+  };
+};
+template <>
+struct type_detect_t<signed char>
+{
+  enum {
+    index = signed_char_idx
+  };
+};
+template <>
+struct type_detect_t<unsigned char>
+{
+  enum {
+    index = unsigned_char_idx
+  };
+};
+template <>
+struct type_detect_t<signed short>
+{
+  enum {
+    index = signed_short_idx
+  };
+};
+template <>
+struct type_detect_t<unsigned short>
+{
+  enum {
+    index = unsigned_short_idx
+  };
+};
+template <>
+struct type_detect_t<signed int>
+{
+  enum {
+    index = signed_int_idx
+  };
+};
+template <>
+struct type_detect_t<unsigned int>
+{
+  enum {
+    index = unsigned_int_idx
+  };
+};
+template <>
+struct type_detect_t<signed long>
+{
+  enum {
+    index = signed_long_idx
+  };
+};
+template <>
+struct type_detect_t<unsigned long>
+{
+  enum {
+    index = unsigned_long_idx
+  };
+};
+#ifdef IRSDEFS_I64
+template <>
+struct type_detect_t<irs_i64>
+{
+  enum {
+    index = i64_idx
+  };
+};
+template <>
+struct type_detect_t<irs_u64>
+{
+  enum {
+    index = u64_idx
+  };
+};
+#endif //IRSDEFS_I64
+template <>
+struct type_detect_t<float>
+{
+  enum {
+    index = float_idx
+  };
+};
+template <>
+struct type_detect_t<double>
+{
+  enum {
+    index = double_idx
+  };
+};
+template <>
+struct type_detect_t<long double>
+{
+  enum {
+    index = long_double_idx
+  };
+};
 
 // Определение знаковости типа
 struct signed_type_tag {};
@@ -332,18 +443,20 @@ struct char_relative_t<unsigned_type_tag>
 };
 template <>
 struct type_relative_t<char>:
-  public char_relative_t<integer_sign_detect_t<char>::sign_type >,
+  char_relative_t<integer_sign_detect_t<char>::sign_type >,
   type_relative_by_size_t<
     sizeof(char),
     integer_sign_detect_t<char>::sign_type
   >
 {
+  #ifdef NOP
   typedef char_relative_t<integer_sign_detect_t<char>::sign_type >
     base_type;
 
   typedef base_type::signed_type signed_type;
   typedef base_type::unsigned_type unsigned_type;
   typedef base_type::opposite_signed_type opposite_signed_type;
+  #endif //NOP
 };
 template <>
 struct type_relative_t<signed char>:

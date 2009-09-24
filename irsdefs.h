@@ -24,7 +24,7 @@
 #if defined(__ICCAVR__)
 //#define IRS_UNICODE
 #else //compilers
-//#define IRS_UNICODE
+#define IRS_UNICODE
 #endif //compilers
 #endif //IRS_UNICODE_GLOBAL
 

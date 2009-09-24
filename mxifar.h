@@ -17,7 +17,7 @@
 struct mxip_t {
   irs_u8 val[4];
 
-  mxip_t zero_ip()
+  static mxip_t zero_ip()
   {
     mxip_t ip = {{0, 0, 0, 0}};
     return ip;
@@ -52,8 +52,8 @@ inline mxip_t make_mxip(int first_octet, int second_octet, int third_octet,
 }
 inline mxip_t make_mxip(const char_t* a_ip)
 {
-  mxip_t ip;
-  if (!cstr_to_mxip(ip, a_ip)) {
+  mxip_t ip = mxip_t::zero_ip();
+  if (!cstr_to_mxip(ip, IRS_SIMPLE_CHAR_FROM_TCHAR_STR(a_ip))) {
     ip = mxip_t();
   }
   return ip;

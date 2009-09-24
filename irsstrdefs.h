@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 23.09.2009
+// Дата: 24.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -177,28 +177,151 @@ inline size_t strlent(const char_t* a_str)
   #endif //IRS_UNICODE
 }
 
-#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
-#ifndef NOP
-inline irs::raw_data_t<char> char_from_wchar_str(
-  const irs::raw_data_t<wchar_t>& ins)
+inline const char* cstr_from_codecvt_result_helper(
+  codecvt_base::result a_result,
+  char
+)
 {
-  irs::raw_data_t<wchar_t>::const_pointer in_it = ins.data();
-
-  irs::raw_data_t<char> outs(ins.size());
-  irs::raw_data_t<char>::pointer out_it = outs.data();
-
-  typedef codecvt<wchar_t, char, mbstate_t> convert_t;
-  //typedef codecvt<char, wchar_t, mbstate_t> convert_t;
-  const convert_t& cdcvt = use_facet<convert_t>(locale());
-
-  mbstate_t state;
-  cdcvt.out(state, ins.data(), ins.data() + ins.size(), in_it,
-    outs.data(), outs.data() + outs.size(), out_it);
-
-  return outs;
+  switch (a_result) {
+    case codecvt_base::ok: {
+      return "ok";
+    } break;
+    case codecvt_base::partial: {
+      return "partial";
+    } break;
+    case codecvt_base::error: {
+      return "error";
+    } break;
+    case codecvt_base::noconv: {
+      return "noconv";
+    } break;
+  }
+  return "unknown";
 }
-#endif //NOP
-#endif //__WATCOMC__
+inline const wchar_t* cstr_from_codecvt_result_helper(
+  codecvt_base::result a_result,
+  wchar_t
+)
+{
+  switch (a_result) {
+    case codecvt_base::ok: {
+      return L"ok";
+    } break;
+    case codecvt_base::partial: {
+      return L"partial";
+    } break;
+    case codecvt_base::error: {
+      return L"error";
+    } break;
+    case codecvt_base::noconv: {
+      return L"noconv";
+    } break;
+  }
+  return L"unknown";
+}
+
+#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
+template <class T>
+const char* cstr_from_codecvt_result(codecvt_base::result a_result)
+{
+  return cstr_from_codecvt_result_helper(a_result, T());
+}
+
+inline codecvt_base::result codecvt_helper(mbstate_t state,
+  const wchar_t* from, const wchar_t* from_end, const wchar_t*& from_next,
+  char* to, char* to_end, char*& to_next)
+{
+  typedef codecvt<wchar_t, char, mbstate_t> convert_t;
+  const convert_t& cdcvt = use_facet<convert_t>(locale());
+  return cdcvt.out(state, from, from_end, from_next,
+    to, to_end, to_next);
+}
+inline codecvt_base::result codecvt_helper(mbstate_t state,
+  const char* from, const char* from_end, const char*& from_next,
+  wchar_t* to, wchar_t* to_end, wchar_t*& to_next)
+{
+  typedef codecvt<wchar_t, char, mbstate_t> convert_t;
+  const convert_t& cdcvt = use_facet<convert_t>(locale());
+  return cdcvt.in(state, from, from_end, from_next,
+    to, to_end, to_next);
+}
+
+// Преобразование из строки in_char_type* в строку out_char_type*
+// Доступны только варианты:
+// I = wchar_t, O = char
+// I = char, O = wchar_t
+template <class I, class O>
+class convert_str_t
+{
+public:
+  typedef I in_char_type;
+  typedef O out_char_type;
+  typedef irs::raw_data_t<out_char_type> data_type;
+private:
+  enum {
+    m_size_default = static_cast<size_t>(-1)
+  };
+  data_type m_outstr_data;
+public:
+  convert_str_t(const in_char_type* ap_instr,
+    size_t a_instr_size = m_size_default
+  ):
+    m_outstr_data()
+  {
+    IRS_STATIC_ASSERT(
+      ((irs::type_detect_t<I>::index == irs::char_idx) &&
+       (irs::type_detect_t<O>::index == irs::wchar_idx)) ||
+      ((irs::type_detect_t<I>::index == irs::wchar_idx) &&
+       (irs::type_detect_t<O>::index == irs::char_idx))
+    );
+
+    if (a_instr_size == m_size_default) {
+      a_instr_size = wcslen(ap_instr) + 1;
+    }
+    m_outstr_data.resize(a_instr_size);
+
+    const in_char_type* p_instr_next = ap_instr;
+    data_type::pointer p_outstr_next = m_outstr_data.data();
+
+    mbstate_t state;
+    codecvt_base::result convert_result =
+      codecvt_helper(
+        state,
+
+        ap_instr,
+        ap_instr + a_instr_size,
+        p_instr_next,
+
+        m_outstr_data.data(),
+        m_outstr_data.data() + m_outstr_data.size(),
+        p_outstr_next
+      );
+    if (convert_result != codecvt_base::ok)
+    {
+      IRS_LIB_DBG_MSG("convert_str_t codecvt result: " <<
+        cstr_from_codecvt_result<char>(convert_result));
+    }
+  }
+  operator const out_char_type*() const
+  {
+    return m_outstr_data.data();
+  }
+  operator out_char_type*()
+  {
+    return m_outstr_data.data();
+  }
+};
+#endif //!defined(__WATCOMC__) && !defined(__ICCAVR__)
+
+#ifdef IRS_UNICODE
+#define IRS_WIDE_CHAR_FROM_TCHAR_STR(str) (str)
+#define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str)\
+  (irs::convert_str_t<wchar_t, char>(str))
+#else //IRS_UNICODE
+#define IRS_WIDE_CHAR_FROM_TCHAR_STR(str)\
+  (irs::convert_str_t<char, wchar_t>(str))
+#define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
+#endif //IRS_UNICODE
 
 } //namespace irs
 

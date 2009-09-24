@@ -1,5 +1,5 @@
 // Набор тестов
-// Дата: 23.09.2009
+// Дата: 24.09.2009
 // Дата создания: 20.09.2009
 
 #ifndef IRSTESTH
@@ -134,6 +134,9 @@ inline codecvt_base::result codecvt_helper(mbstate_t state,
 }
 
 // Преобразование из строки in_char_type* в строку out_char_type*
+// Доступны только варианты:
+// I = wchar_t, O = char
+// I = char, O = wchar_t
 template <class I, class O>
 class convert_str_t
 {
@@ -142,12 +145,24 @@ public:
   typedef O out_char_type;
   typedef irs::raw_data_t<out_char_type> data_type;
 private:
+  enum {
+    m_size_default = static_cast<size_t>(-1)
+  };
   data_type m_outstr_data;
 public:
-  convert_str_t(const in_char_type* ap_instr, size_t a_instr_size = 0):
+  convert_str_t(const in_char_type* ap_instr,
+    size_t a_instr_size = m_size_default
+  ):
     m_outstr_data()
   {
-    if (a_instr_size == 0) {
+    IRS_STATIC_ASSERT(
+      ((irs::type_detect_t<I>::index == irs::char_idx) &&
+       (irs::type_detect_t<O>::index == irs::wchar_idx)) ||
+      ((irs::type_detect_t<I>::index == irs::wchar_idx) &&
+       (irs::type_detect_t<O>::index == irs::char_idx))
+    );
+
+    if (a_instr_size == m_size_default) {
       a_instr_size = wcslen(ap_instr) + 1;
     }
     m_outstr_data.resize(a_instr_size);
@@ -156,10 +171,18 @@ public:
     data_type::pointer p_outstr_next = m_outstr_data.data();
 
     mbstate_t state;
-    codecvt_base::result convert_result = codecvt_helper(state,
-      ap_instr, ap_instr + a_instr_size, p_instr_next,
-      m_outstr_data.data(), m_outstr_data.data() + m_outstr_data.size(),
-      p_outstr_next);
+    codecvt_base::result convert_result =
+      codecvt_helper(
+        state,
+
+        ap_instr,
+        ap_instr + a_instr_size,
+        p_instr_next,
+
+        m_outstr_data.data(),
+        m_outstr_data.data() + m_outstr_data.size(),
+        p_outstr_next
+      );
     if (convert_result != codecvt_base::ok)
     {
       IRS_LIB_DBG_MSG("convert_str_t codecvt result: " <<
@@ -175,6 +198,16 @@ public:
     return m_outstr_data.data();
   }
 };
+
+#ifdef IRS_UNICODE
+#define IRS_WIDE_CHAR_FROM_TCHAR_STR(str) (str)
+#define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str)\
+  (irs::convert_str_t<wchar_t, char>(str))
+#else //IRS_UNICODE
+#define IRS_WIDE_CHAR_FROM_TCHAR_STR(str)\
+  (irs::convert_str_t<char, wchar_t>(str))
+#define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
+#endif //IRS_UNICODE
 
 inline irs::raw_data_t<char> char_from_wchar_str_dbg(
   const irs::raw_data_t<wchar_t>& ins)
@@ -226,12 +259,14 @@ inline irs::raw_data_t<wchar_t> wchar_from_char_str_dbg(
 template <class T>
 inline void raw_data_out(ostream& a_strm, const raw_data_t<T> a_data)
 {
+  ios::fmtflags strm_flags_save = a_strm.flags();
   a_strm << hex;
   if (a_data.size()) {
     transform(a_data.data(), a_data.data() + a_data.size() - 1,
       ostream_iterator<int>(a_strm, ", "), to_int<T>);
   }
   a_strm << to_int<T>(a_data.data()[a_data.size() - 1]);
+  a_strm.flags(strm_flags_save);
 }
 
 inline void exec(ostream& a_strm)
@@ -273,8 +308,10 @@ inline void exec(ostream& a_strm)
   }
 
   {
-    a_strm << convert_str_t<wchar_t, char>(L"hello!?& Й") << endl;
+    a_strm << IRS_SIMPLE_CHAR_FROM_TCHAR_STR(irst("hello!?& Й")) << endl;
   }
+
+  a_strm << endl;
 }
 
 } //namespace cstr_convert
