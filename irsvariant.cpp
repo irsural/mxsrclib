@@ -1,5 +1,5 @@
 //  Component Variant
-//  Data: 21.09.2009
+//  Data: 23.09.2009
 
 #include <irsvariant.h>
 
@@ -53,6 +53,7 @@ void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
     // “екущий тип не требует дополнительных действий
   }
   switch(a_variant_type) {
+    case var_type_unknown:
     case var_type_bool:
     case var_type_char:
     case var_type_singned_char:
