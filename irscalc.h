@@ -1136,7 +1136,7 @@ inline calculator_t::calculator_t():
   function_add(irst("pow"), new pow_t());   
 
   constant_add(irst("IRS_E"), IRS_E);
-  constant_add(irst("IRS_LOG2E"), IRS_LOG2E);
+  constant_add(irst("IRS_LOG2E"), IRS_LOG2E); 
   constant_add(irst("IRS_LOG10E"), IRS_LOG10E);
   constant_add(irst("IRS_LN2"), IRS_LN2);
   constant_add(irst("IRS_LN10"), IRS_LN10);

@@ -10,10 +10,9 @@
 #include <irsstd.h>
 #include <irstime.h>
 #include <irscpp.h>
-#include <irsstrdefs.h>
+//#include <irsstrdefs.h>
 
-/*
-#define IRS_LIB_DEBUG_GLOBAL
+/*#define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK
 
 #ifdef IRS_LIB_DEBUG_GLOBAL

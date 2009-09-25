@@ -1876,9 +1876,8 @@ void binary_operation(
   T* ap_result)
 {
   typedef typename var_type_traits_t<T>::group_type group_type;
-  IRS_LIB_ASSERT(binary_operation_helper(
-    a_var_operation_type, a_first_var, a_second_var, ap_result,
-      group_type()));
+  binary_operation_helper(a_var_operation_type, a_first_var, a_second_var,
+    ap_result, group_type());
 }
 
 #ifdef IRS_LIB_DEBUG

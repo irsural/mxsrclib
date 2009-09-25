@@ -177,6 +177,7 @@ inline size_t strlent(const char_t* a_str)
   #endif //IRS_UNICODE
 }
 
+#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 inline const char* cstr_from_codecvt_result_helper(
   codecvt_base::result a_result,
   char
@@ -220,7 +221,7 @@ inline const wchar_t* cstr_from_codecvt_result_helper(
   return L"unknown";
 }
 
-#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
+//#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 template <class T>
 const char* cstr_from_codecvt_result(codecvt_base::result a_result)
 {
@@ -281,7 +282,7 @@ public:
     m_outstr_data.resize(a_instr_size);
 
     const in_char_type* p_instr_next = ap_instr;
-    data_type::pointer p_outstr_next = m_outstr_data.data();
+    typename data_type::pointer p_outstr_next = m_outstr_data.data();
 
     mbstate_t state;
     codecvt_base::result convert_result =
@@ -321,6 +322,7 @@ public:
 #define IRS_WIDE_CHAR_FROM_TCHAR_STR(str)\
   (irs::convert_str_t<char, wchar_t>(str))
 #define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
+
 #endif //IRS_UNICODE
 
 } //namespace irs
