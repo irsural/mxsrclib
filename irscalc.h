@@ -1006,7 +1006,7 @@ inline bool detector_token_t::next_token()
       m_cur_token_data.valid = false;
       fsuccess = detect_token();
     } else {
-      IRS_LIB_ASSERT_MSG(irst("Ошибка при перемещении к следующему сиволу"));
+      IRS_LIB_ASSERT_MSG("Ошибка при перемещении к следующему сиволу");
       fsuccess = false;
     }
   } else {
