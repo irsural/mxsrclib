@@ -1720,6 +1720,165 @@ inline void calculator_t::function_clear()
   m_list_identifier.function_clear();
 }
 
+#ifdef NOP
+template<class T>
+class mutable_ref_t
+{
+public:
+  enum type_t {type_value, type_reference};
+  struct value_tag {};
+  struct reference_tag {};
+  mutable_ref_t(type_t a_type = type_reference);
+  mutable_ref_t(T& a_value, reference_tag);
+  mutable_ref_t(const T& a_value, value_tag);
+  mutable_ref_t(const mutable_ref_t<T>& a_ref);
+  type_t type() const;
+  operator T&();
+  //operator const T&() const;
+  void set_value(const T& a_value);
+  void set_reference(T& a_value);
+  T& operator=(const T& a_value);
+  mutable_ref_t& operator=(const mutable_ref_t<T>& a_ref);
+private:
+  T* mp_value;
+  type_t m_type;
+};
+
+template<class T>
+mutable_ref_t<T>::mutable_ref_t(type_t a_type):
+  mp_value((a_type == type_reference) ? IRS_NULL : new T()),
+  m_type(a_type)
+{
+}
+
+template<class T>
+mutable_ref_t<T>::mutable_ref_t(const T& a_value, value_tag):
+  mp_value(new T(a_value)),
+  m_type(type_value)
+{
+}
+
+template<class T>
+mutable_ref_t<T>::mutable_ref_t(T& a_value, reference_tag):
+  mp_value(&a_value),
+  m_type(type_reference)
+{
+}
+
+template<class T>
+mutable_ref_t<T>::mutable_ref_t(const mutable_ref_t<T>& a_ref):
+  mp_value((a_ref.m_type == type_reference) ?
+    a_ref.mp_value : new T(a_ref.mp_value)),
+  m_type(a_ref.m_type)
+{ 
+}
+
+template<class T>
+typename mutable_ref_t<T>::type_t mutable_ref_t<T>::type() const
+{
+  return m_type;
+}
+
+template<class T>
+mutable_ref_t<T>::operator T&() 
+{
+  return *mp_value;
+}
+
+/*template<class T>
+mutable_ref_t<T>::operator const T&() const
+{
+  return *mp_value;
+}*/
+
+template<class T>
+void mutable_ref_t<T>::set_value(const T& a_value)
+{
+  if (m_type == type_reference) {
+    mp_value = new T(a_value);
+  } else {
+    *mp_value = a_value;
+  }
+}
+
+template<class T>
+void mutable_ref_t<T>::set_reference(T& a_value)
+{
+  if (m_type == type_value) {
+    delete mp_value;
+  } else {
+    // Память не выделена
+  }
+  mp_value = &a_value;
+}
+
+template<class T>
+T& mutable_ref_t<T>::operator=(const T& a_value)
+{
+  *mp_value = a_value;
+  return *mp_value;
+}
+
+/*template<class T>
+T* mutable_ref_t<T>::operator=(T* ap_value)
+{
+  if (m_location_memory_internal) {
+    delete mp_value;
+  } else {
+    // Указатель указывает на внешнюю память
+  }
+  mp_value = ap_value;
+  m_location_memory_internal = false;
+  return mp_value;
+}*/
+
+template<class T>
+mutable_ref_t<T>& mutable_ref_t<T>::operator=(const mutable_ref_t<T>& a_ref)
+{
+  mutable_ref_t<T> ref(a_ref);
+  swap(this, ref);
+  return *this;
+}
+
+inline void mutable_ref_test()
+{
+  typedef int test_type;
+  // Сначало проверим, как работает обычное копирование переменной
+  // во внутреннюю память объекта класса mutable_ref_t
+  test_type* p_var = IRS_NULL;
+  p_var = new test_type;
+  mutable_ref_t<test_type> mref_var;
+  // Происходит копирование во внутреннюю память ref_int;
+  mref_var.set_value(*p_var);
+  // Удаляем выделенную память и зануляем указатель
+  delete p_var;
+  p_var = IRS_NULL;
+  // В объекте должна быть выделена память, в которую
+  // мы может что нибудь записать
+  mref_var = 10;
+  IRS_LIB_ASSERT(mref_var == 10);
+  // Теперь проверим, как объект класса mutable_ref_t работает в качестве
+  // ссылки на внешнюю переменную
+  p_var = new test_type;
+  // В результате присвоения внуть mref_int скопируется только указатель
+  mref_var.set_reference(*p_var);
+  mref_var = 99;
+  // В переменной var должно оказаться ранее присвоенное значение
+  test_type var = *p_var;
+  IRS_LIB_ASSERT(var == 99);
+
+  mutable_ref_t<int> mref_var2(20, mutable_ref_t<int>::value_tag());
+  mref_var2 = 22;
+
+  string str;
+  mutable_ref_t<string> mref_string;
+  mref_string.set_reference(str);
+  mref_string = "sdfsa"; 
+  IRS_LIB_ASSERT(mref_string == "sdfsa");
+}
+
+#endif //NOP
+
 } // namespace calc
 
 } // namespace irs
