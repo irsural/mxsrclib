@@ -10,9 +10,9 @@
 #include <irsstd.h>
 #include <irstime.h>
 #include <irscpp.h>
-//#include <irsstrdefs.h>
 
-/*#define IRS_LIB_DEBUG_GLOBAL
+/*
+#define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK
 
 #ifdef IRS_LIB_DEBUG_GLOBAL
@@ -24,6 +24,7 @@
 #endif //IRS_LIB_DEBUG_GLOBAL
 */
 
+
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
@@ -33,25 +34,25 @@
 #define IRS_ASSERT(assert_expr)\
   {\
     if (!(assert_expr)) {\
-      IRS_ERROR_HELPER(irs::ec_assert, irs::spec_assert(#assert_expr, 0))\
+      IRS_ERROR_HELPER(irs::ec_assert, irs::spec_assert(#assert_expr, 0));\
     }\
   }
 #define IRS_ASSERT_EX(assert_expr, msg)\
   {\
     if (!(assert_expr)) {\
       IRS_ERROR_HELPER(irs::ec_assert,\
-        irs::spec_assert(#assert_expr, msg))\
+        irs::spec_assert(#assert_expr, msg));\
     }\
   }
 #define IRS_ERROR(error_code, msg)\
   {\
-    IRS_ERROR_HELPER(error_code, msg)\
+    IRS_ERROR_HELPER(error_code, msg);\
   }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
 #define IRS_ASSERT_MSG(msg)\
   {\
     IRS_ERROR_HELPER(irs::ec_assert,\
-      irs::spec_assert("Assert", msg))\
+      irs::spec_assert("Assert", msg));\
   }
 
 #define IRS_DBG_RAW_MSG(msg)\
