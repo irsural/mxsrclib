@@ -5,12 +5,14 @@
 #ifndef IRSERRORH
 #define IRSERRORH
 
+#include <irsconfig.h>
 #include <irsdefs.h>
 #include <irsstd.h>
 #include <irstime.h>
 #include <irscpp.h>
 #include <irsstrdefs.h>
 
+/*
 #define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK
 
@@ -21,6 +23,7 @@
 #define IRS_LIB_DEBUG
 #endif //compilers
 #endif //IRS_LIB_DEBUG_GLOBAL
+*/
 
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
