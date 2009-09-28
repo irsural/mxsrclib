@@ -2,6 +2,8 @@ mkdir obj_nios2
 make\
   compiler=nios2-linux-uclibc-g++\
   out_file_suffix=nios2\
+  compiler_options_ext=\
+  linker_options_ext=-elf2flt\
   --directory=obj_nios2\
   --makefile=../makefile\
   2>&1 | tee make_nios2_out

@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 23.09.2009
+// Дата: 27.09.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -79,7 +79,7 @@
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
 // Макрос __FUNC__
-#ifndef __FUNC__ 
+#ifndef __FUNC__
 #if defined(__FUNCTION__)
 #define __FUNC__ __FUNCTION__
 #elif defined(__func__)
@@ -181,6 +181,58 @@ const irs_bool   irs_true = 1;
 const irs_bool   irs_false = 0;
 
 typedef void (*irs_vfunc)();
+
+// Тип для пина
+enum irs_pin_t {
+  irs_on = 0,
+  irs_off = 1
+};
+
+// Абстрактный тип для портов AVR
+enum irs_avr_port_t {
+  irs_avr_porta = 0,
+  irs_avr_portb = 1,
+  irs_avr_portc = 2,
+  irs_avr_portd = 3,
+  irs_avr_porte = 4,
+  irs_avr_portf = 5,
+  irs_avr_portg = 6
+};
+
+// Класс для функций обработки
+class mx_proc_t {
+public:
+  virtual ~mx_proc_t() {}
+  virtual irs_bool tick() = 0;
+  virtual void abort() = 0;
+};
+
+
+namespace irs {
+
+const int npos = -1;
+
+// Прямоугольник
+struct rect_t {
+  irs_i32 left;
+  irs_i32 top;
+  irs_i32 width;
+  irs_i32 height;
+
+  rect_t(
+    irs_i32 a_left = 0,
+    irs_i32 a_top = 0,
+    irs_i32 a_width = 0,
+    irs_i32 a_height = 0
+  ):
+    left(a_left),
+    top(a_top),
+    width(a_width),
+    height(a_height)
+  {}
+};
+
+} //namespace irs
 
 // Гасим ненужные предупреждения C++ Builder
 #ifdef __BCPLUSPLUS__

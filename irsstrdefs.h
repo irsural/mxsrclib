@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 24.09.2009
+// Дата: 27.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -7,7 +7,11 @@
 
 #include <irsdefs.h>
 #include <irsstring.h>
-#include <mxdata.h>
+//#include <mxdata.h>
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#include <stdexcept>
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#include <irscpp.h>
 
 namespace irs {
 
@@ -40,7 +44,7 @@ inline bool isalnumt(char_int_t a_ch, const locale& a_loc = locale())
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alnum,
     static_cast<char_t>(a_ch));
 }
-                                              
+
 inline bool isalphat(char_int_t a_ch, const locale& a_loc = locale())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alpha,
@@ -159,25 +163,33 @@ inline bool isxdigitt(char_int_t a_ch)
 
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+inline const char* strchru(const char* a_str, int a_ch)
+{
+  return strchr(a_str, a_ch);
+}
+inline const wchar_t* strchru(const wchar_t* a_str, wint_t a_ch)
+{
+  return wcschr(a_str, a_ch);
+}
 inline const char_t* strchrt(const char_t* a_str, char_int_t a_ch)
 {
-  #ifdef IRS_UNICODE
-  return wcschr(a_str, a_ch);
-  #else //IRS_UNICODE
-  return strchr(a_str, a_ch);
-  #endif //IRS_UNICODE
+  return strchru(a_str, a_ch);
 }
 
+inline size_t strlenu(const char* a_str)
+{
+  return strlen(a_str);
+}
+inline size_t strlenu(const wchar_t* a_str)
+{
+  return wcslen(a_str);
+}
 inline size_t strlent(const char_t* a_str)
 {
-  #ifdef IRS_UNICODE
-  return wcslen(a_str);
-  #else //IRS_UNICODE
-  return strlen(a_str);
-  #endif //IRS_UNICODE
+  strlenu(a_str);
 }
 
-#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 inline const char* cstr_from_codecvt_result_helper(
   codecvt_base::result a_result,
   char
@@ -228,7 +240,7 @@ const char* cstr_from_codecvt_result(codecvt_base::result a_result)
   return cstr_from_codecvt_result_helper(a_result, T());
 }
 
-inline codecvt_base::result codecvt_helper(mbstate_t state,
+inline codecvt_base::result code_convert(mbstate_t state,
   const wchar_t* from, const wchar_t* from_end, const wchar_t*& from_next,
   char* to, char* to_end, char*& to_next)
 {
@@ -237,7 +249,7 @@ inline codecvt_base::result codecvt_helper(mbstate_t state,
   return cdcvt.out(state, from, from_end, from_next,
     to, to_end, to_next);
 }
-inline codecvt_base::result codecvt_helper(mbstate_t state,
+inline codecvt_base::result code_convert(mbstate_t state,
   const char* from, const char* from_end, const char*& from_next,
   wchar_t* to, wchar_t* to_end, wchar_t*& to_next)
 {
@@ -257,17 +269,17 @@ class convert_str_t
 public:
   typedef I in_char_type;
   typedef O out_char_type;
-  typedef irs::raw_data_t<out_char_type> data_type;
+  //typedef irs::raw_data_t<out_char_type> data_type;
 private:
   enum {
     m_size_default = static_cast<size_t>(-1)
   };
-  data_type m_outstr_data;
+  out_char_type* mp_outstr;
 public:
   convert_str_t(const in_char_type* ap_instr,
     size_t a_instr_size = m_size_default
   ):
-    m_outstr_data()
+    mp_outstr(IRS_NULL)
   {
     IRS_STATIC_ASSERT(
       ((irs::type_detect_t<I>::index == irs::char_idx) &&
@@ -277,42 +289,52 @@ public:
     );
 
     if (a_instr_size == m_size_default) {
-      a_instr_size = wcslen(ap_instr) + 1;
+      a_instr_size = strlenu(ap_instr) + 1;
     }
-    m_outstr_data.resize(a_instr_size);
+    //mp_outstr.resize(a_instr_size);
+    mp_outstr = new out_char_type[a_instr_size];
 
     const in_char_type* p_instr_next = ap_instr;
-    typename data_type::pointer p_outstr_next = m_outstr_data.data();
+    const in_char_type* p_outstr_next = mp_outstr;
 
     mbstate_t state;
     codecvt_base::result convert_result =
-      codecvt_helper(
+      code_convert(
         state,
 
         ap_instr,
         ap_instr + a_instr_size,
         p_instr_next,
 
-        m_outstr_data.data(),
-        m_outstr_data.data() + m_outstr_data.size(),
+        mp_outstr,
+        mp_outstr + a_instr_size,
         p_outstr_next
       );
     if (convert_result != codecvt_base::ok)
     {
-      IRS_LIB_DBG_MSG("convert_str_t codecvt result: " <<
-        cstr_from_codecvt_result<char>(convert_result));
+      stringstream stream;
+      stream << "convert_str_t codecvt result: " <<
+        cstr_from_codecvt_result<char>(convert_result);
+      stream.flush();
+      throw runtime_error(stream.str().c_str());
+      //IRS_LIB_DBG_MSG("convert_str_t codecvt result: " <<
+        //cstr_from_codecvt_result<char>(convert_result));
     }
+  }
+  ~convert_str_t()
+  {
+    IRS_ARRDELETE(mp_outstr);
   }
   operator const out_char_type*() const
   {
-    return m_outstr_data.data();
+    return mp_outstr;
   }
   operator out_char_type*()
   {
-    return m_outstr_data.data();
+    return mp_outstr;
   }
 };
-#endif //!defined(__WATCOMC__) && !defined(__ICCAVR__)
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef IRS_UNICODE
 #define IRS_WIDE_CHAR_FROM_TCHAR_STR(str) (str)
@@ -322,7 +344,6 @@ public:
 #define IRS_WIDE_CHAR_FROM_TCHAR_STR(str)\
   (irs::convert_str_t<char, wchar_t>(str))
 #define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
-
 #endif //IRS_UNICODE
 
 } //namespace irs

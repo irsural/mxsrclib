@@ -1,10 +1,18 @@
 // Потоки ввода/вывода ИРС
 // Дата: 14.09.2009
+// Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
 #define IRSSTRMH
 
 //#define NEW
+
+#include <irscpp.h>
+//#include <irsstd.h>
+#include <irsdefs.h>
+#include <mxdata.h>
+#include <irsstrmstd.h>
+#include <irsconsole.h>
 
 #ifdef __ICCAVR__
 #include <ioavr.h>
@@ -16,11 +24,6 @@
 #include <unistd.h>
 #include <signal.h>
 #endif //IRS_LINUX
-
-#include <irscpp.h>
-#include <irsstd.h>
-#include <irsdefs.h>
-#include <mxdata.h>
 
 namespace irs {
 

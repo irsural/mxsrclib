@@ -2,8 +2,6 @@ mkdir obj_pc
 make\
   compiler=g++\
   out_file_suffix=pc\
-  compiler_options_ext=\
-  linker_options_ext=\
   --directory=obj_pc\
   --makefile=../makefile\
   2>&1 | tee make_pc_out

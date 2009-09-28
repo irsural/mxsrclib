@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 24.09.2009
+// Дата: 26.09.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -7,7 +7,7 @@
 
 #include <irsconfig.h>
 #include <irsdefs.h>
-#include <irsstd.h>
+#include <irsint.h>
 #include <irstime.h>
 #include <irscpp.h>
 

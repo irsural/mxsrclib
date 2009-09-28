@@ -1,10 +1,12 @@
 // Утилиты для работы с mxdata_t
-// Дата: 21.09.2009
+// Дата: 26.09.2009
+// Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
 
-#include <irsstd.h>
+#include <mxdatastd.h>
+//#include <irsstd.h>
 #include <irserror.h>
 #include <irscpp.h>
 
