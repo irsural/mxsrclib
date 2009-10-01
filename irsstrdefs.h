@@ -186,7 +186,7 @@ inline size_t strlenu(const wchar_t* a_str)
 }
 inline size_t strlent(const char_t* a_str)
 {
-  strlenu(a_str);
+  return strlenu(a_str);
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
