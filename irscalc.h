@@ -1883,6 +1883,7 @@ inline void mutable_ref_test()
 
 } // namespace irs
 
+
 #endif //__WATCOMC__
 
 #endif //irscalcH

@@ -30,11 +30,10 @@
 
 
 namespace irs {
-
-#if (defined(__BORLANDC__) && ((__BORLANDC__ == IRS_CPP_BUILDER6) ||\
-      (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
+/*
+#if (defined(__BORLANDC__) && (__BORLANDC__ == IRS_CPP_BUILDER6)) ||\
     defined(IRS_LINUX) //|| defined(__ICCAVR__)
-
+*/
 template<class T>
 class tree_t;
 
@@ -181,12 +180,13 @@ public:
   typedef const tree_node_t<T>* node_const_pointer;
   //typedef list<tree_node_t<T> > list_tree_node;
   //typedef typename list_tree_node::iterator node_iterator;
+  typedef typename vector<tree_node_t<T> >:: iterator test_node_iterator;
   typedef typename list<tree_node_t<T> >:: iterator node_iterator;
   typedef node_iterator parent_type;
   typedef node_iterator child_type;   
   typedef vector<child_type> children_type;
   typedef typename vector<child_type>::iterator children_iterator;
-  typedef typename vector<child_type>::iterator children_const_iterator;
+  typedef typename vector<child_type>::const_iterator children_const_iterator;
   typedef tree_node_child_iterator_t<T, node_pointer, node_reference>
     iterator;
   typedef tree_node_child_iterator_t<T, node_const_pointer,
@@ -512,10 +512,21 @@ void test_tree()
   int size_list_iterator = sizeof(it_l);
 }
 
-#endif /*(defined(__BORLANDC__) && ((__BORLANDC__ == IRS_CPP_BUILDER6) ||\
-        (__BORLANDC__ == (IRS_CPP_BUILDER2006 + 2)))) ||\
-        defined(IRS_LINUX) //|| defined(__ICCAVR__)*/
+//#endif //Compilers
+
 
 }; // namespace irs
 
+template<class T>
+class obj_t
+{
+public:
+  typedef typename list<obj_t<T> >::iterator iterator_list_var;
+private:
+   T m_value;
+};
+
 #endif //irstreeH
+
+
+
