@@ -2,7 +2,7 @@ mkdir obj_pc
 make\
   compiler=g++\
   out_file_suffix=pc\
-  compiler_options_ext=\
+  compiler_options_ext=-finput-charset=CP1251\
   linker_options_ext=\
   --directory=obj_pc\
   --makefile=../makefile\

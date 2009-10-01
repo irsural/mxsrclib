@@ -2,7 +2,7 @@ mkdir obj_nios2
 make\
   compiler=nios2-linux-uclibc-g++\
   out_file_suffix=nios2\
-  compiler_options_ext=\
+  compiler_options_ext=-finput-charset=CP1251\
   linker_options_ext=-elf2flt\
   --directory=obj_nios2\
   --makefile=../makefile\

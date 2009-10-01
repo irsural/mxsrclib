@@ -1,4 +1,3 @@
-//---------------------------------------------------------------------------
 // Калькулятор
 // Дата: 24.09.2009
 
@@ -23,7 +22,7 @@ enum type_function_t {
   tf_r_float_a_float = tf_r_int_a_int+1,
   tf_r_double_a_double = tf_r_float_a_float+1,
   tf_r_ldouble_a_ldouble = tf_r_double_a_double+1,
-  tf_last = tf_r_ldouble_a_ldouble};     
+  tf_last = tf_r_ldouble_a_ldouble};
 
 // Предварительная обработка стоки.
 // Заменяет все запятые на точки
@@ -300,7 +299,7 @@ inline void list_identifier_t::constant_add(const pair<string_type,
   IRS_LIB_ASSERT(m_constant_list.find(a_constant_pair.first) ==
     m_constant_list.end());
   IRS_LIB_ASSERT(m_function_map.find(a_constant_pair.first) ==
-    m_function_map.end());    
+    m_function_map.end());
   m_constant_list.insert(a_constant_pair);
 }
 
@@ -442,7 +441,7 @@ public:
   {
     type_change(tt_constant);
     m_tok.p_constant = ap_constant;
-  } 
+  }
   inline delimiter_t delimiter() const
   {
     delimiter_t delimiter = d_none;
@@ -843,7 +842,7 @@ inline bool detector_token_t::detect_token()
           }
         } else {
           break;
-        } 
+        }
       }
       num_str = mp_prog->substr(num_begin_ch, (pos - num_begin_ch));
       bool convert_str_to_number_success = false;
@@ -1027,7 +1026,7 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
     *ap_token = m_cur_token_data.token;
   } else {
     // Произошла ошибка
-  }         
+  }
   return fsuccess;
 }
 
@@ -1065,7 +1064,7 @@ private:
   // Обрабатывает умножение, деление, целочисленное деление
   inline bool eval_exp_arithmetic_level2(value_type* ap_value);
   // Обрабатывает унарную логическую операцию "не"
-  inline bool eval_exp_not(value_type* ap_value);  
+  inline bool eval_exp_not(value_type* ap_value);
   // Обрабатывает возведение в степень
   inline bool eval_exp_power(value_type* ap_value);
   // Обрабатывает скобки
@@ -1133,10 +1132,10 @@ inline calculator_t::calculator_t():
   func_r_dbl_a_dbl_ptr = tanh;
   function_add(irst("tanh"),
     new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  function_add(irst("pow"), new pow_t());   
+  function_add(irst("pow"), new pow_t());
 
   constant_add(irst("IRS_E"), IRS_E);
-  constant_add(irst("IRS_LOG2E"), IRS_LOG2E); 
+  constant_add(irst("IRS_LOG2E"), IRS_LOG2E);
   constant_add(irst("IRS_LOG10E"), IRS_LOG10E);
   constant_add(irst("IRS_LN2"), IRS_LN2);
   constant_add(irst("IRS_LN10"), IRS_LN10);
@@ -1146,7 +1145,7 @@ inline calculator_t::calculator_t():
   constant_add(irst("IRS_1_PI"), IRS_1_PI);
   constant_add(irst("IRS_2_PI"), IRS_2_PI);
   constant_add(irst("IRS_1_SQRTPI"), IRS_1_SQRTPI);
-  constant_add(irst("IRS_2_SQRTPI"), IRS_2_SQRTPI); 
+  constant_add(irst("IRS_2_SQRTPI"), IRS_2_SQRTPI);
   constant_add(irst("IRS_SQRT2"), IRS_SQRT2);
   constant_add(irst("IRS_SQRT_2"), IRS_SQRT_2);
 
@@ -1165,7 +1164,7 @@ inline calculator_t::calculator_t():
       cnt++;
     }
   }
-  constant_add(irst("arr"), arr);   
+  constant_add(irst("arr"), arr);
 }
 
 inline bool calculator_t::interp(
@@ -1184,7 +1183,7 @@ inline bool calculator_t::interp(
       } else {
         // Текущим ограничителем должен быть конец программы
         fsuccess = false;
-      }            
+      }
     } else {
       // Произошла ошибка
     }
@@ -1324,7 +1323,7 @@ inline bool calculator_t::eval_exp_logical(value_type* ap_value)
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
       delimiter_t delim = token.delimiter();
-      while(token.is_operator_logical() && fsuccess) { 
+      while(token.is_operator_logical() && fsuccess) {
         fsuccess = m_detector_token.next_token();
         if (fsuccess) {
           if ((delim == d_and) || (delim == d_or)) {
@@ -1632,7 +1631,7 @@ inline bool calculator_t::atom(value_type* ap_value)
       fsuccess = m_detector_token.next_token();
       while (fsuccess && (p_constant->type() == variant::var_type_array)) {
         value_type elem_index;
-        if (fsuccess) {       
+        if (fsuccess) {
           fsuccess = eval_exp_square_brackets(&elem_index);
         } else {
           // Произошла ошибка
@@ -1642,7 +1641,7 @@ inline bool calculator_t::atom(value_type* ap_value)
             p_constant = &(*p_constant)[elem_index];
           } else {
             fsuccess = false;
-          }                  
+          }
         } else {
           // Произошла ошибка
         }
@@ -1697,7 +1696,7 @@ inline void calculator_t::constant_add(
 inline void calculator_t::constant_del(const string_type& a_name)
 {
   m_list_identifier.constant_del(a_name);
-}    
+}
 
 inline void calculator_t::constant_clear()
 {
@@ -1770,7 +1769,7 @@ mutable_ref_t<T>::mutable_ref_t(const mutable_ref_t<T>& a_ref):
   mp_value((a_ref.m_type == type_reference) ?
     a_ref.mp_value : new T(a_ref.mp_value)),
   m_type(a_ref.m_type)
-{ 
+{
 }
 
 template<class T>
@@ -1780,7 +1779,7 @@ typename mutable_ref_t<T>::type_t mutable_ref_t<T>::type() const
 }
 
 template<class T>
-mutable_ref_t<T>::operator T&() 
+mutable_ref_t<T>::operator T&()
 {
   return *mp_value;
 }
@@ -1873,7 +1872,7 @@ inline void mutable_ref_test()
   string str;
   mutable_ref_t<string> mref_string;
   mref_string.set_reference(str);
-  mref_string = "sdfsa"; 
+  mref_string = "sdfsa";
   IRS_LIB_ASSERT(mref_string == "sdfsa");
 }
 

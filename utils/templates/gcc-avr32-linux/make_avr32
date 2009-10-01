@@ -2,7 +2,7 @@ mkdir avr32
 make\
   compiler=avr32-linux-g++\
   out_file_suffix=avr32\
-  compiler_options_ext=\
+  compiler_options_ext=-finput-charset=CP1251\
   linker_options_ext=-L.. -lstdc++\
   --directory=avr32\
   --makefile=../makefile\

@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 27.09.2009
+// Дата: 28.09.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -58,6 +58,27 @@
 #else //compilers
 #define IRS_STREAMSPECDECL
 #endif //compilers
+
+// Статические утверждения
+// Взято из STLSoft
+// Перенесено из irserror.h для того, чтобы была возможность применить
+// в irsstrdefs.h
+#if \
+    (\
+      defined(__GNUC__) && \
+      (\
+        (__GNUC__ < 3) ||\
+        ( (__GNUC__ == 3) && (__GNUC_MINOR__ < 4) )\
+      )\
+    )
+    // Эта константа у меня пока отсутствует
+    // || defined(STLSOFT_COMPILER_IS_INTEL)
+  #define IRS_STATIC_ASSERT(ex)\
+    do { typedef int ai[(ex) ? 1 : -1]; } while(0)
+#else /* ? compiler */
+  #define IRS_STATIC_ASSERT(ex)\
+    do { typedef int ai[(ex) ? 1 : 0]; } while(0)
+#endif /* compiler */
 
 // Вычисление размера статического массива
 #define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))

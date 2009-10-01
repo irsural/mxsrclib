@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 27.09.2009
+// Дата: 28.09.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -282,10 +282,14 @@ public:
     mp_outstr(IRS_NULL)
   {
     IRS_STATIC_ASSERT(
-      ((irs::type_detect_t<I>::index == irs::char_idx) &&
-       (irs::type_detect_t<O>::index == irs::wchar_idx)) ||
-      ((irs::type_detect_t<I>::index == irs::wchar_idx) &&
-       (irs::type_detect_t<O>::index == irs::char_idx))
+      ((static_cast<std_type_idx_t>(type_detect_t<in_char_type>::index) ==
+        char_idx) &&
+       (static_cast<std_type_idx_t>(type_detect_t<out_char_type>::index) ==
+        irs::wchar_idx)) ||
+      ((static_cast<std_type_idx_t>(type_detect_t<in_char_type>::index) ==
+        irs::wchar_idx) &&
+       (static_cast<std_type_idx_t>(type_detect_t<out_char_type>::index) ==
+        irs::char_idx))
     );
 
     if (a_instr_size == m_size_default) {
@@ -295,7 +299,7 @@ public:
     mp_outstr = new out_char_type[a_instr_size];
 
     const in_char_type* p_instr_next = ap_instr;
-    const in_char_type* p_outstr_next = mp_outstr;
+    out_char_type* p_outstr_next = mp_outstr;
 
     mbstate_t state;
     codecvt_base::result convert_result =
@@ -323,7 +327,7 @@ public:
   }
   ~convert_str_t()
   {
-    IRS_ARRDELETE(mp_outstr);
+    IRS_ARDELETE(mp_outstr);
   }
   operator const out_char_type*() const
   {
