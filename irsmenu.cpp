@@ -360,6 +360,261 @@ void irs_menu_t::draw(irs_menu_base_t **a_cur_menu)
   }
 }
 
+//--------------------------  ADVANCED MENU  -----------------------------------
+
+irs_advanced_menu_t::irs_advanced_menu_t():
+  m_menu_vector(),
+  m_arrow_position(0),
+  m_current_item(0)
+{
+}
+
+irs_advanced_menu_t::~irs_advanced_menu_t()
+{
+}
+
+irs_menu_base_t::size_type irs_advanced_menu_t::get_parametr_string(
+  char *ap_parametr_string,
+  size_type /*a_length*/,
+  irs_menu_param_show_mode_t /*a_show_mode*/,
+  irs_menu_param_update_t /*a_update*/)
+{
+  if (ap_parametr_string)
+  {
+    strcpy(ap_parametr_string, empty_str);
+  }
+  return 0;
+}
+
+bool irs_advanced_menu_t::find_next_shown_item(size_type &a_item)
+{
+  size_type item = a_item;
+  if (item >= m_menu_vector.size() - 1) return false;
+  else item++;
+  for (; item < m_menu_vector.size(); item++)
+  {
+    if (m_menu_vector[item].show) 
+    {
+      a_item = item;
+      return true;
+    }
+  }
+  if (item == (m_menu_vector.size() - 1) && m_menu_vector[item].show)
+  {
+    a_item = item;
+    return true;
+  }
+  return false;
+}
+
+bool irs_advanced_menu_t::find_prev_shown_item(size_type &a_item)
+{
+  size_type item = a_item;
+  if (item == 0) return false;
+  else item--;
+  for (; item > 0; item--)
+  {
+    if (m_menu_vector[item].show) 
+    {
+      a_item = item;
+      return true;
+    }
+  }
+  if (item == 0 && m_menu_vector[item].show) 
+  {
+    a_item = item;
+    return true;
+  }
+  return false;
+}
+
+void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
+{
+  irskey_t a_key = irskey_none;
+  if (f_key_event) a_key = f_key_event->check();
+  
+  if (f_want_redraw)
+  {
+    mp_disp_drv->clear();
+    mp_disp_drv->outtextpos(0, 0, "^~");
+    mp_disp_drv->outtextpos(3, 0, f_header);
+    
+    if (m_menu_vector.size() > 0 && m_menu_vector[m_current_item].show)
+    {
+      const mxdisp_pos_t x_pos = 1;
+      const mxdisp_pos_t cur_item_y_pos = m_arrow_position + 1;
+      const mxdisp_pos_t top_line = 1;
+      const mxdisp_pos_t bottom_line = mp_disp_drv->get_height() - 1;
+      
+      size_type cur_item = m_current_item;
+      mp_disp_drv->outtextpos(x_pos, cur_item_y_pos, 
+        m_menu_vector[cur_item].p_item->get_header());
+      if (cur_item_y_pos > top_line)
+      {
+        for (mxdisp_pos_t y_pos = cur_item_y_pos - 1; 
+             y_pos >= top_line; y_pos--)
+        {
+          if (find_prev_shown_item(cur_item))
+          {
+            mp_disp_drv->outtextpos(x_pos, y_pos, 
+              m_menu_vector[cur_item].p_item->get_header());
+          }
+        }
+      }
+      
+      cur_item = m_current_item;
+      
+      if (cur_item_y_pos < bottom_line)
+      {
+        for (mxdisp_pos_t y_pos = cur_item_y_pos + 1; 
+             y_pos <= bottom_line; y_pos++)
+        {
+          if (find_next_shown_item(cur_item))
+          {
+            mp_disp_drv->outtextpos(x_pos, y_pos, 
+              m_menu_vector[cur_item].p_item->get_header());
+          }
+        }
+      }
+      
+      mp_disp_drv->outtextpos(0, cur_item_y_pos, ">");
+    }
+  }
+  switch (a_key)
+  {
+    case irskey_up:
+    {
+      if (m_arrow_position == 0)
+      {
+        if (m_current_item > 0)
+        {
+          find_prev_shown_item(m_current_item);
+          f_want_redraw = true;
+        }
+      }
+      else
+      {
+        if (m_current_item > 0)
+        {
+          if (find_prev_shown_item(m_current_item)) m_arrow_position--;
+        }
+        f_want_redraw = true;
+      }
+      break;
+    }
+    case irskey_down:
+    {
+      if (m_arrow_position >= (mp_disp_drv->get_height() - 2))
+      {
+        if (m_current_item < (m_menu_vector.size()-1))
+        {
+          find_next_shown_item(m_current_item);
+          f_want_redraw = true;
+        }
+      }
+      else
+      {
+        if (m_current_item < (m_menu_vector.size()-1))
+        {
+          if (find_next_shown_item(m_current_item)) m_arrow_position++;
+          f_want_redraw = true;
+        }
+      }
+      break;
+    }
+    case irskey_enter:
+    {
+      if (m_menu_vector.size() > 0) 
+      {
+        m_menu_vector[m_current_item].p_item->set_master_menu(this);
+        *a_cur_menu = m_menu_vector[m_current_item].p_item;
+        f_want_redraw = true;
+        f_show_needed = true;
+      }
+      break;
+    }
+    case irskey_escape:
+    {
+      if (f_master_menu != IRS_NULL)
+      {
+        f_want_redraw = true;
+        *a_cur_menu = f_master_menu;
+        f_show_needed = true;
+      }
+      break;
+    }
+  }
+}
+  
+irs_menu_base_t::size_type irs_advanced_menu_t::get_current_item()
+{
+  return m_current_item;
+}
+  
+irs_menu_base_t::size_type irs_advanced_menu_t::get_items_count()
+{
+  return m_menu_vector.size();
+}
+  
+irs_menu_base_t::size_type irs_advanced_menu_t::add(irs_menu_base_t *ap_item,
+  bool a_show)
+{
+  menu_item_t item;
+  item.p_item = ap_item;
+  item.show = a_show;
+  
+  if (f_key_event) item.p_item->set_key_event(f_key_event);
+  if (f_creep) item.p_item->set_creep(f_creep);
+  if (mp_disp_drv) item.p_item->set_disp_drv(mp_disp_drv);
+  item.p_item->set_cursor_symbol(f_cursor_symbol);
+  item.p_item->set_master_menu(this);
+  
+  m_menu_vector.push_back(item);
+  
+  m_current_item = 0;
+  m_arrow_position = 0;
+  if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
+  f_want_redraw = true;
+  
+  return m_menu_vector.size() - 1;
+}
+
+irs_menu_base_t::size_type irs_advanced_menu_t::get_dynamic_string(
+  char *ap_buffer, size_type /*a_length*/)
+{
+  if (ap_buffer)
+  {
+    strcpy(ap_buffer, "");
+  }
+  return 0;
+}
+  
+void irs_advanced_menu_t::hide_item(size_type a_item_number)
+{
+  if (a_item_number > m_menu_vector.size() - 1) return;
+  m_menu_vector[a_item_number].show = false;
+  m_current_item = 0;
+  m_arrow_position = 0;
+  if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
+  f_want_redraw = true;
+}
+  
+void irs_advanced_menu_t::show_item(size_type a_item_number)
+{
+  if (a_item_number > m_menu_vector.size() - 1) return;
+  m_menu_vector[a_item_number].show = true;
+  m_current_item = 0;
+  m_arrow_position = 0;
+  if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
+  f_want_redraw = true;
+}
+  
+bool irs_advanced_menu_t::item_is_hidden(size_type a_item_number)
+{  
+  if (a_item_number > m_menu_vector.size() - 1) return false;
+  return m_menu_vector[a_item_number].show;
+}
+
 //--------------------------  MENU_DOUBLE_ITEM  --------------------------------
 
 irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,

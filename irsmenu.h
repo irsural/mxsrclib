@@ -159,6 +159,37 @@ public:
   size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
 };
 
+class irs_advanced_menu_t: public irs_menu_base_t
+{
+  struct menu_item_t
+  {
+    irs_menu_base_t* p_item;
+    bool show;
+  };
+  vector<menu_item_t> m_menu_vector;
+  size_type m_arrow_position;
+  size_type m_current_item;
+  bool find_prev_shown_item(size_type &a_item);
+  bool find_next_shown_item(size_type &a_item);
+public:
+  irs_advanced_menu_t();
+  ~irs_advanced_menu_t();
+  size_type get_parametr_string(
+    char *ap_parametr_string,
+    size_type a_length = 0,
+    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
+    irs_menu_param_update_t a_update = IMU_UPDATE);
+  void draw(irs_menu_base_t **a_cur_menu);
+  size_type get_current_item();
+  size_type get_items_count();
+  size_type add(irs_menu_base_t *item, bool a_show = true);
+  size_type get_dynamic_string(char *ap_buffer, size_type a_length = 0);
+  size_type get_last_item_number();
+  void hide_item(size_type a_item_number);
+  void show_item(size_type a_item_number);
+  bool item_is_hidden(size_type a_item_number);
+};
+
 class irs_tablo_t: public irs_menu_base_t
 {
   size_type f_parametr_count;
