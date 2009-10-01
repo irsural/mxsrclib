@@ -5,9 +5,16 @@
 #include <ioavr.h>
 #include <inavr.h>
 #include <irsarchint.h>
+#include <irscpu.h>
 
 irs_i16 HW_TCNT = 0;
 irs_u8 init_cnt = 0;
+
+// Количество отсчетов в интервале
+extern counter_t COUNTER_PER_INTERVAL = 0x10000;
+// Число секунд в интервале
+extern counter_t SECONDS_PER_INTERVAL =
+  COUNTER_PER_INTERVAL/(irs::cpu_traits_t::frequency()/1024);
 
 class timer_overflow_event_t: public mxfact_event_t
 {

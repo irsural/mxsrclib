@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 14.09.2009
+// Дата: 1.10.2009
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -100,7 +100,7 @@ inline int union_streambuf::overflow(int c)
     m_streambufs[buf_i]->pubsync();
   }
   setp(m_outbuf.data(), m_outbuf.data() + m_outbuf.size());
-  return 0;
+  return result;
 }
 inline int union_streambuf::sync()
 {
@@ -268,10 +268,10 @@ private:
 };
 inline com_ostream::com_ostream():
   ostream(&m_buf),
-  m_buf(),
+  m_buf()
 {
   //rdbuf(&m_buf);
-  init(&m_buf)
+  init(&m_buf);
 }
 
 } //namespace avr
