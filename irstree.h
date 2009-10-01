@@ -30,10 +30,10 @@
 
 
 namespace irs {
-/*
+
 #if (defined(__BORLANDC__) && (__BORLANDC__ == IRS_CPP_BUILDER6)) ||\
     defined(IRS_LINUX) //|| defined(__ICCAVR__)
-*/
+
 template<class T>
 class tree_t;
 
@@ -512,7 +512,7 @@ void test_tree()
   int size_list_iterator = sizeof(it_l);
 }
 
-//#endif //Compilers
+#endif //Compilers
 
 
 }; // namespace irs
