@@ -1,9 +1,14 @@
 // Калькулятор
-// Дата: 24.09.2009
-// Ранняя дата: 01.10.2008
+// Дата: 01.10.2008
+// Ранняя дата: 24.09.2009
 
 // В Watcom C++ есть только не-const версия функции map::find
 #ifndef __WATCOMC__
+
+// В GNU C++ версии >= 3.4 строки char* имеют кодировку UTF-8
+// Русские символы в этой кодировке 'Я' имеют размер 2 байта, что недопустимо
+// по стандарту C++
+#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
 #include <irscalc.h>
 
@@ -33,7 +38,7 @@ irs::string irs::preprocessing_str(const irs::string& a_str)
   while (pos_ch_decimal_point != irs::string::npos) {
     str.replace(pos_ch_decimal_point, 1, ".");
     pos_ch_decimal_point = str.find(",");
-  }*/   
+  }*/
   return str;
 }
 
@@ -115,5 +120,7 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
   (*ap_keyword_map)[irst("xor")] = keyword_xor;
   (*ap_keyword_map)[irst("xor_eq")] = keyword_xor_eq;
 }
+
+#endif // GNU C++ specific
 
 #endif //__WATCOMC__

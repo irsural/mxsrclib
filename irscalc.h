@@ -1,11 +1,17 @@
 // Калькулятор
-// Дата: 24.09.2009
+// Дата: 01.10.2008
+// Ранняя дата: 24.09.2009
 
 #ifndef irscalcH
 #define irscalcH
 
 // В Watcom C++ есть только не-const версия функции map::find
 #ifndef __WATCOMC__
+
+// В GNU C++ версии >= 3.4 строки char* имеют кодировку UTF-8
+// Русские символы в этой кодировке (например 'Я') имеют размер 2 байта,
+// что недопустимо по стандарту C++
+#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
 #include <iostream>
 #include <irsstdg.h>
@@ -1882,6 +1888,7 @@ inline void mutable_ref_test()
 
 } // namespace irs
 
+#endif // GNU C++ specific
 
 #endif //__WATCOMC__
 
