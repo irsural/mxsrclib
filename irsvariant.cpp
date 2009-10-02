@@ -404,6 +404,13 @@ irs::variant::variant_t::as_string() const
   return value;
 }
 
+irs::variant::variant_t::operator bool() const
+{
+  bool value;
+  value_get(&value);
+  return value;
+}
+
 irs::variant::variant_t::operator char() const
 {
   char value;
@@ -978,6 +985,312 @@ irs::variant::variant_t irs::variant::operator%(
   return result;
 }
 
+bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
+{
+  bool convert_success = false;
+  if (m_type != a_var_type) {
+    if (is_type_number(m_type)) {
+      switch(a_var_type) {
+        case var_type_bool: {
+          bool value = as_bool();
+          type_change(a_var_type);
+          m_value.val_bool_type = value;
+          convert_success = true;
+        } break;
+        case var_type_char: {
+          char value = as_char();
+          type_change(a_var_type);
+          m_value.val_char_type = value;
+          convert_success = true;
+        } break;
+        case var_type_singned_char: {
+          signed char value = as_signed_char();
+          type_change(a_var_type);
+          m_value.val_schar_type = value;
+          convert_success = true;
+        } break;
+        case var_type_unsigned_char: {
+          unsigned char value = as_unsigned_char();
+          type_change(a_var_type);
+          m_value.val_uchar_type = value;
+          convert_success = true;
+        } break;
+        case var_type_short: {
+          short value = as_short();
+          type_change(a_var_type);
+          m_value.val_short_type = value;
+          convert_success = true;
+        } break;
+        case var_type_unsigned_short: {
+          unsigned short value = as_unsigned_short();
+          type_change(a_var_type);
+          m_value.val_ushort_type = value;
+          convert_success = true;
+        } break;
+        case var_type_int: {
+          int value = as_int();
+          type_change(a_var_type);
+          m_value.val_int_type = value;
+          convert_success = true;
+        } break;
+        case var_type_unsigned_int: {
+          unsigned int value = as_unsigned_int();
+          type_change(a_var_type);
+          m_value.val_uint_type = value;
+          convert_success = true;
+        } break;
+        case var_type_long: {
+          long value = as_long();
+          type_change(a_var_type);
+          m_value.val_long_type = value;
+          convert_success = true;
+        } break;
+        case var_type_unsigned_long: {
+          unsigned long value = as_unsigned_long();
+          type_change(a_var_type);
+          m_value.val_ulong_type = value;
+          convert_success = true;
+        } break;
+        case var_type_float: {
+          float value = as_float();
+          type_change(a_var_type);
+          m_value.val_float_type = value;
+          convert_success = true;
+        } break;
+        case var_type_double: {
+          double value = as_double();
+          type_change(a_var_type);
+          m_value.val_double_type = value;
+          convert_success = true;
+        } break;
+        case var_type_long_double: {
+          long double value = as_long_double();
+          type_change(a_var_type);
+          m_value.val_long_double_type = value;
+          convert_success = true;
+        } break;
+        #ifdef IRSDEFS_I64
+        case var_type_long_long: {
+          long_long_type value = as_long_long();
+          type_change(a_var_type);
+          m_value.val_long_long_type = value;
+          convert_success = true;
+        } break;
+        case var_type_unsigned_long_long: {
+          unsigned_long_long_type value = as_unsigned_long_long();
+          type_change(a_var_type);
+          m_value.val_ulong_long_type = value;
+          convert_success = true;
+        } break;
+        #endif // IRSDEFS_I64
+        case var_type_string: {
+          string_type value = as_string();
+          type_change(a_var_type);
+          *m_value.p_val_string_type = value;
+          convert_success = true;
+        } break;
+        default : {
+          // Ошибка при конвертировании
+        }
+      }
+    } else if (m_type == var_type_string) {
+      switch(a_var_type) {
+        case var_type_bool: {
+          bool value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_bool_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_char: {
+          char value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_char_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_singned_char: {
+          signed char value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_schar_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_unsigned_char: {
+          unsigned char value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_uchar_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_short: {
+          short value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_short_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_unsigned_short: {
+          unsigned short value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_ushort_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_int: {
+          int value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_int_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_unsigned_int: {
+          unsigned int value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_uint_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_long: {
+          long value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_long_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_unsigned_long: {
+          unsigned long value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_ulong_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_float: {
+          float value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_float_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_double: {
+          double value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_double_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_long_double: {
+          long double value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_long_double_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        #ifdef IRSDEFS_I64
+        case var_type_long_long: {
+          long_long_type value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_long_long_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        case var_type_unsigned_long_long: {
+          unsigned_long_long_type value;
+          if (m_value.p_val_string_type->to_number(value)) {
+            type_change(a_var_type);
+            m_value.val_ulong_long_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в число не удалось
+          }
+        } break;
+        #endif // IRSDEFS_I64
+        default : {
+          // Ошибка при конвертировании
+        }
+      }
+    } else {
+      IRS_LIB_ASSERT_MSG("Неучтенный тип");
+    }
+  } else {
+    // Операция конвертирования не требуется
+  }
+  return convert_success;
+}
+
+bool irs::variant::variant_t::is_type_number(var_type_t a_var_type)
+{
+  bool is_type_num = false;
+  switch(a_var_type) {
+    case var_type_bool:
+    case var_type_char:
+    case var_type_singned_char:
+    case var_type_unsigned_char:
+    case var_type_short:
+    case var_type_unsigned_short:
+    case var_type_int:
+    case var_type_unsigned_int:
+    case var_type_long:
+    case var_type_unsigned_long:
+    case var_type_float:
+    case var_type_double:
+    case var_type_long_double:
+    #ifdef IRSDEFS_I64
+    case var_type_long_long:
+    case var_type_unsigned_long_long:
+    #endif // IRSDEFS_I64
+    {
+      is_type_num = true;
+    } break;
+    default : {
+      // Тип не является числовым типом
+    }
+  }
+  return is_type_num;
+}
+
 #ifdef IRS_LIB_DEBUG
 void irs::variant::test_variant()
 {
@@ -1131,7 +1444,7 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT(static_cast<int>(first_variant) ==
     static_cast<int>(second_double_var));
   variant_t::string_type string_var = "test";
-  first_variant = string_var;    
+  first_variant = string_var;
   first_variant.assign_no_cast(string_var);    
 
   // Проверка оператора копирования
@@ -1146,6 +1459,15 @@ void irs::variant::test_variant()
   //size_type cur_size = first_variant.size();
   const size_type elem_index = 1;
   second_variant = first_variant[elem_index];
+
+  // Проверка функций присвоения и преобразования
+  first_variant.type(var_type_int);
+  first_variant.assign_no_cast(10);
+  first_variant.convert_to(var_type_string);
+  string s = first_variant;
+  first_int_var = first_variant;
+  first_variant.convert_to(var_type_int);
+  second_double_var = first_variant;
 }
 #endif // IRS_LIB_DEBUG
 

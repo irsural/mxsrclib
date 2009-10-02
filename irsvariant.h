@@ -169,6 +169,7 @@ public:
   string_type as_string() const;
   //signed char is_array() const;
 
+  operator bool() const;
   operator char() const;
   operator signed char() const;
   operator unsigned char() const;
@@ -202,7 +203,8 @@ public:
   operator T()const;
   */
   template<class T>
-  variant_t& assign_no_cast(const T& a_value);  
+  variant_t& assign_no_cast(const T& a_value);
+  bool convert_to(const var_type_t a_var_type);
 
   inline size_type size() const;
   inline void resize(const size_type a_new_size);
@@ -256,6 +258,7 @@ private:
     T* ap_value);
 
   void prefix_operation(const operation_type_t a_unary_operation_type);
+  bool is_type_number(var_type_t a_var_type);
 };
 
 inline var_type_t variant_t::type() const
@@ -270,7 +273,7 @@ variant_t::operator T()const
   value_get(&value);
   return value;
 }*/
-
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 template<class T>
 variant_t& variant_t::assign_no_cast(const T& a_value)
 {
@@ -314,34 +317,168 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
     case var_type_long_double: {
       m_value.val_long_double_type = static_cast<long double>(a_value);
     } break;
-#ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_I64
     case var_type_long_long: {
       m_value.val_long_long_type = static_cast<long_long_type>(a_value);
     } break;
     case var_type_unsigned_long_long: {
       m_value.val_ulong_long_type =
-          static_cast<unsigned_long_long_type>(a_value);
+        static_cast<unsigned_long_long_type>(a_value);
     } break;
-#endif // IRSDEFS_I64
-      /*case variant_string_type: {
-    m_value.p_val_string_type = static_cast<string_type>(a_value);
-  } break;*/
+    #endif // IRSDEFS_I64
+    case var_type_string: {
+      *m_value.p_val_string_type = static_cast<string_type>(a_value);
+    } break;
+    case var_type_unknown:
+    case var_type_array: {
+      IRS_LIB_ERROR(ec_standard, "Недопустимая операция для данного типа");
+    } break;
     default : {
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
     }
   }
   return *this;
 }
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 template<>
 inline variant_t& variant_t::assign_no_cast<variant_t::string_type>(
   const string_type& a_value)
 {
-  if (m_type == var_type_string) {
-    *m_value.p_val_string_type = a_value;
+  bool fsuccess = false;
+  switch(m_type) {
+    case var_type_bool: {
+      fsuccess = a_value.to_number(m_value.val_bool_type);
+    } break;
+    case var_type_char: {
+      fsuccess = a_value.to_number(m_value.val_char_type);    
+    } break;
+    case var_type_singned_char: {
+      fsuccess = a_value.to_number(m_value.val_schar_type);
+    } break;
+    case var_type_unsigned_char: {
+      fsuccess = a_value.to_number(m_value.val_uchar_type);
+    } break;
+    case var_type_short: {
+      fsuccess = a_value.to_number(m_value.val_short_type);
+    } break;
+    case var_type_unsigned_short: {
+      fsuccess = a_value.to_number(m_value.val_ushort_type);
+    } break;
+    case var_type_int: {
+      fsuccess = a_value.to_number(m_value.val_int_type);
+    } break;
+    case var_type_unsigned_int: {
+      fsuccess = a_value.to_number(m_value.val_uint_type);
+    } break;
+    case var_type_long: {
+      fsuccess = a_value.to_number(m_value.val_long_type);
+    } break;
+    case var_type_unsigned_long: {
+      fsuccess = a_value.to_number(m_value.val_ulong_type);
+    } break;
+    case var_type_float: {
+      fsuccess = a_value.to_number(m_value.val_float_type);
+    } break;
+    case var_type_double: {
+      fsuccess = a_value.to_number(m_value.val_double_type);
+    } break;
+    case var_type_long_double: {
+      fsuccess = a_value.to_number(m_value.val_long_double_type);
+    } break;
+    #ifdef IRSDEFS_I64
+    case var_type_long_long: {
+      fsuccess = a_value.to_number(m_value.val_long_long_type);
+    } break;
+    case var_type_unsigned_long_long: {
+      fsuccess = a_value.to_number(m_value.val_ulong_long_type);
+    } break;
+    #endif // IRSDEFS_I64
+    case var_type_string: {
+      *m_value.p_val_string_type = a_value;
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Неизвестный тип");
+    }
+  }
+  if (fsuccess) {
+    IRS_LIB_ERROR(ec_standard, "Преобразование завершилось неудачей");
   } else {
-    IRS_LIB_ASSERT_MSG("Невозможно преобразовать string_type в другие типы");
+    // Преобразование успешно          
+  }
+  return *this;
+}
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+template<>
+inline variant_t& variant_t::assign_no_cast<variant_t>(
+  const variant_t& a_variant)
+{
+  switch(m_type) {
+    case var_type_bool: {
+      m_value.val_bool_type = a_variant.as_bool();
+    } break;
+    case var_type_char: {
+      m_value.val_char_type = a_variant.as_char();
+    } break;
+    case var_type_singned_char: {
+      m_value.val_schar_type = a_variant.as_signed_char();
+    } break;
+    case var_type_unsigned_char: {
+      m_value.val_uchar_type = a_variant.as_unsigned_char();
+    } break;
+    case var_type_short: {
+      m_value.val_short_type = a_variant.as_short();
+    } break;
+    case var_type_unsigned_short: {
+      m_value.val_ushort_type = a_variant.as_unsigned_short();
+    } break;
+    case var_type_int: {
+      m_value.val_int_type = a_variant.as_int();
+    } break;
+    case var_type_unsigned_int: {
+      m_value.val_uint_type = a_variant.as_unsigned_int();
+    } break;
+    case var_type_long: {
+      m_value.val_long_type = a_variant.as_long();
+    } break;
+    case var_type_unsigned_long: {
+      m_value.val_ulong_type = a_variant.as_unsigned_long();
+    } break;
+    case var_type_float: {
+      m_value.val_float_type = a_variant.as_float();
+    } break;
+    case var_type_double: {
+      m_value.val_double_type = a_variant.as_double();
+    } break;
+    case var_type_long_double: {
+      m_value.val_long_double_type = a_variant.as_long_double();
+    } break;
+    #ifdef IRSDEFS_I64
+    case var_type_long_long: {
+      m_value.val_long_long_type = a_variant.as_long_long();
+    } break;
+    case var_type_unsigned_long_long: {
+      m_value.val_ulong_long_type = a_variant.as_unsigned_long_long();
+    } break;
+    #endif // IRSDEFS_I64
+    case var_type_string: {
+      *m_value.p_val_string_type = a_variant.as_string();
+    } break;
+    case var_type_unknown:
+      IRS_LIB_ERROR(ec_standard, "Недопустимая операция для данного типа");
+    case var_type_array: {
+      if (a_variant.type() == var_type_array) {
+        *m_value.p_val_string_type = *a_variant.m_value.p_val_string_type;
+      } else {
+        IRS_LIB_ERROR(ec_standard, "Недопустимая операция");
+      }
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Неизвестный тип");
+    }
   }
   return *this;
 }
@@ -455,10 +592,14 @@ T variant_t::value_get() const
       value = static_cast<T>(m_value.val_ulong_long_type);
     } break;
     #endif // IRSDEFS_I64
-    /*case variant_string_type: {
-      IRS_STATIC_ASSERT(m_type == variant_string_type);
-      value = *(m_value.p_val_string_type);
-    } break;*/
+    case var_type_string: {
+      bool fsuccess = m_value.p_val_string_type->to_number(value);
+      if (!fsuccess) {
+        IRS_LIB_ASSERT_MSG("Преобразовать строку в число не удалось");
+      } else {
+        // Строка успешно преобразована в число
+      }
+    } break;
     default : {
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
     }
@@ -471,13 +612,70 @@ template<>
 inline variant_t::string_type
 variant_t::value_get<variant_t::string_type>() const
 {
-  return *(m_value.p_val_string_type);
+  string_type value;
+  switch(m_type) {
+    case var_type_bool: {
+      value = m_value.val_bool_type;
+    } break;
+    case var_type_char: {
+      value = m_value.val_char_type;
+    } break;
+    case var_type_singned_char: {
+      value = m_value.val_schar_type;
+    } break;
+    case var_type_unsigned_char: {
+      value = m_value.val_uchar_type;
+    } break;
+    case var_type_short: {
+      value = m_value.val_short_type;
+    } break;
+    case var_type_unsigned_short: {
+      value = m_value.val_ushort_type;
+    } break;
+    case var_type_int: {
+      value = m_value.val_int_type;
+    } break;
+    case var_type_unsigned_int: {
+      value = m_value.val_uint_type;
+    } break;
+    case var_type_long: {
+      value = m_value.val_long_type;
+    } break;
+    case var_type_unsigned_long: {
+      value = m_value.val_ulong_type;
+    } break;
+    case var_type_float: {
+      value = m_value.val_float_type;
+    } break;
+    case var_type_double: {
+      value = m_value.val_double_type;
+    } break;
+    case var_type_long_double: {
+      value = m_value.val_long_double_type;
+    } break;
+    #ifdef IRSDEFS_I64
+    case var_type_long_long: {
+      value = m_value.val_long_long_type;
+    } break;
+    case var_type_unsigned_long_long: {
+      value = m_value.val_ulong_long_type;
+    } break;
+    #endif // IRSDEFS_I64
+    case var_type_string: {
+      value = *(m_value.p_val_string_type);
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Недопустимая операция");
+    }
+  }
+  return value;
 }
 
 template<>
 inline variant_t::vector_variant_type
 variant_t::value_get<variant_t::vector_variant_type>() const
 {
+  IRS_LIB_ASSERT(m_type == var_type_array);
   return *(m_value.p_val_vector_variant);
 }
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
