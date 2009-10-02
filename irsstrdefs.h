@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 28.09.2009
+// Дата: 02.10.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -235,7 +235,7 @@ inline const wchar_t* cstr_from_codecvt_result_helper(
 
 //#if !defined(__WATCOMC__) && !defined(__ICCAVR__)
 template <class T>
-const char* cstr_from_codecvt_result(codecvt_base::result a_result)
+const T* cstr_from_codecvt_result(codecvt_base::result a_result)
 {
   return cstr_from_codecvt_result_helper(a_result, T());
 }
@@ -349,6 +349,14 @@ public:
   (irs::convert_str_t<char, wchar_t>(str))
 #define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
 #endif //IRS_UNICODE
+
+inline void convert_str_test(ostream& a_strm)
+{
+  a_strm << "Преобразование из wchar_t* в char*: ";
+  a_strm << irs::convert_str_t<wchar_t, char>(L"hello!?& Й") << endl;
+  a_strm << "Преобразование из char_t* в char*: ";
+  a_strm << IRS_SIMPLE_CHAR_FROM_TCHAR_STR(irst("hello!?& Й")) << endl;
+}
 
 } //namespace irs
 
