@@ -1,6 +1,7 @@
 // Модуль счетчика
 // Linux
-// Дата: 13.09.2009
+// Дата: 01.10.2009
+// Ранняя дата: 13.09.2009
 
 #include <counter.h>
 #include <armmap.h>
@@ -20,7 +21,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <irscpp.h>
-// Заголовок limits.h включается из-за того что это аппаратно-зависимый код
+// Заголовок limits включается из-за того что это аппаратно-зависимый код
 #include <limits>
 #include <stdarg.h>
 #include <irsdefs.h>
@@ -30,7 +31,7 @@ counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();
 // Число секунд в интервале
 counter_t SECONDS_PER_INTERVAL = 1;
 // Количество отсчетов в секунде
-counter_t COUNTER_PER_INTERVAL = 1000000;
+counter_t COUNTER_PER_INTERVAL = CLOCKS_PER_SEC;
 
 // Разрядность счетчика ARM
 const int arm_counter_digits = 20;
