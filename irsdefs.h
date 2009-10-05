@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 02.10.2009
+// Дата: 04.10.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -72,7 +72,7 @@
 // Взято из STLSoft
 // Перенесено из irserror.h для того, чтобы была возможность применить
 // в irsstrdefs.h
-#ifdef IRS_GNUC_VERSION_LESS_3_4
+#if IRS_GNUC_VERSION_LESS_3_4
     // Эта константа у меня пока отсутствует
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\
@@ -102,15 +102,9 @@
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
 // Макрос __FUNC__
-#ifndef __FUNC__
-#if defined(__FUNCTION__)
+#if defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
 #define __FUNC__ __FUNCTION__
-#elif defined(__func__)
-#define __FUNC__ __func__
-#else // другие варианты __FUNC__
-#define __FUNC__ ""
-#endif // другие варианты __FUNC__
-#endif //__FUNC__
+#endif //defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
 
 // Макросы для работы c DLL
 // Объявление внешней функции
