@@ -50,13 +50,14 @@ public:
   virtual void tick();
   float get_conv_koef();
 };
+
 struct th_lm95071_data_t
 {
-  irs::bit_data_t ready_status_bit;
+  irs::bit_data_t new_data_bit;
   irs::conn_data_t<irs_u16> temperature_code;
   
   th_lm95071_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
-    ready_status_bit(),
+    new_data_bit(),
     temperature_code()
   {
     connect(ap_data, a_start_index);    
@@ -65,12 +66,11 @@ struct th_lm95071_data_t
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
-    index = ready_status_bit.connect(ap_data, index, 0);
+    index = new_data_bit.connect(ap_data, index, 0);
     index++;
     index = temperature_code.connect(ap_data, index);
   }
 };
-
 
 //--------------------------  AD7791  ------------------------------------------
 
@@ -158,6 +158,27 @@ public:
   virtual void tick();
 };
 
+struct adc_ad7791_data_t
+{
+  irs::bit_data_t new_data_bit;
+  irs::conn_data_t<irs_u32> voltage_code;
+  
+  adc_ad7791_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    new_data_bit(),
+    voltage_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = new_data_bit.connect(ap_data, index, 0);
+    index++;
+    index = voltage_code.connect(ap_data, index);
+  }
+};
+
 //--------------------------  AD7686  ------------------------------------------
 
 class adc_ad7686_t : public mxdata_t
@@ -193,6 +214,27 @@ public:
   virtual void tick();
 };
 
+struct adc_ad7686_data_t
+{
+  irs::bit_data_t new_data_bit;
+  irs::conn_data_t<irs_u16> voltage_code;
+  
+  adc_ad7686_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    new_data_bit(),
+    voltage_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = new_data_bit.connect(ap_data, index, 0);
+    index++;
+    index = voltage_code.connect(ap_data, index);
+  }
+};
+
 //--------------------------  AD8400  ------------------------------------------
 
 class dac_ad8400_t : public mxdata_t
@@ -223,14 +265,15 @@ public:
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
 };
+
 struct dac_ad8400_data_t
 {
-  irs::bit_data_t ready_status_bit;
-  irs::conn_data_t<irs_u8> data_byte;
+  irs::bit_data_t ready_bit;
+  irs::conn_data_t<irs_u8> resistance_code;
   
   dac_ad8400_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
-    ready_status_bit(),
-    data_byte()
+    ready_bit(),
+    resistance_code()
   {
     connect(ap_data, a_start_index);    
   }  
@@ -238,12 +281,11 @@ struct dac_ad8400_data_t
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
-    index = ready_status_bit.connect(ap_data, index, 0);
+    index = ready_bit.connect(ap_data, index, 0);
     index++;
-    index = data_byte.connect(ap_data, index);
+    index = resistance_code.connect(ap_data, index);
   }
 };
-
 
 //--------------------------  AD7376  ------------------------------------------
 // Цифровой потенциометр 8 бит
@@ -285,21 +327,31 @@ public:
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
 };
+
 struct dac_ad7376_data_t
 {
-  irs::bit_data_t ready_status_bit;
+  irs::bit_data_t ready_bit;
   irs::bit_data_t rs_bit;
   irs::bit_data_t shdn_bit;
-  irs::conn_data_t<irs_u8> data_byte;
+  irs::conn_data_t<irs_u8> resistance_code;
+  
+  dac_ad7376_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    rs_bit(),
+    shdn_bit(),
+    resistance_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
-    ready_status_bit.connect(ap_data, a_start_index, 0);
+    ready_bit.connect(ap_data, a_start_index, 0);
     rs_bit.connect(ap_data, a_start_index, 1);
     shdn_bit.connect(ap_data, a_start_index, 2);
-    data_byte.connect(ap_data, a_start_index+1);
+    resistance_code.connect(ap_data, a_start_index+1);
   }
 };
-
 
 //--------------------------  MAX551  ------------------------------------------
 
@@ -333,7 +385,157 @@ public:
   virtual void tick();
 };
 
+struct dac_max551_data_t
+{
+  irs::bit_data_t ready_bit;
+  irs::conn_data_t<irs_u16> voltage_code;
+  
+  dac_max551_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    voltage_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    ready_bit.connect(ap_data, a_start_index, 0);
+    voltage_code.connect(ap_data, a_start_index+1);
+  }
+};
+
 //--------------------------  AD9854  ------------------------------------------
+
+struct dds_ad9854_data_t
+{
+  irs::bit_data_t ready_status_bit;
+  irs::bit_data_t reset_bit;
+  //
+  irs::conn_data_t<irs_u32> phase_offset_code_1;
+  irs::conn_data_t<irs_u32> phase_offset_code_2;
+  irs::conn_data_t<irs_u64> frequency_code_1;
+  irs::conn_data_t<irs_u64> frequency_code_2;
+  irs::conn_data_t<irs_u64> delta_frequency_code;
+  irs::conn_data_t<irs_u32> update_clock_rate_code;
+  irs::conn_data_t<irs_u32> ramp_rate_clock_code;
+  //  Control register bits
+  irs::conn_data_t<irs_u32> control_register;
+  irs::bit_data_t sdo_active_bit;
+  irs::bit_data_t data_order_bit;
+  irs::bit_data_t shaped_keying_control_bit;
+  irs::bit_data_t shaped_keying_enable_bit;
+  irs::bit_data_t internal_sinc_bypass_bit;
+  irs::bit_data_t intud_active_bit;
+  irs::bit_data_t mode_bit_0;
+  irs::bit_data_t mode_bit_1;
+  irs::bit_data_t mode_bit_2;
+  irs::bit_data_t source_q_dac_bit;
+  irs::bit_data_t triangle_bit;
+  irs::bit_data_t clear_accum_1_2_bit;
+  irs::bit_data_t clear_accum_1_bit;
+  irs::conn_data_t<irs_u8> pll_multiplier_code;
+  irs::bit_data_t pll_bypass_bit;
+  irs::bit_data_t pll_range_bit;
+  irs::bit_data_t digital_power_down_bit;
+  irs::bit_data_t i_q_dac_power_down_bit;
+  irs::bit_data_t q_dac_power_down_bit;
+  irs::bit_data_t wres_bit;
+  irs::bit_data_t comparator_power_down_bit;
+  //
+  irs::conn_data_t<irs_u16> i_path_mult_code;
+  irs::conn_data_t<irs_u16> q_path_mult_code;
+  irs::conn_data_t<irs_u8>  shaped_keying_ramp_rate_code;
+  irs::conn_data_t<irs_u16> q_dac_voltage_code;
+  
+  dds_ad9854_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_status_bit(),
+    reset_bit(),
+    //
+    phase_offset_code_1(),
+    phase_offset_code_2(),
+    frequency_code_1(),
+    frequency_code_2(),
+    delta_frequency_code(),
+    update_clock_rate_code(),
+    ramp_rate_clock_code(),
+    control_register(),
+    //  Control register bits
+    sdo_active_bit(),
+    data_order_bit(),
+    shaped_keying_control_bit(),
+    shaped_keying_enable_bit(),
+    internal_sinc_bypass_bit(),
+    intud_active_bit(),
+    mode_bit_0(),
+    mode_bit_1(),
+    mode_bit_2(),
+    source_q_dac_bit(),
+    triangle_bit(),
+    clear_accum_1_2_bit(),
+    clear_accum_1_bit(),
+    pll_multiplier_code(),
+    pll_bypass_bit(),
+    pll_range_bit(),
+    digital_power_down_bit(),
+    i_q_dac_power_down_bit(),
+    q_dac_power_down_bit(),
+    wres_bit(),
+    comparator_power_down_bit(),
+    //
+    i_path_mult_code(),
+    q_path_mult_code(),
+    shaped_keying_ramp_rate_code(),
+    q_dac_voltage_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    ready_status_bit.connect(ap_data, index, 0);
+    ready_status_bit.connect(ap_data, index, 7);
+    index++;
+    index = phase_offset_code_1.connect(ap_data, index);
+    index = phase_offset_code_2.connect(ap_data, index);
+    index = frequency_code_1.connect(ap_data, index);
+    index = frequency_code_2.connect(ap_data, index);
+    index = delta_frequency_code.connect(ap_data, index);
+    index = update_clock_rate_code.connect(ap_data, index);
+    index = ramp_rate_clock_code.connect(ap_data, index);
+    control_register.connect(ap_data, index);
+    //  Control register bits
+    sdo_active_bit.connect(ap_data, index, 0);
+    data_order_bit.connect(ap_data, index, 1);
+    shaped_keying_control_bit.connect(ap_data, index, 4);
+    shaped_keying_enable_bit.connect(ap_data, index, 5);
+    internal_sinc_bypass_bit.connect(ap_data, index, 6);
+    index++;
+    intud_active_bit.connect(ap_data, index, 0);
+    mode_bit_0.connect(ap_data, index, 1);
+    mode_bit_1.connect(ap_data, index, 2);
+    mode_bit_2.connect(ap_data, index, 3);
+    source_q_dac_bit.connect(ap_data, index, 4);
+    triangle_bit.connect(ap_data, index, 5);
+    clear_accum_1_2_bit.connect(ap_data, index, 6);
+    clear_accum_1_bit.connect(ap_data, index, 7);
+    index = pll_multiplier_code.connect(ap_data, index);
+    pll_bypass_bit.connect(ap_data, index, 5);
+    pll_range_bit.connect(ap_data, index, 6);
+    index++;
+    digital_power_down_bit.connect(ap_data, index, 0);
+    i_q_dac_power_down_bit.connect(ap_data, index, 1);
+    q_dac_power_down_bit.connect(ap_data, index, 2);
+    wres_bit.connect(ap_data, index, 3);
+    comparator_power_down_bit.connect(ap_data, index, 4);
+    //
+    index++;
+    index = i_path_mult_code.connect(ap_data, index);
+    index = q_path_mult_code.connect(ap_data, index);
+    index = shaped_keying_ramp_rate_code.connect(ap_data, index);
+    index = q_dac_voltage_code.connect(ap_data, index);
+  }
+};
 
 /*-------------------------- структура данных ----------------------------------
   Num   Description
@@ -406,6 +608,7 @@ class dds_ad9854_t : public mxdata_t
   static const irs_u8 POS_INTUD = 29;   //  Update Clock Rate Register
   static const irs_u8 POS_RRCR = 33;    //  Ramp Rate Clock Register
   static const irs_u8 POS_CR = 37;      //  Control Register
+  static const irs_u8 POS_PLL_MUL = 39; //  PLL Multiplier 5 bits
   static const irs_u8 POS_IPATH = 41;   //  I Path Digital Multiplier Register
   static const irs_u8 POS_QPATH = 43;   //  Q Path Digital Multiplier Register
   static const irs_u8 POS_SKRR = 45;    //  Shaped On/Off Keying Ramp Rate Reg
@@ -509,6 +712,110 @@ public:
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
+};
+
+//-------------------------- LTC2622 -------------------------------------------
+// 12-битный ЦАП
+class dac_ltc2622_t : public mxdata_t
+{
+  enum status_t
+  {
+    DAC_FREE,
+    DAC_WRITE_REGA,
+    DAC_WRITE_REGB,
+    DAC_DALAY
+  };
+  enum
+  {
+    m_size = 5,
+    m_data_regA_position = 1,
+    m_data_regB_position = 3, 
+    m_data_reg_size = 2,
+    m_packet_size = 2,
+    m_write_buf_size = 3,
+    m_data_bytes_size = 2,
+    m_ready_bit_regA = 0,
+    m_ready_bit_regB = 1
+  };
+  enum 
+  {
+    m_com_write_to_input_register = 0x00,
+    m_com_write_to_input_register_and_update_all = 0x40,
+    m_com_write_to_input_register_and_update = 0x30,
+    m_com_no_operation = 0xF0 
+  };
+  enum 
+  {
+    m_addr_DACA = 0x00,
+    m_addr_DACB = 0x01,
+    m_addr_all_DACs = 0x0F
+  };
+  
+  inline irs_u8 bt(irs_u8 a_enum)
+  {
+    return a_enum;
+  }
+  inline irs_u8* to_pu8(irs_u16 &a_reg)
+  {
+    return reinterpret_cast<irs_u8*> (a_reg);
+  }  
+ 
+  status_t m_status;
+  
+  spi_t *mp_spi;
+  
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buf[m_write_buf_size];
+  irs_u8& m_command;
+   
+  irs_u16& m_regA;
+  irs_u16& m_regB;
+  irs_u16& m_write_reg;
+  
+  irs::timer_t m_wait_timer;
+  
+  bool m_need_write;
+  
+  gpio_pin_t *mp_cs_pin;
+  
+public:
+  dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u16 a_init_regA,
+    irs_u16 a_init_regB);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void tick();
+  
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+};
+
+struct dac_ltc2622_data_t
+{
+  irs::bit_data_t ready_bit_A;
+  irs::bit_data_t ready_bit_B;
+  irs::conn_data_t<irs_u16> voltage_code_A;
+  irs::conn_data_t<irs_u16> voltage_code_B;
+  
+  dac_ltc2622_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit_A(),
+    ready_bit_B(),
+    voltage_code_A(),
+    voltage_code_B()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+   
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    ready_bit_A.connect(ap_data, a_start_index, 0);
+    ready_bit_B.connect(ap_data, a_start_index, 1);
+    a_start_index++;
+    a_start_index = voltage_code_A.connect(ap_data, a_start_index);
+    a_start_index = voltage_code_B.connect(ap_data, a_start_index);
+  }
 };
 
 } //  irs
