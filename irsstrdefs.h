@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 04.10.2009
+// Дата: 06.10.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -78,8 +78,8 @@ typedef wstring string_t;
 typedef wostream ostream_t;
 typedef wistream istream_t;
 typedef wstringstream stringstream_t; 
-typedef wistringstream stringstream_t;
-typedef wostringstream stringstream_t;
+typedef wistringstream istringstream_t;
+typedef wostringstream ostringstream_t;
 
 #else //IRS_UNICODE
 
@@ -91,8 +91,8 @@ typedef irs::string string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
 typedef stringstream stringstream_t;
-typedef istringstream stringstream_t;
-typedef ostringstream stringstream_t;
+typedef istringstream istringstream_t;
+typedef ostringstream ostringstream_t;
 
 #endif //IRS_UNICODE
 
