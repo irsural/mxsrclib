@@ -986,11 +986,11 @@ void irs::dds_ad9854_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     return;
   }
   //----  Ахтунг!!!  -------  Непроверенный код  -------  Ахтунг!!!  -----------
-  if (a_index == POS_PLL_MUL && a_size == 1)
+  if ((a_index == POS_PLL_MUL) && (a_size == 1))
   {
     enum { PLL_MUL_MASK = 0xE0 };
     irs_u8 data_byte = ap_buf[0];
-    if (data_byte & PLL_MUL_MASK == 0)
+    if ((data_byte & PLL_MUL_MASK) == 0)
     {
       mp_buf[a_index] &= PLL_MUL_MASK;
       mp_buf[a_index] |= data_byte;

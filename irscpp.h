@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 23.09.2009
+// Дата: 06.10.2009
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -37,6 +37,7 @@
 #include <utility>
 #include <vector>
 #include <fstream>
+#include <locale>
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 namespace std {
