@@ -77,6 +77,9 @@ typedef wchar_t char_t;
 typedef wstring string_t;
 typedef wostream ostream_t;
 typedef wistream istream_t;
+typedef wstringstream stringstream_t; 
+typedef wistringstream stringstream_t;
+typedef wostringstream stringstream_t;
 
 #else //IRS_UNICODE
 
@@ -87,6 +90,9 @@ typedef char char_t;
 typedef irs::string string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
+typedef stringstream stringstream_t;
+typedef istringstream stringstream_t;
+typedef ostringstream stringstream_t;
 
 #endif //IRS_UNICODE
 
