@@ -48,7 +48,7 @@ enum var_type_t {
   var_type_long_long,
   var_type_unsigned_long_long,
   #endif // IRSDEFS_I64
-  var_type_ptr_char,
+  //var_type_ptr_char,
   var_type_string,
   var_type_array
 };
