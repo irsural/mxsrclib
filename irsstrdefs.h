@@ -90,7 +90,9 @@ typedef char char_t;
 typedef irs::string string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
+#ifndef __ICCAVR__
 typedef stringstream stringstream_t;
+#endif // __ICCAVR__
 typedef istringstream istringstream_t;
 typedef ostringstream ostringstream_t;
 

@@ -37,7 +37,9 @@
 #include <utility>
 #include <vector>
 #include <fstream>
+#ifndef __ICCAVR__
 #include <locale>
+#endif //__ICCAVR__
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 namespace std {

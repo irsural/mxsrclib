@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 04.10.2009
+// Дата: 07.10.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -72,7 +72,7 @@
 // Взято из STLSoft
 // Перенесено из irserror.h для того, чтобы была возможность применить
 // в irsstrdefs.h
-#if IRS_GNUC_VERSION_LESS_3_4
+#ifdef IRS_GNUC_VERSION_LESS_3_4
     // Эта константа у меня пока отсутствует
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\
