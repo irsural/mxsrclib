@@ -1,6 +1,6 @@
 // Калькулятор
-// Дата: 01.10.2008
-// Ранняя дата: 24.09.2009
+// Дата: 09.10.2009
+// Дата создания: 1.02.2009
 
 #ifndef irscalcH
 #define irscalcH
@@ -11,7 +11,7 @@
 // В GNU C++ версии >= 3.4 строки char* имеют кодировку UTF-8
 // Русские символы в этой кодировке (например 'Я') имеют размер 2 байта,
 // что недопустимо по стандарту C++
-#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
+//#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
 #include <iostream>
 #include <irsstdg.h>
@@ -590,21 +590,21 @@ inline bool detector_token_t::is_char_exponent(const char_type a_ch)
 
 inline bool detector_token_t::is_char_alpha(const char_type a_ch)
 {
-  bool is_ch_alpha = false;
+  /*bool is_ch_alpha = false;
   if (isalphat(a_ch)) {
     is_ch_alpha = true;
   } else {
     // Заглавная буква русского алфавита
     bool is_ch_russian_capital = (a_ch >= irst('А')) && (a_ch <= irst('Я'));
     // Строчная буква русского алфавита
-    bool is_ch_russian_small = (a_ch >= irst('а'))/* && (a_ch <= irst('я'))*/;
+    bool is_ch_russian_small = (a_ch >= irst('а'));
     if (is_ch_russian_capital || is_ch_russian_small) {
       is_ch_alpha = true;
     } else {
       // Символ не является буквой латинского и русского алфавитов
     }
-  }
-  return is_ch_alpha;
+  }*/
+  return (isalnumt(a_ch) || a_ch == '_');
 }
 
 inline bool detector_token_t::detect_token()
@@ -1888,7 +1888,7 @@ inline void mutable_ref_test()
 
 } // namespace irs
 
-#endif // GNU C++ specific
+//#endif // GNU C++ specific
 
 #endif //__WATCOMC__
 

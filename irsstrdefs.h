@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 06.10.2009
+// Дата: 09.10.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -11,6 +11,7 @@
 #include <irsstring.h>
 #include <irslimits.h>
 #include <irsexcept.h>
+#include <irslocale.h>
 //#include <mxdata.h>
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #include <stdexcept>
@@ -100,67 +101,67 @@ typedef ostringstream ostringstream_t;
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-inline bool isalnumt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isalnumt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alnum,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isalphat(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isalphat(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alpha,
     static_cast<char_t>(a_ch));
 }
 
-inline bool iscntrlt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool iscntrlt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::cntrl,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isdigitt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isdigitt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::digit,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isgrapht(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isgrapht(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::graph,
     static_cast<char_t>(a_ch));
 }
 
-inline bool islowert(char_int_t a_ch, const locale& a_loc = locale())
+inline bool islowert(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::lower,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isprintt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isprintt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::print,
     static_cast<char_t>(a_ch));
 }
 
-inline bool ispunctt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool ispunctt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::punct,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isspacet(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isspacet(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::space,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isuppert(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isuppert(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::upper,
     static_cast<char_t>(a_ch));
 }
 
-inline bool isxdigitt(char_int_t a_ch, const locale& a_loc = locale())
+inline bool isxdigitt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::xdigit,
     static_cast<char_t>(a_ch));

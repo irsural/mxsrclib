@@ -8,7 +8,7 @@
 // В GNU C++ версии >= 3.4 строки char* имеют кодировку UTF-8
 // Русские символы в этой кодировке 'Я' имеют размер 2 байта, что недопустимо
 // по стандарту C++
-#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
+//#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
 #include <irscalc.h>
 
@@ -121,6 +121,6 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
   (*ap_keyword_map)[irst("xor_eq")] = keyword_xor_eq;
 }
 
-#endif // GNU C++ specific
+//#endif // GNU C++ specific
 
 #endif //__WATCOMC__
