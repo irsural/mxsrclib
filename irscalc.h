@@ -19,6 +19,7 @@
 #include <math.h>
 #include <irsvariant.h>
 #include <irscpp.h>
+#include <irslocale.h>
 
 namespace irs {
 
@@ -400,21 +401,18 @@ list_identifier_t::list_identifier_t(
 
 class token_t
 {
+public:
   typedef valuens_t value_type;
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  union {
-    value_type* p_num;
-    delimiter_t delimiter;
-    const value_type* p_constant;
-    const function_t* p_function;
-    string_type* p_identifier;
-  } m_tok;
-  token_type_t m_token_type;
-public:
+
   token_t(): m_tok(), m_token_type(tt_none)
   { }
+  token_t(const token_t& a_token): m_tok(), m_token_type(tt_none)
+  {
+    assign(a_token);
+  }
   ~token_t()
   {
     type_change(tt_none);
@@ -440,6 +438,11 @@ public:
       // Не требуется изменение типа
     }
     m_token_type = a_token_type;
+  }
+  inline token_t& operator=(const token_t& a_token)
+  {
+    assign(a_token);
+    return *this;
   }
   inline void set_number(const value_type& a_num)
   {
@@ -490,6 +493,11 @@ public:
     }
     return p_function;
   }
+  inline const string_type& get_identifier() const
+  {
+    IRS_LIB_ASSERT(m_token_type == tt_identifier);
+    return *m_tok.p_identifier;
+  }
   inline const value_type* get_constant() const
   {
     const value_type* p_constant = IRS_NULL;
@@ -502,14 +510,15 @@ public:
   }
   inline value_type get_number() const
   {
-    value_type num;
+    IRS_LIB_ASSERT(m_token_type == tt_number);
+    /*value_type num;
     num.type(variant::var_type_unknown);
     if (m_token_type == tt_number) {
       num = (*m_tok.p_num);
     } else {
       // Текущая константа не является числом
-    }
-    return num;
+    }*/
+    return *m_tok.p_num;
   }
   inline bool is_operator_logical()
   {
@@ -541,6 +550,42 @@ public:
     }
     return operator_compare_status;
   }
+private:
+  union {
+    value_type* p_num;
+    delimiter_t delimiter;
+    const value_type* p_constant;
+    const function_t* p_function;
+    string_type* p_identifier;
+  } m_tok;
+  token_type_t m_token_type;
+  inline void assign(const token_t& a_token)
+  {
+    type_change(a_token.m_token_type);
+    switch (m_token_type) {
+      case tt_number: {
+        *m_tok.p_num = *a_token.m_tok.p_num;
+      } break;
+      case tt_delimiter: {
+        m_tok.delimiter = a_token.m_tok.delimiter;
+      } break;
+      case tt_constant: {
+        m_tok.p_constant = a_token.m_tok.p_constant;
+      } break;
+      case tt_function: {
+        m_tok.p_function = a_token.m_tok.p_function;
+      } break;
+      case tt_identifier: {
+        *m_tok.p_identifier = *a_token.m_tok.p_identifier;
+      } break;
+      case tt_none: {
+        // Нет элементов для копирования
+      } break;
+      default : {
+        IRS_LIB_ASSERT_MSG("Неучтенный тип");
+      }
+    }
+  }
 };
 
 // Детектор лексем
@@ -570,7 +615,6 @@ public:
   detector_token_t(
     list_identifier_t& a_list_identifier):
     m_list_identifier(a_list_identifier),
-    //m_cur_token_data(),
     m_token_data_list(),
     m_cur_token_data_it(m_token_data_list.end()),
     mp_prog(IRS_NULL),
@@ -578,6 +622,9 @@ public:
     m_ch_valid_name(irst("_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "abcdefghijklmnopqrstuvwxyz"))
   { }
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  inline void imbue(const locale& a_locale);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   // Установить указатель на текст программы
   inline void set_prog(const string_type* ap_prog);
   inline bool next_token();
@@ -591,6 +638,9 @@ private:
   // Список лексем
   token_list_type m_token_data_list;
   token_iterator m_cur_token_data_it;
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  locale m_locale;
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   // Указатель на текст программы
   const string_type* mp_prog;
   // Текущая позиция в тексте программы
@@ -1028,6 +1078,13 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
   return detected_token;
 }
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+inline void detector_token_t::imbue(const locale& a_locale)
+{
+  m_locale = a_locale;
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
 inline void detector_token_t::set_prog(const string_type* ap_prog)
 {
   mp_prog = ap_prog;
@@ -1126,6 +1183,14 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
   return fsuccess;
 }
 
+class handle_external_constant_t
+{
+public:
+  typedef stringns_t string_type;
+  ~handle_external_constant_t();
+  virtual bool get(string_type, irs::variant::variant_t) = 0;
+};
+
 class calculator_t
 {
 public:
@@ -1143,12 +1208,23 @@ public:
     const handle_t<function_t> ap_function);
   inline void function_del(const string_type& a_name);
   inline void function_clear();
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  inline void imbue(const locale& a_locale);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+  inline void handle_external_constant_set(
+    const handle_external_constant_t* ap_handle_extern_const);
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  locale m_locale;
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+  const handle_external_constant_t* mp_handle_extern_const;
   inline bool interp(value_type* ap_value);
   // Обрабатывает квадратные скобки
   inline bool eval_exp_square_brackets(value_type* ap_value);
+  inline bool eval_exp_constant(
+    vector<pair<string_type, vector<int> > >* a_constant);
   // Обрабатывает скобки функции выражение, расположенное внутри них
   inline bool eval_exp_arg_function(value_type* ap_value);
   // Обрабатывает логические операции
@@ -1167,6 +1243,9 @@ private:
   inline bool eval_exp_brackets(value_type* ap_value);
   // Обрабатывает функции и числа
   inline bool atom(value_type* ap_value);
+  inline bool constant_value_get(
+    const vector<pair<string_type, vector<int> > >& a_constant,
+    value_type* ap_value);
   // Выполнение функцию
   inline void func_exec(
     const function_t& a_function,
@@ -1176,8 +1255,15 @@ private:
 
 inline calculator_t::calculator_t():
   m_list_identifier(),
-  m_detector_token(m_list_identifier)
+  m_detector_token(m_list_identifier),
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  m_locale(irs::loc().get()),
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+  mp_handle_extern_const(IRS_NULL)
 {
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  m_detector_token.imbue(m_locale);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   func_r_double_a_double_t::func_r_double_a_double_ptr_type
     func_r_dbl_a_dbl_ptr = IRS_NULL;
   func_r_dbl_a_dbl_ptr = acos;
@@ -1324,6 +1410,127 @@ inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
       // Квадратная левая скобка не обнаружена
       fsuccess = false;
     }
+  }
+  return fsuccess;
+}
+
+inline bool calculator_t::eval_exp_constant(
+  vector<pair<string_type, vector<int> > >* a_constant)
+{
+  bool fsuccess = true;
+  a_constant->clear();
+  enum last_token_type_t {
+    ltt_unknown,
+    ltt_identifier,
+    ltt_dot,
+    ltt_right_square_bracket
+  } last_token_type = ltt_unknown;
+
+  token_t token;
+  fsuccess = m_detector_token.get_token(&token);
+  if (fsuccess) {
+    if (token.token_type() == tt_identifier) {
+      last_token_type = ltt_identifier;
+      a_constant->push_back(make_pair(token.get_identifier(), vector<int>()));
+      fsuccess = m_detector_token.next_token();
+      if (fsuccess) {
+        fsuccess = m_detector_token.get_token(&token);
+      } else {
+        // Произошла ошибка
+      }
+      bool is_token_part_identifier = false;
+      if (fsuccess) {                       
+        if (token.token_type() == tt_identifier) {
+          is_token_part_identifier = true;
+        } else if (token.token_type() == tt_delimiter) {
+          delimiter_t delim = token.delimiter();
+          if ((delim == d_dot) ||
+            (delim == d_left_square_bracket) ||
+            (delim == d_right_square_bracket))
+          {
+            is_token_part_identifier = true;
+          } else {
+            // Лексема не является частью идентификатора
+          }
+        } else {
+          // Лексема не является частью идентификатора
+        }
+      } else {
+        // Произошла ошибка
+      }
+      
+      while (fsuccess && is_token_part_identifier) {
+        switch (token.token_type()) {
+          case tt_identifier: {
+            if (last_token_type == ltt_dot) {
+              last_token_type = ltt_identifier;
+              a_constant->push_back(
+                make_pair(token.get_identifier(), vector<int>()));
+            } else {
+              fsuccess = false;
+            }
+            is_token_part_identifier = true;
+          } break;
+          case tt_delimiter: {
+            delimiter_t delim = token.delimiter();
+            if (delim == d_dot) {
+              if ((last_token_type != ltt_identifier) &&
+                (last_token_type != d_right_square_bracket))
+              {
+                fsuccess = false;
+              } else {
+                // Игнорируем точку
+                last_token_type = ltt_dot;
+              }
+              is_token_part_identifier = true;
+            } else if (delim == d_left_square_bracket) {
+              value_type index_value;
+              fsuccess = eval_exp_logical(&index_value);
+              if (fsuccess) {
+                fsuccess = m_detector_token.next_token();
+              } else {
+                // Произошла ошибка
+              }
+              if (fsuccess) {
+                fsuccess = m_detector_token.get_token(&token);
+              } else {
+                // Произошла ошибка
+              }
+              if (fsuccess) {
+                if (token.token_type() == tt_delimiter) {
+                  delimiter_t next_delim = token.delimiter();
+                  if (next_delim == d_right_square_bracket) {
+                    a_constant->back().second.push_back(index_value);
+                    last_token_type = ltt_right_square_bracket;
+                  } else {
+                    fsuccess = false;
+                  }
+                } else {
+                  fsuccess = false;
+                }
+              } else {
+                // Произошла ошибка
+              }
+              is_token_part_identifier = true;
+            } else {
+              is_token_part_identifier = false;
+            }
+          } break;
+          default : {
+            is_token_part_identifier = false;
+          }
+        }
+      }
+    } else {
+      fsuccess = false;
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (!fsuccess) {
+    a_constant->clear();
+  } else {
+    // Ошибок не произошло
   }
   return fsuccess;
 }
@@ -1701,14 +1908,38 @@ inline bool calculator_t::eval_exp_brackets(value_type* ap_value)
   return fsuccess;
 }
 
-
 inline bool calculator_t::atom(value_type* ap_value)
 {
   bool fsuccess = true;
   token_t token;
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
-    if (token.token_type() == tt_function) {
+    if (token.token_type() == tt_identifier) {
+      const function_t* p_function = IRS_NULL;
+      if (m_list_identifier.function_find(token.get_identifier(), &p_function))
+      { 
+        fsuccess = m_detector_token.next_token();
+        value_type arguments_func;
+        if (fsuccess) {
+          fsuccess = eval_exp_arg_function(&arguments_func);
+        } else {
+          // Произошла ошибка
+        }
+        if (fsuccess) {
+          fsuccess = p_function->exec(&arguments_func, ap_value);
+        } else {
+          // Произошла ошибка
+        }
+      } else {
+        vector<pair<string_type, vector<int> > > constant;
+        fsuccess = eval_exp_constant(&constant);
+        if (fsuccess) {
+          fsuccess = constant_value_get(constant, ap_value);
+        } else {
+          // Произошла ошибка
+        }
+      }  
+    } else if (token.token_type() == tt_function) {
       const function_t* const p_func = token.get_function();
       fsuccess = m_detector_token.next_token();
       value_type arguments_func;
@@ -1776,6 +2007,55 @@ inline bool calculator_t::atom(value_type* ap_value)
   return fsuccess;
 }
 
+inline bool calculator_t::constant_value_get(
+  const vector<pair<string_type, vector<int> > >& a_constant,
+  value_type* ap_value)
+{
+  bool fsuccess = true;
+  IRS_LIB_ASSERT(ap_value != IRS_NULL);
+  if (a_constant.size() == 1) {
+    const size_type index_count = a_constant.front().second.size();
+    const value_type* p_constant = IRS_NULL;
+    if (m_list_identifier.constant_find(a_constant.front().first, &p_constant))
+    {
+      for (size_type index_i = 0; index_i < index_count; index_i++) {
+        if (p_constant->type() == variant::var_type_array) {
+          int cur_index = a_constant.front().second[index_i];
+          p_constant = &(*p_constant)[cur_index];
+        } else {
+          fsuccess = false;
+          break;
+        }
+      }
+      if (fsuccess) {
+        if (p_constant->type() != variant::var_type_array) {
+          *ap_value = *p_constant;
+        } else {
+          fsuccess = false;
+        }
+      } else {
+        // Произошла ошибка
+      }
+    } else {
+      if (mp_handle_extern_const != IRS_NULL) {
+        fsuccess = mp_handle_extern_const;
+      } else {
+        fsuccess = false;
+      }
+    }
+  } else if (a_constant.size() > 1) {
+    // Контейнер не пустой
+    if (mp_handle_extern_const != IRS_NULL) {
+      fsuccess = mp_handle_extern_const;
+    } else {
+      fsuccess = false;
+    }
+  } else {
+    fsuccess = false;
+  }
+  return fsuccess;
+}
+
 inline bool calculator_t::
   calc(const string_type* ap_prog, value_type* ap_num)
 {
@@ -1813,6 +2093,20 @@ inline void calculator_t::function_del(const string_type& a_name)
 inline void calculator_t::function_clear()
 {
   m_list_identifier.function_clear();
+}
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+inline void calculator_t::imbue(const locale& a_locale)
+{
+  m_locale = a_locale;
+  m_detector_token.imbue(a_locale);
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+inline void calculator_t::handle_external_constant_set(
+  const handle_external_constant_t* ap_handle_extern_const)
+{
+  mp_handle_extern_const = ap_handle_extern_const;
 }
 
 #ifdef NOP
