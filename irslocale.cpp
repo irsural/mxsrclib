@@ -1,18 +1,17 @@
 // Локализация ИРС
-// Дата 7.10.2009
-
-#ifndef __embedded_cplusplus 
+// Дата: 12.10.2009
 
 #include <irslocale.h>
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
 irs::locale_manager_t::locale_manager_t():
-  m_loc()
-{
   #if defined(IRS_WIN32)
-  m_loc = locale("Russia_Russian.1251");
-  #elif defined(IRS_LINUX)
-  m_loc = locale("");
+  m_loc("Russian_Russia.1251")
+  #else // Compilers
+  m_loc("")
   #endif // Compilers
+{
   locale::global(m_loc);
 }
 
@@ -22,4 +21,4 @@ irs::locale_manager_t& irs::loc()
   return loc_manager;
 }
 
-#endif // __embedded_cplusplus
+#endif //IRS_FULL_STDCPPLIB_SUPPORT

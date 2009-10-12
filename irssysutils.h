@@ -4,8 +4,10 @@
 #ifndef irssysutilsH
 #define irssysutilsH
 
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <irsstrdefs.h>
+#include <irscpp.h>
+#include <limits>
 
 #ifdef IRS_WIN32
 #include <Rpc.h>
@@ -58,17 +60,17 @@ string number_to_str(
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-template<class T>
-void number_to_string(const T& a_num, string* ap_str,
+template<class T, class C>
+void number_to_string(const T& a_num, basic_string<C>* ap_str,
   const locale& a_loc = irs::loc().get())
 {
-  ostringstream ostr;
+  basic_ostringstream<C> ostr;
   ostr.imbue(a_loc);
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
   {
-    int val_int = a_num;
+    int val_int = static_cast<int>(a_num);
     ostr << val_int << irst('\0');
   } else {
     ostr << a_num << irst('\0');
@@ -76,30 +78,12 @@ void number_to_string(const T& a_num, string* ap_str,
   *ap_str = ostr.str();
 }
 
-template<class T>
-void number_to_string(const T& a_num, wstring* ap_str,
-  const locale& a_loc = irs::loc().get())
-{
-  wostringstream ostr;
-  ostr.imbue(a_loc);
-  if ((type_to_index<T>() == char_idx) ||
-    (type_to_index<T>() == signed_char_idx) ||
-    (type_to_index<T>() == unsigned_char_idx))
-  {
-    int val_int = a_num;
-    ostr << val_int << irst('\0');
-  } else {
-    ostr << a_num << irst('\0');
-  }         
-  *ap_str = ostr.str();
-}
-
-template<class T>
-bool string_to_number(const string& a_str, T* ap_num,
+template<class T, class C>
+bool string_to_number(const basic_string<C>& a_str, T* ap_num,
   const locale& a_loc = irs::loc().get())
 {
   bool convert_success = true;
-  istringstream istr(a_str);
+  basic_istringstream<C> istr(a_str);
   istr.imbue(a_loc);
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
@@ -107,40 +91,15 @@ bool string_to_number(const string& a_str, T* ap_num,
   {
     int val_int = 0;
     istr >> val_int;
-    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
+    int signed_char_min =
+      std::numeric_limits<type_relative_t<C>::signed_type>::min();
+    int unsigned_char_max =
+      std::numeric_limits<type_relative_t<C>::unsigned_type>::max();
+    if ((val_int >= signed_char_min) && (val_int <= unsigned_char_max )) {
       *ap_num = static_cast<T>(val_int);
     } else {
       convert_success = false;
     } 
-  } else {
-    istr >> *ap_num;
-  }
-  if (!istr) {
-    convert_success = false;
-  } else {
-    // Поток в нормальном состоянии
-  }
-  return convert_success;
-}
-
-template<class T>
-bool string_to_number(const wstring& a_str, T* ap_num,
-  const locale& a_loc = irs::loc().get())
-{
-  bool convert_success = true;
-  wistringstream istr(a_str);
-  istr.imbue(a_loc);
-  if ((type_to_index<T>() == char_idx) ||
-    (type_to_index<T>() == signed_char_idx) ||
-    (type_to_index<T>() == unsigned_char_idx))
-  {
-    int val_int = 0;
-    istr >> val_int;
-    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
-      *ap_num = static_cast<T>(val_int);
-    } else {
-      convert_success = false;
-    }
   } else {
     istr >> *ap_num;
   }
@@ -182,7 +141,7 @@ bool string_to_number(const string& a_str, T* ap_num)
   {
     int val_int = 0;
     istr >> val_int;
-    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
+    if ((val_int >= SCHAR_MIN) && (val_int <= UCHAR_MAX)) {
       *ap_num = static_cast<T>(val_int);
     } else {
       convert_success = false;

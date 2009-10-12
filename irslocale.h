@@ -1,15 +1,16 @@
 // Локализация ИРС
-// Дата 7.10.2009
+// Дата: 12.10.2009
 
 #ifndef irslocaleH
 #define irslocaleH
 
 #include <irscpp.h>
+#include <irsdefs.h>
 
 namespace irs {
-  
-#ifndef __embedded_cplusplus 
-  
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
 class locale_manager_t
 {
 public:
@@ -33,7 +34,7 @@ inline void locale_manager_t::set(const locale& a_loc)
 
 locale_manager_t& loc();
 
-#endif // __embedded_cplusplus
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 } // namespace irs
 
