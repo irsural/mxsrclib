@@ -5,6 +5,7 @@
 #define irssysutilsH
 
 #include <irsstdg.h>
+#include <irsstrdefs.h>
 
 #ifdef IRS_WIN32
 #include <Rpc.h>
@@ -19,7 +20,7 @@ enum num_base_t {num_base_dec, num_base_hex, num_base_oct};
 
 // Универсальная функция перевода чисел в текст
 template<class T>
-irs::string number_to_str(
+string number_to_str(
   const T a_num,
   const int a_precision = -1,
   const num_mode_t a_num_mode = num_mode_general)
@@ -28,7 +29,7 @@ irs::string number_to_str(
     (a_precision < 0) || ((a_precision == 0) &&
     (a_num_mode == num_mode_general));
 
-  irs::string str_value;
+  string str_value;
 
   if (precision_bad_value) {
     str_value = a_num;
@@ -55,6 +56,149 @@ irs::string number_to_str(
   }
   return str_value;
 }
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+template<class T>
+void number_to_string(const T& a_num, string* ap_str,
+  const locale& a_loc = irs::loc().get())
+{
+  ostringstream ostr;
+  ostr.imbue(a_loc);
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = a_num;
+    ostr << val_int << irst('\0');
+  } else {
+    ostr << a_num << irst('\0');
+  }
+  *ap_str = ostr.str();
+}
+
+template<class T>
+void number_to_string(const T& a_num, wstring* ap_str,
+  const locale& a_loc = irs::loc().get())
+{
+  wostringstream ostr;
+  ostr.imbue(a_loc);
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = a_num;
+    ostr << val_int << irst('\0');
+  } else {
+    ostr << a_num << irst('\0');
+  }         
+  *ap_str = ostr.str();
+}
+
+template<class T>
+bool string_to_number(const string& a_str, T* ap_num,
+  const locale& a_loc = irs::loc().get())
+{
+  bool convert_success = true;
+  istringstream istr(a_str);
+  istr.imbue(a_loc);
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = 0;
+    istr >> val_int;
+    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
+      *ap_num = static_cast<T>(val_int);
+    } else {
+      convert_success = false;
+    } 
+  } else {
+    istr >> *ap_num;
+  }
+  if (!istr) {
+    convert_success = false;
+  } else {
+    // Поток в нормальном состоянии
+  }
+  return convert_success;
+}
+
+template<class T>
+bool string_to_number(const wstring& a_str, T* ap_num,
+  const locale& a_loc = irs::loc().get())
+{
+  bool convert_success = true;
+  wistringstream istr(a_str);
+  istr.imbue(a_loc);
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = 0;
+    istr >> val_int;
+    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
+      *ap_num = static_cast<T>(val_int);
+    } else {
+      convert_success = false;
+    }
+  } else {
+    istr >> *ap_num;
+  }
+  if (!istr) {
+    convert_success = false;
+  } else {
+    // Поток в нормальном состоянии
+  }
+  return convert_success;
+}
+
+#else  // IRS_FULL_STDCPPLIB_SUPPORT
+
+template<class T>
+void number_to_string(const T& a_num, string* ap_str)
+{
+  ostrstream ostr;
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = a_num;
+    ostr << val_int << irst('\0');
+  } else {
+    ostr << a_num << irst('\0');
+  }
+  *ap_str = ostr.str();
+  ostr.rdbuf()->freeze(false);
+}  
+
+template<class T>
+bool string_to_number(const string& a_str, T* ap_num)
+{
+  bool convert_success = true;
+  istrstream istr(a_str.c_str());
+  if ((type_to_index<T>() == char_idx) ||
+    (type_to_index<T>() == signed_char_idx) ||
+    (type_to_index<T>() == unsigned_char_idx))
+  {
+    int val_int = 0;
+    istr >> val_int;
+    if ((val_int >= CHAR_MIN) && (val_int <= UCHAR_MAX)) {
+      *ap_num = static_cast<T>(val_int);
+    } else {
+      convert_success = false;
+    }
+  } else {
+    istr >> *ap_num;
+  }
+  if (!istr) {
+    convert_success = false;
+  } else {
+    // Поток в нормальном состоянии
+  }
+  return convert_success;
+}
+
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 inline bool get_closed_file_size(const irs::string& a_file_name, int& a_size)
 {

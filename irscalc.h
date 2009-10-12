@@ -54,7 +54,8 @@ enum token_type_t {
   tt_number,
   tt_delimiter,
   tt_constant,
-  tt_function
+  tt_function,
+  tt_identifier
 };
 // Список идентификаторов
 
@@ -70,6 +71,7 @@ enum delimiter_t {
   d_right_parenthesis,
   d_left_square_bracket,
   d_right_square_bracket,
+  d_dot,
   d_comma,
   d_and,
   d_or,
@@ -402,26 +404,37 @@ class token_t
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
-  token_type_t m_token_type;
   union {
     value_type* p_num;
     delimiter_t delimiter;
     const value_type* p_constant;
     const function_t* p_function;
+    string_type* p_identifier;
   } m_tok;
+  token_type_t m_token_type;
 public:
-  token_t(
-  ):
-    m_token_type(tt_none),
-    m_tok()
+  token_t(): m_tok(), m_token_type(tt_none)
   { }
+  ~token_t()
+  {
+    type_change(tt_none);
+  }
   inline void type_change(const token_type_t a_token_type)
   {
     if (m_token_type != a_token_type) {
       if (m_token_type == tt_number) {
         delete m_tok.p_num;
-      } else if (a_token_type == tt_number) {
+      } else if (m_token_type == tt_identifier) {
+        delete m_tok.p_identifier;
+      } else {
+        // Другие типы не требуют освобождения памяти
+      }
+      if (a_token_type == tt_number) {
         m_tok.p_num = new value_type;
+      } else if (a_token_type == tt_identifier) {
+        m_tok.p_identifier = new string_type;
+      } else {
+        // Другие типы не требуют динамического выделения памяти
       }
     } else {
       // Не требуется изменение типа
@@ -437,6 +450,11 @@ public:
   {
     type_change(tt_delimiter);
     m_tok.delimiter = a_delimiter;
+  }
+  inline void set_identifier(const string_type& a_identifier)
+  {
+    type_change(tt_identifier);
+    *m_tok.p_identifier = a_identifier;
   }
   inline void set_function(const function_t* ap_function)
   {
@@ -533,10 +551,28 @@ public:
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
+  typedef stringns_t::iterator string_iterator;
+  typedef stringns_t::const_iterator string_const_iterator;
+  struct token_data_t
+  {
+    token_t token;
+    size_type length;
+    //bool valid;
+    token_data_t():
+      token(),
+      length(0)/*,
+      valid(false)*/
+    {}
+  };
+  typedef deque<token_data_t> token_list_type;
+  typedef deque<token_data_t>::iterator token_iterator;
+  typedef deque<token_data_t>::const_iterator token_const_iterator;
   detector_token_t(
     list_identifier_t& a_list_identifier):
     m_list_identifier(a_list_identifier),
-    m_cur_token_data(),
+    //m_cur_token_data(),
+    m_token_data_list(),
+    m_cur_token_data_it(m_token_data_list.end()),
     mp_prog(IRS_NULL),
     m_prog_pos(0),
     m_ch_valid_name(irst("_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -545,23 +581,16 @@ public:
   // Установить указатель на текст программы
   inline void set_prog(const string_type* ap_prog);
   inline bool next_token();
+  inline void back_token();
   //bool back_token();
   inline bool get_token(token_t* const ap_token);
 private:
   // Список идентификаторов
   const list_identifier_t& m_list_identifier;
-  struct token_data_t
-  {
-    token_t token;
-    size_type length;
-    bool valid;
-    token_data_t():
-      token(),
-      length(0),
-      valid(false)
-    {}
-  };
-  token_data_t m_cur_token_data;
+  //token_data_t m_cur_token_data;
+  // Список лексем
+  token_list_type m_token_data_list;
+  token_iterator m_cur_token_data_it;
   // Указатель на текст программы
   const string_type* mp_prog;
   // Текущая позиция в тексте программы
@@ -575,7 +604,8 @@ private:
   // Проверка символа на принадлежность букве
   inline bool is_char_alpha(const char_type a_ch);
   // Идентифицировать лексему в текущей позиции программы
-  inline bool detect_token();
+  inline bool detect_token(const string_type* ap_prog,
+    const size_type a_prog_pos, token_data_t* ap_token_data);
 };
 
 inline bool detector_token_t::is_char_digit(const char_type a_ch)
@@ -607,30 +637,31 @@ inline bool detector_token_t::is_char_alpha(const char_type a_ch)
   return (isalnumt(a_ch) || a_ch == '_');
 }
 
-inline bool detector_token_t::detect_token()
+inline bool detector_token_t::detect_token(const string_type* ap_prog,
+  const size_type a_prog_pos, token_data_t* ap_token_data)
 {
   bool detected_token = false;
   //bool fsuccess = true;
-  if (m_prog_pos == mp_prog->size()) {
-    m_cur_token_data.token.set_delimiter(d_end);
-    m_cur_token_data.length = 0;
-    //m_cur_token_data.valid = true;
+  if (a_prog_pos == ap_prog->size()) {
+    ap_token_data->token.set_delimiter(d_end);
+    ap_token_data->length = 0;
+    //ap_token_data.valid = true;
     detected_token = true;
   }
   size_type pos;
   char_type ch = irst('\0');
   if (!detected_token) {
     // Пропускаем пробелы, табуляции и переходы на новую строку
-    pos = mp_prog->find_first_not_of(irst(" \n\r\t"), m_prog_pos);
+    pos = ap_prog->find_first_not_of(irst(" \n\r\t"), a_prog_pos);
     if (pos == string_type::npos) {
       // Достигнут конец программы
-      m_prog_pos = mp_prog->size();
-      m_cur_token_data.token.set_delimiter(d_end);
-      m_cur_token_data.length = 0;
-      //m_cur_token_data.valid = true;
+      //a_prog_pos = ap_prog->size();
+      ap_token_data->token.set_delimiter(d_end);
+      ap_token_data->length = 0;
+      //ap_token_data.valid = true;
       detected_token = true;
     } else {
-      ch = (*mp_prog)[pos];
+      ch = (*ap_prog)[pos];
     }
   }
 
@@ -639,16 +670,16 @@ inline bool detector_token_t::detect_token()
     bool next_ch_not_end_prog = false;
     const size_type begin_ch_pos = pos;
     char_type next_ch = irst('\0');
-    if ((pos + 1) < mp_prog->size()) {
+    if ((pos + 1) < ap_prog->size()) {
       next_ch_not_end_prog = true;
-      next_ch = (*mp_prog)[pos + 1];
+      next_ch = (*ap_prog)[pos + 1];
     } else {
       // Следующий символ отсутсвует
     }
     switch(ch) {
       case irst('&'): {
         if (next_ch_not_end_prog && (next_ch == irst('&'))) {
-          m_cur_token_data.token.set_delimiter(d_and);
+          ap_token_data->token.set_delimiter(d_and);
           detected_token = true;
           pos += 2;
         } else {
@@ -657,7 +688,7 @@ inline bool detector_token_t::detect_token()
       } break;
       case irst('|'): {
         if (next_ch_not_end_prog && (next_ch == irst('|'))) {
-          m_cur_token_data.token.set_delimiter(d_or);
+          ap_token_data->token.set_delimiter(d_or);
           detected_token = true;
           pos += 2;
         } else {
@@ -666,7 +697,7 @@ inline bool detector_token_t::detect_token()
       } break;
       case irst('='): {
         if (next_ch_not_end_prog && (next_ch == irst('='))) {
-          m_cur_token_data.token.set_delimiter(d_compare_equal);
+          ap_token_data->token.set_delimiter(d_compare_equal);
           detected_token = true;
           pos += 2;
         } else {
@@ -675,84 +706,89 @@ inline bool detector_token_t::detect_token()
       } break;
       case irst('!'): {
         if (next_ch_not_end_prog && (next_ch == irst('='))) {
-          m_cur_token_data.token.set_delimiter(d_compare_not_equal);
+          ap_token_data->token.set_delimiter(d_compare_not_equal);
           detected_token = true;
           pos += 2;
         } else {
-          m_cur_token_data.token.set_delimiter(d_not);
+          ap_token_data->token.set_delimiter(d_not);
           detected_token = true;
           pos ++;
         }
       } break;
       case irst('<'): {
         if (next_ch_not_end_prog && (next_ch == irst('='))) {
-          m_cur_token_data.token.set_delimiter(d_compare_less_or_equal);
+          ap_token_data->token.set_delimiter(d_compare_less_or_equal);
           detected_token = true;
           pos += 2;
         } else {
-          m_cur_token_data.token.set_delimiter(d_compare_less);
+          ap_token_data->token.set_delimiter(d_compare_less);
           detected_token = true;
           pos++;
         }
       } break;
       case irst('>'): {
         if (next_ch_not_end_prog && (next_ch == irst('='))) {
-          m_cur_token_data.token.set_delimiter(d_compare_greater_or_equal);
+          ap_token_data->token.set_delimiter(d_compare_greater_or_equal);
           detected_token = true;
           pos += 2;
         } else {
-          m_cur_token_data.token.set_delimiter(d_compare_greater);
+          ap_token_data->token.set_delimiter(d_compare_greater);
           detected_token = true;
           pos++;
         }
       } break;
       case irst('+'): {
-        m_cur_token_data.token.set_delimiter(d_plus);
+        ap_token_data->token.set_delimiter(d_plus);
         detected_token = true;
         pos++;
       } break;
       case irst('-'): {
-        m_cur_token_data.token.set_delimiter(d_minus);
+        ap_token_data->token.set_delimiter(d_minus);
         detected_token = true;
         pos++;
       } break;
       case irst('*'): {
-        m_cur_token_data.token.set_delimiter(d_multiply);
+        ap_token_data->token.set_delimiter(d_multiply);
         detected_token = true;
         pos++;
       } break;
       case irst('/'): {
-        m_cur_token_data.token.set_delimiter(d_division);
+        ap_token_data->token.set_delimiter(d_division);
         detected_token = true;
         pos++;
       } break;
       case irst('%'): {
-        m_cur_token_data.token.set_delimiter(d_integer_division);
+        ap_token_data->token.set_delimiter(d_integer_division);
         detected_token = true;
         pos++;
       } break;
       case irst('('): {
-        m_cur_token_data.token.set_delimiter(d_left_parenthesis);
+        ap_token_data->token.set_delimiter(d_left_parenthesis);
         detected_token = true;
         pos++;
       } break;
       case irst(')'): {
-        m_cur_token_data.token.set_delimiter(d_right_parenthesis);
+        ap_token_data->token.set_delimiter(d_right_parenthesis);
         detected_token = true;
         pos++;
       } break;
       case irst('['): {
-        m_cur_token_data.token.set_delimiter(d_left_square_bracket);
+        ap_token_data->token.set_delimiter(d_left_square_bracket);
         detected_token = true;
         pos++;
       } break;
       case irst(']'): {
-        m_cur_token_data.token.set_delimiter(d_right_square_bracket);
+        ap_token_data->token.set_delimiter(d_right_square_bracket);
         detected_token = true;
         pos++;
       } break;
       case irst(','): {
-        m_cur_token_data.token.set_delimiter(d_comma);
+        ap_token_data->token.set_delimiter(d_comma);
+        detected_token = true;
+        pos++;
+      } break;
+      case irst('.'): {
+        ap_token_data->token.set_delimiter(d_dot);
         detected_token = true;
         pos++;
       } break;
@@ -761,8 +797,8 @@ inline bool detector_token_t::detect_token()
       }
     }
     if (detected_token) {
-      m_cur_token_data.length = pos - m_prog_pos;
-      //m_cur_token_data.valid = true;
+      ap_token_data->length = pos - a_prog_pos;
+      //ap_token_data->valid = true;
     } else {
       pos = begin_ch_pos;
     }
@@ -787,17 +823,17 @@ inline bool detector_token_t::detect_token()
       bool detected_suffix_long = false;
       // Статус обнаружения суффикса float
       bool detected_suffix_float = false;
-      while (pos <  mp_prog->size()) {
+      while (pos <  ap_prog->size()) {
         // Ищем первый символ, не являющийся цифрой
-        pos = mp_prog->find_first_not_of(irst("0123456789"), pos);
+        pos = ap_prog->find_first_not_of(irst("0123456789"), pos);
 
         if (pos == string_type::npos) {
-          pos = mp_prog->size();
+          pos = ap_prog->size();
           break;
         } else {
           // Найден символ, не являющийся цифрой
         }
-        const char_type ch_number = (*mp_prog)[pos];
+        const char_type ch_number = (*ap_prog)[pos];
         if (ch_number == irst('.')) {
           if ((!detected_exponent_ch) && (!detected_int_part_delim_ch) &&
             (!detected_sign_exponent_ch))
@@ -850,7 +886,7 @@ inline bool detector_token_t::detect_token()
           break;
         }
       }
-      num_str = mp_prog->substr(num_begin_ch, (pos - num_begin_ch));
+      num_str = ap_prog->substr(num_begin_ch, (pos - num_begin_ch));
       bool convert_str_to_number_success = false;
       if (!detected_int_part_delim_ch &&
         !detected_exponent_ch &&
@@ -862,7 +898,7 @@ inline bool detector_token_t::detect_token()
             unsigned long number = 0;
             convert_str_to_number_success = num_str.to_number(number);
             if (convert_str_to_number_success) {
-              m_cur_token_data.token.set_number(number);
+              ap_token_data->token.set_number(number);
             } else {
               // Преобразование в число прошло неудачно
             }
@@ -870,7 +906,7 @@ inline bool detector_token_t::detect_token()
             long number = 0;
             convert_str_to_number_success = num_str.to_number(number);
             if (convert_str_to_number_success) {
-              m_cur_token_data.token.set_number(number);
+              ap_token_data->token.set_number(number);
             } else {
               // Преобразование в число прошло неудачно
             }
@@ -880,7 +916,7 @@ inline bool detector_token_t::detect_token()
             unsigned int number = 0;
             convert_str_to_number_success = num_str.to_number(number);
             if (convert_str_to_number_success) {
-              m_cur_token_data.token.set_number(number);
+              ap_token_data->token.set_number(number);
             } else {
               // Преобразование в число прошло неудачно
             }
@@ -888,7 +924,7 @@ inline bool detector_token_t::detect_token()
             int number = 0;
             convert_str_to_number_success = num_str.to_number(number);
             if (convert_str_to_number_success) {
-              m_cur_token_data.token.set_number(number);
+              ap_token_data->token.set_number(number);
             } else {
               // Преобразование в число прошло неудачно
             }
@@ -900,7 +936,7 @@ inline bool detector_token_t::detect_token()
           long double number = 0.;
           convert_str_to_number_success = num_str.to_number(number);
           if (convert_str_to_number_success) {
-            m_cur_token_data.token.set_number(number);
+            ap_token_data->token.set_number(number);
           } else {
             // Преобразование в число прошло неудачно
           }
@@ -908,7 +944,7 @@ inline bool detector_token_t::detect_token()
           float number = 0.f;
           convert_str_to_number_success = num_str.to_number(number);
           if (convert_str_to_number_success) {
-            m_cur_token_data.token.set_number(number);
+            ap_token_data->token.set_number(number);
           } else {
             // Преобразование в число прошло неудачно
           }
@@ -916,7 +952,7 @@ inline bool detector_token_t::detect_token()
           double number = 0.;
           convert_str_to_number_success = num_str.to_number(number);
           if (convert_str_to_number_success) {
-            m_cur_token_data.token.set_number(number);
+            ap_token_data->token.set_number(number);
           } else {
             // Преобразование в число прошло неудачно
           }
@@ -924,7 +960,7 @@ inline bool detector_token_t::detect_token()
       }
 
       if (convert_str_to_number_success) {
-        m_cur_token_data.length = pos - m_prog_pos;
+        ap_token_data->length = pos - a_prog_pos;
         detected_token = true;
       } else {
         // Строку не удалось преобразовать в число
@@ -943,54 +979,51 @@ inline bool detector_token_t::detect_token()
   if (!detected_token) {
     if (is_char_alpha(ch)) {
       const size_type pos_begin_name = pos;
-      pos = mp_prog->find_first_not_of(m_ch_valid_name, pos);
+      pos = ap_prog->find_first_not_of(m_ch_valid_name, pos);
       if (pos == string_type::npos) {
-        pos = mp_prog->size();
+        pos = ap_prog->size();
       } else {
         // Символ, не принадлежащий группе символов, допустимых в имени,
         // не найден
       }
       string_type identifier_str =
-        mp_prog->substr(pos_begin_name, (pos - pos_begin_name));
-
+        ap_prog->substr(pos_begin_name, (pos - pos_begin_name));
+      detected_token = true;
       if (identifier_str == irst("and")) {
-        m_cur_token_data.token.set_delimiter(d_and);
-        detected_token = true;
+        ap_token_data->token.set_delimiter(d_and);
+        //detected_token = true;
       } else if (identifier_str == irst("or")) {
-        m_cur_token_data.token.set_delimiter(d_or);
-        detected_token = true;
+        ap_token_data->token.set_delimiter(d_or);
+        //detected_token = true;
       } else if (identifier_str == irst("not")) {
-        m_cur_token_data.token.set_delimiter(d_not);
-        detected_token = true;
+        ap_token_data->token.set_delimiter(d_not);
+        //detected_token = true;
       } else {
-        const function_t* p_function = IRS_NULL;
+        ap_token_data->token.set_identifier(identifier_str);
+        //detected_token = true;
+        /*const function_t* p_function = IRS_NULL;
         if (m_list_identifier.function_find(identifier_str, &p_function)) {
-          m_cur_token_data.token.set_function(p_function);
+          ap_token_data->token.set_function(p_function);
           detected_token = true;
         } else {
           const value_type* p_constant = IRS_NULL;
           if (m_list_identifier.constant_find(identifier_str, &p_constant)) {
-            m_cur_token_data.token.set_constant(p_constant);
+            ap_token_data->token.set_constant(p_constant);
             detected_token = true;
           } else {
             // Констранта с таким именем не найдена
           }
-        }
+        }*/
       }
       if (detected_token) {
-        m_cur_token_data.length = pos - m_prog_pos;
-        //m_cur_token_data.valid = true;
+        ap_token_data->length = pos - a_prog_pos;
+
       } else {
         pos = pos_begin_name;
       }
     } else {
       // Символ не принадлежит группе символов, допустимых в имени
     }
-  }
-  if (detected_token) {
-    m_cur_token_data.valid = true;
-  } else {
-    // Лексема не детектирована
   }
   return detected_token;
 }
@@ -999,12 +1032,39 @@ inline void detector_token_t::set_prog(const string_type* ap_prog)
 {
   mp_prog = ap_prog;
   m_prog_pos = 0;
-  m_cur_token_data.valid = false;
+  //m_cur_token_data.valid = false;
+  m_token_data_list.clear();
+  m_cur_token_data_it = m_token_data_list.end();
 }
 
 inline bool detector_token_t::next_token()
 {
   bool fsuccess = true;
+  if (m_cur_token_data_it != m_token_data_list.end()) {
+    m_prog_pos += m_cur_token_data_it->length;
+    m_cur_token_data_it++;
+  } else {
+    // Сдвиг текущей точки программы не требуется
+  }
+  if (m_cur_token_data_it == m_token_data_list.end()) {
+    if (m_prog_pos <= mp_prog->size()) {
+      token_data_t token_data;
+      fsuccess = detect_token(mp_prog, m_prog_pos, &token_data);
+      if (fsuccess) {
+        m_token_data_list.push_back(token_data);
+        m_cur_token_data_it = m_token_data_list.end()-1;
+      } else {
+        // Детектировать лексему не удалось
+      }
+    } else {
+      fsuccess = false;
+      IRS_LIB_ASSERT_MSG("Ошибка при перемещении к следующему сиволу");
+    }
+  } else {
+    // Следующая лексема уже детектирована
+  }
+
+  #ifdef NOP
   if (m_cur_token_data.valid) {
     if ((m_prog_pos + m_cur_token_data.length) <= mp_prog->size()) {
       m_prog_pos += m_cur_token_data.length;
@@ -1017,12 +1077,41 @@ inline bool detector_token_t::next_token()
   } else {
     fsuccess = detect_token();
   }
+  #endif // NOP
   return fsuccess;
+}
+
+inline void detector_token_t::back_token()
+{
+  if (m_cur_token_data_it != m_token_data_list.begin()) {
+    m_cur_token_data_it--;
+    m_prog_pos -= m_cur_token_data_it->length;
+  } else {
+    IRS_LIB_ASSERT_MSG("Ошибка при перемещении к предыдущей лексеме");
+  }
 }
 
 inline bool detector_token_t::get_token(token_t* const ap_token)
 {
-  bool fsuccess = true;
+  bool fsuccess = true;  
+  if (m_cur_token_data_it == m_token_data_list.end()) {
+    token_data_t token_data;
+    fsuccess = detect_token(mp_prog, m_prog_pos, &token_data);
+    if (fsuccess) {
+      m_token_data_list.push_back(token_data);
+      m_cur_token_data_it = m_token_data_list.end()-1;
+    } else {
+      // Детектировать лексему не удалось
+    }
+  } else {
+    // Лексема уже детектирована
+  }
+  if (fsuccess) {
+    *ap_token = m_cur_token_data_it->token;
+  } else {
+    // Произошла ошибка
+  }
+  #ifdef NOP
   if (!m_cur_token_data.valid) {
     fsuccess = detect_token();
   } else {
@@ -1033,6 +1122,7 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
   } else {
     // Произошла ошибка
   }
+  #endif // NOP
   return fsuccess;
 }
 
