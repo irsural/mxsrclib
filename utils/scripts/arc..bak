@@ -1,3 +1,0 @@
-#! /bin/sh
-
-tar -zcf mxsrclib.tar.gz ../../../mxsrclib
