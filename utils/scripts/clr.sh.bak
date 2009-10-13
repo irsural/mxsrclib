@@ -1,8 +1,0 @@
-#! /bin/sh
-
-pushd ../..
-rm -f *.obj *.tds *.~* *.il? *.bak *.*~
-pushd arch/cur/
-rm -f *.obj *.tds *.~* *.il? *.bak *.*~
-popd
-popd
