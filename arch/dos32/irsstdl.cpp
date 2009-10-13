@@ -168,6 +168,7 @@ irskey_t irs_win32_console_key_drv_t::operator()()
   return m_temporary_irs_key;
 }
 //---------------------------------------------------------------------------
+#ifdef NOP
 // Конфигурация консоли для Watcom C++
 irs::conio_cfg_t& irs::arch_conio_cfg::def()
 {
@@ -176,3 +177,4 @@ irs::conio_cfg_t& irs::arch_conio_cfg::def()
   static conio_cfg_t conio_cfg_i(key_drv, display);
   return conio_cfg_i;
 }
+#endif //NOP

@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 06.10.2009
+// Дата: 12.10.2009
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -46,11 +46,69 @@ namespace std {
 #endif //NAMESPACE_STD_NOT_SUPPORT
 
 // Переносимые манипуляторы
-inline ios &general(ios &strm)
+IRS_STREAMSPECDECL inline ios &general(ios &strm)
 {
   strm.setf(static_cast<ios::fmtflags>(0), ios::floatfield);
   return strm;
 }
+#ifdef __WATCOMC__
+IRS_STREAMSPECDECL inline ios &fixed(ios &strm, int)
+{
+  strm.setf(ios::fixed, ios::floatfield);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &scientific(ios &strm, int)
+{
+  strm.setf(ios::scientific, ios::floatfield);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &left(ios &strm)
+{
+  strm.setf(ios::left, ios::adjustfield);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &right(ios &strm)
+{
+  strm.setf(ios::right, ios::adjustfield);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &internal(ios &strm)
+{
+  strm.setf(ios::internal, ios::adjustfield);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &showbase(ios &strm, int)
+{
+  strm.setf(ios::showbase);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &noshowbase(ios &strm, int)
+{
+  strm.unsetf(ios::showbase);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &showpos(ios &strm, int)
+{
+  strm.setf(ios::showpos);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &noshowpos(ios &strm, int)
+{
+  strm.unsetf(ios::showpos);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &uppercase(ios &strm, int)
+{
+  strm.setf(ios::uppercase);
+  return strm;
+}
+IRS_STREAMSPECDECL inline ios &nouppercase(ios &strm, int)
+{
+  strm.unsetf(ios::uppercase);
+  return strm;
+}
+#endif //__WATCOMC__
+
 #ifdef NOP
 inline ostream& operator<<(ostream& strm, ios& (*f)(ios&, int))
 {
@@ -70,41 +128,6 @@ inline ios &dec(ios &strm, int)
 inline ios &hex(ios &strm, int)
 {
   strm.setf(ios::hex, ios::basefield);
-  return strm;
-}
-inline ios &fixed(ios &strm, int)
-{
-  strm.setf(ios::fixed, ios::floatfield);
-  return strm;
-}
-inline ios &scientific(ios &strm, int)
-{
-  strm.setf(ios::scientific, ios::floatfield);
-  return strm;
-}
-inline ios &left(ios &strm, int)
-{
-  strm.setf(ios::left, ios::adjustfield);
-  return strm;
-}
-inline ios &right(ios &strm, int)
-{
-  strm.setf(ios::right, ios::adjustfield);
-  return strm;
-}
-inline ios &internal(ios &strm, int)
-{
-  strm.setf(ios::internal, ios::adjustfield);
-  return strm;
-}
-inline ios &showbase(ios &strm, int)
-{
-  strm.setf(ios::showbase);
-  return strm;
-}
-inline ios &noshowbase(ios &strm, int)
-{
-  strm.unsetf(ios::showbase);
   return strm;
 }
 #ifdef NOP
@@ -129,16 +152,6 @@ inline ios &noshowpoint(ios &strm, int)
   return strm;
 }
 #endif //NOP
-inline ios &showpos(ios &strm, int)
-{
-  strm.setf(ios::showpos);
-  return strm;
-}
-inline ios &noshowpos(ios &strm, int)
-{
-  strm.unsetf(ios::showpos);
-  return strm;
-}
 inline ios &skipws(ios &strm, int)
 {
   strm.setf(ios::skipws);
@@ -147,16 +160,6 @@ inline ios &skipws(ios &strm, int)
 inline ios &noskipws(ios &strm, int)
 {
   strm.unsetf(ios::skipws);
-  return strm;
-}
-inline ios &uppercase(ios &strm, int)
-{
-  strm.setf(ios::uppercase);
-  return strm;
-}
-inline ios &nouppercase(ios &strm, int)
-{
-  strm.unsetf(ios::uppercase);
   return strm;
 }
 #endif //NOP
