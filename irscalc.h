@@ -864,7 +864,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
       // Статус обнаружения символа показателя степени
       bool detected_exponent_ch = false;
       // Статус обнаружения символа - разделителя целой и дробной части
-      bool detected_int_part_delim_ch = false;
+      bool detected_decimal_point = false;
       // Статус обнаружения знака показателя степени
       bool detected_sign_exponent_ch = false;
       // Статус обнаружения суффикса unsigned
@@ -885,10 +885,10 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         }
         const char_type ch_number = (*ap_prog)[pos];
         if (ch_number == irst('.')) {
-          if ((!detected_exponent_ch) && (!detected_int_part_delim_ch) &&
+          if ((!detected_exponent_ch) && (!detected_decimal_point) &&
             (!detected_sign_exponent_ch))
           {
-            detected_int_part_delim_ch = true;
+            detected_decimal_point = true;
             pos++;
           } else {
             break;
@@ -910,7 +910,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         } else if (strchrt(irst("Uu"), ch_number)) {
           if (!detected_suffix_unsigned &&
             !detected_suffix_float &&
-            !detected_int_part_delim_ch &&
+            !detected_decimal_point &&
             !detected_exponent_ch)
           {
             detected_suffix_unsigned = true;
@@ -926,7 +926,8 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
             break;
           }
         } else if (strchrt(irst("Ff"), ch_number)) {
-          if (!detected_suffix_float && !detected_suffix_long) {
+          if ((detected_decimal_point || detected_exponent_ch) &&
+            !detected_suffix_float && !detected_suffix_long) {
             detected_suffix_float = true;
             pos++;
           } else {
@@ -938,7 +939,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
       }
       num_str = ap_prog->substr(num_begin_ch, (pos - num_begin_ch));
       bool convert_str_to_number_success = false;
-      if (!detected_int_part_delim_ch &&
+      if (!detected_decimal_point &&
         !detected_exponent_ch &&
         !detected_suffix_float)
       {
@@ -1183,12 +1184,16 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
   return fsuccess;
 }
 
+typedef vector<pair<stringns_t, vector<int> > > id_constant_type;
+
 class handle_external_constant_t
 {
 public:
   typedef stringns_t string_type;
-  ~handle_external_constant_t();
-  virtual bool get(string_type, irs::variant::variant_t) = 0;
+  typedef vector<pair<string_type, vector<int> > > id_constant_type;
+  typedef variant::variant_t variant_type;
+  virtual ~handle_external_constant_t();
+  virtual bool get(const id_constant_type&, variant_type*) const = 0;
 };
 
 class calculator_t
@@ -1223,8 +1228,7 @@ private:
   inline bool interp(value_type* ap_value);
   // Обрабатывает квадратные скобки
   inline bool eval_exp_square_brackets(value_type* ap_value);
-  inline bool eval_exp_constant(
-    vector<pair<string_type, vector<int> > >* a_constant);
+  inline bool eval_exp_constant(id_constant_type* ap_id_constant);
   // Обрабатывает скобки функции выражение, расположенное внутри них
   inline bool eval_exp_arg_function(value_type* ap_value);
   // Обрабатывает логические операции
@@ -1243,8 +1247,7 @@ private:
   inline bool eval_exp_brackets(value_type* ap_value);
   // Обрабатывает функции и числа
   inline bool atom(value_type* ap_value);
-  inline bool constant_value_get(
-    const vector<pair<string_type, vector<int> > >& a_constant,
+  inline bool constant_value_get(const id_constant_type& a_id_constant,
     value_type* ap_value);
   // Выполнение функцию
   inline void func_exec(
@@ -1415,10 +1418,10 @@ inline bool calculator_t::eval_exp_square_brackets(value_type* ap_value)
 }
 
 inline bool calculator_t::eval_exp_constant(
-  vector<pair<string_type, vector<int> > >* a_constant)
+  vector<pair<string_type, vector<int> > >* ap_id_constant)
 {
   bool fsuccess = true;
-  a_constant->clear();
+  ap_id_constant->clear();
   enum last_token_type_t {
     ltt_unknown,
     ltt_identifier,
@@ -1431,7 +1434,7 @@ inline bool calculator_t::eval_exp_constant(
   if (fsuccess) {
     if (token.token_type() == tt_identifier) {
       last_token_type = ltt_identifier;
-      a_constant->push_back(make_pair(token.get_identifier(), vector<int>()));
+      ap_id_constant->push_back(make_pair(token.get_identifier(), vector<int>()));
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
         fsuccess = m_detector_token.get_token(&token);
@@ -1464,7 +1467,7 @@ inline bool calculator_t::eval_exp_constant(
           case tt_identifier: {
             if (last_token_type == ltt_dot) {
               last_token_type = ltt_identifier;
-              a_constant->push_back(
+              ap_id_constant->push_back(
                 make_pair(token.get_identifier(), vector<int>()));
             } else {
               fsuccess = false;
@@ -1484,13 +1487,18 @@ inline bool calculator_t::eval_exp_constant(
               }
               is_token_part_identifier = true;
             } else if (delim == d_left_square_bracket) {
+              fsuccess = m_detector_token.next_token();
               value_type index_value;
-              fsuccess = eval_exp_logical(&index_value);
-              if (fsuccess) {
-                fsuccess = m_detector_token.next_token();
+              if (fsuccess) {        
+                fsuccess = eval_exp_logical(&index_value);
               } else {
                 // Произошла ошибка
               }
+              /*if (fsuccess) {
+                fsuccess = m_detector_token.next_token();
+              } else {
+                // Произошла ошибка
+              }*/
               if (fsuccess) {
                 fsuccess = m_detector_token.get_token(&token);
               } else {
@@ -1500,7 +1508,7 @@ inline bool calculator_t::eval_exp_constant(
                 if (token.token_type() == tt_delimiter) {
                   delimiter_t next_delim = token.delimiter();
                   if (next_delim == d_right_square_bracket) {
-                    a_constant->back().second.push_back(index_value);
+                    ap_id_constant->back().second.push_back(index_value);
                     last_token_type = ltt_right_square_bracket;
                   } else {
                     fsuccess = false;
@@ -1520,6 +1528,16 @@ inline bool calculator_t::eval_exp_constant(
             is_token_part_identifier = false;
           }
         }
+        if (fsuccess && is_token_part_identifier) {
+          fsuccess = m_detector_token.next_token();
+          if (fsuccess) {
+            fsuccess = m_detector_token.get_token(&token);
+          } else {
+            // Произошла ошибка
+          }
+        } else {
+          // Произошла ошибка
+        }
       }
     } else {
       fsuccess = false;
@@ -1528,7 +1546,7 @@ inline bool calculator_t::eval_exp_constant(
     // Произошла ошибка
   }
   if (!fsuccess) {
-    a_constant->clear();
+    ap_id_constant->clear();
   } else {
     // Ошибок не произошло
   }
@@ -2008,19 +2026,20 @@ inline bool calculator_t::atom(value_type* ap_value)
 }
 
 inline bool calculator_t::constant_value_get(
-  const vector<pair<string_type, vector<int> > >& a_constant,
+  const id_constant_type& a_id_constant,
   value_type* ap_value)
 {
   bool fsuccess = true;
   IRS_LIB_ASSERT(ap_value != IRS_NULL);
-  if (a_constant.size() == 1) {
-    const size_type index_count = a_constant.front().second.size();
+  if (a_id_constant.size() == 1) {
+    const size_type index_count = a_id_constant.front().second.size();
     const value_type* p_constant = IRS_NULL;
-    if (m_list_identifier.constant_find(a_constant.front().first, &p_constant))
+    if (m_list_identifier.constant_find(
+      a_id_constant.front().first, &p_constant))
     {
       for (size_type index_i = 0; index_i < index_count; index_i++) {
         if (p_constant->type() == variant::var_type_array) {
-          int cur_index = a_constant.front().second[index_i];
+          int cur_index = a_id_constant.front().second[index_i];
           p_constant = &(*p_constant)[cur_index];
         } else {
           fsuccess = false;
@@ -2038,15 +2057,15 @@ inline bool calculator_t::constant_value_get(
       }
     } else {
       if (mp_handle_extern_const != IRS_NULL) {
-        fsuccess = mp_handle_extern_const;
+        fsuccess = mp_handle_extern_const->get(a_id_constant, ap_value);
       } else {
         fsuccess = false;
       }
     }
-  } else if (a_constant.size() > 1) {
+  } else if (a_id_constant.size() > 1) {
     // Контейнер не пустой
     if (mp_handle_extern_const != IRS_NULL) {
-      fsuccess = mp_handle_extern_const;
+      fsuccess = mp_handle_extern_const->get(a_id_constant, ap_value);;
     } else {
       fsuccess = false;
     }
