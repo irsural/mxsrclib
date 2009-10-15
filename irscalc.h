@@ -291,7 +291,7 @@ public:
   //inline const function_t& get_func(size_type a_id_func) const;
 private:
   keyword_map_type m_keyword_map;
-  vector<function_t> m_func_array;
+  //vector<function_t> m_func_array;
   constant_list_type m_constant_list;
   function_map_type m_function_map;
   inline bool add_func(
