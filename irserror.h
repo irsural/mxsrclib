@@ -48,6 +48,12 @@
   {\
     IRS_ERROR_HELPER(error_code, msg);\
   }
+#define IRS_ERROR_IF_NOT(assert_expr, error_code, msg)\
+  {\
+    if (!(assert_expr)) {\
+      IRS_ERROR_HELPER(error_code, msg);\
+    }\
+  }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
 #define IRS_ASSERT_MSG(msg)\
   {\
@@ -75,6 +81,8 @@
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ERROR(error_code, msg) IRS_ERROR(error_code, msg)
+#define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)\
+  IRS_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg) IRS_FATAL_ERROR(msg)
 #define IRS_LIB_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
 #define IRS_LIB_DBG_RAW_MSG(msg) IRS_DBG_RAW_MSG(msg)
@@ -84,6 +92,7 @@
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ERROR(error_code, msg)
+#define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg))
 #define IRS_LIB_ASSERT_MSG(msg)
 #define IRS_LIB_DBG_RAW_MSG(msg)
