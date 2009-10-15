@@ -187,7 +187,7 @@ public:
   operator unsigned_long_long_type() const;
   #endif // IRSDEFS_I64
   //operator const char_type*() const;
-  operator const string_type() const;
+  operator string_type() const;
 
   variant_t& operator+=(const variant_t& a_variant);
   variant_t& operator-=(const variant_t& a_variant);

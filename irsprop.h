@@ -5,7 +5,7 @@
 #ifndef irspropH
 #define irspropH
 
-#if !defined(__ICCAVR__) && !defined(__WATCOMC__)
+#if !defined(__ICCAVR__) && !defined(__WATCOMC__) && !defined(_MSC_VER)
 
 #include <irscpp.h>
 
@@ -940,6 +940,6 @@ inline bool testing_property()
 }
 #endif // example_propety
 
-#endif //!defined(__ICCAVR__) && !defined(__WATCOMC__)
+#endif //!defined(__ICCAVR__) && !defined(__WATCOMC__) && !defined(_MSC_VER)
 
 #endif //irspropH

@@ -7,7 +7,6 @@
 #include <irsstd.h>
 #include <irsstrdefs.h>
 #include <irscpp.h>
-#include <limits>
 
 #ifdef IRS_WIN32
 #include <Rpc.h>

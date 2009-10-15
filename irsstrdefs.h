@@ -100,7 +100,6 @@ typedef ostringstream ostringstream_t;
 #endif //IRS_UNICODE
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-
 inline bool isalnumt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 {
   return use_facet<ctype<char_t> >(a_loc).is(ctype<char_t>::alnum,
@@ -168,6 +167,7 @@ inline bool isxdigitt(char_int_t a_ch, const locale& a_loc = irs::loc().get())
 }
 
 #else //IRS_FULL_STDCPPLIB_SUPPORT
+
 inline bool isalnumt(char_int_t a_ch)
 {
   return ::isalnum(a_ch);

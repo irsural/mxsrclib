@@ -516,7 +516,7 @@ irs::variant::variant_t::operator unsigned_long_long_type() const
   return m_value.p_val_string_type->c_str();
 }*/
 
-irs::variant::variant_t::operator const string_type() const
+irs::variant::variant_t::operator string_type() const
 {
   string_type value;
   value_get(&value);

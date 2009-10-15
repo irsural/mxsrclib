@@ -48,7 +48,8 @@
 
 // Полная поддержка библиотеки C++
 #if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) ||\
-  (defined(__GNUC__) && (__GNUC__ >= 4))
+  (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
+  (defined (_MSC_VER) && (_MSC_VER >= 1400))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -102,7 +103,8 @@
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
 // Макрос __FUNC__
-#if defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
+#if defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__) ||\
+  defined(_MSC_VER)
 #define __FUNC__ __FUNCTION__
 #endif //defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
 
