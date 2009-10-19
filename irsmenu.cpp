@@ -1,5 +1,5 @@
 // Текстовое меню
-// Дата: 15.09.2009
+// Дата: 19.10.2009
 
 #include <irsmenu.h>
 #include <irsdefs.h>
@@ -2989,7 +2989,7 @@ void irs_menu_2param_master_item_t::set_stop_key(irskey_t a_stop_key)
 }
 
 irs_menu_base_t::size_type irs_menu_2param_master_item_t::get_parametr_string(
-  char */*a_parametr_string*/,
+  char * /*a_parametr_string*/,
   irs_menu_base_t::size_type /*a_length*/,
   irs_menu_param_show_mode_t /*a_show_mode*/,
   irs_menu_param_update_t /*a_update*/)
@@ -2998,7 +2998,7 @@ irs_menu_base_t::size_type irs_menu_2param_master_item_t::get_parametr_string(
 }
 
 irs_menu_base_t::size_type irs_menu_2param_master_item_t::get_dynamic_string(
-  char */*ap_buffer*/,
+  char * /*ap_buffer*/,
   irs_menu_base_t::size_type /*a_length*/)
 {
   return 0;

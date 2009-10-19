@@ -91,9 +91,9 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
     int val_int = 0;
     istr >> val_int;
     int signed_char_min =
-      std::numeric_limits<type_relative_t<C>::signed_type>::min();
+      std::numeric_limits<typename type_relative_t<C>::signed_type>::min();
     int unsigned_char_max =
-      std::numeric_limits<type_relative_t<C>::unsigned_type>::max();
+      std::numeric_limits<typename type_relative_t<C>::unsigned_type>::max();
     if ((val_int >= signed_char_min) && (val_int <= unsigned_char_max )) {
       *ap_num = static_cast<T>(val_int);
     } else {

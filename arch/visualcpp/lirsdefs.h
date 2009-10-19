@@ -1,6 +1,6 @@
 // Локальные объявления типов
-// Дата 18.09.2007 15:31
-// C++ Builder
+// Дата 17.10.2009 16:30
+// Microsoft Visual C++
 
 #ifndef LIRSDEFSH
 #define LIRSDEFSH

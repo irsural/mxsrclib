@@ -1,5 +1,5 @@
 //  Component Variant
-//  Data: 23.09.2009
+//  Data: 19.10.2009
 
 #include <irsvariant.h>
 
@@ -266,16 +266,16 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const long_long_type a_value)
 {
-  type_change(var_type_long_double);
-  m_value.val_long_double_type = a_value;
+  type_change(var_type_long_long);
+  m_value.val_long_long_type = a_value;
   return *this;
 }
 
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const unsigned_long_long_type a_value)
 {
-  type_change(var_type_long_double);
-  m_value.val_long_double_type = a_value;
+  type_change(var_type_unsigned_long_long);
+  m_value.val_ulong_long_type = a_value;
   return *this;
 }
 

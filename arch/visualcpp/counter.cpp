@@ -1,22 +1,15 @@
 // Модуль счетчика
 // C++ Builder
 // Используем встроенный счетчик процессора
-// Дата 25.11.2007
+// Дата: 14.09.2009
 
-//#pragma inline
-//#include <windows.h>
-//#include <winbase.h>
+#include <windows.h>
 #include <time.h>
 #include <counter.h>
+#include <limits>
 
-// Время калибровки в тиках
-const clock_t time_int_calibr = 9;
-// Время калибровки, с. Состоит из числителя и знаменателя.
-// Числитель
-const calccnt_t time_calibr_num = 1;
-// Знаменатель
-const calccnt_t time_calibr_denom = 10;
-
+// Максимальное время которое можно измерить
+counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();
 // Число секунд в интервале
 counter_t SECONDS_PER_INTERVAL = 1;
 // Количество отсчетов в секунде
@@ -24,44 +17,28 @@ counter_t COUNTER_PER_INTERVAL = 300000000;
 
 static irs_u32 count_init = 0;
 
-// Чтение встроенного счетчика процессора
-extern "C"
-  {void count32 (int, int);}
-counter_t get_rdtsc(void)
-{  
-  irs_u64 rdtsc1;
-  count32((int)&rdtsc1, (int)((long*)&rdtsc1 + 1));  
-  return rdtsc1;
-}
 // Инициализация счетчика
 void counter_init()
 {
   if (!count_init) {
-    calccnt_t cps = static_cast<calccnt_t>(CLOCKS_PER_SEC);
-    clock_t time_int_calibr =
-      static_cast<clock_t>(time_calibr_num*cps/time_calibr_denom);
-	  clock_t start_clock = clock();
-    clock_t cur_clock = clock();
-    while (cur_clock != start_clock) {
-      cur_clock = clock();
-    }
-    start_clock = cur_clock;
-    counter_t start_counter = counter_get();
-    while ((cur_clock - start_clock) < time_int_calibr) {
-      cur_clock = clock();
-    }
-    counter_t stop_counter = counter_get();
-    COUNTER_PER_INTERVAL = calccnt_t(SECONDS_PER_INTERVAL)*
-      calccnt_t(CLOCKS_PER_SEC)*calccnt_t(stop_counter - start_counter)/
-      calccnt_t(time_int_calibr);
+    counter_refresh();
   }
   count_init++;
+}
+// Обновление масштабных коэффициентов счетчика
+void counter_refresh()
+{
+  LARGE_INTEGER cpu_freq;
+  memset(static_cast<void*>(&cpu_freq), 0, sizeof(cpu_freq));
+  QueryPerformanceFrequency(&cpu_freq);
+  COUNTER_PER_INTERVAL = static_cast<counter_t>(cpu_freq.QuadPart);
 }
 // Чтение счетчика
 counter_t counter_get()
 {
-	counter_t cnt = get_rdtsc();
-	return cnt;
+  LARGE_INTEGER cpu_cnt;
+  QueryPerformanceCounter(&cpu_cnt);
+  return static_cast<counter_t>(cpu_cnt.QuadPart);
 }
 // Деинициализация счетчика
 void counter_deinit()
@@ -70,3 +47,4 @@ void counter_deinit()
   if (!count_init) {
   }
 }
+

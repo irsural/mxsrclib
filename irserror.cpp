@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 20.09.2009
+// Дата: 17.10.2009
 // Ранняя дата: 4.08.2009
 
 #include <irserror.h>
@@ -109,9 +109,56 @@ const  void* irs::spec_assert(const char *assert_str,
   return static_cast<const  void*>(&spec_assert_i);
 }
 
+#ifdef IRS_WIN32
+void irs::send_format_msg(
+   int a_error_code,
+   error_trans_base_t* ap_error_trans,
+   char* ap_file,
+   int a_line)
+{ 
+  LPVOID lpMsgBuf;
+  //LPVOID lpDisplayBuf;
+  FormatMessage(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,
+      a_error_code,
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      (LPTSTR) &lpMsgBuf,
+      0, NULL);
+  irs::string message = static_cast<irs::string>(a_error_code)+
+    ": "+static_cast<char*>(lpMsgBuf);
+  ap_error_trans->throw_error(
+    ec_standard, ap_file, a_line, (void*)(message.c_str()));
+  LocalFree(lpMsgBuf);
+}
+
+void irs::send_last_message_err(
+  error_trans_base_t* ap_error_trans, char* ap_file, int a_line)
+{
+  int error_code = GetLastError();
+  send_format_msg(error_code, ap_error_trans, ap_file, a_line);
+}
+
+void irs::send_wsa_last_message_err(
+  error_trans_base_t* ap_error_trans, char* ap_file, int a_line)
+{
+  int error_code = WSAGetLastError();
+  send_format_msg(error_code, irs::error_trans(), ap_file, a_line);
+}
+
+void irs::send_message_err(DWORD a_error_code, char* ap_file,
+  int a_line)
+{
+  send_format_msg(a_error_code, irs::error_trans(), ap_file, a_line);
+}
+#endif // IRS_WIN32
+
 ostream& irs::mlog()
 {
   static irs::zerobuf buf;
   static ostream mlog_obj(&buf);
   return mlog_obj;
 }
+

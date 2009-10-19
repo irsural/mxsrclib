@@ -29,7 +29,8 @@
 #endif //IRS_UNICODE_GLOBAL
 
 // Определения платформы
-#if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__)
+#if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
+  (defined(_MSC_VER) && defined(_WIN32))
 #define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
 #define IRS_LINUX // Платформа Linux

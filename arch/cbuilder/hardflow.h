@@ -12,7 +12,7 @@
 #include <hardflowg.h>
 #include <irsstd.h>
 #include <timer.h>
-#include <irscberror.h>
+#include <irserror.h>
 
 /* com port
 Описание структуры DCB

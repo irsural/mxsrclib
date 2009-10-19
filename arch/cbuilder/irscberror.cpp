@@ -1,6 +1,6 @@
 // Обработка ошибок
 // С++ Builder
-// Дата 10.04.2009
+// Дата 17.10.2009
 
 #include <vcl.h>
 #pragma hdrstop
@@ -229,49 +229,5 @@ void irs::cbuilder::set_error_handler(
 {
   static error_handler_t error_handler_i(
     handler_type, irs::error_trans(), ap_log_msg);
-}
-
-void irs::cbuilder::send_format_msg(
-   int a_error_code,
-   error_trans_base_t* ap_error_trans,
-   char* ap_file,
-   int a_line)
-{ 
-  LPVOID lpMsgBuf;
-  //LPVOID lpDisplayBuf;
-  FormatMessage(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM |
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      a_error_code,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      (LPTSTR) &lpMsgBuf,
-      0, NULL);
-  irs::string message = static_cast<irs::string>(a_error_code)+
-    ": "+static_cast<char*>(lpMsgBuf);
-  ap_error_trans->throw_error(
-    ec_standard, ap_file, a_line, (void*)(message.c_str()));
-  LocalFree(lpMsgBuf);
-}
-
-void irs::cbuilder::send_last_message_err(
-  error_trans_base_t* ap_error_trans, char* ap_file, int a_line)
-{
-  int error_code = GetLastError();
-  send_format_msg(error_code, ap_error_trans, ap_file, a_line);
-}
-
-void irs::cbuilder::send_wsa_last_message_err(
-  error_trans_base_t* ap_error_trans, char* ap_file, int a_line)
-{
-  int error_code = WSAGetLastError();
-  send_format_msg(error_code, irs::error_trans(), ap_file, a_line);
-}
-
-void irs::cbuilder::send_message_err(DWORD a_error_code, char* ap_file,
-  int a_line)
-{
-  send_format_msg(a_error_code, irs::error_trans(), ap_file, a_line);
 }
 

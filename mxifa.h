@@ -1,6 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 20.09.2009
+// Дата: 19.10.2009
 // Ранняя дата: 06.03.2008
 
 #ifndef MXIFAH
@@ -196,7 +196,7 @@ typedef struct _mxifa_hardflow_cfg {
   irs::hardflow_t *user_hardflow;
 } mxifa_hardflow_cfg;
 
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(_MSC_VER)
 // Определение функций для компиляторов для которых нет реализации mxifa
 inline void mxifa_init() {}
 inline void mxifa_deinit() {}

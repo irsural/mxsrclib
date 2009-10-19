@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 20.09.2009
+// Дата: 19.10.2009
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -385,20 +385,20 @@ void mx_agilent_3458a_t::get_voltage(double *voltage)
   f_status = meas_status_busy;
 }
 // Чтение усредненного сдвира фаз
-void mx_agilent_3458a_t::get_phase_average(double */*phase_average*/)
+void mx_agilent_3458a_t::get_phase_average(double * /*phase_average*/)
 {
 }
 // Чтение фазового сдвига
-void mx_agilent_3458a_t::get_phase(double */*phase*/)
+void mx_agilent_3458a_t::get_phase(double * /*phase*/)
 {
 }
 // Чтение временного интервала
-void mx_agilent_3458a_t::get_time_interval(double */*time_interval*/)
+void mx_agilent_3458a_t::get_time_interval(double * /*time_interval*/)
 {
 }
 // Чтение усредненного временного интервала
 void mx_agilent_3458a_t::get_time_interval_average(
-  double */*ap_time_interval*/)
+  double * /*ap_time_interval*/)
 {
 }
 // Чтения силы тока
@@ -907,19 +907,19 @@ void irs::v7_78_1_t::get_voltage(double *voltage)
   f_status = meas_status_busy;
 }
 // Чтение усредненного сдвира фаз
-void irs::v7_78_1_t::get_phase_average(double */*phase_average*/)
+void irs::v7_78_1_t::get_phase_average(double * /*phase_average*/)
 {
 }
 // Чтение фазового сдвига
-void irs::v7_78_1_t::get_phase(double */*phase*/)
+void irs::v7_78_1_t::get_phase(double * /*phase*/)
 {
 }
 // Чтение временного интервала
-void irs::v7_78_1_t::get_time_interval(double */*time_interval*/)
+void irs::v7_78_1_t::get_time_interval(double * /*time_interval*/)
 {
 }
 // Чтение усредненного временного интервала
-void irs::v7_78_1_t::get_time_interval_average(double */*ap_time_interval*/)
+void irs::v7_78_1_t::get_time_interval_average(double * /*ap_time_interval*/)
 {
 }
 // Чтения силы тока
@@ -1470,19 +1470,19 @@ void irs::akip_ch3_85_3r_t::get_value(double *ap_value)
   }else
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
-void irs::akip_ch3_85_3r_t::get_voltage(double */*ap_voltage*/)
+void irs::akip_ch3_85_3r_t::get_voltage(double * /*ap_voltage*/)
 {
 }
 // Чтения силы тока
-void irs::akip_ch3_85_3r_t::get_current(double */*ap_current*/)
+void irs::akip_ch3_85_3r_t::get_current(double * /*ap_current*/)
 {
 }
 // Чтение сопротивления по двухпроводной схеме
-void irs::akip_ch3_85_3r_t::get_resistance2x(double */*ap_resistance*/)
+void irs::akip_ch3_85_3r_t::get_resistance2x(double * /*ap_resistance*/)
 {
 }
 // Чтение сопротивления по четырехпроводной схеме
-void irs::akip_ch3_85_3r_t::get_resistance4x(double */*ap_resistance*/)
+void irs::akip_ch3_85_3r_t::get_resistance4x(double * /*ap_resistance*/)
 {
 }
 void irs::akip_ch3_85_3r_t::get_frequency(double *ap_frequency)

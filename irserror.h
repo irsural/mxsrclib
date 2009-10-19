@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 28.09.2009
+// Дата: 17.10.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -10,6 +10,10 @@
 #include <irsint.h>
 #include <irstime.h>
 #include <irscpp.h>
+
+#ifdef IRS_WIN32
+#include <winsock2.h>
+#endif // IRS_WIN32
 
 /*
 #define IRS_LIB_DEBUG_GLOBAL
@@ -100,6 +104,17 @@
 #define IRS_LIB_DBG_MSG_SRC(msg)
 #endif // IRS_LIB_DEBUG
 
+#ifdef IRS_WIN32
+#define SEND_WIN_LAST_MESSAGE_ERR(error_trans)\
+  irs::send_last_message_err(error_trans,__FILE__,__LINE__)
+
+#define SEND_WIN_WSA_LAST_MESSAGE_ERR(error_trans)\
+  irs::send_wsa_last_message_err(error_trans,__FILE__,__LINE__)
+
+#define SEND_WIN_MESSAGE_ERR(error_code)\
+  irs::send_message_err(error_code,__FILE__,__LINE__)          
+#endif // IRS_WIN32
+
 namespace irs {
 
 // Тип для кодов ошибок
@@ -183,6 +198,19 @@ public:
   }
 };
 #endif //__WATCOMC__
+
+#ifdef IRS_WIN32
+void send_format_msg(int a_error_code, error_trans_base_t* ap_error_trans,
+  char* ap_file, int a_line);
+
+void send_last_message_err(
+  error_trans_base_t* ap_error_trans, char* ap_file, int a_line);
+
+void send_wsa_last_message_err(
+  error_trans_base_t* ap_error_trans, char* ap_file, int a_line);
+
+void send_message_err(DWORD a_error_code, char* ap_file, int a_line);
+#endif // IRS_WIN32
 
 ostream& mlog();
 
