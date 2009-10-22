@@ -1185,6 +1185,11 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
 }
 
 typedef vector<pair<stringns_t, vector<int> > > id_constant_type;
+typedef vector<pair<stringns_t, vector<int> > > id_variable_type;
+typedef vector<pair<stringns_t, vector<int> > >::iterator
+  id_variable_part_name_iterator;
+typedef vector<pair<stringns_t, vector<int> > >::const_iterator
+  id_variable_part_name_const_iterator;
 
 class handle_external_constant_t
 {
