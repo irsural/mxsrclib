@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 19.10.2009
+// Дата: 24.10.2009
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -1714,7 +1714,7 @@ void irs::akip_ch3_85_3r_t::set_start_level(double a_level)
   }else
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
-void irs::akip_ch3_85_3r_t::set_range(type_meas_t /*a_type_meas*/, 
+void irs::akip_ch3_85_3r_t::set_range(type_meas_t /*a_type_meas*/,
   double /*a_range*/)
 {
 }

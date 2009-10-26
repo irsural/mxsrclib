@@ -122,19 +122,19 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
 }
 
 bool irs::calc::part_id_name_get(
-  const id_variable_part_name_const_iterator a_begin_part_id_it,
-  const id_variable_part_name_const_iterator a_end_part_id_it,
+  const part_id_variable_const_iterator a_begin_part_id_it,
+  const part_id_variable_const_iterator a_end_part_id_it,
   stringns_t* ap_name)
 {
   IRS_LIB_ASSERT(ap_name != IRS_NULL);
   bool fsuccess = false;
   const int single_part_id = 1;
   if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
-    if (a_begin_part_id_it->first == part_id_type_name) {
-      if (a_begin_part_id_it->second.type() == irs::variant::var_type_string) {
-        *ap_name = a_begin_part_id_it->second.as_string();
+    if (a_begin_part_id_it->type == part_id_type_name) {
+      if (a_begin_part_id_it->part_id.type() == irs::variant::var_type_string) {
+        *ap_name = a_begin_part_id_it->part_id.as_string();
       } else {
-        IRS_LIB_ASSERT("Имя имеет неправильный тип");
+        IRS_LIB_ASSERT_MSG("Имя имеет неправильный тип");
       }
     } else {
       // Текущая часть идентификатора не является именем
@@ -146,19 +146,19 @@ bool irs::calc::part_id_name_get(
 }
 
 bool irs::calc::part_id_index_get(
-  const id_variable_part_name_const_iterator a_begin_part_id_it,
-  const id_variable_part_name_const_iterator a_end_part_id_it,
+  const part_id_variable_const_iterator a_begin_part_id_it,
+  const part_id_variable_const_iterator a_end_part_id_it,
   irs::variant::variant_t* ap_index)
 {
   IRS_LIB_ASSERT(ap_index != IRS_NULL);
   bool fsuccess = false;
   const int single_part_id = 1;
   if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
-    if (a_begin_part_id_it->first == part_id_type_index) {
-      if (a_begin_part_id_it->second.type() == ap_index->type()) {
-        ap_index->assign_no_cast(a_begin_part_id_it->second);
+    if (a_begin_part_id_it->type == part_id_type_index) {
+      if (a_begin_part_id_it->part_id.type() == ap_index->type()) {
+        ap_index->assign_no_cast(a_begin_part_id_it->part_id);
       } else {
-        IRS_LIB_ASSERT("Имя имеет неправильный тип");
+        IRS_LIB_ASSERT_MSG("Имя имеет неправильный тип");
       }
     } else {
       // Текущая часть идентификатора не является именем
@@ -168,6 +168,142 @@ bool irs::calc::part_id_index_get(
   }
   return fsuccess;
 }
+
+#ifdef NOP
+// class mutable_ref_t
+irs::calc::mutable_ref_t::mutable_ref_t():
+  m_type(type_unknown)
+{
+  m_variable.p_value = IRS_NULL;
+}
+
+irs::calc::mutable_ref_t::mutable_ref_t(type_t a_type):
+  m_type(type_unknown)
+{
+  change_type(a_type);
+}
+
+irs::calc::mutable_ref_t::mutable_ref_t(const variant_t& a_value, value_tag)
+{
+  value(a_value);
+}
+
+irs::calc::mutable_ref_t::mutable_ref_t(
+  const id_variable_type& a_id_variable, id_variable_tag)
+{
+  id(a_id_variable);
+}
+
+irs::calc::mutable_ref_t::mutable_ref_t(const mutable_ref_t& a_mutable_ref):
+  m_type(type_unknown)
+{
+  change_type(a_mutable_ref.m_type);
+  switch (a_mutable_ref.m_type) {
+    case type_value: {
+      *m_variable.p_value = *a_mutable_ref.m_variable.p_value;
+    } break;
+    case type_id: {
+      *m_variable.p_id = *a_mutable_ref.m_variable.p_id;
+    } break;
+    case type_unknown: {
+      // Нет данных для копирования
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Неучтенный тип");
+    }
+  }
+}
+
+irs::calc::mutable_ref_t::variant_t& irs::calc::mutable_ref_t::value()
+{
+  return *m_variable.p_value;
+}
+
+const irs::calc::mutable_ref_t::variant_t&
+irs::calc::mutable_ref_t::value() const
+{
+  return *m_variable.p_value;
+}
+
+void irs::calc::mutable_ref_t::value(const variant_t& a_value)
+{
+  change_type(type_value);
+  *m_variable.p_value = a_value;
+}
+
+irs::calc::id_variable_type& irs::calc::mutable_ref_t::id()
+{
+  return *m_variable.p_id;
+}
+
+const irs::calc::id_variable_type& irs::calc::mutable_ref_t::id() const
+{
+  return *m_variable.p_id;
+}
+
+void irs::calc::mutable_ref_t::id(const id_variable_type& a_id)
+{
+  change_type(type_id);
+  *m_variable.p_id = a_id;
+}       
+
+irs::calc::mutable_ref_t::type_t irs::calc::mutable_ref_t::type(type_t) const
+{
+  return m_type;
+}
+
+void irs::calc::mutable_ref_t::change_type(const type_t a_type)
+{
+  if (a_type != m_type) {
+    switch (m_type) {
+      case type_value: {
+        delete m_variable.p_value;
+      } break;
+      case type_id: {
+        delete m_variable.p_id;
+      } break;
+      case type_unknown: {
+        // Память не выделена
+      } break;
+      default : {
+        IRS_LIB_ASSERT_MSG("Неучтенный тип");
+      }
+    }
+    m_type = a_type;
+    switch (a_type) {
+      case type_value: {
+        m_variable.p_value = new variant_t();
+      } break;
+      case type_id: {
+        m_variable.p_id = new id_variable_type();
+      } break;
+      case type_unknown: {
+        // Выделять память не требуется
+      } break;
+      default : {
+        IRS_LIB_ASSERT_MSG("Неучтенный тип");
+      }
+    }
+  } else {
+    // Объект уже имеет требуемый тип
+  }
+}
+
+void irs::calc::mutable_ref_t::swap(mutable_ref_t& a_mutable_ref)
+{                                              
+  ::swap(m_type, a_mutable_ref.m_type);
+  ::swap(m_variable, a_mutable_ref.m_variable);
+}
+
+irs::calc::mutable_ref_t&
+irs::calc::mutable_ref_t::operator=(const mutable_ref_t& a_mutable_ref)
+{
+  mutable_ref_t mutable_ref(a_mutable_ref);
+  ::swap(mutable_ref, *this);
+  return *this;
+}
+
+#endif // NOP
 
 //#endif // GNU C++ specific
 

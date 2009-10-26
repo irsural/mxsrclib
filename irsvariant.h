@@ -118,10 +118,18 @@ public:
 
   template<class T>
   variant_t(const T& a_value):
-    m_type(var_type_int),
+    m_type(var_type_unknown),
     m_value()
   {
     operator=(a_value);
+  }
+
+  template<class T>
+  variant_t(const T& a_value, const var_type_t a_var_type):
+    m_type(a_var_type),
+    m_value()
+  {
+    assign_no_cast(a_value);
   }
 
   variant_t(const variant_t& a_variant);
@@ -168,6 +176,8 @@ public:
   #endif // IRSDEFS_I64
   string_type as_string() const;
   //signed char is_array() const;
+  template <class T>
+  T as_type() const;
 
   operator bool() const;
   operator char() const;
@@ -202,7 +212,9 @@ public:
   /*template<class T>
   operator T()const;
   */
-  template<class T>
+  template <class T>
+  variant_t& assign(const T& a_value);
+  template <class T>
   variant_t& assign_no_cast(const T& a_value);
   bool convert_to(const var_type_t a_var_type);
 
@@ -273,14 +285,34 @@ variant_t::operator T()const
   value_get(&value);
   return value;
 }*/
+
+template <class T>
+T variant_t::as_type() const
+{
+  return value_get<T>();
+}
+
+template <class T>
+variant_t& variant_t::assign(const T& a_value)
+{
+  return operator=(a_value);
+}
+
 #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
 template<class T>
 variant_t& variant_t::assign_no_cast(const T& a_value)
 {
   switch(m_type) {
+    #ifdef _MSC_VER
+    # pragma warning(disable: 4800)
+    #endif // _MSC_VER  
     case var_type_bool: {
       m_value.val_bool_type = static_cast<bool>(a_value);
     } break;
+    #ifdef _MSC_VER
+    # pragma warning(default: 4800)
+    #endif // _MSC_VER  
     case var_type_char: {
       m_value.val_char_type = static_cast<char>(a_value);
     } break;
@@ -339,6 +371,7 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
   }
   return *this;
 }
+
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
@@ -544,7 +577,12 @@ template<class T>
 T variant_t::value_get() const
 {
   T value;
-  switch(m_type) {
+  switch(m_type) {    
+
+    #ifdef _MSC_VER
+    # pragma warning(disable: 4800)
+    #endif // _MSC_VER  
+
     case var_type_bool: {
       value = static_cast<T>(m_value.val_bool_type);
     } break;
@@ -584,14 +622,22 @@ T variant_t::value_get() const
     case var_type_long_double: {
       value = static_cast<T>(m_value.val_long_double_type);
     } break;
+
     #ifdef IRSDEFS_I64
+
     case var_type_long_long: {
       value = static_cast<T>(m_value.val_long_long_type);
     } break;
     case var_type_unsigned_long_long: {
       value = static_cast<T>(m_value.val_ulong_long_type);
     } break;
+
     #endif // IRSDEFS_I64
+
+    #ifdef _MSC_VER
+    # pragma warning(default: 4800)
+    #endif // _MSC_VER  
+
     case var_type_string: {
       bool fsuccess = m_value.p_val_string_type->to_number(value);
       if (!fsuccess) {
@@ -600,8 +646,11 @@ T variant_t::value_get() const
         // Строка успешно преобразована в число
       }
     } break;
-    default : {
+    default : {      
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
+      // Чтобы переменная в любом случае была инициализирована
+      value = 0;
+     
     }
   }
   return value;

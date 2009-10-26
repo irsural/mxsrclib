@@ -7,13 +7,13 @@
 
 irs::variant::variant_t::variant_t():
   m_value(),
-  m_type(var_type_int)
+  m_type(var_type_unknown)
 {
 }
 
 irs::variant::variant_t::variant_t(const variant_t& a_variant):
   m_value(),
-  m_type(var_type_int)
+  m_type(var_type_unknown)
 {
   operator=(a_variant);
 }
@@ -157,6 +157,9 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
       *(m_value.p_val_vector_variant) =
         *(a_variant.m_value.p_val_vector_variant);
     } break;
+    case var_type_unknown: {
+      // Нет данных для копирования
+    } break;
     default : {
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
     }
@@ -288,226 +291,164 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
 }
 
 bool irs::variant::variant_t::as_bool() const
-{
-  bool value;
-  value_get(&value);
-  return value;
+{ 
+  return as_type<bool>();
 }
 
 char irs::variant::variant_t::as_char() const
 {
-  char value;
-  value_get(&value);
-  return value;
+  return as_type<char>();
 }
 
 signed char irs::variant::variant_t::as_signed_char() const
 {
-  signed char value;
-  value_get(&value);
-  return value;
+  return as_type<signed char>();
 }
 
 unsigned char irs::variant::variant_t::as_unsigned_char() const
 {
-  unsigned char value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned char>();
 }
 
 short irs::variant::variant_t::as_short() const
 {
-  short value;
-  value_get(&value);
-  return value;
+  return as_type<short>();
 }
 
 unsigned short irs::variant::variant_t::as_unsigned_short() const
 {
-  unsigned short value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned short>();
 }
 
 int irs::variant::variant_t::as_int() const
 {
-  int value;
-  value_get(&value);
-  return value;
+  return as_type<int>();
 }
 
 unsigned int irs::variant::variant_t::as_unsigned_int() const
 {
-  unsigned int value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned int>();
 }
 
 long irs::variant::variant_t::as_long() const
 {
-  long value;
-  value_get(&value);
-  return value;
+  return as_type<long>();
 }
 
 unsigned long irs::variant::variant_t::as_unsigned_long() const
 {
-  unsigned long value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned long>();
 }
 
 float irs::variant::variant_t::as_float() const
 {
-  float value;
-  value_get(&value);
-  return value;
+  return as_type<float>();
 }
 
 double irs::variant::variant_t::as_double() const
 {
-  double value;
-  value_get(&value);
-  return value;
+  return as_type<double>();
 }
 
 long double irs::variant::variant_t::as_long_double() const
 {
-  long double value;
-  value_get(&value);
-  return value;
+  return as_type<long double>();
 }
 
 #ifdef IRSDEFS_I64
 irs::variant::variant_t::long_long_type
 irs::variant::variant_t::as_long_long() const
 {
-  long_long_type value;
-  value_get(&value);
-  return value;
+  return as_type<long_long_type>();
 }
 
 irs::variant::variant_t::unsigned_long_long_type
 irs::variant::variant_t::as_unsigned_long_long() const
 {
-  unsigned_long_long_type value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned_long_long_type>();
 }
 #endif // IRSDEFS_I64
 
 irs::variant::variant_t::string_type
 irs::variant::variant_t::as_string() const
-{
-  string value;
-  value_get(&value);
-  return value;
+{ 
+  return as_type<string_type>();
 }
 
 irs::variant::variant_t::operator bool() const
 {
-  bool value;
-  value_get(&value);
-  return value;
+  return as_type<bool>();
 }
 
 irs::variant::variant_t::operator char() const
 {
-  char value;
-  value_get(&value);
-  return value;
+  return as_type<char>();
 }
 
 irs::variant::variant_t::operator signed char() const
 {
-  signed char value;
-  value_get(&value);
-  return value;
+  return as_type<signed char>();
 }
 
 irs::variant::variant_t::operator unsigned char() const
 {
-  unsigned char value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned char>();
 }
 
 irs::variant::variant_t::operator short() const
 {
-  short value;
-  value_get(&value);
-  return value;
+  return as_type<short>();
 }
 
 irs::variant::variant_t::operator unsigned short() const
 {
-  unsigned short value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned short>();
 }
 
 irs::variant::variant_t::operator int() const
 {
-  int value;
-  value_get(&value);
-  return value;
+  return as_type<int>();
 }
 
 irs::variant::variant_t::operator unsigned int() const
 {
-  unsigned int value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned int>();
 }
 
 irs::variant::variant_t::operator long() const
 {
-  long value;
-  value_get(&value);
-  return value;
+  return as_type<long>();
 }
 
 irs::variant::variant_t::operator unsigned long() const
 {
-  unsigned long value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned long>();
 }
 
 irs::variant::variant_t::operator float() const
 {
-  float value;
-  value_get(&value);
-  return value;
+  return as_type<float>();
 }
 
 irs::variant::variant_t::operator double() const
 {
-  double value;
-  value_get(&value);
-  return value;
+  return as_type<double>();
 }
 
 irs::variant::variant_t::operator long double() const
 {
-  long double value;
-  value_get(&value);
-  return value;
+  return as_type<long double>();
 }
 
 #ifdef IRSDEFS_I64
 irs::variant::variant_t::operator long_long_type() const
 {
-  long_long_type value;
-  value_get(&value);
-  return value;
+  return as_type<long_long_type>();
 }
 
 irs::variant::variant_t::operator unsigned_long_long_type() const
 {
-  unsigned_long_long_type value;
-  value_get(&value);
-  return value;
+  return as_type<unsigned_long_long_type>();
 }
 #endif // IRSDEFS_I64
 
@@ -518,9 +459,7 @@ irs::variant::variant_t::operator unsigned_long_long_type() const
 
 irs::variant::variant_t::operator string_type() const
 {
-  string_type value;
-  value_get(&value);
-  return value;
+  return as_type<string_type>();
 }
 
 irs::variant::variant_t& irs::variant::variant_t::operator+=(

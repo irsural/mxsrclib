@@ -1,5 +1,5 @@
 // Калькулятор
-// Дата: 09.10.2009
+// Дата: 24.10.2009
 // Дата создания: 1.02.2009
 
 #ifndef irscalcH
@@ -62,6 +62,7 @@ enum token_type_t {
 
 enum delimiter_t {
   d_none,
+  d_assign,
   d_plus,
   d_minus,
   d_multiply,
@@ -1187,21 +1188,24 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
 typedef vector<pair<stringns_t, vector<int> > > id_constant_type;
 
 enum part_id_type_t {part_id_type_name, part_id_type_index};
-typedef vector<pair<part_id_type_t, irs::variant::variant_t> >
-  id_variable_type;
-typedef vector<pair<part_id_type_t, irs::variant::variant_t> >::iterator
-  id_variable_part_name_iterator;
-typedef vector<pair<part_id_type_t, irs::variant::variant_t> >::const_iterator
-  id_variable_part_name_const_iterator;
+struct part_id_variable_t
+{
+  part_id_type_t type;
+  irs::variant::variant_t part_id;
+};
+typedef vector<part_id_variable_t> id_variable_type;
+typedef vector<part_id_variable_t>::iterator part_id_variable_iterator;
+typedef vector<part_id_variable_t>::const_iterator
+  part_id_variable_const_iterator;
 
 bool part_id_name_get(
-  const id_variable_part_name_const_iterator a_begin_part_id_it,
-  const id_variable_part_name_const_iterator a_end_part_id_it,
+  const part_id_variable_const_iterator a_begin_part_id_it,
+  const part_id_variable_const_iterator a_end_part_id_it,
   stringns_t* ap_name);
 
 bool part_id_index_get(
-  const id_variable_part_name_const_iterator a_begin_part_id_it,
-  const id_variable_part_name_const_iterator a_end_part_id_it,
+  const part_id_variable_const_iterator a_begin_part_id_it,
+  const part_id_variable_const_iterator a_end_part_id_it,
   irs::variant::variant_t* ap_index);
 
 /*typedef vector<pair<stringns_t, vector<int> > > id_variable_type;
@@ -1227,6 +1231,7 @@ public:
   typedef sizens_t size_type;
   typedef charns_t char_type;
   typedef stringns_t string_type;
+  //typedef mutable_ref_t mutable_ref_type;
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline void constant_add(const string_type& a_name,
@@ -1250,10 +1255,12 @@ private:
   #endif // IRS_FULL_STDCPPLIB_SUPPORT
   const handle_external_constant_t* mp_handle_extern_const;
   inline bool interp(value_type* ap_value);
+  // Обрабатывает операцию присвоения
+  //inline bool eval_exp_assign(value_type* ap_value);
   // Обрабатывает квадратные скобки
   inline bool eval_exp_square_brackets(value_type* ap_value);
   inline bool eval_exp_constant(id_constant_type* ap_id_constant);
-  // Обрабатывает скобки функции выражение, расположенное внутри них
+  // Обрабатывает скобки функции и выражение, расположенное внутри них
   inline bool eval_exp_arg_function(value_type* ap_value);
   // Обрабатывает логические операции
   inline bool eval_exp_logical(value_type* ap_value);
@@ -1458,7 +1465,8 @@ inline bool calculator_t::eval_exp_constant(
   if (fsuccess) {
     if (token.token_type() == tt_identifier) {
       last_token_type = ltt_identifier;
-      ap_id_constant->push_back(make_pair(token.get_identifier(), vector<int>()));
+      ap_id_constant->push_back(make_pair(token.get_identifier(),
+        vector<int>()));
       fsuccess = m_detector_token.next_token();
       if (fsuccess) {
         fsuccess = m_detector_token.get_token(&token);
@@ -1502,7 +1510,7 @@ inline bool calculator_t::eval_exp_constant(
             delimiter_t delim = token.delimiter();
             if (delim == d_dot) {
               if ((last_token_type != ltt_identifier) &&
-                (last_token_type != d_right_square_bracket))
+                (last_token_type != ltt_right_square_bracket))
               {
                 fsuccess = false;
               } else {
@@ -2153,163 +2161,38 @@ inline void calculator_t::handle_external_constant_set(
 }
 
 #ifdef NOP
-template<class T>
 class mutable_ref_t
 {
 public:
-  enum type_t {type_value, type_reference};
+  typedef irs::variant::variant_t variant_t;
+  enum type_t {type_unknown, type_value, type_id};
   struct value_tag {};
-  struct reference_tag {};
-  mutable_ref_t(type_t a_type = type_reference);
-  mutable_ref_t(T& a_value, reference_tag);
-  mutable_ref_t(const T& a_value, value_tag);
-  mutable_ref_t(const mutable_ref_t<T>& a_ref);
-  type_t type() const;
-  operator T&();
-  //operator const T&() const;
-  void set_value(const T& a_value);
-  void set_reference(T& a_value);
-  T& operator=(const T& a_value);
-  mutable_ref_t& operator=(const mutable_ref_t<T>& a_ref);
+  struct id_variable_tag {};
+  mutable_ref_t();
+  mutable_ref_t(type_t a_type = type_value);
+  mutable_ref_t(const variant_t& a_value, value_tag);
+  mutable_ref_t(const id_variable_type& a_id_variable, id_variable_tag);
+  mutable_ref_t(const mutable_ref_t& a_mutable_ref);
+  variant_t& value();
+  const variant_t& value() const;
+  void value(const variant_t& a_value);
+  id_variable_type& id();
+  const id_variable_type& id() const;
+  void id(const id_variable_type& a_id);
+  type_t type(type_t) const;
+  void swap(mutable_ref_t& a_mutable_ref);
+  mutable_ref_t& operator=(const mutable_ref_t& a_mutable_ref);
 private:
-  T* mp_value;
+  void change_type(const type_t a_type);
+  variant_t m_value;
+  id_variable_type m_id;
+  /*union {
+    variant_t* p_value;
+    id_variable_type* p_id;
+  } m_variable;*/
   type_t m_type;
 };
-
-template<class T>
-mutable_ref_t<T>::mutable_ref_t(type_t a_type):
-  mp_value((a_type == type_reference) ? IRS_NULL : new T()),
-  m_type(a_type)
-{
-}
-
-template<class T>
-mutable_ref_t<T>::mutable_ref_t(const T& a_value, value_tag):
-  mp_value(new T(a_value)),
-  m_type(type_value)
-{
-}
-
-template<class T>
-mutable_ref_t<T>::mutable_ref_t(T& a_value, reference_tag):
-  mp_value(&a_value),
-  m_type(type_reference)
-{
-}
-
-template<class T>
-mutable_ref_t<T>::mutable_ref_t(const mutable_ref_t<T>& a_ref):
-  mp_value((a_ref.m_type == type_reference) ?
-    a_ref.mp_value : new T(a_ref.mp_value)),
-  m_type(a_ref.m_type)
-{
-}
-
-template<class T>
-typename mutable_ref_t<T>::type_t mutable_ref_t<T>::type() const
-{
-  return m_type;
-}
-
-template<class T>
-mutable_ref_t<T>::operator T&()
-{
-  return *mp_value;
-}
-
-/*template<class T>
-mutable_ref_t<T>::operator const T&() const
-{
-  return *mp_value;
-}*/
-
-template<class T>
-void mutable_ref_t<T>::set_value(const T& a_value)
-{
-  if (m_type == type_reference) {
-    mp_value = new T(a_value);
-  } else {
-    *mp_value = a_value;
-  }
-}
-
-template<class T>
-void mutable_ref_t<T>::set_reference(T& a_value)
-{
-  if (m_type == type_value) {
-    delete mp_value;
-  } else {
-    // Память не выделена
-  }
-  mp_value = &a_value;
-}
-
-template<class T>
-T& mutable_ref_t<T>::operator=(const T& a_value)
-{
-  *mp_value = a_value;
-  return *mp_value;
-}
-
-/*template<class T>
-T* mutable_ref_t<T>::operator=(T* ap_value)
-{
-  if (m_location_memory_internal) {
-    delete mp_value;
-  } else {
-    // Указатель указывает на внешнюю память
-  }
-  mp_value = ap_value;
-  m_location_memory_internal = false;
-  return mp_value;
-}*/
-
-template<class T>
-mutable_ref_t<T>& mutable_ref_t<T>::operator=(const mutable_ref_t<T>& a_ref)
-{
-  mutable_ref_t<T> ref(a_ref);
-  swap(this, ref);
-  return *this;
-}
-
-inline void mutable_ref_test()
-{
-  typedef int test_type;
-  // Сначало проверим, как работает обычное копирование переменной
-  // во внутреннюю память объекта класса mutable_ref_t
-  test_type* p_var = IRS_NULL;
-  p_var = new test_type;
-  mutable_ref_t<test_type> mref_var;
-  // Происходит копирование во внутреннюю память ref_int;
-  mref_var.set_value(*p_var);
-  // Удаляем выделенную память и зануляем указатель
-  delete p_var;
-  p_var = IRS_NULL;
-  // В объекте должна быть выделена память, в которую
-  // мы может что нибудь записать
-  mref_var = 10;
-  IRS_LIB_ASSERT(mref_var == 10);
-  // Теперь проверим, как объект класса mutable_ref_t работает в качестве
-  // ссылки на внешнюю переменную
-  p_var = new test_type;
-  // В результате присвоения внуть mref_int скопируется только указатель
-  mref_var.set_reference(*p_var);
-  mref_var = 99;
-  // В переменной var должно оказаться ранее присвоенное значение
-  test_type var = *p_var;
-  IRS_LIB_ASSERT(var == 99);
-
-  mutable_ref_t<int> mref_var2(20, mutable_ref_t<int>::value_tag());
-  mref_var2 = 22;
-
-  string str;
-  mutable_ref_t<string> mref_string;
-  mref_string.set_reference(str);
-  mref_string = "sdfsa";
-  IRS_LIB_ASSERT(mref_string == "sdfsa");
-}
-
-#endif //NOP
+#endif // NOP
 
 } // namespace calc
 
