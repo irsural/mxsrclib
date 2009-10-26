@@ -1185,12 +1185,31 @@ inline bool detector_token_t::get_token(token_t* const ap_token)
 }
 
 typedef vector<pair<stringns_t, vector<int> > > id_constant_type;
-typedef vector<pair<stringns_t, vector<int> > > id_variable_type;
+
+enum part_id_type_t {part_id_type_name, part_id_type_index};
+typedef vector<pair<part_id_type_t, irs::variant::variant_t> >
+  id_variable_type;
+typedef vector<pair<part_id_type_t, irs::variant::variant_t> >::iterator
+  id_variable_part_name_iterator;
+typedef vector<pair<part_id_type_t, irs::variant::variant_t> >::const_iterator
+  id_variable_part_name_const_iterator;
+
+bool part_id_name_get(
+  const id_variable_part_name_const_iterator a_begin_part_id_it,
+  const id_variable_part_name_const_iterator a_end_part_id_it,
+  stringns_t* ap_name);
+
+bool part_id_index_get(
+  const id_variable_part_name_const_iterator a_begin_part_id_it,
+  const id_variable_part_name_const_iterator a_end_part_id_it,
+  irs::variant::variant_t* ap_index);
+
+/*typedef vector<pair<stringns_t, vector<int> > > id_variable_type;
 typedef vector<pair<stringns_t, vector<int> > >::iterator
   id_variable_part_name_iterator;
 typedef vector<pair<stringns_t, vector<int> > >::const_iterator
   id_variable_part_name_const_iterator;
-
+*/
 class handle_external_constant_t
 {
 public:

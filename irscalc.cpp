@@ -121,6 +121,54 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
   (*ap_keyword_map)[irst("xor_eq")] = keyword_xor_eq;
 }
 
+bool irs::calc::part_id_name_get(
+  const id_variable_part_name_const_iterator a_begin_part_id_it,
+  const id_variable_part_name_const_iterator a_end_part_id_it,
+  stringns_t* ap_name)
+{
+  IRS_LIB_ASSERT(ap_name != IRS_NULL);
+  bool fsuccess = false;
+  const int single_part_id = 1;
+  if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
+    if (a_begin_part_id_it->first == part_id_type_name) {
+      if (a_begin_part_id_it->second.type() == irs::variant::var_type_string) {
+        *ap_name = a_begin_part_id_it->second.as_string();
+      } else {
+        IRS_LIB_ASSERT("Имя имеет неправильный тип");
+      }
+    } else {
+      // Текущая часть идентификатора не является именем
+    }
+  } else {
+    // Нет частей идентификатора для обработки
+  }
+  return fsuccess;
+}
+
+bool irs::calc::part_id_index_get(
+  const id_variable_part_name_const_iterator a_begin_part_id_it,
+  const id_variable_part_name_const_iterator a_end_part_id_it,
+  irs::variant::variant_t* ap_index)
+{
+  IRS_LIB_ASSERT(ap_index != IRS_NULL);
+  bool fsuccess = false;
+  const int single_part_id = 1;
+  if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
+    if (a_begin_part_id_it->first == part_id_type_index) {
+      if (a_begin_part_id_it->second.type() == ap_index->type()) {
+        ap_index->assign_no_cast(a_begin_part_id_it->second);
+      } else {
+        IRS_LIB_ASSERT("Имя имеет неправильный тип");
+      }
+    } else {
+      // Текущая часть идентификатора не является именем
+    }
+  } else {
+    // Нет частей идентификатора для обработки
+  }
+  return fsuccess;
+}
+
 //#endif // GNU C++ specific
 
 #endif //__WATCOMC__
