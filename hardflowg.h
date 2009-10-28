@@ -62,6 +62,7 @@ public:
 };
 
 namespace hardflow {
+
 typedef size_t sizens_t;
 typedef irs::string string_t;
 #if defined(IRS_WIN32) || defined(IRS_LINUX)

@@ -53,7 +53,7 @@ inline mxip_t make_mxip(int first_octet, int second_octet, int third_octet,
 inline mxip_t make_mxip(const char_t* a_ip)
 {
   mxip_t ip = mxip_t::zero_ip();
-  if (!cstr_to_mxip(ip, IRS_SIMPLE_FROM_TYPE_STR(a_ip))) {
+  if (!cstr_to_mxip(ip, IRS_SIMPLE_CHAR_FROM_TCHAR_STR(a_ip))) {
     ip = mxip_t();
   }
   return ip;

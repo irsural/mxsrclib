@@ -25,6 +25,7 @@
 #include <limits>
 #include <stdarg.h>
 #include <irsdefs.h>
+#include <irscpu.h>
 
 // ћаксимальное врем€ которое можно измерить
 counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();
@@ -74,6 +75,14 @@ void counter_init()
       OUTDBG(cout << "Release     "<<buf->release <<"\n");
       OUTDBG(cout << "Version     "<<buf->version <<"\n");
       OUTDBG(cout << "Machine     "<<buf->machine <<"\n");
+      OUTDBG(
+        const char *endian = IRS_NULL;
+        if(irs::cpu_traits_t::endian() == irs::little_endian)
+          endian = "little_endian";
+        else
+          endian = "big_endian";
+        cout << "Byte order  "<<endian <<"\n";
+      );
       char* machine = strstr(buf->machine, "armv4l");
       if (machine != IRS_NULL)
       {

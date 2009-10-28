@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 07.10.2009
+// Дата: 14.10.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -84,6 +84,25 @@
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
+#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
+#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
+
+namespace irs {
+
+enum endian_t {
+  little_endian = 0,
+  big_endian = 1
+};
+
+inline endian_t detect_cpu_endian()
+{
+  const irs_u16 x = static_cast<irs_u16>(1); /* 0x0001 */
+  endian_t cpu_endian = static_cast<endian_t>(IRS_FIRSTBYTE(x) == 0);
+  return cpu_endian;
+}
+
+}//namespace irs
+
 // Вычисление размера статического массива
 #define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
 #define IRS_ARRAYOFSIZE(_ARRAY_) IRS_ARRAYSIZE(_ARRAY_)
@@ -91,12 +110,18 @@
 #define IRS_NULL 0
 // Макросы выделения из переменных их частей
 // BYTE - байты, WORD - 2 байта, DWORD - 4 байта
-#define IRS_HIDWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_))) + 1))
-#define IRS_LODWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_)))))
-#define IRS_HIWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_))) + 1))
-#define IRS_LOWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_)))))
-#define IRS_HIBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
-#define IRS_LOBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
+#define IRS_HIDWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u32 *)(&(_NUM_))) + 1):*(((irs_u32 *)(&(_NUM_)))))
+#define IRS_LODWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u32 *)(&(_NUM_)))):*(((irs_u32 *)(&(_NUM_))) + 1))
+#define IRS_HIWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u16 *)(&(_NUM_))) + 1):*(((irs_u16 *)(&(_NUM_)))))
+#define IRS_LOWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u16 *)(&(_NUM_)))):*(((irs_u16 *)(&(_NUM_))) + 1))
+#define IRS_HIBYTE(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u8 *)(&(_NUM_))) + 1):*(((irs_u8 *)(&(_NUM_)))))
+#define IRS_LOBYTE(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+  *(((irs_u8 *)(&(_NUM_)))):*(((irs_u8 *)(&(_NUM_))) + 1))
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))

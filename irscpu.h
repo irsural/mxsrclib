@@ -1,5 +1,5 @@
 // Свойства процессора
-// Дата: 1.10.2009
+// Дата: 14.10.2009
 // Дата создания: 1.10.2009
 
 #ifndef IRSCPUH
@@ -17,10 +17,12 @@ public:
   #else //__ICCAVR__
   typedef irs_umax frequency_type;
   #endif //__ICCAVR__
-  
+  typedef endian_t endian_type;
+
   // Частота процессора, Гц
   static void frequency(frequency_type a_frequency);
   static frequency_type frequency();
+  static endian_t endian();
 private:
   static frequency_type m_frequency;
 };

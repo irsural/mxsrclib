@@ -81,6 +81,14 @@
     irs::mlog() << msg << endl;\
   }
 
+#define IRS_DBG_MSG_SRC_ENG(msg)\
+{\
+  irs::mlog() << irs::stime << "File: " << __FILE__;\
+  irs::mlog() << "; Line: " << __LINE__;\
+  irs::mlog() << "; Function: " << __FUNC__ << "; " <<\
+  irs::mlog() << msg << endl;\
+}
+
 #ifdef IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
@@ -92,6 +100,7 @@
 #define IRS_LIB_DBG_RAW_MSG(msg) IRS_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg) IRS_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg) IRS_DBG_MSG_SRC(msg)
+#define IRS_LIB_DBG_MSG_SRC_ENG(msg) IRS_DBG_MSG_SRC_ENG(msg)
 #else // IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
@@ -102,6 +111,7 @@
 #define IRS_LIB_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg)
+#define IRS_LIB_DBG_MSG_SRC_ENG(msg)
 #endif // IRS_LIB_DEBUG
 
 #ifdef IRS_WIN32
