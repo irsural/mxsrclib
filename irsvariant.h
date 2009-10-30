@@ -29,6 +29,8 @@ typedef size_t sizens_t;
 typedef char_t charns_t;
 typedef string_t stringns_t;
 
+// Числовые типы должны идти подряд,
+// так как это используется в в некоторых функциях
 enum var_type_t {
   var_type_unknown,
   var_type_bool,
@@ -52,6 +54,17 @@ enum var_type_t {
   var_type_string,
   var_type_array
 };
+
+inline bool is_number_type(const var_type_t a_var_type)
+{
+  #ifdef IRSDEFS_I64
+  return ((a_var_type >= var_type_bool) &&
+    (a_var_type <= var_type_unsigned_long_long)) ? true : false;
+  #else
+  return ((a_var_type >= var_type_bool) &&
+    (a_var_type <= var_type_long_double)) ? true : false;
+  #endif // IRSDEFS_I64
+}
 
 enum operation_type_t {
   operation_unknown,
