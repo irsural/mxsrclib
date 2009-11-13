@@ -152,7 +152,6 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       if((index_out != 0) && (index_in != 0))
         first_part_size = 8 - index_in;
       last_part_size = (size_data_bit + offset - first_part_size)%8;
-      cout << "last_part_size= " << last_part_size << endl;
     } else if((index_in - index_out) > 0) {
       offset = index_data_in%8 - index_data_out%8;
       middle_mask = mask_gen(0, offset);
@@ -323,14 +322,12 @@ void irs::test_bit_copy(ostream& strm, irs_u16 size_data_in,
   for(int idx_in = 0; idx_in < ap_data_in.size(); idx_in ++)
   {
     strm << int_to_str(ap_data_in[idx_in], 2, 8) << " ";
-    //strm << hex << (int)ap_data_out[idx_out] << " ";
   }
   strm << endl;
   strm << "OUT before operation" << endl;
   for(int idx_out = 0; idx_out < ap_data_out.size(); idx_out ++)
   {
     strm << int_to_str(ap_data_out[idx_out], 2, 8) << " ";
-    //strm << hex << (int)ap_data_out[idx_out] << " ";
   }
   strm << endl;
   bit_copy(ap_data_in.data(), ap_data_out.data(),
@@ -339,7 +336,6 @@ void irs::test_bit_copy(ostream& strm, irs_u16 size_data_in,
   for(int idx_out = 0; idx_out < ap_data_out.size(); idx_out ++)
   {
     strm << int_to_str(ap_data_out[idx_out], 2, 8) << " ";
-    //strm << hex << (int)ap_data_out[idx_out] << " ";
   }
   strm << endl;
 }
@@ -430,33 +426,6 @@ void irs::irsmb_se::write_bytes(raw_data_t<irs_u16> &data_u16,irs_u32 index,
   IRS_MBUS_DBG_MSG_DETAIL("write_bytes ..................");
   irs_u8* data_u8 = reinterpret_cast<irs_u8*>(data_u16.data());
   irs::memcpyex(data_u8 + index, buf + start, size);
-  /*if(((index%2) == 0)&&((size%2)==0))
-  {
-    IRS_MBUS_DBG_MSG_DETAIL(" OK");
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    copy(head.value,head.value +size/2,vec.begin()+index/2);
-  }
-  if(((index%2) == 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    copy(head.value,head.value +size/2,vec.begin()+index/2);
-    IRS_LOBYTE(vec[index/2+size/2]) = buf[start + size -1];
-  }
-  if(((index%2) != 0)&&((size%2)==0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + start + 1);
-    IRS_HIBYTE(vec[index/2]) = buf[start];
-    copy(head.value,head.value + size/2-1,
-      vec.begin()+index/2+1);
-    IRS_LOBYTE(vec[index/2+size/2]) = buf[start + size-1];
-  }
-  if(((index%2) != 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + start + 1);
-    IRS_HIBYTE(vec[index/2]) = buf[start];
-    copy(head.value,head.value + size/2,
-      vec.begin()+index/2+1);
-  }*/
   #ifdef NOP//IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
   for(irs_u16 i = (index/2); i<(size/2+index/2);i++)
   {
@@ -476,62 +445,14 @@ void irs::irsmb_se::write_bytes(raw_data_t<irs_u16> &data_u16,irs_u32 index,
 void irs::irsmb_se::get_bytes(raw_data_t<irs_u16> &data_u16,irs_u32 index,
   irs_u32 size,irs_u8 *buf,irs_u32 start)
 {
-  //irs_u16 mass[vec.size()];
   IRS_MBUS_DBG_MSG_DETAIL("get_bytes.............................");
   irs_u8* data_u8 = reinterpret_cast<irs_u8*>(data_u16.data());
   irs::memcpyex(buf + start, data_u8 + index, size);
-  /*if(((index%2) == 0)&&((size%2)==0))
-  {
-    IRS_MBUS_DBG_MSG_DETAIL(" OK");
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    //copy(vec.begin()+index/2,vec.begin()+index/2+size/2,mass);
-    copy(vec.begin()+index/2,vec.begin()+index/2+size/2,head.value);
-    #ifdef NOP//IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL
-    for(irs_u16 i = 0; i<size/2;i++)
-    {
-      head.value[i] = mass[i];
-      IRS_MBUS_DBG_MSG_DETAIL(hex_u16<< (int)mass[i]<<'=');
-      IRS_MBUS_DBG_MSG_DETAIL(hex_u16<< (int)head.value[i]<<' ');
-      IRS_MBUS_DBG_MSG_DETAIL("|");
-    }
-    #endif
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
-  }
-  if(((index%2) == 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    //copy(vec.begin()+index/2,vec.begin()+index/2+size/2,mass);
-    copy(vec.begin()+index/2,vec.begin()+index/2+size/2,head.value);
-    //for(irs_u16 i = 0; i<(size/2);i++)
-      //head.value[i] = mass[i];
-    buf[size-1+start] = IRS_LOBYTE(vec[index/2+size/2]);
-  }
-  if(((index%2) != 0)&&((size%2)==0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + 1 + start);
-    buf[start] = IRS_HIBYTE(vec[index/2]);
-    //copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2,mass);
-    copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2,head.value);
-    //for(irs_u16 i = 0; i<(size/2-1);i++)
-      //head.value[i] = mass[i];
-    buf[size-1+start] = IRS_LOBYTE(vec[index/2+size/2]);
-  }
-  if(((index%2) != 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+1+start);
-    buf[start] = IRS_HIBYTE(vec[index/2]);
-    //copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2+1,mass);
-    copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2+1,head.value);
-    //for(irs_u16 i = 0; i<(size/2);i++)
-      //head.value[i] = mass[i];
-  }
-  IRS_MBUS_DBG_MSG_DETAIL("OK");*/
 }
 
 void irs::irsmb_se::range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
 irs_u32 *num,irs_u32 *start)
 {
-  //IRS_MBUS_DBG_MSG_DETAIL("range..................");
   irs_u32 var = index + size;
   if((index>=M1)&&(index<M2)&&(var>M1)&&(var <= M2))
   {
@@ -568,7 +489,7 @@ void irs::irsmb_se::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   range(index,a_size,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
   range(index,a_size,hr_end_byte,ir_end_byte,&ir_size_byte,&ir_start_byte);
   irs_u32 i = 0;
-  if((di_size_byte != 0))//||(di_start_byte != 0)
+  if((di_size_byte != 0))
   {
     IRS_MBUS_DBG_MSG_DETAIL("DI size: " << di_size_byte <<
       " di_start_byte: " << di_start_byte);
@@ -596,9 +517,6 @@ void irs::irsmb_se::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
       hr_start_byte);
     get_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte,ap_buf,i);
     IRS_LIB_ASSERT((IRS_ARRAYSIZE(ap_buf)-i) >= hr_size_byte);
-    //for(irs_u16 i = 0; i < hr_size_byte;i++)
-      //OUTDBG(cout <<hex<<showbase<< (int)ap_buf[i] << ' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
   if((ir_size_byte != 0)||(ir_start_byte != 0))
   {
@@ -608,9 +526,6 @@ void irs::irsmb_se::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
       i + hr_size_byte);
     IRS_LIB_ASSERT((IRS_ARRAYSIZE(ap_buf)-(i + hr_size_byte)) >= ir_size_byte);
     IRS_MBUS_DBG_MSG_DETAIL("Regs");
-    //for(irs_u16 i = ir_start_byte/2; i< (ir_size_byte/2+ir_start_byte/2);i++)
-      //OUTDBG(cout <<hex<<showbase<< (int)m_input_regs_reg_r[i]<<' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
 }
 
@@ -626,28 +541,19 @@ void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
     &coils_start_byte);
   range(index,size,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
   range(index,size,hr_end_byte,ir_end_byte,&ir_size_byte,&ir_start_byte);
-  //irs_u16 i = 0;
-  if((di_size_byte != 0))//||(di_start_byte != 0)
+  if((di_size_byte != 0))
   {
     IRS_MBUS_DBG_MSG_DETAIL("di_size_byte: " << di_size_byte <<
       " di_start_byte: " << di_start_byte);
-    //pack_d8_t &m_pack_di = *(pack_d8_t *)(buf);
     bit_copy(buf,m_discr_inputs_bit.data(),0,di_start_byte*8,
       (irs_u16)(di_size_byte)*8);
-    //for(irs_u16 i = di_start_byte; i< (di_size_byte+di_start_byte);i++)
-      //OUTDBG(cout << (int)m_discr_inputs_bit[i] << ' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
   if((coils_size_byte != 0)||(coils_start_byte != 0))
   {
     IRS_MBUS_DBG_MSG_DETAIL("coils_size_byte: " << coils_size_byte << 
       " coils_start_byte: " << coils_start_byte);
-    //pack_d8_t &m_pack_coils = *(pack_d8_t *)(buf+di_size_byte);
     bit_copy(buf+di_size_byte,m_coils_bit.data(), 0, coils_start_byte*8,
       (irs_u16)(coils_size_byte));
-    //for(irs_u16 i = hr_start_byte; i< (hr_size_byte+hr_start_byte);i++)
-      //OUTDBG(cout << (int)m_coils_bit[i] << ' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
   if((hr_size_byte != 0)||(hr_start_byte != 0))
   {
@@ -656,12 +562,7 @@ void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
     write_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte,buf,
       di_size_byte + coils_size_byte);
     IRS_LIB_ASSERT(m_hold_regs_reg.size() >= hr_size_byte);
-    /*write_bytes(vector<irs_u16> &vec,irs_u32 index,irs_u32
-    size,const irs_u8 *buf,irs_u32 start)*/
-    //for(irs_u16 i = hr_start_byte/2; i< (hr_size_byte/2+hr_start_byte/2);i++)
-      //OUTDBG(cout <<hex<<showbase<< (int)m_hold_regs_reg[i] << ' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
-  }
+ }
   if((ir_size_byte != 0)||(ir_start_byte != 0))
   {
     IRS_MBUS_DBG_MSG_DETAIL("IR size: " << ir_size_byte <<
@@ -669,9 +570,6 @@ void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
     write_bytes(m_input_regs_reg,ir_start_byte,ir_size_byte,buf,
       di_size_byte + coils_size_byte + hr_size_byte);
     IRS_LIB_ASSERT(m_input_regs_reg.size() >= ir_size_byte);
-    //for(irs_u16 i = 0; i< (ir_reg/2);i++)
-      //OUTDBG(cout <<hex_u16<<(int)m_input_regs_reg[i]<<' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
   #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
     if((coils_size_byte == 0)&&(di_size_byte == 0)&&
@@ -689,7 +587,6 @@ irs_bool irs::irsmb_se::bit(irs_uarc index, irs_uarc bit_index)
   irs_u32 coils_size_byte = 0, coils_start_byte = 0;
   irs_u32 hr_size_byte = 0, hr_start_byte = 0;
   irs_u32 ir_size_byte = 0, ir_start_byte = 0;
-  // irs_uarc byte = 0;
   range(index,1,di_start_byte,di_end_byte,&di_size_byte,&di_start_byte);
   range(index,1,di_end_byte,coils_end_byte,&coils_size_byte,&coils_start_byte);
   range(index,1,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
@@ -697,12 +594,10 @@ irs_bool irs::irsmb_se::bit(irs_uarc index, irs_uarc bit_index)
   if (bit_index < 8) {
     if ((di_size_byte != 0) || (di_start_byte != 0))
     {
-      //byte = m_discr_inputs_bit[di_start_byte*8];
       return to_irs_bool(m_discr_inputs_bit[di_start_byte*8 + bit_index]);
     }
     if ((coils_size_byte != 0) || (coils_start_byte != 0))
     {
-      //byte = m_coils_bit[coils_start_byte*8];
       return to_irs_bool(m_coils_bit[coils_start_byte*8 + bit_index]);
     }
     if ((hr_size_byte != 0) || (hr_start_byte != 0))
@@ -815,18 +710,6 @@ void irs::irsmb_se::Error_response(irs_u8 error_code)
   m_ercode.value[0] = error_code;
 }
 
-/*void irs::irsmb_se::convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
-{
-  IRS_MBUS_DBG_MSG_DETAIL("convert..................");
-  irs_u8 var = 0;
-  for(irs_u8 i = a_start; i < irs_u8(a_length+a_start);i+=irs_u8(2))
-  {
-    var = ap_mess[i+1];
-    ap_mess[i+1] = ap_mess[i];
-    ap_mess[i] = var;
-  }
-}*/
-
 void irs::irsmb_se::status()
 {
   IRS_MBUS_DBG_MSG_DETAIL("status()..................");
@@ -869,15 +752,6 @@ void irs::irsmb_se::tick()
   {
     case read_mode:
     {
-      /*irs_u8 *data_in = 0;
-      irs_u8 *data_out = 0;
-      irs_u32 index_in = 0;
-      irs_u32 index_out = 0;
-      irs_u16 size_data = 0;
-      cout << "1" <<endl;
-      bit_copy(data_in, data_out, index_in, index_out, size_data);
-      cout << "2" <<endl;
-      exit(0);*/
       if(mxifa_read_end(mp_handle,irs_false))
       {
         //complex_modbus_header_t &header = *(complex_modbus_header_t *)mess;
@@ -894,10 +768,6 @@ void irs::irsmb_se::tick()
           IRS_MBUS_DBG_MSG_BASE("read_pack");
           mode = read_pack;
         }
-        //for(irs_u16 t=0; t<size_of_packet;t++);
-          //OUTDBG(cout << (int)mess[t]<< ' ');
-        //OUTDBG(cout << "Message: "<< (int)mess<< "\n");
-        //OUTDBG(cout << "Read begin... \n");
       }
     }
     break;
@@ -905,9 +775,6 @@ void irs::irsmb_se::tick()
     {
       if(mxifa_read_end(mp_handle,irs_false))
       {
-        //OUTDBG(cout << "Read pack... \n");
-        //for(irs_u16 t=0; t<sizeof(mess);t++)
-          //cout << "mess:" << (int)mess[t] << ' ';
         convert(mess,0,size_of_MBAP);
         complex_modbus_header_t& cmb_head = 
           reinterpret_cast<complex_modbus_header_t&>(*mess);
@@ -944,25 +811,16 @@ void irs::irsmb_se::tick()
           IRS_MBUS_DBG_MSG_BASE("read_end");
           mode = read_end;
         }
-        //for(irs_u16 t=0; t<size_of_packet;t++);
-         // OUTDBG(cout << (int)mess[t]<< ' ');
-        //OUTDBG(cout << "Message: "<< (int)mess<< "\n");
       }
     }
     break;
     case read_end:
     {
-      //IRS_MBUS_DBG_MSG_BASE("\n****** read_end ******");
       if(mxifa_read_end(mp_handle,irs_false))
       {
-        //OUTDBG(cout << "Read end... \n");
-        //copy(m_packet.begin(),m_packet.begin()+size_of_header,&cmb_head);
-        //memcpy(&cmb_head,mess,size_of_header);
-        //OUTDBG(cout <<"Recieved message: \n");
-        for(irs_u16 t = 0; t<12;t++)
+       for(irs_u16 t = 0; t<12;t++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(mess[t])) << ' ');
         IRS_MBUS_DBG_MSG_DETAIL("");
-        //convert(mess,0,size_of_MBAP);
         convert(mess,8,size_of_read_header);
         IRS_MBUS_DBG_MSG_DETAIL("\nRecieved Message after convert: ");
         for(irs_u16 t = 0; t<12;t++)
@@ -970,10 +828,6 @@ void irs::irsmb_se::tick()
         IRS_MBUS_DBG_MSG_DETAIL("");
         complex_modbus_header_t &cmb_head = *(complex_modbus_header_t *)mess;
         request_read_t &sec_head = *(request_read_t *)(mess+size_of_header);        
-        /*pack_tb_t &ssec_head = *(pack_tb_t *)(mess+size_of_header);
-        m_staddr = ssec_head.value[0];
-        pack_tb_t &trec_head = *(pack_tb_t *)(mess+size_of_header+1);
-        m_nregs = trec_head.value[0];*/   
         IRS_LIB_ASSERT((cmb_head.length + size_of_MBAP) < 260);
         for(irs_u16 t=0; t<(cmb_head.length+size_of_MBAP);t++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<<(int)mess[t]<< ' ');
@@ -1048,8 +902,6 @@ void irs::irsmb_se::tick()
                 m_packet_di.byte_count = irs_u8(sec_head.num_of_regs/8);
               else
                 m_packet_di.byte_count = irs_u8(sec_head.num_of_regs/8 + 1);
-              //OUTDBG(cout << "Recieved header - starting_address:  " <<
-                //m_staddr <<"\n");
               bit_copy(mess+size_of_header, m_discr_inputs_bit.data(),
                 m_staddr, 0, sizeof(di_size_byte));
               cmb_head.length = irs_u16(size_of_res + m_packet_di.byte_count);
@@ -1074,16 +926,9 @@ void irs::irsmb_se::tick()
               get_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte*2,
                 dop_head.value,0);
               IRS_LIB_ASSERT(dop_head.byte_count >= hr_size_byte);
-              //m_data_16.clear();
-              //copy(m_hold_regs_reg.begin()+hr_start_byte,
-                //m_hold_regs_reg.begin()+hr_start_byte+hr_size_byte,m_data16);
-              //packet_data_16_t &m_packet_hr =
-                //*(packet_data_16_t*)(mess+size_of_header);
-              //m_packet_hr.byte_count = hr_size_byte*2;
               IRS_MBUS_DBG_MSG_DETAIL("\nMemory contein: ");
               for(irs_u8 i = 0; i< irs_u8(hr_size_byte*2);i++)
               {
-                //m_packet_hr.value[i] = m_data16[i];
                 IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< (int)dop_head.value[i]<<'|');
               }
               IRS_MBUS_DBG_MSG_DETAIL("");
@@ -1119,7 +964,6 @@ void irs::irsmb_se::tick()
               {
                   IRS_MBUS_DBG_MSG_DETAIL(hex_u16<<(int)dop_head.value[i]<<' ');
               }
-              //OUTDBG(cout <<dec<<noshowbase<< "\n");
               cmb_head.length = irs_u16(size_of_res + dop_head.byte_count);
               m_size_byte_end = cmb_head.length;
               IRS_MBUS_DBG_MSG_DETAIL("before convert" );
@@ -1141,10 +985,6 @@ void irs::irsmb_se::tick()
           case Wcoil:
           {
             IRS_MBUS_DBG_MSG_BASE("\n Wcoil");
-            //packet_data_8_t &m_packet_coil =
-              // *(packet_data_8_t*)(mess+size_of_header+size_of_read_header);
-            //irs_u8_to_vector_bool(m_coils_bit,sec_head.starting_address,
-              //m_packet_coil);
             if(IRS_HIBYTE(sec_head.num_of_regs) == 0xFF)
               m_coils_bit[sec_head.starting_address] = irs_true;
             else
@@ -1185,8 +1025,6 @@ void irs::irsmb_se::tick()
           case WM_regs:
           {
             IRS_MBUS_DBG_MSG_BASE("\n WM_regs");
-            //request_wr_regs_t &dop_head =
-              //*(request_wr_regs_t*)(mess+size_of_header+size_of_read_header);
             for(irs_u16 t=0; t<size_of_packet;t++)
               IRS_MBUS_DBG_MSG_DETAIL((int)mess[t]<< ' ');
             request_wr_coils_t &dop_head =
@@ -1200,8 +1038,6 @@ void irs::irsmb_se::tick()
               IRS_MBUS_DBG_MSG_DETAIL((int)dop_head.value[i]<< ' ');
             range(m_staddr*2, sec_head.num_of_regs*2, 0, hr_reg,
               &hr_size_byte, &hr_start_byte);
-            //copy(dop_head.value,dop_head.value + sec_head.num_of_regs,
-              //m_hold_regs_reg.begin()+sec_head.starting_address);
             write_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte,
               dop_head.value,0);
             IRS_LIB_ASSERT(m_hold_regs_reg.size() >= hr_size_byte);
@@ -1222,8 +1058,6 @@ void irs::irsmb_se::tick()
             wr_sreg_t &dop_head =
               *(wr_sreg_t*)(mess+size_of_header);
             hr_size_byte = 2;
-            //convert(mess,size_of_header+size_of_read_header+1,
-              //sec_head.num_of_regs*2);
             range(m_staddr*2,2,0,hr_reg,&hr_size_byte,&hr_start_byte);
             write_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte,
               dop_head.value,0);
@@ -1294,15 +1128,12 @@ void irs::irsmb_se::tick()
         IRS_MBUS_DBG_MSG_BASE("write_mode");
         mode = wait_mode;
       }
-      //else
-        //mode = read_mode;
     }
     break;
     case write_mode:
     {
       if(mxifa_write_end(mp_handle,irs_false))
       {
-        //OUTDBG(cout << "Write begin... \n");
         #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
         puts("Header of message: ");
         for(irs_u16 t = 0; t<(size_of_MBAP + size_of_res);t++)
@@ -1338,7 +1169,6 @@ void irs::irsmb_se::tick()
         { 
           IRS_MBUS_DBG_MSG_BASE("write_mode");
           mode = write_mode;
-          //OUTDBG(cout << "wait_mode \n");
         }
     }
   }
@@ -1460,36 +1290,6 @@ void irs::irsmb_cl::write_bytes(raw_data_t<irs_u16>& data_u16,irs_u32 index,
     "************************");
   irs_u8* data_u8 = reinterpret_cast<irs_u8*>(data_u16.data());
   irs::memcpyex(data_u8 + index, buf + start, size);
-  /*if(((index%2) == 0)&&((size%2)==0))
-  {
-    IRS_MBUS_DBG_MSG_DETAIL(" OK");
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    //copy(head.value,head.value + size/2,vec.begin()+index/2);
-    memcpyex(vec.data()+index/2, head.value, size/2);
-  }
-  if(((index%2) == 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    //(head.value,head.value + size/2,vec.begin()+index/2);
-    memcpyex(vec.data()+index/2, head.value, size/2);
-    IRS_LOBYTE(vec[index/2+size/2]) = buf[start + size -1];
-  }
-  if(((index%2) != 0)&&((size%2)==0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + start + 1);
-    IRS_HIBYTE(vec[index/2]) = buf[start];
-    copy(head.value,head.value + size/2 - 1,
-      vec.begin()+index/2+1);
-    memcpy
-    IRS_LOBYTE(vec[index/2+size/2]) = buf[start + size-1];
-  }
-  if(((index%2) != 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + start + 1);
-    IRS_HIBYTE(vec[index/2]) = buf[start];
-    copy(head.value,head.value + size/2,
-      vec.begin()+index/2+1);
-  }*/
   #ifdef NOP//(IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   for(irs_u16 i = (index/2); i<(size/2+index/2);i++)
   {
@@ -1510,31 +1310,6 @@ void irs::irsmb_cl::get_bytes(raw_data_t<irs_u16> &data_u16,irs_u32 index,
   IRS_MBUS_DBG_MSG_DETAIL("get_bytes....................");
   irs_u8* data_u8 = reinterpret_cast<irs_u8*>(data_u16.data());
   irs::memcpyex(buf + start, data_u8 + index, size);
-  /*if(((index%2) == 0)&&((size%2)==0))
-  {
-    //OUTDBG(cout << " OK\n");
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    copy(vec.begin()+index/2,vec.begin()+index/2+size/2,head.value);
-  }
-  if(((index%2) == 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+start);
-    copy(vec.begin()+index/2,vec.begin()+index/2+size/2,head.value);
-    buf[size-1+start] = IRS_LOBYTE(vec[index/2+size/2]);
-  }
-  if(((index%2) != 0)&&((size%2)==0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf + 1 + start);
-    buf[start] = IRS_HIBYTE(vec[index/2]);
-    copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2,head.value);
-    buf[size-1+start] = IRS_LOBYTE(vec[index/2+size/2]);
-  }
-  if(((index%2) != 0)&&((size%2)!=0))
-  {
-    pack_tb_t &head = *(pack_tb_t *)(buf+1+start);
-    buf[start] = IRS_HIBYTE(vec[index/2]);
-    copy(vec.begin()+index/2+1,vec.begin()+index/2+size/2+1,head.value);
-  }*/
   #ifdef NOP//(IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   IRS_MBUS_DBG_MSG_DETAIL("\n**************************Get bytes"
     "************************");
@@ -1557,11 +1332,6 @@ void irs::irsmb_cl::get_bytes(raw_data_t<irs_u16> &data_u16,irs_u32 index,
       << vec[index/2]);
   }
   #endif
-  //for(irs_u16 i = start; i<(size+start);i++)
-  //{
-    //OUTDBG(cout <<hex<<"Buf["<<(int)i<<"] = 0x"<< (int)buf[i]<<' ');
-  //}
-  //OUTDBG(cout <<"\n");
 }
 
 void irs::irsmb_cl::range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
@@ -1604,11 +1374,8 @@ void irs::irsmb_cl::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   range(index,a_size,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
   range(index,a_size,hr_end_byte,ir_end_byte,&ir_size_byte,&ir_start_byte);
   irs_u16 i = 0;
-  //OUTDBG(cout << "Index: " << index<<'\n');
   if((di_size_byte != 0)||(di_start_byte != 0))
   {
-    //OUTDBG(cout << "DI size: "<<di_size_byte<<" di_start_byte: "<<
-      //di_start_byte<< "\n");
     packet_data_8_t &m_packet_di = *(packet_data_8_t *)in_str;
     m_packet_di.byte_count = irs_u8(di_size_byte);
     bit_copy(in_str, m_discr_inputs_bit_r.data(), 
@@ -1618,8 +1385,6 @@ void irs::irsmb_cl::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   }
   if((coils_size_byte != 0)||(coils_start_byte != 0))
   {
-    //OUTDBG(cout << "coils_size_byte: "<<coils_size_byte<<
-      //" coils_start_byte: "<< coils_start_byte<< "\n");
     packet_data_8_t &m_packet_coils = *(packet_data_8_t *)in_str;
     m_packet_coils.byte_count = irs_u8(coils_size_byte);
     bit_copy(in_str, m_coils_bit_r.data(), coils_start_byte*8, 0,
@@ -1627,32 +1392,18 @@ void irs::irsmb_cl::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
     for(;i<irs_u16(coils_size_byte + di_size_byte);i++)
     {
       ap_buf[i] = m_packet_coils.value[i-di_size_byte];
-      //OUTDBG(cout << (int)m_packet_coils.value[i-di_size_byte]<<' ');
     }
-    //OUTDBG(cout << "\n");
   }
   if((hr_size_byte != 0)||(hr_start_byte != 0))
   {
-    //OUTDBG(cout << "HR size: "<<hr_size_byte<<" hr_start_byte: "<<
-      //hr_start_byte<< "\n");
-    //irs_u8 *bufer;
     get_bytes(m_hold_regs_reg_r,hr_start_byte,hr_size_byte,ap_buf,i);\
     IRS_LIB_ASSERT((IRS_ARRAYSIZE(ap_buf)-i) >= hr_size_byte);
-    //for(irs_u16 i = 0; i < hr_size_byte;i++)
-      //OUTDBG(cout <<hex<<showbase<< (int)ap_buf[i] << ' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
   if((ir_size_byte != 0)||(ir_start_byte != 0))
   {
-    //OUTDBG(cout << "ir_size_byte: "<<ir_size_byte<<" ir_start_byte: "<< 
-      //ir_start_byte<< "\n");
     get_bytes(m_input_regs_reg_r,ir_start_byte,ir_size_byte,ap_buf,
       i+hr_size_byte);
     IRS_LIB_ASSERT((IRS_ARRAYSIZE(ap_buf)-(i+hr_size_byte)) >= ir_size_byte);
-    //OUTDBG(cout << "Regs\n");
-    //for(irs_u16 i = ir_start_byte/2; i< (ir_size_byte/2+ir_start_byte/2);i++)
-        //OUTDBG(cout <<hex<<showbase<< (int)m_input_regs_reg_r[i]<<' ');
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
   }
 }
 void irs::irsmb_cl::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
@@ -1663,56 +1414,28 @@ void irs::irsmb_cl::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
   range(index,size,di_end_byte,coils_end_byte,&coils_size_byte,
     &coils_start_byte);
   range(index,size,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
-  //irs_u16 i = 0;
   if((coils_size_byte != 0)||(coils_start_byte != 0))
   {
-    //OUTDBG(cout << "coils_size_byte: "<<coils_size_byte<<
-      //" coils_start_byte: "<< coils_start_byte<< "\n");
     packet_data_8_t &m_pack_coils = *(packet_data_8_t *)(buf-1);
     m_pack_coils.byte_count = irs_u8(coils_size_byte);
-    //if(m_nothing)
-    //{
-      bit_copy(buf-1,m_coils_bit_w.data(),0,coils_start_byte*8,
-        (irs_u16)size);
-      for(irs_u16 i = irs_u16(coils_start_byte*8);
-        i < irs_u16(coils_start_byte*8+coils_size_byte*8);i++)
-      {
-        m_rforwr[i] = 1;
-        //m_rforwr_wait[i] = 1;
-
-        //OUTDBG(cout <<dec<<noshowbase<<"Vector["<<(int)i<<"] = "<<
-          //m_rforwr[i]<<'\n');
-      }
-    //}
-    //for(irs_u16 i = hr_start_byte; i< (hr_size_byte+hr_start_byte);i++)
-    //{
-      //OUTDBG(cout << (int)m_coils_bit_w[i] << ' ');
-    //}
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
+    bit_copy(buf-1,m_coils_bit_w.data(),0,coils_start_byte*8,
+      (irs_u16)size);
+    for(irs_u16 i = irs_u16(coils_start_byte*8);
+      i < irs_u16(coils_start_byte*8+coils_size_byte*8);i++)
+    {
+      m_rforwr[i] = 1;
+    }
   }
   if((hr_size_byte != 0)||(hr_start_byte != 0))
   {
-    //OUTDBG(cout << "HR size: "<<hr_size_byte<<" hr_start_byte: "<<
-      //hr_start_byte<< "\n");
-    //if(m_nothing)
-    //{
-      write_bytes(m_hold_regs_reg_w,hr_start_byte,hr_size_byte,buf,
-        coils_size_byte);
-      IRS_LIB_ASSERT(m_hold_regs_reg_w.size() >= hr_size_byte);
-      for(irs_u32 i = (hr_start_byte+coils_bit); i < (hr_size_byte + coils_bit 
-        + hr_start_byte); i++)
-      {
-        m_rforwr[i] = 1;
-        //m_rforwr_wait[i] = 1;
-        //OUTDBG(cout <<dec<<noshowbase<<"Vector["<<(int)i<<"] = "<<
-          //m_rforwr[i]<<'\n');
-      }
-    //}
-    //for(irs_u16 i = hr_start_byte/2; i< (hr_size_byte/2+hr_start_byte/2);i++)
-    //{
-      //OUTDBG(cout <<hex<<showbase<< (int)m_hold_regs_reg_w[i] << ' ');
-    //}
-    //OUTDBG(cout <<dec<<noshowbase<< "\n");
+    write_bytes(m_hold_regs_reg_w,hr_start_byte,hr_size_byte,buf,
+      coils_size_byte);
+    IRS_LIB_ASSERT(m_hold_regs_reg_w.size() >= hr_size_byte);
+    for(irs_u32 i = (hr_start_byte+coils_bit); i < (hr_size_byte + coils_bit 
+      + hr_start_byte); i++)
+    {
+      m_rforwr[i] = 1;
+    }
   }
 }
 
@@ -1728,7 +1451,6 @@ irs_bool irs::irsmb_cl::bit(irs_uarc index, irs_uarc a_bit_index)
   range(index,1,coils_end_byte,hr_end_byte,&hr_size_byte,&hr_start_byte);
   range(index,1,hr_end_byte,ir_end_byte,&ir_size_byte,&ir_start_byte);
   irs_uarc byte = 0;
-  //irs_u16 i = 0;
   if((di_size_byte != 0)||(di_start_byte != 0))
     return m_discr_inputs_bit_r[di_start_byte*8+a_bit_index];
   if((coils_size_byte != 0)||(coils_start_byte != 0))
@@ -1770,13 +1492,11 @@ void irs::irsmb_cl::set_bit(irs_uarc index, irs_uarc a_bit_index)
   range(index,1,di_end_byte,coils_end_byte,&coils_size_byte,&coils_start_byte);
   range(index,1,hr_end_byte,ir_end_byte,&hr_size_byte,&hr_start_byte);
   irs_uarc byte = 0;
-  //irs_u16 i = 0;
   if (a_bit_index < 8) {
     if((coils_size_byte != 0) || (coils_start_byte != 0))
     {
       m_coils_bit_w[coils_start_byte*8+a_bit_index] = 1;
       m_rforwr[coils_start_byte*8+a_bit_index] = 1;
-      //m_rforwr_wait[coils_start_byte*8+a_bit_index] = 1;
     }
     if((hr_size_byte != 0) || (hr_start_byte != 0))
     {
@@ -1784,7 +1504,6 @@ void irs::irsmb_cl::set_bit(irs_uarc index, irs_uarc a_bit_index)
       byte |= (1<<a_bit_index);
       m_hold_regs_reg_w[hr_start_byte/2] = irs_u16(byte);
       m_rforwr[hr_start_byte + coils_bit] = 1;
-      //m_rforwr_wait[hr_start_byte + coils_bit] = 1;
     }
   }
   #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
@@ -1803,13 +1522,11 @@ void irs::irsmb_cl::clear_bit(irs_uarc index, irs_uarc a_bit_index)
   range(index,1,di_end_byte,coils_end_byte,&coils_size_byte,&coils_start_byte);
   range(index,1,hr_end_byte,ir_end_byte,&hr_size_byte,&hr_start_byte);
   irs_uarc byte = 0;
-  //irs_u16 i = 0;
   if (a_bit_index < 8) {
     if((coils_size_byte != 0)||(coils_start_byte != 0))
     {
       m_coils_bit_w[coils_start_byte*8+a_bit_index] = 0;
       m_rforwr[coils_start_byte*8+a_bit_index] = 1;
-      //m_rforwr_wait[coils_start_byte*8+a_bit_index] = 1;
     }
     if((hr_size_byte != 0)||(hr_start_byte != 0))
     {
@@ -1817,7 +1534,6 @@ void irs::irsmb_cl::clear_bit(irs_uarc index, irs_uarc a_bit_index)
       byte&=~(1<<a_bit_index);
       m_hold_regs_reg_w[hr_start_byte/2] = irs_u16(byte);
       m_rforwr[hr_start_byte + coils_bit] = 1;
-      //m_rforwr_wait[hr_start_byte + coils_bit] = 1;
     }
   }
   #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
@@ -1864,26 +1580,10 @@ void irs::irsmb_cl::make_packet(irs_uarc a_index, irs_u16 a_size)
   m_size_byte_end = cmb_head.length;
   for(irs_u16 t = 0; t<(cmb_head.length+size_of_MBAP);t++)
     IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(m_spacket[t])) << ' ');
-  //OUTDBG(cout << "\n");
   convert(m_spacket,0,size_of_MBAP);
   convert(m_spacket,size_of_header,size_of_read_header);
-  //for(irs_u16 t = 0; t<13;t++)
-    //OUTDBG(cout << hex_u8<< ((int)(m_spacket[t])) << ' ');
-  //OUTDBG(cout << "\n");
   IRS_MBUS_DBG_MSG_DETAIL("\nPacket ready");
 }
-
-/*void irs::irsmb_cl::convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
-{
-  IRS_MBUS_DBG_MSG_DETAIL("convert....................");
-  irs_u8 var = 0;
-  for(irs_u8 i = a_start; i < (a_length+a_start);i+=irs_u8(2))
-  {
-    var = ap_mess[i+1];
-    ap_mess[i+1] = ap_mess[i];
-    ap_mess[i] = var;
-  }
-}*/
 
 void irs::irsmb_cl::set_delay_time(double time)
 {
@@ -2111,18 +1811,13 @@ void irs::irsmb_cl::tick()
       break;
       case wend_r:
       {
-        //OUTDBG(cout<<"End of operation read 1\n");
         if(mxifa_read_end(mp_handle,irs_false))
         {
           convert(m_spacket,8,size_of_read_header);
           for(irs_u16 t = 0; t<(size_of_MBAP*2);t++)
             IRS_MBUS_DBG_MSG_DETAIL(hex_u8<< ((int)(m_rpacket[t])) << ' ');
-          //mp_buf = m_rpacket;
-          //OUTDBG(cout << "Packet: " << (int)mp_buf << "\n");
-          //memcpy((void *)&mb_rpacket,(void *)&m_rpacket,12);
           IRS_MBUS_DBG_MSG_BASE("pr_mode");
           m_mode = pr_mode;
-          //OUTDBG(cout << "End of operation read 2 .. \n");
         }
         if(test_to_cnt(rtimeout))
         {
@@ -2151,52 +1846,33 @@ void irs::irsmb_cl::tick()
       break;
       case pr_mode:
       {
-        //OUTDBG(cout << "pr_mode \n");
-        //copy(m_packet.begin(),m_packet.begin()+size_of_header,&cmb_head);
-        //memcpy(&cmb_head,m_rpacket,size_of_header);
         complex_modbus_header_t &cmb_head =
           *(complex_modbus_header_t *)m_rpacket;
-        //request_read_t &m_head_s = *(request_read_t *)m_spacket;
-        //OUTDBG(cout << "Recieved header - transaction_id:    " <<
-          //cmb_head.transaction_id << "\n");
-        //OUTDBG(cout << "Recieved header - proto_id:          " <<
-          //cmb_head.proto_id << "\n");
         IRS_MBUS_DBG_MSG_DETAIL("Send packet - length:            " <<
           hex_u16 << cmb_head.length);
         IRS_MBUS_DBG_MSG_DETAIL("Send packet - unit_identifier:   " <<
           hex_u16 << (int)cmb_head.unit_identifier);
         IRS_MBUS_DBG_MSG_DETAIL("Send packet - function_code:     " <<
           hex_u16 << (int)cmb_head.function_code);
-        //OUTDBG(cout << "Recieved header - starting_address:  " <<
-          //cmb_head.starting_address << "\n");
 
         for(irs_u16 i = 0;i<(cmb_head.length + size_of_MBAP);i++)
           IRS_MBUS_DBG_MSG_DETAIL(hex_u8<<(int)m_rpacket[i]<<' ');
         IRS_MBUS_DBG_MSG_DETAIL("Length of whole send packet: " <<
           (cmb_head.length + size_of_MBAP));
-        //OUTDBG(cout << "M_ibank:"<<m_ibank<<'\n');
-        //OUTDBG(cout << "Read table status : "<<
-          //(float)((float)m_ibank/(float)(coils_bit/8+di_bit/8+
-          //hr_reg/2+ir_reg/2))*100 << "%"<<'\n');
         switch(cmb_head.function_code)
         {
           case Rcoil:
           {
             packet_data_8_t &m_pack_coils =
               *(packet_data_8_t *)(m_rpacket + size_of_header);
-            //irs_u8_to_vector_bool(m_coils_bit_r,m_stpos,m_pack_coils);
             bit_copy(m_rpacket+size_of_header,m_coils_bit_r.data(),
               0, m_stpos,(irs_u16)coils_size_byte);
-            //for(irs_u16 i = m_stpos;i<(m_stpos+m_pack_coils.byte_count*8);i++)
-              //OUTDBG(cout<<m_coils_bit_r[i]);
-            //OUTDBG(cout<<'\n');
           }
           break;
           case R_DI:
           {
             packet_data_8_t &m_pack_di =
               *(packet_data_8_t *)(m_rpacket + size_of_header);
-            //irs_u8_to_vector_bool(m_discr_inputs_bit_r,m_stpos,m_pack_di);
             bit_copy(m_rpacket + size_of_header, 
               m_discr_inputs_bit_r.data(), 0, m_stpos,(irs_u16)di_size_byte);
           }
@@ -2211,18 +1887,10 @@ void irs::irsmb_cl::tick()
             write_bytes(m_hold_regs_reg_r,hr_start_byte,
               hr_size_byte,m_packet_hr.value,0);
             IRS_LIB_ASSERT(m_hold_regs_reg_r.size() >= hr_size_byte);
-            //packet_data_16_t &m_packet_hr =
-              //*(packet_data_16_t *)(m_rpacket+size_of_header);
-            //OUTDBG(cout<<"\n");
-            //for(irs_u16 i = 0;i<(m_packet_hr.byte_count);i++)
-              //OUTDBG(cout<<hex_u8<<(int)m_packet_hr.value[i]<<' ');
             IRS_MBUS_DBG_MSG_DETAIL("");
             IRS_MBUS_DBG_MSG_DETAIL("Start position: "<<m_stpos);
             IRS_MBUS_DBG_MSG_DETAIL("Count of regs: "
               <<(int)m_packet_hr.byte_count);
-            //copy(m_packet_hr.value,m_packet_hr.value +
-              //m_packet_hr.byte_count/2,
-              //m_hold_regs_reg_r.begin()+m_stpos);
             for(irs_u16 i = m_stpos;i<(m_stpos + m_packet_hr.byte_count/2);i++)
               IRS_MBUS_DBG_MSG_DETAIL(hex_u16<<(int)m_hold_regs_reg_r[i]<<' ');
           }
@@ -2243,16 +1911,11 @@ void irs::irsmb_cl::tick()
           {
             request_read_t &sec_head =
               *(request_read_t*)(m_spacket+size_of_header);
-            //OUTDBG(cout << "Recieved header - num_of_regs:       " <<
-              //sec_head.num_of_regs << "\n");
             for(irs_u16 reg_index = 0; reg_index < sec_head.num_of_regs;
               reg_index++)
             {
-              //m_rforwr_wait[m_stpos + reg_index] = 0;
               m_rforwr[m_stpos + reg_index] = 0;
               m_coils_bit_w[m_stpos + reg_index] = 0;
-              //OUTDBG(cout <<"m_coils_bit_w["<<(m_stpos + l)<<"] = "<<
-                //m_coils_bit_w[m_stpos +l]<< '\n');
             }
           }
           break;
@@ -2260,21 +1923,12 @@ void irs::irsmb_cl::tick()
           {
             request_read_t &sec_head = 
               *(request_read_t*)(m_spacket+size_of_header);
-            //OUTDBG(cout << "Recieved header - num_of_regs:       " <<
-              //sec_head.num_of_regs << "\n");
-            //OUTDBG(cout<<"Starting address: "<<m_stpos<<"\n");
             for(irs_u16 reg_index = 0; reg_index < sec_head.num_of_regs;
               reg_index++) //*2
             {
-              //m_rforwr_wait[coils_bit + m_stpos + reg_index] = 0;
               m_rforwr[coils_bit + m_stpos + reg_index] = 0;
               m_hold_regs_reg_w[m_stpos + reg_index] = 0;
-              //OUTDBG(cout <<hex<<showbase<<"m_hold_regs_reg_w["<<dec<<
-                //noshowbase<<
-                //(m_stpos + l)<<"] = "
-                //<< m_hold_regs_reg_w[m_stpos + l]<< '\n');
             }
-            //OUTDBG(cout <<dec<<noshowbase<< "\n");
           }
           break;
           case Status:
@@ -2284,9 +1938,6 @@ void irs::irsmb_cl::tick()
         }
           for(irs_u16 t = 0; t<size_of_packet;t++)
             m_spacket[t] = 0;
-        //for(irs_u16 i = 0;i<12;i++)
-          //OUTDBG(cout<<hex<<showbase<<(int)m_hold_regs_reg_r[i]<<' ');
-        //OUTDBG(cout <<dec<<noshowbase <<"\n");
         if(m_read_table)
         {
           IRS_MBUS_DBG_MSG_BASE("get_table");
@@ -2337,10 +1988,6 @@ void irs::irsmb_cl::tick()
               m_nregs = coils_bit - m_start_block;
               search_index += m_nregs;
             }
-            //OUTDBG(cout<<"Find block\n");
-            //OUTDBG(cout<< "Search index"<<dec<<search_index<<"\n");
-            //OUTDBG(cout << "Mstart block "<<m_start_block<<"\n");
-            //OUTDBG(cout << "MNregs "<<m_nregs<<"\n");
             break;
           }
           search_index++;
@@ -2366,28 +2013,13 @@ void irs::irsmb_cl::tick()
       break;
       case send_data:
       {
-        //OUTDBG(cout << "send_data \n ");
         m_read_table = irs_true;
-        //range(m_start_block,m_nregs,coils_bit,hr_reg+coils_bit,
-           //&hr_size_byte,&hr_start_byte);
-        //irs_u32 coils_size_byte = 0, coils_start_byte = 0;
-        //irs_u32 hr_size_byte = 0, hr_start_byte = 0;
-        //if((coils_size_byte !=0)&&(hr_size_byte!=0))
-          //send_part = irs_true;
         if((m_start_block>=(irs_u32)coils_bit) &&
           (m_start_block<(irs_u32)(coils_bit + hr_reg)))
         {
-          //range(m_start_block,m_nregs,bit_msize,reg_msize+bit_msize,
-            //&hr_size_byte,&hr_start_byte);
           m_command = WM_regs;//function_code = m_command
           hr_start_byte = m_start_block - coils_bit;
           hr_size_byte = m_nregs;
-          //OUTDBG(cout << "Size " << hr_size_byte <<"\n");
-          //OUTDBG(cout << "Start "<< hr_start_byte<<"\n");
-          //make_packet(hr_start_byte,s_regbuf);
-          //request_wr_regs_t &m_packet_hr =
-            //*(request_wr_regs_t*)(m_spacket + size_of_header + 
-              //size_of_read_header);
           auto_arr<irs_u16> mass(new irs_u16[hr_reg/2]);
           if(hr_size_byte > ((s_regbuf-1)*2))
           {
@@ -2400,16 +2032,10 @@ void irs::irsmb_cl::tick()
             irs_u16 nul = 0;
             get_bytes(m_hold_regs_reg_w,hr_start_byte,(s_regbuf-1)*2,rmass,nul);
             IRS_LIB_ASSERT(IRS_ARRAYSIZE(rmass) >= (s_regbuf-1)*2);
-            //irs_u16 &m_pack_regs = *(irs_u16 *)rmass;
-            //copy(m_hold_regs_reg_w.begin() + hr_start_byte,
-              //m_hold_regs_reg_w.begin() + hr_start_byte + hr_size_byte,mass);
             for(irs_u8 i = 0;i<(s_regbuf-1);i++)
             {
               m_packet_hr.value[i] = rmass[i];
-              //OUTDBG(cout<<hex<<showbase<<m_packet_hr.value[i]<<"="<<
-                //m_pack_regs.value[i]<<' ');
             }
-            //OUTDBG(cout <<dec<<noshowbase<< '\n');
             make_packet(hr_start_byte/2,(s_regbuf-1));
             for(irs_u32 i = m_start_block;
               i < (m_start_block +(s_regbuf-1)*2);i++)
@@ -2420,9 +2046,6 @@ void irs::irsmb_cl::tick()
           }
           else
           {
-            //copy(m_hold_regs_reg_w.begin() + hr_start_byte/2,
-              //m_hold_regs_reg_w.begin() + hr_start_byte/2 + 
-                //hr_size_byte/2,mass);
             for(irs_u16 t = 0; t<size_of_packet;t++)
               m_spacket[t] = 0;
             if(hr_size_byte%2 == 0)
@@ -2437,8 +2060,6 @@ void irs::irsmb_cl::tick()
                   m_packet_hr.value,nul);
                 IRS_LIB_ASSERT(IRS_ARRAYSIZE(m_packet_hr.value) >= 1);
                 m_stpos = irs_u16(hr_start_byte/2);
-                //irs_u8 rmass[size_of_data]);
-                //pack_tb_t &m_pack_regs = *(pack_tb_t *)rmass;
                 m_packet_hr.byte_count = (irs_u8)hr_size_byte;
                 get_bytes(m_hold_regs_reg_w,hr_start_byte,
                   hr_size_byte,m_packet_hr.value,1);
@@ -2448,26 +2069,13 @@ void irs::irsmb_cl::tick()
               else
               {
                 m_stpos = irs_u16(hr_start_byte/2);
-                //irs_u8 rmass[size_of_data]);
                 irs_u16 nul = 0;
-                //pack_tb_t &m_pack_regs = *(pack_tb_t *)rmass;
                 m_packet_hr.byte_count = irs_u8(hr_size_byte);
                 get_bytes(m_hold_regs_reg_w,hr_start_byte,
                   hr_size_byte,m_packet_hr.value,nul);
                 IRS_LIB_ASSERT(IRS_ARRAYSIZE(m_packet_hr.value) >=hr_size_byte);
                 make_packet(hr_start_byte/2,irs_u16(hr_size_byte/2));
               }
-              //for(irs_u8 i = 0;i<(hr_size_byte/2);i++)
-              //{
-                //m_packet_hr.value[i] = m_pack_regs.value[i]);
-                //OUTDBG(cout<<hex<<showbase<<(int)m_packet_hr.value[i]);
-                  //<<"="<<  (int)m_pack_regs.value[i]<<' ');
-                //OUTDBG(cout<<hex<<showbase<<m_packet_hr.value[i]<<
-                  //"=" << mass[i] << ' ');
-              //}
-              //for(irs_u16 t = 0; t<size_of_packet;t++)
-                //OUTDBG(cout << ((int)(m_spacket[t])) << " ";
-              //OUTDBG(cout << "\n");
             }
             else
             {
@@ -2491,27 +2099,13 @@ void irs::irsmb_cl::tick()
               {
                 m_stpos = irs_u16(hr_start_byte/2);
                 m_packet_hr.byte_count = irs_u8(hr_size_byte);
-                //irs_u8 rmass[size_of_data]);
                 irs_u16 nul = 0;
                 get_bytes(m_hold_regs_reg_w,hr_start_byte,
                   hr_size_byte,m_packet_hr.value,nul);
                 IRS_LIB_ASSERT(IRS_ARRAYSIZE(m_packet_hr.value) >=hr_size_byte);
                 make_packet(hr_start_byte/2,irs_u16(hr_size_byte/2+1));
-                //pack_tb_t &m_pack_regs = *(pack_tb_t *)rmass;
               }
-              //for(irs_u8 i = 0;i<((hr_size_byte/2)+1);i++)
-              //{
-                //m_packet_hr.value[i] = m_pack_regs.value[i]);
-                //m_packet_hr.value[i] = mass[i]);
-                //OUTDBG(cout<<hex<<showbase<<(int)m_packet_hr.value[i]<<"="<<
-                  //(int)m_pack_regs.value[i]<<' ');
-              //}
             }
-            //OUTDBG(cout <<dec<<noshowbase<< '\n');
-            //for(irs_u32 i = m_start_block;i<(m_start_block + hr_size_byte);
-              //i++)
-              //m_rforwr[i] = 0;
-            //m_part_send = irs_false;
           }
         }
         else if (m_start_block<(irs_u32)coils_bit)
@@ -2519,11 +2113,6 @@ void irs::irsmb_cl::tick()
           irs_u32 nul = 0;
           range(m_start_block,m_nregs,nul,coils_bit,
             &coils_size_byte,&coils_start_byte);
-          //coils_start_byte = m_start_block;
-          //coils_size_byte = m_nregs;
-          //OUTDBG(cout << "Coils in bits "<<dec<<(int)coils_bit<<"\n");
-          //OUTDBG(cout << "Size " << dec<<(int)coils_size_byte <<"\n");
-          //OUTDBG(cout << "Start "<< dec<<(int)coils_start_byte<<"\n");
           m_command = WMcoils;
           packet_data_8_t &m_packet_coils =
             *(packet_data_8_t*)(m_spacket+size_of_header+size_of_read_header);
@@ -2560,12 +2149,8 @@ void irs::irsmb_cl::tick()
       break;
       case wait_mode:
       {
-        //if(test_to_cnt(wait))
-        //{ 
-          IRS_MBUS_DBG_MSG_BASE("w_mode");
-          m_mode = w_mode;
-          //OUTDBG(cout << "wait_mode \n");
-        //}  
+        IRS_MBUS_DBG_MSG_BASE("w_mode");
+        m_mode = w_mode;
       }
       break;
     }
