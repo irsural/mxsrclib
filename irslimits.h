@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 23.09.2009
+// Дата: 12.11.2009
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -32,6 +32,10 @@ inline const char* bool_to_cstr(bool a_value)
 }
 
 // Преобразование из типа в строку
+inline const char* type_to_string_helper(bool)
+{
+  return "bool";
+}
 inline const char* type_to_string_helper(char)
 {
   return "char";
@@ -109,6 +113,7 @@ enum signed_t {
   unsigned_idx
 };
 enum std_type_idx_t {
+  bool_idx,
   char_idx,
   wchar_idx,
   signed_char_idx,
@@ -129,6 +134,10 @@ enum std_type_idx_t {
 };
 
 // Преобразование тип в индекс
+inline std_type_idx_t type_to_index_helper(bool)
+{
+  return bool_idx;
+}
 inline std_type_idx_t type_to_index_helper(char)
 {
   return char_idx;

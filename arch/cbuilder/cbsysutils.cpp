@@ -197,3 +197,133 @@ void irs::cbuilder::file_xls_table_write(const string_t& a_book_name,
   }
 }
 
+void irs::cbuilder::string_grid_to_table_string(
+  const TStringGrid& a_string_grid,
+  irs::table_string_t* ap_table_string)
+{
+  IRS_LIB_ASSERT(ap_table_string != IRS_NULL);
+  rect_t string_grid_rect(0, 0, a_string_grid.ColCount, a_string_grid.RowCount);
+  point_t table_string_point(0, 0);
+  string_grid_to_table_string(string_grid_rect, a_string_grid,
+    table_string_point, ap_table_string);
+}
+
+void irs::cbuilder::string_grid_to_table_string(
+  const rect_t& a_string_grid_rect,
+  const TStringGrid& a_string_grid,
+  const point_t& a_table_string_point,
+  irs::table_string_t* ap_table_string)
+{
+  IRS_LIB_ASSERT(ap_table_string != IRS_NULL);
+  IRS_LIB_ASSERT((a_string_grid_rect.left + a_string_grid_rect.width) <=
+    static_cast<sizens_t>(a_string_grid.ColCount));
+  IRS_LIB_ASSERT((a_string_grid_rect.top + a_string_grid_rect.height) <=
+    static_cast<sizens_t>(a_string_grid.RowCount));
+  const sizens_t string_grid_last_col = min(a_string_grid.ColCount - 1,
+    a_string_grid_rect.left + a_string_grid_rect.width);
+  const sizens_t string_grid_last_row = min(a_string_grid.RowCount - 1,
+    a_string_grid_rect.top + a_string_grid_rect.height);
+  const sizens_t table_string_last_col = a_table_string_point.left +
+    a_string_grid_rect.width;
+  const sizens_t table_string_last_row = a_table_string_point.top +
+    a_string_grid_rect.height;
+  if (table_string_last_col >= ap_table_string->get_col_count())
+  {
+    ap_table_string->set_col_count(table_string_last_col + 1);
+  } else {
+    // Таблица-приемник имеет допустимое количество столбцов
+  }
+  if (table_string_last_row >= ap_table_string->get_row_count())
+  {
+    ap_table_string->set_row_count(table_string_last_row + 1);
+  } else {
+    // Таблица-приемник имеет допустимое количество строк
+  }
+  sizens_t table_string_col_i = a_table_string_point.left;
+  string cell;
+  for (sizens_t string_grid_col_i = a_string_grid_rect.left;
+    string_grid_col_i <= string_grid_last_col;
+    string_grid_col_i++)
+  {
+    sizens_t table_string_row_i = a_table_string_point.top;
+    for (sizens_t string_grid_row_i = a_string_grid_rect.left;
+      string_grid_row_i <= string_grid_last_row;
+      string_grid_row_i++)
+    {
+      cell = const_cast<TStringGrid*>(&a_string_grid)->Cells
+        [string_grid_col_i][string_grid_row_i].c_str();
+      ap_table_string->write_cell(table_string_col_i, table_string_row_i, cell);
+      table_string_row_i++;
+    }
+    table_string_col_i++;
+  }                        
+}
+
+void irs::cbuilder::table_string_to_string_grid(
+  const table_string_t& a_table_string,
+  TStringGrid* ap_string_grid)
+{
+  IRS_LIB_ASSERT(ap_string_grid != IRS_NULL);
+  rect_t table_string_rect(0, 0, a_table_string.get_col_count(),
+    a_table_string.get_row_count());
+  point_t a_string_grid_point(0, 0);
+  table_string_to_string_grid(table_string_rect, a_table_string,
+    a_string_grid_point, ap_string_grid);
+}
+
+void irs::cbuilder::table_string_to_string_grid(
+  const rect_t& a_table_string_rect,
+  const table_string_t& a_table_string,
+  const point_t& a_string_grid_point,
+  TStringGrid* ap_string_grid)
+{ 
+  IRS_LIB_ASSERT(ap_string_grid != IRS_NULL);
+  IRS_LIB_ASSERT((a_table_string_rect.left + a_table_string_rect.width) <=
+    static_cast<sizens_t>(a_table_string.get_col_count()));
+  IRS_LIB_ASSERT((a_table_string_rect.top + a_table_string_rect.height) <=
+    static_cast<sizens_t>(a_table_string.get_row_count()));
+  const sizens_t table_string_last_col = min(
+    a_table_string.get_col_count() - 1,
+    a_table_string_rect.left + a_table_string_rect.width);
+  const sizens_t table_string_last_row = min(
+    a_table_string.get_row_count() - 1,
+    a_table_string_rect.top + a_table_string_rect.height);
+  const sizens_t string_grid_last_col = a_string_grid_point.left +
+    a_table_string_rect.width - 1;
+  const sizens_t string_grid_last_row = a_string_grid_point.top +
+    a_table_string_rect.height - 1;
+  if (string_grid_last_col >= static_cast<sizens_t>(ap_string_grid->ColCount))
+  {
+    ap_string_grid->ColCount = string_grid_last_col + 1;
+  } else {
+    // Таблица-приемник имеет допустимое количество столбцов
+  }
+  if (string_grid_last_row >= static_cast<sizens_t>(ap_string_grid->RowCount))
+  {
+    ap_string_grid->RowCount = string_grid_last_row + 1;
+  } else {
+    // Таблица-приемник имеет допустимое количество строк
+  }
+  sizens_t string_grid_col_i = a_string_grid_point.left;
+  AnsiString cell;
+  for (sizens_t table_string_col_i = a_table_string_rect.left;
+    table_string_col_i <= table_string_last_col;
+    table_string_col_i++)
+  {
+    sizens_t string_grid_row_i = a_string_grid_point.top;
+    for (sizens_t table_string_row_i = a_table_string_rect.left;
+      table_string_row_i <= table_string_last_row;
+      table_string_row_i++)
+    {
+      cell = a_table_string.read_cell(
+        table_string_col_i, table_string_row_i).c_str();
+      ap_string_grid->Cells[string_grid_col_i][string_grid_row_i] = cell;
+      string_grid_row_i++;
+    }
+    string_grid_col_i++;
+  }
+}
+
+
+
+

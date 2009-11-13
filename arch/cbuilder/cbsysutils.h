@@ -15,10 +15,12 @@
 // ***************************************************************************
 #include <OleCtnrs.hpp>
 #include <SysUtils.hpp>
+#include <Grids.hpp>
 
 #include <irssysutils.h>
 #include <irstable.h>
 #include <irserror.h>
+#include <irsdefs.h>
 #include <irscpp.h>
 
 namespace irs {
@@ -61,7 +63,7 @@ struct file_version_t
 // Запрос версии файла
 bool get_file_version(
   const irs::string& a_file_name, file_version_t& a_version);
-// Перевод структуры о версии файла в строку   
+// Перевод структуры о версии файла в строку
 irs::string file_version_to_str(const file_version_t& a_file_version);
 
 void file_xls_table_read(const string_t& a_book_name,
@@ -73,9 +75,37 @@ void file_xls_table_read(const string_t& a_book_name,
 
 void file_xls_table_write(const string_t& a_book_name,
   const string_t& a_sheet,
-  const string_t& a_cell_first,    
+  const string_t& a_cell_first,
   const table_string_t& a_table_string,
   bool* ap_read_success);
+
+// Функции, обеспечивающие безопасное копирование из StringGrid в table_string_t
+// и обратно. При недостаточном размере таблицы-приемника, ее размеры будут
+// автоматически увеличены
+void string_grid_to_table_string(
+  const TStringGrid& a_string_grid,
+  irs::table_string_t* ap_table_string
+);
+
+void string_grid_to_table_string(
+  const rect_t& a_string_grid_rect,
+  const TStringGrid& a_string_grid,
+  const point_t& a_table_string_point,
+  irs::table_string_t* ap_table_string
+);
+
+void table_string_to_string_grid(
+  const table_string_t& a_table_string,
+  TStringGrid* ap_string_grid
+);
+
+void table_string_to_string_grid(
+  const rect_t& a_table_string_rect,
+  const table_string_t& a_table_string,
+  const point_t& a_string_grid_point,
+  TStringGrid* ap_string_grid
+);
+
 
 
 // Вывод в компонент

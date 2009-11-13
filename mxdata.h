@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 26.09.2009
+// Дата: 12.11.2009
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
@@ -579,7 +579,7 @@ T* handle_t<T>::operator->() const
 template <class T>
 T* handle_t<T>::get() const
 {
-  return mp_rep->object;
+  return (mp_rep) ? mp_rep->object : IRS_NULL;
 }
 template <class T>
 void handle_t<T>::reset(T* ap_object)

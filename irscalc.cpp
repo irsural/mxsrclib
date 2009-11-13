@@ -11,16 +11,10 @@
 //#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
 #include <irscalc.h>
-
+/*
 irs::string irs::preprocessing_str(const irs::string& a_str)
 {
   irs::string str = a_str;
-  //Удаляем пробелы
-  /*int pos_ch_space = str.find(' ');
-  while (pos_ch_space != irs::string::npos) {
-    str.erase(pos_ch_space, 1);
-    pos_ch_space = str.find(' ');
-  }*/
   // Удаляем переход на новую строку
   int pos_ch_return = str.find("\r");
   while (pos_ch_return != irs::string::npos) {
@@ -33,14 +27,9 @@ irs::string irs::preprocessing_str(const irs::string& a_str)
     str.erase(pos_ch_tab, 2);
     pos_ch_tab = str.find("\t");
   }
-  // Заменяем запятые на точки
-  /*int pos_ch_decimal_point = str.find(",");
-  while (pos_ch_decimal_point != irs::string::npos) {
-    str.replace(pos_ch_decimal_point, 1, ".");
-    pos_ch_decimal_point = str.find(",");
-  }*/
   return str;
 }
+*/
 
 void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
 {
@@ -169,130 +158,284 @@ bool irs::calc::part_id_index_get(
   return fsuccess;
 }
 
-#ifdef NOP
-// class mutable_ref_t
-irs::calc::mutable_ref_t::mutable_ref_t():
-  m_type(type_unknown)
+bool irs::calc::calculator_t::local_variable_value(
+  const mode_io_value_t a_mode_io_value,
+  const id_variable_type& id_variable,
+  variant_t* ap_value)
 {
-  m_variable.p_value = IRS_NULL;
+  IRS_LIB_ASSERT(ap_value != IRS_NULL);
+  bool fsuccess = true;
+  const size_type part_count = id_variable.size();
+  variant_t* p_value_variant = IRS_NULL;
+  list_identifier_t::variable_t* p_variable = IRS_NULL;
+  if (part_count > 0) {
+    //variant_t value_helper;
+    variant_t index_variant;
+    IRS_LIB_ASSERT(id_variable.front().type == part_id_type_name);
+    if (m_list_identifier.variable_find(id_variable.front().part_id,
+      &p_variable))
+    {
+      p_value_variant = &p_variable->value;
+      for (size_type part_i = 1; part_i < part_count; part_i++) {
+        if (id_variable[part_i].type == part_id_type_index) {
+          if (p_value_variant->type() == irs::variant::var_type_array) {
+            index_variant = id_variable[part_i].part_id;
+            if (irs::variant::is_number_type(index_variant.type())) {
+              p_value_variant =
+                &(*p_value_variant)[index_variant.as_type<size_type>()];
+              //value = value_helper;
+            } else {
+              // Недопустимый тип индекса
+              fsuccess = false;
+              break;
+            }
+          } else {
+            // Недопустимое количество индексов
+            fsuccess = false;
+            break;
+          }
+        } else {
+          // Часть идентификатора должна быть индексом
+          fsuccess = false;
+          break;
+        }
+      }
+    } else {
+      fsuccess = false;
+    }
+  } else {
+    // Пустой идентификатор
+    fsuccess = false;
+  }
+  if (fsuccess) {
+    switch (a_mode_io_value) {
+      case mode_io_value_read: {
+        *ap_value = *p_value_variant;
+      } break;
+      case mode_io_value_write: {
+        if (p_variable->variability == v_is_variable) {
+          *p_value_variant = *ap_value;
+        } else {
+          // Переменная является константой
+          fsuccess = false;
+        }
+      } break;
+      default : {
+        IRS_LIB_ASSERT_MSG("Недопустимый режим");
+      }
+    }
+  } else {
+    // Получить значение не удалось
+  }
+  return fsuccess;
 }
 
+bool irs::calc::calculator_t::extern_variable_value(
+  const mode_io_value_t a_mode_io_value,
+  const id_variable_type& id_variable,
+  variant_t* ap_value
+)
+{
+  IRS_LIB_ASSERT(ap_value != IRS_NULL);
+  bool fsuccess = false;
+  if (mp_handle_extern_variable) {
+    switch (a_mode_io_value) {
+      case mode_io_value_read: {
+        fsuccess = mp_handle_extern_variable->get(id_variable, ap_value);
+      } break;
+      case mode_io_value_write: {
+        fsuccess = mp_handle_extern_variable->set(id_variable, *ap_value);
+      } break;
+      default : {
+        IRS_LIB_ASSERT_MSG("Недопустимый режим");
+      }
+    }
+  } else {
+    // Список на внешние переменные не установлен
+  }
+  return fsuccess;
+}
+
+bool irs::calc::calculator_t::assign_variable(
+  const mutable_ref_t& a_right_value_mref,
+  mutable_ref_t* ap_left_value_mref)
+{
+  bool assign_success = false;
+  if (ap_left_value_mref->type() == mutable_ref_t::type_id) {
+    assign_success = value_write(a_right_value_mref, ap_left_value_mref);
+  } else {
+    // Левое значение должно быть ссылкой на переменную
+  }
+  return assign_success;
+}
+
+bool irs::calc::calculator_t::value_read(
+  const mutable_ref_t& a_mutable_ref_src,
+  variant_t* ap_value_dest)
+{
+  IRS_LIB_ASSERT(ap_value_dest != IRS_NULL);
+  bool value_read_success = false;
+  const mutable_ref_t::type_t type = a_mutable_ref_src.type();
+  switch (type) {
+    case mutable_ref_t::type_value: {
+      *ap_value_dest = a_mutable_ref_src.value();
+      value_read_success = true;
+    } break;
+    case mutable_ref_t::type_id: {
+      const id_variable_type id_variable = a_mutable_ref_src.id();
+      variant_t value_src_variant;
+      if (local_variable_value(
+        mode_io_value_read, id_variable, ap_value_dest))
+      {
+        //*ap_value_dest = value_src_variant;
+        value_read_success = true;
+      } else if (extern_variable_value(mode_io_value_read, id_variable,
+        ap_value_dest)) {
+        value_read_success = true;
+      } else {
+        // Переменная не найдена
+      }
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Неизвестный тип");
+    }
+  }
+  return value_read_success;
+}
+
+bool irs::calc::calculator_t::value_write(
+  const mutable_ref_t& a_mutable_ref_src,
+  mutable_ref_t* ap_mutable_ref_dest)
+{              
+  IRS_LIB_ASSERT(ap_mutable_ref_dest != IRS_NULL);
+  bool value_write_success = false;
+  const mutable_ref_t::type_t mutable_ref_dest_type =
+    ap_mutable_ref_dest->type();
+  switch (mutable_ref_dest_type) {
+    case mutable_ref_t::type_value: {
+      variant_t value_dest;
+      if (value_read(a_mutable_ref_src, &value_dest)) {
+        ap_mutable_ref_dest->value(value_dest);
+        value_write_success = true;
+      } else {
+        // Прочить значение не удалось
+      }
+    } break;
+    case mutable_ref_t::type_id: {
+      const id_variable_type id_variable_dest = ap_mutable_ref_dest->id();
+      variant_t value_variant_src;
+      if (value_read(a_mutable_ref_src, &value_variant_src)) {
+        if (local_variable_value(
+          mode_io_value_write, id_variable_dest, &value_variant_src))
+        {
+          value_write_success = true;
+        } else if (extern_variable_value(mode_io_value_write, id_variable_dest,
+          &value_variant_src)) {
+          value_write_success = true;
+        } else {
+          // Записать значение не удалось
+        }
+      } else {
+        // Прочить значение не удалось
+      }
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Неизвестный тип");
+    }
+  }
+  return value_write_success;
+}
+
+
+#ifndef NOP
+// class mutable_ref_t   
 irs::calc::mutable_ref_t::mutable_ref_t(type_t a_type):
-  m_type(type_unknown)
+  m_type(a_type),
+  m_value(),
+  m_id()
 {
-  change_type(a_type);
 }
 
-irs::calc::mutable_ref_t::mutable_ref_t(const variant_t& a_value, value_tag)
-{
-  value(a_value);
+irs::calc::mutable_ref_t::mutable_ref_t(const variant_t& a_value, value_tag):
+  m_type(type_value),
+  m_value(a_value),
+  m_id()
+{     
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(
-  const id_variable_type& a_id_variable, id_variable_tag)
-{
-  id(a_id_variable);
+  const id_variable_type& a_id_variable, id_variable_tag
+):
+  m_type(type_id),
+  m_value(),
+  m_id(a_id_variable)
+{           
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(const mutable_ref_t& a_mutable_ref):
   m_type(type_unknown)
 {
-  change_type(a_mutable_ref.m_type);
-  switch (a_mutable_ref.m_type) {
-    case type_value: {
-      *m_variable.p_value = *a_mutable_ref.m_variable.p_value;
-    } break;
-    case type_id: {
-      *m_variable.p_id = *a_mutable_ref.m_variable.p_id;
-    } break;
-    case type_unknown: {
-      // Нет данных для копирования
-    } break;
-    default : {
-      IRS_LIB_ASSERT_MSG("Неучтенный тип");
-    }
-  }
+  m_type = a_mutable_ref.m_type;
+  m_value = a_mutable_ref.m_value;
+  m_id = a_mutable_ref.m_id;
 }
 
 irs::calc::mutable_ref_t::variant_t& irs::calc::mutable_ref_t::value()
 {
-  return *m_variable.p_value;
+  return m_value;
 }
 
 const irs::calc::mutable_ref_t::variant_t&
 irs::calc::mutable_ref_t::value() const
 {
-  return *m_variable.p_value;
+  return m_value;
 }
 
 void irs::calc::mutable_ref_t::value(const variant_t& a_value)
 {
-  change_type(type_value);
-  *m_variable.p_value = a_value;
+  m_type = type_value;
+  m_value = a_value;
+  m_id.clear();
 }
 
 irs::calc::id_variable_type& irs::calc::mutable_ref_t::id()
 {
-  return *m_variable.p_id;
+  return m_id;
 }
 
 const irs::calc::id_variable_type& irs::calc::mutable_ref_t::id() const
 {
-  return *m_variable.p_id;
+  return m_id;
 }
 
 void irs::calc::mutable_ref_t::id(const id_variable_type& a_id)
 {
-  change_type(type_id);
-  *m_variable.p_id = a_id;
+  m_type = type_id;
+  m_id = a_id;
 }       
 
-irs::calc::mutable_ref_t::type_t irs::calc::mutable_ref_t::type(type_t) const
+irs::calc::mutable_ref_t::type_t irs::calc::mutable_ref_t::type() const
 {
   return m_type;
 }
 
+void irs::calc::mutable_ref_t::type(const type_t a_type)
+{
+  change_type(a_type);
+}
+
 void irs::calc::mutable_ref_t::change_type(const type_t a_type)
 {
-  if (a_type != m_type) {
-    switch (m_type) {
-      case type_value: {
-        delete m_variable.p_value;
-      } break;
-      case type_id: {
-        delete m_variable.p_id;
-      } break;
-      case type_unknown: {
-        // Память не выделена
-      } break;
-      default : {
-        IRS_LIB_ASSERT_MSG("Неучтенный тип");
-      }
-    }
-    m_type = a_type;
-    switch (a_type) {
-      case type_value: {
-        m_variable.p_value = new variant_t();
-      } break;
-      case type_id: {
-        m_variable.p_id = new id_variable_type();
-      } break;
-      case type_unknown: {
-        // Выделять память не требуется
-      } break;
-      default : {
-        IRS_LIB_ASSERT_MSG("Неучтенный тип");
-      }
-    }
-  } else {
-    // Объект уже имеет требуемый тип
-  }
+  m_type = a_type;
+  m_value.type(irs::variant::var_type_unknown);
+  m_id.clear();
 }
 
 void irs::calc::mutable_ref_t::swap(mutable_ref_t& a_mutable_ref)
-{                                              
+{
   ::swap(m_type, a_mutable_ref.m_type);
-  ::swap(m_variable, a_mutable_ref.m_variable);
+  ::swap(m_value, a_mutable_ref.m_value);
+  ::swap(m_id, a_mutable_ref.m_id);
 }
 
 irs::calc::mutable_ref_t&

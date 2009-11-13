@@ -1195,6 +1195,7 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
     }
   } else {
     // Операция конвертирования не требуется
+    convert_success = true;
   }
   return convert_success;
 }
