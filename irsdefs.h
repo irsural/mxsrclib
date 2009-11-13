@@ -1,11 +1,16 @@
 // Глобальные объявления типов
+<<<<<<< .mine
+// Дата: 13.11.2009
+=======
 // Дата: 14.10.2009
+>>>>>>> .r160
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
 
 #include <limits.h>
+#include <vector> // For type size_t
 
 // Деректива throw
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
@@ -256,19 +261,33 @@ public:
 namespace irs {
 
 const int npos = -1;
+typedef size_t sizens_t;
+
+// Точка
+struct point_t {
+  sizens_t left;
+  sizens_t top;
+  point_t(
+    sizens_t a_left = 0,
+    sizens_t a_top = 0
+  ):
+    left(a_left),
+    top(a_top)
+  {}
+};
 
 // Прямоугольник
 struct rect_t {
-  irs_i32 left;
-  irs_i32 top;
-  irs_i32 width;
-  irs_i32 height;
+  sizens_t left;
+  sizens_t top;
+  sizens_t width;
+  sizens_t height;
 
   rect_t(
-    irs_i32 a_left = 0,
-    irs_i32 a_top = 0,
-    irs_i32 a_width = 0,
-    irs_i32 a_height = 0
+    sizens_t a_left = 0,
+    sizens_t a_top = 0,
+    sizens_t a_width = 0,
+    sizens_t a_height = 0
   ):
     left(a_left),
     top(a_top),
