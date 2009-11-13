@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 27.09.2009
+// Дата: 13.11.2009
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -192,7 +192,7 @@ inline size_t strlenu(const wchar_t* a_str)
 }
 inline size_t strlent(const char_t* a_str)
 {
-  strlenu(a_str);
+  return strlenu(a_str);
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
