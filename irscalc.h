@@ -264,6 +264,9 @@ public:
   {
     value_type value;
     variability_t variability;
+    variable_t(): value(), variability(v_is_constant)
+    {
+    }
     variable_t(const value_type& a_value, const variability_t& a_variability):
       value(a_value),
       variability(a_variability)
@@ -282,6 +285,10 @@ public:
     function_map_const_iterator;
   inline list_identifier_t();
   inline void variable_add(const string_type& a_name, const value_type& a_value,
+    const variability_t a_variability = v_is_variable);
+  // Заменяет существующее значение или вставляет, если значение не существует  
+  inline void variable_replace(const string_type& a_name,
+    const value_type& a_value,
     const variability_t a_variability = v_is_variable);
   inline void variable_del(const string_type& a_variable_name);
   inline void variable_clear();
@@ -321,6 +328,15 @@ inline void list_identifier_t::variable_add(const string_type& a_name,
   IRS_LIB_ASSERT(m_function_map.find(a_name) == m_function_map.end());
   m_variable_list.insert(
     make_pair(a_name, variable_t(a_value, a_variability)));
+}
+
+inline void list_identifier_t::variable_replace(const string_type& a_name,
+  const value_type& a_value,
+  const variability_t a_variability)
+{
+  IRS_LIB_ASSERT(m_keyword_map.find(a_name) == m_keyword_map.end());
+  IRS_LIB_ASSERT(m_function_map.find(a_name) == m_function_map.end());    
+  m_variable_list[a_name] = variable_t(a_value, a_variability);
 }
 
 inline void list_identifier_t::variable_del(
@@ -1298,6 +1314,10 @@ public:
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline void variable_add(const string_type& a_name, const value_type& a_value,
+    const variability_t a_variability = v_is_variable);
+  inline void variable_replace(
+    const string_type& a_name,
+    const value_type& a_value,
     const variability_t a_variability = v_is_variable);
   inline void variable_del(const string_type& a_name);
   inline void variable_clear();
@@ -2389,6 +2409,14 @@ inline void calculator_t::variable_add(
   const variability_t a_variability)
 {
   m_list_identifier.variable_add(a_name, a_value, a_variability);
+}
+
+inline void calculator_t::variable_replace(
+  const string_type& a_name,
+  const value_type& a_value,
+  const variability_t a_variability)
+{
+  m_list_identifier.variable_replace(a_name, a_value, a_variability);
 }
 
 inline void calculator_t::variable_del(const string_type& a_name)

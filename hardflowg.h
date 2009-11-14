@@ -274,11 +274,11 @@ public:
   #endif // IRS_WINDOWS IRS_LINUX
 private:
   #if defined(IRS_WIN32)
-  enum {m_socket_error = SOCKET_ERROR};
-  enum {m_invalid_socket = INVALID_SOCKET};
+  enum { m_socket_error = SOCKET_ERROR };
+  enum { m_invalid_socket = INVALID_SOCKET };
   #elif defined(IRS_LINUX)
-  enum {m_socket_error = -1};
-  enum {m_invalid_socket = -1};
+  enum { m_socket_error = -1 };
+  enum { m_invalid_socket = -1 };
   #endif // IRS_WINDOWS IRS_LINUX
   /*#ifdef __BORLANDC__
   error_trans_base_t *mp_error_trans;
