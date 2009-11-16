@@ -582,9 +582,9 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
 
   hardflow_t* mp_hardflow;
   multimeter_mode_type_t m_mul_mode_type;
-  loop_timer_t m_time_interval;
   const counter_t m_time_between_big_cmd;
   const counter_t m_time_between_small_cmd;
+  loop_timer_t m_time_interval;
 
   enum meas_type_t{DC_MEAS, AC_MEAS} m_meas_type;
 

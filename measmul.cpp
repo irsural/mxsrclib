@@ -1283,10 +1283,10 @@ irs::akip_ch3_85_3r_t::akip_ch3_85_3r_t(
   multimeter_mode_type_t a_mul_mode_type):
   mp_error_trans(irs::error_trans()),
   mp_hardflow(ap_hardflow),
-  m_mul_mode_type(a_mul_mode_type),
-  m_time_interval(m_time_between_small_cmd),
+  m_mul_mode_type(a_mul_mode_type),         
   m_time_between_big_cmd(make_cnt_ms(800)),
   m_time_between_small_cmd(make_cnt_ms(1)),
+  m_time_interval(m_time_between_small_cmd),
   md_buf_cmds(),
   m_buf_cmd(),
   m_string_msgs(),
@@ -1307,6 +1307,7 @@ irs::akip_ch3_85_3r_t::akip_ch3_85_3r_t(
 {
   //  оманды, большие по времении выполнени€
   mv_big_time_commands.push_back("*RST\n");
+  mv_big_time_commands.push_back(":FORMat ASCii\n");
 
   //  оманды при инициализации
   if (m_mul_mode_type == mul_mode_type_active) {
@@ -1589,7 +1590,7 @@ void irs::akip_ch3_85_3r_t::abort()
 // Ёлементарное действие
 void irs::akip_ch3_85_3r_t::tick()
 {
-  irs_uarc ch = 0;
+  irs_uarc ch = mp_hardflow->channel_next();
   if(mp_hardflow != NULL) {
     static const irs_u32 size_buf_rd = 1024;
     bool big_cmd = false;

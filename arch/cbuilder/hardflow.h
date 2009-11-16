@@ -153,9 +153,10 @@ struct com_param_str_t
 class com_flow_t: public hardflow_t
 {
 private:
+  typedef hardflow_t::size_type size_type;
   enum port_status_t{PS_PREFECT, PS_DEFECT} m_port_status;
-
-  const irs_uarc m_max_size_write;
+  enum { m_channel_id = 1};
+  const size_type m_max_size_write;
   HANDLE m_com;
   irs::error_trans_base_t *mp_error_trans;
   com_param_t m_com_param;
@@ -177,10 +178,12 @@ public:
   virtual ~com_flow_t();
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const irs::string &a_name, const irs::string &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
 

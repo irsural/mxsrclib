@@ -42,7 +42,7 @@ irs::com_flow_t::com_flow_t(
     fsuccess = SetupComm(m_com,m_max_size_write*2, m_max_size_write*2);
     if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
   }
-  if(fsuccess){
+  if(fsuccess) {
     get_param_dbc();
     m_com_param.baud_rate = a_baud_rate;
     m_com_param.f_parity = a_f_parity;
@@ -55,7 +55,7 @@ irs::com_flow_t::com_flow_t(
     fsuccess = GetCommTimeouts(m_com,&time_outs);
     if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
   }
-  if(fsuccess){
+  if (fsuccess) {
     time_outs.ReadIntervalTimeout = 10;
     time_outs.ReadTotalTimeoutMultiplier = 0;
     time_outs.ReadTotalTimeoutConstant = 10;
@@ -64,13 +64,13 @@ irs::com_flow_t::com_flow_t(
     fsuccess = SetCommTimeouts(m_com,&time_outs);
     if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
   }
-  if(fsuccess){
+  if (fsuccess) {
     // сброс порта
     fsuccess = PurgeComm(
       m_com, PURGE_RXABORT|PURGE_TXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); }
   }
-  if(!fsuccess){
+  if (!fsuccess) {
     m_port_status = PS_DEFECT;
     resource_free();
   }
@@ -191,66 +191,94 @@ void irs::com_flow_t::set_param(const irs::string &a_name,
   IRS_ASSERT(fsuccess);
 }
 
-irs_uarc irs::com_flow_t::read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-  irs_uarc a_size)
+irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
+  irs_u8 *ap_buf, size_type a_size)
 {
   DWORD fsuccess = 1;
-  DWORD errors = 0;
+  if (a_channel_ident != m_channel_id) {
+    fsuccess = 0;
+  } else {
+    // ”казан существующий канал
+  }
   COMSTAT com_stat;
-  irs_u32 size_rd = 0;
   memset((void*)&com_stat, 0, sizeof(COMSTAT));
-  if(m_port_status == PS_DEFECT){
+  if (m_port_status == PS_DEFECT) {
     fsuccess = 0;
   }
-  if(fsuccess){
+  if (fsuccess) {
+    DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
+    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
   }
-  if(fsuccess){
+  size_type size_rd = 0;
+  if (fsuccess) {
     irs_uarc num_bytes_buf_rd = com_stat.cbInQue;
     if(num_bytes_buf_rd > 0){
       DWORD num_of_bytes_read = 0;
       size_rd = min(a_size, num_bytes_buf_rd);
       fsuccess = ReadFile(m_com, ap_buf, size_rd, &num_of_bytes_read, NULL);
-      if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
-      size_rd = num_of_bytes_read;
+      if (fsuccess) {
+        size_rd = num_of_bytes_read;
+      } else {
+        size_rd = 0;
+        SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+      }
     }
-  }else{
+  } else {
     m_port_status = PS_DEFECT;
     resource_free();
   }
   return size_rd;
 }
 
-irs_uarc irs::com_flow_t::write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-  irs_uarc a_size)
+irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
+  const irs_u8 *ap_buf, size_type a_size)
 {
   DWORD fsuccess = 1;
-  DWORD errors = 0;
+  if (a_channel_ident != m_channel_id) {
+    fsuccess = 0;
+  } else {
+    // ”казан существующий канал
+  }
   COMSTAT com_stat;
-  irs_u32 size_wr = 0;
   memset((void*)&com_stat, 0, sizeof(COMSTAT));
-  if(m_port_status == PS_DEFECT){
+  if (m_port_status == PS_DEFECT) {
     fsuccess = 0;
   }
-  if(fsuccess){
+  if (fsuccess) {
+    DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
     if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
   }
+  irs_u32 size_wr = 0;
   if(fsuccess){
     irs_uarc num_bytes_buf_wr = com_stat.cbOutQue;
     if(num_bytes_buf_wr == 0){
       DWORD num_of_bytes_written = 0;
       size_wr = min(a_size, m_max_size_write);
       fsuccess = WriteFile(m_com, ap_buf, size_wr, &num_of_bytes_written, NULL);
-      if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
-      size_wr = num_of_bytes_written;
+      if (fsuccess) {
+        size_wr = num_of_bytes_written;
+      } else {
+        size_wr = 0;
+        SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+      }
     }
   }else{
     m_port_status = PS_DEFECT;
     resource_free();
   }
   return size_wr;
+}
+
+irs::com_flow_t::size_type irs::com_flow_t::channel_next()
+{
+  return m_channel_id;
+}
+
+bool irs::com_flow_t::is_channel_exists(size_type a_channel_ident)
+{
+  return (m_channel_id == a_channel_ident);
 }
 
 void irs::com_flow_t::tick()
@@ -301,9 +329,9 @@ void irs::com_flow_t::get_param_dbc()
 {
   DWORD fsuccess = 0;
   DCB dcb;
-  if(m_port_status == PS_DEFECT){
+  if (m_port_status == PS_DEFECT) {
     fsuccess = 0;
-  }else{
+  } else {
     fsuccess = GetCommState(m_com, &dcb);
     if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
   }
@@ -331,8 +359,8 @@ void irs::com_flow_t::get_param_dbc()
     m_com_param.eof_char = dcb.EofChar;
     m_com_param.evt_char = dcb.EvtChar;
 
-    fsuccess = SetCommState(m_com, &dcb);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    //fsuccess = SetCommState(m_com, &dcb);
+    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); }
   }else{
     m_port_status = PS_DEFECT;
     resource_free();

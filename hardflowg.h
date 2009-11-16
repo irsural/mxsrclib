@@ -50,14 +50,21 @@ namespace irs {
 
 class hardflow_t {
 public:
+  typedef size_t size_type;
+  enum {
+    invalid_channel = 0
+  };
+
   virtual ~hardflow_t() {}
   virtual irs::string param(const irs::string &a_name) = 0;
   virtual void set_param(const irs::string &a_name,
     const irs::string &a_value) = 0;
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size) = 0;
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size) = 0;
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size) = 0;
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size) = 0;
+  virtual size_type channel_next() = 0;
+  virtual bool is_channel_exists(size_type a_channel_ident) = 0;
   virtual void tick() = 0;
 };
 
@@ -262,8 +269,8 @@ private:
 class udp_flow_t : public hardflow_t
 {
 public:
-  typedef size_t size_type;
-  typedef irs::string string_type;
+  typedef hardflow_t::size_type size_type;
+  typedef irs::string string_type;        
   typedef int errcode_type;
   #if defined(IRS_WIN32)
   typedef SOCKET socket_type;
@@ -337,12 +344,14 @@ public:
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const irs::string &a_name,
     const irs::string &a_value);
-  // В случае если функция read возвращает irs_uarc == 0, буфер ap_buf может
+  // В случае если функция read возвращает size_type == 0, буфер ap_buf может
   // быть испорчен
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
 

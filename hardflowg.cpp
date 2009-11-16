@@ -225,7 +225,7 @@ irs::hardflow::udp_flow_t::udp_flow_t(
     &remote_host_addr, &init_success);
   if (init_success) {
     bool insert_success = false;
-    irs_uarc remote_host_id = 0;
+    size_type remote_host_id = 0;
     mesh_point_list.insert(remote_host_addr, &remote_host_id, &insert_success);
     IRS_LIB_ASSERT(insert_success);
   } else {
@@ -443,10 +443,10 @@ void irs::hardflow::udp_flow_t::set_param(const irs::string &a_name,
 {
 }
 
-irs_uarc irs::hardflow::udp_flow_t::read(
-  irs_uarc &a_channel_ident, irs_u8 *ap_buf, irs_uarc a_size)
+irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::read(
+  size_type a_channel_ident, irs_u8 *ap_buf, size_type a_size)
 { 
-  irs_uarc size_rd = 0;
+  size_type size_rd = 0;
   bool start_success = m_state_info.get_state_start();
   if (start_success) {
     FD_ZERO(&m_s_kit);
@@ -464,7 +464,7 @@ irs_uarc irs::hardflow::udp_flow_t::read(
           mesh_point_list.insert(sender_addr, &a_channel_ident,
             &insert_success);
           if (insert_success) {
-            size_rd = static_cast<irs_uarc>(ret);
+            size_rd = static_cast<size_type>(ret);
             IRS_LIB_SOCK_DBG_MSG("Прочитано " <<
               static_cast<string_type>(size_rd) << " байт");
           } else {
@@ -491,10 +491,10 @@ irs_uarc irs::hardflow::udp_flow_t::read(
   return size_rd;
 }
 
-irs_uarc irs::hardflow::udp_flow_t::write(
-  irs_uarc a_channel_ident, const irs_u8 *ap_buf, irs_uarc a_size)
+irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
+  size_type a_channel_ident, const irs_u8 *ap_buf, size_type a_size)
 {
-  irs_uarc size_wr = 0;
+  size_type size_wr = 0;
   bool start_success = m_state_info.get_state_start();
   if (start_success) {
     sockaddr_in remote_host_adr;
@@ -505,7 +505,7 @@ irs_uarc irs::hardflow::udp_flow_t::write(
         msg_size, 0, reinterpret_cast<sockaddr*>(&remote_host_adr),
           sizeof(remote_host_adr));
       if (ret != m_socket_error) {
-        size_wr = static_cast<irs_uarc>(ret);
+        size_wr = static_cast<size_type>(ret);
         IRS_LIB_SOCK_DBG_MSG("Записано " <<
           static_cast<string_type>(size_wr) << " байт");
       } else {
@@ -519,6 +519,16 @@ irs_uarc irs::hardflow::udp_flow_t::write(
     // Запуск не произошел
   }
   return size_wr;
+}
+
+irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::channel_next()
+{
+  return invalid_channel;
+}
+
+bool irs::hardflow::udp_flow_t::is_channel_exists(size_type a_channel_ident)
+{
+  return false;
 }
 
 void irs::hardflow::udp_flow_t::tick()
