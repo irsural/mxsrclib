@@ -431,7 +431,7 @@ void irs::raw_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
-    size_type new_capacity = m_capacity*2;
+    size_type new_capacity = new_size*2;
     reserve_raw(new_capacity);
     size_type delta = new_size - m_size;
     memsetex(mp_data + m_size, delta);
@@ -622,6 +622,18 @@ inline void handle_test()
   }
 }
 #endif //NOP
+
+// Зануление структур
+template <class T>
+struct zero_struct_t
+{
+  static T get()
+  {
+    T struct_instance;
+    memsetex(&struct_instance, 1);
+    return struct_instance;
+  }
+};
 
 } //namespace irs
 

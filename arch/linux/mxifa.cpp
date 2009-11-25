@@ -540,7 +540,7 @@ static void mxifa_open_cl_socket(mxifa_chdata_t *cur_chanel)
     sizeof(linux_tcpip_cl->dest_addr));
   if(er == -1)
   {
-    perror("");
+    perror("connect");
     #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
     IRS_MBUS_DBG_MSG_BASE("\n427 CLIENT - number of error: " << errno);
     IRS_MBUS_DBG_MSG_BASE("\n428 CLIENT - dest addr " <<
@@ -563,10 +563,8 @@ static void mxifa_open_cl_socket(mxifa_chdata_t *cur_chanel)
 static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
 {
   IRS_MBUS_DBG_MSG_DETAIL("\n*** mxifa_read_cl_socket ***");
-  IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 1");
   mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
     (mxifa_linux_tcpip_cl_t *)cur_chanel->ch_spec;
-  IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 2");
   //puts("445 CLIENT - read");
   //linux_tcpip_cl->read_end = irs_false;
   #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
@@ -583,22 +581,18 @@ static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
     (void *)linux_tcpip_cl->rd_buf,
     (size_t)linux_tcpip_cl->rd_size,0);
   IRS_MBUS_DBG_MSG_DETAIL("\nnbytes_r " << nbytes_r);
-  IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 3");
   if(nbytes_r <= 0)
   {
     IRS_MBUS_DBG_MSG_DETAIL("\n*** nbytes_r <= 0 ***");
-    IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 3.25");
     if(nbytes_r == 0)
     {
       IRS_MBUS_DBG_MSG_BASE("\n454 CLIENT-Socket " <<
         linux_tcpip_cl->socket_fd << " hung up when reading");
-      IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 3.5");
     }
     else
     {
       perror("recv");
       IRS_MBUS_DBG_MSG_BASE("\n460 Client - number of error "<< errno);
-      IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 3.75");
     }
     close(linux_tcpip_cl->socket_fd);
     linux_tcpip_cl->sock_open = irs_false;
@@ -609,7 +603,6 @@ static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
     FD_CLR(linux_tcpip_cl->socket_fd,
       &(linux_tcpip_cl->write_fds));
     linux_tcpip_cl->can_read = irs_false;
-    IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 4");
   }
   else
   {
@@ -622,7 +615,6 @@ static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
       (int)linux_tcpip_cl->rd_size);
     IRS_MBUS_DBG_MSG_DETAIL("\n481 CLIENT - bufer  "<< &linux_tcpip_cl->rd_buf);
     #endif
-    IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point 5");
     linux_tcpip_cl->rd_buf += nbytes_r;
     linux_tcpip_cl->rd_size -= nbytes_r;
     if(linux_tcpip_cl->rd_size <= 0)
@@ -1253,7 +1245,7 @@ void  mxifa_find_read_sock()
 {
   mxifa_chdata_t *pchdatas = mxifa_chdata_cur;
   mxifa_linux_tcpip_t *linux_tcpip =
-   (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
+    (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
   linux_tcpip->sock_finded = irs_false;
   IRS_MBUS_DBG_MSG_BASE("\nfirst_read= " << boolalpha <<
     static_cast<bool>(linux_tcpip->first_read) <<
@@ -1313,21 +1305,18 @@ void  mxifa_find_read_sock()
 // Ёлементарное действие
 void mxifa_tick()
 {
-  //OUTDBG(cout"Start tick() - 0\n");
   mxifa_chdata_t *pchdatas = mxifa_chdata_cur;
-  //OUTDBG(cout"Start tick() - 1\n");
   switch (mxifa_chdata_cur->enum_iface)
   {
     case mxifa_ei_linux_tcpip:
     {
       if(!pchdatas->opened)break;
       //OUTDBG(cout"Channel number - %d\n",channel_cur);
-      //OUTDBG(cout"Start tick() - 2\n");
       mxifa_linux_tcpip_t *linux_tcpip =
        (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
       linux_tcpip->read_fds = linux_tcpip->master;
       linux_tcpip->write_fds = linux_tcpip->master;
-      int se = select(linux_tcpip->maxfd+1,&(linux_tcpip->read_fds),
+      int se = select(linux_tcpip->maxfd + 1,&(linux_tcpip->read_fds),
         &(linux_tcpip->write_fds),NULL,&(linux_tcpip->tv_zero));
       //IRS_MBUS_DBG_MSG_BASE("\nNumber of descriptors, se= " << se);
       if(se < 0)
@@ -1388,6 +1377,8 @@ void mxifa_tick()
                 (*(linux_tcpip->r_it)).get_hfd()<< " hung up");
               IRS_MBUS_DBG_MSG_BASE("\n1142 SERVER - recv close socket");
               #endif
+              cout << "\n1133 SERVER - Recv: socket " <<
+                (*(linux_tcpip->r_it)).get_hfd() << endl;
               close((*(linux_tcpip->r_it)).get_hfd());
               FD_CLR((*(linux_tcpip->r_it)).get_hfd(),
                 &(linux_tcpip->master));
@@ -1480,6 +1471,8 @@ void mxifa_tick()
               {
                 IRS_MBUS_DBG_MSG_BASE("\n1244 SERVER - Send: socket  hung up"
                   <<((*(linux_tcpip->it)).get_hfd()));
+                cout << "\n1244 SERVER - Send: socket  hung up " <<
+                  (*(linux_tcpip->it)).get_hfd() << endl;
                 IRS_MBUS_DBG_MSG_BASE("\n1250 ERROR!!!");
                 //perror("send");
                 close((*(linux_tcpip->it)).get_hfd());
@@ -1925,8 +1918,10 @@ mxifa_sz_t mxifa_fast_read(void *pchdata,
               #ifdef NOP
               OUTDBG(cout"1727 CLIENT - Get message\n");
               OUTDBG(cout"1728 CLIENT - Number recivied bytes %d\n", length);
-              OUTDBG(cout"1729 CLIENT - File descriptor %d\n", linux_tcpip_cl->socket_fd);
-              OUTDBG(cout"1730 CLIENT - bufer size: %d\n", (int)linux_tcpip_cl->rd_size);
+              OUTDBG(cout"1729 CLIENT - File descriptor %d\n", 
+                linux_tcpip_cl->socket_fd);
+              OUTDBG(cout"1730 CLIENT - bufer size: %d\n", 
+                (int)linux_tcpip_cl->rd_size);
             // OUTDBG(cout"1733 CLIENT - bufer %s\n", linux_tcpip_cl->rd_buf);
               linux_tcpip_cl->rd_buf += length;
               linux_tcpip_cl->rd_size -= length;

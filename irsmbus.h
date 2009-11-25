@@ -1,6 +1,8 @@
 // Клиент и сервер modbus написаный Олегом Коноваловым
 // Дата: 7.02.2008
 
+#ifdef NOP
+
 #ifndef irsmbusH
 #define irsmbusH
 
@@ -278,3 +280,5 @@ public:
 } //namespace irs
 
 #endif //irsmbusH
+
+#endif //NOP

@@ -42,8 +42,8 @@ const int arm_counter_shift =
 
 int init_cnt = 0;
 
-#define OUTDBG(out) out
-//#define OUTDBG(out)
+//#define OUTDBG(out) out
+#define OUTDBG(out)
 
 // Регистр AT91
 #define AT91_REG(BASE, OFFSET, REG) \

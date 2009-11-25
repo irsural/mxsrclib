@@ -1,5 +1,6 @@
 // Коммуникационные потоки
-// Дата: 27.08.2009
+// Дата создания: 27.08.2009
+// Дата последнего изменения: 25.11.2009
 
 #ifndef hardflowgH
 #define hardflowgH
@@ -30,9 +31,10 @@
 #include <irsstd.h>
 #include <timer.h>
 #include <irserror.h>
+#include <mxifar.h>
 
 // Для вывода отладочных сообщений
-#define IRS_LIB_SOCK_DEBUG
+//#define IRS_LIB_SOCK_DEBUG
 
 #ifdef IRS_LIB_SOCK_DEBUG
 #define IRS_LIB_SOCK_DBG_MSG(msg) IRS_LIB_DBG_MSG(msg)
@@ -51,6 +53,7 @@ namespace irs {
 class hardflow_t {
 public:
   typedef size_t size_type;
+  typedef size_t channel_type;
   enum {
     invalid_channel = 0
   };
@@ -72,6 +75,9 @@ namespace hardflow {
 
 typedef size_t sizens_t;
 typedef irs::string string_t;
+
+
+
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 #if defined(IRS_WIN32)
 inline void send_format_msg(
@@ -116,6 +122,7 @@ inline void send_format_msg(
 #else // IRS_LIB_DEBUG
 #define SEND_MESSAGE_ERR(error_code)
 #endif // IRS_LIB_DEBUG
+
 
 class error_sock_t
 {
@@ -354,6 +361,140 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
+
+
+#if defined(IRS_LINUX)
+
+class tcp_server_t : public hardflow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  typedef hardflow_t::channel_type channel_type;
+  
+  tcp_server_t(irs_u16 local_port);
+  virtual ~tcp_server_t();
+  virtual size_type read(channel_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual void tick();
+  virtual irs::string param(const irs::string &a_name);
+  virtual void set_param(const irs::string &a_name,
+    const irs::string &a_value);
+  virtual channel_type channel_next();
+  virtual bool is_channel_exists(channel_type a_channel_ident);
+  
+private:
+  struct tcp_close_t
+  {
+    void operator()(pair<const channel_type, int>& a_map_item)
+    {
+      close(a_map_item.second);
+    }
+  };
+
+  struct sockaddr_in m_addr;
+  struct timeval m_serv_select_timeout;
+  
+  fd_set m_read_fds;
+  fd_set m_write_fds;
+  bool m_is_open;
+  irs_u16 m_local_port;
+  int m_server_sock;
+  map<channel_type, int> m_map_channel_sock;
+  map<channel_type, int>::iterator mp_map_channel_sock_it;
+  channel_type m_channel;
+
+  void start_server();
+  void stop_server();
+  void new_channel();
+};
+
+class tcp_client_t : public hardflow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  typedef hardflow_t::channel_type channel_type;
+
+  tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
+  virtual ~tcp_client_t();
+  virtual size_type read(channel_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual void tick();
+  virtual irs::string param(const irs::string &a_name);
+  virtual void set_param(const irs::string &a_name,
+    const irs::string &a_value);
+  virtual channel_type channel_next();
+  virtual bool is_channel_exists(channel_type a_channel_ident);
+  
+private:
+  struct sockaddr_in m_addr;
+  //struct sockaddr_in m_local_addr;
+
+  fd_set m_read_fds;
+  fd_set m_write_fds;
+  timeval m_client_select_timeout;
+  int m_client_sock;
+  bool m_is_open;
+  mxip_t m_dest_ip;
+  irs_u16 m_dest_port;
+  channel_type m_channel;
+  
+  void start_client();
+  void stop_client();
+};
+
+// Прием/передача фиксированных объемов данных
+class fixed_flow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  typedef hardflow_t::channel_type channel_type;
+
+  enum status_t {
+    status_wait,
+    status_success,
+    status_error
+  };
+
+  fixed_flow_t(hardflow_t* ap_hardflow = IRS_NULL);
+  void read(channel_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  void write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  status_t read_status();
+  size_type read_abort();
+  status_t write_status();
+  size_type write_abort();
+  void tick();
+  void connect(hardflow_t* ap_hardflow);
+  
+private:
+  hardflow_t* mp_hardflow;
+  
+  channel_type m_read_channel; 
+  irs_u8* mp_read_buf_cur;
+  irs_u8* mp_read_buf;
+  size_type m_read_size;
+  size_type m_size_read;
+  status_t  m_read_status;
+  size_type m_read_size_cur;
+  timer_t m_read_timeout;
+
+  channel_type m_write_channel;
+  const irs_u8* mp_write_buf_cur;
+  const irs_u8* mp_write_buf;
+  size_type m_write_size;
+  size_type m_size_write;
+  status_t  m_write_status;
+  size_type m_write_size_cur;
+  timer_t m_write_timeout;
+  
+};
+
+#endif //defined(IRS_LINUX)
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 

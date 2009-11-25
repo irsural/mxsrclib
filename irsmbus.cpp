@@ -2,6 +2,8 @@
 // Дата: 13.10.2009
 // Ранняя дата: 16.09.2009
 
+#ifdef NOP
+
 #include <irsmbus.h>
 #include <string.h>
 #include <timer.h>
@@ -93,7 +95,7 @@ void first_part(irs_u8 &internal_byte, irs_u8 external_byte,
 void second_part(irs_u8 &internal_byte, irs_u8 external_byte,
   int index_bit, irs_u8 mask)
 {
-  external_byte >>= (8-index_bit);
+  external_byte >>= (8 - index_bit);
   internal_byte &= mask;
   internal_byte |= external_byte;
 }
@@ -2063,7 +2065,8 @@ void irs::irsmb_cl::tick()
                 m_packet_hr.byte_count = (irs_u8)hr_size_byte;
                 get_bytes(m_hold_regs_reg_w,hr_start_byte,
                   hr_size_byte,m_packet_hr.value,1);
-                IRS_LIB_ASSERT((IRS_ARRAYSIZE(m_packet_hr.value)-1) >= hr_size_byte);
+                IRS_LIB_ASSERT((IRS_ARRAYSIZE(m_packet_hr.value)-1) >=
+                  hr_size_byte);
                 make_packet(hr_start_byte/2,irs_u16((hr_size_byte/2)+1));
               }
               else
@@ -2092,7 +2095,8 @@ void irs::irsmb_cl::tick()
                 m_packet_hr.byte_count = irs_u8(hr_size_byte);
                 get_bytes(m_hold_regs_reg_w,hr_start_byte,
                   hr_size_byte,m_packet_hr.value,1);
-                IRS_LIB_ASSERT((IRS_ARRAYSIZE(m_packet_hr.value)-1) >=hr_size_byte);
+                IRS_LIB_ASSERT((IRS_ARRAYSIZE(m_packet_hr.value)-1) >=
+                  hr_size_byte);
                 make_packet(hr_start_byte/2,irs_u16(hr_size_byte/2+1));
               }
               else
@@ -2122,7 +2126,8 @@ void irs::irsmb_cl::tick()
             m_stpos = irs_u16(coils_start_byte);
             m_packet_coils.byte_count   = size_of_data;
             bit_copy(m_spacket+size_of_header+size_of_read_header,
-              m_coils_bit_w.data(),coils_start_byte, 0, sizeof(coils_size_byte));
+              m_coils_bit_w.data(), coils_start_byte, 0, 
+                sizeof(coils_size_byte));
             for(irs_u32 i = m_start_block;
               i < (m_start_block + size_of_data*8);i++)
               m_rforwr[i] = 0;
@@ -2167,3 +2172,4 @@ void irs::irsmb_cl::tick()
   }
   mxifa_tick();
 }
+#endif //NOP
