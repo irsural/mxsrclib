@@ -27,9 +27,11 @@ counter_t wait;
 
 //#define OUTDBG(out) out
 //#define OUTDBG(out)
+#define IRS_MBUS_MSG_NONE   0
 #define IRS_MBUS_MSG_BASE   1
 #define IRS_MBUS_MSG_DETAIL 2
 
+#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_NONE
 //#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_BASE
 //#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_DETAIL
 

@@ -756,6 +756,25 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
     }
   }
 
+  /*if (!detected_token) {
+    // Читаем строку в кавычках
+    // Запоминаем позицию первого символа числа
+    const size_type num_begin_ch = pos;
+    if ((*ap_prog)[pos] == irst('"')) {
+      pos++;
+      pos = ap_prog->find_first_not_of(irst("\""), pos);
+      if (pos != string_type::npos) {
+      } else {
+
+      }
+      while ((*ap_prog)[pos] == irst('"') &&) {
+      }
+    } else {
+
+    }
+  } else {
+    // Лексема уже детектирована
+  }*/
   if (!detected_token) {
     // Читаем ограничитель
     bool next_ch_not_end_prog = false;
@@ -1110,8 +1129,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         }*/
       }
       if (detected_token) {
-        ap_token_data->length = pos - a_prog_pos;
-
+        ap_token_data->length = pos - a_prog_pos; 
       } else {
         pos = pos_begin_name;
       }
