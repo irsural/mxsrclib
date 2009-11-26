@@ -2,8 +2,6 @@
 // Дата: 13.10.2009
 // Ранняя дата: 16.09.2009
 
-#ifdef NOP
-
 #include <irsmbus.h>
 #include <string.h>
 #include <timer.h>
@@ -89,7 +87,7 @@ void first_part(irs_u8 &internal_byte, irs_u8 external_byte,
   int index_bit, irs_u8 mask)
 {
   external_byte <<= index_bit;
-  internal_byte &= ~mask;
+  internal_byte &= static_cast<irs_u8>(~mask);
   internal_byte |= external_byte;
 }
 void second_part(irs_u8 &internal_byte, irs_u8 external_byte,
@@ -122,7 +120,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       irs_u8 first_mask = mask_gen(0, first_part_size);
       irs_u8 first_data_in = ap_data_in[data_start_in];
       first_data_in &= first_mask;
-      ap_data_out[data_start_out] &= ~first_mask;
+      ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_mask);
       ap_data_out[data_start_out] |= first_data_in;
       part_idx = 1;
     }
@@ -132,7 +130,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         first_part_size];
       last_data_in &= last_mask;
       ap_data_out[data_start_out + middle_part_size + part_idx] &= 
-        ~last_mask;
+        static_cast<irs_u8>(~last_mask);
       ap_data_out[data_start_out + middle_part_size + part_idx] |=
         last_data_in;
     }
@@ -193,10 +191,11 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         data_second_in &= second_in_mask;
         data_second_in >>= (8 - offset);
         irs_u8 first_out_mask = mask_gen(0, 8 - index_out);
-        ap_data_out[data_start_out] &= ~first_out_mask;
+        ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_out_mask);
         ap_data_out[data_start_out] |= data_first_in;
         irs_u8 second_out_mask = mask_gen(8 - offset, offset);
-        ap_data_out[data_start_out + 1] &= ~second_out_mask;
+        ap_data_out[data_start_out + 1] &=
+          static_cast<irs_u8>(~second_out_mask);
         ap_data_out[data_start_out + 1] |= data_second_in;
       }
     }
@@ -205,7 +204,9 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       int last_external_byte_index = data_cnt + data_start_in + first_part_idx;
       int last_internal_byte_index = data_cnt + data_start_out + first_part_idx; 
       irs_u8 last_mask = 0;
-      if(last_part_size < ((8 - 2*offset)*offset_idx + offset)) {
+      if(static_cast<irs_u32>(last_part_size) <
+        ((8 - 2*offset)*offset_idx + offset))
+      {
         if((index_out - index_in) > 0)
         {
           last_mask = mask_gen(8 - last_part_size, last_part_size);
@@ -240,7 +241,9 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         second_part(ap_data_out[last_internal_byte_index], 
           ap_data_in[last_external_byte_index - 1 + offset_idx],
           index_bit, middle_mask);
-        if(last_part_size > ((8 - 2*offset)*offset_idx + offset)) {
+        if(static_cast<irs_u32>(last_part_size) >
+          ((8 - 2*offset)*offset_idx + offset))
+        {
           if((index_out - index_in) > 0)
           {
             last_mask = mask_gen(8 - last_part_size, 
@@ -257,7 +260,8 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
             irs_u8 data_ext = ap_data_in[last_external_byte_index+1];
             data_ext &= mask_ext;
             data_ext <<= 8 - offset;
-            ap_data_out[last_internal_byte_index] &= ~mask_int;
+            ap_data_out[last_internal_byte_index] &=
+              static_cast<irs_u8>(~mask_int);
             ap_data_out[last_internal_byte_index] |= data_ext;
           }
         }  
@@ -309,25 +313,27 @@ void irs::test_bit_copy(ostream& strm, irs_u16 size_data_in,
 {
   irs::raw_data_t<irs_u8> ap_data_in(size_data_in);
   irs::raw_data_t<irs_u8> ap_data_out(size_data_out);
-  rand();rand();rand();
-  for(int idx_in = 0; idx_in < ap_data_in.size(); idx_in ++)
+  rand();
+  for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
   {
     int rand_val = rand();
-    ap_data_in[idx_in] = (irs_i64)rand_val*IRS_U8_MAX/RAND_MAX;
+    ap_data_in[idx_in] = static_cast<irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
   }
-  for(int idx_out = 0; idx_out < ap_data_out.size(); idx_out ++)
+  for(int idx_out = 0; idx_out < static_cast<int>(ap_data_out.size());
+    idx_out ++)
   {
     int rand_val = rand();
-    ap_data_out[idx_out] = (irs_i64)rand_val*IRS_U8_MAX/RAND_MAX;
+    ap_data_out[idx_out] = static_cast<irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
   }
   strm << "IN before operation" << endl;
-  for(int idx_in = 0; idx_in < ap_data_in.size(); idx_in ++)
+  for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
   {
     strm << int_to_str(ap_data_in[idx_in], 2, 8) << " ";
   }
   strm << endl;
   strm << "OUT before operation" << endl;
-  for(int idx_out = 0; idx_out < ap_data_out.size(); idx_out ++)
+  for(int idx_out = 0; idx_out < static_cast<int>(ap_data_out.size());
+    idx_out ++)
   {
     strm << int_to_str(ap_data_out[idx_out], 2, 8) << " ";
   }
@@ -335,7 +341,8 @@ void irs::test_bit_copy(ostream& strm, irs_u16 size_data_in,
   bit_copy(ap_data_in.data(), ap_data_out.data(),
     index_data_in, index_data_out, size_data);
   strm << "OUT after operation" << endl;
-  for(int idx_out = 0; idx_out < ap_data_out.size(); idx_out ++)
+  for(int idx_out = 0; idx_out < static_cast<int>(ap_data_out.size());
+    idx_out ++)
   {
     strm << int_to_str(ap_data_out[idx_out], 2, 8) << " ";
   }
@@ -356,7 +363,7 @@ void convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length)
 }
 
 irs::irsmb_se::irsmb_se(
-  mxifa_ch_t channel,
+  channel_type channel,
   irs_u16 local_port,
   irs_u16 a_discr_inputs_size_byte,
   irs_u16 a_coils_size_byte,
@@ -383,7 +390,7 @@ irs::irsmb_se::irsmb_se(
   m_nregs(0),
   m_rcoil(irs_false),
   mode(read_mode),
-  mp_handle(IRS_NULL),
+  //mp_handle(IRS_NULL),
   di_size_byte(0),
   di_start_byte(0),
   coils_size_byte(0),
@@ -396,7 +403,7 @@ irs::irsmb_se::irsmb_se(
 {
   memsetex(mess, IRS_ARRAYSIZE(mess));
   memsetex(in_str, IRS_ARRAYSIZE(in_str));
-  const mxip_t zero_ip = {{0,0,0,0}};
+  /*const mxip_t zero_ip = {{0,0,0,0}};
   m_mbchdata.mxifa_linux_dest.ip      = zero_ip;
   m_mbchdata.mxifa_linux_dest.port    = 0;
   mxifa_init();
@@ -409,7 +416,7 @@ irs::irsmb_se::irsmb_se(
   #endif //NOP
   mxifa_linux_tcp_ip_cfg cfg;
   cfg.local_port = local_port;
-  mp_handle = mxifa_open_ex(channel,(void *)&cfg, irs_false);
+  mp_handle = mxifa_open_ex(channel,(void *)&cfg, irs_false);*/
 }
 
 irs_uarc irs::irsmb_se::size()
@@ -548,7 +555,7 @@ void irs::irsmb_se::write(const irs_u8 *buf, irs_uarc index, irs_uarc size)
     IRS_MBUS_DBG_MSG_DETAIL("di_size_byte: " << di_size_byte <<
       " di_start_byte: " << di_start_byte);
     bit_copy(buf,m_discr_inputs_bit.data(),0,di_start_byte*8,
-      (irs_u16)(di_size_byte)*8);
+      static_cast<irs_u16>((di_size_byte)*8));
   }
   if((coils_size_byte != 0)||(coils_start_byte != 0))
   {
@@ -756,7 +763,6 @@ void irs::irsmb_se::tick()
     {
       if(mxifa_read_end(mp_handle,irs_false))
       {
-        //complex_modbus_header_t &header = *(complex_modbus_header_t *)mess;
         complex_modbus_header_t& header = 
           reinterpret_cast<complex_modbus_header_t&>(*mess);
         if(header.length != 0)
@@ -927,7 +933,8 @@ void irs::irsmb_se::tick()
               dop_head.byte_count = irs_u8(hr_size_byte*2);
               get_bytes(m_hold_regs_reg,hr_start_byte,hr_size_byte*2,
                 dop_head.value,0);
-              IRS_LIB_ASSERT(dop_head.byte_count >= hr_size_byte);
+              IRS_LIB_ASSERT(static_cast<irs_u32>(dop_head.byte_count) >=
+                hr_size_byte);
               IRS_MBUS_DBG_MSG_DETAIL("\nMemory contein: ");
               for(irs_u8 i = 0; i< irs_u8(hr_size_byte*2);i++)
               {
@@ -961,10 +968,11 @@ void irs::irsmb_se::tick()
               IRS_MBUS_DBG_MSG_DETAIL("INPUT REGS" );
               get_bytes(m_input_regs_reg,ir_start_byte,ir_size_byte*2,
                 dop_head.value,0);
-              IRS_LIB_ASSERT(dop_head.byte_count >= ir_size_byte);
+              IRS_LIB_ASSERT(static_cast<irs_u32>(dop_head.byte_count) >=
+                ir_size_byte);
               for(irs_u16 i = 0; i< irs_u16(ir_reg/2);i++)
               {
-                  IRS_MBUS_DBG_MSG_DETAIL(hex_u16<<(int)dop_head.value[i]<<' ');
+                IRS_MBUS_DBG_MSG_DETAIL(hex_u16<<(int)dop_head.value[i]<<' ');
               }
               cmb_head.length = irs_u16(size_of_res + dop_head.byte_count);
               m_size_byte_end = cmb_head.length;
@@ -1011,7 +1019,7 @@ void irs::irsmb_se::tick()
             IRS_MBUS_DBG_MSG_DETAIL("Starting address: "
               << sec_head.starting_address);
             //irs_u8& dop_head_value = *(irs_u8*)dop_head.value; 
-            irs_u16 dop_head_size = (irs_u16)dop_head.byte_count*8; 
+            irs_u16 dop_head_size = static_cast<irs_u16>(dop_head.byte_count*8); 
             bit_copy(dop_head.value,m_coils_bit.data(), 0, 
               sec_head.starting_address, dop_head_size);
             for(irs_u16 i = sec_head.starting_address;
@@ -1178,7 +1186,7 @@ void irs::irsmb_se::tick()
 }
 
 irs::irsmb_cl::irsmb_cl(
-  mxifa_ch_t channel,
+  channel_type channel,
   mxip_t dest_ip,
   irs_u16 dest_port,
   irs_u16 a_discr_inputs_size_byte,
@@ -2172,4 +2180,3 @@ void irs::irsmb_cl::tick()
   }
   mxifa_tick();
 }
-#endif //NOP

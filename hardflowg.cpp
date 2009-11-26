@@ -21,9 +21,6 @@
 #define IRS_TCP_DBG_MSG_BASE(msg) ;
 #endif
 
-
-#ifdef NOP
-
 #if defined(IRS_WIN32) //|| defined(IRS_LINUX)
 
 //class host_list_t
@@ -564,8 +561,6 @@ void irs::hardflow::udp_flow_t::tick()
 }
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
-
-#endif //NOP
 
 #if defined(IRS_LINUX)
 

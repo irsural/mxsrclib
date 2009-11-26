@@ -1,8 +1,6 @@
 // Клиент и сервер modbus написаный Олегом Коноваловым
 // Дата: 7.02.2008
 
-#ifdef NOP
-
 #ifndef irsmbusH
 #define irsmbusH
 
@@ -66,6 +64,28 @@ void test_bit_copy(ostream& strm, irs_u16 size_data_in, irs_u16 size_data_out,
 
 class irsmb_se : public mxdata_t
 {
+public:
+  typedef hardflow_t::channel_type channel_type;
+  
+  irsmb_se(
+    channel_type channel,
+    irs_u16 local_port,
+    irs_u16 a_discr_inputs_size_byte = 8191,
+    irs_u16 a_coils_size_byte = 8191,
+    irs_u16 a_hold_regs_reg = 2500,
+    irs_u16 a_input_regs_reg = 2500
+  );
+  virtual ~irsmb_se() {}
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+  virtual void status();
+  
 private:
   enum{
     size_of_data = 248,
@@ -131,20 +151,27 @@ private:
         const irs_u8 *buf,irs_u32 start);
   void range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
         irs_u32 *num,irs_u32 *start); 
-  //void convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length);
+};
 
+class irsmb_cl : public mxdata_t
+{
 public:
-  irsmb_se(
-    mxifa_ch_t channel,
-    irs_u16 local_port,
+  typedef hardflow_t::channel_type channel_type;
+  
+  irsmb_cl(
+    channel_type channel,
+    mxip_t dest_ip,
+    irs_u16 dest_port,
     irs_u16 a_discr_inputs_size_byte = 8191,
     irs_u16 a_coils_size_byte = 8191,
     irs_u16 a_hold_regs_reg = 2500,
     irs_u16 a_input_regs_reg = 2500
   );
-  virtual ~irsmb_se() {}
+  void set_delay_time(double time);
+  virtual ~irsmb_cl();
   virtual irs_uarc size();
   virtual irs_bool connected();
+  virtual irs_bool connected_1();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
   virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
@@ -152,10 +179,7 @@ public:
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
   virtual void status();
-};
-
-class irsmb_cl : public mxdata_t
-{
+  
 private:
   enum {
     size_of_MBAP =6,
@@ -216,7 +240,8 @@ private:
   irs_bool                              m_read_table;
   irs_bool                              m_first_read;
   irs_bool                              m_part_send;
-  mxifa_ch_t                            m_channel;
+  //mxifa_ch_t                            m_channel;
+  channel_type                          m_channel;
   mxip_t                                m_dip;
   irs_u32                               m_nregs;
   irs_u32                               m_start_block;
@@ -251,34 +276,9 @@ private:
         const irs_u8 *buf,irs_u32 start);
   void range(irs_u32 index, irs_u32 size, irs_u32 M1, irs_u32 M2,
          irs_u32 *num,irs_u32 *start);
-  //void convert(irs_u8 *ap_mess,irs_u8 a_start,irs_u8 a_length);
-public:
-  irsmb_cl(
-    mxifa_ch_t channel,
-    mxip_t dest_ip,
-    irs_u16 dest_port,
-    irs_u16 a_discr_inputs_size_byte = 8191,
-    irs_u16 a_coils_size_byte = 8191,
-    irs_u16 a_hold_regs_reg = 2500,
-    irs_u16 a_input_regs_reg = 2500
-  );
-  void set_delay_time(double time);
-  virtual ~irsmb_cl();
-  virtual irs_uarc size();
-  virtual irs_bool connected();
-  virtual irs_bool connected_1();
-  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void tick();
-  virtual void status();
-  //void write_regs();
+
 };
 
 } //namespace irs
 
 #endif //irsmbusH
-
-#endif //NOP
