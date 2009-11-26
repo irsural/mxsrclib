@@ -258,13 +258,16 @@ void csv_file::clear_pars()
 #if !defined(__embedded_cplusplus) && !defined(__WATCOMC__)
 
 //class csv_file_t
-const char irs::csvwork::csv_file_t::m_delimiter_row = '\n';
-const char irs::csvwork::csv_file_t::m_quote = '"';
 irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
 ):
-  m_delimiter_col(';'),
+  m_delimiter_col(irst(';')),
+  m_delimiter_row(irst('\n')),
+  m_delim_row("\r\n"),
+  m_delimiter_row_size(m_delim_row.size()),
+  //m_delimiter_size(2),
+  //m_pos(0),
   m_filename(a_filename.c_str()),
-  m_file(m_filename.c_str()),
+  m_file(),
   m_progress(0.),
   m_status(cfs_success),
   m_cur_instruction(ci_calc_col_count),
@@ -290,6 +293,7 @@ irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
   m_row_index(0),
   m_pos_mode(pos_mode_beg),
   m_row_pos_file(0),
+  m_quote(irst('"')),
   m_quote_count(0)
 {
   m_special_character = static_cast<irs::string>(m_delimiter_col) +
@@ -324,70 +328,118 @@ void irs::csvwork::csv_file_t::tick()
           case cmd_get_row:
           case cmd_calc_col_count:
           case cmd_calc_row_count: {
-            if (!m_file) {
-              m_file.close();
-              m_file.clear();
-              m_file.open(m_filename.c_str());
-            }
+            m_file.open(m_filename.c_str(), ios::in);
             if (m_file) {
               m_file.seekg(0, ios::end);
               m_file_size = m_file.tellg();
               m_file.seekg(0, ios::beg);
               m_processing_status = ps_run_instruction;
             } else {
-              m_status = cfs_error;
-              m_command = cmd_none_command;
-              m_processing_status = ps_busy_command;
+              set_mode_error();
             }
           } break;
           case cmd_rows_erase: {
           } break;
           case cmd_row_push_back: {
-            if (!m_file) {
-              m_file.close();
-              m_file.clear();
-              m_file.open(m_filename.c_str());
+            bool success = true;
+            // Создаем файл если не существует
+            m_file.open(m_filename.c_str(), ios::out | ios::app | ios::binary);
+            success = m_file ? success : false;
+            if (success) {
+              m_file.seekp(0, ios::end);
+              m_file_size = m_file.tellp();
+              success = m_file ? success : false;
+            } else {
+              // Произошла ошибка
             }
-            if (m_file) {
-              m_file.seekg(0, ios::end);
-              m_file_size = m_file.tellg();
+            if (success) {
+              if (m_file_size == 0) {
+                m_file << m_delim_row;
+              } else {
+                // Файл уже существовал и в нем уже есть записи
+              }
+            } else {
+              // Произошла ошибка
+            }
+            m_file.close();
+            // Открываем файл для чтения/записи
+            if (success) {
+              m_file.open(m_filename.c_str(), ios::in | ios::out | ios::binary);
+              success = m_file ? success : false;
+            } else {
+              // Произошла ошибка
+            }
+            if (success) {
+              m_file.seekp(0, ios::end);
+              success = m_file ? success : false;
+            } else {
+              // Произошла ошибка
+            }
+            if (success) {
+              m_file_size = m_file.tellp();
+              success = m_file ? success : false;
+            } else {
+              // Произошла ошибка
+            }
+            if (success) {
+              if (m_file_size >= m_delim_row.size()) {
+                m_file.seekg(-static_cast<fstream::pos_type>(
+                  m_delimiter_row_size), ios::end);
+                success = m_file ? success : false;
+                char* p_buf = new char[m_delimiter_row_size + 1];
+                if (success) {
+                  m_file.read(p_buf, m_delim_row.size());
+                  p_buf[m_delimiter_row_size] = '\0';
+                  success = m_file ? success : false;
+                } else {
+                  // Произошла ошибка
+                }
+                if (success) {
+                  if (m_delim_row == string_type(p_buf)) {
+                    if (m_file_size == m_delimiter_row_size) {
+                      m_file.seekp(0, ios::beg);
+                    } else {
+                      m_file.seekp(0, ios::end);
+                    }
+                    success = m_file ? success : false;
+                  } else {
+                    // Некорректный файл
+                    success = false;
+                  }
+                } else {
+                  // Произошла ошибка
+                }
+              } else {
+                // Некорректный файл
+                success = false;
+              }
+            } else {
+              // Произошла ошибка
+            }
+            if (success) {
               m_processing_status = ps_run_instruction;
             } else {
-              m_status = cfs_error;
-              m_command = cmd_none_command;
-              m_processing_status = ps_busy_command;
+              set_mode_error();
             }
           } break;
           case cmd_save : {
-            // Удаляем старое содержимое файла
-            // !!! Поискать альтернативу в виде вызова функции
-            m_file.close();
-            m_file.clear();
-            m_file.open(m_filename.c_str(), ios::in|ios::out|ios::trunc);
+            m_file.open(m_filename.c_str(), ios::in | ios::out | ios::trunc);
             if (m_file) {
               m_processing_status = ps_run_instruction;
             } else {
-              m_status = cfs_error;
-              m_command = cmd_none_command;
-              m_processing_status = ps_busy_command;
+              set_mode_error();
             }
           } break;
           case cmd_load: {
             mp_table_user->clear();
-            if (!m_file) {
-              m_file.close();
-              m_file.clear();
-              m_file.open(m_filename.c_str());
-            }
+            m_file.open(m_filename.c_str(), ios::in);
             if (m_file) {
               m_file.seekg(0, ios::end);
               m_file_size = m_file.tellg();
               m_file.seekg(0, ios::beg);
               m_processing_status = ps_run_instruction;
             } else {
-              m_status = cfs_error;
-              m_command = cmd_none_command;
-              m_processing_status = ps_busy_command;
+              set_mode_error();
             }
           } break;
           case cmd_none_command:{
@@ -433,16 +485,10 @@ void irs::csvwork::csv_file_t::tick()
                 *mp_col_count_user = 0;
               }
             }
-            m_progress = 1.;
-            m_status = cfs_success;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_success();
             // Если есть ошибки, но EOF не установлен
           } else {
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
         case ci_calc_row_count: {
@@ -465,16 +511,10 @@ void irs::csvwork::csv_file_t::tick()
             if (mp_row_count_user != IRS_NULL) {
               *mp_row_count_user = m_delimiter_row_count;
             }
-            m_progress = 1.;
-            m_status = cfs_success;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_success();
             // Если есть ошибки, но EOF не установлен
           } else {
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
         case ci_rows_erase: {
@@ -489,16 +529,18 @@ void irs::csvwork::csv_file_t::tick()
           for (size_type i = 0; i < i_end; i++) {
             if (!m_file.good()) {
               fsuccess = false;
+              break;
             } else {
               if (m_cell_index > 0) {
-                m_file << m_delimiter_col;
+                m_file.write(reinterpret_cast<const char*>(&m_delimiter_col),
+                  sizeof(m_delimiter_col));
               }
               std::vector<irs::string>::iterator it_cell =
                 ((*mp_row_user).begin()+m_cell_index);
               if((*it_cell).find_first_of(
                 m_special_character) == irs::string::npos)
               {
-                m_file << (*it_cell);
+                m_file.write(it_cell->c_str(), it_cell->size());
               } else {
                 irs::string cell_modified;
                 size_type cell_size = (*it_cell).size();
@@ -508,34 +550,44 @@ void irs::csvwork::csv_file_t::tick()
                   }
                   cell_modified += (*it_cell)[i];
                 }
-                m_file << "\"" << cell_modified << "\"";
+                cell_modified = "\"" + cell_modified + "\"";
+                m_file.write(cell_modified.c_str(), cell_modified.size());  
               }
               m_cell_index++;
             }
           }
           if (row_user_size > 0) {
             m_progress = (m_cell_index / static_cast<double>(row_user_size));
+          } else {
+            // Нет данных для записи
           }
-          if (m_cell_index >= row_user_size) {
-            if (m_file.good()) {
-              m_file << m_delimiter_row;
-            }
-            if (m_file.good()) {
-              m_progress = 1.;
-              m_status = cfs_success;
+          if (fsuccess) {
+            if (m_cell_index == row_user_size) {
+              if (row_user_size > 0) {
+                m_file << m_delim_row;
+              } else {
+                // Никаких дополнительных действий не требуется
+              }
+              m_row_user_buf.clear();
+              if (m_file.good()) {
+                set_mode_success();
+              } else {
+                set_mode_error();
+              }
+            } else if (m_cell_index > row_user_size) {
+              IRS_LIB_ASSERT_MSG("Выход за пределы массива");
+              fsuccess = false;
             } else {
-              m_progress = 0.;
-              m_status = cfs_error;
+              // Запись не завершена
             }
+          } else {
+            // Произошла ошибка
+          }
+          if (!fsuccess) {
             m_row_user_buf.clear();
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
-          } else if (!fsuccess) {
-            m_row_user_buf.clear();
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
+          } else {
+            // Ошибок не произошло
           }
         } break;
         case ci_find_row_pos: {
@@ -568,10 +620,7 @@ void irs::csvwork::csv_file_t::tick()
             m_row_pos_file = m_file.tellg();
             m_cur_instruction = ci_get_row;
           } else {
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
         case ci_get_row: {
@@ -630,10 +679,7 @@ void irs::csvwork::csv_file_t::tick()
               {
                 mp_row_user->resize(m_cell_index+1);
               }
-              m_progress = 1.;
-              m_status = cfs_success;
-              m_command = cmd_none_command;
-              m_processing_status = ps_busy_command;
+              set_mode_success();
             } else if (ch == m_quote) {
               on_add_ch = true;
               m_quote_count++;
@@ -652,10 +698,7 @@ void irs::csvwork::csv_file_t::tick()
           }
           if (!instruction_success) {
             mp_row_user->clear();
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
         case ci_save: {
@@ -707,22 +750,15 @@ void irs::csvwork::csv_file_t::tick()
               m_cell_index / static_cast<double>(m_table_uses_cell_count);
           }
           if (m_cell_index >= m_table_uses_cell_count) {
-            if (m_file.good()) {
-              m_progress = 1.;
-              m_status = cfs_success;
-            } else {
-              m_progress = 0.;
-              m_status = cfs_error;
-            }
             m_row_user_buf.clear();
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            if (m_file.good()) {
+              set_mode_success();
+            } else {
+              set_mode_error();
+            }
           } else if (!instruction_success) {
             m_row_user_buf.clear();
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
         case ci_load: {
@@ -791,75 +827,36 @@ void irs::csvwork::csv_file_t::tick()
             }
           // Если достигнут EOF
           } else if (m_file.eof()){
-            m_progress = 1.;
-            m_status = cfs_success;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_success();
           // Если не EOF
           } else {
             instruction_success = false;
           }
           if (!instruction_success) {
             mp_row_user->clear();
-            m_progress = 0.;
-            m_status = cfs_error;
-            m_command = cmd_none_command;
-            m_processing_status = ps_busy_command;
+            set_mode_error();
           }
         } break;
+        default : {
+          IRS_LIB_ASSERT_MSG("Неизвестный тип инструкции");
+          set_mode_error();
+        }
       }
     } break;
-
     case ps_abort: {
-      m_progress = 0;
-      m_status = cfs_success;
-
+      set_mode_success();
     }
   }
 }
 
-bool irs::csvwork::csv_file_t::open(const irs::string& a_filename)
-{
-  bool fsuccess = true;
-  IRS_LIB_ASSERT(m_command == cmd_none_command);
-  if (m_command == cmd_none_command) {
-    m_filename = a_filename;
-    m_file.open(a_filename.c_str());
-    if (m_file.good()) {
-      fsuccess = true;
-    } else {
-      fsuccess = false;
-    }
-  }
-  return fsuccess;
-}
-void irs::csvwork::csv_file_t::close()
+void irs::csvwork::csv_file_t::set_file(const string_type& a_file_name)
 {
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
-    m_file.close();
-    // Очистка всех ошибок
-    m_file.clear();
+    m_filename = a_file_name;
+  } else {
+    IRS_LIB_ASSERT_MSG("Еще не завершена последняя операция с файлом");
   }
-}
-
-bool irs::csvwork::csv_file_t::reset_file(const irs::string& a_filename)
-{
-  bool fsuccess = true;
-  IRS_LIB_ASSERT(m_command == cmd_none_command);
-  if (m_command == cmd_none_command) {
-    m_filename = a_filename;
-    m_file.close();
-    // Очистка всех ошибок
-    m_file.clear();
-    m_file.open(a_filename.c_str());
-    if (m_file.good()) {
-      fsuccess = true;
-    } else {
-      fsuccess = false;
-    }
-  }
-  return fsuccess;
 }
 
 void irs::csvwork::csv_file_t::get_col_count(size_type* ap_col_count)
@@ -940,11 +937,11 @@ bool irs::csvwork::csv_file_t::clear()
   bool fsuccess = true;
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
-    m_file.close();
-    m_file.clear();
     m_file.open(m_filename.c_str(), ios::in|ios::out|ios::trunc);
     if(!m_file) {
       fsuccess = false;
+    } else {
+      m_file.close();
     }
   } else {
     fsuccess = false;
@@ -969,13 +966,32 @@ void irs::csvwork::csv_file_t::get_row(
   {
     mp_row_user = ap_row;
     mp_row_user->clear();
-    //mp_row_user->resize(1);
     m_row_index = a_row_index;
     m_pos_mode = a_pos_mode;
     m_cur_instruction = ci_find_row_pos;
     m_command = cmd_get_row;
     m_status = cfs_busy;
   }
+}
+
+void irs::csvwork::csv_file_t::set_mode_error()
+{
+  m_file.close();
+  m_file.clear();
+  m_progress = 0.;
+  m_status = cfs_error;
+  m_command = cmd_none_command;
+  m_processing_status = ps_busy_command;
+}
+
+void irs::csvwork::csv_file_t::set_mode_success()
+{
+  m_file.close();
+  m_file.clear();
+  m_progress = 1.;
+  m_status = cfs_success;
+  m_command = cmd_none_command;
+  m_processing_status = ps_busy_command;
 }
 
 /*void irs::csv_file_t::row_erase(const int a_row_begin, const int a_row_end)

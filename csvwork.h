@@ -129,10 +129,17 @@ class csv_file_t
 {
 public:
   typedef size_t size_type;
+  typedef char_t char_type;
+  typedef string_t string_type;
+  typedef int delimiter_row_type;
   enum pos_mode_t {pos_mode_beg, pos_mode_end};
 private:
-  char m_delimiter_col;
-  static const char m_delimiter_row;
+  char_type m_delimiter_col;
+  const char m_delimiter_row;
+  const string_type m_delim_row;
+  const size_type m_delimiter_row_size;
+
+  //size_type m_pos;
   string m_filename;
   fstream m_file;
   double m_progress;
@@ -181,28 +188,24 @@ private:
   size_type m_row_index;
   pos_mode_t m_pos_mode;
   size_type m_row_pos_file;
-  static const char m_quote;
+  const char_type m_quote;
   size_type m_quote_count;
   string m_special_character;
   //csv_file_t();
 
-public:
-
+public:   
   csv_file_t(const string& a_filename = "");
   ~csv_file_t();
   // Выдает текущее состояние выполняемой операции. Значения от 0 до 1
   inline double get_progress();
   inline csv_file_status_t get_status();
   void tick();
-  bool open(const string& a_filename);
-  void close();
-  bool reset_file(const string& a_filename);
+  void set_file(const string_type& a_file_name);
   void get_col_count(size_type* ap_col_count);
   void get_row_count(size_type* ap_row_count);
   // Добавить строку в конец CSV файла
   // Буфер внутрь не копируется, а считываюется прямо из буфера пользователя
   void row_push_back(vector<string>* const  ap_row);
-
   // Добавить строку в конец CSV файла
   // Буфер строк копируется во внутренний буфер
   void row_push_back(vector<string>& a_row);
@@ -217,7 +220,9 @@ public:
     const pos_mode_t a_pos_mode = pos_mode_beg);
   bool clear();
   //void row_erase(const int a_row_begin, const int a_row_end);
-
+private:
+  void set_mode_error();
+  void set_mode_success();
 };
 
 inline double csv_file_t::get_progress()
