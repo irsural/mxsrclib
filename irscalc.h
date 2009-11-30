@@ -53,6 +53,7 @@ typedef variant::variant_t valuens_t;
 enum token_type_t {
   tt_none,
   tt_number,
+  tt_string,
   tt_delimiter,
   tt_constant,
   tt_function,
@@ -168,9 +169,13 @@ typedef map<stringns_t, keyword_t> keyword_map_type;
 typedef map<stringns_t, keyword_t> keyword_map_iterator;
 typedef map<stringns_t, keyword_t> keyword_map_const_iterator;
 
-void create_keyword_map(keyword_map_type* ap_keyword_map);
+void create_keyword_cpp_map(keyword_map_type* ap_keyword_map);
 
 enum variability_t {v_is_variable, v_is_constant};
+
+class mutable_ref_t;
+class calculator_t;
+class calc_variables_t;
 
 class function_t
 {
@@ -178,31 +183,25 @@ public:
   inline virtual ~function_t()
   {
   }
-  virtual bool exec(vector<variant::variant_t>* ap_parameters,
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
     variant::variant_t* ap_returned_value) const = 0;
 };
 
 class func_r_int_a_int_t: public function_t
 {
 public:
+  typedef variant::variant_t variant_t;
   typedef int (*func_r_int_a_int_ptr)(int);
-  inline func_r_int_a_int_t(func_r_int_a_int_ptr ap_func
-  ):
+  inline func_r_int_a_int_t(func_r_int_a_int_ptr ap_func):
     mp_func(ap_func)
   {
   }
-  inline virtual bool exec(vector<variant::variant_t>* ap_parameters,
-    variant::variant_t* ap_returned_value) const
-  {
-    bool fsuccess = true;
-    if (ap_parameters->size() == 1) {
-      *ap_returned_value = (*mp_func)((*ap_parameters)[0].as_int());
-    } else {
-      // Недопустимое количество параметров
-      fsuccess = false;
-    }
-    return fsuccess;
-  }
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_t* ap_returned_value) const;
 private:
   func_r_int_a_int_ptr mp_func;
   func_r_int_a_int_t();
@@ -211,6 +210,7 @@ private:
 class func_r_double_a_double_t: public function_t
 {
 public:
+  typedef variant::variant_t variant_t;
   typedef double (*func_r_double_a_double_ptr_type)(double);
   inline explicit func_r_double_a_double_t(
     func_r_double_a_double_ptr_type ap_func
@@ -218,18 +218,10 @@ public:
     mp_func(ap_func)
   {
   }
-  inline virtual bool exec(vector<variant::variant_t>* ap_parameters,
-    variant::variant_t* ap_returned_value) const
-  {
-    bool fsuccess = true;
-    if (ap_parameters->size() == 1) {
-      *ap_returned_value = (*mp_func)((*ap_parameters)[0].as_double());
-    } else {
-      // Недопустимое количество параметров
-      fsuccess = false;
-    }
-    return fsuccess;
-  }
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_t* ap_returned_value) const;
 private:
   func_r_double_a_double_ptr_type mp_func;
   func_r_double_a_double_t();
@@ -238,19 +230,33 @@ private:
 class pow_t: public function_t
 {
 public:
-  inline virtual bool exec(vector<variant::variant_t>* ap_parameters,
-    variant::variant_t* ap_returned_value) const
-  {  
-    bool fsuccess = true;
-    if (ap_parameters->size() == 2) {
-      *ap_returned_value = pow((*ap_parameters)[0].as_double(),
-        (*ap_parameters)[1].as_double());
-    } else {
-      // Недопустимое количество параметров
-      fsuccess = false;
-    }
-    return fsuccess;
-  }                       
+  typedef variant::variant_t variant_t;
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_t* ap_returned_value) const;
+};
+
+class number_to_string_t: public function_t
+{
+public:
+  typedef stringns_t string_type;
+  typedef variant::variant_t variant_t;
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_t* ap_returned_value) const;
+};
+
+class string_to_number_t: public function_t
+{
+public:
+  typedef stringns_t string_type;
+  typedef variant::variant_t variant_t;
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_t* ap_returned_value) const;
 };
 
 class list_identifier_t
@@ -437,7 +443,7 @@ list_identifier_t::list_identifier_t(
   m_variable_list(),
   m_function_map()
 {
-  create_keyword_map(&m_keyword_map);
+  create_keyword_cpp_map(&m_keyword_map);
 }
 
 class token_t
@@ -461,15 +467,15 @@ public:
   inline void type_change(const token_type_t a_token_type)
   {
     if (m_token_type != a_token_type) {
-      if (m_token_type == tt_number) {
-        delete m_tok.p_num;
+      if ((m_token_type == tt_number) || (m_token_type == tt_string)) {
+        delete m_tok.p_num_or_str;
       } else if (m_token_type == tt_identifier) {
         delete m_tok.p_identifier;
       } else {
         // Другие типы не требуют освобождения памяти
       }
-      if (a_token_type == tt_number) {
-        m_tok.p_num = new value_type;
+      if ((a_token_type == tt_number) || (a_token_type == tt_string)) {
+        m_tok.p_num_or_str = new value_type;
       } else if (a_token_type == tt_identifier) {
         m_tok.p_identifier = new string_type;
       } else {
@@ -488,7 +494,12 @@ public:
   inline void set_number(const value_type& a_num)
   {
     type_change(tt_number);
-    *m_tok.p_num = a_num;
+    *m_tok.p_num_or_str = a_num;
+  }
+  inline void set_string(const value_type& a_string)
+  {
+    type_change(tt_string);
+    *m_tok.p_num_or_str = a_string;
   }
   inline void set_delimiter(const delimiter_t a_delimiter)
   {
@@ -552,14 +563,13 @@ public:
   inline value_type get_number() const
   {
     IRS_LIB_ASSERT(m_token_type == tt_number);
-    /*value_type num;
-    num.type(variant::var_type_unknown);
-    if (m_token_type == tt_number) {
-      num = (*m_tok.p_num);
-    } else {
-      // Текущая константа не является числом
-    }*/
-    return *m_tok.p_num;
+
+    return *m_tok.p_num_or_str;
+  }
+  inline value_type get_string() const
+  {
+    IRS_LIB_ASSERT(m_token_type == tt_string);
+    return *m_tok.p_num_or_str;
   }
   inline bool is_operator_logical()
   {
@@ -593,7 +603,7 @@ public:
   }
 private:
   union {
-    value_type* p_num;
+    value_type* p_num_or_str;
     delimiter_t delimiter;
     const value_type* p_constant;
     const function_t* p_function;
@@ -604,8 +614,9 @@ private:
   {
     type_change(a_token.m_token_type);
     switch (m_token_type) {
-      case tt_number: {
-        *m_tok.p_num = *a_token.m_tok.p_num;
+      case tt_number:
+      case tt_string: {
+        *m_tok.p_num_or_str = *a_token.m_tok.p_num_or_str;
       } break;
       case tt_delimiter: {
         m_tok.delimiter = a_token.m_tok.delimiter;
@@ -710,22 +721,8 @@ inline bool detector_token_t::is_char_exponent(const char_type a_ch)
 }
 
 inline bool detector_token_t::is_char_alpha(const char_type a_ch)
-{
-  /*bool is_ch_alpha = false;
-  if (isalphat(a_ch)) {
-    is_ch_alpha = true;
-  } else {
-    // Заглавная буква русского алфавита
-    bool is_ch_russian_capital = (a_ch >= irst('А')) && (a_ch <= irst('Я'));
-    // Строчная буква русского алфавита
-    bool is_ch_russian_small = (a_ch >= irst('а'));
-    if (is_ch_russian_capital || is_ch_russian_small) {
-      is_ch_alpha = true;
-    } else {
-      // Символ не является буквой латинского и русского алфавитов
-    }
-  }*/
-  return (isalnumt(a_ch) || a_ch == '_');
+{ 
+  return (isalnumt(a_ch) || a_ch == irst('_'));
 }
 
 inline bool detector_token_t::detect_token(const string_type* ap_prog,
@@ -756,25 +753,37 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
     }
   }
 
-  /*if (!detected_token) {
+  if (!detected_token) {
     // Читаем строку в кавычках
     // Запоминаем позицию первого символа числа
     const size_type num_begin_ch = pos;
     if ((*ap_prog)[pos] == irst('"')) {
       pos++;
-      pos = ap_prog->find_first_not_of(irst("\""), pos);
-      if (pos != string_type::npos) {
+      if (pos < ap_prog->size()) {
+        pos = ap_prog->find(irst("\""), pos);
+        if (pos != string_type::npos) {
+          string_type string_value = ap_prog->substr(num_begin_ch + 1, pos-1);
+          ap_token_data->token.set_string(string_value);
+          pos++;
+          ap_token_data->length = pos - a_prog_pos;
+          detected_token = true;
+        } else {
+          // Достигнут конец программы
+        }
       } else {
-
-      }
-      while ((*ap_prog)[pos] == irst('"') &&) {
+        // Достигнут конец программы
       }
     } else {
-
+      // Символ кавычки не найден
+    }
+    if (!detected_token) {
+      pos = num_begin_ch;
+    } else {
+      // Лексема детектирована
     }
   } else {
     // Лексема уже детектирована
-  }*/
+  }
   if (!detected_token) {
     // Читаем ограничитель
     bool next_ch_not_end_prog = false;
@@ -1090,7 +1099,13 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
 
   // Читаем идентификатор или ключевое слово
   if (!detected_token) {
-    if (is_char_alpha(ch)) {
+    bool is_alnum = false;
+    #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+    is_alnum = isalnumt(ch, locale::classic());
+    #else // IRS_FULL_STDCPPLIB_SUPPORT
+    is_alnum = isalnumt(ch);
+    #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+    if (is_alnum || (ch == irst('_'))) {
       const size_type pos_begin_name = pos;
       pos = ap_prog->find_first_not_of(m_ch_valid_name, pos);
       if (pos == string_type::npos) {
@@ -1318,6 +1333,22 @@ private:
   type_t m_type;
 };
 
+class calc_variables_t
+{
+public:
+  typedef irs::variant::variant_t variant_t;
+  calc_variables_t(calculator_t* const ap_calculator);
+  bool value_read(const mutable_ref_t& a_mutable_ref_src,
+    variant_t* ap_value_dest);
+  bool value_write(variant_t& a_variant_src,
+    mutable_ref_t* ap_mutable_ref_dest);
+  bool value_write(const mutable_ref_t& a_mutable_ref_src,
+    mutable_ref_t* ap_mutable_ref_dest);
+private:
+  calc_variables_t();
+  calculator_t* const mp_calculator;
+};
+
 class calculator_t
 {
 public:
@@ -1362,7 +1393,7 @@ private:
   inline bool eval_exp_square_brackets(mutable_ref_t* ap_value);
   inline bool eval_exp_variable(id_constant_type* ap_id_constant);
   // Обрабатывает скобки функции и выражение, расположенное внутри них
-  inline bool eval_exp_arg_function(vector<variant_t>* ap_args);
+  inline bool eval_exp_arg_function(vector<mutable_ref_t>* ap_args);
   // Обрабатывает логические операции
   inline bool eval_exp_logical(mutable_ref_t* ap_value);
   // Обрабатывает операции отношения
@@ -1380,7 +1411,7 @@ private:
   // Обрабатывает скобки
   inline bool eval_exp_brackets(mutable_ref_t* ap_value);
   // Обрабатывает переменные, функции и числа
-  inline bool atom(mutable_ref_t* ap_value);
+  bool atom(mutable_ref_t* ap_value);
   #ifdef NOP
   inline bool variable_value_get(const id_constant_type& a_id_constant,
     mutable_ref_t* ap_value_mref);
@@ -1402,9 +1433,22 @@ private:
   );
   bool assign_variable(const mutable_ref_t& a_right_value_mref,
     mutable_ref_t* ap_left_value_mref);
+//public: // Убрать доступ!!!
   bool value_read(const mutable_ref_t& a_mutable_ref_src,
     variant_t* ap_value_dest);
+  bool value_write(variant_t& a_variant_src,
+    mutable_ref_t* ap_mutable_ref_dest);
   bool value_write(const mutable_ref_t& a_mutable_ref_src,
+    mutable_ref_t* ap_mutable_ref_dest);
+
+  friend bool calc_variables_t::value_read(
+    const mutable_ref_t& a_mutable_ref_src,
+    variant_t* ap_value_dest);
+  friend bool calc_variables_t::value_write(
+    variant_t& a_variant_src,
+    mutable_ref_t* ap_mutable_ref_dest);
+  friend bool calc_variables_t::value_write(
+    const mutable_ref_t& a_mutable_ref_src,
     mutable_ref_t* ap_mutable_ref_dest);
 };
 
@@ -1470,6 +1514,8 @@ inline calculator_t::calculator_t():
   function_add(irst("tanh"),
     new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
   function_add(irst("pow"), new pow_t());
+  function_add(irst("number_to_string"), new number_to_string_t());
+  function_add(irst("string_to_number"), new string_to_number_t());    
 
   variable_add(irst("IRS_E"), IRS_E, v_is_constant);
   variable_add(irst("IRS_LOG2E"), IRS_LOG2E, v_is_constant);
@@ -1755,7 +1801,7 @@ inline bool calculator_t::eval_exp_variable(
   return fsuccess;
 }
 
-inline bool calculator_t::eval_exp_arg_function(vector<variant_t>* ap_args)
+inline bool calculator_t::eval_exp_arg_function(vector<mutable_ref_t>* ap_args)
 {
   bool fsuccess = true;
   ap_args->resize(0);
@@ -1776,18 +1822,18 @@ inline bool calculator_t::eval_exp_arg_function(vector<variant_t>* ap_args)
         // Произошла ошибка
       }
       while (fsuccess && (delim != d_right_parenthesis)) {
-        mutable_ref_t partial_value;
+        mutable_ref_t value;
         if (fsuccess) {
-          fsuccess = eval_exp_logical(&partial_value);
+          fsuccess = eval_exp_logical(&value);
         } else {
           // Произошла ошибка
         }
-        variant_t value;
+        /*variant_t value;
         if (fsuccess) {
           fsuccess = value_read(partial_value, &value);
         } else {
           // Произошла ошибка
-        }
+        }*/
         if (fsuccess) {
           ap_args->push_back(value);
           fsuccess = m_detector_token.get_token(&token);
@@ -2226,130 +2272,6 @@ inline bool calculator_t::eval_exp_brackets(mutable_ref_t* ap_value)
       }
     } else {
       fsuccess = atom(ap_value);
-    }
-  }
-  return fsuccess;
-}
-
-inline bool calculator_t::atom(mutable_ref_t* ap_value)
-{
-  bool fsuccess = true;
-  token_t token;
-  fsuccess = m_detector_token.get_token(&token);
-  if (fsuccess) {
-    if (token.token_type() == tt_identifier) {
-      const function_t* p_function = IRS_NULL;
-      if (m_list_identifier.function_find(token.get_identifier(), &p_function))
-      { 
-        fsuccess = m_detector_token.next_token();
-        vector<variant_t> arguments_func;
-        if (fsuccess) {
-          fsuccess = eval_exp_arg_function(&arguments_func);
-        } else {
-          // Произошла ошибка
-        }
-        variant_t result_value_variant;
-        if (fsuccess) {
-          fsuccess = p_function->exec(&arguments_func, &result_value_variant);
-        } else {
-          // Произошла ошибка
-        }
-        if (fsuccess) {
-          ap_value->type(mutable_ref_t::type_value);
-          ap_value->value(result_value_variant);
-        } else {
-          // Произошла ошибка
-        }
-      } else {
-        id_variable_type id_variable;
-        fsuccess = eval_exp_variable(&id_variable);
-        if (fsuccess) {
-          //fsuccess = variable_value_get(constant, ap_value);
-          ap_value->type(mutable_ref_t::type_id);
-          ap_value->id(id_variable);
-        } else {
-          // Произошла ошибка
-        }
-      }
-    /*
-    } else if (token.token_type() == tt_function) {
-      const function_t* const p_func = token.get_function();
-      fsuccess = m_detector_token.next_token();
-      vector<variant_t> arguments_func;
-      if (fsuccess) {
-        fsuccess = eval_exp_arg_function(&arguments_func);
-      } else {
-        // Произошла ошибка
-      }
-      if (fsuccess) {
-        fsuccess = p_func->exec(&arguments_func, ap_value);
-      } else {
-        // Произошла ошибка
-      }
-    } else if (token.token_type() == tt_constant) {
-      const value_type* p_constant = token.get_constant();
-      fsuccess = m_detector_token.next_token();
-      while (fsuccess && (p_constant->type() == variant::var_type_array)) {
-        value_type elem_index;
-        if (fsuccess) {
-          fsuccess = eval_exp_square_brackets(&elem_index);
-        } else {
-          // Произошла ошибка
-        }
-        if (fsuccess) {
-          if (elem_index < p_constant->size()) {
-            p_constant = &(*p_constant)[elem_index];
-          } else {
-            fsuccess = false;
-          }
-        } else {
-          // Произошла ошибка
-        }
-      }
-      if (fsuccess) {
-        *ap_value = *p_constant;
-      } else {
-        // Произошла ошибка
-      }
-    */
-    } else if (token.token_type() == tt_number) {
-      variant_t value_variant = token.get_number();
-      ap_value->type(mutable_ref_t::type_value);
-      ap_value->value(value_variant);
-      fsuccess = m_detector_token.next_token();
-    } else if (token.token_type() == tt_delimiter) {
-      if (token.delimiter() == d_plus) {
-        fsuccess = m_detector_token.next_token();
-        if (fsuccess) {
-          fsuccess = atom(ap_value);
-        } else {
-          // Произошла ошибка
-        }
-      } else if (token.delimiter() == d_minus) {
-        fsuccess = m_detector_token.next_token();
-        if (fsuccess) {
-          fsuccess = atom(ap_value);
-          variant_t value_variant;
-          if (fsuccess) {
-            fsuccess = value_read(*ap_value, &value_variant);
-          } else {
-            // Произошла ошибка
-          }
-          if (fsuccess) {
-            value_variant *= -1;
-            ap_value->type(mutable_ref_t::type_value);
-            ap_value->value(value_variant);
-          } else{
-            // Произошла ошибка
-          }
-        } else {
-          // Произошла ошибка
-        }
-      } else {
-        fsuccess = false;
-      }
-    } else {
-      fsuccess = false;
     }
   }
   return fsuccess;

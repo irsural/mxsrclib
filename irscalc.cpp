@@ -31,7 +31,7 @@ irs::string irs::preprocessing_str(const irs::string& a_str)
 }
 */
 
-void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
+void irs::calc::create_keyword_cpp_map(keyword_map_type* ap_keyword_map)
 {
   ap_keyword_map->clear();
   (*ap_keyword_map)[irst("and")] = keyword_and;
@@ -110,6 +110,212 @@ void irs::calc::create_keyword_map(keyword_map_type* ap_keyword_map)
   (*ap_keyword_map)[irst("xor_eq")] = keyword_xor_eq;
 }
 
+// class func_r_int_a_int_t
+bool irs::calc::func_r_int_a_int_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_t* ap_returned_value) const
+{
+  bool fsuccess = false;
+  if (ap_parameters->size() == 1) {
+    variant_t value_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
+      if (value_variant.convert_to(irs::variant::var_type_int)) {
+        *ap_returned_value = (*mp_func)(value_variant.as_int());
+        fsuccess = true;
+      } else {
+        // Недопустимый тип аргумента
+      }
+    } else {
+      // Прочитать аргумент не удалось
+    }
+  } else {
+    // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+
+// class func_r_double_a_double_t
+bool irs::calc::func_r_double_a_double_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_t* ap_returned_value) const
+{
+  bool fsuccess = false;
+  if (ap_parameters->size() == 1) {
+    variant_t value_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
+      if (value_variant.convert_to(irs::variant::var_type_double)) {
+        *ap_returned_value = (*mp_func)(value_variant.as_double());
+        fsuccess = true;
+      } else {
+        // Недопустимый тип аргумента
+      }
+    } else {
+      // Прочитать аргумент не удалось
+    }
+  } else {
+    // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+
+// class pow_t
+bool irs::calc::pow_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_t* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() == 2) {
+    variant_t first_arg_variant;
+    variant_t second_arg_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &first_arg_variant))
+    {
+      if (!first_arg_variant.convert_to(irs::variant::var_type_double)) {
+        // Недопустимый тип аргумента
+        fsuccess = false;
+      } else {
+        // Первый аргумент успешно прочитан
+      }
+    } else {
+      // Прочитать аргумент не удалось
+      fsuccess = false;
+    }
+    if (ap_calc_variables->value_read((*ap_parameters)[1], &second_arg_variant))
+    {
+      if (!second_arg_variant.convert_to(irs::variant::var_type_double)) {
+        // Недопустимый тип аргумента
+        fsuccess = false;
+      } else {
+        // Второй аргумент успешно прочитан
+      }
+    } else {
+      // Прочитать аргумент не удалось
+      fsuccess = false;
+    }
+    if (fsuccess) {
+      *ap_returned_value = pow(first_arg_variant.as_double(),
+        second_arg_variant.as_double());
+    } else {
+      // Произошла ошибка
+    }       
+  } else {
+    // Недопустимое количество параметров
+    fsuccess = false;
+  }
+  return fsuccess;
+}
+
+// class number_to_string_t
+bool irs::calc::number_to_string_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_t* ap_returned_value) const
+{
+  bool fsuccess = false;
+  if (ap_parameters->size() == 1) {
+    variant_t value_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
+      if (irs::variant::is_number_type(value_variant.type())) {
+        if (value_variant.convert_to(irs::variant::var_type_string)) {
+          *ap_returned_value = value_variant.as_type<string_type>();
+          fsuccess = true;
+        } else {
+          // Преобразование окончилось неудачей
+        }
+      } else {
+        // Недопустимый тип аргумента
+      }
+    } else {
+      // Прочитать аргумент не удалось
+    }
+  } else {
+    // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+
+// class string_to_number_t
+bool irs::calc::string_to_number_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_t* ap_returned_value) const
+{
+  bool fsuccess = true;  
+  if (ap_parameters->size() != 2) {
+    fsuccess = false;
+  } else {
+    // Количество аргументов имеет правильное значение
+  }
+  variant_t first_arg_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0], &first_arg_variant))
+    {
+      fsuccess = false;
+    } else {
+      // Значение успешно прочитано
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    if (first_arg_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    } else {
+      // Прочитанное значение имеет строковый тип
+    }
+  } else {
+    // Произошла ошибка
+  }
+  variant_t number_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[1], &number_variant)) {
+      fsuccess = false;
+    } else {
+      // Значение второго аргумента успешно прочитано
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    if (!irs::variant::is_number_type(number_variant.type())) {
+      fsuccess = false;
+    } else {
+      // Второй аргумент имеет числовой тип
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    if (!first_arg_variant.convert_to(number_variant.type())) {
+      fsuccess = false;
+    } else {
+      // Первый аргумент успешно сконвертирован в числовой тип
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    if (!ap_calc_variables->value_write(
+      first_arg_variant, &(*ap_parameters)[1]))
+    {
+      fsuccess = false;
+    } else {
+      // Значение второго аргумента успешно перезаписано числом, полученным из
+      // строки
+    }
+  } else {
+    // Произошла ошибка
+  }
+  if (fsuccess) {
+    *ap_returned_value = true;
+  } else {
+    *ap_returned_value = false;
+  }         
+  return fsuccess;
+}
+
 bool irs::calc::part_id_name_get(
   const part_id_variable_const_iterator a_begin_part_id_it,
   const part_id_variable_const_iterator a_end_part_id_it,
@@ -122,6 +328,7 @@ bool irs::calc::part_id_name_get(
     if (a_begin_part_id_it->type == part_id_type_name) {
       if (a_begin_part_id_it->part_id.type() == irs::variant::var_type_string) {
         *ap_name = a_begin_part_id_it->part_id.as_string();
+        fsuccess = true;
       } else {
         IRS_LIB_ASSERT_MSG("Имя имеет неправильный тип");
       }
@@ -141,19 +348,179 @@ bool irs::calc::part_id_index_get(
 {
   IRS_LIB_ASSERT(ap_index != IRS_NULL);
   bool fsuccess = false;
-  const int single_part_id = 1;
+  const size_t single_part_id = 1;
   if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
     if (a_begin_part_id_it->type == part_id_type_index) {
-      if (a_begin_part_id_it->part_id.type() == ap_index->type()) {
+      irs::variant::variant_t index_variant = a_begin_part_id_it->part_id;
+      if (index_variant.convert_to(ap_index->type())) {
         ap_index->assign_no_cast(a_begin_part_id_it->part_id);
+        fsuccess = true;
       } else {
-        IRS_LIB_ASSERT_MSG("Имя имеет неправильный тип");
+        IRS_LIB_ASSERT_MSG("Индекс имеет неправильный тип");
       }
     } else {
       // Текущая часть идентификатора не является именем
     }
   } else {
     // Нет частей идентификатора для обработки
+  }
+  return fsuccess;
+}
+
+// class calc_variables_t
+irs::calc::calc_variables_t::calc_variables_t(
+  calculator_t* const ap_calculator
+):
+  mp_calculator(ap_calculator)
+{
+  IRS_LIB_ASSERT(mp_calculator);
+}
+
+bool irs::calc::calc_variables_t::value_read(
+  const mutable_ref_t& a_mutable_ref_src,
+  variant_t* ap_value_dest)
+{
+  IRS_LIB_ASSERT(mp_calculator);
+  return mp_calculator->value_read(a_mutable_ref_src, ap_value_dest);
+}
+
+bool irs::calc::calc_variables_t::value_write(
+  variant_t& a_variant_src,
+  mutable_ref_t* ap_mutable_ref_dest)
+{
+  IRS_LIB_ASSERT(mp_calculator);
+  return mp_calculator->value_write(a_variant_src, ap_mutable_ref_dest);
+}
+
+bool irs::calc::calculator_t::atom(mutable_ref_t* ap_value)
+{
+  bool fsuccess = true;
+  token_t token;
+  fsuccess = m_detector_token.get_token(&token);
+  if (fsuccess) {
+    if (token.token_type() == tt_identifier) {
+      const function_t* p_function = IRS_NULL;
+      if (m_list_identifier.function_find(token.get_identifier(), &p_function))
+      { 
+        fsuccess = m_detector_token.next_token();
+        vector<mutable_ref_t> arguments_func;
+        if (fsuccess) {
+          fsuccess = eval_exp_arg_function(&arguments_func);
+        } else {
+          // Произошла ошибка
+        }
+        variant_t result_value_variant;
+        if (fsuccess) {
+          calc_variables_t calc_variables(this);
+          fsuccess = p_function->exec(&calc_variables, &arguments_func,
+            &result_value_variant);
+        } else {
+          // Произошла ошибка
+        }
+        if (fsuccess) {
+          ap_value->type(mutable_ref_t::type_value);
+          ap_value->value(result_value_variant);
+        } else {
+          // Произошла ошибка
+        }
+      } else {
+        id_variable_type id_variable;
+        fsuccess = eval_exp_variable(&id_variable);
+        if (fsuccess) {
+          //fsuccess = variable_value_get(constant, ap_value);
+          ap_value->type(mutable_ref_t::type_id);
+          ap_value->id(id_variable);
+        } else {
+          // Произошла ошибка
+        }
+      }
+    /*
+    } else if (token.token_type() == tt_function) {
+      const function_t* const p_func = token.get_function();
+      fsuccess = m_detector_token.next_token();
+      vector<variant_t> arguments_func;
+      if (fsuccess) {
+        fsuccess = eval_exp_arg_function(&arguments_func);
+      } else {
+        // Произошла ошибка
+      }
+      if (fsuccess) {
+        fsuccess = p_func->exec(&arguments_func, ap_value);
+      } else {
+        // Произошла ошибка
+      }
+    } else if (token.token_type() == tt_constant) {
+      const value_type* p_constant = token.get_constant();
+      fsuccess = m_detector_token.next_token();
+      while (fsuccess && (p_constant->type() == variant::var_type_array)) {
+        value_type elem_index;
+        if (fsuccess) {
+          fsuccess = eval_exp_square_brackets(&elem_index);
+        } else {
+          // Произошла ошибка
+        }
+        if (fsuccess) {
+          if (elem_index < p_constant->size()) {
+            p_constant = &(*p_constant)[elem_index];
+          } else {
+            fsuccess = false;
+          }
+        } else {
+          // Произошла ошибка
+        }
+      }
+      if (fsuccess) {
+        *ap_value = *p_constant;
+      } else {
+        // Произошла ошибка
+      }
+    */
+    } else if ((token.token_type() == tt_number) ||
+      (token.token_type() == tt_string))
+    {
+      variant_t value_variant;
+      if (token.token_type() == tt_number) {
+        value_variant = token.get_number();
+      } else {
+        value_variant = token.get_string();
+      }                                 
+      ap_value->type(mutable_ref_t::type_value);
+      ap_value->value(value_variant);
+      fsuccess = m_detector_token.next_token();
+    } else if (token.token_type() == tt_delimiter) {
+      if (token.delimiter() == d_plus) {
+        fsuccess = m_detector_token.next_token();
+        if (fsuccess) {
+          fsuccess = atom(ap_value);
+        } else {
+          // Произошла ошибка
+        }
+      } else if (token.delimiter() == d_minus) {
+        fsuccess = m_detector_token.next_token();
+        if (fsuccess) {
+          fsuccess = atom(ap_value);
+          variant_t value_variant;
+          if (fsuccess) {
+            fsuccess = value_read(*ap_value, &value_variant);
+          } else {
+            // Произошла ошибка
+          }
+          if (fsuccess) {
+            value_variant *= -1;
+            ap_value->type(mutable_ref_t::type_value);
+            ap_value->value(value_variant);
+          } else{
+            // Произошла ошибка
+          }
+        } else {
+          // Произошла ошибка
+        }
+      } else {
+        fsuccess = false;
+      }
+    } else {
+      fsuccess = false;
+    }
   }
   return fsuccess;
 }
@@ -303,40 +670,29 @@ bool irs::calc::calculator_t::value_read(
   return value_read_success;
 }
 
-bool irs::calc::calculator_t::value_write(
-  const mutable_ref_t& a_mutable_ref_src,
+bool irs::calc::calculator_t::value_write(variant_t& a_variant_src,
   mutable_ref_t* ap_mutable_ref_dest)
-{              
+{
   IRS_LIB_ASSERT(ap_mutable_ref_dest != IRS_NULL);
   bool value_write_success = false;
   const mutable_ref_t::type_t mutable_ref_dest_type =
     ap_mutable_ref_dest->type();
   switch (mutable_ref_dest_type) {
     case mutable_ref_t::type_value: {
-      variant_t value_dest;
-      if (value_read(a_mutable_ref_src, &value_dest)) {
-        ap_mutable_ref_dest->value(value_dest);
-        value_write_success = true;
-      } else {
-        // Прочить значение не удалось
-      }
+      ap_mutable_ref_dest->value(a_variant_src);
+      value_write_success = true;
     } break;
     case mutable_ref_t::type_id: {
       const id_variable_type id_variable_dest = ap_mutable_ref_dest->id();
-      variant_t value_variant_src;
-      if (value_read(a_mutable_ref_src, &value_variant_src)) {
-        if (local_variable_value(
-          mode_io_value_write, id_variable_dest, &value_variant_src))
-        {
-          value_write_success = true;
-        } else if (extern_variable_value(mode_io_value_write, id_variable_dest,
-          &value_variant_src)) {
-          value_write_success = true;
-        } else {
-          // Записать значение не удалось
-        }
+      if (local_variable_value(
+        mode_io_value_write, id_variable_dest, &a_variant_src))
+      {
+        value_write_success = true;
+      } else if (extern_variable_value(mode_io_value_write, id_variable_dest,
+        &a_variant_src)) {
+        value_write_success = true;
       } else {
-        // Прочить значение не удалось
+        // Записать значение не удалось
       }
     } break;
     default : {
@@ -346,9 +702,25 @@ bool irs::calc::calculator_t::value_write(
   return value_write_success;
 }
 
+bool irs::calc::calculator_t::value_write(
+  const mutable_ref_t& a_mutable_ref_src,
+  mutable_ref_t* ap_mutable_ref_dest)
+{
+  IRS_LIB_ASSERT(ap_mutable_ref_dest != IRS_NULL);
+  bool value_write_success = false;
+  variant_t value_variant_src;
+  if (value_read(a_mutable_ref_src, &value_variant_src)) {
+    value_write_success = value_write(value_variant_src,
+      ap_mutable_ref_dest);
+  } else {
+    // Прочить значение не удалось
+  }
+  return value_write_success;
+}
+
 
 #ifndef NOP
-// class mutable_ref_t   
+// class mutable_ref_t
 irs::calc::mutable_ref_t::mutable_ref_t(type_t a_type):
   m_type(a_type),
   m_value(),
@@ -447,6 +819,14 @@ irs::calc::mutable_ref_t::operator=(const mutable_ref_t& a_mutable_ref)
 }
 
 #endif // NOP
+
+bool irs::calc::calc_variables_t::value_write(
+  const mutable_ref_t& a_mutable_ref_src,
+  mutable_ref_t* ap_mutable_ref_dest)
+{
+  IRS_LIB_ASSERT(mp_calculator);
+  return mp_calculator->value_write(a_mutable_ref_src, ap_mutable_ref_dest);
+}
 
 //#endif // GNU C++ specific
 

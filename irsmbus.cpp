@@ -325,7 +325,8 @@ void irs::test_bit_copy(ostream& strm, irs_u16 size_data_in,
     idx_out ++)
   {
     int rand_val = rand();
-    ap_data_out[idx_out] = static_cast<irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
+    ap_data_out[idx_out] = static_cast
+      <irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
   }
   strm << "IN before operation" << endl;
   for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)

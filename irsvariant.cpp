@@ -54,6 +54,8 @@ void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
   }
   switch(a_variant_type) {
     case var_type_unknown:
+    case var_type_void_ptr:
+    case var_type_const_void_ptr:
     case var_type_bool:
     case var_type_char:
     case var_type_singned_char:
@@ -103,6 +105,9 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
 {
   type_change(a_variant.m_type);
   switch(m_type) {
+    case var_type_void_ptr: {
+      m_value.p_void_type = a_variant.m_value.p_void_type;
+    } break;
     case var_type_bool: {
       m_value.val_bool_type = a_variant.m_value.val_bool_type;
     } break;
@@ -164,6 +169,21 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
     }
   }
+  return *this;
+}
+
+irs::variant::variant_t& irs::variant::variant_t::operator=(void* ap_value)
+{
+  type_change(var_type_void_ptr);
+  m_value.p_void_type = ap_value;
+  return *this;
+}
+
+irs::variant::variant_t& irs::variant::variant_t::operator=(
+  const void* ap_value)
+{
+  type_change(var_type_const_void_ptr);
+  m_value.p_const_void_type = ap_value;
   return *this;
 }
 
@@ -290,8 +310,18 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   return *this;
 }
 
+void* irs::variant::variant_t::as_void_ptr() const
+{
+  return as_type<void*>();
+}
+
+const void* irs::variant::variant_t::as_const_void_ptr() const
+{
+  return as_type<const void*>();
+}
+
 bool irs::variant::variant_t::as_bool() const
-{ 
+{
   return as_type<bool>();
 }
 
@@ -451,6 +481,16 @@ irs::variant::variant_t::operator unsigned_long_long_type() const
   return as_type<unsigned_long_long_type>();
 }
 #endif // IRSDEFS_I64
+
+irs::variant::variant_t::operator void*() const
+{
+  return as_type<void*>();
+}
+
+irs::variant::variant_t::operator const void*() const
+{
+  return as_type<const void*>();
+}
 
 /*irs::variant::variant_t::operator const char_type*() const
 {
@@ -625,6 +665,19 @@ void irs::variant::binary_operation(
   } else {
     // Тип операции уже определен
   }
+  if (operation_vars_type == var_type_unknown) {
+    if (((a_first_variant.m_type == var_type_void_ptr) ||
+      (a_first_variant.m_type == var_type_const_void_ptr)) &&
+      ((a_second_variant.m_type == var_type_void_ptr) ||
+      (a_second_variant.m_type == var_type_const_void_ptr)))
+    {
+      operation_vars_type = var_type_const_void_ptr;
+    } else {
+      // Тип операции опеределить не удалось
+    }
+  } else {
+    // Тип операции уже определен
+  }
 
   if (operation_is_compare(a_operation_type)) {
     IRS_LIB_ASSERT(ap_result_variant == IRS_NULL);
@@ -732,6 +785,26 @@ void irs::variant::binary_operation(
         ap_result_bool);
     } break;
     #endif // IRSDEFS_I64
+    case var_type_void_ptr: {
+      void* first_var = a_first_variant.value_get<void*>();
+      void* second_var = a_second_variant.value_get<void*>();
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        (ap_result_variant == IRS_NULL) ?
+          IRS_NULL : &(ap_result_variant->m_value.p_void_type),
+        ap_result_bool);
+    } break;
+    case var_type_const_void_ptr: {
+      const void* first_var = a_first_variant.value_get<const void*>();
+      const void* second_var = a_second_variant.value_get<const void*>();
+      const void* var_helper = IRS_NULL;
+      operation_helper(a_operation_type,
+        first_var,
+        second_var,
+        &var_helper,
+        ap_result_bool);
+    } break;
     case var_type_string: {
       string_type first_var =
         a_first_variant.value_get<string_type>();
@@ -1262,6 +1335,7 @@ void irs::variant::test_variant()
   long double var_long_double_type = 0.18;
   variant_t::long_long_type var_long_long_type = 19;
   variant_t::unsigned_long_long_type var_unsigned_long_long_type = 20;
+  void* var_void_ptr = IRS_NULL;
   variant_t::string_type var_string_type = "test variant";
 
   // Тест операторов записи и чтения
@@ -1310,6 +1384,7 @@ void irs::variant::test_variant()
     variant;
   IRS_LIB_ASSERT(var_unsigned_long_long_type ==
     var_unsigned_long_long_type_result_read);
+  variant = var_void_ptr;  
   variant = var_string_type;
   variant_t::string_type var_string_type_result_read = variant;
   
@@ -1317,9 +1392,9 @@ void irs::variant::test_variant()
 
   // Тест операторов сравнения
   int first_var = 23;
-  double second_double_var = 12.097;
+  double double_var = 12.097;
   variant_t first_variant = first_var;
-  variant_t second_variant = second_double_var;
+  variant_t second_variant = double_var;
   first_variant == second_variant;
   IRS_LIB_ASSERT(!(first_variant == second_variant));
   IRS_LIB_ASSERT(first_variant != second_variant);
@@ -1328,13 +1403,24 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT(!(first_variant <= second_variant));
   IRS_LIB_ASSERT(first_variant >= second_variant);
 
-  IRS_LIB_ASSERT(!(second_double_var == first_variant));
-  IRS_LIB_ASSERT(first_variant != second_double_var);
-  IRS_LIB_ASSERT(!(first_variant < second_double_var));
-  IRS_LIB_ASSERT(first_variant > second_double_var);
-  IRS_LIB_ASSERT(!(first_variant <= second_double_var));
-  IRS_LIB_ASSERT(first_variant >= second_double_var);
+  IRS_LIB_ASSERT(!(double_var == first_variant));
+  IRS_LIB_ASSERT(first_variant != double_var);
+  IRS_LIB_ASSERT(!(first_variant < double_var));
+  IRS_LIB_ASSERT(first_variant > double_var);
+  IRS_LIB_ASSERT(!(first_variant <= double_var));
+  IRS_LIB_ASSERT(first_variant >= double_var);
 
+  void* void_ptr_var = IRS_NULL;
+  const int var_helper = 0;
+  variant_t void_ptr_variant = &var_helper;
+  /*
+  IRS_LIB_ASSERT(!(void_ptr_var == void_ptr_variant));
+  IRS_LIB_ASSERT(void_ptr_variant != void_ptr_var);
+  IRS_LIB_ASSERT(!(void_ptr_variant < void_ptr_var));
+  IRS_LIB_ASSERT(void_ptr_variant > void_ptr_var);
+  IRS_LIB_ASSERT(!(void_ptr_variant <= void_ptr_var));
+  IRS_LIB_ASSERT(void_ptr_variant >= void_ptr_var);
+  */
   // Тест унарных и бинарных арифметических операторов
   int first_int_var = 232;
   int second_int_var = 342;
@@ -1380,9 +1466,9 @@ void irs::variant::test_variant()
 
   // Проверака функции assign_no_cast
   first_variant = first_int_var;
-  first_variant.assign_no_cast(second_double_var);
+  first_variant.assign_no_cast(double_var);
   IRS_LIB_ASSERT(static_cast<int>(first_variant) ==
-    static_cast<int>(second_double_var));
+    static_cast<int>(double_var));
   variant_t::string_type string_var = "test";
   first_variant = string_var;
   first_variant.assign_no_cast(string_var);    
@@ -1407,7 +1493,7 @@ void irs::variant::test_variant()
   string s = first_variant;
   first_int_var = first_variant;
   first_variant.convert_to(var_type_int);
-  second_double_var = first_variant;
+  double_var = first_variant;
 }
 #endif // IRS_LIB_DEBUG
 

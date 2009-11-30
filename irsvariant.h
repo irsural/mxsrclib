@@ -50,9 +50,11 @@ enum var_type_t {
   var_type_long_long,
   var_type_unsigned_long_long,
   #endif // IRSDEFS_I64
+  var_type_void_ptr,
+  var_type_const_void_ptr,
   //var_type_ptr_char,
   var_type_string,
-  var_type_array
+  var_type_array    
 };
 
 inline bool is_number_type(const var_type_t a_var_type)
@@ -151,6 +153,8 @@ public:
   inline var_type_t type() const;
   void type(const var_type_t a_variant_type);
   variant_t& operator=(const variant_t& a_variant);
+  variant_t& operator=(void* ap_value);
+  variant_t& operator=(const void* ap_value);
   variant_t& operator=(const bool a_value);
   variant_t& operator=(const char a_value);
   variant_t& operator=(const signed char a_value);
@@ -187,6 +191,8 @@ public:
   long_long_type as_long_long() const;
   unsigned_long_long_type as_unsigned_long_long() const;
   #endif // IRSDEFS_I64
+  void* as_void_ptr() const;
+  const void* as_const_void_ptr() const;
   string_type as_string() const;
   //signed char is_array() const;
   template <class T>
@@ -209,6 +215,8 @@ public:
   operator long_long_type() const;
   operator unsigned_long_long_type() const;
   #endif // IRSDEFS_I64
+  operator void*() const;
+  operator const void*() const;
   //operator const char_type*() const;
   operator string_type() const;
 
@@ -239,6 +247,8 @@ public:
   
 private:
   union {
+    void* p_void_type;
+    const void* p_const_void_type;
     bool val_bool_type;
     char val_char_type;
     signed char val_schar_type;
@@ -594,8 +604,8 @@ T variant_t::value_get() const
 
     #ifdef _MSC_VER
     # pragma warning(disable: 4800)
-    #endif // _MSC_VER  
-
+    #endif // _MSC_VER
+    
     case var_type_bool: {
       value = static_cast<T>(m_value.val_bool_type);
     } break;
@@ -670,6 +680,32 @@ T variant_t::value_get() const
 }
 
 #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+template<>
+inline void* variant_t::value_get<void*>() const
+{
+  void* p_value = IRS_NULL;
+  if (m_type == var_type_void_ptr) {
+    p_value = m_value.p_void_type;
+  } else {
+    IRS_LIB_ASSERT_MSG("Недопустимая операция");
+  }
+  return p_value;
+}
+
+template<>
+inline const void* variant_t::value_get<const void*>() const
+{
+  const void* p_value = IRS_NULL;
+  if (m_type == var_type_void_ptr) {
+    p_value = m_value.p_void_type;
+  } else if (m_type == var_type_const_void_ptr) {
+    p_value = m_value.p_const_void_type;
+  } else {
+    IRS_LIB_ASSERT_MSG("Недопустимая операция");
+  }
+  return p_value;
+}
+
 template<>
 inline variant_t::string_type
 variant_t::value_get<variant_t::string_type>() const
@@ -784,6 +820,69 @@ bool operator<=(const variant_t& a_first_variant,
 
 bool operator>=(const variant_t& a_first_variant,
   const variant_t& a_second_variant);
+
+// Comparisons  (type void*)
+#ifdef NOP
+inline bool operator==(const variant_t& a_variant, const void* ap_value)
+{
+  return operator==(a_variant, variant_t(ap_value));
+}
+
+inline bool operator==(const void* ap_value, const variant_t& a_variant)
+{
+  return operator==(a_variant, variant_t(ap_value));
+}
+
+inline bool operator!=(const variant_t& a_variant, const void* ap_value)
+{
+  return operator!=(a_variant, variant_t(ap_value));
+}
+
+inline bool operator!=(const void* ap_value, const variant_t& a_variant)
+{
+  return operator!=(a_variant, variant_t(ap_value));
+}
+
+inline bool operator<(const variant_t& a_variant, const void* ap_value)
+{
+  return operator<(a_variant, variant_t(ap_value));
+}
+
+inline bool operator<(const void* ap_value, const variant_t& a_variant)
+{
+  return operator<(a_variant, variant_t(ap_value));
+}
+
+inline bool operator>(const variant_t& a_variant, const void* ap_value)
+{
+  return operator>(a_variant, variant_t(ap_value));
+}
+
+inline bool operator>(const void* ap_value, const variant_t& a_variant)
+{
+  return operator>(a_variant, variant_t(ap_value));
+}
+
+inline bool operator<=(const variant_t& a_variant, const void* ap_value)
+{
+  return operator<=(a_variant, variant_t(ap_value));
+}
+
+inline bool operator<=(const void* ap_value, const variant_t& a_variant)
+{
+  return operator<=(a_variant, variant_t(ap_value));
+}
+
+inline bool operator>=(const variant_t& a_variant, const void* ap_value)
+{
+  return operator>=(a_variant, variant_t(ap_value));
+}
+
+inline bool operator>=(const void* ap_value, const variant_t& a_variant)
+{
+  return operator>=(a_variant, variant_t(ap_value));
+}
+#endif // NOP
 
 // Comparisons  (type char)
 inline bool operator==(const variant_t& a_variant, const char& a_value)
@@ -1870,6 +1969,10 @@ struct var_string_type_tag
 {
 };
 
+struct var_const_void_ptr_type_tag
+{
+};
+
 struct var_container_type_tag
 {
 };
@@ -1980,6 +2083,18 @@ template <>
 struct var_type_traits_t<long double>
 {
   typedef var_floating_type_tag group_type;
+};
+
+template <>
+struct var_type_traits_t<void*>
+{
+  typedef var_const_void_ptr_type_tag group_type;
+};
+
+template <>
+struct var_type_traits_t<const void*>
+{
+  typedef var_const_void_ptr_type_tag group_type;
 };
 
 template <class T>
@@ -2101,6 +2216,18 @@ bool binary_operation_helper(
     // Операция выполнена
   }
   return operation_is_executed;
+}
+
+template <class T>
+bool binary_operation_helper(
+  const operation_type_t /*a_var_operation_type*/,
+  const T& /*a_first_var*/,
+  const T& /*a_second_var*/,
+  T* /*ap_result*/,
+  var_const_void_ptr_type_tag)
+{ 
+  // Игнорируем любые операции
+  return false;
 }
 
 template<class T>
