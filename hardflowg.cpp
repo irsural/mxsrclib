@@ -216,10 +216,7 @@ irs::hardflow::udp_flow_t::udp_flow_t(
   const string_type& a_local_host_port,
   const string_type& a_remote_host_name,
   const string_type& a_remote_host_port
-):
-  /*#ifdef __BORLANDC__
-  mp_error_trans(irs::error_trans()),
-  #endif // __BORLANDC__*/
+):    
   m_error_sock(),
   m_state_info(),
   #if defined(IRS_WIN32)
@@ -266,9 +263,7 @@ irs::hardflow::udp_flow_t::~udp_flow_t()
 
 void irs::hardflow::udp_flow_t::start()
 {
-  if (m_state_info.lib_socket_loaded) {
-    // Библиотека уже загружена
-  } else {
+  if (!m_state_info.lib_socket_loaded) {
     #if defined(IRS_WIN32)
     // Загружаем библиотеку сокетов версии 2.2
     WORD version_requested = 0;
@@ -287,16 +282,13 @@ void irs::hardflow::udp_flow_t::start()
     m_state_info.lib_socket_loaded = true;
     #endif // IRS_WINDOWS IRS_LINUX
     m_state_info.sock_created = false;
+  } else {
+    // Библиотека уже загружена
   }
   if (m_state_info.lib_socket_loaded) {
-    if (m_state_info.sock_created) {
-      // Сокет уже создан
-    } else {
+    if (!m_state_info.sock_created) {
       m_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-      if (m_sock == static_cast<socket_type>(m_invalid_socket)) {
-        // Сокет создать не удалось
-        SEND_MESSAGE_ERR(m_error_sock.get_last_error());
-      } else {
+      if (m_sock != static_cast<socket_type>(m_invalid_socket)) {
         m_state_info.sock_created = true;
         m_state_info.set_io_mode_sock_success = false;
         // Обновляем переменную, указывающую максимальный размер сообщения
@@ -318,16 +310,19 @@ void irs::hardflow::udp_flow_t::start()
           SEND_MESSAGE_ERR(m_error_sock.get_last_error());
         } else {
           m_recv_msg_max_size = optval;
-        }*/
+        }*/                                             
+      } else {
+        // Сокет создать не удалось
+        SEND_MESSAGE_ERR(m_error_sock.get_last_error());
       }
+    } else {
+      // Сокет уже создан
     }
   } else {
     // Библиотека сокетов не загружена
   }
   if (m_state_info.sock_created) {
-    if (m_state_info.set_io_mode_sock_success) {
-      // Сокет уже переведен в неблокирующий режим
-    } else {     
+    if (!m_state_info.set_io_mode_sock_success) {
       // для включения неблокирующего режима переменная ulblock должна иметь
       // ненулевое значение
       unsigned long ulblock = 1;
@@ -347,15 +342,15 @@ void irs::hardflow::udp_flow_t::start()
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.bind_sock_and_ladr_success = false;
       }
-      #endif // IRS_WINDOWS IRS_LINUX
+      #endif // IRS_WINDOWS IRS_LINUX             
+    } else {
+      // Сокет уже переведен в неблокирующий режим
     }
   } else {
     // Сокет не создан
   }
   if (m_state_info.set_io_mode_sock_success) {
     if (m_state_info.bind_sock_and_ladr_success) {
-      // Сокет уже привязан к локальному адресу
-    } else {
       sockaddr_in local_addr;
       bool init_success = true;
       local_addr_init(&local_addr, &init_success);
@@ -371,7 +366,9 @@ void irs::hardflow::udp_flow_t::start()
         }
       } else {
         // Ошибка инициализации
-      }
+      }                                        
+    } else {
+      // Сокет уже привязан к локальному адресу
     }
   } else {
     // Перевод сокета в неблокирующий режим завершился неудачей

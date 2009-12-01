@@ -293,10 +293,7 @@ private:
   #elif defined(IRS_LINUX)
   enum { m_socket_error = -1 };
   enum { m_invalid_socket = -1 };
-  #endif // IRS_WINDOWS IRS_LINUX
-  /*#ifdef __BORLANDC__
-  error_trans_base_t *mp_error_trans;
-  #endif // __BORLANDC__*/
+  #endif // IRS_WINDOWS IRS_LINUX   
   error_sock_t m_error_sock;
   struct state_info_t
   {
