@@ -121,7 +121,7 @@ void irs::avr::spi_master_flow_t::set_param(const irs::string &a_name,
   return;
 }
 
-irs_uarc irs::avr::spi_master_flow_t::read(irs_uarc &/*a_channel_id*/,
+irs_uarc irs::avr::spi_master_flow_t::read(irs_uarc /*a_channel_id*/,
   irs_u8 *ap_buf, irs_uarc a_size)
 {
   if (m_rb_new_data)
@@ -428,7 +428,7 @@ void irs::avr::spi_slave_flow_t::set_param(const irs::string &/*a_name*/,
   return;
 }
 
-irs_uarc irs::avr::spi_slave_flow_t::read(irs_uarc &/*a_channel_id*/,
+irs_uarc irs::avr::spi_slave_flow_t::read(irs_uarc /*a_channel_id*/,
   irs_u8 *ap_buf, irs_uarc a_size)
 {
   if (m_rb_new_data)

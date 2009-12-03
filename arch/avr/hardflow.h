@@ -69,7 +69,7 @@ public:
   virtual ~spi_master_flow_t();
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const irs::string &a_name, const irs::string &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_id, irs_u8 *ap_buf,
+  virtual irs_uarc read(irs_uarc a_channel_id, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_id, const irs_u8 *ap_buf,
     irs_uarc a_size);
@@ -130,7 +130,7 @@ public:
   virtual ~spi_slave_flow_t();
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const string &a_name, const string &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_id, irs_u8 *ap_buf,
+  virtual irs_uarc read(irs_uarc a_channel_id, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_id, const irs_u8 *ap_buf,
     irs_uarc a_size);
