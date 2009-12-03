@@ -1,6 +1,6 @@
 // Коммуникационные потоки
 // Дата создания: 27.08.2009
-// Дата последнего изменения: 25.11.2009
+// Дата последнего изменения: 3.12.2009
 
 #ifndef hardflowgH
 #define hardflowgH
@@ -32,6 +32,7 @@
 #include <timer.h>
 #include <irserror.h>
 #include <mxifar.h>
+#include <mxdata.h>
 
 // Для вывода отладочных сообщений
 //#define IRS_LIB_SOCK_DEBUG
@@ -53,7 +54,6 @@ namespace irs {
 class hardflow_t {
 public:
   typedef size_t size_type;
-  typedef size_t channel_type;
   enum {
     invalid_channel = 0
   };
@@ -209,8 +209,16 @@ public:
   typedef string_t string_type;
   typedef sockaddr_in adress_type;
   typedef size_type id_type;
-  typedef map<id_type, adress_type> map_id_adress_type;
+  typedef irs::deque_data_t<irs_u8> bufer_type;
+  struct channel_t
+  {
+    adress_type adress;
+    bufer_type bufer;
+    measure_time_t lifetime;
+    measure_time_t downtime;
+  };
   typedef map<adress_type, id_type, less_t> map_adress_id_type;
+  typedef map<id_type, channel_t> map_id_channel;   
   typedef deque<id_type> queue_id_type;
   class less_t
   {
@@ -232,13 +240,9 @@ public:
     {
       a_first_adr.sin_addr;
       bool first_less_second = false;
-      //if (a_first_adr.sin_addr.S_un.S_addr <
-        //a_second_adr.sin_addr.S_un.S_addr)
       if (extract_ip(a_first_adr) < extract_ip(a_second_adr))
       {
         first_less_second = true;
-      //} else if (a_first_adr.sin_addr.S_un.S_addr ==
-        //a_second_adr.sin_addr.S_un.S_addr)
       } else if (extract_ip(a_first_adr) == extract_ip(a_second_adr)) {
         first_less_second = (a_first_adr.sin_port < a_second_adr.sin_port);
       } else {
@@ -259,18 +263,38 @@ public:
   // добавлен в список или такой адрес уже есть
   void insert(adress_type a_adress, id_type* ap_id, bool* ap_insert_success);
   void erase(const id_type a_id);
+  bool is_channel_exists(const id_type a_id);
+
   void clear();
   size_type size();
   void mode_set(const mode_t a_mode);
   size_type max_size_get();
   void max_size_set(size_type a_max_size);
+  size_type write(const adress_type& a_adress, const irs_u8 *ap_buf,
+    size_type a_size);
+  size_type read(size_type a_id, irs_u8 *ap_buf,
+    size_type a_size);
+  void tick();
 private:
+  enum {channel};
+  bool lifetime_exceeded(const map_id_channel::iterator a_it_cur_channel);
+  bool downtime_exceeded(const map_id_channel::iterator a_it_cur_channel);
   mode_t m_mode;
   size_type m_max_size;
   size_type m_counter;
-  map_id_adress_type m_map_id_adress;
+  const size_type m_channel_max_count;
+  map_id_channel m_map_id_channel;
+  //map_id_adress_type m_map_id_adress;
   map_adress_id_type m_map_adress_id;
+  //map_id_buf_type m_map_id_buf;
   queue_id_type m_id_list;
+  size_type m_buf_max_size;
+  map_id_channel::iterator m_it_cur_channel;
+  map_id_channel::iterator m_it_cur_channel_for_check;
+  bool m_on_max_lifetime;
+  bool m_on_max_downtime;
+  counter_t m_max_lifetime;
+  counter_t m_max_downtime;
 };
 
 class udp_flow_t : public hardflow_t
@@ -327,8 +351,9 @@ private:
   timeval m_func_select_timeout;
   fd_set m_s_kit;
   size_type m_send_msg_max_size;
-  host_list_t mesh_point_list;
-  //size_type m_recv_msg_max_size;     
+  host_list_t m_remove_host_list;
+  //size_type m_recv_msg_max_size;
+  irs::raw_data_t<irs_u8> m_buf;   
 public:
   udp_flow_t(
     const string_type& a_local_host_name = "",
@@ -365,26 +390,24 @@ public:
 class tcp_server_t : public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;
-  typedef hardflow_t::channel_type channel_type;
-  
+  typedef hardflow_t::size_type size_type;  
   tcp_server_t(irs_u16 local_port);
   virtual ~tcp_server_t();
-  virtual size_type read(channel_type a_channel_ident, irs_u8 *ap_buf,
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
-  virtual size_type write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   virtual void tick();
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const irs::string &a_name,
     const irs::string &a_value);
-  virtual channel_type channel_next();
-  virtual bool is_channel_exists(channel_type a_channel_ident);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
   
 private:
   struct tcp_close_t
   {
-    void operator()(pair<const channel_type, int>& a_map_item)
+    void operator()(pair<const size_type, int>& a_map_item)
     {
       close(a_map_item.second);
     }
@@ -398,9 +421,11 @@ private:
   bool m_is_open;
   irs_u16 m_local_port;
   int m_server_sock;
-  map<channel_type, int> m_map_channel_sock;
-  map<channel_type, int>::iterator mp_map_channel_sock_it;
-  channel_type m_channel;
+  map<size_type, int> m_map_channel_sock;
+  map<size_type, int>::iterator mp_map_channel_sock_it;
+  size_type m_channel;
+  bool m_channel_id_overflow;
+  const size_type m_channel_max_count;
 
   void start_server();
   void stop_server();
@@ -411,20 +436,19 @@ class tcp_client_t : public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
-  typedef hardflow_t::channel_type channel_type;
 
   tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
   virtual ~tcp_client_t();
-  virtual size_type read(channel_type a_channel_ident, irs_u8 *ap_buf,
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
-  virtual size_type write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   virtual void tick();
   virtual irs::string param(const irs::string &a_name);
   virtual void set_param(const irs::string &a_name,
     const irs::string &a_value);
-  virtual channel_type channel_next();
-  virtual bool is_channel_exists(channel_type a_channel_ident);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
   
 private:
   struct sockaddr_in m_addr;
@@ -437,7 +461,7 @@ private:
   bool m_is_open;
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
-  channel_type m_channel;
+  size_type m_channel;
   
   void start_client();
   void stop_client();
@@ -448,7 +472,6 @@ class fixed_flow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
-  typedef hardflow_t::channel_type channel_type;
 
   enum status_t {
     status_wait,
@@ -457,9 +480,9 @@ public:
   };
 
   fixed_flow_t(hardflow_t* ap_hardflow = IRS_NULL);
-  void read(channel_type a_channel_ident, irs_u8 *ap_buf,
+  void read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
-  void write(channel_type a_channel_ident, const irs_u8 *ap_buf,
+  void write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   status_t read_status();
   size_type read_abort();
@@ -471,7 +494,7 @@ public:
 private:
   hardflow_t* mp_hardflow;
   
-  channel_type m_read_channel; 
+  size_type m_read_channel; 
   irs_u8* mp_read_buf_cur;
   irs_u8* mp_read_buf;
   size_type m_read_size;
@@ -480,7 +503,7 @@ private:
   size_type m_read_size_cur;
   timer_t m_read_timeout;
 
-  channel_type m_write_channel;
+  size_type m_write_channel;
   const irs_u8* mp_write_buf_cur;
   const irs_u8* mp_write_buf;
   size_type m_write_size;

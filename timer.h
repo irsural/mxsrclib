@@ -176,6 +176,7 @@ public:
   ~measure_time_t();
   void start();
   double get();
+  counter_t get_cnt();
 private:
   counter_t m_start_cnt;
 };

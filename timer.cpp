@@ -172,6 +172,11 @@ double irs::measure_time_t::get()
   counter_t cur_cnt = counter_get();
   return CNT_TO_DBLTIME(cur_cnt - m_start_cnt);
 }
+counter_t irs::measure_time_t::get_cnt()
+{
+  counter_t cur_cnt = counter_get();
+  return cur_cnt - m_start_cnt;
+}
 
 // Инициализация таймера
 void irs::init_timer()

@@ -65,7 +65,7 @@ void test_bit_copy(ostream& strm, irs_u16 size_data_in, irs_u16 size_data_out,
 class irsmb_se : public mxdata_t
 {
 public:
-  typedef hardflow_t::channel_type channel_type;
+  typedef hardflow_t::size_type channel_type;
   
   irsmb_se(
     channel_type channel,
@@ -156,7 +156,7 @@ private:
 class irsmb_cl : public mxdata_t
 {
 public:
-  typedef hardflow_t::channel_type channel_type;
+  typedef hardflow_t::size_type channel_type;
   
   irsmb_cl(
     channel_type channel,
