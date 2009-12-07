@@ -7,32 +7,37 @@
 #include <mxdata.h>
 
 //#define IRS_LIB_HARDFLOW_DEBUG
-#define IRS_LIB_HARDFLOW_DEBUG_BASE
-#define IRS_LIB_HARDFLOW_DEBUG_FULL
+#define IRS_LIB_HARDFLOW_DEBUG_NONE 0
+#define IRS_LIB_HARDFLOW_DEBUG_BASE 1
+#define IRS_LIB_HARDFLOW_DEBUG_DETAIL 2
 
-#ifdef IRS_LIB_HARDFLOW_DEBUG
-#define IRS_HARDFLOW_DBG_RAW_MSG_FULL(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#define IRS_HARDFLOW_DBG_MSG_FULL(msg) IRS_LIB_DBG_MSG(msg)
+#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
+//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_BASE
+//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_DETAIL
+
+#if (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE)
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
+#elif (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_DETAIL)
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
 #else
-#define IRS_HARDFLOW_DBG_RAW_MSG_FULL(msg)
-#define IRS_HARDFLOW_DBG_MSG_FULL(msg)
-#endif
-
-#ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
-#define IRS_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#define IRS_HARDFLOW_DBG_RAW_BASE(msg) IRS_LIB_DBG_MSG(msg)
-#else
-#define IRS_HARDFLOW_DBG_RAW_MSG_BASE(msg)
-#define IRS_HARDFLOW_DBG_RAW_BASE(msg)
-#endif
-
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg)
+#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
+#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
+#endif   
 /*#ifdef IRS_LIB_HARDFLOW_DEBUG_FULL
 #define IRS_TCP_DBG_MSG_FULL(msg) {msg}
 #else
 #define IRS_TCP_DBG_MSG_FULL(msg) ;
 #endif*/
 
-#if defined(IRS_WIN32) //|| defined(IRS_LINUX)
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
 
 //class host_list_t
 irs::hardflow::host_list_t::host_list_t(
@@ -102,7 +107,11 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
     if (allow_add) {
       next_free_channel_id();
       IRS_LIB_ASSERT(m_channel_id != invalid_channel);
-      m_map_id_channel.insert(make_pair(m_channel_id, channel_t()));
+      channel_t channel;
+      channel.adress = a_adress;
+      channel.lifetime.start();
+      channel.downtime.start();
+      m_map_id_channel.insert(make_pair(m_channel_id, channel));
       m_map_adress_id.insert(make_pair(a_adress, m_channel_id));
       m_id_list.push_back(m_channel_id);
       *ap_id = m_channel_id;
@@ -431,7 +440,7 @@ void irs::hardflow::host_list_t::next_free_channel_id()
 
     } else {
       //Нет свободных мест под новый канал
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
       m_channel_id = invalid_channel;
     }
   } else {
@@ -518,12 +527,12 @@ void irs::hardflow::udp_flow_t::start()
     IRS_HIBYTE(version_requested) = 2;
     if (WSAStartup(version_requested, &m_wsd) != 0) {
       // Ошибка при загрузке библиотеки
-      HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+      IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(error_str(m_error_sock.get_last_error()));
     } else {
       // библиотека удачно загружена
       m_state_info.lib_socket_loaded = true;
       m_state_info.sock_created = false;
-      IRS_LIB_SOCK_DBG_MSG("Библиотека сокетов удачно загружена");
+      IRS_LIB_HARDFLOW_DBG_MSG_BASE("Библиотека сокетов удачно загружена");
     }
     #elif defined(IRS_LINUX)
     m_state_info.lib_socket_loaded = true;
@@ -544,10 +553,11 @@ void irs::hardflow::udp_flow_t::start()
         int optname = SO_SNDBUF;
         int res = getsockopt(m_sock, SOL_SOCKET, optname,
           reinterpret_cast<char*>(&optval),  &optval_size);
-        if (res == m_socket_error) {
-          HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
-        } else {
+        if (res != m_socket_error) {
           m_send_msg_max_size = optval;
+        } else {
+          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+            error_str(m_error_sock.get_last_error()));
         }
         /*optval_size = sizeof(optval);
         optname = SO_RCVBUF;
@@ -560,7 +570,8 @@ void irs::hardflow::udp_flow_t::start()
         }*/                                             
       } else {
         // Сокет создать не удалось
-        HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
       }
     } else {
       // Сокет уже создан
@@ -576,7 +587,8 @@ void irs::hardflow::udp_flow_t::start()
       #if defined(IRS_WIN32)
       if (ioctlsocket(m_sock, FIONBIO, &ulblock) == m_socket_error) {
         // функция завершилась неудачей
-        HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
       } else {
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.bind_sock_and_ladr_success = false;
@@ -584,7 +596,8 @@ void irs::hardflow::udp_flow_t::start()
       #elif defined(IRS_LINUX)
       if (fcntl(m_sock, F_SETFL, O_NONBLOCK) == m_socket_error) {
         // функция завершилась неудачей
-        HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
       } else {
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.bind_sock_and_ladr_success = false;
@@ -608,7 +621,8 @@ void irs::hardflow::udp_flow_t::start()
           m_state_info.bind_sock_and_ladr_success = true;    
         } else {
           // Ошибка при связывании сокета с локальным адресом
-          HARDFLOW_DBG_MSG(m_error_sock.get_last_error());
+          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+            error_str(m_error_sock.get_last_error()));
         }
       } else {
         // Ошибка инициализации
@@ -671,37 +685,46 @@ void irs::hardflow::udp_flow_t::local_addr_init(
 }
 
 void irs::hardflow::udp_flow_t::addr_init(
-  const string_type& a_remote_host_name,
-  const string_type& a_remote_host_port,
+  const string_type& a_host_name,
+  const string_type& a_host_port,
   sockaddr_in* ap_sockaddr,
   bool* ap_init_success)
 {
   *ap_init_success = true;
-  unsigned long addr = inet_addr(a_remote_host_name.c_str());
-  if (addr == INADDR_NONE) {
-    hostent* p_host = gethostbyname(a_remote_host_name.c_str());
-    if (p_host == NULL) {
-      // Ошибка получения адреса
-      *ap_init_success = false;
+  if (m_local_host_name != "") {
+    unsigned long addr = inet_addr(a_host_name.c_str());
+    if (addr == INADDR_NONE) {
+      hostent* p_host = gethostbyname(a_host_name.c_str());
+      if (p_host == NULL) {
+        // Ошибка получения адреса
+        *ap_init_success = false;
+      } else {
+        // Берем первый адрес в списке
+        memcpy(&(ap_sockaddr->sin_addr), p_host->h_addr_list[0],
+          p_host->h_length);
+      }
     } else {
-      // Берем первый адрес в списке
-      memcpy(&(ap_sockaddr->sin_addr), p_host->h_addr_list[0],
-        p_host->h_length);
+      ap_sockaddr->sin_addr.s_addr = addr;
     }
   } else {
-    ap_sockaddr->sin_addr.s_addr = addr;
+    // Адрес не задан
+    *ap_init_success = false;
   }
   ap_sockaddr->sin_family = AF_INET;
-  if (a_remote_host_port != "") {
-    unsigned short port = 0;
-    if (a_remote_host_port.to_number(port)) {
-      ap_sockaddr->sin_port = htons(port);
+  if (*ap_init_success) {
+    if (a_host_port != "") {
+      unsigned short port = 0;
+      if (a_host_port.to_number(port)) {
+        ap_sockaddr->sin_port = htons(port);
+      } else {
+        *ap_init_success = false;
+      }
     } else {
+      // Порт не задан
       *ap_init_success = false;
     }
   } else {
-    // Порт не задан
-    *ap_init_success = false;
+    // Произошла ошибка
   }
 }
 
@@ -739,14 +762,15 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
           sizeof(remote_host_adr));
       if (ret != m_socket_error) {
         size_wr = static_cast<size_type>(ret);
-        IRS_LIB_SOCK_DBG_MSG("Записано " <<
+        IRS_LIB_HARDFLOW_DBG_MSG_BASE("Записано " <<
           static_cast<string_type>(size_wr) << " байт");
       } else {
-        HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
       }
     } else {
       // Адресс с таким идентификатором отсутсвует в списке
-      IRS_LIB_SOCK_DBG_MSG("Неизвестный идентификатор");
+      IRS_LIB_HARDFLOW_DBG_MSG_BASE("Неизвестный идентификатор");
     }
   } else {
     // Запуск не произошел
@@ -783,13 +807,15 @@ void irs::hardflow::udp_flow_t::tick()
           bool insert_success = false;
           m_remove_host_list.write(sender_addr, m_buf.data(), m_buf.size());
         } else {
-          HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+            error_str(m_error_sock.get_last_error()));
         }
       } else {
         // Нет сокетов для чтения
       }
     } else if (ready_read_sock_count > 0) {
-      HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
+      IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+        error_str(m_error_sock.get_last_error()));
     } else {
       // Нет сокетов для чтения
     }
@@ -840,11 +866,11 @@ void irs::hardflow::tcp_server_t::start_server()
       int queue_lenght = 50; //длина очереди
       listen(m_server_sock, queue_lenght);
     } else {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("bind: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("bind: " << last_error_str());
       m_is_open = false;
     }
   } else {
-    IRS_HARDFLOW_DBG_RAW_MSG_FULL("socket: " << last_error_str());
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("socket: " << last_error_str());
     m_is_open = false;
   }
 }
@@ -858,8 +884,8 @@ irs::hardflow::tcp_server_t::size_type
     if(mp_map_channel_sock_it == m_map_channel_sock.end())
     {
       mp_map_channel_sock_it = m_map_channel_sock.begin();
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("Reach the end" << endl);
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("Go to first socket" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Reach the end" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Go to first socket" << endl);
     }
     channel = mp_map_channel_sock_it->first;
   } else {
@@ -917,7 +943,7 @@ void irs::hardflow::tcp_server_t::new_channel()
       }
     } else {
       //Нет свободных мест под новый канал
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
       m_channel = invalid_channel;
     }
   } else {
@@ -937,7 +963,7 @@ irs::hardflow::tcp_server_t::size_type
       NULL, NULL, &m_serv_select_timeout);
     if(sock_ready > 0) {
       if(FD_ISSET(sock_rd, &m_read_fds)) {
-        IRS_HARDFLOW_DBG_RAW_MSG_FULL("recv start" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("recv start" << endl);
         int server_read = recv(sock_rd, reinterpret_cast<char*>(ap_buf),
           a_size, 0);
         if(server_read > 0){
@@ -946,7 +972,7 @@ irs::hardflow::tcp_server_t::size_type
         }
         else {
           if(server_read < 0) {
-            IRS_HARDFLOW_DBG_RAW_MSG_FULL("recv: " << last_error_str());
+            IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("recv: " << last_error_str());
           }
           m_map_channel_sock.erase(a_channel_ident);
           mp_map_channel_sock_it = m_map_channel_sock.begin();
@@ -963,16 +989,16 @@ irs::hardflow::tcp_server_t::size_type
 
           FD_CLR(sock_rd, &m_read_fds);
           FD_CLR(sock_rd, &m_write_fds);
-          IRS_HARDFLOW_DBG_RAW_MSG_BASE("FD_CLR" << endl);
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("FD_CLR" << endl);
           close(sock_rd);
         }
       }
     } else if(sock_ready < 0) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("select: " << last_error_str())
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("read" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("select: " << last_error_str())
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("read" << endl);
       FD_CLR(sock_rd, &m_read_fds);
       FD_CLR(sock_rd, &m_write_fds);
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("FD_CLR" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("FD_CLR" << endl);
       close(sock_rd);
     }
     else {
@@ -995,7 +1021,7 @@ irs::hardflow::tcp_server_t::size_type
       &m_write_fds, NULL, &m_serv_select_timeout);
     if(sock_ready > 0) {
       if(FD_ISSET(sock_wr, &m_write_fds)) {
-        IRS_HARDFLOW_DBG_RAW_MSG_FULL("send start" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("send start" << endl);
         int server_write = send(sock_wr, ap_buf, a_size, 0);
         if(server_write > 0){
           wr_data_size = 
@@ -1003,7 +1029,7 @@ irs::hardflow::tcp_server_t::size_type
         }
         else{
           if(server_write < 0) {
-            IRS_HARDFLOW_DBG_RAW_MSG_FULL("send: " << last_error_str());
+            IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("send: " << last_error_str());
           }
           m_map_channel_sock.erase(a_channel_ident);
           mp_map_channel_sock_it = m_map_channel_sock.begin();
@@ -1018,13 +1044,13 @@ irs::hardflow::tcp_server_t::size_type
           cout << "-------------------------------" << endl;
           #endif //IRS_LIB_HARDFLOW_DEBUG
 
-          IRS_HARDFLOW_DBG_RAW_MSG_BASE("FD_CLR" << endl);
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("FD_CLR" << endl);
           close(sock_wr);
         }
       }
     } else if(sock_ready < 0) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("select: " << last_error_str());
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("write" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("write" << endl);
       FD_CLR(sock_wr, &m_read_fds);
       FD_CLR(sock_wr, &m_write_fds);
       close(sock_wr);
@@ -1080,21 +1106,22 @@ void irs::hardflow::tcp_server_t::tick()
               cout << "-------------------------------" << endl;
             }
             else {
-              IRS_HARDFLOW_DBG_RAW_MSG_BASE("Channel already exist" << endl);
+              IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
+                "Channel already exist" << endl);
             }
             #endif //IRS_LIB_HARDFLOW_DEBUG
           }
           else {
-            IRS_HARDFLOW_DBG_RAW_MSG_BASE("Invalid channel" << endl);
+            IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Invalid channel" << endl);
             close(new_sock);
           }
         } else {
-          IRS_HARDFLOW_DBG_RAW_MSG_FULL("accept: " << last_error_str());
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("accept: " << last_error_str());
         }
       }
     } else if (se_select < 0) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("select: " << last_error_str());
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("tick()" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("tick()" << endl);
     } else {
       // если select вернула 0, то событие не сработало
     }
@@ -1164,15 +1191,15 @@ void irs::hardflow::tcp_client_t::start_client()
     if(connect(m_client_sock, (struct sockaddr *)&m_addr, 
       sizeof(m_addr)) == 0) 
     {
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("Start client" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Start client" << endl);
     }
     else {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("connect: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("connect: " << last_error_str());
       close(m_client_sock);
       m_is_open = false;
     }
   } else {
-    IRS_HARDFLOW_DBG_RAW_MSG_FULL("socket: " << last_error_str());
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("socket: " << last_error_str());
     m_is_open = false;
   }
 }
@@ -1183,7 +1210,7 @@ void irs::hardflow::tcp_client_t::stop_client()
   m_is_open = false;
   FD_ZERO(&m_read_fds);
   FD_ZERO(&m_write_fds);
-  IRS_HARDFLOW_DBG_RAW_MSG_BASE("Close client" << endl);
+  IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Close client" << endl);
 }
 
 irs::hardflow::tcp_client_t::size_type 
@@ -1218,13 +1245,13 @@ irs::hardflow::tcp_client_t::size_type
             static_cast<size_type>(client_read);
         } else {
           if(client_read < 0) {
-            IRS_HARDFLOW_DBG_RAW_MSG_FULL("recv: " << last_error_str());
+            IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("recv: " << last_error_str());
           }
           stop_client();
         }
       }
     } else if(sock_ready < 0) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("select: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
       return 0;
     }
     else {
@@ -1253,12 +1280,12 @@ irs::hardflow::tcp_client_t::size_type
             static_cast<size_type>(client_write);
         }
         else{
-          IRS_HARDFLOW_DBG_RAW_MSG_FULL("send: " << last_error_str());
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("send: " << last_error_str());
           stop_client();
         }
       }
     } else if(sock_ready < 0) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("select: " << last_error_str());
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
       return 0;
     }
     else {
@@ -1385,22 +1412,23 @@ void irs::hardflow::fixed_flow_t::tick()
       m_read_timeout.stop();
     }
     if (!m_read_timeout.check()) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("m_size_read = " << m_size_read << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
+        "m_size_read = " << m_size_read << endl);
       if(mp_hardflow->is_channel_exists(m_read_channel)) {
         mp_read_buf_cur += m_size_read;
         m_read_size_cur -= m_size_read;
         if(mp_read_buf_cur >= (mp_read_buf + m_read_size)) {
-          IRS_HARDFLOW_DBG_RAW_MSG_FULL("read end" << endl);
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("read end" << endl);
           m_read_status = status_success;
         }
       }
       else {
         m_read_status = status_error;
-        IRS_HARDFLOW_DBG_RAW_MSG_FULL("read_abort" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("read_abort" << endl);
       }
     } else {
       m_read_status = status_error;
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("read_abort" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("read_abort" << endl);
     }
   }
   if(write_status() == status_wait) {
@@ -1408,32 +1436,33 @@ void irs::hardflow::fixed_flow_t::tick()
       m_write_size_cur);
     if(m_size_write == 0) {
       if(m_write_timeout.stopped()) {
-        IRS_HARDFLOW_DBG_RAW_MSG_BASE("write: stopped()" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("write: stopped()" << endl);
         m_write_timeout.start();
       }
     } else {
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("stop()" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("stop()" << endl);
       m_write_timeout.stop();
     }
     if(!m_write_timeout.check()) {
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("m_size_write = " << m_size_write << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
+        "m_size_write = " << m_size_write << endl);
       if(mp_hardflow->is_channel_exists(m_write_channel)) {
         mp_write_buf_cur += m_size_write;
         m_write_size_cur -= m_size_write;
         if(mp_write_buf_cur >= (mp_write_buf + m_write_size) ) {
-          IRS_HARDFLOW_DBG_RAW_MSG_FULL("write end" << endl);
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("write end" << endl);
           m_write_status = status_success;
         }
       }
       else {
-        IRS_HARDFLOW_DBG_RAW_MSG_BASE("channel not exists" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("channel not exists" << endl);
         m_write_status = status_error;
-        IRS_HARDFLOW_DBG_RAW_MSG_FULL("write_abort" << endl);
+        IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("write_abort" << endl);
       }
     } else {
-      IRS_HARDFLOW_DBG_RAW_MSG_BASE("write: check()" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("write: check()" << endl);
       m_write_status = status_error;
-      IRS_HARDFLOW_DBG_RAW_MSG_FULL("write_abort" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("write_abort" << endl);
     }
   }
 }
