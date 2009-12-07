@@ -40,7 +40,7 @@ irs::com_flow_t::com_flow_t(
     // настраиваем
     //устанавливаем размер внутренних буферов приема-передачи в драйвере порта
     fsuccess = SetupComm(m_com,m_max_size_write*2, m_max_size_write*2);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
   if(fsuccess) {
     get_param_dbc();
@@ -53,7 +53,7 @@ irs::com_flow_t::com_flow_t(
 
     set_and_get_param_dbc();
     fsuccess = GetCommTimeouts(m_com,&time_outs);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
   if (fsuccess) {
     time_outs.ReadIntervalTimeout = 10;
@@ -62,13 +62,13 @@ irs::com_flow_t::com_flow_t(
     time_outs.WriteTotalTimeoutMultiplier = 0;
     time_outs.WriteTotalTimeoutConstant = 10;
     fsuccess = SetCommTimeouts(m_com,&time_outs);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
   if (fsuccess) {
     // сброс порта
     fsuccess = PurgeComm(
       m_com, PURGE_RXABORT|PURGE_TXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
-    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); }
+    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); }
   }
   if (!fsuccess) {
     m_port_status = PS_DEFECT;
@@ -208,7 +208,7 @@ irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
   if (fsuccess) {
     DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
-    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
+    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); return 0;}
   }
   size_type size_rd = 0;
   if (fsuccess) {
@@ -221,7 +221,7 @@ irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
         size_rd = num_of_bytes_read;
       } else {
         size_rd = 0;
-        SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+        IRS_LIB_SEND_LAST_ERROR();
       }
     }
   } else {
@@ -248,7 +248,7 @@ irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
   if (fsuccess) {
     DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return 0;}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR(); return 0;}
   }
   irs_u32 size_wr = 0;
   if(fsuccess){
@@ -261,7 +261,7 @@ irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
         size_wr = num_of_bytes_written;
       } else {
         size_wr = 0;
-        SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+        IRS_LIB_SEND_LAST_ERROR();
       }
     }
   }else{
@@ -292,7 +292,7 @@ void irs::com_flow_t::set_and_get_param_dbc()
     fsuccess = 0;
   }else{
     fsuccess = GetCommState(m_com, &dcb);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
   if(fsuccess){
     dcb.BaudRate = m_com_param.baud_rate;
@@ -318,7 +318,7 @@ void irs::com_flow_t::set_and_get_param_dbc()
     dcb.EofChar = m_com_param.eof_char;
     dcb.EvtChar = m_com_param.evt_char;
     fsuccess = SetCommState(m_com, &dcb);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); return;}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR(); return;}
     get_param_dbc();
   }else{
     m_port_status = PS_DEFECT;
@@ -333,7 +333,7 @@ void irs::com_flow_t::get_param_dbc()
     fsuccess = 0;
   } else {
     fsuccess = GetCommState(m_com, &dcb);
-    if(!fsuccess){SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);}
+    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
   if(fsuccess){
     m_com_param.baud_rate = dcb.BaudRate;
@@ -360,7 +360,7 @@ void irs::com_flow_t::get_param_dbc()
     m_com_param.evt_char = dcb.EvtChar;
 
     //fsuccess = SetCommState(m_com, &dcb);
-    if (!fsuccess) { SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans); }
+    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); }
   }else{
     m_port_status = PS_DEFECT;
     resource_free();
@@ -444,7 +444,7 @@ irs_uarc irs::named_pipe_server_t::read(
     if (!ReadFile(handle_named_pipe, ap_buf,  a_size, &size_rd, p_ovl))
     {
       DWORD dw = GetLastError();
-      SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_LAST_ERROR();
       if (dw == 109){
         DisconnectNamedPipe(handle_named_pipe);
         ConnectNamedPipe(handle_named_pipe, p_ovl);
@@ -536,7 +536,7 @@ void irs::named_pipe_server_t::add_named_pipe(const irs_u32 a_count)
       0,
       NULL);
     if (handle_named_pipe == INVALID_HANDLE_VALUE){
-      SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_LAST_ERROR();
       break;
     }else{
       instance_named_pipe_t instance_named_pipe;
@@ -593,7 +593,7 @@ irs_uarc irs::named_pipe_client_t::read(
     {
       CloseHandle(m_handle_named_pipe);
       m_connected = false;
-      SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_LAST_ERROR();
     }
   }
   return size_rd;
@@ -614,7 +614,7 @@ irs_uarc irs::named_pipe_client_t::write(
       if (dw != ERROR_IO_PENDING){
         CloseHandle(m_handle_named_pipe);
         m_connected = false;
-        SEND_WIN_LAST_MESSAGE_ERR(mp_error_trans);
+        IRS_LIB_SEND_LAST_ERROR();
       }else{
         size_wr = a_size;
       }
@@ -792,13 +792,13 @@ irs_uarc irs::tcp_server_t::read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
       NULL, &m_cs_kit_read, NULL, NULL, &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR)
     {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
       IRS_LIB_FATAL_ERROR("Select failed");
     } else if (ready_sock_count > 0) {
       if (FD_ISSET(*it_cl_sock, &m_cs_kit_read)) {
         int ret = recv(*it_cl_sock, reinterpret_cast<char*>(ap_buf), a_size, 0);
         if (ret == SOCKET_ERROR) {
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
           // Произошло отключение клиента, удаляем сокет
           closesocket(*it_cl_sock);
           m_client_sock.erase(it_cl_sock);
@@ -837,14 +837,14 @@ irs_uarc irs::tcp_server_t::write(
       NULL, NULL, &m_cs_kit_write, NULL, &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR)
     {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
       IRS_LIB_FATAL_ERROR("Select failed");
     } else if (ready_sock_count > 0) {
       if (FD_ISSET(*it_cl_sock, &m_cs_kit_write)) {
         int ret =
           send(*it_cl_sock, reinterpret_cast<const char*>(ap_buf), a_size, 0);
         if (ret == SOCKET_ERROR) {
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
           // Произошло отключение клиента, удаляем сокет
           closesocket(*it_cl_sock);
           m_client_sock.erase(it_cl_sock);
@@ -872,7 +872,7 @@ void irs::tcp_server_t::tick()
     int ready_sock_count = select(
       NULL, &m_sls_kit_read, NULL, NULL, &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR) {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
       // Возможна ошибка WSAENOTSOCK. Это возникает по причине работы с
       // неблокирующим сокетом и это нормально для нашего алгоритма.
     } else if (ready_sock_count > 0) {
@@ -889,7 +889,7 @@ void irs::tcp_server_t::tick()
           ULONG ulblock = 1;
           if (ioctlsocket(client_sock, FIONBIO, &ulblock) == SOCKET_ERROR)
           {
-            SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+            IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
             closesocket(client_sock);
           } else {
             m_client_sock.push_back(client_sock);
@@ -1042,14 +1042,14 @@ irs_uarc irs::tcp_client_t::read(
       &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR)
     {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
       IRS_LIB_FATAL_ERROR("Select failed");
     } else if (ready_sock_count > 0) {
       if (FD_ISSET(m_client_sock, &m_cs_kit_read)) {
         int ret = recv(
           m_client_sock, reinterpret_cast<char*>(ap_buf), a_size, 0);
         if (ret == SOCKET_ERROR) {
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
           m_state_info.csock_connected = false;
         } else if (ret == 0) {
           m_state_info.csock_connected = false;
@@ -1086,7 +1086,7 @@ irs_uarc irs::tcp_client_t::write(
       NULL,
       &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR) {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
     } else if (ready_sock_count > 0) {
       if (FD_ISSET(m_client_sock, &m_cs_kit_write)) {
         int ret = send(
@@ -1190,7 +1190,7 @@ void irs::udp_flow_t::start()
         int res = getsockopt(m_sock, SOL_SOCKET, SO_MAX_MSG_SIZE,
           reinterpret_cast<char*>(&optval),  &optval_size);
         if (res == SOCKET_ERROR) {
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
         } else {
           m_send_msg_max_size = optval;
         }
@@ -1343,7 +1343,7 @@ irs_uarc irs::udp_flow_t::read(
       &m_func_select_timeout);
     if (ready_sock_count == SOCKET_ERROR)
     {
-      SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+      IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
       IRS_LIB_FATAL_ERROR("Select failed");
     } else if (ready_sock_count > 0) {
       if (FD_ISSET(m_sock, &m_s_kit)) {
@@ -1360,7 +1360,7 @@ irs_uarc irs::udp_flow_t::read(
               // Размер полученного сообщения больше размера буфера
             } break;
             default : {
-              SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+              IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
               sock_close();
             }
           }
@@ -1394,10 +1394,10 @@ irs_uarc irs::udp_flow_t::write(
       switch (ret) {
         case WSAEMSGSIZE : {
           // Размер отправляемого сообщения превышает допустимый
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
         } break;
         default : {
-          SEND_WIN_WSA_LAST_MESSAGE_ERR(mp_error_trans);
+          IRS_LIB_SEND_WIN_WSA_LAST_ERROR();
           sock_close();
         }
       }  

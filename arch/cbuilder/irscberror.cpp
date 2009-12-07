@@ -102,40 +102,32 @@ void irs::cbuilder::error_handler_t::error_out(ostrstream &msg_strm,
 void irs::cbuilder::error_handler_t::show_msg(String &Msg,
   handler_type_t a_handler_type)
 {
-  switch (a_handler_type) {
-    case ht_exception: {
-      if (m_msg_first) {
-        m_msg_first = false;
+  if (m_msg_first) {
+    m_msg_first = false;
+    switch (a_handler_type) {
+      case ht_exception: {
         throw Exception(Msg);
-      }
-      m_msg_first = true;
-    }
-    case ht_message: {
-      if (m_msg_first) {
-        m_msg_first = false;
+      } break;
+      case ht_message: {
         ShowMessage(Msg);
-      }
-      m_msg_first = true;
-    } break;
-    case ht_log: {
-      if (m_msg_first) {
-        m_msg_first = false;
+      } break;
+      case ht_log: {
         irs::string msg_strg = Msg.c_str();
         if(mp_log_msg != NULL)
           mp_log_msg->send_msg(msg_strg);
+      } break;
+      case ht_none: {
+        // В этом случае ничего не делаем
+      } break;
+      default: {
+        throw Exception("Неправильный параметр handler_type установлен "
+          "в классе irs::cbuilder::error_handler_t\n"
+          "Файл: " + String(__FILE__) + "\n"
+          "Строка: " + String(__LINE__));
       }
-      m_msg_first = true;
-    } break;
-    case ht_none: {
-      // В этом случае ничего не делаем
-    } break;
-    default: {
-      throw Exception("Неправильный параметр handler_type установлен "
-        "в классе irs::cbuilder::error_handler_t\n"
-        "Файл: " + String(__FILE__) + "\n"
-        "Строка: " + String(__LINE__));
     }
   }
+  m_msg_first = true;
 }
 void irs::cbuilder::error_handler_t::exec()
 {

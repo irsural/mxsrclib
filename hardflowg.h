@@ -37,18 +37,12 @@
 // Для вывода отладочных сообщений
 //#define IRS_LIB_SOCK_DEBUG
 
-#ifdef IRS_LIB_SOCK_DEBUG
+#ifdef IRS_LIB_HARDFLOW_DEBUG
 #define IRS_LIB_SOCK_DBG_MSG(msg) IRS_LIB_DBG_MSG(msg)
 #else
 #define IRS_LIB_SOCK_DBG_MSG(msg)
 #endif
 
-/*#ifdef IRS_LIB_DEBUG
-#define SEND_MESSAGE(msg) IRS_LIB_ASSERT_EX(false, msg)
-#else // IRS_LIB_DEBUG
-#define SEND_MESSAGE(msg)
-#endif // IRS_LIB_DEBUG
-*/
 namespace irs {
 
 class hardflow_t {
@@ -74,53 +68,18 @@ public:
 namespace hardflow {
 
 typedef size_t sizens_t;
-typedef irs::string string_t;
-
-
+typedef irs::string string_t;   
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
-#if defined(IRS_WIN32)
-inline void send_format_msg(
-   int a_error_code,
-   const char* ap_file,
-   int a_line)
-{
-  LPVOID lpMsgBuf;
-  //LPVOID lpDisplayBuf;
-  FormatMessage(
-    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-    FORMAT_MESSAGE_FROM_SYSTEM |
-    FORMAT_MESSAGE_IGNORE_INSERTS,
-    NULL,
-    a_error_code,
-    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    (LPTSTR) &lpMsgBuf,
-    0, NULL);
-  irs::string message = static_cast<irs::string>(a_error_code)+
-    ": "+static_cast<char*>(lpMsgBuf);
-  irs::error_trans()->throw_error(
-    ec_standard, ap_file, a_line, (void*)(message.c_str()));
-  LocalFree(lpMsgBuf);
-}
-#elif defined(IRS_LINUX)
-inline void send_format_msg(
-   int a_error_code,
-   const char* ap_file,
-   int a_line)
-{
-  char* errmsg = strerror(a_error_code);
-  irs::string message = static_cast<irs::string>(a_error_code)+
-    ": "+static_cast<char*>(errmsg);
-   irs::error_trans()->throw_error(
-    ec_standard, ap_file, a_line, (void*)(message.c_str()));
-}
-#endif //__GNUC__
 
 #ifdef IRS_LIB_DEBUG
-#define SEND_MESSAGE_ERR(error_code)\
-  send_format_msg(error_code,__FILE__,__LINE__)
+#define HARDFLOW_DBG_ERR(error_code)\
+  irs::send_format_msg(error_code,__FILE__,__LINE__)
+#define HARDFLOW_DBG_MSG(error_code)\
+  irs::send_format_msg(error_code,__FILE__,__LINE__)
 #else // IRS_LIB_DEBUG
-#define SEND_MESSAGE_ERR(error_code)
+#define HARDFLOW_DBG_ERR(error_code)
+#define HARDFLOW_DBG_MSG(error_code)
 #endif // IRS_LIB_DEBUG
 
 
@@ -255,7 +214,8 @@ public:
     invalid_mode,             // Недопустимый режим
     mode_queue,               // Учитывается переменная m_max_size
     mode_limited_vector,      // Учитывается переменная m_max_size
-    mode_unlimited_vector};   // Переменная m_max_size не учитывается  
+    mode_unlimited_vector};   // Переменная m_max_size не учитывается
+  enum { invalid_channel = hardflow_t::invalid_channel };
   host_list_t(mode_t a_mode = mode_queue, size_type a_max_size = 1000);
   bool id_get(adress_type a_adress, id_type* ap_id);
   bool adress_get(id_type a_id, adress_type* ap_adress);
@@ -274,14 +234,17 @@ public:
     size_type a_size);
   size_type read(size_type a_id, irs_u8 *ap_buf,
     size_type a_size);
+  size_type channel_next();
   void tick();
 private:
-  enum {channel};
+
   bool lifetime_exceeded(const map_id_channel::iterator a_it_cur_channel);
   bool downtime_exceeded(const map_id_channel::iterator a_it_cur_channel);
+  void next_free_channel_id();
   mode_t m_mode;
   size_type m_max_size;
-  size_type m_counter;
+  size_type m_channel_id;
+  bool m_channel_id_overflow;
   const size_type m_channel_max_count;
   map_id_channel m_map_id_channel;
   //map_id_adress_type m_map_id_adress;

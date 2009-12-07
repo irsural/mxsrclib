@@ -11,9 +11,13 @@
 #include <irstime.h>
 #include <irscpp.h>
 
-#ifdef IRS_WIN32
+#if defined(IRS_WIN32)
+// Standart Windows headers
 #include <winsock2.h>
-#endif // IRS_WIN32
+#elif defined(IRS_LINUX)
+// Standart Linux headers
+#include <errno.h>
+#endif // defined(IRS_LINUX)
 
 /*
 #define IRS_LIB_DEBUG_GLOBAL
@@ -31,10 +35,12 @@
 
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
+    ostrstream ostr;\
+    ostr << spec_data << '\0';\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
-      static_cast<const void*>(spec_data));\
-  }
-
+    static_cast<const void*>(ostr.str()));\
+    ostr.rdbuf()->freeze(false);\
+  }      
 #define IRS_ASSERT(assert_expr)\
   {\
     if (!(assert_expr)) {\
@@ -89,6 +95,19 @@
   irs::mlog() << msg << endl;\
 }
 
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
+#define IRS_SEND_LAST_ERROR()\
+  irs::send_last_message_err(__FILE__,__LINE__)
+  
+#define IRS_SEND_ERROR(error_code)\
+  irs::send_message_err(error_code,__FILE__,__LINE__)
+#endif // defined(IRS_WIN32) || defined(IRS_LINUX)
+
+#if defined(IRS_WIN32)
+#define IRS_SEND_WIN_WSA_LAST_ERROR()\
+  irs::send_wsa_last_message_err(__FILE__,__LINE__)
+#endif // IRS_WIN32
+
 #ifdef IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
@@ -101,6 +120,9 @@
 #define IRS_LIB_DBG_MSG(msg) IRS_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg) IRS_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg) IRS_DBG_MSG_SRC_ENG(msg)
+#define IRS_LIB_SEND_LAST_ERROR() IRS_SEND_LAST_ERROR()
+#define IRS_LIB_SEND_ERROR() IRS_SEND_ERROR()
+#define IRS_LIB_SEND_WIN_WSA_LAST_ERROR() IRS_SEND_WIN_WSA_LAST_ERROR()
 #else // IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
@@ -112,18 +134,10 @@
 #define IRS_LIB_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg)
+#define IRS_LIB_SEND_LAST_ERROR()
+#define IRS_LIB_SEND_ERROR()
+#define IRS_LIB_SEND_WIN_WSA_LAST_ERROR()
 #endif // IRS_LIB_DEBUG
-
-#ifdef IRS_WIN32
-#define SEND_WIN_LAST_MESSAGE_ERR(error_trans)\
-  irs::send_last_message_err(error_trans,__FILE__,__LINE__)
-
-#define SEND_WIN_WSA_LAST_MESSAGE_ERR(error_trans)\
-  irs::send_wsa_last_message_err(error_trans,__FILE__,__LINE__)
-
-#define SEND_WIN_MESSAGE_ERR(error_code)\
-  irs::send_message_err(error_code,__FILE__,__LINE__)          
-#endif // IRS_WIN32
 
 namespace irs {
 
@@ -209,18 +223,21 @@ public:
 };
 #endif //__WATCOMC__
 
-#ifdef IRS_WIN32
-void send_format_msg(int a_error_code, error_trans_base_t* ap_error_trans,
-  char* ap_file, int a_line);
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
+int last_error_code();
 
-void send_last_message_err(
-  error_trans_base_t* ap_error_trans, char* ap_file, int a_line);
+irs::string last_error_str();
 
-void send_wsa_last_message_err(
-  error_trans_base_t* ap_error_trans, char* ap_file, int a_line);
+irs::string error_str(int a_error_code);
 
-void send_message_err(DWORD a_error_code, char* ap_file, int a_line);
-#endif // IRS_WIN32
+void send_format_msg(int a_error_code, char* ap_file, int a_line);
+
+void send_last_message_err(char* ap_file, int a_line);
+
+void send_wsa_last_message_err(char* ap_file, int a_line);
+
+void send_message_err(int a_error_code, char* ap_file, int a_line);
+#endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 ostream& mlog();
 
