@@ -109,7 +109,7 @@ public:
   void set(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
-  inline counter_t get();
+  inline counter_t get() const;
   void start();
   void stop();
   bool check();
@@ -119,7 +119,7 @@ private:
   counter_t m_time;
   bool m_start;
 };
-inline counter_t timer_t::get()
+inline counter_t timer_t::get() const
 {
   return m_time;
 }

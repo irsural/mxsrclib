@@ -33,15 +33,37 @@
 #include <irserror.h>
 #include <mxifar.h>
 #include <mxdata.h>
+#include <irssysutils.h>
 
-// Для вывода отладочных сообщений
-//#define IRS_LIB_SOCK_DEBUG
+#define IRS_LIB_HARDFLOW_DEBUG_NONE 0
+#define IRS_LIB_HARDFLOW_DEBUG_BASE 1
+#define IRS_LIB_HARDFLOW_DEBUG_DETAIL 2
 
-#ifdef IRS_LIB_HARDFLOW_DEBUG
-#define IRS_LIB_SOCK_DBG_MSG(msg) IRS_LIB_DBG_MSG(msg)
+//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
+//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_BASE
+#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_DETAIL
+
+#if (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE)
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
+#elif (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_DETAIL)
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
 #else
-#define IRS_LIB_SOCK_DBG_MSG(msg)
-#endif
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg)
+# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_DETAIL(msg)
+#endif           
 
 namespace irs {
 
@@ -160,10 +182,18 @@ public:
   errcode_type get_last_error();
 };
 
-class host_list_t
+enum udp_limit_connections_mode_t {
+  udplc_mode_invalid,      // Недопустимый режим
+  udplc_mode_queue,        // Учитывается переменная m_max_size
+  udplc_mode_limited,      // Учитывается переменная m_max_size
+  udplc_mode_unlimited     // Переменная m_max_size не учитывается*/
+};
+
+class udp_channel_list_t
 {
 public:
   class less_t;
+  class udp_flow_t;
   typedef sizens_t size_type;
   typedef string_t string_type;
   typedef sockaddr_in adress_type;
@@ -177,7 +207,9 @@ public:
     measure_time_t downtime;
   };
   typedef map<adress_type, id_type, less_t> map_adress_id_type;
-  typedef map<id_type, channel_t> map_id_channel;   
+  typedef map<id_type, channel_t> map_id_channel_type;
+  typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
+  typedef map<id_type, channel_t>::iterator map_id_channel_const_iterator;   
   typedef deque<id_type> queue_id_type;
   class less_t
   {
@@ -210,13 +242,16 @@ public:
       return first_less_second;
     };
   };
-  enum mode_t {
-    invalid_mode,             // Недопустимый режим
-    mode_queue,               // Учитывается переменная m_max_size
-    mode_limited_vector,      // Учитывается переменная m_max_size
-    mode_unlimited_vector};   // Переменная m_max_size не учитывается
   enum { invalid_channel = hardflow_t::invalid_channel };
-  host_list_t(mode_t a_mode = mode_queue, size_type a_max_size = 1000);
+  udp_channel_list_t(
+    const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
+    const size_type a_max_size = 1000,
+    const size_type a_channel_buf_max_size = 32768,
+    const bool a_limit_livetime_enabled = false,
+    const double a_max_livetime_sec = 24*60*60,
+    const bool a_limit_downtime_enabled = false,
+    const double a_max_downtime_sec = 60*60
+  );
   bool id_get(adress_type a_adress, id_type* ap_id);
   bool adress_get(id_type a_id, adress_type* ap_adress);
   // Возвращает false, если достигнут лимит, и true, если адрес успешно
@@ -224,10 +259,23 @@ public:
   void insert(adress_type a_adress, id_type* ap_id, bool* ap_insert_success);
   void erase(const id_type a_id);
   bool is_channel_exists(const id_type a_id);
-
+  size_type channel_buf_max_size_get() const;
+  void channel_buf_max_size_set(size_type a_channel_buf_max_size);
+  bool limit_livetime_enabled_get() const;
+  void limit_livetime_enabled_set(bool a_limit_livetime_enabled);
+  double max_livetime_get() const;
+  void max_livetime_set(double a_max_livetime_sec);
+  bool limit_downtime_enabled_get() const;
+  void limit_downtime_enabled_set(bool a_limit_downtime_enabled);
+  double max_downtime_get() const;
+  void max_downtime_set(double a_max_downtime_sec);
+  void channel_adress_get(const id_type a_channel_id,
+    adress_type* ap_adress) ;
+  void channel_adress_set(const id_type a_channel_id,
+    const adress_type& a_adress);
   void clear();
   size_type size();
-  void mode_set(const mode_t a_mode);
+  void mode_set(const udp_limit_connections_mode_t a_mode);
   size_type max_size_get();
   void max_size_set(size_type a_max_size);
   size_type write(const adress_type& a_adress, const irs_u8 *ap_buf,
@@ -235,27 +283,26 @@ public:
   size_type read(size_type a_id, irs_u8 *ap_buf,
     size_type a_size);
   size_type channel_next();
-  void tick();
-private:
+  size_type cur_channel() const;
 
-  bool lifetime_exceeded(const map_id_channel::iterator a_it_cur_channel);
-  bool downtime_exceeded(const map_id_channel::iterator a_it_cur_channel);
+  void tick();
+private:    
+  bool lifetime_exceeded(const map_id_channel_iterator a_it_cur_channel);
+  bool downtime_exceeded(const map_id_channel_iterator a_it_cur_channel);
   void next_free_channel_id();
-  mode_t m_mode;
+  udp_limit_connections_mode_t m_mode;
   size_type m_max_size;
   size_type m_channel_id;
   bool m_channel_id_overflow;
   const size_type m_channel_max_count;
-  map_id_channel m_map_id_channel;
-  //map_id_adress_type m_map_id_adress;
+  map_id_channel_type m_map_id_channel;
   map_adress_id_type m_map_adress_id;
-  //map_id_buf_type m_map_id_buf;
   queue_id_type m_id_list;
   size_type m_buf_max_size;
-  map_id_channel::iterator m_it_cur_channel;
-  map_id_channel::iterator m_it_cur_channel_for_check;
-  bool m_on_max_lifetime;
-  bool m_on_max_downtime;
+  map_id_channel_iterator m_it_cur_channel;
+  map_id_channel_iterator m_it_cur_channel_for_check;
+  bool m_max_lifetime_enabled;
+  bool m_max_downtime_enabled;
   counter_t m_max_lifetime;
   counter_t m_max_downtime;
 };
@@ -264,14 +311,22 @@ class udp_flow_t : public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
-  typedef irs::string string_type;        
+  typedef irs::string string_type;
+  typedef udp_channel_list_t::adress_type adress_type;
+  enum mode_t {
+    invalid_mode,             // Недопустимый режим
+    mode_queue,               // Учитывается переменная m_max_size
+    mode_limited_vector,      // Учитывается переменная m_max_size
+    mode_unlimited_vector};   // Переменная m_max_size не учитывается
   typedef int errcode_type;
   #if defined(IRS_WIN32)
   typedef SOCKET socket_type;
   typedef int socklen_type;
+  typedef unsigned long in_addr_type;
   #elif defined(IRS_LINUX)
   typedef int socket_type;
   typedef socklen_t socklen_type;
+  typedef in_addr_t in_addr_type;
   #endif // IRS_WINDOWS IRS_LINUX
 private:
   #if defined(IRS_WIN32)
@@ -314,15 +369,33 @@ private:
   timeval m_func_select_timeout;
   fd_set m_s_kit;
   size_type m_send_msg_max_size;
-  host_list_t m_remove_host_list;
-  //size_type m_recv_msg_max_size;
-  irs::raw_data_t<irs_u8> m_buf;   
+  udp_channel_list_t m_channel_list;
+  irs::raw_data_t<irs_u8> m_read_buf;
+  enum parameter_t{
+    param_invalid,
+    param_adress,
+    param_port,
+    param_read_buf_max_size,
+    param_limit_livetime_enabled,
+    param_limit_livetime,
+    param_limit_downtime_enabled,
+    param_limit_downtime,
+    param_channel_max_count
+  };
 public:
   udp_flow_t(
     const string_type& a_local_host_name = "",
     const string_type& a_local_host_port = "",
     const string_type& a_remote_host_name = "",
-    const string_type& a_remote_host_port = "");
+    const string_type& a_remote_host_port = "",
+    const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
+    const size_type a_channel_max_count = 1000,
+    const size_type a_channel_buf_max_size = 0xFFFF,
+    const bool a_limit_livetime_enabled = false,
+    const double a_max_livetime_sec = 24*60*60,
+    const bool a_limit_downtime_enabled = false,
+    const double a_max_downtime_sec = 60*60
+  );
   virtual ~udp_flow_t();
 private:
   void start();
@@ -332,9 +405,11 @@ private:
     const string_type& a_remote_host_port,
     sockaddr_in* ap_sockaddr,
     bool* ap_init_success);
+  bool adress_str_to_adress_binary(
+    const string_type& a_adress_str, in_addr_type* ap_adress_binary);
 public:
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
+  virtual irs::string param(const irs::string &a_param_name);
+  virtual void set_param(const irs::string &a_param_name,
     const irs::string &a_value);
   // В случае если функция read возвращает size_type == 0, буфер ap_buf может
   // быть испорчен
@@ -345,8 +420,7 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
-};
-
+};                        
 
 #if defined(IRS_LINUX)
 
@@ -453,28 +527,30 @@ public:
   size_type write_abort();
   void tick();
   void connect(hardflow_t* ap_hardflow);
-  
+  size_type read_byte_count() const;
+  size_type write_byte_count() const;
+  void read_timeout(double a_read_timeout_sec);
+  double read_timeout() const;
+  void write_timeout(double a_write_timeout_sec);
+  double write_timeout() const;
 private:
-  hardflow_t* mp_hardflow;
-  
-  size_type m_read_channel; 
+  hardflow_t* mp_hardflow;   
+  size_type m_read_channel;
   irs_u8* mp_read_buf_cur;
   irs_u8* mp_read_buf;
-  size_type m_read_size;
-  size_type m_size_read;
-  status_t  m_read_status;
-  size_type m_read_size_cur;
+  size_type m_read_size_need;
+  size_type m_read_size_rest;
+  status_t m_read_status;
   timer_t m_read_timeout;
 
   size_type m_write_channel;
   const irs_u8* mp_write_buf_cur;
   const irs_u8* mp_write_buf;
-  size_type m_write_size;
-  size_type m_size_write;
+  size_type m_write_size_need;
+  size_type m_write_size_rest;
   status_t  m_write_status;
-  size_type m_write_size_cur;
   timer_t m_write_timeout;
-  
+
 };
 
 #endif //defined(IRS_LINUX)

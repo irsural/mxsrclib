@@ -6,43 +6,17 @@
 #include <irscpp.h>
 #include <mxdata.h>
 
-//#define IRS_LIB_HARDFLOW_DEBUG
-#define IRS_LIB_HARDFLOW_DEBUG_NONE 0
-#define IRS_LIB_HARDFLOW_DEBUG_BASE 1
-#define IRS_LIB_HARDFLOW_DEBUG_DETAIL 2
-
-#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
-//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_BASE
-//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_DETAIL
-
-#if (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE)
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
-#elif (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_DETAIL)
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
-#else
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg)
-#define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
-#define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
-#endif   
-/*#ifdef IRS_LIB_HARDFLOW_DEBUG_FULL
-#define IRS_TCP_DBG_MSG_FULL(msg) {msg}
-#else
-#define IRS_TCP_DBG_MSG_FULL(msg) ;
-#endif*/
-
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
-//class host_list_t
-irs::hardflow::host_list_t::host_list_t(
-  mode_t a_mode,
-  size_type a_max_size
+//class udp_channel_list_t
+irs::hardflow::udp_channel_list_t::udp_channel_list_t(
+  const udp_limit_connections_mode_t a_mode,
+  const size_type a_max_size,
+  const size_type a_channel_buf_max_size,
+  const bool a_limit_livetime_enabled,
+  const double a_max_livetime_sec,
+  const bool a_limit_downtime_enabled,
+  const double a_max_downtime_sec
 ):
   m_mode(a_mode),
   m_max_size(min(a_max_size, static_cast<size_type>(-1)-1)),
@@ -53,17 +27,17 @@ irs::hardflow::host_list_t::host_list_t(
   //m_map_id_adress(),
   m_map_adress_id(),
   m_id_list(),
-  m_buf_max_size(32768),
+  m_buf_max_size(a_channel_buf_max_size),
   m_it_cur_channel(m_map_id_channel.end()),
   m_it_cur_channel_for_check(m_map_id_channel.end()),
-  m_on_max_lifetime(false),
-  m_on_max_downtime(true),
-  m_max_lifetime(irs::make_cnt_s(24*60*60)),
-  m_max_downtime(irs::make_cnt_s(1*60*60))
+  m_max_lifetime_enabled(a_limit_livetime_enabled),
+  m_max_downtime_enabled(a_limit_downtime_enabled),
+  m_max_lifetime(irs::make_cnt_s(a_max_livetime_sec)),
+  m_max_downtime(irs::make_cnt_s(a_max_downtime_sec))
 {
 }
 
-void irs::hardflow::host_list_t::insert(adress_type a_adress,
+void irs::hardflow::udp_channel_list_t::insert(adress_type a_adress,
   id_type* ap_id, bool* ap_insert_success)
 {
   *ap_insert_success = false;
@@ -72,7 +46,7 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
   if (it_map_addr_id == m_map_adress_id.end()) {
     bool allow_add = false;
     switch (m_mode) {
-      case mode_queue: {
+      case udplc_mode_queue: {
         IRS_ASSERT(m_id_list.size() <= m_max_size);
         if (m_id_list.size() < m_max_size) {
           allow_add = true;
@@ -85,7 +59,7 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
           }
         }
       } break;
-      case mode_limited_vector: {
+      case udplc_mode_limited: {
         IRS_ASSERT(m_id_list.size() <= m_max_size);
         if (m_id_list.size() < m_max_size) {
           allow_add = true;
@@ -93,7 +67,7 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
           // Достигнут лимит количества записей
         }
       } break;
-      case mode_unlimited_vector: {
+      case udplc_mode_unlimited: {
         if (m_id_list.size() <= m_channel_max_count) {
           allow_add = true;
         } else {
@@ -115,7 +89,7 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
       m_map_adress_id.insert(make_pair(a_adress, m_channel_id));
       m_id_list.push_back(m_channel_id);
       *ap_id = m_channel_id;
-      m_channel_id++;
+      //m_channel_id++;
       *ap_insert_success = true;
     } else {
       // Добавление не разрешено
@@ -127,7 +101,7 @@ void irs::hardflow::host_list_t::insert(adress_type a_adress,
   }
 }
 
-bool irs::hardflow::host_list_t::id_get(adress_type a_adress,
+bool irs::hardflow::udp_channel_list_t::id_get(adress_type a_adress,
   id_type* ap_id)
 {
   bool find_success = false;
@@ -142,11 +116,11 @@ bool irs::hardflow::host_list_t::id_get(adress_type a_adress,
   return find_success;
 }
 
-bool irs::hardflow::host_list_t::adress_get(id_type a_id,
+bool irs::hardflow::udp_channel_list_t::adress_get(id_type a_id,
   adress_type* ap_adress)
 {
   bool find_success = true;
-  map_id_channel::iterator it_map_id_channel = m_map_id_channel.find(a_id); 
+  map_id_channel_iterator it_map_id_channel = m_map_id_channel.find(a_id); 
   if (it_map_id_channel != m_map_id_channel.end()) {
     *ap_adress = it_map_id_channel->second.adress;
     find_success = true;
@@ -156,9 +130,9 @@ bool irs::hardflow::host_list_t::adress_get(id_type a_id,
   return find_success;
 }
 
-void irs::hardflow::host_list_t::erase(id_type a_id)
+void irs::hardflow::udp_channel_list_t::erase(id_type a_id)
 {
-  map_id_channel::iterator it_erase_channel =
+  map_id_channel_iterator it_erase_channel =
     m_map_id_channel.find(a_id);
   if (it_erase_channel != m_map_id_channel.end()) {
     if (m_it_cur_channel == it_erase_channel) {
@@ -191,12 +165,95 @@ void irs::hardflow::host_list_t::erase(id_type a_id)
   }
 }
 
-bool irs::hardflow::host_list_t::is_channel_exists(const id_type a_id)
+bool irs::hardflow::udp_channel_list_t::is_channel_exists(const id_type a_id)
 {
   return m_map_id_channel.find(a_id) != m_map_id_channel.end();
 }
 
-void irs::hardflow::host_list_t::clear()
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::channel_buf_max_size_get() const
+{
+  return m_buf_max_size;
+}
+
+void irs::hardflow::udp_channel_list_t::channel_buf_max_size_set(
+  size_type a_channel_buf_max_size)
+{
+  m_buf_max_size = a_channel_buf_max_size;
+  map_id_channel_iterator it_channel = m_map_id_channel.begin();
+  while (it_channel != m_map_id_channel.end()) {
+    it_channel->second.bufer.resize(m_buf_max_size);
+  }
+}
+
+bool irs::hardflow::udp_channel_list_t::limit_livetime_enabled_get() const
+{
+  return m_max_lifetime_enabled;
+}
+
+double irs::hardflow::udp_channel_list_t::max_livetime_get() const
+{
+  return CNT_TO_DBLTIME(m_max_lifetime);
+}
+
+void irs::hardflow::udp_channel_list_t::max_livetime_set(
+  double a_max_livetime_sec)
+{
+  m_max_lifetime = irs::make_cnt_s(a_max_livetime_sec);
+}
+
+void irs::hardflow::udp_channel_list_t::limit_livetime_enabled_set(
+  bool a_limit_livetime_enabled)
+{
+  m_max_lifetime_enabled = a_limit_livetime_enabled;
+}
+
+bool irs::hardflow::udp_channel_list_t::limit_downtime_enabled_get() const
+{
+  return m_max_downtime_enabled;
+}
+
+void irs::hardflow::udp_channel_list_t::limit_downtime_enabled_set(
+  bool a_limit_downtime_enabled)
+{
+  m_max_downtime_enabled = a_limit_downtime_enabled;
+}
+
+double irs::hardflow::udp_channel_list_t::max_downtime_get() const
+{
+  return CNT_TO_DBLTIME(m_max_downtime);
+}
+
+void irs::hardflow::udp_channel_list_t::max_downtime_set(
+  double a_max_downtime_sec)
+{
+  m_max_downtime = irs::make_cnt_s(a_max_downtime_sec);
+}
+
+void irs::hardflow::udp_channel_list_t::channel_adress_get(
+  const id_type a_channel_id, adress_type* ap_adress) 
+{
+  map_id_channel_iterator it_channel = m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    *ap_adress = it_channel->second.adress;
+  } else {
+    // Канал не найден
+  }
+}
+
+void irs::hardflow::udp_channel_list_t::channel_adress_set(
+  const id_type a_channel_id, const adress_type& a_adress)
+{
+  map_id_channel_iterator it_channel = m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    it_channel->second.adress = a_adress;
+    it_channel->second.bufer.clear();
+  } else {
+    // Канал не найден
+  }
+}  
+
+void irs::hardflow::udp_channel_list_t::clear()
 {
   m_map_id_channel.clear();
   m_map_adress_id.clear();
@@ -205,17 +262,18 @@ void irs::hardflow::host_list_t::clear()
   m_it_cur_channel_for_check = m_map_id_channel.end();
 }
 
-irs::hardflow::host_list_t::size_type
-irs::hardflow::host_list_t::size()
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::size()
 {
   return m_id_list.size();
 }
 
-void irs::hardflow::host_list_t::mode_set(const mode_t a_mode)
+void irs::hardflow::udp_channel_list_t::mode_set(
+  const udp_limit_connections_mode_t a_mode)
 {
   m_mode = a_mode;
   switch (m_mode) {
-    case mode_queue: {
+    case udplc_mode_queue: {
       if (m_id_list.size() > m_max_size) {
         size_type adress_count_need_delete = m_id_list.size() - m_max_size;
         for (size_type id_i = 0; id_i < adress_count_need_delete; id_i++) {
@@ -225,7 +283,7 @@ void irs::hardflow::host_list_t::mode_set(const mode_t a_mode)
         // Удаление объектов не требуется
       }
     } break;
-    case mode_limited_vector: {
+    case udplc_mode_limited: {
       if (m_id_list.size() > m_max_size) {
         size_type adress_count_need_delete = m_id_list.size() - m_max_size;
         for (size_type id_i = 0; id_i < adress_count_need_delete; id_i++) {
@@ -235,7 +293,7 @@ void irs::hardflow::host_list_t::mode_set(const mode_t a_mode)
         // Удаление объектов не требуется
       }
     } break;
-    case mode_unlimited_vector: {
+    case udplc_mode_unlimited: {
       // Удаление не требуется
     } break;
     default : {
@@ -244,19 +302,49 @@ void irs::hardflow::host_list_t::mode_set(const mode_t a_mode)
   }
 }
 
-irs::hardflow::host_list_t::size_type
-irs::hardflow::host_list_t::max_size_get()
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::max_size_get()
 {
   return m_max_size;
 }
 
-void irs::hardflow::host_list_t::max_size_set(size_type a_max_size)
+void irs::hardflow::udp_channel_list_t::max_size_set(size_type a_max_size)
 {
-  m_max_size = a_max_size;
+  m_max_size = min(a_max_size, m_channel_max_count);
+  switch (m_mode) {
+    case udplc_mode_queue: {
+      if (m_id_list.size() > m_max_size) {
+        const size_type channel_erase_count = m_id_list.size() - m_max_size;
+        for (size_type channel_i = 0; channel_i < channel_erase_count;
+          channel_i++)
+        {
+          erase(m_id_list.front());
+          m_id_list.pop_front();
+        }
+      } else {
+        // Удаление лишних каналов не требуется
+      }
+    } break;
+    case udplc_mode_limited: {
+      const size_type channel_erase_count = m_id_list.size() - m_max_size;
+      for (size_type channel_i = 0; channel_i < channel_erase_count;
+        channel_i++)
+      {
+        erase(m_id_list.back());
+        m_id_list.pop_back();
+      }
+    } break;
+    case udplc_mode_unlimited: {
+      // Удаление каналов не требуется
+    } break;
+    default : {
+      IRS_ASSERT_MSG("Неизвестный вариант рабочего режима");
+    }
+  }
 }
 
-irs::hardflow::host_list_t::size_type
-irs::hardflow::host_list_t::write(const adress_type& a_adress,
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::write(const adress_type& a_adress,
   const irs_u8 *ap_buf, size_type a_size)
 {
   size_type write_byte_count = 0;
@@ -265,13 +353,14 @@ irs::hardflow::host_list_t::write(const adress_type& a_adress,
   // Проверяем наличие канала и создаем, если его не существует
   insert(a_adress, &id, &channel_exists);
   if (channel_exists) {
-    map_id_channel::iterator it_map_id_channel =
+    map_id_channel_iterator it_map_id_channel =
       m_map_id_channel.find(id);
     if (it_map_id_channel != m_map_id_channel.end()) {
       bufer_type& buf = it_map_id_channel->second.bufer;
       IRS_LIB_ASSERT(buf.size() <= m_buf_max_size);
       write_byte_count = min(a_size, m_buf_max_size - buf.size());
-      buf.push_back(ap_buf, ap_buf + write_byte_count);  
+      buf.push_back(ap_buf, ap_buf + write_byte_count);
+      it_map_id_channel->second.downtime.start();  
     } else {
       IRS_LIB_ASSERT_MSG("Канал отсутсвует в списке");
     }                   
@@ -281,12 +370,12 @@ irs::hardflow::host_list_t::write(const adress_type& a_adress,
   return write_byte_count;
 }
 
-irs::hardflow::host_list_t::size_type
-irs::hardflow::host_list_t::read(size_type a_id,
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::read(size_type a_id,
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type read_byte_count = 0;
-  map_id_channel::iterator it_map_id_channel =
+  map_id_channel_iterator it_map_id_channel =
     m_map_id_channel.find(a_id);
   if (it_map_id_channel != m_map_id_channel.end()) {
     bufer_type& buf = it_map_id_channel->second.bufer;
@@ -299,16 +388,21 @@ irs::hardflow::host_list_t::read(size_type a_id,
   return read_byte_count;
 }
 
-irs::hardflow::host_list_t::size_type irs::hardflow::host_list_t::channel_next()
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::channel_next()
 {
   size_type cur_channel_id = invalid_channel;
+  if (m_it_cur_channel != m_map_id_channel.end()) {
+    m_it_cur_channel++;
+  } else {
+    // Текущий канал не установлен
+  }
   if (m_it_cur_channel != m_map_id_channel.end()) {
     cur_channel_id = m_it_cur_channel->first;
   } else {
     m_it_cur_channel = m_map_id_channel.begin();
     if (m_it_cur_channel != m_map_id_channel.end()) {
       cur_channel_id = m_it_cur_channel->first;
-      m_it_cur_channel++;
     } else {
       // Нет ни одного канала
     }
@@ -316,9 +410,21 @@ irs::hardflow::host_list_t::size_type irs::hardflow::host_list_t::channel_next()
   return cur_channel_id;
 }
 
-void irs::hardflow::host_list_t::tick()
+irs::hardflow::udp_channel_list_t::size_type
+irs::hardflow::udp_channel_list_t::cur_channel() const
 {
-  if (m_on_max_lifetime || m_on_max_downtime) {
+  id_type channel_id = invalid_channel;
+  if (m_it_cur_channel != m_map_id_channel.end()) {
+    channel_id = m_it_cur_channel->first;
+  } else {
+    // Текущий канал не установлен
+  }
+  return channel_id;
+}
+
+void irs::hardflow::udp_channel_list_t::tick()
+{
+  if (m_max_lifetime_enabled || m_max_downtime_enabled) {
     if (m_it_cur_channel_for_check == m_map_id_channel.end()) {
       m_it_cur_channel_for_check = m_map_id_channel.begin();
     } else {
@@ -326,7 +432,7 @@ void irs::hardflow::host_list_t::tick()
     }
     if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
       bool channel_need_destroy = false;
-      if (m_on_max_lifetime) {
+      if (m_max_lifetime_enabled) {
         if (lifetime_exceeded(m_it_cur_channel_for_check)) {
           channel_need_destroy = true;
         } else {
@@ -335,7 +441,7 @@ void irs::hardflow::host_list_t::tick()
       } else {
         // Проверка времени жизни отключена
       }
-      if (m_on_max_downtime) {
+      if (m_max_downtime_enabled) {
         if (downtime_exceeded(m_it_cur_channel_for_check)) {
           channel_need_destroy = true;
         } else {
@@ -359,8 +465,8 @@ void irs::hardflow::host_list_t::tick()
   }
 }
 
-bool irs::hardflow::host_list_t::lifetime_exceeded(
-  const map_id_channel::iterator a_it_cur_channel)
+bool irs::hardflow::udp_channel_list_t::lifetime_exceeded(
+  const map_id_channel_iterator a_it_cur_channel)
 {
   bool lifetime_exceeded_status = false;
   if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
@@ -376,8 +482,8 @@ bool irs::hardflow::host_list_t::lifetime_exceeded(
   return lifetime_exceeded_status;
 }
 
-bool irs::hardflow::host_list_t::downtime_exceeded(
-  const map_id_channel::iterator a_it_cur_channel)
+bool irs::hardflow::udp_channel_list_t::downtime_exceeded(
+  const map_id_channel_iterator a_it_cur_channel)
 {
   bool downtime_exceeded_status = false;
   if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
@@ -393,11 +499,11 @@ bool irs::hardflow::host_list_t::downtime_exceeded(
   return downtime_exceeded_status;
 }
 
-void irs::hardflow::host_list_t::next_free_channel_id()
+void irs::hardflow::udp_channel_list_t::next_free_channel_id()
 {
   if (!m_channel_id_overflow) {
-    IRS_LIB_ASSERT(m_map_id_channel.find(m_channel_id) ==
-      m_map_id_channel.end());
+    //IRS_LIB_ASSERT(m_map_id_channel.find(m_channel_id) ==
+      //m_map_id_channel.end());
     m_channel_id++;
     if (m_channel_id == invalid_channel) {
       m_channel_id_overflow = true;
@@ -412,9 +518,9 @@ void irs::hardflow::host_list_t::next_free_channel_id()
       if(m_channel_id == invalid_channel) {
         m_channel_id++;
       }
-      map_id_channel::iterator it_prev =
+      map_id_channel_iterator it_prev =
         m_map_id_channel.find(m_channel_id);
-      map_id_channel::iterator it_cur = it_prev;
+      map_id_channel_iterator it_cur = it_prev;
       if(it_cur != m_map_id_channel.end()) {
         while(true) {
           it_cur++;
@@ -463,14 +569,20 @@ irs::hardflow::error_sock_t::get_last_error()
   #endif // IRS_WINDOWS IRS_LINUX
   return error_code;
 }
-
-
+      
 // class udp_flow_t
 irs::hardflow::udp_flow_t::udp_flow_t(
   const string_type& a_local_host_name,
   const string_type& a_local_host_port,
   const string_type& a_remote_host_name,
-  const string_type& a_remote_host_port
+  const string_type& a_remote_host_port,
+  const udp_limit_connections_mode_t a_mode,
+  const size_type a_channel_max_count,
+  const size_type a_channel_buf_max_size,
+  const bool a_limit_livetime_enabled,
+  const double a_max_livetime_sec,
+  const bool a_limit_downtime_enabled,
+  const double a_max_downtime_sec
 ):    
   m_error_sock(),
   m_state_info(),
@@ -482,9 +594,17 @@ irs::hardflow::udp_flow_t::udp_flow_t(
   m_local_host_port(a_local_host_port),
   m_func_select_timeout(),
   m_s_kit(),
-  m_send_msg_max_size(1024),
-  m_remove_host_list()
-  //m_recv_msg_max_size(1024)
+  m_send_msg_max_size(65000),
+  m_channel_list(
+    a_mode,
+    a_channel_max_count,
+    a_channel_buf_max_size,
+    a_limit_livetime_enabled,
+    a_max_livetime_sec,
+    a_limit_downtime_enabled,
+    a_max_downtime_sec
+  ),
+  m_read_buf(a_channel_buf_max_size)
 {
   m_func_select_timeout.tv_sec = 0;
   m_func_select_timeout.tv_usec = 0;
@@ -496,7 +616,7 @@ irs::hardflow::udp_flow_t::udp_flow_t(
   if (init_success) {
     bool insert_success = false;
     size_type remote_host_id = 0;
-    m_remove_host_list.insert(
+    m_channel_list.insert(
       remote_host_addr, &remote_host_id, &insert_success);
     IRS_LIB_ASSERT(insert_success);
   } else {
@@ -506,7 +626,7 @@ irs::hardflow::udp_flow_t::udp_flow_t(
 
 irs::hardflow::udp_flow_t::~udp_flow_t()
 {
-  if (m_state_info.sock_created) {    
+  if (m_state_info.sock_created) {
     #if defined(IRS_WIN32)
     closesocket(m_sock);
     #elif defined(IRS_LINUX)
@@ -547,27 +667,6 @@ void irs::hardflow::udp_flow_t::start()
       if (m_sock != static_cast<socket_type>(m_invalid_socket)) {
         m_state_info.sock_created = true;
         m_state_info.set_io_mode_sock_success = false;
-        // Обновляем переменную, указывающую максимальный размер сообщения
-        int optval;
-        socklen_type optval_size = sizeof(optval);
-        int optname = SO_SNDBUF;
-        int res = getsockopt(m_sock, SOL_SOCKET, optname,
-          reinterpret_cast<char*>(&optval),  &optval_size);
-        if (res != m_socket_error) {
-          m_send_msg_max_size = optval;
-        } else {
-          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
-            error_str(m_error_sock.get_last_error()));
-        }
-        /*optval_size = sizeof(optval);
-        optname = SO_RCVBUF;
-        res = getsockopt(m_sock, SOL_SOCKET, optname,
-          reinterpret_cast<char*>(&optval),  &optval_size);
-        if (res == m_socket_error) {
-          HARDFLOW_DBG_ERR(m_error_sock.get_last_error());
-        } else {
-          m_recv_msg_max_size = optval;
-        }*/                                             
       } else {
         // Сокет создать не удалось
         IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
@@ -581,6 +680,8 @@ void irs::hardflow::udp_flow_t::start()
   }
   if (m_state_info.sock_created) {
     if (!m_state_info.set_io_mode_sock_success) {
+      m_state_info.set_io_mode_sock_success = true;
+      #ifdef NOP
       // для включения неблокирующего режима переменная ulblock должна иметь
       // ненулевое значение
       unsigned long ulblock = 1;
@@ -602,7 +703,8 @@ void irs::hardflow::udp_flow_t::start()
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.bind_sock_and_ladr_success = false;
       }
-      #endif // IRS_WINDOWS IRS_LINUX             
+      #endif // IRS_WINDOWS IRS_LINUX
+      #endif // NOP
     } else {
       // Сокет уже переведен в неблокирующий режим
     }
@@ -652,36 +754,30 @@ void irs::hardflow::udp_flow_t::local_addr_init(
 {
   *ap_init_success = true;
   if (m_local_host_name != "") {
-    unsigned long addr = inet_addr(m_local_host_name.c_str());
-    if (addr == INADDR_NONE) {
-      hostent* p_host = gethostbyname(m_local_host_name.c_str());
-      if (p_host == NULL) {
-        // Ошибка получения адреса
-        *ap_init_success = false;
-      } else {
-        // Берем первый адрес в списке
-        memcpy(&ap_sockaddr->sin_addr,
-          p_host->h_addr_list[0], p_host->h_length);
-      }
+    if (!adress_str_to_adress_binary(m_local_host_name,
+      &ap_sockaddr->sin_addr.s_addr))
+    {
+      // Преобразовать адрес не удалось
+      *ap_init_success = false;
     } else {
-      ap_sockaddr->sin_addr.s_addr = addr;
-    }                                                
+      // Адрес успешно получен
+    }
   } else {
     // Адрес не задан
     ap_sockaddr->sin_addr.s_addr = htonl(INADDR_ANY);
   }
-  ap_sockaddr->sin_family = AF_INET;
-  if (m_local_host_port != "") {
+  if (*ap_init_success) {
+    ap_sockaddr->sin_family = AF_INET;
     unsigned short port = 0;
     if (m_local_host_port.to_number(port)) {
       ap_sockaddr->sin_port = htons(port);
     } else {
+      // Преобразовать строку в число не удалось
       *ap_init_success = false;
     }
   } else {
-    // Порт не задан, выбераем произвольный порт
-    *ap_init_success = false;   
-  } 
+    // Значение адреса получить не удалось
+  }
 }
 
 void irs::hardflow::udp_flow_t::addr_init(
@@ -690,37 +786,15 @@ void irs::hardflow::udp_flow_t::addr_init(
   sockaddr_in* ap_sockaddr,
   bool* ap_init_success)
 {
-  *ap_init_success = true;
-  if (m_local_host_name != "") {
-    unsigned long addr = inet_addr(a_host_name.c_str());
-    if (addr == INADDR_NONE) {
-      hostent* p_host = gethostbyname(a_host_name.c_str());
-      if (p_host == NULL) {
-        // Ошибка получения адреса
-        *ap_init_success = false;
-      } else {
-        // Берем первый адрес в списке
-        memcpy(&(ap_sockaddr->sin_addr), p_host->h_addr_list[0],
-          p_host->h_length);
-      }
-    } else {
-      ap_sockaddr->sin_addr.s_addr = addr;
-    }
-  } else {
-    // Адрес не задан
-    *ap_init_success = false;
-  }
+  *ap_init_success = adress_str_to_adress_binary(
+    a_host_name, &ap_sockaddr->sin_addr.s_addr);  
   ap_sockaddr->sin_family = AF_INET;
   if (*ap_init_success) {
-    if (a_host_port != "") {
-      unsigned short port = 0;
-      if (a_host_port.to_number(port)) {
-        ap_sockaddr->sin_port = htons(port);
-      } else {
-        *ap_init_success = false;
-      }
+    unsigned short port = 0;
+    if (a_host_port.to_number(port)) {
+      ap_sockaddr->sin_port = htons(port);
     } else {
-      // Порт не задан
+      // Преобразовать в число не удалось
       *ap_init_success = false;
     }
   } else {
@@ -728,22 +802,142 @@ void irs::hardflow::udp_flow_t::addr_init(
   }
 }
 
-irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_name)
+bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
+  const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
-  irs::string param;
-  return param;
+  bool adress_convert_success = false;
+  if (a_adress_str != "") {
+    irs_u32 adress = inet_addr(a_adress_str.c_str());
+    if (adress == INADDR_NONE) {
+      hostent* p_host = gethostbyname(a_adress_str.c_str());
+      if (p_host != NULL) {
+        // Берем первый адрес в списке
+        memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);
+        adress_convert_success = true;
+      } else {
+        // Ошибка получения списка адресов
+      }
+    } else {
+      *ap_adress_binary = adress;
+      adress_convert_success = true;
+    }
+  } else {
+    // Адрес не задан
+  }
+  return adress_convert_success;
 }
 
-void irs::hardflow::udp_flow_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_param_name)
 {
+  irs::string param_value;
+  if (a_param_name == irst("remote_adress")) {
+    adress_type adress;
+    m_channel_list.channel_adress_get(m_channel_list.cur_channel(), &adress);
+    param_value = inet_ntoa(adress.sin_addr);
+  } else if (a_param_name == irst("remote_port")) {
+    adress_type adress;
+    m_channel_list.channel_adress_get(m_channel_list.cur_channel(), &adress);
+    irs_u16 port =  ntohs(adress.sin_port);
+    number_to_string(port, &param_value);
+  } else if (a_param_name == irst("read_buf_max_size")) {
+    number_to_string(m_channel_list.channel_buf_max_size_get(), &param_value);
+  } else if (a_param_name == irst("limit_livetime_enabled")) {
+    number_to_string(m_channel_list.limit_livetime_enabled_get(), &param_value);
+  } else if (a_param_name == irst("max_livetime")) {
+    number_to_string(m_channel_list.max_livetime_get(), &param_value);
+  } else if (a_param_name == irst("limit_downtime_enabled")) {
+    number_to_string(m_channel_list.limit_downtime_enabled_get(), &param_value);
+  } else if (a_param_name == irst("max_downtime")) {
+    number_to_string(m_channel_list.max_downtime_get(), &param_value);
+  } else if (a_param_name == irst("channel_max_count")) {
+    number_to_string(m_channel_list.max_size_get(), &param_value);
+  } else {
+    IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Неизвестный параметр");
+  }
+  return param_value;
+}
+
+void irs::hardflow::udp_flow_t::set_param(const irs::string &a_param_name,
+  const irs::string &a_value)
+{ 
+  if (a_param_name == irst("remote_adress")) {
+    in_addr_type adress_binary = 0;
+    if (adress_str_to_adress_binary(a_value, &adress_binary)) {
+      adress_type adress;
+      m_channel_list.channel_adress_get(m_channel_list.cur_channel(), &adress);
+      adress.sin_addr.s_addr = adress_binary;
+      m_channel_list.channel_adress_set(m_channel_list.cur_channel(), adress);
+    } else {
+      // Преобразовать адрес не удалось
+    }
+  } else if (a_param_name == irst("remote_port")) {
+    irs_u16 port = 0;
+    if (string_to_number(a_value, &port)) {
+      adress_type adress;
+      m_channel_list.channel_adress_get(m_channel_list.cur_channel(), &adress);
+      adress.sin_port = htons(port);
+      m_channel_list.channel_adress_set(m_channel_list.cur_channel(), adress);
+    } else {
+      // Преобразовать значение не удалось
+    }
+  } else if (a_param_name == irst("read_buf_max_size")) {
+    size_type read_buf_max_size = 0;
+    if (string_to_number(a_value, &read_buf_max_size)) {
+      m_channel_list.channel_buf_max_size_set(read_buf_max_size);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "read_buf_max_size == " << a_value);
+    }
+  } else if (a_param_name == irst("limit_livetime_enabled")) {
+    bool limit_livetime_enabled = false;
+    if (string_to_number(a_value, &limit_livetime_enabled)) {
+      m_channel_list.limit_livetime_enabled_set(limit_livetime_enabled);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "limit_livetime_enabled == " << a_value);
+    }
+  } else if (a_param_name == irst("max_livetime")) {
+    double max_livetime = 0.;
+    if (string_to_number(a_value, &max_livetime)) {
+      m_channel_list.max_livetime_set(max_livetime);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "max_livetime == " << a_value);
+    }
+  } else if (a_param_name == irst("limit_downtime_enabled")) {
+    bool limit_downtime_enabled = false;
+    if (string_to_number(a_value, &limit_downtime_enabled)) {
+      m_channel_list.limit_downtime_enabled_set(limit_downtime_enabled);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "limit_downtime_enabled == " << a_value);
+    }
+  } else if (a_param_name == irst("max_downtime")) {
+    double max_downtime = 0.;
+    if (string_to_number(a_value, &max_downtime)) {
+      m_channel_list.max_downtime_set(max_downtime);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "max_downtime == " << a_value);
+    }
+  } else if (a_param_name == irst("channel_max_count")) {
+    size_type channel_max_count = 0;
+    if (string_to_number(a_value, &channel_max_count)) {
+      m_channel_list.max_size_set(channel_max_count);
+    } else {
+      IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Недопустимое значение параметра. " <<
+        "channel_max_count == " << a_value);
+    }
+  } else {
+    IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Неизвестный параметр");
+  }
 }
 
 irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::read(
   size_type a_channel_ident, irs_u8 *ap_buf, size_type a_size)
 {
   size_type size_rd = 0;
-  size_rd = m_remove_host_list.read(a_channel_ident, ap_buf, a_size);
+  size_rd = m_channel_list.read(a_channel_ident, ap_buf, a_size);
   return size_rd;
 }
 
@@ -755,7 +949,7 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
   if (start_success) {
     sockaddr_in remote_host_adr;
     memset(&remote_host_adr, sizeof(sockaddr_in), 0);
-    if (m_remove_host_list.adress_get(a_channel_ident, &remote_host_adr)) {
+    if (m_channel_list.adress_get(a_channel_ident, &remote_host_adr)) {
       size_type msg_size = min(a_size, m_send_msg_max_size);
       const int ret = sendto(m_sock, reinterpret_cast<const char*>(ap_buf),
         msg_size, 0, reinterpret_cast<sockaddr*>(&remote_host_adr),
@@ -765,10 +959,10 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
         IRS_LIB_HARDFLOW_DBG_MSG_BASE("Записано " <<
           static_cast<string_type>(size_wr) << " байт");
       } else {
-        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL("Запись: " <<
           error_str(m_error_sock.get_last_error()));
       }
-    } else {
+    } else { 
       // Адресс с таким идентификатором отсутсвует в списке
       IRS_LIB_HARDFLOW_DBG_MSG_BASE("Неизвестный идентификатор");
     }
@@ -780,12 +974,12 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
 
 irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::channel_next()
 {
-  return m_remove_host_list.channel_next();
+  return m_channel_list.channel_next();
 }
 
 bool irs::hardflow::udp_flow_t::is_channel_exists(size_type a_channel_ident)
 {
-  return m_remove_host_list.is_channel_exists(a_channel_ident);
+  return m_channel_list.is_channel_exists(a_channel_ident);
 }
 
 void irs::hardflow::udp_flow_t::tick()
@@ -801,13 +995,14 @@ void irs::hardflow::udp_flow_t::tick()
       if (FD_ISSET(m_sock, &m_s_kit)) {
         sockaddr_in sender_addr;
         socklen_type sender_addr_size = sizeof(sender_addr);
-        int ret = recvfrom(m_sock, reinterpret_cast<char*>(m_buf.data()),
-          m_buf.size(), 0, (sockaddr*)&sender_addr, &sender_addr_size);
+        int ret = recvfrom(m_sock, reinterpret_cast<char*>(m_read_buf.data()),
+          m_read_buf.size(), 0, (sockaddr*)&sender_addr, &sender_addr_size);
         if (ret != m_socket_error) {
-          bool insert_success = false;
-          m_remove_host_list.write(sender_addr, m_buf.data(), m_buf.size());
+          m_channel_list.write(sender_addr, m_read_buf.data(), ret);
+          IRS_LIB_HARDFLOW_DBG_MSG_BASE("Прочитано " <<
+            static_cast<string_type>(ret) << " байт");
         } else {
-          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL("Чтение: " <<
             error_str(m_error_sock.get_last_error()));
         }
       } else {
@@ -822,7 +1017,7 @@ void irs::hardflow::udp_flow_t::tick()
   } else {
     start();
   }
-  m_remove_host_list.tick();
+  m_channel_list.tick();
 }
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
@@ -1321,17 +1516,15 @@ irs::hardflow::fixed_flow_t::fixed_flow_t(
   mp_hardflow(ap_hardflow),
   m_read_channel(0),
   mp_read_buf_cur(IRS_NULL),
-  m_read_size(0),
-  m_size_read(0),
+  m_read_size_need(0),
+  m_read_size_rest(0),
   m_read_status(status_success),
-  m_read_size_cur(0),
   m_read_timeout(make_cnt_s(2)),
   m_write_channel(0),
   mp_write_buf_cur(IRS_NULL),
-  m_write_size(0),
-  m_size_write(0),
+  m_write_size_need(0),
+  m_write_size_rest(0),
   m_write_status(status_success),
-  m_write_size_cur(0),
   m_write_timeout(make_cnt_s(2))
 {
 }
@@ -1341,7 +1534,40 @@ void irs::hardflow::fixed_flow_t::connect(hardflow_t* ap_hardflow)
   mp_hardflow = ap_hardflow;
 }
 
-void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident, 
+irs::hardflow::fixed_flow_t::size_type
+irs::hardflow::fixed_flow_t::read_byte_count() const
+{
+  return mp_read_buf_cur - mp_read_buf;
+}
+
+irs::hardflow::fixed_flow_t::size_type
+irs::hardflow::fixed_flow_t::write_byte_count() const
+{
+  return mp_write_buf_cur - mp_write_buf;
+}
+
+void irs::hardflow::fixed_flow_t::read_timeout(double a_read_timeout_sec)
+{
+  m_read_timeout.set(make_cnt_s(a_read_timeout_sec));
+}
+
+double irs::hardflow::fixed_flow_t::read_timeout() const
+{
+  return CNT_TO_DBLTIME(m_read_timeout.get());
+}
+
+void irs::hardflow::fixed_flow_t::write_timeout(
+  double a_write_timeout_sec)
+{
+  m_write_timeout.set(make_cnt_s(a_write_timeout_sec));
+}
+
+double irs::hardflow::fixed_flow_t::write_timeout() const
+{
+  return CNT_TO_DBLTIME(m_write_timeout.get());
+}
+
+void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident,
   irs_u8* ap_buf, size_type a_size)
 {
   if (read_status() != status_wait) {
@@ -1349,8 +1575,8 @@ void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident,
     m_read_channel = a_channel_ident;
     mp_read_buf_cur = ap_buf;
     mp_read_buf = ap_buf;
-    m_read_size = a_size;
-    m_read_size_cur = a_size;
+    m_read_size_need = a_size;
+    m_read_size_rest = a_size;
   }
 }
 
@@ -1363,10 +1589,10 @@ irs::hardflow::fixed_flow_t::status_t
 irs::hardflow::fixed_flow_t::size_type 
   irs::hardflow::fixed_flow_t::read_abort()
 {
-  size_type m_size_retr = m_read_size - m_read_size_cur;
+  size_type m_size_retr = m_read_size_need - m_read_size_rest;
   m_read_status = status_success;
   mp_read_buf_cur = IRS_NULL;
-  m_read_size_cur = 0;
+  m_read_size_rest = 0;
   return m_size_retr;
 }
 
@@ -1378,8 +1604,8 @@ void irs::hardflow::fixed_flow_t::write(size_type a_channel_ident,
     m_write_channel = a_channel_ident;
     mp_write_buf_cur = ap_buf;
     mp_write_buf = ap_buf;
-    m_write_size = a_size;
-    m_write_size_cur = a_size;
+    m_write_size_need = a_size;
+    m_write_size_rest = a_size;
   }
 }
 
@@ -1392,19 +1618,19 @@ irs::hardflow::fixed_flow_t::status_t
 irs::hardflow::fixed_flow_t::size_type
   irs::hardflow::fixed_flow_t::write_abort()
 {
-  size_type m_size_rec = m_write_size - m_write_size_cur;
+  size_type m_size_rec = m_write_size_need - m_write_size_rest;
   m_write_status = status_success;
   mp_write_buf_cur = IRS_NULL;
-  m_write_size_cur = 0;
+  m_write_size_rest = 0;
   return m_size_rec;
 }
 
 void irs::hardflow::fixed_flow_t::tick()
 {
   if(read_status() == status_wait) {
-    m_size_read = mp_hardflow->read(m_read_channel, mp_read_buf_cur,
-      m_read_size_cur);
-    if (m_size_read == 0) {
+    size_type read_size = mp_hardflow->read(m_read_channel, mp_read_buf_cur,
+      m_read_size_rest);
+    if (read_size == 0) {
       if (m_read_timeout.stopped()) {
         m_read_timeout.start();
       }
@@ -1413,11 +1639,11 @@ void irs::hardflow::fixed_flow_t::tick()
     }
     if (!m_read_timeout.check()) {
       IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-        "m_size_read = " << m_size_read << endl);
+        "read_size = " << read_size << endl);
       if(mp_hardflow->is_channel_exists(m_read_channel)) {
-        mp_read_buf_cur += m_size_read;
-        m_read_size_cur -= m_size_read;
-        if(mp_read_buf_cur >= (mp_read_buf + m_read_size)) {
+        mp_read_buf_cur += read_size;
+        m_read_size_rest -= read_size;
+        if(mp_read_buf_cur >= (mp_read_buf + m_read_size_need)) {
           IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("read end" << endl);
           m_read_status = status_success;
         }
@@ -1432,9 +1658,9 @@ void irs::hardflow::fixed_flow_t::tick()
     }
   }
   if(write_status() == status_wait) {
-    m_size_write = mp_hardflow->write(m_write_channel, mp_write_buf_cur,
-      m_write_size_cur);
-    if(m_size_write == 0) {
+    size_type write_size = mp_hardflow->write(m_write_channel, mp_write_buf_cur,
+      m_write_size_rest);
+    if(write_size == 0) {
       if(m_write_timeout.stopped()) {
         IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("write: stopped()" << endl);
         m_write_timeout.start();
@@ -1445,11 +1671,11 @@ void irs::hardflow::fixed_flow_t::tick()
     }
     if(!m_write_timeout.check()) {
       IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-        "m_size_write = " << m_size_write << endl);
+        "write_size = " << write_size << endl);
       if(mp_hardflow->is_channel_exists(m_write_channel)) {
-        mp_write_buf_cur += m_size_write;
-        m_write_size_cur -= m_size_write;
-        if(mp_write_buf_cur >= (mp_write_buf + m_write_size) ) {
+        mp_write_buf_cur += write_size;
+        m_write_size_rest -= write_size;
+        if(mp_write_buf_cur >= (mp_write_buf + m_write_size_need) ) {
           IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("write end" << endl);
           m_write_status = status_success;
         }

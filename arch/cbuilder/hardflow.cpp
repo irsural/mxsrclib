@@ -893,7 +893,7 @@ void irs::tcp_server_t::tick()
             closesocket(client_sock);
           } else {
             m_client_sock.push_back(client_sock);
-            IRS_LIB_SOCK_DBG_MSG("Произошло подключение клиента");
+            IRS_LIB_HARDFLOW_DBG_MSG_BASE("Произошло подключение клиента");
           }
         }
       } else {
@@ -1001,7 +1001,7 @@ void irs::tcp_client_t::start()
          } else if (Error == WSAEISCONN) {
            // Сокет уже соединен с сервером
            m_state_info.csock_connected = true;
-           IRS_LIB_SOCK_DBG_MSG("Произошло подключение к серверу");
+           IRS_LIB_HARDFLOW_DBG_MSG_BASE("Произошло подключение к серверу");
          } else {
            // Другая ошибка
          }
@@ -1092,7 +1092,7 @@ irs_uarc irs::tcp_client_t::write(
         int ret = send(
           m_client_sock, reinterpret_cast<const char*>(ap_buf), a_size, 0);
         if (ret == SOCKET_ERROR) {
-          IRS_LIB_SOCK_DBG_MSG("Произошла какая то ошибка при отправке"
+          IRS_LIB_HARDFLOW_DBG_MSG_BASE("Произошла какая то ошибка при отправке"
             "сообщения. Пробуем снова подключиться к серверу");
           m_state_info.csock_connected = false;
         } else {

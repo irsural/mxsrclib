@@ -179,11 +179,11 @@ inline std_type_idx_t type_to_index_helper(unsigned long)
   return unsigned_long_idx;
 }
 #ifdef IRSDEFS_I64
-inline std_type_idx_t type_to_index_helper(irs_i64&)
+inline std_type_idx_t type_to_index_helper(irs_i64)
 {
   return i64_idx;
 }
-inline std_type_idx_t type_to_index_helper(irs_u64&)
+inline std_type_idx_t type_to_index_helper(irs_u64)
 {
   return u64_idx;
 }

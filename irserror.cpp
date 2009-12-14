@@ -130,7 +130,7 @@ irs::string irs::last_error_str()
 irs::string irs::error_str(int a_error_code)
 {
   irs::string message;
-  #if defined (IRS_WIN32)
+  #if defined(IRS_WIN32)
   LPVOID lpMsgBuf;
   FormatMessage(
     FORMAT_MESSAGE_ALLOCATE_BUFFER |

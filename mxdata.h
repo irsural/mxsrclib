@@ -705,10 +705,10 @@ void irs::deque_data_t<T>::pop_front(size_type a_size)
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (erase_data_size < buf_right_part_size) {
     m_ring_begin_pos += erase_data_size;
-    m_ring_size -= erase_data_size;
   } else {
     m_ring_begin_pos = erase_data_size - buf_right_part_size;
   }
+  m_ring_size -= erase_data_size;
 }
 
 template <class T>

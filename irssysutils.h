@@ -66,6 +66,7 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
 {
   basic_ostringstream<C> ostr;
   ostr.imbue(a_loc);
+  //min(T());
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
