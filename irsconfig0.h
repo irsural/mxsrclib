@@ -2,6 +2,9 @@
 // Дата 25.09.2009
 // Дата создания 25.09.2009
 
+// Скопируйте этот файл "irsconfig0.h" в файл с именем "irsconfig.h"
+// Измените в "irsconfig.h" (но не "irsconfig0.h") опции, если необходимо
+
 #ifndef IRSCONFIGH 
 #define IRSCONFIGH 
  
