@@ -26,6 +26,8 @@
 #define IRS_LIB_TREE_ASSERT(msg) IRS_LIB_ASSERT(msg)
 #define IRS_LIB_TREE_ASSERT_MSG(msg) IRS_LIB_ASSERT_MSG(msg)
 #else // IRS_LIB_TREE_DEBUG
+#define IRS_LIB_TREE_ASSERT(msg)
+#define IRS_LIB_TREE_ASSERT_MSG(msg)
 #endif // IRS_LIB_TREE_DEBUG
 
 

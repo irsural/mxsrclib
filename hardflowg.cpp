@@ -1020,8 +1020,6 @@ void irs::hardflow::udp_flow_t::tick()
   m_channel_list.tick();
 }
 
-#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
-
 #if defined(IRS_LINUX)
 
 irs::hardflow::tcp_server_t::tcp_server_t(
@@ -1510,6 +1508,10 @@ void irs::hardflow::tcp_client_t::tick()
   }
 }
 
+#endif // defined(IRS_LINUX)
+
+#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
+
 irs::hardflow::fixed_flow_t::fixed_flow_t(
   hardflow_t* ap_hardflow
 ):
@@ -1690,4 +1692,3 @@ void irs::hardflow::fixed_flow_t::tick()
   }
 }
 
-#endif // defined(IRS_LINUX)

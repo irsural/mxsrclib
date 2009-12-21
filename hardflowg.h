@@ -504,6 +504,10 @@ private:
   void stop_client();
 };
 
+#endif //defined(IRS_LINUX)
+
+#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
+
 // Прием/передача фиксированных объемов данных
 class fixed_flow_t
 {
@@ -550,12 +554,7 @@ private:
   size_type m_write_size_rest;
   status_t  m_write_status;
   timer_t m_write_timeout;
-
 };
-
-#endif //defined(IRS_LINUX)
-
-#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 } // namespace hardflow
 

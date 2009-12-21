@@ -5,10 +5,10 @@
 #include <vcl.h>
 #pragma hdrstop
 
-#include <irscberror.h>
 #include <irserror.h>
 #include <irsstd.h>
 #include <irscpp.h>
+#include <irscberror.h>
 
 namespace irs {
 

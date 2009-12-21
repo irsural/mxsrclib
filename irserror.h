@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 17.10.2009
+// Дата: 21.12.2009
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -19,40 +19,32 @@
 #include <errno.h>
 #endif // defined(IRS_LINUX)
 
-/*
-#define IRS_LIB_DEBUG_GLOBAL
-//#define IRS_LIB_CHECK
-
-#ifdef IRS_LIB_DEBUG_GLOBAL
-#if defined(__ICCAVR__)
-//#define IRS_LIB_DEBUG
-#else //compilers
-#define IRS_LIB_DEBUG
-#endif //compilers
-#endif //IRS_LIB_DEBUG_GLOBAL
-*/
-
-
-#define IRS_ERROR_HELPER(error_code, spec_data)\
+#define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
-    ostrstream ostr;\
-    ostr << spec_data << '\0';\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
-    static_cast<const void*>(ostr.str()));\
-    ostr.rdbuf()->freeze(false);\
-  }      
+      irs::spec_assert(#assert_expr, message));\
+  }
+
 #define IRS_ASSERT(assert_expr)\
   {\
     if (!(assert_expr)) {\
-      IRS_ERROR_HELPER(irs::ec_assert, irs::spec_assert(#assert_expr, 0));\
+      IRS_ASSERT_HELPER(irs::ec_assert, assert_expr, 0);\
     }\
   }
 #define IRS_ASSERT_EX(assert_expr, msg)\
   {\
     if (!(assert_expr)) {\
-      IRS_ERROR_HELPER(irs::ec_assert,\
-        irs::spec_assert(#assert_expr, msg));\
+      IRS_ASSERT_HELPER(irs::ec_assert, assert_expr, msg);\
     }\
+  }
+#define IRS_ASSERT_MSG(msg)\
+  {\
+    IRS_ASSERT_HELPER(irs::ec_assert, "Assert", msg);\
+  }
+#define IRS_ERROR_HELPER(error_code, spec_data)\
+  {\
+    irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
+      static_cast<const void*>(spec_data));\
   }
 #define IRS_ERROR(error_code, msg)\
   {\
@@ -65,12 +57,6 @@
     }\
   }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
-#define IRS_ASSERT_MSG(msg)\
-  {\
-    IRS_ERROR_HELPER(irs::ec_assert,\
-      irs::spec_assert("Assert", msg));\
-  }
-
 #define IRS_DBG_RAW_MSG(msg)\
   {\
     irs::mlog() << msg;\
@@ -128,7 +114,7 @@
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
-#define IRS_LIB_FATAL_ERROR(msg))
+#define IRS_LIB_FATAL_ERROR(msg)
 #define IRS_LIB_ASSERT_MSG(msg)
 #define IRS_LIB_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg)
