@@ -1,6 +1,6 @@
 // Коммуникационные потоки
 // Дата создания: 8.09.2009
-// Дата последнего изменения: 3.12.2009
+// Дата последнего изменения: 21.12.2009
 
 #include <hardflowg.h>
 #include <irscpp.h>
@@ -1172,14 +1172,14 @@ irs::hardflow::tcp_server_t::size_type
           m_map_channel_sock.erase(a_channel_ident);
           mp_map_channel_sock_it = m_map_channel_sock.begin();
           #ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
-          cout << "Delete channel by read command" << endl;
-          cout << "-------------------------------" << endl;
+          irs::mlog() << "Delete channel by read command" << endl;
+          irs::mlog() << "-------------------------------" << endl;
           for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
             it != m_map_channel_sock.end(); it++) {
-            cout << "m_channel: " << (int)it->first << 
+            irs::mlog() << "m_channel: " << (int)it->first << 
               " socket: " << it->second << endl;
           }
-          cout << "-------------------------------" << endl;
+          irs::mlog() << "-------------------------------" << endl;
           #endif //IRS_LIB_HARDFLOW_DEBUG
 
           FD_CLR(sock_rd, &m_read_fds);
@@ -1229,14 +1229,14 @@ irs::hardflow::tcp_server_t::size_type
           m_map_channel_sock.erase(a_channel_ident);
           mp_map_channel_sock_it = m_map_channel_sock.begin();
           #ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
-          cout << "Delete channel by write command" << endl;
-          cout << "-------------------------------" << endl;
+          irs::mlog() << "Delete channel by write command" << endl;
+          irs::mlog() << "-------------------------------" << endl;
           for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
             it != m_map_channel_sock.end(); it++) {
-            cout << "m_channel: " << (int)it->first << 
+            irs::mlog() << "m_channel: " << (int)it->first << 
               " socket: " << it->second << endl;
           }
-          cout << "-------------------------------" << endl;
+          irs::mlog() << "-------------------------------" << endl;
           #endif //IRS_LIB_HARDFLOW_DEBUG
 
           IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("FD_CLR" << endl);
@@ -1259,7 +1259,7 @@ irs::hardflow::tcp_server_t::size_type
 }
 
 void irs::hardflow::tcp_server_t::tick()
-{
+{ 
   if(m_is_open) {
     FD_SET(m_server_sock, &m_read_fds);
     //FD_SET(m_server_sock, &m_write_fds);
@@ -1290,15 +1290,15 @@ void irs::hardflow::tcp_server_t::tick()
               m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             #ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
             if(insert_channel.second) {
-              cout << "New channel added" << endl;
-              cout << "-------------------------------" << endl;
+              irs::mlog() << "New channel added" << endl;
+              irs::mlog() << "-------------------------------" << endl;
               for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
                 it != m_map_channel_sock.end(); it++) 
               {
-                cout << "m_channel: " << (int)it->first << 
+                irs::mlog() << "m_channel: " << (int)it->first << 
                   " socket: " << it->second << endl;
               }
-              cout << "-------------------------------" << endl;
+              irs::mlog() << "-------------------------------" << endl;
             }
             else {
               IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
@@ -1636,10 +1636,9 @@ void irs::hardflow::fixed_flow_t::tick()
       }
     } else {
       m_read_timeout.stop();
+      IRS_TCP_DBG_MSG(irs::mlog() << "read timeout stop()" << endl;);
     }
     if (!m_read_timeout.check()) {
-      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-        "read_size = " << read_size << endl);
       if(mp_hardflow->is_channel_exists(m_read_channel)) {
         mp_read_buf_cur += read_size;
         m_read_size_rest -= read_size;
@@ -1670,8 +1669,6 @@ void irs::hardflow::fixed_flow_t::tick()
       m_write_timeout.stop();
     }
     if(!m_write_timeout.check()) {
-      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-        "write_size = " << write_size << endl);
       if(mp_hardflow->is_channel_exists(m_write_channel)) {
         mp_write_buf_cur += write_size;
         m_write_size_rest -= write_size;

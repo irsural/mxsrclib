@@ -34,7 +34,8 @@ public:
   virtual inline irs_uarc size();
   virtual inline irs_bool connected();
   virtual inline void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual inline void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual inline void write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size);
   virtual inline irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual inline void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual inline void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
