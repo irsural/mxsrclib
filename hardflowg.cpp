@@ -19,10 +19,10 @@ irs::hardflow::udp_channel_list_t::udp_channel_list_t(
   const double a_max_downtime_sec
 ):
   m_mode(a_mode),
-  m_max_size(min(a_max_size, static_cast<size_type>(-1)-1)),
+  m_max_size(min(a_max_size, static_cast<size_type>(-2))),
   m_channel_id(invalid_channel + 1),
   m_channel_id_overflow(false),
-  m_channel_max_count(static_cast<size_type>(-1) - 1),
+  m_channel_max_count(static_cast<size_type>(-2)),
   m_map_id_channel(),
   //m_map_id_adress(),
   m_map_adress_id(),
@@ -1036,7 +1036,7 @@ irs::hardflow::tcp_server_t::tcp_server_t(
   mp_map_channel_sock_it(m_map_channel_sock.begin()),
   m_channel(invalid_channel + 1),
   m_channel_id_overflow(false),
-  m_channel_max_count(static_cast<size_type>(-1) - 1)
+  m_channel_max_count(static_cast<size_type>(-2))
 {
   start_server();
 }
@@ -1638,7 +1638,7 @@ void irs::hardflow::fixed_flow_t::tick()
       }
     } else {
       m_read_timeout.stop();
-      IRS_TCP_DBG_MSG(irs::mlog() << "read timeout stop()" << endl;);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("read timeout stop()" << endl);
     }
     if (!m_read_timeout.check()) {
       if(mp_hardflow->is_channel_exists(m_read_channel)) {

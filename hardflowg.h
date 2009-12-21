@@ -88,9 +88,7 @@ public:
 };
 
 namespace hardflow {
-
-typedef size_t sizens_t;
-typedef irs::string string_t;   
+typedef irs::string_t stringns_t;
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -194,7 +192,7 @@ class udp_channel_list_t
 public:
   class less_t;
   class udp_flow_t;
-  typedef sizens_t size_type;
+  typedef hardflow_t::size_type size_type;
   typedef string_t string_type;
   typedef sockaddr_in adress_type;
   typedef size_type id_type;
