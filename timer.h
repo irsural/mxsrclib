@@ -175,8 +175,8 @@ public:
   measure_time_t();
   ~measure_time_t();
   void start();
-  double get();
-  counter_t get_cnt();
+  double get() const;
+  counter_t get_cnt() const;
 private:
   counter_t m_start_cnt;
 };

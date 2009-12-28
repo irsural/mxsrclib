@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 14.10.2009
+// Дата: 25.12.2009
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -65,16 +65,15 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
   const locale& a_loc = irs::loc().get())
 {
   basic_ostringstream<C> ostr;
-  ostr.imbue(a_loc);
-  //min(T());
+  ostr.imbue(a_loc); 
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
   {
     int val_int = static_cast<int>(a_num);
-    ostr << val_int << irst('\0');
+    ostr << val_int;
   } else {
-    ostr << a_num << irst('\0');
+    ostr << a_num;
   }
   *ap_str = ostr.str();
 }

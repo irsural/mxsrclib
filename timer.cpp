@@ -167,12 +167,12 @@ void irs::measure_time_t::start()
 {
   m_start_cnt = counter_get();
 }
-double irs::measure_time_t::get()
+double irs::measure_time_t::get() const
 {
   counter_t cur_cnt = counter_get();
   return CNT_TO_DBLTIME(cur_cnt - m_start_cnt);
 }
-counter_t irs::measure_time_t::get_cnt()
+counter_t irs::measure_time_t::get_cnt() const
 {
   counter_t cur_cnt = counter_get();
   return cur_cnt - m_start_cnt;

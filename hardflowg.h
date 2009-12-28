@@ -207,7 +207,7 @@ public:
   typedef map<adress_type, id_type, less_t> map_adress_id_type;
   typedef map<id_type, channel_t> map_id_channel_type;
   typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
-  typedef map<id_type, channel_t>::iterator map_id_channel_const_iterator;   
+  typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;   
   typedef deque<id_type> queue_id_type;
   class less_t
   {
@@ -245,8 +245,8 @@ public:
     const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
     const size_type a_max_size = 1000,
     const size_type a_channel_buf_max_size = 32768,
-    const bool a_limit_livetime_enabled = false,
-    const double a_max_livetime_sec = 24*60*60,
+    const bool a_limit_lifetime_enabled = false,
+    const double a_max_lifetime_sec = 24*60*60,
     const bool a_limit_downtime_enabled = false,
     const double a_max_downtime_sec = 60*60
   );
@@ -259,10 +259,13 @@ public:
   bool is_channel_exists(const id_type a_id);
   size_type channel_buf_max_size_get() const;
   void channel_buf_max_size_set(size_type a_channel_buf_max_size);
-  bool limit_livetime_enabled_get() const;
-  void limit_livetime_enabled_set(bool a_limit_livetime_enabled);
-  double max_livetime_get() const;
-  void max_livetime_set(double a_max_livetime_sec);
+  double lifetime_get(const id_type a_channel_id) const;
+  bool limit_lifetime_enabled_get() const;
+  void limit_lifetime_enabled_set(bool a_limit_lifetime_enabled);
+  double max_lifetime_get() const;
+  void max_lifetime_set(double a_max_lifetime_sec);
+  void downtime_timer_reset(const id_type a_channel_id);
+  double downtime_get(const id_type a_channel_id) const;
   bool limit_downtime_enabled_get() const;
   void limit_downtime_enabled_set(bool a_limit_downtime_enabled);
   double max_downtime_get() const;
@@ -281,8 +284,7 @@ public:
   size_type read(size_type a_id, irs_u8 *ap_buf,
     size_type a_size);
   size_type channel_next();
-  size_type cur_channel() const;
-
+  size_type cur_channel() const; 
   void tick();
 private:    
   bool lifetime_exceeded(const map_id_channel_iterator a_it_cur_channel);
@@ -333,7 +335,7 @@ private:
   #elif defined(IRS_LINUX)
   enum { m_socket_error = -1 };
   enum { m_invalid_socket = -1 };
-  #endif // IRS_WINDOWS IRS_LINUX   
+  #endif // IRS_WINDOWS IRS_LINUX
   error_sock_t m_error_sock;
   struct state_info_t
   {
@@ -374,8 +376,8 @@ private:
     param_adress,
     param_port,
     param_read_buf_max_size,
-    param_limit_livetime_enabled,
-    param_limit_livetime,
+    param_limit_lifetime_enabled,
+    param_limit_lifetime,
     param_limit_downtime_enabled,
     param_limit_downtime,
     param_channel_max_count
@@ -389,8 +391,8 @@ public:
     const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
     const size_type a_channel_max_count = 1000,
     const size_type a_channel_buf_max_size = 0xFFFF,
-    const bool a_limit_livetime_enabled = false,
-    const double a_max_livetime_sec = 24*60*60,
+    const bool a_limit_lifetime_enabled = false,
+    const double a_max_lifetime_sec = 24*60*60,
     const bool a_limit_downtime_enabled = false,
     const double a_max_downtime_sec = 60*60
   );
@@ -405,6 +407,8 @@ private:
     bool* ap_init_success);
   bool adress_str_to_adress_binary(
     const string_type& a_adress_str, in_addr_type* ap_adress_binary);
+  bool detect_func_single_arg(string_type a_param, string_type* ap_func_name,
+    string_type* ap_arg) const;
 public:
   virtual irs::string param(const irs::string &a_param_name);
   virtual void set_param(const irs::string &a_param_name,
@@ -418,7 +422,7 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
-};                        
+};
 
 #if defined(IRS_LINUX)
 
