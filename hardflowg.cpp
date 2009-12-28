@@ -924,7 +924,11 @@ bool irs::hardflow::udp_flow_t::detect_func_single_arg(
 irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_param_name)
 {
   irs::string param_value;
-  if (a_param_name == irst("remote_adress")) {
+  if (a_param_name == irst("locale_adress")) {
+    param_value = m_local_host_name;
+  } else if (a_param_name == irst("locale_port")) {
+    param_value = m_local_host_port;
+  } else if (a_param_name == irst("remote_adress")) {
     adress_type adress;
     m_channel_list.channel_adress_get(m_channel_list.cur_channel(), &adress);
     param_value = inet_ntoa(adress.sin_addr);
@@ -957,6 +961,15 @@ irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_param_name)
         } else if (func_name == irst("downtime")) {
           number_to_string(m_channel_list.downtime_get(channel_id),
             &param_value);
+        } else if (func_name == irst("remote_adress")) {
+          adress_type adress;
+          m_channel_list.channel_adress_get(channel_id, &adress);
+          param_value = inet_ntoa(adress.sin_addr);
+        } else if (func_name == irst("remote_port")) {
+          adress_type adress;
+          m_channel_list.channel_adress_get(channel_id, &adress);
+          irs_u16 port =  ntohs(adress.sin_port);
+          number_to_string(port, &param_value);
         } else {
           IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE("Неверный формат параметра " <<
             "\"" << a_param_name << "\"");
