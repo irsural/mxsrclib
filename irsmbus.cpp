@@ -1,6 +1,6 @@
-//    modbus
-//  : 16.09.2009
-//   : 10.12.2009
+// Клиент и сервер modbus
+// Дата создания: 16.09.2008
+// Дата последнего изменения: 10.12.2009
 
 #include <irsmbus.h>
 #include <string.h>
@@ -55,20 +55,20 @@ counter_t wait;
 ostream &hex_u8(ostream &s)
 {
   s.setf(ios::hex, ios::basefield);
-  s<<setw(2)<<setfill('0');
+  s << setw(2) << setfill('0');
   return s;
 }
 ostream &hex_u16(ostream &s)
 {
   s.setf(ios::showbase);
   s.setf(ios::hex , ios::basefield);
-  s<<setw(4)<<setfill('0');
+  s << setw(4) << setfill('0');
   return s;
 }
 ostream &dec_u8(ostream &s)
 {
   s.setf(ios::dec, ios::basefield);
-  s<<setw(3)<<setfill('0');
+  s << setw(3) << setfill('0');
   return s;
 }
 template <class T>

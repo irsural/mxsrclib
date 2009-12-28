@@ -501,6 +501,7 @@ private:
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
   size_type m_channel;
+  measure_time_t m_connect_time;
   
   void start_client();
   void stop_client();
