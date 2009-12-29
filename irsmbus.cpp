@@ -2110,7 +2110,7 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   {
     irs::mlog() << "-------------------------------"
       "-------------------------" << endl;
-    for(int idx = 0; idx < (int)m_di_size_byte; idx++)
+    for(; idx < (int)m_di_size_byte; idx++)
     {
       ap_buf[idx] = m_discr_inputs_byte_r[idx];
       #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
