@@ -318,8 +318,8 @@ public:
     owner_t& a_owner,
     get_method_t a_get_method
   ) :
-    m_property_read_only(a_owner, a_get_method),
-    m_first_index()
+    m_first_index(),
+    m_property_read_only(a_owner, a_get_method)
   { }
   inline void set_index(const first_index_t a_first_index)
   {
@@ -350,9 +350,9 @@ public:
     get_method_t ap_get_method
   ) :
     m_owner(a_owner),
-    mp_get_method(ap_get_method),
     m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL)
+    m_second_index(IRS_NULL),
+    mp_get_method(ap_get_method)
   { }
   inline operator value_t () const
   {
@@ -410,8 +410,8 @@ public:
     owner_t& a_owner,
     set_method_t a_set_method
   ) :
-    m_property_write_only(a_owner, a_set_method),
-    m_first_index()
+    m_first_index(),
+    m_property_write_only(a_owner, a_set_method)
   { }
   inline void set_index(const first_index_t a_first_index)
   {
@@ -442,9 +442,9 @@ public:
     set_method_t ap_set_method
   ) :
     m_owner(a_owner),
-    mp_set_method(ap_set_method),
     m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL)
+    m_second_index(IRS_NULL),
+    mp_set_method(ap_set_method)
   { }
   inline const value_t& operator = (const value_t& a_value)
   {
@@ -507,8 +507,8 @@ public:
     get_method_t a_get_method,
     set_method_t a_set_method
   ) :
-    m_property_read_write(a_owner, a_get_method, a_set_method),
-    m_first_index()
+    m_first_index(),
+    m_property_read_write(a_owner, a_get_method, a_set_method)
   { }
   inline void set_index(const first_index_t a_first_index)
   {
@@ -541,10 +541,10 @@ public:
     set_method_t ap_set_method
   ) :
     m_owner(a_owner),
-    mp_get_method(ap_get_method),
-    mp_set_method(ap_set_method),
     m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL)
+    m_second_index(IRS_NULL),
+    mp_get_method(ap_get_method),
+    mp_set_method(ap_set_method)
   { }
   inline operator value_t () const
   {

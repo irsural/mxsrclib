@@ -17,20 +17,20 @@ typedef double (* str_to_double_t)(irs_u8 *);
 char irs_menu_base_t::empty_str[] = "";
 char irs_menu_base_t::zero_str[] = "0";
 irs_menu_base_t::irs_menu_base_t():
-  f_master_menu(IRS_NULL),
   f_header(empty_str),
   f_message(empty_str),
   f_creep(IRS_NULL),
   f_creep_buffer(empty_str),
+  f_cursor_symbol('_'),
   f_blink_counter(0),
   f_cur_symbol(0),
   f_can_edit(irs_false),
   f_state(ims_show),
+  f_master_menu(IRS_NULL),
   f_want_redraw(irs_true),
   f_message_count(0),
   f_key_event(IRS_NULL),
   f_show_needed(irs_true),
-  f_cursor_symbol('_'),
   mp_disp_drv(IRS_NULL),
   mp_event(IRS_NULL),
   m_updated(true)
@@ -137,9 +137,9 @@ bool irs_menu_base_t::is_updated()
 
 irs_menu_t::irs_menu_t():
   f_menu_array(IRS_NULL),
+  f_arrow_position(0),
   f_items_count(0),
-  f_current_item(0),
-  f_arrow_position(0)
+  f_current_item(0)
 {
   init_to_cnt();
   f_want_redraw = irs_false;
@@ -543,6 +543,10 @@ void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
       }
       break;
     }
+    default :
+    {
+      // Остальные клавиши игнорируем
+    }
   }
 }
   
@@ -619,13 +623,13 @@ bool irs_advanced_menu_t::item_is_hidden(size_type a_item_number)
 
 irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   irs_bool a_can_edit):
-  f_suffix(empty_str),
   f_prefix(empty_str),
+  f_suffix(empty_str),
   f_value_string(empty_str),
   f_len(0),
   f_accur(0),
-  f_min(0.0f),
   f_max(0.0f),
+  f_min(0.0f),
   f_parametr(a_parametr),
   f_point_flag(irs_false),
   f_double_trans(IRS_NULL),
@@ -1072,6 +1076,10 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
                 }
                 break;
               }
+            default :
+              {
+                // Остальные клавиши игнорируем
+              }
             }
           }
 
@@ -1175,6 +1183,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               f_want_redraw = true;
               break;
             }
+            default : {
+              // Остальные клавиши игнорируем
+            }
           }
           if (f_want_redraw)
           {
@@ -1208,15 +1219,20 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
       }
       break;
     }
+  default :
+    {
+      // Остальные режимы меню игнорируем
+    }
   }
 }
 
 //------------------------------------------------------------------------------
 
 irs_tablo_t::irs_tablo_t():
-  f_slave_menu(IRS_NULL),
   f_parametr_count(0),
-  mp_lcd_string(IRS_NULL)
+  mp_lcd_string(IRS_NULL),
+  f_parametr_array(IRS_NULL),
+  f_slave_menu(IRS_NULL)
 {
   f_state = ims_hide;
   f_creep = IRS_NULL;
@@ -1367,9 +1383,9 @@ void irs_tablo_t::draw(irs_menu_base_t **a_cur_menu)
 //-----------------------------  ADVANCED TABLO  -------------------------------
 
 irs_advanced_tablo_t::irs_advanced_tablo_t():
-  mp_slave_menu(IRS_NULL),
-  mp_lcd_string(IRS_NULL),
   m_parametr_vector(),
+  mp_lcd_string(IRS_NULL),
+  mp_slave_menu(IRS_NULL),
   m_creep_stopped(false),
   m_updated_item(0)
 {
@@ -1591,31 +1607,32 @@ bool irs_advanced_tablo_t::item_is_hidden(size_type a_item_number)
 
 
 irs_menu_trimmer_item_t::irs_menu_trimmer_item_t(double *a_parametr,
-  irs_bool a_save_after_exit):
-  f_min(0.0f),
-  f_max(0.0f),
-  f_parametr(a_parametr),
-  f_value_string(empty_str),
-  f_suffix(empty_str),
+  irs_bool a_save_after_exit
+):
   f_prefix(empty_str),
+  f_suffix(empty_str),
   f_start_prefix(empty_str),
   f_trim_prefix(empty_str),
+  f_step_prefix(empty_str),
+  f_value_string(empty_str),
   f_len(0),
-  f_accur(0),
   f_trim_len(0),
+  f_step_len(0),
   f_trim_accur(0),
+  f_step_accur(0),
+  f_accur(0),
+  f_max(0.0f),
+  f_min(0.0f),
+  f_start_value(*a_parametr),
+  f_parametr(a_parametr),
+  f_trim_value(0.0f),
   f_double_trans(IRS_NULL),
   f_step_count(0),
-  f_trim_value(0.0f),
-  f_start_value(*a_parametr),
+  f_begin_step(1.f),
+  f_step(f_begin_step),
   f_save_after_exit(a_save_after_exit),
   f_first_raz(irs_true),
-  f_extra_parametr(IRS_NULL),
-  f_step_prefix(empty_str),
-  f_step_len(0),
-  f_step_accur(0),
-  f_begin_step(1.f),
-  f_step(f_begin_step)
+  f_extra_parametr(IRS_NULL)
 {
   f_master_menu = IRS_NULL;
   f_state = ims_hide;
@@ -2107,6 +2124,9 @@ void irs_menu_trimmer_item_t::draw(irs_menu_base_t **a_cur_menu)
           }
           break;
         }
+        default : {
+          // Остальные клавиши игнорируем
+        }
       }
       break;
     }
@@ -2151,12 +2171,13 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_step_string(
 }
 
 irs_menu_ip_item_t::irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string,
-  irs_bool a_can_edit):
+  irs_bool a_can_edit
+):
   f_value_string(a_value_string),
+  f_extra_parametr(IRS_NULL),
   f_parametr(a_parametr),
-  f_ip_trans(IRS_NULL),
-  f_extra_parametr(IRS_NULL)
-{
+  f_ip_trans(IRS_NULL)
+{   
   f_master_menu = IRS_NULL;
   f_cur_symbol = 0;
   f_cursor[0] = ' ';
@@ -2420,18 +2441,27 @@ void irs_menu_ip_item_t::draw(irs_menu_base_t **a_cur_menu)
             f_cur_symbol++;
             break;
           }
+        default :
+          {
+            // Остальные клавиши игнорируем
+          }
         }
       }
       break;
+    }
+  default :
+    {
+      // Остальные режимы меню игнорируем
     }
   }
 }
 //---------------------------------------------------------------------------
 irs_menu_bool_item_t::irs_menu_bool_item_t(irs_bool *a_parametr,
-  irs_bool a_can_edit):
-  f_parametr(a_parametr),
+  irs_bool a_can_edit
+):
   f_true_string(empty_str),
   f_false_string(empty_str),
+  f_parametr(a_parametr),   
   f_temp_parametr(*a_parametr),
   f_bool_trans(IRS_NULL)
 {
@@ -2648,6 +2678,10 @@ void irs_menu_bool_item_t::draw(irs_menu_base_t **a_cur_menu)
 
       break;
     }
+  default :
+    {
+      // Остальные режимы меню игнорируем
+    }
   }
 }
 
@@ -2791,19 +2825,20 @@ void irs_menu_progress_bar_t::draw(irs_menu_base_t **ap_cur_menu)
 //---------------------  2 PARAMETER MASTER  -----------------------------------
 
 irs_menu_2param_master_item_t::irs_menu_2param_master_item_t(
-    param_t &a_param_1, param_t &a_param_2, param_t &a_out_param):
+  param_t &a_param_1, param_t &a_param_2, param_t &a_out_param
+):
   mp_value_string(IRS_NULL),
   m_len(0),
   m_accur(0),
   mp_prefix_1(IRS_NULL),
   mp_suffix_1(IRS_NULL),
   m_show_mode_1(IMM_FULL),
-  m_show_mode_2(IMM_FULL),
-  m_show_mode_out(IMM_FULL),
   mp_prefix_2(IRS_NULL),
   mp_suffix_2(IRS_NULL),
+  m_show_mode_2(IMM_FULL),
   mp_prefix_out(IRS_NULL),
   mp_suffix_out(IRS_NULL),
+  m_show_mode_out(IMM_FULL),
   m_edit_status(OFF),
   m_current_point(0),
   m_point_vector(),
@@ -3142,6 +3177,9 @@ void irs_menu_2param_master_item_t::draw(irs_menu_base_t **ap_cur_menu)
           }
           break;
         }
+        default : {
+          // Остальные клавиши игнорируем
+        }
       }
       break;
     }
@@ -3201,8 +3239,15 @@ void irs_menu_2param_master_item_t::draw(irs_menu_base_t **ap_cur_menu)
           else m_point_vector[m_current_point].out_value = m_min_out_value;
           break;
         }
+        default : {
+          // Остальные клавиши игнорируем
+        }
       }
       break;
+    }
+  default :
+    {
+      // Остальные режимы меню игнорируем
     }
   }
 }
@@ -3257,16 +3302,16 @@ irs_menu_creep_t::irs_menu_creep_t(
   irs_menu_base_t::size_type a_static_len,
   irs_menu_base_t::size_type a_message_len,
   irs_u8 time_num,
-  irs_u8 time_denom):
-
+  irs_u8 time_denom
+):
   f_buffer(a_buffer),
-  f_buffer_len(a_buffer_len),
   f_line_len(a_line_len),
+  f_buffer_len(a_buffer_len),
   f_static_len(a_static_len),
   f_message_len(a_message_len),
   f_dynamic_len(irs_u8(f_buffer_len - f_static_len - f_message_len)),
-  f_position(0),
-  f_creeptime(0)
+  f_creeptime(0),
+  f_position(0)
 {
   //for (irs_u8 i = 0; i < f_buffer_len; f_buffer[i++] = ' ');
   memset(f_buffer, ' ', f_buffer_len);

@@ -464,7 +464,7 @@ void test_tree()
   p_node.pop_back();
   p_node.insert(p_node.begin(), 10.1);
   tree_size = tree.size();
-  int node_child_size = p_node.size();
+  //int node_child_size = p_node.size();
   irs::tree_node_t<double>::iterator it_child_node_beg = p_node.begin();
   irs::tree_node_t<double>::iterator it_child_node_end = p_node.end();
   p_node.erase(p_node.begin());
@@ -491,6 +491,8 @@ void test_tree()
 
   while (it != p_node.end()) {
     double d = it->value();
+    d *= 10;
+    it->value(d);
     it++;                   
   }
   irs::tree_node_t<double> ref2_node = tree.top();
@@ -506,13 +508,6 @@ void test_tree()
     ref2_node = ref2_node->next();
   }*/
   tree_size = tree.size();
-  int i = 0;
-  vector<int> v;
-  list<int> l;
-  int size_vector = sizeof(v);
-  int size_list = sizeof(l);
-  list<int>::iterator it_l ;
-  int size_list_iterator = sizeof(it_l);
 }
 
 #endif //Compilers

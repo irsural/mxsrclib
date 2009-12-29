@@ -1410,7 +1410,6 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT(!(first_variant <= double_var));
   IRS_LIB_ASSERT(first_variant >= double_var);
 
-  void* void_ptr_var = IRS_NULL;
   const int var_helper = 0;
   variant_t void_ptr_variant = &var_helper;
   /*

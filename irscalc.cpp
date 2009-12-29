@@ -348,7 +348,7 @@ bool irs::calc::part_id_index_get(
 {
   IRS_LIB_ASSERT(ap_index != IRS_NULL);
   bool fsuccess = false;
-  const size_t single_part_id = 1;
+  const ptrdiff_t single_part_id = 1;
   if (distance(a_begin_part_id_it, a_end_part_id_it) >= single_part_id) {
     if (a_begin_part_id_it->type == part_id_type_index) {
       irs::variant::variant_t index_variant = a_begin_part_id_it->part_id;
@@ -722,25 +722,25 @@ bool irs::calc::calculator_t::value_write(
 #ifndef NOP
 // class mutable_ref_t
 irs::calc::mutable_ref_t::mutable_ref_t(type_t a_type):
-  m_type(a_type),
   m_value(),
-  m_id()
+  m_id(),
+  m_type(a_type)
 {
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(const variant_t& a_value, value_tag):
-  m_type(type_value),
   m_value(a_value),
-  m_id()
+  m_id(),
+  m_type(type_value)
 {     
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(
   const id_variable_type& a_id_variable, id_variable_tag
 ):
-  m_type(type_id),
   m_value(),
-  m_id(a_id_variable)
+  m_id(a_id_variable),
+  m_type(type_id)
 {           
 }
 

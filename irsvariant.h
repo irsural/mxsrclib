@@ -133,16 +133,16 @@ public:
 
   template<class T>
   variant_t(const T& a_value):
-    m_type(var_type_unknown),
-    m_value()
+    m_value(),
+    m_type(var_type_unknown)
   {
     operator=(a_value);
   }
 
   template<class T>
   variant_t(const T& a_value, const var_type_t a_var_type):
-    m_type(a_var_type),
-    m_value()
+    m_value(),
+    m_type(a_var_type)
   {
     assign_no_cast(a_value);
   }
@@ -246,7 +246,7 @@ public:
   inline const variant_t& operator[](const size_type a_index) const;
   
 private:
-  union {
+  union value_t {
     void* p_void_type;
     const void* p_const_void_type;
     bool val_bool_type;
