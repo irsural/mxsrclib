@@ -121,7 +121,6 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     if((index_out != 0) && (index_in != 0))
       first_part_size = 8 - index_out;
     last_part_size = (a_size_data_bit - first_part_size)%8;
-    int size_data_byte = a_size_data_bit/8;
     int middle_part_size = (a_size_data_bit - 
       (first_part_size + last_part_size))/8;
     int part_idx = 0;
@@ -1042,16 +1041,30 @@ void irs::modbus_server_t::set_bit(irs_uarc byte_index, irs_uarc bit_index)
       /*byte = m_hold_regs_reg[m_hr_start_byte/2u];
       byte |= (1<<bit_index);
       m_hold_regs_reg[m_hr_start_byte/2u] = IRS_LOBYTE(byte);*/
-      /*if((byte_index - (m_di_size_byte + m_coils_size_byte))/2 == 0)
-        //byte = IRS_LOBYTE(m_hold_regs_reg[]);
-      else
-        //byte = IRS_HIBYTE(m_hold_regs_reg[]);
+      /*if((byte_index - (m_di_size_byte + m_coils_size_byte))%2 == 0) {
+        byte = IRS_LOBYTE(m_hold_regs_reg[(byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2]);
+        irs::mlog() << " m_hr_size_byte = " << (int)m_hr_size_byte << endl;  
+        irs::mlog() << " m_hr_start_byte = " << (int)m_hr_start_byte << endl;  
+        irs::mlog() << " m_hold_regs_reg[" << (byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2 << "] = " << 
+          (int)m_hold_regs_reg[(byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2] << endl;
+        irs::mlog() << " hold regs LOBYTE" << "  byte = " << (int)byte << endl;
+      } else {
+        byte = IRS_HIBYTE(m_hold_regs_reg[(byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2]);
+        irs::mlog() << " hold regs HIBYTE" << "  byte = " << (int)byte << endl;
+      }
       byte &= static_cast<irs_u8>(~mask);
       byte |= static_cast<irs_u8>(mask);
-      if((byte_index - (m_di_size_byte + m_coils_size_byte))/2 == 0)
-        //byte = IRS_LOBYTE(m_hold_regs_reg[]);
-      else
-        //byte = IRS_HIBYTE(m_hold_regs_reg[]);*/
+      if((byte_index - (m_di_size_byte + m_coils_size_byte))%2 == 0) {
+        IRS_LOBYTE(m_hold_regs_reg[(byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2]) = byte;
+      } else {
+        IRS_HIBYTE(m_hold_regs_reg[(byte_index - (m_di_size_byte +
+          m_coils_size_byte))/2]) = byte;
+      }*/
     }
     if((m_ir_size_byte != 0)||(m_ir_start_byte != 0))
     {
@@ -1640,10 +1653,10 @@ irs::modbus_client_t::modbus_client_t(
   request_type(request_start),
   m_mode(make_request_mode),
   m_loop_timer(make_cnt_ms(200)),
-  mp_tcp_client(ap_hardflow/*&m_tcp_client*/),
+  mp_tcp_client(ap_hardflow),
   m_fixed_flow(mp_tcp_client),
-  m_start_addr(0),
-  m_num_of_elem(0)
+  m_num_of_elem(0),
+  m_start_addr(0)
 {
   memsetex(m_spacket,IRS_ARRAYSIZE(m_spacket));
   memsetex(m_rpacket,IRS_ARRAYSIZE(m_rpacket));
@@ -2064,7 +2077,7 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   {
     irs::mlog() << "-------------------------------"
       "-------------------------" << endl;
-    for(int idx = 0; idx < m_di_size_byte; idx++)
+    for(int idx = 0; idx < (int)m_di_size_byte; idx++)
     {
       ap_buf[idx] = m_discr_inputs_byte_r[idx];
       #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
@@ -2075,7 +2088,7 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc index, irs_uarc a_size)
   }
   if((m_coils_size_byte != 0)||(m_coils_start_byte != 0))
   {
-    for(; idx < (m_di_size_byte + m_coils_size_byte); idx++)
+    for(; idx < int(m_di_size_byte + m_coils_size_byte); idx++)
     {
       ap_buf[idx] = m_coils_byte_r[idx - m_di_size_byte];
       #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)

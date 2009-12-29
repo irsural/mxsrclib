@@ -227,7 +227,6 @@ public:
     bool operator()(const adress_type& a_first_adr,
       const adress_type& a_second_adr) const
     {
-      a_first_adr.sin_addr;
       bool first_less_second = false;
       if (extract_ip(a_first_adr) < extract_ip(a_second_adr))
       {
@@ -493,9 +492,9 @@ private:
   struct sockaddr_in m_addr;
   //struct sockaddr_in m_local_addr;
 
+  timeval m_client_select_timeout;
   fd_set m_read_fds;
   fd_set m_write_fds;
-  timeval m_client_select_timeout;
   int m_client_sock;
   bool m_is_open;
   mxip_t m_dest_ip;
