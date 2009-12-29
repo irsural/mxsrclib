@@ -30,22 +30,29 @@ using namespace std;
 //#define OUTDBG(out) out
 #define OUTDBG(out)
 
-#define IRS_MBUS_MSG_BASE   1
-#define IRS_MBUS_MSG_DETAIL 2
+#define IRS_LIB_MXIFA_MSG_NONE   0
+#define IRS_LIB_MXIFA_MSG_BASE   1
+#define IRS_LIB_MXIFA_MSG_DETAIL 2
 
-//#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_BASE
-//#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_DETAIL
+#ifdef IRS_LIB_DEBUG
+//#define IRS_LIB_MXIFA_MSG_TYPE IRS_LIB_MXIFA_MSG_BASE
+//#define IRS_LIB_MXIFA_MSG_TYPE IRS_LIB_MXIFA_MSG_DETAIL
+#endif //IRS_LIB_DEBUG
+#define IRS_LIB_MXIFA_MSG_TYPE IRS_LIB_MXIFA_MSG_NONE
 
-#if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
-#define IRS_MBUS_DBG_MSG_DETAIL(msg)
-#define IRS_MBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
-#elif (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
-#define IRS_MBUS_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
-#define IRS_MBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
-#else //IRS_MBUS_MSG_TYPE
-#define IRS_MBUS_DBG_MSG_DETAIL(msg) 
-#define IRS_MBUS_DBG_MSG_BASE(msg) 
-#endif //IRS_MBUS_MSG_TYPE
+#if (IRS_LIB_MXIFA_MSG_TYPE == IRS_LIB_MXIFA_MSG_BASE)
+#define IRS_LIB_MXIFA_DBG_MSG_ERROR(msg)
+#define IRS_LIB_MXIFA_DBG_MSG_DETAIL(msg)
+#define IRS_LIB_MXIFA_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
+#elif (IRS_LIB_MXIFA_MSG_TYPE == IRS_LIB_MXIFA_MSG_DETAIL)
+#define IRS_LIB_MXIFA_DBG_MSG_ERROR(msg) IRS_LIB_DBG_MSG(msg)
+#define IRS_LIB_MXIFA_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
+#define IRS_LIB_MXIFA_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC_ENG(msg) 
+#else //IRS_LIB_MXIFA_MSG_TYPE
+#define IRS_LIB_MXIFA_DBG_MSG_ERROR(msg)
+#define IRS_LIB_MXIFA_DBG_MSG_DETAIL(msg) 
+#define IRS_LIB_MXIFA_DBG_MSG_BASE(msg) 
+#endif //IRS_LIB_MXIFA_MSG_TYPE
 
 
 // Таймаут открытия канала
@@ -507,54 +514,41 @@ static void mxifa_open_cl_socket(mxifa_chdata_t *cur_chanel)
   FD_ZERO(&(linux_tcpip_cl->write_fds));
   linux_tcpip_cl->socket_fd = 0;
   linux_tcpip_cl->socket_fd = socket(PF_INET,SOCK_STREAM,0);
-  //puts("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
-  if(linux_tcpip_cl->socket_fd == -1){
-    IRS_MBUS_DBG_MSG_BASE("\n400 CLIENT - Can't open socket!");}
+  if(linux_tcpip_cl->socket_fd == -1)
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("\n400 CLIENT - Can't open socket!");
   else
-    IRS_MBUS_DBG_MSG_BASE("\n402 CLIENT - Socket: OK");
-  #endif
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("\n402 CLIENT - Socket: OK");
   int ye = 1;
   int w = setsockopt(linux_tcpip_cl->socket_fd,
             SOL_SOCKET, SO_REUSEADDR, &ye, sizeof(ye));
   if(w == -1)
-    perror("setsockopt");
- // else
-   // OUTDBG(cout"409 CLIENT - Setsockopt:        OK\n");
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("setsockopt:" << last_error_str());
 
   int d = bind(linux_tcpip_cl->socket_fd,
           (struct sockaddr *)&(linux_tcpip_cl->local_addr),
           sizeof(struct sockaddr));
-  //IRS_LIB_ASSERT(d == -1);        
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
   if(d == -1)
-    perror("Bind");
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("bind: " << last_error_str());
   else
-    IRS_MBUS_DBG_MSG_BASE("\n417 CLIENT - Bind: OK");
-  // int yes = 1;
-  IRS_MBUS_DBG_MSG_BASE("\n419 CLIENT - Socket_fd: " 
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("\n417 CLIENT - Bind: OK");
+  IRS_LIB_MXIFA_DBG_MSG_ERROR("\n419 CLIENT - Socket_fd: " 
     << linux_tcpip_cl->socket_fd);
-  #endif
   int er = connect(linux_tcpip_cl->socket_fd,
     (struct sockaddr *)&(linux_tcpip_cl->dest_addr),
     sizeof(linux_tcpip_cl->dest_addr));
   if(er == -1)
   {
-    perror("connect");
-    #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
-    IRS_MBUS_DBG_MSG_BASE("\n427 CLIENT - number of error: " << errno);
-    IRS_MBUS_DBG_MSG_BASE("\n428 CLIENT - dest addr " <<
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("connect" << last_error_str());
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("\n427 CLIENT - number of error: " << errno);
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("\n428 CLIENT - dest addr " <<
       inet_ntoa(linux_tcpip_cl->dest_addr.sin_addr));
-    #endif
     close(linux_tcpip_cl->socket_fd);
     linux_tcpip_cl->sock_open = irs_false;
-    //puts("CLIENT - mxifa_cl_socket: Closed");
   }
   else
   {
-    IRS_MBUS_DBG_MSG_BASE("\n435 CLIENT - Connect: OK");
+    IRS_LIB_MXIFA_DBG_MSG_BASE("\n435 CLIENT - Connect: OK");
     linux_tcpip_cl->sock_open = irs_true;
-    //puts("CLIENT - mxifa_cl_socket: OPEN");
     FD_SET(linux_tcpip_cl->socket_fd, &(linux_tcpip_cl->master));
   }
   cur_chanel->opened = irs_true;
@@ -562,37 +556,33 @@ static void mxifa_open_cl_socket(mxifa_chdata_t *cur_chanel)
 
 static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
 {
-  IRS_MBUS_DBG_MSG_DETAIL("\n*** mxifa_read_cl_socket ***");
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n*** mxifa_read_cl_socket ***");
   mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
     (mxifa_linux_tcpip_cl_t *)cur_chanel->ch_spec;
-  //puts("445 CLIENT - read");
-  //linux_tcpip_cl->read_end = irs_false;
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->socket_fd = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->socket_fd = " <<
     linux_tcpip_cl->socket_fd);
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->rd_buf = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->rd_buf = " <<
     &linux_tcpip_cl->rd_buf);
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->rd_size = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->rd_size = " <<
     linux_tcpip_cl->rd_size);
-  #endif                  
   IRS_LIB_ASSERT(FD_ISSET(linux_tcpip_cl->socket_fd,
     &(linux_tcpip_cl->read_fds)));
   mxifa_sz_t nbytes_r = recv(linux_tcpip_cl->socket_fd,
     (void *)linux_tcpip_cl->rd_buf,
     (size_t)linux_tcpip_cl->rd_size,0);
-  IRS_MBUS_DBG_MSG_DETAIL("\nnbytes_r " << nbytes_r);
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nnbytes_r " << nbytes_r);
   if(nbytes_r <= 0)
   {
-    IRS_MBUS_DBG_MSG_DETAIL("\n*** nbytes_r <= 0 ***");
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n*** nbytes_r <= 0 ***");
     if(nbytes_r == 0)
     {
-      IRS_MBUS_DBG_MSG_BASE("\n454 CLIENT-Socket " <<
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n454 CLIENT-Socket " <<
         linux_tcpip_cl->socket_fd << " hung up when reading");
     }
     else
     {
-      perror("recv");
-      IRS_MBUS_DBG_MSG_BASE("\n460 Client - number of error "<< errno);
+      IRS_LIB_MXIFA_DBG_MSG_ERROR("recv" << last_error_str());
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n460 Client - number of error "<< errno);
     }
     close(linux_tcpip_cl->socket_fd);
     linux_tcpip_cl->sock_open = irs_false;
@@ -606,39 +596,35 @@ static void mxifa_read_cl_socket(mxifa_chdata_t *cur_chanel)
   }
   else
   {
-    #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
-    IRS_MBUS_DBG_MSG_DETAIL("\n475 CLIENT - Get message");
-    IRS_MBUS_DBG_MSG_DETAIL("\n476 CLIENT - Number recivied bytes "<<nbytes_r);
-    IRS_MBUS_DBG_MSG_DETAIL("\n477 CLIENT - File descriptor " <<
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n475 CLIENT - Get message");
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n476 CLIENT - Number recivied bytes "<<nbytes_r);
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n477 CLIENT - File descriptor " <<
       linux_tcpip_cl->socket_fd);
-    IRS_MBUS_DBG_MSG_DETAIL("\n478 CLIENT - bufer size: " <<
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n478 CLIENT - bufer size: " <<
       (int)linux_tcpip_cl->rd_size);
-    IRS_MBUS_DBG_MSG_DETAIL("\n481 CLIENT - bufer  "<< &linux_tcpip_cl->rd_buf);
-    #endif
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n481 CLIENT - bufer  "<< &linux_tcpip_cl->rd_buf);
     linux_tcpip_cl->rd_buf += nbytes_r;
     linux_tcpip_cl->rd_size -= nbytes_r;
     if(linux_tcpip_cl->rd_size <= 0)
     {
       linux_tcpip_cl->can_read = irs_false;
-      IRS_MBUS_DBG_MSG_BASE("\n487 CLIENT - Get all parts of the message");
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n487 CLIENT - Get all parts of the message");
     }
-    IRS_MBUS_DBG_MSG_DETAIL("\nread_cl_socket test point END");
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nread_cl_socket test point END");
   }
 }
 static void mxifa_write_cl_socket(mxifa_chdata_t *cur_chanel)
 {
   mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
   (mxifa_linux_tcpip_cl_t *)cur_chanel->ch_spec;
-  IRS_MBUS_DBG_MSG_BASE("\n495 CLIENT - SEND:bufer size " <<
+  IRS_LIB_MXIFA_DBG_MSG_BASE("\n495 CLIENT - SEND:bufer size " <<
     (int)linux_tcpip_cl->wr_size);
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->socket_fd = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->socket_fd = " <<
     linux_tcpip_cl->socket_fd);
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->wr_buf = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->wr_buf = " <<
     &linux_tcpip_cl->wr_buf);
-  IRS_MBUS_DBG_MSG_DETAIL("\nlinux_tcpip_cl->wr_size = " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nlinux_tcpip_cl->wr_size = " <<
     linux_tcpip_cl->wr_size);
-  #endif
   IRS_LIB_ASSERT(FD_ISSET(linux_tcpip_cl->socket_fd,
     &(linux_tcpip_cl->write_fds)));
   int nbytes_wr =
@@ -649,13 +635,13 @@ static void mxifa_write_cl_socket(mxifa_chdata_t *cur_chanel)
   {
     if(nbytes_wr == 0)
     {
-      IRS_MBUS_DBG_MSG_BASE("\n505 CLIENT - Socket " <<
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n505 CLIENT - Socket " <<
         linux_tcpip_cl->socket_fd << " hung up wen sending ");
     }
     else
     {
-      perror("send");
-      IRS_MBUS_DBG_MSG_BASE("\n511 Client - number of error " << errno);
+      IRS_LIB_MXIFA_DBG_MSG_ERROR("send:" << last_error_str());
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n511 Client - number of error " << errno);
     }
     close(linux_tcpip_cl->socket_fd);
     linux_tcpip_cl->sock_open = irs_false;
@@ -669,22 +655,12 @@ static void mxifa_write_cl_socket(mxifa_chdata_t *cur_chanel)
   }
   else
   {
-    #ifdef NOP
-    OUTDBG(cout"526 CLIENT - SEND:Number send bytes %d\n", nbytes_wr);
-    OUTDBG(cout"527 CLIENT - SEND:File descriptor %d\n",
-      linux_tcpip_cl->socket_fd);
-    OUTDBG(cout"529 CLIENT - SEND:bufer size %d\n",
-      (int)linux_tcpip_cl->wr_size);
-    OUTDBG(cout"531 CLIENT - SEND:bufer %s\n", linux_tcpip_cl->wr_buf);
-    #endif //NOP
     linux_tcpip_cl->wr_buf += nbytes_wr;
     linux_tcpip_cl->wr_size -= nbytes_wr;
     if(linux_tcpip_cl->wr_size <= 0)
     {
       linux_tcpip_cl->can_write = irs_false;
-    //  OUTDBG(cout"538 CLIENT - Send all parts of the message\n");
     }
-    //linux_tcpip_cl->can_write == irs_false;
   }
 }
 
@@ -698,7 +674,7 @@ static void mxifa_reconect_cl_socket(mxifa_chdata_t *cur_chanel)
   (linux_tcpip_cl->dest_addr.sin_port !=
     htons(linux_tcpip_cl->dest_port_cur)))
   {
-    IRS_MBUS_DBG_MSG_BASE("\n554 CLIENT - Reconnect socket");
+    IRS_LIB_MXIFA_DBG_MSG_BASE("\n554 CLIENT - Reconnect socket");
     if(linux_tcpip_cl->sock_open == irs_true)
     {
       close(linux_tcpip_cl->socket_fd);
@@ -721,48 +697,35 @@ static void mxifa_open_se_socket(mxifa_chdata_t *cur_chanel)
   FD_ZERO(&(linux_tcpip->write_fds));
   linux_tcpip->socket_fd = socket(PF_INET,SOCK_STREAM,0);
   IRS_LIB_ASSERT(linux_tcpip->socket_fd > 0);
-  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   if(linux_tcpip->socket_fd == -1)
-    IRS_MBUS_DBG_MSG_BASE("\n577 SERVER - Can't open socket!\n");
-  #endif
-  //else
-    //puts("579 SERVER - Socket:            OK");
+    IRS_LIB_MXIFA_DBG_MSG_BASE("\n577 SERVER - Can't open socket!\n");
   int yes = 1;
-  //OUTDBG(cout"581 SERVER - Socket_fd:         %d\n",
-      //linux_tcpip->socket_fd);
   int w = setsockopt(linux_tcpip->socket_fd,
             SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   if(w == -1)
-    perror("setsockopt");
-  //else
-    //OUTDBG(cout"588 SERVER - Setsockopt:        OK\n");
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("setsockopt:" << last_error_str());
   int d = bind(linux_tcpip->socket_fd,
           (struct sockaddr *)&(linux_tcpip->local_addr),
           sizeof(struct sockaddr));
   if(d == -1)
-    perror("Bind");
-  //else
-    //OUTDBG(cout"595 SERVER - Bind:              OK\n");
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("Bind" << last_error_str());
 
   int a = listen(linux_tcpip->socket_fd, addrmass_size);
   if(a == -1)
-    perror("listen");
-  //else
-    //OUTDBG(cout"601 SERVER - Listen:            OK\n");
+    IRS_LIB_MXIFA_DBG_MSG_ERROR("listen" << last_error_str());
   FD_SET(linux_tcpip->socket_fd, &(linux_tcpip->master));
   FD_SET(linux_tcpip->socket_fd, &(linux_tcpip->read_fds));
   FD_SET(linux_tcpip->socket_fd, &(linux_tcpip->write_fds));
   linux_tcpip->maxfd = linux_tcpip->socket_fd;
   linux_tcpip->cur_rw_sock = 0;
   linux_tcpip->cur_ac_sock = 0;
-  IRS_MBUS_DBG_MSG_DETAIL("SERVER - mxifa_open_se_socket: OK");
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("SERVER - mxifa_open_se_socket: OK");
 }
 
 static void mxifa_close_se_socket(mxifa_chdata_t *cur_chanel)
 {
   mxifa_linux_tcpip_t *linux_tcpip =
    (mxifa_linux_tcpip_t *)cur_chanel->ch_spec;
-  //int j = 0;
   list<Hdata>::iterator remove_it;
   for(remove_it = linux_tcpip->HD.begin();
     remove_it != linux_tcpip->HD.end();
@@ -771,7 +734,7 @@ static void mxifa_close_se_socket(mxifa_chdata_t *cur_chanel)
     close((*(remove_it)).get_hfd());
   }
   close(linux_tcpip->socket_fd);
-  IRS_MBUS_DBG_MSG_DETAIL("SERVER - mxifa_close_se_socket: OK");
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("SERVER - mxifa_close_se_socket: OK");
 }
 
 // Блокирующее открытие channel
@@ -779,7 +742,6 @@ void *mxifa_open(mxifa_ch_t channel, irs_bool is_broadcast)
 {
   mxifa_chdata_t *pchdatas = mxifa_chdata_cur;
   if(pchdatas->opened)return IRS_NULL;
-  //if(linux_tcpip_cl->sock_open == irs_false) break;
   void *pchdata = mxifa_open_begin(channel, is_broadcast);
   counter_t var_timeout_channel_open;
   set_to_cnt(var_timeout_channel_open, TIMEOUT_CHANNEL);
@@ -797,11 +759,10 @@ void *mxifa_open_begin(mxifa_ch_t channel, irs_bool is_broadcast)
 {
   if ((channel < 1) || (channel >= MXIFA_CHD_SIZE)) return IRS_NULL;
   mxifa_chdata_t *cur_ch = &mxifa_chdata[channel];
-  //OUTDBG(cout"648 Channel %d \n", (int) channel);
   switch (cur_ch->enum_iface) {
     case mxifa_ei_linux_tcpip:
     {
-      IRS_MBUS_DBG_MSG_DETAIL("652 SERVER - Mxifa_open_begin:  OK");
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("652 SERVER - Mxifa_open_begin:  OK");
       mxifa_linux_tcpip_t *linux_tcpip =
         (mxifa_linux_tcpip_t *)cur_ch->ch_spec;
       const mxip_t *dest_ip = &linux_tcpip->dest_ip;
@@ -816,7 +777,7 @@ void *mxifa_open_begin(mxifa_ch_t channel, irs_bool is_broadcast)
     break;
     case mxifa_ei_linux_tcpip_cl:
     {
-      IRS_MBUS_DBG_MSG_DETAIL("667 CLIENT - Mxifa_open_begin:  OK");
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("667 CLIENT - Mxifa_open_begin:  OK");
       mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
         (mxifa_linux_tcpip_cl_t *)cur_ch->ch_spec;
       const mxip_t *dest_ip = &linux_tcpip_cl->dest_ip;
@@ -847,7 +808,6 @@ irs_bool mxifa_open_end(void *pchdata, bool abort)
     case mxifa_ei_linux_tcpip_cl: {
       abort = abort;
       opened = irs_true;
-      //return mxifa_linux_tcpip_6.sock_open;
     } break;
     default : {
     }
@@ -894,7 +854,7 @@ irs_bool mxifa_close_begin(void *pchdata)
        (mxifa_linux_tcpip_cl_t *)pchdatas->ch_spec;
         //close(linux_tcpip_cl->socket_fd);
         if(close(linux_tcpip_cl->socket_fd) < 0)
-          perror("close");
+          IRS_LIB_MXIFA_DBG_MSG_ERROR("close" << last_error_str());
         linux_tcpip_cl->sock_open = irs_false;
         pchdatas->opened = irs_false;
     }
@@ -934,8 +894,8 @@ irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
   if (pchdata == IRS_NULL) return irs_false;
   if (buf == IRS_NULL) return irs_false;
   mxifa_chdata_t *pchdatas = (mxifa_chdata_t *)pchdata;
-  //IRS_MBUS_DBG_MSG_DETAIL("\nWrite_begin Start - 1");
-  IRS_MBUS_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_BEGIN "
+  //IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nWrite_begin Start - 1");
+  IRS_LIB_MXIFA_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_BEGIN "
   "-------------------------");
   switch (pchdatas->enum_iface) {
     case mxifa_ei_linux_tcpip:
@@ -946,7 +906,7 @@ irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
       linux_tcpip->wr_buf = buf;
       linux_tcpip->wr_size = size;
       //linux_tcpip->can_write = irs_true;
-      IRS_MBUS_DBG_MSG_DETAIL("\n809 SERVER - write begin:bufer size " << size);
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n809 SERVER - write begin:bufer size " << size);
       if(dest == IRS_NULL)
       {
         if(linux_tcpip->is_broadcast == irs_true)
@@ -1030,47 +990,47 @@ irs_bool mxifa_write_end(void *pchdata, irs_bool abort)
   mxifa_chdata_t *pchdatas = (mxifa_chdata_t *)pchdata;
   switch (pchdatas->enum_iface) {
     case mxifa_ei_linux_tcpip: {
-      IRS_MBUS_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_END "
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_END "
         "-------------------------");
       mxifa_linux_tcpip_t *linux_tcpip =
         (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
       if (abort)
       {
         linux_tcpip->can_write = irs_false;
-        IRS_MBUS_DBG_MSG_DETAIL("\nserver_abort = true");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nserver_abort = true");
         return irs_true;
       }
       if (linux_tcpip->can_write)
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nserver_can_write = true");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nserver_can_write = true");
         return irs_false;
       }
       else
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nserver_can_write = false");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nserver_can_write = false");
         return irs_true;
       }
     } break;
     case mxifa_ei_linux_tcpip_cl:
     {
-      IRS_MBUS_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_END "
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_END "
         "-------------------------");
       mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
         (mxifa_linux_tcpip_cl_t *)pchdatas->ch_spec;
       if (abort)
       {
         linux_tcpip_cl->can_write = irs_false;
-        IRS_MBUS_DBG_MSG_DETAIL("\nabort = true");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nabort = true");
         return irs_true;
       }
       if (linux_tcpip_cl->can_write)
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nclient_can_write = true");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nclient_can_write = true");
         return irs_false;
       }
       else
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nclient_can_write = false");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nclient_can_write = false");
         return irs_true;
       }
     } break;
@@ -1083,16 +1043,16 @@ irs_bool mxifa_write_end(void *pchdata, irs_bool abort)
 irs_bool mxifa_read_begin(void *pchdata, mxifa_dest_t *dest,
   irs_u8 *buf, mxifa_sz_t size)
 {
-  IRS_MBUS_DBG_MSG_BASE("\n------------------------- MXIFA_READ_BEGIN "
+  IRS_LIB_MXIFA_DBG_MSG_BASE("\n------------------------- MXIFA_READ_BEGIN "
     "-------------------------");
   if (pchdata == IRS_NULL)
   {
-    IRS_MBUS_DBG_MSG_BASE("\npchdata= " << pchdata);
+    IRS_LIB_MXIFA_DBG_MSG_BASE("\npchdata= " << pchdata);
     return irs_false;
   }
   if (buf == IRS_NULL)
   {
-    IRS_MBUS_DBG_MSG_BASE("\nbuf= " << buf);
+    IRS_LIB_MXIFA_DBG_MSG_BASE("\nbuf= " << buf);
     return irs_false;
   }
   mxifa_chdata_t *pchdatas = (mxifa_chdata_t *)pchdata;
@@ -1106,7 +1066,7 @@ irs_bool mxifa_read_begin(void *pchdata, mxifa_dest_t *dest,
       linux_tcpip->rd_size_bu = size;
       linux_tcpip->can_read = irs_true;
       linux_tcpip->first_read = irs_true;
-      IRS_MBUS_DBG_MSG_BASE("\nfirst_read = " << boolalpha <<
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\nfirst_read = " << boolalpha <<
         static_cast<bool>(linux_tcpip->first_read));
       //linux_tcpip->can_rany = irs_true;
       linux_tcpip->read_address = dest;
@@ -1124,17 +1084,17 @@ irs_bool mxifa_read_begin(void *pchdata, mxifa_dest_t *dest,
       else
       {
         linux_tcpip->can_rany = irs_false;
-        IRS_MBUS_DBG_MSG_BASE("\nlinux_tcpip->can_rany= " <<
+        IRS_LIB_MXIFA_DBG_MSG_BASE("\nlinux_tcpip->can_rany= " <<
           boolalpha << static_cast<bool>(linux_tcpip->can_rany));
         //linux_tcpip->r_it = linux_tcpip->HD.begin();
       }
-      IRS_MBUS_DBG_MSG_BASE("\ncan_rany = " << boolalpha <<
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\ncan_rany = " << boolalpha <<
         static_cast<bool>(linux_tcpip->can_rany));
       IRS_LIB_ASSERT(linux_tcpip->first_read);
     } break;
     case mxifa_ei_linux_tcpip_cl:
     {
-      IRS_MBUS_DBG_MSG_BASE("\nCLIENT - function read_begin");
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\nCLIENT - function read_begin");
       mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
         (mxifa_linux_tcpip_cl_t *)pchdatas->ch_spec;
       linux_tcpip_cl->rd_buf = buf;
@@ -1163,24 +1123,24 @@ irs_bool mxifa_read_end(void *pchdata, irs_bool abort)
       mxifa_linux_tcpip_t *linux_tcpip =
         (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
       if (mxifa_linux_tcpip_5.HD.size() == 0) return irs_false;
-      IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end server test point 1");
-      IRS_MBUS_DBG_MSG_BASE("\nserver_can_read= " <<
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end server test point 1");
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\nserver_can_read= " <<
           boolalpha << static_cast<bool>(linux_tcpip->can_read));
       if(!linux_tcpip->can_read)
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end server test point 2");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end server test point 2");
         return irs_true;    
       }
       else
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end server test point 3");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end server test point 3");
         return irs_false;
       }
       if(abort)
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end server test point 4");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end server test point 4");
         linux_tcpip->can_read = irs_false;
-        IRS_MBUS_DBG_MSG_DETAIL("abort || server_can_read= " <<
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("abort || server_can_read= " <<
           boolalpha << static_cast<bool>(linux_tcpip->can_read));
         return irs_true;
       }
@@ -1190,24 +1150,24 @@ irs_bool mxifa_read_end(void *pchdata, irs_bool abort)
       mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
         (mxifa_linux_tcpip_cl_t *)pchdatas->ch_spec;
       //puts("CLIENT - read end");
-      IRS_MBUS_DBG_MSG_DETAIL("\n client_can_read= " <<
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n client_can_read= " <<
           boolalpha << static_cast<bool>(linux_tcpip_cl->can_read));
-      IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end client test point 1");
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end client test point 1");
       if (!linux_tcpip_cl->can_read)
       {
         return irs_true;
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end client test point 2");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end client test point 2");
       }
       else
       {
         return irs_false;
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end client test point 3");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end client test point 3");
       }
       if(abort)
       {
-        IRS_MBUS_DBG_MSG_DETAIL("\nmxifa_read_end client test point 4");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nmxifa_read_end client test point 4");
         linux_tcpip_cl->can_read = irs_false;
-        IRS_MBUS_DBG_MSG_DETAIL("abort || client_can_read= " <<
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("abort || client_can_read= " <<
           boolalpha << static_cast<bool>(linux_tcpip_cl->can_read));
         return irs_true;
       }
@@ -1247,7 +1207,7 @@ void  mxifa_find_read_sock()
   mxifa_linux_tcpip_t *linux_tcpip =
     (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
   linux_tcpip->sock_finded = irs_false;
-  IRS_MBUS_DBG_MSG_BASE("\nfirst_read= " << boolalpha <<
+  IRS_LIB_MXIFA_DBG_MSG_BASE("\nfirst_read= " << boolalpha <<
     static_cast<bool>(linux_tcpip->first_read) <<
     "\ncan_rany= " << boolalpha << 
     static_cast<bool>(linux_tcpip->can_rany));
@@ -1261,7 +1221,7 @@ void  mxifa_find_read_sock()
         if(soc_f)
         {
           linux_tcpip->sock_finded = irs_true;
-          IRS_MBUS_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
+          IRS_LIB_MXIFA_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
             boolalpha << static_cast<bool>(linux_tcpip->sock_finded));
           break;
         }
@@ -1287,7 +1247,7 @@ void  mxifa_find_read_sock()
           &(linux_tcpip->read_fds)))
         {
           linux_tcpip->sock_finded = irs_true;
-          IRS_MBUS_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
+          IRS_LIB_MXIFA_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
             boolalpha << static_cast<bool>(linux_tcpip->sock_finded));
           break;
         }
@@ -1299,7 +1259,7 @@ void  mxifa_find_read_sock()
       }
     }
   }
-  IRS_MBUS_DBG_MSG_DETAIL("\nsoc_finded= " <<
+  IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nsoc_finded= " <<
     boolalpha << static_cast<bool>(linux_tcpip->sock_finded));
 }
 // Элементарное действие
@@ -1311,21 +1271,17 @@ void mxifa_tick()
     case mxifa_ei_linux_tcpip:
     {
       if(!pchdatas->opened)break;
-      //OUTDBG(cout"Channel number - %d\n",channel_cur);
       mxifa_linux_tcpip_t *linux_tcpip =
        (mxifa_linux_tcpip_t *)pchdatas->ch_spec;
       linux_tcpip->read_fds = linux_tcpip->master;
       linux_tcpip->write_fds = linux_tcpip->master;
       int se = select(linux_tcpip->maxfd + 1,&(linux_tcpip->read_fds),
         &(linux_tcpip->write_fds),NULL,&(linux_tcpip->tv_zero));
-      //IRS_MBUS_DBG_MSG_BASE("\nNumber of descriptors, se= " << se);
       if(se < 0)
-        perror("select");
+        IRS_LIB_MXIFA_DBG_MSG_ERROR("select:" << last_error_str());
       if(se > 0)
       {
         int qwe = FD_ISSET(linux_tcpip->socket_fd,&(linux_tcpip->read_fds));
-        /*IRS_LIB_ASSERT(FD_ISSET(linux_tcpip->socket_fd,
-          &(linux_tcpip->read_fds)));*/
         if(qwe)
         {
           FD_SET(linux_tcpip->socket_fd, &(linux_tcpip->read_fds));
@@ -1335,11 +1291,11 @@ void mxifa_tick()
             &(addrlen));
           if(linux_tcpip->newfd == -1)
           {
-            perror("accept");
+            IRS_LIB_MXIFA_DBG_MSG_ERROR("accept:" << last_error_str());
           }
           else
           {
-            IRS_MBUS_DBG_MSG_BASE("\n1058 SERVER - Accept: OK\nNew file"
+            IRS_LIB_MXIFA_DBG_MSG_BASE("\n1058 SERVER - Accept: OK\nNew file"
               "descriptor: " << linux_tcpip->newfd);
             FD_SET(linux_tcpip->newfd,&(linux_tcpip->master));
             FD_SET(linux_tcpip->newfd, &(linux_tcpip->read_fds));
@@ -1347,14 +1303,12 @@ void mxifa_tick()
             if(linux_tcpip->newfd > linux_tcpip->maxfd)
               linux_tcpip->maxfd = linux_tcpip->newfd;
             mxifa_add_sock(linux_tcpip->newfd, linux_tcpip->acc_addr);
-            // int r = linux_tcpip->HD.front().get_hfd();/*here*/
-            //IRS_MBUS_DBG_MSG_BASE("1074 SERVER - port dest: "<< r);
           }
         }
         if((linux_tcpip->can_read)&&(!linux_tcpip->HD.empty()))
         {
           mxifa_find_read_sock();
-          IRS_MBUS_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
+          IRS_LIB_MXIFA_DBG_MSG_BASE("\nlinux_tcpip->sock_finded= " <<
             boolalpha << static_cast<bool>(linux_tcpip->sock_finded));
           if(linux_tcpip->sock_finded)
           {
@@ -1363,20 +1317,15 @@ void mxifa_tick()
               (void *)linux_tcpip->rd_buf,
               (size_t)linux_tcpip->rd_size,MSG_NOSIGNAL);
 
-            #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
-            IRS_MBUS_DBG_MSG_DETAIL("\n1122 SERVER - File descriptor " <<
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1122 SERVER - File descriptor " <<
               (*(linux_tcpip->r_it)).get_hfd());
-            IRS_MBUS_DBG_MSG_DETAIL("\n1125 SERVER - bufer size " <<
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1125 SERVER - bufer size " <<
               (int)linux_tcpip->rd_size);
-            #endif             
             if(nbytes_r <= 0)
             {
-              //puts("+++++++++++++");
-              #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
-              IRS_MBUS_DBG_MSG_BASE("\n1133 SERVER - Recv: socket " <<
+               IRS_LIB_MXIFA_DBG_MSG_BASE("\n1133 SERVER - Recv: socket " <<
                 (*(linux_tcpip->r_it)).get_hfd()<< " hung up");
-              IRS_MBUS_DBG_MSG_BASE("\n1142 SERVER - recv close socket");
-              #endif
+              IRS_LIB_MXIFA_DBG_MSG_BASE("\n1142 SERVER - recv close socket");
               cout << "\n1133 SERVER - Recv: socket " <<
                 (*(linux_tcpip->r_it)).get_hfd() << endl;
               close((*(linux_tcpip->r_it)).get_hfd());
@@ -1403,8 +1352,7 @@ void mxifa_tick()
                 *(mxip_t *)&(var_ip);
               }
               linux_tcpip->first_read = irs_false;
-              //puts("-----------------");
-              IRS_MBUS_DBG_MSG_BASE("\nfirst_read= " << boolalpha <<
+              IRS_LIB_MXIFA_DBG_MSG_BASE("\nfirst_read= " << boolalpha <<
               static_cast<bool>(linux_tcpip->first_read));
               if(nbytes_r == linux_tcpip->rd_size)
               {
@@ -1460,20 +1408,13 @@ void mxifa_tick()
                 (void *)linux_tcpip->wr_buf,
                 (size_t)linux_tcpip->wr_size,MSG_NOSIGNAL);
                 //IRS_LIB_ASSERT(nbytes_wr==0);
-              #ifdef NOP
-              OUTDBG(cout"1234 SERVER - File descriptor %d\n",
-                (*(linux_tcpip->it)).get_hfd());
-              OUTDBG(cout"1236 SERVER - bufer size %d\n",
-                (int)linux_tcpip->rd_size);
-              #endif //NOP
-              //OUTDBG(cout"1239 SERVER - bufer %s\n", linux_tcpip->wr_buf);
               if(nbytes_wr <= 0)
               {
-                IRS_MBUS_DBG_MSG_BASE("\n1244 SERVER - Send: socket  hung up"
+                IRS_LIB_MXIFA_DBG_MSG_BASE("\n1244 SERVER - Send: socket  hung up"
                   <<((*(linux_tcpip->it)).get_hfd()));
                 cout << "\n1244 SERVER - Send: socket  hung up " <<
                   (*(linux_tcpip->it)).get_hfd() << endl;
-                IRS_MBUS_DBG_MSG_BASE("\n1250 ERROR!!!");
+                IRS_LIB_MXIFA_DBG_MSG_BASE("\n1250 ERROR!!!");
                 //perror("send");
                 close((*(linux_tcpip->it)).get_hfd());
                 FD_CLR((*(linux_tcpip->it)).get_hfd(),
@@ -1523,10 +1464,10 @@ void mxifa_tick()
                       &(linux_tcpip_cl->read_fds),
                       &(linux_tcpip_cl->write_fds),NULL,
                       &(linux_tcpip_cl->tv_zero));
-        IRS_MBUS_DBG_MSG_DETAIL("\nNumber of descriptors CL_SE= " << CL_SE);              
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nNumber of descriptors CL_SE= " << CL_SE);              
         if(CL_SE == -1)
         {
-          perror("select");
+          IRS_LIB_MXIFA_DBG_MSG_ERROR("select:" << last_error_str());
         }
         if(CL_SE > 0)
         {
@@ -1534,49 +1475,48 @@ void mxifa_tick()
                 &(linux_tcpip_cl->read_fds));
           int cl_rd = FD_ISSET(linux_tcpip_cl->socket_fd,
                 &(linux_tcpip_cl->read_fds));
-          IRS_MBUS_DBG_MSG_DETAIL("\n1329 CLIENT - test socket  " << cl_rd);
-          IRS_MBUS_DBG_MSG_DETAIL("\n1331 Socket fd: " <<
+          IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1329 CLIENT - test socket  " << cl_rd);
+          IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1331 Socket fd: " <<
             linux_tcpip_cl->socket_fd);
           if(cl_rd)
           {
-            IRS_MBUS_DBG_MSG_DETAIL("\n FD_ISSET   linux_tcpip_cl->read_fds");
-            IRS_MBUS_DBG_MSG_DETAIL("\ncan_read= " << boolalpha <<
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n FD_ISSET   linux_tcpip_cl->read_fds");
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\ncan_read= " << boolalpha <<
               static_cast<bool>(linux_tcpip_cl->can_read));           
             if(linux_tcpip_cl->can_read)
             {
-              IRS_MBUS_DBG_MSG_BASE("\n 1336 CLIENT - read data begin");
+              IRS_LIB_MXIFA_DBG_MSG_BASE("\n 1336 CLIENT - read data begin");
               mxifa_read_cl_socket(pchdatas);
-              IRS_MBUS_DBG_MSG_BASE("\n 1336 CLIENT - read data end");
+              IRS_LIB_MXIFA_DBG_MSG_BASE("\n 1336 CLIENT - read data end");
             }
           }
           int cl_wt = FD_ISSET(linux_tcpip_cl->socket_fd,
                 &(linux_tcpip_cl->write_fds)); 
-          IRS_MBUS_DBG_MSG_DETAIL("\n1329 CLIENT - test socket  " << cl_wt);
-          IRS_MBUS_DBG_MSG_DETAIL("\n1331 Socket fd: " <<
+          IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1329 CLIENT - test socket  " << cl_wt);
+          IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1331 Socket fd: " <<
             linux_tcpip_cl->socket_fd);
           if(cl_wt)
           {
-            IRS_MBUS_DBG_MSG_DETAIL("\n FD_ISSET   linux_tcpip_cl->write_fds");
-            IRS_MBUS_DBG_MSG_DETAIL("\ncan_write= " << boolalpha <<
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n FD_ISSET   linux_tcpip_cl->write_fds");
+            IRS_LIB_MXIFA_DBG_MSG_DETAIL("\ncan_write= " << boolalpha <<
               static_cast<bool>(linux_tcpip_cl->can_write));
             if(linux_tcpip_cl->can_write)
             {
-              IRS_MBUS_DBG_MSG_BASE("\n 1347 CLIENT - send data");
+              IRS_LIB_MXIFA_DBG_MSG_BASE("\n 1347 CLIENT - send data");
               mxifa_write_cl_socket(pchdatas);
             }
           }
         }
-        IRS_MBUS_DBG_MSG_DETAIL("\n1352 Client test point end!");
+        IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1352 Client test point end!");
       }
     }
     break;
     default : {
     }
   }
- // puts("1357 Dop test point 0");
   if (MXIFA_CHD_SIZE > 2)
   {
-    IRS_MBUS_DBG_MSG_DETAIL("\n1360 MXIFA_CHD_SIZE  = " << (int)MXIFA_CHD_SIZE);
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1360 MXIFA_CHD_SIZE  = " << (int)MXIFA_CHD_SIZE);
     for(unsigned int i = 1; i < MXIFA_CHD_SIZE;i++)
     {
       channel_cur++;
@@ -1591,9 +1531,8 @@ void mxifa_tick()
       irs_bool opened_ch =  mxifa_chdata_cur->opened;
       if(known_ch && opened_ch) break;
     }
-    IRS_MBUS_DBG_MSG_DETAIL("\n1375 Current channel - " << channel_cur);
+    IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n1375 Current channel - " << channel_cur);
   }
-//  puts("1377 Dop test point end of tick()");
 }
 // Чтение типа канала
 mxifa_ei_t mxifa_get_channel_type(void *pchdata)
@@ -1621,7 +1560,7 @@ void mxifa_set_config(void *pchdata, void *config)
         mxifa_close_se_socket(pchdatas);
         is_noteq = irs_true;
       }
-      IRS_MBUS_DBG_MSG_BASE("\n1405 SERVER - changing configuration: OK");
+      IRS_LIB_MXIFA_DBG_MSG_BASE("\n1405 SERVER - changing configuration: OK");
       //fcntl(linux_tcpip->socket_fd,F_SETFL, O_NONBLOCK);
       linux_tcpip->local_addr.sin_family = AF_INET;
       linux_tcpip->local_addr.sin_port = htons(cfg->local_port);
@@ -1693,7 +1632,7 @@ void mxifa_set_config(void *pchdata, void *config)
 
       if(is_noteq)
       {
-        IRS_MBUS_DBG_MSG_BASE("is_noteg");
+        IRS_LIB_MXIFA_DBG_MSG_BASE("is_noteg");
         mxifa_open_cl_socket(pchdatas);
         is_noteq = irs_false;
       }
@@ -1828,7 +1767,7 @@ mxifa_sz_t mxifa_fast_read(void *pchdata,
         else
         {
           linux_tcpip->can_rany = irs_false;
-          IRS_MBUS_DBG_MSG_BASE("\nlinux_tcpip->can_rany= " <<
+          IRS_LIB_MXIFA_DBG_MSG_BASE("\nlinux_tcpip->can_rany= " <<
           boolalpha << static_cast<bool>(linux_tcpip->can_rany));
         }
         linux_tcpip->first_read = irs_true;
@@ -1881,7 +1820,7 @@ mxifa_sz_t mxifa_fast_read(void *pchdata,
           &(linux_tcpip_cl->read_fds),NULL,NULL,&(linux_tcpip_cl->tv_zero));
         if(res == -1)
         {
-          perror("select");
+          IRS_LIB_MXIFA_DBG_MSG_ERROR("select" << last_error_str());
           return IRS_NULL;
         }
         if(res > 0)
@@ -1901,7 +1840,7 @@ mxifa_sz_t mxifa_fast_read(void *pchdata,
               }
               else
               {
-                perror("recv");
+                IRS_LIB_MXIFA_DBG_MSG_ERROR("recv" << last_error_str());
               }
               close(linux_tcpip_cl->socket_fd);
               linux_tcpip_cl->sock_open = irs_false;
