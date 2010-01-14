@@ -19,9 +19,9 @@ public:
   enum mode_t { mode_auto_refresh, mode_manual_refresh };
   virtual ~mxdata_ext_t() {}
   virtual void send(irs_uarc a_index, irs_uarc a_size) = 0;
-  virtual void recive(irs_uarc a_index, irs_uarc a_size) = 0;
-  virtual void send_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
-  virtual void recive_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
+  virtual void receive(irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void send_bit(irs_uarc a_byte_index, irs_uarc a_bit_index) = 0;
+  virtual void receive_bit(irs_uarc a_byte_index, irs_uarc a_bit_index) = 0;
   virtual status_t status() const = 0;
 };
 
