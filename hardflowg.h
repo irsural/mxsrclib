@@ -182,6 +182,34 @@ public:
   errcode_type get_last_error();
 };
 
+#if defined(IRS_WIN32)
+enum { socket_error = SOCKET_ERROR };
+enum { invalid_socket = INVALID_SOCKET };
+#elif defined(IRS_LINUX)
+enum { socket_error = -1 };
+enum { invalid_socket = -1 };
+#endif // IRS_WINDOWS IRS_LINUX
+
+#if defined(IRS_WIN32)
+typedef SOCKET socketns_t;
+#elif defined(IRS_LINUX)
+typedef int socketns_t;
+#endif // IRS_WINDOWS IRS_LINUX
+
+inline void close_socket(socketns_t a_socket)
+{
+  #if defined(IRS_WIN32)
+  closesocket(a_socket);
+  #elif defined(IRS_LINUX)
+  close(a_socket);
+  #endif // IRS_WINDOWS IRS_LINUX
+}
+
+#if defined(IRS_WIN32)
+bool lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
+  int a_version_minor);
+#endif // defined(IRS_WIN32)
+
 enum udp_limit_connections_mode_t {
   udplc_mode_invalid,      // Недопустимый режим
   udplc_mode_queue,        // Учитывается переменная m_max_size
@@ -425,12 +453,13 @@ public:
   virtual void tick();
 };
 
-#if defined(IRS_LINUX)
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
 
 class tcp_server_t : public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;  
+  typedef hardflow_t::size_type size_type;
+  typedef socketns_t socket_type;  
   tcp_server_t(irs_u16 local_port);
   virtual ~tcp_server_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -445,22 +474,16 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   
 private:
-  struct tcp_close_t
-  {
-    void operator()(pair<const size_type, int>& a_map_item)
-    {
-      close(a_map_item.second);
-    }
-  };
-
+  #if defined(IRS_WIN32)
+  WSADATA m_wsd;
+  #endif // IRS_WIN32
   struct sockaddr_in m_addr;
   struct timeval m_serv_select_timeout;
-  
   fd_set m_read_fds;
   fd_set m_write_fds;
   bool m_is_open;
   irs_u16 m_local_port;
-  int m_server_sock;
+  socket_type m_server_sock;
   map<size_type, int> m_map_channel_sock;
   map<size_type, int>::iterator mp_map_channel_sock_it;
   size_type m_channel;
@@ -476,7 +499,7 @@ class tcp_client_t : public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
-
+  typedef socketns_t socket_type;
   tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
   virtual ~tcp_client_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -491,13 +514,14 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   
 private:
+  #if defined(IRS_WIN32)
+  WSADATA m_wsd;
+  #endif // IRS_WIN32
   struct sockaddr_in m_addr;
-  //struct sockaddr_in m_local_addr;
-
   timeval m_client_select_timeout;
   fd_set m_read_fds;
   fd_set m_write_fds;
-  int m_client_sock;
+  socket_type m_client_sock;
   bool m_is_open;
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
@@ -508,7 +532,7 @@ private:
   void stop_client();
 };
 
-#endif //defined(IRS_LINUX)
+#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
