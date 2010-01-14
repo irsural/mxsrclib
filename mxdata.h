@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 3.12.2009
+// Дата: 14.01.2010
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
@@ -11,6 +11,19 @@
 #include <irscpp.h>
 
 namespace irs {
+
+class mxdata_ext_t : public mxdata_t
+{
+public:
+  enum status_t { status_completed, status_wait };
+  enum mode_t { mode_auto_refresh, mode_manual_refresh };
+  virtual ~mxdata_ext_t() {}
+  virtual void send(irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void recive(irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void send_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
+  virtual void recive_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
+  virtual status_t status() const = 0;
+};
 
 // Тип для параметра - изменение при первом соединении
 enum change_data_first_connect_t {
