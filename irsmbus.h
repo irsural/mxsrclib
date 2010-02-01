@@ -68,8 +68,8 @@ struct response_exception_t {
 void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out, 
   size_t index_data_in, size_t index_data_out, size_t size_data);  
   
-void range(size_t a_index, size_t a_size, size_t M1, size_t M2,
-  size_t *a_num, size_t *a_start);
+void range(size_t a_index, size_t a_size, size_t a_start_range, 
+  size_t a_end_range, size_t *a_num, size_t *a_start);
   
 class modbus_server_t : public mxdata_t
 {
@@ -78,10 +78,10 @@ public:
   
   modbus_server_t(
     hardflow_t* ap_hardflow,
-    size_t a_discr_inputs_size_byte = 8191,
-    size_t a_coils_size_byte = 8191,
-    size_t a_hold_regs_reg = 2500,
-    size_t a_input_regs_reg = 2500
+    size_t a_discr_inputs_size_byte = 8192,
+    size_t a_coils_size_byte = 8192,
+    size_t a_hold_regs_reg = 65535,//2500,
+    size_t a_input_regs_reg = 65535//2500
   );
   virtual ~modbus_server_t() {}
   virtual irs_uarc size();
@@ -92,7 +92,6 @@ public:
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
-  virtual void status();
   
 private:
   enum {
@@ -112,15 +111,11 @@ private:
     read_exception_status = 7,
     write_multiple_coils = 15,
     write_multiple_registers = 16,
-    W_SevHR = 10,
-    Rsize = 70,
-    Rtab = 30
   };
   enum condition_t {
     read_header_mode,
     read_request_mode,
     send_response_mode,
-    wait_mode,
     read_end_mode,
     write_end
   };
@@ -128,33 +123,36 @@ private:
   raw_data_t<irs_u8>                    mp_buf;
   size_t                                m_size_byte_end;
   size_t                                m_coils_size_bit;
-  size_t                                m_di_size_bit;
-  size_t                                m_hr_size_reg;
-  size_t                                m_ir_size_reg;
+  size_t                                m_discret_inputs_size_bit;
+  size_t                                m_hold_registers_size_reg;
+  size_t                                m_input_registers_size_reg;
   size_t                                m_size_byte;
-  size_t                                m_di_end_byte;
+  size_t                                m_discret_inputs_end_byte;
   size_t                                m_coils_end_byte;
-  size_t                                m_hr_end_byte;
-  size_t                                m_ir_end_byte;
+  size_t                                m_hold_registers_end_byte;
+  size_t                                m_input_registers_end_byte;
   condition_t                           m_mode;
   raw_data_t<irs_u8>                    m_discr_inputs_byte;
   raw_data_t<irs_u8>                    m_coils_byte;
   raw_data_t<irs_u16>                   m_input_regs_reg;
   raw_data_t<irs_u16>                   m_hold_regs_reg;
-  size_t                                m_di_size_byte;
-  size_t                                m_di_start_byte;
+  size_t                                m_discret_inputs_size_byte;
+  size_t                                m_discret_inputs_start_byte;
   size_t                                m_coils_size_byte;
   size_t                                m_coils_start_byte;
-  size_t                                m_hr_size_byte;
-  size_t                                m_hr_start_byte;
-  size_t                                m_ir_size_byte;
-  size_t                                m_ir_start_byte;
+  size_t                                m_hold_registers_size_byte;
+  size_t                                m_hold_registers_start_byte;
+  size_t                                m_input_registers_size_byte;
+  size_t                                m_input_registers_start_byte;
   channel_type                          m_channel;
   hardflow_t*                           mp_tcp_server;
   hardflow::fixed_flow_t                m_fixed_flow;
   size_t                                m_num_of_elem;
+  mx_time_int_local_t                   m_read_measure_time;
+  mx_time_int_local_t                   m_write_measure_time;
+  mx_time_int_local_t                   m_proc_measure_time;
   
-  void Error_response(irs_u8 error_code);
+  void error_response(irs_u8 error_code);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
 };
@@ -166,23 +164,22 @@ public:
   
   modbus_client_t(
     hardflow_t* ap_hardflow,
-    size_t a_discr_inputs_size_byte = 8191,
-    size_t a_coils_size_byte = 8191,
-    size_t a_hold_regs_reg = 2500,
-    size_t a_input_regs_reg = 2500
+    size_t a_discr_inputs_size_byte = 8192,
+    size_t a_coils_size_byte = 8192,
+    size_t a_hold_regs_reg = 65535,
+    size_t a_input_regs_reg = 65535,
+    loop_timer_t a_loop_timer = make_cnt_ms(200)
   );
   void set_delay_time(double time);
   virtual ~modbus_client_t();
   virtual irs_uarc size();
   virtual irs_bool connected();
-  virtual irs_bool connected_1();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
   virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
-  virtual void status();
   
 private:
   enum {
@@ -193,8 +190,8 @@ private:
     size_of_req_excep = 1,
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
-    size_of_data_byte = 248,
-    size_of_data_reg = 124
+    size_of_data_byte = 250,
+    size_of_data_reg = 125
   };
   enum condition_t {
     request_start = 0,
@@ -207,18 +204,14 @@ private:
     read_exception_status = 7,
     write_multiple_coils = 15,
     write_multiple_registers = 16,
-    W_SevHR = 10,
-    Rsize = 70,
-    Rtab = 30,
-    ERT =31
   };
   enum mode_t {
     send_request_mode,
-    write_end_mode,
+    //write_end_mode,
     read_header_mode,
     read_response_mode,
-    read_end_mode,
-    wait_mode,
+    //read_end_mode,
+    //wait_mode,
     treatment_response_mode,
     make_request_mode,
     send_data_mode,
@@ -227,50 +220,55 @@ private:
   
   counter_t                             m_del_time;
   irs_u8                                *mp_buf;
-  size_t                                m_global_index;
-  size_t                                m_ibank;
+  size_t                                m_global_read_index;
+  size_t                                m_global_write_index;
   size_t                                m_coils_size_bit;
-  size_t                                m_di_size_bit;
-  size_t                                m_hr_size_reg;
-  size_t                                m_ir_size_reg;
-  size_t                                m_di_end_byte;
+  size_t                                m_discret_inputs_size_bit;
+  size_t                                m_hold_registers_size_reg;
+  size_t                                m_input_registers_size_reg;
+  size_t                                m_discret_inputs_end_byte;
   size_t                                m_coils_end_byte;
-  size_t                                m_hr_end_byte;
-  size_t                                m_ir_end_byte;
+  size_t                                m_hold_registers_end_byte;
+  size_t                                m_input_registers_end_byte;
   irs_u8                                m_spacket[size_of_packet];
   irs_u8                                m_rpacket[size_of_packet];
   size_t                                m_size_byte_end;
   irs_bool                              m_nothing;
-  irs_bool                              m_read_table;
-  irs_bool                              m_first_read;
-  irs_bool                              m_part_send;
+  bool                                  m_read_table;
   channel_type                          m_channel;
   size_t                                m_start_block;
   size_t                                m_search_index;
   irs_u16                               m_bytes;
-  size_t                                m_di_size_byte;
-  size_t                                m_di_start_byte;
+  size_t                                m_discret_inputs_size_byte;
+  size_t                                m_discret_inputs_start_byte;
   size_t                                m_coils_size_byte;
   size_t                                m_coils_start_byte;
-  size_t                                m_hr_size_byte;
-  size_t                                m_hr_start_byte;
-  size_t                                m_ir_size_byte;
-  size_t                                m_ir_start_byte;
-  vector<bool>                          m_rforwr;
-  raw_data_t<irs_u8>                    m_discr_inputs_byte_r;
-  raw_data_t<irs_u8>                    m_coils_byte_r;
-  raw_data_t<irs_u8>                    m_coils_byte_w;
-  raw_data_t<irs_u16>                   m_input_regs_reg_r;
-  raw_data_t<irs_u16>                   m_hold_regs_reg_r;
-  raw_data_t<irs_u16>                   m_hold_regs_reg_w;
-  condition_t                           m_command, request_type;
+  size_t                                m_hold_registers_size_byte;
+  size_t                                m_hold_registers_start_byte;
+  size_t                                m_input_registers_size_byte;
+  size_t                                m_input_registers_start_byte;
+  vector<bool>                          m_need_writes;
+  raw_data_t<irs_u8>                    m_discr_inputs_byte_read;
+  raw_data_t<irs_u8>                    m_coils_byte_read;
+  raw_data_t<irs_u8>                    m_coils_byte_write;
+  raw_data_t<irs_u16>                   m_input_regs_reg_read;
+  raw_data_t<irs_u16>                   m_hold_regs_reg_read;
+  raw_data_t<irs_u16>                   m_hold_regs_reg_write;
+  condition_t                           m_command, m_request_type;
   mode_t                                m_mode;
   loop_timer_t                          m_loop_timer;
   hardflow_t*                           mp_tcp_client;
   hardflow::fixed_flow_t                m_fixed_flow;
   size_t                                m_num_of_elem;
   size_t                                m_start_addr;
-
+  irs_u16                               m_coil_write_bit;
+  size_t                                m_coil_bit_index;
+  mx_time_int_t                         m_send_measure_time;
+  irs_bool                              m_first_read;
+  mx_time_int_local_t                   m_read_measure_time;
+  mx_time_int_local_t                   m_write_measure_time;
+  mx_time_int_local_t                   m_proc_measure_time;
+  
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
