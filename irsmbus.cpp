@@ -1,6 +1,6 @@
 // Клиент и сервер modbus
 // Дата создания: 16.09.2008
-// Дата последнего изменения: 10.12.2009
+// Дата последнего изменения: 02.02.2010
 
 #include <irsmbus.h>
 #include <string.h>
@@ -495,7 +495,7 @@ irs_bool irs::modbus_server_t::connected()
   return irs_true;
 }
 
-//#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
+#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
 void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
   irs::mlog() << "\n recieved packet" << endl;
@@ -667,9 +667,9 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
   }
 }
-//#endif // IRS_MBUS_MSG_DETAIL
+#endif // IRS_MBUS_MSG_DETAIL
 
-//#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
+#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
 void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 {
   irs::mlog() << "\n send packet" << endl;
@@ -827,7 +827,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
   }
 }
-//#endif // IRS_MBUS_MSG_DETAIL
+#endif // IRS_MBUS_MSG_DETAIL
 
 void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
@@ -1311,7 +1311,7 @@ void irs::modbus_server_t::tick()
         }
         IRS_MBUS_DBG_MSG_DETAIL("\n recieved packet");
         IRS_MBUS_DBG_MONITOR(modbus_pack_request_monitor(mp_buf.data()););
-        modbus_pack_request_monitor(mp_buf.data());
+        //modbus_pack_request_monitor(mp_buf.data());
         MBAP_header_t &header = 
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
         request_t &req_header = 
@@ -1560,7 +1560,7 @@ void irs::modbus_server_t::tick()
     {
       IRS_MBUS_DBG_MSG_DETAIL("\n send packet");
       IRS_MBUS_DBG_MONITOR(modbus_pack_response_monitor(mp_buf.data()););
-      modbus_pack_response_monitor(mp_buf.data());
+      //modbus_pack_response_monitor(mp_buf.data());
       convert(mp_buf.data(), 0, size_of_MBAP - 1);
       request_exception_t &convert_pack_for_write =
         reinterpret_cast<request_exception_t&>(*(mp_buf.data() + 
@@ -1723,7 +1723,7 @@ irs_bool irs::modbus_client_t::connected()
     return irs_false;
 }
 
-//#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
+#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
 void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
   irs::mlog() << "\n send packet" << endl;
@@ -1895,9 +1895,9 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
   }
 }
-//#endif // IRS_MBUS_MSG_DETAIL
+#endif // IRS_MBUS_MSG_DETAIL
 
-//#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
+#if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
 void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 {
   irs::mlog() << "\n recieved packet" << endl;
@@ -2055,7 +2055,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
   }
 }
-//#endif // IRS_MBUS_MSG_DETAIL
+#endif // IRS_MBUS_MSG_DETAIL
 
 void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
@@ -2653,7 +2653,7 @@ void irs::modbus_client_t::tick()
     {
       IRS_MBUS_DBG_MONITOR(modbus_pack_request_monitor(m_spacket););
       //send packet:
-      modbus_pack_request_monitor(m_spacket); 
+      //modbus_pack_request_monitor(m_spacket); 
       m_proc_measure_time.start();
       convert(m_spacket, 0, size_of_MBAP - 1);
       request_exception_t &convert_pack_for_write =
@@ -2803,7 +2803,7 @@ void irs::modbus_client_t::tick()
         request_t &req_header = 
           reinterpret_cast<request_t&>(*(m_spacket + size_of_MBAP));
         //Recieve packet:
-        modbus_pack_response_monitor(m_rpacket);
+        //modbus_pack_response_monitor(m_rpacket);
         IRS_MBUS_DBG_MONITOR(modbus_pack_response_monitor(m_rpacket););
         convert(m_spacket, size_of_MBAP + 1, size_of_read_header);
         irs_u16 start_addr = req_header.starting_address;
