@@ -233,8 +233,9 @@ private:
   irs_u8                                m_spacket[size_of_packet];
   irs_u8                                m_rpacket[size_of_packet];
   size_t                                m_size_byte_end;
-  irs_bool                              m_nothing;
   bool                                  m_read_table;
+  bool                                  m_write_coils;
+  bool                                  m_write_hold_registers;
   channel_type                          m_channel;
   size_t                                m_start_block;
   size_t                                m_search_index;
