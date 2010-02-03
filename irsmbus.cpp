@@ -1223,7 +1223,7 @@ void irs::modbus_server_t::tick()
   
   switch(m_mode)
   {
-    case read_header_mode: 
+    case read_header_mode:
     {
       m_fixed_flow.read(m_channel, mp_buf.data(), size_of_MBAP);
       m_mode = read_request_mode;
@@ -2549,6 +2549,8 @@ void irs::modbus_client_t::tick()
           if(m_loop_timer.check()) {
             //irs::mlog() << " m_send_measure_time = " <<
               //m_send_measure_time() << endl;
+            irs::mlog() << " m_write_measure_time = " <<
+              m_read_measure_time() << " write end" << endl;
             m_mode = make_request_mode;
             m_request_type = read_discrete_inputs;
             m_read_measure_time.start();
@@ -2871,13 +2873,15 @@ void irs::modbus_client_t::tick()
                 int(IRS_HIBYTE(m_input_regs_reg_read[ir_idx])) << endl;
             }
             #endif //IRS_MBUS_MSG_DETAIL
-            /*if((start_addr + ir_packet.byte_count/2) >= 
+            if((start_addr + ir_packet.byte_count/2) >= 
               m_input_registers_size_reg)
             {
               m_first_read = irs_true;
+              //#if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
               irs::mlog() << " m_read_measure_time = " <<
                 m_read_measure_time() << " read end" << endl;
-            }*/
+              //#endif //IRS_MBUS_MSG_DETAIL
+            }
           }
           break;
           case write_single_coil:
@@ -2905,6 +2909,13 @@ void irs::modbus_client_t::tick()
               m_need_writes[start_addr + reg_index] = 0;
               m_coils_byte_write[reg_index] = 0;
             }
+            /*if((start_addr + sec_head.byte_count/2) >= 
+              (m_coils_start_byte + m_coils_size_byte))
+            {
+              m_read_table = true;
+              irs::mlog() << " m_write_measure_time =" <<
+                m_read_measure_time() << " write end" << endl;
+            }*/
           }
           break;
           case write_multiple_registers:
@@ -2919,7 +2930,7 @@ void irs::modbus_client_t::tick()
               m_hold_regs_reg_write[reg_index] = 0;
             }
             /*if((start_addr + sec_head.byte_count/2) >= 
-              m_hold_registers_size_reg)
+              (m_hold_registers_start_byte + m_hold_registers_size_byte))
             {
               m_read_table = true;
               irs::mlog() << " m_write_measure_time = " <<
@@ -3029,7 +3040,6 @@ void irs::modbus_client_t::tick()
               coils_quantity++;
           }
           if(coils_quantity > 1) {
-            //irs::mlog() << " write multiple coils" << endl;
             make_packet(m_coils_start_byte + m_global_write_index,
               irs_u16((m_coils_size_byte - m_global_write_index)*8));
             bit_copy(m_coils_byte_write.data(),
@@ -3037,7 +3047,6 @@ void irs::modbus_client_t::tick()
                 m_global_write_index*8, 0, 
                 (m_coils_size_byte - m_global_write_index)*8);
           } else {
-            //irs::mlog() << " write single coils" << endl;
             m_command = write_single_coil;
             response_single_write_t &sec_head =
               reinterpret_cast<response_single_write_t&>(*(m_spacket + 
@@ -3047,6 +3056,18 @@ void irs::modbus_client_t::tick()
           }
           m_global_write_index = 0;
           m_search_index = m_coils_size_bit;
+          size_t hr_writes = 0;
+          for(size_t write_idx = m_coils_size_bit; 
+            write_idx < size_t(m_coils_size_bit + m_hold_registers_size_reg);
+            write_idx++)
+          {
+            if(m_need_writes[write_idx] == 1)
+              hr_writes += 2;
+          }
+          if(hr_writes == 0) {
+            m_read_table = true;
+            irs::mlog() << " write coils: m_read_table = true" << endl;
+          }
         }
       }
       //запись hold regs
@@ -3107,6 +3128,8 @@ void irs::modbus_client_t::tick()
             irs_u16(hr_size_byte));
           m_global_write_index = 0;
           m_search_index = 0;
+          m_read_table = true;
+          irs::mlog() << " write registers: m_read_table = true" << endl;
         }
       }
       IRS_MBUS_DBG_MSG_BASE("send_request_mode");
