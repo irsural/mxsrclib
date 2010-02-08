@@ -545,9 +545,10 @@ typedef table_t<
   deque<deque<irs::string> > > table_string_t;
 
 template <class cell_type_t>
-class composite_table_t : public irs::table_size_t
+class composite_table_t : public table_size_t
 {
 public:
+  typedef table_size_t::size_type size_type;
   typedef irs::rect_t diapason_type;
   struct cell_param_t
   {
@@ -564,7 +565,7 @@ public:
     cell_type_t value;
     cell_param_t param;
   };
-  composite_table_t();
+  composite_table_t();  
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
   inline void write_cell(
@@ -575,12 +576,12 @@ public:
   virtual size_type get_row_count() const;
   virtual inline void set_col_count(const size_type a_col_count);
   virtual inline void set_row_count(const size_type a_row_count);
-
   inline void union_on(const diapason_type& a_diapason);
   inline void union_off(const diapason_type& a_diapason);
   inline bool is_cell_united(const size_type a_col_index,
     const size_type a_row_index) const;
-  inline diapason_type get_cell_diapason() const;
+  inline diapason_type get_cell_diapason(const size_type a_col_index,
+    const size_type a_row_index) const;
 private:
   // Первый диапазон является поддиапазоном второго
   inline bool first_subdiapason_second(const diapason_type& a_first_diapason,
@@ -632,14 +633,14 @@ composite_table_t<cell_type_t>::composite_table_t():
 }
 
 template <class cell_type_t>
-composite_table_t <cell_type_t>::size_type
-composite_table_t <cell_type_t>::get_col_count() const
+typename composite_table_t<cell_type_t>::size_type
+composite_table_t<cell_type_t>::get_col_count() const
 {
   return m_table.get_col_count();
 }
 
 template <class cell_type_t>
-composite_table_t<cell_type_t>::size_type
+typename composite_table_t<cell_type_t>::size_type
 composite_table_t<cell_type_t>::get_row_count() const
 {
   return m_table.get_row_count();
@@ -759,14 +760,17 @@ template <class cell_type_t>
 inline void composite_table_t<cell_type_t>::union_off(
   const diapason_type& a_diapason)
 {
-  param_t param_for_autonomous;
+  cell_param_t param_for_autonomous;
   param_for_autonomous.autonomous = true;
-  for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++) {
-    for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom; row_i++)
+  for (size_type col_i = a_diapason.left;
+    col_i < (col_i + a_diapason.width); col_i++)
+  {
+    for (size_type row_i = a_diapason.top;
+      row_i < (row_i + a_diapason.height); row_i++)
     {
       const cell_t& cell = read_cell(col_i, row_i);
       if (!cell.param.autonomous) {
-        diapason_t diapason = cell.param.diapason;
+        diapason_type diapason = cell.param.diapason;
         for (size_type col_i = cell.param.left; col_i <= cell.param.right;
           col_i++)
         {
@@ -790,12 +794,14 @@ inline bool composite_table_t<cell_type_t>::is_cell_united(
   const size_type a_row_index) const
 {
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);
-  return cell.param.autonomous;
+  return !cell.param.autonomous;
 }
 
 template <class cell_type_t>
-inline composite_table_t<cell_type_t>::diapason_type
-composite_table_t<cell_type_t>::get_cell_diapason() const
+inline typename composite_table_t<cell_type_t>::diapason_type
+composite_table_t<cell_type_t>::get_cell_diapason(
+  const size_type a_col_index,
+  const size_type a_row_index) const
 {
   diapason_type diapason(a_col_index, a_row_index, 1, 1);
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);
