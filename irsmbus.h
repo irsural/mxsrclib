@@ -148,9 +148,6 @@ private:
   hardflow_t*                           mp_tcp_server;
   hardflow::fixed_flow_t                m_fixed_flow;
   size_t                                m_num_of_elem;
-  mx_time_int_local_t                   m_read_measure_time;
-  mx_time_int_local_t                   m_write_measure_time;
-  mx_time_int_local_t                   m_proc_measure_time;
   
   void error_response(irs_u8 error_code);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
@@ -190,8 +187,10 @@ private:
     size_of_req_excep = 1,
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
-    size_of_data_byte = 250,
-    size_of_data_reg = 125
+    size_of_data_write_byte = 246,
+    size_of_data_read_byte = 250,
+    size_of_data_write_reg = size_of_data_write_byte/2,
+    size_of_data_read_reg = size_of_data_read_byte/2
   };
   enum condition_t {
     request_start = 0,
@@ -266,10 +265,9 @@ private:
   size_t                                m_coil_bit_index;
   mx_time_int_t                         m_send_measure_time;
   irs_bool                              m_first_read;
-  mx_time_int_local_t                   m_read_measure_time;
-  mx_time_int_local_t                   m_write_measure_time;
-  mx_time_int_local_t                   m_proc_measure_time;
-  
+  measure_time_t                        m_measure_time;
+  double                                m_measure_int_time;
+
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);

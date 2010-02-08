@@ -664,7 +664,7 @@ static void mxifa_write_cl_socket(mxifa_chdata_t *cur_chanel)
   }
 }
 
-static void mxifa_reconect_cl_socket(mxifa_chdata_t *cur_chanel)
+/*static void mxifa_reconect_cl_socket(mxifa_chdata_t *cur_chanel)
 {
   mxifa_chdata_t *pchdatas = mxifa_chdata_cur;
   mxifa_linux_tcpip_cl_t *linux_tcpip_cl =
@@ -686,7 +686,7 @@ static void mxifa_reconect_cl_socket(mxifa_chdata_t *cur_chanel)
       htons(linux_tcpip_cl->dest_port_cur);
     mxifa_open_cl_socket(pchdatas);
   }
-}
+}*/
 
 static void mxifa_open_se_socket(mxifa_chdata_t *cur_chanel)
 {

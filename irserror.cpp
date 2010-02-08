@@ -208,7 +208,7 @@ void irs::send_message_err(int a_error_code, char* ap_file,
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 ostream& irs::mlog()
-{
+{ 
   static irs::zerobuf buf;
   static ostream mlog_obj(&buf);
   return mlog_obj;
