@@ -580,7 +580,7 @@ public:
   inline void union_off(const diapason_type& a_diapason);
   inline bool is_cell_united(const size_type a_col_index,
     const size_type a_row_index) const;
-  inline diapason_type cell_diapason_get() const;
+  inline diapason_type get_cell_diapason() const;
 private:
   // Первый диапазон является поддиапазоном второго
   inline bool first_subdiapason_second(const diapason_type& a_first_diapason,
@@ -795,7 +795,7 @@ inline bool composite_table_t<cell_type_t>::is_cell_united(
 
 template <class cell_type_t>
 inline composite_table_t<cell_type_t>::diapason_type
-composite_table_t<cell_type_t>::cell_diapason_get() const
+composite_table_t<cell_type_t>::get_cell_diapason() const
 {
   diapason_type diapason(a_col_index, a_row_index, 1, 1);
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);

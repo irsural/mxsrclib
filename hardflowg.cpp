@@ -1124,7 +1124,7 @@ void irs::hardflow::udp_flow_t::tick()
     // Клиент успешно запущен
     FD_ZERO(&m_s_kit);
     FD_SET(m_sock, &m_s_kit);
-    int ready_read_sock_count = select(NULL, &m_s_kit, NULL, NULL,
+    int ready_read_sock_count = select(m_sock + 1, &m_s_kit, NULL, NULL,
       &m_func_select_timeout);
     if ((ready_read_sock_count != m_socket_error) &&
       (ready_read_sock_count != 0))
