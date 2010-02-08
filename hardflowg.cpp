@@ -840,12 +840,16 @@ void irs::hardflow::udp_flow_t::local_addr_init(
   }
   if (*ap_init_success) {
     ap_sockaddr->sin_family = AF_INET;
-    unsigned short port = 0;
-    if (m_local_host_port.to_number(port)) {
-      ap_sockaddr->sin_port = htons(port);
+    if (m_local_host_port != "") {
+      unsigned short port = 0;
+      if (m_local_host_port.to_number(port)) {
+        ap_sockaddr->sin_port = htons(port);
+      } else {
+        // ѕреобразовать строку в число не удалось
+        *ap_init_success = false;
+      }
     } else {
-      // ѕреобразовать строку в число не удалось
-      *ap_init_success = false;
+      // ѕорт не указан, выбераем любой порт
     }
   } else {
     // «начение адреса получить не удалось
