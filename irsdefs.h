@@ -290,6 +290,12 @@ struct rect_t {
     width(a_width),
     height(a_height)
   {}
+  rect_t(const rect_t& a_rect):
+    left(a_rect.left),
+    top(a_rect.top),
+    width(a_rect.width),
+    height(a_rect.height)
+  {}
 };
 
 } //namespace irs

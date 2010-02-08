@@ -66,6 +66,8 @@ public:
   table_t(size_type a_new_col_count, size_type a_new_row_count);
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
+  inline cell_type_t& read_cell(
+    const size_type a_col_index, const size_type a_row_index);
   inline void write_cell(
     const size_type a_col_index,
     const size_type a_row_index,
@@ -145,6 +147,19 @@ read_cell(const size_type a_col_index, const size_type a_row_index) const
   it_const_container_t it_col = m_container.begin();
   advance(it_col, a_col_index);
   it_const_column_t it_elem_col = it_col->begin();
+  advance(it_elem_col, a_row_index);
+  return *it_elem_col;
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+inline cell_type_t& table_t<cell_type_t, column_type_t, container_t>::
+read_cell(const size_type a_col_index, const size_type a_row_index)
+{
+  IRS_LIB_ASSERT(a_col_index < m_col_count);
+  IRS_LIB_ASSERT(a_row_index < m_row_count);
+  it_container_t it_col = m_container.begin();
+  advance(it_col, a_col_index);
+  it_column_t it_elem_col = it_col->begin();
   advance(it_elem_col, a_row_index);
   return *it_elem_col;
 }

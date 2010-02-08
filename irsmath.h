@@ -61,7 +61,14 @@ inline double acos_gra(const double a_value);
 inline double atan_deg(const double a_value);
 inline double atan_rad(const double a_value);
 inline double atan_gra(const double a_value);
-                                                
+
+// Функция реализует алгоритм Евклида -
+// алгоритм для нахождения наибольшего делителя двух
+// целых чисел или наибольшей общей меры двух однородных величин.
+inline int gcd(int a, int b);
+
+// Нахождения наименьшего общего кратного
+inline int lcm(int a, int b);
 
 inline double asinh(const double a_x)
 {
@@ -202,6 +209,22 @@ inline double atan_gra(const double a_value)
 {
   double radian = atan(a_value);
   return rad_to_gra(radian);
+}
+
+inline int gcd(int a, int b)
+{
+  int c;
+  while (b) {
+    c = a % b;
+    a = b;
+    b = c;
+  }
+  return abs(a);
+}
+
+inline int lcm(int a, int b)
+{
+  return (a * b) / gcd(a, b);
 }
 
 }; // namespace irs
