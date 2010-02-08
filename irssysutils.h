@@ -8,6 +8,7 @@
 #include <irsstd.h>
 #include <irsstrdefs.h>
 #include <irscpp.h>
+#include <irserror.h>
 
 #ifdef IRS_WIN32
 #include <Rpc.h>
@@ -17,8 +18,11 @@
 
 namespace irs {
 // Вид числа
-enum num_mode_t{num_mode_general, num_mode_fixed, num_mode_scientific};
-enum num_base_t {num_base_dec, num_base_hex, num_base_oct};
+enum { num_precision_default = -1 };
+enum num_mode_t{num_mode_invalid, num_mode_general, num_mode_fixed, num_mode_scientific,
+  num_mode_default = num_mode_general};
+enum num_base_t {num_base_invalid, num_base_dec, num_base_hex, num_base_oct,
+  num_base_default = num_base_dec};
 
 // Универсальная функция перевода чисел в текст
 template<class T>
@@ -60,12 +64,30 @@ string number_to_str(
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
 template<class T, class C>
 void number_to_string(const T& a_num, basic_string<C>* ap_str,
+  const size_t a_precision,
+  const num_mode_t a_num_mode = num_mode_default,
   const locale& a_loc = irs::loc().get())
 {
   basic_ostringstream<C> ostr;
-  ostr.imbue(a_loc); 
+  ostr.imbue(a_loc);
+  ostr << dec;
+  switch (a_num_mode) {
+    case num_mode_general: {
+    } break;
+    case num_mode_fixed: {
+      ostr << fixed;
+    } break;
+    case num_mode_scientific: {
+      ostr << scientific;
+    } break;
+    default : {
+      IRS_LIB_ASSERT("Недопустимое значение типа представления числа");
+    }
+  }
+  ostr << setprecision(a_precision);
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
@@ -76,6 +98,14 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
     ostr << a_num;
   }
   *ap_str = ostr.str();
+}
+
+template<class T, class C>
+void number_to_string(const T& a_num, basic_string<C>* ap_str,
+  const locale& a_loc = irs::loc().get())
+{
+  number_to_string<T, C>(a_num, ap_str, num_precision_default,
+    num_mode_general, a_loc);
 }
 
 template<class T, class C>

@@ -20,6 +20,7 @@
 #include <irsvariant.h>
 #include <irscpp.h>
 #include <irslocale.h>
+#include <irssysutils.h>
 
 namespace irs {
 
@@ -705,6 +706,13 @@ private:
   inline bool is_char_exponent(const char_type a_ch);
   // Проверка символа на принадлежность букве
   inline bool is_char_alpha(const char_type a_ch);
+  // Проверка на принадлежность к символу восьмеричного числа
+  inline bool is_char_oct_digit(const char_type a_ch);
+  // Проверка на принадлежность к символу шестнадцатиричного числа
+  inline bool is_char_hex_digit(const char_type a_ch);
+  // Перевод строкового представления числа в тип числа
+  template <class T>
+  inline bool str_to_num(const string_type a_str, T* a_number);
   // Идентифицировать лексему в текущей позиции программы
   inline bool detect_token(const string_type* ap_prog,
     const size_type a_prog_pos, token_data_t* ap_token_data);
@@ -717,12 +725,47 @@ inline bool detector_token_t::is_char_digit(const char_type a_ch)
 
 inline bool detector_token_t::is_char_exponent(const char_type a_ch)
 {
-  return (a_ch == irst('e')) || (a_ch == irst('E'));
+  return (a_ch == irst('e')) || (a_ch == irst('E'));  
 }
 
 inline bool detector_token_t::is_char_alpha(const char_type a_ch)
-{ 
+{
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  return (isalnumt(a_ch, m_locale) || a_ch == irst('_'));
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
   return (isalnumt(a_ch) || a_ch == irst('_'));
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+}
+
+inline bool detector_token_t::is_char_oct_digit(const char_type a_ch)
+{
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  return (isdigitt(a_ch) && (a_ch != irst('8')) && (a_ch != irst('9')));
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
+  return (isdigitt(a_ch, m_locale) && (a_ch != irst('8')) &&
+    (a_ch != irst('9')));
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+}
+
+inline bool detector_token_t::is_char_hex_digit(const char_type a_ch)
+{
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  return isxdigitt(a_ch, m_locale);
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
+  return isxdigitt(a_ch);
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+}
+
+template <class T>
+inline bool detector_token_t::str_to_num(
+  const string_type a_str, T* a_number)
+{
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  bool convert_success = string_to_number(a_str, a_number, m_locale);
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
+  bool convert_success = string_to_number(a_str, a_number);
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+  return convert_success;
 }
 
 inline bool detector_token_t::detect_token(const string_type* ap_prog,
@@ -758,20 +801,111 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
     // Запоминаем позицию первого символа числа
     const size_type num_begin_ch = pos;
     if ((*ap_prog)[pos] == irst('"')) {
-      pos++;
-      if (pos < ap_prog->size()) {
-        pos = ap_prog->find(irst("\""), pos);
-        if (pos != string_type::npos) {
-          string_type string_value = ap_prog->substr(num_begin_ch + 1, pos-1);
-          ap_token_data->token.set_string(string_value);
-          pos++;
-          ap_token_data->length = pos - a_prog_pos;
-          detected_token = true;
+      ++pos;
+      bool detect_str_error = false;
+      string_type string_value;
+      size_type begin_pos = num_begin_ch + 1;
+      while (!detected_token && !detect_str_error) {
+        if (pos < ap_prog->size()) {
+          pos = ap_prog->find_first_of(irst("\\\""), pos);
+          if (pos != string_type::npos) {
+            char_type ch_substr = (*ap_prog)[pos];
+            if (ch_substr == irst('\\')) {
+                string_value = ap_prog->substr(begin_pos, pos - begin_pos);
+              if ((pos + 1) < ap_prog->size()) {
+                ++pos;
+                const char_type next_ch_substr = (*ap_prog)[pos];
+                switch (next_ch_substr) {
+                  case irst('n'): {
+                    string_value += "\n";
+                  } break;
+                  case irst('t'): {
+                    string_value += "\t";
+                  } break;
+                  case irst('v'): {
+                    string_value += "\v";
+                  } break;
+                  case irst('b'): {
+                    string_value += "\b";
+                  } break;
+                  case irst('r'): {
+                    string_value += "\r";
+                  } break;
+                  case irst('f'): {
+                    string_value += "\f";
+                  } break;
+                  case irst('a'): {
+                    string_value += "\a";
+                  } break;
+                  case irst('\\'): {
+                    string_value += "\\";
+                  } break;
+                  case irst('?'): {
+                    string_value += "\?";
+                  } break;
+                  case irst('\''): {
+                    string_value += "\'";
+                  } break;
+                  case irst('\"'): {
+                    string_value += "\"";
+                  } break;
+                  case irst('x'): {
+                    if ((pos + 1) < ap_prog->size()) {
+                      char_type ch_xdigit = (*ap_prog)[pos + 1];
+                      if (is_char_hex_digit(ch_xdigit)) {
+                        string_type num_hex_str = ch_xdigit;
+                        if ((pos + 2) < ap_prog->size()) {
+                          ch_xdigit = (*ap_prog)[pos + 2];
+                          if (isxdigitt(ch_xdigit)) {
+                            num_hex_str += ch_xdigit;
+                            ++pos;
+                          } else {
+                            // Второй символ не является hex-числом
+                          }
+                        } else {
+                          // Недопустимый символ
+                        }
+                        char_type num_hex = 0;
+                        if (str_to_num(num_hex_str, &num_hex)) {
+                          string_value += num_hex;
+                        } else {
+                          detect_str_error = true;
+                        }
+                      } else {
+                        detect_str_error = true;
+                      }
+                    } else {
+                       detect_str_error = true;
+                    }
+                  } break;
+                  default : {
+                    detect_str_error = true;
+                  }
+                }
+                ++pos;
+                begin_pos = pos;
+              } else {
+                // Следующий символ отсутсвует
+                detect_str_error = true;
+              }
+            } else if (ch_substr == irst('"')) {
+              string_value += ap_prog->substr(begin_pos, pos - begin_pos);
+              ap_token_data->token.set_string(string_value);
+              pos++;
+              ap_token_data->length = pos - a_prog_pos;
+              detected_token = true;
+            } else {
+              IRS_LIB_ASSERT_MSG("Недопустимый символ");
+              detect_str_error = true;
+            }
+          } else {
+            // Достигнут конец программы
+            detect_str_error = true;
+          }
         } else {
           // Достигнут конец программы
+          detect_str_error = true;
         }
-      } else {
-        // Достигнут конец программы
       }
     } else {
       // Символ кавычки не найден
