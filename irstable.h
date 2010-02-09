@@ -543,7 +543,7 @@ typedef table_t<
   irs::string,
   deque<irs::string>,
   deque<deque<irs::string> > > table_string_t;
-
+#ifndef IRS_LINUX
 template <class cell_type_t>
 class composite_table_t : public table_size_t
 {
@@ -836,6 +836,7 @@ inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
   }
   return statement_true;
 }
+#endif //IRS_LINUX
 
 /*class table_string_t:public
   table_t<
