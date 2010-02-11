@@ -21,7 +21,7 @@ bool irs::hardflow::lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
     IRS_LIB_HARDFLOW_DBG_MSG_BASE("Библиотека сокетов удачно загружена");
   } else {
     // Ошибка при загрузке библиотеки
-    IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(error_str(m_error_sock.get_last_error()));
+    IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(error_str(error_sock_t().get_last_error()));
     lib_load_success = false;
   }     
   return lib_load_success;
@@ -739,7 +739,11 @@ void irs::hardflow::udp_flow_t::start()
   }
   if (m_state_info.lib_socket_loaded) {
     if (!m_state_info.sock_created) {
+      #if defined(IRS_WIN32)
       m_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      #elif defined(IRS_LINUX)
+      m_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      #endif // IRS_WINDOWS IRS_LINUX
       if (m_sock != static_cast<socket_type>(m_invalid_socket)) {
         m_state_info.sock_created = true;
         m_state_info.set_io_mode_sock_success = false;
@@ -804,7 +808,7 @@ void irs::hardflow::udp_flow_t::start()
         }
       } else {
         // Ошибка инициализации
-      }                                        
+      }
     } else {
       // Сокет уже привязан к локальному адресу
     }
@@ -1166,6 +1170,7 @@ void irs::hardflow::udp_flow_t::tick()
 irs::hardflow::tcp_server_t::tcp_server_t(
   irs_u16 local_port
 ):
+  m_error_sock(),
   #if defined(IRS_WIN32)
   m_wsd(),
   #endif // IRS_WIN32
@@ -1521,6 +1526,8 @@ irs::hardflow::tcp_client_t::tcp_client_t(
   mxip_t dest_ip,
   irs_u16 dest_port
 ):
+  m_error_sock(),
+  m_state_info(),
   #if defined(IRS_WIN32)
   m_wsd(),
   #endif // IRS_WIN32
@@ -1535,17 +1542,114 @@ irs::hardflow::tcp_client_t::tcp_client_t(
   m_channel(1),
   m_connect_time()
 {
-  start_client();
+  //start_client();
 }
 
 irs::hardflow::tcp_client_t::~tcp_client_t()
 {
-  stop_client();
+  if (m_state_info.sock_created) {
+    close_socket(m_client_sock);
+  } else {
+    // Сокет не создан
+  }
 }
 
 void irs::hardflow::tcp_client_t::start_client()
 {
-  m_is_open = true;
+  if (!m_state_info.lib_socket_loaded) {
+    // Загружаем библиотеку сокетов версии 2.2
+    #if defined(IRS_WIN32)
+    if (lib_socket_load(&m_wsd, 2, 2)) {
+      m_state_info.lib_socket_loaded = true;
+    } else {
+      // Загрузить библиотеку не удалось
+    }
+    #elif defined(IRS_LINUX)
+    m_state_info.lib_socket_loaded = true;
+    #endif // IRS_WINDOWS IRS_LINUX
+    m_state_info.sock_created = false;
+  } else {
+    // Библиотека уже загружена
+  }
+  if (m_state_info.lib_socket_loaded) {
+    if (!m_state_info.sock_created) {
+      #if defined(IRS_WIN32)
+      m_client_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+      #elif defined(IRS_LINUX)
+      m_client_sock = socket(PF_INET, SOCK_STREAM, 0);
+      #endif // IRS_WINDOWS IRS_LINUX
+      if (m_client_sock != static_cast<socket_type>(m_invalid_socket)) {
+        m_state_info.sock_created = true;
+        m_state_info.set_io_mode_sock_success = false;
+      } else {
+        // Сокет создать не удалось
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
+      }
+    } else {
+      // Сокет уже создан
+    }
+  } else {
+    // Библиотека сокетов не загружена
+  }
+  if (m_state_info.sock_created) {
+    if (!m_state_info.set_io_mode_sock_success) {
+      // для включения неблокирующего режима переменная ulblock должна иметь
+      // ненулевое значение
+      #if defined(IRS_WIN32)
+      unsigned long ulblock = 1;
+      if (ioctlsocket(m_client_sock, FIONBIO, &ulblock) != m_socket_error) {
+        m_state_info.set_io_mode_sock_success = true;
+        m_state_info.connect_sock_success = false;
+      } else {
+        // функция завершилась неудачей
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
+      }
+      #elif defined(IRS_LINUX)
+      if (fcntl(m_client_sock, F_SETFL, O_NONBLOCK) != m_socket_error) {
+        m_state_info.set_io_mode_sock_success = true;
+        m_state_info.connect_sock_success = false;
+      } else {
+        // функция завершилась неудачей
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
+      }
+      #endif // IRS_WINDOWS IRS_LINUX
+    } else {
+      // Сокет уже переведен в неблокирующий режим
+    }
+  } else {
+    // Сокет не создан
+  }
+  if (m_state_info.set_io_mode_sock_success) {
+    if (!m_state_info.connect_sock_success) {
+      m_addr.sin_family = AF_INET;
+      m_addr.sin_port = htons(m_dest_port);
+      m_addr.sin_addr.s_addr = reinterpret_cast<unsigned long&>(m_dest_ip);
+      if (connect(m_client_sock, (struct sockaddr *)&m_addr,
+        sizeof(m_addr)) != m_socket_error)
+      {
+        m_state_info.connect_sock_success = true;
+      } else {
+        const errcode_type error = m_error_sock.get_last_error();
+        if (error == error_sock_t::eisconn) {
+          // Сокет уже соединен с сервером
+          m_state_info.connect_sock_success = true;
+          IRS_LIB_HARDFLOW_DBG_MSG_BASE("Произошло подключение к серверу");
+        } else {
+          // Ошибка при устоновлении соединения
+          IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+            error_str(m_error_sock.get_last_error()));
+        }
+      }
+    } else {
+      // Соединение уже установлено
+    }
+  } else {
+    // Перевод сокета в неблокирующий режим завершился неудачей
+  }
+  /*m_is_open = true;
   bool lib_load_success = true;
   #if defined(IRS_WIN32)
   if (!lib_socket_load(&m_wsd, 2, 2)) {
@@ -1560,18 +1664,45 @@ void irs::hardflow::tcp_client_t::start_client()
       m_addr.sin_family = AF_INET;
       m_addr.sin_port = htons(m_dest_port);
       m_addr.sin_addr.s_addr = reinterpret_cast<unsigned long&>(m_dest_ip);
-      if(connect(m_client_sock, (struct sockaddr *)&m_addr,
-        sizeof(m_addr)) == 0)
-      {
-        IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
-          irs::ms_to_strtime(irs::system_time()) << " Start client" << endl);
-        irs::mlog() << irs::ms_to_strtime(irs::system_time()) <<
-          " connect_time = " << m_connect_time.get() << endl;
+      // для включения неблокирующего режима переменная ulblock должна иметь
+      // ненулевое значение
+      bool set_io_mode_sock_success = false;
+      #if defined(IRS_WIN32)
+      unsigned long ulblock = 1;
+      if (ioctlsocket(m_client_sock, FIONBIO, &ulblock) == m_socket_error) {
+        // функция завершилась неудачей
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
+      } else {
+        set_io_mode_sock_success = true;
       }
-      else {
-        IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-          irs::ms_to_strtime(irs::system_time()) << " connect: " <<
-          last_error_str() << endl);
+      #elif defined(IRS_LINUX)
+      if (fcntl(m_client_sock, F_SETFL, O_NONBLOCK) == m_socket_error) {
+        // функция завершилась неудачей
+        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
+          error_str(m_error_sock.get_last_error()));
+      } else {
+        set_io_mode_sock_success = true;
+      }
+      #endif // IRS_WINDOWS IRS_LINUX
+      if (set_io_mode_sock_success) {
+        if(connect(m_client_sock, (struct sockaddr *)&m_addr,
+          sizeof(m_addr)) == 0)
+        {
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
+            irs::ms_to_strtime(irs::system_time()) << " Start client" << endl);
+          irs::mlog() << irs::ms_to_strtime(irs::system_time()) <<
+            " connect_time = " << m_connect_time.get() << endl;
+        }
+        else {
+          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
+            irs::ms_to_strtime(irs::system_time()) << " connect: " <<
+            last_error_str() << endl);
+          close_socket(m_client_sock);
+          m_is_open = false;
+        }
+      } else {
+        // Сокет не удалось перевести в неблокирующий режим
         close_socket(m_client_sock);
         m_is_open = false;
       }
@@ -1583,7 +1714,7 @@ void irs::hardflow::tcp_client_t::start_client()
   } else {
     // Библиотеку загрузить не удалось
     m_is_open = false;
-  }
+  }*/
 }
 
 void irs::hardflow::tcp_client_t::stop_client()
@@ -1614,7 +1745,7 @@ irs::hardflow::tcp_client_t::size_type
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type rd_data_size = 0;
-  if (m_is_open) {
+  if (m_state_info.get_state_start()) {
     a_channel_ident = m_channel;
     FD_SET(m_client_sock, &m_read_fds);
     socket_type sock_ready = select(m_client_sock + 1, &m_read_fds, 
@@ -1629,7 +1760,8 @@ irs::hardflow::tcp_client_t::size_type
           if(client_read < 0) {
             IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("recv: " << last_error_str());
           }
-          stop_client();
+          close_socket(m_client_sock);
+          m_state_info.sock_created = false;
         }
       }
     } else if(sock_ready == socket_error) {
@@ -1647,7 +1779,7 @@ irs::hardflow::tcp_client_t::size_type
   const irs_u8 *ap_buf, size_type a_size)
 {
   size_type wr_data_size = 0;
-  if (m_is_open) {
+  if (m_state_info.get_state_start()) {
     socket_type sock_wr = m_client_sock;
     FD_SET(sock_wr, &m_write_fds);
     socket_type sock_ready = select(sock_wr + 1, NULL,
@@ -1662,7 +1794,8 @@ irs::hardflow::tcp_client_t::size_type
         }
         else{
           IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("send: " << last_error_str());
-          stop_client();
+          close_socket(m_client_sock);
+          m_state_info.sock_created = false;
         }
       }
     } else if(sock_ready == socket_error) {
@@ -1690,7 +1823,7 @@ void irs::hardflow::tcp_client_t::set_param(const irs::string &a_name,
 
 void irs::hardflow::tcp_client_t::tick()
 {
-  if(!m_is_open) {
+  if(!m_state_info.get_state_start()) {
     start_client();
   }
 }

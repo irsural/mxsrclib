@@ -40,10 +40,12 @@
 #define IRS_LIB_HARDFLOW_DEBUG_DETAIL 2
 
 #ifdef IRS_LIB_DEBUG
+#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
 //#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_BASE
 //#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_DETAIL
-#endif //IRS_LIB_DEBUG
+#else 
 #define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
+#endif //IRS_LIB_DEBUG
 
 #if (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE)
 # define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
@@ -56,7 +58,8 @@
 # define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
 # define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
+  //IRS_LIB_DBG_MSG(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_SRC_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
 #else
 # define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg)
@@ -459,7 +462,7 @@ class tcp_server_t : public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
-  typedef socketns_t socket_type;  
+  typedef socketns_t socket_type;
   tcp_server_t(irs_u16 local_port);
   virtual ~tcp_server_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -472,8 +475,16 @@ public:
     const irs::string &a_value);
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
-  
+
 private:
+  #if defined(IRS_WIN32)
+  enum { m_socket_error = SOCKET_ERROR };
+  enum { m_invalid_socket = INVALID_SOCKET };
+  #elif defined(IRS_LINUX)
+  enum { m_socket_error = -1 };
+  enum { m_invalid_socket = -1 };
+  #endif // IRS_WINDOWS IRS_LINUX
+  error_sock_t m_error_sock;
   #if defined(IRS_WIN32)
   WSADATA m_wsd;
   #endif // IRS_WIN32
@@ -514,6 +525,39 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   
 private:
+  typedef int errcode_type;
+  #if defined(IRS_WIN32)
+  enum { m_socket_error = SOCKET_ERROR };
+  enum { m_invalid_socket = INVALID_SOCKET };
+  #elif defined(IRS_LINUX)
+  enum { m_socket_error = -1 };
+  enum { m_invalid_socket = -1 };
+  #endif // IRS_WINDOWS IRS_LINUX
+  error_sock_t m_error_sock;
+  struct state_info_t
+  {
+    bool lib_socket_loaded;
+    bool sock_created;
+    // —татус установки сокета в неблокирующий режим
+    bool set_io_mode_sock_success;
+    bool connect_sock_success;
+    state_info_t(
+    ):
+      lib_socket_loaded(false),
+      sock_created(false),
+      set_io_mode_sock_success(false),
+      connect_sock_success(false)
+    { }
+    bool get_state_start()
+    {
+      bool start_success =
+        lib_socket_loaded &&
+        sock_created &&
+        set_io_mode_sock_success &&
+        connect_sock_success;
+      return start_success;
+    }
+  } m_state_info;
   #if defined(IRS_WIN32)
   WSADATA m_wsd;
   #endif // IRS_WIN32

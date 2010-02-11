@@ -16,13 +16,19 @@ class mxdata_ext_t : public mxdata_t
 {
 public:
   enum status_t { status_completed, status_wait };
-  enum mode_t { mode_auto_refresh, mode_manual_refresh };
+  enum mode_refresh_t { mode_refresh_invalid, mode_refresh_auto,
+    mode_refresh_manual };
+  
   virtual ~mxdata_ext_t() {}
-  virtual void send(irs_uarc a_index, irs_uarc a_size) = 0;
-  virtual void receive(irs_uarc a_index, irs_uarc a_size) = 0;
-  virtual void send_bit(irs_uarc a_byte_index, irs_uarc a_bit_index) = 0;
-  virtual void receive_bit(irs_uarc a_byte_index, irs_uarc a_bit_index) = 0;
+  virtual void mark_to_send(irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void mark_to_recieve(irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void mark_to_send_bit(irs_uarc a_byte_index,
+    irs_uarc a_bit_index) = 0;
+  virtual void mark_to_recieve_bit(irs_uarc a_byte_index,
+    irs_uarc a_bit_index) = 0;
+  virtual void update() = 0;
   virtual status_t status() const = 0;
+  virtual void set_refresh_mode(mode_refresh_t a_refresh_mode) = 0;
 };
 
 // “ип дл€ параметра - изменение при первом соединении
