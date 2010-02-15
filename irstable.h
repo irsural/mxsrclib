@@ -565,7 +565,8 @@ public:
     cell_type_t value;
     cell_param_t param;
   };
-  composite_table_t();  
+  composite_table_t();
+  composite_table_t(const size_type a_col_count, const size_type a_row_count);
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
   inline void write_cell(
@@ -576,6 +577,7 @@ public:
   virtual size_type get_row_count() const;
   virtual inline void set_col_count(const size_type a_col_count);
   virtual inline void set_row_count(const size_type a_row_count);
+  inline void resize(size_type a_new_col_count, size_type a_new_row_count);
   inline void union_on(const diapason_type& a_diapason);
   inline void union_off(const diapason_type& a_diapason);
   inline bool is_cell_united(const size_type a_col_index,
@@ -588,6 +590,21 @@ private:
     const diapason_type& a_second_diapason);
   irs::table_t<cell_t> m_table;
 };
+
+template <class cell_type_t>
+composite_table_t<cell_type_t>::composite_table_t():
+  m_table()
+{
+}
+
+template <class cell_type_t>
+composite_table_t<cell_type_t>::composite_table_t(
+  const size_type a_col_count,
+  const size_type a_row_count
+):
+  m_table(a_col_count, a_row_count)
+{
+}
 
 template <class cell_type_t>
 inline const cell_type_t&
@@ -624,12 +641,6 @@ write_cell(
     // Оставляем прежние координаты ячейки
   }
   m_table.write_cell(final_col_index, final_row_index, cell);
-}
-
-template <class cell_type_t>
-composite_table_t<cell_type_t>::composite_table_t():
-  m_table()
-{
 }
 
 template <class cell_type_t>
@@ -702,6 +713,14 @@ inline void composite_table_t<cell_type_t>::set_row_count(
     // Никаких дополнительных действий не требуется
   }
   m_table.set_row_count(a_row_count);
+}
+
+template <class cell_type_t>
+inline void composite_table_t<cell_type_t>::resize(
+  size_type a_new_col_count, size_type a_new_row_count)
+{
+  set_row_count(a_new_col_count);
+  set_col_count(a_new_row_count);
 }
 
 template <class cell_type_t>
