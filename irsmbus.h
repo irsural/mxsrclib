@@ -11,6 +11,35 @@
 #include <mxdata.h>
 #include <irsdefs.h>
 
+#define IRS_MBUS_MSG_NONE   0
+#define IRS_MBUS_MSG_BASE   1
+#define IRS_MBUS_MSG_DETAIL 2
+
+#ifdef IRS_LIB_DEBUG
+#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_NONE
+//#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_BASE
+//#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_DETAIL
+#else //IRS_LIB_DEBUG
+#define IRS_MBUS_MSG_TYPE IRS_MBUS_MSG_NONE
+#endif //IRS_LIB_DEBUG
+
+#if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_BASE)
+#define IRS_MBUS_DBG_OPERATION_TIME(msg) msg
+#define IRS_MBUS_DBG_MONITOR(msg)
+#define IRS_MBUS_DBG_MSG_DETAIL(msg)
+#define IRS_MBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#elif (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
+#define IRS_MBUS_DBG_OPERATION_TIME(msg) msg
+#define IRS_MBUS_DBG_MONITOR(msg) msg
+#define IRS_MBUS_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg) 
+#define IRS_MBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg) 
+#else //IRS_MBUS_MSG_TYPE
+#define IRS_MBUS_DBG_OPERATION_TIME(msg)
+#define IRS_MBUS_DBG_MONITOR(msg)
+#define IRS_MBUS_DBG_MSG_DETAIL(msg) 
+#define IRS_MBUS_DBG_MSG_BASE(msg) 
+#endif //IRS_MBUS_MSG_TYPE
+
 namespace irs {
 
 #pragma pack(push, 1)
@@ -71,7 +100,7 @@ void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
 void range(size_t a_index, size_t a_size, size_t a_start_range, 
   size_t a_end_range, size_t *a_num, size_t *a_start);
   
-class modbus_server_t : public mxdata_t
+class modbus_server_t : public mxdata_ext_t
 {
 public:
   typedef hardflow_t::size_type channel_type;
@@ -80,8 +109,8 @@ public:
     hardflow_t* ap_hardflow,
     size_t a_discr_inputs_size_byte = 8192,
     size_t a_coils_size_byte = 8192,
-    size_t a_hold_regs_reg = 65535,//2500,
-    size_t a_input_regs_reg = 65535//2500
+    size_t a_hold_regs_reg = 65535,
+    size_t a_input_regs_reg = 65535
   );
   virtual ~modbus_server_t() {}
   virtual irs_uarc size();
@@ -91,6 +120,13 @@ public:
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void mark_to_send(irs_uarc a_index, irs_uarc a_size);
+  virtual void mark_to_recieve(irs_uarc a_index, irs_uarc a_size);
+  virtual void mark_to_send_bit(irs_uarc a_byte_index, irs_uarc a_bit_index);
+  virtual void mark_to_recieve_bit(irs_uarc a_byte_index, irs_uarc a_bit_index);
+  virtual void update();
+  virtual status_t status() const;
+  virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
   virtual void tick();
   
 private:
@@ -122,8 +158,8 @@ private:
   
   raw_data_t<irs_u8>                    mp_buf;
   size_t                                m_size_byte_end;
-  size_t                                m_coils_size_bit;
   size_t                                m_discret_inputs_size_bit;
+  size_t                                m_coils_size_bit;
   size_t                                m_hold_registers_size_reg;
   size_t                                m_input_registers_size_reg;
   size_t                                m_size_byte;
@@ -145,22 +181,24 @@ private:
   size_t                                m_input_registers_size_byte;
   size_t                                m_input_registers_start_byte;
   channel_type                          m_channel;
-  hardflow_t*                           mp_tcp_server;
+  hardflow_t*                           mp_hardflow_server;
   hardflow::fixed_flow_t                m_fixed_flow;
   size_t                                m_num_of_elem;
+  status_t                              m_operation_status;
   
   void error_response(irs_u8 error_code);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
 };
 
-class modbus_client_t : public mxdata_t
+class modbus_client_t : public mxdata_ext_t
 {
 public:
   typedef hardflow_t::size_type channel_type;
   
   modbus_client_t(
     hardflow_t* ap_hardflow,
+    mode_refresh_t a_refresh_mode = mode_refresh_auto,
     size_t a_discr_inputs_size_byte = 8192,
     size_t a_coils_size_byte = 8192,
     size_t a_hold_regs_reg = 65535,
@@ -176,6 +214,13 @@ public:
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void mark_to_send(irs_uarc a_index, irs_uarc a_size);
+  virtual void mark_to_recieve(irs_uarc a_index, irs_uarc a_size);
+  virtual void mark_to_send_bit(irs_uarc a_byte_index, irs_uarc a_bit_index);
+  virtual void mark_to_recieve_bit(irs_uarc a_byte_index, irs_uarc a_bit_index);
+  virtual void update();
+  virtual status_t status() const;
+  virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
   virtual void tick();
   
 private:
@@ -205,24 +250,23 @@ private:
     write_multiple_registers = 16,
   };
   enum mode_t {
+    wait_command_mode,
+    search_write_data_mode,
+    request_write_data_mode,
     send_request_mode,
-    //write_end_mode,
     read_header_mode,
     read_response_mode,
-    //read_end_mode,
-    //wait_mode,
     treatment_response_mode,
-    make_request_mode,
-    send_data_mode,
-    search_block_mode
+    search_read_data_mode,
+    request_read_data_mode,
+    make_request_mode
   };
   
   counter_t                             m_del_time;
   irs_u8                                *mp_buf;
   size_t                                m_global_read_index;
-  size_t                                m_global_write_index;
-  size_t                                m_coils_size_bit;
   size_t                                m_discret_inputs_size_bit;
+  size_t                                m_coils_size_bit;
   size_t                                m_hold_registers_size_reg;
   size_t                                m_input_registers_size_reg;
   size_t                                m_discret_inputs_end_byte;
@@ -233,8 +277,7 @@ private:
   irs_u8                                m_rpacket[size_of_packet];
   size_t                                m_size_byte_end;
   bool                                  m_read_table;
-  bool                                  m_write_coils;
-  bool                                  m_write_hold_registers;
+  bool                                  m_write_table;
   channel_type                          m_channel;
   size_t                                m_start_block;
   size_t                                m_search_index;
@@ -247,6 +290,7 @@ private:
   size_t                                m_hold_registers_start_byte;
   size_t                                m_input_registers_size_byte;
   size_t                                m_input_registers_start_byte;
+  vector<bool>                          m_need_read;
   vector<bool>                          m_need_writes;
   raw_data_t<irs_u8>                    m_discr_inputs_byte_read;
   raw_data_t<irs_u8>                    m_coils_byte_read;
@@ -257,9 +301,8 @@ private:
   condition_t                           m_command, m_request_type;
   mode_t                                m_mode;
   loop_timer_t                          m_loop_timer;
-  hardflow_t*                           mp_tcp_client;
+  hardflow_t*                           mp_hardflow_client;
   hardflow::fixed_flow_t                m_fixed_flow;
-  size_t                                m_num_of_elem;
   size_t                                m_start_addr;
   irs_u16                               m_coil_write_bit;
   size_t                                m_coil_bit_index;
@@ -267,11 +310,15 @@ private:
   irs_bool                              m_first_read;
   measure_time_t                        m_measure_time;
   double                                m_measure_int_time;
+  status_t                              m_operation_status;
+  mode_refresh_t                        m_refresh_mode;
+  irs_bool                              m_start;
+  irs_u16                               m_write_quantity;
+  irs_u16                               m_read_quantity;
 
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
-
 };
 
 } //namespace irs

@@ -69,7 +69,7 @@
   {\
     irs::mlog() << irs::stime << "Файл: " << __FILE__;\
     irs::mlog() << "; Строка: " << __LINE__;\
-    irs::mlog() << "; Функция: " << __FUNC__ << "; " <<\
+    irs::mlog() << "; Функция: " << __FUNC__ << "; ";\
     irs::mlog() << msg << endl;\
   }
 
@@ -77,7 +77,7 @@
 {\
   irs::mlog() << irs::stime << "File: " << __FILE__;\
   irs::mlog() << "; Line: " << __LINE__;\
-  irs::mlog() << "; Function: " << __FUNC__ << "; " <<\
+  irs::mlog() << "; Function: " << __FUNC__ << "; ";\
   irs::mlog() << msg << endl;\
 }
 

@@ -1459,7 +1459,6 @@ void irs::hardflow::tcp_server_t::tick()
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();
             #ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
-            irs::mlog() << " new_sock >= 0" << endl;
             if(insert_channel.second) {
               irs::mlog() << "New channel added: " << (int)m_channel << endl;
               irs::mlog() << "-------------------------------" << endl;
