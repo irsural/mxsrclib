@@ -340,6 +340,29 @@ public:
     return mp_outstr;
   }
 };
+
+template <class I, class O>
+inline void str_conv(const I& a_str_src, O* ap_str_dest)
+{
+  IRS_STATIC_ASSERT(false);
+}
+
+template <>
+inline void str_conv<wstring, irs::string>(const wstring& a_str_src,
+  irs::string* ap_str_dest)
+{
+  *ap_str_dest = irs::convert_str_t<wchar_t, char>(a_str_src.c_str(),
+    a_str_src.size() + 1);
+}
+
+template <>
+inline void str_conv<irs::string, wstring>(const irs::string& a_str_src,
+  wstring* ap_str_dest)
+{
+  *ap_str_dest = irs::convert_str_t<char, wchar_t>(a_str_src.c_str(),
+    a_str_src.size() + 1);
+}
+
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef IRS_UNICODE
