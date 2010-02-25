@@ -6,7 +6,6 @@
 #define IRSDEFSH
 
 #include <limits.h>
-#include <vector> // For type size_t
 
 // Деректива throw
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
@@ -253,52 +252,11 @@ public:
   virtual void abort() = 0;
 };
 
-
 namespace irs {
 
 const int npos = -1;
-typedef size_t sizens_t;
 
-// Точка
-struct point_t {
-  sizens_t left;
-  sizens_t top;
-  point_t(
-    sizens_t a_left = 0,
-    sizens_t a_top = 0
-  ):
-    left(a_left),
-    top(a_top)
-  {}
-};
-
-// Прямоугольник
-struct rect_t {
-  sizens_t left;
-  sizens_t top;
-  sizens_t width;
-  sizens_t height;
-
-  rect_t(
-    sizens_t a_left = 0,
-    sizens_t a_top = 0,
-    sizens_t a_width = 0,
-    sizens_t a_height = 0
-  ):
-    left(a_left),
-    top(a_top),
-    width(a_width),
-    height(a_height)
-  {}
-  rect_t(const rect_t& a_rect):
-    left(a_rect.left),
-    top(a_rect.top),
-    width(a_rect.width),
-    height(a_rect.height)
-  {}
-};
-
-} //namespace irs
+}
 
 // Гасим ненужные предупреждения C++ Builder
 #ifdef __BCPLUSPLUS__

@@ -16,6 +16,7 @@
 #include <OleCtnrs.hpp>
 #include <SysUtils.hpp>
 #include <Grids.hpp>
+#include <wstring.h>
 
 #include <irssysutils.h>
 #include <irstable.h>
@@ -50,6 +51,8 @@ inline bool str_to_number(const AnsiString& a_str, T& a_number)
   irs::string str = a_str.c_str();
   return str.to_number(a_number);
 };
+
+
 
 // Структура версии файла
 struct file_version_t
@@ -112,6 +115,36 @@ void table_string_to_string_grid(
 //void out_to_tree_view();
 
 }; //namespace cbuilder
+
+inline void str_conv(const AnsiString& a_str_src, irs::string* ap_str_dest)
+{
+  *ap_str_dest = a_str_src.c_str();
+}
+
+inline void str_conv(const irs::string& a_str_src, AnsiString* ap_str_dest)
+{
+  *ap_str_dest = a_str_src.c_str();
+}
+
+inline void str_conv(const WideString& a_str_src, wstring* ap_str_dest)
+{
+  *ap_str_dest = a_str_src.Copy();
+}
+
+inline void str_conv(const wstring& a_str_src, WideString* ap_str_dest)
+{
+  ap_str_dest->Copy(const_cast<wchar_t*>(a_str_src.c_str()));
+}
+
+inline void str_conv(const AnsiString& a_str_src, WideString* ap_str_dest)
+{
+  *ap_str_dest = a_str_src;
+}
+
+inline void str_conv(const WideString& a_str_src, AnsiString* ap_str_dest)
+{
+  *ap_str_dest = a_str_src;
+}
 
 }; //namespace irs
 

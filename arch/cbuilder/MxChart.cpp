@@ -3056,8 +3056,8 @@ set_position(const rect_t &a_position)
   mp_form->Position = poDesigned;
   mp_form->Left = a_position.left;
   mp_form->Top = a_position.top;
-  mp_form->Width = a_position.width;
-  mp_form->Height = a_position.height;
+  mp_form->Width = a_position.width();
+  mp_form->Height = a_position.height();
 }
 void irs::chart::builder_chart_window_t::
 add_param(const irs::string &a_name)

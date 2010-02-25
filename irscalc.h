@@ -1043,9 +1043,13 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         pos++;
       } break;
       case irst('.'): {
-        ap_token_data->token.set_delimiter(d_dot);
-        detected_token = true;
-        pos++;
+        if (!is_char_digit(next_ch)) {
+          ap_token_data->token.set_delimiter(d_dot);
+          detected_token = true;
+          pos++;
+        } else {
+          // Не удалось распознать ограничитель
+        }
       } break;
       default : {
         detected_token = false;
@@ -1060,10 +1064,10 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
   }
 
   if (!detected_token) {
+    // Запоминаем позицию первого символа числа
+    const size_type num_begin_ch = pos;
     // Читаем число
-    if (is_char_digit(ch)) {
-      // Запоминаем позицию первого символа числа
-      const size_type num_begin_ch = pos;
+    if (is_char_digit(ch) || (ch == irst('.'))) {
       string_type num_str;
       pos++;
       // Статус обнаружения символа показателя степени
@@ -1078,7 +1082,12 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
       bool detected_suffix_long = false;
       // Статус обнаружения суффикса float
       bool detected_suffix_float = false;
-      while (pos <  ap_prog->size()) {
+      if (ch == irst('.')) {
+        detected_decimal_point = true;
+      } else {
+        // Первый символ не является знаком разделителем целой и дробной части
+      }
+      while (pos < ap_prog->size()) {
         // Ищем первый символ, не являющийся цифрой
         pos = ap_prog->find_first_not_of(irst("0123456789"), pos);
 
@@ -1152,7 +1161,8 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         if (detected_suffix_long) {
           if (detected_suffix_unsigned) {
             unsigned long number = 0;
-            convert_str_to_number_success = num_str.to_number(number);
+
+            convert_str_to_number_success = str_to_num(num_str, &number);
             if (convert_str_to_number_success) {
               ap_token_data->token.set_number(number);
             } else {
@@ -1160,7 +1170,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
             }
           } else {
             long number = 0;
-            convert_str_to_number_success = num_str.to_number(number);
+            convert_str_to_number_success = str_to_num(num_str, &number);
             if (convert_str_to_number_success) {
               ap_token_data->token.set_number(number);
             } else {
@@ -1170,7 +1180,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         } else {
           if (detected_suffix_unsigned) {
             unsigned int number = 0;
-            convert_str_to_number_success = num_str.to_number(number);
+            convert_str_to_number_success = str_to_num(num_str, &number);
             if (convert_str_to_number_success) {
               ap_token_data->token.set_number(number);
             } else {
@@ -1178,7 +1188,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
             }
           } else {
             int number = 0;
-            convert_str_to_number_success = num_str.to_number(number);
+            convert_str_to_number_success = str_to_num(num_str, &number);
             if (convert_str_to_number_success) {
               ap_token_data->token.set_number(number);
             } else {
@@ -1190,7 +1200,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
         // Значит число с плавающей точкой
         if (detected_suffix_long) {
           long double number = 0.;
-          convert_str_to_number_success = num_str.to_number(number);
+          convert_str_to_number_success = str_to_num(num_str, &number);
           if (convert_str_to_number_success) {
             ap_token_data->token.set_number(number);
           } else {
@@ -1198,7 +1208,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
           }
         } else if (detected_suffix_float) {
           float number = 0.f;
-          convert_str_to_number_success = num_str.to_number(number);
+          convert_str_to_number_success = str_to_num(num_str, &number);
           if (convert_str_to_number_success) {
             ap_token_data->token.set_number(number);
           } else {
@@ -1206,7 +1216,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
           }
         } else {
           double number = 0.;
-          convert_str_to_number_success = num_str.to_number(number);
+          convert_str_to_number_success = str_to_num(num_str, &number);
           if (convert_str_to_number_success) {
             ap_token_data->token.set_number(number);
           } else {
@@ -1221,13 +1231,66 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
       } else {
         // Строку не удалось преобразовать в число
       }
-      if (!detected_token) {
+      /*if (!detected_token) {
         pos = num_begin_ch;
       } else {
         // Лексема детектирована
+      }*/
+    } else if (ch == irst('t') || ch == irst('f')) { // Детектируем true и false
+      const size_type true_str_size = 4;
+      const size_type false_str_size = 5;
+      const string_type true_str = irst("true");
+      const string_type false_str = irst("false");
+      size_type number_str_size = 0;
+      bool boolean_detected_success = false;
+      bool number_detected = false;
+      bool is_sub_str_boolean_const = false;
+      if (static_cast<string_type>(ap_prog->substr(pos, true_str_size)) ==
+        true_str)
+      {
+        number_detected = true;
+        is_sub_str_boolean_const = true;
+        number_str_size = true_str_size;
+      } else if (static_cast<string_type>(
+        ap_prog->substr(pos, false_str_size)) == false_str)
+      {
+        number_detected = false;
+        is_sub_str_boolean_const = true;
+        number_str_size = false_str_size;
+      } else {
+        // Подстрока не является представлением булевой коснтанты
+      }
+      if (is_sub_str_boolean_const) {
+        if ((ap_prog->size() - pos) == number_str_size) {
+          boolean_detected_success = true;
+        } else {
+          const char_type ch_after_sub_str = (*ap_prog)[pos + number_str_size];
+          if (!is_char_alpha(ch_after_sub_str) &&
+            (ch_after_sub_str != irst('_')))
+          {
+            boolean_detected_success = true;
+          } else {
+            // За подстрокой следует символ, не являющийся ограничителем лексемы
+          }
+        }
+      } else {
+        // Подстрока не является представлением булевой константы
+      }
+      if (boolean_detected_success) {
+        ap_token_data->token.set_number(number_detected);
+        ap_token_data->length = (pos - a_prog_pos) + number_str_size;
+        detected_token = true;
+        pos += number_str_size;
+      } else {
+        // Детектировать булевую константу не удалось
       }
     } else {
       // Символ не принадлежит группе символов, допустимых при написании чисел
+    }
+    if (!detected_token) {
+      pos = num_begin_ch;
+    } else {
+      // Лексема детектирована
     }
   }
 
@@ -2115,8 +2178,7 @@ inline bool calculator_t::eval_exp_compare(mutable_ref_t* ap_value)
         }
         variant_t second_value_variant;
         if (fsuccess) {
-          fsuccess = value_read(partial_value_mref,
-            &second_value_variant);
+          fsuccess = value_read(partial_value_mref, &second_value_variant);
         } else {
           // Произошла ошибка
         }
@@ -2126,25 +2188,35 @@ inline bool calculator_t::eval_exp_compare(mutable_ref_t* ap_value)
               first_value_variant = (first_value_variant == second_value_variant);
             } break;
             case d_compare_not_equal: {
-              first_value_variant = (first_value_variant != second_value_variant);
+              first_value_variant =
+                (first_value_variant != second_value_variant);
             } break;
             case d_compare_less: {
-              first_value_variant = (first_value_variant < second_value_variant);
+              first_value_variant =
+                (first_value_variant < second_value_variant);
             } break;
             case d_compare_greater: {
-              first_value_variant = (first_value_variant > second_value_variant);
+              first_value_variant =
+                (first_value_variant > second_value_variant);
             } break;
             case d_compare_less_or_equal: {
-              first_value_variant = (first_value_variant <= second_value_variant);
+              first_value_variant =
+                (first_value_variant <= second_value_variant);
             } break;
             case d_compare_greater_or_equal: {
-              first_value_variant = (first_value_variant >= second_value_variant);
+              first_value_variant =
+                (first_value_variant >= second_value_variant);
             } break;
             default : {
               IRS_LIB_ASSERT_MSG("Лексема должна быть операцией сравнения");
             }
           }
-          fsuccess = m_detector_token.get_token(&token);
+          /*if (first_value_variant.type() != irs::variant::var_type_bool) {
+            fsuccess = false;
+          } else {
+            fsuccess = m_detector_token.get_token(&token);
+          }*/
+          fsuccess = m_detector_token.get_token(&token);  
         } else {
           // Произошла ошибка
         }

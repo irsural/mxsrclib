@@ -172,7 +172,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   return *this;
 }
 
-irs::variant::variant_t& irs::variant::variant_t::operator=(void* ap_value)
+/*irs::variant::variant_t& irs::variant::variant_t::operator=(void* ap_value)
 {
   type_change(var_type_void_ptr);
   m_value.p_void_type = ap_value;
@@ -185,7 +185,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   type_change(var_type_const_void_ptr);
   m_value.p_const_void_type = ap_value;
   return *this;
-}
+}*/
 
 irs::variant::variant_t& irs::variant::variant_t::operator=(const bool a_value)
 {

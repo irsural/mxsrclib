@@ -7,6 +7,7 @@
 
 #include <irsdefs.h>
 #include <irsstring.h>
+#include <irsrect.h>
 
 namespace irs {
 

@@ -215,20 +215,19 @@ void irs::cbuilder::string_grid_to_table_string(
 	irs::table_string_t* ap_table_string)
 {
 	IRS_LIB_ASSERT(ap_table_string != IRS_NULL);
-	IRS_LIB_ASSERT((a_string_grid_rect.left + a_string_grid_rect.width) <=
-		static_cast<sizens_t>(a_string_grid.ColCount));
-	IRS_LIB_ASSERT((a_string_grid_rect.top + a_string_grid_rect.height) <=
+  IRS_LIB_ASSERT(a_string_grid_rect.left <= a_string_grid_rect.right);
+	IRS_LIB_ASSERT(a_string_grid_rect.right <
+    static_cast<sizens_t>(a_string_grid.ColCount));
+	IRS_LIB_ASSERT(a_string_grid_rect.bottom <
 	static_cast<sizens_t>(a_string_grid.RowCount));  	 
 	const sizens_t string_grid_col_count = min(
-		static_cast<sizens_t>(a_string_grid.ColCount),
-		a_string_grid_rect.left + a_string_grid_rect.width);
+		static_cast<sizens_t>(a_string_grid.ColCount), a_string_grid_rect.right);
 	const sizens_t string_grid_row_count = min(
-		static_cast<sizens_t>(a_string_grid.RowCount),
-		a_string_grid_rect.top + a_string_grid_rect.height);
+		static_cast<sizens_t>(a_string_grid.RowCount), a_string_grid_rect.bottom);
 	const sizens_t table_string_last_col = a_table_string_point.left +
-		a_string_grid_rect.width;
+		a_string_grid_rect.width();
 	const sizens_t table_string_last_row = a_table_string_point.top +
-		a_string_grid_rect.height;
+		a_string_grid_rect.height();
 	if (table_string_last_col >= ap_table_string->get_col_count())
 	{
 		ap_table_string->set_col_count(table_string_last_col + 1);
@@ -282,20 +281,20 @@ void irs::cbuilder::table_string_to_string_grid(
   TStringGrid* ap_string_grid)
 { 
   IRS_LIB_ASSERT(ap_string_grid != IRS_NULL);
-	IRS_LIB_ASSERT((a_table_string_rect.left + a_table_string_rect.width) <=
+  IRS_LIB_ASSERT(a_table_string_rect.left <= a_table_string_rect.right);
+  IRS_LIB_ASSERT(a_table_string_rect.top <= a_table_string_rect.bottom);
+	IRS_LIB_ASSERT(a_table_string_rect.right <=
     static_cast<sizens_t>(a_table_string.get_col_count()));
-  IRS_LIB_ASSERT((a_table_string_rect.top + a_table_string_rect.height) <=
+  IRS_LIB_ASSERT(a_table_string_rect.bottom <=
 		static_cast<sizens_t>(a_table_string.get_row_count()));   	
 	const sizens_t table_string_col_count = min(
-		a_table_string.get_col_count(),
-		a_table_string_rect.left + a_table_string_rect.width);
+		a_table_string.get_col_count(), a_table_string_rect.right);
 	const sizens_t table_string_row_count = min(
-		a_table_string.get_row_count(),
-		a_table_string_rect.top + a_table_string_rect.height);
+		a_table_string.get_row_count(), a_table_string_rect.bottom);
 	const sizens_t string_grid_last_col = a_string_grid_point.left +
-		a_table_string_rect.width;
+		a_table_string_rect.width();
 	const sizens_t string_grid_last_row = a_string_grid_point.top +
-    a_table_string_rect.height;
+    a_table_string_rect.height();
   if (string_grid_last_col >= static_cast<sizens_t>(ap_string_grid->ColCount))
   {
     ap_string_grid->ColCount = string_grid_last_col + 1;

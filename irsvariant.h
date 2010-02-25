@@ -153,8 +153,8 @@ public:
   inline var_type_t type() const;
   void type(const var_type_t a_variant_type);
   variant_t& operator=(const variant_t& a_variant);
-  variant_t& operator=(void* ap_value);
-  variant_t& operator=(const void* ap_value);
+  //variant_t& operator=(void* ap_value);
+  //variant_t& operator=(const void* ap_value);
   variant_t& operator=(const bool a_value);
   variant_t& operator=(const char a_value);
   variant_t& operator=(const signed char a_value);
@@ -535,6 +535,35 @@ inline variant_t& variant_t::assign_no_cast<variant_t>(
     default : {
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
     }
+  }
+  return *this;
+}
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+template<>
+inline variant_t& variant_t::assign_no_cast<void*>(void* const& ap_void)
+{
+  if (m_type == var_type_void_ptr) {
+    m_value.p_void_type = ap_void;
+  } else if (m_type == var_type_const_void_ptr) {
+    m_value.p_const_void_type = ap_void;
+  } else {
+    IRS_LIB_ASSERT_MSG("Недопустимый тип");
+  }
+  return *this;
+}
+#endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
+#ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+template<>
+inline variant_t& variant_t::assign_no_cast<const void*>(
+  const void* const& ap_void)
+{
+  if (m_type == var_type_const_void_ptr) {
+    m_value.p_const_void_type = ap_void;
+  } else {
+    IRS_LIB_ASSERT_MSG("Недопустимый тип");
   }
   return *this;
 }

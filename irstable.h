@@ -196,7 +196,7 @@ table_t<cell_type_t, column_type_t, container_t>::get_row_count() const
   if (m_container.size() > 0) {
     IRS_LIB_ASSERT(m_row_count == m_container.begin()->size());
   } else {
-    IRS_LIB_ASSERT(m_row_count == 0);
+    //  оличество строк может быть любым
   }
   #endif
   return m_row_count;
@@ -543,7 +543,7 @@ typedef table_t<
   irs::string,
   deque<irs::string>,
   deque<deque<irs::string> > > table_string_t;
-#ifndef IRS_LINUX
+
 template <class cell_type_t>
 class composite_table_t : public table_size_t
 {
@@ -580,6 +580,8 @@ public:
   inline void resize(size_type a_new_col_count, size_type a_new_row_count);
   inline void union_on(const diapason_type& a_diapason);
   inline void union_off(const diapason_type& a_diapason);
+  inline bool is_diapason_for_union_valid(
+    const diapason_type& a_diapason) const;
   inline bool is_cell_united(const size_type a_col_index,
     const size_type a_row_index) const;
   inline diapason_type get_cell_diapason(const size_type a_col_index,
@@ -668,10 +670,9 @@ set_col_count(const size_type a_col_count)
       for (size_type row_i = 0; row_i < row_count; row_i++) {
         cell_t& cell = m_table.read_cell(col_i, row_i);
         if (!cell.param.autonomous) {
-          if ((cell.param.diapason.left + cell.param.diapason.width) >
-            a_col_count)
+          if (cell.param.diapason.right >= a_col_count)
           {
-            cell.param.diapason.width = a_col_count - cell.param.diapason.left;
+            cell.param.diapason.right = a_col_count - 1;
           } else {
             //  орректировать границы диапазона не требуетс€
           }
@@ -697,10 +698,9 @@ inline void composite_table_t<cell_type_t>::set_row_count(
       for (size_type row_i = 0; row_i < a_row_count; row_i++) {
         cell_t& cell = m_table.read_cell(col_i, row_i);
         if (!cell.param.autonomous) {
-          if ((cell.param.diapason.top + cell.param.diapason.height) >
-            a_row_count)
+          if (cell.param.diapason.bottom >= a_row_count)
           {
-            cell.param.diapason.height = a_row_count - cell.param.diapason.top;
+            cell.param.diapason.bottom = a_row_count - 1;
           } else {
             //  орректировать границы диапазона не требуетс€
           }
@@ -727,42 +727,11 @@ template <class cell_type_t>
 inline void composite_table_t<cell_type_t>::union_on(
   const diapason_type& a_diapason)
 {
-  bool diapason_success = true;
-  if ((a_diapason.width == 0) || (a_diapason.height == 0)) {
-    diapason_success = false;
-  } else {
-    // ƒлина и ширина имеет допустимые значени€
-  }
-  if ((a_diapason.width <= 1) && (a_diapason.height <= 1)) {
-    diapason_success = false;
-  } else {
-    // ƒиапазон охватывает более одной €чеки
-  }
-  for (size_type col_i = a_diapason.left;
-    col_i < (a_diapason.left + a_diapason.width); col_i++)
-  {
-    for (size_type row_i = a_diapason.top;
-      row_i < (a_diapason.top + a_diapason.height); row_i++)
+  if (is_diapason_for_union_valid(a_diapason)) {
+    for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++)
     {
-      const cell_t& cell = m_table.read_cell(col_i, row_i);
-      if (!cell.param.autonomous) {
-        if (!first_subdiapason_second(cell.param.diapason, a_diapason)) {
-          diapason_success = false;
-          break;
-        } else {
-          // ƒиапазон €чейки входит в диапазон дл€ текущего объединени€ €чеек
-        }
-      } else {
-        // јвтономна€ €чейка не требует проверки диапазона
-      }
-    }
-  }
-  if (diapason_success) {
-    for (size_type col_i = a_diapason.left;
-      col_i < a_diapason.left + a_diapason.width; col_i++)
-    {
-      for (size_type row_i = a_diapason.top;
-        row_i < a_diapason.top + a_diapason.height; row_i++)
+      for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom;
+        row_i++)
       {
         cell_t cell = m_table.read_cell(col_i, row_i);
         cell.param.autonomous = false;
@@ -781,22 +750,20 @@ inline void composite_table_t<cell_type_t>::union_off(
 {
   cell_param_t param_for_autonomous;
   param_for_autonomous.autonomous = true;
-  for (size_type col_i = a_diapason.left;
-    col_i < (col_i + a_diapason.width); col_i++)
+  for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++)
   {
-    for (size_type row_i = a_diapason.top;
-      row_i < (row_i + a_diapason.height); row_i++)
+    for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom; row_i++)
     {
-      const cell_t& cell = read_cell(col_i, row_i);
+      const cell_t& cell = m_table.read_cell(col_i, row_i);
       if (!cell.param.autonomous) {
         diapason_type diapason = cell.param.diapason;
-        for (size_type col_i = cell.param.left; col_i <= cell.param.right;
+        for (size_type col_i = diapason.left; col_i <= diapason.right;
           col_i++)
         {
-          for (size_type row_i = cell.param.top; row_i <= cell.param.bottom;
+          for (size_type row_i = diapason.top; row_i <= diapason.bottom;
             row_i++)
           {
-            cell_t& cell_from_subdiapason = read_cell(col_i, row_i);;
+            cell_t& cell_from_subdiapason = m_table.read_cell(col_i, row_i);
             cell_from_subdiapason.param.autonomous = true;
           }
         }
@@ -805,6 +772,36 @@ inline void composite_table_t<cell_type_t>::union_off(
       }
     }
   }
+}
+
+template <class cell_type_t>
+inline bool composite_table_t<cell_type_t>::is_diapason_for_union_valid(
+  const diapason_type& a_diapason) const
+{
+  bool diapason_success = true;
+  if ((a_diapason.width() <= 1) && (a_diapason.height() <= 1)) {
+    diapason_success = false;
+  } else {
+    // ƒиапазон охватывает более одной €чеки
+  }
+  for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++)
+  {
+    for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom; row_i++)
+    {
+      const cell_t& cell = m_table.read_cell(col_i, row_i);
+      if (!cell.param.autonomous) {
+        if (!first_subdiapason_second(cell.param.diapason, a_diapason)) {
+          diapason_success = false;
+          break;
+        } else {
+          // ƒиапазон €чейки входит в диапазон дл€ текущего объединени€ €чеек
+        }
+      } else {
+        // јвтономна€ €чейка не требует проверки диапазона
+      }
+    }
+  }
+  return diapason_success;
 }
 
 template <class cell_type_t>
@@ -838,16 +835,16 @@ inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
   const diapason_type& a_second_diapason)
 {
   bool statement_true = false;
-  const size_type first_right = a_first_diapason.left + a_first_diapason.width;
-  const size_type second_right = a_second_diapason.left +
-    a_second_diapason.width;
-  const size_type first_bottom = a_first_diapason.top + a_first_diapason.height;
-  const size_type second_bottom = a_second_diapason.top +
-    a_second_diapason.height;
+  //const size_type first_right = a_first_diapason.left + a_first_diapason.width;
+  //const size_type second_right = a_second_diapason.left +
+    //a_second_diapason.width;
+  //const size_type first_bottom = a_first_diapason.top + a_first_diapason.height;
+  //const size_type second_bottom = a_second_diapason.top +
+    //a_second_diapason.height;
   if ((a_first_diapason.left >= a_second_diapason.left) &&
-    (first_right <= second_right) &&
+    (a_first_diapason.right <= a_second_diapason.right) &&
     (a_first_diapason.top >= a_second_diapason.top) &&
-    (first_bottom <= second_bottom))
+    (a_first_diapason.bottom <= a_second_diapason.bottom))
   {
     statement_true = true;
   } else {
@@ -855,7 +852,6 @@ inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
   }
   return statement_true;
 }
-#endif //IRS_LINUX
 
 /*class table_string_t:public
   table_t<
