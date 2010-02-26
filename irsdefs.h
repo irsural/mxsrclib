@@ -49,8 +49,8 @@
 
 // Полная поддержка библиотеки C++
 #if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) ||\
-  (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
-  (defined (_MSC_VER) && (_MSC_VER >= 1400))
+  (defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__CYGWIN__)) ||\
+  (defined(_MSC_VER) && (_MSC_VER >= 1400))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 

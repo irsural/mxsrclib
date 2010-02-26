@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 12.10.2009
+// Дата: 26.02.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include <irscpp.h>
 #include <irsdefs.h>
 #include <irsstring.h>
 #include <irslimits.h>
@@ -16,7 +17,6 @@
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #include <stdexcept>
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
-#include <irscpp.h>
 
 #ifdef IRS_UNICODE
 #define IRS_WIDE_FROM_TYPE_STR(str) (str)
@@ -464,11 +464,17 @@ inline void convert_str_test_check(ostream& a_strm, F a_func)
 }
 inline const char* convert_str_test_str_rus(char)
 {
-  return "hello!?& Й";
+  return "hello!?& Я";
 }
 inline const wchar_t* convert_str_test_str_rus(wchar_t)
 {
-  return L"hello!?& Й";
+  #ifndef __AVR32__
+  return L"hello!?& Я";
+  #else //__AVR32__
+  // На AVR32 недоступна опция преобразования кодировки перед компиляцией,
+  // поэтому русские буквы в wchar_t строках вызывают ошибку компилятора
+  return L"hello!?& ";
+  #endif //__AVR32__
 }
 inline const char* convert_str_test_str_eng(char)
 {

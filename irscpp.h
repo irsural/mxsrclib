@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 19.10.2009
+// Дата: 26.02.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -163,6 +163,12 @@ inline ios &noskipws(ios &strm, int)
   strm.unsetf(ios::skipws);
   return strm;
 }
+
+// Cygwin не полностью поддерживает wchar_t и wstring
+#ifdef __CYGWIN__
+//template<> struct char_traits<wchar_t>;
+typedef basic_string<wchar_t> wstring;
+#endif //__CYGWIN__
 #endif //NOP
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT

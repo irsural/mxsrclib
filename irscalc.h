@@ -1,5 +1,5 @@
 // Калькулятор
-// Дата: 24.10.2009
+// Дата: 26.02.2010
 // Дата создания: 1.02.2009
 
 #ifndef irscalcH
@@ -740,10 +740,10 @@ inline bool detector_token_t::is_char_alpha(const char_type a_ch)
 inline bool detector_token_t::is_char_oct_digit(const char_type a_ch)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  return (isdigitt(a_ch) && (a_ch != irst('8')) && (a_ch != irst('9')));
-  #else // !IRS_FULL_STDCPPLIB_SUPPORT
   return (isdigitt(a_ch, m_locale) && (a_ch != irst('8')) &&
     (a_ch != irst('9')));
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
+  return (isdigitt(a_ch) && (a_ch != irst('8')) && (a_ch != irst('9')));
   #endif // !IRS_FULL_STDCPPLIB_SUPPORT
 }
 
