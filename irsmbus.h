@@ -109,8 +109,8 @@ public:
     hardflow_t* ap_hardflow,
     size_t a_discr_inputs_size_byte = 8192,
     size_t a_coils_size_byte = 8192,
-    size_t a_hold_regs_reg = 65535,
-    size_t a_input_regs_reg = 65535
+    size_t a_hold_regs_reg = 65536,
+    size_t a_input_regs_reg = 65536
   );
   virtual ~modbus_server_t() {}
   virtual irs_uarc size();
@@ -128,6 +128,7 @@ public:
   virtual status_t status() const;
   virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
   virtual void tick();
+  virtual void abort();
   
 private:
   enum {
@@ -201,9 +202,10 @@ public:
     mode_refresh_t a_refresh_mode = mode_refresh_auto,
     size_t a_discr_inputs_size_byte = 8192,
     size_t a_coils_size_byte = 8192,
-    size_t a_hold_regs_reg = 65535,
-    size_t a_input_regs_reg = 65535,
-    loop_timer_t a_loop_timer = make_cnt_ms(200)
+    size_t a_hold_regs_reg = 65536,
+    size_t a_input_regs_reg = 65536,
+    counter_t a_update_time = make_cnt_ms(200),
+    irs_u8 a_error_count_max = 3
   );
   void set_delay_time(double time);
   virtual ~modbus_client_t();
@@ -221,6 +223,7 @@ public:
   virtual void update();
   virtual status_t status() const;
   virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
+  virtual void abort();
   virtual void tick();
   
 private:
@@ -262,8 +265,6 @@ private:
     make_request_mode
   };
   
-  counter_t                             m_del_time;
-  irs_u8                                *mp_buf;
   size_t                                m_global_read_index;
   size_t                                m_discret_inputs_size_bit;
   size_t                                m_coils_size_bit;
@@ -278,10 +279,10 @@ private:
   size_t                                m_size_byte_end;
   bool                                  m_read_table;
   bool                                  m_write_table;
+  bool                                  m_write_complete;
   channel_type                          m_channel;
   size_t                                m_start_block;
   size_t                                m_search_index;
-  irs_u16                               m_bytes;
   size_t                                m_discret_inputs_size_byte;
   size_t                                m_discret_inputs_start_byte;
   size_t                                m_coils_size_byte;
@@ -315,6 +316,7 @@ private:
   irs_bool                              m_start;
   irs_u16                               m_write_quantity;
   irs_u16                               m_read_quantity;
+  irs_u8                                m_error_count_max;
 
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
