@@ -1170,7 +1170,6 @@ void irs::hardflow::udp_flow_t::tick()
 irs::hardflow::tcp_server_t::tcp_server_t(
   irs_u16 local_port
 ):
-  m_error_sock(),
   #if defined(IRS_WIN32)
   m_wsd(),
   #endif // IRS_WIN32
@@ -1213,7 +1212,8 @@ void irs::hardflow::tcp_server_t::start_server()
       m_addr.sin_port = htons(m_local_port);
       m_addr.sin_addr.s_addr = htonl(INADDR_ANY);
       if(bind(m_server_sock, (struct sockaddr *)&m_addr,
-        sizeof(m_addr)) >= 0) {
+        sizeof(m_addr)) >= 0) 
+      {
         int queue_lenght = 300; //длина очереди
         listen(m_server_sock, queue_lenght);
       } else {
@@ -1458,7 +1458,7 @@ void irs::hardflow::tcp_server_t::tick()
               m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();
-            #ifdef IRS_LIB_HARDFLOW_DEBUG_BASE
+            #if IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
             if(insert_channel.second) {
               irs::mlog() << "New channel added: " << (int)m_channel << endl;
               irs::mlog() << "-------------------------------" << endl;
@@ -1538,8 +1538,7 @@ irs::hardflow::tcp_client_t::tcp_client_t(
   m_is_open(false),
   m_dest_ip(dest_ip),
   m_dest_port(dest_port),
-  m_channel(1),
-  m_connect_time()
+  m_channel(1)
 {
   //start_client();
 }
@@ -1648,72 +1647,6 @@ void irs::hardflow::tcp_client_t::start_client()
   } else {
     // Перевод сокета в неблокирующий режим завершился неудачей
   }
-  /*m_is_open = true;
-  bool lib_load_success = true;
-  #if defined(IRS_WIN32)
-  if (!lib_socket_load(&m_wsd, 2, 2)) {
-    lib_load_success = false;
-  } else {
-    // Библиотека удачно загружена
-  }
-  #endif // defined(IRS_WIN32)
-  if (lib_load_success) {
-    m_client_sock = socket(PF_INET, SOCK_STREAM, 0);
-    if(m_client_sock != invalid_socket) {
-      m_addr.sin_family = AF_INET;
-      m_addr.sin_port = htons(m_dest_port);
-      m_addr.sin_addr.s_addr = reinterpret_cast<unsigned long&>(m_dest_ip);
-      // для включения неблокирующего режима переменная ulblock должна иметь
-      // ненулевое значение
-      bool set_io_mode_sock_success = false;
-      #if defined(IRS_WIN32)
-      unsigned long ulblock = 1;
-      if (ioctlsocket(m_client_sock, FIONBIO, &ulblock) == m_socket_error) {
-        // функция завершилась неудачей
-        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
-          error_str(m_error_sock.get_last_error()));
-      } else {
-        set_io_mode_sock_success = true;
-      }
-      #elif defined(IRS_LINUX)
-      if (fcntl(m_client_sock, F_SETFL, O_NONBLOCK) == m_socket_error) {
-        // функция завершилась неудачей
-        IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(
-          error_str(m_error_sock.get_last_error()));
-      } else {
-        set_io_mode_sock_success = true;
-      }
-      #endif // IRS_WINDOWS IRS_LINUX
-      if (set_io_mode_sock_success) {
-        if(connect(m_client_sock, (struct sockaddr *)&m_addr,
-          sizeof(m_addr)) == 0)
-        {
-          IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
-            irs::ms_to_strtime(irs::system_time()) << " Start client" << endl);
-          irs::mlog() << irs::ms_to_strtime(irs::system_time()) <<
-            " connect_time = " << m_connect_time.get() << endl;
-        }
-        else {
-          IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(
-            irs::ms_to_strtime(irs::system_time()) << " connect: " <<
-            last_error_str() << endl);
-          close_socket(m_client_sock);
-          m_is_open = false;
-        }
-      } else {
-        // Сокет не удалось перевести в неблокирующий режим
-        close_socket(m_client_sock);
-        m_is_open = false;
-      }
-    } else {
-      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("socket: " <<
-        last_error_str() << endl);
-      m_is_open = false;
-    }
-  } else {
-    // Библиотеку загрузить не удалось
-    m_is_open = false;
-  }*/
 }
 
 void irs::hardflow::tcp_client_t::stop_client()
@@ -1723,7 +1656,6 @@ void irs::hardflow::tcp_client_t::stop_client()
   FD_ZERO(&m_read_fds);
   FD_ZERO(&m_write_fds);
   IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Close client" << endl);
-  m_connect_time.start();
 }
 
 irs::hardflow::tcp_client_t::size_type 

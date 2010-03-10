@@ -484,7 +484,6 @@ private:
   enum { m_socket_error = -1 };
   enum { m_invalid_socket = -1 };
   #endif // IRS_WINDOWS IRS_LINUX
-  error_sock_t m_error_sock;
   #if defined(IRS_WIN32)
   WSADATA m_wsd;
   #endif // IRS_WIN32
@@ -570,7 +569,6 @@ private:
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
   size_type m_channel;
-  measure_time_t m_connect_time;
   
   void start_client();
   void stop_client();
