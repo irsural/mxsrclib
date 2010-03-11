@@ -398,7 +398,8 @@ irs::modbus_server_t::modbus_server_t(
   size_t a_discr_inputs_size_byte,
   size_t a_coils_size_byte,
   size_t a_hold_regs_reg,
-  size_t a_input_regs_reg
+  size_t a_input_regs_reg,
+  double a_disconnect_time_sec
 ):
   mp_buf(size_of_packet),
   m_size_byte_end(0),
@@ -433,6 +434,8 @@ irs::modbus_server_t::modbus_server_t(
   m_num_of_elem(0),
   m_operation_status(status_completed)
 {
+  m_fixed_flow.read_timeout(a_disconnect_time_sec);
+  m_fixed_flow.write_timeout(a_disconnect_time_sec);
   irs::mlog() << "SERVER START!" << endl;
 }
 
@@ -1596,7 +1599,8 @@ irs::modbus_client_t::modbus_client_t(
   size_t a_hold_regs_reg,
   size_t a_input_regs_reg,
   counter_t a_update_time,
-  irs_u8 a_error_count_max
+  irs_u8 a_error_count_max,
+  double a_disconnect_time_sec
 ):
   m_global_read_index(0),
   m_discret_inputs_size_bit(size_t(a_discr_inputs_size_byte*8)),
@@ -1652,6 +1656,8 @@ irs::modbus_client_t::modbus_client_t(
   m_read_quantity(0),
   m_error_count_max(a_error_count_max)
 {
+  m_fixed_flow.read_timeout(a_disconnect_time_sec);
+  m_fixed_flow.write_timeout(a_disconnect_time_sec);
   memsetex(m_spacket,IRS_ARRAYSIZE(m_spacket));
   memsetex(m_rpacket,IRS_ARRAYSIZE(m_rpacket));
   init_to_cnt();

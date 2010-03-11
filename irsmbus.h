@@ -110,7 +110,8 @@ public:
     size_t a_discr_inputs_size_byte = 8192,
     size_t a_coils_size_byte = 8192,
     size_t a_hold_regs_reg = 65536,
-    size_t a_input_regs_reg = 65536
+    size_t a_input_regs_reg = 65536,
+    double a_disconnect_time_sec = 2
   );
   virtual ~modbus_server_t() {}
   virtual irs_uarc size();
@@ -205,7 +206,8 @@ public:
     size_t a_hold_regs_reg = 65536,
     size_t a_input_regs_reg = 65536,
     counter_t a_update_time = make_cnt_ms(200),
-    irs_u8 a_error_count_max = 3
+    irs_u8 a_error_count_max = 3,
+    double a_disconnect_time_sec = 2
   );
   void set_delay_time(double time);
   virtual ~modbus_client_t();
