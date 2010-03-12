@@ -1,6 +1,6 @@
 // Клиент и сервер modbus
 // Дата создания: 7.02.2008
-// Дата последнего изменения: 18.02.2010
+// Дата последнего изменения: 12.03.2010
 
 #ifndef irsmbusH
 #define irsmbusH
@@ -107,10 +107,10 @@ public:
   
   modbus_server_t(
     hardflow_t* ap_hardflow,
-    size_t a_discr_inputs_size_byte = 8192,
-    size_t a_coils_size_byte = 8192,
-    size_t a_hold_regs_reg = 65536,
-    size_t a_input_regs_reg = 65536,
+    size_t a_discr_inputs_size_byte = 8,
+    size_t a_coils_size_byte = 8,
+    size_t a_hold_regs_reg = 7,
+    size_t a_input_regs_reg = 7,
     double a_disconnect_time_sec = 2
   );
   virtual ~modbus_server_t() {}
@@ -148,7 +148,7 @@ private:
     write_single_register = 6,
     read_exception_status = 7,
     write_multiple_coils = 15,
-    write_multiple_registers = 16,
+    write_multiple_registers = 16
   };
   enum condition_t {
     read_header_mode,
@@ -201,10 +201,10 @@ public:
   modbus_client_t(
     hardflow_t* ap_hardflow,
     mode_refresh_t a_refresh_mode = mode_refresh_auto,
-    size_t a_discr_inputs_size_byte = 8192,
-    size_t a_coils_size_byte = 8192,
-    size_t a_hold_regs_reg = 65536,
-    size_t a_input_regs_reg = 65536,
+    size_t a_discr_inputs_size_byte = 8,
+    size_t a_coils_size_byte = 8,
+    size_t a_hold_regs_reg = 7,
+    size_t a_input_regs_reg = 7,
     counter_t a_update_time = make_cnt_ms(200),
     irs_u8 a_error_count_max = 3,
     double a_disconnect_time_sec = 2
@@ -252,7 +252,7 @@ private:
     write_single_register = 6,
     read_exception_status = 7,
     write_multiple_coils = 15,
-    write_multiple_registers = 16,
+    write_multiple_registers = 16
   };
   enum mode_t {
     wait_command_mode,

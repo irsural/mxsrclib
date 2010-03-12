@@ -1,3 +1,7 @@
+// Клавиатура
+// Дата: 12.03.2010
+// Дата создания: 11.03.2010
+
 #include <irskbd.h>
 
 #ifdef IRS_LINUX
@@ -42,11 +46,11 @@ irs::gcc_linux::keyboard_t::~keyboard_t()
 
 char irs::gcc_linux::keyboard_t::key()
 {
-  char key_code = 0;
+  char key_code = key_none;
   if(read(m_terminal, static_cast<void*>(&key_code), 1) == 1) {
     return key_code;
   } else {
-    return 0;
+    return key_none;
   }
 }
 

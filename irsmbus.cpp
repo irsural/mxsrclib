@@ -1,6 +1,6 @@
 // Клиент и сервер modbus
+// Дата: 12.03.2010
 // Дата создания: 16.09.2008
-// Дата последнего изменения: 18.02.2010
 
 #include <irsmbus.h>
 #include <string.h>
@@ -480,87 +480,87 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
   {
     case read_discrete_inputs:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read discret inputs" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_coils:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read coils" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_hold_registers:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read hold registers" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_input_registers:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read input registers" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case write_single_coil:
     {
-      response_single_write_t &req_header = 
+      response_single_write_t &req_header_inner = 
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write single coil" << endl;
       irs::mlog() << " output_address_lo .... " <<
-        int(IRS_LOBYTE(req_header.address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " output_address_hi .... " <<
-        int(IRS_HIBYTE(req_header.address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " output_value_lo ...... " <<
-        int(IRS_LOBYTE(req_header.value)) << endl;
+        int(IRS_LOBYTE(req_header_inner.value)) << endl;
       irs::mlog() << " output_value_hi ...... " <<
-        int(IRS_HIBYTE(req_header.value)) << endl;
+        int(IRS_HIBYTE(req_header_inner.value)) << endl;
     } break;
     case write_single_register:
     {
-      response_single_write_t &req_header = 
+      response_single_write_t &req_header_inner = 
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write hold register" << endl;
       irs::mlog() << " register_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " register_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " register_value_lo .... " <<
-        int(IRS_LOBYTE(req_header.value)) << endl;
+        int(IRS_LOBYTE(req_header_inner.value)) << endl;
       irs::mlog() << " register_value_hi .... " <<
-        int(IRS_HIBYTE(req_header.value)) << endl;
+        int(IRS_HIBYTE(req_header_inner.value)) << endl;
     } break;
     case read_exception_status:
     {
@@ -568,51 +568,51 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_multiple_write_byte_t &req_header = 
+      request_multiple_write_byte_t &req_header_inner = 
         reinterpret_cast<request_multiple_write_byte_t&>(
         *(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple coils" << endl;
       irs::mlog() << " starting_address_lo ..... " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi ..... " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_of_outputs_lo .. " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_of_outputs_hi .. " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " byte_count .............. " <<
-        int(req_header.byte_count) << endl;
+        int(req_header_inner.byte_count) << endl;
       int coils_idx_max = 0;
-      if(req_header.quantity%8 == 0)
-        coils_idx_max = req_header.quantity/8;
+      if(req_header_inner.quantity%8 == 0)
+        coils_idx_max = req_header_inner.quantity/8;
       else
-        coils_idx_max = req_header.quantity/8 + 1;
+        coils_idx_max = req_header_inner.quantity/8 + 1;
       for(int coils_idx = 0; coils_idx < coils_idx_max; coils_idx++) {
         irs::mlog() << " coils_value ........... " <<
-          int(req_header.value[coils_idx]) << endl;
+          int(req_header_inner.value[coils_idx]) << endl;
       }
     } break;
     case write_multiple_registers:
     {
-      request_multiple_write_regs_t &req_header = 
+      request_multiple_write_regs_t &req_header_inner = 
         reinterpret_cast<request_multiple_write_regs_t&>(
         *(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple register" << endl;
       irs::mlog() << " starting_address_lo ....... " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi ....... " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_of_registers_lo .. " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_of_registers_hi .. " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " byte_count ................ " <<
-        int(req_header.byte_count) << endl;
-      for(int reg_idx = 0; reg_idx < int(req_header.quantity); reg_idx++) {
+        int(req_header_inner.byte_count) << endl;
+      for(int reg_idx = 0; reg_idx < int(req_header_inner.quantity); reg_idx++) {
         irs::mlog() << " register_value_lo ......... " <<
-          int(IRS_LOBYTE(req_header.value[reg_idx])) << endl;
+          int(IRS_LOBYTE(req_header_inner.value[reg_idx])) << endl;
         irs::mlog() << " register_value_hi ......... " <<
-          int(IRS_HIBYTE(req_header.value[reg_idx])) << endl;
+          int(IRS_HIBYTE(req_header_inner.value[reg_idx])) << endl;
       }
     } break;
     default:
@@ -655,126 +655,128 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
   {
     case read_discrete_inputs:
     {
-      response_read_byte_t &resp_header = 
+      response_read_byte_t &resp_header_inner = 
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read discret inputs" << endl;
       irs::mlog() << " byte_count ........... " <<
-        int(resp_header.byte_count) << endl;
-      for(int di_idx = 0; di_idx < resp_header.byte_count; di_idx++) {
+        int(resp_header_inner.byte_count) << endl;
+      for(int di_idx = 0; di_idx < resp_header_inner.byte_count; di_idx++) {
         irs::mlog() << " discret input[" << di_idx << "] ..... " <<
-          int(resp_header.value[di_idx]) << endl;
+          int(resp_header_inner.value[di_idx]) << endl;
       }
     } break;
     case read_coils:
     {
-      response_read_byte_t &resp_header = 
+      response_read_byte_t &resp_header_inner = 
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read coils" << endl;
       irs::mlog() << " byte_count ........... " <<
-        int(resp_header.byte_count) << endl;
-      for(int coils_idx = 0; coils_idx < resp_header.byte_count; coils_idx++) {
+        int(resp_header_inner.byte_count) << endl;
+      for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count; 
+        coils_idx++) 
+      {
         irs::mlog() << " coils[" << coils_idx << "] ............. " <<
-          int(resp_header.value[coils_idx]) << endl;
+          int(resp_header_inner.value[coils_idx]) << endl;
       }
     } break;
     case read_hold_registers:
     {
-      response_read_reg_t &resp_header = 
+      response_read_reg_t &resp_header_inner = 
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read hold registers" << endl;
       irs::mlog() << " byte_count ........... " <<
-        int(resp_header.byte_count) << endl;
-      for(int h_reg_idx = 0; h_reg_idx < int(resp_header.byte_count)/2;
+        int(resp_header_inner.byte_count) << endl;
+      for(int h_reg_idx = 0; h_reg_idx < int(resp_header_inner.byte_count)/2;
         h_reg_idx++) 
       {
         irs::mlog() << " hold regs lo[" << h_reg_idx << "] ...... " <<
-          int(IRS_LOBYTE(resp_header.value[h_reg_idx])) << endl;
+          int(IRS_LOBYTE(resp_header_inner.value[h_reg_idx])) << endl;
         irs::mlog() << " hold regs hi[" << h_reg_idx << "] ...... " <<
-          int(IRS_HIBYTE(resp_header.value[h_reg_idx])) << endl;
+          int(IRS_HIBYTE(resp_header_inner.value[h_reg_idx])) << endl;
       }
     } break;
     case read_input_registers:
     {
-      response_read_reg_t &resp_header = 
+      response_read_reg_t &resp_header_inner = 
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read input registers" << endl;
       irs::mlog() << " byte_count ........... " <<
-        int(resp_header.byte_count) << endl;
-      for(int i_reg_idx = 0; i_reg_idx < int(resp_header.byte_count)/2;
+        int(resp_header_inner.byte_count) << endl;
+      for(int i_reg_idx = 0; i_reg_idx < int(resp_header_inner.byte_count)/2;
         i_reg_idx++) 
       {
         irs::mlog() << " input regs lo[" << i_reg_idx << "] ..... " <<
-          int(IRS_LOBYTE(resp_header.value[i_reg_idx])) << endl;
+          int(IRS_LOBYTE(resp_header_inner.value[i_reg_idx])) << endl;
         irs::mlog() << " input regs hi[" << i_reg_idx << "] ..... " <<
-          int(IRS_HIBYTE(resp_header.value[i_reg_idx])) << endl;
+          int(IRS_HIBYTE(resp_header_inner.value[i_reg_idx])) << endl;
       }
     } break;
     case write_single_coil:
     {
-      response_single_write_t &resp_header = 
+      response_single_write_t &resp_header_inner = 
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write single coil" << endl;
       irs::mlog() << " output_address_lo .... " <<
-        int(IRS_LOBYTE(resp_header.address)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.address)) << endl;
       irs::mlog() << " output_address_hi .... " <<
-        int(IRS_HIBYTE(resp_header.address)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.address)) << endl;
       irs::mlog() << " output_value_lo ...... " <<
-        int(IRS_LOBYTE(resp_header.value)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.value)) << endl;
       irs::mlog() << " output_value_hi ...... " <<
-        int(IRS_HIBYTE(resp_header.value)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.value)) << endl;
     } break;
     case write_single_register:
     {
-      response_single_write_t &resp_header = 
+      response_single_write_t &resp_header_inner = 
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write single register" << endl;
       irs::mlog() << " output_address_lo .... " <<
-        int(IRS_LOBYTE(resp_header.address)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.address)) << endl;
       irs::mlog() << " output_address_hi .... " <<
-        int(IRS_HIBYTE(resp_header.address)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.address)) << endl;
       irs::mlog() << " output_value_lo ...... " <<
-        int(IRS_LOBYTE(resp_header.value)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.value)) << endl;
       irs::mlog() << " output_value_hi ...... " <<
-        int(IRS_HIBYTE(resp_header.value)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.value)) << endl;
     } break;
     case read_exception_status:
     {
-      response_exception_t &resp_header = 
+      response_exception_t &resp_header_inner = 
         reinterpret_cast<response_exception_t&>(
         *(ap_buf + size_of_MBAP));
       irs::mlog() << " read exception status " << endl;
       irs::mlog() << " error_code ........... " <<
-        int(resp_header.error_code) << endl;
+        int(resp_header_inner.error_code) << endl;
       irs::mlog() << " exeption_code ........ " <<
-        int(resp_header.exeption_code) << endl;
+        int(resp_header_inner.exeption_code) << endl;
     } break;
     case write_multiple_coils:
     {
-      request_t &resp_header = 
+      request_t &resp_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple coils" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(resp_header.starting_address)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(resp_header.starting_address)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(resp_header.quantity)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(resp_header.quantity)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.quantity)) << endl;
     } break;
     case write_multiple_registers:
     {
-      request_t &resp_header = 
+      request_t &resp_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple registers" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(resp_header.starting_address)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(resp_header.starting_address)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(resp_header.quantity)) << endl;
+        int(IRS_LOBYTE(resp_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(resp_header.quantity)) << endl;
+        int(IRS_HIBYTE(resp_header_inner.quantity)) << endl;
     } break;
     default:
     {
@@ -1167,24 +1169,26 @@ void irs::modbus_server_t::error_response(irs_u8 error_type)
     response_error.error_code, size_of_MBAP*8, sizeof(response_error)*8);
 }
 
-void irs::modbus_server_t::mark_to_send(irs_uarc a_index, irs_uarc a_size)
+void irs::modbus_server_t::mark_to_send(irs_uarc /*a_index*/, 
+  irs_uarc /*a_size*/)
 {
   m_operation_status = status_completed;
 }
 
-void irs::modbus_server_t::mark_to_recieve(irs_uarc a_index, irs_uarc a_size)
+void irs::modbus_server_t::mark_to_recieve(irs_uarc /*a_index*/, 
+  irs_uarc /*a_size*/)
 {
   m_operation_status = status_completed;
 }
 
-void irs::modbus_server_t::mark_to_send_bit(irs_uarc a_byte_index,
-  irs_uarc a_bit_index)
+void irs::modbus_server_t::mark_to_send_bit(irs_uarc /*a_byte_index*/,
+  irs_uarc /*a_bit_index*/)
 {
   m_operation_status = status_completed;
 }
 
-void irs::modbus_server_t::mark_to_recieve_bit(irs_uarc a_byte_index,
-  irs_uarc a_bit_index)
+void irs::modbus_server_t::mark_to_recieve_bit(irs_uarc /*a_byte_index*/,
+  irs_uarc /*a_bit_index*/)
 {
   m_operation_status = status_completed;
 }
@@ -1194,7 +1198,7 @@ irs::modbus_server_t::status_t irs::modbus_server_t::status() const
   return m_operation_status;
 }
 
-void irs::modbus_server_t::set_refresh_mode(mode_refresh_t a_refresh_mode)
+void irs::modbus_server_t::set_refresh_mode(mode_refresh_t /*a_refresh_mode*/)
 {
   
 }
@@ -1729,87 +1733,87 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
   {
     case read_discrete_inputs:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read discret inputs" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_coils:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read coils" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_hold_registers:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read hold registers" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_input_registers:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " read input registers" << endl;
       irs::mlog() << " starting_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_lo .......... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_hi .......... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case write_single_coil:
     {
-      request_t &req_header = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write single coil" << endl;
       irs::mlog() << " output_address_lo .... " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " output_address_hi .... " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " output_value_lo ...... " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " output_value_hi ...... " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case write_single_register:
     {
-      response_single_write_t &req_header = 
+      response_single_write_t &req_header_inner = 
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       irs::mlog() << " write single register" << endl;
       irs::mlog() << " register_address_lo .. " <<
-        int(IRS_LOBYTE(req_header.address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " register_address_hi .. " <<
-        int(IRS_HIBYTE(req_header.address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.address)) << endl;
       irs::mlog() << " register_value_lo .... " <<
-        int(IRS_LOBYTE(req_header.value)) << endl;
+        int(IRS_LOBYTE(req_header_inner.value)) << endl;
       irs::mlog() << " register_value_hi .... " <<
-        int(IRS_HIBYTE(req_header.value)) << endl;
+        int(IRS_HIBYTE(req_header_inner.value)) << endl;
     } break;
     case read_exception_status:
     {
@@ -1817,51 +1821,51 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_multiple_write_byte_t &req_header = 
+      request_multiple_write_byte_t &req_header_inner = 
         reinterpret_cast<request_multiple_write_byte_t&>(
         *(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple coils" << endl;
       irs::mlog() << " starting_address_lo ..... " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi ..... " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_of_outputs_lo .. " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_of_outputs_hi .. " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " byte_count .............. " <<
-        int(req_header.byte_count) << endl;
+        int(req_header_inner.byte_count) << endl;
       int coils_idx_max = 0;
-      if(req_header.quantity%8 == 0)
-        coils_idx_max = req_header.quantity/8;
+      if(req_header_inner.quantity%8 == 0)
+        coils_idx_max = req_header_inner.quantity/8;
       else
-        coils_idx_max = req_header.quantity/8 + 1;
+        coils_idx_max = req_header_inner.quantity/8 + 1;
       for(int coils_idx = 0; coils_idx < coils_idx_max; coils_idx++) {
         irs::mlog() << " coils_value ........... " <<
-          int(req_header.value[coils_idx]) << endl;
+          int(req_header_inner.value[coils_idx]) << endl;
       }
     } break;
     case write_multiple_registers:
     {
-      request_multiple_write_regs_t &req_header = 
+      request_multiple_write_regs_t &req_header_inner = 
         reinterpret_cast<request_multiple_write_regs_t&>(
         *(ap_buf + size_of_MBAP));
       irs::mlog() << " write multiple registers" << endl;
       irs::mlog() << " starting_address_lo ....... " <<
-        int(IRS_LOBYTE(req_header.starting_address)) << endl;
+        int(IRS_LOBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " starting_address_hi ....... " <<
-        int(IRS_HIBYTE(req_header.starting_address)) << endl;
+        int(IRS_HIBYTE(req_header_inner.starting_address)) << endl;
       irs::mlog() << " quantity_of_registers_lo .. " <<
-        int(IRS_LOBYTE(req_header.quantity)) << endl;
+        int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " quantity_of_registers_hi .. " <<
-        int(IRS_HIBYTE(req_header.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << " byte_count ................ " <<
-        int(req_header.byte_count) << endl;
-      for(int reg_idx = 0; reg_idx < int(req_header.quantity); reg_idx++) {
+        int(req_header_inner.byte_count) << endl;
+      for(int reg_idx = 0; reg_idx < int(req_header_inner.quantity); reg_idx++) {
         irs::mlog() << " register_value_lo ......... " <<
-          int(IRS_LOBYTE(req_header.value[reg_idx])) << endl;
+          int(IRS_LOBYTE(req_header_inner.value[reg_idx])) << endl;
         irs::mlog() << " register_value_hi ......... " <<
-          int(IRS_HIBYTE(req_header.value[reg_idx])) << endl;
+          int(IRS_HIBYTE(req_header_inner.value[reg_idx])) << endl;
       }
     } break;
     default:
@@ -1874,7 +1878,11 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 
 void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 {
-  #if (IRS_MBUS_MSG_TYPE ==  IRS_MBUS_MSG_DETAIL)
+  // В IAR возникает предупреждение, что ap_buf не используется,
+  // если сообщения выключены. Для выключения предупреждения
+  // предназначен текст приведенный ниже
+  ap_buf = ap_buf;
+  #if (IRS_MBUS_MSG_TYPE == IRS_MBUS_MSG_DETAIL)
   irs::mlog() << "\n recieved packet" << endl;
   MBAP_header_t &header = 
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
