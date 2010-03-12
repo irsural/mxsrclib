@@ -739,7 +739,11 @@ inline bool detector_token_t::is_char_alpha(const char_type a_ch)
 
 inline bool detector_token_t::is_char_oct_digit(const char_type a_ch)
 {
+<<<<<<< .mine
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT  
+=======
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+>>>>>>> .r228
   return (isdigitt(a_ch, m_locale) && (a_ch != irst('8')) &&
     (a_ch != irst('9')));
   #else // !IRS_FULL_STDCPPLIB_SUPPORT

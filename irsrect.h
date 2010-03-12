@@ -143,10 +143,10 @@ inline void rect_t::offset(const size_type a_x_diff, const size_type a_y_diff)
 
 inline void rect_t::union_with(const rect_t& a_rect)
 {
-  left = std::min(left, a_rect.left);
-  top = std::min(top, a_rect.top);
-  right = std::max(right, a_rect.right);
-  bottom = std::max(bottom, a_rect.bottom);
+  left = min(left, a_rect.left);
+  top = min(top, a_rect.top);
+  right = max(right, a_rect.right);
+  bottom = max(bottom, a_rect.bottom);
 }
 
 inline rect_t rect_t::get_united(const rect_t& a_rect) const

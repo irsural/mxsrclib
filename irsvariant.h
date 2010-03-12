@@ -29,8 +29,8 @@ typedef size_t sizens_t;
 typedef char_t charns_t;
 typedef string_t stringns_t;
 
-// Числовые типы должны идти подряд,
-// так как это используется в в некоторых функциях
+// Числовые типы должны быть в определенном порядке,
+// так как это используется в некоторых функциях
 enum var_type_t {
   var_type_unknown,
   var_type_bool,
@@ -46,10 +46,10 @@ enum var_type_t {
   var_type_float,
   var_type_double,
   var_type_long_double,
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   var_type_long_long,
   var_type_unsigned_long_long,
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
   var_type_void_ptr,
   var_type_const_void_ptr,
   //var_type_ptr_char,
@@ -59,13 +59,13 @@ enum var_type_t {
 
 inline bool is_number_type(const var_type_t a_var_type)
 {
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   return ((a_var_type >= var_type_bool) &&
     (a_var_type <= var_type_unsigned_long_long)) ? true : false;
   #else
   return ((a_var_type >= var_type_bool) &&
     (a_var_type <= var_type_long_double)) ? true : false;
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
 }
 
 enum operation_type_t {
@@ -125,10 +125,10 @@ public:
   typedef char_t char_type;
   typedef irs::string string_type;
   typedef vector<variant_t> vector_variant_type;
-  #ifdef IRSDEFS_I64
-  typedef irs_i64 long_long_type;
-  typedef irs_u64 unsigned_long_long_type;
-  #endif // IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
+  typedef irs_ilong_long long_long_type;
+  typedef irs_ulong_long unsigned_long_long_type;
+  #endif // IRSDEFS_LONG_LONG
   variant_t();
 
   template<class T>
@@ -168,10 +168,10 @@ public:
   variant_t& operator=(const float a_value);
   variant_t& operator=(const double a_value);
   variant_t& operator=(const long double a_value);
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   variant_t& operator=(const long_long_type a_value);
   variant_t& operator=(const unsigned_long_long_type a_value);
-  #endif // IRSDEFS_I64   
+  #endif // IRSDEFS_LONG_LONG   
   variant_t& operator=(const string_type& a_value);
 
   bool as_bool() const;
@@ -187,10 +187,10 @@ public:
   float as_float() const;
   double as_double() const;
   long double as_long_double() const;
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   long_long_type as_long_long() const;
   unsigned_long_long_type as_unsigned_long_long() const;
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
   void* as_void_ptr() const;
   const void* as_const_void_ptr() const;
   string_type as_string() const;
@@ -211,10 +211,10 @@ public:
   operator float() const;
   operator double() const;
   operator long double() const;
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   operator long_long_type() const;
   operator unsigned_long_long_type() const;
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
   operator void*() const;
   operator const void*() const;
   //operator const char_type*() const;
@@ -262,10 +262,10 @@ private:
     float val_float_type;
     double val_double_type;
     long double val_long_double_type;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     long_long_type val_long_long_type;
     unsigned_long_long_type val_ulong_long_type;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     string_type* p_val_string_type;
     vector_variant_type* p_val_vector_variant;
   } m_value;
@@ -372,7 +372,7 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
     case var_type_long_double: {
       m_value.val_long_double_type = static_cast<long double>(a_value);
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       m_value.val_long_long_type = static_cast<long_long_type>(a_value);
     } break;
@@ -380,7 +380,7 @@ variant_t& variant_t::assign_no_cast(const T& a_value)
       m_value.val_ulong_long_type =
         static_cast<unsigned_long_long_type>(a_value);
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_string: {
       *m_value.p_val_string_type = static_cast<string_type>(a_value);
     } break;
@@ -443,14 +443,14 @@ inline variant_t& variant_t::assign_no_cast<variant_t::string_type>(
     case var_type_long_double: {
       fsuccess = a_value.to_number(m_value.val_long_double_type);
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       fsuccess = a_value.to_number(m_value.val_long_long_type);
     } break;
     case var_type_unsigned_long_long: {
       fsuccess = a_value.to_number(m_value.val_ulong_long_type);
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_string: {
       *m_value.p_val_string_type = a_value;
     } break;
@@ -512,14 +512,14 @@ inline variant_t& variant_t::assign_no_cast<variant_t>(
     case var_type_long_double: {
       m_value.val_long_double_type = a_variant.as_long_double();
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       m_value.val_long_long_type = a_variant.as_long_long();
     } break;
     case var_type_unsigned_long_long: {
       m_value.val_ulong_long_type = a_variant.as_unsigned_long_long();
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_string: {
       *m_value.p_val_string_type = a_variant.as_string();
     } break;
@@ -675,7 +675,7 @@ T variant_t::value_get() const
       value = static_cast<T>(m_value.val_long_double_type);
     } break;
 
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
 
     case var_type_long_long: {
       value = static_cast<T>(m_value.val_long_long_type);
@@ -684,7 +684,7 @@ T variant_t::value_get() const
       value = static_cast<T>(m_value.val_ulong_long_type);
     } break;
 
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
 
     #ifdef _MSC_VER
     # pragma warning(default: 4800)
@@ -780,14 +780,14 @@ variant_t::value_get<variant_t::string_type>() const
     case var_type_long_double: {
       value = m_value.val_long_double_type;
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       value = m_value.val_long_long_type;
     } break;
     case var_type_unsigned_long_long: {
       value = m_value.val_ulong_long_type;
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_string: {
       value = *(m_value.p_val_string_type);
     } break;
@@ -1654,6 +1654,8 @@ inline bool operator>=(const long double& a_value, const variant_t& a_variant)
   return operator>=(a_variant, variant_t(a_value));
 }
 
+#ifdef IRSDEFS_LONG_LONG
+
 // Comparisons  (type long long)
 inline bool operator==(const variant_t& a_variant,
   const variant_t::long_long_type& a_value)
@@ -1799,6 +1801,8 @@ inline bool operator>=(const variant_t::unsigned_long_long_type& a_value,
 {
   return operator>=(a_variant, variant_t(a_value));
 }
+
+#endif // IRSDEFS_LONG_LONG
 
 // Comparisons  (type string_type)
 inline bool operator==(const variant_t& a_variant,
@@ -2084,6 +2088,8 @@ struct var_type_traits_t<unsigned long>
   typedef var_integer_type_tag group_type;
 };
 
+#ifdef IRSDEFS_LONG_LONG
+
 template <>
 struct var_type_traits_t<variant_t::long_long_type>
 {
@@ -2095,6 +2101,8 @@ struct var_type_traits_t<variant_t::unsigned_long_long_type>
 {
   typedef var_integer_type_tag group_type;
 };
+
+#endif // IRSDEFS_LONG_LONG
 
 template <>
 struct var_type_traits_t<float>

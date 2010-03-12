@@ -113,6 +113,7 @@ enum signed_t {
   unsigned_idx
 };
 enum std_type_idx_t {
+  invalid_idx,
   bool_idx,
   char_idx,
   wchar_idx,
@@ -124,13 +125,29 @@ enum std_type_idx_t {
   unsigned_int_idx,
   signed_long_idx,
   unsigned_long_idx,
-  #ifdef IRSDEFS_I64
-  i64_idx,
-  u64_idx,
-  #endif //IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
+  signed_long_long_idx,
+  unsigned_long_long_idx,
+  #endif // IRSDEFS_LONG_LONG
   float_idx,
   double_idx,
   long_double_idx
+};
+
+enum fix_type_idx_t {
+  invalid_fix_idx,
+  i8_fix_idx,
+  u8_fix_idx,
+  i16_fix_idx,
+  u16_fix_idx,
+  i32_fix_idx,
+  u32_fix_idx,
+  #ifdef IRSDEFS_I64
+  i64_fix_idx,
+  u64_fix_idx,
+  #endif //IRSDEFS_I64
+  float32_fix_idx,
+  float64_fix_idx
 };
 
 // Преобразование тип в индекс
@@ -178,16 +195,16 @@ inline std_type_idx_t type_to_index_helper(unsigned long)
 {
   return unsigned_long_idx;
 }
-#ifdef IRSDEFS_I64
-inline std_type_idx_t type_to_index_helper(irs_i64)
+#ifdef IRSDEFS_LONG_LONG
+inline std_type_idx_t type_to_index_helper(irs_ilong_long)
 {
-  return i64_idx;
+  return signed_long_long_idx;
 }
-inline std_type_idx_t type_to_index_helper(irs_u64)
+inline std_type_idx_t type_to_index_helper(irs_ulong_long)
 {
-  return u64_idx;
+  return unsigned_long_long_idx;
 }
-#endif //IRSDEFS_I64
+#endif //IRSDEFS_LONG_LONG
 inline std_type_idx_t type_to_index_helper(float)
 {
   return float_idx;
@@ -284,19 +301,19 @@ struct type_detect_t<unsigned long>
     index = unsigned_long_idx
   };
 };
-#ifdef IRSDEFS_I64
+#ifdef IRSDEFS_LONG_LONG
 template <>
-struct type_detect_t<irs_i64>
+struct type_detect_t<irs_ilong_long>
 {
   enum {
-    index = i64_idx
+    index = signed_long_long_idx
   };
 };
 template <>
-struct type_detect_t<irs_u64>
+struct type_detect_t<irs_ulong_long>
 {
   enum {
-    index = u64_idx
+    index = unsigned_long_long_idx
   };
 };
 #endif //IRSDEFS_I64
@@ -557,26 +574,26 @@ struct type_relative_t<unsigned long>:
 };
 #ifdef IRSDEFS_I64
 template <>
-struct type_relative_t<irs_i64>:
+struct type_relative_t<irs_ilong_long>:
   type_relative_by_size_t<
-    sizeof(irs_i64),
-    integer_sign_detect_t<irs_i64>::sign_type
+    sizeof(irs_ilong_long),
+    integer_sign_detect_t<irs_ilong_long>::sign_type
   >
 {
-  typedef irs_i64 signed_type;
-  typedef irs_u64 unsigned_type;
-  typedef irs_u64 opposite_signed_type;
+  typedef irs_ilong_long signed_type;
+  typedef irs_ulong_long unsigned_type;
+  typedef irs_ulong_long opposite_signed_type;
 };
 template <>
-struct type_relative_t<irs_u64>:
+struct type_relative_t<irs_ulong_long>:
   type_relative_by_size_t<
-    sizeof(irs_u64),
-    integer_sign_detect_t<irs_u64>::sign_type
+    sizeof(irs_ulong_long),
+    integer_sign_detect_t<irs_ulong_long>::sign_type
   >
 {
-  typedef irs_i64 signed_type;
-  typedef irs_u64 unsigned_type;
-  typedef irs_i64 opposite_signed_type;
+  typedef irs_ilong_long signed_type;
+  typedef irs_ulong_long unsigned_type;
+  typedef irs_ilong_long opposite_signed_type;
 };
 #endif //IRSDEFS_I64
 
@@ -619,9 +636,9 @@ inline void display_parametrs_of_built_in_types(ostream &strm)
   strm << "size of short: " << sizeof(short) << endl;
   strm << "size of int: " << sizeof(int) << endl;
   strm << "size of long: " << sizeof(long) << endl;
-  #ifdef IRSDEFS_I64
-  strm << "size of irs_i64: " << sizeof(irs_i64) << endl;
-  #endif //IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
+  strm << "size of irs_ilong_long: " << sizeof(irs_ilong_long) << endl;
+  #endif // IRSDEFS_LONG_LONG
   strm << "size of float: " << sizeof(float) << endl;
   strm << "size of double: " << sizeof(double) << endl;
   strm << "size of long double: " << sizeof(long double) << endl;

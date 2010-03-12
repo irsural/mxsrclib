@@ -12,6 +12,22 @@
 
 #include <lirsdefs.h>
 
+#ifdef __BORLANDC__
+// Большое целое со знаком
+typedef signed __int64 irs_ilong_long;
+// Большое целое без знака
+typedef unsigned __int64 irs_ulong_long;
+#else // !__BORLANDC__
+// Большое целое со знаком
+typedef signed long long irs_ilong_long;
+// Большое целое без знака
+typedef unsigned long long irs_ulong_long;
+#endif // !__BORLANDC__
+// 32-битовое плавающее
+typedef float irs_float32;
+// 64-битовое плавающее
+typedef double irs_float64;
+
 // Определение версии Builder
 #define IRS_CPP_BUILDER4    0x0540
 #define IRS_CPP_BUILDER6    0x0560

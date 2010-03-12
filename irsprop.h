@@ -808,6 +808,7 @@ class ex_prop_r_di_t;
 class ex_prop_w_di_t;
 class ex_prop_rw_di_t;
 class ex_template_prop_rw_di_t;*/
+
 // Функция для отладки свойств
 inline bool testing_property()
 {

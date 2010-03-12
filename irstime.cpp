@@ -30,7 +30,6 @@ irs::string irs::ms_to_strtime(irs::millisecond_t ms, bool show_ms)
   irs::string time_strg = time_strm.str();
   time_strm.rdbuf()->freeze(false);
   return time_strg;
-  return irs::string("adfa");
 }
 // Счетчика ИРС в строку в формате: ЧЧ:ММ:СС.МСЕ
 irs::string irs::cnt_to_strtime(counter_t cnt, bool show_ms)

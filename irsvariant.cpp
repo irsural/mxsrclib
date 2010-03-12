@@ -69,8 +69,11 @@ void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
     case var_type_float:
     case var_type_double:
     case var_type_long_double:
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long:
-    case var_type_unsigned_long_long: {
+    case var_type_unsigned_long_long:
+    #endif // IRSDEFS_LONG_LONG
+    {
       m_type = a_variant_type;
     } break;
     case var_type_string: {
@@ -147,14 +150,14 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
     case var_type_long_double: {
       m_value.val_long_double_type = a_variant.m_value.val_long_double_type;
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       m_value.val_long_long_type = a_variant.m_value.val_long_long_type;
     } break;
     case var_type_unsigned_long_long: {
       m_value.val_ulong_long_type = a_variant.m_value.val_ulong_long_type;
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_string: {
       *(m_value.p_val_string_type) = *(a_variant.m_value.p_val_string_type);
     } break;
@@ -286,6 +289,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   return *this;
 }
 
+#ifdef IRSDEFS_LONG_LONG
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const long_long_type a_value)
 {
@@ -301,6 +305,7 @@ irs::variant::variant_t& irs::variant::variant_t::operator=(
   m_value.val_ulong_long_type = a_value;
   return *this;
 }
+#endif // IRSDEFS_LONG_LONG
 
 irs::variant::variant_t& irs::variant::variant_t::operator=(
   const string_type& a_value)
@@ -385,7 +390,7 @@ long double irs::variant::variant_t::as_long_double() const
   return as_type<long double>();
 }
 
-#ifdef IRSDEFS_I64
+#ifdef IRSDEFS_LONG_LONG
 irs::variant::variant_t::long_long_type
 irs::variant::variant_t::as_long_long() const
 {
@@ -397,7 +402,7 @@ irs::variant::variant_t::as_unsigned_long_long() const
 {
   return as_type<unsigned_long_long_type>();
 }
-#endif // IRSDEFS_I64
+#endif // IRSDEFS_LONG_LONG
 
 irs::variant::variant_t::string_type
 irs::variant::variant_t::as_string() const
@@ -470,7 +475,7 @@ irs::variant::variant_t::operator long double() const
   return as_type<long double>();
 }
 
-#ifdef IRSDEFS_I64
+#ifdef IRSDEFS_LONG_LONG
 irs::variant::variant_t::operator long_long_type() const
 {
   return as_type<long_long_type>();
@@ -480,7 +485,7 @@ irs::variant::variant_t::operator unsigned_long_long_type() const
 {
   return as_type<unsigned_long_long_type>();
 }
-#endif // IRSDEFS_I64
+#endif // IRSDEFS_LONG_LONG
 
 irs::variant::variant_t::operator void*() const
 {
@@ -573,10 +578,10 @@ void irs::variant::binary_operation(
   typedef variant_t::size_type size_type;
   typedef variant_t::string_type string_type;
   typedef variant_t::vector_variant_type vector_variant_type;
-  #ifdef IRSDEFS_I64
+  #ifdef IRSDEFS_LONG_LONG
   typedef variant_t::long_long_type long_long_type;
   typedef variant_t::unsigned_long_long_type unsigned_long_long_type;
-  #endif // IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
 
   typedef var_type_t var_type;
   var_type operation_vars_type = var_type_unknown;
@@ -609,6 +614,7 @@ void irs::variant::binary_operation(
   {
     operation_vars_type = var_type_long_double;
   } else {
+    #ifdef IRSDEFS_LONG_LONG
     var_type first_var_type = var_type_unknown;
     var_type second_var_type = var_type_unknown;
 
@@ -642,6 +648,7 @@ void irs::variant::binary_operation(
     } else {
       // Тип операции не определен
     }
+    #endif // IRSDEFS_LONG_LONG
   }
   if (operation_vars_type == var_type_unknown) {
     if ((a_first_variant.m_type == var_type_string) &&
@@ -761,7 +768,7 @@ void irs::variant::binary_operation(
           IRS_NULL : &(ap_result_variant->m_value.val_long_double_type),
         ap_result_bool);
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       long_long_type first_var = a_first_variant.value_get<long_long_type>();
       long_long_type second_var = a_second_variant.value_get<long_long_type>();
@@ -784,7 +791,7 @@ void irs::variant::binary_operation(
           IRS_NULL : &(ap_result_variant->m_value.val_ulong_long_type),
         ap_result_bool);
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     case var_type_void_ptr: {
       void* first_var = a_first_variant.value_get<void*>();
       void* second_var = a_second_variant.value_get<void*>();
@@ -879,14 +886,14 @@ void irs::variant::variant_t::prefix_operation(
     case var_type_long_double: {
       prefix_operation(a_unary_operation_type, &m_value.val_long_double_type);
     } break;
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_long_long_type);
     } break;
     case var_type_unsigned_long_long: {
       prefix_operation(a_unary_operation_type, &m_value.val_ulong_long_type);
     } break;
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     default : {
       IRS_LIB_ASSERT_MSG("Недопустимая операция для данного типа");
     }
@@ -1081,7 +1088,7 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
           m_value.val_long_double_type = value;
           convert_success = true;
         } break;
-        #ifdef IRSDEFS_I64
+        #ifdef IRSDEFS_LONG_LONG
         case var_type_long_long: {
           long_long_type value = as_long_long();
           type_change(a_var_type);
@@ -1094,7 +1101,7 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
           m_value.val_ulong_long_type = value;
           convert_success = true;
         } break;
-        #endif // IRSDEFS_I64
+        #endif // IRSDEFS_LONG_LONG
         case var_type_string: {
           string_type value = as_string();
           type_change(a_var_type);
@@ -1237,7 +1244,7 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
             // Преобразовать строку в число не удалось
           }
         } break;
-        #ifdef IRSDEFS_I64
+        #ifdef IRSDEFS_LONG_LONG
         case var_type_long_long: {
           long_long_type value;
           if (m_value.p_val_string_type->to_number(value)) {
@@ -1258,7 +1265,7 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
             // Преобразовать строку в число не удалось
           }
         } break;
-        #endif // IRSDEFS_I64
+        #endif // IRSDEFS_LONG_LONG
         default : {
           // Ошибка при конвертировании
         }
@@ -1290,10 +1297,10 @@ bool irs::variant::variant_t::is_type_number(var_type_t a_var_type)
     case var_type_float:
     case var_type_double:
     case var_type_long_double:
-    #ifdef IRSDEFS_I64
+    #ifdef IRSDEFS_LONG_LONG
     case var_type_long_long:
     case var_type_unsigned_long_long:
-    #endif // IRSDEFS_I64
+    #endif // IRSDEFS_LONG_LONG
     {
       is_type_num = true;
     } break;
@@ -1333,8 +1340,10 @@ void irs::variant::test_variant()
   float var_float_type = 0.16f;
   double var_double_type = 0.17;
   long double var_long_double_type = 0.18;
+  #ifdef IRSDEFS_LONG_LONG
   variant_t::long_long_type var_long_long_type = 19;
   variant_t::unsigned_long_long_type var_unsigned_long_long_type = 20;
+  #endif // IRSDEFS_LONG_LONG
   void* var_void_ptr = IRS_NULL;
   variant_t::string_type var_string_type = "test variant";
 
@@ -1376,6 +1385,7 @@ void irs::variant::test_variant()
   variant = var_long_double_type;
   long double var_long_double_type_result_read = variant;
   IRS_LIB_ASSERT(var_long_double_type == var_long_double_type_result_read);
+  #ifdef IRSDEFS_LONG_LONG
   variant = var_long_long_type;
   variant_t::long_long_type var_long_long_type_result_read = variant;
   IRS_LIB_ASSERT(var_long_long_type == var_long_long_type_result_read);
@@ -1384,6 +1394,7 @@ void irs::variant::test_variant()
     variant;
   IRS_LIB_ASSERT(var_unsigned_long_long_type ==
     var_unsigned_long_long_type_result_read);
+  #endif // IRSDEFS_LONG_LONG
   variant = var_void_ptr;  
   variant = var_string_type;
   variant_t::string_type var_string_type_result_read = variant;

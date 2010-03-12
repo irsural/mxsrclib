@@ -589,7 +589,7 @@ public:
 private:
   // Первый диапазон является поддиапазоном второго
   inline bool first_subdiapason_second(const diapason_type& a_first_diapason,
-    const diapason_type& a_second_diapason);
+    const diapason_type& a_second_diapason) const;
   irs::table_t<cell_t> m_table;
 };
 
@@ -757,13 +757,16 @@ inline void composite_table_t<cell_type_t>::union_off(
       const cell_t& cell = m_table.read_cell(col_i, row_i);
       if (!cell.param.autonomous) {
         diapason_type diapason = cell.param.diapason;
-        for (size_type col_i = diapason.left; col_i <= diapason.right;
-          col_i++)
+        for (size_type diapason_col_i = diapason.left;
+          diapason_col_i <= diapason.right;
+          diapason_col_i++)
         {
-          for (size_type row_i = diapason.top; row_i <= diapason.bottom;
-            row_i++)
+          for (size_type diapason_row_i = diapason.top;
+            diapason_row_i <= diapason.bottom;
+            diapason_row_i++)
           {
-            cell_t& cell_from_subdiapason = m_table.read_cell(col_i, row_i);
+            cell_t& cell_from_subdiapason =
+              m_table.read_cell(diapason_col_i, diapason_row_i);
             cell_from_subdiapason.param.autonomous = true;
           }
         }
@@ -832,7 +835,7 @@ composite_table_t<cell_type_t>::get_cell_diapason(
 template <class cell_type_t>
 inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
   const diapason_type& a_first_diapason,
-  const diapason_type& a_second_diapason)
+  const diapason_type& a_second_diapason) const
 {
   bool statement_true = false;
   //const size_type first_right = a_first_diapason.left + a_first_diapason.width;
