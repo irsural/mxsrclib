@@ -1,15 +1,11 @@
 // Коммуникационные потоки
 // Дата создания: 27.08.2009
-// Дата последнего изменения: 3.12.2009
+// Дата последнего изменения: 15.03.2010
 
 #ifndef hardflowgH
 #define hardflowgH
 
 #include <irsdefs.h>
-
-// Standart C++ headers
-#include <vector>
-#include <string.h>
 
 #if defined(IRS_WIN32)
 // Standart Windows headers
@@ -27,6 +23,9 @@
 #include <arpa/inet.h>
 #endif // IRS_WINDOWS IRS_LINUX
 
+// Standart C++ headers
+#include <string.h>
+
 // mxsrclib headers
 #include <irsstd.h>
 #include <timer.h>
@@ -34,6 +33,7 @@
 #include <mxifar.h>
 #include <mxdata.h>
 #include <irssysutils.h>
+#include <irscpp.h>
 
 #define IRS_LIB_HARDFLOW_DEBUG_NONE 0
 #define IRS_LIB_HARDFLOW_DEBUG_BASE 1

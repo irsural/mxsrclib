@@ -300,16 +300,14 @@ void irs::test_bit_copy(ostream& a_strm, size_t a_size_data_in,
   rand();
   for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
   {
-    int rand_val = rand();
-    ap_data_in[idx_in] = 
-      static_cast<irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
+    irs_i64 rand_val = rand();
+    ap_data_in[idx_in] = static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
   }
   for(int idx_out = 0; idx_out < static_cast<int>(ap_data_out.size());
     idx_out ++)
   {
     int rand_val = rand();
-    ap_data_out[idx_out] = 
-      static_cast<irs_i64>(rand_val*(IRS_U8_MAX/RAND_MAX));
+    ap_data_out[idx_out] = static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
   }
   a_strm << "IN before operation" << endl;
   for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
@@ -1683,7 +1681,7 @@ irs_uarc irs::modbus_client_t::size()
 
 irs_bool irs::modbus_client_t::connected()
 {
-  irs_bool connect;
+  irs_bool connect = irs_false;
   if(m_refresh_mode == mode_refresh_auto) {
     if(m_first_read)
       connect = irs_true;
@@ -2763,7 +2761,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     {
       request_t &sec_header = 
         reinterpret_cast<request_t&>(*(m_spacket + size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = (irs_u16)a_index;
       sec_header.quantity = a_size;
       header.length  = irs_u16(1 + sizeof(sec_header));
@@ -2773,7 +2771,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     {
       request_t &sec_header = 
         reinterpret_cast<request_t&>(*(m_spacket + size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = (irs_u16)a_index;
       sec_header.quantity = a_size;
       header.length  = irs_u16(1 + sizeof(sec_header));
@@ -2783,7 +2781,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     {
       request_t &sec_header = 
         reinterpret_cast<request_t&>(*(m_spacket + size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = (irs_u16)a_index;
       sec_header.quantity = a_size;
       header.length  = irs_u16(1 + sizeof(sec_header));
@@ -2793,7 +2791,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     {
       request_t &sec_header = 
         reinterpret_cast<request_t&>(*(m_spacket + size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = (irs_u16)a_index;
       sec_header.quantity = a_size;
       header.length  = irs_u16(1 + sizeof(sec_header));
@@ -2803,7 +2801,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     {
       request_exception_t &sec_header = 
         reinterpret_cast<request_exception_t&>(*(m_spacket + size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       header.length  = irs_u16(1 + sizeof(sec_header));
     }
     break;
@@ -2812,7 +2810,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
       response_single_write_t &sec_header = 
         reinterpret_cast<response_single_write_t&>(*(m_spacket + 
         size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.address = (irs_u16)a_index;
       header.length  = irs_u16(size_of_resp_multi_write);
     }
@@ -2822,7 +2820,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
       response_single_write_t &sec_header = 
         reinterpret_cast<response_single_write_t&>(*(m_spacket +
         size_of_MBAP));
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.address = (irs_u16)a_index;
       header.length  = irs_u16(size_of_resp_multi_write);
     }
@@ -2842,7 +2840,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
       sec_header.byte_count = static_cast<irs_u8>(bytes_count);
       header.length  = irs_u16(size_of_resp_multi_write +
         sec_header.byte_count + 1);
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
     }
     break;
     case write_multiple_registers:
@@ -2855,7 +2853,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
       sec_header.byte_count = static_cast<irs_u8>(a_size);
       header.length  = irs_u16(size_of_resp_multi_write + 
         sec_header.byte_count);
-      sec_header.function_code = m_command;
+      sec_header.function_code = static_cast<irs_u8>(m_command);
     }
     break;
     default : {

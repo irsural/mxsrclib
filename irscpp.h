@@ -8,9 +8,6 @@
 
 #include <irsdefs.h>
 
-#undef max
-#undef min
-
 #include <complex>
 #include <iomanip>
 //#include <ios>
@@ -41,6 +38,9 @@
 #include <locale>
 #include <limits>
 #endif //__ICCAVR__
+
+#undef max
+#undef min
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 namespace std {

@@ -5,19 +5,19 @@
 #ifndef irssysutilsH
 #define irssysutilsH
 
-#include <irsstd.h>
-#include <irsstrdefs.h>
-#include <irscpp.h>
-#include <irserror.h>
-
-#undef min
-#undef max
-
 #ifdef IRS_WIN32
 #include <Rpc.h>
 #else   // Прочие платформы
 #include <stdlib.h>
 #endif  // Прочие платформы
+
+#include <irsstd.h>
+#include <irsstrdefs.h>
+#include <irserror.h>
+#include <irscpp.h>
+
+#undef min
+#undef max
 
 namespace irs {
 // Вид числа
@@ -133,9 +133,9 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
     int val_int = 0;
     istr >> val_int;
     int signed_char_min =
-      numeric_limits<typename type_relative_t<C>::signed_type>::min();
+      ::numeric_limits<typename type_relative_t<C>::signed_type>::min();
     int unsigned_char_max =
-      std::numeric_limits<typename type_relative_t<C>::unsigned_type>::max();
+      ::numeric_limits<typename type_relative_t<C>::unsigned_type>::max();
     if ((val_int >= signed_char_min) && (val_int <= unsigned_char_max )) {
       *ap_num = static_cast<T>(val_int);
     } else {

@@ -13,10 +13,10 @@
 // что недопустимо по стандарту C++
 //#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
-#include <iostream>
+#include <math.h>
+
 #include <irsstdg.h>
 #include <irserror.h>
-#include <math.h>
 #include <irsvariant.h>
 #include <irscpp.h>
 #include <irslocale.h>

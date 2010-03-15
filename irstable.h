@@ -1,14 +1,11 @@
 // Абстракция таблицы Лящова Максима
-// Дата: 17.09.2009
+// Дата: 15.03.2010
+// Ранняя дата: 17.09.2009
 
 #ifndef tablegH
 #define tablegH
 
 #include <irscpp.h>
-//#include <strstream>
-//#include <string>
-//#include <vector>
-//#include <algorithm>
 #include <irsstdg.h>
 #include <irserror.h>
 #include <irsmath.h>
