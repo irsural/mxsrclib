@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 26.02.2010
+// Дата: 15.03.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -39,8 +39,7 @@
 #include <limits>
 #endif //__ICCAVR__
 
-#undef max
-#undef min
+#include <irsfinal.h>
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 namespace std {
