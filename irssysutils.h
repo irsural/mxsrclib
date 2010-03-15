@@ -10,6 +10,9 @@
 #include <irscpp.h>
 #include <irserror.h>
 
+#undef min
+#undef max
+
 #ifdef IRS_WIN32
 #include <Rpc.h>
 #else   // Прочие платформы
@@ -18,7 +21,7 @@
 
 namespace irs {
 // Вид числа
-enum { num_precision_default = -1 };
+enum { num_precision_default = static_cast<int>(-1) };
 enum num_mode_t{num_mode_invalid, num_mode_general, num_mode_fixed, num_mode_scientific,
   num_mode_default = num_mode_general};
 enum num_base_t {num_base_invalid, num_base_dec, num_base_hex, num_base_oct,
@@ -67,7 +70,7 @@ string number_to_str(
 
 template<class T, class C>
 void number_to_string(const T& a_num, basic_string<C>* ap_str,
-  const size_t a_precision,
+  const int a_precision,
   const num_mode_t a_num_mode = num_mode_default,
   const locale& a_loc = irs::loc().get())
 {
@@ -87,7 +90,11 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
       IRS_LIB_ASSERT("Недопустимое значение типа представления числа");
     }
   }
-  ostr << setprecision(a_precision);
+  if (a_precision != num_precision_default) {
+    ostr << setprecision(a_precision);
+  } else {
+    // Оставляем точность по умолчанию  
+  }
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
@@ -104,8 +111,12 @@ template<class T, class C>
 void number_to_string(const T& a_num, basic_string<C>* ap_str,
   const locale& a_loc = irs::loc().get())
 {
-  number_to_string<T, C>(a_num, ap_str, num_precision_default,
-    num_mode_general, a_loc);
+  number_to_string<T, C>(
+    a_num, 
+    ap_str, 
+    num_precision_default,
+    num_mode_general, a_loc
+  );
 }
 
 template<class T, class C>
@@ -122,7 +133,7 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
     int val_int = 0;
     istr >> val_int;
     int signed_char_min =
-      std::numeric_limits<typename type_relative_t<C>::signed_type>::min();
+      numeric_limits<typename type_relative_t<C>::signed_type>::min();
     int unsigned_char_max =
       std::numeric_limits<typename type_relative_t<C>::unsigned_type>::max();
     if ((val_int >= signed_char_min) && (val_int <= unsigned_char_max )) {

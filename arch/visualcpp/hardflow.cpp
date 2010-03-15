@@ -329,6 +329,7 @@ void irs::com_flow_t::get_param_dbc()
 {
   DWORD fsuccess = 0;
   DCB dcb;
+  memset(&dcb, 0, sizeof(dcb));
   if (m_port_status == PS_DEFECT) {
     fsuccess = 0;
   } else {

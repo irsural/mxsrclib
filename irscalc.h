@@ -779,7 +779,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
     //ap_token_data.valid = true;
     detected_token = true;
   }
-  size_type pos;
+  size_type pos = 0;
   char_type ch = irst('\0');
   if (!detected_token) {
     // Пропускаем пробелы, табуляции и переходы на новую строку

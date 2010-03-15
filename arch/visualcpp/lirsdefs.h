@@ -8,6 +8,9 @@
 // ¬ключение 64-битного типа
 #define IRSDEFS_I64
 
+// ¬ключение большого целого числа
+#define IRSDEFS_LONG_LONG
+
 // 8-битовое целое со знаком
 typedef signed char 			irs_i8;
 // 8-битовое целое без знака
