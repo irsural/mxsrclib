@@ -10,3 +10,7 @@ del ~W*.tmp
 del ~$*.*
 del *.map
 del *.pch
+del lsprst7.tgz
+del lsprst7.dll
+del sysprs7.tgz
+del sysprs7.dll
