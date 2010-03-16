@@ -1791,13 +1791,13 @@ void irs::hardflow::fixed_flow_t::connect(hardflow_t* ap_hardflow)
 }
 
 irs::hardflow::fixed_flow_t::size_type
-irs::hardflow::fixed_flow_t::read_byte_count() const
+  irs::hardflow::fixed_flow_t::read_byte_count() const
 {
   return mp_read_buf_cur - mp_read_buf;
 }
 
 irs::hardflow::fixed_flow_t::size_type
-irs::hardflow::fixed_flow_t::write_byte_count() const
+  irs::hardflow::fixed_flow_t::write_byte_count() const
 {
   return mp_write_buf_cur - mp_write_buf;
 }

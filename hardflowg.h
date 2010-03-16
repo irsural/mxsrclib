@@ -463,6 +463,7 @@ class tcp_server_t: public hardflow_t
 public:
   typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
+  
   tcp_server_t(irs_u16 local_port);
   virtual ~tcp_server_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -510,6 +511,7 @@ class tcp_client_t: public hardflow_t
 public:
   typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
+  
   tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
   virtual ~tcp_client_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -525,6 +527,7 @@ public:
   
 private:
   typedef int errcode_type;
+  
   #if defined(IRS_WIN32)
   enum { m_socket_error = SOCKET_ERROR };
   enum { m_invalid_socket = INVALID_SOCKET };
