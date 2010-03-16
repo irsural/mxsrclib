@@ -100,7 +100,7 @@ private:
   loop_timer_t m_reset_timer;
 };
   
-} //namespace avr
+} //namespace udp
   
 } //namespace irs
 
@@ -185,7 +185,6 @@ void irs::udp::arp_cash_t::resize(irs_uarc a_size)
   
 
 
-irs_u8 flag1=0;
 irs_u8 __flash prot_icmp = 0x01;
 irs_u8 __flash prot_tcp = 0x06;
 irs_u8 __flash prot_udp = 0x11;
