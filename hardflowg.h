@@ -339,7 +339,7 @@ private:
   counter_t m_max_downtime;
 };
 
-class udp_flow_t : public hardflow_t
+class udp_flow_t: public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
@@ -458,7 +458,7 @@ public:
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
-class tcp_server_t : public hardflow_t
+class tcp_server_t: public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
@@ -505,7 +505,7 @@ private:
   void new_channel();
 };
 
-class tcp_client_t : public hardflow_t
+class tcp_client_t: public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;

@@ -478,6 +478,7 @@ return((0xFFFF^sum));
 ////////////////////////////////////ARP/////////////////////////////////////////////////
 void arp_ping(irs_u8 dest_ip_[4])
 {
+  //Широковещательный запрос
   arpbuf[0x0]=0xff;
   arpbuf[0x1]=0xff;
   arpbuf[0x2]=0xff;
@@ -485,6 +486,7 @@ void arp_ping(irs_u8 dest_ip_[4])
   arpbuf[0x4]=0xff;
   arpbuf[0x5]=0xff;
 
+  //Локальный МАС-адресс
   arpbuf[0x6]=mac[0x0];
   arpbuf[0x7]=mac[0x1];
   arpbuf[0x8]=mac[0x2];
@@ -492,31 +494,26 @@ void arp_ping(irs_u8 dest_ip_[4])
   arpbuf[0xa]=mac[0x4];
   arpbuf[0xb]=mac[0x5];
 
+  //EtherType пакетов запроса 0x0806 
   arpbuf[0xc]=0x8;
   arpbuf[0xd]=0x6;
 
+  //Hardware type
   arpbuf[0xe]=0x0;
   arpbuf[0xf]=0x1;
+  
+  //Protocol type
   arpbuf[0x10]=0x8;
   arpbuf[0x11]=0x0;
-
+  
+  //Hardware lenght
   arpbuf[0x12]=0x6;
+  //Protocol lenght
   arpbuf[0x13]=0x4;
-
+  //Код операции
   arpbuf[0x15]=0x1;
 
-  arpbuf[0x20]=arpbuf[0x0];
-  arpbuf[0x21]=arpbuf[0x0];
-  arpbuf[0x22]=arpbuf[0x0];
-  arpbuf[0x23]=arpbuf[0x0];
-  arpbuf[0x24]=arpbuf[0x0];
-  arpbuf[0x25]=arpbuf[0x0];
-
-  arpbuf[0x26]=dest_ip_[0x0];
-  arpbuf[0x27]=dest_ip_[0x1];
-  arpbuf[0x28]=dest_ip_[0x2];
-  arpbuf[0x29]=dest_ip_[0x3];
-
+  //Физический адрес отправителя
   arpbuf[0x16]=mac[0x0];
   arpbuf[0x17]=mac[0x1];
   arpbuf[0x18]=mac[0x2];
@@ -524,15 +521,27 @@ void arp_ping(irs_u8 dest_ip_[4])
   arpbuf[0x1a]=mac[0x4];
   arpbuf[0x1b]=mac[0x5];
 
+  //Логический адрес отправителя
   arpbuf[0x1c]=ip[0x0];
   arpbuf[0x1d]=ip[0x1];
   arpbuf[0x1e]=ip[0x2];
   arpbuf[0x1f]=ip[0x3];
 
+  //Физический адрес получателя
+  arpbuf[0x20]=arpbuf[0x0];
+  arpbuf[0x21]=arpbuf[0x0];
+  arpbuf[0x22]=arpbuf[0x0];
+  arpbuf[0x23]=arpbuf[0x0];
+  arpbuf[0x24]=arpbuf[0x0];
+  arpbuf[0x25]=arpbuf[0x0];
+
+  //Логический адрес получателя
+  arpbuf[0x26]=dest_ip_[0x0];
+  arpbuf[0x27]=dest_ip_[0x1];
+  arpbuf[0x28]=dest_ip_[0x2];
+  arpbuf[0x29]=dest_ip_[0x3];
+
   send_arp=1;
-
-
-
 }
 
 void arppacket(void)

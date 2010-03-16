@@ -87,7 +87,7 @@ const irs_u8 rdc=0x40;//Const Rdc = &H40
 //int i, rxlen_hard=0;//Dim I as Integer
 //irs_u16 i;//Dim I as Integer
 irs_u16 rxlen_hard = 0;
-irs_u8 rx_hard=0, tx_hard=0; // glags of hardware transmission and resieving
+irs_u8 rx_hard=0, tx_hard=0; // flags of hardware transmission and resieving
 irs_u8 rx_buf[ETHERNET_PACKET_RX];
 irs_u8 tx_buf[ETHERNET_PACKET_TX];
 
