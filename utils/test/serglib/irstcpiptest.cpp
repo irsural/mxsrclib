@@ -6,7 +6,7 @@
 
 #include <irscpp.h>
 //#include <irstcpip.h>
-#include <irstcpip.h>
+#include <irstcpiptest.h>
 #include <timer.h>
 
 #include <irsfinal.h>
@@ -74,7 +74,7 @@ inline irs::ip_t& ip_from_data(T* data)
 }
 
 // ARP-кэш
-irs::arp_cash_t::arp_cash_t(irs_uarc a_size):
+irs::arp_cash_t::arp_cash_t(size_t a_size):
   m_cash(a_size),
   m_pos(0),
   m_reset_timer(60, 1)
@@ -91,42 +91,50 @@ bool irs::arp_cash_t::ip_to_mac(const irs::ip_t& a_ip, irs::mac_t& a_mac)
     }
   }
   if (m_reset_timer.check()) {
-    irs_uarc save_size = m_cash.size();
+    size_t save_size = m_cash.size();
     m_cash.clear();
     m_cash.resize(save_size);
   }
   return false;
 }
+
+//Добавление ip и mac в ARP-таблицу
 void irs::arp_cash_t::add(const irs::ip_t& a_ip, const irs::mac_t& a_mac)
 {
   bool ip_finded = false;
-  for (cash_item_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
-    if (it->valid) {
-      if (it->ip == a_ip) {
+  for(cash_item_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
+    if(it->valid) {
+      if(it->ip == a_ip) {
         it->mac = a_mac;
         ip_finded = true;
       }
     }
   }
-  if (!ip_finded) {
+  if(!ip_finded) {
     m_cash[m_pos].ip = a_ip;
     m_cash[m_pos].mac = a_mac;
     m_cash[m_pos].valid = true;
     ++m_pos;
-    if (m_pos > m_cash.size()) m_pos = 0;
+    if(m_pos > m_cash.size()) {
+      m_pos = 0;
+    }
   }
 }
 
-inline irs_uarc irs::arp_cash_t::size() const
+inline size_t irs::arp_cash_t::size() const
 {
-  return (irs_uarc)m_cash.size();
+  return (size_t)m_cash.size();
 }
 
-void irs::arp_cash_t::resize(irs_uarc a_size)
+void irs::arp_cash_t::resize(size_t a_size)
 {
-  if (a_size < 1) a_size = 1;
+  if(a_size < 1) {
+    a_size = 1;
+  }
   m_cash.resize(a_size);
-  if (m_pos > m_cash.size()) m_pos = 0;
+  if(m_pos > m_cash.size()) {
+    m_pos = 0;
+  }
 }
 
 irs::simple_tcpip_t::simple_tcpip_t(
@@ -141,7 +149,7 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_arp_buf(ARPBUF_SENDSIZE),
   m_icmp_buf(ICMPBUF_SIZE),
   m_arp_cash(10),
-  m_rx_len_icmp(0),
+  m_recv_buf_size_icmp(0),
   m_dest_ip(IRS_UDP_IP_SIZE),
   m_dest_ip_def(IRS_UDP_IP_SIZE),
   m_user_recv_status(false),
@@ -292,18 +300,18 @@ irs_u16 irs::simple_tcpip_t::ip_checksum(irs_u16 a_cs, irs_u8 a_dat,
 	cs_h = IRS_HIBYTE(a_cs);
 	cs_l = IRS_LOBYTE(a_cs);
 
-	if( IRS_LOBYTE(a_count) & 0x01 ) {
+	if(IRS_LOBYTE(a_count) & 0x01) {
 		//* We are processing LSB	
-		if( (cs_l = cs_l + b) < b ) {
-			if( ++cs_h == 0 ) {
-				cs_l ++;
+		if((cs_l = cs_l + b) < b) {
+			if(++cs_h == 0 ) {
+				cs_l++;
       }
 		}
 	} else {
 		//* We are processing MSB	
-		if( (cs_h = cs_h + b) < b )	{
-			if( ++cs_l == 0 ) {
-				cs_h ++;
+		if((cs_h = cs_h + b) < b)	{
+			if(++cs_l == 0) {
+				cs_h++;
       }
 		}
 	}
@@ -314,7 +322,7 @@ irs_u16 irs::simple_tcpip_t::ip_checksum(irs_u16 a_cs, irs_u8 a_dat,
 	return a_cs;
 }
 
-irs_u16 irs::simple_tcpip_t::cheksum(irs_u16 a_count, irs_u8* a_addr)
+irs_u16 irs::simple_tcpip_t::check_sum(irs_u16 a_count, irs_u8* a_addr)
 {
   irs_u16 ip_cs = 0;
 
@@ -416,9 +424,11 @@ irs_u16 irs::simple_tcpip_t::cheksumUDP(irs_u16 a_count, irs_u8* a_addr)
 }
 
 //Формирование ARP-запроса
-void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
+void irs::simple_tcpip_t::arp_request(irs_u8* a_dest_ip)
 {
-  //Широковещательный запрос
+  //Заголовок Ethernet:
+  
+  // Destination MAC
   mp_send_buf[0x0] = 0xff;
   mp_send_buf[0x1] = 0xff;
   mp_send_buf[0x2] = 0xff;
@@ -426,7 +436,7 @@ void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
   mp_send_buf[0x4] = 0xff;
   mp_send_buf[0x5] = 0xff;
 
-  //Локальный МАС-адресс
+  // Source MAC
   mp_send_buf[0x6] = m_mac[0x0];
   mp_send_buf[0x7] = m_mac[0x1];
   mp_send_buf[0x8] = m_mac[0x2];
@@ -434,10 +444,13 @@ void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
   mp_send_buf[0xa] = m_mac[0x4];
   mp_send_buf[0xb] = m_mac[0x5];
 
-  //EtherType пакетов запроса 0x0806 
+  //EtherType
   mp_send_buf[0xc] = 0x8;
   mp_send_buf[0xd] = 0x6;
-
+  //-----------------------------------
+  
+  //ARP-запрос:
+  
   //Hardware type
   mp_send_buf[0xe] = 0x0;
   mp_send_buf[0xf] = 0x1;
@@ -450,7 +463,7 @@ void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
   mp_send_buf[0x12] = 0x6;
   //Protocol lenght
   mp_send_buf[0x13] = 0x4;
-  //Код операции
+  //Operation Code
   mp_send_buf[0x15] = 0x1;
 
   //Физический адрес отправителя
@@ -468,12 +481,12 @@ void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
   mp_send_buf[0x1f] = m_ip[0x3];
 
   //Физический адрес получателя
-  mp_send_buf[0x20] = m_arp_buf[0x0];
-  mp_send_buf[0x21] = m_arp_buf[0x0];
-  mp_send_buf[0x22] = m_arp_buf[0x0];
-  mp_send_buf[0x23] = m_arp_buf[0x0];
-  mp_send_buf[0x24] = m_arp_buf[0x0];
-  mp_send_buf[0x25] = m_arp_buf[0x0];
+  mp_send_buf[0x20] = mp_send_buf[0x0];
+  mp_send_buf[0x21] = mp_send_buf[0x0];
+  mp_send_buf[0x22] = mp_send_buf[0x0];
+  mp_send_buf[0x23] = mp_send_buf[0x0];
+  mp_send_buf[0x24] = mp_send_buf[0x0];
+  mp_send_buf[0x25] = mp_send_buf[0x0];
 
   //Логический адрес получателя
   mp_send_buf[0x26] = a_dest_ip[0x0];
@@ -484,9 +497,9 @@ void irs::simple_tcpip_t::arp_ping(irs_u8* a_dest_ip)
   m_send_arp_status = true;
 }
 
-void irs::simple_tcpip_t::arp_packet(void)
+void irs::simple_tcpip_t::arp_response(void)
 {
-  //формируем пакет
+  //Destination MAC
   mp_send_buf[0x0] = mp_recv_buf[0x6];
   mp_send_buf[0x1] = mp_recv_buf[0x7];
   mp_send_buf[0x2] = mp_recv_buf[0x8];
@@ -494,6 +507,7 @@ void irs::simple_tcpip_t::arp_packet(void)
   mp_send_buf[0x4] = mp_recv_buf[0xa];
   mp_send_buf[0x5] = mp_recv_buf[0xb];
 
+  //Source MAC
   mp_send_buf[0x6] = m_mac[0x0];
   mp_send_buf[0x7] = m_mac[0x1];
   mp_send_buf[0x8] = m_mac[0x2];
@@ -501,19 +515,26 @@ void irs::simple_tcpip_t::arp_packet(void)
   mp_send_buf[0xa] = m_mac[0x4];
   mp_send_buf[0xb] = m_mac[0x5];
 
+  //EtherType
+  mp_send_buf[0xc] = 0x8;
+  mp_send_buf[0xd] = 0x6;
+  
+  //Hardware type
+  mp_send_buf[0xe] = 0x0;
+  mp_send_buf[0xf] = 0x1;
+  
+  //Protocol type
+  mp_send_buf[0x10] = 0x8;
+  mp_send_buf[0x11] = 0x0;
+  
+  //Hardware lenght
+  mp_send_buf[0x12] = 0x6;
+  
+  //Protocol lenght
+  mp_send_buf[0x13] = 0x4;
+
+  //Operation Code
   mp_send_buf[0x15] = 0x2;
-
-  mp_send_buf[0x20] = mp_recv_buf[0x16];
-  mp_send_buf[0x21] = mp_recv_buf[0x17];
-  mp_send_buf[0x22] = mp_recv_buf[0x18];
-  mp_send_buf[0x23] = mp_recv_buf[0x19];
-  mp_send_buf[0x24] = mp_recv_buf[0x1a];
-  mp_send_buf[0x25] = mp_recv_buf[0x1b];
-
-  mp_send_buf[0x26] = mp_recv_buf[0x1c];
-  mp_send_buf[0x27] = mp_recv_buf[0x1d];
-  mp_send_buf[0x28] = mp_recv_buf[0x1e];
-  mp_send_buf[0x29] = mp_recv_buf[0x1f];
 
   mp_send_buf[0x16] = m_mac[0x0];
   mp_send_buf[0x17] = m_mac[0x1];
@@ -527,9 +548,22 @@ void irs::simple_tcpip_t::arp_packet(void)
   mp_send_buf[0x1e] = m_ip[0x2];
   mp_send_buf[0x1f] = m_ip[0x3];
 
+  mp_send_buf[0x20] = mp_recv_buf[0x16];
+  mp_send_buf[0x21] = mp_recv_buf[0x17];
+  mp_send_buf[0x22] = mp_recv_buf[0x18];
+  mp_send_buf[0x23] = mp_recv_buf[0x19];
+  mp_send_buf[0x24] = mp_recv_buf[0x1a];
+  mp_send_buf[0x25] = mp_recv_buf[0x1b];
+
+  mp_send_buf[0x26] = mp_recv_buf[0x1c];
+  mp_send_buf[0x27] = mp_recv_buf[0x1d];
+  mp_send_buf[0x28] = mp_recv_buf[0x1e];
+  mp_send_buf[0x29] = mp_recv_buf[0x1f];
+
   m_send_arp_status = true;
 }
 
+//Заполнение ARP-таблицы:
 void irs::simple_tcpip_t::arp_cash(void)
 {
   irs::ip_t& arp_ip = ip_from_data(mp_recv_buf[0x1c]);
@@ -540,6 +574,7 @@ void irs::simple_tcpip_t::arp_cash(void)
 
 void irs::simple_tcpip_t::arp()
 {
+  //Логический адрес получателя (dest_ip)
   if((mp_recv_buf[0x26] == m_ip[0]) && (mp_recv_buf[0x27] == m_ip[1]) &&
     (mp_recv_buf[0x28] == m_ip[2]) && (mp_recv_buf[0x29] == m_ip[3]))
   {
@@ -549,11 +584,13 @@ void irs::simple_tcpip_t::arp()
         m_arp_buf[i] = mp_recv_buf[i];
       }
       m_recv_status = false;
-      if (m_arp_buf[0x15] == 2) {
-        arp_cash();
+      if (m_arp_buf[0x15] == 2) { //ARP-ответ
+        //добавояем ip и mac в ARP-таблицу
+        arp_cash(); 
       }
-      if (m_arp_buf[0x15] == 1) {
-        arp_packet();
+      if (m_arp_buf[0x15] == 1) { //ARP-запрос
+        //формируем ответ на пришедший ARP-запрос 
+        arp_response();
       }
     }
   } else {
@@ -570,67 +607,100 @@ void irs::simple_tcpip_t::send_arp(void)
 
 void irs::simple_tcpip_t::icmp_packet()
 {
-  // MAC-приемника
-  m_icmp_buf[0x0] = m_icmp_buf[0x6];
-  m_icmp_buf[0x1] = m_icmp_buf[0x7];
-  m_icmp_buf[0x2] = m_icmp_buf[0x8];
-  m_icmp_buf[0x3] = m_icmp_buf[0x9];
-  m_icmp_buf[0x4] = m_icmp_buf[0xa];
-  m_icmp_buf[0x5] = m_icmp_buf[0xb];
+  //Ethernet заголовок----------------------
+  
+  // Destination MAC
+  mp_send_buf[0x0] = mp_send_buf[0x6];
+  mp_send_buf[0x1] = mp_send_buf[0x7];
+  mp_send_buf[0x2] = mp_send_buf[0x8];
+  mp_send_buf[0x3] = mp_send_buf[0x9];
+  mp_send_buf[0x4] = mp_send_buf[0xa];
+  mp_send_buf[0x5] = mp_send_buf[0xb];
 
-  // MAC-передатчика
-  m_icmp_buf[0x6] = m_mac[0x0];
-  m_icmp_buf[0x7] = m_mac[0x1];
-  m_icmp_buf[0x8] = m_mac[0x2];
-  m_icmp_buf[0x9] = m_mac[0x3];
-  m_icmp_buf[0xa] = m_mac[0x4];
-  m_icmp_buf[0xb] = m_mac[0x5];
+  // Source MAC
+  mp_send_buf[0x6] = m_mac[0x0];
+  mp_send_buf[0x7] = m_mac[0x1];
+  mp_send_buf[0x8] = m_mac[0x2];
+  mp_send_buf[0x9] = m_mac[0x3];
+  mp_send_buf[0xa] = m_mac[0x4];
+  mp_send_buf[0xb] = m_mac[0x5];
 
-  // Уменьшаем TTL на 1
-  // Обычно при ответе на ping стек TCP/IP не уменьшает TTL
-  //icmpbuf[0x16] -= 1;
-
+ //EtherType
+  mp_send_buf[0xc] = 0x8;
+  mp_send_buf[0xd] = 0x6;
+  
+  //----------------------------------------
+  
+  //IP заголовок----------------------------
+  
+  //Version number & Header lenght
+  //mp_send_buf[0xe] = ;
+  
+  //Type of Service
+  //mp_send_buf[0xf] = ;
+  
+  //General length
+  //mp_send_buf[0x10] = ;
+  //mp_send_buf[0x11] = ;
+  
+  //Packet identifier
+  //mp_send_buf[0x12] = ;
+  //mp_send_buf[0x13] = ;
+  
+  //
+  //mp_send_buf[0x15] = ;
+  //mp_send_buf[0x16] = ;
+  
+  //Time To Life
+  //mp_send_buf[0x17] = ;
+  
   // Обнуляем контрольную сумму IP
-  m_icmp_buf[0x18] = 0x00;
-  m_icmp_buf[0x19] = 0x00;
-
-  // IP-адрес приемника
-  m_icmp_buf[0x1E] = m_icmp_buf[0x1a];
-  m_icmp_buf[0x1f] = m_icmp_buf[0x1b];
-  m_icmp_buf[0x20] = m_icmp_buf[0x1c];
-  m_icmp_buf[0x21] = m_icmp_buf[0x1d];
+  mp_send_buf[0x18] = 0x00;
+  mp_send_buf[0x19] = 0x00;
+  
+  // Контрольная сумма заголовка IP
+  irs_u16 chksum_ip = check_sum(20, &mp_send_buf[0xe]);
+  mp_send_buf[0x18] = IRS_HIBYTE(chksum_ip);
+  mp_send_buf[0x19] = IRS_LOBYTE(chksum_ip);
 
   // IP-адрес источника
-  m_icmp_buf[0x1a] = m_ip[0x0];
-  m_icmp_buf[0x1b] = m_ip[0x1];
-  m_icmp_buf[0x1c] = m_ip[0x2];
-  m_icmp_buf[0x1d] = m_ip[0x3];
+  mp_send_buf[0x1a] = m_ip[0x0];
+  mp_send_buf[0x1b] = m_ip[0x1];
+  mp_send_buf[0x1c] = m_ip[0x2];
+  mp_send_buf[0x1d] = m_ip[0x3];
 
-  // Контрольная сумма IP
-  irs_u16 chksum_ip = cheksum(20, &m_icmp_buf[0xe]);
-  m_icmp_buf[0x18] = IRS_HIBYTE(chksum_ip);
-  m_icmp_buf[0x19] = IRS_LOBYTE(chksum_ip);
+  // IP-адрес приемника
+  mp_send_buf[0x1e] = mp_send_buf[0x1a];
+  mp_send_buf[0x1f] = mp_send_buf[0x1b];
+  mp_send_buf[0x20] = mp_send_buf[0x1c];
+  mp_send_buf[0x21] = mp_send_buf[0x1d];
 
+  //------------------------------------------------------
+  
+  //ICMP-пакет--------------------------------------------
+  
   // Тип ICMP - эхо-ответ
-  m_icmp_buf[0x22] = 0x00;
+  mp_send_buf[0x22] = 0x00;
   // Код ICMP
-  m_icmp_buf[0x23] = 0x00;
+  mp_send_buf[0x23] = 0x00;
 
   // Обнуляем контрольную сумму ICMP
-  m_icmp_buf[0x24] = 0x00;
-  m_icmp_buf[0x25] = 0x00;
+  mp_send_buf[0x24] = 0x00;
+  mp_send_buf[0x25] = 0x00;
 
   // Контрольная сумма ICMP
-  irs_u16 chksum_icmp = cheksum(m_rx_len_icmp - 0x22, &m_icmp_buf[0x22]);
-  m_icmp_buf[0x24] = IRS_HIBYTE(chksum_icmp);
-  m_icmp_buf[0x25] = IRS_LOBYTE(chksum_icmp);
-
+  irs_u16 check_sum_icmp = check_sum(m_recv_buf_size_icmp - 0x22, &mp_send_buf[0x22]);
+  mp_send_buf[0x24] = IRS_HIBYTE(check_sum_icmp);
+  mp_send_buf[0x25] = IRS_LOBYTE(check_sum_icmp);
+  
+  //-------------------------------------------------------
+  
   m_send_icmp_status = true;
 }
 
 void irs::simple_tcpip_t::send_icmp()
 {
-  mp_ethernet->send_packet(m_rx_len_icmp);
+  mp_ethernet->send_packet(m_recv_buf_size_icmp);
   #ifdef DBGMODE
   PORTB ^= (1 << PORTB2);
   #endif //DBGMODE
@@ -643,10 +713,10 @@ void irs::simple_tcpip_t::icmp()
   if ((mp_recv_buf[0x22] == 8)&&(mp_recv_buf[0x23] == 0))
   {
     if (m_recv_icmp_status == false) {
-      m_rx_len_icmp = m_recv_buf_size - 4;
-      if (m_rx_len_icmp <= ICMPBUF_SIZE) {
+      m_recv_buf_size_icmp = m_recv_buf_size - 4;
+      if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_icmp_status = true;
-        for (irs_i16 i = 0; i < m_rx_len_icmp; i++) {
+        for (irs_i16 i = 0; i < m_recv_buf_size_icmp; i++) {
           m_icmp_buf[i] = mp_recv_buf[i];
         }
         icmp_packet();
@@ -677,12 +747,12 @@ void irs::simple_tcpip_t::server_udp()
 
 void irs::simple_tcpip_t::udp_packet()
 {
-  mp_send_buf[0x0] = m_arp_cash[0x4];
-  mp_send_buf[0x1] = m_arp_cash[0x5];
-  mp_send_buf[0x2] = m_arp_cash[0x6];
-  mp_send_buf[0x3] = m_arp_cash[0x7];
-  mp_send_buf[0x4] = m_arp_cash[0x8];
-  mp_send_buf[0x5] = m_arp_cash[0x9];
+  mp_send_buf[0x0] = mp_send_buf[0x4];
+  mp_send_buf[0x1] = mp_send_buf[0x5];
+  mp_send_buf[0x2] = mp_send_buf[0x6];
+  mp_send_buf[0x3] = mp_send_buf[0x7];
+  mp_send_buf[0x4] = mp_send_buf[0x8];
+  mp_send_buf[0x5] = mp_send_buf[0x9];
 
   mp_send_buf[0x6] = m_mac[0x0];
   mp_send_buf[0x7] = m_mac[0x1];
@@ -712,15 +782,15 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[0x16] = 128;
   //protocol
   mp_send_buf[0x17] = 0x11;
-  //obnulenie cheksum
+  //obnulenie check_sum
   mp_send_buf[0x18] = 0;
   mp_send_buf[0x19] = 0;
 
   //ip dest
-  mp_send_buf[0x1e] = m_arp_cash[0x0];
-  mp_send_buf[0x1f] = m_arp_cash[0x1];
-  mp_send_buf[0x20] = m_arp_cash[0x2];
-  mp_send_buf[0x21] = m_arp_cash[0x3];
+  mp_send_buf[0x1e] = mp_send_buf[0x0];
+  mp_send_buf[0x1f] = mp_send_buf[0x1];
+  mp_send_buf[0x20] = mp_send_buf[0x2];
+  mp_send_buf[0x21] = mp_send_buf[0x3];
   //ip sourse
   mp_send_buf[0x1a] = m_ip[0x0];
   mp_send_buf[0x1b] = m_ip[0x1];
@@ -729,7 +799,7 @@ void irs::simple_tcpip_t::udp_packet()
   //clear checsum
 
   //checksum
-  irs_u16 chksum_ip = cheksum(20, &mp_send_buf[0xe]);
+  irs_u16 chksum_ip = check_sum(20, &mp_send_buf[0xe]);
   mp_send_buf[0x18] = IRS_HIBYTE(chksum_ip);
   mp_send_buf[0x19] = IRS_LOBYTE(chksum_ip);
 
@@ -787,7 +857,7 @@ void irs::simple_tcpip_t::client_udp()
       } else {
         if (m_recv_arp_status == false) {
           m_recv_arp_status = true;
-          arp_ping(m_dest_ip.data());
+          arp_request(m_dest_ip.data());
           udp_wait_arp = true;
           set_to_cnt(to_udp_wait_arp, t_udp_wait_arp);
         }
@@ -810,12 +880,12 @@ void irs::simple_tcpip_t::ip(void)
   if((mp_recv_buf[0x1e] == m_ip[0]) && (mp_recv_buf[0x1f] == m_ip[1]) && 
     (mp_recv_buf[0x20] == m_ip[2]) && (mp_recv_buf[0x21] == m_ip[3]))
   {
-      if(mp_recv_buf[0x17] == 0x01) {
-        icmp(); 
-      }
-      if(mp_recv_buf[0x17] == 0x11) {
-        udp();
-      }
+    if(mp_recv_buf[0x17] == 0x01) {
+      icmp(); 
+    }
+    if(mp_recv_buf[0x17] == 0x11) {
+      udp();
+    }
   } else {
     m_recv_status = false;
   }  
@@ -825,29 +895,33 @@ void irs::simple_tcpip_t::tick()
 {
   if (m_recv_status == true)
   {
-    if ((mp_recv_buf[0xc] == 0x8)&&(mp_recv_buf[0xd] == 0)) ip();
-    if ((mp_recv_buf[0xc] == 0x8)&&(mp_recv_buf[0xd] == 6)) arp();
+    if((mp_recv_buf[0xc] == 0x8) && (mp_recv_buf[0xd] == 0x0)) {
+      ip();
+    }
+    if((mp_recv_buf[0xc] == 0x8) && (mp_recv_buf[0xd] == 0x6)) {
+      arp();
+    }
     m_recv_status = false;
   }
 
-  if (m_udp_open == true) {
+  if(m_udp_open == true) {
     client_udp();
   }
 
-  if (m_send_arp_status) {
-    if (m_send_status == false) {
+  if(m_send_arp_status) {
+    if(m_send_status == false) {
       send_arp();
     }
   }
   
-  if (m_send_icmp_status) {
-    if (m_send_status == false) {
+  if(m_send_icmp_status) {
+    if(m_send_status == false) {
       send_icmp();
     }
   }
   
-  if (m_send_udp_status) {
-    if (m_send_status == false) {
+  if(m_send_udp_status) {
+    if(m_send_status == false) {
       send_udp();
     }
   }

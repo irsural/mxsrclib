@@ -9,7 +9,7 @@
 
 #include <irsstd.h>
 //#include <irstcpip.h>
-#include <irstcpip.h>
+#include <irstcpiptest.h>
 
 #include <irsfinal.h>
 
