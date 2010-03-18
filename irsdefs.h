@@ -6,6 +6,7 @@
 #define IRSDEFSH
 
 #include <limits.h>
+#include <stddef.h>
 
 // Деректива throw
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
@@ -267,6 +268,10 @@ public:
   virtual irs_bool tick() = 0;
   virtual void abort() = 0;
 };
+
+// Переопределение станартных типов
+typedef size_t irs_size_t;
+typedef ptrdiff_t irs_ptrdiff_t;
 
 namespace irs {
 

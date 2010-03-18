@@ -3,6 +3,38 @@
 
 #include <irsint.h>
 #include <irserror.h>
+#ifdef __ICCAVR__
+#include <irsarchint.h>
+#endif //__ICCAVR__
+
+namespace irs {
+
+// В C++ Builder 4 mem_fun не переваривает функции возвращающие void
+// Поэтому определяем собственный функциональный объект для
+// функции irs::generator_events_t::exec
+struct event_exec_fun_t
+{
+  void operator()(event_t *ap_event)
+  {
+    ap_event->exec();
+  }
+};
+
+// Пустая реализация работы с прерываниями
+class interrupt_array_empty_t: public interrupt_array_base_t
+{
+public:
+  typedef irs_size_t size_type;
+
+  interrupt_array_empty_t();
+    
+  virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
+  virtual void exec_event(size_type a_index);
+private:
+  irs_int_event_gen_t m_gen;
+};
+
+} //namespace irs
 
 // Класс действий
 irs_action_t::irs_action_t():
@@ -28,21 +60,6 @@ irs::generator_events_t::generator_events_t():
   m_events()
 {
 }
-
-namespace irs {
-
-// В C++ Builder 4 mem_fun не переваривает функции возвращающие void
-// Поэтому определяем собственный функциональный объект для
-// функции irs::generator_events_t::exec
-struct event_exec_fun_t
-{
-  void operator()(event_t *ap_event)
-  {
-    ap_event->exec();
-  }
-};
-
-} //namespace irs
 
 void irs::generator_events_t::exec()
 {
@@ -131,4 +148,30 @@ void mxfact_event_t::connect(mxfact_event_t *&a_event)
 void mxfact_event_t::add(irs_action_t *a_action)
 {
   a_action->connect(fp_action);
+}
+
+// Пустая реализация работы с прерываниями
+irs::interrupt_array_empty_t::interrupt_array_empty_t():
+  m_gen()
+{
+}
+irs_int_event_gen_t* 
+  irs::interrupt_array_empty_t::int_event_gen(size_type /*a_index*/)
+{
+  return &m_gen;
+}
+void irs::interrupt_array_empty_t::exec_event(size_type /*a_index*/)
+{
+}
+
+// Возвращает массив прерываний
+irs::interrupt_array_base_t* irs::interrupt_array()
+{
+  #ifdef __ICCAVR__
+  return irs::avr::interrupt_array();
+  #else //__ICCAVR__
+  static auto_ptr<interrupt_array_t> 
+    p_interrupt_array(new interrupt_array_empty_t);
+  return p_interrupt_array.get();
+  #endif //__ICCAVR__
 }

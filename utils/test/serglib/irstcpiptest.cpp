@@ -717,7 +717,7 @@ void irs::simple_tcpip_t::icmp()
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_icmp_status = true;
         for (irs_i16 i = 0; i < m_recv_buf_size_icmp; i++) {
-          m_icmp_buf[i] = mp_recv_buf[i];
+          m_send_buf[i] = mp_recv_buf[i];
         }
         icmp_packet();
       }

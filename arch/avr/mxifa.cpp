@@ -1,6 +1,7 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата 25.09.2008
+// Дата 18.03.2010
+// Ранняя дата 25.09.2008
 
 #include <mxifa.h>
 #include <irsdefs.h>
@@ -345,7 +346,7 @@ irs_bool mxifa_close_begin(void *pchdata)
       }
     } break;
     case mxifa_ei_hardflow: {
-      closed = true;  //-----------------------------------------------------------------------
+      closed = true;  
     }
   }
   return closed;

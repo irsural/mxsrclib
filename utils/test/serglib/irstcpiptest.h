@@ -32,8 +32,9 @@ class simple_ethernet_t
 public:
   virtual ~simple_ethernet_t();
   virtual void send_packet(irs_u16 a_size);
-  virtual bool recv_status(); 
-  virtual bool send_status(); 
+  //virtual void set_recv_status_completed()
+  virtual bool recv_status(); //is_recv_status_busy
+  virtual bool send_status(); //is_send_status_busy
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual size_t recv_buf_size();

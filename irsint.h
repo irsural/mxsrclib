@@ -1,11 +1,15 @@
 // Прерывания
-// Дата: 17.09.2009
+// Дата: 17.03.2010
+// Ранняя дата: 17.09.2009
 
 #ifndef irsintH
 #define irsintH
 
 #include <irsdefs.h>
+
 #include <irscpp.h> 
+
+#include <irsfinal.h>
 
 // Класс действий
 class irs_action_t
@@ -18,8 +22,91 @@ public:
   virtual void connect(irs_action_t *&a_action);
 };
 
-//#ifdef NOP
+// Класс событий
+class mxfact_event_t
+{
+  mxfact_event_t *fp_prev_event;
+  irs_bool f_occurred;
+  irs_action_t *fp_action;
+public:
+  mxfact_event_t();
+  virtual ~mxfact_event_t();
+  virtual void exec();
+  virtual irs_bool check();
+  virtual void reset();
+  virtual void connect(mxfact_event_t *&a_event);
+  virtual void add(irs_action_t *a_action);
+};
+
+// Класс генератора прерываний
+class irs_int_event_gen_t
+{
+  mxfact_event_t *mp_event;
+public:
+  inline irs_int_event_gen_t();
+  inline ~irs_int_event_gen_t();
+  inline void exec();
+  inline void add(mxfact_event_t *ap_event);
+};
+
+inline irs_int_event_gen_t::irs_int_event_gen_t():
+  mp_event(IRS_NULL)
+{
+}
+inline irs_int_event_gen_t::~irs_int_event_gen_t()
+{
+}
+inline void irs_int_event_gen_t::exec()
+{
+  mp_event->exec();
+}
+inline void irs_int_event_gen_t::add(mxfact_event_t *ap_event)
+{
+  ap_event->connect(mp_event);
+}
+
 namespace irs {
+
+// Подключение событий к функциям-членам класса
+template <class T>
+class event_connect_t: public mxfact_event_t
+{
+public:
+  typedef void (T::*member_type)();
+  
+  event_connect_t(T* ap_object, member_type ap_member);
+  
+  virtual void exec();
+private:
+  T* mp_object;
+  member_type mp_member;
+  
+  event_connect_t();
+};
+template <class T>
+event_connect_t<T>::event_connect_t(T* ap_object, member_type ap_member):
+  mp_object(ap_object),
+  mp_member(ap_member)
+{
+}
+template <class T>
+void event_connect_t<T>::exec()
+{
+  (mp_object->*mp_member)();
+}
+
+// Интерфейс для работы с прерываниями
+class interrupt_array_base_t
+{
+public:
+  typedef irs_size_t size_type;
+
+  virtual irs_int_event_gen_t* int_event_gen(size_type a_index) = 0;
+  virtual void exec_event(size_type a_index) = 0;
+};
+
+// Возвращает массив прерываний
+interrupt_array_base_t* interrupt_array();
 
 // Базовый класс событий
 class event_t
@@ -104,82 +191,6 @@ inline event_t* make_event(
 )
 { 
   return new event_function_t<owner_type>(ap_owner, ap_function);
-}
-
-} // namespace irs
-//#endif // NOP
-
-// Класс событий
-class mxfact_event_t
-{
-  mxfact_event_t *fp_prev_event;
-  irs_bool f_occurred;
-  irs_action_t *fp_action;
-public:
-  mxfact_event_t();
-  virtual ~mxfact_event_t();
-  virtual void exec();
-  virtual irs_bool check();
-  virtual void reset();
-  virtual void connect(mxfact_event_t *&a_event);
-  virtual void add(irs_action_t *a_action);
-};
-
-// Класс генератора прерываний
-class irs_int_event_gen_t
-{
-  mxfact_event_t *mp_event;
-public:
-  inline irs_int_event_gen_t();
-  inline ~irs_int_event_gen_t();
-  inline void exec();
-  inline void add(mxfact_event_t *ap_event);
-};
-
-inline irs_int_event_gen_t::irs_int_event_gen_t():
-  mp_event(IRS_NULL)
-{
-}
-inline irs_int_event_gen_t::~irs_int_event_gen_t()
-{
-}
-inline void irs_int_event_gen_t::exec()
-{
-  mp_event->exec();
-}
-inline void irs_int_event_gen_t::add(mxfact_event_t *ap_event)
-{
-  ap_event->connect(mp_event);
-}
-
-namespace irs {
-
-// Подключение событий к функциям-членам класса
-template <class T>
-class event_connect_t: public mxfact_event_t
-{
-public:
-  typedef void (T::*member_type)();
-  
-  event_connect_t(T* ap_object, member_type ap_member);
-  
-  virtual void exec();
-private:
-  T* mp_object;
-  member_type mp_member;
-  
-  event_connect_t();
-};
-template <class T>
-event_connect_t<T>::event_connect_t(T* ap_object, member_type ap_member):
-  mp_object(ap_object),
-  mp_member(ap_member)
-{
-}
-template <class T>
-void event_connect_t<T>::exec()
-{
-  (mp_object->*mp_member)();
 }
 
 } //namespace irs
