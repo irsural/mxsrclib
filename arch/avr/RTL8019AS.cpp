@@ -1,17 +1,24 @@
 // Драйвер Ethernet для RTL8019AS Димы Уржумцева
 // Откорректирован Крашенинников М. В.
 // Испорчен Поляковым М.
-// Дата: 26.02.2009
+// Дата: 18.03.2010
+// Ранняя дата: 26.02.2009
 
 #define RTL_RESET_ON_TIMEOUT // Сброс RTL при таймауте в операции
 //#define RTL_DISABLE_INT // Выключение прерываний во время операции
 #define RTL_DISABLE_INT_BYTE //Запрет прерываний при чтении/записи байтов
 
+#include <irsdefs.h>
+
 #include <ioavr.h>
 #include <inavr.h>
+
 #include <RTL8019AS.h>
 #include <timer.h>
-//#include <irsavrutil.h>
+#include <irsconfig.h>
+#include <irsavrutil.h>
+
+#include <irsfinal.h>
 
 ////объявления выводов
 ////////////////defines hardware
@@ -113,12 +120,21 @@ void writertl(irs_u8 regaddr, irs_u8 regdata);
 void overrun();
 void getpacket();
 
+#ifdef IRS_LIB_RTL_OLD_INTERRUPT
+#pragma vector=INT4_vect
+__interrupt void int_etherhet(void)
+{
+#else //IRS_LIB_RTL_OLD_INTERRUPT
 /////interrupt/////////////////////////////////////////////
 class rtl_interrupt_t : public mxfact_event_t
 {
 public:
   virtual void exec()
   {
+#endif //IRS_LIB_RTL_OLD_INTERRUPT
+  static irs::blink_t blink_red(irs_avr_porte, 2);
+  blink_red();
+
     #ifdef RTL_DISABLE_INT
     irs_disable_interrupt();
     #else //RTL_DISABLE_INT
@@ -149,8 +165,12 @@ public:
     #ifdef RTL_DISABLE_INT
     irs_enable_interrupt();
     #endif //RTL_DISABLE_INT
+#ifdef IRS_LIB_RTL_OLD_INTERRUPT
+}
+#else //IRS_LIB_RTL_OLD_INTERRUPT
   }
 };
+#endif //IRS_LIB_RTL_OLD_INTERRUPT
 
 #ifdef NOP
 #pragma vector=INT4_vect
@@ -418,8 +438,10 @@ void initrtl(const irs_u8 *mac)
 {
   memcpy(mac_save, mac, mac_size);
 
+  #ifndef IRS_LIB_RTL_OLD_INTERRUPT
   static rtl_interrupt_t rtl_interrupt;
   irs_avr_int4_int.add(&rtl_interrupt);
+  #endif //IRS_LIB_RTL_OLD_INTERRUPT
 
   // Сброс RTL
   reset_rtl();

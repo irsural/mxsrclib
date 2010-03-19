@@ -7,6 +7,7 @@
 #include <ioavr.h>
 
 #include <irsarchint.h>
+#include <irsconfig.h>
 
 #include <irsfinal.h>
 
@@ -93,8 +94,12 @@ IRS_INT_EVENT_GEN_DEFINE_FUNC(int1_int);
 IRS_INT_EVENT_GEN_DEFINE_FUNC(int2_int);
 #pragma vector=INT3_vect
 IRS_INT_EVENT_GEN_DEFINE_FUNC(int3_int);
-//#pragma vector=INT4_vect
-//IRS_INT_EVENT_GEN_DEFINE_FUNC(int4_int);
+
+#ifndef IRS_LIB_RTL_OLD_INTERRUPT
+#pragma vector=INT4_vect
+IRS_INT_EVENT_GEN_DEFINE_FUNC(int4_int);
+#endif //IRS_LIB_RTL_OLD_INTERRUPT
+
 #pragma vector=INT5_vect
 IRS_INT_EVENT_GEN_DEFINE_FUNC(int5_int);
 #pragma vector=INT6_vect
