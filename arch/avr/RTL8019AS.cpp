@@ -325,8 +325,8 @@ void reset_rtl()
   *port_str.rtl_address_port_set &= (0xFF^(1 << RSTDRV));
   // Задержка после сброса RTL
   counter_t to_wait_rst;
-  //set_to_cnt(to_wait_rst, TIME_TO_CNT(1,320));
-  set_to_cnt(to_wait_rst, TIME_TO_CNT(1, 1));
+  set_to_cnt(to_wait_rst, TIME_TO_CNT(1,320));
+  //set_to_cnt(to_wait_rst, TIME_TO_CNT(1, 1));
   while (!test_to_cnt(to_wait_rst));
 
   // Линия прерывания INT4 - вход
