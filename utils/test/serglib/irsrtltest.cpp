@@ -381,27 +381,32 @@ void irs::rtl8019as_t::init_rtl(const irs_u8 *ap_mac)
   reset_rtl();
 }
 
-bool irs::rtl8019as_t::get_rx_hard()
+void irs::rtl8019as_t::set_recv_status_completed()
+{
+  m_recv_status = false;
+}
+
+bool irs::rtl8019as_t::is_recv_status_busy()
 {
   return m_recv_status;
 }
 
-bool irs::rtl8019as_t::get_tx_hard()
+bool irs::rtl8019as_t::is_send_status_busy()
 {
   return false;
 }
 
-irs_u8* irs::rtl8019as_t::get_rx_buf()
+irs_u8* irs::rtl8019as_t::get_recv_buf()
 {
   return m_recv_buf.data();
 }
 
-irs_u8* irs::rtl8019as_t::get_tx_buf()
+irs_u8* irs::rtl8019as_t::get_send_buf()
 {
   return m_send_buf.data();
 }
 
-irs_u16 irs::rtl8019as_t::get_rx_len_hard()
+size_t irs::rtl8019as_t::recv_buf_size()
 {
   return m_recv_buf_size;
 }

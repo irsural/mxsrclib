@@ -146,8 +146,6 @@ irs::simple_tcpip_t::simple_tcpip_t(
   mp_ethernet(ap_ethernet),
   m_ip(IRS_UDP_IP_SIZE),
   m_mac(IRS_UDP_MAC_SIZE),
-  m_arp_buf(ARPBUF_SENDSIZE),
-  m_icmp_buf(ICMPBUF_SIZE),
   m_arp_cash(10),
   m_recv_buf_size_icmp(0),
   m_dest_ip(IRS_UDP_IP_SIZE),
@@ -172,10 +170,12 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_recv_icmp_status(false),
   m_send_icmp_status(false),
   m_send_udp_status(false),
-  m_recv_status(mp_ethernet->recv_status()),
-  m_send_status(mp_ethernet->send_status()),
+  m_recv_status(mp_ethernet->is_recv_status_busy()),
+  m_send_status(mp_ethernet->is_send_status_busy()),
   m_recv_buf_size(mp_ethernet->recv_buf_size()),
-  mp_arp_cash(a_arp_cash)
+  mp_arp_cash(a_arp_cash),
+  m_cash_ip(ip_from_data(m_arp_cash[0])),
+  m_cash_mac(mac_from_data(m_arp_cash[4]))
 {
   m_ip[0] = ap_ip[0];
   m_ip[1] = ap_ip[1];
@@ -278,13 +278,15 @@ void irs::simple_tcpip_t::read_udp_end()
 bool irs::simple_tcpip_t::cash(irs_u8* a_dest_ip)
 {
   bool result = false;
-  irs::mac_t& cash_mac = mac_from_data(a_dest_ip);
-  const irs::ip_t& ip = ip_from_data(a_dest_ip);
-  if (ip != irs::broadcast_ip()) {
-    if (mp_arp_cash.ip_to_mac(ip, cash_mac)) {
+  const ip_t& ip = ip_from_data(a_dest_ip);
+  if(ip != broadcast_ip()) {
+    if(mp_arp_cash.ip_to_mac(ip, m_cash_mac)) {
+      m_cash_ip = ip;
       result = true;
     }
   } else {
+    m_cash_ip = broadcast_ip();
+    m_cash_mac = broadcast_mac();
     result = true;
   }
   return result;
@@ -569,6 +571,7 @@ void irs::simple_tcpip_t::arp_cash(void)
   irs::ip_t& arp_ip = ip_from_data(mp_recv_buf[0x1c]);
   irs::mac_t& arp_mac = mac_from_data(mp_recv_buf[0x16]);
   mp_arp_cash.add(arp_ip, arp_mac);
+  
   m_recv_arp_status = false;
 }
 
@@ -581,14 +584,14 @@ void irs::simple_tcpip_t::arp()
     if (m_recv_arp_status == false) {
       m_recv_arp_status = true;
       for (irs_u8 i = 0; i < ARPBUF_SIZE; i++) {
-        m_arp_buf[i] = mp_recv_buf[i];
+        mp_send_buf[i] = mp_recv_buf[i];
       }
       m_recv_status = false;
-      if (m_arp_buf[0x15] == 2) { //ARP-ответ
+      if (mp_send_buf[0x15] == 2) { //ARP-ответ
         //добавояем ip и mac в ARP-таблицу
         arp_cash(); 
       }
-      if (m_arp_buf[0x15] == 1) { //ARP-запрос
+      if (mp_send_buf[0x15] == 1) { //ARP-запрос
         //формируем ответ на пришедший ARP-запрос 
         arp_response();
       }
@@ -717,7 +720,7 @@ void irs::simple_tcpip_t::icmp()
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_icmp_status = true;
         for (irs_i16 i = 0; i < m_recv_buf_size_icmp; i++) {
-          m_send_buf[i] = mp_recv_buf[i];
+          mp_send_buf[i] = mp_recv_buf[i];
         }
         icmp_packet();
       }
@@ -747,12 +750,12 @@ void irs::simple_tcpip_t::server_udp()
 
 void irs::simple_tcpip_t::udp_packet()
 {
-  mp_send_buf[0x0] = mp_send_buf[0x4];
-  mp_send_buf[0x1] = mp_send_buf[0x5];
-  mp_send_buf[0x2] = mp_send_buf[0x6];
-  mp_send_buf[0x3] = mp_send_buf[0x7];
-  mp_send_buf[0x4] = mp_send_buf[0x8];
-  mp_send_buf[0x5] = mp_send_buf[0x9];
+  mp_send_buf[0x0] = m_arp_cash[0x4];
+  mp_send_buf[0x1] = m_arp_cash[0x5];
+  mp_send_buf[0x2] = m_arp_cash[0x6];
+  mp_send_buf[0x3] = m_arp_cash[0x7];
+  mp_send_buf[0x4] = m_arp_cash[0x8];
+  mp_send_buf[0x5] = m_arp_cash[0x9];
 
   mp_send_buf[0x6] = m_mac[0x0];
   mp_send_buf[0x7] = m_mac[0x1];
@@ -787,10 +790,10 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[0x19] = 0;
 
   //ip dest
-  mp_send_buf[0x1e] = mp_send_buf[0x0];
-  mp_send_buf[0x1f] = mp_send_buf[0x1];
-  mp_send_buf[0x20] = mp_send_buf[0x2];
-  mp_send_buf[0x21] = mp_send_buf[0x3];
+  mp_send_buf[0x1e] = m_arp_cash[0x0];
+  mp_send_buf[0x1f] = m_arp_cash[0x1];
+  mp_send_buf[0x20] = m_arp_cash[0x2];
+  mp_send_buf[0x21] = m_arp_cash[0x3];
   //ip sourse
   mp_send_buf[0x1a] = m_ip[0x0];
   mp_send_buf[0x1b] = m_ip[0x1];

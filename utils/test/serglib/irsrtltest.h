@@ -62,12 +62,12 @@ public:
   );
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_u16 a_size);
-  virtual bool get_rx_hard();
-  virtual bool get_tx_hard();
-  virtual irs_u8* get_rx_buf();
-  virtual irs_u8* get_tx_buf();
-  virtual irs_u16 get_rx_len_hard();
-  virtual void tick();
+  virtual void set_recv_status_completed();
+  virtual bool is_recv_status_busy();
+  virtual bool is_send_status_busy();
+  virtual irs_u8* get_recv_buf();
+  virtual irs_u8* get_send_buf();
+  virtual size_t recv_buf_size();
   
 private:
   raw_data_t<irs_u8> m_recv_buf;
@@ -75,7 +75,7 @@ private:
   raw_data_t<irs_u8> m_mac_save;
   event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_recv_status;
-  irs_u16 m_recv_buf_size;
+  size_t m_recv_buf_size;
   
   void set_rtl_ports(irs_avr_port_t a_data_port, irs_avr_port_t a_address_port);
   void init_rtl(const irs_u8 *ap_mac);

@@ -32,9 +32,9 @@ class simple_ethernet_t
 public:
   virtual ~simple_ethernet_t();
   virtual void send_packet(irs_u16 a_size);
-  //virtual void set_recv_status_completed()
-  virtual bool recv_status(); //is_recv_status_busy
-  virtual bool send_status(); //is_send_status_busy
+  virtual void set_recv_status_completed();
+  virtual bool is_recv_status_busy(); 
+  virtual bool is_send_status_busy(); 
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual size_t recv_buf_size();
@@ -139,8 +139,6 @@ private:
   simple_ethernet_t* mp_ethernet;
   raw_data_t<irs_u8> m_ip;
   raw_data_t<irs_u8> m_mac;
-  raw_data_t<irs_u8> m_arp_buf;
-  raw_data_t<irs_u8> m_icmp_buf;
   raw_data_t<irs_u8> m_arp_cash;
   irs_u16 m_recv_buf_size_icmp;
   raw_data_t<irs_u8> m_dest_ip;
@@ -169,6 +167,8 @@ private:
   bool m_send_status;
   size_t m_recv_buf_size;
   arp_cash_t mp_arp_cash;
+  ip_t& m_cash_ip;
+  mac_t& m_cash_mac;
   
   bool cash(irs_u8* a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
