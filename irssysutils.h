@@ -261,7 +261,7 @@ public:
         if (m_id.size() >= a_byte_count) {
           break;
         } else {
-          irs_u8 id_element = *(reinterpret_cast<irs_u8*>(&id)+byte_i);
+          irs_u8 id_element = *(reinterpret_cast<irs_u8*>(&id) + byte_i);
           m_id.push_back(id_element);
         }
       }
@@ -320,7 +320,8 @@ public:
     const size_type id_str_size = a_id_str.size();
     const size_type need_elem_str_size = 2;
     string_type elem_str;
-    identificator id(m_id.size(), 0);
+    identificator id;
+    id.reserve(id_str_size / need_elem_str_size);
     for (size_type id_str_index = 0; id_str_index < id_str_size;
       id_str_index++)
     {
