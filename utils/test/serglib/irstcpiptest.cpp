@@ -176,6 +176,8 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_send_udp_status_busy(false),
   m_recv_status(mp_ethernet->is_recv_status_busy()),
   m_send_status(mp_ethernet->is_send_status_busy()),
+  m_udp_wait_arp(false),
+  m_udp_wait_arp_time(TIME_TO_CNT(1, 1)),
   m_recv_buf_size(mp_ethernet->recv_buf_size()),
   m_arp_cash(a_arp_cash_size),
   m_dest_mac(IRS_TCPIP_MAC(mp_send_buf))
@@ -854,20 +856,20 @@ void irs::simple_tcpip_t::client_udp()
 {
   if (m_user_send_status == true) {
     // !!!! Сделать перменные класса
-    static bool udp_wait_arp = false;
-    static counter_t to_udp_wait_arp;
-    #define t_udp_wait_arp TIME_TO_CNT(1, 1)
+    //static bool udp_wait_arp = false;
+    //static counter_t to_udp_wait_arp;
+    //#define t_udp_wait_arp TIME_TO_CNT(1, 1)
 
     if (cash(m_dest_ip)) {
       if (m_udp_send_status == false) {
         udp_packet();
         m_udp_send_status = true;
-        udp_wait_arp = false;
+        m_udp_wait_arp = false;
       }
     } else {
-      if (udp_wait_arp) {
-        if (test_to_cnt(to_udp_wait_arp)) {
-          udp_wait_arp = false;
+      if (m_udp_wait_arp) {
+        if (m_udp_wait_arp_time.check()) {
+          m_udp_wait_arp = false;
           m_send_udp_status_busy = false;
           m_udp_send_status = false;
           m_user_send_status = false;
@@ -876,8 +878,8 @@ void irs::simple_tcpip_t::client_udp()
         if (m_recv_arp_status_busy == false) {
           m_recv_arp_status_busy = true;
           arp_request(m_dest_ip);
-          udp_wait_arp = true;
-          set_to_cnt(to_udp_wait_arp, t_udp_wait_arp);
+          m_udp_wait_arp = true;
+          m_udp_wait_arp_time.start();
         }
       }
     }

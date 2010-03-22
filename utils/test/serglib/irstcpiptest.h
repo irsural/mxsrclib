@@ -140,7 +140,7 @@ public:
     simple_ethernet_t* ap_ethernet,
     const mac_t& a_mac, 
     const ip_t& a_ip,
-    irs_size_t a_arp_cash_size
+    irs_size_t a_arp_cash_size = arp_cash_t::arp_table_size
   );
   ~simple_tcpip_t();
   void open_udp();
@@ -188,6 +188,8 @@ private:
   bool m_send_udp_status_busy;
   bool m_recv_status;
   bool m_send_status;
+  bool m_udp_wait_arp;
+  timer_t m_udp_wait_arp_time;
   size_t m_recv_buf_size;
   arp_cash_t m_arp_cash;
   mac_t& m_dest_mac;
