@@ -24,7 +24,12 @@ class rtl8019as_t: public simple_ethernet_t
 {
 public:
   typedef rtl8019as_t this_type;
+  typedef simple_ethernet_t::buffer_num_t buffer_num_t;
   
+  enum {
+    ETHERNET_PACKET_MAX = 1550,
+    ETHERNET_PACKET_MIN = 60
+  };
   enum {
     rstport = 0x18,
     isr = 0x07,
@@ -56,6 +61,8 @@ public:
   };
   
   rtl8019as_t(
+    buffer_num_t a_num_buf,
+    size_t a_buf_size,
     irs_avr_port_t a_data_port,
     irs_avr_port_t a_address_port,
     const irs_u8 *ap_mac
@@ -68,16 +75,23 @@ public:
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual size_t recv_buf_size();
+  virtual buffer_num_t get_buf_num();
   
 private:
+  buffer_num_t m_buf_num;
+  size_t m_size_buf;
   raw_data_t<irs_u8> m_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
   raw_data_t<irs_u8> m_mac_save;
   event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_recv_status;
+  bool m_send_status;
   size_t m_recv_buf_size;
+  irs_u8* mp_recv_buf;
+  irs_u8* mp_send_buf;
   
-  void set_rtl_ports(irs_avr_port_t a_data_port, irs_avr_port_t a_address_port);
+  void set_rtl_ports(irs_avr_port_t a_data_port, 
+    irs_avr_port_t a_address_port);
   void init_rtl(const irs_u8 *ap_mac);
   void rtl_interrupt();
   irs_u8 read_rtl(irs_u8 a_reg_addr);

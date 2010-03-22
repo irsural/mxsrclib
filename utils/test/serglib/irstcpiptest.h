@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 17.03.2010
+// Дата: 19.03.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -30,6 +30,10 @@ namespace irs {
 class simple_ethernet_t
 {
 public:
+  enum buffer_num_t{
+    single_buf,
+    double_buf
+  };
   virtual ~simple_ethernet_t();
   virtual void send_packet(irs_u16 a_size);
   virtual void set_recv_status_completed();
@@ -38,6 +42,7 @@ public:
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual size_t recv_buf_size();
+  virtual buffer_num_t get_buf_num();
 };
 
 struct mac_t 
@@ -78,9 +83,11 @@ const mac_t& broadcast_mac();
 class arp_cash_t
 {
 public:
-  static const size_t m_def_size = 3;
+  enum {
+    arp_table_size = 3
+  };
   
-  arp_cash_t(size_t a_size = m_def_size);
+  arp_cash_t(size_t a_size = arp_table_size);
   bool ip_to_mac(const irs::ip_t& a_ip, irs::mac_t& a_mac);
   void add(const irs::ip_t& a_ip, const irs::mac_t& a_mac);
   inline size_t size() const;
@@ -113,6 +120,8 @@ private:
 class simple_tcpip_t
 {
 public:
+  typedef simple_ethernet_t::buffer_num_t buffer_num_t;
+
   enum {
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
@@ -137,6 +146,7 @@ public:
   
 private:
   simple_ethernet_t* mp_ethernet;
+  buffer_num_t m_buf_num;
   raw_data_t<irs_u8> m_ip;
   raw_data_t<irs_u8> m_mac;
   raw_data_t<irs_u8> m_arp_cash;
@@ -158,11 +168,11 @@ private:
   irs_u8* mp_send_buf;
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
-  bool m_recv_arp_status;
-  bool m_send_arp_status;
-  bool m_recv_icmp_status;
-  bool m_send_icmp_status;
-  bool m_send_udp_status;
+  bool m_recv_arp_status_busy;
+  bool m_send_arp_status_busy;
+  bool m_recv_icmp_status_busy;
+  bool m_send_icmp_status_busy;
+  bool m_send_udp_status_busy;
   bool m_recv_status;
   bool m_send_status;
   size_t m_recv_buf_size;

@@ -9,6 +9,7 @@
 
 #include <irsint.h>
 #include <timer.h>
+#include <irserror.h>
 //#include <irsrtl.h>
 #include <irsrtltest.h>
 
@@ -22,33 +23,6 @@
 
 //Запрет прерываний при чтении/записи байтов:
 #define RTL_DISABLE_INT_BYTE 
-
-//Объявление выводов:
-#define ETHERNET_PACKET_MIN_RX 64
-#define ETHERNET_PACKET_MAX_RX 1554
-#define ETHERNET_PACKET_MIN_TX 60
-
-#define ETHERNET_PACKET_MAX_TX 1550
-
-#if ETHERNET_PACKET_MAX_RX<ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MAX_RX
-#endif
-
-#if ETHERNET_PACKET_MIN_RX>ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MIN_RX
-#endif
-
-#if ETHERNET_PACKET_MAX_TX<ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MAX_TX
-#endif
-
-#if ETHERNET_PACKET_MIN_TX>ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MIN_TX
-#endif
 
 //ETHERNET_PORT2|=0x20
 #define IOR_HI {*rtl_port_str.rtl_address_port_set |= (1 << IORB);}
@@ -82,16 +56,25 @@ struct rtl_port_str_t
 } rtl_port_str;
 
 irs::rtl8019as_t::rtl8019as_t(
+  buffer_num_t a_num_buf,
+  size_t a_buf_size,
   irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port,
   const irs_u8 *ap_mac
 ):
-  m_recv_buf(ETHERNET_PACKET_RX),
-  m_send_buf(ETHERNET_PACKET_TX),
+  m_buf_num(a_num_buf),
+  m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
+    ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
+    ETHERNET_PACKET_MAX),
+  m_recv_buf(m_size_buf + 4),
+  m_send_buf((a_num_buf == single_buf) ? 0 : m_size_buf),
   m_mac_save(mac_size),
   m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_status(false),
-  m_recv_buf_size(0)
+  m_send_status(false),
+  m_recv_buf_size(0),
+  mp_recv_buf(m_recv_buf.data()),
+  mp_send_buf((a_num_buf == single_buf) ? mp_recv_buf : m_send_buf.data())
 {
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
   set_rtl_ports(a_data_port, a_address_port);
@@ -189,9 +172,12 @@ void irs::rtl8019as_t::recv_packet()
       }
     } else {
       m_recv_status = true;
+      /*if(m_buf_num == single_buf) {
+        m_send_status = true;
+      }*/
       m_recv_buf_size = recv_size_cur;
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
-        m_recv_buf[i] = read_rtl(rdmaport);
+        mp_recv_buf[i] = read_rtl(rdmaport);
       }
     }
   } else {
@@ -343,6 +329,16 @@ bool irs::rtl8019as_t::wait_dma()
 
 void irs::rtl8019as_t::send_packet(irs_u16 a_size) 
 {
+  #ifdef IRS_LIB_CHECK
+  if (a_size > ETHERNET_PACKET_MAX) {
+    a_size = ETHERNET_PACKET_MAX;
+  } else if (a_size < ETHERNET_PACKET_MIN) {
+    a_size = ETHERNET_PACKET_MIN;
+  }
+  #endif //IRS_LIB_CHECK
+
+  IRS_LIB_ASSERT(a_size > ETHERNET_PACKET_MAX);
+  
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT
@@ -357,7 +353,7 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
   for (irs_u16 i = 0; i < a_size; i++) {
-    write_rtl(rdmaport, m_send_buf[i]);
+    write_rtl(rdmaport, mp_send_buf[i]);
   }
 
   if (!wait_dma()) {
@@ -393,7 +389,7 @@ bool irs::rtl8019as_t::is_recv_status_busy()
 
 bool irs::rtl8019as_t::is_send_status_busy()
 {
-  return false;
+  return m_send_status;
 }
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()
@@ -409,4 +405,9 @@ irs_u8* irs::rtl8019as_t::get_send_buf()
 size_t irs::rtl8019as_t::recv_buf_size()
 {
   return m_recv_buf_size;
+}
+
+irs::rtl8019as_t::buffer_num_t irs::rtl8019as_t::get_buf_num()
+{
+  return m_buf_num;
 }

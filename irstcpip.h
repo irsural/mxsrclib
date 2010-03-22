@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 17.03.2010
+// Дата: 19.03.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -32,8 +32,9 @@ class simple_ethernet_t
 public:
   virtual ~simple_ethernet_t();
   virtual void send_packet(irs_u16 a_size);
-  virtual bool recv_status(); 
-  virtual bool send_status(); 
+  virtual void set_recv_status_completed();
+  virtual bool is_recv_status_busy(); 
+  virtual bool is_send_status_busy(); 
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual size_t recv_buf_size();
@@ -77,13 +78,15 @@ const mac_t& broadcast_mac();
 class arp_cash_t
 {
 public:
-  static const irs_uarc m_def_size = 3;
+  enum {
+    arp_table_size = 3
+  };
   
-  arp_cash_t(irs_uarc a_size = m_def_size);
+  arp_cash_t(size_t a_size = arp_table_size);
   bool ip_to_mac(const irs::ip_t& a_ip, irs::mac_t& a_mac);
   void add(const irs::ip_t& a_ip, const irs::mac_t& a_mac);
-  inline irs_uarc size() const;
-  void resize(irs_uarc a_size);
+  inline size_t size() const;
+  void resize(size_t a_size);
 private:
   struct cash_item_t {
     irs::ip_t ip;
@@ -105,7 +108,7 @@ private:
   typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
   
   vector<cash_item_t> m_cash;
-  irs_uarc m_pos;
+  size_t m_pos;
   irs::loop_timer_t m_reset_timer;
 };
 
@@ -138,10 +141,8 @@ private:
   simple_ethernet_t* mp_ethernet;
   raw_data_t<irs_u8> m_ip;
   raw_data_t<irs_u8> m_mac;
-  raw_data_t<irs_u8> m_arp_buf;
-  raw_data_t<irs_u8> m_icmp_buf;
   raw_data_t<irs_u8> m_arp_cash;
-  irs_u16 m_rx_len_icmp;
+  irs_u16 m_recv_buf_size_icmp;
   raw_data_t<irs_u8> m_dest_ip;
   raw_data_t<irs_u8> m_dest_ip_def;
   bool m_user_recv_status;
@@ -159,22 +160,24 @@ private:
   irs_u8* mp_send_buf;
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
-  bool m_recv_arp_status;
-  bool m_send_arp_status;
-  bool m_recv_icmp_status;
-  bool m_send_icmp_status;
-  bool m_send_udp_status;
+  bool m_recv_arp_status_busy;
+  bool m_send_arp_status_busy;
+  bool m_recv_icmp_status_busy;
+  bool m_send_icmp_status_busy;
+  bool m_send_udp_status_busy;
   bool m_recv_status;
   bool m_send_status;
   size_t m_recv_buf_size;
   arp_cash_t mp_arp_cash;
+  ip_t& m_cash_ip;
+  mac_t& m_cash_mac;
   
   bool cash(irs_u8* a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
-  irs_u16 cheksum(irs_u16 a_count, irs_u8* a_addr);
+  irs_u16 check_sum(irs_u16 a_count, irs_u8* a_addr);
   irs_u16 cheksumUDP(irs_u16 a_count, irs_u8* a_addr);
-  void arp_ping(irs_u8* a_dest_ip);
-  void arp_packet(void);
+  void arp_request(irs_u8* a_dest_ip);
+  void arp_response(void);
   void arp_cash(void);
   void arp();
   void send_arp(void);
