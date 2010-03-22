@@ -61,7 +61,7 @@ public:
   };
   
   rtl8019as_t(
-    buffer_num_t a_num_buf,
+    buffer_num_t a_buf_num,
     size_t a_buf_size,
     irs_avr_port_t a_data_port,
     irs_avr_port_t a_address_port,

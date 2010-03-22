@@ -45,20 +45,14 @@ public:
   virtual buffer_num_t get_buf_num();
 };
 
-const ip_t& zero_ip();
-const ip_t& broadcast_ip();
-
-const mac_t& zero_mac();
-const mac_t& broadcast_mac();
-
 struct mac_t 
 {
   irs_u8 val[IRS_UDP_MAC_SIZE];
   
-  mac_t
+  /*mac_t
   {
     *this = zero_mac();
-  }
+  }*/
   bool operator==(const mac_t& a_mac) const
   {
     return memcmp((void *)val, (void *)a_mac.val, IRS_UDP_MAC_SIZE) == 0;
@@ -73,6 +67,10 @@ struct ip_t
 {
   irs_u8 val[IRS_UDP_IP_SIZE];
   
+  /*ip_t
+  {
+    *this = zero_ip();
+  }*/
   bool operator==(const ip_t& a_ip) const
   {
     return memcmp((void *)val, (void *)a_ip.val, IRS_UDP_IP_SIZE) == 0;
@@ -83,6 +81,12 @@ struct ip_t
   }
 };
 
+const ip_t& zero_ip();
+const ip_t& broadcast_ip();
+
+const mac_t& zero_mac();
+const mac_t& broadcast_mac();
+
 // ARP-êýø
 class arp_cash_t
 {
@@ -91,11 +95,11 @@ public:
     arp_table_size = 3
   };
   
-  arp_cash_t(size_t a_size = arp_table_size);
+  arp_cash_t(irs_size_t a_size = arp_table_size);
   bool ip_to_mac(const irs::ip_t& a_ip, irs::mac_t& a_mac);
   void add(const irs::ip_t& a_ip, const irs::mac_t& a_mac);
-  inline size_t size() const;
-  void resize(size_t a_size);
+  inline irs_size_t size() const;
+  void resize(irs_size_t a_size);
 private:
   struct cash_item_t {
     irs::ip_t ip;
@@ -117,7 +121,7 @@ private:
   typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
   
   vector<cash_item_t> m_cash;
-  size_t m_pos;
+  irs_size_t m_pos;
   irs::loop_timer_t m_reset_timer;
 };
 
@@ -134,34 +138,34 @@ public:
   
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
-    arp_cash_t a_arp_cash,
-    const irs_u8* ap_mac, 
-    const irs_u8* ap_ip
+    const mac_t& a_mac, 
+    const ip_t& a_ip,
+    irs_size_t a_arp_cash_size
   );
   ~simple_tcpip_t();
-  void open_udp(irs_u16 a_local_port, irs_u16 a_dest_port, 
-    const irs_u8* a_dest_ip);
+  void open_udp();
+  //void open_udp(irs_u16 a_local_port, irs_u16 a_dest_port, 
+    //const irs_u8* a_dest_ip);
   void close_udp();
   irs_u8 write_udp_begin();
-  // irs_size_t read_udp(ip_t a_dest_ip, irs_u16 a_dest_port,
-  //   irs_u16 a_local_port, irs_size_t a_size);
-  void write_udp_end(irs_u8* a_dest_ip, irs_u16* a_dest_port, irs_u16 a_size);
-  // irs_size_t read_udp(ip_t* a_dest_ip, irs_u16* a_dest_port,
-  //   irs_u16* a_local_port);
-  irs_u16 read_udp_begin(irs_u8* a_dest_ip, irs_u16* a_dest_port);
-  // void read_udp_complete();
-  void read_udp_end();
+  void write_udp(ip_t a_dest_ip, irs_u16 a_dest_port,
+    irs_u16 a_local_port, irs_size_t a_size);
+  //void write_udp_end(irs_u8* a_dest_ip, irs_u16* a_dest_port, irs_u16 a_size);
+  irs_size_t read_udp(ip_t* a_dest_ip, irs_u16* a_dest_port,
+    irs_u16* a_local_port);
+  //irs_u16 read_udp_begin(irs_u8* a_dest_ip, irs_u16* a_dest_port);
+  void read_udp_complete();
+  //void read_udp_end();
   void tick();
   
 private:
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
-  raw_data_t<irs_u8> m_ip;
-  raw_data_t<irs_u8> m_mac;
-  raw_data_t<irs_u8> m_arp_cash;
+  ip_t m_ip;
+  mac_t m_mac;
   irs_u16 m_recv_buf_size_icmp;
-  raw_data_t<irs_u8> m_dest_ip;
-  raw_data_t<irs_u8> m_dest_ip_def;
+  ip_t m_dest_ip;
+  ip_t m_dest_ip_def;
   bool m_user_recv_status;
   bool m_user_send_status;
   bool m_udp_send_status;
@@ -185,16 +189,16 @@ private:
   bool m_recv_status;
   bool m_send_status;
   size_t m_recv_buf_size;
-  arp_cash_t mp_arp_cash;
-  // mac_t& m_dest_mac;
-  ip_t& m_cash_ip;
-  mac_t& m_cash_mac;
+  arp_cash_t m_arp_cash;
+  mac_t& m_dest_mac;
+  //ip_t& m_cash_ip;
+  //mac_t& m_cash_mac;
   
-  bool cash(irs_u8* a_dest_ip);
+  bool cash(ip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
   irs_u16 check_sum(irs_u16 a_count, irs_u8* a_addr);
   irs_u16 cheksumUDP(irs_u16 a_count, irs_u8* a_addr);
-  void arp_request(irs_u8* a_dest_ip);
+  void arp_request(ip_t a_dest_ip);
   void arp_response(void);
   void arp_cash(void);
   void arp();

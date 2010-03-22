@@ -56,25 +56,25 @@ struct rtl_port_str_t
 } rtl_port_str;
 
 irs::rtl8019as_t::rtl8019as_t(
-  buffer_num_t a_num_buf,
+  buffer_num_t a_buf_num,
   size_t a_buf_size,
   irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port,
   const irs_u8 *ap_mac
 ):
-  m_buf_num(a_num_buf),
+  m_buf_num(a_buf_num),
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
     ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
     ETHERNET_PACKET_MAX),
   m_recv_buf(m_size_buf + 4),
-  m_send_buf((a_num_buf == single_buf) ? 0 : m_size_buf),
+  m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
   m_mac_save(mac_size),
   m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_status(false),
   m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
-  mp_send_buf((a_num_buf == single_buf) ? mp_recv_buf : m_send_buf.data())
+  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data())
 {
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
   set_rtl_ports(a_data_port, a_address_port);
