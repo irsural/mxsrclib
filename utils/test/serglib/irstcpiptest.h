@@ -45,10 +45,20 @@ public:
   virtual buffer_num_t get_buf_num();
 };
 
+const ip_t& zero_ip();
+const ip_t& broadcast_ip();
+
+const mac_t& zero_mac();
+const mac_t& broadcast_mac();
+
 struct mac_t 
 {
   irs_u8 val[IRS_UDP_MAC_SIZE];
   
+  mac_t
+  {
+    *this = zero_mac();
+  }
   bool operator==(const mac_t& a_mac) const
   {
     return memcmp((void *)val, (void *)a_mac.val, IRS_UDP_MAC_SIZE) == 0;
@@ -72,12 +82,6 @@ struct ip_t
     return !(val == a_ip.val);
   }
 };
-
-const ip_t& zero_ip();
-const ip_t& broadcast_ip();
-
-const mac_t& zero_mac();
-const mac_t& broadcast_mac();
 
 // ARP-êýø
 class arp_cash_t
@@ -139,8 +143,13 @@ public:
     const irs_u8* a_dest_ip);
   void close_udp();
   irs_u8 write_udp_begin();
+  // irs_size_t read_udp(ip_t a_dest_ip, irs_u16 a_dest_port,
+  //   irs_u16 a_local_port, irs_size_t a_size);
   void write_udp_end(irs_u8* a_dest_ip, irs_u16* a_dest_port, irs_u16 a_size);
+  // irs_size_t read_udp(ip_t* a_dest_ip, irs_u16* a_dest_port,
+  //   irs_u16* a_local_port);
   irs_u16 read_udp_begin(irs_u8* a_dest_ip, irs_u16* a_dest_port);
+  // void read_udp_complete();
   void read_udp_end();
   void tick();
   
@@ -177,6 +186,7 @@ private:
   bool m_send_status;
   size_t m_recv_buf_size;
   arp_cash_t mp_arp_cash;
+  // mac_t& m_dest_mac;
   ip_t& m_cash_ip;
   mac_t& m_cash_mac;
   

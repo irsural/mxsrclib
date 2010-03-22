@@ -35,6 +35,9 @@ const irs::mac_t& irs::broadcast_mac()
   return broadcast_mac_var;
 }
 
+#define IRS_TCPIP_MAC(data) (*(irs::mac_t*)(data))
+#define IRS_TCPIP_IP(data) (*(irs::ip_t*)(data))
+
 // Переобразование данных в mac_t
 #define IRS_UDP_MAC(data) (*(irs::mac_t*)(&(data)))
 template <class T>
@@ -176,6 +179,7 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_send_status(mp_ethernet->is_send_status_busy()),
   m_recv_buf_size(mp_ethernet->recv_buf_size()),
   mp_arp_cash(a_arp_cash),
+  //m_dest_mac(IRS_TCPIP_MAC(mp_send_buf)),
   m_cash_ip(ip_from_data(m_arp_cash[0])),
   m_cash_mac(mac_from_data(m_arp_cash[4]))
 {
@@ -282,6 +286,7 @@ bool irs::simple_tcpip_t::cash(irs_u8* a_dest_ip)
   bool result = false;
   const ip_t& ip = ip_from_data(a_dest_ip);
   if (ip != broadcast_ip()) {
+    //if (mp_arp_cash.ip_to_mac(ip, m_dest_mac)) {
     if (mp_arp_cash.ip_to_mac(ip, m_cash_mac)) {
       m_cash_ip = ip;
       result = true;
@@ -763,6 +768,9 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[0x3] = m_arp_cash[0x7];
   mp_send_buf[0x4] = m_arp_cash[0x8];
   mp_send_buf[0x5] = m_arp_cash[0x9];
+  
+  //m_arp_cash.ip_to_mac(IRS_TCPIP_IP(m_dest_ip), IRS_TCPIP_MAC(mp_send_buf));
+  //IRS_TCPIP_MAC(mp_send_buf) = m_dest_mac;
 
   mp_send_buf[0x6] = m_mac[0x0];
   mp_send_buf[0x7] = m_mac[0x1];
@@ -846,6 +854,7 @@ void irs::simple_tcpip_t::send_udp()
 void irs::simple_tcpip_t::client_udp()
 {
   if (m_user_send_status == true) {
+    // !!!! Сделать перменные класса
     static bool udp_wait_arp = false;
     static counter_t to_udp_wait_arp;
     #define t_udp_wait_arp TIME_TO_CNT(1, 1)
