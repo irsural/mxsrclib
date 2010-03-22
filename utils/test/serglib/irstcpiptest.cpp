@@ -223,7 +223,7 @@ void irs::simple_tcpip_t::close_udp()
 
 irs_u8 irs::simple_tcpip_t::write_udp_begin()
 {
-  return m_user_send_status^0x1;
+  return !m_user_send_status;
 }
 
 void irs::simple_tcpip_t::write_udp_end(irs_u8* a_dest_ip, 
