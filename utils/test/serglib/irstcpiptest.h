@@ -35,15 +35,15 @@ public:
     single_buf,
     double_buf
   };
-  virtual ~simple_ethernet_t();
-  virtual void send_packet(irs_u16 a_size);
-  virtual void set_recv_handled();
-  virtual bool is_recv_buf_filled();
-  virtual irs_u8* get_recv_buf();
-  virtual irs_u8* get_send_buf();
-  virtual irs_size_t recv_buf_size();
-  virtual irs_size_t send_buf_max_size();
-  virtual buffer_num_t get_buf_num();
+  virtual ~simple_ethernet_t() {}
+  virtual void send_packet(irs_u16 a_size) = 0;
+  virtual void set_recv_handled() = 0;
+  virtual bool is_recv_buf_filled() = 0;
+  virtual irs_u8* get_recv_buf() = 0;
+  virtual irs_u8* get_send_buf() = 0;
+  virtual irs_size_t recv_buf_size() = 0;
+  virtual irs_size_t send_buf_max_size() = 0;
+  virtual buffer_num_t get_buf_num() = 0;
 };
 
 struct mac_t 
@@ -183,13 +183,6 @@ private:
   irs_u8* mp_send_buf;
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
-  bool m_recv_arp_status_busy;
-  bool m_send_arp_buf_filled;
-  bool m_recv_icmp_status_busy;
-  bool m_send_icmp_buf_filled;
-  bool m_send_udp_buf_filled;
-  bool m_is_recv_buf_filled;
-  bool m_send_status;
   bool m_udp_wait_arp;
   bool m_recv_buf_filled;
   bool m_send_buf_filled;
@@ -220,5 +213,4 @@ private:
 };
 
 } //namespace irs
-
 #endif //IRSTCPIPH

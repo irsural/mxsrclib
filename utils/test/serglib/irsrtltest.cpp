@@ -60,7 +60,7 @@ irs::rtl8019as_t::rtl8019as_t(
   size_t a_buf_size,
   irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port,
-  const irs_u8 *ap_mac
+  mac_t ap_mac
 ):
   m_buf_num(a_buf_num),
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
@@ -68,7 +68,7 @@ irs::rtl8019as_t::rtl8019as_t(
     ETHERNET_PACKET_MAX),
   m_recv_buf(m_size_buf),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
-  m_mac_save(mac_size),
+  m_mac(ap_mac),
   m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_status(false),
   m_recv_buf_size(0),
@@ -77,7 +77,7 @@ irs::rtl8019as_t::rtl8019as_t(
 {
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
   set_rtl_ports(a_data_port, a_address_port);
-  init_rtl(ap_mac);
+  init_rtl();
 }
 
 irs::rtl8019as_t::~rtl8019as_t()
@@ -286,12 +286,12 @@ void irs::rtl8019as_t::reset_rtl()
   __no_operation();
   write_rtl(curr, rxstart);
 
-  write_rtl(0x1, m_mac_save[0]);
-  write_rtl(0x2, m_mac_save[1]);
-  write_rtl(0x3, m_mac_save[2]);
-  write_rtl(0x4, m_mac_save[3]);
-  write_rtl(0x5, m_mac_save[4]);
-  write_rtl(0x6, m_mac_save[5]);
+  write_rtl(0x1, m_mac.val[0]);
+  write_rtl(0x2, m_mac.val[1]);
+  write_rtl(0x3, m_mac.val[2]);
+  write_rtl(0x4, m_mac.val[3]);
+  write_rtl(0x5, m_mac.val[4]);
+  write_rtl(0x6, m_mac.val[5]);
 
   write_rtl(cr, 0x21);
   write_rtl(dcr, dcrval);
@@ -365,9 +365,8 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   #endif //RTL_DISABLE_INT
 }
 
-void irs::rtl8019as_t::init_rtl(const irs_u8 *ap_mac)
+void irs::rtl8019as_t::init_rtl()
 {
-  memcpy(m_mac_save.data(), ap_mac, mac_size);
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
   // —брос RTL
   reset_rtl();

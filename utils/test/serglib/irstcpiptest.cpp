@@ -14,6 +14,7 @@
 #include <irscpp.h>
 //#include <irstcpip.h>
 #include <irstcpiptest.h>
+#include <irsrtltest.h>
 
 #include <irsfinal.h>
 
@@ -175,17 +176,10 @@ irs::simple_tcpip_t::simple_tcpip_t(
     mp_ethernet->get_send_buf() : mp_ethernet->get_recv_buf()),
   mp_user_recv_buf(mp_ethernet->get_recv_buf()),
   mp_user_send_buf(mp_ethernet->get_send_buf()),
-  m_recv_arp_status_busy(false), //delete
-  m_send_arp_buf_filled(false),
-  m_recv_icmp_status_busy(false),
-  m_send_icmp_buf_filled(false),
-  m_send_udp_buf_filled(false),
-  m_is_recv_buf_filled(mp_ethernet->is_recv_buf_filled()),
-  m_send_status((m_buf_num == simple_ethernet_t::double_buf) ? false : 
+  m_recv_buf_filled(mp_ethernet->is_recv_buf_filled()),
+  m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
     mp_ethernet->is_recv_buf_filled()),
   m_udp_wait_arp(false),
-  m_recv_buf_filled(false),
-  m_send_buf_filled(false),
   m_udp_wait_arp_time(make_cnt_s(1)),
   m_recv_buf_size(mp_ethernet->recv_buf_size()),
   m_arp_cash(a_arp_cash_size),
@@ -485,7 +479,6 @@ void irs::simple_tcpip_t::arp_request(ip_t a_dest_ip)
   mp_send_buf[0x29] = a_dest_ip.val[0x3];
 
   m_send_buf_filled = true;
-  //m_send_arp_buf_filled = true;
 }
 
 void irs::simple_tcpip_t::arp_response(void)
@@ -552,7 +545,6 @@ void irs::simple_tcpip_t::arp_response(void)
   mp_send_buf[0x29] = mp_recv_buf[0x1f];
 
   m_send_buf_filled = true;
-  //m_send_arp_buf_filled = true;
 }
 
 //Заполнение ARP-таблицы:
@@ -563,7 +555,6 @@ void irs::simple_tcpip_t::arp_cash(void)
   m_arp_cash.add(arp_ip, arp_mac);
   
   mp_ethernet->set_recv_handled();
-  //m_recv_arp_status_busy = false;
 }
 
 void irs::simple_tcpip_t::arp()
@@ -574,9 +565,7 @@ void irs::simple_tcpip_t::arp()
     (mp_recv_buf[0x28] == m_ip.val[2]) && (mp_recv_buf[0x29] == m_ip.val[3]))
   {
     if (m_recv_buf_filled == false) {
-    //if (m_recv_arp_status_busy == false) {
       if (m_buf_num == simple_ethernet_t::double_buf)  {
-        //m_recv_arp_status_busy = true;
         m_recv_buf_filled = true;
         for (irs_u8 i = 0; i < ARPBUF_SIZE; i++) {
           mp_send_buf[i] = mp_recv_buf[i];
@@ -602,8 +591,6 @@ void irs::simple_tcpip_t::send_arp(void)
   mp_ethernet->send_packet(ARPBUF_SENDSIZE);
   mp_ethernet->set_recv_handled();
   m_send_buf_filled = false;
-  //m_send_arp_buf_filled = false; 
-  //m_recv_arp_status_busy = false;
 }
 
 void irs::simple_tcpip_t::icmp_packet()
@@ -697,7 +684,6 @@ void irs::simple_tcpip_t::icmp_packet()
   
   //-------------------------------------------------------
   m_send_buf_filled = true;
-  //m_send_icmp_buf_filled = true;
 }
 
 void irs::simple_tcpip_t::send_icmp()
@@ -708,8 +694,6 @@ void irs::simple_tcpip_t::send_icmp()
   #endif //DBGMODE
   m_send_buf_filled = false;
   mp_ethernet->set_recv_handled();
-  //m_send_icmp_buf_filled = false;
-  //m_recv_icmp_status_busy = false;
 }
 
 void irs::simple_tcpip_t::icmp()
@@ -717,11 +701,9 @@ void irs::simple_tcpip_t::icmp()
   if ((mp_recv_buf[0x22] == 8) && (mp_recv_buf[0x23] == 0))
   {
     if (m_recv_buf_filled == false) {
-    //if (m_recv_icmp_status_busy == false) {
       m_recv_buf_size_icmp = m_recv_buf_size - 4;
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_buf_filled = true;
-        //m_recv_icmp_status_busy = true;
         if (m_buf_num == simple_ethernet_t::double_buf) {
           for (irs_i16 i = 0; i < m_recv_buf_size_icmp; i++) {
             mp_send_buf[i] = mp_recv_buf[i];
@@ -823,14 +805,12 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[0x29] = IRS_LOBYTE(chksum_udp);
   
   m_send_buf_filled = true;
-  //m_send_udp_buf_filled = true;
 }
 
 void irs::simple_tcpip_t::send_udp()
 {
   mp_ethernet->send_packet(m_user_send_buf_size + HEADERS_SIZE);
   m_send_buf_filled = false;
-  //m_send_udp_buf_filled = false;
   m_udp_send_status = false;
   m_user_send_status = false;
 }
@@ -849,15 +829,12 @@ void irs::simple_tcpip_t::client_udp()
         if (m_udp_wait_arp_time.check()) {
           m_udp_wait_arp = false;
           m_send_buf_filled = false;
-          //m_send_udp_buf_filled = false;
           m_udp_send_status = false;
           m_user_send_status = false;
         }
       } else {
         if (m_recv_buf_filled == false) {
-        //if (m_recv_arp_status_busy == false) {
           m_recv_buf_filled = true;
-          //m_recv_arp_status_busy = true;
           arp_request(m_dest_ip);
           m_udp_wait_arp = true;
           m_udp_wait_arp_time.start();
@@ -897,7 +874,6 @@ void irs::simple_tcpip_t::ip(void)
 void irs::simple_tcpip_t::tick()
 {
   if (m_recv_buf_filled == true)
-  //if (m_is_recv_buf_filled == true)
   {
     if ((mp_recv_buf[0xc] == static_cast<irs_u8>(IPv4 >> 8)) && 
       (mp_recv_buf[0xd] == static_cast<irs_u8>(IPv4 & 0x0011))) 
@@ -916,23 +892,6 @@ void irs::simple_tcpip_t::tick()
     client_udp();
   }
 
-  /*if (m_send_arp_buf_filled) {
-    if(m_send_status == false) {
-      send_arp();
-    }
-  }
-  
-  if (m_send_icmp_buf_filled) {
-    if (m_send_status == false) {
-      send_icmp();
-    }
-  }
-  
-  if (m_send_udp_buf_filled) {
-    if (m_send_status == false) {
-      send_udp();
-    }
-  }*/
   if (m_send_buf_filled) {
     switch(m_mode)
     {

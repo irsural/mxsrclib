@@ -65,7 +65,7 @@ public:
     size_t a_buf_size,
     irs_avr_port_t a_data_port,
     irs_avr_port_t a_address_port,
-    const irs_u8 *ap_mac
+    mac_t ap_mac
   );
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_u16 a_size);
@@ -82,7 +82,7 @@ private:
   size_t m_size_buf;
   raw_data_t<irs_u8> m_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
-  raw_data_t<irs_u8> m_mac_save;
+  mac_t m_mac;
   event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_recv_status;
   bool m_send_status;
@@ -92,7 +92,7 @@ private:
   
   void set_rtl_ports(irs_avr_port_t a_data_port, 
     irs_avr_port_t a_address_port);
-  void init_rtl(const irs_u8 *ap_mac);
+  void init_rtl();
   void rtl_interrupt();
   irs_u8 read_rtl(irs_u8 a_reg_addr);
   void write_rtl(irs_u8 a_reg_addr, irs_u8 a_reg_data);
