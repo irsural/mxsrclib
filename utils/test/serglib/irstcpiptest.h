@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 19.03.2010
+// Дата: 23.03.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -8,6 +8,7 @@
 #include <irsdefs.h>
 
 #include <mxdata.h>
+#include <timer.h>
 
 #include <irsfinal.h>
 
@@ -36,12 +37,12 @@ public:
   };
   virtual ~simple_ethernet_t();
   virtual void send_packet(irs_u16 a_size);
-  virtual void set_recv_status_completed();
-  virtual bool is_recv_status_busy(); 
-  virtual bool is_send_status_busy(); 
+  virtual void set_recv_handled();
+  virtual bool is_recv_buf_filled();
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
-  virtual size_t recv_buf_size();
+  virtual irs_size_t recv_buf_size();
+  virtual irs_size_t send_buf_max_size();
   virtual buffer_num_t get_buf_num();
 };
 
@@ -49,10 +50,6 @@ struct mac_t
 {
   irs_u8 val[IRS_UDP_MAC_SIZE];
   
-  /*mac_t
-  {
-    *this = zero_mac();
-  }*/
   bool operator==(const mac_t& a_mac) const
   {
     return memcmp((void *)val, (void *)a_mac.val, IRS_UDP_MAC_SIZE) == 0;
@@ -67,10 +64,6 @@ struct ip_t
 {
   irs_u8 val[IRS_UDP_IP_SIZE];
   
-  /*ip_t
-  {
-    *this = zero_ip();
-  }*/
   bool operator==(const ip_t& a_ip) const
   {
     return memcmp((void *)val, (void *)a_ip.val, IRS_UDP_IP_SIZE) == 0;
@@ -133,7 +126,21 @@ public:
   enum {
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
-    ICMPBUF_SIZE = 200
+    ICMPBUF_SIZE = 200,
+    mac_length = 0x6,
+    ip_length = 0x4,
+    arp_operation_request = 1,
+    arp_operation_response = 2,
+    udp_proto = 0x11,
+    icmp_proto = 0x01,
+    ether_type = 0x0806,
+    IPv4 = 0x0800,
+    Ethernet = 0x0001
+  };
+  enum mode_t{
+    ARP,
+    ICMP,
+    UDP
   };
   
   simple_tcpip_t(
@@ -144,18 +151,13 @@ public:
   );
   ~simple_tcpip_t();
   void open_udp();
-  //void open_udp(irs_u16 a_local_port, irs_u16 a_dest_port, 
-    //const irs_u8* a_dest_ip);
   void close_udp();
-  irs_u8 write_udp_begin();
+  bool is_write_udp_complete();
   void write_udp(ip_t a_dest_ip, irs_u16 a_dest_port,
     irs_u16 a_local_port, irs_size_t a_size);
-  //void write_udp_end(irs_u8* a_dest_ip, irs_u16* a_dest_port, irs_u16 a_size);
   irs_size_t read_udp(ip_t* a_dest_ip, irs_u16* a_dest_port,
     irs_u16* a_local_port);
-  //irs_u16 read_udp_begin(irs_u8* a_dest_ip, irs_u16* a_dest_port);
-  void read_udp_complete();
-  //void read_udp_end();
+  void is_read_udp_complete();
   void tick();
   
 private:
@@ -182,19 +184,20 @@ private:
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
   bool m_recv_arp_status_busy;
-  bool m_send_arp_status_busy;
+  bool m_send_arp_buf_filled;
   bool m_recv_icmp_status_busy;
-  bool m_send_icmp_status_busy;
-  bool m_send_udp_status_busy;
-  bool m_recv_status;
+  bool m_send_icmp_buf_filled;
+  bool m_send_udp_buf_filled;
+  bool m_is_recv_buf_filled;
   bool m_send_status;
   bool m_udp_wait_arp;
+  bool m_recv_buf_filled;
+  bool m_send_buf_filled;
   timer_t m_udp_wait_arp_time;
   size_t m_recv_buf_size;
   arp_cash_t m_arp_cash;
   mac_t& m_dest_mac;
-  //ip_t& m_cash_ip;
-  //mac_t& m_cash_mac;
+  mode_t m_mode;
   
   bool cash(ip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
@@ -214,7 +217,6 @@ private:
   void client_udp();
   void udp();
   void ip(void);
-  
 };
 
 } //namespace irs

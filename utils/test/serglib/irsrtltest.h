@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 17.03.2010
+// Дата: 22.03.2010
 // Дата создания: 15.03.2010
 
 #ifndef IRSRTLH
@@ -27,8 +27,8 @@ public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
   
   enum {
-    ETHERNET_PACKET_MAX = 1550,
-    ETHERNET_PACKET_MIN = 60
+    ETHERNET_PACKET_MAX = 1554,
+    ETHERNET_PACKET_MIN = 64
   };
   enum {
     rstport = 0x18,
@@ -69,12 +69,12 @@ public:
   );
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_u16 a_size);
-  virtual void set_recv_status_completed();
-  virtual bool is_recv_status_busy();
-  virtual bool is_send_status_busy();
+  virtual void set_recv_handled();
+  virtual bool is_recv_buf_filled();
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
-  virtual size_t recv_buf_size();
+  virtual irs_size_t recv_buf_size();
+  virtual irs_size_t send_buf_max_size();
   virtual buffer_num_t get_buf_num();
   
 private:

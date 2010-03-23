@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 17.03.2010
+// Дата: 22.03.2010
 // Дата создания: 15.03.2010
 
 #include <irsdefs.h>
@@ -66,12 +66,11 @@ irs::rtl8019as_t::rtl8019as_t(
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
     ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
     ETHERNET_PACKET_MAX),
-  m_recv_buf(m_size_buf + 4),
+  m_recv_buf(m_size_buf),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
   m_mac_save(mac_size),
   m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_status(false),
-  m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
   mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data())
@@ -172,9 +171,6 @@ void irs::rtl8019as_t::recv_packet()
       }
     } else {
       m_recv_status = true;
-      /*if(m_buf_num == single_buf) {
-        m_send_status = true;
-      }*/
       m_recv_buf_size = recv_size_cur;
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
@@ -377,19 +373,14 @@ void irs::rtl8019as_t::init_rtl(const irs_u8 *ap_mac)
   reset_rtl();
 }
 
-void irs::rtl8019as_t::set_recv_status_completed()
+void irs::rtl8019as_t::set_recv_handled()
 {
   m_recv_status = false;
 }
 
-bool irs::rtl8019as_t::is_recv_status_busy()
+bool irs::rtl8019as_t::is_recv_buf_filled()
 {
   return m_recv_status;
-}
-
-bool irs::rtl8019as_t::is_send_status_busy()
-{
-  return m_send_status;
 }
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()
@@ -402,9 +393,14 @@ irs_u8* irs::rtl8019as_t::get_send_buf()
   return m_send_buf.data();
 }
 
-size_t irs::rtl8019as_t::recv_buf_size()
+irs_size_t irs::rtl8019as_t::recv_buf_size()
 {
   return m_recv_buf_size;
+}
+
+irs_size_t irs::rtl8019as_t::send_buf_max_size()
+{
+  return m_size_buf;
 }
 
 irs::rtl8019as_t::buffer_num_t irs::rtl8019as_t::get_buf_num()

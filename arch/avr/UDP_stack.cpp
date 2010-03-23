@@ -778,7 +778,7 @@ void udppacket()
   tx_buf[0xd]=0x0;
   //ver//tos
   tx_buf[0xe]=0x45;
-  tx_buf[0xf]=0x10;
+  tx_buf[0xf]=0x10; 
   ///alllenth
   irs_u16 ip_length = tx_user_length_udp + 28;
   tx_buf[0x11]=IRS_LOBYTE(ip_length);
