@@ -9,6 +9,7 @@
 
 #include <mxdata.h>
 #include <timer.h>
+#include <irsavrutil.h>
 
 #include <irsfinal.h>
 
@@ -26,25 +27,6 @@
 #define IRS_UDP_MAC_SIZE 6
 
 namespace irs {
-
-//Ethernet interface for RTL
-class simple_ethernet_t
-{
-public:
-  enum buffer_num_t{
-    single_buf,
-    double_buf
-  };
-  virtual ~simple_ethernet_t() {}
-  virtual void send_packet(irs_u16 a_size) = 0;
-  virtual void set_recv_handled() = 0;
-  virtual bool is_recv_buf_filled() = 0;
-  virtual irs_u8* get_recv_buf() = 0;
-  virtual irs_u8* get_send_buf() = 0;
-  virtual irs_size_t recv_buf_size() = 0;
-  virtual irs_size_t send_buf_max_size() = 0;
-  virtual buffer_num_t get_buf_num() = 0;
-};
 
 struct mac_t 
 {
@@ -79,6 +61,27 @@ const ip_t& broadcast_ip();
 
 const mac_t& zero_mac();
 const mac_t& broadcast_mac();
+
+//Ethernet interface for RTL
+class simple_ethernet_t
+{
+public:
+  enum buffer_num_t{
+    single_buf,
+    double_buf
+  };
+  virtual ~simple_ethernet_t() {}
+  virtual void send_packet(irs_u16 a_size) = 0;
+  virtual void set_recv_handled() = 0;
+  virtual bool is_recv_buf_filled() = 0;
+  virtual irs_u8* get_recv_buf() = 0;
+  virtual irs_u8* get_send_buf() = 0;
+  virtual irs_size_t recv_buf_size() = 0;
+  virtual irs_size_t send_buf_max_size() = 0;
+  virtual buffer_num_t get_buf_num() = 0;
+  virtual mac_t get_local_mac() = 0;
+  virtual void tick() = 0;
+};
 
 // ARP-êýø
 class arp_cash_t
@@ -137,15 +140,9 @@ public:
     IPv4 = 0x0800,
     Ethernet = 0x0001
   };
-  enum mode_t{
-    ARP,
-    ICMP,
-    UDP
-  };
   
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
-    const mac_t& a_mac, 
     const ip_t& a_ip,
     irs_size_t a_arp_cash_size = arp_cash_t::arp_table_size
   );
@@ -190,7 +187,15 @@ private:
   size_t m_recv_buf_size;
   arp_cash_t m_arp_cash;
   mac_t& m_dest_mac;
-  mode_t m_mode;
+  blink_t m_blink_0;
+  blink_t m_blink_1;
+  blink_t m_blink_2;
+  blink_t m_blink_3;
+  bool m_send_arp;
+  bool m_send_icmp;
+  bool m_send_udp;
+  bool m_recv_arp;
+  bool m_recv_icmp;
   
   bool cash(ip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);

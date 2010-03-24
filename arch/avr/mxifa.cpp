@@ -105,7 +105,7 @@ typedef struct _mxifa_chdata_t {
 // Порт протокола mxnet
 #define MXNET_PORT 5005
 // Ethernet (MAC) адрес
-irs_u8 local_mac[MXIFA_MAC_SIZE] = {0x23, 0x01, 0xF1, 0x5C, 0xAF, 0x11};
+irs_u8 local_mac[MXIFA_MAC_SIZE] = {0x00, 0x01, 0xF1, 0x5C, 0xAF, 0x11};
 // Локальный IP
 mxip_t local_ip = {{192, 168, 0, 38}};
 // Широковещательный IP

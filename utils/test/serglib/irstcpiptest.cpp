@@ -14,7 +14,6 @@
 #include <irscpp.h>
 //#include <irstcpip.h>
 #include <irstcpiptest.h>
-#include <irsrtltest.h>
 
 #include <irsfinal.h>
 
@@ -149,14 +148,13 @@ void irs::arp_cash_t::resize(irs_size_t a_size)
 
 irs::simple_tcpip_t::simple_tcpip_t(
   simple_ethernet_t* ap_ethernet,
-  const mac_t& a_mac, 
   const ip_t& a_ip,
   irs_size_t a_arp_cash_size
 ):
   mp_ethernet(ap_ethernet),
   m_buf_num(mp_ethernet->get_buf_num()),
   m_ip(a_ip),
-  m_mac(a_mac),
+  m_mac(mp_ethernet->get_local_mac()),
   m_recv_buf_size_icmp(0),
   m_dest_ip(a_ip),
   m_dest_ip_def(a_ip),
@@ -184,7 +182,15 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_recv_buf_size(mp_ethernet->recv_buf_size()),
   m_arp_cash(a_arp_cash_size),
   m_dest_mac(IRS_TCPIP_MAC(mp_send_buf)),
-  m_mode(ARP)
+  m_blink_0(irs_avr_porte, 7),
+  m_blink_1(irs_avr_porte, 5),
+  m_blink_2(irs_avr_porte, 2),
+  m_blink_3(irs_avr_portf, 0),
+  m_send_arp(false),
+  m_send_icmp(false),
+  m_send_udp(false),
+  m_recv_arp(false),
+  m_recv_icmp(false)
 {
 }
 
@@ -478,7 +484,7 @@ void irs::simple_tcpip_t::arp_request(ip_t a_dest_ip)
   mp_send_buf[0x28] = a_dest_ip.val[0x2];
   mp_send_buf[0x29] = a_dest_ip.val[0x3];
 
-  m_send_buf_filled = true;
+  m_send_arp = true;
 }
 
 void irs::simple_tcpip_t::arp_response(void)
@@ -544,7 +550,7 @@ void irs::simple_tcpip_t::arp_response(void)
   mp_send_buf[0x28] = mp_recv_buf[0x1e];
   mp_send_buf[0x29] = mp_recv_buf[0x1f];
 
-  m_send_buf_filled = true;
+  m_send_arp = true;
 }
 
 //«аполнение ARP-таблицы:
@@ -554,7 +560,7 @@ void irs::simple_tcpip_t::arp_cash(void)
   irs::mac_t& arp_mac = mac_from_data(mp_recv_buf[0x16]);
   m_arp_cash.add(arp_ip, arp_mac);
   
-  mp_ethernet->set_recv_handled();
+  m_recv_arp = false;
 }
 
 void irs::simple_tcpip_t::arp()
@@ -564,14 +570,12 @@ void irs::simple_tcpip_t::arp()
       (mp_recv_buf[0x27] == m_ip.val[1]) &&
     (mp_recv_buf[0x28] == m_ip.val[2]) && (mp_recv_buf[0x29] == m_ip.val[3]))
   {
-    if (m_recv_buf_filled == false) {
-      if (m_buf_num == simple_ethernet_t::double_buf)  {
-        m_recv_buf_filled = true;
+    if (m_recv_arp == false) {
+        m_recv_arp = true;
         for (irs_u8 i = 0; i < ARPBUF_SIZE; i++) {
           mp_send_buf[i] = mp_recv_buf[i];
         }
         mp_ethernet->set_recv_handled();
-      }
       if (mp_send_buf[0x15] == arp_operation_response) { //ARP-ответ
         //добаво€ем ip и mac в ARP-таблицу
         arp_cash(); 
@@ -589,8 +593,8 @@ void irs::simple_tcpip_t::arp()
 void irs::simple_tcpip_t::send_arp(void)
 {
   mp_ethernet->send_packet(ARPBUF_SENDSIZE);
-  mp_ethernet->set_recv_handled();
-  m_send_buf_filled = false;
+  m_recv_arp = false;
+  m_send_arp = false;
 }
 
 void irs::simple_tcpip_t::icmp_packet()
@@ -683,7 +687,7 @@ void irs::simple_tcpip_t::icmp_packet()
   mp_send_buf[0x25] = IRS_LOBYTE(check_sum_icmp);
   
   //-------------------------------------------------------
-  m_send_buf_filled = true;
+  m_send_icmp = true;
 }
 
 void irs::simple_tcpip_t::send_icmp()
@@ -692,18 +696,18 @@ void irs::simple_tcpip_t::send_icmp()
   #ifdef DBGMODE
   PORTB ^= (1 << PORTB2);
   #endif //DBGMODE
-  m_send_buf_filled = false;
-  mp_ethernet->set_recv_handled();
+  m_send_icmp = false;
+  m_recv_icmp = false;
 }
 
 void irs::simple_tcpip_t::icmp()
 {
   if ((mp_recv_buf[0x22] == 8) && (mp_recv_buf[0x23] == 0))
   {
-    if (m_recv_buf_filled == false) {
+    if (m_recv_icmp == false) {
       m_recv_buf_size_icmp = m_recv_buf_size - 4;
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
-        m_recv_buf_filled = true;
+        m_recv_icmp = true;
         if (m_buf_num == simple_ethernet_t::double_buf) {
           for (irs_i16 i = 0; i < m_recv_buf_size_icmp; i++) {
             mp_send_buf[i] = mp_recv_buf[i];
@@ -804,13 +808,13 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[0x28] = IRS_HIBYTE(chksum_udp);
   mp_send_buf[0x29] = IRS_LOBYTE(chksum_udp);
   
-  m_send_buf_filled = true;
+  m_send_udp = true;
 }
 
 void irs::simple_tcpip_t::send_udp()
 {
   mp_ethernet->send_packet(m_user_send_buf_size + HEADERS_SIZE);
-  m_send_buf_filled = false;
+  m_send_udp = false;
   m_udp_send_status = false;
   m_user_send_status = false;
 }
@@ -828,13 +832,13 @@ void irs::simple_tcpip_t::client_udp()
       if (m_udp_wait_arp) {
         if (m_udp_wait_arp_time.check()) {
           m_udp_wait_arp = false;
-          m_send_buf_filled = false;
+          m_send_udp = false;
           m_udp_send_status = false;
           m_user_send_status = false;
         }
       } else {
-        if (m_recv_buf_filled == false) {
-          m_recv_buf_filled = true;
+        if (m_recv_arp == false) {
+          m_recv_arp = true;
           arp_request(m_dest_ip);
           m_udp_wait_arp = true;
           m_udp_wait_arp_time.start();
@@ -873,17 +877,22 @@ void irs::simple_tcpip_t::ip(void)
 
 void irs::simple_tcpip_t::tick()
 {
-  if (m_recv_buf_filled == true)
+  mp_ethernet->tick();
+  m_blink_0();
+  if (mp_ethernet->is_recv_buf_filled() == true)
   {
+    //m_blink_1.set();
     if ((mp_recv_buf[0xc] == static_cast<irs_u8>(IPv4 >> 8)) && 
       (mp_recv_buf[0xd] == static_cast<irs_u8>(IPv4 & 0x0011))) 
     {
       ip();
+      //m_blink_1.set();
     }
     if ((mp_recv_buf[0xc] == static_cast<irs_u8>(ether_type >> 8)) && 
       (mp_recv_buf[0xd] == static_cast<irs_u8>(ether_type & 0x0011))) 
     {
       arp();
+      //m_blink_2.set();
     }
     mp_ethernet->set_recv_handled();
   }
@@ -892,31 +901,22 @@ void irs::simple_tcpip_t::tick()
     client_udp();
   }
 
-  if (m_send_buf_filled) {
-    switch(m_mode)
-    {
-      case ARP:
-      {
-        send_arp();
-        m_mode = ICMP;
-      }
-      break;
-      case ICMP:
-      {
-        send_icmp();
-        m_mode = UDP;
-      }
-      break;
-      case UDP:
-      {
-        send_udp();
-      }
-      break;
-      default:
-      {
-      
-      }
-      break;
+  if (m_send_arp) {
+    if (m_send_buf_filled == 0) {
+      send_arp();
+      //m_blink_1.set();
+    }
+  }
+  if (m_send_icmp) {
+    if (m_send_buf_filled == 0) {
+      send_icmp();
+      //m_blink_2.set();
+    }
+  }
+  if (m_send_udp) {
+    if (m_send_buf_filled == 0) {
+      send_udp();
+      //m_blink_3.set();
     }
   }
 }

@@ -10,6 +10,7 @@
 #include <irsstd.h>
 //#include <irstcpip.h>
 #include <irstcpiptest.h>
+#include <irsavrutil.h>
 
 #include <irsfinal.h>
 
@@ -76,6 +77,9 @@ public:
   virtual irs_size_t recv_buf_size();
   virtual irs_size_t send_buf_max_size();
   virtual buffer_num_t get_buf_num();
+  virtual mac_t get_local_mac();
+  virtual void tick();
+
   
 private:
   buffer_num_t m_buf_num;
@@ -89,10 +93,11 @@ private:
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
+  blink_t m_blink_17;
+  blink_t m_blink_18;
+  blink_t m_blink_19;
+  blink_t m_blink_20;
   
-  void set_rtl_ports(irs_avr_port_t a_data_port, 
-    irs_avr_port_t a_address_port);
-  void init_rtl();
   void rtl_interrupt();
   irs_u8 read_rtl(irs_u8 a_reg_addr);
   void write_rtl(irs_u8 a_reg_addr, irs_u8 a_reg_data);
