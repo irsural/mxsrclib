@@ -1,5 +1,7 @@
 #include <avrdev.h>
 
+#ifndef __ATmega128__
+
 //------------------------------------------------------------------------------
 
 irs::avr::OC0B_pwm_t::OC0B_pwm_t(irs_uarc a_init_duty):
@@ -467,3 +469,4 @@ irs::cpu_traits_t::frequency_type irs::avr::OC1AB_pwm_t::get_max_frequency()
 }
 
 //------------------------------------------------------------------------------
+#endif //__ATmega128__

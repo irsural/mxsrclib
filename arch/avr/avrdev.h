@@ -9,6 +9,8 @@ namespace irs
 namespace avr
 {
 
+#ifndef __ATmega128__
+
 class OC0B_pwm_t : public pwm_gen_t
 {
   const irs_uarc m_max_duty;
@@ -65,6 +67,8 @@ public:
   virtual irs_uarc get_max_duty();
   virtual cpu_traits_t::frequency_type get_max_frequency();
 };
+
+#endif //__ATmega128__
 
 } //  avr
 } //  irs
