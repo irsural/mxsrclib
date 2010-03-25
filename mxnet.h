@@ -1,17 +1,22 @@
 // Протокол MxNet (Max Network)
-// Дата 16.04.2008
+// Дата 24.03.2010
+// Ранняя дата 16.04.2008
 
 #ifndef MXNETH
 #define MXNETH
 
 #include <irsdefs.h>
+
 #include <mxifa.h>
 #include <mxnetda.h>
 #include <mxnetr.h>
 #include <timer.h>
+#include <irsconfig.h>
+
+#include <irsfinal.h>
 
 // Версия (<старший байт>.<младший байт>)
-#define MXN_VERSION 0x0003
+#define MXN_VERSION 0x0004
 
 // Предварительное объявление данных для протокола mxnet
 struct _mxn_data_t;
@@ -98,7 +103,11 @@ void mxn_get_avrport(mxn_data_t &data, irs_avr_port_t &data_port,
 // Установка типа контрольной суммы
 void mxn_set_checksum_type(mxn_data_t &data, irs::mxn_checksum_t checksum_type); 
 // Чтение типа контрольной суммы
-irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data); 
+irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data);
+#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+void mxn_set_ether_bufs_size(mxn_data_t &data, irs_size_t bufs_size);
+irs_size_t mxn_get_ether_bufs_size(mxn_data_t &data);
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 namespace irs {
 

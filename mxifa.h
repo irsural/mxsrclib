@@ -1,17 +1,21 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 19.10.2009
+// Дата: 24.03.2010
 // Ранняя дата: 06.03.2008
 
 #ifndef MXIFAH
 #define MXIFAH
 
 #include <irsdefs.h>
+
 #include <mxifal.h>
 #include <mxifar.h>
 #include <irsstd.h>
 #include <hardflowg.h>
 #include <irserror.h>
+#include <irsconfig.h>
+
+#include <irsfinal.h>
 
 //extern irs_bool dbg_write;
 
@@ -142,6 +146,11 @@ typedef struct _mxifa_avr128_cfg {
   irs_avr_port_t data_port;
   // Порт данных AVR к которому подключены линии адреса RTL
   irs_avr_port_t address_port;
+  
+  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+  // Размер буфера приема и передачи по Ethernet
+  irs_size_t ether_bufs_size;
+  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 } mxifa_avr128_cfg;
 
 // Структура для установки конфигурации win32_tcp_ip в функции mxifa_set_config

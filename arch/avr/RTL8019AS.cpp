@@ -1,7 +1,7 @@
 // Драйвер Ethernet для RTL8019AS Димы Уржумцева
 // Откорректирован Крашенинников М. В.
 // Испорчен Поляковым М.
-// Дата: 18.03.2010
+// Дата: 24.03.2010
 // Ранняя дата: 30.05.2008
 
 #define RTL_RESET_ON_TIMEOUT // Сброс RTL при таймауте в операции
@@ -13,10 +13,11 @@
 #include <ioavr.h>
 #include <inavr.h>
 
-#include <RTL8019AS.h>
+#include <mxdata.h>
 #include <timer.h>
 #include <irsconfig.h>
 #include <irsavrutil.h>
+#include <RTL8019AS.h>
 
 #include <irsfinal.h>
 
@@ -95,8 +96,15 @@ const irs_u8 rdc=0x40;//Const Rdc = &H40
 //irs_u16 i;//Dim I as Integer
 irs_u16 rxlen_hard = 0;
 irs_u8 rx_hard=0, tx_hard=0; // flags of hardware transmission and resieving
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 irs_u8 rx_buf[ETHERNET_PACKET_RX];
 irs_u8 tx_buf[ETHERNET_PACKET_TX];
+#else //IRS_LIB_UDP_RTL_STATIC_BUFS
+irs::raw_data_t<irs_u8> tx_buf_data;
+irs::raw_data_t<irs_u8> rx_buf_data;
+extern irs_u8* tx_buf = IRS_NULL;
+extern irs_u8* rx_buf = IRS_NULL;
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 struct
 {
@@ -434,8 +442,19 @@ bool wait_dma()
 
 } //namespace
 
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 void initrtl(const irs_u8 *mac)
+#else //IRS_LIB_UDP_RTL_STATIC_BUFS
+void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 {
+  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+  tx_buf_data.resize(bufs_size);
+  rx_buf_data.resize(bufs_size + 4);
+  tx_buf = tx_buf_data.data();
+  rx_buf = rx_buf_data.data();
+  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
+  
   memcpy(mac_save, mac, mac_size);
 
   #ifndef IRS_LIB_RTL_OLD_INTERRUPT
@@ -447,7 +466,14 @@ void initrtl(const irs_u8 *mac)
   reset_rtl();
 }
 
-void sendpacket(irs_u16 length, irs_u8 *tx_buf)
+#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+irs_size_t tx_buf_size()
+{
+  return tx_buf_data.size();
+}
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
+
+void sendpacket(irs_u16 length, irs_u8 *ext_tx_buf)
 {
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
@@ -464,7 +490,7 @@ void sendpacket(irs_u16 length, irs_u8 *tx_buf)
   //writertl(rbcr0,(irs_u8)(length&0xFF));
   //writertl(rbcr1,length>>8);
   writertl(cr,0x12);
-  for (irs_u16 i = 0; i < length; i++) writertl(rdmaport, tx_buf[i]);
+  for (irs_u16 i = 0; i < length; i++) writertl(rdmaport, ext_tx_buf[i]);
 
   if (!wait_dma()) return;
 

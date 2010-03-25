@@ -464,7 +464,11 @@ void irs::raw_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
-    size_type new_capacity = new_size*2;
+    #ifdef __ICCAVR__
+    size_type new_capacity = new_size;
+    #else //__ICCAVR__
+    size_type new_capacity = max(m_capacity*2, new_size);
+    #endif //__ICCAVR__
     reserve_raw(new_capacity);
     size_type delta = new_size - m_size;
     memsetex(mp_data + m_size, delta);

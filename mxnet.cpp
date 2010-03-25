@@ -215,6 +215,27 @@ irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data)
 {
   return data.checksum_type;
 }
+#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+void mxn_set_ether_bufs_size(mxn_data_t &data, irs_size_t bufs_size)
+{
+  if (mxifa_get_channel_type(data.data_ch) == mxifa_ei_avr128_ether) {
+    mxifa_avr128_cfg chan_cfg;
+    mxifa_get_config(data.data_ch, &chan_cfg);
+    chan_cfg.ether_bufs_size = bufs_size;
+    mxifa_set_config(data.data_ch, &chan_cfg);
+  }
+}
+irs_size_t mxn_get_ether_bufs_size(mxn_data_t &data)
+{
+  irs_size_t bufs_size = 0;
+  if (mxifa_get_channel_type(data.data_ch) == mxifa_ei_avr128_ether) {
+    mxifa_avr128_cfg chan_cfg;
+    mxifa_get_config(data.data_ch, &chan_cfg);
+    bufs_size = chan_cfg.ether_bufs_size;
+  }
+  return bufs_size;
+}
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 // Пуск выполнения обработки
 static void mxn_tick_start(mxn_data_t &data)
 {

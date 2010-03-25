@@ -4,16 +4,20 @@
 
 #define IRS_UDP_ARP_CASH_EXT // Расширеный ARP-кэш
 
-#include <udp_stack.h>
+#include <irsdefs.h>
+
 #include <timer.h>
 #include <irscpp.h>
+#include <mxdata.h>
 //#include <irsavrutil.h>
+#include <udp_stack.h>
+
+#include <irsfinal.h>
 
 #ifdef NOP
 #define MAX_IP_OPTLEN		40				/* Max IP Header option field length	*/
 #define IP_MIN_HLEN			20		
 #endif //NOP
-
 
 
 #ifdef IRS_UDP_ARP_CASH_EXT
@@ -192,9 +196,17 @@ irs_u8 ip[4] = {0, 0, 0, 0};
 irs_u8 mac[6] = {0, 0, 0, 0, 0, 0};
 const irs_u8 ARPBUF_SIZE = 42;
 const irs_u8 ARPBUF_SENDSIZE = 60;
-irs_u8 arpbuf[ARPBUF_SENDSIZE];
 const irs_u8 ICMPBUF_SIZE = 200;
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
+irs_u8 arpbuf[ARPBUF_SENDSIZE];
 irs_u8 icmpbuf[ICMPBUF_SIZE];
+#else //IRS_LIB_UDP_RTL_STATIC_BUFS
+irs::raw_data_t<irs_u8> arpbuf_data;
+irs::raw_data_t<irs_u8> icmpbuf_data;
+irs_u8* arpbuf = arpbuf_data.data();
+irs_u8* icmpbuf = icmpbuf_data.data();
+irs_size_t user_buf_size = 0;
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 irs_u8 arpcash[10];///первые 4 под IP остальные MAC
 irs_u16 rxlenudp = 0;
 irs_u16 rxlenicmp = 0;
@@ -255,12 +267,26 @@ struct ip_frame
 #endif //NOP
 
 // Инициализация UDP/IP
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 void Init_UDP(const irs_u8 *mymac,const irs_u8 *myip,
   irs_avr_port_t a_data_port, irs_avr_port_t a_address_port)
+#else //IRS_LIB_UDP_RTL_STATIC_BUFS
+void Init_UDP(const irs_u8 *mymac,const irs_u8 *myip,
+  irs_avr_port_t a_data_port, irs_avr_port_t a_address_port,
+  irs_size_t bufs_size)
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 {
   rtl_set_ports(a_data_port, a_address_port);
 
+  #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
   initrtl(mymac);
+  #else //IRS_LIB_UDP_RTL_STATIC_BUFS
+  initrtl(mymac, bufs_size);
+  arpbuf_data.resize(ARPBUF_SENDSIZE);
+  icmpbuf_data.resize(ICMPBUF_SIZE);
+  user_buf_size = tx_buf_size() - HEADERS_SIZE;
+  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
+
   ip[0]=myip[0];
   ip[1]=myip[1];
   ip[2]=myip[2];
@@ -1018,3 +1044,10 @@ void Tick_UDP()
     if (tx_hard == 0) sendUDP();
   }
 }
+
+#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+irs_size_t udp_buf_size()
+{
+  return user_buf_size;
+}
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS

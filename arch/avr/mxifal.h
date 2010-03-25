@@ -12,8 +12,8 @@
 // Тип номера канала
 typedef irs_u8 mxifa_ch_t;
 // Максимальное значение для типа mxifa_sz_t
-#define MXIFA_SZ_T_MAX IRS_U8_MAX
+#define MXIFA_SZ_T_MAX IRS_U16_MAX
 // Тип размера буфера
-typedef irs_u8 mxifa_sz_t;
+typedef irs_u16 mxifa_sz_t;
 
 #endif //MXIFALH
