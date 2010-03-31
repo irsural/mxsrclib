@@ -140,8 +140,8 @@ public:
   virtual void exec()
   {
 #endif //IRS_LIB_RTL_OLD_INTERRUPT
-  static irs::blink_t blink_red(irs_avr_porte, 2);
-  blink_red();
+    static irs::blink_t blink_red(irs_avr_porte, 2);
+    blink_red.set();
 
     #ifdef RTL_DISABLE_INT
     irs_disable_interrupt();

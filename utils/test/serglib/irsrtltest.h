@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 22.03.2010
+// Дата: 25.03.2010
 // Дата создания: 15.03.2010
 
 #ifndef IRSRTLH
@@ -11,11 +11,14 @@
 //#include <irstcpip.h>
 #include <irstcpiptest.h>
 #include <irsavrutil.h>
+#include <irsconfig.h>
 
 #include <irsfinal.h>
 
-#define ETHERNET_PACKET_TX 300
-#define ETHERNET_PACKET_RX 304
+#define ETHERNET_PACKET_TX 250
+#define ETHERNET_PACKET_RX 254
+//#define ETHERNET_PACKET_TX 300
+//#define ETHERNET_PACKET_RX 304
 //#define ETHERNET_PACKET_TX 1550
 //#define ETHERNET_PACKET_RX 1554
 
@@ -58,7 +61,8 @@ public:
     tbcr1 = 0x6,
     rdmaport = 0x10,
     rdc = 0x40,
-    mac_size = 6
+    mac_size = 6,
+    par0 = 0x01
   };
   
   rtl8019as_t(
@@ -66,7 +70,7 @@ public:
     size_t a_buf_size,
     irs_avr_port_t a_data_port,
     irs_avr_port_t a_address_port,
-    mac_t ap_mac
+    mac_t a_mac
   );
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_u16 a_size);
@@ -79,29 +83,42 @@ public:
   virtual buffer_num_t get_buf_num();
   virtual mac_t get_local_mac();
   virtual void tick();
-
+  #ifdef SERGEY_OFF_INT4
+  void rtl_interrupt();
+  #endif //SERGEY_OFF_INT4
   
 private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
+  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   raw_data_t<irs_u8> m_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
+  #else //IRS_LIB_UDP_RTL_STATIC_BUFS
+  irs_u8 m_recv_buf[ETHERNET_PACKET_RX];
+  irs_u8 m_send_buf[ETHERNET_PACKET_TX];
+  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   mac_t m_mac;
+  #ifndef SERGEY_OFF_INT4
   event_connect_t<this_type> m_rtl_interrupt_event;
+  #endif //SERGEY_OFF_INT4
   bool m_recv_status;
   bool m_send_status;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
+  blink_t m_blink_15;
+  blink_t m_blink_16;
   blink_t m_blink_17;
   blink_t m_blink_18;
   blink_t m_blink_19;
   blink_t m_blink_20;
   
+  #ifndef SERGEY_OFF_INT4
   void rtl_interrupt();
+  #endif //SERGEY_OFF_INT4
   irs_u8 read_rtl(irs_u8 a_reg_addr);
   void write_rtl(irs_u8 a_reg_addr, irs_u8 a_reg_data);
-  void reset_rtl();
+  void init_rtl();
   bool wait_dma();
   void overrun();
   void recv_packet();

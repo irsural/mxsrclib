@@ -149,7 +149,7 @@ mxifa_avr128_ether_t mxifa_avr128_ether_1 = {
   // Порт данных AVR к которому подключены линии данных RTL
   irs_avr_porta,
   // Порт данных AVR к которому подключены линии адреса RTL
-  irs_avr_portf
+  irs_avr_portf //irs_avr_portc наверно???
 };
 
 // Данные канала 2

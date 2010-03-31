@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 13.11.2009
+// Дата: 31.03.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -101,9 +101,6 @@ typedef double irs_float64;
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
-#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
-#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
-
 namespace irs {
 
 enum endian_t {
@@ -139,6 +136,14 @@ inline endian_t detect_cpu_endian()
   *(((irs_u8 *)(&(_NUM_))) + 1):*(((irs_u8 *)(&(_NUM_)))))
 #define IRS_LOBYTE(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
   *(((irs_u8 *)(&(_NUM_)))):*(((irs_u8 *)(&(_NUM_))) + 1))
+
+#define IRS_CONST_HIBYTE(_NUM_)\
+  (static_cast<irs_u8>(static_cast<irs_u8>(_NUM_) >> 8))
+#define IRS_CONST_LOBYTE(_NUM_)\
+  (static_cast<irs_u8>(_NUM_ & 0xFF))
+
+#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
+#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))
