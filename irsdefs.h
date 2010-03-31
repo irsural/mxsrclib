@@ -101,6 +101,11 @@ typedef double irs_float64;
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
+// Используется в функции detect_cpu_endian, поэтому стоит выше
+// макросов IRS_HIBYTE, ...
+#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
+#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
+
 namespace irs {
 
 enum endian_t {
@@ -141,9 +146,6 @@ inline endian_t detect_cpu_endian()
   (static_cast<irs_u8>(static_cast<irs_u8>(_NUM_) >> 8))
 #define IRS_CONST_LOBYTE(_NUM_)\
   (static_cast<irs_u8>(_NUM_ & 0xFF))
-
-#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
-#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))

@@ -90,13 +90,8 @@ public:
 private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   raw_data_t<irs_u8> m_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
-  #else //IRS_LIB_UDP_RTL_STATIC_BUFS
-  irs_u8 m_recv_buf[ETHERNET_PACKET_RX];
-  irs_u8 m_send_buf[ETHERNET_PACKET_TX];
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   mac_t m_mac;
   #ifndef SERGEY_OFF_INT4
   event_connect_t<this_type> m_rtl_interrupt_event;

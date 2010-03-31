@@ -132,8 +132,8 @@ public:
     ICMPBUF_SIZE = 200,
     mac_length = 0x6,
     ip_length = 0x4,
-    arp_operation_request = 0x1,
-    arp_operation_response = 0x2,
+    arp_operation_request = 0x0001,
+    arp_operation_response = 0x0002,
     udp_proto = 0x11,
     icmp_proto = 0x01,
     //tcp_proto = 0x6,
@@ -143,9 +143,20 @@ public:
     
     dest_mac = 0x0,
     sourse_mac = 0x6,
-    ether_type = 0xc,
-    hardware_type = 0xe,
-    proto_type = 0x10
+    ether_type_0 = 0xc,
+    ether_type_1 = 0xd,
+    hardware_type_0 = 0xe,
+    hardware_type_1 = 0xf,
+    proto_type_0 = 0x10,
+    proto_type_1 = 0x11,
+    hardware_length = 0x12,
+    proto_length = 0x13,
+    arp_operation_code_0 = 0x14,
+    arp_operation_code_1 = 0x15,
+    sender_mac = 0x16,
+    sender_ip = 0xc1,
+    target_mac = 0x20,
+    target_ip = 0x26
   };
   
   simple_tcpip_t(

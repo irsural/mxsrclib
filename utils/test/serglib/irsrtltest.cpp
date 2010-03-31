@@ -66,10 +66,8 @@ irs::rtl8019as_t::rtl8019as_t(
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
     ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
     ETHERNET_PACKET_MAX),
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   m_recv_buf(m_size_buf),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   m_mac(a_mac),
   #ifndef SERGEY_OFF_INT4
   m_rtl_interrupt_event(this, rtl_interrupt),
@@ -77,13 +75,8 @@ irs::rtl8019as_t::rtl8019as_t(
   m_recv_status(false),
   m_send_status(false),
   m_recv_buf_size(0),
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   mp_recv_buf(m_recv_buf.data()),
   mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
-  #else //IRS_LIB_UDP_RTL_STATIC_BUFS
-  mp_recv_buf(IRS_NULL),
-  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : IRS_NULL),
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   m_blink_15(irs_avr_portd, 1),
   m_blink_16(irs_avr_portb, 6),
   m_blink_17(irs_avr_portb, 5),
@@ -443,20 +436,12 @@ bool irs::rtl8019as_t::is_recv_buf_filled()
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()
 {
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   return m_recv_buf.data();
-  #else //IRS_LIB_UDP_RTL_STATIC_BUFS*/
-  return mp_recv_buf;
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 }
 
 irs_u8* irs::rtl8019as_t::get_send_buf()
 {
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   return m_send_buf.data();
-  #else //IRS_LIB_UDP_RTL_STATIC_BUFS
-  return mp_send_buf;
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 }
 
 irs_size_t irs::rtl8019as_t::recv_buf_size()
