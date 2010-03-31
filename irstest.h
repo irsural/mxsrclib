@@ -316,6 +316,47 @@ inline void exec(ostream& a_strm)
 
 } //namespace cstr_convert
 
+#ifdef NOP
+// Простой динамический буфер
+struct dyn_data_t
+{
+  irs_u8* data;
+  irs_size_t size;
+  
+  dyn_data_t(irs_size_t a_size = 0):
+    data(IRS_NULL),
+    size(a_size)
+  {
+    resize(size);
+  }
+  ~dyn_data_t()
+  {
+    if (size) {
+      delete data;
+    }
+  }
+  void resize(irs_size_t a_size)
+  {
+    if (size) {
+      delete data;
+    }
+    if (a_size) {
+      data = new irs_u8[a_size];
+      irs::memsetex(data, a_size);
+      IRS_LIB_ASSERT(data != IRS_NULL);
+      if (data) {
+        size = a_size;
+      } else {
+        size = 0;
+      }
+    } else {
+      data = IRS_NULL;
+      size = 0;
+    }
+  }
+};
+#endif //NOP
+
 } //namespace irs
 
 #endif //IRSTESTH

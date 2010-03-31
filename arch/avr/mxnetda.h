@@ -7,7 +7,7 @@
 // Тип для счетчика переменных (Всегда должен быть unsigned)
 typedef irs_u8 mxn_cnt_t;
 // Тип для количества данных в байтах
-typedef irs_u8 mxn_sz_t;
+typedef irs_u16 mxn_sz_t;
 
 // Размер пустой части переменной в массиве
 #define MXN_DUMMY_SIZE (sizeof(irs_i32) - sizeof(mxn_cnt_t))

@@ -1,9 +1,11 @@
 // Обработка ошибок
-// Дата: 21.12.2009
+// Дата: 29.03.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
 #define IRSERRORH
+
+#include <irsdefs.h>
 
 #include <irsconfig.h>
 #include <irsdefs.h>
@@ -18,6 +20,8 @@
 // Standart Linux headers
 #include <errno.h>
 #endif // defined(IRS_LINUX)
+
+#include <irsfinal.h>
 
 #define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
@@ -41,6 +45,11 @@
   {\
     IRS_ASSERT_HELPER(irs::ec_assert, "Assert", msg);\
   }
+#define IRS_NEW_ASSERT(new_expr)\
+  (irs::new_assert(new_expr, __FILE__, __LINE__))
+
+
+
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
@@ -97,11 +106,12 @@
 #ifdef IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
+#define IRS_LIB_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
+#define IRS_LIB_NEW_ASSERT(new_expr) IRS_NEW_ASSERT(new_expr)
 #define IRS_LIB_ERROR(error_code, msg) IRS_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)\
   IRS_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg) IRS_FATAL_ERROR(msg)
-#define IRS_LIB_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
 #define IRS_LIB_DBG_RAW_MSG(msg) IRS_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg) IRS_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg) IRS_DBG_MSG_SRC(msg)
@@ -112,10 +122,11 @@
 #else // IRS_LIB_DEBUG
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
+#define IRS_LIB_ASSERT_MSG(msg)
+#define IRS_LIB_NEW_ASSERT(new_expr) new_expr
 #define IRS_LIB_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg)
-#define IRS_LIB_ASSERT_MSG(msg)
 #define IRS_LIB_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg)
@@ -226,6 +237,17 @@ void send_message_err(int a_error_code, char* ap_file, int a_line);
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 ostream& mlog();
+
+//new_assert(new_expr, __FILE__, __LINE__)
+template <class T>
+T* new_assert(T* a_new_expr, const char* a_file, int a_line)
+{
+  if (a_new_expr == IRS_NULL) {
+    irs::error_trans()->throw_error(irs::ec_assert, a_file, a_line,
+      irs::spec_assert("new != NULL", IRS_NULL));
+  }
+  return a_new_expr;
+}
 
 } //namespace irs
 

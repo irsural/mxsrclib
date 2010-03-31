@@ -186,7 +186,7 @@ inline com_buf::com_buf(int a_com_index, int a_outbuf_size):
 
     UCSR0A_MPCM0 = 0;//режим мультипроцессорного обмена
     UCSR0A_U2X0 = 0;//удвоение скорости обмена
-   } else {
+  } else {
     UBRR1H = IRS_HIBYTE(ubrr);
     UBRR1L = IRS_LOBYTE(ubrr);
     UCSR1B_RXEN1 = 0;//Разрешение приема
@@ -214,10 +214,13 @@ inline com_buf::com_buf(int a_com_index, int a_outbuf_size):
 
     UCSR1A_MPCM1 = 0;//режим мультипроцессорного обмена
     UCSR1A_U2X1 = 0;//удвоение скорости обмена
-   }
+  }
 
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+  
+  // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
+  __delay_cycles(4000);
 }
 /*inline irs::com_buf::~com_buf()
 {
@@ -262,13 +265,13 @@ inline int com_buf::sync()
 class com_ostream: public ostream
 {
 public:
-  inline com_ostream();
+  inline com_ostream(int a_com_index = 1, int a_outbuf_size = 10);
 private:
   com_buf m_buf;
 };
-inline com_ostream::com_ostream():
+inline com_ostream::com_ostream(int a_com_index, int a_outbuf_size):
   ostream(&m_buf),
-  m_buf()
+  m_buf(a_com_index, a_outbuf_size)
 {
   //rdbuf(&m_buf);
   init(&m_buf);

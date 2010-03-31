@@ -1,5 +1,5 @@
 // Консоль, выделенная из irsstd
-// Дата: 27.09.2009
+// Дата: 30.10.2010
 // Дата создания: 27.09.2009
 
 #ifndef IRSCONSOLESTDH
@@ -476,7 +476,6 @@ inline void irs_win32_filtrsize_console_display_t::outtextpos(
   mxdisp_pos_t a_top,
   const char *ap_text)
 {
-  char* buftext = IRS_NULL;
   if(strlen(ap_text)<=static_cast<irs_u32>(m_width_display_box-a_left))
     mp_driver->outtextpos(
       static_cast<mxdisp_pos_t>(a_left+m_left_display_box),
@@ -484,15 +483,15 @@ inline void irs_win32_filtrsize_console_display_t::outtextpos(
       ap_text);
   else
   {
-    buftext=new char[static_cast<irs_u32>(m_width_display_box-a_left+1)];
+    char* buftext=new char[static_cast<irs_u32>(m_width_display_box-a_left+1)];
     strncpy(buftext, ap_text, static_cast<irs_u32>(m_width_display_box-a_left));
     buftext[static_cast<irs_u32>(m_width_display_box-a_left+1)]='\0';
     mp_driver->outtextpos(
       static_cast<mxdisp_pos_t>(a_left+m_left_display_box),
       static_cast<mxdisp_pos_t>(a_top+m_top_display_box),
       buftext);
+    delete []buftext;
   }
-  delete []buftext;
 }
 inline void irs_win32_filtrsize_console_display_t::tick()
 {

@@ -203,8 +203,8 @@ irs_u8 icmpbuf[ICMPBUF_SIZE];
 #else //IRS_LIB_UDP_RTL_STATIC_BUFS
 irs::raw_data_t<irs_u8> arpbuf_data;
 irs::raw_data_t<irs_u8> icmpbuf_data;
-irs_u8* arpbuf = arpbuf_data.data();
-irs_u8* icmpbuf = icmpbuf_data.data();
+irs_u8* arpbuf = IRS_NULL;
+irs_u8* icmpbuf = IRS_NULL;
 irs_size_t user_buf_size = 0;
 #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 irs_u8 arpcash[10];///первые 4 под IP остальные MAC
@@ -284,6 +284,8 @@ void Init_UDP(const irs_u8 *mymac,const irs_u8 *myip,
   initrtl(mymac, bufs_size);
   arpbuf_data.resize(ARPBUF_SENDSIZE);
   icmpbuf_data.resize(ICMPBUF_SIZE);
+  arpbuf = arpbuf_data.data();
+  icmpbuf = icmpbuf_data.data();
   user_buf_size = tx_buf_size() - HEADERS_SIZE;
   #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 

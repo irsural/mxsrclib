@@ -18,6 +18,7 @@
 #include <irsconfig.h>
 #include <irsavrutil.h>
 #include <RTL8019AS.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
@@ -96,14 +97,21 @@ const irs_u8 rdc=0x40;//Const Rdc = &H40
 //irs_u16 i;//Dim I as Integer
 irs_u16 rxlen_hard = 0;
 irs_u8 rx_hard=0, tx_hard=0; // flags of hardware transmission and resieving
+
 #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
+
 irs_u8 rx_buf[ETHERNET_PACKET_RX];
 irs_u8 tx_buf[ETHERNET_PACKET_TX];
+
 #else //IRS_LIB_UDP_RTL_STATIC_BUFS
+
 irs::raw_data_t<irs_u8> tx_buf_data;
 irs::raw_data_t<irs_u8> rx_buf_data;
+
 extern irs_u8* tx_buf = IRS_NULL;
 extern irs_u8* rx_buf = IRS_NULL;
+bool is_initialized = false;
+
 #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 struct
@@ -139,9 +147,11 @@ class rtl_interrupt_t : public mxfact_event_t
 public:
   virtual void exec()
   {
+    if (!is_initialized) return;
 #endif //IRS_LIB_RTL_OLD_INTERRUPT
-    static irs::blink_t blink_red(irs_avr_porte, 2);
-    blink_red.set();
+    
+    static irs::blink_t blink_14(irs_avr_portd, 3, 0);
+    blink_14();
 
     #ifdef RTL_DISABLE_INT
     irs_disable_interrupt();
@@ -464,6 +474,10 @@ void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
 
   // —брос RTL
   reset_rtl();
+  
+  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+  is_initialized = true;
+  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 }
 
 #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS

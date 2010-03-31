@@ -181,6 +181,13 @@ private:
   counter_t m_start_cnt;
 };
 
+inline void pause(counter_t a_counter)
+{
+  irs::timer_t pause_timer(a_counter);
+  pause_timer.start();
+  while(!pause_timer.check());
+}
+
 } //namespace irs
 
 // Установка таймаута t по переменной counter

@@ -115,8 +115,9 @@ enum endian_t {
 
 inline endian_t detect_cpu_endian()
 {
-  const irs_u16 x = static_cast<irs_u16>(1); /* 0x0001 */
-  endian_t cpu_endian = static_cast<endian_t>(IRS_FIRSTBYTE(x) == 0);
+  const irs_u16 endian_test_var = static_cast<irs_u16>(1); /* 0x0001 */
+  endian_t cpu_endian = 
+    static_cast<endian_t>(IRS_FIRSTBYTE(endian_test_var) == 0);
   return cpu_endian;
 }
 
