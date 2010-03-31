@@ -146,7 +146,7 @@ inline endian_t detect_cpu_endian()
 #define IRS_CONST_HIBYTE(_NUM_)\
   (static_cast<irs_u8>(static_cast<irs_u8>(_NUM_) >> 8))
 #define IRS_CONST_LOBYTE(_NUM_)\
-  (static_cast<irs_u8>(_NUM_ & 0xFF))
+  (static_cast<irs_u8>(_NUM_ & 0xF))
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))

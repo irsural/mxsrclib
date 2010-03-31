@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 23.03.2010
+// Дата: 31.03.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -153,10 +153,31 @@ public:
     proto_length = 0x13,
     arp_operation_code_0 = 0x14,
     arp_operation_code_1 = 0x15,
-    sender_mac = 0x16,
-    sender_ip = 0xc1,
-    target_mac = 0x20,
-    target_ip = 0x26
+    arp_sender_mac = 0x16,
+    arp_sender_ip = 0x1c,
+    arp_target_mac = 0x20,
+    arp_target_ip = 0x26,
+    check_sum_ip_0 = 0x18,
+    check_sum_ip_1 = 0x19,
+    check_sum_icmp_0 = 0x24,
+    check_sum_icmp_1 = 0x25,
+    icmp_target_ip = 0x1e,
+    icmp_sender_ip = 0x1a,
+    icmp_type = 0x22,
+    icmp_code = 0x23,
+    icmp_echo_request = 8,
+    icmp_echo_response = 0,
+    udp_dest_ip = 0x1e,
+    udp_source_ip = 0x1a,
+    udp_dest_port_0 = 0x24,
+    udp_dest_port_1 = 0x25,
+    udp_local_port_0 = 0x22,
+    udp_local_port_1 = 0x23,
+    udp_length_0 = 0x26,
+    udp_length_1 = 0x27,
+    udp_check_sum_0 = 0x28,
+    udp_check_sum_1 = 0x29,
+    ip_proto_type = 0x17
   };
   
   simple_tcpip_t(
@@ -202,7 +223,6 @@ private:
   bool m_recv_buf_filled;
   bool m_send_buf_filled;
   timer_t m_udp_wait_arp_time;
-  size_t m_recv_buf_size;
   arp_cash_t m_arp_cash;
   mac_t& m_dest_mac;
   blink_t m_blink_0;
