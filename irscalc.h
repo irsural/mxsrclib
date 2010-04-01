@@ -811,7 +811,7 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
           if (pos != string_type::npos) {
             char_type ch_substr = (*ap_prog)[pos];
             if (ch_substr == irst('\\')) {
-                string_value = ap_prog->substr(begin_pos, pos - begin_pos);
+                string_value += ap_prog->substr(begin_pos, pos - begin_pos);
               if ((pos + 1) < ap_prog->size()) {
                 ++pos;
                 const char_type next_ch_substr = (*ap_prog)[pos];
@@ -1753,14 +1753,19 @@ inline bool calculator_t::interp(value_type* ap_value)
   mutable_ref_t value;
   // m_cur_lexeme_index = 0;
   bool fsuccess = eval_exp_assign(&value);
-  //bool fsuccess = eval_exp_logical(&value);   1
+  //bool fsuccess = eval_exp_logical(&value);   
   if (fsuccess) {
     token_t token;
     fsuccess = m_detector_token.get_token(&token);
     if (fsuccess) {
       delimiter_t delim = token.delimiter();
       if (delim == d_end) {
-        fsuccess = value_read(value, ap_value);
+        if (!value_read(value, ap_value)) {
+          ap_value->type(irs::variant::var_type_unknown);
+        } else {
+          // Значение успешно считано
+        }
+        fsuccess = true;
       } else {
         // Текущим ограничителем должен быть конец программы
         fsuccess = false;
