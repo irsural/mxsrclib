@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 17.03.2010
+// Дата: 29.03.2010
 // Дата создания: 15.03.2010
 
 #include <irsdefs.h>
@@ -9,6 +9,7 @@
 
 #include <irsint.h>
 #include <timer.h>
+#include <irserror.h>
 #include <irsrtl.h>
 
 #include <irsfinal.h>
@@ -21,33 +22,6 @@
 
 //Запрет прерываний при чтении/записи байтов:
 #define RTL_DISABLE_INT_BYTE 
-
-//Объявление выводов:
-#define ETHERNET_PACKET_MIN_RX 64
-#define ETHERNET_PACKET_MAX_RX 1554
-#define ETHERNET_PACKET_MIN_TX 60
-
-#define ETHERNET_PACKET_MAX_TX 1550
-
-#if ETHERNET_PACKET_MAX_RX<ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MAX_RX
-#endif
-
-#if ETHERNET_PACKET_MIN_RX>ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MIN_RX
-#endif
-
-#if ETHERNET_PACKET_MAX_TX<ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MAX_TX
-#endif
-
-#if ETHERNET_PACKET_MIN_TX>ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MIN_TX
-#endif
 
 //ETHERNET_PORT2|=0x20
 #define IOR_HI {*rtl_port_str.rtl_address_port_set |= (1 << IORB);}
@@ -81,20 +55,46 @@ struct rtl_port_str_t
 } rtl_port_str;
 
 irs::rtl8019as_t::rtl8019as_t(
+  buffer_num_t a_buf_num,
+  size_t a_buf_size,
   irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port,
-  const irs_u8 *ap_mac
+  mxmac_t a_mac
 ):
-  m_recv_buf(ETHERNET_PACKET_RX),
-  m_send_buf(ETHERNET_PACKET_TX),
-  m_mac_save(mac_size),
+  m_buf_num(a_buf_num),
+  m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
+    ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
+    ETHERNET_PACKET_MAX),
+  m_recv_buf(m_size_buf),
+  m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
+  m_mac(a_mac),
+  #ifndef SERGEY_OFF_INT4
   m_rtl_interrupt_event(this, rtl_interrupt),
+  #endif //SERGEY_OFF_INT4
   m_recv_status(false),
-  m_recv_buf_size(0)
+  m_send_status(false),
+  m_recv_buf_size(0),
+  mp_recv_buf(m_recv_buf.data()),
+  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
+  m_blink_15(irs_avr_portd, 1),
+  m_blink_16(irs_avr_portb, 6),
+  m_blink_17(irs_avr_portb, 5),
+  m_blink_18(irs_avr_portb, 4),
+  m_blink_19(irs_avr_portb, 2),
+  m_blink_20(irs_avr_portb, 7)
 {
+  rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
+  rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
+  rtl_port_str.rtl_data_port_dir = avr_port_map[a_data_port].dir;
+  rtl_port_str.rtl_address_port_set = avr_port_map[a_address_port].set;
+  rtl_port_str.rtl_address_port_get = avr_port_map[a_address_port].get;
+  rtl_port_str.rtl_address_port_dir = avr_port_map[a_address_port].dir;
+  
+  #ifndef SERGEY_OFF_INT4
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
-  set_rtl_ports(a_data_port, a_address_port);
-  init_rtl(ap_mac);
+  #endif // SERGEY_OFF_INT4
+  
+  init_rtl();
 }
 
 irs::rtl8019as_t::~rtl8019as_t()
@@ -104,6 +104,7 @@ irs::rtl8019as_t::~rtl8019as_t()
 
 irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
 {
+  m_blink_17.set();
   #ifdef RTL_DISABLE_INT_BYTE
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
@@ -129,6 +130,7 @@ irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
 void irs::rtl8019as_t::write_rtl(irs_u8 a_reg_addr, 
   irs_u8 a_reg_data)
 {
+  m_blink_18.set();
   #ifdef RTL_DISABLE_INT_BYTE
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
@@ -181,7 +183,7 @@ void irs::rtl8019as_t::recv_packet()
   IRS_LOBYTE(recv_size_cur) = byte;
   byte = read_rtl(rdmaport);
   IRS_HIBYTE(recv_size_cur) = byte;
-  if (!m_recv_status) {
+  if (m_recv_status == false) {
     if (recv_size_cur > ETHERNET_PACKET_RX) {
       for (irs_u16 i = 0; i < recv_size_cur; i++) {
         byte = read_rtl(rdmaport);
@@ -190,8 +192,23 @@ void irs::rtl8019as_t::recv_packet()
       m_recv_status = true;
       m_recv_buf_size = recv_size_cur;
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
-        m_recv_buf[i] = read_rtl(rdmaport);
+        mp_recv_buf[i] = read_rtl(rdmaport);
       }
+      
+      #ifndef NOP
+      // IP получателя
+      static mxip_t local_ip = {{ 192, 168, 0, 37}};
+      if((m_recv_buf[0xC] == 0x8) && (m_recv_buf[0xD] == 0x6)) { //EtherType
+        if((m_recv_buf[0x26] == local_ip.val[0]) && 
+          (m_recv_buf[0x27] == local_ip.val[1]) && 
+          (m_recv_buf[0x28] == local_ip.val[2]) && 
+          (m_recv_buf[0x29] == local_ip.val[3]) &&
+          (m_recv_buf[0x15] == 0x1)) //arp-request
+        {
+          m_blink_15();
+        }
+      } 
+      #endif //NOP
     }
   } else {
     for (irs_u16 i = 0; i < recv_size_cur; i++) {
@@ -204,30 +221,39 @@ void irs::rtl8019as_t::recv_packet()
   write_rtl(isr, 0xF5);
 }
 
-void irs::rtl8019as_t::rtl_interrupt()
+void irs::rtl8019as_t::rtl_interrupt() 
 {
+  m_blink_20();
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #else //RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
-
+  
   irs_u8 byte = read_rtl(isr);
-  if((byte&0x10) == 0x10) {
+  if(byte&0x10) { //буфер приема переполнен
+    //m_blink_19.set();
     overrun(); 
   }
-  if((byte&0x1) == 0x1) {
+  if(byte&0x01) { //получено без ошибок
     recv_packet();
   }
+  if (byte&0xA) { //данные отправлены
+    //m_blink_19.set();
+    m_send_status = false;
+  }
+  /*if (byte&0x2) { //данные отправлены без ошибок
+    m_blink_19.set(); 
+  }*/
 
   byte = read_rtl(bnry);
   write_rtl(cr, 0x62);
   irs_u8 _byte = read_rtl(curr);
   write_rtl(cr, 0x22);
 
-  //'buffer is not empty, get next packet
+  //buffer is not empty, get next packet
   if (byte != _byte) {
-    overrun();
+    overrun(); //recv_packet(); 
   }
 
   write_rtl(isr, 0xff);
@@ -238,22 +264,12 @@ void irs::rtl8019as_t::rtl_interrupt()
   #endif //RTL_DISABLE_INT
 }
 
-void irs::rtl8019as_t::set_rtl_ports(irs_avr_port_t a_data_port, 
-  irs_avr_port_t a_address_port)
-{  
-  rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
-  rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
-  rtl_port_str.rtl_data_port_dir = avr_port_map[a_data_port].dir;
-  rtl_port_str.rtl_address_port_set = avr_port_map[a_address_port].set;
-  rtl_port_str.rtl_address_port_get = avr_port_map[a_address_port].get;
-  rtl_port_str.rtl_address_port_dir = avr_port_map[a_address_port].dir;
-}
-
-void irs::rtl8019as_t::reset_rtl() 
+void irs::rtl8019as_t::init_rtl() 
 {
   // Запрет прерываний
   irs_disable_interrupt();
-  // Все линии PORT2 выходы
+
+  // Все линии PORTA выходы
   *rtl_port_str.rtl_address_port_dir = 0xFF;
 
   // Линию RTL RESDRV выставляем в 1
@@ -283,12 +299,20 @@ void irs::rtl8019as_t::reset_rtl()
   IOR_HI;
   // Линию RTL IOWB выставляем в 1
   IOW_HI;
-
+  
   irs_u8 byte = read_rtl(rstport);
   write_rtl(rstport, byte);
   __no_operation();
 
-  write_rtl(cr, 0x21);
+  //check for good soft reset
+  if(!(read_rtl(isr) & 0x80))
+  {
+    //fail
+    static irs::blink_t blink_7(irs_avr_portb, 3);
+    blink_7.set();
+  }
+  
+  write_rtl(cr, 0x21);//stop, page0
   __no_operation();
   write_rtl(dcr, dcrval);
   write_rtl(rbcr0, 0x0);
@@ -299,20 +323,17 @@ void irs::rtl8019as_t::reset_rtl()
   write_rtl(pstart, rxstart);
   write_rtl(bnry, rxstart);
   write_rtl(pstop, rxstop);
-  write_rtl(cr, 0x61);
+  write_rtl(cr, 0x61); //stop, page1
   __no_operation();
   write_rtl(curr, rxstart);
 
-  write_rtl(0x1, m_mac_save[0]);
-  write_rtl(0x2, m_mac_save[1]);
-  write_rtl(0x3, m_mac_save[2]);
-  write_rtl(0x4, m_mac_save[3]);
-  write_rtl(0x5, m_mac_save[4]);
-  write_rtl(0x6, m_mac_save[5]);
+  for (int mac_index = 0; mac_index < mac_size; mac_index++) {
+    write_rtl(par0 + mac_index, m_mac.val[mac_index]);
+  }
 
-  write_rtl(cr, 0x21);
+  write_rtl(cr, 0x21); //stop, page0
   write_rtl(dcr, dcrval);
-  write_rtl(cr, 0x22);
+  write_rtl(cr, 0x22); //start
   write_rtl(isr, 0xff);
   write_rtl(imr, imrval);
   write_rtl(tcr, tcrval);
@@ -330,7 +351,7 @@ bool irs::rtl8019as_t::wait_dma()
     isr_cont = read_rtl(isr);
     if (test_to_cnt(to_wait_end_dma)) {
       #ifdef RTL_RESET_ON_TIMEOUT
-      reset_rtl();
+      init_rtl();
       return false;
       #else //RTL_RESET_ON_TIMEOUT
       return true
@@ -342,6 +363,16 @@ bool irs::rtl8019as_t::wait_dma()
 
 void irs::rtl8019as_t::send_packet(irs_u16 a_size) 
 {
+  #ifdef IRS_LIB_CHECK
+  if (a_size > ETHERNET_PACKET_MAX) {
+    a_size = ETHERNET_PACKET_MAX;
+  } else if (a_size < ETHERNET_PACKET_MIN) {
+    a_size = ETHERNET_PACKET_MIN;
+  }
+  #endif //IRS_LIB_CHECK
+
+  IRS_LIB_ASSERT(a_size > ETHERNET_PACKET_MAX);
+  
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT
@@ -356,9 +387,29 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
   for (irs_u16 i = 0; i < a_size; i++) {
-    write_rtl(rdmaport, m_send_buf[i]);
+    write_rtl(rdmaport, mp_send_buf[i]);
   }
-
+  
+  #ifndef NOP
+  //IP Отправителя
+  static mxip_t local_ip = {{ 192, 168, 0, 37}};
+  if((m_send_buf[0x1c] == local_ip.val[0]) &&
+    (m_send_buf[0x1d] == local_ip.val[1]) &&
+    (m_send_buf[0x1e] == local_ip.val[2]) &&
+    (m_send_buf[0x1f] == local_ip.val[3]))
+  {
+    //IP Получателя
+    static mxip_t dest_ip = {{ 192, 168, 0, 28}};
+    if((m_send_buf[0x26] == dest_ip.val[0]) &&
+      (m_send_buf[0x27] == dest_ip.val[1]) &&
+      (m_send_buf[0x28] == dest_ip.val[2]) &&
+      (m_send_buf[0x29] == dest_ip.val[3]))
+    {
+      m_blink_16();
+    }
+  }
+  #endif //NOP
+  
   if (!wait_dma()) {
     return;
   }
@@ -372,27 +423,14 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   #endif //RTL_DISABLE_INT
 }
 
-void irs::rtl8019as_t::init_rtl(const irs_u8 *ap_mac)
-{
-  memcpy(m_mac_save.data(), ap_mac, mac_size);
-  irs_avr_int4_int.add(&m_rtl_interrupt_event);
-  // Сброс RTL
-  reset_rtl();
-}
-
-void irs::rtl8019as_t::set_recv_status_completed()
+void irs::rtl8019as_t::set_recv_handled()
 {
   m_recv_status = false;
 }
 
-bool irs::rtl8019as_t::is_recv_status_busy()
+bool irs::rtl8019as_t::is_recv_buf_filled()
 {
   return m_recv_status;
-}
-
-bool irs::rtl8019as_t::is_send_status_busy()
-{
-  return false;
 }
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()
@@ -405,7 +443,26 @@ irs_u8* irs::rtl8019as_t::get_send_buf()
   return m_send_buf.data();
 }
 
-size_t irs::rtl8019as_t::recv_buf_size()
+irs_size_t irs::rtl8019as_t::recv_buf_size()
 {
   return m_recv_buf_size;
+}
+
+irs_size_t irs::rtl8019as_t::send_buf_max_size()
+{
+  return m_size_buf;
+}
+
+irs::rtl8019as_t::buffer_num_t irs::rtl8019as_t::get_buf_num()
+{
+  return m_buf_num;
+}
+
+mxmac_t irs::rtl8019as_t::get_local_mac()
+{
+  return m_mac;
+}
+
+void irs::rtl8019as_t::tick()
+{
 }

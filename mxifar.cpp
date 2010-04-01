@@ -1,5 +1,6 @@
 // Функции для mxifa (mxifa routines)
-// Дата: 17.09.2009
+// Дата: 01.04.2010
+// Ранняя дата: 17.09.2009
 
 #include <mxifar.h>
 #include <string.h>
@@ -10,6 +11,8 @@
 // Нулевой IP
 const mxip_t zero_ip = {{0, 0, 0, 0}};
 //---------------------------------------------------------------------------
+
+#ifdef NOP
 // Оператор == для mxip_t
 irs_bool operator ==(mxip_t ip1, mxip_t ip2)
 {
@@ -128,4 +131,5 @@ irs_bool cstr_to_mxip(mxip_t &ip, const char *a_str_ip)
     }
   }
 }
+#endif // NOP
 

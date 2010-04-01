@@ -1,5 +1,6 @@
 // Функции для mxifa (mxifa routines)
-// Дата: 17.09.2009
+// Дата: 01.04.2010
+// Ранняя дата: 17.09.2009
 
 #ifndef mxifarH
 #define mxifarH
@@ -7,6 +8,9 @@
 #include <irsdefs.h>
 #include <irsstd.h>
 #include <irsstrdefs.h>
+#include <irsnetdefs.h>
+
+#ifdef NOP
 
 // Длина строки для ip-адреса
 #define IPSTR_LEN 16
@@ -23,10 +27,16 @@ struct mxip_t {
     return ip;
   }
 };
+
+#endif //NOP
+
 //---------------------------------------------------------------------------
 // Нулевой IP
 extern const mxip_t zero_ip;
 //---------------------------------------------------------------------------
+
+#ifdef NOP
+
 // Оператор == для mxip_t
 irs_bool operator ==(mxip_t ip1, mxip_t ip2);
 // Оператор != для mxip_t
@@ -63,3 +73,4 @@ inline mxip_t make_mxip(const char_t* a_ip)
 //---------------------------------------------------------------------------
 #endif //mxifarH
 
+#endif //NOP

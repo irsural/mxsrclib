@@ -1,6 +1,6 @@
 // Коммуникационные потоки
+// Дата: 31.03.2010
 // Дата создания: 8.09.2009
-// Дата последнего изменения: 21.12.2009
 
 #include <hardflowg.h>
 #include <irscpp.h>
@@ -1951,3 +1951,156 @@ void irs::hardflow::fixed_flow_t::tick()
   }
 }
 
+irs::hardflow::simple_udp_flow_t::simple_udp_flow_t(
+  simple_tcpip_t* ap_simple_udp, 
+  mxip_t a_local_ip,
+  irs_u16 a_local_port,
+  mxip_t a_dest_ip,
+  irs_u16 a_dest_port
+):
+  mp_simple_udp(ap_simple_udp),
+  m_local_ip(a_local_ip),
+  m_local_port(a_local_port),
+  m_dest_ip(a_dest_ip),
+  m_dest_port(a_dest_port),
+  m_channel(invalid_channel + 1),
+  m_map_channel(),
+  mp_map_channel_it(m_map_channel.begin()),
+  m_channel_max_count(static_cast<size_type>(-1)),
+  m_channel_id_overflow(false)
+{
+  
+}
+
+irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
+{
+}
+
+void irs::hardflow::simple_udp_flow_t::start()
+{
+  mp_simple_udp->open_udp();
+}
+
+void irs::hardflow::simple_udp_flow_t::stop()
+{
+  mp_simple_udp->close_udp();
+}
+
+void irs::hardflow::simple_udp_flow_t::new_channel()
+{
+  if (!m_channel_id_overflow) {
+    m_channel++;
+    if (m_channel == invalid_channel) {
+      m_channel_id_overflow = true;
+    } else {
+      // Переполнение не произошло
+      IRS_LIB_ASSERT(m_map_channel.find(m_channel) ==
+        m_map_channel.end());
+    }
+  } else {
+    // Уже было переполнение счетчика
+  }
+  if (m_channel_id_overflow)  {
+    if (m_map_channel.size() < m_channel_max_count) {
+      if(m_channel == invalid_channel) {
+        m_channel++;
+      }
+      map<size_type, int>::iterator it_prev =
+        m_map_channel.find(m_channel);
+      map<size_type, int>::iterator it_cur = it_prev;
+      if(it_cur != m_map_channel.end()) {
+        while(true) {
+          it_cur++;
+          if(it_cur == m_map_channel.end()) {
+            m_channel = it_prev->first + 1;
+            if(m_channel == invalid_channel) {
+              m_channel++;
+            }
+            it_prev = m_map_channel.find(m_channel);
+            it_cur = it_prev;
+            if(it_cur == m_map_channel.end()) {
+              break;
+            }
+          } else if((it_cur->first - it_prev->first) > 1) {
+            m_channel = it_prev->first + 1;
+            break;
+          }
+          it_prev = it_cur;
+        }
+      }
+    } else {
+      //Нет свободных мест под новый канал
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
+      m_channel = invalid_channel;
+    }
+  } else {
+    // Переполнения счетчика не было
+  }
+}
+
+irs::hardflow::simple_udp_flow_t::size_type 
+  irs::hardflow::simple_udp_flow_t::channel_next()
+{
+  size_type channel = invalid_channel;
+  if (!m_map_channel.empty()) {
+    IRS_LIB_ASSERT(mp_map_channel_it != m_map_channel.end());
+    mp_map_channel_it++;
+    if(mp_map_channel_it == m_map_channel.end())
+    {
+      mp_map_channel_it = m_map_channel.begin();
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Reach the end" << endl);
+      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Go to first socket" << endl);
+    }
+    channel = mp_map_channel_it->first;
+  } else {
+    channel = invalid_channel;
+  }
+  return channel;
+}
+
+bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
+  size_type a_channel_ident)
+{
+  return m_map_channel.find(a_channel_ident) != m_map_channel.end();
+}
+
+irs::hardflow::simple_udp_flow_t::size_type 
+  irs::hardflow::simple_udp_flow_t::read(size_type a_channel_ident, 
+  irs_u8 *ap_buf, size_type a_size)
+{
+  size_type read_data_size = 
+    mp_simple_udp->read_udp(&m_dest_ip, &m_dest_port, &m_local_port);
+  if(read_data_size == a_size) {
+    mp_simple_udp->read_udp_complete();
+  }
+  return read_data_size;
+}
+
+irs::hardflow::simple_udp_flow_t::size_type 
+  irs::hardflow::simple_udp_flow_t::write(size_type a_channel_ident, 
+  const irs_u8 *ap_buf, size_type a_size)
+{
+  size_type write_data_size = 0;
+  if(mp_simple_udp->is_write_udp_complete()) {
+    mp_simple_udp->write_udp(m_dest_ip, m_dest_port, m_local_port,
+      a_size);
+  }
+  return write_data_size;
+}
+
+irs::string irs::hardflow::simple_udp_flow_t::param(const irs::string &a_name)
+{
+  irs::string param;
+  return param;
+}
+
+void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &a_name,
+  const irs::string &a_value)
+{
+
+}
+
+void irs::hardflow::simple_udp_flow_t::tick()
+{
+
+}

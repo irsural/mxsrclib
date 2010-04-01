@@ -1,6 +1,6 @@
 // Коммуникационные потоки
+// Дата: 31.03.2010
 // Дата создания: 27.08.2009
-// Дата последнего изменения: 15.03.2010
 
 #ifndef hardflowgH
 #define hardflowgH
@@ -34,6 +34,8 @@
 #include <mxdata.h>
 #include <irssysutils.h>
 #include <irscpp.h>
+#include <irstcpip.h>
+#include <irsnetdefs.h>
 
 #define IRS_LIB_HARDFLOW_DEBUG_NONE 0
 #define IRS_LIB_HARDFLOW_DEBUG_BASE 1
@@ -627,6 +629,47 @@ private:
   size_type m_write_size_rest;
   status_t  m_write_status;
   timer_t m_write_timeout;
+};
+
+class simple_udp_flow_t: public hardflow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  
+  simple_udp_flow_t(
+    simple_tcpip_t* ap_simple_udp,
+    mxip_t a_local_ip,
+    irs_u16 a_local_port,
+    mxip_t a_dest_ip,
+    irs_u16 a_dest_port
+  );
+  virtual ~simple_udp_flow_t();
+  virtual irs::string param(const irs::string &a_name);
+  virtual void set_param(const irs::string &a_name,
+    const irs::string &a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+
+private:
+  simple_tcpip_t* mp_simple_udp;
+  mxip_t m_local_ip;
+  irs_u16 m_local_port;
+  mxip_t m_dest_ip;
+  irs_u16 m_dest_port;
+  size_type m_channel;
+  map<size_type, int> m_map_channel;
+  map<size_type, int>::iterator mp_map_channel_it;
+  const size_type m_channel_max_count;
+  bool m_channel_id_overflow;
+  
+  void new_channel();
+  void start();
+  void stop();
 };
 
 } // namespace hardflow
