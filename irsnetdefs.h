@@ -150,27 +150,6 @@ inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
   }
 }
 
-inline mxip_t make_mxip(int a_first_octet, int a_second_octet, 
-  int a_third_octet, int a_fourth_octet)
-{
-  mxip_t ip = {{
-    static_cast<irs_u8>(a_first_octet),
-    static_cast<irs_u8>(a_second_octet),
-    static_cast<irs_u8>(a_third_octet),
-    static_cast<irs_u8>(a_fourth_octet)
-  }};
-  return ip;
-}
-
-inline mxip_t make_mxip(const irs::char_t* a_ip)
-{
-  mxip_t ip = mxip_t::zero_ip();
-  if (!cstr_to_mxip(ip, IRS_SIMPLE_FROM_TYPE_STR(a_ip))) {
-    ip = mxip_t();
-  }
-  return ip;
-}
-
 struct mxmac_t 
 {
   irs_u8 val[mac_length];
@@ -303,6 +282,29 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
   }
 }
 
+namespace irs {
+
+inline mxip_t make_mxip(int a_first_octet, int a_second_octet, 
+  int a_third_octet, int a_fourth_octet)
+{
+  mxip_t ip = {{
+    static_cast<irs_u8>(a_first_octet),
+    static_cast<irs_u8>(a_second_octet),
+    static_cast<irs_u8>(a_third_octet),
+    static_cast<irs_u8>(a_fourth_octet)
+  }};
+  return ip;
+}
+
+inline mxip_t make_mxip(const irs::char_t* a_ip)
+{
+  mxip_t ip = mxip_t::zero_ip();
+  if (!cstr_to_mxip(ip, IRS_SIMPLE_FROM_TYPE_STR(a_ip))) {
+    ip = mxip_t();
+  }
+  return ip;
+}
+
 inline mxmac_t make_mxmac(int a_first_octet, int a_second_octet, 
   int a_third_octet, int a_fourth_octet, int a_fifth_octet, int a_sixth_octet)
 {
@@ -325,5 +327,7 @@ inline mxmac_t make_mxmac(const irs::char_t* a_mac)
   }
   return mac;
 }
+
+} //namespace irs
 
 #endif //IRSNETDEFSH
