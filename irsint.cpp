@@ -170,7 +170,7 @@ irs::interrupt_array_base_t* irs::interrupt_array()
   #ifdef __ICCAVR__
   return irs::avr::interrupt_array();
   #else //__ICCAVR__
-  static auto_ptr<interrupt_array_t> 
+  static auto_ptr<interrupt_array_base_t> 
     p_interrupt_array(new interrupt_array_empty_t);
   return p_interrupt_array.get();
   #endif //__ICCAVR__
