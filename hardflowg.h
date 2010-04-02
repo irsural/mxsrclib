@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 31.03.2010
+// Дата: 02.04.2010
 // Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -666,10 +666,13 @@ private:
   map<size_type, int>::iterator mp_map_channel_it;
   const size_type m_channel_max_count;
   bool m_channel_id_overflow;
+  irs_u8* mp_recv_buf;
+  irs_u8* mp_send_buf;
+  size_type m_udp_max_data_size;
   
   void new_channel();
-  void start();
-  void stop();
+  /*void start();
+  void stop();*/
 };
 
 } // namespace hardflow

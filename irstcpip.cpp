@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 31.03.2010
+// Дата: 02.04.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -151,10 +151,12 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_udp_wait_arp_time(make_cnt_s(1)),
   m_arp_cash(a_arp_cash_size),
   m_dest_mac(IRS_TCPIP_MAC(mp_send_buf)),
+  #ifdef __ICCAVR__
   m_blink_0(irs_avr_porte, 7),
   m_blink_1(irs_avr_porte, 5),
   m_blink_2(irs_avr_porte, 2),
   m_blink_3(irs_avr_portf, 0),
+  #endif //__ICCAVR__
   m_send_arp(false),
   m_send_icmp(false),
   m_send_udp(false),
@@ -423,13 +425,17 @@ void irs::simple_tcpip_t::arp()
     if (mp_send_buf[arp_operation_code_1] == arp_operation_response) {
       //ARP-ответ
       //добавляем ip и mac в ARP-таблицу
+      #ifdef __ICCAVR__
       m_blink_1();
+      #endif //__ICCAVR__
       arp_cash(); 
     }
     if (mp_send_buf[arp_operation_code_1] == arp_operation_request) { 
       //ARP-запрос
       //формируем ответ на пришедший ARP-запрос 
+      #ifdef __ICCAVR__
       m_blink_2();
+      #endif //__ICCAVR__
       arp_response();
     }
   }
@@ -510,7 +516,9 @@ void irs::simple_tcpip_t::icmp()
             mp_send_buf[i] = mp_recv_buf[i];
           }
         }
+        #ifdef __ICCAVR__
         m_blink_3();
+        #endif //__ICCAVR__
         icmp_packet();
       }
     }
@@ -659,10 +667,22 @@ void irs::simple_tcpip_t::ip(void)
   }
 }
 
+irs_u8* irs::simple_tcpip_t::get_recv_buf()
+{
+  return mp_recv_buf;
+}
+
+irs_u8* irs::simple_tcpip_t::get_send_buf()
+{
+  return mp_send_buf;
+}
+
 void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
+  #ifdef __ICCAVR__
   m_blink_0();
+  #endif //__ICCAVR__
   if (mp_ethernet->is_recv_buf_filled() == true)
   {
     if(IRS_TCPIP_IP(mp_recv_buf + arp_target_ip) == m_ip)
@@ -695,8 +715,10 @@ void irs::simple_tcpip_t::tick()
       ((m_buf_num == simple_ethernet_t::single_buf) && 
       (mp_ethernet->is_recv_buf_filled() == false)))
     {
+      #ifdef __ICCAVR__
       static blink_t blink_4(irs_avr_porte, 3);
       blink_4.set();
+      #endif //__ICCAVR__
       send_icmp();
     }
   }

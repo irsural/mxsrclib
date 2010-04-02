@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 31.03.2010
+// Дата: 02.04.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -8,7 +8,9 @@
 #include <irsdefs.h>
 
 #include <mxdata.h>
+#ifdef __ICCAVR__
 #include <irsavrutil.h>
+#endif //__ICCAVR__
 #include <irsnetdefs.h>
 
 #include <irsfinal.h>
@@ -169,6 +171,8 @@ public:
   irs_size_t read_udp(mxip_t* a_dest_ip, irs_u16* a_dest_port,
     irs_u16* a_local_port);
   void read_udp_complete();
+  irs_u8* get_recv_buf();
+  irs_u8* get_send_buf();
   void tick();
   
 private:
@@ -200,10 +204,12 @@ private:
   timer_t m_udp_wait_arp_time;
   arp_cash_t m_arp_cash;
   mxmac_t& m_dest_mac;
+  #ifdef __ICCAVR__
   blink_t m_blink_0;
   blink_t m_blink_1;
   blink_t m_blink_2;
   blink_t m_blink_3;
+  #endif //__ICCAVR__
   bool m_send_arp;
   bool m_send_icmp;
   bool m_send_udp;

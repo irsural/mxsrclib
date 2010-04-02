@@ -4,13 +4,6 @@
 #include <irsarcherror.h>
 #include <irskbd.h>
 
-mxip_t make_ip(irs_u8 a_ip0, irs_u8 a_ip1, irs_u8 a_ip2,
-  irs_u8 a_ip3)
-{
-  mxip_t ip = {{a_ip0, a_ip1, a_ip2, a_ip3}};
-  return ip;
-}
-
 int main()
 {
   irs::gcc_linux::set_error_handler();

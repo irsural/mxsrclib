@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 31.03.2010
+// Дата: 02.04.2010
 // Дата создания: 8.09.2009
 
 #include <hardflowg.h>
@@ -1967,24 +1967,26 @@ irs::hardflow::simple_udp_flow_t::simple_udp_flow_t(
   m_map_channel(),
   mp_map_channel_it(m_map_channel.begin()),
   m_channel_max_count(static_cast<size_type>(-1)),
-  m_channel_id_overflow(false)
-{
-  
-}
-
-irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
-{
-}
-
-void irs::hardflow::simple_udp_flow_t::start()
+  m_channel_id_overflow(false),
+  mp_recv_buf(mp_simple_udp->get_recv_buf()),
+  mp_send_buf(mp_simple_udp->get_send_buf()),
+  m_udp_max_data_size(8192)
 {
   mp_simple_udp->open_udp();
 }
 
-void irs::hardflow::simple_udp_flow_t::stop()
+irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 {
   mp_simple_udp->close_udp();
 }
+
+/*void irs::hardflow::simple_udp_flow_t::start()
+{
+}
+
+void irs::hardflow::simple_udp_flow_t::stop()
+{
+}*/
 
 void irs::hardflow::simple_udp_flow_t::new_channel()
 {
@@ -2068,11 +2070,15 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs::hardflow::simple_udp_flow_t::read(size_type a_channel_ident, 
   irs_u8 *ap_buf, size_type a_size)
 {
+  if(a_size > m_udp_max_data_size) {
+    a_size = m_udp_max_data_size;
+  }
   size_type read_data_size = 
     mp_simple_udp->read_udp(&m_dest_ip, &m_dest_port, &m_local_port);
   if(read_data_size == a_size) {
     mp_simple_udp->read_udp_complete();
   }
+  //memcpyex(ap_buf, mp_recv_buf + 0x2a, read_data_size);
   return read_data_size;
 }
 
@@ -2080,11 +2086,15 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs::hardflow::simple_udp_flow_t::write(size_type a_channel_ident, 
   const irs_u8 *ap_buf, size_type a_size)
 {
+  if(a_size > m_udp_max_data_size) {
+    a_size = m_udp_max_data_size;
+  }
   size_type write_data_size = 0;
   if(mp_simple_udp->is_write_udp_complete()) {
     mp_simple_udp->write_udp(m_dest_ip, m_dest_port, m_local_port,
       a_size);
   }
+  //memcpyex(ap_buf, mp_send_buf + 0x2a, a_size);
   return write_data_size;
 }
 
@@ -2102,5 +2112,5 @@ void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &a_name,
 
 void irs::hardflow::simple_udp_flow_t::tick()
 {
-
+  mp_simple_udp->tick();
 }
