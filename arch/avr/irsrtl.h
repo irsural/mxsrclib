@@ -27,6 +27,9 @@ public:
     ETHERNET_PACKET_MIN = 64
   };
   enum {
+    IORB = 5,
+    IOWB = 6,
+    RSTDRV = 7,
     rstport = 0x18,
     isr = 0x07,
     cr = 0x0,

@@ -23,27 +23,6 @@
 //Запрет прерываний при чтении/записи байтов:
 #define RTL_DISABLE_INT_BYTE 
 
-//ETHERNET_PORT2|=0x20
-#define IOR_HI {*rtl_port_str.rtl_address_port_set |= (1 << IORB);}
-//ETHERNET_PORT2&=(0xFF^0x20)
-#define IOR_LO {*rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IORB));}
-//ETHERNET_PORT2|=0x40
-#define IOW_HI {*rtl_port_str.rtl_address_port_set |= (1 << IOWB);}
-//ETHERNET_PORT2&=(0xFF^0x40)
-#define IOW_LO {*rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));}
-#define IORB 5
-#define IOWB 6
-#define RSTDRV 7
-// Регистры RTL
-#define config3 0x06
-// Биты CONFIG3
-// Тип 0-го светодиода
-#define LEDS0 4
-// Биты CR
-// Номер регистровой страницы
-#define PS0 6
-#define PS1 7
-
 struct rtl_port_str_t
 {
   p_avr_port_t rtl_data_port_set;
@@ -113,11 +92,11 @@ irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
   *rtl_port_str.rtl_data_port_set = 0xFF;
   *rtl_port_str.rtl_address_port_set &= (0xFF^0x1F);
   *rtl_port_str.rtl_address_port_set |= a_reg_addr;
-  IOR_LO;
+  *rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IORB));
   __no_operation();
   irs_u8 READ = *rtl_port_str.rtl_data_port_get;
   __no_operation();
-  IOR_HI;
+  *rtl_port_str.rtl_address_port_set |= (1 << IORB);
   __no_operation();
 
   #ifdef RTL_DISABLE_INT_BYTE
@@ -140,9 +119,9 @@ void irs::rtl8019as_t::write_rtl(irs_u8 a_reg_addr,
   *rtl_port_str.rtl_data_port_dir = 0xFF;
   *rtl_port_str.rtl_data_port_set = a_reg_data;
   __no_operation();
-  IOW_LO;
+  *rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));
   __no_operation();
-  IOW_HI;
+  *rtl_port_str.rtl_address_port_set |= (1 << IOWB);
   __no_operation();
   *rtl_port_str.rtl_data_port_dir = 0x00;
   *rtl_port_str.rtl_data_port_set = 0xFF;
@@ -296,9 +275,9 @@ void irs::rtl8019as_t::init_rtl()
   // Адресные биты сбрасываем в 0
   *rtl_port_str.rtl_address_port_set &= 0xE0;
   // Линию RTL IORB выставляем в 1
-  IOR_HI;
+  *rtl_port_str.rtl_address_port_set |= (1 << IORB);
   // Линию RTL IOWB выставляем в 1
-  IOW_HI;
+  *rtl_port_str.rtl_address_port_set |= (1 << IOWB);
   
   irs_u8 byte = read_rtl(rstport);
   write_rtl(rstport, byte);
