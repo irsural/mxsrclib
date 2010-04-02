@@ -14,13 +14,6 @@
 
 #include <irsfinal.h>
 
-#define ETHERNET_PACKET_TX 250
-#define ETHERNET_PACKET_RX 254
-//#define ETHERNET_PACKET_TX 300
-//#define ETHERNET_PACKET_RX 304
-//#define ETHERNET_PACKET_TX 1550
-//#define ETHERNET_PACKET_RX 1554
-
 namespace irs {
 
 class rtl8019as_t: public simple_ethernet_t

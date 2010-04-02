@@ -184,7 +184,7 @@ void irs::rtl8019as_t::recv_packet()
   byte = read_rtl(rdmaport);
   IRS_HIBYTE(recv_size_cur) = byte;
   if (m_recv_status == false) {
-    if (recv_size_cur > ETHERNET_PACKET_RX) {
+    if (recv_size_cur > m_size_buf) {
       for (irs_u16 i = 0; i < recv_size_cur; i++) {
         byte = read_rtl(rdmaport);
       }

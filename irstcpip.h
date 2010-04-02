@@ -15,19 +15,6 @@
 
 #include <irsfinal.h>
 
-// Размер заголовков Ethernet + IP + UDP
-#define HEADERS_SIZE 42
-// Размер буфера передачи
-#define UDP_BUFFER_SIZE_TX (ETHERNET_PACKET_TX - HEADERS_SIZE)
-// Размер буфера приема
-#define UDP_BUFFER_SIZE_RX (ETHERNET_PACKET_RX - HEADERS_SIZE)
-
-// Размер IP-адреса
-#define IRS_UDP_IP_SIZE 4
-
-// Размер MAC-адреса
-#define IRS_UDP_MAC_SIZE 6
-
 namespace irs {
 
 //Ethernet interface for RTL
@@ -95,6 +82,7 @@ public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
 
   enum {
+    HEADERS_SIZE = 42,
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 200,
