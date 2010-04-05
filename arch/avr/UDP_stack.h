@@ -1,6 +1,7 @@
 // UDP/IP-стэк Димы Уржумцева
 // Откорректирован Крашенинников М. В.
-// Дата: 30.05.2008
+// Дата: 02.04.2010
+// Ранняя дата: 30.05.2008
 
 #ifndef UDPSTACKH
 #define UDPSTACKH
@@ -52,6 +53,7 @@ irs_u16 ReadUDP_begin(irs_u8 *dest_ip_a, irs_u16 *dest_port_a);
 // Освобождение буфера приема
 void ReadUDP_end();
 #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+// Размер буферов Ethernet
 irs_size_t udp_buf_size();
 #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 

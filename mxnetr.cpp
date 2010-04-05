@@ -37,7 +37,7 @@ irs::mx_beg_pack_proc_t::~mx_beg_pack_proc_t()
 void irs::mx_beg_pack_proc_t::operator()(irs_u8 *a_buf, mxifa_dest_t *a_dest)
 {
   m_buf = a_buf;
-  m_buf_end = m_buf + SIZE_OF_BEG_PACK;
+  m_buf_end = m_buf + MXN_SIZE_OF_BEG_PACK;
   m_proc = irs_true;
   m_mode = mode_start;
   m_abort_request = irs_false;
@@ -48,7 +48,7 @@ irs_bool irs::mx_beg_pack_proc_t::tick()
 {
   switch (m_mode) {
     case mode_start: {
-      mxifa_read_begin(m_handle_channel, m_dest, m_buf, SIZE_OF_BEG_PACK);
+      mxifa_read_begin(m_handle_channel, m_dest, m_buf, MXN_SIZE_OF_BEG_PACK);
       m_mode = mode_read_begin;
     } break;
     case mode_read_begin: {
@@ -81,7 +81,7 @@ irs_bool irs::mx_beg_pack_proc_t::tick()
           }
         } else {
           void *src = (void *)(m_buf + mxn_end_size);
-          size_t move_size = SIZE_OF_BEG_PACK;
+          size_t move_size = MXN_SIZE_OF_BEG_PACK;
           void *dest = (void *)m_buf;
           memmove(dest, src, move_size);
 
@@ -128,8 +128,8 @@ irs_bool find_begin_in_data(irs_u8 *buf, mxn_sz_t size, mxn_sz_t &pos)
         first_byte_compare = false;
         buf_ind_next = buf_ind;
       }
-      if (bpa_ind >= SIZE_OF_BEG_PACK - 1) {
-        pos = buf_ind - SIZE_OF_BEG_PACK + 1;
+      if (bpa_ind >= MXN_SIZE_OF_BEG_PACK - 1) {
+        pos = buf_ind - MXN_SIZE_OF_BEG_PACK + 1;
         return irs_true;
       }
       bpa_ind++;

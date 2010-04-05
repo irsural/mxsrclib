@@ -1,12 +1,15 @@
 // Строки ИРС
-// Дата: 20.09.2009
+// Дата: 01.04.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
 #define IRSSTRINGH
 
 #include <irsdefs.h>
+
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

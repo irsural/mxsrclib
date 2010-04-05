@@ -1,12 +1,16 @@
 // Утилиты для AVR
-// Дата: 11.04.2008
+// Дата: 01.04.2010
+// Ранняя дата: 11.04.2008
 
 #ifndef IRSAVRUTILH
 #define IRSAVRUTILH
 
-#include <irsstd.h>
 #include <irsdefs.h>
+
+#include <irsstd.h>
 #include <timer.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 
@@ -53,6 +57,10 @@ public:
   void clear()
   {
     (*mp_port_set) &= ~(1 << m_bit);
+  }
+  void flip()
+  {
+    (*mp_port_set) ^= (1 << m_bit);
   }
 };
 

@@ -1,12 +1,17 @@
 // Протокол MxNet (Max Network)
-// Дата: 18.06.2008
+// Дата: 05.04.2010
+// Ранняя дата: 18.06.2008
 
-#include <gdefs.h>
+#include <irsdefs.h>
+
 #include <string.h>
+
 #include <mxnet.h>
 #include <mxnetd.h>
-#include <irsdefs.h>
 //#include <irsavrutil.h>
+#include <irserror.h>
+
+#include <irsfinal.h>
 
 // Пуск выполнения обработки
 static void mxn_tick_start(mxn_data_t &data);
@@ -56,12 +61,16 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   mxifa_init();
   data.count = count;
   data.vars_ext = vars;
-  data.packet = (mxn_packet_t *)new irs_i32[data.count + SIZE_OF_HEADER + 1];
-  data.read_only = new irs_bool[data.count];
+  data.packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
+    new (nothrow) irs_i32[data.count + MXN_SIZE_OF_HEADER + 1]
+  );
+  memset(static_cast<void*>(data.packet), 0, data.count +
+    MXN_SIZE_OF_HEADER + 1);
+  data.read_only = IRS_LIB_NEW_ASSERT(new (nothrow) irs_bool[data.count]);
   for (mxn_cnt_t ind_var = 0; ind_var < data.count; ind_var++) {
     data.read_only[ind_var] = irs_false;
   }
-  memset((void *)&data.dest_info, 0, sizeof(data.dest_info));
+  memset(static_cast<void*>(&data.dest_info), 0, sizeof(data.dest_info));
   data.channel = channel;
   data.is_broadcast = irs_false;
   data.is_broadcast_new = irs_false;
@@ -78,7 +87,8 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   }
   if (!open_ex_performed)
     data.data_ch = mxifa_open(data.channel, data.is_broadcast);
-  data.beg_pack_proc = new irs::mx_beg_pack_proc_t(data.data_ch);
+  data.beg_pack_proc = 
+    IRS_LIB_NEW_ASSERT(new (nothrow) irs::mx_beg_pack_proc_t(data.data_ch));
   data.count_send = 0;
   data.broadcast_send = irs_false;
   data.write_error = irs_false;
@@ -253,10 +263,6 @@ static void mxn_read_head(mxn_data_t &data)
 // Ожидание чтения заголовка и его анализ
 static void mxn_wait_read_head_and_analysis(mxn_data_t &data)
 {
-
-  //static irs::blink_t blink2(irs_avr_porte, 2);
-  //blink2();
-
   mxifa_tick();
   if (!data.beg_pack_proc->tick()) {
     if (data.packet->code_comm == MXN_WRITE) {
@@ -345,7 +351,7 @@ static void mxn_read_count_packet(mxn_data_t &data)
   mxifa_tick();
   data.packet->var_count = data.count;
   mxn_calc_checksum(data.packet->var[0], data.packet, 0, data.checksum_type);
-  data.count_send = sizeof(irs_i32)*(SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
   //data.mxn_tick = mxn_read_count_write;
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;
@@ -396,7 +402,8 @@ static void mxn_read_packet(mxn_data_t &data)
          sizeof(irs_i32)*data.packet->var_count);
   mxn_calc_checksum(data.packet->var[data.packet->var_count], data.packet, 
     data.packet->var_count, data.checksum_type);
-  data.count_send = sizeof(irs_i32)*(data.packet->var_count + SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*
+    (data.packet->var_count + MXN_SIZE_OF_HEADER + 1);
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;
 }
@@ -428,7 +435,7 @@ static void mxn_write_packet(mxn_data_t &data)
   data.packet->var_ind_first = data.write_error;
   data.packet->var_count = 0;
   mxn_calc_checksum(data.packet->var[0], data.packet, 0, data.checksum_type);
-  data.count_send = sizeof(irs_i32)*(SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;
 }
@@ -439,7 +446,7 @@ static void mxn_get_version_packet(mxn_data_t &data)
   data.packet->var_ind_first = 0;
   IRS_LOWORD(data.packet->var_count) = MXN_VERSION;
   mxn_calc_checksum(data.packet->var[0], data.packet, 0, data.checksum_type);
-  data.count_send = sizeof(irs_i32)*(SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;
 }
@@ -462,7 +469,7 @@ static void mxn_set_broadcast_proc(mxn_data_t &data)
 static void mxn_set_broadcast_packet(mxn_data_t &data)
 {
   mxifa_tick();
-  data.count_send = sizeof(irs_i32)*(SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;
 }
@@ -479,7 +486,7 @@ static void mxn_write_broadcast_packet(mxn_data_t &data)
     sizeof(irs_i32)*data.count);
   mxn_calc_checksum(data.packet->var[data.count], data.packet, data.count,
     data.checksum_type);
-  data.count_send = sizeof(irs_i32)*(data.count + SIZE_OF_HEADER + 1);
+  data.count_send = sizeof(irs_i32)*(data.count + MXN_SIZE_OF_HEADER + 1);
   data.broadcast_send = irs_true;
   data.mxn_tick = mxn_write;
   data.mxn_tick_next = mxn_read_head;

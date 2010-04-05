@@ -1,14 +1,18 @@
 // Утилиты для работы с mxdata_t
-// Дата: 14.01.2010
+// Дата: 01.04.2010
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
 
+#include <irsdefs.h>
+
 #include <mxdatastd.h>
 //#include <irsstd.h>
 #include <irserror.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 
@@ -279,16 +283,20 @@ inline T reset_val(T* p_val, T zero_val = T())
 template <class T>
 inline void memsetex(T* ap_data, const T& a_fill_elem, size_t a_size)
 {
+  IRS_LIB_ASSERT(ap_data != IRS_NULL);
   fill_n(ap_data, a_size, a_fill_elem);
 }
 template <class T>
 inline void memsetex(T* ap_data, size_t a_size)
 {
+  IRS_LIB_ASSERT(ap_data != IRS_NULL);
   memset(reinterpret_cast<void*>(ap_data), 0, a_size*sizeof(T));
 }
 template <class T>
 inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 {
+  IRS_LIB_ASSERT(ap_dest != IRS_NULL);
+  IRS_LIB_ASSERT(ap_src != IRS_NULL);
   return reinterpret_cast<T*>(memcpy(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
@@ -298,6 +306,8 @@ inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 template <class T>
 inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
 {
+  IRS_LIB_ASSERT(ap_dest != IRS_NULL);
+  IRS_LIB_ASSERT(ap_src != IRS_NULL);
   return reinterpret_cast<T*>(memmove(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
@@ -309,6 +319,8 @@ template <class T>
 inline int memcmpex(
   const T* ap_buf_first, const T* ap_buf_second, size_t a_size)
 {
+  IRS_LIB_ASSERT(ap_buf_first != IRS_NULL);
+  IRS_LIB_ASSERT(ap_buf_second != IRS_NULL);
   return memcmp(
     reinterpret_cast<const void*>(ap_buf_first),
     reinterpret_cast<const void*>(ap_buf_second),
@@ -361,49 +373,49 @@ private:
   void reserve_raw(size_type a_capacity);
 };
 template <class T>
-irs::raw_data_t<T>::raw_data_t(size_type a_size):
+raw_data_t<T>::raw_data_t(size_type a_size):
   m_size(a_size),
   m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
-  mp_data(new value_type[m_capacity])
+  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity]))
 {
   memsetex(mp_data, m_size);
 }
 template <class T>
-irs::raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
+raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
   m_size(a_raw_data.m_size),
   m_capacity(a_raw_data.m_capacity),
-  mp_data(new value_type[m_capacity])
+  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity]))
 {
   memcpyex(mp_data, a_raw_data.mp_data, m_size);
 }
 template <class T>
-irs::raw_data_t<T>::~raw_data_t()
+raw_data_t<T>::~raw_data_t()
 {
   delete []mp_data;
 }
 template <class T>
-inline typename irs::raw_data_t<T>::reference
-  irs::raw_data_t<T>::operator[](size_type a_index)
+inline typename raw_data_t<T>::reference
+  raw_data_t<T>::operator[](size_type a_index)
 {
   return mp_data[a_index];
 }
 template <class T>
-inline typename irs::raw_data_t<T>::const_reference
-  irs::raw_data_t<T>::operator[](size_type a_index) const
+inline typename raw_data_t<T>::const_reference
+  raw_data_t<T>::operator[](size_type a_index) const
 {
   return mp_data[a_index];
 }
 template <class T>
-const typename irs::raw_data_t<T>&
-  irs::raw_data_t<T>::operator=(const raw_data_t<T>& a_raw_data)
+const raw_data_t<T>&
+  raw_data_t<T>::operator=(const raw_data_t<T>& a_raw_data)
 {
   raw_data_t<T> raw_data(a_raw_data);
   swap(&raw_data);
   return *this;
 }
 template <class T>
-inline typename irs::raw_data_t<T>::pointer
-  irs::raw_data_t<T>::data()
+inline typename raw_data_t<T>::pointer
+  raw_data_t<T>::data()
 {
   #ifdef IRS_LIB_DEBUG
   return size() ? mp_data : IRS_NULL;
@@ -412,37 +424,37 @@ inline typename irs::raw_data_t<T>::pointer
   #endif // !IRS_DEBUG
 }
 template <class T>
-inline typename irs::raw_data_t<T>::const_pointer
-  irs::raw_data_t<T>::data() const
+inline typename raw_data_t<T>::const_pointer
+  raw_data_t<T>::data() const
 {
   return mp_data;
 }
 template <class T>
-inline typename irs::raw_data_t<T>::size_type
-  irs::raw_data_t<T>::size() const
+inline typename raw_data_t<T>::size_type
+  raw_data_t<T>::size() const
 {
   return m_size;
 }
 template <class T>
-inline typename irs::raw_data_t<T>::size_type
-  irs::raw_data_t<T>::capacity() const
+inline typename raw_data_t<T>::size_type
+  raw_data_t<T>::capacity() const
 {
   return m_capacity;
 }
 template <class T>
-inline bool irs::raw_data_t<T>::empty() const
+inline bool raw_data_t<T>::empty() const
 {
   return m_size == 0;
 }
 template <class T>
-void irs::raw_data_t<T>::reserve(size_type a_capacity)
+void raw_data_t<T>::reserve(size_type a_capacity)
 {
   size_type capacity_norm = max(a_capacity, (size_type)m_capacity_min);
   size_type capacity_new = max(capacity_norm, m_size);
   reserve_raw(capacity_new);
 }
 template <class T>
-void irs::raw_data_t<T>::reserve_raw(size_type a_capacity)
+void raw_data_t<T>::reserve_raw(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
   #ifdef IRS_LIB_CHECK
@@ -451,7 +463,7 @@ void irs::raw_data_t<T>::reserve_raw(size_type a_capacity)
   if (a_capacity == m_capacity) return;
 
   size_type new_capacity = a_capacity;
-  pointer new_data = new value_type[new_capacity];
+  pointer new_data = IRS_LIB_NEW_ASSERT(new (nothrow) value_type[new_capacity]);
   size_type new_size = min(new_capacity, m_size);
   memcpyex(new_data, mp_data, new_size);
   delete []mp_data;
@@ -460,7 +472,7 @@ void irs::raw_data_t<T>::reserve_raw(size_type a_capacity)
   m_size = new_size;
 }
 template <class T>
-void irs::raw_data_t<T>::resize(size_type a_size)
+void raw_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
@@ -481,7 +493,7 @@ void irs::raw_data_t<T>::resize(size_type a_size)
   m_size = new_size;
 }
 template <class T>
-void irs::raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
+void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   const_pointer ap_last)
 {
   IRS_LIB_ASSERT((ap_pos >= data()) && (ap_pos <= data()+size()));
@@ -500,7 +512,7 @@ void irs::raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   memcpyex(p_pos, ap_first, insert_bloc_size);
 }
 template <class T>
-void irs::raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
+void raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
 {
   IRS_LIB_ASSERT((ap_first >= data()) && (ap_first <= (data()+size())));
   IRS_LIB_ASSERT((ap_last >= data()) && (ap_last <= (data()+size())));
@@ -510,13 +522,13 @@ void irs::raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
   resize(new_size);
 }
 template <class T>
-inline void irs::raw_data_t<T>::clear()
+inline void raw_data_t<T>::clear()
 {
   m_size = 0;
 }
 
 template <class T>
-inline void irs::raw_data_t<T>::swap(irs::raw_data_t<T>* ap_raw_data)
+inline void raw_data_t<T>::swap(raw_data_t<T>* ap_raw_data)
 {
   ::swap(m_size, ap_raw_data->m_size);
   ::swap(m_capacity, ap_raw_data->m_capacity);

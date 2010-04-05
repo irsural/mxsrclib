@@ -1,16 +1,18 @@
 // Протокол MxNet defines
-// Версия 0.2
+// Дата: 05.04.2010
+// Ранняя дата: 18.06.2008
+
 #ifndef MXNETDH
 #define MXNETDH
 
 // Размер заголовка, 4 байта (32-битное целое)
-#define SIZE_OF_HEADER 5
+#define MXN_SIZE_OF_HEADER 5
 // Размер идентификатора начала пакета, байт
-#define SIZE_OF_BEG_PACK 8
+#define MXN_SIZE_OF_BEG_PACK 8
 // Размер заголовка, байт
-#define mxn_header_size (SIZE_OF_HEADER*sizeof(irs_i32))
+#define mxn_header_size (MXN_SIZE_OF_HEADER*sizeof(irs_i32))
 // Размер заголовка за вычетом идентификатора, байт
-#define mxn_end_size (mxn_header_size - SIZE_OF_BEG_PACK)
+#define mxn_end_size (mxn_header_size - MXN_SIZE_OF_BEG_PACK)
 
 // Коды сетевых команд
 #define MXN_READ_COUNT        0
@@ -28,5 +30,7 @@
 #define MXN_CONST_IDENT_BEG_PACK_FIRST  ((irs_i32)0xFF43439A)
 // Код начала пакета - вторя часть
 #define MXN_CONST_IDENT_BEG_PACK_SECOND ((irs_i32)0xE81F3AAD)
+
+#define MXN_UDP_IP_ETHERNET_HEADER_SIZE 70
 
 #endif //MXNETDH

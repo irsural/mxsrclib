@@ -38,9 +38,9 @@ public:
 };
 
 // Размер заголовка в 4-байтных перменных
-const mxn_cnt_t mxn_count_of_header = SIZE_OF_HEADER;
+const mxn_cnt_t mxn_count_of_header = MXN_SIZE_OF_HEADER;
 // Размер начала пакета в 4-байтных переменных
-const mxn_cnt_t mxn_count_of_beg_pack = SIZE_OF_BEG_PACK/sizeof(irs_i32);
+const mxn_cnt_t mxn_count_of_beg_pack = MXN_SIZE_OF_BEG_PACK/sizeof(irs_i32);
 // Размер контрольной суммы в 4-байтных переменных
 const mxn_cnt_t mxn_count_of_checksum = 1;
 // Тип контрольной суммы

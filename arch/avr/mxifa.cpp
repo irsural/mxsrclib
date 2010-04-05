@@ -1,6 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата 24.03.2010
+// Дата 05.04.2010
 // Ранняя дата 16.04.2008
 
 #include <irsdefs.h>
@@ -309,7 +309,7 @@ void *mxifa_open_begin(mxifa_ch_t channel, irs_bool is_broadcast)
     } break;
     case mxifa_ei_hardflow: {
       mxifa_hardflow_t *hardflow = (mxifa_hardflow_t*)cur_ch->ch_spec;
-      if (hardflow->hardflow) cur_ch->opened = true;
+      if (hardflow->hardflow) cur_ch->opened = irs_true;
     } break;
   }
   return cur_ch;
@@ -365,6 +365,7 @@ irs_bool mxifa_close_begin(void *pchdata)
       }
     } break;
     case mxifa_ei_hardflow: {
+      pchdatas->opened = irs_false;
       closed = true;  
     }
   }
@@ -520,45 +521,48 @@ void mxifa_tick()
     mxifa_chdata_cur < mxifa_chdata_end;
     mxifa_chdata_cur++
   ) {
-    switch (mxifa_chdata_cur->enum_iface) {
-      case mxifa_ei_avr128_ether: {
-        Tick_UDP();
-        mxifa_chdata_cur->tick(mxifa_chdata_cur);
-      } break;
-      case mxifa_ei_hardflow:
-      {
-        mxifa_hardflow_t *hardflow =
-          (mxifa_hardflow_t*)mxifa_chdata_cur->ch_spec;
-        hardflow->hardflow->tick();
-
-        if (hardflow->write_process)
+    if (mxifa_chdata_cur->opened) {
+      switch (mxifa_chdata_cur->enum_iface) {
+        case mxifa_ei_avr128_ether: {
+          Tick_UDP();
+          mxifa_chdata_cur->tick(mxifa_chdata_cur);
+        } break;
+        case mxifa_ei_hardflow:
         {
-          irs_u8 *buf = &hardflow->write_buffer[hardflow->wb_current_byte];
-          irs_u8 write_count = hardflow->hardflow->write(hardflow->channel_id,
-            buf, hardflow->wb_size - hardflow->wb_current_byte);
-          hardflow->wb_current_byte += write_count;
-          if (hardflow->wb_current_byte >= hardflow->wb_size)
+          mxifa_hardflow_t *hardflow =
+            (mxifa_hardflow_t*)mxifa_chdata_cur->ch_spec;
+          hardflow->hardflow->tick();
+  
+          if (hardflow->write_process)
           {
-            hardflow->wb_size = 0;
-            hardflow->wb_current_byte = 0;
-            hardflow->write_process = false;
+            irs_u8 *buf = &hardflow->write_buffer[hardflow->wb_current_byte];
+            irs_u8 write_count = hardflow->hardflow->write(
+              hardflow->channel_id, buf, 
+              hardflow->wb_size - hardflow->wb_current_byte);
+            hardflow->wb_current_byte += write_count;
+            if (hardflow->wb_current_byte >= hardflow->wb_size)
+            {
+              hardflow->wb_size = 0;
+              hardflow->wb_current_byte = 0;
+              hardflow->write_process = false;
+            }
           }
-        }
-        if (hardflow->read_process)
-        {
-          irs_u8 *buf = &hardflow->read_buffer[hardflow->rb_current_byte];
-          irs_uarc size = hardflow->rb_size - hardflow->rb_current_byte;
-          irs_u8 read_count = hardflow->hardflow->read(hardflow->channel_id,
-            buf, size);
-          hardflow->rb_current_byte += read_count;
-          if (hardflow->rb_current_byte >= hardflow->rb_size)
+          if (hardflow->read_process)
           {
-            hardflow->rb_size = 0;
-            hardflow->rb_current_byte = 0;
-            hardflow->read_process = false;
+            irs_u8 *buf = &hardflow->read_buffer[hardflow->rb_current_byte];
+            irs_uarc size = hardflow->rb_size - hardflow->rb_current_byte;
+            irs_u8 read_count = hardflow->hardflow->read(
+              hardflow->channel_id, buf, size);
+            hardflow->rb_current_byte += read_count;
+            if (hardflow->rb_current_byte >= hardflow->rb_size)
+            {
+              hardflow->rb_size = 0;
+              hardflow->rb_current_byte = 0;
+              hardflow->read_process = false;
+            }
           }
-        }
-      } break;
+        } break;
+      }
     }
   }
 }
@@ -697,7 +701,7 @@ void *mxifa_open_begin_ex(mxifa_ch_t channel, void *config,
       mxifa_hardflow_t *hardflow = (mxifa_hardflow_t*)cur_ch->ch_spec;
       mxifa_hardflow_cfg *cfg = (mxifa_hardflow_cfg*)config;
       hardflow->hardflow = cfg->user_hardflow;
-      if (hardflow->hardflow) cur_ch->opened = true;
+      if (hardflow->hardflow) cur_ch->opened = irs_true;
     } break;
   }
   return cur_ch;

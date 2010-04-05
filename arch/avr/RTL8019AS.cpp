@@ -1,12 +1,13 @@
 // Драйвер Ethernet для RTL8019AS Димы Уржумцева
 // Откорректирован Крашенинников М. В.
 // Испорчен Поляковым М.
-// Дата: 24.03.2010
+// Дата: 02.04.2010
 // Ранняя дата: 30.05.2008
 
 #define RTL_RESET_ON_TIMEOUT // Сброс RTL при таймауте в операции
 //#define RTL_DISABLE_INT // Выключение прерываний во время операции
 #define RTL_DISABLE_INT_BYTE //Запрет прерываний при чтении/записи байтов
+//#define RTL_DBG_MSG // Отображение отладочных сообщений (нужен общий DBG)
 
 #include <irsdefs.h>
 
@@ -16,7 +17,7 @@
 #include <mxdata.h>
 #include <timer.h>
 #include <irsconfig.h>
-#include <irsavrutil.h>
+//#include <irsavrutil.h>
 #include <RTL8019AS.h>
 #include <irserror.h>
 
@@ -24,6 +25,7 @@
 
 ////объявления выводов
 ////////////////defines hardware
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 #define ETHERNET_PACKET_MIN_RX 64
 #define ETHERNET_PACKET_MAX_RX 1554
 #define ETHERNET_PACKET_MIN_TX 60
@@ -44,7 +46,9 @@
 #undef ETHERNET_PACKET_TX
 #define ETHERNET_PACKET_TX ETHERNET_PACKET_MIN_TX
 #endif
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
+#ifdef NOP
 //ETHERNET_PORT2|=0x20
 #define IOR_HI {*port_str.rtl_address_port_set |= (1 << IORB);}
 //ETHERNET_PORT2&=(0xFF^0x20)
@@ -53,50 +57,7 @@
 #define IOW_HI {*port_str.rtl_address_port_set |= (1 << IOWB);}
 //ETHERNET_PORT2&=(0xFF^0x40)
 #define IOW_LO {*port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));}
-#define IORB 5
-#define IOWB 6
-#define RSTDRV 7
-// Регистры RTL
-#define config3 0x06
-// Биты CONFIG3
-// Тип 0-го светодиода
-#define LEDS0 4
-// Биты CR
-// Номер регистровой страницы
-#define PS0 6
-#define PS1 7
-/////дефайны сетевушки
-const irs_u8 rstport=0x18;
-const irs_u8 isr=0x07;
-const irs_u8 cr=0x0;
-const irs_u8 dcrval=0x58;
-const irs_u8 dcr=0x0e;
-const irs_u8 rbcr0=0x0a;
-const irs_u8 rbcr1=0x0b;
-const irs_u8 rcr=0x0c;
-const irs_u8 tpsr=0x04;
-const irs_u8 txtstart=0x40;
-const irs_u8 tcr=0x0d;
-const irs_u8 pstart=0x01;
-const irs_u8 rxstart=0x46;
-const irs_u8 bnry=0x03;
-const irs_u8 pstop=0x02;
-const irs_u8 rxstop=0x60;
-const irs_u8 curr=0x07;
-const irs_u8 imr=0x0f;
-const irs_u8 imrval=0x1b;
-const irs_u8 tcrval=0x00;
-const irs_u8 rsar0=0x8;
-const irs_u8 rsar1=0x9;
-const irs_u8 tbcr0=0x5;
-const irs_u8 tbcr1=0x6;
-const irs_u8 rdmaport=0x10;//Const Rdmaport = &H10
-const irs_u8 rdc=0x40;//Const Rdc = &H40
-///////peremennie setevushki
-//int i, rxlen_hard=0;//Dim I as Integer
-//irs_u16 i;//Dim I as Integer
-irs_u16 rxlen_hard = 0;
-irs_u8 rx_hard=0, tx_hard=0; // flags of hardware transmission and resieving
+#endif //NOP
 
 #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 
@@ -105,14 +66,114 @@ irs_u8 tx_buf[ETHERNET_PACKET_TX];
 
 #else //IRS_LIB_UDP_RTL_STATIC_BUFS
 
-irs::raw_data_t<irs_u8> tx_buf_data;
-irs::raw_data_t<irs_u8> rx_buf_data;
-
 extern irs_u8* tx_buf = IRS_NULL;
 extern irs_u8* rx_buf = IRS_NULL;
+
+namespace {
+  
+irs::raw_data_t<irs_u8> tx_buf_data;
+irs::raw_data_t<irs_u8> rx_buf_data;
 bool is_initialized = false;
 
+} //namespace
+
 #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
+
+// Внешние переменные, поэтому вне namespace
+irs_u8 rx_hard = 0;
+irs_u8 tx_hard = 0;
+irs_u16 rxlen_hard = 0;
+
+namespace {
+
+enum {
+  // Регистры
+  CR = 0x0,
+  
+  PSTART = 0x01,
+  PSTOP = 0x02,
+  BNRY = 0x03,
+  // Адресс страницы в которой находится пакет для передачи
+  TPSR = 0x04,
+  TBCR0 = 0x05,
+  TBCR1 = 0x06,
+  ISR = 0x07,
+  RSAR0 = 0x08,
+  RSAR1 = 0x09,
+  RBCR0 = 0x0a,
+  RBCR1 = 0x0b,
+  RCR = 0x0c,
+  TCR = 0x0d,
+  DCR = 0x0e,
+  IMR = 0x0f,
+  
+  CURR = 0x07,
+
+  CONFIG3 = 0x06,
+    
+  RDMAPORT = 0x10,
+  RSTPORT = 0x18,
+  
+  // Биты CR
+  STP = 0,
+  STA = 1,
+  TXP = 2,
+  RD0 = 3,
+  RD1 = 4,
+  RD2 = 5,
+  PS0 = 6,
+  PS1 = 7,
+  cr_page0 = ((0 << PS1)|(0 << PS0)),
+  cr_page1 = ((0 << PS1)|(1 << PS0)),
+  cr_page2 = ((1 << PS1)|(0 << PS0)),
+  cr_page3 = ((1 << PS1)|(1 << PS0)),
+  cr_remote_read = ((0 << RD2)|(0 << RD1)|(1 << RD0)),
+  cr_remote_write = ((0 << RD2)|(1 << RD1)|(0 << RD0)),
+  cr_remote_send = ((0 << RD2)|(1 << RD1)|(1 << RD0)),
+  cr_dma_abort_complete = ((1 << RD2)|(1 << RD1)|(1 << RD0)),
+  cr_rtl_start = ((1 << STA)|(0 << STP)),
+  cr_rtl_stop = ((0 << STA)|(1 << STP)),
+
+  // Биты ISR
+  RDC = 0x40,
+  
+  // Биты DCR
+  WTS = 0,
+  BOS = 1,
+  LAS = 2,
+  LS = 3,
+  ARM = 4,
+  FT0 = 5,
+  FT1 = 6,
+  
+  // Биты CONFIG3
+  // Тип 0-го светодиода
+  LEDS0 = 4,
+  
+  // Готовые значения для регистров
+  //dcrval = 0x58,
+  dcrval = ((1 << LS)|(1 << ARM)|(1 << FT1)),
+  // Адрес для TPSR
+  txstart = 0x40,
+  rxstart = 0x46,
+  rxstop = 0x60,
+  imrval = 0x1b,
+  tcrval = 0x00
+};
+
+// Пины AVR для RTL
+enum {
+  IORB = 5,
+  IOWB  = 6,
+  RSTDRV = 7
+};
+
+enum {
+  irs_rtl8019as_packet_def_mark = 0,
+  irs_rtl8019as_packet_def = 300,
+  irs_rtl8019as_packet_min = 60,
+  irs_rtl8019as_packet_max = 1550
+};
 
 struct
 {
@@ -123,8 +184,6 @@ struct
   p_avr_port_t rtl_address_port_get;
   p_avr_port_t rtl_address_port_dir;
 } port_str;
-
-namespace {
 
 const irs_u8 mac_size = 6;
 irs_u8 mac_save[mac_size] = {0, 0, 0, 0, 0, 0};
@@ -150,8 +209,10 @@ public:
     if (!is_initialized) return;
 #endif //IRS_LIB_RTL_OLD_INTERRUPT
     
-    static irs::blink_t blink_14(irs_avr_portd, 3, 0);
-    blink_14();
+    #ifdef NOP
+    static irs::blink_t blink_14(irs_avr_portd, 3);
+    blink_14.flip();
+    #endif //NOP
 
     #ifdef RTL_DISABLE_INT
     irs_disable_interrupt();
@@ -160,72 +221,42 @@ public:
     #endif //RTL_DISABLE_INT
 
     irs_u8 byte, _byte;
-    byte=readrtl(isr);//
-    if((byte&0x10)==0x10) overrun(); ///
-    if((byte&0x1)==0x1) getpacket();//
-    if(byte&0xA) tx_hard=0;
+    byte=readrtl(ISR);
+    if( (byte&0x10) == 0x10) {
+      overrun();
+    }
+    if((byte&0x1) == 0x1) {
+      getpacket();
+    }
+    if(byte&0xA) {
+      tx_hard = 0;
+    }
 
-    byte=readrtl(bnry); /////Call Read_rtl8019as(bnry)
+    byte=readrtl(BNRY); /////Call Read_rtl8019as(BNRY)
                         ///Data_l = Byte_read
-    writertl(cr,0x62);   ////Call Write_rtl8019as(cr , &H62)
-    _byte=readrtl(curr);   ///Call Read_rtl8019as(curr)
+    writertl(CR,0x62);   ////Call Write_rtl8019as(CR , &H62)
+    _byte=readrtl(CURR);   ///Call Read_rtl8019as(CURR)
                            ///Data_h = Byte_read
-    writertl(cr, 0x22); ////Call Write_rtl8019as(cr , &H22)
+    writertl(CR, 0x22); ////Call Write_rtl8019as(CR , &H22)
 
     //'buffer is not empty, get next packet
     if (byte != _byte) {
       overrun();
     }
 
-    writertl(isr,0xff);
-    writertl(cr,0x22);
+    writertl(ISR,0xff);
+    writertl(CR,0x22);
 
     #ifdef RTL_DISABLE_INT
     irs_enable_interrupt();
     #endif //RTL_DISABLE_INT
+    
 #ifdef IRS_LIB_RTL_OLD_INTERRUPT
 }
 #else //IRS_LIB_RTL_OLD_INTERRUPT
   }
 };
 #endif //IRS_LIB_RTL_OLD_INTERRUPT
-
-#ifdef NOP
-#pragma vector=INT4_vect
-__interrupt void int_etherhet(void)
-{
-  #ifdef RTL_DISABLE_INT
-  irs_disable_interrupt();
-  #else //RTL_DISABLE_INT
-  irs_enable_interrupt();
-  #endif //RTL_DISABLE_INT
-
-  irs_u8 byte, _byte;
-  byte=readrtl(isr);//
-  if((byte&0x10)==0x10) overrun(); ///
-  if((byte&0x1)==0x1) getpacket();//
-  if(byte&0xA) tx_hard=0;
-
-  byte=readrtl(bnry); /////Call Read_rtl8019as(bnry)
-                      ///Data_l = Byte_read
-  writertl(cr,0x62);   ////Call Write_rtl8019as(cr , &H62)
-  _byte=readrtl(curr);   ///Call Read_rtl8019as(curr)
-                         ///Data_h = Byte_read
-  writertl(cr, 0x22); ////Call Write_rtl8019as(cr , &H22)
-
-  //'buffer is not empty, get next packet
-  if (byte != _byte) {
-    overrun();
-  }
-
-  writertl(isr,0xff);
-  writertl(cr,0x22);
-  
-  #ifdef RTL_DISABLE_INT
-  irs_enable_interrupt();
-  #endif //RTL_DISABLE_INT
-}
-#endif //NOP
 
 ////////////////////////////////////////read and write/////////////
 irs_u8 readrtl(irs_u8 regaddr)
@@ -240,11 +271,11 @@ irs_u8 readrtl(irs_u8 regaddr)
   *port_str.rtl_data_port_set = 0xFF;
   *port_str.rtl_address_port_set &= (0xFF^0x1F);
   *port_str.rtl_address_port_set |= regaddr;
-  IOR_LO;
+  *port_str.rtl_address_port_set &= (0xFF^(1 << IORB));
   __no_operation();
   READ = *port_str.rtl_data_port_get;
   __no_operation();
-  IOR_HI;
+  *port_str.rtl_address_port_set |= (1 << IORB);
   __no_operation();
   //__no_operation();
   //__no_operation();
@@ -271,12 +302,12 @@ void writertl(irs_u8 regaddr, irs_u8 regdata)
   __no_operation();
   //__no_operation();
   //__no_operation();
-  IOW_LO;
+  *port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));
   __no_operation();
   //__no_operation();
   //__no_operation();
   //__no_operation();
-  IOW_HI;
+  *port_str.rtl_address_port_set |= (1 << IOWB);
   __no_operation();
   //__no_operation();
   //__no_operation();
@@ -291,60 +322,65 @@ void writertl(irs_u8 regaddr, irs_u8 regdata)
 
 void overrun()
 {
-  irs_u8 cr_save = readrtl(cr);
-  writertl(cr,0x21);
+  irs_u8 cr_save = readrtl(CR);
+  writertl(CR,0x21);
   __no_operation();
-  writertl(rbcr0,0x0);
-  writertl(rbcr1,0x0);
+  writertl(RBCR0,0x0);
+  writertl(RBCR1,0x0);
 
-  if((cr_save&0x4)==0) readrtl(isr);
+  if((cr_save&0x4)==0) readrtl(ISR);
 
-  writertl(tcr,0x2);
-  writertl(cr,0x22);
-  writertl(bnry,rxstart);
-  writertl(cr,0x62);
-  writertl(curr,rxstart);
-  writertl(cr,0x22);
-  writertl(isr,0x10);
-  writertl(tcr,tcrval);
+  writertl(TCR,0x2);
+  writertl(CR,0x22);
+  writertl(BNRY,rxstart);
+  writertl(CR,0x62);
+  writertl(CURR,rxstart);
+  writertl(CR,0x22);
+  writertl(ISR,0x10);
+  writertl(TCR,tcrval);
 }
 
 void getpacket()
 {
-  irs_u8 byte;
-  writertl(cr, 0x1a);
-  byte = readrtl(rdmaport);
-  byte = readrtl(rdmaport);
-  byte = readrtl(rdmaport);
+  writertl(CR, 0x1a);
+  
+  readrtl(RDMAPORT);
+  readrtl(RDMAPORT);
   irs_u16 rxlen_hard_cur = 0;
-  //IRS_HIBYTE(rxlen_hard_cur) = byte;
-  IRS_LOBYTE(rxlen_hard_cur) = byte;
-  byte = readrtl(rdmaport);
-  //rxlen_hard += (byte*256);
-  //rxlen_hard |= ((int)byte) << 8;
-  //IRS_LOBYTE(rxlen_hard_cur) = byte;
-  IRS_HIBYTE(rxlen_hard_cur) = byte;
-  //if (!IRS_HIBYTE(rxlen_hard_cur)) PORTB ^= 8;
-  //if (IRS_HIBYTE(rxlen_hard_cur)) PORTB |= 4;
+  IRS_LOBYTE(rxlen_hard_cur) = readrtl(RDMAPORT);
+  IRS_HIBYTE(rxlen_hard_cur) = readrtl(RDMAPORT);
+  
+  #ifdef RTL_DBG_MSG
+  IRS_LIB_DBG_RAW_MSG("rtl - receive size = " << rxlen_hard_cur << endl);
+  #endif //RTL_DBG_MSG
+  
   if (rx_hard == 0) {
-    if (rxlen_hard_cur > ETHERNET_PACKET_RX) {
-      for (irs_u16 i = 0; i < rxlen_hard_cur; i++) {
-        byte = readrtl(rdmaport);
-      }
-    } else {
+    #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
+    if (rxlen_hard_cur <= ETHERNET_PACKET_RX) {
+    #else //IRS_LIB_UDP_RTL_STATIC_BUFS
+    if (rxlen_hard_cur <= rx_buf_data.size()) {
+    #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
+      // Если размер пакета в норме, то принимаем его
       rx_hard = 1;
       rxlen_hard = rxlen_hard_cur;
       for (irs_u16 i = 0; i < rxlen_hard; i++) {
-        rx_buf[i] = readrtl(rdmaport);
+        rx_buf[i] = readrtl(RDMAPORT);
+      }
+    } else {
+      // Если принятый пакет превышает размер буфера, то отбрасываем его
+      for (irs_u16 i = 0; i < rxlen_hard_cur; i++) {
+        readrtl(RDMAPORT);
       }
     }
   } else {
+    // Если буфер занят, то отбрасываем пакет
     for (irs_u16 i = 0; i < rxlen_hard_cur; i++) {
-      byte = readrtl(rdmaport);
+      readrtl(RDMAPORT);
     }
   }
-  if ((byte&rdc) != 64) byte = readrtl(isr);
-  writertl(isr, 0xF5);
+  
+  //if ((byte&RDC) != 64) byte = readrtl(ISR);
+  writertl(ISR, 0xF5);
 }
 
 // Сброс RTL
@@ -382,30 +418,30 @@ void reset_rtl()
   // Адресные биты сбрасываем в 0
   *port_str.rtl_address_port_set &= 0xE0;
   // Линию RTL IORB выставляем в 1
-  IOR_HI;
+  *port_str.rtl_address_port_set |= (1 << IORB);
   // Линию RTL IOWB выставляем в 1
-  IOW_HI;
+  *port_str.rtl_address_port_set |= (1 << IOWB);
 
-  byte = readrtl(rstport);////читаем порт резета
-  writertl(rstport,byte);
+  byte = readrtl(RSTPORT);////читаем порт резета
+  writertl(RSTPORT,byte);
   __no_operation();
-  //if((readrtl(isr)&0x80)==0x0);
+  //if((readrtl(ISR)&0x80)==0x0);
   //////////!!!!!!!!!!
 
-  writertl(cr,0x21);
+  writertl(CR,0x21);
   __no_operation();
-  writertl(dcr,dcrval);
-  writertl(rbcr0,0x0);
-  writertl(rbcr1,0x0);
-  writertl(rcr,0x04);
-  writertl(tpsr,txtstart);
-  writertl(tcr,0x02);
-  writertl(pstart,rxstart);
-  writertl(bnry,rxstart);
-  writertl(pstop,rxstop);
-  writertl(cr,0x61);
+  writertl(DCR,dcrval);
+  writertl(RBCR0,0x0);
+  writertl(RBCR1,0x0);
+  writertl(RCR,0x04);
+  writertl(TPSR,txstart);
+  writertl(TCR,0x02);
+  writertl(PSTART,rxstart);
+  writertl(BNRY,rxstart);
+  writertl(PSTOP,rxstop);
+  writertl(CR,0x61);
   __no_operation();
-  writertl(curr,rxstart);
+  writertl(CURR,rxstart);
 
   writertl(0x1,mac_save[0]);
   writertl(0x2,mac_save[1]);
@@ -414,26 +450,27 @@ void reset_rtl()
   writertl(0x5,mac_save[4]);
   writertl(0x6,mac_save[5]);
 
-  writertl(cr,0x21);
-  writertl(dcr,dcrval);
-  writertl(cr,0x22);
-  writertl(isr,0xff);///обнуляем иср
-  writertl(imr,imrval);
-  writertl(tcr,tcrval);
+  writertl(CR,0x21);
+  writertl(DCR,dcrval);
+  writertl(CR,0x22);
+  writertl(ISR,0xff);///обнуляем иср
+  writertl(IMR,imrval);
+  writertl(TCR,tcrval);
 
-  // writertl(cr,0x22);///go!
+  // writertl(CR,0x22);///go!
 
   // Разрешение прерываний
   irs_enable_interrupt();
 }
+
 // Ожидание завершения работы DMA
 bool wait_dma()
 {
   counter_t to_wait_end_dma;
   set_to_cnt(to_wait_end_dma, TIME_TO_CNT(1, 2));
-  irs_u8 isr_cont = readrtl(isr);
-  while ((isr_cont&rdc) == 0) {
-    isr_cont = readrtl(isr);
+  irs_u8 isr_cont = readrtl(ISR);
+  while ((isr_cont&RDC) == 0) {
+    isr_cont = readrtl(ISR);
     if (test_to_cnt(to_wait_end_dma)) {
 
   //static irs::blink_t blink_red(irs_avr_porte, 3);
@@ -459,10 +496,36 @@ void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
 #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 {
   #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
+  #ifdef RTL_DBG_MSG
+  IRS_LIB_DBG_RAW_MSG("rtl - bufs_size перед: " << bufs_size << endl);
+  #endif //RTL_DBG_MSG
+  
+  #ifdef IRS_LIB_DEBUG
+  bool is_bufs_size_valid =
+    (bufs_size == irs_rtl8019as_packet_def_mark) || 
+    (
+      (irs_rtl8019as_packet_min <= bufs_size) &&
+      (bufs_size <= irs_rtl8019as_packet_max)
+    );
+  IRS_LIB_ASSERT(is_bufs_size_valid);
+  #endif //IRS_LIB_DEBUG
+  
+  if (bufs_size == irs_rtl8019as_packet_def_mark) {
+    bufs_size = irs_rtl8019as_packet_def;
+  } else if (irs_rtl8019as_packet_min > bufs_size) {
+    bufs_size = irs_rtl8019as_packet_min;
+  } else if (bufs_size > irs_rtl8019as_packet_max) {
+    bufs_size = irs_rtl8019as_packet_max;
+  }
+  
   tx_buf_data.resize(bufs_size);
   rx_buf_data.resize(bufs_size + 4);
   tx_buf = tx_buf_data.data();
   rx_buf = rx_buf_data.data();
+  
+  #ifdef RTL_DBG_MSG
+  IRS_LIB_DBG_RAW_MSG("rtl - bufs_size после: " << bufs_size << endl);
+  #endif //RTL_DBG_MSG
   #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   
   memcpy(mac_save, mac, mac_size);
@@ -489,36 +552,41 @@ irs_size_t tx_buf_size()
 
 void sendpacket(irs_u16 length, irs_u8 *ext_tx_buf)
 {
+  #ifdef RTL_DBG_MSG
+  IRS_LIB_DBG_RAW_MSG("rtl - send size = " << length << endl);
+  #endif //RTL_DBG_MSG
+  
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT
   
-  writertl(cr,0x22);
-  writertl(tpsr,txtstart);
-  writertl(rsar0,0x00);
-  writertl(rsar1,0x40);
-  writertl(isr,0xff);
+  //STA RD2
+  //writertl(CR,0x22);
+  writertl(CR, cr_rtl_start|cr_dma_abort_complete|cr_page0);
+  writertl(TPSR,txstart);
+  writertl(RSAR0,0x00);
+  writertl(RSAR1,0x40);
+  writertl(ISR,0xff);
 
-  writertl(rbcr0, IRS_LOBYTE(length));
-  writertl(rbcr1, IRS_HIBYTE(length));
-  //writertl(rbcr0,(irs_u8)(length&0xFF));
-  //writertl(rbcr1,length>>8);
-  writertl(cr,0x12);
-  for (irs_u16 i = 0; i < length; i++) writertl(rdmaport, ext_tx_buf[i]);
+  writertl(RBCR0, IRS_LOBYTE(length));
+  writertl(RBCR1, IRS_HIBYTE(length));
+  //writertl(RBCR0,(irs_u8)(length&0xFF));
+  //writertl(RBCR1,length>>8);
+  writertl(CR,0x12);
+  for (irs_u16 i = 0; i < length; i++) writertl(RDMAPORT, ext_tx_buf[i]);
 
   if (!wait_dma()) return;
 
-  writertl(tbcr0, IRS_LOBYTE(length));
-  writertl(tbcr1, IRS_HIBYTE(length));
-  //writertl(tbcr0,(irs_u8)(length&0xFF));
-  //writertl(tbcr1,length>>8);
-  writertl(cr,0x24);
+  writertl(TBCR0, IRS_LOBYTE(length));
+  writertl(TBCR1, IRS_HIBYTE(length));
+  //writertl(TBCR0,(irs_u8)(length&0xFF));
+  //writertl(TBCR1,length>>8);
+  writertl(CR,0x24);
   
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
 }
-
 
 void rtl_set_ports(irs_avr_port_t a_data_port, irs_avr_port_t a_address_port)
 {

@@ -451,7 +451,7 @@ void mxnetc::tick()
         } break;
       }
       mxn_sz_t cur_packet_size =
-        (SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+        (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
       irs_bool packet_size_ok = (cur_packet_size == f_receive_size);
       irs_bool checksum_ok = checksum_valid(f_packet, var_count,
         f_receive_size, f_checksum_type);
@@ -648,7 +648,7 @@ irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
     mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
 {
   mxn_sz_t request_packet_size =
-    (SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
   if (request_packet_size <= packet_size) {
     return packet->var[var_count] == checksum_calc(packet, var_count,
       packet_size, checksum_type);
@@ -662,7 +662,7 @@ irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
   mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
 {
   mxn_sz_t request_packet_size =
-    (SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
   if (request_packet_size > packet_size) {
     return 0;
   }
@@ -696,14 +696,14 @@ irs_bool mxnetc::deny_proc()
 irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
   mxn_cnt_t packet_var_count, irs_i32 *vars, mxn_cnt_t var_count)
 {
-  f_packet_size = (SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+  f_packet_size = (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
   if (code_comm == MXN_WRITE) {
-    f_receive_size = (SIZE_OF_HEADER + 1)*sizeof(irs_i32);
+    f_receive_size = (MXN_SIZE_OF_HEADER + 1)*sizeof(irs_i32);
   } else {
     f_receive_size = f_packet_size;
   }
   if (code_comm == MXN_READ) {
-    f_send_size = (SIZE_OF_HEADER + 1)*sizeof(irs_i32);
+    f_send_size = (MXN_SIZE_OF_HEADER + 1)*sizeof(irs_i32);
   } else {
     f_send_size = f_packet_size;
   }
@@ -856,7 +856,7 @@ irs_bool mx_broadcast_proc_t::tick()
       f_broadcast_count = header->var_count;
       mxn_sz_t old_size = f_broadcast_packet_size;
       f_broadcast_packet_size =
-        (SIZE_OF_HEADER + f_broadcast_count + 1)*sizeof(irs_i32);
+        (MXN_SIZE_OF_HEADER + f_broadcast_count + 1)*sizeof(irs_i32);
       f_broadcast_packet = (mxn_packet_t *)renew (f_broadcast_packet,
         old_size, f_broadcast_packet_size);
       memcpy((void *)f_broadcast_packet, (void *)f_buf, mxn_header_size);

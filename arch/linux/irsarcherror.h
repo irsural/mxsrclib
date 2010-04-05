@@ -1,11 +1,15 @@
 // Обработчик ошибок
-// Дата: 25.09.2009
-// дата создания: 24.09.2009
+// Дата: 31.03.2010
+// Дата создания: 24.09.2009
 
 #ifndef IRSARCHERRORH
 #define IRSARCHERRORH
 
+#include <irsdefs.h>
+
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

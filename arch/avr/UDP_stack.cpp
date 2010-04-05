@@ -1,8 +1,7 @@
 // UDP/IP-стек Димы Уржумцева
 // Откорректирован Крашенинников М. В.
-// Дата: 30.05.2008
-
-#define IRS_UDP_ARP_CASH_EXT // Расширеный ARP-кэш
+// Дата: 02.04.2010
+// Ранняя дата: 30.05.2008
 
 #include <irsdefs.h>
 
@@ -11,16 +10,10 @@
 #include <mxdata.h>
 //#include <irsavrutil.h>
 #include <udp_stack.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
-#ifdef NOP
-#define MAX_IP_OPTLEN		40				/* Max IP Header option field length	*/
-#define IP_MIN_HLEN			20		
-#endif //NOP
-
-
-#ifdef IRS_UDP_ARP_CASH_EXT
 namespace irs {
 
 namespace udp {
@@ -185,7 +178,6 @@ void irs::udp::arp_cash_t::resize(irs_uarc a_size)
   m_cash.resize(a_size);
   if (m_pos > m_cash.size()) m_pos = 0;
 }
-#endif //IRS_UDP_ARP_CASH_EXT
   
 
 
@@ -231,7 +223,6 @@ irs_u8 *user_tx_buf = 0;
 
 irs_u8 rxarp=0,send_arp=0,rxicmp=0,send_icmp=0,send_udp=0;
 
-#ifdef IRS_UDP_ARP_CASH_EXT
 namespace {
 // Экземпдяр ARP-кэша
 irs::udp::arp_cash_t arp_cash;
@@ -240,7 +231,6 @@ irs::udp::ip_t& cash_ip = irs::udp::ip_from_data(arpcash[0]);
 // Ссылка на MAC из кэша
 irs::udp::mac_t& cash_mac = irs::udp::mac_from_data(arpcash[4]);
 } //namespace
-#endif //IRS_UDP_ARP_CASH_EXT
 
 #ifdef NOP
 typedef unsigned char UINT8;
@@ -280,6 +270,8 @@ void Init_UDP(const irs_u8 *mymac,const irs_u8 *myip,
 
   #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
   initrtl(mymac);
+  memset(arpbuf, 0, ARPBUF_SENDSIZE);
+  memset(icmpbuf, 0, ICMPBUF_SIZE);
   #else //IRS_LIB_UDP_RTL_STATIC_BUFS
   initrtl(mymac, bufs_size);
   arpbuf_data.resize(ARPBUF_SENDSIZE);
@@ -303,8 +295,8 @@ void Init_UDP(const irs_u8 *mymac,const irs_u8 *myip,
   user_rx_buf=&rx_buf[HEADERS_SIZE];
   user_tx_buf=&tx_buf[HEADERS_SIZE];
   
-  memset(arpbuf, 0, ARPBUF_SENDSIZE);
-  memset(icmpbuf, 0, ICMPBUF_SIZE);
+  IRS_LIB_ASSERT(arpbuf != IRS_NULL);
+  IRS_LIB_ASSERT(icmpbuf != IRS_NULL);
 }
 // Деинициализация UDP/IP
 void Deinit_UDP()
@@ -315,7 +307,6 @@ irs_u8 cash(irs_u8 dest_ip[4])
 { 
   irs_u8 result = 0;
   
-  #ifdef IRS_UDP_ARP_CASH_EXT
   const irs::udp::ip_t& ip = irs::udp::ip_from_data(dest_ip);
   if (ip != irs::udp::broadcast_ip) {
     if (arp_cash.ip_to_mac(ip, cash_mac)) {
@@ -327,24 +318,6 @@ irs_u8 cash(irs_u8 dest_ip[4])
     cash_mac = irs::udp::broadcast_mac;
     result = 1;
   }
-  #else //IRS_UDP_ARP_CASH_EXT
-  const irs_u32 broadcast_ip = 0xFFFFFFFF;
-  if (IRS_LODWORD(dest_ip[0]) == broadcast_ip) {
-    *(irs_u32*)(&arpcash[0]) = 0xFFFFFFFF;
-    arpcash[4]=0xff;
-    arpcash[5]=0xff;
-    arpcash[6]=0xff;
-    arpcash[7]=0xff;
-    arpcash[8]=0xff;
-    arpcash[9]=0xff;
-    result = 1;
-  } else { 
-    if (IRS_LODWORD(arpcash[0]) != 0)
-    if (IRS_LODWORD(dest_ip[0]) == IRS_LODWORD(arpcash[0])) {
-      result = 1;
-    }
-  }
-  #endif //IRS_UDP_ARP_CASH_EXT
   
   return result;
 }
@@ -394,27 +367,7 @@ irs_u16 cheksum(irs_u16 count, irs_u8 *adr)
 
   return ip_cs;
 }
-#ifdef NOP
-irs_u16 cheksum(irs_u16 count, irs_u8 *adr)
-{
-  long sum=0;
-  irs_u16 byte;
-  while (count > 1) {
-    byte = (((irs_u16)*adr) << 8) + *(adr + 1);
 
-    //sum+=*(irs_u16*) adr;
-    sum += byte;
-    adr += 2;
-    count -= 2;
-  }
-
-  if (count > 0) sum += *(irs_u8*) adr;
-  while (sum >> 16) sum = (sum&0xffff) + (sum >> 16);
-  return((0xFFFF^sum));
-}
-#endif //NOP
-
-#ifndef NOP
 irs_u16 cheksumUDP(irs_u16 count, irs_u8 *adr)
 {
   // Длина псевдозаголовка
@@ -453,56 +406,8 @@ irs_u16 cheksumUDP(irs_u16 count, irs_u8 *adr)
 
   return ip_cs;
 }
-#else //NOP
-irs_u16 cheksumUDP(irs_u16 count,irs_u8 *adr)
-{
-  irs_u8 pseudo_header[12],count_head=12;
-irs_u8 *adr_h;
-irs_u32 sum=0;
-irs_u16 byte;
- ///psevdo zagolovok
- pseudo_header[0]=tx_buf[0x1a];
- pseudo_header[1]=tx_buf[0x1b];
- pseudo_header[2]=tx_buf[0x1c];
- pseudo_header[3]=tx_buf[0x1d];
 
- pseudo_header[4]=tx_buf[0x1e];
- pseudo_header[5]=tx_buf[0x1f];
- pseudo_header[6]=tx_buf[0x20];
- pseudo_header[7]=tx_buf[0x21];
-
- pseudo_header[8]=0;
- pseudo_header[9]=0x11;
-
- pseudo_header[10]=tx_buf[0x26];
- pseudo_header[11]=tx_buf[0x27];
- adr_h=&pseudo_header[0];
- while (count_head>1) {
-                 byte = (((irs_u16)*adr_h) << 8) + *(adr_h + 1);
-
-                 //sum+=*(irs_u16*) adr;
-                 sum+=byte;
-                 adr_h+=2;
-                 count_head-=2;
-                }
-
- while (count>1) {
-                 byte = (((irs_u16)*adr) << 8) + *(adr + 1);
-
-                 //sum+=*(irs_u16*) adr;
-                 sum+=byte;
-                 adr+=2;
-                 count-=2;
-                }
-
-if(count>0) sum+= ((irs_u16)*adr)<<8;
-while (sum>>16)
-sum=(sum&0xffff) + (sum>>16);
-return((0xFFFF^sum));
-}
-#endif //NOP
-
-////////////////////////////////////ARP/////////////////////////////////////////////////
+////////////////////////////////////ARP//////////////////////////////////////
 void arp_ping(irs_u8 dest_ip_[4])
 {
   //Широковещательный запрос
@@ -620,28 +525,21 @@ void arppacket(void)
 
 void arpcash_(void)
 {
-  #ifdef IRS_UDP_ARP_CASH_EXT
   irs::udp::ip_t& arp_ip = irs::udp::ip_from_data(arpbuf[0x1c]);
   irs::udp::mac_t& arp_mac = irs::udp::mac_from_data(arpbuf[0x16]);
   arp_cash.add(arp_ip, arp_mac);
-  #else //IRS_UDP_ARP_CASH_EXT
-  arpcash[4]=arpbuf[0x16];
-  arpcash[5]=arpbuf[0x17];
-  arpcash[6]=arpbuf[0x18];
-  arpcash[7]=arpbuf[0x19];
-  arpcash[8]=arpbuf[0x1a];
-  arpcash[9]=arpbuf[0x1b];
-
-  arpcash[0]=arpbuf[0x1c];
-  arpcash[1]=arpbuf[0x1d];
-  arpcash[2]=arpbuf[0x1e];
-  arpcash[3]=arpbuf[0x1f];
-  #endif //IRS_UDP_ARP_CASH_EXT
   rxarp=0;
 }
 
 void arp()
 {
+  
+#ifdef NOP
+    static irs::blink_t blink_2(irs_avr_porte, 2);
+    blink_2.set();
+    //for(;;);
+#endif //NOP
+    
   //irs_u8 i=0;
   if((rx_buf[0x26]==ip[0])&&(rx_buf[0x27]==ip[1])&&
     (rx_buf[0x28]==ip[2])&&(rx_buf[0x29]==ip[3]))
@@ -666,7 +564,7 @@ void sendARP(void)
   send_arp=0;
   rxarp=0;
 }
-///////////////////////////ICMP/////////////////////////////////////////////////////////////
+///////////////////////////ICMP/////////////////////////////////////////////
 void icmppacket()
 {
   // MAC-приемника
@@ -766,20 +664,9 @@ void serverUDP()
     IRS_LOBYTE(udp_size) = rx_buf[0x27];
     IRS_HIBYTE(udp_size) = rx_buf[0x26];
     rx_user_length = udp_size - 8;
-    #ifdef IRS_UDP_ARP_CASH_EXT
     irs::udp::ip_t& ip = irs::udp::ip_from_data(rx_buf[0x1A]);
     irs::udp::mac_t& mac = irs::udp::mac_from_data(rx_buf[0x06]);
     arp_cash.add(ip, mac);
-
-#ifdef NOP
-    irs::udp::mac_t my_mac = {{0x00, 0x14, 0x85, 0x3E, 0x30, 0x7A}};
-    if (mac == my_mac) {
-  static irs::blink_t red_blink(irs_avr_porte, 3);
-  red_blink.set();
-    }
-#endif //NOP
-  
-    #endif //IRS_UDP_ARP_CASH_EXT
   } else {
     rx_hard = 0;
   }
@@ -1003,21 +890,22 @@ void udp()
   }
 }
 
-/////////////////////////////////////////////IP///////////////////////////////////////////////
+///////////////////////////////////////IP////////////////////////////////////
 void ip_(void)
 {
- if((rx_buf[0x1e]==ip[0])&&(rx_buf[0x1f]==ip[1])&&(rx_buf[0x20]==ip[2])&&(rx_buf[0x21]==ip[3]))
-                       {
-
-
-                         if(rx_buf[0x17]==0x01){ icmp(); }
-                         if(rx_buf[0x17]==0x11){ udp();}
-                       // if (packet[0x17]==0x6) tcp();
-
-                       }
-
-else rx_hard=0;
-
+  if ((rx_buf[0x1e] == ip[0]) && (rx_buf[0x1f] == ip[1])&&
+    (rx_buf[0x20] == ip[2]) && (rx_buf[0x21] == ip[3]))
+  {
+    if (rx_buf[0x17] == 0x01) { 
+      icmp(); 
+    }
+    if(rx_buf[0x17] == 0x11) { 
+      udp();
+    }
+    //if (packet[0x17]==0x6) tcp();
+  } else {
+    rx_hard=0;
+  }
 }
 
 

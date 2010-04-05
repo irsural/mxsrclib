@@ -1,12 +1,14 @@
 // Обработка ошибок
 // Linux
-// Дата создания: 25.09.2009
-// Дата: 25.09.2009
+// Дата: 31.03.2010 
+// Дата создания: 24.09.2009
 
 //При компиляции с помощью g++ (GCC) 3.4.4 runtime_error не выводит сообщение,
 //но выполнение программы завершает.
 //При компиляции с помощью g++ (GCC) 4.3.2 20080827 (alpha-testing)
 //runtime_error выводит сообщение и прерывает выполнение программы.
+
+#include <irsdefs.h>
 
 #include <irsarcherror.h>
 #include <irserror.h>
@@ -14,6 +16,8 @@
 #include <irscpp.h>
 #include <exception>
 #include <stdexcept>
+
+#include <irsfinal.h>
 
 namespace irs {
 
@@ -110,7 +114,6 @@ void irs::gcc_linux::error_handler_t::show_msg(irs::string &a_msg,
   if (m_msg_first) {
     m_msg_first = false;
     throw runtime_error(a_msg.c_str());
-    //cout << a_msg << endl;
   }
   m_msg_first = true;
 }
@@ -136,18 +139,18 @@ void irs::gcc_linux::error_handler_t::exec()
       } break;
       case irs::ec_assert: {
         ostrstream msg_strm;
-        error_out(msg_strm, error_code, "Statement");
+        error_out(msg_strm, error_code, "Assert");
         const irs::et_spec_assert_t *spec_data =
           static_cast<const irs::et_spec_assert_t *>(
             mp_error_trans->spec_data()
           );
         if (spec_data) {
           if (spec_data->assert_str) {
-            msg_strm << "Statement approval: " << spec_data->assert_str;
+            msg_strm << "Assert: " << spec_data->assert_str;
             msg_strm << endl;
           }
           if (spec_data->message) {
-            msg_strm << "Message approval: " << spec_data->message;
+            msg_strm << "Message: " << spec_data->message;
             msg_strm << endl;
           }
         }

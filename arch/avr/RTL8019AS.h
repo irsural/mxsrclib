@@ -15,12 +15,14 @@
 
 #include <irsfinal.h>
 
+#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 #define ETHERNET_PACKET_TX 250
 #define ETHERNET_PACKET_RX 254
 //#define ETHERNET_PACKET_TX 300
 //#define ETHERNET_PACKET_RX 304
 //#define ETHERNET_PACKET_TX 1550
 //#define ETHERNET_PACKET_RX 1554
+#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 // Длина MAC(Ethernet)-адреса
 #define IRS_RTL_MAC_SIZE 6
