@@ -350,7 +350,7 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   }
   #endif //IRS_LIB_CHECK
 
-  IRS_LIB_ASSERT(a_size > ETHERNET_PACKET_MAX);
+  IRS_LIB_ASSERT(a_size < ETHERNET_PACKET_MAX);
   
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();

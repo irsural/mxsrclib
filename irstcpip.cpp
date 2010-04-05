@@ -58,6 +58,7 @@ irs::arp_cash_t::arp_cash_t(irs_size_t a_size):
   m_reset_timer(60, 1)
 {
 }
+
 bool irs::arp_cash_t::ip_to_mac(const mxip_t& a_ip, mxmac_t& a_mac)
 {
   for (cash_item_const_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
@@ -422,6 +423,7 @@ void irs::simple_tcpip_t::arp()
       mp_send_buf[i] = mp_recv_buf[i];
     }
     mp_ethernet->set_recv_handled();
+    mlog() << "arp()" << endl;
     if (mp_send_buf[arp_operation_code_1] == arp_operation_response) {
       //ARP-ответ
       //добавляем ip и mac в ARP-таблицу
@@ -429,6 +431,7 @@ void irs::simple_tcpip_t::arp()
       m_blink_1();
       #endif //__ICCAVR__
       arp_cash(); 
+      mlog() << "добавляем ip и mac в ARP-таблицу" << endl;
     }
     if (mp_send_buf[arp_operation_code_1] == arp_operation_request) { 
       //ARP-запрос
@@ -437,6 +440,7 @@ void irs::simple_tcpip_t::arp()
       m_blink_2();
       #endif //__ICCAVR__
       arp_response();
+      mlog() << "формируем ответ на пришедший ARP-запрос" << endl;
     }
   }
 }
@@ -444,6 +448,7 @@ void irs::simple_tcpip_t::arp()
 void irs::simple_tcpip_t::send_arp(void)
 {
   mp_ethernet->send_packet(ARPBUF_SENDSIZE);
+  mlog() << "send_arp() size = " << int(ARPBUF_SENDSIZE) << endl;
   m_recv_arp = false;
   m_send_arp = false;
 }
@@ -495,6 +500,7 @@ void irs::simple_tcpip_t::icmp_packet()
 void irs::simple_tcpip_t::send_icmp()
 {
   mp_ethernet->send_packet(m_recv_buf_size_icmp);
+  //mlog() << "send_icmp() size = " << int(m_recv_buf_size_icmp) << endl;
   #ifdef DBGMODE
   PORTB ^= (1 << PORTB2);
   #endif //DBGMODE
@@ -540,6 +546,7 @@ void irs::simple_tcpip_t::server_udp()
     mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
     mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
     m_arp_cash.add(ip, mac);
+    mlog() << "server_udp()" << endl;
   } else {
     mp_ethernet->set_recv_handled();
   }
@@ -614,6 +621,8 @@ void irs::simple_tcpip_t::udp_packet()
 void irs::simple_tcpip_t::send_udp()
 {
   mp_ethernet->send_packet(m_user_send_buf_size + HEADERS_SIZE);
+  mlog() << "send_udp() size = " <<
+    int(m_user_send_buf_size + HEADERS_SIZE) << endl;
   m_send_udp = false;
   m_udp_send_status = false;
   m_user_send_status = false;
@@ -623,7 +632,9 @@ void irs::simple_tcpip_t::client_udp()
 {
   if (m_user_send_status == true) {
     if (cash(m_dest_ip)) {
+      mlog() << "cash(m_dest_ip)" << endl;
       if (m_udp_send_status == false) {
+        mlog() << "udp_packet()" << endl;
         udp_packet();
         m_udp_send_status = true;
         m_udp_wait_arp = false;
@@ -691,6 +702,7 @@ void irs::simple_tcpip_t::tick()
     }
     if(IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) == m_ip)
     {
+      mlog() << " ip()" << endl;
       ip();
     }
     mp_ethernet->set_recv_handled();

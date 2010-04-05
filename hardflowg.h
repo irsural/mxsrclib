@@ -662,13 +662,20 @@ private:
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
   size_type m_channel;
-  map<size_type, int> m_map_channel;
-  map<size_type, int>::iterator mp_map_channel_it;
+  struct udp_channel_t {
+    mxip_t local_ip;
+    irs_u16 local_port;
+    mxip_t dest_ip;
+    irs_u16 dest_port;
+  };
+  map<size_type, udp_channel_t> m_map_channel;
+  map<size_type, udp_channel_t>::iterator mp_map_channel_it;
   const size_type m_channel_max_count;
   bool m_channel_id_overflow;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
   size_type m_udp_max_data_size;
+  udp_channel_t m_channel_id;
   
   void new_channel();
   /*void start();
