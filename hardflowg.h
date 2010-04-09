@@ -37,40 +37,28 @@
 #include <irstcpip.h>
 #include <irsnetdefs.h>
 
-#define IRS_LIB_HARDFLOW_DEBUG_NONE 0
-#define IRS_LIB_HARDFLOW_DEBUG_BASE 1
-#define IRS_LIB_HARDFLOW_DEBUG_DETAIL 2
-
-#ifdef IRS_LIB_DEBUG
-#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
-//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_BASE
-//#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_DETAIL
-#else 
-#define IRS_HARDFLOW_DEBUG_TYPE IRS_LIB_HARDFLOW_DEBUG_NONE
-#endif //IRS_LIB_DEBUG
-
-#if (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE)
-# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
-# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
-#elif (IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_DETAIL)
-# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
-# define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
-  //IRS_LIB_DBG_MSG(msg)
-# define IRS_LIB_HARDFLOW_DBG_MSG_SRC_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
-#else
+#ifdef IRS_LIB_HARDFLOWG_DEBUG_TYPE
+# if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+#   define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#   define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
+# elif (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+#   define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#   define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#   define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
+# endif 
+#else // IRS_LIB_HARDFLOWG_DEBUG_TYPE
 # define IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_BASE(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_SRC_BASE(msg)
 # define IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_DETAIL(msg)
 # define IRS_LIB_HARDFLOW_DBG_MSG_SRC_DETAIL(msg)
-#endif           
+#endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
 
 namespace irs {
 
@@ -641,7 +629,8 @@ public:
     mxip_t a_local_ip,
     irs_u16 a_local_port,
     mxip_t a_dest_ip,
-    irs_u16 a_dest_port
+    irs_u16 a_dest_port,
+    size_type a_channel_max_count = 3
   );
   virtual ~simple_udp_flow_t();
   virtual irs::string param(const irs::string &a_name);
@@ -656,30 +645,56 @@ public:
   virtual void tick();
 
 private:
+  struct udp_channel_t {
+    mxip_t ip;
+    irs_u16 port;
+    udp_channel_t():
+      ip(mxip_t::zero_ip()),
+      port(0)
+    {
+    }
+  };
+  class channel_equal_t
+  {
+  public:  
+    channel_equal_t(mxip_t a_ip, irs_u16 a_port):
+      m_ip(a_ip),
+      m_port(a_port)
+    {
+    }
+    bool operator()(udp_channel_t a_udp_channel)
+    {
+      if (a_udp_channel.port == m_port) {
+        if (a_udp_channel.ip == m_ip) {
+          return true;
+        }
+      }
+      return false;
+    }
+  private:
+    mxip_t m_ip;
+    irs_u16 m_port;
+  };
+  
   simple_tcpip_t* mp_simple_udp;
   mxip_t m_local_ip;
   irs_u16 m_local_port;
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
   size_type m_channel;
-  struct udp_channel_t {
-    mxip_t local_ip;
-    irs_u16 local_port;
-    mxip_t dest_ip;
-    irs_u16 dest_port;
-  };
-  map<size_type, udp_channel_t> m_map_channel;
-  map<size_type, udp_channel_t>::iterator mp_map_channel_it;
-  const size_type m_channel_max_count;
-  bool m_channel_id_overflow;
+  size_type m_cur_channel;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
+  mxip_t m_cur_dest_ip;
+  irs_u16 m_cur_dest_port;
+  //counter_t m_max_channel_downtime;
+  const size_type m_channel_max_count;
+  deque<udp_channel_t> m_channel_list;
+  deque<udp_channel_t>::iterator m_channel_list_it;
   size_type m_udp_max_data_size;
-  udp_channel_t m_channel_id;
   
-  void new_channel();
-  /*void start();
-  void stop();*/
+  void new_channel(mxip_t a_ip, irs_u16 a_port);
+  void view_channel_list();
 };
 
 } // namespace hardflow

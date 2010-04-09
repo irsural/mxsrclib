@@ -824,7 +824,7 @@ composite_table_t<cell_type_t>::get_cell_diapason(
   if (!cell.param.autonomous) {
     diapason = cell.param.diapason;
   } else {
-    IRS_LIB_ASSERT("Ячейка не объединена");
+    IRS_LIB_ASSERT_MSG("Ячейка не объединена");
   }
   return diapason;
 }

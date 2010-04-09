@@ -168,26 +168,11 @@ void irs::rtl8019as_t::recv_packet()
         byte = read_rtl(rdmaport);
       }
     } else {
-      m_recv_status = true;
       m_recv_buf_size = recv_size_cur;
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
-      
-      #ifndef NOP
-      // IP получателя
-      static mxip_t local_ip = {{ 192, 168, 0, 37}};
-      if((m_recv_buf[0xC] == 0x8) && (m_recv_buf[0xD] == 0x6)) { //EtherType
-        if((m_recv_buf[0x26] == local_ip.val[0]) && 
-          (m_recv_buf[0x27] == local_ip.val[1]) && 
-          (m_recv_buf[0x28] == local_ip.val[2]) && 
-          (m_recv_buf[0x29] == local_ip.val[3]) &&
-          (m_recv_buf[0x15] == 0x1)) //arp-request
-        {
-          m_blink_15();
-        }
-      } 
-      #endif //NOP
+      m_recv_status = true;
     }
   } else {
     for (irs_u16 i = 0; i < recv_size_cur; i++) {

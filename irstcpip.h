@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 02.04.2010
+// Дата: 06.04.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -14,6 +14,19 @@
 #include <irsnetdefs.h>
 
 #include <irsfinal.h>
+
+#ifdef IRS_TCPIP_DEBUG_TYPE
+# if (IRS_TCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
+# elif (IRS_TCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# endif
+#else // IRS_TCPIP_DEBUG_TYPE
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
+#endif // IRS_TCPIP_DEBUG_TYPE
 
 namespace irs {
 
@@ -148,6 +161,7 @@ public:
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
     const mxip_t& a_ip,
+    const mxip_t& a_dest_ip,
     irs_size_t a_arp_cash_size = arp_cash_t::arp_table_size
   );
   ~simple_tcpip_t();
@@ -161,6 +175,8 @@ public:
   void read_udp_complete();
   irs_u8* get_recv_buf();
   irs_u8* get_send_buf();
+  void open_port(irs_u16 a_port);
+  void close_port(irs_u16 a_port);
   void tick();
   
 private:
@@ -203,6 +219,10 @@ private:
   bool m_send_udp;
   bool m_recv_arp;
   bool m_recv_icmp;
+  set<size_t> m_port_list;
+  mxip_t m_cur_dest_ip;
+  irs_u16 m_cur_dest_port;
+  irs_u16 m_cur_local_port;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
