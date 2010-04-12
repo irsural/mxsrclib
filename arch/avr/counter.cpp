@@ -6,7 +6,9 @@
 #include <inavr.h>
 #include <irsarchint.h>
 #include <irscpu.h>
+#ifdef IRS_LIB_COUNTER_MEM_CHECK
 #include <irsdbgutil.h>
+#endif //IRS_LIB_COUNTER_MEM_CHECK
 
 irs_i16 HW_TCNT = 0;
 irs_u8 init_cnt = 0;
@@ -27,7 +29,9 @@ public:
     HW_TCNT++;
     SREG = sreg;
     
+    #ifdef IRS_LIB_COUNTER_MEM_CHECK
     irs::memory_checker()->check();
+    #endif //IRS_LIB_COUNTER_MEM_CHECK
   }
 };
 

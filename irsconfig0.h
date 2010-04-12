@@ -1,5 +1,5 @@
 // Локальная конфигурация для каждого программиста
-// Дата 09.04.2010
+// Дата 12.04.2010
 // Дата создания 25.09.2009
 
 // Скопируйте этот файл "irsconfig0.h" в файл с именем "irsconfig.h"
@@ -21,6 +21,7 @@
 
 //#define IRS_LIB_RTL_OLD_INTERRUPT
 //#define IRS_LIB_UDP_RTL_STATIC_BUFS
+#define IRS_LIB_COUNTER_MEM_CHECK
  
 #ifdef IRS_LIB_DEBUG_GLOBAL 
 #if defined(__ICCAVR__) 
