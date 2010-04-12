@@ -1,13 +1,13 @@
 // Функции для mxifa (mxifa routines)
-// Дата: 01.04.2010
+// Дата: 09.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef mxifarH
 #define mxifarH
 
-#include <irsdefs.h>
-#include <irsstd.h>
-#include <irsstrdefs.h>
+//#include <irsdefs.h>
+//#include <irsstd.h>
+//#include <irsstrdefs.h>
 #include <irsnetdefs.h>
 
 //---------------------------------------------------------------------------
@@ -15,4 +15,4 @@
 extern const mxip_t zero_ip;
 //---------------------------------------------------------------------------
 
-#endif //NOP
+#endif //mxifarH

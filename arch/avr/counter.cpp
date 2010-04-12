@@ -6,6 +6,7 @@
 #include <inavr.h>
 #include <irsarchint.h>
 #include <irscpu.h>
+#include <irsdbgutil.h>
 
 irs_i16 HW_TCNT = 0;
 irs_u8 init_cnt = 0;
@@ -25,6 +26,8 @@ public:
     irs_u8 sreg = SREG;
     HW_TCNT++;
     SREG = sreg;
+    
+    //irs::memory_checker()->check();
   }
 };
 

@@ -2147,14 +2147,15 @@ irs::hardflow::simple_udp_flow_t::size_type
   return write_data_size;
 }
 
-irs::string irs::hardflow::simple_udp_flow_t::param(const irs::string &a_name)
+irs::string irs::hardflow::simple_udp_flow_t::param(
+  const irs::string& /*a_name*/)
 {
   irs::string param;
   return param;
 }
 
-void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &/*a_name*/,
+  const irs::string& /*a_value*/)
 {
 
 }
@@ -2169,3 +2170,4 @@ void irs::hardflow::simple_udp_flow_t::tick()
   }
   new_channel(m_cur_dest_ip, m_cur_dest_port);
 }
+

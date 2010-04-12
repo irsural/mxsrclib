@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 31.03.2010
+// Дата: 09.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -100,6 +100,9 @@ typedef double irs_float64;
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
+
+// Определение модификатора flash для компилятора IAR AVR
+#define IRS_ICCAVR_FLASH __flash
 
 // Используется в функции detect_cpu_endian, поэтому стоит выше
 // макросов IRS_HIBYTE, ...
