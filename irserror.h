@@ -23,6 +23,14 @@
 
 #include <irsfinal.h>
 
+#ifdef __ICCAVR__
+#define irsm(cstr)\
+  ""; { static char __flash dbg_msg_cstring[] = cstr;\
+  irs::mlog() << dbg_msg_cstring; } irs::mlog()
+#else //__ICCAVR__
+#define irsm(cstr) cstr
+#endif //__ICCAVR__
+
 #define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\

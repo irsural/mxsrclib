@@ -27,7 +27,7 @@ public:
     HW_TCNT++;
     SREG = sreg;
     
-    //irs::memory_checker()->check();
+    irs::memory_checker()->check();
   }
 };
 
