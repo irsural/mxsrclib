@@ -1506,7 +1506,8 @@ void irs::variant::test_variant()
   first_variant.type(var_type_int);
   first_variant.assign_no_cast(10);
   first_variant.convert_to(var_type_string);
-  //string s = first_variant;
+  string s = first_variant;
+  first_variant = s;
   first_int_var = first_variant;
   first_variant.convert_to(var_type_int);
   double_var = first_variant;
