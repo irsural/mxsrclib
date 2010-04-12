@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 05.04.2010
+// Дата: 09.04.2010
 // Дата создания: 8.09.2009
 
 #include <hardflowg.h>
@@ -1348,7 +1348,7 @@ irs::hardflow::tcp_server_t::size_type
           } else {
             m_map_channel_sock.erase(a_channel_ident);
           }
-          #if IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
+          #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
           irs::mlog() << "Delete channel " << (int)a_channel_ident
             << " by read command" << endl;
           irs::mlog() << "-------------------------------" << endl;
@@ -1414,7 +1414,7 @@ irs::hardflow::tcp_server_t::size_type
             m_map_channel_sock.erase(a_channel_ident);
           }
           
-          #if IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
+          #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
           irs::mlog() << "Delete channel " << (int)a_channel_ident
             << " by write command" << endl;
           irs::mlog() << "-------------------------------" << endl;
@@ -1458,7 +1458,7 @@ void irs::hardflow::tcp_server_t::tick()
               m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();
-            #if IRS_HARDFLOW_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
+            #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_HARDFLOW_DEBUG_BASE
             if(insert_channel.second) {
               irs::mlog() << "New channel added: " << (int)m_channel << endl;
               irs::mlog() << "-------------------------------" << endl;
@@ -1988,6 +1988,7 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
+  #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
   mlog() << "Channel List updated: m_channel = " << int(m_channel) << endl;
   for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
     mlog() << "Decue index " << int(list_idx) << " ip : " <<
@@ -1997,33 +1998,11 @@ void irs::hardflow::simple_udp_flow_t::view_channel_list()
       int(m_channel_list[list_idx].ip.val[3]) << " port : " <<
       int(m_channel_list[list_idx].port) << endl;
   }
+  #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
 }
 
 void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
 {
-  #ifdef NOP
-  udp_channel_t channel_content;
-  channel_content.ip = a_ip;
-  channel_content.port = a_port;
-  if (find_if(m_channel_list.begin(), m_channel_list.end(),
-    channel_equal_t(a_ip, a_port)) == m_channel_list.end()) 
-  {
-    m_channel++;
-    if (m_channel == invalid_channel) {
-      m_channel_list.clear();
-      m_channel++;
-      m_channel_list.push_back(channel_content);
-      mlog() << "Reach the end" << endl;
-    }
-    if (m_channel <= m_channel_max_count) {
-      m_channel_list.push_back(channel_content);
-    } else {
-      m_channel_list.pop_front();
-      m_channel_list.push_back(channel_content);
-    }
-  }
-  #endif // NOP
-  
   udp_channel_t channel_content;
   channel_content.ip = a_ip;
   channel_content.port = a_port;
@@ -2040,6 +2019,7 @@ void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
     } else {
       if (m_channel <= m_channel_max_count) {
         m_channel_list[m_channel - 1] = channel_content;
+        mlog() << "Add channel: " << int(m_channel) << endl;
       } else {
         m_channel_list.pop_front();
         m_channel_list.push_back(channel_content);
@@ -2052,30 +2032,7 @@ void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
 irs::hardflow::simple_udp_flow_t::size_type 
   irs::hardflow::simple_udp_flow_t::channel_next()
 {
-  //size_type channel = invalid_channel;
-  #ifdef NOP
-  if (!m_map_channel.empty()) {
-    IRS_LIB_ASSERT(mp_map_channel_it != m_map_channel.end());
-    mp_map_channel_it++;
-    if (mp_map_channel_it == m_map_channel.end())
-    {
-      mp_map_channel_it = m_map_channel.begin();
-      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Reach the end" << endl);
-      IRS_LIB_HARDFLOW_DBG_RAW_MSG_DETAIL("Go to first socket" << endl);
-    }
-    channel = mp_map_channel_it->first;
-  }
-  #endif // NOP
-  
   if (m_channel_list.size()) {
-    /*if ((m_cur_channel >= (m_channel - m_channel_list.size())) &&
-      (m_cur_channel < m_channel))
-    {
-      m_cur_channel++;
-    }
-    if (m_cur_channel == m_channel) {
-      m_cur_channel -= m_channel_list.size();
-    }*/
     if (m_channel <= m_channel_max_count) {
       if(m_cur_channel == m_channel) {
         m_cur_channel = 1;
@@ -2092,7 +2049,7 @@ irs::hardflow::simple_udp_flow_t::size_type
       }
     }
   }
-  return m_cur_channel;//channel;
+  return m_cur_channel;
 }
 
 bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
@@ -2112,9 +2069,11 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type read_data_size = 0;
-  mlog() << "a_channel_ident_read = " << int(a_channel_ident) << endl;
+  IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("a_channel_ident_read = " << 
+    int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident)) {
-    mlog() << " ************** read ****************" << endl;
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(" ************** read "
+      "****************" << endl);
     m_cur_channel = a_channel_ident;
     if (a_size > m_udp_max_data_size) {
       a_size = m_udp_max_data_size;
@@ -2122,7 +2081,7 @@ irs::hardflow::simple_udp_flow_t::size_type
     mxip_t dest_ip = mxip_t::zero_ip();
     irs_u16 dest_port = 0;
     read_data_size =
-    mp_simple_udp->read_udp(&dest_ip, &dest_port, &m_local_port);
+      mp_simple_udp->read_udp(&dest_ip, &dest_port, &m_local_port);
     if (read_data_size == a_size) {
       mp_simple_udp->read_udp_complete();
     }
@@ -2134,7 +2093,8 @@ irs::hardflow::simple_udp_flow_t::size_type
       return 0;
     }
   } else {
-    mlog() << "Channel don't exist, read data not posible " << endl;
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Channel don't exist, "
+      "read data not posible " << endl);
   }
   return read_data_size;
 }
@@ -2144,11 +2104,13 @@ irs::hardflow::simple_udp_flow_t::size_type
   const irs_u8 *ap_buf, size_type a_size)
 {
   size_type write_data_size = 0;
-  mlog() << "a_channel_ident_write = " << int(a_channel_ident) << endl;
+  IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("a_channel_ident_write = " <<
+    int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident))
   {
     m_cur_channel = a_channel_ident;
-    mlog() << " ***************** write ************************" << endl;
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(" ***************** write "
+      "************************" << endl);
     size_t deque_index = 0;
     if (m_channel >= m_channel_max_count) {
       deque_index = m_channel_list.size() - 
@@ -2167,6 +2129,7 @@ irs::hardflow::simple_udp_flow_t::size_type
     mlog() << " m_cur_channel: " << int(m_cur_channel) << endl;
     mlog() << " m_channel: " << int(m_channel) << endl;
     mlog() << " deque_index = " << int(deque_index) << endl;*/
+    #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
     if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
       mlog() << " write dest_ip = " << 
         int(m_channel_list[deque_index].ip.val[0]) << "." <<
@@ -2175,9 +2138,11 @@ irs::hardflow::simple_udp_flow_t::size_type
         int(m_channel_list[deque_index].ip.val[3]) << " dest_port = " <<
         int(m_channel_list[deque_index].port) << endl;
     }
+    #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
     memcpyex(mp_send_buf + 0x2a, ap_buf, a_size);
   } else {
-    mlog() << "Channel don't exist, write data not posible " << endl;
+    IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE("Channel don't exist,"
+      "write data not posible " << endl);
   }
   return write_data_size;
 }
