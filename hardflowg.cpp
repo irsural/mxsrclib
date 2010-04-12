@@ -21,7 +21,8 @@ bool irs::hardflow::lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
     IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Библиотека сокетов удачно загружена");
   } else {
     // Ошибка при загрузке библиотеки
-    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(error_str(error_sock_t().get_last_error()));
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(
+      error_str(error_sock_t().get_last_error()));
     lib_load_success = false;
   }     
   return lib_load_success;
@@ -633,7 +634,8 @@ void irs::hardflow::udp_channel_list_t::next_free_channel_id()
 
     } else {
       //Нет свободных мест под новый канал
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("No place for add new channel" << endl);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+        "No place for add new channel" << endl);
       m_channel_id = invalid_channel;
     }
   } else {
@@ -1893,29 +1895,31 @@ void irs::hardflow::fixed_flow_t::tick()
     if (read_size == 0) {
       if (m_read_timeout.stopped()) {
         m_read_timeout.start();
-        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("read timeout start()" << endl);
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("read timeout start()") << endl);
       }
     } else {
       m_read_timeout.stop();
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("read timeout stop()" << endl);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("read timeout stop()") << endl);
     }
     if (!m_read_timeout.check()) {
       if(mp_hardflow->is_channel_exists(m_read_channel)) {
         mp_read_buf_cur += read_size;
         m_read_size_rest -= read_size;
         if(mp_read_buf_cur >= (mp_read_buf + m_read_size_need)) {
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("read end" << endl);
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("read end") << endl);
           m_read_status = status_success;
         }
       }
       else {
         m_read_status = status_error;
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
-          "read abort by channel is absent" << endl);
+          irsm("read abort by channel is absent") << endl);
       }
     } else {
       m_read_status = status_error;
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("read abort by timeout" << endl);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
+        irsm("read abort by timeout") << endl);
     }
   }  
   if(write_status() == status_wait) {
@@ -1923,11 +1927,12 @@ void irs::hardflow::fixed_flow_t::tick()
       m_write_size_rest);
     if(write_size == 0) {
       if(m_write_timeout.stopped()) {
-        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("write timeout start()" << endl);
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("write timeout start()") << endl);
         m_write_timeout.start();
       }
     } else {
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("write timeout stop()" << endl);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("write timeout stop()") << endl);
       m_write_timeout.stop();
     }
     if(!m_write_timeout.check()) {
@@ -1935,18 +1940,19 @@ void irs::hardflow::fixed_flow_t::tick()
         mp_write_buf_cur += write_size;
         m_write_size_rest -= write_size;
         if(mp_write_buf_cur >= (mp_write_buf + m_write_size_need) ) {
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("write end" << endl);
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("write end") << endl);
           m_write_status = status_success;
         }
       }
       else {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
-          "write abort by channel is absent" << endl);
+          irsm("write abort by channel is absent") << endl);
         m_write_status = status_error;
       }
     } else {
       m_write_status = status_error;
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("write abort by timeout" << endl);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
+        irsm("write abort by timeout") << endl);
     }
   }
 }
@@ -1989,7 +1995,8 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
   #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-  mlog() << irsm("Channel List updated: m_channel = ") << int(m_channel) << endl;
+  mlog() << irsm("Channel List updated: m_channel = ") <<
+    int(m_channel) << endl;
   for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
     mlog() << irsm("Decue index ") << int(list_idx) << irsm(" ip : ") <<
       int(m_channel_list[list_idx].ip.val[0]) << irsm(".") <<
@@ -2125,7 +2132,8 @@ irs::hardflow::simple_udp_flow_t::size_type
       mp_simple_udp->write_udp(m_channel_list[deque_index].ip, 
         m_channel_list[deque_index].port, m_local_port, a_size);
     }
-    /*mlog() << " m_channel_list.size() = " << int(m_channel_list.size()) << endl;
+    /*
+    mlog() << " m_channel_list.size() = " << int(m_channel_list.size()) << endl;
     mlog() << " m_cur_channel: " << int(m_cur_channel) << endl;
     mlog() << " m_channel: " << int(m_channel) << endl;
     mlog() << " deque_index = " << int(deque_index) << endl;*/
