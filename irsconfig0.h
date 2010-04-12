@@ -11,6 +11,7 @@
 #define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK
 
+#define IRS_LIB_DEBUG_NONE 0
 #define IRS_LIB_DEBUG_BASE 1
 #define IRS_LIB_DEBUG_DETAIL 2
 

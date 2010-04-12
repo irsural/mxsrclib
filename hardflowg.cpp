@@ -1989,13 +1989,13 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
   #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-  mlog() << "Channel List updated: m_channel = " << int(m_channel) << endl;
+  mlog() << irsm("Channel List updated: m_channel = ") << int(m_channel) << endl;
   for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
-    mlog() << "Decue index " << int(list_idx) << " ip : " <<
-      int(m_channel_list[list_idx].ip.val[0]) << "." <<
-      int(m_channel_list[list_idx].ip.val[1]) << "." <<
-      int(m_channel_list[list_idx].ip.val[2]) << "." <<
-      int(m_channel_list[list_idx].ip.val[3]) << " port : " <<
+    mlog() << irsm("Decue index ") << int(list_idx) << irsm(" ip : ") <<
+      int(m_channel_list[list_idx].ip.val[0]) << irsm(".") <<
+      int(m_channel_list[list_idx].ip.val[1]) << irsm(".") <<
+      int(m_channel_list[list_idx].ip.val[2]) << irsm(".") <<
+      int(m_channel_list[list_idx].ip.val[3]) << irsm(" port : ") <<
       int(m_channel_list[list_idx].port) << endl;
   }
   #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
@@ -2019,7 +2019,7 @@ void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
     } else {
       if (m_channel <= m_channel_max_count) {
         m_channel_list[m_channel - 1] = channel_content;
-        mlog() << "Add channel: " << int(m_channel) << endl;
+        mlog() << irsm("Add channel: ") << int(m_channel) << endl;
       } else {
         m_channel_list.pop_front();
         m_channel_list.push_back(channel_content);
@@ -2069,11 +2069,11 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type read_data_size = 0;
-  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("a_channel_ident_read = " << 
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_read = ") << 
     int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident)) {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(" ************** read "
-      "****************" << endl);
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm(" ************** read "
+      "****************") << endl);
     m_cur_channel = a_channel_ident;
     if (a_size > m_udp_max_data_size) {
       a_size = m_udp_max_data_size;
@@ -2093,8 +2093,8 @@ irs::hardflow::simple_udp_flow_t::size_type
       return 0;
     }
   } else {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("Channel don't exist, "
-      "read data not posible " << endl);
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist, "
+      "read data not posible ") << endl);
   }
   return read_data_size;
 }
@@ -2104,13 +2104,13 @@ irs::hardflow::simple_udp_flow_t::size_type
   const irs_u8 *ap_buf, size_type a_size)
 {
   size_type write_data_size = 0;
-  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("a_channel_ident_write = " <<
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_write = ") <<
     int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident))
   {
     m_cur_channel = a_channel_ident;
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(" ***************** write "
-      "************************" << endl);
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm(" ***************** write "
+      "************************") << endl);
     size_t deque_index = 0;
     if (m_channel >= m_channel_max_count) {
       deque_index = m_channel_list.size() - 
@@ -2131,18 +2131,18 @@ irs::hardflow::simple_udp_flow_t::size_type
     mlog() << " deque_index = " << int(deque_index) << endl;*/
     #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
     if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
-      mlog() << " write dest_ip = " << 
-        int(m_channel_list[deque_index].ip.val[0]) << "." <<
-        int(m_channel_list[deque_index].ip.val[1]) << "." << 
-        int(m_channel_list[deque_index].ip.val[2]) << "." <<
-        int(m_channel_list[deque_index].ip.val[3]) << " dest_port = " <<
+      mlog() << irsm(" write dest_ip = ") << 
+        int(m_channel_list[deque_index].ip.val[0]) << irsm(".") <<
+        int(m_channel_list[deque_index].ip.val[1]) << irsm(".") << 
+        int(m_channel_list[deque_index].ip.val[2]) << irsm(".") <<
+        int(m_channel_list[deque_index].ip.val[3]) << irsm(" dest_port = ") <<
         int(m_channel_list[deque_index].port) << endl;
     }
     #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
     memcpyex(mp_send_buf + 0x2a, ap_buf, a_size);
   } else {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("Channel don't exist,"
-      "write data not posible " << endl);
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist,"
+      "write data not posible ") << endl);
   }
   return write_data_size;
 }
