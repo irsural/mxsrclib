@@ -1,11 +1,13 @@
 // Потоки ввода/вывода ИРС
-// Дата: 09.04.2010
+// Дата: 12.04.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
 #define IRSSTRMH
 
 //#define NEW
+
+#include <irsdefs.h>
 
 #include <irscpp.h>
 //#include <irsstd.h>
@@ -25,60 +27,14 @@
 #include <signal.h>
 #endif //IRS_LINUX
 
+#include <irsfinal.h>
+
 #ifdef __ICCAVR__
 #define IRS_STRM_ICCAVR_FLASH_OUT(out_stream, string)\
   {\
     static char IRS_ICCAVR_FLASH irs_stream_flash_string[] = string;\
     out_stream << irs_stream_flash_string;\
   }
-
-// Операция сдвига для вывода строк размещенных во Flash в поток
-// Вне пространства имен irs размещена намеренно
-inline ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
-{
-  for (;*ap_strg != 0; ap_strg++) {
-    char out_char = *ap_strg;
-    a_strm << out_char;
-  }
-  return a_strm;
-}
-
-#ifdef NOP
-// Реализация котороая в будущем может понадобится
-// !!! Просьба не удалять
-ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
-{
-  enum {
-    buf_size = 100
-  };
-  static char buf[buf_size + 1] = { 0 };
-    
-  #ifdef IRS_LIB_DEBUG
-  if (buf[buf_size] != 0) {
-    static char IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] = "В операторе сдвига для "
-      "строк во Flash в буфере отсутствует завершающий нуль";
-    a_strm << endl << p_msg_no_zero_terminator << endl;
-    for (;;);
-  }
-  #endif //IRS_LIB_DEBUG
-  
-  const size_t strg_size = strlen_G(ap_strg);
-  const size_t part_cnt = strg_size/buf_size;
-  char IRS_ICCAVR_FLASH* strg_end = ap_strg + strg_size;
-  for (size_t part_idx = 0; part_idx < part_cnt; ++part_idx) {
-    char IRS_ICCAVR_FLASH* strg_part_end = ap_strg + buf_size;
-    copy(ap_strg, strg_part_end, buf);
-    a_strm << buf;
-    ap_strg = strg_part_end;
-  }
-  if (ap_strg < strg_end) {
-    copy(ap_strg, strg_end, buf);
-    buf[strg_end - ap_strg] = 0;
-    a_strm << buf;
-  }
-}
-#endif //NOP
-
 #endif //__ICCAVR__
 
 namespace irs {
