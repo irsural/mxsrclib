@@ -1,14 +1,22 @@
 // Модуль счетчика
-// Дата 18.08.2009
+// Дата: 12.04.2010
+// Ранняя дата: 18.08.2009
 
-#include <counter.h>
+#include <irsdefs.h>
+
 #include <ioavr.h>
 #include <inavr.h>
+
+#include <irsconfig.h>
+#include <counter.h>
 #include <irsarchint.h>
 #include <irscpu.h>
 #ifdef IRS_LIB_COUNTER_MEM_CHECK
 #include <irsdbgutil.h>
 #endif //IRS_LIB_COUNTER_MEM_CHECK
+#include <irserror.h>
+
+#include <irsfinal.h>
 
 irs_i16 HW_TCNT = 0;
 irs_u8 init_cnt = 0;

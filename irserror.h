@@ -26,7 +26,7 @@
 
 #ifdef __ICCAVR__
 #define irsm(cstr)\
-  ""; { static char __flash dbg_msg_cstring[] = cstr;\
+  ""; { static char IRS_ICCAVR_FLASH dbg_msg_cstring[] = cstr;\
   irs::mlog() << dbg_msg_cstring; } irs::mlog()
 #else //__ICCAVR__
 #define irsm(cstr) cstr
@@ -57,8 +57,9 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
     
   #ifdef IRS_LIB_DEBUG
   if (buf[buf_size] != 0) {
-    static char IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] = "¬ операторе сдвига дл€ "
-      "строк во Flash в буфере отсутствует завершающий нуль";
+    static char IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] =
+      "¬ операторе сдвига дл€ строк во Flash в буфере отсутствует "
+      "завершающий нуль";
     a_strm << endl << p_msg_no_zero_terminator << endl;
     for (;;);
   }
@@ -84,12 +85,20 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #endif //__ICCAVR__
 
 
+#ifdef NOP //__ICCAVR__
+#define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
+  {\
+    static char IRS_ICCAVR_FLASH assert_expr_fstr[] = #assert_expr\
+    irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
+      irs::spec_assert(assert_expr_fstr, message));\
+  }
+#else //__ICCAVR__
 #define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
       irs::spec_assert(#assert_expr, message));\
   }
-
+#endif //__ICCAVR__
 #define IRS_ASSERT(assert_expr)\
   {\
     if (!(assert_expr)) {\
@@ -108,7 +117,6 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
   }
 #define IRS_NEW_ASSERT(new_expr)\
   (irs::new_assert(new_expr, __FILE__, __LINE__))
-
 
 
 #define IRS_ERROR_HELPER(error_code, spec_data)\
@@ -164,37 +172,48 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
   irs::send_wsa_last_message_err(__FILE__,__LINE__)
 #endif // IRS_WIN32
 
+
 #ifdef IRS_LIB_DEBUG
+
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
 #define IRS_LIB_NEW_ASSERT(new_expr) IRS_NEW_ASSERT(new_expr)
+
 #define IRS_LIB_ERROR(error_code, msg) IRS_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)\
   IRS_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg) IRS_FATAL_ERROR(msg)
+
 #define IRS_LIB_DBG_RAW_MSG(msg) IRS_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg) IRS_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg) IRS_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg) IRS_DBG_MSG_SRC_ENG(msg)
+
 #define IRS_LIB_SEND_LAST_ERROR() IRS_SEND_LAST_ERROR()
 #define IRS_LIB_SEND_ERROR() IRS_SEND_ERROR()
 #define IRS_LIB_SEND_WIN_WSA_LAST_ERROR() IRS_SEND_WIN_WSA_LAST_ERROR()
+
 #else // IRS_LIB_DEBUG
+
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ASSERT_MSG(msg)
 #define IRS_LIB_NEW_ASSERT(new_expr) new_expr
+
 #define IRS_LIB_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg)
+
 #define IRS_LIB_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg)
 #define IRS_LIB_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg)
+
 #define IRS_LIB_SEND_LAST_ERROR()
 #define IRS_LIB_SEND_ERROR()
 #define IRS_LIB_SEND_WIN_WSA_LAST_ERROR()
+
 #endif // IRS_LIB_DEBUG
 
 namespace irs {

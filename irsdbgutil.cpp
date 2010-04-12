@@ -327,12 +327,21 @@ void irs::avr_memory_checker_t::out_info(ostream* ap_strm)
 }
 void irs::avr_memory_checker_t::check()
 {
-  irs_u8 call_stack_check_var = 0;
+  //irs_u8 call_stack_check_var = 0;
+  m_var_list[mcrpi_avr_return_stack].param.current = 
+    static_cast<value_type>(SP);
   m_var_list[mcrpi_avr_call_stack].param.current = 
-    reinterpret_cast<value_type>(&call_stack_check_var);
+    static_cast<value_type>(*reinterpret_cast<irs_u16*>(0x1C));
   auto_ptr<irs_u8> p_heap_check_var(IRS_LIB_NEW_ASSERT(new irs_u8));
   m_var_list[mcrpi_avr_heap].param.current = 
     reinterpret_cast<value_type>(p_heap_check_var.get());
+  
+  #ifdef NOP
+  IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* Y = "));
+  IRS_LIB_DBG_RAW_MSG((*(irs_u16*)0x1C) << endl << endl);
+  IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* SP = "));
+  IRS_LIB_DBG_RAW_MSG(SP << endl << endl);
+  #endif //NOP
 }
 #endif //__ICCAVR__
 
