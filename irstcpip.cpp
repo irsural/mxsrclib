@@ -156,7 +156,7 @@ irs::simple_tcpip_t::simple_tcpip_t(
   #ifdef __ICCAVR__
   m_blink_0(irs_avr_porte, 7),
   m_blink_1(irs_avr_porte, 5),
-  m_blink_2(irs_avr_porte, 2),
+  //m_blink_2(irs_avr_porte, 2),
   m_blink_3(irs_avr_portf, 0),
   #endif //__ICCAVR__
   m_send_arp(false),
@@ -223,18 +223,29 @@ irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
   if (m_user_recv_status == true) {
     data = m_user_recv_buf_size;
     if (a_dest_ip) {
-      //IRS_LODWORD(*a_dest_ip) = IRS_LODWORD(mp_recv_buf[udp_source_ip]);
+      #ifdef TESTING
       *a_dest_ip = m_cur_dest_ip;
+      #else // TESTING
+      IRS_LODWORD(*a_dest_ip) = IRS_LODWORD(mp_recv_buf[udp_source_ip]);
+      #endif // TESTING
     }
     if (a_dest_port) {
       //IRS_HIBYTE(*a_dest_port) = mp_recv_buf[udp_local_port_0];
       //IRS_LOBYTE(*a_dest_port) = mp_recv_buf[udp_local_port_1];
+      #ifdef TESTING
       *a_dest_port = m_cur_dest_port;
+      #else // TESTING
+      
+      #endif // TESTING
     }
     if (a_local_port) {
       //IRS_HIBYTE(*a_local_port) = mp_recv_buf[udp_dest_port_0];
       //IRS_LOBYTE(*a_local_port) = mp_recv_buf[udp_dest_port_1];
+      #ifdef TESTING
       *a_local_port = m_cur_local_port;
+      #else // TESTING
+      
+      #endif // TESTING
     }
   }
   return data;
@@ -446,7 +457,7 @@ void irs::simple_tcpip_t::arp()
         //ARP-запрос
         //формируем ответ на пришедший ARP-запрос 
         #ifdef __ICCAVR__
-        m_blink_2();
+        //m_blink_2();
         #endif //__ICCAVR__
         arp_response();
         IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
@@ -547,32 +558,6 @@ void irs::simple_tcpip_t::icmp()
   mp_ethernet->set_recv_handled();
 }
 
-void irs::simple_tcpip_t::server_udp()
-{
-  IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: server_udp()") << endl);
-  irs_u16 local_port = 0;
-  IRS_HIBYTE(local_port) = mp_recv_buf[udp_dest_port_0];
-  IRS_LOBYTE(local_port) = mp_recv_buf[udp_dest_port_1];
-  if (m_port_list.find(local_port) != m_port_list.end())
-  {
-    IRS_HIBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_0];
-    IRS_LOBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_1];
-    m_cur_local_port = local_port;
-    size_t udp_size = 0;
-    IRS_HIBYTE(udp_size) = mp_recv_buf[udp_length_0];
-    IRS_LOBYTE(udp_size) = mp_recv_buf[udp_length_1];
-    m_user_recv_buf_size = udp_size - 8;
-    
-    mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
-    mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
-    m_cur_dest_ip = ip;
-    m_arp_cash.add(ip, mac);
-    m_user_recv_status = true;
-  } else {
-    mp_ethernet->set_recv_handled();
-  }
-}
-
 void irs::simple_tcpip_t::udp_packet()
 {
   IRS_TCPIP_MAC(mp_send_buf) = m_dest_mac;
@@ -649,6 +634,37 @@ void irs::simple_tcpip_t::send_udp()
   m_user_send_status = false;
 }
 
+void irs::simple_tcpip_t::server_udp()
+{
+  IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: server_udp()") << endl);
+  irs_u16 local_port = 0;
+  IRS_HIBYTE(local_port) = mp_recv_buf[udp_dest_port_0];
+  IRS_LOBYTE(local_port) = mp_recv_buf[udp_dest_port_1];
+  if (m_port_list.find(local_port) != m_port_list.end())
+  {
+    mlog() << irsm("recv: server_udp() by port") << endl;
+    #ifdef TESTING
+    IRS_HIBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_0];
+    IRS_LOBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_1];
+    m_cur_local_port = local_port;
+    #endif // TESTING
+    size_t udp_size = 0;
+    IRS_HIBYTE(udp_size) = mp_recv_buf[udp_length_0];
+    IRS_LOBYTE(udp_size) = mp_recv_buf[udp_length_1];
+    m_user_recv_buf_size = udp_size - 8;
+    
+    mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
+    mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
+    #ifdef TESTING
+    m_cur_dest_ip = ip;
+    #endif // TESTING
+    m_arp_cash.add(ip, mac);
+    m_user_recv_status = true;
+  } else {
+    mp_ethernet->set_recv_handled();
+  }
+}
+
 void irs::simple_tcpip_t::client_udp()
 {
   if (m_user_send_status == true) {
@@ -696,7 +712,7 @@ void irs::simple_tcpip_t::ip(void)
       icmp(); 
     }
     if (mp_recv_buf[ip_proto_type] == udp_proto) {
-      //IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> udp()") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> udp()") << endl);
       udp();
     }
   } else {

@@ -1978,9 +1978,9 @@ irs::hardflow::simple_udp_flow_t::simple_udp_flow_t(
   m_channel_max_count(a_channel_max_count),
   m_channel_list(m_channel_max_count, udp_channel_t()),
   m_channel_list_it(m_channel_list.begin()),
-  m_udp_max_data_size(65000),
+  m_udp_max_data_size(65000)/*,
   m_cur_dest_ip(mxip_t::zero_ip()),
-  m_cur_dest_port(0)
+  m_cur_dest_port(0)*/
 {
   mp_simple_udp->open_udp();
   mp_simple_udp->open_port(m_local_port);
@@ -2171,11 +2171,13 @@ void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &/*a_name*/,
 void irs::hardflow::simple_udp_flow_t::tick()
 {
   mp_simple_udp->tick();
-  if (mp_simple_udp->read_udp(&m_cur_dest_ip, &m_cur_dest_port,
+  static mxip_t dest_ip_cur = mxip_t::zero_ip();
+  static irs_u16 dest_port_cur = 0;
+  if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port_cur,
     &m_local_port) > 20)
   {
     mp_simple_udp->read_udp_complete();
   }
-  new_channel(m_cur_dest_ip, m_cur_dest_port);
+  new_channel(dest_ip_cur, dest_port_cur);
 }
 

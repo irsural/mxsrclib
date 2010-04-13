@@ -15,19 +15,21 @@
 
 #include <irsfinal.h>
 
-#ifdef IRS_TCPIP_DEBUG_TYPE
-# if (IRS_TCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+#ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
+# if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
 #   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
 #   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
-# elif (IRS_TCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+# elif (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
 #   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
 #   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
 # endif
-#else // IRS_TCPIP_DEBUG_TYPE
-# define IRS_TCPIP_DEBUG_TYPE IRS_LIB_DEBUG_NONE
+#else // IRS_LIB_IRSTCPIP_DEBUG_TYPE
+# define IRS_LIB_IRSTCPIP_DEBUG_TYPE IRS_LIB_DEBUG_NONE
 # define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg)
 # define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
-#endif // IRS_TCPIP_DEBUG_TYPE
+#endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
+
+#define TESTING 1
 
 namespace irs {
 
@@ -212,7 +214,7 @@ private:
   #ifdef __ICCAVR__
   blink_t m_blink_0;
   blink_t m_blink_1;
-  blink_t m_blink_2;
+  //blink_t m_blink_2;
   blink_t m_blink_3;
   #endif //__ICCAVR__
   bool m_send_arp;
@@ -221,9 +223,11 @@ private:
   bool m_recv_arp;
   bool m_recv_icmp;
   set<size_t> m_port_list;
+  #ifdef TESTING
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
   irs_u16 m_cur_local_port;
+  #endif // TESTING
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);

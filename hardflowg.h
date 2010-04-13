@@ -686,8 +686,8 @@ private:
   size_type m_cur_channel;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
-  mxip_t m_cur_dest_ip;
-  irs_u16 m_cur_dest_port;
+  //mxip_t m_cur_dest_ip;
+  //irs_u16 m_cur_dest_port;
   //counter_t m_max_channel_downtime;
   const size_type m_channel_max_count;
   deque<udp_channel_t> m_channel_list;

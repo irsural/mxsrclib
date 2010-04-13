@@ -686,9 +686,11 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
       for(int h_reg_idx = 0; h_reg_idx < int(resp_header_inner.byte_count)/2;
         h_reg_idx++) 
       {
-        irs::mlog() << irsm(" hold regs lo[") << h_reg_idx << irsm("] ...... ") <<
+        irs::mlog() << irsm(" hold regs lo[") << h_reg_idx <<
+          irsm("] ...... ") <<
           int(IRS_LOBYTE(resp_header_inner.value[h_reg_idx])) << endl;
-        irs::mlog() << irsm(" hold regs hi[") << h_reg_idx << irsm("] ...... ") <<
+        irs::mlog() << irsm(" hold regs hi[") << h_reg_idx <<
+          irsm("] ...... ") <<
           int(IRS_HIBYTE(resp_header_inner.value[h_reg_idx])) << endl;
       }
     } break;
@@ -702,9 +704,11 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
       for(int i_reg_idx = 0; i_reg_idx < int(resp_header_inner.byte_count)/2;
         i_reg_idx++) 
       {
-        irs::mlog() << irsm(" input regs lo[") << i_reg_idx << irsm("] ..... ") <<
+        irs::mlog() << irsm(" input regs lo[") << i_reg_idx <<
+          irsm("] ..... ") <<
           int(IRS_LOBYTE(resp_header_inner.value[i_reg_idx])) << endl;
-        irs::mlog() << irsm(" input regs hi[") << i_reg_idx << irsm("] ..... ") <<
+        irs::mlog() << irsm(" input regs hi[") << i_reg_idx <<
+          irsm("] ..... ") <<
           int(IRS_HIBYTE(resp_header_inner.value[i_reg_idx])) << endl;
       }
     } break;
@@ -1401,9 +1405,11 @@ void irs::modbus_server_t::tick()
                 hr_idx++)
               {
                 irs::mlog() << irsm(" hold regs lo[") << hr_idx << 
-                  irsm("] = ") << int(IRS_LOBYTE(read_hr.value[hr_idx])) << endl;
+                  irsm("] = ") <<
+                  int(IRS_LOBYTE(read_hr.value[hr_idx])) << endl;
                 irs::mlog() << irsm(" hold regs hi[") << hr_idx << 
-                  irsm("] = ") << int(IRS_HIBYTE(read_hr.value[hr_idx])) << endl;
+                  irsm("] = ") <<
+                  int(IRS_HIBYTE(read_hr.value[hr_idx])) << endl;
               }
               #endif // IRS_LIB_DEBUG_DETAIL
               header.length = irs_u16(1 + size_of_resp_header + 
@@ -1429,9 +1435,11 @@ void irs::modbus_server_t::tick()
                 ir_idx++)
               {
                 irs::mlog() << irsm(" input regs lo[") << ir_idx << 
-                  irsm("] = ") << int(IRS_LOBYTE(read_ir.value[ir_idx])) << endl;
+                  irsm("] = ") <<
+                  int(IRS_LOBYTE(read_ir.value[ir_idx])) << endl;
                 irs::mlog() << irsm(" input regs hi[") << ir_idx << 
-                  irsm("] = ") << int(IRS_HIBYTE(read_ir.value[ir_idx])) << endl;
+                  irsm("] = ") <<
+                  int(IRS_HIBYTE(read_ir.value[ir_idx])) << endl;
               }
               #endif // IRS_LIB_DEBUG_DETAIL
               header.length = irs_u16(1 + size_of_resp_header + 
@@ -1868,7 +1876,8 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
         int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
       irs::mlog() << irsm(" byte_count ................ ") <<
         int(req_header_inner.byte_count) << endl;
-      for(int reg_idx = 0; reg_idx < int(req_header_inner.quantity); reg_idx++) {
+      for(int reg_idx = 0; reg_idx < int(req_header_inner.quantity); reg_idx++)
+      {
         irs::mlog() << irsm(" register_value_lo ......... ") <<
           int(IRS_LOBYTE(req_header_inner.value[reg_idx])) << endl;
         irs::mlog() << irsm(" register_value_hi ......... ") <<
@@ -1933,8 +1942,11 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
       irs::mlog() << irsm(" read coils") << endl;
       irs::mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
-      for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count; coils_idx++) {
-        irs::mlog() << irsm(" coils[") << coils_idx << irsm("] ............. ") <<
+      for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count;
+        coils_idx++)
+      {
+        irs::mlog() << irsm(" coils[") << coils_idx << 
+          irsm("] ............. ") <<
           int(resp_header_inner.value[coils_idx]) << endl;
       }
     } break;
@@ -2087,7 +2099,8 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     {
       ap_buf[idx] = m_coils_byte_read[m_coils_start_byte + idx - 
         m_discret_inputs_size_byte];
-      irs::mlog() << irsm(" ap_buf[") << idx << irsm("] = ") << int(ap_buf[idx]) << endl;
+      irs::mlog() << irsm(" ap_buf[") << idx << irsm("] = ") <<
+        int(ap_buf[idx]) << endl;
       #if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
       irs::mlog() << irsm("coils[") << m_coils_start_byte + idx -  
         m_discret_inputs_size_byte << irsm("] = ") <<

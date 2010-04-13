@@ -206,9 +206,9 @@ void irs::rtl8019as_t::rtl_interrupt()
     //m_blink_19.set();
     m_send_status = false;
   }
-  /*if (byte&0x2) { //данные отправлены без ошибок
+  if (byte&0x2) { //данные отправлены без ошибок
     m_blink_19.set(); 
-  }*/
+  }
 
   byte = read_rtl(bnry);
   write_rtl(cr, 0x62);
@@ -217,7 +217,8 @@ void irs::rtl8019as_t::rtl_interrupt()
 
   //buffer is not empty, get next packet
   if (byte != _byte) {
-    overrun(); //recv_packet(); 
+    //mlog() << irsm("buffer is not empty, get next packet") << endl;
+    overrun();//overrun(); //recv_packet(); 
   }
 
   write_rtl(isr, 0xff);
@@ -351,28 +352,11 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
   for (irs_u16 i = 0; i < a_size; i++) {
+    static irs::blink_t blink_2(irs_avr_porte, 2);
+    blink_2();
     write_rtl(rdmaport, mp_send_buf[i]);
   }
   
-  #ifndef NOP
-  //IP Отправителя
-  static mxip_t local_ip = {{ 192, 168, 0, 37}};
-  if((m_send_buf[0x1c] == local_ip.val[0]) &&
-    (m_send_buf[0x1d] == local_ip.val[1]) &&
-    (m_send_buf[0x1e] == local_ip.val[2]) &&
-    (m_send_buf[0x1f] == local_ip.val[3]))
-  {
-    //IP Получателя
-    static mxip_t dest_ip = {{ 192, 168, 0, 28}};
-    if((m_send_buf[0x26] == dest_ip.val[0]) &&
-      (m_send_buf[0x27] == dest_ip.val[1]) &&
-      (m_send_buf[0x28] == dest_ip.val[2]) &&
-      (m_send_buf[0x29] == dest_ip.val[3]))
-    {
-      m_blink_16();
-    }
-  }
-  #endif //NOP
   
   if (!wait_dma()) {
     return;
