@@ -120,6 +120,7 @@ private:
   value_type first_delta(ident_type a_ident);
   value_type second_delta(ident_type a_ident);
   void out_param(ostream* ap_strm, ident_type a_ident);
+  void select_max(ident_type a_ident, irs_u16 a_value);
 };
 #endif //__ICCAVR__
 
@@ -197,7 +198,7 @@ void irs::default_memory_checker_t::check()
 irs::avr_memory_checker_t::avr_memory_checker_t():
   m_var_list(mcrpi_avr_size),
   m_ident_name_list(mcrpi_avr_size),
-  m_heap_array_size(1)
+  m_heap_array_size(heap_array_size_def)
 {
   m_var_list[mcrpi_avr_return_stack] = var_item_type(
     memory_checker_param_t(), second_delta, first_delta);
@@ -341,19 +342,64 @@ void irs::avr_memory_checker_t::out_info(ostream* ap_strm)
   }
   (*ap_strm) << endl;
 }
+void irs::avr_memory_checker_t::select_max(ident_type a_ident, irs_u16 a_value)
+{
+  value_type& param_current = m_var_list[a_ident].param.current;
+  value_type param_current_prev = param_current;
+  value_type param_cur_size_prev = range_param_cur_size(a_ident);
+  param_current = static_cast<value_type>(a_value);
+  value_type param_cur_size = range_param_cur_size(a_ident);
+  if ((param_cur_size_prev > param_cur_size) && (param_current_prev != 0)) {
+    param_current = param_current_prev;
+  }
+}
 void irs::avr_memory_checker_t::check()
 {
   //irs_u8 call_stack_check_var = 0;
-  m_var_list[mcrpi_avr_return_stack].param.current = 
-    static_cast<value_type>(SP);
-  m_var_list[mcrpi_avr_call_stack].param.current = 
-    static_cast<value_type>(*reinterpret_cast<irs_u16*>(0x1C));
+  
+  select_max(mcrpi_avr_return_stack, SP);
+  
+  irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
+  select_max(mcrpi_avr_call_stack, Y);
+  
+  auto_ptr<irs_u8> p_heap_check_var(
+    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
+  select_max(mcrpi_avr_heap,
+    reinterpret_cast<value_type>(p_heap_check_var.get()));
+  
+  #ifdef NOP
+  value_type& return_stack_current =
+    m_var_list[mcrpi_avr_return_stack].param.current;
+  value_type return_stack_current_prev = return_stack_current;
+  value_type return_stack_cur_size_prev = 
+    range_param_cur_size(mcrpi_avr_return_stack);
+  return_stack_current = static_cast<value_type>(SP);
+  value_type return_stack_cur_size = 
+    range_param_cur_size(mcrpi_avr_return_stack);
+  if (return_stack_cur_size_prev > return_stack_cur_size) {
+    return_stack_current = return_stack_current_prev;
+  }
+  
+  value_type& call_stack_current =
+    m_var_list[mcrpi_avr_call_stack].param.current;
+  value_type call_stack_current_prev = call_stack_current;
+  value_type call_stack_cur_size_prev = 
+    range_param_cur_size(mcrpi_avr_call_stack);
+  irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
+  call_stack_current = static_cast<value_type>(Y);
+  value_type call_stack_cur_size = 
+    range_param_cur_size(mcrpi_avr_call_stack);
+  if (call_stack_cur_size_prev > call_stack_cur_size) {
+    call_stack_current = call_stack_current_prev;
+  }
+
+  m_var_list[mcrpi_avr_call_stack].param.current =
+    static_cast<value_type>(Y);
   auto_ptr<irs_u8> p_heap_check_var(
     IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
   m_var_list[mcrpi_avr_heap].param.current = 
     reinterpret_cast<value_type>(p_heap_check_var.get());
   
-  #ifdef NOP
   IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* Y = "));
   IRS_LIB_DBG_RAW_MSG((*(irs_u16*)0x1C) << endl << endl);
   IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* SP = "));
@@ -378,7 +424,8 @@ irs::memory_checker_t* irs::memory_checker_init(
   memory_checker_t::value_type a_heap_begin,
   memory_checker_t::value_type a_heap_end,
   memory_checker_t::value_type a_return_stack_begin,
-  memory_checker_t::value_type a_return_stack_end
+  memory_checker_t::value_type a_return_stack_end,
+  memory_checker_t::value_type a_heap_array_size
 )
 {
   irs::memory_checker()->range_param_begin(irs::mcrpi_avr_call_stack,
@@ -393,5 +440,18 @@ irs::memory_checker_t* irs::memory_checker_init(
     a_return_stack_begin);
   irs::memory_checker()->range_param_end(irs::mcrpi_avr_return_stack,
     a_return_stack_end);
+  irs::memory_checker()->heap_array_size(a_heap_array_size);
   return irs::memory_checker();
 }
+irs::memory_checker_t* irs::memory_checker_avr_init(
+  memory_checker_t::value_type a_call_stack_begin,
+  memory_checker_t::value_type a_heap_begin,
+  memory_checker_t::value_type a_return_stack_begin,
+  memory_checker_t::value_type a_return_stack_end,
+  memory_checker_t::value_type a_heap_array_size
+)
+{
+  return memory_checker_init(a_call_stack_begin, a_heap_begin, a_heap_begin,
+    a_return_stack_begin, a_return_stack_begin, a_return_stack_end,
+    a_heap_array_size);
+};

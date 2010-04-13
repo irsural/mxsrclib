@@ -351,7 +351,8 @@ void getpacket()
   IRS_HIBYTE(rxlen_hard_cur) = readrtl(RDMAPORT);
   
   #ifdef RTL_DBG_MSG
-  IRS_LIB_DBG_RAW_MSG("rtl - receive size = " << rxlen_hard_cur << endl);
+  IRS_LIB_DBG_RAW_MSG(irsm("rtl - receive size = ") << rxlen_hard_cur);
+  IRS_LIB_DBG_RAW_MSG(endl);
   #endif //RTL_DBG_MSG
   
   if (rx_hard == 0) {
@@ -497,7 +498,7 @@ void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
 {
   #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   #ifdef RTL_DBG_MSG
-  IRS_LIB_DBG_RAW_MSG("rtl - bufs_size перед: " << bufs_size << endl);
+  IRS_LIB_DBG_RAW_MSG(irsm("rtl - bufs_size перед: ") << bufs_size << endl);
   #endif //RTL_DBG_MSG
   
   #ifdef IRS_LIB_DEBUG
@@ -524,7 +525,7 @@ void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
   rx_buf = rx_buf_data.data();
   
   #ifdef RTL_DBG_MSG
-  IRS_LIB_DBG_RAW_MSG("rtl - bufs_size после: " << bufs_size << endl);
+  IRS_LIB_DBG_RAW_MSG(irsm("rtl - bufs_size после: ") << bufs_size << endl);
   #endif //RTL_DBG_MSG
   #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   
@@ -553,7 +554,7 @@ irs_size_t tx_buf_size()
 void sendpacket(irs_u16 length, irs_u8 *ext_tx_buf)
 {
   #ifdef RTL_DBG_MSG
-  IRS_LIB_DBG_RAW_MSG("rtl - send size = " << length << endl);
+  IRS_LIB_DBG_RAW_MSG(irsm("rtl - send size = ") << length << endl);
   #endif //RTL_DBG_MSG
   
   #ifdef RTL_DISABLE_INT

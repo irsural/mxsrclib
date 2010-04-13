@@ -27,6 +27,10 @@ public:
   typedef int ident_type;
   typedef irs_size_t value_type;
   
+  enum {
+    heap_array_size_def = 10
+  };
+  
   virtual ~memory_checker_t();
   virtual irs_size_t range_param_begin(ident_type a_ident) = 0;
   virtual void range_param_begin(ident_type a_ident,
@@ -52,7 +56,17 @@ memory_checker_t* memory_checker_init(
   memory_checker_t::value_type a_heap_begin,
   memory_checker_t::value_type a_heap_end,
   memory_checker_t::value_type a_return_stack_begin,
-  memory_checker_t::value_type a_return_stack_end
+  memory_checker_t::value_type a_return_stack_end,
+  memory_checker_t::value_type a_heap_array_size = 
+    memory_checker_t::heap_array_size_def
+);
+memory_checker_t* memory_checker_avr_init(
+  memory_checker_t::value_type a_call_stack_begin,
+  memory_checker_t::value_type a_heap_begin,
+  memory_checker_t::value_type a_return_stack_begin,
+  memory_checker_t::value_type a_return_stack_end,
+  memory_checker_t::value_type a_heap_array_size = 
+    memory_checker_t::heap_array_size_def
 );
   
 } //namespace irs

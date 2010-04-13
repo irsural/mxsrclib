@@ -188,7 +188,7 @@ irs_u8 ip[4] = {0, 0, 0, 0};
 irs_u8 mac[6] = {0, 0, 0, 0, 0, 0};
 const irs_u8 ARPBUF_SIZE = 42;
 const irs_u8 ARPBUF_SENDSIZE = 60;
-const irs_u8 ICMPBUF_SIZE = 200;
+const irs_u8 ICMPBUF_SIZE = 100;
 #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
 irs_u8 arpbuf[ARPBUF_SENDSIZE];
 irs_u8 icmpbuf[ICMPBUF_SIZE];
