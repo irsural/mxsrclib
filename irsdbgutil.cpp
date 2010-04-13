@@ -1,5 +1,5 @@
 // Утилиты для отладки программы
-// Дата: 09.04.2010
+// Дата: 12.04.2010
 // Дата создания: 09.04.2010
 
 #include <irsdefs.h>
@@ -29,6 +29,7 @@ public:
   virtual value_type range_param_size(ident_type a_ident);
   virtual value_type range_param_cur_size(ident_type a_ident);
   virtual value_type range_param_rest(ident_type a_ident);
+  virtual void heap_array_size(value_type a_size);
   virtual void out_info(ostream* ap_strm);
   virtual void check();
 private:
@@ -104,11 +105,17 @@ public:
   virtual value_type range_param_size(ident_type a_ident);
   virtual value_type range_param_cur_size(ident_type a_ident);
   virtual value_type range_param_rest(ident_type a_ident);
+  virtual void heap_array_size(value_type a_size);
   virtual void out_info(ostream* ap_strm);
   virtual void check();
 private:
+  enum {
+    m_heap_array_max_size = 4096
+  };
+  
   vector<var_item_type> m_var_list;
   vector<char IRS_ICCAVR_FLASH*> m_ident_name_list;
+  value_type m_heap_array_size;
   
   value_type first_delta(ident_type a_ident);
   value_type second_delta(ident_type a_ident);
@@ -175,6 +182,9 @@ irs::default_memory_checker_t::value_type
 {
   return 0;
 }
+void irs::default_memory_checker_t::heap_array_size(value_type /*a_size*/)
+{
+}
 void irs::default_memory_checker_t::out_info(ostream* /*ap_strm*/)
 {
 }
@@ -186,7 +196,8 @@ void irs::default_memory_checker_t::check()
 // Проверка памяти для AVR
 irs::avr_memory_checker_t::avr_memory_checker_t():
   m_var_list(mcrpi_avr_size),
-  m_ident_name_list(mcrpi_avr_size)
+  m_ident_name_list(mcrpi_avr_size),
+  m_heap_array_size(1)
 {
   m_var_list[mcrpi_avr_return_stack] = var_item_type(
     memory_checker_param_t(), second_delta, first_delta);
@@ -317,6 +328,11 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm, ident_type a_ident)
   out_hex_0x(ap_strm, rest);
   (*ap_strm) << endl;
 }
+void irs::avr_memory_checker_t::heap_array_size(value_type a_size)
+{
+  IRS_LIB_ASSERT((a_size != 0) && (a_size < m_heap_array_max_size));
+  m_heap_array_size = a_size;
+}
 void irs::avr_memory_checker_t::out_info(ostream* ap_strm)
 {
   (*ap_strm) << endl;
@@ -332,7 +348,8 @@ void irs::avr_memory_checker_t::check()
     static_cast<value_type>(SP);
   m_var_list[mcrpi_avr_call_stack].param.current = 
     static_cast<value_type>(*reinterpret_cast<irs_u16*>(0x1C));
-  auto_ptr<irs_u8> p_heap_check_var(IRS_LIB_NEW_ASSERT(new irs_u8));
+  auto_ptr<irs_u8> p_heap_check_var(
+    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
   m_var_list[mcrpi_avr_heap].param.current = 
     reinterpret_cast<value_type>(p_heap_check_var.get());
   
@@ -353,4 +370,28 @@ irs::memory_checker_t* irs::memory_checker()
   static default_memory_checker_t memory_checker_obj;
   #endif //__ICCAVR__
   return &memory_checker_obj;
+}
+
+irs::memory_checker_t* irs::memory_checker_init(
+  memory_checker_t::value_type a_call_stack_begin,
+  memory_checker_t::value_type a_call_stack_end,
+  memory_checker_t::value_type a_heap_begin,
+  memory_checker_t::value_type a_heap_end,
+  memory_checker_t::value_type a_return_stack_begin,
+  memory_checker_t::value_type a_return_stack_end
+)
+{
+  irs::memory_checker()->range_param_begin(irs::mcrpi_avr_call_stack,
+    a_call_stack_begin);
+  irs::memory_checker()->range_param_end(irs::mcrpi_avr_call_stack,
+    a_call_stack_end);
+  irs::memory_checker()->range_param_begin(irs::mcrpi_avr_heap,
+    a_heap_begin);
+  irs::memory_checker()->range_param_end(irs::mcrpi_avr_heap,
+    a_heap_end);
+  irs::memory_checker()->range_param_begin(irs::mcrpi_avr_return_stack,
+    a_return_stack_begin);
+  irs::memory_checker()->range_param_end(irs::mcrpi_avr_return_stack,
+    a_return_stack_end);
+  return irs::memory_checker();
 }
