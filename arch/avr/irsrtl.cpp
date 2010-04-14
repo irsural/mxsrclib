@@ -155,33 +155,36 @@ void irs::rtl8019as_t::overrun()
 void irs::rtl8019as_t::recv_packet() 
 {
   write_rtl(cr, 0x1a);
-  irs_u8 byte = read_rtl(rdmaport);
-  byte = read_rtl(rdmaport);
-  byte = read_rtl(rdmaport);
+  
+  read_rtl(rdmaport);
+  read_rtl(rdmaport);
+  
   size_t recv_size_cur = 0;
-  IRS_LOBYTE(recv_size_cur) = byte;
-  byte = read_rtl(rdmaport);
-  IRS_HIBYTE(recv_size_cur) = byte;
+  IRS_LOBYTE(recv_size_cur) = read_rtl(rdmaport);
+  IRS_HIBYTE(recv_size_cur) = read_rtl(rdmaport);
+  
   if (m_recv_status == false) {
-    if (recv_size_cur > m_size_buf) {
-      for (irs_u16 i = 0; i < recv_size_cur; i++) {
-        byte = read_rtl(rdmaport);
-      }
-    } else {
+    if (recv_size_cur <= m_size_buf) {
       m_recv_buf_size = recv_size_cur;
+      IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
+        (m_recv_buf_size <= m_recv_buf.size()));
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
       m_recv_status = true;
+    } else {
+      for (irs_u16 i = 0; i < recv_size_cur; i++) {
+        read_rtl(rdmaport);
+      }
     }
   } else {
     for (irs_u16 i = 0; i < recv_size_cur; i++) {
-      byte = read_rtl(rdmaport);
+      read_rtl(rdmaport);
     }
   }
-  if ((byte&rdc) != 64) {
+  /*if ((byte&rdc) != 64) {
     byte = read_rtl(isr);
-  }
+  }*/
   write_rtl(isr, 0xF5);
 }
 
@@ -197,7 +200,7 @@ void irs::rtl8019as_t::rtl_interrupt()
   irs_u8 byte = read_rtl(isr);
   if(byte&0x10) { //буфер приема переполнен
     //m_blink_19.set();
-    overrun(); 
+    overrun();
   }
   if(byte&0x01) { //получено без ошибок
     recv_packet();
@@ -207,7 +210,7 @@ void irs::rtl8019as_t::rtl_interrupt()
     m_send_status = false;
   }
   if (byte&0x2) { //данные отправлены без ошибок
-    m_blink_19.set(); 
+    m_blink_19();
   }
 
   byte = read_rtl(bnry);
@@ -336,7 +339,8 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   }
   #endif //IRS_LIB_CHECK
 
-  IRS_LIB_ASSERT(a_size < ETHERNET_PACKET_MAX);
+  IRS_LIB_ASSERT((a_size < ETHERNET_PACKET_MAX) && 
+    (a_size <= m_send_buf.size()));
   
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();

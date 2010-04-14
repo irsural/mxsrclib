@@ -217,17 +217,17 @@ private:
   //blink_t m_blink_2;
   blink_t m_blink_3;
   #endif //__ICCAVR__
+  #ifdef TESTING
+  mxip_t m_cur_dest_ip;
+  irs_u16 m_cur_dest_port;
+  irs_u16 m_cur_local_port;
+  #endif // TESTING
   bool m_send_arp;
   bool m_send_icmp;
   bool m_send_udp;
   bool m_recv_arp;
   bool m_recv_icmp;
   set<size_t> m_port_list;
-  #ifdef TESTING
-  mxip_t m_cur_dest_ip;
-  irs_u16 m_cur_dest_port;
-  irs_u16 m_cur_local_port;
-  #endif // TESTING
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);

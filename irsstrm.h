@@ -359,7 +359,7 @@ private:
 public:
   ostream_format_save_t(ostream *ap_ostream = IRS_NULL):
     mp_ostream(ap_ostream),
-    m_format_flags(0),
+    m_format_flags(ios::fmtflags()),
     m_width(0),
     m_precision(0)
   {
