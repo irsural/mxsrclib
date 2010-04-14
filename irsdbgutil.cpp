@@ -408,10 +408,11 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
 irs::avr_memory_checker_t::value_type irs::avr_memory_checker_t::param(
   ident_type a_ident)
 {
-  return 0;
+  return (this->*m_param_list[a_ident].get_method)(a_ident);
 }
 void irs::avr_memory_checker_t::param(ident_type a_ident, value_type a_value)
 {
+  (this->*m_param_list[a_ident].set_method)(a_ident, a_value);
 }
 void irs::avr_memory_checker_t::heap_array_size(value_type a_size)
 {
