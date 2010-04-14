@@ -1,10 +1,15 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 3.12.2009
+// Дата: 14.04.2010
+// Дата создания: 3.12.2009
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
 
 #include <cbsysutils.h>
+
+#include <irsfinal.h>
 
 // Запрос версии файла
 bool irs::cbuilder::get_file_version(

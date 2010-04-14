@@ -9,8 +9,11 @@
 #define MESSUP_VERSION 0x0001
 
 #include <irsdefs.h>
+
 #include <measdef.h>
 #include <mxifa.h>
+
+#include <irsfinal.h>
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30

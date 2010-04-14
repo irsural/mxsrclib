@@ -1,18 +1,22 @@
 // Коммуникационные потоки
 // Для Borland C++ Builder
-// Дата 27.03.2009
+// Дата: 14.04.2010 
+// Дата создания: 27.03.2009
 
 #ifndef hardflowH
 #define hardflowH
 
-#include <vector>
+#include <irsdefs.h>
 
 #include <winsock2.h>
 
+#include <irscpp.h>
 #include <hardflowg.h>
 #include <irsstd.h>
 #include <timer.h>
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 /* com port
 Описание структуры DCB

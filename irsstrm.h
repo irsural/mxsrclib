@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 12.04.2010
+// Дата: 13.04.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -11,10 +11,11 @@
 
 #include <irscpp.h>
 //#include <irsstd.h>
-#include <irsdefs.h>
 #include <mxdata.h>
 #include <irsstrmstd.h>
 #include <irsconsole.h>
+
+#include <irsfinal.h>
 
 #ifdef __ICCAVR__
 #include <ioavr.h>

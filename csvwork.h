@@ -1,17 +1,17 @@
 // Работа с csv-файлами
-// Дата: 17.09.2009
+// Дата: 13.04.2010
 
 #ifndef csvworkH
 #define csvworkH
+
+#include <irsdefs.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <irsstd.h>
 #include <irstable.h>
-//#include <irscpp.h>
 
-//#include <irsdefs.h>
-//#include <irserror.h>  
+#include <irsfinal.h>
 
 //---------------------------------------------------------------------------
 // typedef-определения

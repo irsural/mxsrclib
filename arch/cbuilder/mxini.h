@@ -1,8 +1,11 @@
 // Работа с ini-файлами
-// Дата: 27.08.2009
+// Дата: 14.04.2010
+// Дата создания: 27.08.2009
 
 #ifndef mxiniH
 #define mxiniH
+
+#include <irsdefs.h>
 
 #include <inifiles.hpp>
 #include <stdctrls.hpp>
@@ -13,7 +16,9 @@
 #include <SysUtils.hpp>
 
 #include <irscpp.h>
-#include <irsstd.h>        
+#include <irsstd.h>
+
+#include <irsfinal.h>        
 
 namespace irs {
 

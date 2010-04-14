@@ -1,13 +1,19 @@
 // Стандартаная библиотека ИРС локальная часть
 // Для Borland C++ Builder
-// Дата: 2.09.2009
+// Дата: 14.04.2010
+// Дата создания: 2.09.2009
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
 
-#include <irsstdl.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <irsstdl.h>
+
+#include <irsfinal.h>
 //---------------------------------------------------------------------------
 // Вспомогательный класс драйвера клавиатуры С++ Builder
 class mxkdb_keystate_t: TObject

@@ -1,9 +1,11 @@
 // Утилиты ИРС
-// Дата: 12.03.2010
+// Дата: 14.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
 #define irssysutilsH
+
+#include <irsdefs.h>
 
 #ifdef IRS_WIN32
 #include <Rpc.h>
@@ -16,8 +18,7 @@
 #include <irserror.h>
 #include <irscpp.h>
 
-#undef min
-#undef max
+#include <irsfinal.h>
 
 namespace irs {
 

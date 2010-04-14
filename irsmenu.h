@@ -1,13 +1,17 @@
 // Текстовое меню
-// Дата: 15.09.2009
+// Дата: 14.04.2010
+// Ранняя дата: 15.09.2009
 
 #ifndef IRSMENUH
 #define IRSMENUH
 
 #include <irsdefs.h>
+
 #include <timer.h>
 //#include <irslcd.h>
 #include <irsstd.h>
+
+#include <irsfinal.h>
 
 #define CUR_BLINK 500//ms
 #define EDIT_LINE 2

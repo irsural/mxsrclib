@@ -1,11 +1,14 @@
 // Работа с таймером
-// Дата: 10.09.2009
+// Дата: 13.04.2010
 
 #ifndef TIMERH
 #define TIMERH
 
 #include <irsdefs.h>
+
 #include <counter.h>
+
+#include <irsfinal.h>
 
 // Преобразование времени в секундах в виде отношения числителя
 // _TIME_NUM_ к знаменателю _TIME_DENOM_ в масштаб счетчика

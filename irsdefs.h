@@ -1,15 +1,27 @@
 // Глобальные объявления типов
-// Дата: 12.04.2010
+// Дата: 13.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
 
-#include <limits.h>
-#include <stddef.h>
-
 // Деректива throw
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
+
+// Определения платформы
+#if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
+  (defined(_MSC_VER) && defined(_WIN32))
+#define IRS_WIN32 // Платформа Win32 API
+#elif defined(__GNUC__)
+#define IRS_LINUX // Платформа Linux
+#endif // Определения платформы
+
+#ifdef IRS_WIN32
+#include <winsock2.h>
+#endif // __WIN32__
+
+#include <limits.h>
+#include <stddef.h>
 
 #include <lirsdefs.h>
 
@@ -44,14 +56,6 @@ typedef double irs_float64;
 #define IRS_UNICODE
 #endif //compilers
 #endif //IRS_UNICODE_GLOBAL
-
-// Определения платформы
-#if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
-  (defined(_MSC_VER) && defined(_WIN32))
-#define IRS_WIN32 // Платформа Win32 API
-#elif defined(__GNUC__)
-#define IRS_LINUX // Платформа Linux
-#endif // Определения платформы
 
 // Возможности компиляторов
 // __ICCAVR__ - Компилятор IAR для AVR

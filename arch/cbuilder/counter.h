@@ -1,13 +1,17 @@
 // Модуль счетчика
 // C++ Builder
 // Используем встроенный счетчик процессора
-// Дата: 14.09.2009
+// Дата: 14.04.2010
+// Дата создания: 14.09.2009
 
 #ifndef COUNTERH
 #define COUNTERH
 
 #include <irsdefs.h>
+
 #include <irslimits.h>
+
+#include <irsfinal.h>
 
 // Тип основного счетчика
 typedef irs_i64 basic_counter_t;

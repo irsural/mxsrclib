@@ -1,12 +1,17 @@
 // MTL version 2.0
-// Дата: 6.05.2009
+// Дата: 14.04.2010
 
 #ifndef irsmatrixH
 #define irsmatrixH
 
+#include <irsdefs.h>
+
 #include <math.h>
 #include <vector>
+
 #include <irsstdg.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

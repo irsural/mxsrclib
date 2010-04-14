@@ -1,13 +1,16 @@
 // Общие утилиты mxnet
-// Дата: 16.04.2008
+// Дата: 13.04.2010
 
 #ifndef MXNETRH
 #define MXNETRH
 
 #include <irsdefs.h>
+
 #include <mxifa.h>
 #include <mxnetd.h>
 #include <mxnetda.h>
+
+#include <irsfinal.h>
 
 namespace irs {
   

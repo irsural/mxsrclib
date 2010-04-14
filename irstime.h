@@ -1,13 +1,16 @@
 // Работа со временем
-// Дата: 26.09.2009
+// Дата: 13.04.2010
 // Ранняя дата: 10.07.2009
 
 #ifndef irstimeH
 #define irstimeH
 
 #include <irsdefs.h>
+
 #include <irsstring.h>
 #include <timer.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

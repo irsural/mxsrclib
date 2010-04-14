@@ -1,11 +1,14 @@
 // Локализация ИРС
-// Дата: 12.10.2009
+// Дата: 14.04.2010
 
 #ifndef irslocaleH
 #define irslocaleH
 
-#include <irscpp.h>
 #include <irsdefs.h>
+
+#include <irscpp.h>
+
+#include <irsfinal.h> 
 
 namespace irs {
 

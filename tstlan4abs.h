@@ -1,10 +1,15 @@
 // Тест сети 4 - абстрактный базовый класс
-// Дата: 14.05.2008
+// Дата: 14.04.2010
+// Дата создания: 14.05.2008
 
 #ifndef tstlan4absH
 #define tstlan4absH
 
+#include <irsdefs.h>
+
 #include <irsstd.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

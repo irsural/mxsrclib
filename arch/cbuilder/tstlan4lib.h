@@ -1,17 +1,20 @@
 // Тест сети 4 - библиотека
-// Дата: 17.09.2009
+// Дата: 14.04.2010
+// Дата создания: 17.09.2009
 
 #ifndef tstlan4libH
 #define tstlan4libH
 
-//#include <Forms.hpp>
-#include <vcl.h>
+#include <irsdefs.h>
 
+//#include <Forms.hpp>
 #include <tstlan4abs.h>
 #include <irsstd.h>
 #include <timer.h>
 #include <mxini.h>
 #include <MxChart.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

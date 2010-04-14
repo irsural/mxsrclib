@@ -4,10 +4,13 @@
 #ifndef irsmathH
 #define irsmathH
 
+#include <irsdefs.h>
+
 #include <irsstdg.h>
 #include <math.h>
 #include <irscpp.h>
 
+#include <irsfinal.h>
 
 namespace irs {
 

@@ -1,17 +1,21 @@
 // Протокол MxNetC (Max Network Client)
-// Дата: 25.05.2008
+// Дата: 13.04.2010
 
 //---------------------------------------------------------------------------
 #ifndef mxnetcH
 #define mxnetcH
 
 #include <irsdefs.h>
+
 #include <mxnetd.h>
 #include <mxnetda.h>
 #include <mxifa.h>
 #include <timer.h>
 #include <irsstd.h>
 #include <mxnetr.h>
+
+#include <irsfinal.h>
+
 //---------------------------------------------------------------------------
 // Версия (<старший байт>.<младший байт>)
 #define MXNC_VERSION 0x0001

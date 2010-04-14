@@ -1,7 +1,15 @@
+// Rect
+// Дата: 14.04.2010
+// Дата создания: 15.04.2010
+
 #ifndef IRSRECTH
 #define IRSRECTH
 
+#include <irsdefs.h>
+
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

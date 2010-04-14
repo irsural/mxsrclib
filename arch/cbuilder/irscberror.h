@@ -1,11 +1,16 @@
 // Обработка ошибок
 // С++ Builder
-// Дата: 17.10.2009
+// Дата: 14.04.2010
+// Дата создания: 17.10.2009
 
 #ifndef irscberrorH
 #define irscberrorH
 
+#include <irsdefs.h>
+
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

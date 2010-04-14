@@ -2,10 +2,16 @@
 // Дата: 10.04.2010
 // Ранняя дата: 19.10.2009
 
-//  Component Variant
-//  Data: 19.10.2009
+#include <irsdefs.h>
+
+#ifdef __BORLANDC__
+# include <vcl.h>
+# pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irsvariant.h>
+
+#include <irsfinal.h>
 
 #ifndef __WATCOMC__
 
@@ -1316,6 +1322,162 @@ bool irs::variant::variant_t::is_type_number(var_type_t a_var_type)
   }
   return is_type_num;
 }
+
+// class var_type_converter_t
+irs::variant::var_type_converter_t::var_type_converter_t():
+  m_table_var_type_and_str(),
+  m_table_str_and_var_type()
+{
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_unknown, irst("var_type_unknown")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unknown"), var_type_unknown));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_bool, irst("var_type_bool")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_bool"), var_type_bool));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_char, irst("var_type_char")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_char"), var_type_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_singned_char, irst("var_type_singned_char")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_singned_char"), var_type_singned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_unsigned_char, irst("var_type_unsigned_char")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_int, irst("var_type_int")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_unsigned_int, irst("var_type_unsigned_int")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_long, irst("var_type_long")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_unsigned_long, irst("var_type_unsigned_long")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_float, irst("var_type_float")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_float"), var_type_float));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_double, irst("var_type_double")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_double"), var_type_double));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_long_double, irst("var_type_long_double")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_long_double"), var_type_long_double));
+
+  #ifdef IRSDEFS_LONG_LONG
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_long_long, irst("var_type_long_long")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_long_long"), var_type_long_long));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_unsigned_long_long,
+      irst("var_type_unsigned_long_long")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_unsigned_long_long"),
+      var_type_unsigned_long_long));
+  #endif // IRSDEFS_LONG_LONG
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_void_ptr, irst("var_type_void_ptr")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_void_ptr"), var_type_void_ptr));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_const_void_ptr, irst("var_type_const_void_ptr")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_const_void_ptr"), var_type_const_void_ptr));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_string, irst("var_type_string")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_string"), var_type_string));
+
+  m_table_var_type_and_str.insert(
+    make_pair(var_type_array, irst("var_type_array")));
+  m_table_str_and_var_type.insert(
+    make_pair(irst("var_type_array"), var_type_array));
+}
+
+void irs::variant::var_type_converter_t::to_str(
+  const var_type_t a_var_type, string_type* ap_var_type_str)
+{
+  table_var_type_and_str_const_iterator var_type_it =
+    m_table_var_type_and_str.find(a_var_type);
+  if (var_type_it != m_table_var_type_and_str.end()) {
+    *ap_var_type_str = var_type_it->second;
+  } else {
+    IRS_LIB_ASSERT_MSG(irsm("Неучтенный тип"));
+  }
+}
+
+bool irs::variant::var_type_converter_t::to_type(
+  const string_type& a_var_type_str, var_type_t* ap_var_type)
+{
+  bool convert_success = true;
+  table_str_and_var_type_const_iterator var_type_str_it =
+    m_table_str_and_var_type.find(a_var_type_str);
+  if (var_type_str_it != m_table_str_and_var_type.end()) {
+    *ap_var_type = var_type_str_it->second;
+  } else {
+    convert_success = false;
+  }
+  return convert_success;
+}
+
+#ifdef __BORLANDC__
+
+/*void irs::variant::variant_to_tree_view(
+  const irs::variant::variant_t& a_variant,
+  TTreeView* ap_tree_view,
+  TTreeNode* ap_tree_node)
+{
+  typedef irs::variant::sizens_t size_type;
+  typedef irs::variant::stringns_t string_type;
+  var_type_converter_t var_type_converter;
+  string_type var_type_str;
+  var_type_converter.to_str(a_variant.type(), &var_type_str);
+  TTreeNode* p_new_node =
+    ap_tree_view->Items->AddChildFirst(ap_tree_node, var_type_str.c_str());
+  if (a_variant.type() == irs::variant::var_type_array) {
+    const size_type array_size = a_variant.size();
+    for (size_type elem_i = 0; elem_i < array_size; elem_i++) {
+      variant_to_tree_view(a_variant[elem_i], ap_tree_view, p_new_node);
+    }
+  } else {
+    irs::variant::variant_t var = a_variant;
+    if (var.convert_to(irs::variant::var_type_string)) {
+      ap_tree_view->Items->AddChildFirst(p_new_node, var.as_string().c_str());
+    } else {
+      // Невозможно преобразовать в строку
+    }
+  }
+}*/
+
+#endif // __BORLANDC__
 
 #ifdef IRS_LIB_DEBUG
 void irs::variant::test_variant()

@@ -13,6 +13,8 @@
 // что недопустимо по стандарту C++
 //#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
+#include <irsdefs.h>
+
 #include <math.h>
 
 #include <irsstdg.h>
@@ -21,6 +23,8 @@
 #include <irscpp.h>
 #include <irslocale.h>
 #include <irssysutils.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

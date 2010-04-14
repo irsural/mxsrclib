@@ -1,12 +1,16 @@
 // Аналоговый ввод-вывод
-// Дата: 4.09.2009
+// Дата: 14.04.2010
 
 #ifndef irsadcH
 #define irsadcH
 
+#include <irsdefs.h>
+
 #include <irsspi.h>
 #include <irsstd.h>
 #include <irsgpio.h>
+
+#include <irsfinal.h>
 
 namespace irs
 {

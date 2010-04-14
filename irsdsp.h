@@ -1,5 +1,5 @@
 // Цифровая обработка сигналов
-// Дата: 20.09.2009
+// Дата: 13.04.2010
 // Ранняя дата: 27.08.2009
 
 #ifndef irsdspH
@@ -7,9 +7,12 @@
 
 //#define NEW
 
-#include <irscpp.h>
 #include <irsdefs.h>
+
+#include <irscpp.h>
 #include <irsstd.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

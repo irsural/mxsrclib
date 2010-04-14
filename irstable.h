@@ -1,9 +1,11 @@
 // Абстракция таблицы Лящова Максима
-// Дата: 15.03.2010
+// Дата: 14.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef tablegH
 #define tablegH
+
+#include <irsdefs.h>
 
 #include <irscpp.h>
 #include <irsstdg.h>
@@ -11,6 +13,8 @@
 #include <irsmath.h>
 #include <irssysutils.h>
 #include <irsmatrix.h>
+
+#include <irsfinal.h>
 //---------------------------------------------------------------------------
 
 namespace irs {

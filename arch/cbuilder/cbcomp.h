@@ -1,16 +1,21 @@
 // Компоненты
 // С++ Builder
-// Дата 10.12.2008
+// Дата: 14.04.2010
+// Дата создания: 10.12.2008
 
 #ifndef cbcompH
 #define cbcompH
 
-#include <vcl.h>
+//#include <vcl.h>
+#include <irsdefs.h>
 
 #include <windows.h>
+#include <StdCtrls.hpp>
 
 #include <irsstdg.h>
 #include <mxdata.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

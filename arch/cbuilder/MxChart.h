@@ -1,19 +1,23 @@
 // Построение графиков
 // C++ Builder
-// Дата: 8.09.2008
+// Дата: 14.04.2010
+// Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
 #ifndef MxChartH
 #define MxChartH
 //---------------------------------------------------------------------------
 //#include <Classes.hpp>
 //#include <Graphics.hpp>
-#include <vcl.h>
+
+#include <irsdefs.h>
 
 #include <MxBase.h>
-#include <irsstd.h>
-#include <irsdefs.h>
-#include <irscpp.h>
 #include <limits> // Отсутствует в IAR
+
+#include <irsstd.h>
+#include <irscpp.h>
+
+#include <irsfinal.h>
 
 #define CHARTRANGE(Chart) BeginChartRange(Chart, 0), EndChartRange(Chart, 0)
 #define CHARTRANGEL(Chart) BeginChartRange(Chart, -1), EndChartRange(Chart, -1)

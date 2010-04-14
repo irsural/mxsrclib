@@ -1,15 +1,18 @@
 // Клиент и сервер modbus
 // Дата создания: 7.02.2008
-// Дата последнего изменения: 12.03.2010
+// Дата последнего изменения: 14.04.2010
 
 #ifndef irsmbusH
 #define irsmbusH
+
+#include <irsdefs.h>
 
 #include <mxifa.h>
 #include <irsstd.h>
 #include <irscpp.h>
 #include <mxdata.h>
-#include <irsdefs.h>
+
+#include <irsfinal.h>
 
 #ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
 # if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)

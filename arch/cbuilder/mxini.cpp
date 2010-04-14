@@ -1,5 +1,8 @@
 // Работа с ini-файлами
-// Дата: 10.09.2009
+// Дата: 14.04.2010
+// Дата создания: 10.09.2009
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
@@ -7,7 +10,9 @@
 
 #include <cbsysutils.h>
 
-#include "mxini.h"
+#include <mxini.h>
+
+#include <irsfinal.h>
 //---------------------------------------------------------------------------
 // Работа с ini-файлами
 

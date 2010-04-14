@@ -13,9 +13,13 @@
 #ifndef irstreeH
 #define irstreeH
 
+#include <irsdefs.h>
+
 #include <irscpp.h>
 #include <mxdata.h>
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 #ifdef IRS_LIB_DEBUG
 // Включение отладочного режима компонента

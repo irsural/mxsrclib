@@ -1,11 +1,16 @@
 // Компоненты
 // С++ Builder
-// Дата 19.11.2008
+// Дата: 14.04.2010
+// Дата создания: 14.11.2008
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
 
 #include <cbcomp.h>
+
+#include <irsfinal.h>
 
 int irs::cbuilder::combo_box_find_item(
   TComboBox *a_control, const String &a_name)

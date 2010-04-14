@@ -1,5 +1,5 @@
 // Свойства
-// Дата: 20.09.2009
+// Дата: 14.04.2010
 // Ранняя дата: 17.08.2009
 
 #ifndef irspropH
@@ -7,7 +7,11 @@
 
 #if !defined(__ICCAVR__) && !defined(__WATCOMC__) && !defined(_MSC_VER)
 
+#include <irsdefs.h>
+
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 //#ifdef NOP
 namespace irs {

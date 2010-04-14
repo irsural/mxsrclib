@@ -1,8 +1,11 @@
 // Работа с таймером
-// Дата 18.07.2008
+// Дата 13.04.2010
+
+#include <irsdefs.h>
 
 #include <timer.h>
-#include <irsdefs.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

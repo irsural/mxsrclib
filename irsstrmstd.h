@@ -1,13 +1,16 @@
 // Потоки ввода/вывода ИРС из irsstd
-// Дата: 27.09.2009
+// Дата: 13.04.2010
 // Дата создания: 27.09.2009
 
 #ifndef IRSSTRMSTDH
 #define IRSSTRMSTDH
 
 #include <irsdefs.h>
+
 #include <irscpp.h>
 #include <irsconsolestd.h>
+
+#include <irsfinal.h>
 
 // класс буфер
 class irs_strm_buf: public streambuf

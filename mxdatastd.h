@@ -1,12 +1,15 @@
 // Стандартаная библиотека ИРС, класс mxdata_t
-// Дата: 27.09.2009
+// Дата: 13.04.2010
 // Дата создания: 26.09.2009
 
 #ifndef MXDATASTDH
 #define MXDATASTDH
 
 #include <irsdefs.h>
+
 #include <irslimits.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

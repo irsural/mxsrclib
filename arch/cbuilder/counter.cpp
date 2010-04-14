@@ -1,12 +1,19 @@
 // Модуль счетчика
 // C++ Builder
 // Используем встроенный счетчик процессора
-// Дата: 14.09.2009
+// Дата: 14.04.2010
+// Дата создания: 14.09.2009
+
+#include <irsdefs.h>
 
 #include <windows.h>
+
+#include <limits>
+
 #include <time.h>
 #include <counter.h>
-#include <limits>
+
+#include <irsfinal.h>
 
 // Максимальное время которое можно измерить
 counter_t COUNTER_MAX = std::numeric_limits<counter_t>::max();

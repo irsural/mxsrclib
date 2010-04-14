@@ -1,11 +1,15 @@
 // Класс для расширения количества переменнных в mxnet "Воронка"
-// Дата 25.09.2008
+// Дата 13.00.2010
 
 #ifndef irsfunnelH
 #define irsfunnelH
 
+#include <irsdefs.h>
+
 #include <irsstd.h>
 #include <timer.h>
+
+#include <irsfinal.h>
 
 namespace irs
 {

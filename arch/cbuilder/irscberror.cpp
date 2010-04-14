@@ -1,6 +1,9 @@
 // Обработка ошибок
 // С++ Builder
-// Дата 17.10.2009
+// Дата: 14.04.2010
+// Дата создания: 17.10.2009
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
@@ -9,6 +12,8 @@
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irscberror.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

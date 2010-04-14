@@ -1,9 +1,12 @@
 // Стандартаная библиотека ИРС локальная часть
 // Для Borland C++ Builder
-// Дата: 10.04.2009
+// Дата: 14.04.2010
+// Дата создания: 10.04.2009
 
 #ifndef irsstdlH
 #define irsstdlH
+
+#include <irsdefs.h>
 
 #include <winsock2.h>
 
@@ -13,10 +16,11 @@
 #include <StdCtrls.hpp>
 #include <ExtCtrls.hpp>
 
-#include <irsdefs.h>
 #include <irsstdg.h>
 #include <timer.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 // Преобразование числа double в строку в %g формате
 //irs_u8 *irs_gcvt(double value, int ndigits, irs_u8 *buffer);

@@ -1,9 +1,12 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Для Borland C++ Builder
 // Max Interface Abstraction
-// Дата: 18.03.2009
+// Дата: 14.04.2010
+// Дата создания: 18.03.2009
 
 #define MXIFA_NEW
+
+#include <irsdefs.h>
 
 #include <string.h>
 
@@ -18,6 +21,8 @@
 extern "C" {
 #include <Decl-32.h>
 }
+
+#include <irsfinal.h>
 
 // Таймаут открытия канала
 #define TIMEOUT_CHANNEL TIME_TO_CNT(1, 1)

@@ -1,12 +1,16 @@
 // Стандартаная библиотека ИРС
-// Дата 25.11.2007
+// Дата: 14.04.2010
+// Ранняя дата: 25.11.2007
 
 #ifndef irsstdH
 #define irsstdH
 
-#include <irsstdl.h>
 #include <irsdefs.h>
+
+#include <irsstdl.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 // Класс для вывода отладочной информации
 class mxconsole_t

@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 12.02.2009
+// Дата: 13.04.2010
 
 #ifndef measmulH
 #define measmulH
@@ -7,14 +7,16 @@
 // Версия модуля measmul
 #define MESMUL_VERSION 0x0001
 
-#include <timer.h>
 #include <irsdefs.h>
+
+#include <timer.h>
 #include <measdef.h>
 #include <mxifa.h>
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irserror.h>
 
+#include <irsfinal.h>
 
 #if (MXIFA_VERSION < 0x0004)
 #error mxifa version incompatible. The version should be >= 0.4.

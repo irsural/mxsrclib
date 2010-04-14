@@ -1,15 +1,18 @@
 // Характеристики чисел
-// Дата: 12.11.2009
+// Дата: 13.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
 #define IRSLIMITSH
 
+#include <irsdefs.h>
+
 #include <float.h>
 #include <string.h>
 
-#include <irsdefs.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

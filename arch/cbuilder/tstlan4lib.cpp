@@ -1,5 +1,8 @@
 // Тест сети 4 - библиотека
-// Дата: 17.09.2009
+// Дата: 14.04.2010
+// Дата создания: 17.09.2009
+
+#include <irsdefs.h>
 
 #include <vcl.h>
 #pragma hdrstop
@@ -8,6 +11,8 @@
 #include <irstime.h>
 #include <MxBase.h>
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
   m_form_type(a_tstlan4.m_form_type),

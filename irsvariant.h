@@ -15,11 +15,23 @@
 
 #ifndef __WATCOMC__
 
+#include <irsdefs.h>
+
+/*#ifdef __WIN32__
+#include <winsock2.h>
+#endif // __WIN32__
+*/
+#ifdef __BORLANDC__
+# include <ComCtrls.hpp>
+#endif // __BORLANDC__
+
 #include <irscpp.h>
 #include <irsstd.h>
 #include <mxdata.h>
 #include <irserror.h>
 #include <irsstrdefs.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 
@@ -2303,6 +2315,34 @@ void binary_operation(
   binary_operation_helper(a_var_operation_type, a_first_var, a_second_var,
     ap_result, group_type());
 }
+
+class var_type_converter_t
+{
+public:
+  typedef sizens_t size_type;
+  typedef stringns_t string_type;  
+
+  typedef map<var_type_t, string_type> table_var_type_and_str_type;
+  typedef map<var_type_t, string_type>::const_iterator
+    table_var_type_and_str_const_iterator;
+  typedef map<string_type, var_type_t> table_str_and_var_type_type;
+  typedef map<string_type, var_type_t>::const_iterator
+    table_str_and_var_type_const_iterator;
+
+  var_type_converter_t();
+  void to_str(const var_type_t a_var_type, string_type* ap_var_type_str);
+  bool to_type(const string_type& a_var_type_str, var_type_t* ap_var_type);
+private:
+  table_var_type_and_str_type m_table_var_type_and_str;
+  table_str_and_var_type_type m_table_str_and_var_type;
+};
+
+#ifdef __BORLANDC__
+/*void variant_to_tree_view(
+  const variant_t& a_variant,
+  TTreeView* ap_tree_view,
+  TTreeNode* ap_tree_node = IRS_NULL);*/
+#endif // #ifdef __BORLANDC__
 
 #ifdef IRS_LIB_DEBUG
 void test_variant();

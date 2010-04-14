@@ -1,5 +1,6 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 9.09.2009
+// Дата: 14.04.2010
+// Дата создания: 9.09.2009
 
 #ifndef cbsysutilsH
 #define cbsysutilsH
@@ -9,6 +10,7 @@
 // в include-дереве файла OleCtnrs.hpp. В include-дереве sysvary.h отсутствует
 // необходимый файл utilcls.h
 #include <irsdefs.h>
+
 #if __BORLANDC__ < IRS_CPP_BUILDER6
 #include <utilcls.h>
 #endif //__BORLANDC__ < IRS_CPP_BUILDER6
@@ -23,6 +25,8 @@
 #include <irserror.h>
 #include <irsdefs.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

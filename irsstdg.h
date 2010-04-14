@@ -1,13 +1,14 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 27.09.2009
+// Дата: 13.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irsstdgH
 #define irsstdgH
 
+#include <irsdefs.h>
+
 #include <string.h>
 
-#include <irsdefs.h>
 #include <irscpp.h>
 #include <timer.h>
 #include <irsint.h>
@@ -16,6 +17,8 @@
 #include <irsconsolestd.h>
 #include <irsstrmstd.h>
 #include <irschartwin.h>
+
+#include <irsfinal.h>
 
 //typedef string std_string;
 

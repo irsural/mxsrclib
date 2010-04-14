@@ -1,14 +1,17 @@
 // Набор тестов
-// Дата: 24.09.2009
+// Дата: 13.04.2010
 // Дата создания: 20.09.2009
 
 #ifndef IRSTESTH
 #define IRSTESTH
 
 #include <irsdefs.h>
+
 #include <irscpp.h>
 #include <mxdata.h>
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

@@ -1,14 +1,15 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 26.02.2010
+// Дата: 13.04.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
 #define IRSSTRDEFSH
 
+#include <irsdefs.h>
+
 #include <string.h>
 
 #include <irscpp.h>
-#include <irsdefs.h>
 #include <irsstring.h>
 #include <irslimits.h>
 #include <irsexcept.h>
@@ -17,6 +18,8 @@
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #include <stdexcept>
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+#include <irsfinal.h>
 
 #ifdef IRS_UNICODE
 #define IRS_WIDE_FROM_TYPE_STR(str) (str)
