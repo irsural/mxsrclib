@@ -1,5 +1,5 @@
 // Утилиты для отладки программы
-// Дата: 12.04.2010
+// Дата: 14.04.2010
 // Дата создания: 09.04.2010
 
 #ifndef IRSDBGUTILH
@@ -22,6 +22,7 @@ enum mc_range_param_ident_avr_t {
 
 enum mc_param_ident_avr_t {
   mcpi_avr_interrupt,
+  mcpi_avr_out_time_s,
   mcpi_avr_size
 };
 

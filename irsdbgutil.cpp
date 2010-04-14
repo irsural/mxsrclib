@@ -1,5 +1,5 @@
 // Утилиты для отладки программы
-// Дата: 12.04.2010
+// Дата: 14.04.2010
 // Дата создания: 09.04.2010
 
 #include <irsdefs.h>
@@ -7,7 +7,9 @@
 #include <irsdbgutil.h>
 #include <irserror.h>
 #include <irsstrm.h>
+#ifdef __ICCAVR__
 #include <irsarchint.h>
+#endif //__ICCAVR__
 
 #include <irsfinal.h>
 
@@ -157,7 +159,8 @@ public:
   virtual void check();
 private:
   enum {
-    m_heap_array_max_size = 4096
+    m_heap_array_max_size = 4096,
+    m_out_time_s_def = 10
   };
   
   vector<range_param_type> m_range_param_list;
@@ -165,6 +168,7 @@ private:
   vector<char IRS_ICCAVR_FLASH*> m_ident_name_list;
   value_type m_heap_array_size;
   event_connect_t<this_type> m_check_event;
+  loop_timer_t m_out_timer;
   
   value_type first_delta(ident_type a_ident);
   value_type second_delta(ident_type a_ident);
@@ -175,6 +179,7 @@ private:
   value_type simple_param_get(ident_type a_ident);
   void simple_param_set(ident_type a_ident, value_type a_value);
   void interrupt_set(ident_type a_ident, value_type a_value);
+  void out_time_set(ident_type a_ident, value_type a_value);
 };
 #endif //__ICCAVR__
 
@@ -263,7 +268,8 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_param_list(mcpi_avr_size),
   m_ident_name_list(mcrpi_avr_size),
   m_heap_array_size(heap_array_size_def),
-  m_check_event(this, check)
+  m_check_event(this, check),
+  m_out_timer(make_cnt_s(m_out_time_s_def))
 {
   m_range_param_list[mcrpi_avr_return_stack] = range_param_type(
     memory_checker_range_param_t(), second_delta, first_delta);
@@ -273,6 +279,8 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
     memory_checker_range_param_t(), first_delta, second_delta);
   
   m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
+    simple_param_get, interrupt_set);
+  m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
     simple_param_get, simple_param_set);
   
   if (m_param_list[mcpi_avr_interrupt].param == mcp_avr_interrupt_timer0) {
@@ -421,11 +429,13 @@ void irs::avr_memory_checker_t::heap_array_size(value_type a_size)
 }
 void irs::avr_memory_checker_t::out_info(ostream* ap_strm)
 {
-  (*ap_strm) << endl;
-  for (ident_type ident = 0; ident < mcrpi_avr_size; ++ident) {
-    out_param(ap_strm, ident);
+  if (m_out_timer.check()) {
+    (*ap_strm) << endl;
+    for (ident_type ident = 0; ident < mcrpi_avr_size; ++ident) {
+      out_param(ap_strm, ident);
+    }
+    (*ap_strm) << endl;
   }
-  (*ap_strm) << endl;
 }
 void irs::avr_memory_checker_t::select_max(ident_type a_ident,
   irs_u16 a_value)
@@ -499,10 +509,15 @@ void irs::avr_memory_checker_t::interrupt_set(ident_type a_ident,
     }
   };
 }
+void irs::avr_memory_checker_t::out_time_set(ident_type a_ident,
+  value_type a_value)
+{
+  m_param_list[a_ident].param = a_value;
+  m_out_timer.set(make_cnt_s(static_cast<int>(a_value)));
+  m_out_timer.start();
+}
 void irs::avr_memory_checker_t::check()
 {
-  //irs_u8 call_stack_check_var = 0;
-  
   select_max(mcrpi_avr_return_stack, SP);
   
   irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
@@ -512,45 +527,6 @@ void irs::avr_memory_checker_t::check()
     IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
   select_max(mcrpi_avr_heap,
     reinterpret_cast<value_type>(p_heap_check_var.get()));
-  
-  #ifdef NOP
-  value_type& return_stack_current =
-    m_range_param_list[mcrpi_avr_return_stack].param.current;
-  value_type return_stack_current_prev = return_stack_current;
-  value_type return_stack_cur_size_prev = 
-    range_param_cur_size(mcrpi_avr_return_stack);
-  return_stack_current = static_cast<value_type>(SP);
-  value_type return_stack_cur_size = 
-    range_param_cur_size(mcrpi_avr_return_stack);
-  if (return_stack_cur_size_prev > return_stack_cur_size) {
-    return_stack_current = return_stack_current_prev;
-  }
-  
-  value_type& call_stack_current =
-    m_range_param_list[mcrpi_avr_call_stack].param.current;
-  value_type call_stack_current_prev = call_stack_current;
-  value_type call_stack_cur_size_prev = 
-    range_param_cur_size(mcrpi_avr_call_stack);
-  irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
-  call_stack_current = static_cast<value_type>(Y);
-  value_type call_stack_cur_size = 
-    range_param_cur_size(mcrpi_avr_call_stack);
-  if (call_stack_cur_size_prev > call_stack_cur_size) {
-    call_stack_current = call_stack_current_prev;
-  }
-
-  m_range_param_list[mcrpi_avr_call_stack].param.current =
-    static_cast<value_type>(Y);
-  auto_ptr<irs_u8> p_heap_check_var(
-    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
-  m_range_param_list[mcrpi_avr_heap].param.current = 
-    reinterpret_cast<value_type>(p_heap_check_var.get());
-  
-  IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* Y = "));
-  IRS_LIB_DBG_RAW_MSG((*(irs_u16*)0x1C) << endl << endl);
-  IRS_LIB_DBG_RAW_MSG(endl << endl << irsm("************* SP = "));
-  IRS_LIB_DBG_RAW_MSG(SP << endl << endl);
-  #endif //NOP
 }
 #endif //__ICCAVR__
 
