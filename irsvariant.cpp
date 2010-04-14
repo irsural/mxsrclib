@@ -1430,7 +1430,7 @@ void irs::variant::var_type_converter_t::to_str(
   if (var_type_it != m_table_var_type_and_str.end()) {
     *ap_var_type_str = var_type_it->second;
   } else {
-    IRS_LIB_ASSERT_MSG(irsm("Неучтенный тип"));
+    IRS_LIB_ASSERT_MSG("Неучтенный тип");
   }
 }
 
