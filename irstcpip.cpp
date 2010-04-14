@@ -797,8 +797,10 @@ void irs::simple_tcpip_t::tick()
       send_udp();
     }
   }
+  #ifdef __ICCAVR__
   if(!TCNT0) {
     static irs::blink_t blink_2(irs_avr_porte, 2);
     blink_2.set();
   }
+  #endif // __ICCAVR__
 }
