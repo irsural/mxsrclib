@@ -20,6 +20,16 @@ enum mc_range_param_ident_avr_t {
   mcrpi_avr_size
 };
 
+enum mc_param_ident_avr_t {
+  mcpi_avr_interrupt,
+  mcpi_avr_size
+};
+
+enum mc_param_avr_interrupt_t {
+  mcp_avr_interrupt_none,
+  mcp_avr_interrupt_timer0
+};
+
 // Базовый класс для проверки памяти
 class memory_checker_t
 {
@@ -44,6 +54,8 @@ public:
   virtual value_type range_param_size(ident_type a_ident) = 0;
   virtual value_type range_param_cur_size(ident_type a_ident) = 0;
   virtual value_type range_param_rest(ident_type a_ident) = 0;
+  virtual value_type param(ident_type a_ident) = 0;
+  virtual void param(ident_type a_ident, value_type a_value) = 0;
   virtual void heap_array_size(value_type a_size) = 0;
   virtual void out_info(ostream* ap_strm) = 0;
   virtual void check() = 0;
