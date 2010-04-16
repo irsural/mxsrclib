@@ -1,9 +1,12 @@
 // Обработка ошибок
-// Дата: 12.04.2010
+// Дата: 15.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
 #define IRSERRORH
+
+// Номер файла
+#define IRSERRORH_IDX 6
 
 #include <irsdefs.h>
 
@@ -12,6 +15,7 @@
 #include <irsint.h>
 #include <irstime.h>
 #include <irscpp.h>
+#include <irsstrdefs.h>
 
 #if defined(IRS_WIN32)
 // Standart Windows headers
@@ -27,7 +31,7 @@
 #ifdef __ICCAVR__
 #define irsm(cstr)\
   ""; { static char IRS_ICCAVR_FLASH dbg_msg_cstring[] = cstr;\
-  irs::mlog() << dbg_msg_cstring; } irs::mlog()
+  irs::mlog() << dbg_msg_cstring; } irs::mlog() << ""
 #else //__ICCAVR__
 #define irsm(cstr) cstr
 #endif //__ICCAVR__
@@ -85,24 +89,26 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #endif //__ICCAVR__
 
 
-#ifdef NOP //__ICCAVR__
+#ifdef IRS_LIB_FLASH_ASSERT
 #define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
-    static char IRS_ICCAVR_FLASH assert_expr_fstr[] = #assert_expr\
-    irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
-      irs::spec_assert(assert_expr_fstr, message));\
+    IRS_SPEC_CSTR_DECLARE(assert_expr_fstr, #assert_expr);\
+    IRS_SPEC_CSTR_DECLARE(file_fstr, __FILE__);\
+    IRS_SPEC_CSTR_DECLARE(message_fstr, message);\
+    irs::error_trans()->throw_error(error_code, file_fstr, __LINE__,\
+      irs::spec_assert(assert_expr_fstr, message_fstr));\
   }
-#else //__ICCAVR__
+#else //IRS_LIB_FLASH_ASSERT
 #define IRS_ASSERT_HELPER(error_code, assert_expr, message)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
       irs::spec_assert(#assert_expr, message));\
   }
-#endif //__ICCAVR__
+#endif //IRS_LIB_FLASH_ASSERT
 #define IRS_ASSERT(assert_expr)\
   {\
     if (!(assert_expr)) {\
-      IRS_ASSERT_HELPER(irs::ec_assert, assert_expr, 0);\
+      IRS_ASSERT_HELPER(irs::ec_assert, assert_expr, "");\
     }\
   }
 #define IRS_ASSERT_EX(assert_expr, msg)\
@@ -115,15 +121,43 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
   {\
     IRS_ASSERT_HELPER(irs::ec_assert, "Assert", msg);\
   }
-#define IRS_NEW_ASSERT(new_expr)\
+#ifdef IRS_LIB_FLASH_ASSERT
+#define IRS_NEW_ASSERT(new_expr, file_idx)\
+  (irs::new_assert(new_expr, file_idx, __LINE__))
+#else //IRS_LIB_FLASH_ASSERT
+#define IRS_NEW_ASSERT(new_expr, file_idx)\
   (irs::new_assert(new_expr, __FILE__, __LINE__))
+#endif //IRS_LIB_FLASH_ASSERT
 
-
+#ifdef IRS_LIB_FLASH_ASSERT
+#define IRS_ERROR_HELPER(error_code, spec_data)\
+  {\
+    const void* message_spec = IRS_NULL;\
+    if (sizeof(char IRS_ICCAVR_FLASH*) == sizeof(void*)) {\
+      IRS_SPEC_CSTR_DECLARE(message_fstr, spec_data);\
+      message_spec = reinterpret_cast<const void*>(message_fstr);\
+    } else {\
+      irs::mlog() << irsm("Несоответствие размеров указателя специального ");\
+      irs::mlog() << irsm("типа C-строки (char IRS_ICCAVR_FLASH*) и");\
+      irs::mlog() << irsm("стандартного (const char*) в макросе ");\
+      irs::mlog() << irsm("IRS_ERROR_HELPER\n");\
+      irs::mlog() << irsm("Текст сообщения: ") << irsm(spec_data);\
+      irs::mlog() << irsm("\nДалее следует вывод сообщения об ошибке ");\
+      irs::mlog() << irsm("без этого сообщения...\n") << endl;\
+      IRS_SPEC_CSTR_DECLARE(empty_fstr, "");\
+      message_spec = reinterpret_cast<const void*>(empty_fstr);\
+    }\
+    IRS_SPEC_CSTR_DECLARE(file_fstr, __FILE__);\
+    irs::error_trans()->throw_error(error_code, file_fstr, __LINE__,\
+      message_spec);\
+  }
+#else //IRS_LIB_FLASH_ASSERT
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
     irs::error_trans()->throw_error(error_code, __FILE__, __LINE__,\
       static_cast<const void*>(spec_data));\
   }
+#endif //IRS_LIB_FLASH_ASSERT
 #define IRS_ERROR(error_code, msg)\
   {\
     IRS_ERROR_HELPER(error_code, msg);\
@@ -135,6 +169,7 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
     }\
   }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
+
 #define IRS_DBG_RAW_MSG(msg)\
   {\
     irs::mlog() << msg;\
@@ -178,7 +213,8 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
-#define IRS_LIB_NEW_ASSERT(new_expr) IRS_NEW_ASSERT(new_expr)
+#define IRS_LIB_NEW_ASSERT(new_expr, file_idx)\
+  IRS_NEW_ASSERT(new_expr, file_idx)
 
 #define IRS_LIB_ERROR(error_code, msg) IRS_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)\
@@ -199,7 +235,7 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ASSERT_MSG(msg)
-#define IRS_LIB_NEW_ASSERT(new_expr) new_expr
+#define IRS_LIB_NEW_ASSERT(new_expr, file_idx) new_expr
 
 #define IRS_LIB_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
@@ -221,40 +257,39 @@ namespace irs {
 // Тип для кодов ошибок
 typedef irs_u16 error_code_t;
 
-// Специфические данные для утвердений в error_trans_base_t
-struct et_spec_assert_t
-{
-  // Утверждение
-  const char *assert_str;
-  // Сообщение
-  const char *message;
-};
-
 // Стандартный код ошибки (в ap_spec_data содержится сообщение в виде char*)
 const error_code_t ec_standard = 0;
 // Код ошибки для утверждений (ap_spec_data типа et_spec_assert_t*)
 const error_code_t ec_assert = 1;
 // Код фатальной ошибки (ap_spec_data типа char*)
 const error_code_t ec_fatal_error = 2;
+// Код ошибки для утверждений оператора new (ap_spec_data типа int*)
+const error_code_t ec_new_assert = 3;
 // Пользовательские коды ошибок
-const error_code_t ec_user = 3;
+const error_code_t ec_user = 4;
 
 // Приемо-передатчик ошибок (Интерфейс)
 class error_trans_base_t
 {
 public:
+  #ifdef IRS_LIB_FLASH_ASSERT
+  typedef char IRS_ICCAVR_FLASH* cstr_type;
+  #else //IRS_LIB_FLASH_ASSERT
+  typedef const char* cstr_type;
+  #endif //IRS_LIB_FLASH_ASSERT
+  
   virtual ~error_trans_base_t() {}
   // Передать ошибку (тип ap_spec_data определяется a_error_code)
   virtual void throw_error(
     error_code_t a_error_code = ec_standard,
-    const char *ap_file_name = 0,
+    cstr_type ap_file_name = 0,
     int a_line_number = 0,
     const void *ap_spec_data = 0
   ) = 0;
   // Считать последний код ошибки
   virtual error_code_t error_code() = 0;
   // Считать имя файла в котором произошла последняя ошибка
-  virtual const char *file_name() = 0;
+  virtual cstr_type file_name() = 0;
   // Считать номер строки в файле в которой произошла ошибка
   virtual int line_number() = 0;
   // Считать специфические данные соответствующие коду ошибки
@@ -267,9 +302,18 @@ public:
 error_trans_base_t *error_trans();
 
 // Специфические данные для утвердений в error_trans_base_t
+struct et_spec_assert_t
+{
+  // Утверждение
+  error_trans_base_t::cstr_type assert_str;
+  // Сообщение
+  error_trans_base_t::cstr_type message;
+};
+
+// Специфические данные для утвердений в error_trans_base_t
 //  (Считывание указателя на экземпляр)
-const void *spec_assert(const char *assert_str,
-  const char *message);
+const void *spec_assert(error_trans_base_t::cstr_type assert_str,
+  error_trans_base_t::cstr_type message);
 
 class zerobuf: public streambuf
 {
@@ -318,9 +362,22 @@ void send_message_err(int a_error_code, char* ap_file, int a_line);
 
 ostream& mlog();
 
-//new_assert(new_expr, __FILE__, __LINE__)
+#ifdef IRS_LIB_FLASH_ASSERT
 template <class T>
-T* new_assert(T* a_new_expr, const char* a_file, int a_line)
+T* new_assert(T* a_new_expr, int a_file_idx, int a_line)
+{
+  if (a_new_expr == IRS_NULL) {
+    static int a_file_idx_hold = a_file_idx;
+    //static char IRS_ICCAVR_FLASH empty_fstr[] = "";
+    irs::error_trans()->throw_error(irs::ec_new_assert, IRS_NULL, a_line,
+      &a_file_idx_hold);
+  }
+  return a_new_expr;
+}
+#else //IRS_LIB_FLASH_ASSERT
+template <class T>
+T* new_assert(T* a_new_expr, error_trans_base_t::cstr_type a_file,
+  int a_line)
 {
   if (a_new_expr == IRS_NULL) {
     irs::error_trans()->throw_error(irs::ec_assert, a_file, a_line,
@@ -328,6 +385,7 @@ T* new_assert(T* a_new_expr, const char* a_file, int a_line)
   }
   return a_new_expr;
 }
+#endif //IRS_LIB_FLASH_ASSERT
 
 } //namespace irs
 

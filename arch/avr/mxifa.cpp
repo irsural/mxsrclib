@@ -1,6 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата 05.04.2010
+// Дата 14.04.2010
 // Ранняя дата 16.04.2008
 
 #include <irsdefs.h>
@@ -73,10 +73,8 @@ typedef struct _mxifa_avr128_ether_t {
   irs_u16 buf_begin;
   // Размер буфера чтения UDP_stack
   irs_u16 buf_size;
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   // Размер буфера приема и передачи по Ethernet
   irs_size_t ether_bufs_size;
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   // Порт данных AVR к которому подключены линии данных RTL
   irs_avr_port_t data_port;
   // Порт данных AVR к которому подключены линии адреса RTL
@@ -142,10 +140,8 @@ mxifa_avr128_ether_t mxifa_avr128_ether_1 = {
   0,                    // Размер буфера чтения
   0,                    // Начало буфера чтения UDP_stack
   0,                    // Размер буфера чтения UDP_stack
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   // Размер буфера приема и передачи по Ethernet
   250,
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   // Порт данных AVR к которому подключены линии данных RTL
   irs_avr_porta,
   // Порт данных AVR к которому подключены линии адреса RTL
@@ -295,14 +291,9 @@ void *mxifa_open_begin(mxifa_ch_t channel, irs_bool is_broadcast)
       if (is_broadcast) {
         dest_ip = &broadcast_ip;
       }
-      #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-      Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
-        avr128_ether->data_port, avr128_ether->address_port);
-      #else //IRS_LIB_UDP_RTL_STATIC_BUFS
       Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
         avr128_ether->data_port, avr128_ether->address_port,
         avr128_ether->ether_bufs_size);
-      #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
       OpenUDP(avr128_ether->local_port, avr128_ether->dest_port,
         (irs_u8 *)dest_ip);
       cur_ch->opened = irs_true;
@@ -584,9 +575,7 @@ void mxifa_avr128_ether_config(void *pchdata, void *config)
   memcpy(local_mac, cfg->mac, sizeof(local_mac));
   avr128_ether->data_port = cfg->data_port;
   avr128_ether->address_port = cfg->address_port;
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   avr128_ether->ether_bufs_size = cfg->ether_bufs_size;
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 }
 // Установка конфигурации канала
 void mxifa_set_config(void *pchdata, void *config)
@@ -607,14 +596,9 @@ void mxifa_set_config(void *pchdata, void *config)
       if (avr128_ether->is_broadcast) {
         dest_ip = &broadcast_ip;
       }
-      #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-      Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
-        avr128_ether->data_port, avr128_ether->address_port);
-      #else //IRS_LIB_UDP_RTL_STATIC_BUFS
       Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
         avr128_ether->data_port, avr128_ether->address_port,
         avr128_ether->ether_bufs_size);
-      #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
       if (pchdatas->opened)
         OpenUDP(avr128_ether->local_port, avr128_ether->dest_port,
           (irs_u8 *)dest_ip);
@@ -643,9 +627,7 @@ void mxifa_get_config(void *pchdata, void *config)
       cfg->mac = local_mac;
       cfg->data_port = avr128_ether->data_port;
       cfg->address_port = avr128_ether->address_port;
-      #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
       cfg->ether_bufs_size = avr128_ether->ether_bufs_size;
-      #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
     } break;
     case mxifa_ei_hardflow: {
       mxifa_hardflow_t *hardflow = (mxifa_hardflow_t*)pchdatas->ch_spec;
@@ -685,14 +667,9 @@ void *mxifa_open_begin_ex(mxifa_ch_t channel, void *config,
       if (is_broadcast) {
         dest_ip = &broadcast_ip;
       }
-      #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-      Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
-        avr128_ether->data_port, avr128_ether->address_port);
-      #else //IRS_LIB_UDP_RTL_STATIC_BUFS
       Init_UDP(local_mac, (irs_u8 *)&avr128_ether->local_ip,
         avr128_ether->data_port, avr128_ether->address_port,
         avr128_ether->ether_bufs_size);
-      #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
       OpenUDP(avr128_ether->local_port, avr128_ether->dest_port,
         (irs_u8 *)dest_ip);
       cur_ch->opened = irs_true;
@@ -783,14 +760,8 @@ static void avr128_ether_write(void *pchdata)
   if (avr128_ether->write_mode == mxifa_wm_write) {
     if (WriteUDP_begin()) {
       mxifa_sz_t size = avr128_ether->wr_size;
-      #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-      #if (MXIFA_SZ_T_MAX > UDP_BUFFER_SIZE_TX)
-      if (size > UDP_BUFFER_SIZE_TX) size = UDP_BUFFER_SIZE_TX;
-      #endif //(MXIFA_SZ_T_MAX > UDP_BUFFER_SIZE_TX)
-      #else //IRS_LIB_UDP_RTL_STATIC_BUFS
       IRS_LIB_ASSERT(size <= udp_buf_size());
       if (size > udp_buf_size()) size = udp_buf_size();
-      #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
       memcpy((void *)user_tx_buf, (void *)avr128_ether->wr_buf, size);
       avr128_ether->write_mode = mxifa_wm_free;
       irs_bool read_mode_free = (avr128_ether->read_mode == mxifa_rm_free);

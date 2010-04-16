@@ -1,5 +1,5 @@
 // Модуль счетчика
-// Дата: 12.04.2010
+// Дата: 14.04.2010
 // Ранняя дата: 18.08.2009
 
 #include <irsdefs.h>
@@ -11,9 +11,6 @@
 #include <counter.h>
 #include <irsarchint.h>
 #include <irscpu.h>
-#ifdef IRS_LIB_COUNTER_MEM_CHECK
-#include <irsdbgutil.h>
-#endif //IRS_LIB_COUNTER_MEM_CHECK
 #include <irserror.h>
 
 #include <irsfinal.h>
@@ -36,10 +33,6 @@ public:
     irs_u8 sreg = SREG;
     HW_TCNT++;
     SREG = sreg;
-    
-    #ifdef IRS_LIB_COUNTER_MEM_CHECK
-    irs::memory_checker()->check();
-    #endif //IRS_LIB_COUNTER_MEM_CHECK
   }
 };
 

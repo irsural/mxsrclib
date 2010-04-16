@@ -1,6 +1,9 @@
 // Обработка ошибок
-// Дата: 17.10.2009
+// Дата: 14.04.2010
 // Ранняя дата: 4.08.2009
+
+// Номер файла
+#define IRSERRORCPP_IDX 5
 
 #include <irserror.h>
 
@@ -15,14 +18,14 @@ public:
   // Передать ошибку (тип ap_spec_data определяется a_error_code)
   virtual void throw_error(
     error_code_t a_error_code = ec_standard,
-    const char *ap_file_name = 0,
+    cstr_type ap_file_name = 0,
     int a_line_number = 0,
     const void *ap_spec_data = 0
   );
   // Считать последний код ошибки
   virtual error_code_t error_code();
   // Считать имя файла в котором произошла последняя ошибка
-  virtual const char *file_name();
+  virtual cstr_type file_name();
   // Считать номер строки в файле в которой произошла ошибка
   virtual int line_number();
   // Считать специфические данные соответствующие коду ошибки
@@ -31,7 +34,7 @@ public:
   virtual void add_handler(mxfact_event_t *ap_handler);
 private:
   error_code_t m_error_code;
-  const char *mp_file_name;
+  cstr_type mp_file_name;
   int m_line_number;
   const void *mp_spec_data;
   mxfact_event_t *mp_handler;
@@ -54,7 +57,7 @@ irs::error_trans_t::~error_trans_t()
 // Передать ошибку (тип ap_spec_data определяется a_error_code)
 void irs::error_trans_t::throw_error(
   error_code_t a_error_code,
-  const char *ap_file_name,
+  cstr_type ap_file_name,
   int a_line_number,
   const void *ap_spec_data
 )
@@ -71,7 +74,7 @@ irs::error_code_t irs::error_trans_t::error_code()
   return m_error_code;
 }
 // Считать имя файла в котором произошла последняя ошибка
-const char *irs::error_trans_t::file_name()
+irs::error_trans_t::cstr_type irs::error_trans_t::file_name()
 {
   return mp_file_name;
 }
@@ -100,8 +103,8 @@ irs::error_trans_base_t *irs::error_trans()
 
 // Специфические данные для утвердений в error_trans_base_t
 //  (Считывание указателя на экземпляр)
-const  void* irs::spec_assert(const char *assert_str,
-  const char *message)
+const void* irs::spec_assert(error_trans_base_t::cstr_type assert_str,
+  error_trans_base_t::cstr_type message)
 {
   static et_spec_assert_t spec_assert_i;
   spec_assert_i.assert_str = assert_str;

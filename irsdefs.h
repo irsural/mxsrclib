@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 13.04.2010
+// Дата: 15.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -62,6 +62,7 @@ typedef double irs_float64;
 // __WATCOMC__ - Компилятор Open Watcom
 // __GNUC__ - Компилятор GNU
 // __BORLANDC__ - Компилятор Borland
+// __AVR32__ - Компилятор GCC для AVR32
 
 // Поддержка частичной специализации для функций
 #if !defined(__WATCOMC__)
@@ -82,7 +83,7 @@ typedef double irs_float64;
 #define IRS_STREAMSPECDECL
 #endif //compilers
 // Определение модификатора flash для компилятора IAR AVR
-#define IRS_ICCAVR_FLASH __flash
+#define IRS_ICCAVR_FLASH const __flash
 
 // GCC версии < 3.4
 #if (defined(__GNUC__) && \

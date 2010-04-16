@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 13.04.2010
+// Дата: 15.04.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -14,10 +14,7 @@
 #include <irslimits.h>
 #include <irsexcept.h>
 #include <irslocale.h>
-//#include <mxdata.h>
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-#include <stdexcept>
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#include <irsconfig.h>
 
 #include <irsfinal.h>
 
@@ -30,6 +27,21 @@
   (irs::convert_str_t<char, wchar_t>(str).get())
 #define IRS_SIMPLE_FROM_TYPE_STR(str) (str)
 #endif //IRS_UNICODE
+
+// Поддержка экзотических строк типа __flash в IAR и др.
+#ifdef IRS_LIB_FLASH_ASSERT
+#define IRS_SPEC_CSTR_DECLARE(a_name, a_cstr)\
+  static char IRS_ICCAVR_FLASH a_name[] = a_cstr;
+#define IRS_SPEC_CSTR_ASSIGN(a_name, a_cstr)\
+  {\
+    static char IRS_ICCAVR_FLASH irs_spec_cstr_assign_name[] = a_cstr;\
+    a_name = irs_spec_cstr_assign_name;\
+  }
+#else //IRS_LIB_FLASH_ASSERT
+#define IRS_SPEC_CSTR_DECLARE(a_name, a_cstr)\
+  static const char a_name[] = a_cstr;
+#define IRS_SPEC_CSTR_ASSIGN(a_name, a_cstr) a_name = a_cstr;
+#endif //IRS_LIB_FLASH_ASSERT
 
 //#define IRSSTRDEFS_DEBUG
 #ifdef IRSSTRDEFS_DEBUG

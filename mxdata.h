@@ -1,9 +1,12 @@
 // Утилиты для работы с mxdata_t
-// Дата: 01.04.2010
+// Дата: 15.04.2010
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
+
+// Номер файла
+#define MXDATAH_IDX 2
 
 #include <irsdefs.h>
 
@@ -376,7 +379,8 @@ template <class T>
 raw_data_t<T>::raw_data_t(size_type a_size):
   m_size(a_size),
   m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
-  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity]))
+  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity],
+    MXDATAH_IDX))
 {
   memsetex(mp_data, m_size);
 }
@@ -384,7 +388,8 @@ template <class T>
 raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
   m_size(a_raw_data.m_size),
   m_capacity(a_raw_data.m_capacity),
-  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity]))
+  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity],
+    MXDATAH_IDX))
 {
   memcpyex(mp_data, a_raw_data.mp_data, m_size);
 }
@@ -463,7 +468,8 @@ void raw_data_t<T>::reserve_raw(size_type a_capacity)
   if (a_capacity == m_capacity) return;
 
   size_type new_capacity = a_capacity;
-  pointer new_data = IRS_LIB_NEW_ASSERT(new (nothrow) value_type[new_capacity]);
+  pointer new_data = IRS_LIB_NEW_ASSERT(
+    new (nothrow) value_type[new_capacity], MXDATAH_IDX);
   size_type new_size = min(new_capacity, m_size);
   memcpyex(new_data, mp_data, new_size);
   delete []mp_data;
@@ -625,6 +631,7 @@ inline typename irs::deque_data_t<T>::reference
   irs::deque_data_t<T>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
+
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (a_index < buf_right_part_size) {

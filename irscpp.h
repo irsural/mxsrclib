@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 15.03.2010
+// Дата: 15.04.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -38,6 +38,9 @@
 #include <locale>
 #include <limits>
 #endif //__ICCAVR__
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#include <stdexcept>
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #include <irsfinal.h>
 

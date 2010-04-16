@@ -5,6 +5,9 @@
 #ifndef IRSDBGUTILH
 #define IRSDBGUTILH
 
+// Номер файла
+#define IRSDBGUTILH_IDX 4
+
 #include <irsdefs.h>
 
 #include <irscpp.h>

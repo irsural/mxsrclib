@@ -1,9 +1,12 @@
 // Протокол MxNet (Max Network)
-// Дата 24.03.2010
+// Дата 14.04.2010
 // Ранняя дата 16.04.2008
 
 #ifndef MXNETH
 #define MXNETH
+
+// Номер файла
+#define MXNETH_IDX 8
 
 #include <irsdefs.h>
 
@@ -104,10 +107,8 @@ void mxn_get_avrport(mxn_data_t &data, irs_avr_port_t &data_port,
 void mxn_set_checksum_type(mxn_data_t &data, irs::mxn_checksum_t checksum_type); 
 // Чтение типа контрольной суммы
 irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data);
-#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
 void mxn_set_ether_bufs_size(mxn_data_t &data, irs_size_t bufs_size);
 irs_size_t mxn_get_ether_bufs_size(mxn_data_t &data);
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 namespace irs {
 

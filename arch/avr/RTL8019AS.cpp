@@ -1,7 +1,7 @@
 // Драйвер Ethernet для RTL8019AS Димы Уржумцева
 // Откорректирован Крашенинников М. В.
 // Испорчен Поляковым М.
-// Дата: 02.04.2010
+// Дата: 14.04.2010
 // Ранняя дата: 30.05.2008
 
 #define RTL_RESET_ON_TIMEOUT // Сброс RTL при таймауте в операции
@@ -23,48 +23,6 @@
 
 #include <irsfinal.h>
 
-////объявления выводов
-////////////////defines hardware
-#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-#define ETHERNET_PACKET_MIN_RX 64
-#define ETHERNET_PACKET_MAX_RX 1554
-#define ETHERNET_PACKET_MIN_TX 60
-#define ETHERNET_PACKET_MAX_TX 1550
-#if ETHERNET_PACKET_MAX_RX<ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MAX_RX
-#endif
-#if ETHERNET_PACKET_MIN_RX>ETHERNET_PACKET_RX
-#undef ETHERNET_PACKET_RX
-#define ETHERNET_PACKET_RX ETHERNET_PACKET_MIN_RX
-#endif
-#if ETHERNET_PACKET_MAX_TX<ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MAX_TX
-#endif
-#if ETHERNET_PACKET_MIN_TX>ETHERNET_PACKET_TX
-#undef ETHERNET_PACKET_TX
-#define ETHERNET_PACKET_TX ETHERNET_PACKET_MIN_TX
-#endif
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
-
-#ifdef NOP
-//ETHERNET_PORT2|=0x20
-#define IOR_HI {*port_str.rtl_address_port_set |= (1 << IORB);}
-//ETHERNET_PORT2&=(0xFF^0x20)
-#define IOR_LO {*port_str.rtl_address_port_set &= (0xFF^(1 << IORB));}
-//ETHERNET_PORT2|=0x40
-#define IOW_HI {*port_str.rtl_address_port_set |= (1 << IOWB);}
-//ETHERNET_PORT2&=(0xFF^0x40)
-#define IOW_LO {*port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));}
-#endif //NOP
-
-#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-
-irs_u8 rx_buf[ETHERNET_PACKET_RX];
-irs_u8 tx_buf[ETHERNET_PACKET_TX];
-
-#else //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 extern irs_u8* tx_buf = IRS_NULL;
 extern irs_u8* rx_buf = IRS_NULL;
@@ -76,8 +34,6 @@ irs::raw_data_t<irs_u8> rx_buf_data;
 bool is_initialized = false;
 
 } //namespace
-
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 // Внешние переменные, поэтому вне namespace
 irs_u8 rx_hard = 0;
@@ -195,11 +151,6 @@ void writertl(irs_u8 regaddr, irs_u8 regdata);
 void overrun();
 void getpacket();
 
-#ifdef IRS_LIB_RTL_OLD_INTERRUPT
-#pragma vector=INT4_vect
-__interrupt void int_etherhet(void)
-{
-#else //IRS_LIB_RTL_OLD_INTERRUPT
 /////interrupt/////////////////////////////////////////////
 class rtl_interrupt_t : public mxfact_event_t
 {
@@ -207,7 +158,6 @@ public:
   virtual void exec()
   {
     if (!is_initialized) return;
-#endif //IRS_LIB_RTL_OLD_INTERRUPT
     
     #ifdef NOP
     static irs::blink_t blink_14(irs_avr_portd, 3);
@@ -251,12 +201,8 @@ public:
     irs_enable_interrupt();
     #endif //RTL_DISABLE_INT
     
-#ifdef IRS_LIB_RTL_OLD_INTERRUPT
-}
-#else //IRS_LIB_RTL_OLD_INTERRUPT
   }
 };
-#endif //IRS_LIB_RTL_OLD_INTERRUPT
 
 ////////////////////////////////////////read and write/////////////
 irs_u8 readrtl(irs_u8 regaddr)
@@ -356,11 +302,7 @@ void getpacket()
   #endif //RTL_DBG_MSG
   
   if (rx_hard == 0) {
-    #ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-    if (rxlen_hard_cur <= ETHERNET_PACKET_RX) {
-    #else //IRS_LIB_UDP_RTL_STATIC_BUFS
     if (rxlen_hard_cur <= rx_buf_data.size()) {
-    #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
       // Если размер пакета в норме, то принимаем его
       rx_hard = 1;
       rxlen_hard = rxlen_hard_cur;
@@ -490,13 +432,8 @@ bool wait_dma()
 
 } //namespace
 
-#ifdef IRS_LIB_UDP_RTL_STATIC_BUFS
-void initrtl(const irs_u8 *mac)
-#else //IRS_LIB_UDP_RTL_STATIC_BUFS
 void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 {
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   #ifdef RTL_DBG_MSG
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - bufs_size перед: ") << bufs_size << endl);
   #endif //RTL_DBG_MSG
@@ -527,29 +464,22 @@ void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
   #ifdef RTL_DBG_MSG
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - bufs_size после: ") << bufs_size << endl);
   #endif //RTL_DBG_MSG
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
   
   memcpy(mac_save, mac, mac_size);
 
-  #ifndef IRS_LIB_RTL_OLD_INTERRUPT
   static rtl_interrupt_t rtl_interrupt;
   irs_avr_int4_int.add(&rtl_interrupt);
-  #endif //IRS_LIB_RTL_OLD_INTERRUPT
 
   // Сброс RTL
   reset_rtl();
   
-  #ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
   is_initialized = true;
-  #endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 }
 
-#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
 irs_size_t tx_buf_size()
 {
   return tx_buf_data.size();
 }
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 
 void sendpacket(irs_u16 length, irs_u8 *ext_tx_buf)
 {

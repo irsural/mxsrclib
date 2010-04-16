@@ -2,6 +2,9 @@
 // Дата: 14.04.2010
 // Дата создания: 09.04.2010
 
+// Номер файла
+#define IRSDBGUTILCPP_IDX 3
+
 #include <irsdefs.h>
 
 #include <irsdbgutil.h>
@@ -524,7 +527,7 @@ void irs::avr_memory_checker_t::check()
   select_max(mcrpi_avr_call_stack, Y);
   
   auto_ptr<irs_u8> p_heap_check_var(
-    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size]));
+    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size], IRSDBGUTILCPP_IDX));
   select_max(mcrpi_avr_heap,
     reinterpret_cast<value_type>(p_heap_check_var.get()));
 }

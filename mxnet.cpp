@@ -1,6 +1,9 @@
 // Протокол MxNet (Max Network)
-// Дата: 05.04.2010
+// Дата: 14.04.2010
 // Ранняя дата: 18.06.2008
+
+// Номер файла
+#define MXNETCPP_IDX 7
 
 #include <irsdefs.h>
 
@@ -62,11 +65,13 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   data.count = count;
   data.vars_ext = vars;
   data.packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
-    new (nothrow) irs_i32[data.count + MXN_SIZE_OF_HEADER + 1]
+    new (nothrow) irs_i32[data.count + MXN_SIZE_OF_HEADER + 1],
+    MXNETCPP_IDX
   );
   memset(static_cast<void*>(data.packet), 0, data.count +
     MXN_SIZE_OF_HEADER + 1);
-  data.read_only = IRS_LIB_NEW_ASSERT(new (nothrow) irs_bool[data.count]);
+  data.read_only = IRS_LIB_NEW_ASSERT(new (nothrow) irs_bool[data.count],
+    MXNETCPP_IDX);
   for (mxn_cnt_t ind_var = 0; ind_var < data.count; ind_var++) {
     data.read_only[ind_var] = irs_false;
   }
@@ -88,7 +93,8 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   if (!open_ex_performed)
     data.data_ch = mxifa_open(data.channel, data.is_broadcast);
   data.beg_pack_proc = 
-    IRS_LIB_NEW_ASSERT(new (nothrow) irs::mx_beg_pack_proc_t(data.data_ch));
+    IRS_LIB_NEW_ASSERT(new (nothrow) irs::mx_beg_pack_proc_t(data.data_ch),
+    MXNETCPP_IDX);
   data.count_send = 0;
   data.broadcast_send = irs_false;
   data.write_error = irs_false;
@@ -225,7 +231,6 @@ irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data)
 {
   return data.checksum_type;
 }
-#ifndef IRS_LIB_UDP_RTL_STATIC_BUFS
 void mxn_set_ether_bufs_size(mxn_data_t &data, irs_size_t bufs_size)
 {
   if (mxifa_get_channel_type(data.data_ch) == mxifa_ei_avr128_ether) {
@@ -245,7 +250,6 @@ irs_size_t mxn_get_ether_bufs_size(mxn_data_t &data)
   }
   return bufs_size;
 }
-#endif //IRS_LIB_UDP_RTL_STATIC_BUFS
 // Пуск выполнения обработки
 static void mxn_tick_start(mxn_data_t &data)
 {
