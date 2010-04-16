@@ -1323,6 +1323,177 @@ bool irs::variant::variant_t::is_type_number(var_type_t a_var_type)
   return is_type_num;
 }
 
+namespace {
+
+irs::variant::sizens_t get_max_depth_helper(
+  const irs::variant::variant_t& a_variant,
+  const irs::variant::sizens_t a_max_depth)
+{
+  typedef irs::variant::sizens_t size_type;
+  size_type max_depth = a_max_depth;
+  size_type new_max_depth = max_depth;
+  if (a_variant.type() == irs::variant::var_type_array) {
+    max_depth++;
+    const size_type array_size = a_variant.size();
+    for (size_type elem_i = 0; elem_i < array_size; elem_i++) {
+      new_max_depth = max(max_depth,
+        get_max_depth_helper(a_variant[elem_i], max_depth));
+    }
+  } else {
+    // Вложенность отсутсвует
+  }
+  return new_max_depth;
+}
+
+} // empty namespace
+
+irs::variant::sizens_t irs::variant::get_max_depth(const variant_t& a_variant)
+{ 
+  return get_max_depth_helper(a_variant, 0);
+}
+
+namespace {
+
+bool is_uniform_dimension_helper(
+  const irs::variant::variant_t& a_variant,
+  vector<irs::variant::sizens_t>& ap_size_array,
+  const irs::variant::sizens_t d_level)
+{
+  typedef irs::variant::sizens_t size_type;
+  bool uniform_status = true;
+  bool can_jump_to_sub_level = false;
+  if (a_variant.type() == irs::variant::var_type_array) {
+    if (a_variant.size() > 0) {
+      if (d_level >= ap_size_array.size()) {
+        IRS_LIB_ASSERT(d_level <= ap_size_array.size());
+        ap_size_array.push_back(a_variant.size());
+        can_jump_to_sub_level = true;
+      } else {
+        if (ap_size_array[d_level] != a_variant.size()) {
+          uniform_status = false;
+        } else {
+          // Продолжаем проверку
+          can_jump_to_sub_level = true;
+        }
+      }
+    } else {
+      if (d_level < ap_size_array.size()) {
+        uniform_status = false;
+      } else {
+        // Возвращаем успешный статус
+      }
+    }
+  } else {
+    if (d_level < ap_size_array.size()) {
+      uniform_status = false;
+    } else {
+      // Возвращаем успешный статус
+    }
+  }
+  // Переходим на подуровень
+  if (can_jump_to_sub_level) {
+    const size_type d_sub_level = d_level + 1;      
+    for (size_type elem_i = 0; elem_i < ap_size_array[d_level]; elem_i++) {
+      if (!is_uniform_dimension_helper(a_variant[elem_i], ap_size_array,
+        d_sub_level)) {
+        uniform_status = false;
+        break;
+        //return false;
+      } else {
+        // Продолжаем проверку
+      }
+    }
+  } else {
+    // Проверка завершена
+  }
+  return uniform_status;
+}
+
+} // empty namespace
+
+bool irs::variant::is_uniform_dimension(
+  const irs::variant::variant_t& a_variant,
+  vector<irs::variant::sizens_t>* ap_size_array)
+{
+  bool uniform = true;
+  if (ap_size_array) {
+    ap_size_array->clear();
+    uniform = is_uniform_dimension_helper(a_variant, *ap_size_array, 0);
+    if (!uniform) {
+      ap_size_array->clear();
+    } else {
+      // Возвращаем успешный статус
+    }
+  } else {
+    vector<irs::variant::sizens_t> size_array;
+    uniform = is_uniform_dimension_helper(a_variant, size_array, 0);
+  }
+  return uniform;
+}
+
+namespace {    
+
+bool is_uniform_type_helper(const irs::variant::variant_t& a_variant,
+  const irs::variant::sizens_t a_cur_level,
+  const irs::variant::sizens_t a_max_depth,
+  irs::variant::var_type_t* ap_var_type)
+{
+  typedef irs::variant::sizens_t size_type;
+  bool uniform_type = true;
+
+  if (a_cur_level < a_max_depth) {
+    if (a_variant.type() == irs::variant::var_type_array) {
+      const size_type array_size = a_variant.size();
+      for (size_type elem_i = 0; elem_i < array_size; elem_i++) {
+        if (!is_uniform_type_helper(a_variant[elem_i], a_cur_level + 1,
+          a_max_depth, ap_var_type)) {
+
+          uniform_type = false;
+          break;
+        } else {
+          // Продолжаем проверку 
+        }
+      }
+    } else {
+      uniform_type = false;
+    }
+  } else {
+    if (a_variant.type() == irs::variant::var_type_array) {
+      uniform_type = false;
+    } else {
+      if (*ap_var_type != irs::variant::var_type_array) {
+        if (*ap_var_type != a_variant.type()) {
+          uniform_type = false;
+        } else {
+          // Возвращаем успешный статус
+        }
+      } else {
+        *ap_var_type = a_variant.type();
+      }
+    }
+  }
+  return uniform_type;
+}
+
+} // empty namespace
+
+bool irs::variant::is_uniform_type(const variant_t& a_variant)
+{
+  typedef irs::variant::sizens_t size_type;
+  irs::variant::var_type_t var_type = irs::variant::var_type_array;
+  size_type max_depth = get_max_depth(a_variant);
+  return is_uniform_type_helper(a_variant, 0, max_depth, &var_type);
+}
+
+bool irs::variant::is_uniform_type(const variant_t& a_variant,
+  const irs::variant::var_type_t a_var_type)
+{
+  typedef irs::variant::sizens_t size_type;
+  irs::variant::var_type_t var_type = a_var_type;
+  size_type max_depth = get_max_depth(a_variant);
+  return is_uniform_type_helper(a_variant, 0, max_depth, &var_type);
+}
+
 // class var_type_converter_t
 irs::variant::var_type_converter_t::var_type_converter_t():
   m_table_var_type_and_str(),
@@ -1450,7 +1621,7 @@ bool irs::variant::var_type_converter_t::to_type(
 
 #ifdef __BORLANDC__
 
-/*void irs::variant::variant_to_tree_view(
+void irs::variant::variant_to_tree_view(
   const irs::variant::variant_t& a_variant,
   TTreeView* ap_tree_view,
   TTreeNode* ap_tree_node)
@@ -1475,7 +1646,7 @@ bool irs::variant::var_type_converter_t::to_type(
       // Невозможно преобразовать в строку
     }
   }
-}*/
+}
 
 #endif // __BORLANDC__
 

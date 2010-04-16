@@ -2316,6 +2316,18 @@ void binary_operation(
     ap_result, group_type());
 }
 
+sizens_t get_max_depth(const variant_t& a_variant);
+
+bool is_uniform_dimension(
+  const irs::variant::variant_t& a_variant,
+  vector<irs::variant::sizens_t>* ap_size_array = IRS_NULL
+);
+
+bool is_uniform_type(const variant_t& a_variant);
+
+bool is_uniform_type(const variant_t& a_variant,
+  const irs::variant::var_type_t ap_var_type);
+
 class var_type_converter_t
 {
 public:
@@ -2338,10 +2350,10 @@ private:
 };
 
 #ifdef __BORLANDC__
-/*void variant_to_tree_view(
+void variant_to_tree_view(
   const variant_t& a_variant,
   TTreeView* ap_tree_view,
-  TTreeNode* ap_tree_node = IRS_NULL);*/
+  TTreeNode* ap_tree_node = IRS_NULL);
 #endif // #ifdef __BORLANDC__
 
 #ifdef IRS_LIB_DEBUG

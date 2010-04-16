@@ -1,5 +1,5 @@
 // Калькулятор
-// Дата: 26.02.2010
+// Дата: 15.04.2010
 // Дата создания: 1.02.2009
 
 #ifndef irscalcH
@@ -1558,8 +1558,11 @@ public:
   typedef charns_t char_type;
   typedef stringns_t string_type;
   typedef irs::variant::variant_t variant_t;
-  enum mode_io_value_t {mode_io_value_unknown, mode_io_value_read,
-    mode_io_value_write};
+  enum mode_io_value_t {
+    mode_io_value_unknown,
+    mode_io_value_read,
+    mode_io_value_write
+  };
   //typedef mutable_ref_t mutable_ref_type;
   inline calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
@@ -1580,6 +1583,7 @@ public:
   #endif // IRS_FULL_STDCPPLIB_SUPPORT
   inline void handle_external_varaible_set(
     handle_external_variable_t* ap_handle_extern_variable);
+  inline handle_external_variable_t* handle_external_varaible_get();
 private:
   list_identifier_t m_list_identifier;
   detector_token_t m_detector_token;
@@ -2612,6 +2616,11 @@ inline void calculator_t::handle_external_varaible_set(
   handle_external_variable_t* ap_handle_extern_variable)
 {
   mp_handle_extern_variable = ap_handle_extern_variable;
+}
+
+inline handle_external_variable_t* calculator_t::handle_external_varaible_get()
+{
+  return mp_handle_extern_variable;
 }
 
 } // namespace calc
