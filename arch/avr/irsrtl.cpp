@@ -50,7 +50,7 @@ irs::rtl8019as_t::rtl8019as_t(
   #ifndef SERGEY_OFF_INT4
   m_rtl_interrupt_event(this, rtl_interrupt),
   #endif //SERGEY_OFF_INT4
-  m_recv_status(false),
+  m_is_recv_buf_filled(false),
   m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
@@ -163,7 +163,8 @@ void irs::rtl8019as_t::recv_packet()
   IRS_LOBYTE(recv_size_cur) = read_rtl(rdmaport);
   IRS_HIBYTE(recv_size_cur) = read_rtl(rdmaport);
   
-  if (m_recv_status == false) {
+  if (m_is_recv_buf_filled == false) {
+    //mlog() << irsm("rtl: recv_packet") << endl;
     if (recv_size_cur <= m_size_buf) {
       m_recv_buf_size = recv_size_cur;
       IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
@@ -171,7 +172,7 @@ void irs::rtl8019as_t::recv_packet()
       for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
-      m_recv_status = true;
+      m_is_recv_buf_filled = true;
     } else {
       for (irs_u16 i = 0; i < recv_size_cur; i++) {
         read_rtl(rdmaport);
@@ -377,12 +378,12 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
 
 void irs::rtl8019as_t::set_recv_handled()
 {
-  m_recv_status = false;
+  m_is_recv_buf_filled = false;
 }
 
 bool irs::rtl8019as_t::is_recv_buf_filled()
 {
-  return m_recv_status;
+  return m_is_recv_buf_filled;
 }
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()

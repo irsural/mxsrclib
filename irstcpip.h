@@ -29,7 +29,7 @@
 # define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
 #endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
 
-#define TESTING 1
+#define TESTING
 
 namespace irs {
 
@@ -180,6 +180,7 @@ public:
   irs_u8* get_send_buf();
   void open_port(irs_u16 a_port);
   void close_port(irs_u16 a_port);
+  irs_size_t recv_buf_size();
   void tick();
   
 private:

@@ -91,7 +91,7 @@ private:
   #ifndef SERGEY_OFF_INT4
   event_connect_t<this_type> m_rtl_interrupt_event;
   #endif //SERGEY_OFF_INT4
-  bool m_recv_status;
+  bool m_is_recv_buf_filled;
   bool m_send_status;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;

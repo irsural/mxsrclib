@@ -44,21 +44,27 @@
 #   define IRS_LIB_HARDFLOWG_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
 #   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(msg)
 #   define IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(msg)
+#   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(msg) msg
+#   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 # elif (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
 #   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
 #   define IRS_LIB_HARDFLOWG_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
 #   define IRS_LIB_HARDFLOWG_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(msg) 
 #   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
 #   define IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
 # endif 
 #else // IRS_LIB_HARDFLOWG_DEBUG_TYPE
 # define IRS_LIB_HARDFLOWG_DEBUG_TYPE IRS_LIB_DEBUG_NONE
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_BASE(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_SRC_BASE(msg)
+# define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(msg)
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_SRC_DETAIL(msg)
+# define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
 
 namespace irs {
@@ -685,14 +691,15 @@ private:
   size_type m_channel;
   size_type m_cur_channel;
   irs_u8* mp_recv_buf;
+  irs_u8* mp_recv_buf_cur;
   irs_u8* mp_send_buf;
-  //mxip_t m_cur_dest_ip;
-  //irs_u16 m_cur_dest_port;
   //counter_t m_max_channel_downtime;
   const size_type m_channel_max_count;
   deque<udp_channel_t> m_channel_list;
   deque<udp_channel_t>::iterator m_channel_list_it;
   size_type m_udp_max_data_size;
+  mxip_t m_dest_ip_cur;
+  irs_u16 m_dest_port_cur;
   
   void new_channel(mxip_t a_ip, irs_u16 a_port);
   void view_channel_list();

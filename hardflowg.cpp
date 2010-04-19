@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 09.04.2010
+// Дата: 19.04.2010
 // Дата создания: 8.09.2009
 
 #include <hardflowg.h>
@@ -1350,17 +1350,17 @@ irs::hardflow::tcp_server_t::size_type
           } else {
             m_map_channel_sock.erase(a_channel_ident);
           }
-          #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
-          irs::mlog() << "Delete channel " << (int)a_channel_ident
-            << " by read command" << endl;
-          irs::mlog() << "-------------------------------" << endl;
-          for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
-            it != m_map_channel_sock.end(); it++) {
-            irs::mlog() << "m_channel: " << (int)it->first <<
-              " socket: " << it->second << endl;
-          }
-          irs::mlog() << "-------------------------------" << endl;
-          #endif //IRS_LIB_HARDFLOWG_DEBUG_BASE
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+            irs::mlog() << "Delete channel " << (int)a_channel_ident
+              << " by read command" << endl;
+            irs::mlog() << "-------------------------------" << endl;
+            for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
+              it != m_map_channel_sock.end(); it++) {
+              irs::mlog() << "m_channel: " << (int)it->first <<
+                " socket: " << it->second << endl;
+            }
+            irs::mlog() << "-------------------------------" << endl;
+          );
           close_socket(sock_rd);
         }
       }
@@ -1416,17 +1416,17 @@ irs::hardflow::tcp_server_t::size_type
             m_map_channel_sock.erase(a_channel_ident);
           }
           
-          #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
-          irs::mlog() << "Delete channel " << (int)a_channel_ident
-            << " by write command" << endl;
-          irs::mlog() << "-------------------------------" << endl;
-          for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
-            it != m_map_channel_sock.end(); it++) {
-            irs::mlog() << "m_channel: " << (int)it->first << 
-              " socket: " << it->second << endl;
-          }
-          irs::mlog() << "-------------------------------" << endl;
-          #endif //IRS_LIB_DEBUG_BASE
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+            irs::mlog() << "Delete channel " << (int)a_channel_ident
+              << " by write command" << endl;
+            irs::mlog() << "-------------------------------" << endl;
+            for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
+              it != m_map_channel_sock.end(); it++) {
+              irs::mlog() << "m_channel: " << (int)it->first << 
+                " socket: " << it->second << endl;
+            }
+            irs::mlog() << "-------------------------------" << endl;
+          );
           close_socket(sock_wr);
         }
       }
@@ -1460,23 +1460,23 @@ void irs::hardflow::tcp_server_t::tick()
               m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();
-            #if IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
-            if(insert_channel.second) {
-              irs::mlog() << "New channel added: " << (int)m_channel << endl;
-              irs::mlog() << "-------------------------------" << endl;
-              for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
-                it != m_map_channel_sock.end(); it++) 
-              {
-                irs::mlog() << "m_channel: " << (int)it->first << 
-                  " socket: " << it->second << endl;
+            IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+              if(insert_channel.second) {
+                irs::mlog() << "New channel added: " << (int)m_channel << endl;
+                irs::mlog() << "-------------------------------" << endl;
+                for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
+                  it != m_map_channel_sock.end(); it++) 
+                {
+                  irs::mlog() << "m_channel: " << (int)it->first << 
+                    " socket: " << it->second << endl;
+                }
+                irs::mlog() << "-------------------------------" << endl;
               }
-              irs::mlog() << "-------------------------------" << endl;
-            }
-            else {
-              IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
-                "Channel already exist" << endl);
-            }
-            #endif //IRS_LIB_DEBUG_BASE
+              else {
+                IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
+                  "Channel already exist" << endl);
+              }
+            );
           }
           else {
             IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("Invalid channel" << endl);
@@ -1915,11 +1915,13 @@ void irs::hardflow::fixed_flow_t::tick()
         m_read_status = status_error;
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
           irsm("read abort by channel is absent") << endl);
+        //mlog() << irsm("read abort by channel is absent") << endl;
       }
     } else {
       m_read_status = status_error;
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
         irsm("read abort by timeout") << endl);
+      //mlog() << irsm("read abort by timeout") << endl;
     }
   }  
   if(write_status() == status_wait) {
@@ -1947,12 +1949,14 @@ void irs::hardflow::fixed_flow_t::tick()
       else {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
           irsm("write abort by channel is absent") << endl);
+        //mlog() << irsm("write abort by channel is absent") << endl;
         m_write_status = status_error;
       }
     } else {
       m_write_status = status_error;
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
         irsm("write abort by timeout") << endl);
+      //mlog() << irsm("write abort by timeout") << endl;
     }
   }
 }
@@ -1973,14 +1977,15 @@ irs::hardflow::simple_udp_flow_t::simple_udp_flow_t(
   m_channel(invalid_channel),
   m_cur_channel(invalid_channel),
   mp_recv_buf(mp_simple_udp->get_recv_buf()),
+  mp_recv_buf_cur(mp_simple_udp->get_recv_buf()),
   mp_send_buf(mp_simple_udp->get_send_buf()),
   //m_max_channel_downtime(a_channel_life_time),
   m_channel_max_count(a_channel_max_count),
   m_channel_list(m_channel_max_count, udp_channel_t()),
   m_channel_list_it(m_channel_list.begin()),
-  m_udp_max_data_size(65000)/*,
-  m_cur_dest_ip(mxip_t::zero_ip()),
-  m_cur_dest_port(0)*/
+  m_udp_max_data_size(65000),
+  m_dest_ip_cur(mxip_t::zero_ip()),
+  m_dest_port_cur(0)
 {
   mp_simple_udp->open_udp();
   mp_simple_udp->open_port(m_local_port);
@@ -1994,18 +1999,18 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
-  //#if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-  mlog() << irsm("Channel List updated: m_channel = ") <<
-    int(m_channel) << endl;
-  for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
-    mlog() << irsm("Decue index ") << int(list_idx) << irsm(" ip : ") <<
-      int(m_channel_list[list_idx].ip.val[0]) << irsm(".") <<
-      int(m_channel_list[list_idx].ip.val[1]) << irsm(".") <<
-      int(m_channel_list[list_idx].ip.val[2]) << irsm(".") <<
-      int(m_channel_list[list_idx].ip.val[3]) << irsm(" port : ") <<
-      int(m_channel_list[list_idx].port) << endl;
-  }
-  //#endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(
+    mlog() << irsm("Channel List updated: m_channel = ") <<
+      int(m_channel) << endl;
+    for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
+      mlog() << irsm("Decue index ") << int(list_idx) << irsm(" ip : ") <<
+        int(m_channel_list[list_idx].ip.val[0]) << irsm(".") <<
+        int(m_channel_list[list_idx].ip.val[1]) << irsm(".") <<
+        int(m_channel_list[list_idx].ip.val[2]) << irsm(".") <<
+        int(m_channel_list[list_idx].ip.val[3]) << irsm(" port : ") <<
+        int(m_channel_list[list_idx].port) << endl;
+    }
+  );
 }
 
 void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
@@ -2056,7 +2061,7 @@ irs::hardflow::simple_udp_flow_t::size_type
       }
     }
   }
-  mlog() << irsm("cur_channel: ") << int(m_cur_channel) << endl;
+  //mlog() << irsm("cur_channel: ") << int(m_cur_channel) << endl;
   return m_cur_channel;
 }
 
@@ -2079,8 +2084,6 @@ irs::hardflow::simple_udp_flow_t::size_type
   size_type read_data_size = 0;
   IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_read = ") << 
     int(a_channel_ident) << endl);
-  mlog() << irsm("a_channel_ident_read = ") << 
-    int(a_channel_ident) << endl;
   if (is_channel_exists(a_channel_ident)) {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm(" ************** read "
       "****************") << endl);
@@ -2099,23 +2102,48 @@ irs::hardflow::simple_udp_flow_t::size_type
     irs_u16 dest_port = 0;
     read_data_size =
       mp_simple_udp->read_udp(&dest_ip, &dest_port, &m_local_port);
-    if (read_data_size == a_size) {
-      mp_simple_udp->read_udp_complete();
-    }
-    #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-    mlog() << irsm("read ip: ") << 
-      int(m_channel_list[deque_index].ip.val[0]) << irsm(".") <<
-      int(m_channel_list[deque_index].ip.val[1]) << irsm(".") <<
-      int(m_channel_list[deque_index].ip.val[2]) << irsm(".") <<
-      int(m_channel_list[deque_index].ip.val[3]) << irsm(" port: ") <<
-      int(m_channel_list[deque_index].port) << endl;
-    #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
-    if ((dest_ip == m_channel_list[deque_index].ip) &&
-      (dest_port == m_channel_list[deque_index].port))
-    {
-      memcpyex(ap_buf, mp_recv_buf + 0x2a, read_data_size);
-    } else {
-      return 0;
+    if (read_data_size >= a_size) {
+      //mlog() << irsm("read_data_size = ") << int(read_data_size) << endl;
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+        mlog() << irsm("read ip: ") << 
+          int(m_channel_list[deque_index].ip.val[0]) << irsm(".") <<
+          int(m_channel_list[deque_index].ip.val[1]) << irsm(".") <<
+          int(m_channel_list[deque_index].ip.val[2]) << irsm(".") <<
+          int(m_channel_list[deque_index].ip.val[3]) << irsm(" port: ") <<
+          int(m_channel_list[deque_index].port) << endl;
+      );  
+      if ((dest_ip == m_channel_list[deque_index].ip) &&
+        (dest_port == m_channel_list[deque_index].port))
+      {
+        /*mlog() << irsm("HARDFLOW TEST recieve buffer:") << endl;
+        for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
+          mlog() << irsm("hf_read_buf[") << buf_idx << irsm("] = ") <<
+            int(mp_recv_buf[buf_idx]) << endl;
+        }*/
+        memcpyex(ap_buf, mp_recv_buf_cur, a_size);
+        if (static_cast<irs_u16>(mp_recv_buf_cur + a_size - mp_recv_buf) <
+          (mp_simple_udp->recv_buf_size())) 
+        {
+          mp_recv_buf_cur += a_size;
+          //mlog() << irsm("recv_buf_size = ") << 
+            //int(mp_simple_udp->recv_buf_size()) << endl;
+        } else {
+          // Пакет полностью прочитан
+          mp_recv_buf_cur = mp_recv_buf;
+          mp_simple_udp->read_udp_complete();
+        }
+        /*for(int buf_idx = 0; buf_idx < 12; buf_idx++) {
+          mlog() << irsm("buf_out[") << buf_idx << irsm("] = ") <<
+            int(ap_buf[buf_idx]) << endl;
+        }
+        for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
+          mlog() << irsm("buf_in[") << buf_idx << irsm("] = ") <<
+            int(mp_recv_buf[buf_idx]) << endl;
+        }
+        mlog() << irsm("hardflow read") << endl;*/
+      } else {
+        return 0;
+      }
     }
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist, "
@@ -2128,7 +2156,6 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs::hardflow::simple_udp_flow_t::write(size_type a_channel_ident, 
   const irs_u8 *ap_buf, size_type a_size)
 {
-  size_type write_data_size = 0;
   IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_write = ") <<
     int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident))
@@ -2155,22 +2182,22 @@ irs::hardflow::simple_udp_flow_t::size_type
     mlog() << " m_cur_channel: " << int(m_cur_channel) << endl;
     mlog() << " m_channel: " << int(m_channel) << endl;
     mlog() << " deque_index = " << int(deque_index) << endl;*/
-    #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-    if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
-      mlog() << irsm(" write dest_ip = ") << 
-        int(m_channel_list[deque_index].ip.val[0]) << irsm(".") <<
-        int(m_channel_list[deque_index].ip.val[1]) << irsm(".") << 
-        int(m_channel_list[deque_index].ip.val[2]) << irsm(".") <<
-        int(m_channel_list[deque_index].ip.val[3]) << irsm(" dest_port = ") <<
-        int(m_channel_list[deque_index].port) << endl;
-    }
-    #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE
-    memcpyex(mp_send_buf + 0x2a, ap_buf, a_size);
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+      if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
+        mlog() << irsm(" write dest_ip = ") << 
+          int(m_channel_list[deque_index].ip.val[0]) << irsm(".") <<
+          int(m_channel_list[deque_index].ip.val[1]) << irsm(".") << 
+          int(m_channel_list[deque_index].ip.val[2]) << irsm(".") <<
+          int(m_channel_list[deque_index].ip.val[3]) << irsm(" dest_port = ") <<
+          int(m_channel_list[deque_index].port) << endl;
+      }
+    );
+    memcpyex(mp_send_buf, ap_buf, a_size);
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist,"
       "write data not posible ") << endl);
   }
-  return write_data_size;
+  return a_size;
 }
 
 irs::string irs::hardflow::simple_udp_flow_t::param(
@@ -2189,13 +2216,11 @@ void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &/*a_name*/,
 void irs::hardflow::simple_udp_flow_t::tick()
 {
   mp_simple_udp->tick();
-  static mxip_t dest_ip_cur = mxip_t::zero_ip();
-  static irs_u16 dest_port_cur = 0;
-  if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port_cur,
-    &m_local_port) > 20)
+  if (mp_simple_udp->read_udp(&m_dest_ip_cur, &m_dest_port_cur,
+    &m_local_port) > 1)
   {
     mp_simple_udp->read_udp_complete();
   }
-  new_channel(dest_ip_cur, dest_port_cur);
+  new_channel(m_dest_ip_cur, m_dest_port_cur);
 }
 
