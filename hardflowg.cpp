@@ -2102,6 +2102,8 @@ irs::hardflow::simple_udp_flow_t::size_type
     irs_u16 dest_port = 0;
     read_data_size =
       mp_simple_udp->read_udp(&dest_ip, &dest_port, &m_local_port);
+    /*mlog() << irsm("read_data_size = ") << int(read_data_size) << endl;
+    mlog() << irsm("a_size = ") << int(a_size) << endl;*/
     if (read_data_size >= a_size) {
       //mlog() << irsm("read_data_size = ") << int(read_data_size) << endl;
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -2216,11 +2218,13 @@ void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &/*a_name*/,
 void irs::hardflow::simple_udp_flow_t::tick()
 {
   mp_simple_udp->tick();
-  if (mp_simple_udp->read_udp(&m_dest_ip_cur, &m_dest_port_cur,
+  /*if (mp_simple_udp->read_udp(&m_dest_ip_cur, &m_dest_port_cur,
     &m_local_port) > 1)
   {
     mp_simple_udp->read_udp_complete();
-  }
+  }*/
+  mp_simple_udp->read_udp(&m_dest_ip_cur, &m_dest_port_cur,
+    &m_local_port);
   new_channel(m_dest_ip_cur, m_dest_port_cur);
 }
 

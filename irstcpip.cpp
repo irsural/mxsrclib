@@ -253,6 +253,9 @@ irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
         int(mp_recv_buf[0x2a + buf_idx]) << endl;
     }*/
   }
+  /*mlog() << irsm("m_user_recv_buf_size = ") <<
+    int(m_user_recv_buf_size) << endl;
+  mlog() << irsm("data = ") << int(data) << endl;*/
   return data;
 }
 
@@ -672,6 +675,10 @@ void irs::simple_tcpip_t::server_udp()
     IRS_HIBYTE(udp_size) = mp_recv_buf[udp_length_0];
     IRS_LOBYTE(udp_size) = mp_recv_buf[udp_length_1];
     m_user_recv_buf_size = udp_size - 8;
+    /*mlog() << irsm("m_user_recv_buf_size = ") <<
+      int(m_user_recv_buf_size) << endl;
+    mlog() << irsm("udp_size = ") <<
+      int(udp_size) << endl;*/
     
     mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
     mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
@@ -777,13 +784,6 @@ irs_size_t irs::simple_tcpip_t::recv_buf_size()
 
 void irs::simple_tcpip_t::tick()
 {
-  if(m_user_recv_status == true) {
-    /*mlog() << irsm("TCPIP TEST TICK recieve buffer:") << endl;
-    for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
-      irs::mlog() << irsm("tick_buf[") << buf_idx << irsm("] = ") <<
-        int(mp_recv_buf[0x2a + buf_idx]) << endl;
-    }*/
-  }
   mp_ethernet->tick();
   #ifdef __ICCAVR__
   m_blink_0();

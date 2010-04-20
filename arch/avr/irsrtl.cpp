@@ -173,6 +173,10 @@ void irs::rtl8019as_t::recv_packet()
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
       m_is_recv_buf_filled = true;
+      /*for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
+        irs::mlog() << irsm("server_buf[") << buf_idx << irsm("] = ") <<
+          int(mp_recv_buf[0x2a + buf_idx]) << endl;
+      }*/
     } else {
       for (irs_u16 i = 0; i < recv_size_cur; i++) {
         read_rtl(rdmaport);
@@ -339,9 +343,10 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
     a_size = ETHERNET_PACKET_MIN;
   }
   #endif //IRS_LIB_CHECK
-
-  IRS_LIB_ASSERT((a_size < ETHERNET_PACKET_MAX) && 
-    (a_size <= m_send_buf.size()));
+  
+  /*IRS_LIB_ASSERT((m_buf_num == double_buf) ? ((a_size < ETHERNET_PACKET_MAX) && 
+    (a_size <= m_send_buf.size())) : ((a_size < ETHERNET_PACKET_MAX) && 
+    (a_size <= m_recv_buf.size())));*/
   
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
