@@ -1238,7 +1238,7 @@ void irs::modbus_server_t::tick()
     IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" abort"));
     m_channel = mp_hardflow_server->channel_next();
     m_mode = read_header_mode;
-    mlog() << irsm("abort") << endl;
+    //mlog() << irsm("abort") << endl;
   }
   
   switch(m_mode)
