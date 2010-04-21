@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 13.04.2010
+// Дата: 21.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -233,6 +233,9 @@ std_type_idx_t type_to_index(T)
 template <class T>
 struct type_detect_t
 {
+  enum {
+    index = invalid_idx
+  };
 };
 template <>
 struct type_detect_t<char>
