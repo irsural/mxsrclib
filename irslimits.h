@@ -117,6 +117,7 @@ enum signed_t {
 };
 enum std_type_idx_t {
   invalid_idx,
+  unknown_idx,
   bool_idx,
   char_idx,
   wchar_idx,
@@ -234,7 +235,7 @@ template <class T>
 struct type_detect_t
 {
   enum {
-    index = invalid_idx
+    index = unknown_idx
   };
 };
 template <>
