@@ -1,5 +1,5 @@
 // Прерывания
-// Дата: 17.03.2010
+// Дата: 19.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irsintH
@@ -192,6 +192,29 @@ inline event_t* make_event(
 { 
   return new event_function_t<owner_type>(ap_owner, ap_function);
 }
+
+// Блокировка прерываний по принципу: выделение ресурса есть инициализация
+#ifdef __ICCAVR__
+class lock_interrupt_t
+{
+  irs_u8 m_old_state;
+public:
+  lock_interrupt_t():
+    m_old_state(__save_interrupt())
+  {
+    __disable_interrupt();
+  }
+  ~lock_interrupt_t()
+  {
+    __restore_interrupt(m_old_state);
+  }
+};
+#else //__ICCAVR__
+class lock_interrupt_t
+{
+public:
+};
+#endif //__ICCAVR__
 
 } //namespace irs
 
