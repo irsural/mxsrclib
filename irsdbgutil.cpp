@@ -1,5 +1,5 @@
 // Утилиты для отладки программы
-// Дата: 14.04.2010
+// Дата: 20.04.2010
 // Дата создания: 09.04.2010
 
 // Номер файла
@@ -274,6 +274,8 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_check_event(this, check),
   m_out_timer(make_cnt_s(m_out_time_s_def))
 {
+  lock_interrupt_t lock_interrupt;
+  
   m_range_param_list[mcrpi_avr_return_stack] = range_param_type(
     memory_checker_range_param_t(), second_delta, first_delta);
   m_range_param_list[mcrpi_avr_call_stack] = range_param_type(
@@ -284,11 +286,7 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
     simple_param_get, interrupt_set);
   m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
-    simple_param_get, simple_param_set);
-  
-  if (m_param_list[mcpi_avr_interrupt].param == mcp_avr_interrupt_timer0) {
-    timer0_init();
-  }
+    simple_param_get, out_time_set);
   
   static char IRS_ICCAVR_FLASH return_stack_name[] = "return stack (RSTACK)";
   m_ident_name_list[mcrpi_avr_return_stack] = return_stack_name;
@@ -296,6 +294,12 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_ident_name_list[mcrpi_avr_call_stack] = call_stack_name;
   static char IRS_ICCAVR_FLASH heap_name[] = "heap";
   m_ident_name_list[mcrpi_avr_heap] = heap_name;
+  
+  check();
+
+  if (m_param_list[mcpi_avr_interrupt].param == mcp_avr_interrupt_timer0) {
+    timer0_init();
+  }
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_begin(
@@ -432,7 +436,7 @@ void irs::avr_memory_checker_t::heap_array_size(value_type a_size)
 }
 void irs::avr_memory_checker_t::out_info(ostream* ap_strm)
 {
-  if (m_out_timer.check()) {
+  if (m_out_timer.check() || (m_out_timer.get() == 0)) {
     (*ap_strm) << endl;
     for (ident_type ident = 0; ident < mcrpi_avr_size; ++ident) {
       out_param(ap_strm, ident);
@@ -444,12 +448,30 @@ void irs::avr_memory_checker_t::select_max(ident_type a_ident,
   irs_u16 a_value)
 {
   value_type& param_current = m_range_param_list[a_ident].param.current;
-  value_type param_current_prev = param_current;
-  value_type param_cur_size_prev = range_param_cur_size(a_ident);
-  param_current = static_cast<value_type>(a_value);
-  value_type param_cur_size = range_param_cur_size(a_ident);
-  if ((param_cur_size_prev > param_cur_size) && (param_current_prev != 0)) {
-    param_current = param_current_prev;
+  if (param_current != 0) {
+    value_type param_current_prev = param_current;
+    value_type param_cur_size_prev = range_param_cur_size(a_ident);
+    param_current = static_cast<value_type>(a_value);
+    value_type param_cur_size = range_param_cur_size(a_ident);
+    
+    #ifdef IRS_LIB_DEBUG
+    if (param_cur_size >= range_param_size(a_ident)) {
+      lock_interrupt_t lock_interrupt;
+      IRS_LIB_DBG_RAW_MSG(irsm("\n\n"));
+      IRS_LIB_DBG_RAW_MSG(m_ident_name_list[a_ident]);
+      IRS_LIB_DBG_RAW_MSG(irsm(" owerflow!!!") << endl);
+      out_param(&mlog(), a_ident);
+      bool range_param_is_overflow =
+        (param_cur_size < range_param_size(a_ident));
+      IRS_LIB_ASSERT(range_param_is_overflow);
+    }
+    #endif //IRS_LIB_DEBUG
+    
+    if (param_cur_size_prev > param_cur_size) {
+      param_current = param_current_prev;
+    }
+  } else {
+    param_current = static_cast<value_type>(a_value);
   }
 }
 void irs::avr_memory_checker_t::timer0_init()
@@ -468,6 +490,8 @@ void irs::avr_memory_checker_t::timer0_init()
     (0 << 3)|(0 << 2)|(0 << WGM01)|(0 << WGM00);
   TCCR0B = (0 << FOC0A)|(0 << FOC0B)|(0 << 5)|(0 << 4)|
     (0 << WGM02)|(1 << CS02)|(0 << CS01)|(1 << CS00);
+  //TCCR0B = (0 << FOC0A)|(0 << FOC0B)|(0 << 5)|(0 << 4)|
+    //(0 << WGM02)|(0 << CS02)|(1 << CS01)|(1 << CS00);
   TCNT0 = 0x0;
   OCR0A = 0xFF;
   OCR0B = 0xFF;
@@ -521,13 +545,16 @@ void irs::avr_memory_checker_t::out_time_set(ident_type a_ident,
 }
 void irs::avr_memory_checker_t::check()
 {
+  lock_interrupt_t lock_interrupt;
+  
   select_max(mcrpi_avr_return_stack, SP);
   
   irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
   select_max(mcrpi_avr_call_stack, Y);
   
-  auto_ptr<irs_u8> p_heap_check_var(
-    IRS_LIB_NEW_ASSERT(new irs_u8[m_heap_array_size], IRSDBGUTILCPP_IDX));
+  auto_arr<irs_u8> p_heap_check_var(
+    IRS_LIB_NEW_ASSERT(new (nothrow) irs_u8[m_heap_array_size],
+    IRSDBGUTILCPP_IDX));
   select_max(mcrpi_avr_heap,
     reinterpret_cast<value_type>(p_heap_check_var.get()));
 }
