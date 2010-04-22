@@ -12,6 +12,7 @@
 #include <gdefs.h>
 #include <irsstd.h>
 #include <irsconfig.h>
+#include <irsint.h>
 
 #include <irsfinal.h>
 
