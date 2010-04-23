@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 15.04.2010
+// Дата: 23.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -10,6 +10,10 @@
 
 #include <irsdefs.h>
 
+
+#ifdef __ICCAVR__
+#include <irsavrutil.h>
+#endif //__ICCAVR__
 #include <irsconfig.h>
 #include <irsdefs.h>
 #include <irsint.h>
@@ -27,20 +31,34 @@
 
 #include <irsfinal.h>
 
-
+// Операторы специального вывода irsm и irsu
 #ifdef __ICCAVR__
 #define irsm(cstr)\
-  ""; { static char IRS_ICCAVR_FLASH dbg_msg_cstring[] = cstr;\
+  ""; { static char const IRS_ICCAVR_FLASH dbg_msg_cstring[] = cstr;\
   irs::mlog() << dbg_msg_cstring; } irs::mlog() << ""
 #else //__ICCAVR__
 #define irsm(cstr) cstr
 #endif //__ICCAVR__
+#ifdef __ICCAVR__
+#define IRS_STRM_ICCAVR_FLASH_OUT(out_stream, flash_string)\
+  {\
+    static char const IRS_ICCAVR_FLASH irs_stream_flash_string[] =\
+      flash_string;\
+    out_stream << irs_stream_flash_string;\
+  }
+#define irsu(out_stream, spec_string)\
+  ""; IRS_STRM_ICCAVR_FLASH_OUT(out_stream, spec_string); out_stream << ""
+#else //__ICCAVR__
+#define irsu(out_stream, spec_string) spec_string
+#endif //__ICCAVR__
+
 
 #ifdef __ICCAVR__
 
 // Операция сдвига для вывода строк размещенных во Flash в поток
 // Вне пространства имен irs размещена намеренно
-inline ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
+inline ostream& operator<<(ostream& a_strm,
+  char const IRS_ICCAVR_FLASH* ap_strg)
 {
   for (;*ap_strg != 0; ap_strg++) {
     char out_char = *ap_strg;
@@ -52,7 +70,7 @@ inline ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #ifdef NOP
 // Реализация котороая в будущем может понадобится
 // !!! Просьба не удалять
-ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
+ostream& operator<<(ostream& a_strm, char const IRS_ICCAVR_FLASH* ap_strg)
 {
   enum {
     buf_size = 100
@@ -61,7 +79,7 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
     
   #ifdef IRS_LIB_DEBUG
   if (buf[buf_size] != 0) {
-    static char IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] =
+    static char const IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] =
       "В операторе сдвига для строк во Flash в буфере отсутствует "
       "завершающий нуль";
     a_strm << endl << p_msg_no_zero_terminator << endl;
@@ -71,9 +89,9 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
   
   const size_t strg_size = strlen_G(ap_strg);
   const size_t part_cnt = strg_size/buf_size;
-  char IRS_ICCAVR_FLASH* strg_end = ap_strg + strg_size;
+  char const IRS_ICCAVR_FLASH* strg_end = ap_strg + strg_size;
   for (size_t part_idx = 0; part_idx < part_cnt; ++part_idx) {
-    char IRS_ICCAVR_FLASH* strg_part_end = ap_strg + buf_size;
+    char const IRS_ICCAVR_FLASH* strg_part_end = ap_strg + buf_size;
     copy(ap_strg, strg_part_end, buf);
     a_strm << buf;
     ap_strg = strg_part_end;
@@ -133,12 +151,12 @@ ostream& operator<<(ostream& a_strm, char IRS_ICCAVR_FLASH* ap_strg)
 #define IRS_ERROR_HELPER(error_code, spec_data)\
   {\
     const void* message_spec = IRS_NULL;\
-    if (sizeof(char IRS_ICCAVR_FLASH*) == sizeof(void*)) {\
+    if (sizeof(char const IRS_ICCAVR_FLASH*) == sizeof(void*)) {\
       IRS_SPEC_CSTR_DECLARE(message_fstr, spec_data);\
       message_spec = reinterpret_cast<const void*>(message_fstr);\
     } else {\
       irs::mlog() << irsm("Несоответствие размеров указателя специального ");\
-      irs::mlog() << irsm("типа C-строки (char IRS_ICCAVR_FLASH*) и");\
+      irs::mlog() << irsm("типа C-строки (char const IRS_ICCAVR_FLASH*) и");\
       irs::mlog() << irsm("стандартного (const char*) в макросе ");\
       irs::mlog() << irsm("IRS_ERROR_HELPER\n");\
       irs::mlog() << irsm("Текст сообщения: ") << irsm(spec_data);\
@@ -273,7 +291,7 @@ class error_trans_base_t
 {
 public:
   #ifdef IRS_LIB_FLASH_ASSERT
-  typedef char IRS_ICCAVR_FLASH* cstr_type;
+  typedef char const IRS_ICCAVR_FLASH* cstr_type;
   #else //IRS_LIB_FLASH_ASSERT
   typedef const char* cstr_type;
   #endif //IRS_LIB_FLASH_ASSERT
@@ -314,6 +332,146 @@ struct et_spec_assert_t
 //  (Считывание указателя на экземпляр)
 const void *spec_assert(error_trans_base_t::cstr_type assert_str,
   error_trans_base_t::cstr_type message);
+
+// Вывод информации об ошибке для обработчиков ошибок
+class error_out_t
+{
+public:
+  typedef error_out_t this_type;
+  typedef event_function_t<this_type> out_func_obj_type;
+  
+  enum {
+    m_out_func_list_def_size = ec_user
+  };
+  
+  error_out_t(error_trans_base_t* ap_error_trans,
+    irs_size_t a_out_func_list_size = m_out_func_list_def_size);
+  void out_general_info(ostream &a_out, 
+    error_trans_base_t::cstr_type ap_error_type);
+  void out_info(ostream &a_out);
+  void insert_out_func(error_code_t a_error_code,
+    event_t* ap_out_func);
+  void erase_out_func(error_code_t a_error_code);
+private:
+  error_trans_base_t* mp_error_trans;
+  vector<event_t*> m_out_func_ptr_list;
+  out_func_obj_type m_out_unknown_error_obj;
+  vector<out_func_obj_type> m_out_func_obj_list;
+  ostream* mp_out;
+
+  static event_t* out_func_obj_extract_ptr(
+    out_func_obj_type& a_out_func_obj);
+  
+  void out_standart_error();
+  void out_assert_error();
+  void out_fatal_error();
+  void out_new_assert_error();
+  void out_unknown_error();
+  bool is_valid_error_code(error_code_t a_error_code);
+  error_trans_base_t* error_trans();
+};
+
+// Обработчик ошибок для вывода в ostream
+class ostream_error_handler_t: public mxfact_event_t
+{
+private:
+  ostream* mp_out;
+  error_out_t m_error_out;
+  
+  void exec()
+  {
+    mxfact_event_t::exec();
+    
+    if (mp_out) {
+      m_error_out.out_info(*mp_out);
+    }
+  }
+public:
+  ostream_error_handler_t(
+    ostream* ap_out = IRS_NULL,
+    error_trans_base_t* ap_error_trans = error_trans()
+  ):
+    mp_out(ap_out),
+    m_error_out(ap_error_trans)
+  {
+    ap_error_trans->add_handler(this);
+  }
+  void out(ostream* ap_out)
+  {
+    mp_out = ap_out;
+  }
+};
+
+// Обработчик ошибок для вывода в ostream специально для AVR
+// c остановкой по ошибке и миганием светодиода
+#ifdef __ICCAVR__
+class avr_error_handler_t: public mxfact_event_t
+{
+private:
+  ostream* mp_out;
+  error_out_t m_error_out;
+  blink_t m_error_blink;
+  
+  void exec()
+  {
+    mxfact_event_t::exec();
+    
+    if (mp_out) {
+      m_error_out.out_info(*mp_out);
+    }
+    for (;;) m_error_blink();
+  }
+public:
+  avr_error_handler_t(
+    irs_avr_port_t a_error_blink_port,
+    irs_u8 a_error_blink_bit,
+    ostream* ap_out = IRS_NULL,
+    error_trans_base_t* ap_error_trans = error_trans()
+  ):
+    mp_out(ap_out),
+    m_error_out(ap_error_trans),
+    m_error_blink(a_error_blink_port, a_error_blink_bit, make_cnt_ms(25))
+  {
+    ap_error_trans->add_handler(this);
+  }
+  void out(ostream* ap_out)
+  {
+    mp_out = ap_out;
+  }
+};
+#endif //__ICCAVR__
+
+// Обработчик ошибок для вывода ошибок в виде исключения
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+class exception_error_handler_t: public mxfact_event_t
+{
+private:
+  error_out_t m_error_out;
+  bool m_is_first_throw;
+  
+  void exec()
+  {
+    mxfact_event_t::exec();
+    
+    if (m_is_first_throw) {
+      m_is_first_throw = false;
+      ostringstream out_stream;
+      m_error_out.out_info(out_stream);
+      throw runtime_error(out_stream.str().c_str());
+    }
+    m_is_first_throw = true;
+  }
+public:
+  exception_error_handler_t(
+    error_trans_base_t* ap_error_trans = error_trans()
+  ):
+    m_error_out(ap_error_trans),
+    m_is_first_throw(true)
+  {
+    ap_error_trans->add_handler(this);
+  }
+};
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 class zerobuf: public streambuf
 {
@@ -368,7 +526,7 @@ T* new_assert(T* a_new_expr, int a_file_idx, int a_line)
 {
   if (a_new_expr == IRS_NULL) {
     static int a_file_idx_hold = a_file_idx;
-    //static char IRS_ICCAVR_FLASH empty_fstr[] = "";
+    //static char const IRS_ICCAVR_FLASH empty_fstr[] = "";
     irs::error_trans()->throw_error(irs::ec_new_assert, IRS_NULL, a_line,
       &a_file_idx_hold);
   }

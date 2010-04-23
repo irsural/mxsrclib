@@ -1,14 +1,20 @@
 // Классы для работы с мультиметрами
-// Дата: 24.10.2009
+// Дата: 23.04.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
 //#define RESMEAS // Сброс перед измерением
 
+#include <irsdefs.h>
+
 #include <string.h>
 #include <stdlib.h>
+
+#include <irsstrdefs.h>
+
 #include <measmul.h>
-//---------------------------------------------------------------------------
+
+#include <irsdefs.h>
 
 namespace {
 
@@ -69,15 +75,19 @@ irs::string type_meas_to_str(const type_meas_t a_type_meas)
                             { str_type_meas = str_tm()->time_interval_average;
                                                                     } break;
     default:{
+      #ifdef IRS_LIB_DEBUG
       irs::error_trans_base_t* error_trans = irs::error_trans();
       //  добавлено (void*)
-      char msg_cstr[] = "Отсутствует текстовое представление значения "
-          "переменной перечисляемого типа";
-      char file_cstr[] = __FILE__;
-      error_trans->throw_error(
-        irs::ec_standard, file_cstr, __LINE__,
-          (void*)msg_cstr);
-    }
+      //char msg_cstr[] = "Отсутствует текстовое представление значения "
+          //"переменной перечисляемого типа";
+      //char file_cstr[] = __FILE__;
+      IRS_SPEC_CSTR_DECLARE(msg_cstr, "Отсутствует текстовое представление "
+        "значения переменной перечисляемого типа");
+      IRS_SPEC_CSTR_DECLARE(file_cstr, __FILE__);
+      error_trans->throw_error(irs::ec_standard, file_cstr, __LINE__,
+        (void*)msg_cstr);
+      #endif //IRS_LIB_DEBUG
+    } break;
   }
   return str_type_meas;
 }

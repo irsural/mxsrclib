@@ -1,5 +1,5 @@
 // Утилиты для отладки программы
-// Дата: 20.04.2010
+// Дата: 23.04.2010
 // Дата создания: 09.04.2010
 
 // Номер файла
@@ -7,12 +7,14 @@
 
 #include <irsdefs.h>
 
-#include <irsdbgutil.h>
+#include <timer.h>
 #include <irserror.h>
 #include <irsstrm.h>
 #ifdef __ICCAVR__
 #include <irsarchint.h>
 #endif //__ICCAVR__
+
+#include <irsdbgutil.h>
 
 #include <irsfinal.h>
 
@@ -23,19 +25,19 @@ class default_memory_checker_t: public memory_checker_t
 {
 public:
   default_memory_checker_t();
-  virtual value_type range_param_begin(ident_type a_ident);
+  virtual value_type range_param_begin(ident_type a_ident) const;
   virtual void range_param_begin(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_current(ident_type a_ident);
+  virtual value_type range_param_current(ident_type a_ident) const;
   virtual void range_param_current(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_end(ident_type a_ident);
+  virtual value_type range_param_end(ident_type a_ident) const;
   virtual void range_param_end(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_size(ident_type a_ident);
-  virtual value_type range_param_cur_size(ident_type a_ident);
-  virtual value_type range_param_rest(ident_type a_ident);
-  virtual value_type param(ident_type a_ident);
+  virtual value_type range_param_size(ident_type a_ident) const;
+  virtual value_type range_param_cur_size(ident_type a_ident) const;
+  virtual value_type range_param_rest(ident_type a_ident) const;
+  virtual value_type param(ident_type a_ident) const;
   virtual void param(ident_type a_ident, value_type a_value);
   virtual void heap_array_size(value_type a_size);
   virtual void out_info(ostream* ap_strm);
@@ -43,6 +45,10 @@ public:
 private:
 };
 
+#ifdef __ICCAVR__
+// Проверка памяти для AVR
+// На 23.04.2010 примерный расход памяти:
+// HEAP: 96 байт; CSTACK: 74 байт; Статической: 101 байт
 struct memory_checker_range_param_t
 {
   typedef memory_checker_t::value_type value_type;
@@ -72,7 +78,7 @@ struct memory_checker_traits_t
 {
   typedef memory_checker_t::value_type 
     (avr_memory_checker_t::*param_get_method_type)(
-    memory_checker_t::ident_type a_ident);
+    memory_checker_t::ident_type a_ident) const;
   typedef void (avr_memory_checker_t::*param_set_method_type)(
     memory_checker_t::ident_type a_ident, memory_checker_t::value_type);
 };
@@ -102,7 +108,6 @@ struct memory_checker_range_param_ext_t
   {
   }
 };
-
 struct memory_checker_param_t
 {
   typedef memory_checker_t::value_type value_type;
@@ -132,9 +137,6 @@ struct memory_checker_param_t
   {
   }
 };
-
-#ifdef __ICCAVR__
-// Проверка памяти для AVR
 class avr_memory_checker_t: public memory_checker_t
 {
 public:
@@ -143,19 +145,19 @@ public:
   typedef memory_checker_param_t param_type;
   
   avr_memory_checker_t();
-  virtual value_type range_param_begin(ident_type a_ident);
+  virtual value_type range_param_begin(ident_type a_ident) const;
   virtual void range_param_begin(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_current(ident_type a_ident);
+  virtual value_type range_param_current(ident_type a_ident) const;
   virtual void range_param_current(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_end(ident_type a_ident);
+  virtual value_type range_param_end(ident_type a_ident) const;
   virtual void range_param_end(ident_type a_ident,
     value_type a_value);
-  virtual value_type range_param_size(ident_type a_ident);
-  virtual value_type range_param_cur_size(ident_type a_ident);
-  virtual value_type range_param_rest(ident_type a_ident);
-  virtual value_type param(ident_type a_ident);
+  virtual value_type range_param_size(ident_type a_ident) const;
+  virtual value_type range_param_cur_size(ident_type a_ident) const;
+  virtual value_type range_param_rest(ident_type a_ident) const;
+  virtual value_type param(ident_type a_ident) const;
   virtual void param(ident_type a_ident, value_type a_value);
   virtual void heap_array_size(value_type a_size);
   virtual void out_info(ostream* ap_strm);
@@ -166,23 +168,30 @@ private:
     m_out_time_s_def = 10
   };
   
+  static char const IRS_ICCAVR_FLASH m_call_stack_ident_name[];
+  static char const IRS_ICCAVR_FLASH m_heap_ident_name[];
+  static char const IRS_ICCAVR_FLASH m_return_stack_ident_name[];
+  static IRS_ICCAVR_FLASH char const IRS_ICCAVR_FLASH* const
+    m_ident_name_list[];
+
   vector<range_param_type> m_range_param_list;
   vector<param_type> m_param_list;
-  vector<char IRS_ICCAVR_FLASH*> m_ident_name_list;
   value_type m_heap_array_size;
   event_connect_t<this_type> m_check_event;
   loop_timer_t m_out_timer;
+  irs_u16& m_reg_Y;
   
-  value_type first_delta(ident_type a_ident);
-  value_type second_delta(ident_type a_ident);
-  void out_param(ostream* ap_strm, ident_type a_ident);
+  value_type first_delta(ident_type a_ident) const;
+  value_type second_delta(ident_type a_ident) const;
+  void out_param(ostream* ap_strm, ident_type a_ident) const;
   void select_max(ident_type a_ident, irs_u16 a_value);
   void timer0_init();
   void timer0_deinit();
-  value_type simple_param_get(ident_type a_ident);
+  value_type simple_param_get(ident_type a_ident) const;
   void simple_param_set(ident_type a_ident, value_type a_value);
   void interrupt_set(ident_type a_ident, value_type a_value);
   void out_time_set(ident_type a_ident, value_type a_value);
+  value_type heap_pointer();
 };
 #endif //__ICCAVR__
 
@@ -199,7 +208,7 @@ irs::default_memory_checker_t::default_memory_checker_t()
 }
 irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_begin(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
@@ -209,7 +218,7 @@ void irs::default_memory_checker_t::range_param_begin(
 }
 irs::default_memory_checker_t::value_type 
   irs::default_memory_checker_t::range_param_current(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
@@ -219,7 +228,7 @@ void irs::default_memory_checker_t::range_param_current(
 }
 irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_end(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
@@ -229,24 +238,24 @@ void irs::default_memory_checker_t::range_param_end(
 }
 irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_size(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
 irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_cur_size(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
 irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_rest(
-  ident_type /*a_ident*/)
+  ident_type /*a_ident*/) const
 {
   return 0;
 }
 irs::default_memory_checker_t::value_type
-  irs::default_memory_checker_t::param(ident_type /*a_ident*/)
+  irs::default_memory_checker_t::param(ident_type /*a_ident*/) const
 {
   return 0;
 }
@@ -266,13 +275,26 @@ void irs::default_memory_checker_t::check()
 
 #ifdef __ICCAVR__
 // Проверка памяти для AVR
+char const IRS_ICCAVR_FLASH irs::avr_memory_checker_t::
+  m_call_stack_ident_name[] = "call stack (CSTACK)";
+char const IRS_ICCAVR_FLASH irs::avr_memory_checker_t::
+  m_heap_ident_name[] = "heap";
+char const IRS_ICCAVR_FLASH irs::avr_memory_checker_t::
+  m_return_stack_ident_name[] = "return stack (RSTACK)";
+IRS_ICCAVR_FLASH char const IRS_ICCAVR_FLASH* const
+  irs::avr_memory_checker_t::m_ident_name_list[] =
+{
+  m_call_stack_ident_name,
+  m_heap_ident_name,
+  m_return_stack_ident_name
+};
 irs::avr_memory_checker_t::avr_memory_checker_t():
   m_range_param_list(mcrpi_avr_size),
   m_param_list(mcpi_avr_size),
-  m_ident_name_list(mcrpi_avr_size),
   m_heap_array_size(heap_array_size_def),
   m_check_event(this, check),
-  m_out_timer(make_cnt_s(m_out_time_s_def))
+  m_out_timer(make_cnt_s(m_out_time_s_def)),
+  m_reg_Y(*reinterpret_cast<irs_u16*>(0x1C))
 {
   lock_interrupt_t lock_interrupt;
   
@@ -288,14 +310,9 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
     simple_param_get, out_time_set);
   
-  static char IRS_ICCAVR_FLASH return_stack_name[] = "return stack (RSTACK)";
-  m_ident_name_list[mcrpi_avr_return_stack] = return_stack_name;
-  static char IRS_ICCAVR_FLASH call_stack_name[] = "call stack (CSTACK)";
-  m_ident_name_list[mcrpi_avr_call_stack] = call_stack_name;
-  static char IRS_ICCAVR_FLASH heap_name[] = "heap";
-  m_ident_name_list[mcrpi_avr_heap] = heap_name;
-  
-  check();
+  m_range_param_list[mcrpi_avr_call_stack].param.current = m_reg_Y;
+  m_range_param_list[mcrpi_avr_heap].param.current = heap_pointer();
+  m_range_param_list[mcrpi_avr_return_stack].param.current = SP;
 
   if (m_param_list[mcpi_avr_interrupt].param == mcp_avr_interrupt_timer0) {
     timer0_init();
@@ -303,7 +320,7 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_begin(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.begin;
 }
@@ -314,7 +331,7 @@ void irs::avr_memory_checker_t::range_param_begin(
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_current(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.current;
 }
@@ -325,7 +342,7 @@ void irs::avr_memory_checker_t::range_param_current(
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_end(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.end;
 }
@@ -336,38 +353,38 @@ void irs::avr_memory_checker_t::range_param_end(
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_size(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.end -
     m_range_param_list[a_ident].param.begin;
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_cur_size(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return (this->*m_range_param_list[a_ident].cur_size_method)(a_ident);
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::range_param_rest(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return (this->*m_range_param_list[a_ident].rest_method)(a_ident);
 }
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::first_delta(
-  irs::avr_memory_checker_t::ident_type a_ident)
+  irs::avr_memory_checker_t::ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.current -
     m_range_param_list[a_ident].param.begin;
 }
 irs::avr_memory_checker_t::value_type
-  irs::avr_memory_checker_t::second_delta(ident_type a_ident)
+  irs::avr_memory_checker_t::second_delta(ident_type a_ident) const
 {
   return m_range_param_list[a_ident].param.end -
     m_range_param_list[a_ident].param.current;
 }
 void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "--- ");
   (*ap_strm) << m_ident_name_list[a_ident] << endl;
@@ -421,7 +438,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   (*ap_strm) << endl;
 }
 irs::avr_memory_checker_t::value_type irs::avr_memory_checker_t::param(
-  ident_type a_ident)
+  ident_type a_ident) const
 {
   return (this->*m_param_list[a_ident].get_method)(a_ident);
 }
@@ -448,30 +465,26 @@ void irs::avr_memory_checker_t::select_max(ident_type a_ident,
   irs_u16 a_value)
 {
   value_type& param_current = m_range_param_list[a_ident].param.current;
-  if (param_current != 0) {
-    value_type param_current_prev = param_current;
-    value_type param_cur_size_prev = range_param_cur_size(a_ident);
-    param_current = static_cast<value_type>(a_value);
-    value_type param_cur_size = range_param_cur_size(a_ident);
-    
-    #ifdef IRS_LIB_DEBUG
-    if (param_cur_size >= range_param_size(a_ident)) {
-      lock_interrupt_t lock_interrupt;
-      IRS_LIB_DBG_RAW_MSG(irsm("\n\n"));
-      IRS_LIB_DBG_RAW_MSG(m_ident_name_list[a_ident]);
-      IRS_LIB_DBG_RAW_MSG(irsm(" owerflow!!!") << endl);
-      out_param(&mlog(), a_ident);
-      bool range_param_is_overflow =
-        (param_cur_size < range_param_size(a_ident));
-      IRS_LIB_ASSERT(range_param_is_overflow);
-    }
-    #endif //IRS_LIB_DEBUG
-    
-    if (param_cur_size_prev > param_cur_size) {
-      param_current = param_current_prev;
-    }
-  } else {
-    param_current = static_cast<value_type>(a_value);
+  value_type param_current_prev = param_current;
+  value_type param_cur_size_prev = range_param_cur_size(a_ident);
+  param_current = static_cast<value_type>(a_value);
+  value_type param_cur_size = range_param_cur_size(a_ident);
+  
+  #ifdef IRS_LIB_DEBUG
+  if (param_cur_size >= range_param_size(a_ident)) {
+    lock_interrupt_t lock_interrupt;
+    IRS_LIB_DBG_RAW_MSG(irsm("\n\n"));
+    IRS_LIB_DBG_RAW_MSG(m_ident_name_list[a_ident]);
+    IRS_LIB_DBG_RAW_MSG(irsm(" owerflow!!!") << endl);
+    out_param(&mlog(), a_ident);
+    bool range_param_is_overflow =
+      (param_cur_size < range_param_size(a_ident));
+    IRS_LIB_ASSERT(range_param_is_overflow);
+  }
+  #endif //IRS_LIB_DEBUG
+  
+  if (param_cur_size_prev > param_cur_size) {
+    param_current = param_current_prev;
   }
 }
 void irs::avr_memory_checker_t::timer0_init()
@@ -513,7 +526,7 @@ void irs::avr_memory_checker_t::timer0_deinit()
   #endif //__ATmega128__
 };
 irs::avr_memory_checker_t::value_type
-  irs::avr_memory_checker_t::simple_param_get(ident_type a_ident)
+  irs::avr_memory_checker_t::simple_param_get(ident_type a_ident) const
 {
   return m_param_list[a_ident].param;
 }
@@ -543,20 +556,21 @@ void irs::avr_memory_checker_t::out_time_set(ident_type a_ident,
   m_out_timer.set(make_cnt_s(static_cast<int>(a_value)));
   m_out_timer.start();
 }
+irs::avr_memory_checker_t::value_type
+  irs::avr_memory_checker_t::heap_pointer()
+{
+  auto_arr<irs_u8> p_heap_check_var(
+    IRS_LIB_NEW_ASSERT(new (nothrow) irs_u8[m_heap_array_size],
+    IRSDBGUTILCPP_IDX));
+  return reinterpret_cast<value_type>(p_heap_check_var.get());
+}
 void irs::avr_memory_checker_t::check()
 {
   lock_interrupt_t lock_interrupt;
   
   select_max(mcrpi_avr_return_stack, SP);
-  
-  irs_u16& Y = *reinterpret_cast<irs_u16*>(0x1C);
-  select_max(mcrpi_avr_call_stack, Y);
-  
-  auto_arr<irs_u8> p_heap_check_var(
-    IRS_LIB_NEW_ASSERT(new (nothrow) irs_u8[m_heap_array_size],
-    IRSDBGUTILCPP_IDX));
-  select_max(mcrpi_avr_heap,
-    reinterpret_cast<value_type>(p_heap_check_var.get()));
+  select_max(mcrpi_avr_call_stack, m_reg_Y);
+  select_max(mcrpi_avr_heap, heap_pointer());
 }
 #endif //__ICCAVR__
 

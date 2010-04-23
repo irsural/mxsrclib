@@ -46,19 +46,19 @@ public:
   };
   
   virtual ~memory_checker_t();
-  virtual irs_size_t range_param_begin(ident_type a_ident) = 0;
+  virtual irs_size_t range_param_begin(ident_type a_ident) const = 0;
   virtual void range_param_begin(ident_type a_ident,
     value_type a_value) = 0;
-  virtual value_type range_param_current(ident_type a_ident) = 0;
+  virtual value_type range_param_current(ident_type a_ident) const = 0;
   virtual void range_param_current(ident_type a_ident,
     value_type a_value) = 0;
-  virtual value_type range_param_end(ident_type a_ident) = 0;
+  virtual value_type range_param_end(ident_type a_ident) const = 0;
   virtual void range_param_end(ident_type a_ident,
     value_type a_value) = 0;
-  virtual value_type range_param_size(ident_type a_ident) = 0;
-  virtual value_type range_param_cur_size(ident_type a_ident) = 0;
-  virtual value_type range_param_rest(ident_type a_ident) = 0;
-  virtual value_type param(ident_type a_ident) = 0;
+  virtual value_type range_param_size(ident_type a_ident) const = 0;
+  virtual value_type range_param_cur_size(ident_type a_ident) const = 0;
+  virtual value_type range_param_rest(ident_type a_ident) const = 0;
+  virtual value_type param(ident_type a_ident) const = 0;
   virtual void param(ident_type a_ident, value_type a_value) = 0;
   virtual void heap_array_size(value_type a_size) = 0;
   virtual void out_info(ostream* ap_strm) = 0;

@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 14.04.2010
+// Дата: 23.04.2010
 // Ранняя дата: 4.08.2009
 
 // Номер файла
@@ -110,6 +110,145 @@ const void* irs::spec_assert(error_trans_base_t::cstr_type assert_str,
   spec_assert_i.assert_str = assert_str;
   spec_assert_i.message = message;
   return static_cast<const void*>(&spec_assert_i);
+}
+
+// Вывод информации об ошибке для обработчиков ошибок
+irs::error_out_t::error_out_t(
+  error_trans_base_t* ap_error_trans,
+  irs_size_t a_out_func_list_size
+):
+  mp_error_trans(ap_error_trans),
+  m_out_func_ptr_list(a_out_func_list_size),
+  m_out_unknown_error_obj(this, &irs::error_out_t::out_unknown_error),
+  m_out_func_obj_list(a_out_func_list_size, m_out_unknown_error_obj),
+  mp_out(IRS_NULL)
+{
+  m_out_func_obj_list[ec_standard] =
+    out_func_obj_type(this, &irs::error_out_t::out_standart_error);
+  m_out_func_obj_list[ec_assert] =
+    out_func_obj_type(this, &irs::error_out_t::out_assert_error);
+  m_out_func_obj_list[ec_fatal_error] =
+    out_func_obj_type(this, &irs::error_out_t::out_fatal_error);
+  m_out_func_obj_list[ec_new_assert] =
+    out_func_obj_type(this, &irs::error_out_t::out_new_assert_error);
+  
+  ::transform(m_out_func_obj_list.begin(), m_out_func_obj_list.end(),
+    m_out_func_ptr_list.begin(), out_func_obj_extract_ptr);
+}
+void irs::error_out_t::out_general_info(ostream &a_out,
+  error_trans_base_t::cstr_type ap_error_type)
+{
+  a_out << endl << irsu(a_out, "IRS ERROR") << endl;
+  a_out << irsu(a_out, "Error Code: ");
+  a_out << static_cast<int>(mp_error_trans->error_code()) << endl;
+  a_out << irsu(a_out, "Error Type: ") << ap_error_type << endl;
+  irs::error_trans_base_t::cstr_type file_name = mp_error_trans->file_name();
+  if (file_name) {
+    a_out << irsu(a_out, "File: ");
+    a_out << mp_error_trans->file_name() << endl;
+  }
+  a_out << irsu(a_out, "Line number: ");
+  a_out << mp_error_trans->line_number() << endl;
+}
+void irs::error_out_t::out_info(ostream &a_out)
+{
+  if (mp_error_trans) {
+    irs::error_code_t error_code = mp_error_trans->error_code();
+    if (is_valid_error_code(error_code)) {
+      mp_out = &a_out;
+      if (mp_out) {
+        m_out_func_ptr_list[error_code]->exec();
+      } else {
+        IRS_LIB_DBG_RAW_MSG(irsm("\nОшибка в irs::error_out_t::out_info!\n"));
+        IRS_LIB_DBG_RAW_MSG(irsm("mp_out не должен быть "));
+        IRS_LIB_DBG_RAW_MSG(irsm("равен нулю\n") << endl);
+      }
+    }
+  }
+}
+void irs::error_out_t::insert_out_func(error_code_t a_error_code,
+  event_t* ap_out_func)
+{
+  if (!is_valid_error_code(a_error_code)) {
+    m_out_func_ptr_list.resize(a_error_code + 1);
+  } else {
+    // Если код ошибки правильный (т. е. память под него выделена),
+    // то выделение памяти не требуется
+  }
+  m_out_func_ptr_list[a_error_code] = ap_out_func;
+}
+void irs::error_out_t::erase_out_func(error_code_t a_error_code)
+{
+  if (is_valid_error_code(a_error_code)) {
+    m_out_func_ptr_list[a_error_code] = &m_out_unknown_error_obj;
+  }
+}
+irs::event_t* irs::error_out_t::out_func_obj_extract_ptr(
+  out_func_obj_type& a_out_func_obj)
+{
+  return &a_out_func_obj;
+}
+void irs::error_out_t::out_standart_error()
+{
+  IRS_SPEC_CSTR_DECLARE(error_name, "Standart Error");
+  out_general_info(*mp_out, error_name);
+  irs::error_trans_base_t::cstr_type msg =
+    reinterpret_cast<irs::error_trans_base_t::cstr_type>(
+    mp_error_trans->spec_data());
+  *mp_out << irsu(*mp_out, "Message: ") << msg << endl;
+}
+void irs::error_out_t::out_assert_error()
+{
+  IRS_SPEC_CSTR_DECLARE(error_name, "Assert");
+  out_general_info(*mp_out, error_name);
+  const irs::et_spec_assert_t *spec_data =
+    static_cast<const irs::et_spec_assert_t *>(
+      mp_error_trans->spec_data()
+    );
+  if (spec_data) {
+    if (spec_data->assert_str) {
+      *mp_out << irsu(*mp_out, "Assert: ") << spec_data->assert_str;
+      *mp_out << endl;
+    }
+    if (spec_data->message) {
+      *mp_out << irsu(*mp_out, "Message: ") << spec_data->message;
+      *mp_out << endl;
+    }
+  }
+}
+void irs::error_out_t::out_fatal_error()
+{
+  IRS_SPEC_CSTR_DECLARE(error_name, "Fatal Error");
+  out_general_info(*mp_out, error_name);
+  irs::error_trans_base_t::cstr_type spec_data =
+    reinterpret_cast<irs::error_trans_base_t::cstr_type>(
+    mp_error_trans->spec_data());
+  if (spec_data) {
+    *mp_out << irsu(*mp_out, "Message: ") << spec_data;
+    *mp_out << endl;
+  }
+}
+void irs::error_out_t::out_new_assert_error()
+{
+  IRS_SPEC_CSTR_DECLARE(error_name, "Assert for new");
+  out_general_info(*mp_out, error_name);
+  const int& file_idx = *static_cast<const int*>(
+    mp_error_trans->spec_data());
+  *mp_out << irsu(*mp_out, "File Index: ") << file_idx << endl;
+  *mp_out << irsu(*mp_out, "Allocation Error (operator new)") << endl;
+}
+void irs::error_out_t::out_unknown_error()
+{
+  IRS_SPEC_CSTR_DECLARE(error_name, "Unknown");
+  out_general_info(*mp_out, error_name);
+}
+bool irs::error_out_t::is_valid_error_code(error_code_t a_error_code)
+{
+  return static_cast<size_t>(a_error_code) < m_out_func_ptr_list.size();
+}
+irs::error_trans_base_t* irs::error_out_t::error_trans()
+{
+  return mp_error_trans;
 }
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)

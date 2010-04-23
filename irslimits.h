@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <irscpp.h>
+#include <irsstrdefs.h>
 
 #include <irsfinal.h>
 

@@ -1,5 +1,5 @@
-// UDP/IP-стек 
-// Дата: 09.04.2010
+// UDP/IP-стек
+// Дата: 23.04.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -228,7 +228,7 @@ private:
   bool m_send_udp;
   bool m_recv_arp;
   bool m_recv_icmp;
-  set<size_t> m_port_list;
+  set<irs_u16> m_port_list;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);

@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 19.04.2010
+// Дата: 23.04.2010
 // Дата создания: 8.09.2009
 
 #include <hardflowg.h>
@@ -2123,7 +2123,7 @@ irs::hardflow::simple_udp_flow_t::size_type
             int(mp_recv_buf[buf_idx]) << endl;
         }*/
         memcpyex(ap_buf, mp_recv_buf_cur, a_size);
-        if (static_cast<irs_u16>(mp_recv_buf_cur + a_size - mp_recv_buf) <
+        if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
           (mp_simple_udp->recv_buf_size())) 
         {
           mp_recv_buf_cur += a_size;

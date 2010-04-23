@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 15.04.2010
+// Дата: 19.04.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -27,21 +27,6 @@
 #endif //IRS_LINUX
 
 #include <irsfinal.h>
-
-#ifdef __ICCAVR__
-#define IRS_STRM_ICCAVR_FLASH_OUT(out_stream, flash_string)\
-  {\
-    static char IRS_ICCAVR_FLASH irs_stream_flash_string[] = flash_string;\
-    out_stream << irs_stream_flash_string;\
-  }
-#define irsu(out_stream, spec_string)\
-  ""; IRS_STRM_ICCAVR_FLASH_OUT(out_stream, spec_string); out_stream << ""
-#else //__ICCAVR__
-#define irsu(out_stream, spec_string)\
-  {\
-    spec_string;\
-  }
-#endif //__ICCAVR__
 
 namespace irs {
 
