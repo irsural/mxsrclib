@@ -10,6 +10,9 @@
 
 #include <irsdefs.h>
 
+#ifdef __ICCAVR__
+#include <pgmspace.h>
+#endif //__ICCAVR__
 
 #ifdef __ICCAVR__
 #include <irsavrutil.h>
@@ -70,7 +73,8 @@ inline ostream& operator<<(ostream& a_strm,
 #ifdef NOP
 // Реализация котороая в будущем может понадобится
 // !!! Просьба не удалять
-ostream& operator<<(ostream& a_strm, char const IRS_ICCAVR_FLASH* ap_strg)
+inline ostream& operator<<(ostream& a_strm, 
+  char const IRS_ICCAVR_FLASH* ap_strg)
 {
   enum {
     buf_size = 100
@@ -101,6 +105,8 @@ ostream& operator<<(ostream& a_strm, char const IRS_ICCAVR_FLASH* ap_strg)
     buf[strg_end - ap_strg] = 0;
     a_strm << buf;
   }
+  
+  return a_strm;
 }
 #endif //NOP
 
