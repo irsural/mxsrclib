@@ -1,13 +1,13 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата 14.04.2010
+// Дата 23.04.2010
 // Ранняя дата 16.04.2008
 
 #include <irsdefs.h>
 
 #include <string.h>
 
-#include <mxifa.h>
+#include <mxifatest.h>
 #include <UDP_stack.h>
 #include <timer.h>
 #include <hardflowg.h>
@@ -79,6 +79,7 @@ typedef struct _mxifa_avr128_ether_t {
   irs_avr_port_t data_port;
   // Порт данных AVR к которому подключены линии адреса RTL
   irs_avr_port_t address_port;
+  
 } mxifa_avr128_ether_t;
 
 // Структура данных канала типа mxifa_ei_hardflow
@@ -114,121 +115,113 @@ typedef struct _mxifa_chdata_t {
 // Ethernet (MAC) адрес
 irs_u8 local_mac[MXIFA_MAC_SIZE] = {0x00, 0x01, 0xF1, 0x5C, 0xAF, 0x11};
 // Локальный IP
-mxip_t local_ip = {{192, 168, 0, 38}};
+mxip_t local_ip = {{192, 168, 0, 38}}; // 4 bytes
 // Широковещательный IP
 const mxip_t broadcast_ip = {{255, 255, 255, 255}};
 // Удаленный IP для канала 1
-mxip_t dest_ip_1 = {{192, 168, 0, 16}};
+mxip_t dest_ip_1 = {{192, 168, 0, 16}}; // 4 bytes
 // Маска подсети (не используется)
-mxip_t local_mask = {{255, 255, 255, 0}};
+mxip_t local_mask = {{255, 255, 255, 0}}; // 4 bytes
 
-// Данные канала 1
-mxifa_avr128_ether_t mxifa_avr128_ether_1 = {
-  local_ip,             // Локальный IP
-  MXNET_PORT,           // Локальный порт
-  local_mask,           // Локальная маска
-  dest_ip_1,            // Удаленный IP
-  MXNET_PORT,           // Удаленный порт
-  irs_false,            // Включение широковещания
-  mxifa_wm_free,        // Текущий режим записи
-  IRS_NULL,             // Описание удаленной системы для записи
-  IRS_NULL,             // Буфер записи
-  0,                    // Размер буфера записи
-  mxifa_rm_free,        // Текущий режим записи
-  IRS_NULL,             // Описание удаленной системы для чтения
-  IRS_NULL,             // Буфер чтения
-  0,                    // Размер буфера чтения
-  0,                    // Начало буфера чтения UDP_stack
-  0,                    // Размер буфера чтения UDP_stack
-  // Размер буфера приема и передачи по Ethernet
-  250,
-  // Порт данных AVR к которому подключены линии данных RTL
-  irs_avr_porta,
-  // Порт данных AVR к которому подключены линии адреса RTL
-  irs_avr_portf //irs_avr_portc наверно???
-};
+enum { channel_max_cnt = 8 };
 
-// Данные канала 2
-mxifa_hardflow_t mxifa_hardflow = {
-  MXIFA_HARDFLOW,       //  channel id
-  0,                    //  write_buffer
-  0,                    //  read_buffer
-  0,                    //  rb_size
-  0,                    //  wb_size
-  0,                    //  rb_current_byte
-  0,                    //  wb_current_byte
-  false,                //  read_process
-  false,                //  write_process
-  0                     //  указатель на класс
-};
+//Данные  канала 1 (MXIFA_MXNET)
+mxifa_avr128_ether_t mxifa_avr128_ether_1;
+// Данные канала 7 (MXIFA_HARDFLOW)
+mxifa_hardflow_t mxifa_hardflow_7;
 
-// Массив данных всех каналов
-mxifa_chdata_t mxifa_chdata[] = {
-  // Зарезервированный нулевой порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  // Порт 1 на avr128_ether
-  {
-    mxifa_ei_avr128_ether,        // Тип интерфейса
-    avr128_ether_read,            // Фукции обработки
-    true,                         // Истина, если устройство не занято операциями
-    false,                        // Канал открыт
-    (void *)&mxifa_avr128_ether_1 // Специфические данные канала
-  },
-  // Зарезервированный 2 порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  // Зарезервированный 3 порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  // Зарезервированный 4 порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  // Зарезервированный 5 порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  // Зарезервированный 6 порт
-  {
-    mxifa_ei_unknown,
-    mxifa_nulf,
-    true,
-    false,
-    IRS_NULL
-  },
-  //  Порт 7 на hardflow
-  {
-    mxifa_ei_hardflow,            // Тип интерфейса
-    mxifa_nulf,                   // Фукции обработки
-    true,                         // Истина, если устройство не занято операциями
-    false,                        // Канал открыт
-    (void*)&mxifa_hardflow        // Специфические данные канала
-  }
-};
+mxifa_chdata_t mxifa_chdata[channel_max_cnt];
+
+static void mxifa_unknown_channel_init(mxifa_ch_t a_channel_ident)
+{
+  // Инициализируем данные канала
+  // Создание псевдонима для данных канала
+  mxifa_chdata_t &channel = mxifa_chdata[a_channel_ident];
+    // Тип интерфейса
+  channel.enum_iface = mxifa_ei_unknown;
+  // Фукции обработки
+  channel.tick = mxifa_nulf;
+  // Истина, если устройство не занято операциями
+  channel.mode_free = true;
+  // Канал открыт
+  channel.opened = false;
+  // Специфические данные канала
+  channel.ch_spec = IRS_NULL;  
+}
+
+static void mxifa_hardflow_channel_init(mxifa_ch_t a_channel_ident,
+  mxifa_hardflow_t* ap_channel_spec_data)
+{
+  mxifa_hardflow_t& spec_data = *ap_channel_spec_data;
+  memset(&spec_data, 0, sizeof(spec_data));
+ 
+  spec_data.channel_id = MXIFA_HARDFLOW;
+  spec_data.write_buffer = 0;
+  spec_data.read_buffer = 0;
+  spec_data.rb_size = 0;
+  spec_data.wb_size = 0;
+  spec_data.rb_current_byte = 0;
+  spec_data.wb_current_byte = 0;
+  spec_data.read_process = false;
+  spec_data.write_process = false;
+  spec_data.hardflow = 0;
+  
+  // Инициализируем данные канала
+  // Создание псевдонима для данных канала
+  mxifa_chdata_t &channel = mxifa_chdata[a_channel_ident];
+    // Тип интерфейса
+  channel.enum_iface = mxifa_ei_hardflow;
+  // Фукции обработки
+  channel.tick = mxifa_nulf;
+  // Истина, если устройство не занято операциями
+  channel.mode_free = true;
+  // Канал открыт
+  channel.opened = false;
+  // Специфические данные канала
+  channel.ch_spec = &spec_data;  
+}
+
+static void mxifa_avr128_ether_channel_init(mxifa_ch_t a_channel_ident,
+  mxifa_avr128_ether_t* ap_channel_spec_data)
+{
+  mxifa_avr128_ether_t& spec_data = *ap_channel_spec_data;
+  memset(&spec_data, 0, sizeof(spec_data));
+  
+  spec_data.local_ip = local_ip;
+  spec_data.local_port = MXNET_PORT;
+  spec_data.local_mask = local_mask;
+  spec_data.dest_ip = dest_ip_1;
+  spec_data.dest_port = MXNET_PORT;
+  spec_data.is_broadcast = irs_false;
+  spec_data.write_mode = mxifa_wm_free;
+  spec_data.wr_dest = IRS_NULL;
+  spec_data.wr_buf = IRS_NULL;
+  spec_data.wr_size = 0;
+  spec_data.read_mode = mxifa_rm_free;
+  spec_data.rd_dest = IRS_NULL;
+  spec_data.rd_buf = IRS_NULL;
+  spec_data.rd_size = 0;
+  spec_data.buf_begin = 0;
+  spec_data.buf_size = 0;
+  spec_data.ether_bufs_size = 250;
+  spec_data.data_port = irs_avr_porta;
+  spec_data.address_port = irs_avr_portf;
+  
+  // Инициализируем данные канала
+  // Создание псевдонима для данных канала
+  mxifa_chdata_t &channel = mxifa_chdata[a_channel_ident];
+    // Тип интерфейса
+  channel.enum_iface = mxifa_ei_avr128_ether;
+  // Фукции обработки
+  channel.tick = avr128_ether_read;
+  // Истина, если устройство не занято операциями
+  channel.mode_free = true;
+  // Канал открыт
+  channel.opened = false;
+  // Специфические данные канала
+  channel.ch_spec = &spec_data;
+}
+
 // Обобщенная структура данных канала 1
 //mxifa_chdata_t mxifa_chdata_1 = {mxifa_ei_avr128_ether, mxifa_avr128_ether_1};
 // Массив указателей на данные всех каналов
@@ -252,6 +245,14 @@ void mxifa_init()
   if (!count_init) {
     init_to_cnt();
   }
+  mxifa_unknown_channel_init(MXIFA_ZERO);
+  mxifa_avr128_ether_channel_init(MXIFA_MXNET, &mxifa_avr128_ether_1);
+  mxifa_unknown_channel_init(MXIFA_MXNETC);
+  mxifa_unknown_channel_init(MXIFA_SUPPLY);
+  mxifa_unknown_channel_init(MXIFA_MULTIMETER);
+  mxifa_unknown_channel_init(MXIFA_MODBUS);
+  mxifa_unknown_channel_init(MXIFA_MODBUS_CL);
+  mxifa_hardflow_channel_init(MXIFA_HARDFLOW, &mxifa_hardflow_7);
   count_init++;
 }
 // Деинициализация mxifa
