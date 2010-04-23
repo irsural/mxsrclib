@@ -7,6 +7,10 @@
 
 #include <irsdefs.h>
 
+#ifdef __ICCAVR__
+#include <inavr.h>
+#endif //__ICCAVR__
+
 #include <irscpp.h> 
 
 #include <irsfinal.h>

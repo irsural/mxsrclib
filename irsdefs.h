@@ -1,12 +1,9 @@
 // Глобальные объявления типов
-// Дата: 22.04.2010
+// Дата: 23.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
-
-// Деректива throw
-#define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
 
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
@@ -16,6 +13,7 @@
 #define IRS_LINUX // Платформа Linux
 #endif // Определения платформы
 
+
 #ifdef IRS_WIN32
 #include <winsock2.h>
 #endif // __WIN32__
@@ -23,23 +21,15 @@
 #include <limits.h>
 #include <stddef.h>
 
-#include <lirsdefs.h>
+//#include <lirsdefs.h>
 
-#ifdef __BORLANDC__
-// Большое целое со знаком
-typedef signed __int64 irs_ilong_long;
-// Большое целое без знака
-typedef unsigned __int64 irs_ulong_long;
-#else // !__BORLANDC__
-// Большое целое со знаком
-typedef signed long long irs_ilong_long;
-// Большое целое без знака
-typedef unsigned long long irs_ulong_long;
-#endif // !__BORLANDC__
-// 32-битовое плавающее
-typedef float irs_float32;
-// 64-битовое плавающее
-typedef double irs_float64;
+
+// Деректива throw
+#ifdef __ICCAVR__
+#define IRS_THROW(_THROW_LIST_)
+#else //__ICCAVR__
+#define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
+#endif //__ICCAVR__
 
 // Определение версии Builder
 #define IRS_CPP_BUILDER4    0x0540
@@ -76,6 +66,17 @@ typedef double irs_float64;
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+// Опции для файла irscpp.h
+#ifdef __ICCAVR__
+#define NAMESPACE_STD_NOT_SUPPORT
+#endif //__ICCAVR__
+
+// Включение 64-битного типа
+#define IRSDEFS_I64
+
+// Включение большого целого типа
+#define IRSDEFS_LONG_LONG
+
 // Специальные описатели для манипуляторов в различных компиляторах
 #if defined(__WATCOMC__)
 #define IRS_STREAMSPECDECL _WPRTLINK
@@ -108,6 +109,47 @@ typedef double irs_float64;
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
+// Один из типов используется в функции detect_cpu_endian, поэтому стоит выше
+// других объявлений типов
+// 8-битовое целое со знаком
+typedef signed char 		 		irs_i8;
+// 8-битовое целое без знака
+typedef unsigned char 	 		irs_u8;
+// 16-битовое целое со знаком
+typedef signed short 		 		irs_i16;
+// 16-битовое целое без знака
+typedef unsigned short 	 		irs_u16;
+// 32-битовое целое со знаком
+typedef signed long 		 		irs_i32;
+// 32-битовое целое без знака
+typedef unsigned long 	 		irs_u32;
+#ifdef __BORLANDC__
+// 64-битовое целое со знаком
+typedef signed __int64    irs_i64;
+// 64-битовое целое без знака
+typedef unsigned __int64  irs_u64;
+#else //__BORLANDC__
+// 64-битовое целое со знаком
+typedef signed long long 		irs_i64;
+// 64-битовое целое без знака
+typedef unsigned long long 	irs_u64;
+#endif //__BORLANDC__
+
+#ifdef __BORLANDC__
+// Большое целое со знаком
+typedef signed __int64 irs_ilong_long;
+// Большое целое без знака
+typedef unsigned __int64 irs_ulong_long;
+#else // !__BORLANDC__
+// Большое целое со знаком
+typedef signed long long irs_ilong_long;
+// Большое целое без знака
+typedef unsigned long long irs_ulong_long;
+#endif // !__BORLANDC__
+// 32-битовое плавающее
+typedef float irs_float32;
+// 64-битовое плавающее
+typedef double irs_float64;
 
 // Используется в функции detect_cpu_endian, поэтому стоит выше
 // макросов IRS_HIBYTE, ...
@@ -166,6 +208,13 @@ inline endian_t detect_cpu_endian()
   defined(_MSC_VER)
 #define __FUNC__ __FUNCTION__
 #endif //defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
+
+#ifdef __ICCAVR__
+// Разрешение прерываний
+#define irs_enable_interrupt() { __enable_interrupt(); }
+// Запрещение прерываний
+#define irs_disable_interrupt() { __disable_interrupt(); }
+#endif //__ICCAVR__
 
 // Макросы для работы c DLL
 // Объявление внешней функции
