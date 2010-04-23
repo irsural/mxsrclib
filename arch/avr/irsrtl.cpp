@@ -169,7 +169,7 @@ void irs::rtl8019as_t::recv_packet()
       m_recv_buf_size = recv_size_cur;
       IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
         (m_recv_buf_size <= m_recv_buf.size()));
-      for (irs_u16 i = 0; i < m_recv_buf_size; i++) {
+      for (irs_size_t i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
       m_is_recv_buf_filled = true;
@@ -178,12 +178,12 @@ void irs::rtl8019as_t::recv_packet()
           int(mp_recv_buf[0x2a + buf_idx]) << endl;
       }*/
     } else {
-      for (irs_u16 i = 0; i < recv_size_cur; i++) {
+      for (irs_size_t i = 0; i < recv_size_cur; i++) {
         read_rtl(rdmaport);
       }
     }
   } else {
-    for (irs_u16 i = 0; i < recv_size_cur; i++) {
+    for (irs_size_t i = 0; i < recv_size_cur; i++) {
       read_rtl(rdmaport);
     }
   }
@@ -334,7 +334,7 @@ bool irs::rtl8019as_t::wait_dma()
   return true;
 }
 
-void irs::rtl8019as_t::send_packet(irs_u16 a_size) 
+void irs::rtl8019as_t::send_packet(irs_size_t a_size) 
 {
   #ifdef IRS_LIB_CHECK
   if (a_size > ETHERNET_PACKET_MAX) {
@@ -361,7 +361,7 @@ void irs::rtl8019as_t::send_packet(irs_u16 a_size)
   write_rtl(rbcr0, IRS_LOBYTE(a_size));
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
-  for (irs_u16 i = 0; i < a_size; i++) {
+  for (irs_size_t i = 0; i < a_size; i++) {
     static irs::blink_t blink_2(irs_avr_porte, 2);
     blink_2();
     write_rtl(rdmaport, mp_send_buf[i]);

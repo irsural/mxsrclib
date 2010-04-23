@@ -42,7 +42,7 @@ public:
     double_buf
   };
   virtual ~simple_ethernet_t() {}
-  virtual void send_packet(irs_u16 a_size) = 0;
+  virtual void send_packet(irs_size_t a_size) = 0;
   virtual void set_recv_handled() = 0;
   virtual bool is_recv_buf_filled() = 0;
   virtual irs_u8* get_recv_buf() = 0;
@@ -188,16 +188,16 @@ private:
   buffer_num_t m_buf_num;
   mxip_t m_ip;
   mxmac_t m_mac;
-  irs_u16 m_recv_buf_size_icmp;
+  irs_size_t m_recv_buf_size_icmp;
   mxip_t m_dest_ip;
   mxip_t m_dest_ip_def;
   bool m_user_recv_status;
   bool m_user_send_status;
   bool m_udp_send_status;
   irs_u16 m_identif;
-  irs_u16 m_user_recv_buf_size;
-  irs_u16 m_user_send_buf_size;
-  irs_u16 m_user_send_buf_udp_size;
+  irs_size_t m_user_recv_buf_size;
+  irs_size_t m_user_send_buf_size;
+  irs_size_t m_user_send_buf_udp_size;
   irs_u16 m_dest_port;
   irs_u16 m_dest_port_def;
   irs_u16 m_local_port;
@@ -231,9 +231,9 @@ private:
   set<irs_u16> m_port_list;
   
   bool cash(mxip_t a_dest_ip);
-  irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_u16 a_count);
-  irs_u16 check_sum(irs_u16 a_count, irs_u8* a_addr);
-  irs_u16 cheksumUDP(irs_u16 a_count, irs_u8* a_addr);
+  irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
+  irs_u16 check_sum(irs_size_t a_count, irs_u8* a_addr);
+  irs_u16 cheksumUDP(irs_size_t a_count, irs_u8* a_addr);
   void arp_request(mxip_t a_dest_ip);
   void arp_response(void);
   void arp_cash(void);

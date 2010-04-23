@@ -68,7 +68,7 @@ public:
     mxmac_t a_mac
   );
   virtual ~rtl8019as_t();
-  virtual void send_packet(irs_u16 a_size);
+  virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
   virtual bool is_recv_buf_filled();
   virtual irs_u8* get_recv_buf();
