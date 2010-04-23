@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include <mxifatest.h>
+#include <mxifa.h>
 #include <UDP_stack.h>
 #include <timer.h>
 #include <hardflowg.h>
