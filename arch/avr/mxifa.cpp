@@ -244,15 +244,16 @@ void mxifa_init()
 {
   if (!count_init) {
     init_to_cnt();
+    
+    mxifa_unknown_channel_init(MXIFA_ZERO);
+    mxifa_avr128_ether_channel_init(MXIFA_MXNET, &mxifa_avr128_ether_1);
+    mxifa_unknown_channel_init(MXIFA_MXNETC);
+    mxifa_unknown_channel_init(MXIFA_SUPPLY);
+    mxifa_unknown_channel_init(MXIFA_MULTIMETER);
+    mxifa_unknown_channel_init(MXIFA_MODBUS);
+    mxifa_unknown_channel_init(MXIFA_MODBUS_CL);
+    mxifa_hardflow_channel_init(MXIFA_HARDFLOW, &mxifa_hardflow_7);
   }
-  mxifa_unknown_channel_init(MXIFA_ZERO);
-  mxifa_avr128_ether_channel_init(MXIFA_MXNET, &mxifa_avr128_ether_1);
-  mxifa_unknown_channel_init(MXIFA_MXNETC);
-  mxifa_unknown_channel_init(MXIFA_SUPPLY);
-  mxifa_unknown_channel_init(MXIFA_MULTIMETER);
-  mxifa_unknown_channel_init(MXIFA_MODBUS);
-  mxifa_unknown_channel_init(MXIFA_MODBUS_CL);
-  mxifa_hardflow_channel_init(MXIFA_HARDFLOW, &mxifa_hardflow_7);
   count_init++;
 }
 // Деинициализация mxifa
