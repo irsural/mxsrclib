@@ -1,7 +1,7 @@
 // Драйвер Ethernet для RTL8019AS Димы Уржумцева
 // Откорректирован Крашенинников М. В.
 // Испорчен Поляковым М.
-// Дата: 14.04.2010
+// Дата: 26.04.2010
 // Ранняя дата: 30.05.2008
 
 #ifndef RTL8019ASH
@@ -9,7 +9,7 @@
 
 #include <irsdefs.h>
 
-#include <gdefs.h>
+//#include <gdefs.h>
 #include <irsstd.h>
 #include <irsconfig.h>
 #include <irsint.h>

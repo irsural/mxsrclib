@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 23.04.2010
+// Дата: 26.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -153,11 +153,16 @@ typedef double irs_float64;
 
 // Используется в функции detect_cpu_endian, поэтому стоит выше
 // макросов IRS_HIBYTE, ...
+#define IRS_FIRSTDWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_)))))
+#define IRS_SECONDDWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_))) + 1))
+#define IRS_FIRSTWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_)))))
+#define IRS_SECONDWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_))) + 1))
 #define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
 #define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
 
 namespace irs {
 
+// Определение порядка байтов во время выполнения
 enum endian_t {
   little_endian = 0,
   big_endian = 1
@@ -173,6 +178,15 @@ inline endian_t detect_cpu_endian()
 
 }//namespace irs
 
+// Определение порядка байтов во время компиляции
+#define IRS_LITTLE_ENDIAN 0
+#define IRS_BIG_ENDIAN 1
+#ifdef __AVR32__
+#define IRS_CPU_ENDIAN IRS_BIG_ENDIAN
+#else //__AVR32__
+#define IRS_CPU_ENDIAN IRS_LITTLE_ENDIAN
+#endif //__AVR32__
+
 // Вычисление размера статического массива
 #define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
 #define IRS_ARRAYOFSIZE(_ARRAY_) IRS_ARRAYSIZE(_ARRAY_)
@@ -180,23 +194,33 @@ inline endian_t detect_cpu_endian()
 #define IRS_NULL 0
 // Макросы выделения из переменных их частей
 // BYTE - байты, WORD - 2 байта, DWORD - 4 байта
-#define IRS_HIDWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_HIDWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u32 *)(&(_NUM_))) + 1):*(((irs_u32 *)(&(_NUM_)))))
-#define IRS_LODWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_LODWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u32 *)(&(_NUM_)))):*(((irs_u32 *)(&(_NUM_))) + 1))
-#define IRS_HIWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_HIWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u16 *)(&(_NUM_))) + 1):*(((irs_u16 *)(&(_NUM_)))))
-#define IRS_LOWORD(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_LOWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u16 *)(&(_NUM_)))):*(((irs_u16 *)(&(_NUM_))) + 1))
-#define IRS_HIBYTE(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_HIBYTE(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u8 *)(&(_NUM_))) + 1):*(((irs_u8 *)(&(_NUM_)))))
-#define IRS_LOBYTE(_NUM_) ((irs::detect_cpu_endian()==irs::little_endian)?\
+#define IRS_LOBYTE(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *(((irs_u8 *)(&(_NUM_)))):*(((irs_u8 *)(&(_NUM_))) + 1))
 
+// Макросы выделения из переменных их частей для констант
+#define IRS_CONST_HIDWORD(_NUM_)\
+  (static_cast<irs_u32>((_NUM_ >> 32)&0xFFFFFFFF))
+#define IRS_CONST_LODWORD(_NUM_)\
+  (static_cast<irs_u32>(_NUM_&0xFFFFFFFF))
+#define IRS_CONST_HIWORD(_NUM_)\
+  (static_cast<irs_u16>((_NUM_ >> 16)&0xFFFF))
+#define IRS_CONST_LOWORD(_NUM_)\
+  (static_cast<irs_u16>(_NUM_&0xFFFF))
 #define IRS_CONST_HIBYTE(_NUM_)\
-  (static_cast<irs_u8>(_NUM_ >> 8))
+  (static_cast<irs_u8>((_NUM_ >> 8)&0xFF))
 #define IRS_CONST_LOBYTE(_NUM_)\
-  (static_cast<irs_u8>(_NUM_ & 0xFF))
+  (static_cast<irs_u8>(_NUM_&0xFF))
+
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))

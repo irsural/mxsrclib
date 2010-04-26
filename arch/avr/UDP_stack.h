@@ -1,6 +1,6 @@
 // UDP/IP-стэк Димы Уржумцева
 // Откорректирован Крашенинников М. В.
-// Дата: 14.04.2010
+// Дата: 26.04.2010
 // Ранняя дата: 30.05.2008
 
 #ifndef UDPSTACKH
@@ -10,7 +10,7 @@
 
 #include <RTL8019AS.h>
 #include <irsdefs.h>
-#include <gdefs.h>
+//#include <gdefs.h>
 #include <irsconfig.h>
 
 #include <irsfinal.h>
