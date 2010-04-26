@@ -14,3 +14,4 @@ del lsprst7.tgz
 del lsprst7.dll
 del sysprs7.tgz
 del sysprs7.dll
+del tmpPrst.tgz
