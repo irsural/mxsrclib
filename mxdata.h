@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 15.04.2010
+// Дата: 28.04.2010
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
@@ -379,8 +379,7 @@ template <class T>
 raw_data_t<T>::raw_data_t(size_type a_size):
   m_size(a_size),
   m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
-  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity],
-    MXDATAH_IDX))
+  mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memsetex(mp_data, m_size);
 }
@@ -388,15 +387,14 @@ template <class T>
 raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
   m_size(a_raw_data.m_size),
   m_capacity(a_raw_data.m_capacity),
-  mp_data(IRS_LIB_NEW_ASSERT(new (nothrow) value_type[m_capacity],
-    MXDATAH_IDX))
+  mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memcpyex(mp_data, a_raw_data.mp_data, m_size);
 }
 template <class T>
 raw_data_t<T>::~raw_data_t()
 {
-  delete []mp_data;
+  IRS_LIB_ARRAY_DELETE_ASSERT(mp_data);
 }
 template <class T>
 inline typename raw_data_t<T>::reference
@@ -468,11 +466,11 @@ void raw_data_t<T>::reserve_raw(size_type a_capacity)
   if (a_capacity == m_capacity) return;
 
   size_type new_capacity = a_capacity;
-  pointer new_data = IRS_LIB_NEW_ASSERT(
-    new (nothrow) value_type[new_capacity], MXDATAH_IDX);
+  pointer new_data =
+    IRS_LIB_NEW_ASSERT(value_type[new_capacity], MXDATAH_IDX);
   size_type new_size = min(new_capacity, m_size);
   memcpyex(new_data, mp_data, new_size);
-  delete []mp_data;
+  IRS_LIB_ARRAY_DELETE_ASSERT(mp_data);
   mp_data = new_data;
   m_capacity = new_capacity;
   m_size = new_size;
@@ -884,7 +882,8 @@ inline bool operator!=(const handle_t<T>& a_first_handle,
 }
 template <class T>
 handle_t<T>::handle_t(T* ap_object):
-  mp_rep((ap_object == IRS_NULL)?IRS_NULL:new handle_rep_t<T>(1, ap_object))
+  mp_rep((ap_object == IRS_NULL)?IRS_NULL:
+    IRS_LIB_NEW_ASSERT(handle_rep_t<T>(1, ap_object), MXDATAH_IDX))
 {
 }
 template <class T>
@@ -902,8 +901,8 @@ handle_t<T>::~handle_t()
     mp_rep->counter--;
     IRS_LIB_ASSERT(mp_rep->counter >= 0);
     if (mp_rep->counter == 0) {
-      delete mp_rep->object;
-      delete mp_rep;
+      IRS_LIB_DELETE_ASSERT(mp_rep->object);
+      IRS_LIB_DELETE_ASSERT(mp_rep);
     }
   }
 }

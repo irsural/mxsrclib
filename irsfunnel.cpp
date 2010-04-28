@@ -1,7 +1,17 @@
 // Класс для расширения количества переменнных в mxnet "Воронка"
-// Дата: 12.02.2009
+// Дата: 28.04.2010
+// Ранняя дата: 12.02.2009
+
+// Номер файла
+#define IRSFUNNELCPP_IDX 13
+
+#include <irsdefs.h>
+
+#include <irserror.h>
 
 #include <irsfunnel.h>
+
+#include <irsfinal.h>
 
 irs::funnel_client_t::funnel_client_t(
   mxdata_t *ap_data,
@@ -189,8 +199,8 @@ void irs::funnel_client_t::tick()
               m_area_size = 0;
             }
           }
-          delete []mp_buf;
-          mp_buf = new irs_u8[m_area_size];
+          IRS_ARRAY_DELETE_ASSERT(mp_buf);
+          mp_buf = IRS_LIB_NEW_ASSERT(irs_u8[m_area_size], IRSFUNNELCPP_IDX);
           m_is_buf_created = true;
           if (mp_buf) {
             m_current_index = 0;

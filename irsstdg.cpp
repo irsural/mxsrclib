@@ -1,10 +1,18 @@
 // Стандартаная библиотека ИРС общая часть
-// Дата: 27.09.2009
+// Дата: 28.04.2010
 // Ранняя дата: 9.09.2009
 
-#include <irsstdg.h>
+// Номер файла
+#define IRSSTDGCPP_IDX 15
+
+#include <irsdefs.h>
+
 #include <ctype.h>
 #include <irserror.h>
+
+#include <irsstdg.h>
+
+#include <irsfinal.h>
 
 // Класс для приложения
 mxapplication_t::mxapplication_t():
@@ -92,14 +100,15 @@ void *irs_renew(void *pointer, size_t old_size, size_t new_size)
 
   void *new_pointer = IRS_NULL;
   if (new_size) {
-    new_pointer = (void*)new irs_u8 *[new_size];
+    new_pointer =
+      (void*)IRS_LIB_NEW_ASSERT(irs_u8 *[new_size], IRSSTDGCPP_IDX);
     if (!new_pointer) return new_pointer;
   }
   if (pointer) {
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    delete [](irs_u8 *)pointer;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)pointer);
     pointer = IRS_NULL;
   }
   return new_pointer;

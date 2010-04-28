@@ -1,7 +1,6 @@
 // Протокол MxNetC (Max Network Client)
 // Дата: 13.04.2010
 
-//---------------------------------------------------------------------------
 #ifndef mxnetcH
 #define mxnetcH
 
@@ -16,11 +15,11 @@
 
 #include <irsfinal.h>
 
-//---------------------------------------------------------------------------
+
 // Версия (<старший байт>.<младший байт>)
 #define MXNC_VERSION 0x0001
 
-//---------------------------------------------------------------------------
+
 typedef enum _mxnc_status_t {
   mxnc_status_success = 0,
   mxnc_status_busy = 1,
@@ -60,9 +59,9 @@ typedef enum _mxnc_error_t {
   mxnc_err_remote_invalid_param = 7,
   mxnc_err_timeout = 8
 } mxnc_error_t;
-//---------------------------------------------------------------------------
+
 class mx_broadcast_proc_t;
-//---------------------------------------------------------------------------
+
 // Класс для
 class mxnetc
 {
@@ -184,7 +183,7 @@ public:
   // Чтение текущего режима
   irs_bool get_broadcast_mode();
 };
-//---------------------------------------------------------------------------
+
 class mx_broadcast_proc_t: public mx_proc_t
 {
   typedef enum _mode_t {
@@ -271,6 +270,6 @@ public:
 };
 
 } //namespace irs
-//---------------------------------------------------------------------------
+
 #endif //mxnetcH
 

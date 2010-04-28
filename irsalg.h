@@ -1,12 +1,19 @@
 // Алгоритмы
-// Дата: 2.09.2009
+// Дата: 24.04.2010
+// Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
 #define IRSALGH
 
+// Номер файла
+#define IRSALGH_IDX 10
+
 #include <irsdefs.h>
+
 #include <irserror.h>
 #include <mxdata.h>
+
+#include <irsfinal.h>
 
 // Реализация алгоритма кольцевого буфера
 class alg_ring {
@@ -95,7 +102,7 @@ void irs::sko_calc_t<data_t, calc_t>::clear()
   void *p_rem_val = m_val_ring.read_and_remove_first();
   while (p_rem_val) {
     data_t *dp_rem_val = (data_t *)p_rem_val;
-    delete dp_rem_val;
+    IRS_LIB_DELETE_ASSERT(dp_rem_val);
     p_rem_val = m_val_ring.read_and_remove_first();
   }
   m_sum = 0.;
@@ -105,14 +112,14 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val)
 {
   m_sum += a_val;
 
-  void *p_val = (void *)new data_t;
+  void *p_val = (void *)IRS_LIB_NEW_ASSERT(data_t, IRSALGCPP_IDX);
   *(data_t *)p_val = a_val;
   void *p_rem_val = m_val_ring.add_last_and_get_removed(p_val);
 
   if (p_rem_val) {
     data_t *dp_rem_val = (data_t *)p_rem_val;
     data_t rem_val = *dp_rem_val;
-    delete dp_rem_val;
+    IRS_LIB_DELETE_ASSERT(dp_rem_val);
 
     m_sum -= rem_val;
   }

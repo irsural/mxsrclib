@@ -1,8 +1,12 @@
 // Класс для расширения количества переменнных в mxnet "Воронка"
-// Дата 13.00.2010
+// Дата 28.04.2010
+// Ранняя дата: 12.02.2009
 
 #ifndef irsfunnelH
 #define irsfunnelH
+
+// Номер файла
+#define IRSFUNNELH_IDX 14
 
 #include <irsdefs.h>
 
@@ -13,8 +17,10 @@
 
 namespace irs
 {
+
 enum fannel_client_mode_t {fcm_full_size, fcm_reduce};
-class funnel_client_t : public mxdata_t
+
+class funnel_client_t: public mxdata_t
 {
   enum status_t
   {

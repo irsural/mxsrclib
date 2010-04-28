@@ -1,10 +1,18 @@
 // Алгоритмы
-// Дата: 2.09.2009
+// Дата: 24.04.2010
+// Ранняя дата: 2.09.2009
+
+// Номер файла
+#define IRSALGCPP_IDX 9
+
+#include <irsdefs.h>
 
 #include <string.h>
 #include <math.h>
 
 #include <irsalg.h>
+
+#include <irsfinal.h>
 
 // Реализация алгоритма кольцевого буфера
 
@@ -26,14 +34,14 @@ alg_ring::alg_ring(int size_max)
   // Ошибка в конструкторе
   f_create_error = irs_false;
   // Кольцевой буфер
-  f_buf_ring = new void*[f_size_max];
+  f_buf_ring = IRS_LIB_NEW_ASSERT(void*[f_size_max], IRSALGCPP_IDX);
   memset(f_buf_ring, 0, f_size_max*sizeof(void*));
   if (!f_buf_ring) f_create_error = irs_true;
 }
 //Деструктор
 alg_ring::~alg_ring()
 {
-  if (f_buf_ring) delete []f_buf_ring;
+  if (f_buf_ring) IRS_LIB_ARRAY_DELETE_ASSERT(f_buf_ring);
 }
 // Чтение и удаление первого элемента буфера
 void *alg_ring::read_and_remove_first()

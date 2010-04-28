@@ -1,5 +1,6 @@
 // Прерывания
-// Дата: 2.09.2009
+// Дата: 27.04.2010
+// Ранняя дата: 2.09.2009
 
 #include <irsint.h>
 #include <irserror.h>
@@ -170,8 +171,8 @@ irs::interrupt_array_base_t* irs::interrupt_array()
   #ifdef __ICCAVR__
   return irs::avr::interrupt_array();
   #else //__ICCAVR__
-  static auto_ptr<interrupt_array_base_t> 
-    p_interrupt_array(new interrupt_array_empty_t);
-  return p_interrupt_array.get();
+  static interrupt_array_empty_t interrupt_array;
+  return &interrupt_array;
   #endif //__ICCAVR__
 }
+

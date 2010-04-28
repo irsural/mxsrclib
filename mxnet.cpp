@@ -65,13 +65,12 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   data.count = count;
   data.vars_ext = vars;
   data.packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
-    new (nothrow) irs_i32[data.count + MXN_SIZE_OF_HEADER + 1],
+    irs_i32[data.count + MXN_SIZE_OF_HEADER + 1],
     MXNETCPP_IDX
   );
   memset(static_cast<void*>(data.packet), 0, data.count +
     MXN_SIZE_OF_HEADER + 1);
-  data.read_only = IRS_LIB_NEW_ASSERT(new (nothrow) irs_bool[data.count],
-    MXNETCPP_IDX);
+  data.read_only = IRS_LIB_NEW_ASSERT(irs_bool[data.count], MXNETCPP_IDX);
   for (mxn_cnt_t ind_var = 0; ind_var < data.count; ind_var++) {
     data.read_only[ind_var] = irs_false;
   }
@@ -93,7 +92,7 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   if (!open_ex_performed)
     data.data_ch = mxifa_open(data.channel, data.is_broadcast);
   data.beg_pack_proc = 
-    IRS_LIB_NEW_ASSERT(new (nothrow) irs::mx_beg_pack_proc_t(data.data_ch),
+    IRS_LIB_NEW_ASSERT(irs::mx_beg_pack_proc_t(data.data_ch),
     MXNETCPP_IDX);
   data.count_send = 0;
   data.broadcast_send = irs_false;
@@ -103,10 +102,10 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
 // Деинициализация протокола
 void mxn_deinit(mxn_data_t &data)
 {
-  delete data.beg_pack_proc;
+  IRS_DELETE_ASSERT(data.beg_pack_proc);
   mxifa_close(data.data_ch);
-  delete []data.read_only;
-  delete [](irs_i32 *)data.packet;
+  IRS_ARRAY_DELETE_ASSERT(data.read_only);
+  IRS_ARRAY_DELETE_ASSERT((irs_i32 *)data.packet);
   mxifa_deinit();
   deinit_to_cnt();
 }

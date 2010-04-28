@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 23.04.2010
+// Дата: 27.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -145,13 +145,38 @@ inline ostream& operator<<(ostream& a_strm,
   {\
     IRS_ASSERT_HELPER(irs::ec_assert, "Assert", msg);\
   }
+
 #ifdef IRS_LIB_FLASH_ASSERT
 #define IRS_NEW_ASSERT(new_expr, file_idx)\
-  (irs::new_assert(new_expr, file_idx, __LINE__))
+  (irs::new_assert(new (nothrow) new_expr, file_idx, __LINE__))
+#define IRS_DELETE_ASSERT(delete_var)\
+  {\
+    operator delete(delete_var, nothrow);\
+    delete_var = IRS_NULL;\
+  }
+#define IRS_ARRAY_DELETE_ASSERT(delete_var)\
+  {\
+    operator delete[](delete_var, nothrow);\
+    delete_var = IRS_NULL;\
+  }
 #else //IRS_LIB_FLASH_ASSERT
 #define IRS_NEW_ASSERT(new_expr, file_idx)\
-  (irs::new_assert(new_expr, __FILE__, __LINE__))
+  (new new_expr)
+#define IRS_DELETE_ASSERT(delete_var)\
+  {\
+    delete delete_var;\
+    delete_var = IRS_NULL;\
+  }
+#define IRS_ARRAY_DELETE_ASSERT(delete_var)\
+  {\
+    delete[] delete_var;\
+    delete_var = IRS_NULL;\
+  }
 #endif //IRS_LIB_FLASH_ASSERT
+#define IRS_LIB_DELETE_ASSERT(delete_var)\
+  IRS_DELETE_ASSERT(delete_var);
+#define IRS_LIB_ARRAY_DELETE_ASSERT(delete_var)\
+  IRS_ARRAY_DELETE_ASSERT(delete_var);
 
 #ifdef IRS_LIB_FLASH_ASSERT
 #define IRS_ERROR_HELPER(error_code, spec_data)\

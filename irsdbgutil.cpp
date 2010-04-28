@@ -560,8 +560,7 @@ irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::heap_pointer()
 {
   auto_arr<irs_u8> p_heap_check_var(
-    IRS_LIB_NEW_ASSERT(new (nothrow) irs_u8[m_heap_array_size],
-    IRSDBGUTILCPP_IDX));
+    IRS_LIB_NEW_ASSERT(irs_u8[m_heap_array_size], IRSDBGUTILCPP_IDX));
   return reinterpret_cast<value_type>(p_heap_check_var.get());
 }
 void irs::avr_memory_checker_t::check()

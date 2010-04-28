@@ -1,18 +1,12 @@
 // Протокол MxNetC (Max Network Client)
 // Дата: 12.02.2009
 
-//---------------------------------------------------------------------------
-//#include <vcl.h>
-//#pragma hdrstop
-
 //#define INSERT_LEFT_BYTES // Втавка дополнительных байтов для проверки mxnet
 //#define MXDATA_TO_MXNET_CHECKED // mxdata_to_mxnet_t c проверкой диапазона
 
 #include <mxnetc.h>
 #include <string.h>
-//#include <DBG.h>
 
-//---------------------------------------------------------------------------
 // Нет команды
 #define MXN_COM_NONE          ((mxn_cnt_t)-1)
 // Таймаут сетевых операций
@@ -20,7 +14,7 @@
 //#define net_t TIME_TO_CNT(3600, 1)
 #define broadcast_t TIME_TO_CNT(2, 1)
 //#define broadcast_sw_t TIME_TO_CNT(10000, 1)
-//---------------------------------------------------------------------------
+
 // Перераспределение памяти с сохранением данных
 void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size);
 // Проверка контрольной суммы
@@ -29,10 +23,9 @@ irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
 // Расчет контрольной суммы
 irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
   mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type);
-//---------------------------------------------------------------------------
 
 irs_u8 bcst_start = 0;
-//---------------------------------------------------------------------------
+
 // Конструктор
 mxnetc::mxnetc(mxifa_ch_t channel):
   f_packet(IRS_NULL),
@@ -79,7 +72,7 @@ mxnetc::mxnetc(mxifa_ch_t channel):
   f_beg_pack_proc = new irs::mx_beg_pack_proc_t(f_handle_channel);
   f_broadcast_proc = new mx_broadcast_proc_t(f_handle_channel, f_checksum_type);
 }
-//---------------------------------------------------------------------------
+
 // Деструктор
 mxnetc::~mxnetc()
 {
@@ -109,7 +102,7 @@ mxnetc::~mxnetc()
   }
   #endif //NOP
 }
-//---------------------------------------------------------------------------
+
 // Чтение версии протокола mxnet
 void mxnetc::get_version(irs_u16 *version)
 {
@@ -124,7 +117,7 @@ void mxnetc::get_version(irs_u16 *version)
   f_command = MXN_GET_VERSION;
   f_status = mxnc_status_busy;
 }
-//---------------------------------------------------------------------------
+
 // Чтение размера массива (количество переменных)
 void mxnetc::get_size(mxn_cnt_t *size)
 {
@@ -139,7 +132,7 @@ void mxnetc::get_size(mxn_cnt_t *size)
   f_command = MXN_READ_COUNT;
   f_status = mxnc_status_busy;
 }
-//---------------------------------------------------------------------------
+
 // Чтение переменных
 void mxnetc::read(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars)
 {
@@ -159,7 +152,7 @@ void mxnetc::read(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars)
   f_command = MXN_READ;
   f_status = mxnc_status_busy;
 }
-//---------------------------------------------------------------------------
+
 // Запись переменных
 void mxnetc::write(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars)
 {
@@ -179,7 +172,7 @@ void mxnetc::write(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars)
   f_command = MXN_WRITE;
   f_status = mxnc_status_busy;
 }
-//---------------------------------------------------------------------------
+
 // Включение/выключение широковещательного режима
 void mxnetc::set_broadcast(irs_bool broadcast_mode)
 {
@@ -194,7 +187,7 @@ void mxnetc::set_broadcast(irs_bool broadcast_mode)
   f_command = MXN_SET_BROADCAST;
   f_status = mxnc_status_busy;
 }
-//---------------------------------------------------------------------------
+
 // Статус текущей операции
 mxnc_status_t mxnetc::status()
 {
@@ -205,7 +198,7 @@ mxnc_status_t mxnetc::status()
     return f_status;
   }
 }
-//---------------------------------------------------------------------------
+
 // Элементарное действие
 void mxnetc::tick()
 {
@@ -634,7 +627,7 @@ void mxnetc::tick()
     #endif //NOP
   }
 }
-//---------------------------------------------------------------------------
+
 // Прерывание операции
 void mxnetc::abort()
 {
@@ -642,7 +635,7 @@ void mxnetc::abort()
     f_abort_request = irs_true;
   }
 }
-//---------------------------------------------------------------------------
+
 // Проверка контрольной суммы
 irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
     mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
@@ -656,7 +649,7 @@ irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
     return irs_false;
   }
 }
-//---------------------------------------------------------------------------
+
 // Расчет контрольной суммы
 irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
   mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
@@ -669,13 +662,13 @@ irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
 
   return irs::checksum_calc(checksum_type, packet, var_count);
 }
-//---------------------------------------------------------------------------
+
 // Чтение последней ошибки
 mxnc_error_t mxnetc::get_last_error()
 {
   return f_last_error;
 }
-//---------------------------------------------------------------------------
+
 // Разрешение обработки
 irs_bool mxnetc::deny_proc()
 {
@@ -691,7 +684,7 @@ irs_bool mxnetc::deny_proc()
   }
   return irs_false;
 }
-//---------------------------------------------------------------------------
+
 // Заполнение пакета
 irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
   mxn_cnt_t packet_var_count, irs_i32 *vars, mxn_cnt_t var_count)
@@ -731,7 +724,7 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
     return irs_false;
   }
 }
-//---------------------------------------------------------------------------
+
 // Перераспределение памяти с сохранением данных
 void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
 {
@@ -751,7 +744,7 @@ void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
   }
   return new_pointer;
 }
-//---------------------------------------------------------------------------
+
 // Установка таймаута операций, с
 void mxnetc::set_timeout(calccnt_t t_num, calccnt_t t_denom)
 {
@@ -761,7 +754,7 @@ void mxnetc::set_timeout(calccnt_t t_num, calccnt_t t_denom)
     f_oper_t = 0;
   }
 }
-//---------------------------------------------------------------------------
+
 // Установка ip-адреса удаленного устройства
 void mxnetc::set_dest_ip(mxip_t ip)
 {
@@ -772,7 +765,7 @@ void mxnetc::set_dest_ip(mxip_t ip)
     mxifa_set_config(f_handle_channel, (void *)&cfg);
   }
 }
-//---------------------------------------------------------------------------
+
 // Установка порта удаленного устройства
 void mxnetc::set_dest_port(irs_u16 port)
 {
@@ -783,7 +776,7 @@ void mxnetc::set_dest_port(irs_u16 port)
     mxifa_set_config(f_handle_channel, (void *)&cfg);
   }
 }
-//---------------------------------------------------------------------------
+
 // Установка локального порта
 void mxnetc::set_local_port(irs_u16 port)
 {
@@ -794,20 +787,20 @@ void mxnetc::set_local_port(irs_u16 port)
     mxifa_set_config(f_handle_channel, (void *)&cfg);
   }
 }
-//---------------------------------------------------------------------------
+
 // Задание типа контрольной суммы
 void mxnetc::set_checksum_type(irs::mxn_checksum_t a_checksum_type)
 {
   f_checksum_type = a_checksum_type;
 }
-//---------------------------------------------------------------------------
+
 // Чтение текущего режима
 irs_bool mxnetc::get_broadcast_mode()
 {
   return f_broadcast_mode;
 }
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
+
+
 mx_broadcast_proc_t::mx_broadcast_proc_t(void *a_handle_channel,
   irs::mxn_checksum_t a_checksum_type):
   f_mode(mode_start),
@@ -823,7 +816,7 @@ mx_broadcast_proc_t::mx_broadcast_proc_t(void *a_handle_channel,
   f_checksum_type(a_checksum_type)
 {
 }
-//---------------------------------------------------------------------------
+
 mx_broadcast_proc_t::~mx_broadcast_proc_t()
 {
   if (f_mode == mode_vars_wait) {
@@ -838,7 +831,7 @@ mx_broadcast_proc_t::~mx_broadcast_proc_t()
     f_broadcast_vars = IRS_NULL;
   }
 }
-//---------------------------------------------------------------------------
+
 void mx_broadcast_proc_t::operator()(irs_u8 *a_buf,
   irs::mxn_checksum_t a_checksum_type)
 {
@@ -847,7 +840,7 @@ void mx_broadcast_proc_t::operator()(irs_u8 *a_buf,
   f_mode = mode_start;
   f_checksum_type = a_checksum_type;
 }
-//---------------------------------------------------------------------------
+
 irs_bool mx_broadcast_proc_t::tick()
 {
   switch (f_mode) {
@@ -900,17 +893,17 @@ irs_bool mx_broadcast_proc_t::tick()
 
   return f_proc;
 }
-//---------------------------------------------------------------------------
+
 void mx_broadcast_proc_t::abort()
 {
   f_abort_request = irs_true;
 }
-//---------------------------------------------------------------------------
+
 irs_bool mx_broadcast_proc_t::success()
 {
   return f_success;
 }
-//---------------------------------------------------------------------------
+
 void mx_broadcast_proc_t::get_vars(irs_i32 *user_var, mxn_cnt_t index,
   mxn_cnt_t count)
 {
@@ -919,13 +912,13 @@ void mx_broadcast_proc_t::get_vars(irs_i32 *user_var, mxn_cnt_t index,
   size_t size = count*sizeof(irs_i32);
   memcpy(dest, src, size);
 }
-//---------------------------------------------------------------------------
+
 mxn_cnt_t mx_broadcast_proc_t::get_count()
 {
   return f_broadcast_count;
 }
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
+
+
 // Преобразование mxnetc в mxdata_t
 irs::mxdata_to_mxnet_t::mxdata_to_mxnet_t(mxnetc *ap_mxnet,
   const counter_t &a_connect_interval,
@@ -1223,6 +1216,4 @@ void irs::mxdata_to_mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
     m_write_vector[index] = true;
   }
 }
-//---------------------------------------------------------------------------
-//#pragma package(smart_init)
 
