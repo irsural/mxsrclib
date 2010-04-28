@@ -1,5 +1,5 @@
 // Свойства
-// Дата: 14.04.2010
+// Дата: 28.04.2010
 // Ранняя дата: 17.08.2009
 
 #ifndef irspropH
@@ -571,7 +571,7 @@ public:
 
 }; // namespace irs
 
-#define example_propety
+//#define example_propety
 #ifdef example_propety
 
 //inline bool testing_property();
