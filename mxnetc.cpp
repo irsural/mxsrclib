@@ -100,7 +100,7 @@ mxnetc::~mxnetc()
   mxifa_deinit();
   deinit_to_cnt();
   if (f_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*)f_packet);
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_packet);
   }
 }
 
@@ -702,7 +702,7 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
     f_send_size = f_packet_size;
   }
   if (f_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*)f_packet);
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_packet);
   }
   f_packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
     irs_u8[f_packet_size], MXNETCCPP_IDX);
@@ -740,8 +740,7 @@ void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)pointer);
-    pointer = IRS_NULL;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
   }
   return new_pointer;
 }
@@ -824,12 +823,10 @@ mx_broadcast_proc_t::~mx_broadcast_proc_t()
     mxifa_read_end(f_handle_channel, irs_true);
   }
   if (f_broadcast_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)f_broadcast_packet);
-    f_broadcast_packet = IRS_NULL;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_broadcast_packet);
   }
   if (f_broadcast_vars) {
     IRS_LIB_ARRAY_DELETE_ASSERT(f_broadcast_vars);
-    f_broadcast_vars = IRS_NULL;
   }
 }
 
