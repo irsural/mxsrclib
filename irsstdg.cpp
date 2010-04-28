@@ -108,8 +108,7 @@ void *irs_renew(void *pointer, size_t old_size, size_t new_size)
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)pointer);
-    pointer = IRS_NULL;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
   }
   return new_pointer;
 }

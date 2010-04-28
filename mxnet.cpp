@@ -105,7 +105,7 @@ void mxn_deinit(mxn_data_t &data)
   IRS_DELETE_ASSERT(data.beg_pack_proc);
   mxifa_close(data.data_ch);
   IRS_ARRAY_DELETE_ASSERT(data.read_only);
-  IRS_ARRAY_DELETE_ASSERT((irs_i32 *)data.packet);
+  IRS_ARRAY_DELETE_ASSERT((irs_i32*&)data.packet);
   mxifa_deinit();
   deinit_to_cnt();
 }
