@@ -1,11 +1,19 @@
 // Протокол MxNetC (Max Network Client)
-// Дата: 12.02.2009
+// Дата: 28.04.2010
+// Ранняя дата: 12.02.2009
+
+// Номер файла
+#define MXNETCCPP_IDX 17
 
 //#define INSERT_LEFT_BYTES // Втавка дополнительных байтов для проверки mxnet
 //#define MXDATA_TO_MXNET_CHECKED // mxdata_to_mxnet_t c проверкой диапазона
 
+#include <irsdefs.h>
+
 #include <mxnetc.h>
 #include <string.h>
+
+#include <irsfinal.h>
 
 // Нет команды
 #define MXN_COM_NONE          ((mxn_cnt_t)-1)
@@ -69,16 +77,20 @@ mxnetc::mxnetc(mxifa_ch_t channel):
     return;
   }
   memset((void *)&f_header, 0, sizeof(f_header));
-  f_beg_pack_proc = new irs::mx_beg_pack_proc_t(f_handle_channel);
-  f_broadcast_proc = new mx_broadcast_proc_t(f_handle_channel, f_checksum_type);
+  f_beg_pack_proc = IRS_LIB_NEW_ASSERT(
+    irs::mx_beg_pack_proc_t(f_handle_channel),
+    MXNETCCPP_IDX);
+  f_broadcast_proc = IRS_LIB_NEW_ASSERT(
+    mx_broadcast_proc_t(f_handle_channel, f_checksum_type),
+    MXNETCCPP_IDX);
 }
 
 // Деструктор
 mxnetc::~mxnetc()
 {
-  if (f_broadcast_proc) delete f_broadcast_proc;
+  if (f_broadcast_proc) IRS_LIB_DELETE_ASSERT(f_broadcast_proc);
   f_broadcast_proc = IRS_NULL;
-  if (f_beg_pack_proc) delete f_beg_pack_proc;
+  if (f_beg_pack_proc) IRS_LIB_DELETE_ASSERT(f_beg_pack_proc);
   f_beg_pack_proc = IRS_NULL;
   if (f_handle_channel) {
     //mxifa_close(f_handle_channel);
@@ -88,19 +100,8 @@ mxnetc::~mxnetc()
   mxifa_deinit();
   deinit_to_cnt();
   if (f_packet) {
-    delete []f_packet;
-    f_packet = IRS_NULL;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*)f_packet);
   }
-  #ifdef NOP
-  if (f_broadcast_packet) {
-    delete f_broadcast_packet;
-    f_broadcast_packet = IRS_NULL;
-  }
-  if (f_broadcast_vars) {
-    delete f_broadcast_vars;
-    f_broadcast_vars = IRS_NULL;
-  }
-  #endif //NOP
 }
 
 // Чтение версии протокола mxnet
@@ -296,11 +297,11 @@ void mxnetc::tick()
     case mxnc_mode_write: {
       #ifdef INSERT_LEFT_BYTES
       static irs_u8 *buf = 0;
-      delete []buf;
+      IRS_LIB_ARRAY_DELETE_ASSERT(buf);
 
       const mxn_sz_t added_size = 77;
       mxn_sz_t new_size = f_send_size + added_size;
-      buf = new irs_u8[new_size];
+      buf = IRS_LIB_NEW_ASSERT(irs_u8[new_size], MXNETCCPP_IDX);
 
       const irs_u8 fill_byte = 0x9A;
       memcpy(buf + added_size, f_packet, f_send_size);
@@ -701,10 +702,10 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
     f_send_size = f_packet_size;
   }
   if (f_packet) {
-    delete [](irs_u8*)f_packet;
-    f_packet = IRS_NULL;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*)f_packet);
   }
-  f_packet = (mxn_packet_t *)new irs_u8[f_packet_size];
+  f_packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
+    irs_u8[f_packet_size], MXNETCCPP_IDX);
   if (f_packet) {
     f_packet->ident_beg_pack_first = MXN_CONST_IDENT_BEG_PACK_FIRST;
     f_packet->ident_beg_pack_second = MXN_CONST_IDENT_BEG_PACK_SECOND;
@@ -732,14 +733,14 @@ void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
 
   void *new_pointer = IRS_NULL;
   if (new_size) {
-    new_pointer = new void *[new_size];
+    new_pointer = IRS_LIB_NEW_ASSERT(void *[new_size], MXNETCCPP_IDX);
     if (!new_pointer) return new_pointer;
   }
   if (pointer) {
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    delete [](irs_u8 *)pointer;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)pointer);
     pointer = IRS_NULL;
   }
   return new_pointer;
@@ -823,11 +824,11 @@ mx_broadcast_proc_t::~mx_broadcast_proc_t()
     mxifa_read_end(f_handle_channel, irs_true);
   }
   if (f_broadcast_packet) {
-    delete [](irs_u8 *)f_broadcast_packet;
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8 *)f_broadcast_packet);
     f_broadcast_packet = IRS_NULL;
   }
   if (f_broadcast_vars) {
-    delete []f_broadcast_vars;
+    IRS_LIB_ARRAY_DELETE_ASSERT(f_broadcast_vars);
     f_broadcast_vars = IRS_NULL;
   }
 }
@@ -865,10 +866,11 @@ irs_bool mx_broadcast_proc_t::tick()
         if (checksum_valid(f_broadcast_packet, f_broadcast_count,
           f_broadcast_packet_size, f_checksum_type)) {
           if (f_broadcast_vars) {
-            delete []f_broadcast_vars;
+            IRS_LIB_ARRAY_DELETE_ASSERT(f_broadcast_vars);
             f_broadcast_vars = IRS_NULL;
           }
-          f_broadcast_vars = new irs_i32[f_broadcast_count];
+          f_broadcast_vars = IRS_LIB_NEW_ASSERT(irs_i32[f_broadcast_count],
+            MXNETCCPP_IDX);
           if (f_broadcast_vars) {
             memcpy((void *)f_broadcast_vars, (void *)f_broadcast_packet->var,
               f_broadcast_count*sizeof(irs_i32));
@@ -953,8 +955,8 @@ irs::mxdata_to_mxnet_t::mxdata_to_mxnet_t(mxnetc *ap_mxnet,
 
 irs::mxdata_to_mxnet_t::~mxdata_to_mxnet_t()
 {
-  delete []mp_buf;
-  delete []mp_read_buf;
+  IRS_LIB_ARRAY_DELETE_ASSERT(mp_buf);
+  IRS_LIB_ARRAY_DELETE_ASSERT(mp_read_buf);
   deinit_to_cnt();
 }
 
@@ -964,7 +966,9 @@ double irs::mxdata_to_mxnet_t::measured_interval()
     if (mp_measured_interval_alg.get()) {
       return mp_measured_interval_alg->time();
     } else {
-      mp_measured_interval_alg.reset(new mx_time_int_t(TIME_TO_CNT(1, 1)));
+      mp_measured_interval_alg.reset(
+        IRS_LIB_NEW_ASSERT(mx_time_int_t(TIME_TO_CNT(1, 1)), MXNETCCPP_IDX));
+
       if (!mp_measured_interval_alg.get())
         m_measured_interval_bad_alloc = true;
     }
@@ -1041,10 +1045,12 @@ void irs::mxdata_to_mxnet_t::tick()
 
           const mxn_sz_t m_mxnet_old_size_byte = m_write_vector.size();
           if (m_mxnet_size_byte != m_mxnet_old_size_byte) {
-            delete []mp_buf;
-            delete []mp_read_buf;
-            mp_buf = new irs_u8[m_mxnet_size_byte];
-            mp_read_buf = new irs_u8[m_mxnet_size_byte];
+            IRS_LIB_ARRAY_DELETE_ASSERT(mp_buf);
+            IRS_LIB_ARRAY_DELETE_ASSERT(mp_read_buf);
+            mp_buf = IRS_LIB_NEW_ASSERT(irs_u8[m_mxnet_size_byte],
+              MXNETCCPP_IDX);
+            mp_read_buf = IRS_LIB_NEW_ASSERT(irs_u8[m_mxnet_size_byte],
+              MXNETCCPP_IDX);
             if (mp_buf && mp_read_buf)
             {
               m_status = READ;

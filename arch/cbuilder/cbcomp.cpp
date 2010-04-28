@@ -27,7 +27,7 @@ int irs::cbuilder::combo_box_find_item(
 // Конвертирование событий C++ Builder в события ИРС
 irs::cbuilder::notify_event_cnv_t::
   notify_event_cnv_t():
-  mp_obj_cont(new obj_cont_t())
+  mp_obj_cont(new obj_cont_t)
 {
 }
 irs::cbuilder::notify_event_cnv_t::

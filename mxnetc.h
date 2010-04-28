@@ -1,8 +1,12 @@
 // Протокол MxNetC (Max Network Client)
-// Дата: 13.04.2010
+// Дата: 28.04.2010
+// Ранняя дата: 12.02.2009
 
 #ifndef mxnetcH
 #define mxnetcH
+
+// Номер файла
+#define MXNETCH_IDX 18
 
 #include <irsdefs.h>
 
