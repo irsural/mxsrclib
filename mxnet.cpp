@@ -1,5 +1,5 @@
 // Протокол MxNet (Max Network)
-// Дата: 14.04.2010
+// Дата: 29.04.2010
 // Ранняя дата: 18.06.2008
 
 // Номер файла
@@ -102,10 +102,10 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
 // Деинициализация протокола
 void mxn_deinit(mxn_data_t &data)
 {
-  IRS_DELETE_ASSERT(data.beg_pack_proc);
+  IRS_LIB_DELETE_ASSERT(data.beg_pack_proc);
   mxifa_close(data.data_ch);
-  IRS_ARRAY_DELETE_ASSERT(data.read_only);
-  IRS_ARRAY_DELETE_ASSERT((irs_i32*&)data.packet);
+  IRS_LIB_ARRAY_DELETE_ASSERT(data.read_only);
+  IRS_LIB_ARRAY_DELETE_ASSERT((irs_i32*&)data.packet);
   mxifa_deinit();
   deinit_to_cnt();
 }

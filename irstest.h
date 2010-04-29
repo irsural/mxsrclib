@@ -1,5 +1,5 @@
 // Набор тестов
-// Дата: 13.04.2010
+// Дата: 28.04.2010
 // Дата создания: 20.09.2009
 
 #ifndef IRSTESTH
@@ -188,7 +188,7 @@ public:
       );
     if (convert_result != codecvt_base::ok)
     {
-      IRS_LIB_DBG_MSG("convert_str_t codecvt result: " <<
+      IRS_LIB_DBG_MSG(irsm("convert_str_t codecvt result: ") <<
         cstr_from_codecvt_result<char>(convert_result));
     }
   }
@@ -229,7 +229,7 @@ inline irs::raw_data_t<char> char_from_wchar_str_dbg(
     out_it);
   if (convert_result != codecvt_base::ok)
   {
-    IRS_LIB_DBG_MSG("char_from_wchar_str_dbg codecvt error: " <<
+    IRS_LIB_DBG_MSG(irsm("char_from_wchar_str_dbg codecvt error: ") <<
       cstr_from_codecvt_result<char>(convert_result));
   }
 
@@ -252,7 +252,7 @@ inline irs::raw_data_t<wchar_t> wchar_from_char_str_dbg(
     out_it);
   if (convert_result != codecvt_base::ok)
   {
-    IRS_LIB_DBG_MSG("wchar_from_char_str_dbg codecvt error: " <<
+    IRS_LIB_DBG_MSG(irsm("wchar_from_char_str_dbg codecvt error: ") <<
       cstr_from_codecvt_result<char>(convert_result));
   }
 

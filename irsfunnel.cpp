@@ -1,5 +1,5 @@
 // Класс для расширения количества переменнных в mxnet "Воронка"
-// Дата: 28.04.2010
+// Дата: 29.04.2010
 // Ранняя дата: 12.02.2009
 
 // Номер файла
@@ -199,7 +199,7 @@ void irs::funnel_client_t::tick()
               m_area_size = 0;
             }
           }
-          IRS_ARRAY_DELETE_ASSERT(mp_buf);
+          IRS_LIB_ARRAY_DELETE_ASSERT(mp_buf);
           mp_buf = IRS_LIB_NEW_ASSERT(irs_u8[m_area_size], IRSFUNNELCPP_IDX);
           m_is_buf_created = true;
           if (mp_buf) {
