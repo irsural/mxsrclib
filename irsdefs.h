@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 26.04.2010
+// Дата: 29.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -20,6 +20,10 @@
 
 #include <limits.h>
 #include <stddef.h>
+
+#ifdef __ICCAVR__
+#include <inavr.h>
+#endif // __ICCAVR__
 
 //#include <lirsdefs.h>
 

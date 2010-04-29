@@ -775,7 +775,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
   }
 }
 
-void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index, 
   irs_uarc a_size)
 {
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
@@ -854,15 +854,11 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 
   if((m_discret_inputs_size_byte != 0))
   {
-    /*bit_copy(ap_buf, m_discr_inputs_byte.data(), 0, 
-      m_discret_inputs_start_byte*8, m_discret_inputs_size_byte*8);*/
     memcpyex(m_discr_inputs_byte.data() + m_discret_inputs_start_byte,
       ap_buf, m_discret_inputs_size_byte);
   }
   if((m_coils_size_byte != 0)||(m_coils_start_byte != 0))
   {
-    /*bit_copy(ap_buf, m_coils_byte.data(), m_discret_inputs_size_byte*8,
-      m_coils_start_byte*8, m_coils_size_byte*8);*/
     memcpyex(m_coils_byte.data() + m_coils_start_byte,
       ap_buf + m_discret_inputs_size_byte, m_coils_size_byte);
   }
@@ -2097,9 +2093,6 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   {
     IRS_LIB_ASSERT((m_coils_start_byte + m_coils_size_byte) <= 
       m_coils_byte_write.size());
-    /*bit_copy(ap_buf, m_coils_byte_write.data(), 
-      m_discret_inputs_size_bit + m_coils_start_byte*8, m_coils_start_byte*8, 
-      m_coils_size_byte*8);*/
     size_t ap_buf_start = m_discret_inputs_size_bit/8 + m_coils_start_byte;
     memcpyex(m_coils_byte_write.data() + m_coils_start_byte,
       ap_buf + ap_buf_start, m_coils_size_byte);
