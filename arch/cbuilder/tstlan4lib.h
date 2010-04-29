@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 14.04.2010
+// Дата: 28.04.2010
 // Дата создания: 17.09.2009
 
 #ifndef tstlan4libH
@@ -225,7 +225,7 @@ private:
       }
     }; //netconn_t
 
-    static const int m_vars_count_start = 30;
+    static const int m_vars_count_start = 1;
     static const int m_header_size = 1;
     static const int m_grid_size = m_vars_count_start + m_header_size;
     static const int m_header_row = 0;

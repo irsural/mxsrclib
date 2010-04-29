@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 28.04.2010
+// Дата: 29.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -488,6 +488,7 @@ private:
       m_is_first_throw = false;
       ostringstream out_stream;
       m_error_out.out_info(out_stream);
+      out_stream << '\0';
       throw runtime_error(out_stream.str().c_str());
     }
     m_is_first_throw = true;

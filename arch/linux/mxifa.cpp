@@ -19,7 +19,6 @@
 #include <string.h>
 //#include <list>
 #include <irscpp.h>
-#include <gdefs.h>
 #include <irserror.h>
 
 #ifdef DBGMODE
