@@ -112,7 +112,7 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val)
 {
   m_sum += a_val;
 
-  void *p_val = (void *)IRS_LIB_NEW_ASSERT(data_t, IRSALGCPP_IDX);
+  void *p_val = (void *)IRS_LIB_NEW_ASSERT(data_t, IRSALGH_IDX);
   *(data_t *)p_val = a_val;
   void *p_rem_val = m_val_ring.add_last_and_get_removed(p_val);
 
