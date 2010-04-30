@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 29.04.2010
+// Дата: 30.04.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -285,7 +285,7 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
 #define IRS_LIB_ASSERT_MSG(msg)
-#define IRS_LIB_NEW_ASSERT(new_expr, file_idx) new_expr
+#define IRS_LIB_NEW_ASSERT(new_expr, file_idx) (new new_expr)
 
 #define IRS_LIB_ERROR(error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
