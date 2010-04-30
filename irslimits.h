@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 21.04.2010
+// Дата: 30.04.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include <irscpp.h>
-#include <irsstrdefs.h>
+//#include <irsstrdefs.h>
 
 #include <irsfinal.h>
 
@@ -344,6 +344,179 @@ struct type_detect_t<long double>
 {
   enum {
     index = long_double_idx
+  };
+};
+
+template<class T>
+struct is_void_type
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_void_type<void>
+{
+  enum {
+    value = true
+  };
+};
+
+template<class T>
+struct is_bool_type
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_bool_type<bool>
+{
+  enum {
+    value = true
+  };
+};
+
+template<class T>
+struct is_integral_type
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_integral_type<char>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<signed char>
+{
+  enum {
+    value = true
+  };
+};
+
+template<>
+struct is_integral_type<unsigned char>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<wchar_t>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<short>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<unsigned short>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<int>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<unsigned int>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<long>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<unsigned long>
+{
+  enum {
+    value = true
+  };
+};
+#ifdef IRSDEFS_LONG_LONG
+template<>
+struct is_integral_type<irs_ilong_long>
+{
+  enum {
+    value = true
+  };
+};
+template<>
+struct is_integral_type<irs_ulong_long>
+{
+  enum {
+    value = true
+  };
+};
+#endif //IRSDEFS_I64
+
+template<class T>
+struct is_floating_point_type
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_floating_point_type<float>
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_floating_point_type<double>
+{
+  enum {
+    value = false
+  };
+};
+template<>
+struct is_floating_point_type<long double>
+{
+  enum {
+    value = false
+  };
+};
+
+template<class T>
+struct is_number_type
+{
+  enum {
+    value = is_integral_type<T>::value || is_floating_point_type<T>::value
+  };
+};
+
+template<class T>
+struct is_fundamental_type
+{
+  enum {
+    value = is_void_type<T>::value ||
+      is_bool_type<T>::value ||
+      is_integral_type<T>::value ||
+      is_floating_point_type<T>::value
   };
 };
 
