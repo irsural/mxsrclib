@@ -75,12 +75,12 @@ inline int lcm(int a, int b);
 
 inline double asinh(const double a_x)
 {
-  return log(a_x + sqrt(pow(a_x, 2) + 1));
+  return log(a_x + sqrt(pow(a_x, 2.) + 1));
 }
 
 inline double acosh(const double a_x)
 {
-  return log(a_x + sqrt(pow(a_x, 2) - 1));
+  return log(a_x + sqrt(pow(a_x, 2.) - 1));
 }
 
 inline double atanh(const double a_x)

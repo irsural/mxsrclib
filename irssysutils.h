@@ -234,24 +234,24 @@ inline bool get_closed_file_size(const irs::string& a_file_name, int& a_size)
 class id_t
 {
 public:
-  typedef vector<irs_u8> identificator;
+  typedef vector<irs_u8> identifier_type;
   typedef size_t size_type;
   typedef irs::string string_type;
-  id_t(): m_id()
+  id_t(): m_identifier()
   { }
 
   // В конструкторе задается размер идентификатора и сразу генерируется значение
-  id_t(const size_type a_byte_count): m_id(a_byte_count, 0)
+  id_t(const size_type a_byte_count):
+    m_identifier(new_id(a_byte_count))
   {
-    generate(a_byte_count);
   }
-
-  // Функция генерации нового уникального значения идентификатора с
-  // указанием размера
-  void generate(const size_type a_byte_count = id_byte_count_def)
+private:
+  void generate(
+    const size_type a_byte_count,
+    identifier_type* ap_identifier) const
   {
-    m_id.clear();
-    m_id.reserve(a_byte_count);
+    ap_identifier->clear();
+    ap_identifier->reserve(a_byte_count);
     #ifdef IRS_WIN32
     UUID id;
     const size_type id_size = sizeof(id);
@@ -259,11 +259,11 @@ public:
     for (size_type id_i = 0; id_i < id_count; id_i++) {
       UuidCreate(&id);
       for (size_type byte_i = 0; byte_i < id_size; byte_i++) {
-        if (m_id.size() >= a_byte_count) {
+        if (ap_identifier->size() >= a_byte_count) {
           break;
         } else {
           irs_u8 id_element = *(reinterpret_cast<irs_u8*>(&id) + byte_i);
-          m_id.push_back(id_element);
+          ap_identifier->push_back(id_element);
         }
       }
     }
@@ -271,20 +271,36 @@ public:
     //randomize();
     for (size_type byte_i = 0; byte_i < a_byte_count; byte_i++) {
       int rand_val = rand();
-      m_id.push_back(IRS_LOBYTE(rand_val));
+      ap_identifier->push_back(IRS_LOBYTE(rand_val));
     }
     #endif
+  }
+
+  identifier_type new_id(
+    const size_type a_byte_count = id_byte_count_def) const
+  {
+    identifier_type id;
+    generate(a_byte_count, &id);
+    return id;
+  }
+  
+public:
+  // Функция генерации нового уникального значения идентификатора с
+  // указанием размера
+  void generate(const size_type a_byte_count = id_byte_count_def)
+  {
+    generate(a_byte_count, &m_identifier);
   }
 
   // Функция преобразует значение ключа в строковый тип
   string_type str() const
   {
     string_type id_str;
-    size_type id_size = m_id.size();
+    size_type id_size = m_identifier.size();
     id_str.reserve(id_size);
     for (size_type id_elem_i = 0; id_elem_i < id_size; id_elem_i++) {
       ostrstream ostr;
-      size_type num = m_id[id_elem_i];
+      size_type num = m_identifier[id_elem_i];
       const size_type width = 2;
       char symbol_fill = '0';
       ostr << right << setw(width) << setfill(symbol_fill) <<
@@ -304,7 +320,7 @@ public:
     bool assign_success = true;
     const size_type id_str_size = a_id_str.size();
     const size_type need_elem_str_size = 2;
-    if ((id_str_size / need_elem_str_size) == m_id.size()) {
+    if ((id_str_size / need_elem_str_size) == m_identifier.size()) {
       assign_success = assign_str(a_id_str);
     } else {
       assign_success = false;
@@ -321,7 +337,7 @@ public:
     const size_type id_str_size = a_id_str.size();
     const size_type need_elem_str_size = 2;
     string_type elem_str;
-    identificator id;
+    identifier_type id;
     id.reserve(id_str_size / need_elem_str_size);
     for (size_type id_str_index = 0; id_str_index < id_str_size;
       id_str_index++)
@@ -343,7 +359,7 @@ public:
       }
     }
     if (assign_success) {
-      m_id = id;
+      m_identifier = id;
     } else {
       // Преобразовать строку в идентификатор не удалось
     }
@@ -352,7 +368,7 @@ public:
 
   /*const string_type& operator= (const string_type& a_id_str)
   {
-    m_id.clear();
+    m_identifier.clear();
     size_type id_str_size = a_id_str.size();
     const size_type need_elem_str_size = 2;
     string_type elem_str;
@@ -364,7 +380,7 @@ public:
         int elem_num = 0;
         istrstream istr(const_cast<char*>(elem_str.c_str()));
         istr >> setbase(num_base) >> elem_num;
-        m_id.push_back(static_cast<irs_u8>(elem_num));
+        m_identifier.push_back(static_cast<irs_u8>(elem_num));
         elem_str.clear();
       } else {
         // Необходимый размер не достигнут
@@ -375,16 +391,35 @@ public:
 
   bool operator== (const id_t& a_id) const
   {
-    return (m_id == a_id.m_id);
+    return (m_identifier == a_id.m_identifier);
   }
 
   bool operator!= (const id_t& a_id) const
   {
-    return (m_id != a_id.m_id);
+    return (m_identifier != a_id.m_identifier);
   }
 
-private:   
-  identificator m_id;
+  bool operator< (const id_t& a_id) const
+  {
+    bool less_than_value = true;
+    if (m_identifier.size() != a_id.m_identifier.size()) {
+      less_than_value = (m_identifier.size() < a_id.m_identifier.size());
+    } else {
+      for (size_type elem_i = 0; elem_i < m_identifier.size(); elem_i++) {
+        if (m_identifier[elem_i] != a_id.m_identifier[elem_i]) {
+          less_than_value = (m_identifier[elem_i] < a_id.m_identifier[elem_i]);
+          break;
+        } else {
+          // Продолжаем сравнение
+        }
+      }
+      less_than_value = false;
+    }
+    return less_than_value;
+  }
+
+private:
+  identifier_type m_identifier;
   enum { id_byte_count_def = 8 };
   enum { num_base = 16 };
 };

@@ -401,7 +401,6 @@ public:
        (static_cast<std_type_idx_t>(type_detect_t<out_char_type>::index) ==
         irs::char_idx))
     );
-
     //IRSSTRDEFS_ASSERT(ap_instr != IRS_NULL);
     IRSSTRDEFS_LOG(cout << "\nconvert_str_t(const in_char_type* ap_instr,");
     IRSSTRDEFS_LOG(cout << "size_t a_instr_size = m_size_default)\n");

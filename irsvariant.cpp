@@ -1333,7 +1333,8 @@ irs::variant::sizens_t get_max_depth_helper(
   size_type max_depth = a_max_depth;
   size_type new_max_depth = max_depth;
   if (a_variant.type() == irs::variant::var_type_array) {
-    max_depth++;
+    ++max_depth;
+    new_max_depth = max_depth;
     const size_type array_size = a_variant.size();
     for (size_type elem_i = 0; elem_i < array_size; elem_i++) {
       new_max_depth = max(max_depth,
