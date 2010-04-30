@@ -267,6 +267,18 @@ double variance(const double* ap_data, const int a_data_size);
 // Аналог функции StdDev из библиотеки Math.hpp C++ Builder6
 double std_dev(const double* ap_data, const int a_data_size);
 
+template<class In, class Out, class Pred>
+Out copy_if(In a_first, In a_last, Out a_res, Pred a_pred)
+{
+  while (a_first != a_last) {
+    if (a_pred(*a_first)) {
+      *a_res++ = *a_first;
+    }
+    ++a_first;
+  }
+  return a_res;
+}
+
 } //namespace irs
 
 #endif //IRSALGH
