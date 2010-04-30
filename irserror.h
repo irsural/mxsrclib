@@ -148,8 +148,6 @@ inline ostream& operator<<(ostream& a_strm,
 
 // Этот код может понадобится. Не удалять!
 #ifdef NOP
-#define IRS_NEW_ASSERT(new_expr, file_idx)\
-  (irs::new_assert(new (nothrow) new_expr, file_idx, __LINE__))
 #define IRS_DELETE_ASSERT(delete_var)\
   {\
     operator delete(delete_var, nothrow);\
@@ -162,22 +160,24 @@ inline ostream& operator<<(ostream& a_strm,
   }
 #endif //NOP
 
+#ifdef IRS_LIB_FLASH_ASSERT
+#define IRS_NEW_ASSERT(new_expr, file_idx)\
+  (irs::new_assert(new (nothrow) new_expr, file_idx, __LINE__))
+#else //IRS_LIB_FLASH_ASSERT
 #define IRS_NEW_ASSERT(new_expr, file_idx)\
   (new new_expr)
-#define IRS_DELETE_ASSERT(delete_var)\
+#endif //IRS_LIB_FLASH_ASSERT
+
+#define IRS_LIB_DELETE_ASSERT(delete_var)\
   {\
     delete (delete_var);\
     (delete_var) = IRS_NULL;\
   }
-#define IRS_ARRAY_DELETE_ASSERT(delete_var)\
+#define IRS_LIB_ARRAY_DELETE_ASSERT(delete_var)\
   {\
     delete[] (delete_var);\
     (delete_var) = IRS_NULL;\
   }
-#define IRS_LIB_DELETE_ASSERT(delete_var)\
-  IRS_DELETE_ASSERT(delete_var);
-#define IRS_LIB_ARRAY_DELETE_ASSERT(delete_var)\
-  IRS_ARRAY_DELETE_ASSERT(delete_var);
 
 #ifdef IRS_LIB_FLASH_ASSERT
 #define IRS_ERROR_HELPER(error_code, spec_data)\
