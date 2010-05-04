@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 14.04.2010
+// Дата: 4.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -423,6 +423,66 @@ private:
   enum { id_byte_count_def = 8 };
   enum { num_base = 16 };
 };
+
+// В переданном имени файла изменяется расширение
+
+#ifndef __ICCAVR__
+template<class T>
+void change_file_ext(
+  const basic_string<T>& a_ext,
+  basic_string<T>* ap_file_name)
+{
+  typedef irs_size_t size_type;
+  size_type pos = ap_file_name->find_last_of(irst("."));
+  if (pos != basic_string<T>::npos) {
+    ap_file_name->replace(pos + 1, basic_string<T>::npos, a_ext);
+  } else {
+    ap_file_name->append(a_ext);
+  }    
+}
+
+template<class T>
+basic_string<T> get_file_ext(const basic_string<T>& a_file_name)
+{
+  typedef irs_size_t size_type;
+  basic_string<T> file_ext;
+  size_type pos = a_file_name.find_last_of(irst("."));
+  if (pos != basic_string<T>::npos) {
+    file_ext = a_file_name.substr(pos + 1);
+  } else {
+    // Возращаем пустую строку
+  }
+  return file_ext;
+}
+
+template<class T>
+basic_string<T> get_file_name(const basic_string<T>& a_file_name)
+{
+  typedef irs_size_t size_type;
+  basic_string<T> file_name;
+  size_type pos = a_file_name.find_last_of(irst("\\/"));
+  if (pos != basic_string<T>::npos) {
+    file_name = a_file_name.substr(pos + 1);
+  } else {
+    // Возращаем пустую строку
+  }
+  return file_name;
+}
+
+template<class T>
+basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
+{
+  typedef irs_size_t size_type;
+  basic_string<T> file_dir;
+  size_type pos = a_file_name.find_last_of(irst("\\/"));
+  if (pos != basic_string<T>::npos) {
+    file_dir = a_file_name.substr(0, pos);
+  } else {
+    // Возращаем пустую строку
+  }
+  return file_dir;
+}
+#endif // !__ICCAVR__
 
 }; //namespace irs
 
