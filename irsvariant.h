@@ -44,7 +44,8 @@ typedef string_t stringns_t;
 // Числовые типы должны быть в определенном порядке,
 // так как это используется в некоторых функциях
 enum var_type_t {
-  var_type_unknown,
+  var_type_first,                     // Первый тип
+  var_type_unknown = var_type_first,  // Тип, устанавливающийся по умолчанию
   var_type_bool,
   var_type_char,
   var_type_singned_char,
@@ -66,7 +67,9 @@ enum var_type_t {
   var_type_const_void_ptr,
   //var_type_ptr_char,
   var_type_string,
-  var_type_array    
+  var_type_array,
+  var_type_last = var_type_array,     // Последний тип
+  var_type_count                      // Количество типов
 };
 
 inline bool is_number_type(const var_type_t a_var_type)

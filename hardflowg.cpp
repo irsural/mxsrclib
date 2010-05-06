@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 23.04.2010
+// Дата: 06.05.2010
 // Дата создания: 8.09.2009
 
 #include <hardflowg.h>
@@ -746,7 +746,7 @@ void irs::hardflow::udp_flow_t::start()
       #elif defined(IRS_LINUX)
       m_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
       #endif // IRS_WINDOWS IRS_LINUX
-      if (m_sock != static_cast<socket_type>(m_invalid_socket)) {
+      if (m_sock != IRS_INVALID_SOCKET) {
         m_state_info.sock_created = true;
         m_state_info.set_io_mode_sock_success = false;
       } else {
@@ -768,7 +768,7 @@ void irs::hardflow::udp_flow_t::start()
       // ненулевое значение
       unsigned long ulblock = 1;
       #if defined(IRS_WIN32)
-      if (ioctlsocket(m_sock, FIONBIO, &ulblock) == m_socket_error) {
+      if (ioctlsocket(m_sock, FIONBIO, &ulblock) == IRS_SOCKET_ERROR) {
         // функция завершилась неудачей
         IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(
           error_str(m_error_sock.get_last_error()));
@@ -777,7 +777,7 @@ void irs::hardflow::udp_flow_t::start()
         m_state_info.bind_sock_and_ladr_success = false;
       }
       #elif defined(IRS_LINUX)
-      if (fcntl(m_sock, F_SETFL, O_NONBLOCK) == m_socket_error) {
+      if (fcntl(m_sock, F_SETFL, O_NONBLOCK) == IRS_SOCKET_ERROR) {
         // функция завершилась неудачей
         IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(
           error_str(m_error_sock.get_last_error()));
@@ -800,7 +800,7 @@ void irs::hardflow::udp_flow_t::start()
       local_addr_init(&local_addr, &init_success);
       if (init_success) {
         if (bind(m_sock, (sockaddr *)&local_addr,
-          sizeof(local_addr)) != m_socket_error)
+          sizeof(local_addr)) != IRS_SOCKET_ERROR)
         {
           m_state_info.bind_sock_and_ladr_success = true;    
         } else {
@@ -1098,7 +1098,7 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
       const int ret = sendto(m_sock, reinterpret_cast<const char*>(ap_buf),
         msg_size, 0, reinterpret_cast<sockaddr*>(&remote_host_adr),
           sizeof(remote_host_adr));
-      if (ret != m_socket_error) {
+      if (ret != IRS_SOCKET_ERROR) {
         size_wr = static_cast<size_type>(ret);
         IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Записано " <<
           static_cast<string_type>(size_wr) << " байт");
@@ -1136,7 +1136,7 @@ void irs::hardflow::udp_flow_t::tick()
     FD_SET(m_sock, &m_s_kit);
     int ready_read_sock_count = select(m_sock + 1, &m_s_kit, NULL, NULL,
       &m_func_select_timeout);
-    if ((ready_read_sock_count != m_socket_error) &&
+    if ((ready_read_sock_count != IRS_SOCKET_ERROR) &&
       (ready_read_sock_count != 0))
     {
       if (FD_ISSET(m_sock, &m_s_kit)) {
@@ -1144,7 +1144,7 @@ void irs::hardflow::udp_flow_t::tick()
         socklen_type sender_addr_size = sizeof(sender_addr);
         int ret = recvfrom(m_sock, reinterpret_cast<char*>(m_read_buf.data()),
           m_read_buf.size(), 0, (sockaddr*)&sender_addr, &sender_addr_size);
-        if (ret != m_socket_error) {
+        if (ret != IRS_SOCKET_ERROR) {
           m_channel_list.write(sender_addr, m_read_buf.data(), ret);
           IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Прочитано " <<
             static_cast<string_type>(ret) << " байт");
@@ -1155,7 +1155,7 @@ void irs::hardflow::udp_flow_t::tick()
       } else {
         // Нет сокетов для чтения
       }
-    } else if (ready_read_sock_count == m_socket_error) {
+    } else if (ready_read_sock_count == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(
         error_str(m_error_sock.get_last_error()));
     } else {
@@ -1209,12 +1209,12 @@ void irs::hardflow::tcp_server_t::start_server()
   #endif // defined(IRS_WIN32)
   if (lib_load_success) {
     m_server_sock = socket(PF_INET, SOCK_STREAM, 0);
-    if(m_server_sock != invalid_socket) {
+    if(m_server_sock != IRS_INVALID_SOCKET) {
       m_addr.sin_family = AF_INET;
       m_addr.sin_port = htons(m_local_port);
       m_addr.sin_addr.s_addr = htonl(INADDR_ANY);
       if(bind(m_server_sock, (struct sockaddr *)&m_addr,
-        sizeof(m_addr)) >= 0) 
+        sizeof(m_addr)) >= 0)
       {
         int queue_lenght = 300; //длина очереди
         listen(m_server_sock, queue_lenght);
@@ -1320,9 +1320,9 @@ irs::hardflow::tcp_server_t::size_type
   if (m_is_open && is_channel_exists(a_channel_ident)) {
     socket_type sock_rd = m_map_channel_sock[a_channel_ident];
     FD_SET(sock_rd, &m_read_fds);
-    socket_type sock_ready = select(sock_rd + 1, &m_read_fds,
+    int sock_ready = select(sock_rd + 1, &m_read_fds,
       NULL, NULL, &m_serv_select_timeout);
-    if((sock_ready != socket_error) && (sock_ready != 0)) {
+    if((sock_ready != IRS_SOCKET_ERROR) && (sock_ready != 0)) {
       if(FD_ISSET(sock_rd, &m_read_fds)) {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("recv start" << endl);
         int server_read = recv(sock_rd, reinterpret_cast<char*>(ap_buf),
@@ -1364,7 +1364,7 @@ irs::hardflow::tcp_server_t::size_type
           close_socket(sock_rd);
         }
       }
-    } else if(sock_ready == socket_error) {
+    } else if(sock_ready == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("select: " << last_error_str())
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("read" << endl);
       close_socket(sock_rd);
@@ -1385,9 +1385,9 @@ irs::hardflow::tcp_server_t::size_type
   if (m_is_open && is_channel_exists(a_channel_ident)) {
     socket_type sock_wr = m_map_channel_sock[a_channel_ident];
     FD_SET(sock_wr, &m_write_fds); 
-    socket_type sock_ready = select(sock_wr + 1, NULL,
+    int sock_ready = select(sock_wr + 1, NULL,
       &m_write_fds, NULL, &m_serv_select_timeout);
-    if((sock_ready != socket_error) && (sock_ready != 0)) {
+    if((sock_ready != IRS_SOCKET_ERROR) && (sock_ready != 0)) {
       if(FD_ISSET(sock_wr, &m_write_fds)) {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("send start" << endl);
         int server_write = send(sock_wr, reinterpret_cast<const char*>(ap_buf),
@@ -1430,7 +1430,7 @@ irs::hardflow::tcp_server_t::size_type
           close_socket(sock_wr);
         }
       }
-    } else if(sock_ready == socket_error) {
+    } else if(sock_ready == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("select: " <<
         last_error_str() << endl;);
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE("write" << endl);
@@ -1445,12 +1445,12 @@ irs::hardflow::tcp_server_t::size_type
 }
 
 void irs::hardflow::tcp_server_t::tick()
-{ 
+{
   if(m_is_open) {
     FD_SET(m_server_sock, &m_read_fds);
     int se_select = select(m_server_sock + 1, &m_read_fds,
       NULL, NULL, &m_serv_select_timeout);
-    if((se_select != socket_error) && (se_select != 0)) {
+    if((se_select != IRS_SOCKET_ERROR) && (se_select != 0)) {
       if(FD_ISSET(m_server_sock, &m_read_fds)) {
         int new_sock = accept(m_server_sock, NULL, NULL);
         if(new_sock >= 0) {
@@ -1465,9 +1465,9 @@ void irs::hardflow::tcp_server_t::tick()
                 irs::mlog() << "New channel added: " << (int)m_channel << endl;
                 irs::mlog() << "-------------------------------" << endl;
                 for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
-                  it != m_map_channel_sock.end(); it++) 
+                  it != m_map_channel_sock.end(); it++)
                 {
-                  irs::mlog() << "m_channel: " << (int)it->first << 
+                  irs::mlog() << "m_channel: " << (int)it->first <<
                     " socket: " << it->second << endl;
                 }
                 irs::mlog() << "-------------------------------" << endl;
@@ -1483,11 +1483,11 @@ void irs::hardflow::tcp_server_t::tick()
             close_socket(new_sock);
           }
         } else {
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("accept: " << 
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("accept: " <<
             last_error_str() << endl);
         }
       }
-    } else if (socket_error == socket_error) {
+    } else if (se_select == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
     } else {
       // если select вернула 0, то событие не сработало
@@ -1579,7 +1579,7 @@ void irs::hardflow::tcp_client_t::start_client()
       #elif defined(IRS_LINUX)
       m_client_sock = socket(PF_INET, SOCK_STREAM, 0);
       #endif // IRS_WINDOWS IRS_LINUX
-      if (m_client_sock != static_cast<socket_type>(m_invalid_socket)) {
+      if (m_client_sock != IRS_INVALID_SOCKET) {
         m_state_info.sock_created = true;
         m_state_info.set_io_mode_sock_success = false;
       } else {
@@ -1599,7 +1599,7 @@ void irs::hardflow::tcp_client_t::start_client()
       // ненулевое значение
       #if defined(IRS_WIN32)
       unsigned long ulblock = 1;
-      if (ioctlsocket(m_client_sock, FIONBIO, &ulblock) != m_socket_error) {
+      if (ioctlsocket(m_client_sock, FIONBIO, &ulblock) != IRS_SOCKET_ERROR) {
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.connect_sock_success = false;
       } else {
@@ -1608,7 +1608,7 @@ void irs::hardflow::tcp_client_t::start_client()
           error_str(m_error_sock.get_last_error()));
       }
       #elif defined(IRS_LINUX)
-      if (fcntl(m_client_sock, F_SETFL, O_NONBLOCK) != m_socket_error) {
+      if (fcntl(m_client_sock, F_SETFL, O_NONBLOCK) != IRS_SOCKET_ERROR) {
         m_state_info.set_io_mode_sock_success = true;
         m_state_info.connect_sock_success = false;
       } else {
@@ -1629,7 +1629,7 @@ void irs::hardflow::tcp_client_t::start_client()
       m_addr.sin_port = htons(m_dest_port);
       m_addr.sin_addr.s_addr = reinterpret_cast<unsigned long&>(m_dest_ip);
       if (connect(m_client_sock, (struct sockaddr *)&m_addr,
-        sizeof(m_addr)) != m_socket_error)
+        sizeof(m_addr)) != IRS_SOCKET_ERROR)
       {
         m_state_info.connect_sock_success = true;
       } else {
@@ -1682,9 +1682,9 @@ irs::hardflow::tcp_client_t::size_type
   if (m_state_info.get_state_start()) {
     a_channel_ident = m_channel;
     FD_SET(m_client_sock, &m_read_fds);
-    socket_type sock_ready = select(m_client_sock + 1, &m_read_fds, 
+    int sock_ready = select(m_client_sock + 1, &m_read_fds,
       NULL, NULL, &m_client_select_timeout);
-    if((sock_ready != socket_error) && (sock_ready != 0)) {
+    if((sock_ready != IRS_SOCKET_ERROR) && (sock_ready != 0)) {
       if(FD_ISSET(m_client_sock, &m_read_fds)) {
         int client_read = recv(m_client_sock, reinterpret_cast<char*>(ap_buf),
           a_size, 0);
@@ -1698,7 +1698,7 @@ irs::hardflow::tcp_client_t::size_type
           m_state_info.sock_created = false;
         }
       }
-    } else if(sock_ready == socket_error) {
+    } else if(sock_ready == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
     } else {
       // если select вернула 0, то событие не сработало
@@ -1716,9 +1716,9 @@ irs::hardflow::tcp_client_t::size_type
   if (m_state_info.get_state_start()) {
     socket_type sock_wr = m_client_sock;
     FD_SET(sock_wr, &m_write_fds);
-    socket_type sock_ready = select(sock_wr + 1, NULL,
+    int sock_ready = select(sock_wr + 1, NULL,
       &m_write_fds, NULL, &m_client_select_timeout);
-    if((sock_ready != socket_error) && (sock_ready != 0)) {
+    if((sock_ready != IRS_SOCKET_ERROR) && (sock_ready != 0)) {
       if(FD_ISSET(sock_wr, &m_write_fds)) {
         int client_write = send(sock_wr, reinterpret_cast<const char*>(ap_buf),
           a_size, 0);
@@ -1732,7 +1732,7 @@ irs::hardflow::tcp_client_t::size_type
           m_state_info.sock_created = false;
         }
       }
-    } else if(sock_ready == socket_error) {
+    } else if(sock_ready == IRS_SOCKET_ERROR) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("select: " << last_error_str());
     }
     else {

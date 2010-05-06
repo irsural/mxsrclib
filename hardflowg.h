@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 09.04.2010
+// Дата: 06.05.2010
 // Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -182,13 +182,7 @@ public:
   errcode_type get_last_error();
 };
 
-#if defined(IRS_WIN32)
-enum { socket_error = SOCKET_ERROR };
-enum { invalid_socket = INVALID_SOCKET };
-#elif defined(IRS_LINUX)
-enum { socket_error = -1 };
-enum { invalid_socket = -1 };
-#endif // IRS_WINDOWS IRS_LINUX
+
 
 #if defined(IRS_WIN32)
 typedef SOCKET socketns_t;
@@ -358,13 +352,10 @@ public:
   typedef in_addr_t in_addr_type;
   #endif // IRS_WINDOWS IRS_LINUX
 private:
-  #if defined(IRS_WIN32)
-  enum { m_socket_error = SOCKET_ERROR };
-  enum { m_invalid_socket = INVALID_SOCKET };
-  #elif defined(IRS_LINUX)
-  enum { m_socket_error = -1 };
-  enum { m_invalid_socket = -1 };
-  #endif // IRS_WINDOWS IRS_LINUX
+
+  //enum { m_socket_error = socket_error };
+  //enum { m_invalid_socket = invalid_socket };
+
   error_sock_t m_error_sock;
   struct state_info_t
   {
@@ -475,13 +466,8 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
 
 private:
-  #if defined(IRS_WIN32)
-  enum { m_socket_error = SOCKET_ERROR };
-  enum { m_invalid_socket = INVALID_SOCKET };
-  #elif defined(IRS_LINUX)
-  enum { m_socket_error = -1 };
-  enum { m_invalid_socket = -1 };
-  #endif // IRS_WINDOWS IRS_LINUX
+  //enum { m_socket_error = socket_error };
+  //enum { m_invalid_socket = invalid_socket };
   #if defined(IRS_WIN32)
   WSADATA m_wsd;
   #endif // IRS_WIN32
@@ -524,14 +510,7 @@ public:
   
 private:
   typedef int errcode_type;
-  
-  #if defined(IRS_WIN32)
-  enum { m_socket_error = SOCKET_ERROR };
-  enum { m_invalid_socket = INVALID_SOCKET };
-  #elif defined(IRS_LINUX)
-  enum { m_socket_error = -1 };
-  enum { m_invalid_socket = -1 };
-  #endif // IRS_WINDOWS IRS_LINUX
+
   error_sock_t m_error_sock;
   struct state_info_t
   {

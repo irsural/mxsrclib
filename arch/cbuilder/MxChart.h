@@ -37,7 +37,7 @@ class TMxChartItem;
 //---------------------------------------------------------------------------
 int __fastcall BeginChartRange(TMxChart *Chart, int Index);
 int __fastcall EndChartRange(TMxChart *Chart, int Index);
-#if __BORLANDC__ < IRS_CPP_BUILDER2010
+#if __BORLANDC__ < IRS_CPP_BUILDER2007
 bool __fastcall operator == (TPoint P1, TPoint P2);
 bool __fastcall operator != (TRect R1, TRect R2);
 #endif //__BORLANDC__ < IRS_CPP_BUILDER2010

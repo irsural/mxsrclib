@@ -37,11 +37,11 @@
 
 namespace irs {
 
+#ifdef NOP
 #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER6) &&\
   (__BORLANDC__ <= (IRS_CPP_BUILDER6 + 4))) ||\
   defined(IRS_LINUX) ||\
-  defined(_MSC_VER) //||
-  // defined(__ICCAVR__)
+  defined(_MSC_VER)
 
 template<class T>
 class tree_t;
@@ -517,6 +517,7 @@ void test_tree()
 }
 
 #endif //Compilers
+#endif // NOP
 
 
 }; // namespace irs

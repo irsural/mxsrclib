@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 29.04.2010
+// Дата: 06.05.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -39,6 +39,7 @@
 #define IRS_CPP_BUILDER4    0x0540
 #define IRS_CPP_BUILDER6    0x0560
 #define IRS_CPP_BUILDER2006 0x0580
+#define IRS_CPP_BUILDER2007 0x0590
 #define IRS_CPP_BUILDER2010 0x0620
 
 // Включение Unicode
@@ -336,6 +337,14 @@ const irs_bool   irs_true = 1;
 const irs_bool   irs_false = 0;
 
 typedef void (*irs_vfunc)();
+
+#if defined(IRS_WIN32)
+# define IRS_INVALID_SOCKET INVALID_SOCKET
+# define IRS_SOCKET_ERROR SOCKET_ERROR
+#elif defined(IRS_LINUX)
+# define IRS_INVALID_SOCKET -1
+# define IRS_SOCKET_ERROR -1
+#endif // IRS_LINUX
 
 // Тип для пина
 enum irs_pin_t {

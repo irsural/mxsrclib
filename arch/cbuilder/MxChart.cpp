@@ -26,7 +26,7 @@ const double DblError = 1e-9;
 //***************************************************************************
 // Глобальные функции
 
-#if __BORLANDC__ < IRS_CPP_BUILDER2010
+#if __BORLANDC__ < IRS_CPP_BUILDER2007
 //---------------------------------------------------------------------------
 bool __fastcall operator == (TPoint P1, TPoint P2)
 {
