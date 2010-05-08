@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 23.04.2010
+// Дата: 07.05.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -255,35 +255,35 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   f_get_resistance_commands.push_back("NPLC 20");
   f_get_resistance_commands.push_back("TRIG SGL");
 
-  {
-    if (m_mul_mode_type == mul_mode_type_active) {
-      // Запись команд инициализации
-      #define write_t TIME_TO_CNT(2, 1)
-      counter_t write_to = 0;
-      irs_bool write_wait = irs_false;
-      set_to_cnt(write_to, write_t);
-      index_t ic_index = 0;
-      for (;;) {
-        mxifa_tick();
-        if (write_wait) {
-          if (mxifa_write_end(f_handle, irs_false)) {
-            write_wait = irs_false;
-            ic_index++;
-            if (ic_index >= (index_t)f_init_commands.size()) break;
-          } else if (test_to_cnt(f_oper_to)) {
-            mxifa_write_end(f_handle, irs_true);
-            write_wait = irs_false;
-          } else if (test_to_cnt(write_to)) {
-            mxifa_write_end(f_handle, irs_true);
-            goto _error;
+  if (m_mul_mode_type == mul_mode_type_active) {
+    // Запись команд инициализации
+    #define mx_agilent_3458a_write_time TIME_TO_CNT(1, 1)
+    counter_t write_to = 0;
+    irs_bool write_wait = irs_false;
+    set_to_cnt(write_to, mx_agilent_3458a_write_time);
+    index_t ic_index = 0;
+    for (;;) {
+      mxifa_tick();
+      if (write_wait) {
+        if (mxifa_write_end(f_handle, irs_false)) {
+          write_wait = irs_false;
+          ic_index++;
+          if (ic_index >= static_cast<index_t>(f_init_commands.size())) {
+            break;
           }
-        } else {
-          irs_u8 *icommand = (irs_u8 *)(f_init_commands[ic_index].c_str());
-          irs_u32 len = strlen((char *)icommand);
-          mxifa_write_begin(f_handle, IRS_NULL, icommand, len);
-          set_to_cnt(f_oper_to, f_oper_time);
-          write_wait = irs_true;
+        } else if (test_to_cnt(f_oper_to)) {
+          mxifa_write_end(f_handle, irs_true);
+          write_wait = irs_false;
+        } else if (test_to_cnt(write_to)) {
+          mxifa_write_end(f_handle, irs_true);
+          goto _error;
         }
+      } else {
+        irs_u8 *icommand = (irs_u8 *)(f_init_commands[ic_index].c_str());
+        irs_u32 len = strlen((char *)icommand);
+        mxifa_write_begin(f_handle, IRS_NULL, icommand, len);
+        set_to_cnt(f_oper_to, f_oper_time);
+        write_wait = irs_true;
       }
     }
   }
