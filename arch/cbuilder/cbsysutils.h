@@ -1,16 +1,16 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 14.04.2010
+// Дата: 09.05.2010
 // Дата создания: 9.09.2009
 
 #ifndef cbsysutilsH
 #define cbsysutilsH
 
+#include <irsdefs.h>
+
 // ***************************************************************************
 // Исправление ошибки файла sysvary.h в C++ Builder 4, который находится
 // в include-дереве файла OleCtnrs.hpp. В include-дереве sysvary.h отсутствует
 // необходимый файл utilcls.h
-#include <irsdefs.h>
-
 #if __BORLANDC__ < IRS_CPP_BUILDER6
 #include <utilcls.h>
 #endif //__BORLANDC__ < IRS_CPP_BUILDER6
@@ -111,10 +111,10 @@ void table_string_to_string_grid(
   TStringGrid* ap_string_grid
 );
 
-
-
 // Вывод в компонент
 //void out_to_tree_view();
+
+
 
 }; //namespace cbuilder
 

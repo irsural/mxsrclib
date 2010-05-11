@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 30.04.2010
+// Дата: 09.05.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -13,6 +13,9 @@
 #ifdef __ICCAVR__
 #include <pgmspace.h>
 #endif //__ICCAVR__
+#ifdef __BORLANDC__
+#include <sysutils.hpp>
+#endif //__BORLANDC__
 
 #ifdef __ICCAVR__
 #include <irsavrutil.h>
@@ -490,7 +493,11 @@ private:
       ostringstream out_stream;
       m_error_out.out_info(out_stream);
       out_stream << '\0';
+      #ifdef __BORLANDC__
+      throw Exception(out_stream.str().c_str());
+      #else //__BORLANDC__
       throw runtime_error(out_stream.str().c_str());
+      #endif //__BORLANDC__
     }
     m_is_first_throw = true;
   }
