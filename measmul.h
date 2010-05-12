@@ -143,103 +143,119 @@ class mx_agilent_3458a_t: public mxmultimeter_t
     meas_voltage,
     meas_current,
     meas_frequency,
-    meas_set_range};
+    meas_set_range
+  };
+  // Режим инициализации
+  enum init_mode_t {
+    im_start,
+    im_write_command,
+    im_next_command,
+    im_stop
+  };
 
   // Режим работы мультиметра
   multimeter_mode_type_t m_mul_mode_type;
   // Команды при инициализации
-  vector<irs::string> f_init_commands;
+  vector<irs::string> m_init_commands;
   // Индекс команды установки типа напряжения: постоянное/переменное
-  //index_t f_voltage_type_index;
+  //index_t m_voltage_type_index;
 
   // Команда для текущего типа измерения
-  //const irs::string f_value_type;
+  //const irs::string m_value_type;
   // Команда для постоянного напряжения
-  const irs::string f_voltage_type_direct;
+  const irs::string m_voltage_type_direct;
   // Команда для переменного напряжения
-  const irs::string f_voltage_type_alternate;
+  const irs::string m_voltage_type_alternate;
   // Команда для постоянного тока
-  const irs::string f_current_type_direct;
+  const irs::string m_current_type_direct;
   // Команда для переменного тока
-  const irs::string f_current_type_alternate;
+  const irs::string m_current_type_alternate;
   // Команда для постоянного напряжения c диапазоном
-  irs::string f_voltage_type_direct_range;
+  irs::string m_voltage_type_direct_range;
   // Команда для переменного напряжения c диапазоном
-  irs::string f_voltage_type_alternate_range;
+  irs::string m_voltage_type_alternate_range;
   // Команда для постоянного тока c диапазоном
-  irs::string f_current_type_direct_range;
+  irs::string m_current_type_direct_range;
   // Команда для переменного тока c диапазоном
-  irs::string f_current_type_alternate_range;
+  irs::string m_current_type_alternate_range;
 
   // Типа тока и напряжения - перменное/постоянное
-  volt_curr_type_t f_volt_curr_type;
+  volt_curr_type_t m_volt_curr_type;
   // Индекс команды установки времени интегрирования для напряжения
-  //index_t f_time_int_voltage_index;
+  //index_t m_time_int_voltage_index;
   // Команда установки времени интегрирования для напряжения
-  irs::string f_time_int_measure_command;
+  irs::string m_time_int_measure_command;
   // Команды при чтении напряжения
-  vector<irs::string> f_get_measure_commands;
+  vector<irs::string> m_get_measure_commands;
   // Индекс команды установки типа измерения сопротивления:
   // 2-/4-проводная схема
-  index_t f_resistance_type_index;
+  index_t m_resistance_type_index;
   // Команда для установки 2-проводной схемы измерения сопротивления
-  const irs::string f_resistance_type_2x;
+  const irs::string m_resistance_type_2x;
   // Команда для установки 4-проводной схемы измерения сопротивления
-  const irs::string f_resistance_type_4x;
+  const irs::string m_resistance_type_4x;
   // Индекс команды установки времени интегрирования для сопротивления
-  index_t f_time_int_resistance_index;
+  index_t m_time_int_resistance_index;
   // Команды при чтении сопротивления
-  vector<irs::string> f_get_resistance_commands;
+  vector<irs::string> m_get_resistance_commands;
 
   // Команда для установки диапазона измерений
-  irs::string f_set_range_command;
+  irs::string m_set_range_command;
   // Дескриптор канала mxifa
-  void *f_handle;
+  void *m_handle;
   // Ощибка создания
-  irs_bool f_create_error;
+  bool m_create_error;
   // Текущий режим работы
-  ma_mode_t f_mode;
+  ma_mode_t m_mode;
   // Текущий макрорежим работы
-  macro_mode_t f_macro_mode;
+  macro_mode_t m_macro_mode;
   // Статус текущей операции
-  meas_status_t f_status;
+  meas_status_t m_status;
   // Текущая команда
-  ma_command_t f_command;
+  ma_command_t m_command;
   // Указатель на перменную напряжение пользователя
-  double *f_voltage;
+  double *m_voltage;
   // Указатель на перменную сопротивление пользователя
-  double *f_resistance;
+  double *m_resistance;
   // Запрос на прерывание операции
-  irs_bool f_abort_request;
+  bool m_abort_request;
   // Буфер приема
-  irs_u8 f_read_buf[ma_read_buf_size];
+  irs_u8 m_read_buf[ma_read_buf_size];
   // Текущая позиция в буфере приема
-  index_t f_read_pos;
+  index_t m_read_pos;
   // Текущая команда
-  irs::string f_cur_mul_command;
+  irs::string m_cur_mul_command;
   // Команды для мультиметра
-  vector<irs::string> *f_mul_commands;
+  vector<irs::string> *m_mul_commands;
   // Индекс команд для мультиметра
-  index_t f_mul_commands_index;
+  index_t m_mul_commands_index;
   // Предыдущая команда
-  //ma_command_t f_command_prev;
+  //ma_command_t m_command_prev;
   // Указатель на переменную в которую будет считано значение
-  double *f_value;
+  double *m_value;
   // Выполнить чтение параметра
-  irs_bool f_get_parametr_needed;
+  bool m_get_parametr_needed;
   // Время таймаута операций
-  counter_t f_oper_time;
+  counter_t m_oper_time;
   // Таймаут операций
-  counter_t f_oper_to;
+  counter_t m_oper_to;
   // Время таймаута калибровки
-  counter_t f_acal_time;
+  counter_t m_acal_time;
   // Таймаут калибровки
-  counter_t f_acal_to;
+  counter_t m_acal_to;
+  // Таймер записи команд инициализации
+  irs::timer_t m_init_timer;
+  // Режим инициализации
+  init_mode_t m_init_mode;
+  // Индекс команды инициализации
+  index_t m_ic_index;
 
   // Запрещение конструктора по умолчанию
   mx_agilent_3458a_t();
   // Создание команд для напряжени/тока
   void measure_create_commands(measure_t a_measure);
+  // Отправка команд инициализации в мультиметр
+  void initialize_tick();
 public:
   // Конструктор
   mx_agilent_3458a_t(

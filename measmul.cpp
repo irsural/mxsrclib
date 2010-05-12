@@ -133,65 +133,68 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   multimeter_mode_type_t a_mul_mode_type
 ):
   m_mul_mode_type(a_mul_mode_type),
-  f_init_commands(),
-  f_voltage_type_direct("DCV"),
-  f_voltage_type_alternate("ACV"),
-  f_current_type_direct("DCI"),
-  f_current_type_alternate("ACI"),
-  f_voltage_type_direct_range("DCV AUTO"),
-  f_voltage_type_alternate_range("ACV AUTO"),
-  f_current_type_direct_range("DCI AUTO"),
-  f_current_type_alternate_range("ACI AUTO"),
-  f_volt_curr_type(vct_direct),
-  //f_time_int_voltage_index(0),
-  f_time_int_measure_command("NPLC 100"),
-  f_get_measure_commands(),
-  f_resistance_type_index(0),
-  f_resistance_type_2x("OHM AUTO"),
-  f_resistance_type_4x("OHMF AUTO"),
-  f_time_int_resistance_index(0),
-  f_get_resistance_commands(),
-  f_handle(IRS_NULL),
-  f_create_error(irs_false),
-  f_mode(ma_mode_start),
-  f_macro_mode(macro_mode_stop),
-  f_status(meas_status_success),
-  f_command(mac_free),
-  f_voltage(IRS_NULL),
-  f_resistance(IRS_NULL),
-  f_abort_request(irs_false),
-  f_read_pos(0),
-  f_cur_mul_command(),
-  f_mul_commands(IRS_NULL),
-  f_mul_commands_index(0),
-  //f_command_prev(mac_free),
-  f_value(IRS_NULL),
-  f_get_parametr_needed(irs_false),
-  f_oper_time(0),
-  f_oper_to(0),
-  f_acal_time(0),
-  f_acal_to(0)
+  m_init_commands(),
+  m_voltage_type_direct("DCV"),
+  m_voltage_type_alternate("ACV"),
+  m_current_type_direct("DCI"),
+  m_current_type_alternate("ACI"),
+  m_voltage_type_direct_range("DCV AUTO"),
+  m_voltage_type_alternate_range("ACV AUTO"),
+  m_current_type_direct_range("DCI AUTO"),
+  m_current_type_alternate_range("ACI AUTO"),
+  m_volt_curr_type(vct_direct),
+  //m_time_int_voltage_index(0),
+  m_time_int_measure_command("NPLC 100"),
+  m_get_measure_commands(),
+  m_resistance_type_index(0),
+  m_resistance_type_2x("OHM AUTO"),
+  m_resistance_type_4x("OHMF AUTO"),
+  m_time_int_resistance_index(0),
+  m_get_resistance_commands(),
+  m_handle(IRS_NULL),
+  m_create_error(true),
+  m_mode(ma_mode_start),
+  m_macro_mode(macro_mode_stop),
+  m_status(meas_status_success),
+  m_command(mac_free),
+  m_voltage(IRS_NULL),
+  m_resistance(IRS_NULL),
+  m_abort_request(false),
+  m_read_pos(0),
+  m_cur_mul_command(),
+  m_mul_commands(IRS_NULL),
+  m_mul_commands_index(0),
+  //m_command_prev(mac_free),
+  m_value(IRS_NULL),
+  m_get_parametr_needed(false),
+  m_oper_time(0),
+  m_oper_to(0),
+  m_acal_time(0),
+  m_acal_to(0),
+  m_init_timer(irs::make_cnt_s(1)),
+  m_init_mode(im_start),
+  m_ic_index(0)
 {
   init_to_cnt();
   mxifa_init();
 
-  f_oper_time = TIME_TO_CNT(1, 1);
-  f_acal_time = TIME_TO_CNT(20*60, 1);
+  m_oper_time = TIME_TO_CNT(1, 1);
+  m_acal_time = TIME_TO_CNT(20*60, 1);
 
   // Открытие канала MXIFA_MULTIMETER
   if (mxifa_get_channel_type_ex(channel) ==
       mxifa_ei_win32_ni_usb_gpib) {
     mxifa_win32_ni_usb_gpib_cfg config;
     config.address = address;
-    f_handle = mxifa_open_ex(channel, &config, irs_false);
+    m_handle = mxifa_open_ex(channel, &config, false);
   } else {
-    f_handle = mxifa_open(channel, irs_false);
+    m_handle = mxifa_open(channel, false);
   }
 
 
   // Команды при инициализации
-  f_init_commands.push_back("RESET");
-  f_init_commands.push_back("PRESET NORM");
+  m_init_commands.push_back("RESET");
+  m_init_commands.push_back("PRESET NORM");
   /*
   Автоматическая коррекция нуля (время счета * 2, обязательна
   для четырехпроводной схемы)
@@ -237,138 +240,102 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   */
   #ifndef OFF_EXTCOM
   // Запоминание чисел в виде вещественных чисел двойной точности
-  f_init_commands.push_back("MFORMAT DREAL");
+  m_init_commands.push_back("MFORMAT DREAL");
   // Компенсация наведенного напряжения смещения (Время счета * 2
   // для сопротивления)
-  f_init_commands.push_back("OCOMP ON");
+  m_init_commands.push_back("OCOMP ON");
   // Входное сопротивление фиксируется на 10 МОм для всех пределов
-  //f_init_commands.push_back("FIXEDZ ON");
+  //m_init_commands.push_back("FIXEDZ ON");
   // Автоматическая коррекция нуля (время счета * 2, обязательна
   // для четырехпроводной схемы)
-  //f_init_commands.push_back("AZERO OFF");
+  //m_init_commands.push_back("AZERO OFF");
   #endif //OFF_EXTCOM
 
   // Команды при чтении сопротивления
-  f_resistance_type_index = f_get_resistance_commands.size();
-  f_get_resistance_commands.push_back("OHMF AUTO");
-  f_time_int_resistance_index = f_get_resistance_commands.size();
-  f_get_resistance_commands.push_back("NPLC 20");
-  f_get_resistance_commands.push_back("TRIG SGL");
-
-  if (m_mul_mode_type == mul_mode_type_active) {
-    // Запись команд инициализации
-    #define mx_agilent_3458a_write_time TIME_TO_CNT(1, 1)
-    counter_t write_to = 0;
-    irs_bool write_wait = irs_false;
-    set_to_cnt(write_to, mx_agilent_3458a_write_time);
-    index_t ic_index = 0;
-    for (;;) {
-      mxifa_tick();
-      if (write_wait) {
-        if (mxifa_write_end(f_handle, irs_false)) {
-          write_wait = irs_false;
-          ic_index++;
-          if (ic_index >= static_cast<index_t>(f_init_commands.size())) {
-            break;
-          }
-        } else if (test_to_cnt(f_oper_to)) {
-          mxifa_write_end(f_handle, irs_true);
-          write_wait = irs_false;
-        } else if (test_to_cnt(write_to)) {
-          mxifa_write_end(f_handle, irs_true);
-          goto _error;
-        }
-      } else {
-        irs_u8 *icommand = (irs_u8 *)(f_init_commands[ic_index].c_str());
-        irs_u32 len = strlen((char *)icommand);
-        mxifa_write_begin(f_handle, IRS_NULL, icommand, len);
-        set_to_cnt(f_oper_to, f_oper_time);
-        write_wait = irs_true;
-      }
-    }
-  }
+  m_resistance_type_index = m_get_resistance_commands.size();
+  m_get_resistance_commands.push_back("OHMF AUTO");
+  m_time_int_resistance_index = m_get_resistance_commands.size();
+  m_get_resistance_commands.push_back("NPLC 20");
+  m_get_resistance_commands.push_back("TRIG SGL");
 
   // Очистка буфера приема
-  memset(f_read_buf, 0, ma_read_buf_size);
+  memset(m_read_buf, 0, ma_read_buf_size);
   return;
-
-  _error:
-  f_create_error = irs_true;
 }
 // Создание команд для напряжени/тока
 void mx_agilent_3458a_t::measure_create_commands(measure_t a_measure)
 {
-  f_get_measure_commands.clear();
+  m_get_measure_commands.clear();
   switch (a_measure) {
     case meas_value: {
       // Команды чтения значения при произвольном типе измерения
-      //f_get_measure_commands.push_back(f_value_type);
-      //f_get_measure_commands.push_back(f_time_int_measure_command);
-      f_get_measure_commands.push_back("TRIG SGL");
+      //m_get_measure_commands.push_back(m_value_type);
+      //m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_voltage: {
       // Команды при чтении напряжения
-      //f_voltage_type_index = f_get_measure_commands.size();
-      switch (f_volt_curr_type) {
+      //m_voltage_type_index = m_get_measure_commands.size();
+      switch (m_volt_curr_type) {
         case vct_direct: {
-          f_get_measure_commands.push_back(f_voltage_type_direct_range);
+          m_get_measure_commands.push_back(m_voltage_type_direct_range);
         } break;
         case vct_alternate: {
-          f_get_measure_commands.push_back(f_voltage_type_alternate_range);
-          //f_get_measure_commands.push_back("SETACV SYNC");
+          m_get_measure_commands.push_back(m_voltage_type_alternate_range);
+          //m_get_measure_commands.push_back("SETACV SYNC");
         } break;
       }
-      //f_time_int_voltage_index = f_get_measure_commands.size();
-      f_get_measure_commands.push_back(f_time_int_measure_command);
-      f_get_measure_commands.push_back("TRIG SGL");
+      //m_time_int_voltage_index = m_get_measure_commands.size();
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_current: {
       // Команды при чтении тока
-      //f_voltage_type_index = f_get_measure_commands.size();
-      switch (f_volt_curr_type) {
+      //m_voltage_type_index = m_get_measure_commands.size();
+      switch (m_volt_curr_type) {
         case vct_direct: {
-          f_get_measure_commands.push_back(f_current_type_direct_range);
+          m_get_measure_commands.push_back(m_current_type_direct_range);
         } break;
         case vct_alternate: {
-          f_get_measure_commands.push_back(f_current_type_alternate_range);
+          m_get_measure_commands.push_back(m_current_type_alternate_range);
         } break;
       }
-      //f_time_int_voltage_index = f_get_measure_commands.size();
-      f_get_measure_commands.push_back(f_time_int_measure_command);
-      f_get_measure_commands.push_back("TRIG SGL");
+      //m_time_int_voltage_index = m_get_measure_commands.size();
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_frequency: {
-      f_get_measure_commands.push_back("FREQ");
-      f_get_measure_commands.push_back("FSOURCE ACV");
-      f_get_measure_commands.push_back(f_time_int_measure_command);
-      f_get_measure_commands.push_back("TRIG SGL");
+      m_get_measure_commands.push_back("FREQ");
+      m_get_measure_commands.push_back("FSOURCE ACV");
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
    } break;
    case meas_set_range: {
-      f_get_measure_commands.push_back(f_set_range_command);
+      m_get_measure_commands.push_back(m_set_range_command);
    } break;
   }
-  //f_get_measure_commands.push_back(f_range_measute_command);
+  //m_get_measure_commands.push_back(m_range_measute_command);
 }
 // Деструктор
 mx_agilent_3458a_t::~mx_agilent_3458a_t()
 {
-  if (f_create_error) return;
-  mxifa_close_begin(f_handle);
-  mxifa_close_end(f_handle, irs_true);
+  //if (m_create_error) return;
+  mxifa_close_begin(m_handle);
+  mxifa_close_end(m_handle, true);
   mxifa_deinit();
   deinit_to_cnt();
 }
 // Установить режим измерения постоянного напряжения
 void mx_agilent_3458a_t::set_dc()
 {
-  //f_get_measure_commands[f_voltage_type_index] = f_voltage_type_direct;
-  f_volt_curr_type = vct_direct;
+  //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_direct;
+  m_volt_curr_type = vct_direct;
 }
 // Установить режим измерения переменного напряжения
 void mx_agilent_3458a_t::set_ac()
 {
-  //f_get_measure_commands[f_voltage_type_index] = f_voltage_type_alternate;
-  f_volt_curr_type = vct_alternate;
+  //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_alternate;
+  m_volt_curr_type = vct_alternate;
 }
 // Установить положителный фронт запуска
 void mx_agilent_3458a_t::set_positive()
@@ -379,20 +346,20 @@ void mx_agilent_3458a_t::set_negative()
 // Чтение значения при текущем типа измерения
 void mx_agilent_3458a_t::get_value(double *ap_value)
 {
-  if (f_create_error) return;
+  if (m_create_error) return;
   measure_create_commands(meas_value);
-  f_voltage = ap_value;
-  f_command = mac_get_param;
-  f_status = meas_status_busy;
+  m_voltage = ap_value;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
 }
 // Чтение напряжения
 void mx_agilent_3458a_t::get_voltage(double *voltage)
 {
-  if (f_create_error) return;
+  if (m_create_error) return;
   measure_create_commands(meas_voltage);
-  f_voltage = voltage;
-  f_command = mac_get_param;
-  f_status = meas_status_busy;
+  m_voltage = voltage;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
 }
 // Чтение усредненного сдвира фаз
 void mx_agilent_3458a_t::get_phase_average(double * /*phase_average*/)
@@ -414,29 +381,29 @@ void mx_agilent_3458a_t::get_time_interval_average(
 // Чтения силы тока
 void mx_agilent_3458a_t::get_current(double *current)
 {
-  if (f_create_error) return;
+  if (m_create_error) return;
   measure_create_commands(meas_current);
-  f_voltage = current;
-  f_command = mac_get_param;
-  f_status = meas_status_busy;
+  m_voltage = current;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
 }
 // Чтение сопротивления
 void mx_agilent_3458a_t::get_resistance2x(double *resistance)
 {
-  if (f_create_error) return;
-  f_get_resistance_commands[f_resistance_type_index] = f_resistance_type_2x;
-  f_resistance = resistance;
-  f_command = mac_get_resistance;
-  f_status = meas_status_busy;
+  if (m_create_error) return;
+  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_2x;
+  m_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_status = meas_status_busy;
 }
 // Чтение сопротивления
 void mx_agilent_3458a_t::get_resistance4x(double *resistance)
 {
-  if (f_create_error) return;
-  f_get_resistance_commands[f_resistance_type_index] = f_resistance_type_4x;
-  f_resistance = resistance;
-  f_command = mac_get_resistance;
-  f_status = meas_status_busy;
+  if (m_create_error) return;
+  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_4x;
+  m_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_status = meas_status_busy;
 }
 // Чтение частоты
 void mx_agilent_3458a_t::get_frequency(double* /*frequency*/)
@@ -445,48 +412,105 @@ void mx_agilent_3458a_t::get_frequency(double* /*frequency*/)
 // Запуск автокалибровки (команда ACAL) мультиметра
 void mx_agilent_3458a_t::auto_calibration()
 {
-  if (f_create_error) return;
-  f_command = mac_auto_calibration;
-  f_status = meas_status_busy;
+  if (m_create_error) return;
+  m_command = mac_auto_calibration;
+  m_status = meas_status_busy;
 }
 // Чтение статуса текущей операции
 meas_status_t mx_agilent_3458a_t::status()
 {
-  if (f_create_error) return meas_status_busy;
-  return f_status;
+  if (m_create_error) return meas_status_busy;
+  return m_status;
 }
 // Прерывание текущей операции
 void mx_agilent_3458a_t::abort()
 {
-  if (f_create_error) return;
-  f_abort_request = irs_true;
+  if (m_create_error) return;
+  m_abort_request = true;
+}
+// Отправка команд инициализации в мультиметр
+void mx_agilent_3458a_t::initialize_tick()
+{
+  switch (m_mul_mode_type) {
+    case mul_mode_type_active: {
+      // Запись команд инициализации
+      switch (m_init_mode) {
+        case im_start: {
+          if (m_create_error) {
+            m_init_timer.start();
+            m_ic_index = 0;
+            m_init_mode = im_write_command;
+          }
+        } break;
+        case im_write_command: {
+          irs::string& icomm = m_init_commands[m_ic_index];
+          size_t icomm_size = icomm.size();
+          const irs_u8* icomm_u8 =
+            reinterpret_cast<const irs_u8*>(icomm.c_str());
+          mxifa_write_begin(m_handle, IRS_NULL, icomm_u8, icomm_size);
+          set_to_cnt(m_oper_to, m_oper_time);
+          m_init_mode = im_next_command;
+        } break;
+        case im_next_command: {
+          if (mxifa_write_end(m_handle, false)) {
+            m_ic_index++;
+            if (m_ic_index < static_cast<index_t>(m_init_commands.size())) {
+              m_init_mode = im_write_command;
+            } else {
+              m_create_error = false;
+              m_init_mode = im_start;
+            }
+          }
+          if (test_to_cnt(m_oper_to)) {
+            mxifa_write_end(m_handle, true);
+            m_init_mode = im_write_command;
+          }
+          if (m_init_timer.check()) {
+            mxifa_write_end(m_handle, true);
+            m_init_mode = im_start;
+          }
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("m_init_mode не должен быть default");
+        } break;
+      } //switch (m_init_mode)
+    } break;
+    case mul_mode_type_passive: {
+      m_create_error = false;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("m_mul_mode_type не должен быть default");
+    } break;
+  } //switch (m_mul_mode_type)
 }
 // Элементарное действие
 void mx_agilent_3458a_t::tick()
 {
-  if (f_create_error) return;
   mxifa_tick();
-  switch (f_mode) {
+  initialize_tick();
+
+  if (m_create_error) return;
+  switch (m_mode) {
     case ma_mode_start: {
-      f_abort_request = irs_false;
-      switch (f_command) {
+      m_abort_request = false;
+      switch (m_command) {
         case mac_get_param: {
-          f_get_parametr_needed = irs_false;
-          f_macro_mode = macro_mode_get_voltage;
-          f_mode = ma_mode_macro;
+          m_get_parametr_needed = false;
+          m_macro_mode = macro_mode_get_voltage;
+          m_mode = ma_mode_macro;
         } break;
         case mac_get_resistance: {
-          f_get_parametr_needed = irs_false;
-          f_macro_mode = macro_mode_get_resistance;
-          f_mode = ma_mode_macro;
+          m_get_parametr_needed = false;
+          m_macro_mode = macro_mode_get_resistance;
+          m_mode = ma_mode_macro;
         } break;
         case mac_auto_calibration: {
-          f_macro_mode = macro_mode_stop;
-          f_mode = ma_mode_auto_calibration;
+          m_macro_mode = macro_mode_stop;
+          m_mode = ma_mode_auto_calibration;
         } break;
         case mac_send_commands: {
-          f_macro_mode = macro_mode_send_commands;
-          f_mode = ma_mode_macro;
+          m_macro_mode = macro_mode_send_commands;
+          m_mode = ma_mode_macro;
         } break;
         default : {
           // Добавлено для подовления warning'а. Компилятор gcc4.
@@ -494,83 +518,83 @@ void mx_agilent_3458a_t::tick()
       }
     } break;
     case ma_mode_macro: {
-      if (f_abort_request) {
-        f_abort_request = irs_false;
-        f_macro_mode = macro_mode_stop;
+      if (m_abort_request) {
+        m_abort_request = false;
+        m_macro_mode = macro_mode_stop;
       }
-      switch (f_macro_mode) {
+      switch (m_macro_mode) {
         case macro_mode_get_voltage: {
-          if (f_get_parametr_needed) {
-            f_value = f_voltage;
-            f_macro_mode = macro_mode_stop;
-            f_mode = ma_mode_get_value;
+          if (m_get_parametr_needed) {
+            m_value = m_voltage;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
           } else {
-            f_get_parametr_needed = irs_true;
-            f_mul_commands = &f_get_measure_commands;
-            f_mul_commands_index = 0;
-            //f_command_prev = f_command;
-            f_mode = ma_mode_commands;
+            m_get_parametr_needed = true;
+            m_mul_commands = &m_get_measure_commands;
+            m_mul_commands_index = 0;
+            //m_command_prev = m_command;
+            m_mode = ma_mode_commands;
           }
         } break;
         case macro_mode_get_resistance: {
-          if (f_get_parametr_needed) {
-            f_value = f_resistance;
-            f_macro_mode = macro_mode_stop;
-            f_mode = ma_mode_get_value;
+          if (m_get_parametr_needed) {
+            m_value = m_resistance;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
           } else {
-            f_get_parametr_needed = irs_true;
-            f_mul_commands = &f_get_resistance_commands;
-            f_mul_commands_index = 0;
-            //f_command_prev = f_command;
-            f_mode = ma_mode_commands;
+            m_get_parametr_needed = true;
+            m_mul_commands = &m_get_resistance_commands;
+            m_mul_commands_index = 0;
+            //m_command_prev = m_command;
+            m_mode = ma_mode_commands;
           }
         } break;
         case macro_mode_send_commands: {
-          f_mul_commands = &f_get_measure_commands;
-          f_mul_commands_index = 0;
-          f_mode = ma_mode_commands;
-          f_macro_mode = macro_mode_stop;
+          m_mul_commands = &m_get_measure_commands;
+          m_mul_commands_index = 0;
+          m_mode = ma_mode_commands;
+          m_macro_mode = macro_mode_stop;
         } break;
         case macro_mode_stop: {
-          f_command = mac_free;
-          f_status = meas_status_success;
-          f_mode = ma_mode_start;
+          m_command = mac_free;
+          m_status = meas_status_success;
+          m_mode = ma_mode_start;
         } break;
       }
     } break;
     case ma_mode_commands: {
-      f_cur_mul_command = (*f_mul_commands)[f_mul_commands_index];
-      irs_u8 *command = (irs_u8 *)f_cur_mul_command.c_str();
+      m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
+      irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
       irs_u32 len = strlen((char *)command);
-      mxifa_write_begin(f_handle, IRS_NULL, command, len);
-      f_mode = ma_mode_commands_wait;
-      set_to_cnt(f_oper_to, f_oper_time);
+      mxifa_write_begin(m_handle, IRS_NULL, command, len);
+      m_mode = ma_mode_commands_wait;
+      set_to_cnt(m_oper_to, m_oper_time);
     } break;
     case ma_mode_commands_wait: {
-      if (mxifa_write_end(f_handle, irs_false)) {
-        f_mul_commands_index++;
-        if (f_mul_commands_index >= (index_t)f_mul_commands->size()) {
-          f_mode = ma_mode_macro;
+      if (mxifa_write_end(m_handle, false)) {
+        m_mul_commands_index++;
+        if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
+          m_mode = ma_mode_macro;
         } else {
-          f_mode = ma_mode_commands;
+          m_mode = ma_mode_commands;
         }
-      } else if (test_to_cnt(f_oper_to)) {
-        mxifa_write_end(f_handle, irs_true);
-        f_mode = ma_mode_commands;
-      } else if (f_abort_request) {
-        mxifa_write_end(f_handle, irs_true);
-        f_mode = ma_mode_macro;
+      } else if (test_to_cnt(m_oper_to)) {
+        mxifa_write_end(m_handle, true);
+        m_mode = ma_mode_commands;
+      } else if (m_abort_request) {
+        mxifa_write_end(m_handle, true);
+        m_mode = ma_mode_macro;
       }
     } break;
     case ma_mode_get_value: {
-      if (f_abort_request) {
-        f_mode = ma_mode_macro;
+      if (m_abort_request) {
+        m_mode = ma_mode_macro;
       } else {
-        irs_u8 *buf = f_read_buf + f_read_pos;
-        mxifa_sz_t size = (ma_read_buf_size - 1) - f_read_pos;
+        irs_u8 *buf = m_read_buf + m_read_pos;
+        mxifa_sz_t size = (ma_read_buf_size - 1) - m_read_pos;
         if ((size > 0) && (size < ma_read_buf_size)) {
           mxifa_sz_t read_count =
-            mxifa_fast_read(f_handle, IRS_NULL, buf, size);
+            mxifa_fast_read(m_handle, IRS_NULL, buf, size);
 
           #ifndef NOP
           if (read_count) {
@@ -581,26 +605,26 @@ void mx_agilent_3458a_t::tick()
 
           buf[read_count] = 0;
           char end_chars[3] = {0x0D, 0x0A, 0x00};
-          char *end_number = strstr((char *)f_read_buf, end_chars);
+          char *end_number = strstr((char *)m_read_buf, end_chars);
           if (end_number) {
             *end_number = 0;
             char *end_ptr = IRS_NULL;
-            double val = strtod((char *)f_read_buf, &end_ptr);
+            double val = strtod((char *)m_read_buf, &end_ptr);
             if (end_ptr == end_number) {
-              *f_value = val;
-              f_mode = ma_mode_macro;
+              *m_value = val;
+              m_mode = ma_mode_macro;
             }
             irs_u8 *read_bytes_end_ptr = buf + read_count;
             irs_u8 *next_str_ptr = (irs_u8 *)end_number + 2;
             mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
-            memmove((void *)f_read_buf, (void *)next_str_ptr, rest_bytes);
-            f_read_pos = rest_bytes;
+            memmove((void *)m_read_buf, (void *)next_str_ptr, rest_bytes);
+            m_read_pos = rest_bytes;
           } else {
-            f_read_pos += read_count;
+            m_read_pos += read_count;
           }
         } else {
-          f_read_buf[0] = f_read_buf[ma_read_buf_size - 1];
-          f_read_pos = 1;
+          m_read_buf[0] = m_read_buf[ma_read_buf_size - 1];
+          m_read_pos = 1;
         }
       }
     } break;
@@ -608,17 +632,17 @@ void mx_agilent_3458a_t::tick()
     case ma_mode_auto_calibration: {
       irs_u8 *command = (irs_u8 *)"ACAL ALL";
       irs_u32 len = strlen((char *)command);
-      mxifa_write_begin(f_handle, IRS_NULL, command, len);
-      set_to_cnt(f_acal_to, f_acal_time);
-      f_mode = ma_mode_auto_calibration_wait;
+      mxifa_write_begin(m_handle, IRS_NULL, command, len);
+      set_to_cnt(m_acal_to, m_acal_time);
+      m_mode = ma_mode_auto_calibration_wait;
     } break;
     case ma_mode_auto_calibration_wait: {
-      if (test_to_cnt(f_acal_to)) {
-        if (mxifa_write_end(f_handle, irs_false))
-          f_mode = ma_mode_macro;
-      } else if (f_abort_request) {
-        mxifa_write_end(f_handle, irs_true);
-        f_mode = ma_mode_macro;
+      if (test_to_cnt(m_acal_to)) {
+        if (mxifa_write_end(m_handle, false))
+          m_mode = ma_mode_macro;
+      } else if (m_abort_request) {
+        mxifa_write_end(m_handle, true);
+        m_mode = ma_mode_macro;
       }
     } break;
   }
@@ -628,18 +652,18 @@ void mx_agilent_3458a_t::set_nplc(double nplc)
 {
   irs::string nplc_str = nplc;
   nplc_str = "NPLC " + nplc_str;
-  //f_get_measure_commands[f_time_int_voltage_index] = nplc_str;
-  f_time_int_measure_command = nplc_str;
-  f_get_resistance_commands[f_time_int_resistance_index] = nplc_str;
+  //m_get_measure_commands[m_time_int_voltage_index] = nplc_str;
+  m_time_int_measure_command = nplc_str;
+  m_get_resistance_commands[m_time_int_resistance_index] = nplc_str;
 }
 // Установка времени интегрирования в c
 void mx_agilent_3458a_t::set_aperture(double aperture)
 {
   irs::string aperture_str = aperture;
   aperture_str = "APER " + aperture_str;
-  //f_get_measure_commands[f_time_int_voltage_index] = aperture_str;
-  f_time_int_measure_command = aperture_str;
-  f_get_resistance_commands[f_time_int_resistance_index] = aperture_str;
+  //m_get_measure_commands[m_time_int_voltage_index] = aperture_str;
+  m_time_int_measure_command = aperture_str;
+  m_get_resistance_commands[m_time_int_resistance_index] = aperture_str;
 }
 // Установка полосы фильтра
 void mx_agilent_3458a_t::set_bandwidth(double /*bandwidth*/)
@@ -654,24 +678,24 @@ void mx_agilent_3458a_t::set_start_level(double /*level*/)
 void mx_agilent_3458a_t::set_range(
   type_meas_t a_type_meas, double a_range)
 {
-  if (f_create_error) return;
+  if (m_create_error) return;
   irs::string range_str = a_range;
   switch(a_type_meas) {
     case tm_volt_dc: {
-      f_voltage_type_direct_range = f_voltage_type_direct+" "+range_str;
-      f_set_range_command = f_voltage_type_direct_range;
+      m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
+      m_set_range_command = m_voltage_type_direct_range;
     } break;
     case tm_volt_ac: {
-      f_voltage_type_alternate_range = f_voltage_type_alternate+" "+range_str;
-      f_set_range_command = f_voltage_type_alternate_range;
+      m_voltage_type_alternate_range = m_voltage_type_alternate+" "+range_str;
+      m_set_range_command = m_voltage_type_alternate_range;
     } break;
     case tm_current_dc: {
-      f_current_type_direct_range = f_current_type_direct+" "+range_str;
-      f_set_range_command = f_current_type_direct_range;
+      m_current_type_direct_range = m_current_type_direct+" "+range_str;
+      m_set_range_command = m_current_type_direct_range;
     } break;
     case tm_current_ac: {
-      f_current_type_alternate_range = f_current_type_alternate+" "+range_str;
-      f_set_range_command = f_current_type_alternate_range;
+      m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
+      m_set_range_command = m_current_type_alternate_range;
     } break;
     default : {
       // Остальные типы в данном мультиметре не используются
@@ -679,19 +703,20 @@ void mx_agilent_3458a_t::set_range(
     }
   }
   measure_create_commands(meas_set_range);
-  f_command = mac_send_commands;
-  f_status = meas_status_busy;
+  m_command = mac_send_commands;
+  m_status = meas_status_busy;
 }
 
 void mx_agilent_3458a_t::set_range_auto()
 {
   irs::string range_str = "AUTO";
-  f_voltage_type_direct_range = f_voltage_type_direct+" "+range_str;
-  f_voltage_type_alternate_range = f_voltage_type_alternate+" "+range_str;
-  f_current_type_direct_range = f_current_type_direct+" "+range_str;
-  f_current_type_alternate_range = f_current_type_alternate+" "+range_str;
+  m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
+  m_voltage_type_alternate_range = m_voltage_type_alternate+" "+range_str;
+  m_current_type_direct_range = m_current_type_direct+" "+range_str;
+  m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
 }
-//---------------------------------------------------------------------------
+
+
 // Класс для работы с мультиметром b7-78/1
 
 // Конструктор

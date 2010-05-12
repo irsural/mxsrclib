@@ -1,4 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
+// Дата: 12.05.2010
+// Ранняя дата: 01.10.2007
 
 #include <irsdefs.h>
 #include <mxifa.h>
@@ -63,7 +65,7 @@ irs_bool mxifa_close_end(void *pchdata, bool abort)
 }
 // Запись буфера в интерфейс для передачи
 irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
-  irs_u8 *buf, mxifa_sz_t size)
+  const irs_u8 *buf, mxifa_sz_t size)
 {
   return irs_false;
 }

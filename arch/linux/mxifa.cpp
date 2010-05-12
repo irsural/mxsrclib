@@ -1,6 +1,7 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 16.09.2009
+// Дата: 12.05.2010
+// Ранняя дата: 16.09.2009
 
 #include <mxifa.h>
 #include <unistd.h>
@@ -888,7 +889,7 @@ irs_bool mxifa_close_end(void *pchdata, bool abort)
 }
 // Запись буфера в интерфейс для передачи
 irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
-  irs_u8 *buf, mxifa_sz_t size)
+  const irs_u8 *buf, mxifa_sz_t size)
 {
   if (pchdata == IRS_NULL) return irs_false;
   if (buf == IRS_NULL) return irs_false;

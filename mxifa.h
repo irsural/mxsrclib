@@ -1,6 +1,6 @@
 // Абстакция интерфейса для каналов обмена (интерфейсов)
 // Max Interface Abstraction
-// Дата: 14.04.2010
+// Дата: 12.05.2010
 // Ранняя дата: 06.03.2008
 
 #ifndef MXIFAH
@@ -214,7 +214,7 @@ inline irs_bool mxifa_open_end(void*, bool) { return irs_false; }
 inline irs_bool mxifa_close(void *) { return irs_false; }
 inline irs_bool mxifa_close_begin(void*) { return irs_false; }
 inline irs_bool mxifa_close_end(void*, bool) { return irs_false; }
-inline irs_bool mxifa_write_begin(void*, mxifa_dest_t*, irs_u8*, 
+inline irs_bool mxifa_write_begin(void*, mxifa_dest_t*, const irs_u8*, 
   mxifa_sz_t) { return irs_false; }
 inline irs_bool mxifa_write_end(void*, irs_bool) { return irs_false; }
 inline irs_bool mxifa_read_begin(void*, mxifa_dest_t*, irs_u8*, 
@@ -280,7 +280,7 @@ irs_bool mxifa_close_end(void *pchdata, bool abort);
 // size - размер данных в байтах
 // Возврат - операция окончена
 irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
-  irs_u8 *buf, mxifa_sz_t size);
+  const irs_u8 *buf, mxifa_sz_t size);
 // Проверка окончания записи
 // pchdata - указатель на данные канала, возвращаемые mxifa_open или
 //   mxifa_open_begin
