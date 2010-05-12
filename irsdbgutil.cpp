@@ -608,6 +608,7 @@ irs::memory_checker_t* irs::memory_checker_init(
   irs::memory_checker()->heap_array_size(a_heap_array_size);
   return irs::memory_checker();
 }
+
 irs::memory_checker_t* irs::memory_checker_avr_init(
   memory_checker_t::value_type a_call_stack_begin,
   memory_checker_t::value_type a_heap_begin,
@@ -619,4 +620,26 @@ irs::memory_checker_t* irs::memory_checker_avr_init(
   return memory_checker_init(a_call_stack_begin, a_heap_begin, a_heap_begin,
     a_return_stack_begin, a_return_stack_begin, a_return_stack_end,
     a_heap_array_size);
-};
+}
+
+irs::memory_checker_t* irs::memory_checker_avr_init(
+  memory_checker_t::value_type a_call_stack_size,
+  memory_checker_t::value_type a_heap_size,
+  memory_checker_t::value_type a_return_stack_size
+)
+{
+  #ifdef __ATmega128__
+  memory_checker_t::value_type call_stack_begin = 0x100;
+  irs_u8 multiplier = 2;
+  #else // __ATmega128__
+  memory_checker_t::value_type call_stack_begin = 0x200;
+  irs_u8 multiplier = 3;
+  #endif // __ATmega128__
+  
+  memory_checker_t::value_type heap_begin = call_stack_begin + 
+    a_call_stack_size;
+  return memory_checker_init(call_stack_begin, heap_begin, heap_begin,
+    heap_begin + a_heap_size, heap_begin + a_heap_size, heap_begin + 
+    a_heap_size + a_return_stack_size*multiplier,
+    memory_checker_t::heap_array_size_def);
+}

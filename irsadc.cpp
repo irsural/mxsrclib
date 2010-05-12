@@ -1,5 +1,5 @@
 // Аналоговый ввод-вывод
-// Дата: 4.09.2009
+// Дата: 11.09.2009
 
 #include <irsadc.h>
 
@@ -9,7 +9,7 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   counter_t a_read_delay):
   m_status(TH_FREE),
   mp_spi(ap_spi),
-  m_conv_koef(0.03175f),
+  m_conv_koef(0.031025f), //0.031075f
   m_read_counter(0),
   m_read_delay(a_read_delay),
   m_connect(false),
@@ -1220,12 +1220,14 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
   
   m_command = m_com_write_to_input_register_and_update|m_addr_DACA;
-  
+    
   irs_u8 conv_buf[2];
   memset(conv_buf, 0, 2);
+  
   m_write_reg = m_regA;
+    
   conv_buf[0] = mp_write_buf[1];
-  conv_buf[1] = mp_write_buf[2];         
+  conv_buf[1] = mp_write_buf[2];
   mp_write_buf[1] = conv_buf[1];
   mp_write_buf[2] = conv_buf[0];
   
@@ -1241,6 +1243,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_command = m_com_write_to_input_register_and_update|m_addr_DACB;
   
   m_write_reg = m_regB;
+  
   conv_buf[0] = mp_write_buf[1];
   conv_buf[1] = mp_write_buf[2];         
   mp_write_buf[1] = conv_buf[1];

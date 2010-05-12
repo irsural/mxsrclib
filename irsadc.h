@@ -809,7 +809,7 @@ struct dac_ltc2622_data_t
     voltage_code_A(),
     voltage_code_B()
   {
-    connect(ap_data, a_start_index);    
+    connect(ap_data, a_start_index);
   }  
    
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
