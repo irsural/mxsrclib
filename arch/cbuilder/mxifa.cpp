@@ -79,7 +79,7 @@ typedef struct _mxifa_win32_tcp_ip_t {
   // Операция чтения активна
   irs_bool read_proc;
   // Буфер записи
-  irs_u8 *wr_buf;
+  const irs_u8 *wr_buf;
   // Размер буфера записи
   mxifa_sz_t wr_buf_size;
   // Позиция в буфере записи
@@ -111,7 +111,7 @@ typedef struct _mxifa_win32_ni_usb_gpib_t {
   // Операция чтения активна
   irs_bool read_proc;
   // Буфер записи
-  irs_u8 *wr_buf;
+  const irs_u8 *wr_buf;
   // Размер буфера записи
   mxifa_sz_t wr_buf_size;
   // Позиция в буфере записи
@@ -1033,7 +1033,7 @@ public:
     }
   }
   // Запись в сокет
-  mxifa_sz_t write(mxip_t ip, irs_u16 port, irs_u8 *buf, mxifa_sz_t size)
+  mxifa_sz_t write(mxip_t ip, irs_u16 port, const irs_u8 *buf, mxifa_sz_t size)
   {
     struct sockaddr_in their_addr;
     their_addr.sin_family = AF_INET;
@@ -1049,7 +1049,7 @@ public:
     return bytes_send;
   }
   // Широковещательная запись в сокет
-  mxifa_sz_t write_broadcast(irs_u16 port, irs_u8 *buf, mxifa_sz_t size)
+  mxifa_sz_t write_broadcast(irs_u16 port, const irs_u8 *buf, mxifa_sz_t size)
   {
     struct sockaddr_in their_addr;
     their_addr.sin_family = AF_INET;
@@ -1790,7 +1790,7 @@ static void win32_tcp_ip_write(void *pchdata)
 
     mxip_t ip = win32_tcp_ip->wr_dest.ip;
     irs_u16 port = win32_tcp_ip->wr_dest.port;
-    irs_u8 *buf = win32_tcp_ip->wr_buf + win32_tcp_ip->wr_buf_pos;
+    const irs_u8 *buf = win32_tcp_ip->wr_buf + win32_tcp_ip->wr_buf_pos;
     mxifa_sz_t size = win32_tcp_ip->wr_buf_size - win32_tcp_ip->wr_buf_pos;
     mxifa_sz_t writed_bytes = 0;
 
