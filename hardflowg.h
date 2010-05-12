@@ -596,6 +596,10 @@ private:
   status_t m_read_status;
   timer_t m_read_timeout;
 
+  #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+  bool m_channel_not_exists;
+  #endif // IRS_LIB_DEBUG_DETAIL
+
   size_type m_write_channel;
   const irs_u8* mp_write_buf_cur;
   const irs_u8* mp_write_buf;

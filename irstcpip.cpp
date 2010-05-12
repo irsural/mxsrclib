@@ -554,8 +554,8 @@ void irs::simple_tcpip_t::icmp()
   if ((mp_recv_buf[icmp_type] == icmp_echo_request) && 
     (mp_recv_buf[icmp_code] == 0)) // Ёхо-запрос
   {
-    if (m_recv_icmp == false) {
-      m_recv_buf_size_icmp = recv_buf_size() - 4;
+    if (!m_recv_icmp) {
+      m_recv_buf_size_icmp = mp_ethernet->recv_buf_size() - 4;
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_icmp = true;
         if (m_buf_num == simple_ethernet_t::double_buf) {
@@ -792,11 +792,7 @@ void irs::simple_tcpip_t::tick()
   #ifdef __ICCAVR__
   m_blink_0();
   #endif //__ICCAVR__
-  
-  if (m_udp_open == true) {
-    client_udp();
-  }
-  
+    
   if (mp_ethernet->is_recv_buf_filled() == true)
   {
     if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ether_type)) && 
@@ -823,25 +819,28 @@ void irs::simple_tcpip_t::tick()
     }
   }
   if (m_send_icmp) {
-    if (((m_buf_num == simple_ethernet_t::double_buf) && 
+    if (((m_buf_num == simple_ethernet_t::double_buf) &&
       (m_send_buf_filled == false)) || 
-      ((m_buf_num == simple_ethernet_t::single_buf) && 
+      ((m_buf_num == simple_ethernet_t::single_buf) &&
       (mp_ethernet->is_recv_buf_filled() == false)))
     {
       #ifdef __ICCAVR__
       static blink_t blink_4(irs_avr_porte, 3);
-      blink_4.set();
+      blink_4();
       #endif // __ICCAVR__
       send_icmp();
     }
   }
   if (m_send_udp) {
-    if (((m_buf_num == simple_ethernet_t::double_buf) && 
-      (m_send_buf_filled == false)) || 
-      ((m_buf_num == simple_ethernet_t::single_buf) && 
+    if (((m_buf_num == simple_ethernet_t::double_buf) &&
+      (m_send_buf_filled == false)) ||
+      ((m_buf_num == simple_ethernet_t::single_buf) &&
       (mp_ethernet->is_recv_buf_filled() == false)))
     {
       send_udp();
+      #ifdef __ICCAVR__
+      m_blink_1();
+      #endif // __ICCAVR__
     }
   }
   #ifdef __ICCAVR__
@@ -850,4 +849,7 @@ void irs::simple_tcpip_t::tick()
     blink_2.set();
   }
   #endif // __ICCAVR__
+  if (m_udp_open == true) {
+    client_udp();
+  }
 }

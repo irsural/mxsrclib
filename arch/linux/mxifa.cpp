@@ -176,7 +176,7 @@ typedef struct _mxifa_linux_tcpip_t {
   // Размер буфера чтения
   mxifa_sz_t rd_size, rd_size_bu;
   // Буфер записи
-  irs_u8 *wr_buf;
+  const irs_u8 *wr_buf;
   // Размер буфера записи
   mxifa_sz_t wr_size;
   struct timeval tv_zero;
@@ -240,7 +240,7 @@ typedef struct _mxifa_linux_tcpip_cl_t {
   // Размер буфера чтения
   mxifa_sz_t rd_size;
   // Буфер записи
-  irs_u8 *wr_buf;
+  const irs_u8 *wr_buf;
   // Размер буфера записи
   mxifa_sz_t wr_size;
   struct timeval tv_zero;
@@ -896,7 +896,7 @@ irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
   mxifa_chdata_t *pchdatas = (mxifa_chdata_t *)pchdata;
   //IRS_LIB_MXIFA_DBG_MSG_DETAIL("\nWrite_begin Start - 1");
   IRS_LIB_MXIFA_DBG_MSG_BASE("\n------------------------- MXIFA_WRITE_BEGIN "
-  "-------------------------");
+    "-------------------------");
   switch (pchdatas->enum_iface) {
     case mxifa_ei_linux_tcpip:
     {
@@ -906,7 +906,8 @@ irs_bool mxifa_write_begin(void *pchdata, mxifa_dest_t *dest,
       linux_tcpip->wr_buf = buf;
       linux_tcpip->wr_size = size;
       //linux_tcpip->can_write = irs_true;
-      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n809 SERVER - write begin:bufer size " << size);
+      IRS_LIB_MXIFA_DBG_MSG_DETAIL("\n809 SERVER - "
+        "write begin:bufer size " << size);
       if(dest == IRS_NULL)
       {
         if(linux_tcpip->is_broadcast == irs_true)

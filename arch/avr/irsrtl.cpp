@@ -164,7 +164,6 @@ void irs::rtl8019as_t::recv_packet()
   IRS_HIBYTE(recv_size_cur) = read_rtl(rdmaport);
   
   if (m_is_recv_buf_filled == false) {
-    //mlog() << irsm("rtl: recv_packet") << endl;
     if (recv_size_cur <= m_size_buf) {
       m_recv_buf_size = recv_size_cur;
       IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
@@ -204,14 +203,12 @@ void irs::rtl8019as_t::rtl_interrupt()
   
   irs_u8 byte = read_rtl(isr);
   if(byte&0x10) { //буфер приема переполнен
-    //m_blink_19.set();
     overrun();
   }
   if(byte&0x01) { //получено без ошибок
     recv_packet();
   }
   if (byte&0xA) { //данные отправлены
-    //m_blink_19.set();
     m_send_status = false;
   }
   if (byte&0x2) { //данные отправлены без ошибок
@@ -343,10 +340,6 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
     a_size = ETHERNET_PACKET_MIN;
   }
   #endif //IRS_LIB_CHECK
-  
-  /*IRS_LIB_ASSERT((m_buf_num == double_buf) ? ((a_size < ETHERNET_PACKET_MAX) && 
-    (a_size <= m_send_buf.size())) : ((a_size < ETHERNET_PACKET_MAX) && 
-    (a_size <= m_recv_buf.size())));*/
   
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();

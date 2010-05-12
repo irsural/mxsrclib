@@ -58,7 +58,7 @@ typedef struct _mxifa_avr128_ether_t {
   // Описание удаленной системы для записи
   mxifa_dest_t *wr_dest;
   // Буфер записи
-  irs_u8 *wr_buf;
+  const irs_u8 *wr_buf;
   // Размер буфера записи
   mxifa_sz_t wr_size;
   // Текущий режим записи
@@ -85,7 +85,7 @@ typedef struct _mxifa_avr128_ether_t {
 // Структура данных канала типа mxifa_ei_hardflow
 typedef struct _mxifa_hardflow_t {
   irs_uarc channel_id;
-  irs_u8 *write_buffer;
+  const irs_u8 *write_buffer;
   irs_u8 *read_buffer;
   irs_uarc rb_size;
   irs_uarc wb_size;
@@ -528,7 +528,7 @@ void mxifa_tick()
   
           if (hardflow->write_process)
           {
-            irs_u8 *buf = &hardflow->write_buffer[hardflow->wb_current_byte];
+            const irs_u8 *buf = &hardflow->write_buffer[hardflow->wb_current_byte];
             irs_u8 write_count = hardflow->hardflow->write(
               hardflow->channel_id, buf, 
               hardflow->wb_size - hardflow->wb_current_byte);
