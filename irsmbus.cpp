@@ -1500,7 +1500,8 @@ void irs::modbus_server_t::tick()
                 reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
               irs_u8* multi_hr_data =
                 reinterpret_cast<irs_u8*>(write_multi_regs.value);
-              IRS_LIB_ASSERT(static_cast<size_t>((write_multi_regs.starting_address +
+              IRS_LIB_ASSERT(static_cast<size_t>(
+                (write_multi_regs.starting_address +
                 write_multi_regs.byte_count/2)) <= m_hold_regs_reg.size());
               memcpyex(hold_regs_data + write_multi_regs.starting_address*2,
                 multi_hr_data, write_multi_regs.byte_count);
@@ -2755,7 +2756,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
       sec_header.quantity = static_cast<irs_u16>(a_size/2);  
       sec_header.byte_count = static_cast<irs_u8>(a_size);
       header.length  = irs_u16(size_of_resp_multi_write + 
-        sec_header.byte_count);
+        sec_header.byte_count + 1);
       sec_header.function_code = static_cast<irs_u8>(m_command);
     }
     break;
