@@ -1443,13 +1443,7 @@ void irs::modbus_server_t::tick()
               reinterpret_cast<response_single_write_t&>(*(mp_buf.data() + 
               size_of_MBAP));
             irs_u8 coil_byte = 0;
-            if(response_write_coil.address%8 == 0) {
-              coil_byte =
-                static_cast<irs_u8>(response_write_coil.address/8 - 1);
-            } else {
-              coil_byte =
-                static_cast<irs_u8>(response_write_coil.address/8);
-            }
+            coil_byte = static_cast<irs_u8>(response_write_coil.address/8);
             irs_u8 mask = 
               mask_gen(8 - (response_write_coil.address%8 + 1), 1);
             if(int(response_write_coil.value) == 1) {
