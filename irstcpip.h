@@ -29,8 +29,6 @@
 # define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
 #endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
 
-#define TESTING
-
 namespace irs {
 
 //Ethernet interface for RTL
@@ -183,7 +181,7 @@ public:
   irs_size_t recv_buf_size();
   void tick();
   
-private:
+private:  
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
   mxip_t m_ip;
@@ -212,17 +210,9 @@ private:
   timer_t m_udp_wait_arp_time;
   arp_cash_t m_arp_cash;
   mxmac_t& m_dest_mac;
-  #ifdef __ICCAVR__
-  blink_t m_blink_0;
-  blink_t m_blink_1;
-  //blink_t m_blink_2;
-  blink_t m_blink_3;
-  #endif //__ICCAVR__
-  #ifdef TESTING
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
   irs_u16 m_cur_local_port;
-  #endif // TESTING
   bool m_send_arp;
   bool m_send_icmp;
   bool m_send_udp;

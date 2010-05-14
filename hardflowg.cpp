@@ -1892,6 +1892,7 @@ irs::hardflow::fixed_flow_t::size_type
 
 void irs::hardflow::fixed_flow_t::tick()
 {
+  mp_hardflow->tick();
   if(read_status() == status_wait) {
     if (mp_hardflow->is_channel_exists(m_read_channel)) {
       #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)

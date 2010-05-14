@@ -9,7 +9,6 @@
 
 #include <irsstd.h>
 #include <irstcpip.h>
-#include <irsavrutil.h>
 #include <irsconfig.h>
 
 #include <irsfinal.h>
@@ -96,12 +95,6 @@ private:
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
-  blink_t m_blink_15;
-  blink_t m_blink_16;
-  blink_t m_blink_17;
-  blink_t m_blink_18;
-  blink_t m_blink_19;
-  blink_t m_blink_20;
   
   #ifndef SERGEY_OFF_INT4
   void rtl_interrupt();

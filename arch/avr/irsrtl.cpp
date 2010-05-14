@@ -54,13 +54,7 @@ irs::rtl8019as_t::rtl8019as_t(
   m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
-  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
-  m_blink_15(irs_avr_portd, 1),
-  m_blink_16(irs_avr_portb, 6),
-  m_blink_17(irs_avr_portb, 5),
-  m_blink_18(irs_avr_portb, 4),
-  m_blink_19(irs_avr_portb, 2),
-  m_blink_20(irs_avr_portb, 7)
+  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data())
 {
   rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
   rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
@@ -83,7 +77,6 @@ irs::rtl8019as_t::~rtl8019as_t()
 
 irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
 {
-  m_blink_17.set();
   #ifdef RTL_DISABLE_INT_BYTE
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
@@ -109,7 +102,6 @@ irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
 void irs::rtl8019as_t::write_rtl(irs_u8 a_reg_addr, 
   irs_u8 a_reg_data)
 {
-  m_blink_18.set();
   #ifdef RTL_DISABLE_INT_BYTE
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
@@ -194,7 +186,6 @@ void irs::rtl8019as_t::recv_packet()
 
 void irs::rtl8019as_t::rtl_interrupt() 
 {
-  m_blink_20();
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #else //RTL_DISABLE_INT
@@ -210,9 +201,6 @@ void irs::rtl8019as_t::rtl_interrupt()
   }
   if (byte&0xA) { //данные отправлены
     m_send_status = false;
-  }
-  if (byte&0x2) { //данные отправлены без ошибок
-    m_blink_19();
   }
 
   byte = read_rtl(bnry);
@@ -273,14 +261,6 @@ void irs::rtl8019as_t::init_rtl()
   irs_u8 byte = read_rtl(rstport);
   write_rtl(rstport, byte);
   __no_operation();
-
-  //check for good soft reset
-  if(!(read_rtl(isr) & 0x80))
-  {
-    //fail
-    static irs::blink_t blink_7(irs_avr_portb, 3);
-    blink_7.set();
-  }
   
   write_rtl(cr, 0x21);//stop, page0
   __no_operation();
@@ -355,8 +335,6 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
   for (irs_size_t i = 0; i < a_size; i++) {
-    static irs::blink_t blink_2(irs_avr_porte, 2);
-    blink_2();
     write_rtl(rdmaport, mp_send_buf[i]);
   }
   
