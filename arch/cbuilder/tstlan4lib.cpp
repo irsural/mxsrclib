@@ -35,8 +35,8 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
 }
 irs::tstlan4_t::tstlan4_t(
   form_type_t a_form_type,
-  const irs::string& a_ini_name,
-  const irs::string& a_ini_section_prefix,
+  const string_type& a_ini_name,
+  const string_type& a_ini_section_prefix,
   counter_t a_update_time_cnt,
   global_log_connect_t a_global_log_connect
 ):
@@ -65,6 +65,14 @@ irs::tstlan4_t::tstlan4_t(
 // На предыдущей форме все компоненты уничтожаются
 void irs::tstlan4_t::init(TForm *ap_form)
 {
+  #ifndef NOP
+  ostringstream stream;
+  stream << 17;
+  string strnum = stream.str();
+  ShowMessage(strnum.c_str());
+  //const char* cstr = stream.str().c_str();
+  #endif //NOP
+
   irs::chart::builder_chart_window_t::stay_on_top_t stay_on_top =
     irs::chart::builder_chart_window_t::stay_on_top_on;
   if (m_form_type == ft_internal) {
@@ -86,6 +94,14 @@ void irs::tstlan4_t::deinit()
 void irs::tstlan4_t::tick()
 {
   mp_controls->tick();
+}
+const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_name()
+{
+  return irst("tstlan3.ini");
+}
+const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_section_prefix()
+{
+  return irst("");
 }
 
 void irs::tstlan4_t::show()
@@ -116,8 +132,8 @@ void irs::tstlan4_t::save_conf()
 // Компонентов формы
 irs::tstlan4_t::controls_t::controls_t(
   TForm *ap_form,
-  const irs::string& a_ini_name,
-  const irs::string& a_ini_section_prefix,
+  const string_type& a_ini_name,
+  const string_type& a_ini_section_prefix,
   irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
   counter_t a_update_time_cnt
 ):
@@ -299,17 +315,19 @@ void irs::tstlan4_t::controls_t::tick()
         m_refresh_chart_items = false;
         //mp_chart->clear_param();
         for (int row = m_header_size; row < row_count; row++) {
-          irs::string chart_name = name_list->Strings[row].c_str();
+          string_type chart_name = name_list->Strings[row].c_str();
           if (chart_list->Strings[row] == "1") {
             if (!m_chart_names[chart_name]) {
               m_chart_names[chart_name] = true;
-              mp_chart->add_param(chart_name);
+              mp_chart->add_param(
+                IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
             }
           } else {
             #ifdef NOP
             if (m_chart_names[chart_name]) {
               m_chart_names[chart_name] = false;
-              mp_chart->delete_param(chart_name);
+              mp_chart->delete_param(
+                IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
             }
             #endif //NOP
           }
@@ -319,8 +337,9 @@ void irs::tstlan4_t::controls_t::tick()
       for (int row = m_header_size; row < row_count; row++) {
         if (chart_list->Strings[row] == "1") {
           int var_index = row - m_header_size;
-          irs::string chart_name = name_list->Strings[row].c_str();
-          mp_chart->add(chart_name, chart_time, var_to_double(var_index));
+          string_type chart_name = name_list->Strings[row].c_str();
+          mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
+            chart_time, var_to_double(var_index));
         }
       }
     }
@@ -350,53 +369,36 @@ void irs::tstlan4_t::controls_t::tick()
     }
   }
 }
+template <class T>
+void irs::tstlan4_t::controls_t::integer_to_string(
+  const T& a_value, string_type* ap_string)
+{
+  stringstream_t strm(*ap_string);
+  strm << a_value;
+  strm << internal << setfill(irst('0')) << hex << uppercase;
+  const int i16_hex_width = 2*sizeof(irs_i16);
+  strm << irst(" (0x") << setw(i16_hex_width) << a_value;
+  strm << irst(")\0");
+}
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
-  irs::string val = 0;
+  string_type val = 0;
   netconn_t::item_t item = m_netconn.items[a_var_index];
   switch (item.type) {
     case netconn_t::item_t::type_bit: {
       val = m_netconn.bit_vec[item.index];
     } break;
     case netconn_t::item_t::type_u8: {
-      ostrstream strm;
-      irs_u8 u8_val = m_netconn.u8_vec[item.index];
-      strm << (int)u8_val;
-      strm << internal << setfill('0') << hex << uppercase;
-      const int u8_hex_width = 2*sizeof(irs_u8);
-      strm << " (0x" << setw(u8_hex_width) << (int)u8_val << ")" << '\0';
-      val = strm.str();
-      strm.freeze(false);
+      integer_to_string(static_cast<int>(m_netconn.u8_vec[item.index]), &val);
     } break;
     case netconn_t::item_t::type_i16: {
-      ostrstream strm;
-      irs_i16 i16_val = m_netconn.i16_vec[item.index];
-      strm << (int)i16_val;
-      strm << internal << setfill('0') << hex << uppercase;
-      const int i16_hex_width = 2*sizeof(irs_i16);
-      strm << " (0x" << setw(i16_hex_width) << (int)i16_val << ")" << '\0';
-      val = strm.str();
-      strm.freeze(false);
+      integer_to_string(m_netconn.i16_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_u16: {
-      ostrstream strm;
-      irs_u16 u16_val = m_netconn.u16_vec[item.index];
-      strm << (int)u16_val;
-      strm << internal << setfill('0') << hex << uppercase;
-      const int u16_hex_width = 2*sizeof(irs_u16);
-      strm << " (0x" << setw(u16_hex_width) << (int)u16_val << ")" << '\0';
-      val = strm.str();
-      strm.freeze(false);
+      integer_to_string(m_netconn.u16_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_i32: {
-      ostrstream strm;
-      irs_i32 i32_val = m_netconn.i32_vec[item.index];
-      strm << i32_val;
-      strm << internal << setfill('0') << hex << uppercase;
-      const int i32_hex_width = 2*sizeof(irs_i32);
-      strm << " (0x" << setw(i32_hex_width) << i32_val << ")" << '\0';
-      val = strm.str();
-      strm.freeze(false);
+      integer_to_string(m_netconn.i32_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_float: {
       val = m_netconn.float_vec[item.index];
@@ -405,15 +407,15 @@ String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
       val = m_netconn.double_vec[item.index];
     } break;
     default: {
-      val = "bad";
-    }break;
+      val = irst("bad");
+    } break;
   }
   return val.c_str();
 }
 void irs::tstlan4_t::controls_t::bstr_to_var(int a_var_index,
   const String& a_bstr_val)
 {
-  irs::string val = a_bstr_val.c_str();
+  string_type val = a_bstr_val.c_str();
   netconn_t::item_t item = m_netconn.items[a_var_index];
   switch (item.type) {
     case netconn_t::item_t::type_bit: {

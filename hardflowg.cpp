@@ -1,10 +1,19 @@
 // Коммуникационные потоки
-// Дата: 06.05.2010
+// Дата: 16.05.2010
 // Дата создания: 8.09.2009
+
+#include <irsdefs.h>
+
+#ifdef __BORLANDC__
+#include <vcl.h>
+#pragma hdrstop
+#endif //__BORLANDC__
 
 #include <hardflowg.h>
 #include <irscpp.h>
 #include <mxdata.h>
+
+#include <irsfinal.h>
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -722,6 +731,12 @@ irs::hardflow::udp_flow_t::~udp_flow_t()
   }
 }
 
+const irs::hardflow::udp_flow_t::char_type*
+  irs::hardflow::udp_flow_t::empty_cstr()
+{
+  return irst("");
+}
+
 void irs::hardflow::udp_flow_t::start()
 {
   if (!m_state_info.lib_socket_loaded) {
@@ -831,7 +846,7 @@ void irs::hardflow::udp_flow_t::local_addr_init(
   sockaddr_in* ap_sockaddr, bool* ap_init_success)
 {
   *ap_init_success = true;
-  if (m_local_host_name != "") {
+  if (m_local_host_name != irst("")) {
     if (!adress_str_to_adress_binary(m_local_host_name,
       &ap_sockaddr->sin_addr.s_addr))
     {
@@ -846,7 +861,7 @@ void irs::hardflow::udp_flow_t::local_addr_init(
   }
   if (*ap_init_success) {
     ap_sockaddr->sin_family = AF_INET;
-    if (m_local_host_port != "") {
+    if (m_local_host_port != irst("")) {
       unsigned short port = 0;
       if (m_local_host_port.to_number(port)) {
         ap_sockaddr->sin_port = htons(port);
@@ -888,10 +903,11 @@ bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
   bool adress_convert_success = false;
-  if (a_adress_str != "") {
-    irs_u32 adress = inet_addr(a_adress_str.c_str());
+  if (a_adress_str != irst("")) {
+    irs_u32 adress = inet_addr(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
     if (adress == INADDR_NONE) {
-      hostent* p_host = gethostbyname(a_adress_str.c_str());
+      hostent* p_host =
+        gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
       if (p_host != NULL) {
         // Берем первый адрес в списке
         memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);
@@ -936,9 +952,10 @@ bool irs::hardflow::udp_flow_t::detect_func_single_arg(
   return detect_success;
 }
 
-irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_param_name)
+irs::hardflow::udp_flow_t::string_type irs::hardflow::udp_flow_t::param(
+  const string_type &a_param_name)
 {
-  irs::string param_value;
+  string_type param_value;
   if (a_param_name == irst("locale_adress")) {
     param_value = m_local_host_name;
   } else if (a_param_name == irst("locale_port")) {
@@ -1001,8 +1018,8 @@ irs::string irs::hardflow::udp_flow_t::param(const irs::string &a_param_name)
   return param_value;
 }
 
-void irs::hardflow::udp_flow_t::set_param(const irs::string &a_param_name,
-  const irs::string &a_value)
+void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
+  const string_type &a_value)
 { 
   if (a_param_name == irst("remote_adress")) {
     in_addr_type adress_binary = 0;
@@ -1512,14 +1529,15 @@ void irs::hardflow::tcp_server_t::stop_server()
   m_is_open = false;
 }
 
-irs::string irs::hardflow::tcp_server_t::param(const irs::string &a_name)
+irs::hardflow::tcp_server_t::string_type
+  irs::hardflow::tcp_server_t::param(const string_type &a_name)
 {
-  irs::string param;
+  string_type param;
   return param;
 }
 
-void irs::hardflow::tcp_server_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::hardflow::tcp_server_t::set_param(const string_type &a_name,
+  const string_type &a_value)
 {
 
 }
@@ -1743,16 +1761,15 @@ irs::hardflow::tcp_client_t::size_type
   return wr_data_size;
 }
 
-irs::string irs::hardflow::tcp_client_t::param(const irs::string &a_name)
+irs::hardflow::tcp_client_t::string_type
+  irs::hardflow::tcp_client_t::param(const string_type &a_name)
 {
-  irs::string param;
-  return param;
+  return string_type();
 }
 
-void irs::hardflow::tcp_client_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::hardflow::tcp_client_t::set_param(const string_type &a_name,
+  const string_type &a_value)
 {
-
 }
 
 void irs::hardflow::tcp_client_t::tick()
@@ -2184,17 +2201,15 @@ irs::hardflow::simple_udp_flow_t::size_type
   return a_size;
 }
 
-irs::string irs::hardflow::simple_udp_flow_t::param(
-  const irs::string& /*a_name*/)
+irs::hardflow::simple_udp_flow_t::string_type
+  irs::hardflow::simple_udp_flow_t::param(const string_type& /*a_name*/)
 {
-  irs::string param;
-  return param;
+  return string_type();
 }
 
-void irs::hardflow::simple_udp_flow_t::set_param(const irs::string &/*a_name*/,
-  const irs::string& /*a_value*/)
+void irs::hardflow::simple_udp_flow_t::set_param(const string_type &/*a_name*/,
+  const string_type& /*a_value*/)
 {
-
 }
 
 void irs::hardflow::simple_udp_flow_t::tick()

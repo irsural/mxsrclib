@@ -1,6 +1,10 @@
 // Тип variant
-// Дата: 10.04.2010
-// Ранняя дата: 19.10.2009
+// Дата: 16.05.2010
+// Ранняя дата: 12.10.2009
+
+// В функции
+// bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
+// отсутствует инициализация локальных перменных !!!
 
 #include <irsdefs.h>
 
@@ -1134,7 +1138,17 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
             // Преобразовать строку в число не удалось
           }
         } break;
-        case var_type_char: {
+        case var_type_char: { // !!! СИМВОЛ а не число !!!
+          if (m_value.p_val_string_type->size() >= 1) {
+            char value = IRS_SIMPLE_FROM_TYPE_STR(
+              m_value.p_val_string_type->c_str())[0];
+            type_change(a_var_type);
+            m_value.val_char_type = value;
+            convert_success = true;
+          } else {
+            // Преобразовать строку в символ не удалось
+          }
+          #ifdef NOP
           char value;
           if (m_value.p_val_string_type->to_number(value)) {
             type_change(a_var_type);
@@ -1143,6 +1157,8 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
           } else {
             // Преобразовать строку в число не удалось
           }
+          #endif //NOP
+
         } break;
         case var_type_singned_char: {
           signed char value;
@@ -1840,7 +1856,7 @@ void irs::variant::test_variant()
   first_variant.type(var_type_int);
   first_variant.assign_no_cast(10);
   first_variant.convert_to(var_type_string);
-  string s = first_variant;
+  stringns_t s = first_variant;
   first_variant = s;
   first_int_var = first_variant;
   first_variant.convert_to(var_type_int);

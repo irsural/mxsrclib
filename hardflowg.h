@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 06.05.2010
+// Дата: 16.05.2010
 // Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -37,6 +37,8 @@
 #include <irstcpip.h>
 #include <irsnetdefs.h>
 
+#include <irsfinal.h>
+
 #ifdef IRS_LIB_HARDFLOWG_DEBUG_TYPE
 # if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
 #   define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
@@ -72,14 +74,17 @@ namespace irs {
 class hardflow_t {
 public:
   typedef size_t size_type;
+  typedef string_t string_type;
+  typedef char_t char_type;
+
   enum {
     invalid_channel = 0
   };
 
   virtual ~hardflow_t() {}
-  virtual irs::string param(const irs::string &a_name) = 0;
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value) = 0;
+  virtual string_type param(const string_type &a_name) = 0;
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value) = 0;
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size) = 0;
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
@@ -90,7 +95,7 @@ public:
 };
 
 namespace hardflow {
-typedef irs::string_t stringns_t;
+typedef hardflow_t::string_type stringns_t;
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -217,7 +222,7 @@ public:
   class less_t;
   class udp_flow_t;
   typedef hardflow_t::size_type size_type;
-  typedef string_t string_type;
+  typedef hardflow_t::string_type string_type;
   typedef sockaddr_in adress_type;
   typedef size_type id_type;
   typedef irs::deque_data_t<irs_u8> bufer_type;
@@ -333,8 +338,8 @@ private:
 class udp_flow_t: public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;
-  typedef irs::string string_type;
+  //typedef hardflow_t::size_type size_type;
+  //typedef string_t string_type;
   typedef udp_channel_list_t::adress_type adress_type;
   enum mode_t {
     invalid_mode,             // Недопустимый режим
@@ -402,12 +407,14 @@ private:
     param_limit_downtime,
     param_channel_max_count
   };
+
+  static const char_type* empty_cstr();
 public:
   udp_flow_t(
-    const string_type& a_local_host_name = "",
-    const string_type& a_local_host_port = "",
-    const string_type& a_remote_host_name = "",
-    const string_type& a_remote_host_port = "",
+    const string_type& a_local_host_name = empty_cstr(),
+    const string_type& a_local_host_port = empty_cstr(),
+    const string_type& a_remote_host_name = empty_cstr(),
+    const string_type& a_remote_host_port = empty_cstr(),
     const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
     const size_type a_channel_max_count = 1000,
     const size_type a_channel_buf_max_size = 0xFFFF,
@@ -430,9 +437,9 @@ private:
   bool detect_func_single_arg(string_type a_param, string_type* ap_func_name,
     string_type* ap_arg) const;
 public:
-  virtual irs::string param(const irs::string &a_param_name);
-  virtual void set_param(const irs::string &a_param_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_param_name);
+  virtual void set_param(const string_type &a_param_name,
+    const string_type &a_value);
   // В случае если функция read возвращает size_type == 0, буфер ap_buf может
   // быть испорчен
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -449,7 +456,7 @@ public:
 class tcp_server_t: public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;
+  //typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
   
   tcp_server_t(irs_u16 local_port);
@@ -459,9 +466,9 @@ public:
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   virtual void tick();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
 
@@ -492,7 +499,7 @@ private:
 class tcp_client_t: public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;
+  //typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
   
   tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
@@ -502,9 +509,9 @@ public:
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   virtual void tick();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   
@@ -612,7 +619,7 @@ private:
 class simple_udp_flow_t: public hardflow_t
 {
 public:
-  typedef hardflow_t::size_type size_type;
+  //typedef hardflow_t::size_type size_type;
   
   simple_udp_flow_t(
     simple_tcpip_t* ap_simple_udp,
@@ -623,9 +630,9 @@ public:
     size_type a_channel_max_count = 3
   );
   virtual ~simple_udp_flow_t();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,

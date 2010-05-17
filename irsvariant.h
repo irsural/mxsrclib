@@ -1,3 +1,7 @@
+// Тип variant
+// Дата: 16.05.2010
+// Ранняя дата: 12.10.2009
+
 //  Component Variant
 //  Data: 12.10.2009
 //
@@ -138,7 +142,7 @@ class variant_t
 public:
   typedef size_t size_type;
   typedef char_t char_type;
-  typedef irs::string string_type;
+  typedef stringns_t string_type;
   typedef vector<variant_t> vector_variant_type;
   #ifdef IRSDEFS_LONG_LONG
   typedef irs_ilong_long long_long_type;
@@ -422,8 +426,15 @@ inline variant_t& variant_t::assign_no_cast<variant_t::string_type>(
     case var_type_bool: {
       fsuccess = a_value.to_number(m_value.val_bool_type);
     } break;
-    case var_type_char: {
-      fsuccess = a_value.to_number(m_value.val_char_type);    
+    case var_type_char: { // !!! СИМВОЛ а не число !!!
+      //fsuccess = a_value.to_number(m_value.val_char_type);
+      if (m_value.p_val_string_type->size() >= 1) {
+        m_value.val_char_type = IRS_SIMPLE_FROM_TYPE_STR(
+          m_value.p_val_string_type->c_str())[0];
+        fsuccess = true;
+      } else {
+        fsuccess = false;
+      }
     } break;
     case var_type_singned_char: {
       fsuccess = a_value.to_number(m_value.val_schar_type);
@@ -643,7 +654,7 @@ inline const variant_t& variant_t::operator[](const size_type a_index) const
 template<class T>
 T variant_t::value_get() const
 {
-  T value;
+  T value = T();
   switch(m_type) {    
 
     #ifdef _MSC_VER
@@ -716,8 +727,7 @@ T variant_t::value_get() const
     default : {      
       IRS_LIB_ASSERT_MSG("Неизвестный тип");
       // Чтобы переменная в любом случае была инициализирована
-      value = 0;
-     
+      //value = 0;
     }
   }
   return value;

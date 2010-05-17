@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 06.05.2010
+// Дата: 16.05.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -17,6 +17,9 @@
 #ifdef IRS_WIN32
 #include <winsock2.h>
 #endif // __WIN32__
+#ifdef __BORLANDC__
+#include <System.hpp>
+#endif //__BORLANDC__
 
 #include <limits.h>
 #include <stddef.h>
@@ -43,7 +46,14 @@
 #define IRS_CPP_BUILDER2010 0x0620
 
 // Включение Unicode
+#ifdef __BORLANDC__
+#ifdef _DELPHI_STRING_UNICODE
+#define IRS_UNICODE_GLOBAL
+#endif //_DELPHI_STRING_UNICODE
+#else //__BORLANDC__
 //#define IRS_UNICODE_GLOBAL
+#endif //__BORLANDC__
+
 #ifdef IRS_UNICODE_GLOBAL
 #if defined(__ICCAVR__)
 //#define IRS_UNICODE

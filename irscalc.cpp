@@ -10,7 +10,17 @@
 // по стандарту C++
 //#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
+#include <irsdefs.h>
+
+#ifdef __BORLANDC__
+#include <vcl.h>
+#pragma hdrstop
+#endif //__BORLANDC__
+
 #include <irscalc.h>
+
+#include <irsfinal.h>
+
 /*
 irs::string irs::preprocessing_str(const irs::string& a_str)
 {

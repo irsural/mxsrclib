@@ -21,6 +21,12 @@ namespace irs {
 class tstlan4_t: public tstlan4_base_t
 {
 public:
+  typedef string_t string_type;
+  typedef char_t char_type;
+private:
+  static const char_type* def_ini_name();
+  static const char_type* def_ini_section_prefix();
+public:
   enum form_type_t { ft_internal, ft_external };
   enum global_log_connect_t {
     global_log_connect,
@@ -30,8 +36,8 @@ public:
   tstlan4_t(const tstlan4_t& a_tstlan4);
   tstlan4_t(
     form_type_t a_form_type = ft_internal,
-    const irs::string& a_ini_name = "tstlan3.ini",
-    const irs::string& a_ini_section_prefix = "",
+    const string_type& a_ini_name = def_ini_name(),
+    const string_type& a_ini_section_prefix = def_ini_section_prefix(),
     counter_t a_update_time_cnt = irs::make_cnt_ms(200),
     global_log_connect_t a_global_log_connect = global_log_unchange
   );
@@ -56,8 +62,8 @@ private:
     //controls_t(const controls_t& a_controls, TForm *ap_form);
     controls_t(
       TForm *ap_form,
-      const irs::string& a_ini_name,
-      const irs::string& a_ini_section_prefix,
+      const string_type& a_ini_name,
+      const string_type& a_ini_section_prefix,
       irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
       counter_t a_update_time_cnt
     );
@@ -280,9 +286,11 @@ private:
     bool m_is_grid_edit;
     int m_grid_edit_col;
     int m_grid_edit_row;
-    map<irs::string, bool> m_chart_names;
-    const irs::string m_ini_section_prefix;
+    map<string_type, bool> m_chart_names;
+    const string_type m_ini_section_prefix;
 
+    template <class T>
+    void integer_to_string(const T& a_value, string_type* ap_string);
     String var_to_bstr(int a_var_index);
     void bstr_to_var(int a_var_index, const String& a_bstr_val);
     double var_to_double(int a_var_index);
@@ -304,8 +312,8 @@ private:
   auto_ptr<TForm> mp_form_auto;
   TForm *mp_form;
   auto_ptr<controls_t> mp_controls;
-  const irs::string m_ini_name;
-  const irs::string m_ini_section_prefix;
+  const string_type m_ini_name;
+  const string_type m_ini_section_prefix;
   irs::memobuf m_log_buf;
   counter_t m_update_time_cnt;
   global_log_connect_t m_global_log_connect;

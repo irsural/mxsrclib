@@ -1,6 +1,6 @@
 // Клиент и сервер modbus
-// Дата: 28.04.2010
-// Дата создания: 16.09.2008
+// Дата: 16.05.2010
+// Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
 #include <string.h>
@@ -283,7 +283,7 @@ irs::char_t digit_to_char(int a_digit)
 
 irs::string_t int_to_str(int a_number, int a_radix, int a_cnt)
 {
-  string number_str(a_cnt, irst(' '));
+  irs::string_t number_str(a_cnt, irst(' '));
   for(int digit_idx = a_cnt - 1; digit_idx >= 0; digit_idx--)
   {
     int digit = a_number%a_radix;

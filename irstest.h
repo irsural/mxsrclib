@@ -192,11 +192,11 @@ public:
         cstr_from_codecvt_result<char>(convert_result));
     }
   }
-  operator const out_char_type*() const
+  const out_char_type* get() const
   {
     return m_outstr_data.data();
   }
-  operator out_char_type*()
+  out_char_type* get()
   {
     return m_outstr_data.data();
   }
@@ -205,10 +205,10 @@ public:
 #ifdef IRS_UNICODE
 #define IRS_WIDE_CHAR_FROM_TCHAR_STR(str) (str)
 #define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str)\
-  (irs::convert_str_t<wchar_t, char>(str))
+  (irs::convert_str_t<wchar_t, char>(str).get())
 #else //IRS_UNICODE
 #define IRS_WIDE_CHAR_FROM_TCHAR_STR(str)\
-  (irs::convert_str_t<char, wchar_t>(str))
+  (irs::convert_str_t<char, wchar_t>(str).get())
 #define IRS_SIMPLE_CHAR_FROM_TCHAR_STR(str) (str)
 #endif //IRS_UNICODE
 
@@ -325,7 +325,7 @@ struct dyn_data_t
 {
   irs_u8* data;
   irs_size_t size;
-  
+
   dyn_data_t(irs_size_t a_size = 0):
     data(IRS_NULL),
     size(a_size)

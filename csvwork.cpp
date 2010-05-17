@@ -1,8 +1,15 @@
 // Работа с csv-файлами
-// Дата: 17.09.2009
+// Дата: 16.05.2010
+// Ранняя дата: 17.09.2009
 
-#include <assert.h>
+#include <irsdefs.h>
+
+//#include <assert.h>
+
 #include <csvwork.h>
+#include <irsstrdefs.h>
+
+#include <irsfinal.h>
 
 //---------------------------------------------------------------------------
 
