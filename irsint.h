@@ -1,5 +1,5 @@
 // Прерывания
-// Дата: 19.04.2010
+// Дата: 12.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irsintH
@@ -134,8 +134,12 @@ public:
   void push_back(event_t* ap_event);
   void erase(event_t* ap_event);
   void clear();
+  void enable();
+  void disable();
+  bool is_enabled() const;
 private:
   event_container_type m_events;
+  bool m_is_enabled;
 };
 inline generator_events_t& operator << (generator_events_t& a_generator_events,
   event_t* ap_event)
