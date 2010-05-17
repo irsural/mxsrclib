@@ -36,6 +36,7 @@ public:
   }
 };
 
+typedef ::string std_string_t;
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 typedef ::wstring std_wstring_t;
 template <class T>
