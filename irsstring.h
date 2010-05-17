@@ -160,7 +160,7 @@ public:
   {
     return string_assign(*this, val);
   }
-  IRS_STRING_TYPE& operator=(const T& val)
+  IRS_STRING_TYPE& operator=(const IRS_STRING_CHAR_TYPE& val)
   {
     IRS_STRING_BASE& base = (IRS_STRING_BASE&)(*this);
     base = val;
@@ -257,7 +257,7 @@ public:
   {
     *this = val;
   }
-  IRS_STRING_TYPE(const T& val)
+  IRS_STRING_TYPE(const IRS_STRING_CHAR_TYPE& val)
   {
     *this = val;
   }
@@ -326,7 +326,7 @@ public:
     strm >> val;
     return strm.good();
     #else //IRS_FULL_STDCPPLIB_SUPPORT
-    auto_arr<char_t> buf(new char_t[size()]);
+    auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());
     ::replace(buf.get(), buf.get() + size(), ',', '.');
     istrstream strm(buf.get(), size());
@@ -344,7 +344,8 @@ public:
     throw exception(error_message);
     #endif //__BORLANDC__
     #else //IRS_FULL_STDCPPLIB_SUPPORT
-    *this += error_message;
+    IRS_STRING_BASE& base = ( IRS_STRING_BASE&)(*this);
+    base += error_message;
     #endif //IRS_FULL_STDCPPLIB_SUPPORT
     return false;
   }

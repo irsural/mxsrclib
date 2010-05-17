@@ -31,7 +31,7 @@
 #define IRS_SIMPLE_FROM_TYPE_STR(str) (str)
 #define IRS_TYPE_FROM_WIDE_STR(str)\
   (irs::convert_str_t<wchar_t, char>(str).get())
-#define IRS_TYPE_FROM_WIDE_STR(str) (str)
+#define IRS_TYPE_FROM_SIMPLE_STR(str) (str)
 #endif //IRS_UNICODE
 
 // Поддержка экзотических строк типа __flash в IAR и др.
