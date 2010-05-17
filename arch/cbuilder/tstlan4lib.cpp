@@ -65,7 +65,7 @@ irs::tstlan4_t::tstlan4_t(
 // На предыдущей форме все компоненты уничтожаются
 void irs::tstlan4_t::init(TForm *ap_form)
 {
-  #ifndef NOP
+  #ifdef NOP
   ostringstream stream;
   stream << 17;
   string strnum = stream.str();
