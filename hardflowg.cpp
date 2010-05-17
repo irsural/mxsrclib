@@ -1481,7 +1481,7 @@ void irs::hardflow::tcp_server_t::tick()
               if(insert_channel.second) {
                 irs::mlog() << "New channel added: " << (int)m_channel << endl;
                 irs::mlog() << "-------------------------------" << endl;
-                for(map<size_type, int>::iterator it = m_map_channel_sock.begin();
+                for(map<size_type,int>::iterator it=m_map_channel_sock.begin();
                   it != m_map_channel_sock.end(); it++)
                 {
                   irs::mlog() << "m_channel: " << (int)it->first <<
@@ -1490,7 +1490,7 @@ void irs::hardflow::tcp_server_t::tick()
                 irs::mlog() << "-------------------------------" << endl;
               }
               else {
-                IRS_LIB_HARDFLOW_DBG_RAW_MSG_BASE(
+                IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
                   "Channel already exist" << endl);
               }
             );
@@ -1945,6 +1945,7 @@ void irs::hardflow::fixed_flow_t::tick()
         m_channel_not_exists = true;
       }
       #endif // IRS_LIB_DEBUG_DETAIL
+      mlog() << irsm("read abort by channel is absent") << endl;
     }
   }
   if (write_status() == status_wait) {
@@ -1982,6 +1983,7 @@ void irs::hardflow::fixed_flow_t::tick()
         m_channel_not_exists = true;
       }
       #endif // IRS_LIB_DEBUG_DETAIL
+      mlog() << irsm("write abort by channel is absent") << endl;
     }
   }
 }

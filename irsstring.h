@@ -324,7 +324,7 @@ public:
     #ifdef IRS_FULL_STDCPPLIB_SUPPORT
     basic_istringstream<T> strm(*this);
     strm >> val;
-    return strm.good();
+    return strm;
     #else //IRS_FULL_STDCPPLIB_SUPPORT
     auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());
@@ -370,8 +370,9 @@ template <class C, class T>
 inline basic_irs_string_t<C>& string_assign(basic_irs_string_t<C>& strg,
   const T& val)
 {
-  basic_ostringstream<C> strm(strg);
+  basic_ostringstream<C> strm;
   string_assign_helper(strm, val);
+  strg = strm.str();
   return strg;
 }
 #else //IRS_FULL_STDCPPLIB_SUPPORT
@@ -504,7 +505,9 @@ IRS_STRING_TEMPLATE
 inline ostream& operator<<(ostream& strm, const IRS_STRING_TYPE_SPEC& strg)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  return strm << strg;
+  const IRS_STRING_BASE& strg_base =
+    static_cast<const IRS_STRING_TYPE_SPEC&>(strg);
+  return strm << strg_base;
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   return strm << strg.c_str();
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
@@ -513,7 +516,8 @@ IRS_STRING_TEMPLATE
 inline istream& operator>>(istream& strm, IRS_STRING_TYPE_SPEC& strg)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  return strm >> strg;
+  IRS_STRING_BASE& strg_base = static_cast<IRS_STRING_TYPE_SPEC&>(strg);
+  return strm >> strg_base;
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   strg = "";
   streambuf &sbuf = *strm.rdbuf();
