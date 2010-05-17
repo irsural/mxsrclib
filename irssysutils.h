@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 16.05.2010
+// Дата: 17.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -135,23 +135,10 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
   );
 }
 
-inline bool string_to_number_is_range_valid(
-  char_traits<char>::int_type a_num, char)
+inline bool string_to_number_is_range_valid(int a_num)
 {
-  char_traits<char>::int_type signed_char_min =
-    ::numeric_limits<signed char>::min();
-  char_traits<char>::int_type unsigned_char_max =
-    ::numeric_limits<unsigned char>::max();
-  return (a_num >= signed_char_min) && (a_num <= unsigned_char_max );
-}
-
-inline bool string_to_number_is_range_valid(
-  char_traits<wchar_t>::int_type a_num, wchar_t)
-{
-  char_traits<char>::int_type signed_char_min = 
-    ::numeric_limits<wchar_t>::min();
-  char_traits<char>::int_type unsigned_char_max = 
-    ::numeric_limits<wchar_t>::max();
+  int signed_char_min = ::numeric_limits<signed char>::min();
+  int unsigned_char_max = ::numeric_limits<unsigned char>::max();
   return (a_num >= signed_char_min) && (a_num <= unsigned_char_max );
 }
 
@@ -166,10 +153,10 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
   {
-    char_traits<C>::int_type val_int = 0;
+    int val_int = 0;
     istr >> val_int;
-    if (string_to_number_is_range_valid(val_int, C())) {
-      *ap_num = char_traits<C>::to_int_type(val_int);
+    if (string_to_number_is_range_valid(val_int)) {
+      *ap_num = static_cast<C>(val_int);
     } else {
       convert_success = false;
     } 
