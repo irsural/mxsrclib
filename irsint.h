@@ -1,5 +1,5 @@
 // Прерывания
-// Дата: 12.05.2010
+// Дата: 18.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irsintH
@@ -11,7 +11,7 @@
 #include <inavr.h>
 #endif //__ICCAVR__
 
-#include <irscpp.h> 
+#include <irscpp.h>
 
 #include <irsfinal.h>
 
@@ -62,7 +62,9 @@ inline irs_int_event_gen_t::~irs_int_event_gen_t()
 }
 inline void irs_int_event_gen_t::exec()
 {
-  mp_event->exec();
+  if (mp_event) {
+    mp_event->exec();
+  }
 }
 inline void irs_int_event_gen_t::add(mxfact_event_t *ap_event)
 {
@@ -223,6 +225,31 @@ class lock_interrupt_t
 public:
 };
 #endif //__ICCAVR__
+
+// Работа с прерываниями
+class interrupt_array_t: public interrupt_array_base_t
+{
+public:
+  typedef interrupt_array_base_t base_type;
+  typedef base_type::size_type size_type;
+  typedef irs_u8 gen_index_type;
+
+  interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type 
+    a_reserve_interrupt_count);
+  
+  virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
+  virtual void exec_event(size_type a_index);
+private:
+  enum {
+    interrupt_none = 0
+  };
+
+  vector<gen_index_type> m_int_event_gen_indexes;
+  vector<irs_int_event_gen_t> m_int_event_gens;
+  size_type m_int_event_index;
+  
+  interrupt_array_t(const interrupt_array_t&);
+};
 
 } //namespace irs
 
