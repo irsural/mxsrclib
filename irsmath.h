@@ -7,7 +7,7 @@
 
 #include <irsdefs.h>
 
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <math.h>
 #include <irscpp.h>
 

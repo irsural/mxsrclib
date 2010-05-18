@@ -17,7 +17,7 @@
 
 #include <math.h>
 
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <irserror.h>
 #include <irsvariant.h>
 #include <irscpp.h>

@@ -8,7 +8,7 @@
 #include <irsdefs.h>
 
 #include <irscpp.h>
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <irserror.h>
 #include <irsmath.h>
 #include <irssysutils.h>

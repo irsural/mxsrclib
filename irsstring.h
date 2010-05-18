@@ -166,7 +166,7 @@ public:
     base = val;
     return *this;
   }
-  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE& val)
+  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE& /*val*/)
   {
     other_char_error();
     return *this;
@@ -334,7 +334,7 @@ public:
     return strm.good();
     #endif //IRS_FULL_STDCPPLIB_SUPPORT
   }
-  bool to_number(IRS_STRING_OTHER_CHAR_TYPE& val) const
+  bool to_number(IRS_STRING_OTHER_CHAR_TYPE& /*val*/) const
   {
     const char* error_message = "{Неправильный тип char в to_number}";
     #ifdef IRS_FULL_STDCPPLIB_SUPPORT

@@ -84,6 +84,11 @@ memory_checker_t* memory_checker_avr_init(
   memory_checker_t::value_type a_heap_array_size = 
     memory_checker_t::heap_array_size_def
 );
+memory_checker_t* memory_checker_avr_init(
+  memory_checker_t::value_type a_call_stack_size,
+  memory_checker_t::value_type a_heap_size,
+  memory_checker_t::value_type a_return_stack_size
+);
   
 } //namespace irs
 
