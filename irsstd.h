@@ -5,7 +5,14 @@
 #ifndef irsstdH
 #define irsstdH
 
+// Номер файла
+#define IRSSTDH_IDX 16
+
 #include <irsdefs.h>
+
+#ifdef __ICCAVR__
+#include <ioavr.h>
+#endif //__ICCAVR__
 
 #include <string.h>
 
@@ -18,8 +25,13 @@
 #include <irsconsolestd.h>
 #include <irsstrmstd.h>
 #include <irschartwin.h>
+#include <irscpp.h>
+#include <irscpp.h>
+#include <irsarchint.h>
 
 #include <irsfinal.h>
+
+//#include <vector>
 
 // Устарел
 // Абстактный базовый класс драйвера консоли
@@ -153,5 +165,115 @@ T range(T val, T min_val, T max_val)
 }
 
 } //namespace irs
+
+#ifdef __ICCAVR__
+// Указатель на порт AVR
+typedef irs_u8 volatile __tiny avr_port_t;
+typedef avr_port_t* p_avr_port_t;
+
+typedef struct _irs_avr_port_map_t {
+  //irs_avr_port_t name,
+  p_avr_port_t set;
+  p_avr_port_t get;
+  p_avr_port_t dir;
+} irs_avr_port_map_t;
+
+extern const irs_avr_port_map_t avr_port_map[];
+
+// Класс драйвера клавиатуры AVR
+class mxkey_drv_avr_t: public mxkey_drv_t
+{
+  irs_u8 m_high_set_bit;
+  irs_u8 m_high_get_bit;
+  p_avr_port_t mp_set;
+  p_avr_port_t mp_get;
+  p_avr_port_t mp_dir;
+  irskey_t __flash *mp_key_map;
+
+  inline void sethor(irs_u8 num);
+  inline void reshor(irs_u8 num);
+  inline irs_u8 chkver(irs_u8 num);
+public:
+  mxkey_drv_avr_t(irskbd_t type, irskbd_map_t map_type, irs_avr_port_t a_port);
+  ~mxkey_drv_avr_t();
+  virtual irskey_t operator()();
+};
+
+inline void mxkey_drv_avr_t::sethor(irs_u8 num)
+{
+  (*mp_set) |= (1 << (m_high_set_bit - num));
+}
+inline void mxkey_drv_avr_t::reshor(irs_u8 num)
+{
+  (*mp_set) &= (0xFF^(1 << (m_high_set_bit - num)));
+}
+inline irs_u8 mxkey_drv_avr_t::chkver(irs_u8 num)
+{
+  return (*mp_get)&(1 << (m_high_get_bit - num));
+}
+
+// Класс драйвера дисплея AVR
+class mxdisplay_drv_avr_t: public mxdisplay_drv_t
+{
+  typedef enum _lcd_status_t {
+    LCD_BEGIN,
+    LCD_RS,
+    LCD_DATA_OUT,
+    LCD_ADDRESS_OUT,
+    LCD_E_RISE,
+    LCD_E_FALL,
+    LCD_FREE
+  } lcd_status_t;
+
+  p_avr_port_t mp_set_data;
+  p_avr_port_t mp_get_data;
+  p_avr_port_t mp_dir_data;
+  p_avr_port_t mp_set_control;
+  p_avr_port_t mp_get_control;
+  p_avr_port_t mp_dir_control;
+  irs_u8 m_LCD_E;
+  irs_u8 m_LCD_RS;
+  irs_u8 LINE_COUNT;
+  irs_u8 LINE_LEN;
+  irs_u8 LCD_SIZE;
+  lcd_status_t lcd_status;
+  irs_u8 *lcd_ram;
+  irs_u8 lcd_current_symbol;
+  irs_u8 lcd_current_symbol_address;
+  irs_u8 lcd_init_counter;
+  counter_t lcd_timer;
+  irs_bool lcd_address_jump;
+
+  //  Запись в регистр команд LCD
+  void lcd_IR_enable() {
+    (*mp_set_control) &= ((1 << m_LCD_RS)^0xFF);
+  }
+  //  Запись в регистр данных LCD
+  void lcd_DR_enable() {
+    (*mp_set_control) |= (1 << m_LCD_RS);
+  }
+  //  Выбор LCD
+  void lcd_enable() {
+    (*mp_set_control) |= (1 << m_LCD_E);
+  }
+  //  LCD недоступен для операций
+  void lcd_disable() {
+    (*mp_set_control) &= ((1 << m_LCD_E)^0xFF);
+  }
+  //  Вывод команды/данных в порт
+  void lcd_out(irs_u8 data) {
+    (*mp_set_data) = data;
+  }
+public:
+  mxdisplay_drv_avr_t(irslcd_t a_type, irs_avr_port_t a_data_port,
+    irs_avr_port_t a_control_port, irs_u8 a_control_pin);
+  ~mxdisplay_drv_avr_t();
+  virtual mxdisp_pos_t get_height();
+  virtual mxdisp_pos_t get_width();
+  virtual void outtextpos(mxdisp_pos_t a_left, mxdisp_pos_t a_top,
+    const char *text);
+  virtual void tick();
+};
+#endif //__ICCAVR__
 
 #endif //irsstdH
