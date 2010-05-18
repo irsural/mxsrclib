@@ -373,12 +373,13 @@ template <class T>
 void irs::tstlan4_t::controls_t::integer_to_string(
   const T& a_value, string_type* ap_string)
 {
-  stringstream_t strm(*ap_string);
+  stringstream_t strm;
   strm << a_value;
   strm << internal << setfill(irst('0')) << hex << uppercase;
   const int i16_hex_width = 2*sizeof(irs_i16);
   strm << irst(" (0x") << setw(i16_hex_width) << a_value;
   strm << irst(")\0");
+  *ap_string = strm.str();
 }
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
