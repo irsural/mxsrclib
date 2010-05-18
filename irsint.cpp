@@ -1,12 +1,12 @@
 // Прерывания
-// Дата: 12.05.2010
+// Дата: 27.04.2010
 // Ранняя дата: 2.09.2009
 
 #include <irsint.h>
 #include <irserror.h>
-#ifdef __ICCAVR__
+#if defined(__ICCAVR__) || defined(__ICCARM__)
 #include <irsarchint.h>
-#endif //__ICCAVR__
+#endif //__ICCAVR__ || __ICCARM__
 
 namespace irs {
 
@@ -58,18 +58,13 @@ void irs_action_t::connect(irs_action_t *&a_action)
 //#ifdef NOP
 // class generator_events_t
 irs::generator_events_t::generator_events_t():
-  m_events(),
-  m_is_enabled(true)
+  m_events()
 {
 }
 
 void irs::generator_events_t::exec()
 {
-  if (m_is_enabled) {
-    for_each(m_events.begin(), m_events.end(), event_exec_fun_t());
-  } else {
-    // Генератор выключен. События не генерируются
-  }
+  for_each(m_events.begin(), m_events.end(), event_exec_fun_t());
 }
 void irs::generator_events_t::push_back(event_t* ap_event)
 {
@@ -93,21 +88,6 @@ void irs::generator_events_t::erase(event_t* ap_event)
 void irs::generator_events_t::clear()
 {
   m_events.clear();
-}
-
-void irs::generator_events_t::enable()
-{
-  m_is_enabled = true;
-}
-
-void irs::generator_events_t::disable()
-{
-  m_is_enabled = false;
-}
-
-bool irs::generator_events_t::is_enabled() const
-{
-  return m_is_enabled;
 }
 
 // Класс событий
@@ -188,11 +168,45 @@ void irs::interrupt_array_empty_t::exec_event(size_type /*a_index*/)
 // Возвращает массив прерываний
 irs::interrupt_array_base_t* irs::interrupt_array()
 {
-  #ifdef __ICCAVR__
+  #if defined(__ICCAVR__)
   return irs::avr::interrupt_array();
+  #elif defined(__ICCARM__)
+  return irs::arm::interrupt_array();
   #else //__ICCAVR__
   static interrupt_array_empty_t interrupt_array;
   return &interrupt_array;
   #endif //__ICCAVR__
 }
+
+// Работа с прерываниями
+irs::interrupt_array_t::interrupt_array_t(gen_index_type a_interrupt_count, 
+  gen_index_type a_reserve_interrupt_count
+):
+  m_int_event_gen_indexes(static_cast<size_t>(a_interrupt_count), 
+    static_cast<gen_index_type>(interrupt_none)),
+  m_int_event_gens(),
+  m_int_event_index(interrupt_none)
+{
+  m_int_event_gens.reserve(a_reserve_interrupt_count);
+}
+irs_int_event_gen_t* 
+  irs::interrupt_array_t::int_event_gen(size_type a_index)
+{
+  gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
+  if (gen_index == interrupt_none) {
+    // Создаем генератор прерываний для номера прерывания "a_index"
+    m_int_event_index++;
+    m_int_event_gens.resize(m_int_event_index + 1);
+    gen_index = m_int_event_index;
+  } else {
+    // Генератор прерываний для номера прерывания "a_index" уже существует
+  }
+  return &m_int_event_gens[gen_index];
+}
+void irs::interrupt_array_t::exec_event(size_type a_index)
+{
+  gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
+  m_int_event_gens[gen_index].exec();
+}
+
 

@@ -1,5 +1,5 @@
 // Абстракция таблицы Лящова Максима
-// Дата: 14.04.2010
+// Дата: 18.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef tablegH
@@ -1449,7 +1449,7 @@ struct test3_t
 
 #endif //__WATCOMC__
 
-}; // namespace irs
+} // namespace irs
 
 #endif //tablegH
 

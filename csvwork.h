@@ -1,15 +1,13 @@
 // Работа с csv-файлами
-// Дата: 16.05.2010
-// Ранняя дата: 17.09.2009
+// Дата: 13.04.2010
 
 #ifndef csvworkH
 #define csvworkH
 
 #include <irsdefs.h>
 
-#include <stdio.h>
 #include <string.h>
-
+#include <stdio.h>
 #include <irsstd.h>
 #include <irstable.h>
 
@@ -132,7 +130,7 @@ class csv_file_t
 public:
   typedef size_t size_type;
   typedef char_t char_type;
-  typedef irs_string_t string_type;
+  typedef string_t string_type;
   typedef int delimiter_row_type;
   enum pos_mode_t {pos_mode_beg, pos_mode_end};
 private:

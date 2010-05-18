@@ -22,16 +22,10 @@
 #define IRS_WIDE_FROM_TYPE_STR(str) (str)
 #define IRS_SIMPLE_FROM_TYPE_STR(str)\
   (irs::convert_str_t<wchar_t, char>(str).get())
-#define IRS_TYPE_FROM_WIDE_STR(str) (str)
-#define IRS_TYPE_FROM_SIMPLE_STR(str)\
-  (irs::convert_str_t<char, wchar_t>(str).get())
 #else //IRS_UNICODE
 #define IRS_WIDE_FROM_TYPE_STR(str)\
   (irs::convert_str_t<char, wchar_t>(str).get())
 #define IRS_SIMPLE_FROM_TYPE_STR(str) (str)
-#define IRS_TYPE_FROM_WIDE_STR(str)\
-  (irs::convert_str_t<wchar_t, char>(str).get())
-#define IRS_TYPE_FROM_SIMPLE_STR(str) (str)
 #endif //IRS_UNICODE
 
 // Поддержка экзотических строк типа __flash в IAR и др.
@@ -93,9 +87,10 @@ namespace irs {
 #ifdef IRS_UNICODE
 
 #define irst(cstr) L##cstr
+
 typedef wint_t char_int_t;
 typedef wchar_t char_t;
-typedef irs_wstring_t string_t;
+typedef wstring string_t;
 typedef wostream ostream_t;
 typedef wistream istream_t;
 typedef wstringstream stringstream_t; 
@@ -108,12 +103,12 @@ typedef wostringstream ostringstream_t;
 
 typedef int char_int_t;
 typedef char char_t;
-typedef irs_string_t string_t;
+typedef irs::string string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
-#ifndef __ICCAVR__
+#ifndef __embedded_cplusplus 
 typedef stringstream stringstream_t;
-#endif // __ICCAVR__
+#endif // __embedded_cplusplus 
 typedef istringstream istringstream_t;
 typedef ostringstream ostringstream_t;
 

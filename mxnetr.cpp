@@ -1,5 +1,6 @@
 // Общие утилиты mxnet
-// Дата: 18.02.2009
+// Дата: 18.05.2010
+// Ранняя Дата: 18.02.2009
 
 #include <mxnetr.h>
 #include <irsalg.h>
@@ -189,5 +190,5 @@ irs_i32 irs::checksum_calc(irs::mxn_checksum_t cs_type,
       return cs_ret;
     }
   }
-  return 0xDEADBEEF;
+  return static_cast<irs_i32>(0xDEADBEEF);
 }

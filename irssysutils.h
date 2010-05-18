@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 17.05.2010
+// Дата: 18.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -429,7 +429,7 @@ private:
 
 // В переданном имени файла изменяется расширение
 
-#ifndef __ICCAVR__
+#ifndef __embedded_cplusplus
 template<class T>
 void change_file_ext(
   const basic_string<T>& a_ext,
@@ -487,6 +487,6 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
 }
 #endif // !__ICCAVR__
 
-}; //namespace irs
+} //namespace irs
 
 #endif //irssysutilsH

@@ -1,12 +1,14 @@
 // Свойства процессора
-// Дата: 14.10.2009
+// Дата: 17.05.2010
 // Дата создания: 1.10.2009
 
 #include <irscpu.h>
 
 #ifdef __ICCAVR__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;
-#else //__ICCAVR__
+#elif __ICCARM__
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 50000000;
+#else //__ICCAVR
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;
 #endif //__ICCAVR__
 void irs::cpu_traits_t::frequency(frequency_type a_frequency)

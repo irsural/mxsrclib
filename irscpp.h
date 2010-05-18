@@ -34,10 +34,10 @@
 #include <utility>
 #include <vector>
 #include <fstream>
-#ifndef __ICCAVR__
+#ifndef __embedded_cplusplus 
 #include <locale>
 #include <limits>
-#endif //__ICCAVR__
+#endif //__embedded_cplusplus 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #include <stdexcept>
 #endif //IRS_FULL_STDCPPLIB_SUPPORT

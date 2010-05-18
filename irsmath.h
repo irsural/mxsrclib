@@ -1,5 +1,6 @@
 // Математические функции
-// Дата: 16.09.2009
+// Дата: 18.05.2010
+// Ранняя дата: 16.09.2009
 
 #ifndef irsmathH
 #define irsmathH
@@ -230,6 +231,6 @@ inline int lcm(int a, int b)
   return (a * b) / gcd(a, b);
 }
 
-}; // namespace irs
+} // namespace irs
 //---------------------------------------------------------------------------
-#endif
+#endif //irsmathH

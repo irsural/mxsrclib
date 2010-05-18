@@ -1,5 +1,5 @@
 // Свойства
-// Дата: 28.04.2010
+// Дата: 18.05.2010
 // Ранняя дата: 17.08.2009
 
 #ifndef irspropH
@@ -87,13 +87,36 @@ class property_read_write_t
 };
 
 // Свойство только для чтения с индексом
-template<
-  class owner_t, class index_t, class value_t>
+template<class owner_t, class index_t, class value_t>
 class property_read_only_index_t
 {
   typedef value_t (owner_t::*get_method_t)(const index_t) const;
 public:
-  class property_read_only_t;
+  class property_read_only_t
+  {
+    owner_t& m_owner;
+    get_method_t mp_get_method;
+    index_t m_index;
+    property_read_only_t();
+  public:
+    property_read_only_t(
+      owner_t& a_owner,
+      get_method_t ap_get_method
+    ) :
+      m_owner(a_owner),
+      mp_get_method(ap_get_method),
+      m_index()
+    { }
+    inline operator value_t () const
+    {
+      return (m_owner.*mp_get_method)(m_index);
+    }
+    inline void set_index(
+      index_t a_index)
+    {
+      m_index = a_index;
+    }
+  };
 private:
   property_read_only_t m_property_read_only;
   index_t m_index;
@@ -112,13 +135,39 @@ public:
     m_property_read_only.set_index(a_index);
     return m_property_read_only;
   }
-};     
+};
 
-template<
-  class owner_t, class index_t, class value_t>
-class property_read_only_index_t<
-  owner_t, index_t, value_t>::
-  property_read_only_t
+#ifdef NOP
+// Свойство только для чтения с индексом
+template<class owner_t, class index_t, class value_t>
+class property_read_only_index_t
+{
+  typedef value_t (owner_t::*get_method_t)(const index_t) const;
+public:
+  class property_read_only_t;
+private:
+  property_read_only_t m_property_read_only;
+  index_t m_index;
+  property_read_only_index_t();
+public:
+  property_read_only_index_t(
+    owner_t& a_owner,
+    get_method_t a_get_method
+  ) :
+    m_property_read_only(a_owner, a_get_method),
+    m_index()
+  { }
+  inline property_read_only_t<owner_t, value_t> operator[](
+    const index_t a_index)
+  {
+    m_property_read_only.set_index(a_index);
+    return m_property_read_only;
+  }
+};
+
+template<class owner_t, class index_t, class value_t>
+class property_read_only_index_t<owner_t, index_t, value_t>::
+  property_read_only_t<owner_t, value_t>
 {
   owner_t& m_owner;
   get_method_t mp_get_method;
@@ -143,6 +192,7 @@ public:
     m_index = a_index;
   }
 };
+#endif //NOP
 
 // Свойство только для записи с индексом
 template<
@@ -151,7 +201,32 @@ class property_write_only_index_t
 {
   typedef void (owner_t::*set_method_t)(const index_t, const value_t&);
 public:
-  class property_write_only_t;
+  class property_write_only_t
+  {
+    owner_t& m_owner;
+    set_method_t mp_set_method;
+    index_t m_index;
+    property_write_only_t();
+  public:
+    property_write_only_t(
+      owner_t& a_owner,
+      set_method_t ap_set_method
+    ) :
+      m_owner(a_owner),
+      mp_set_method(ap_set_method),
+      m_index()
+    { }
+    inline const value_t& operator = (const value_t& a_value)
+    {
+      (m_owner.*mp_set_method)(m_index, a_value);
+      return a_value;
+    }
+    inline void set_index(const index_t a_index)
+    {
+      m_index = a_index;
+    }
+  };
+
 private:
   property_write_only_t m_property_write_only;
   index_t m_index;
@@ -176,36 +251,6 @@ public:
   }
 };
 
-template<
-  class owner_t, class index_t, class value_t>
-class property_write_only_index_t<
-  owner_t, index_t, value_t>::
-  property_write_only_t
-{
-  owner_t& m_owner;
-  set_method_t mp_set_method;
-  index_t m_index;
-  property_write_only_t();
-public:
-  property_write_only_t(
-    owner_t& a_owner,
-    set_method_t ap_set_method
-  ) :
-    m_owner(a_owner),
-    mp_set_method(ap_set_method),
-    m_index()
-  { }
-  inline const value_t& operator = (const value_t& a_value)
-  {
-    (m_owner.*mp_set_method)(m_index, a_value);
-    return a_value;
-  }
-  inline void set_index(const index_t a_index)
-  {
-    m_index = a_index;
-  }
-};
-
 // Свойство для чтения и записи с индексом
 template<
   class owner_t, class index_t, class value_t>
@@ -213,8 +258,40 @@ class property_read_write_index_t
 {
   typedef value_t (owner_t::*get_method_t)(const index_t) const;
   typedef void (owner_t::*set_method_t)(const index_t, const value_t&);
-public:
-  class property_read_write_t;
+public:  
+  class property_read_write_t
+  {
+    owner_t& m_owner;
+    get_method_t mp_get_method;
+    set_method_t mp_set_method;
+    index_t m_index;
+    property_read_write_t();
+  public:
+    property_read_write_t(
+      owner_t& a_owner,
+      get_method_t ap_get_method,
+      set_method_t ap_set_method
+    ) :
+      m_owner(a_owner),
+      mp_get_method(ap_get_method),
+      mp_set_method(ap_set_method),
+      m_index()
+    { }
+    inline operator value_t () const
+    {
+      return (m_owner.*mp_get_method)(m_index);
+    }
+    inline const value_t& operator = (const value_t& a_value)
+    {
+      (m_owner.*mp_set_method)(m_index, a_value);
+      return a_value;
+    }
+    inline void set_index(
+      const index_t a_index)
+    {
+      m_index = a_index;
+    }
+  };
 private:
   property_read_write_t m_property_read_write;
   index_t m_index;
@@ -240,53 +317,68 @@ public:
   }
 };     
 
-template<
-  class owner_t, class index_t, class value_t>
-class property_read_write_index_t<
-  owner_t, index_t, value_t>::
-  property_read_write_t
-{
-  owner_t& m_owner;
-  get_method_t mp_get_method;
-  set_method_t mp_set_method;
-  index_t m_index;
-  property_read_write_t();
-public:
-  property_read_write_t(
-    owner_t& a_owner,
-    get_method_t ap_get_method,
-    set_method_t ap_set_method
-  ) :
-    m_owner(a_owner),
-    mp_get_method(ap_get_method),
-    mp_set_method(ap_set_method),
-    m_index()
-  { }
-  inline operator value_t () const
-  {
-    return (m_owner.*mp_get_method)(m_index);
-  }
-  inline const value_t& operator = (const value_t& a_value)
-  {
-    (m_owner.*mp_set_method)(m_index, a_value);
-    return a_value;
-  }
-  inline void set_index(
-    const index_t a_index)
-  {
-    m_index = a_index;
-  }
-};
-
 // Свойство только для чтения с двойным индексом
 template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
+  class owner_t, class first_index_t, class second_index_t, class value_t
+>
 class property_read_only_dual_index_t
 {
   typedef value_t (owner_t::*get_method_t)
     (const first_index_t, const second_index_t) const;
-public:
-  class property_read_only_second_index_t;
+  public:    
+  class property_read_only_second_index_t
+  {
+  public:
+    class property_read_only_t
+    {
+      owner_t& m_owner;
+      first_index_t m_first_index;
+      second_index_t m_second_index;
+      get_method_t mp_get_method;
+      property_read_only_t();
+    public:
+      property_read_only_t(
+        owner_t& a_owner,
+        get_method_t ap_get_method
+      ) :
+        m_owner(a_owner),
+        m_first_index(IRS_NULL),
+        m_second_index(IRS_NULL),
+        mp_get_method(ap_get_method)
+      { }
+      inline operator value_t () const
+      {
+        return (m_owner.*mp_get_method)(m_first_index, m_second_index);
+      }
+      inline void set_index(
+        const first_index_t a_first_index, const first_index_t a_second_index)
+      {
+        m_first_index = a_first_index;
+        m_second_index = a_second_index;
+      }
+    };    
+  private:
+    first_index_t m_first_index;
+    property_read_only_t m_property_read_only;
+    property_read_only_second_index_t();
+  public:
+    property_read_only_second_index_t(
+      owner_t& a_owner,
+      get_method_t a_get_method
+    ) :
+      m_first_index(),
+      m_property_read_only(a_owner, a_get_method)
+    { }
+    inline void set_index(const first_index_t a_first_index)
+    {
+      m_first_index = a_first_index;
+    }
+    inline property_read_only_t operator[](const second_index_t a_second_index)
+    {
+      m_property_read_only.set_index(m_first_index, a_second_index);
+      return m_property_read_only;
+    }
+  };
 private:
   property_read_only_second_index_t m_property_read_only_second_index;
   property_read_only_dual_index_t();
@@ -305,71 +397,6 @@ public:
   }
 };
 
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_read_only_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_read_only_second_index_t
-{
-public:
-  class property_read_only_t;
-private:
-  first_index_t m_first_index;
-  property_read_only_t m_property_read_only;
-  property_read_only_second_index_t();
-public:
-  property_read_only_second_index_t(
-    owner_t& a_owner,
-    get_method_t a_get_method
-  ) :
-    m_first_index(),
-    m_property_read_only(a_owner, a_get_method)
-  { }
-  inline void set_index(const first_index_t a_first_index)
-  {
-    m_first_index = a_first_index;
-  }
-  inline property_read_only_t operator[](const second_index_t a_second_index)
-  {
-    m_property_read_only.set_index(m_first_index, a_second_index);
-    return m_property_read_only;
-  }
-};
-
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_read_only_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_read_only_second_index_t::
-  property_read_only_t
-{
-  owner_t& m_owner;
-  first_index_t m_first_index;
-  second_index_t m_second_index;
-  get_method_t mp_get_method;
-  property_read_only_t();
-public:
-  property_read_only_t(
-    owner_t& a_owner,
-    get_method_t ap_get_method
-  ) :
-    m_owner(a_owner),
-    m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL),
-    mp_get_method(ap_get_method)
-  { }
-  inline operator value_t () const
-  {
-    return (m_owner.*mp_get_method)(m_first_index, m_second_index);
-  }
-  inline void set_index(
-    const first_index_t a_first_index, const first_index_t a_second_index)
-  {
-    m_first_index = a_first_index;
-    m_second_index = a_second_index;
-  }
-};
-
 // Свойство только для записи с двойным индексом
 template<
   class owner_t, class first_index_t, class second_index_t, class value_t>
@@ -377,8 +404,61 @@ class property_write_only_dual_index_t
 {
   typedef void (owner_t::*set_method_t)
     (const first_index_t, const second_index_t , const value_t&);
-public:
-  class property_write_only_second_index_t;
+public:  
+  class property_write_only_second_index_t
+  {
+  public:   
+    class property_write_only_t
+    {
+      owner_t& m_owner;
+      first_index_t m_first_index;
+      second_index_t m_second_index;
+      set_method_t mp_set_method;
+      property_write_only_t();
+    public:
+      property_write_only_t(
+        owner_t& a_owner,
+        set_method_t ap_set_method
+      ) :
+        m_owner(a_owner),
+        m_first_index(IRS_NULL),
+        m_second_index(IRS_NULL),
+        mp_set_method(ap_set_method)
+      { }
+      inline const value_t& operator = (const value_t& a_value)
+      {
+        (m_owner.*mp_set_method)(m_first_index, m_second_index, a_value);
+        return a_value;
+      }
+      inline void set_index(
+        const first_index_t a_first_index, const second_index_t a_second_index)
+      {
+        m_first_index = a_first_index;
+        m_second_index = a_second_index;
+      }
+    };
+  private:
+    first_index_t m_first_index;
+    property_write_only_t m_property_write_only;
+    property_write_only_second_index_t();
+  public:
+    property_write_only_second_index_t(
+      owner_t& a_owner,
+      set_method_t a_set_method
+    ) :
+      m_first_index(),
+      m_property_write_only(a_owner, a_set_method)
+    { }
+    inline void set_index(const first_index_t a_first_index)
+    {
+      m_first_index = a_first_index;
+    }
+    inline property_write_only_t operator[](const second_index_t a_second_index)
+    {
+      m_property_write_only.set_index(m_first_index, a_second_index);
+      return m_property_write_only;
+    }
+  };
 private:
   property_write_only_second_index_t m_property_write_only_second_index;
   property_write_only_dual_index_t();
@@ -397,72 +477,6 @@ public:
   }
 };
 
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_write_only_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_write_only_second_index_t
-{
-public:
-  class property_write_only_t;
-private:
-  first_index_t m_first_index;
-  property_write_only_t m_property_write_only;
-  property_write_only_second_index_t();
-public:
-  property_write_only_second_index_t(
-    owner_t& a_owner,
-    set_method_t a_set_method
-  ) :
-    m_first_index(),
-    m_property_write_only(a_owner, a_set_method)
-  { }
-  inline void set_index(const first_index_t a_first_index)
-  {
-    m_first_index = a_first_index;
-  }
-  inline property_write_only_t operator[](const second_index_t a_second_index)
-  {
-    m_property_write_only.set_index(m_first_index, a_second_index);
-    return m_property_write_only;
-  }
-};
-
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_write_only_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_write_only_second_index_t::
-  property_write_only_t
-{
-  owner_t& m_owner;
-  first_index_t m_first_index;
-  second_index_t m_second_index;
-  set_method_t mp_set_method;
-  property_write_only_t();
-public:
-  property_write_only_t(
-    owner_t& a_owner,
-    set_method_t ap_set_method
-  ) :
-    m_owner(a_owner),
-    m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL),
-    mp_set_method(ap_set_method)
-  { }
-  inline const value_t& operator = (const value_t& a_value)
-  {
-    (m_owner.*mp_set_method)(m_first_index, m_second_index, a_value);
-    return a_value;
-  }
-  inline void set_index(
-    const first_index_t a_first_index, const second_index_t a_second_index)
-  {
-    m_first_index = a_first_index;
-    m_second_index = a_second_index;
-  }
-};
-
 // Свойство для чтения и записи с двойным индексом
 template<
   class owner_t, class first_index_t, class second_index_t, class value_t>
@@ -472,8 +486,69 @@ class property_read_write_dual_index_t
     (const first_index_t, const second_index_t) const;
   typedef void (owner_t::*set_method_t)
     (const first_index_t, const second_index_t , const value_t&);
-public:
-  class property_read_write_second_index_t;
+public:  
+  class property_read_write_second_index_t
+  {
+  public:
+    class property_read_write_t
+    {
+      owner_t& m_owner;
+      first_index_t m_first_index;
+      second_index_t m_second_index;
+      get_method_t mp_get_method;
+      set_method_t mp_set_method;
+      property_read_write_t();
+    public:
+      property_read_write_t(
+        owner_t& a_owner,
+        get_method_t ap_get_method,
+        set_method_t ap_set_method
+      ) :
+        m_owner(a_owner),
+        m_first_index(IRS_NULL),
+        m_second_index(IRS_NULL),
+        mp_get_method(ap_get_method),
+        mp_set_method(ap_set_method)
+      { }
+      inline operator value_t () const
+      {
+        return (m_owner.*mp_get_method)(m_first_index, m_second_index);
+      }
+      inline const value_t& operator = (const value_t& a_value)
+      {
+        (m_owner.*mp_set_method)(m_first_index, m_second_index, a_value);
+        return a_value;
+      }
+      inline void set_index(
+        const first_index_t a_first_index, const first_index_t a_second_index)
+      {
+        m_first_index = a_first_index;
+        m_second_index = a_second_index;
+      }
+    };  
+  private:
+    first_index_t m_first_index;
+    property_read_write_t m_property_read_write;
+    property_read_write_second_index_t();
+  public:
+    property_read_write_second_index_t(
+      owner_t& a_owner,
+      get_method_t a_get_method,
+      set_method_t a_set_method
+    ) :
+      m_first_index(),
+      m_property_read_write(a_owner, a_get_method, a_set_method)
+    { }
+    inline void set_index(const first_index_t a_first_index)
+    {
+      m_first_index = a_first_index;
+    }
+    inline property_read_write_t operator[](const second_index_t a_second_index)
+    {
+      m_property_read_write.set_index(m_first_index, a_second_index);
+      return m_property_read_write;
+    }
+  };
 private:
   property_read_write_second_index_t m_property_read_write_second_index;
   property_read_write_dual_index_t();
@@ -493,83 +568,9 @@ public:
   }  
 };
 
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_read_write_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_read_write_second_index_t
-{
-public:
-  class property_read_write_t;
-private:
-  first_index_t m_first_index;
-  property_read_write_t m_property_read_write;
-  property_read_write_second_index_t();
-public:
-  property_read_write_second_index_t(
-    owner_t& a_owner,
-    get_method_t a_get_method,
-    set_method_t a_set_method
-  ) :
-    m_first_index(),
-    m_property_read_write(a_owner, a_get_method, a_set_method)
-  { }
-  inline void set_index(const first_index_t a_first_index)
-  {
-    m_first_index = a_first_index;
-  }
-  inline property_read_write_t operator[](const second_index_t a_second_index)
-  {
-    m_property_read_write.set_index(m_first_index, a_second_index);
-    return m_property_read_write;
-  }
-};
-
-template<
-  class owner_t, class first_index_t, class second_index_t, class value_t>
-class property_read_write_dual_index_t<
-  owner_t, first_index_t, second_index_t, value_t>::
-  property_read_write_second_index_t::
-  property_read_write_t
-{
-  owner_t& m_owner;
-  first_index_t m_first_index;
-  second_index_t m_second_index;
-  get_method_t mp_get_method;
-  set_method_t mp_set_method;
-  property_read_write_t();
-public:
-  property_read_write_t(
-    owner_t& a_owner,
-    get_method_t ap_get_method,
-    set_method_t ap_set_method
-  ) :
-    m_owner(a_owner),
-    m_first_index(IRS_NULL),
-    m_second_index(IRS_NULL),
-    mp_get_method(ap_get_method),
-    mp_set_method(ap_set_method)
-  { }
-  inline operator value_t () const
-  {
-    return (m_owner.*mp_get_method)(m_first_index, m_second_index);
-  }
-  inline const value_t& operator = (const value_t& a_value)
-  {
-    (m_owner.*mp_set_method)(m_first_index, m_second_index, a_value);
-    return a_value;
-  }
-  inline void set_index(
-    const first_index_t a_first_index, const first_index_t a_second_index)
-  {
-    m_first_index = a_first_index;
-    m_second_index = a_second_index;
-  }
-};
-
 //#endif // NOP
 
-}; // namespace irs
+} // namespace irs
 
 //#define example_propety
 #ifdef example_propety
