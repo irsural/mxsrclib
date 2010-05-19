@@ -53,15 +53,4 @@ public:
   virtual irskey_t operator()();
 };
 
-namespace irs {
-
-#ifdef NOP
-// Конфигурация консоли для Watcom C++
-namespace arch_conio_cfg {
-  conio_cfg_t& def();
-} //namespace arch_conio_cfg
-#endif //NOP
-
-} //namespace irs
-
 #endif //irsstdlH

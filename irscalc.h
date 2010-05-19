@@ -1,6 +1,6 @@
 // Калькулятор
-// Дата: 15.04.2010
-// Дата создания: 1.02.2009
+// Дата: 16.05.2010
+// Дата создания: 01.02.2009
 
 #ifndef irscalcH
 #define irscalcH
@@ -821,37 +821,37 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
                 const char_type next_ch_substr = (*ap_prog)[pos];
                 switch (next_ch_substr) {
                   case irst('n'): {
-                    string_value += "\n";
+                    string_value += irst("\n");
                   } break;
                   case irst('t'): {
-                    string_value += "\t";
+                    string_value += irst("\t");
                   } break;
                   case irst('v'): {
-                    string_value += "\v";
+                    string_value += irst("\v");
                   } break;
                   case irst('b'): {
-                    string_value += "\b";
+                    string_value += irst("\b");
                   } break;
                   case irst('r'): {
-                    string_value += "\r";
+                    string_value += irst("\r");
                   } break;
                   case irst('f'): {
-                    string_value += "\f";
+                    string_value += irst("\f");
                   } break;
                   case irst('a'): {
-                    string_value += "\a";
+                    string_value += irst("\a");
                   } break;
                   case irst('\\'): {
-                    string_value += "\\";
+                    string_value += irst("\\");
                   } break;
                   case irst('?'): {
-                    string_value += "\?";
+                    string_value += irst("\?");
                   } break;
                   case irst('\''): {
-                    string_value += "\'";
+                    string_value += irst("\'");
                   } break;
                   case irst('\"'): {
-                    string_value += "\"";
+                    string_value += irst("\"");
                   } break;
                   case irst('x'): {
                     if ((pos + 1) < ap_prog->size()) {

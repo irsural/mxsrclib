@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 15.04.2010
+// Дата: 19.05.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -20,7 +20,12 @@
 //#include <streambuf>
 #include <string>
 #include <strstream>
+// ---
+// Требуется для файла algorithm в Watcom несомтря на irsfinal
+#undef max
+#undef min
 #include <algorithm>
+// ---
 #include <deque>
 #include <functional>
 #include <iterator>

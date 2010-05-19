@@ -22,6 +22,9 @@
 #include <StdCtrls.hpp>
 #include <ExtCtrls.hpp>
 #endif //__BORLANDC__
+#ifdef __WATCOMC__
+#include <windows.h>
+#endif //__WATCOMC__
 
 #include <string.h>
 
@@ -33,7 +36,6 @@
 #include <irsconsolestd.h>
 #include <irsstrmstd.h>
 #include <irschartwin.h>
-#include <irscpp.h>
 
 #include <irsfinal.h>
 
@@ -416,5 +418,51 @@ private:
 
 } //namespace irs
 #endif //__BORLANDC__
+
+#ifdef __WATCOMC__
+// ѕреобразование числа double в строку в %g формате
+irs_u8 *irs_gcvt(double value, int ndigits, irs_u8 *buffer);
+
+// ласс драйвер дл€ консоли Windows
+class irs_win32_console_display_t: public mxdisplay_drv_t
+{
+private:
+  DWORD m_Written;
+  HANDLE m_InpHandle, m_OutHandle;        //дескрипторы окон
+  COORD m_Coord;                        // координаты вывода(x,y)
+  //CHAR chFillChar;
+  //WORD wColors[3], wColor;          //цвет €чеек, и текста
+  //переменна€ дл€ хранени€  параметров буфера;
+  CONSOLE_SCREEN_BUFFER_INFO m_BufInfo;
+  //так как текст, поступающий в буфер неЋьз€ изменить
+  //(например дл€ обрезки нуль-символом), приходитс€ ввести свой буфер
+  char* m_textbuf;
+  int m_top_displey; //координата Y текущего положени€ видимой области на экране
+public:
+  irs_win32_console_display_t(); //конструктор без параметров
+  virtual mxdisp_pos_t get_height();
+  virtual mxdisp_pos_t get_width();
+  virtual void outtextpos(
+    mxdisp_pos_t a_left,
+    mxdisp_pos_t a_top,
+    const char *text);
+  virtual void tick();
+};
+
+// ласс драйвер дл€ влавиатуры
+class irs_win32_console_key_drv_t: public mxkey_drv_t
+{
+private:
+  irs_bool m_flag_event_KeyDown;
+  irskey_t m_temporary_irs_key;              //храним код нажатой клавиши
+  DWORD m_Written, m_fdwMode, m_cNumRead;
+  HANDLE  m_InpHandle;                  //дескриптор окна
+  static const irs_u32 m_len_buf = 128;
+  INPUT_RECORD m_irInBuf[m_len_buf];
+public:
+  irs_win32_console_key_drv_t();
+  virtual irskey_t operator()();
+};
+#endif //__WATCOMC__
 
 #endif //irsstdH

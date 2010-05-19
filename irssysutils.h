@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 18.05.2010
+// Дата: 19.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -485,7 +485,7 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
   }
   return file_dir;
 }
-#endif // !__ICCAVR__
+#endif // !__embedded_cplusplus
 
 } //namespace irs
 

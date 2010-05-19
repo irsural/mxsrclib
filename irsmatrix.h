@@ -1,5 +1,6 @@
 // MTL version 2.0
-// Дата: 14.04.2010
+// Дата: 19.05.2010
+// Ранняя дата: 14.04.2010
 
 #ifndef irsmatrixH
 #define irsmatrixH

@@ -3,17 +3,18 @@
 // Дата: 17.09.2009
 // Дата ранее: 3.12.2007
 
+#ifdef __WATCOMC__
 #include <irsstdl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-//---------------------------------------------------------------------------
+
 // Преобразование числа double в строку в %g формате
 irs_u8 *irs_gcvt(double value, int ndigits, irs_u8 *buffer)
 {
   return (irs_u8 *)gcvt(value, ndigits, (char *)buffer);
 }
-//---------------------------------------------------------------------------
+
 //Класс драйвер для консоли Windows
 irs_win32_console_display_t::irs_win32_console_display_t():
   m_Written(0),
@@ -67,7 +68,7 @@ void irs_win32_console_display_t::outtextpos(
 void irs_win32_console_display_t::tick()
 {
 }
-//---------------------------------------------------------------------------
+
 // Класс драйвер для влавиатуры
 irs_win32_console_key_drv_t::irs_win32_console_key_drv_t():
   m_flag_event_KeyDown(irs_false),
@@ -167,14 +168,4 @@ irskey_t irs_win32_console_key_drv_t::operator()()
   m_temporary_irs_key=irskey_none;
   return m_temporary_irs_key;
 }
-//---------------------------------------------------------------------------
-#ifdef NOP
-// Конфигурация консоли для Watcom C++
-irs::conio_cfg_t& irs::arch_conio_cfg::def()
-{
-  static irs_win32_console_key_drv_t key_drv;
-  static irs_win32_console_display_t display;
-  static conio_cfg_t conio_cfg_i(key_drv, display);
-  return conio_cfg_i;
-}
-#endif //NOP
+#endif //__WATCOMC__

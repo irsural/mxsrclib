@@ -58,13 +58,18 @@ void irs_action_t::connect(irs_action_t *&a_action)
 //#ifdef NOP
 // class generator_events_t
 irs::generator_events_t::generator_events_t():
-  m_events()
+  m_events(),
+  m_is_enabled(true)
 {
 }
 
 void irs::generator_events_t::exec()
 {
-  for_each(m_events.begin(), m_events.end(), event_exec_fun_t());
+  if (m_is_enabled) {
+    for_each(m_events.begin(), m_events.end(), event_exec_fun_t());
+  } else {
+    // Генератор выключен. События не генерируются
+  }
 }
 void irs::generator_events_t::push_back(event_t* ap_event)
 {
@@ -88,6 +93,21 @@ void irs::generator_events_t::erase(event_t* ap_event)
 void irs::generator_events_t::clear()
 {
   m_events.clear();
+}
+
+void irs::generator_events_t::enable()
+{
+  m_is_enabled = true;
+}
+
+void irs::generator_events_t::disable()
+{
+  m_is_enabled = false;
+}
+
+bool irs::generator_events_t::is_enabled() const
+{
+  return m_is_enabled;
 }
 
 // Класс событий
@@ -208,5 +228,3 @@ void irs::interrupt_array_t::exec_event(size_type a_index)
   gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
   m_int_event_gens[gen_index].exec();
 }
-
-
