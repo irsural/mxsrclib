@@ -12,7 +12,7 @@
 #include <windows.h>
 #include <StdCtrls.hpp>
 
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <mxdata.h>
 
 #include <irsfinal.h>
