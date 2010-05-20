@@ -1,5 +1,5 @@
 // Прерывания
-// Дата: 18.05.2010
+// Дата: 20.05.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irsintH
@@ -176,7 +176,9 @@ public:
   event_function_t(owner_type* ap_owner, function_type ap_function);
   virtual void exec();
 private:
-  event_function_t();
+  // В Watcome без конструктора по умолчанию не компилируется
+  // class error_out_t
+  //event_function_t();
   owner_type* mp_owner;
   function_type mp_function;
 };
@@ -246,7 +248,7 @@ private:
 
   vector<gen_index_type> m_int_event_gen_indexes;
   vector<irs_int_event_gen_t> m_int_event_gens;
-  size_type m_int_event_index;
+  gen_index_type m_int_event_index;
   
   interrupt_array_t(const interrupt_array_t&);
 };

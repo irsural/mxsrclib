@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 23.04.2010
+// Дата: 20.05.2010
 // Ранняя дата: 4.08.2009
 
 // Номер файла
@@ -120,9 +120,22 @@ irs::error_out_t::error_out_t(
   mp_error_trans(ap_error_trans),
   m_out_func_ptr_list(a_out_func_list_size),
   m_out_unknown_error_obj(this, &irs::error_out_t::out_unknown_error),
+  #ifdef IRS_ERROR_OUT_STATIC_EVENT
+  m_out_standart_error_obj(this, &irs::error_out_t::out_standart_error),
+  m_out_assert_error_obj(this, &irs::error_out_t::out_assert_error),
+  m_out_fatal_error_obj(this, &irs::error_out_t::out_fatal_error),
+  m_out_new_assert_error_obj(this, &irs::error_out_t::out_new_assert_error),
+  #else //IRS_ERROR_OUT_STATIC_EVENT
   m_out_func_obj_list(a_out_func_list_size, m_out_unknown_error_obj),
+  #endif //IRS_ERROR_OUT_STATIC_EVENT
   mp_out(IRS_NULL)
 {
+  #ifdef IRS_ERROR_OUT_STATIC_EVENT
+  m_out_func_ptr_list[ec_standard] = &m_out_standart_error_obj;
+  m_out_func_ptr_list[ec_assert] = &m_out_assert_error_obj;
+  m_out_func_ptr_list[ec_fatal_error] = &m_out_fatal_error_obj;
+  m_out_func_ptr_list[ec_new_assert] = &m_out_new_assert_error_obj;
+  #else //IRS_ERROR_OUT_STATIC_EVENT
   m_out_func_obj_list[ec_standard] =
     out_func_obj_type(this, &irs::error_out_t::out_standart_error);
   m_out_func_obj_list[ec_assert] =
@@ -134,6 +147,7 @@ irs::error_out_t::error_out_t(
   
   ::transform(m_out_func_obj_list.begin(), m_out_func_obj_list.end(),
     m_out_func_ptr_list.begin(), out_func_obj_extract_ptr);
+  #endif //IRS_ERROR_OUT_STATIC_EVENT
 }
 void irs::error_out_t::out_general_info(ostream &a_out,
   error_trans_base_t::cstr_type ap_error_type)
@@ -183,11 +197,13 @@ void irs::error_out_t::erase_out_func(error_code_t a_error_code)
     m_out_func_ptr_list[a_error_code] = &m_out_unknown_error_obj;
   }
 }
+#ifndef IRS_ERROR_OUT_STATIC_EVENT
 irs::event_t* irs::error_out_t::out_func_obj_extract_ptr(
   out_func_obj_type& a_out_func_obj)
 {
   return &a_out_func_obj;
 }
+#endif //IRS_ERROR_OUT_STATIC_EVENT
 void irs::error_out_t::out_standart_error()
 {
   IRS_SPEC_CSTR_DECLARE(error_name, "Standart Error");

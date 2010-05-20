@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 16.05.2010
+// Дата: 19.05.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -272,18 +272,18 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   }
 }
 
-irs::char_t digit_to_char(int a_digit)
+char digit_to_char(int a_digit)
 {
   if (a_digit <= 9) {
-    return static_cast<irs::char_t>(irst('0') + a_digit);
+    return static_cast<char>('0' + a_digit);
   } else {
-    return static_cast<irs::char_t>(irst('A') + a_digit - 10);
+    return static_cast<char>('A' + a_digit - 10);
   }
 }
 
-irs::string_t int_to_str(int a_number, int a_radix, int a_cnt)
+irs::irs_string_t int_to_str(int a_number, int a_radix, int a_cnt)
 {
-  irs::string_t number_str(a_cnt, irst(' '));
+  irs::irs_string_t number_str(a_cnt, irst(' '));
   for(int digit_idx = a_cnt - 1; digit_idx >= 0; digit_idx--)
   {
     int digit = a_number%a_radix;

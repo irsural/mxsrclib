@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 16.05.2010
+// Дата: 19.05.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -57,6 +57,8 @@ struct irs_string_other_char_t<wchar_t>
 #define IRS_STRING_BASE basic_string<T>
 #define IRS_STRING_TYPE basic_irs_string_t
 #define IRS_STRING_TYPE_SPEC basic_irs_string_t<T>
+#define IRS_STRING_OSTREAM basic_ostream<T>
+#define IRS_STRING_ISTREAM basic_istream<T>
 #define IRS_STRING_TEMPLATE template <class T>
 #define IRS_STRING_ASSIGN_HELPER_TEMPLATE template<class T, class C>
 #define IRS_STRING_ASSIGN_HELPER_SMALL_TEMPLATE template<class C>
@@ -68,6 +70,8 @@ struct irs_string_other_char_t<wchar_t>
 #define IRS_STRING_BASE std_string_t
 #define IRS_STRING_TYPE irs_string_t
 #define IRS_STRING_TYPE_SPEC irs_string_t
+#define IRS_STRING_OSTREAM ostream
+#define IRS_STRING_ISTREAM istream
 #define IRS_STRING_TEMPLATE
 #define IRS_STRING_ASSIGN_HELPER_TEMPLATE template<class T>
 #define IRS_STRING_ASSIGN_HELPER_OSTREAM ostream
@@ -502,7 +506,8 @@ inline bool operator>=(const IRS_STRING_CHAR_TYPE* ap_cstr,
   return ap_cstr >= static_cast<const IRS_STRING_BASE&>(a_strg);
 }
 IRS_STRING_TEMPLATE
-inline ostream& operator<<(ostream& strm, const IRS_STRING_TYPE_SPEC& strg)
+inline IRS_STRING_OSTREAM& operator<<(IRS_STRING_OSTREAM& strm,
+  const IRS_STRING_TYPE_SPEC& strg)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   const IRS_STRING_BASE& strg_base =
@@ -513,7 +518,8 @@ inline ostream& operator<<(ostream& strm, const IRS_STRING_TYPE_SPEC& strg)
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 }
 IRS_STRING_TEMPLATE
-inline istream& operator>>(istream& strm, IRS_STRING_TYPE_SPEC& strg)
+inline IRS_STRING_OSTREAM& operator>>(IRS_STRING_OSTREAM& strm,
+  IRS_STRING_TYPE_SPEC& strg)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   IRS_STRING_BASE& strg_base = static_cast<IRS_STRING_TYPE_SPEC&>(strg);

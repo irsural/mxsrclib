@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 09.05.2010
+// Дата: 20.05.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -7,6 +7,8 @@
 
 // Номер файла
 #define IRSERRORH_IDX 6
+
+#define IRS_ERROR_OUT_STATIC_EVENT
 
 #include <irsdefs.h>
 
@@ -391,11 +393,20 @@ private:
   error_trans_base_t* mp_error_trans;
   vector<event_t*> m_out_func_ptr_list;
   out_func_obj_type m_out_unknown_error_obj;
+  #ifdef IRS_ERROR_OUT_STATIC_EVENT
+  out_func_obj_type m_out_standart_error_obj;
+  out_func_obj_type m_out_assert_error_obj;
+  out_func_obj_type m_out_fatal_error_obj;
+  out_func_obj_type m_out_new_assert_error_obj;
+  #else //IRS_ERROR_OUT_STATIC_EVENT
   vector<out_func_obj_type> m_out_func_obj_list;
+  #endif //IRS_ERROR_OUT_STATIC_EVENT
   ostream* mp_out;
 
+  #ifndef IRS_ERROR_OUT_STATIC_EVENT
   static event_t* out_func_obj_extract_ptr(
     out_func_obj_type& a_out_func_obj);
+  #endif //IRS_ERROR_OUT_STATIC_EVENT
   
   void out_standart_error();
   void out_assert_error();

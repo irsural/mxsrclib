@@ -111,11 +111,13 @@ typedef char char_t;
 typedef irs_string_t string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
-#ifndef __embedded_cplusplus 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#ifndef __embedded_cplusplus
 typedef stringstream stringstream_t;
-#endif // __embedded_cplusplus 
+#endif // __embedded_cplusplus
 typedef istringstream istringstream_t;
 typedef ostringstream ostringstream_t;
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #endif //IRS_UNICODE
 
