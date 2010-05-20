@@ -14,10 +14,16 @@
 #include <mxdata.h>
 #include <irsstrmstd.h>
 #include <irsconsole.h>
+#include <irscpu.h>
 
 #ifdef __ICCAVR__
 #include <ioavr.h>
 #endif //__ICCAVR__
+
+#ifdef __ICCARM__
+#include <iolm3sxxxx.h>
+#endif //__ICCARM__
+
 #ifdef IRS_LINUX
 #include <fcntl.h>
 #include <sys/termios.h>
@@ -410,6 +416,144 @@ void out_hex_0x(ostream *ap_strm, T& a_value)
   (*ap_strm) << "0x";
   out_hex(ap_strm, a_value);
 }
+
+#ifdef __ICCARM__
+
+namespace arm {
+
+// Буфер потоков для COM-порта ARM (LM3S8971)
+class com_buf: public streambuf
+{
+public:
+  inline com_buf(const com_buf& a_buf);
+  // В LM3S8971 UART один, com_index не используется и оставлен на будущее
+  inline com_buf(
+    int a_com_index = 1,
+    int a_outbuf_size = 16, 
+    const irs_u32 a_baud_rate = 9600
+  );
+  //inline virtual ~com_buf();
+  inline virtual int overflow(int c = EOF);
+  inline virtual int sync();
+  inline void trans (char data);
+  inline void trans_simple (char data);
+private:
+  int m_outbuf_size;
+  auto_arr<char> m_outbuf;
+  const irs_u32 m_baud_rate;
+};
+inline com_buf::com_buf(const com_buf& a_buf):
+  m_outbuf_size(a_buf.m_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1]),
+  m_baud_rate(a_buf.m_baud_rate)
+{
+  memset(m_outbuf.get(), 0, m_outbuf_size);
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+}
+inline com_buf::com_buf(
+  int /*a_com_index*/,
+  int a_outbuf_size,
+  const irs_u32 a_baud_rate
+):
+  m_outbuf_size(a_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1]),
+  m_baud_rate(a_baud_rate)
+{
+  const float FOSC = cpu_traits_t::frequency(); //  Частота процессора
+  float BRD = FOSC / 16.f / float(m_baud_rate);
+  irs_u16 BRDI = irs_u16(BRD);  //  Целая часть делителя
+  irs_u16 BRDF = irs_u16((BRD - float(BRDI))*64.f + 0.5f); //  Дробная часть
+  
+  RCGC1_bit.UART0 = 1;      //  Подача тактовой частоты на модуль UART0
+  RCGC2_bit.PORTA = 1;      //  Подача тактовой частоты на PORTA (нога TX)
+  for (irs_u8 i = 10; i; i--);
+  
+  UART0CTL_bit.UARTEN = 0;  //  Отключение UART0
+  UART0IBRD = BRDI;
+  UART0FBRD = BRDF;
+  UART0LCRH_bit.SPS = 0;    //  Проверка чётности выключена
+  UART0LCRH_bit.WLEN = 0x3; //  8 бит
+  UART0LCRH_bit.FEN = 1;    //  FIFO включен
+  UART0LCRH_bit.STP2 = 0;   //  2 стоп-бита выключено
+  UART0LCRH_bit.EPS = 0;    //  Проверка чётности выключена
+  UART0LCRH_bit.PEN = 0;    //  Проверка чётности выключена
+  UART0LCRH_bit.BRK = 0;    //  Лень писать что, но тоже выключено
+  UART0CTL_bit.RXE = 0;     //  Приём выключен
+  UART0CTL_bit.TXE = 1;     //  Передача включена
+  UART0CTL_bit.LBE = 0;     //  Loop-back выключен
+  //UART0CTL_bit.no2 = 0;     //  Экономный режим ИК-трансивера выключен
+  //UART0CTL_bit.no1 = 0;     //  И сам трансивер тоже
+  UART0IM = 0;              //  Прерывания выключены
+  UART0CTL_bit.UARTEN = 1;  //  UART0 включен
+  
+  GPIOADEN_bit.no1 = 1;     //  Нога TX включена
+  GPIOADIR_bit.no1 = 1;     //  Нога TX выход
+  GPIOAAFSEL_bit.no1 = 1;   //  Альтернативная функция включена
+  //
+
+  memset(m_outbuf.get(), 0, m_outbuf_size);
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+  
+  // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
+  //__delay_cycles(4000);
+}
+/*inline irs::com_buf::~com_buf()
+{
+}*/
+inline void com_buf::trans (char data)
+{
+  if (data == '\n'){
+    trans_simple('\r');
+    trans_simple('\n');
+  } else {
+    trans_simple(data);
+  }
+}
+inline void com_buf::trans_simple (char data)
+{
+  UART0DR = data;
+  while (UART0FR_bit.TXFF);
+}
+inline int com_buf::overflow(int c)
+{
+  int len_s = pptr() - pbase();
+  if (len_s > 0) {
+    *pptr() = 0;
+    char* pend = pptr();
+    for(char *message = pbase(); message<pend; message++ ) {
+      trans(*message);
+    }
+  }
+  if (c != EOF) {
+    trans(c);
+  }
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+  return 0;
+}
+inline int com_buf::sync()
+{
+  return overflow();
+}
+
+// Поток COM-порта ARM
+class com_ostream: public ostream
+{
+public:
+  inline com_ostream(int a_com_index = 1, int a_outbuf_size = 16);
+private:
+  com_buf m_buf;
+};
+inline com_ostream::com_ostream(int a_com_index, int a_outbuf_size):
+  ostream(&m_buf),
+  m_buf(a_com_index, a_outbuf_size)
+{
+  //rdbuf(&m_buf);
+  init(&m_buf);
+}
+
+} //namespace arm
+
+#endif //__ICCAVR__
 
 } //namespace irs
 
