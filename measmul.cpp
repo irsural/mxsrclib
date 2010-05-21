@@ -1596,12 +1596,12 @@ void irs::akip_ch3_85_3r_t::auto_calibration()
 meas_status_t irs::akip_ch3_85_3r_t::status()
 {
   meas_status_t status = meas_status_success;
-  if(m_send_command_stat == CS_BUSY || m_meas_stat == meas_status_busy){
+  if (m_send_command_stat == CS_BUSY || m_meas_stat == meas_status_busy) {
     status = meas_status_busy;
-  }else if(m_send_command_stat == CS_SUCCESS &&
-    m_meas_stat == meas_status_success){
+  } else if ((m_send_command_stat == CS_SUCCESS) &&
+    (m_meas_stat == meas_status_success)) {
     status = meas_status_success;
-  }else{
+  } else {
     status = meas_status_error;
   }
   return status;
@@ -1669,7 +1669,8 @@ void irs::akip_ch3_85_3r_t::tick()
         if(msg_stat == MSG_SUCCESS){
           double value = 0.;
           bool fsuccess = false;
-          fsuccess = message.to_number(value);
+          //fsuccess = message.to_number(value);
+          fsuccess = string_to_number(message, &value, locale("C"));
           if(fsuccess){
             *mp_result = value;
             m_meas_stat = meas_status_success;
