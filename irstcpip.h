@@ -171,7 +171,7 @@ public:
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
     const mxip_t& a_ip,
-    const mxip_t& a_dest_ip,
+    const mxip_t& a_dest_ip = mxip_t::zero_ip(),
     irs_size_t a_arp_cash_size = arp_cash_t::arp_table_size
   );
   ~simple_tcpip_t();
@@ -188,6 +188,7 @@ public:
   void open_port(irs_u16 a_port);
   void close_port(irs_u16 a_port);
   irs_size_t recv_buf_size();
+  irs_size_t send_data_size_max();
   void tick();
   
 private:  
