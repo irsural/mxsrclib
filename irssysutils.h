@@ -69,15 +69,11 @@ string number_to_str(
     } break;
   }
 
-  if (a_num_mode != num_mode_general) {
-    const bool precision_bad_value = (a_precision <= 0);
-    if (precision_bad_value) {
-      ostr << setprecision(get_num_precision_def(a_num));
-    } else {
-      ostr << setprecision(a_precision);
-    }
+  const bool precision_bad_value = (a_precision <= 0);
+  if (precision_bad_value) {
+    ostr << setprecision(get_num_precision_def(a_num));
   } else {
-    // “очность указывать не требуетс€
+    ostr << setprecision(a_precision);
   }
 
   ostr << a_num << ends;
@@ -112,16 +108,12 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
       IRS_LIB_ASSERT("Ќедопустимое значение типа представлени€ числа");
     }
   }
-  
-  if (a_num_mode != num_mode_general) {
-    const bool precision_bad_value = (a_precision <= 0);
-    if (precision_bad_value) {
-      ostr << setprecision(get_num_precision_def(a_num));
-    } else {
-      ostr << setprecision(a_precision);
-    }
+
+  const bool precision_bad_value = (a_precision <= 0);
+  if (precision_bad_value) {
+    ostr << setprecision(get_num_precision_def(a_num));
   } else {
-    // “очность указывать не требуетс€
+    ostr << setprecision(a_precision);
   }
 
   if ((type_to_index<T>() == char_idx) ||
