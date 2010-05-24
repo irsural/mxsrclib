@@ -1669,8 +1669,8 @@ void irs::akip_ch3_85_3r_t::tick()
         if(msg_stat == MSG_SUCCESS){
           double value = 0.;
           bool fsuccess = false;
-          //fsuccess = message.to_number(value);
-          fsuccess = string_to_number(message, &value, locale("C"));
+          fsuccess = message.to_number(value);
+          //fsuccess = string_to_number(message, &value, locale("C"));
           if(fsuccess){
             *mp_result = value;
             m_meas_stat = meas_status_success;

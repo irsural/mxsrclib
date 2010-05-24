@@ -421,7 +421,7 @@ bool rtl_t::wait_dma()
       reset_rtl();
       return false;
       #else //RTL_RESET_ON_TIMEOUT
-      return true
+      return true;
       #endif //RTL_RESET_ON_TIMEOUT
     }
   }

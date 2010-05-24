@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 29.03.2010
+// Дата: 20.05.2010
 // Дата создания: 15.03.2010
 
 #include <irsdefs.h>
@@ -164,10 +164,6 @@ void irs::rtl8019as_t::recv_packet()
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
       m_is_recv_buf_filled = true;
-      /*for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
-        irs::mlog() << irsm("server_buf[") << buf_idx << irsm("] = ") <<
-          int(mp_recv_buf[0x2a + buf_idx]) << endl;
-      }*/
     } else {
       for (irs_size_t i = 0; i < recv_size_cur; i++) {
         read_rtl(rdmaport);
@@ -178,9 +174,6 @@ void irs::rtl8019as_t::recv_packet()
       read_rtl(rdmaport);
     }
   }
-  /*if ((byte&rdc) != 64) {
-    byte = read_rtl(isr);
-  }*/
   write_rtl(isr, 0xF5);
 }
 
@@ -194,12 +187,14 @@ void irs::rtl8019as_t::rtl_interrupt()
   
   irs_u8 byte = read_rtl(isr);
   if(byte&0x10) { //буфер приема переполнен
+    mlog() << irsm("буфер приема переполнен") << endl;
     overrun();
   }
   if(byte&0x01) { //получено без ошибок
     recv_packet();
   }
   if (byte&0xA) { //данные отправлены
+    mlog() << irsm("данные отправлены") << endl;
     m_send_status = false;
   }
 
@@ -304,7 +299,7 @@ bool irs::rtl8019as_t::wait_dma()
       init_rtl();
       return false;
       #else //RTL_RESET_ON_TIMEOUT
-      return true
+      return true;
       #endif //RTL_RESET_ON_TIMEOUT
     }
   }
@@ -313,11 +308,10 @@ bool irs::rtl8019as_t::wait_dma()
 
 void irs::rtl8019as_t::send_packet(irs_size_t a_size) 
 {
+  mlog() << "send_packet begin" << endl;
   #ifdef IRS_LIB_CHECK
-  if (a_size > ETHERNET_PACKET_MAX) {
-    a_size = ETHERNET_PACKET_MAX;
-  } else if (a_size < ETHERNET_PACKET_MIN) {
-    a_size = ETHERNET_PACKET_MIN;
+  if (a_size > m_send_buf.size()) {
+    a_size = m_send_buf.size();
   }
   #endif //IRS_LIB_CHECK
   
@@ -334,6 +328,7 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   write_rtl(rbcr0, IRS_LOBYTE(a_size));
   write_rtl(rbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x12);
+  
   for (irs_size_t i = 0; i < a_size; i++) {
     write_rtl(rdmaport, mp_send_buf[i]);
   }
@@ -350,6 +345,7 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
+  mlog() << "send_packet end" << endl;
 }
 
 void irs::rtl8019as_t::set_recv_handled()

@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 14.04.2010
+// Дата: 20.04.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -503,6 +503,7 @@ void irs::simple_tcpip_t::icmp_packet()
 
 void irs::simple_tcpip_t::send_icmp()
 {
+  IRS_LIB_ASSERT(m_recv_buf_size_icmp <= mp_ethernet->send_buf_max_size());
   mp_ethernet->send_packet(static_cast<irs_u16>(m_recv_buf_size_icmp));
   IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send_icmp() size = ") <<
     int(m_recv_buf_size_icmp) << endl);
@@ -520,6 +521,8 @@ void irs::simple_tcpip_t::icmp()
       if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
         m_recv_icmp = true;
         if (m_buf_num == simple_ethernet_t::double_buf) {
+          IRS_LIB_ASSERT(m_recv_buf_size_icmp <=
+            mp_ethernet->send_buf_max_size());
           for (irs_size_t i = 0; i < m_recv_buf_size_icmp; i++) {
             mp_send_buf[i] = mp_recv_buf[i];
           }
@@ -527,11 +530,6 @@ void irs::simple_tcpip_t::icmp()
         icmp_packet();
       }
     }
-    /*mlog() << irsm("TCPIP TEST ICMP recieve buffer:") << endl;
-    for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
-      irs::mlog() << irsm("icmp_buf[") << buf_idx << irsm("] = ") <<
-        int(mp_recv_buf[0x2a + buf_idx]) << endl;
-    }*/
   }
   mp_ethernet->set_recv_handled();
 }
@@ -604,6 +602,8 @@ void irs::simple_tcpip_t::udp_packet()
 
 void irs::simple_tcpip_t::send_udp()
 {
+  IRS_LIB_ASSERT((m_user_send_buf_size + HEADERS_SIZE) <=
+    mp_ethernet->send_buf_max_size());
   mp_ethernet->send_packet(m_user_send_buf_size +
     HEADERS_SIZE);
   IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send_udp() size = ") <<
@@ -717,6 +717,11 @@ void irs::simple_tcpip_t::close_port(irs_u16 a_port)
 irs_size_t irs::simple_tcpip_t::recv_buf_size()
 {
   return m_user_recv_buf_size;
+}
+
+irs_size_t irs::simple_tcpip_t::send_data_size_max()
+{
+  return (mp_ethernet->send_buf_max_size() - 0x2a - 4);
 }
 
 void irs::simple_tcpip_t::tick()

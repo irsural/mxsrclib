@@ -1,12 +1,12 @@
 // Дискретные ввод/вывод для ARM Linux Олега Коновалова
-// Дата: 4.02.2008
+// Дата: 24.05.2010
 
 #ifndef armioH
 #define armioH
 
 #include <irsdefs.h>
 #include <armmap.h>
-#include <irsstdg.h>
+#include <irsstd.h>
 #include <irscpp.h>
 //#include <irsio.h>
 
