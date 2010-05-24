@@ -45,7 +45,7 @@ enum num_base_t {
   num_base_default = num_base_dec
 };
 
-#if IRS_LIB_VERSION_SUPPORT_LESS(380)
+#if IRS_LIB_VERSION_SUPPORT_LESS(390)
 // ”ниверсальна€ функци€ перевода чисел в текст
 template<class T>
 string number_to_str(

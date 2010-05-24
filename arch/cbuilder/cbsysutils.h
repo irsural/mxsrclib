@@ -35,6 +35,7 @@ namespace cbuilder {
 typedef irs::string string_t;
 typedef size_t sizens_t;
 
+#if IRS_LIB_VERSION_SUPPORT_LESS(390)
 // Универсальная функция перевода чисел в текст
 template<class T>
 inline AnsiString number_to_str(
@@ -54,7 +55,8 @@ inline bool str_to_number(const AnsiString& a_str, T& a_number)
 {
   irs::string str = a_str.c_str();
   return str.to_number(a_number);
-};   
+};
+#endif // #if IRS_LIB_VERSION_SUPPORT_LESS(390)  
 
 // Структура версии файла
 struct file_version_t
