@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 07.05.2010
+// Дата: 24.05.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -1669,8 +1669,12 @@ void irs::akip_ch3_85_3r_t::tick()
         if(msg_stat == MSG_SUCCESS){
           double value = 0.;
           bool fsuccess = false;
-          fsuccess = message.to_number(value);
-          //fsuccess = string_to_number(message, &value, locale("C"));
+          //fsuccess = message.to_number(value);
+          #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+          fsuccess = string_to_number(message, &value, locale::classic());
+          #else // !IRS_FULL_STDCPPLIB_SUPPORT
+          fsuccess = string_to_number(message, &value);
+          #endif // !IRS_FULL_STDCPPLIB_SUPPORT
           if(fsuccess){
             *mp_result = value;
             m_meas_stat = meas_status_success;

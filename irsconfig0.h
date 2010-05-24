@@ -1,12 +1,15 @@
 // Локальная конфигурация для каждого программиста
-// Дата 14.04.2010
+// Дата 24.05.2010
 // Дата создания 25.09.2009
 
 // Скопируйте этот файл "irsconfig0.h" в файл с именем "irsconfig.h"
 // Измените в "irsconfig.h" (но не "irsconfig0.h") опции, если необходимо
 
 #ifndef IRSCONFIGH 
-#define IRSCONFIGH 
+#define IRSCONFIGH
+
+#define IRS_LIB_LAST_VERSION INT_MAX
+#define IRS_LIB_VERSION_SUPPORT IRS_LIB_LAST_VERSION
 
 #define IRS_LIB_DEBUG_GLOBAL
 //#define IRS_LIB_CHECK

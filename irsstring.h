@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 19.05.2010
+// Дата: 24.05.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -80,17 +80,27 @@ struct irs_string_other_char_t<wchar_t>
 #define IRS_STRING_OTHER_CHAR_TYPE wchar_t
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+template<class T>
+int get_num_precision_def(const T& /*a_t*/)
+{
+  const int sizeofT = sizeof(T);
+  int precision_def = 15;  
+  if (sizeofT <= 4) {
+    precision_def = 6;
+  } else if (sizeofT <= 8) {
+    precision_def = 15;
+  } else {
+    precision_def = 19;
+  }
+  return precision_def;
+}
+
 // Добавление операций ввода/вывода для типа string
 IRS_STRING_ASSIGN_HELPER_TEMPLATE
 inline IRS_STRING_ASSIGN_HELPER_OSTREAM& string_assign_helper(
   IRS_STRING_ASSIGN_HELPER_OSTREAM& strm, const T& val)
 {
-  const int sizeofT = sizeof(T);
-  int prec = 15;
-  if (sizeofT <= 4) prec = 6;
-  else if (sizeofT <= 8) prec = 15;
-  else if (sizeofT <= 10) prec = 19;
-  strm.precision(prec);
+  strm.precision(get_num_precision_def(val));
   strm << val;
   return strm;
 }

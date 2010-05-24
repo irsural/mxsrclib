@@ -1,9 +1,13 @@
 // Глобальные объявления типов
-// Дата: 16.05.2010
+// Дата: 24.05.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
+
+#define IRS_LIB_VERSION_SUPPORT_LESS(ver) (IRS_LIB_VERSION_SUPPORT < ver)
+
+#define IRS_LIB_VERSION_SUPPORT_GREATER(ver) (IRS_LIB_VERSION_SUPPORT > ver)
 
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\

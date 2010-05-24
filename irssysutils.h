@@ -22,6 +22,8 @@
 
 namespace irs {
 
+typedef irs_size_t sizens_t;
+
 // Вид числа
 enum {
   num_precision_default = -1
@@ -43,6 +45,7 @@ enum num_base_t {
   num_base_default = num_base_dec
 };
 
+#if IRS_LIB_VERSION_SUPPORT_LESS(380)
 // Универсальная функция перевода чисел в текст
 template<class T>
 string number_to_str(
@@ -50,37 +53,40 @@ string number_to_str(
   const int a_precision = -1,
   const num_mode_t a_num_mode = num_mode_general)
 {
-  bool precision_bad_value =
-    (a_precision < 0) || ((a_precision == 0) &&
-    (a_num_mode == num_mode_general));
-
   string str_value;
+  ostrstream ostr;
 
-  if (precision_bad_value) {
-    str_value = a_num;
-  } else {
-    ostrstream ostr;
-    int precision = a_precision;
-    ostr << dec;
-    switch (a_num_mode) {
-      case num_mode_general: {
-      } break;
-      case num_mode_fixed: {
-        ostr << fixed;
-      } break;
-      case num_mode_scientific: {
-        ostr << scientific;
-      } break;
-    }
+  ostr << dec;
 
-    ostr << setprecision(precision);
-    ostr << a_num << ends;
-    str_value = ostr.str();
-    // Для совместимости с различными компиляторами
-    ostr.rdbuf()->freeze(false);
+  switch (a_num_mode) {
+    case num_mode_general: {
+    } break;
+    case num_mode_fixed: {
+      ostr << fixed;
+    } break;
+    case num_mode_scientific: {
+      ostr << scientific;
+    } break;
   }
+
+  if (a_num_mode != num_mode_general) {
+    const bool precision_bad_value = (a_precision <= 0);
+    if (precision_bad_value) {
+      ostr << setprecision(get_num_precision_def(a_num));
+    } else {
+      ostr << setprecision(a_precision);
+    }
+  } else {
+    // Точность указывать не требуется
+  }
+
+  ostr << a_num << ends;
+  str_value = ostr.str();
+  // Для совместимости с различными компиляторами
+  ostr.rdbuf()->freeze(false);
   return str_value;
 }
+#endif // #if IRS_LIB_VERSION_SUPPORT_LESS(390)
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -106,11 +112,18 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
       IRS_LIB_ASSERT("Недопустимое значение типа представления числа");
     }
   }
-  if (a_precision != num_precision_default) {
-    ostr << setprecision(a_precision);
+  
+  if (a_num_mode != num_mode_general) {
+    const bool precision_bad_value = (a_precision <= 0);
+    if (precision_bad_value) {
+      ostr << setprecision(get_num_precision_def(a_num));
+    } else {
+      ostr << setprecision(a_precision);
+    }
   } else {
-    // Оставляем точность по умолчанию  
+    // Точность указывать не требуется
   }
+
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
@@ -177,6 +190,7 @@ template<class T>
 void number_to_string(const T& a_num, string* ap_str)
 {
   ostrstream ostr;
+  ostr << setprecision(get_num_precision_def(a_num));
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
