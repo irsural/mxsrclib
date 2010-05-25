@@ -650,6 +650,11 @@ private:
       port(0)
     {
     }
+    udp_channel_t(mxip_t a_ip, irs_u16 a_port):
+      ip(a_ip),
+      port(a_port)
+    {
+    }
   };
   class channel_equal_t
   {
@@ -687,11 +692,11 @@ private:
   const size_type m_channel_max_count;
   deque<udp_channel_t> m_channel_list;
   deque<udp_channel_t>::iterator m_channel_list_it;
-  size_type m_udp_max_data_size;
-  mxip_t m_dest_ip_cur;
-  irs_u16 m_dest_port_cur;
+  /*mxip_t m_dest_ip_cur;
+  irs_u16 m_dest_port_cur;*/
   
   void new_channel(mxip_t a_ip, irs_u16 a_port);
+  void delete_channels_by_downtime();
   void view_channel_list();
 };
 
