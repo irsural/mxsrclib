@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 25.03.2010
+// Дата: 25.05.2010
 // Дата создания: 15.03.2010
 
 #ifndef IRSRTLH
@@ -10,6 +10,7 @@
 #include <irsstd.h>
 #include <irstcpip.h>
 #include <irsconfig.h>
+#include <timer.h>
 
 #include <irsfinal.h>
 
@@ -64,7 +65,8 @@ public:
     size_t a_buf_size,
     irs_avr_port_t a_data_port,
     irs_avr_port_t a_address_port,
-    mxmac_t a_mac
+    mxmac_t a_mac,
+    counter_t a_recv_timeout_cnt = make_cnt_s(2)
   );
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_size_t a_size);
@@ -95,6 +97,7 @@ private:
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
+  timer_t m_recv_timeout;
   
   #ifndef SERGEY_OFF_INT4
   void rtl_interrupt();

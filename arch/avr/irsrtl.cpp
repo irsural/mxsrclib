@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 20.05.2010
+// Дата: 25.05.2010
 // Дата создания: 15.03.2010
 
 #include <irsdefs.h>
@@ -38,7 +38,8 @@ irs::rtl8019as_t::rtl8019as_t(
   size_t a_buf_size,
   irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port,
-  mxmac_t a_mac
+  mxmac_t a_mac,
+  counter_t a_recv_timeout_cnt
 ):
   m_buf_num(a_buf_num),
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
@@ -54,7 +55,8 @@ irs::rtl8019as_t::rtl8019as_t(
   m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
-  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data())
+  mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
+  m_recv_timeout(a_recv_timeout_cnt)
 {
   rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
   rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
@@ -164,6 +166,7 @@ void irs::rtl8019as_t::recv_packet()
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
       m_is_recv_buf_filled = true;
+      m_recv_timeout.start();
     } else {
       for (irs_size_t i = 0; i < recv_size_cur; i++) {
         read_rtl(rdmaport);
@@ -187,14 +190,12 @@ void irs::rtl8019as_t::rtl_interrupt()
   
   irs_u8 byte = read_rtl(isr);
   if(byte&0x10) { //буфер приема переполнен
-    mlog() << irsm("буфер приема переполнен") << endl;
     overrun();
   }
   if(byte&0x01) { //получено без ошибок
     recv_packet();
   }
   if (byte&0xA) { //данные отправлены
-    mlog() << irsm("данные отправлены") << endl;
     m_send_status = false;
   }
 
@@ -308,7 +309,6 @@ bool irs::rtl8019as_t::wait_dma()
 
 void irs::rtl8019as_t::send_packet(irs_size_t a_size) 
 {
-  mlog() << "send_packet begin" << endl;
   #ifdef IRS_LIB_CHECK
   if (a_size > m_send_buf.size()) {
     a_size = m_send_buf.size();
@@ -345,12 +345,13 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
-  mlog() << "send_packet end" << endl;
 }
 
 void irs::rtl8019as_t::set_recv_handled()
 {
   m_is_recv_buf_filled = false;
+  m_recv_timeout.stop();
+  
 }
 
 bool irs::rtl8019as_t::is_recv_buf_filled()
@@ -390,4 +391,7 @@ mxmac_t irs::rtl8019as_t::get_local_mac()
 
 void irs::rtl8019as_t::tick()
 {
+  if (m_recv_timeout.check()) {
+    set_recv_handled();
+  }
 }
