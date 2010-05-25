@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 16.05.2010
+// Дата: 20.05.2010
 // Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
@@ -204,7 +204,8 @@ public:
     size_t a_input_regs_reg = 7,
     counter_t a_update_time = make_cnt_ms(200),
     irs_u8 a_error_count_max = 3,
-    double a_disconnect_time_sec = 2
+    double a_disconnect_time_sec = 2,
+    irs_u16 a_size_of_packet = 260
   );
   void set_delay_time(double time);
   virtual ~modbus_client_t();
@@ -230,14 +231,16 @@ private:
     size_of_MBAP = 7,
     size_of_read_header = 4,
     size_of_resp_header = 2,
-    size_of_packet = 260,
+    //size_of_packet = 260,
     size_of_req_excep = 1,
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
-    size_of_data_write_byte = 246,
+    packet_size_max = 260,
+    packet_size_min = 16
+    /*size_of_data_write_byte = 246,
     size_of_data_read_byte = 250,
     size_of_data_write_reg = size_of_data_write_byte/2,
-    size_of_data_read_reg = size_of_data_read_byte/2
+    size_of_data_read_reg = size_of_data_read_byte/2*/
   };
   enum condition_t {
     request_start = 0,
@@ -264,6 +267,11 @@ private:
     make_request_mode
   };
   
+  irs_u16                               m_size_of_packet;
+  irs_u16                               m_size_of_data_write_byte;
+  irs_u16                               m_size_of_data_read_byte;
+  irs_u16                               m_size_of_data_write_reg;
+  irs_u16                               m_size_of_data_read_reg;
   size_t                                m_global_read_index;
   size_t                                m_discret_inputs_size_bit;
   size_t                                m_coils_size_bit;
@@ -273,8 +281,8 @@ private:
   size_t                                m_coils_end_byte;
   size_t                                m_hold_registers_end_byte;
   size_t                                m_input_registers_end_byte;
-  irs_u8                                m_spacket[size_of_packet];
-  irs_u8                                m_rpacket[size_of_packet];
+  raw_data_t<irs_u8>                    m_spacket;
+  raw_data_t<irs_u8>                    m_rpacket;
   size_t                                m_size_byte_end;
   bool                                  m_read_table;
   bool                                  m_write_table;
@@ -316,6 +324,7 @@ private:
   irs_u16                               m_write_quantity;
   irs_u16                               m_read_quantity;
   irs_u8                                m_error_count_max;
+  irs_u16                               m_transaction_id;
 
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
