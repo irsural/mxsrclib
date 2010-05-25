@@ -335,8 +335,11 @@ public:
   template <class V>
   bool to_number(V& val) const
   {
-    #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-    basic_istringstream<T> strm(*this);
+    #ifdef IRS_FULL_STDCPPLIB_SUPPORT  
+    basic_irs_string_t<T> str_modif = *this;
+    ::replace(str_modif.begin(), str_modif.end(), ',', '.');
+    basic_istringstream<T> strm(str_modif);
+    strm.imbue(locale::classic());
     strm >> val;
     return strm;
     #else //IRS_FULL_STDCPPLIB_SUPPORT
