@@ -40,6 +40,43 @@ public:
   virtual void abort();
 };
 
+// Поиск начала пакета через hardflow
+class mx_beg_pack_proc_fix_flow_t
+{
+public:
+  typedef hardflow_t::size_type channel_t;
+    
+  mx_beg_pack_proc_fix_flow_t(hardflow::fixed_flow_t& a_fixed_flow);
+  ~mx_beg_pack_proc_fix_flow_t();
+  void start(irs_u8* ap_buf, channel_t a_channel);
+  void abort();
+  bool busy();
+  void tick();
+private:
+  enum status_t 
+  {
+    WAIT,
+    START,
+    READ_BEGIN,
+    READ_END,
+    READ_CHUNK,
+    STOP
+  };
+  enum
+  {
+    invalid_channel = irs::hardflow_t::invalid_channel
+  };
+
+  status_t m_status;
+  hardflow::fixed_flow_t& m_fixed_flow;
+  irs_u8* mp_buf;
+  irs_u8* mp_buf_end;
+  bool m_abort_request;
+  bool m_busy;
+  channel_t m_channel;
+};
+
+
 // Размер заголовка в 4-байтных перменных
 const mxn_cnt_t mxn_count_of_header = MXN_SIZE_OF_HEADER;
 // Размер начала пакета в 4-байтных переменных

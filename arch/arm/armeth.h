@@ -19,22 +19,17 @@ namespace arm
   
 class arm_ethernet_t : public simple_ethernet_t
 {
-  enum
-  {
-    DA_size = mac_length,
-    SA_size = mac_length,
-    L_size = 2,
-    FCS_size = 4
-  };
-  buffer_num_t m_buf_num;
-  size_t m_buf_size;
-  irs_u8* mp_read_buf;
-  irs_u8* mp_write_buf;
 public:
+  enum use_int_t
+  {
+    USE_INT,
+    NO_USE_INT
+  };
   arm_ethernet_t(
     buffer_num_t a_buf_num,
     size_t a_buf_size,
-    mxmac_t a_mac);
+    mxmac_t a_mac,
+    use_int_t a_use_interrupt = NO_USE_INT);
   virtual ~arm_ethernet_t();
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
@@ -46,6 +41,31 @@ public:
   virtual buffer_num_t get_buf_num();
   virtual mxmac_t get_local_mac();
   virtual void tick();
+private:
+  enum
+  {
+    DA_size = mac_length,
+    SA_size = mac_length,
+    L_size = 2,
+    FCS_size = 4
+  };
+  enum
+  {
+    max_packet_size = 2032
+  };
+  
+  buffer_num_t m_buf_num;
+  irs_size_t m_buf_size;
+  irs_u8* mp_rx_buf;
+  irs_u8* mp_tx_buf;
+  bool m_rx_buf_handled;
+  bool m_rx_buf_filled;
+  irs_size_t m_rx_size;
+  bool m_rx_int_flag;
+  event_connect_t<arm_ethernet_t> m_rx_int_event;
+  const use_int_t m_use_interrupt;
+  
+  void rx_interrupt();
 };
 
 } //  arm

@@ -131,6 +131,76 @@ public:
   void tick();
 };
 
+//  Реализация сервера mxnet в виде класса
+class mxnet_t
+{
+public:
+  typedef irs_i32 var_type;
+  typedef hardflow_t::size_type channel_type;
+  
+  mxnet_t(hardflow_t& a_hardflow, var_type *ap_vars, irs_size_t a_var_cnt);
+  ~mxnet_t();
+  void tick();
+private:
+  enum status_t
+  {
+    START,
+    READ_HEAD,
+    WAIT_READ_HEAD_AND_ANALYSIS,
+    READ_DATA,
+    CHECKSUM,
+    DECODE_COMM,
+    READ_COUNT_PACKET,
+    READ_PROC,
+    READ_PACKET,
+    WRITE_PROC,
+    GET_VERSION_PACKET,
+    WRITE,
+    WRITE_WAIT,
+    WRITE_PACKET
+  };
+  enum 
+  {
+    invalid_channel = hardflow_t::invalid_channel
+  };
+  // Структура пакета mxnet
+  /*struct packet_t
+  {
+    var_type ident_beg_pack_first;
+    var_type ident_beg_pack_second;
+    irs_size_t code_comm;
+    irs_u8 code_comm_dummy[MXN_DUMMY_SIZE];
+    irs_size_t var_ind_first;
+    irs_u8 var_ind_first_dummy[MXN_DUMMY_SIZE];
+    irs_size_t var_count;
+    irs_u8 var_count_dummy[MXN_DUMMY_SIZE];
+    var_type var[1];
+  };*/
+  
+  status_t m_status;
+  status_t m_status_next;
+  hardflow_t& m_hardflow;
+  hardflow::fixed_flow_t m_fixed_flow;
+  mx_beg_pack_proc_fix_flow_t m_beg_pack_proc;
+  channel_type m_current_channel;
+  // Количество переменных
+  irs_size_t m_var_cnt;
+  // Внешний массив переменных
+  var_type* mp_vars;
+  // Внутренний массив переменных
+  mxn_packet_t *mp_packet;
+  // Массив помечающий переменные только для чтения
+  vector<bool> m_read_only_vector;
+  // Количество переменных в принятом пакете
+  irs_size_t m_var_cnt_packet;
+  // Количество отсылаемых байт
+  irs_size_t m_cnt_send;
+  // Ошибка в аргументах записи
+  bool m_write_error;
+  // Текущий тип контрольной суммы
+  mxn_checksum_t m_checksum_type;
+};
+
 } //namespace irs
 
 #endif //MXNETH

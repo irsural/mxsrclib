@@ -599,3 +599,201 @@ void irs::mxdata_to_u8_t::tick()
   //
 }
 
+//  Реализация сервера mxnet в виде класса
+irs::mxnet_t::mxnet_t(hardflow_t &a_hardflow, var_type *ap_vars, 
+  irs_size_t a_var_cnt):
+  
+  m_status(START),
+  m_status_next(START),
+  m_hardflow(a_hardflow),
+  m_fixed_flow(&m_hardflow),
+  m_beg_pack_proc(m_fixed_flow),
+  m_current_channel(0),
+  m_var_cnt(a_var_cnt),
+  mp_vars(ap_vars),
+  m_read_only_vector(m_var_cnt),
+  m_var_cnt_packet(0),
+  m_cnt_send(0),
+  m_write_error(false),
+  m_checksum_type(mxncs_reduced_direct_sum)
+{
+  mp_packet = (mxn_packet_t*)IRS_LIB_NEW_ASSERT(
+    var_type[m_var_cnt + MXN_SIZE_OF_HEADER + 1],
+    MXNETCPP_IDX
+  );
+  memset(static_cast<void*>(mp_packet), 0, m_var_cnt + MXN_SIZE_OF_HEADER + 1);
+}
+
+irs::mxnet_t::~mxnet_t()
+{
+  IRS_LIB_ARRAY_DELETE_ASSERT((var_type*&)mp_packet);
+}
+
+void irs::mxnet_t::tick()
+{
+  m_fixed_flow.tick();
+  m_beg_pack_proc.tick();
+  
+  switch (m_status)
+  {
+    case START:
+    {
+      m_status = READ_HEAD;
+      break;
+    }
+    case READ_HEAD:
+    {
+      m_current_channel = m_hardflow.channel_next();
+      if (m_current_channel != invalid_channel)
+      {
+        m_beg_pack_proc.start((irs_u8*)mp_packet, m_current_channel);
+        m_status = WAIT_READ_HEAD_AND_ANALYSIS;
+      }
+      break;
+    }
+    case WAIT_READ_HEAD_AND_ANALYSIS:
+    {
+      if (!m_beg_pack_proc.busy()) 
+      {
+        if (mp_packet->code_comm == MXN_WRITE) 
+        {
+          if (mp_packet->var_count <= m_var_cnt) 
+          {
+            m_var_cnt_packet = mp_packet->var_count;
+            m_status = READ_DATA;
+          } 
+          else 
+          {
+            m_status = READ_HEAD;
+          }
+        }
+        else 
+        {
+          m_var_cnt_packet = 0;
+          m_status = READ_DATA;
+        }
+      }
+      break;
+    }
+    case READ_DATA:
+    {
+      irs_u8* p_begin = ((irs_u8*)mp_packet) + mxn_header_size;
+      irs_size_t size = sizeof(var_type)*(m_var_cnt_packet + 1);
+      m_fixed_flow.read(m_current_channel, p_begin, size);
+      m_status = CHECKSUM;
+      break;
+    }
+    case CHECKSUM:
+    {
+      if (m_fixed_flow.read_status() == hardflow::fixed_flow_t::status_success)
+      {
+        irs_i32 chksum;
+        mxn_calc_checksum(chksum, mp_packet, m_var_cnt_packet, m_checksum_type);
+        if (chksum == mp_packet->var[m_var_cnt_packet])
+        {
+          m_status = DECODE_COMM;
+        } 
+        else m_status = READ_HEAD;
+      }
+      break;
+    }
+    case DECODE_COMM:
+    {
+      switch (mp_packet->code_comm)
+      {
+        case MXN_READ_COUNT:    m_status = READ_COUNT_PACKET;   break;
+        case MXN_READ:          m_status = READ_PROC;           break;
+        case MXN_WRITE:         m_status = WRITE_PROC;          break;
+        case MXN_GET_VERSION:   m_status = GET_VERSION_PACKET;  break;
+        default:                m_status = READ_HEAD;           break;
+      }
+      break;
+    }
+    case READ_COUNT_PACKET:
+    {
+      mp_packet->var_count = m_var_cnt;
+      mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
+      m_cnt_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
+      m_status = WRITE;
+      m_status_next = READ_HEAD;
+      break;
+    }
+    case WRITE:
+    {
+      m_fixed_flow.write(m_current_channel, (irs_u8*)mp_packet, m_cnt_send);
+      m_status = WRITE_WAIT;
+      break;
+    }
+    case WRITE_WAIT:
+    {
+      if (m_fixed_flow.write_status() == hardflow::fixed_flow_t::status_success)
+      {
+        m_status = m_status_next;
+      }
+      break;
+    }
+    case READ_PROC:
+    {
+      m_status = READ_PACKET;
+      if (mp_packet->var_count > MXN_CNT_MAX - mp_packet->var_ind_first)
+        m_status = READ_HEAD;
+      if (mp_packet->var_ind_first + mp_packet->var_count > m_var_cnt)
+        m_status = READ_HEAD;
+      break;
+    }
+    case READ_PACKET:
+    {
+      memcpy((void*)mp_packet->var,
+             (void*)(mp_vars + mp_packet->var_ind_first),
+             sizeof(var_type) * mp_packet->var_count);
+      mxn_calc_checksum(mp_packet->var[mp_packet->var_count], mp_packet, 
+        mp_packet->var_count, m_checksum_type);
+      m_cnt_send = 
+        sizeof(var_type) * (mp_packet->var_count + MXN_SIZE_OF_HEADER + 1);
+      m_status = WRITE;
+      m_status_next = READ_HEAD;
+      break;
+    }
+    case WRITE_PROC:
+    {
+      bool over_max =
+        (mp_packet->var_count > (MXN_CNT_MAX - mp_packet->var_ind_first));
+      bool over_range =
+        ((mp_packet->var_ind_first + mp_packet->var_count) > m_var_cnt);
+      m_write_error = (over_max || over_range);
+    
+      if (!m_write_error) 
+      {
+        for (irs_size_t ind_var = 0, ind_var_ext = mp_packet->var_ind_first;
+             ind_var < mp_packet->var_count;
+             ind_var++, ind_var_ext++) 
+        {
+          if (!m_read_only_vector[ind_var_ext])
+            mp_vars[ind_var_ext] = mp_packet->var[ind_var];
+        }
+      }
+      m_status = WRITE_PACKET;
+      break;
+    }
+    case WRITE_PACKET:
+    {
+      mp_packet->var_ind_first = m_write_error;
+      mp_packet->var_count = 0;
+      mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
+      m_cnt_send = sizeof(var_type) * (MXN_SIZE_OF_HEADER + 1);
+      m_status = WRITE;
+      m_status_next = READ_HEAD;
+      break;
+    }
+    case GET_VERSION_PACKET:
+    {
+      mp_packet->var_ind_first = 0;
+      IRS_LOWORD(mp_packet->var_count) = MXN_VERSION;
+      mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
+      m_cnt_send = sizeof(var_type) * (MXN_SIZE_OF_HEADER + 1);
+      m_status = WRITE;
+      m_status_next = READ_HEAD;
+      break;
+    }
+  }
+}
