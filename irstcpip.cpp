@@ -689,6 +689,9 @@ void irs::simple_tcpip_t::ip(void)
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> udp()") << endl);
       udp();
     }
+    if (mp_recv_buf[ip_proto_type] == tcp_proto) {
+      
+    }
   } else {
     mp_ethernet->set_recv_handled();
   }
@@ -704,9 +707,11 @@ irs_u8* irs::simple_tcpip_t::get_send_buf()
   return mp_send_buf + 0x2a;
 }
 
-void irs::simple_tcpip_t::open_port(irs_u16 a_port)
+bool irs::simple_tcpip_t::open_port(irs_u16 a_port)
 {
-  m_port_list.insert(a_port);
+  pair<set<irs_u16>::iterator, bool> insert_port =
+    m_port_list.insert(a_port);
+  return insert_port.second;
 }
 
 void irs::simple_tcpip_t::close_port(irs_u16 a_port)

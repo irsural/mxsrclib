@@ -115,7 +115,7 @@ public:
     arp_operation_response = 0x0002,
     udp_proto = 0x11,
     icmp_proto = 0x01,
-    //tcp_proto = 0x6,
+    tcp_proto = 0x6,
     ether_type = 0x0806,
     IPv4 = 0x0800,
     Ethernet = 0x0001,
@@ -185,7 +185,7 @@ public:
   void read_udp_complete();
   irs_u8* get_recv_buf();
   irs_u8* get_send_buf();
-  void open_port(irs_u16 a_port);
+  bool open_port(irs_u16 a_port);
   void close_port(irs_u16 a_port);
   irs_size_t recv_buf_size();
   irs_size_t send_data_size_max();

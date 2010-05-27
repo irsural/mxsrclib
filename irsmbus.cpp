@@ -385,7 +385,7 @@ irs::modbus_server_t::modbus_server_t(
   size_t a_coils_size_byte,
   size_t a_hold_regs_reg,
   size_t a_input_regs_reg,
-  double a_disconnect_time_sec
+  counter_t a_disconnect_time
 ):
   mp_buf(size_of_packet),
   m_size_byte_end(0),
@@ -420,8 +420,8 @@ irs::modbus_server_t::modbus_server_t(
   m_num_of_elem(0),
   m_operation_status(status_completed)
 {
-  m_fixed_flow.read_timeout(a_disconnect_time_sec);
-  m_fixed_flow.write_timeout(a_disconnect_time_sec);
+  m_fixed_flow.read_timeout(a_disconnect_time);
+  m_fixed_flow.write_timeout(a_disconnect_time);
   mlog() << irsm("SERVER START!") << endl;
 }
 
@@ -844,10 +844,6 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  /*mlog() << "a_index = " << int(a_index) << endl;
-  mlog() << "a_size = " << int(a_size) << endl;
-  mlog() << "m_input_registers_end_byte = " <<
-    int(m_input_registers_end_byte) << endl;*/
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
   IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(irsm("write"));
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
@@ -1217,15 +1213,19 @@ void irs::modbus_server_t::tick()
     IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" abort"));
     m_channel = mp_hardflow_server->channel_next();
     m_mode = read_header_mode;
-    //mlog() << irsm("abort") << endl;
+    IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_header_mode"));
   }
   
   switch(m_mode)
   {
     case read_header_mode:
     {
+      if (m_channel) {
+        mlog() << "current channel = " << int(m_channel) << endl;
+      }
       m_fixed_flow.read(m_channel, mp_buf.data(), size_of_MBAP);
       m_mode = read_request_mode;
+      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_request_mode"));
     }
     break;
     case read_request_mode:
@@ -1240,8 +1240,10 @@ void irs::modbus_server_t::tick()
           m_fixed_flow.read(m_channel, mp_buf.data() + size_of_MBAP,
             header.length - 1);
           m_mode = read_end_mode;
+          IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_end_mode"));
         } else {
           m_mode = read_header_mode;
+          IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_header_mode"));
         }
       }
     }
@@ -1251,7 +1253,6 @@ void irs::modbus_server_t::tick()
       if(m_fixed_flow.read_status() == 
         irs::hardflow::fixed_flow_t::status_success)
       {
-        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_end_mode"));
         request_exception_t &convert_pack_for_read =
           reinterpret_cast<request_exception_t&>(*(mp_buf.data() + 
           size_of_MBAP));
@@ -1522,6 +1523,7 @@ void irs::modbus_server_t::tick()
         }
         IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_response_mode"));
         m_mode = send_response_mode;
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" send_response_mode"));
         m_size_byte_end = header.length - 1;
       }
     }
@@ -1588,6 +1590,7 @@ void irs::modbus_server_t::tick()
       m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP + 
         m_size_byte_end);
       m_mode = write_end;
+      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" write_end"));
     }
     break;
     case write_end:
@@ -1597,6 +1600,7 @@ void irs::modbus_server_t::tick()
       { 
         memset(mp_buf.data(), 0, mp_buf.size());
         m_mode = read_header_mode;
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_header_mode"));
         m_channel = mp_hardflow_server->channel_next();
       }
     }
@@ -1613,7 +1617,7 @@ irs::modbus_client_t::modbus_client_t(
   size_t a_input_regs_reg,
   counter_t a_update_time,
   irs_u8 a_error_count_max,
-  double a_disconnect_time_sec,
+  counter_t a_disconnect_time,
   irs_u16 a_size_of_packet
 ):
   m_size_of_packet((a_size_of_packet > packet_size_max)? packet_size_max :
@@ -1679,8 +1683,8 @@ irs::modbus_client_t::modbus_client_t(
   m_error_count_max(a_error_count_max),
   m_transaction_id(0)
 {
-  m_fixed_flow.read_timeout(a_disconnect_time_sec);
-  m_fixed_flow.write_timeout(a_disconnect_time_sec);
+  m_fixed_flow.read_timeout(a_disconnect_time);
+  m_fixed_flow.write_timeout(a_disconnect_time);
   init_to_cnt();
   m_measure_time.start();
   mlog() << irsm("CLIENT START!") << endl;

@@ -19,14 +19,14 @@
 #   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
 #   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
 #   define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg)
-#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl)
 #   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 # elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
 #   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG_SRC(msg) 
-#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg) 
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
+#   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) //msg
+#   define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg) //IRS_LIB_DBG_RAW_MSG(msg << endl) 
+#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) //IRS_LIB_DBG_RAW_MSG(msg << endl) 
+#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) //msg
 # endif
 #else // IRS_LIB_IRSMBUS_DEBUG_TYPE
 # define IRS_LIB_IRSMBUS_DEBUG_TYPE IRS_LIB_DEBUG_NONE
@@ -108,7 +108,7 @@ public:
     size_t a_coils_size_byte = 8,
     size_t a_hold_regs_reg = 7,
     size_t a_input_regs_reg = 7,
-    double a_disconnect_time_sec = 2
+    counter_t a_disconnect_time = make_cnt_s(2)
   );
   virtual ~modbus_server_t() {}
   virtual irs_uarc size();
@@ -204,7 +204,7 @@ public:
     size_t a_input_regs_reg = 7,
     counter_t a_update_time = make_cnt_ms(200),
     irs_u8 a_error_count_max = 3,
-    double a_disconnect_time_sec = 2,
+    counter_t a_disconnect_time = make_cnt_s(2),
     irs_u16 a_size_of_packet = 260
   );
   void set_delay_time(double time);
@@ -325,6 +325,7 @@ private:
   irs_u16                               m_read_quantity;
   irs_u8                                m_error_count_max;
   irs_u16                               m_transaction_id;
+  timer_t                               m_send_request_timer;
 
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);

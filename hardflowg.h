@@ -589,9 +589,9 @@ public:
   void connect(hardflow_t* ap_hardflow);
   size_type read_byte_count() const;
   size_type write_byte_count() const;
-  void read_timeout(double a_read_timeout_sec);
+  void read_timeout(counter_t a_read_timeout);
   double read_timeout() const;
-  void write_timeout(double a_write_timeout_sec);
+  void write_timeout(counter_t a_write_timeout);
   double write_timeout() const;
 private:
   hardflow_t* mp_hardflow;   
@@ -655,6 +655,10 @@ private:
       port(a_port)
     {
     }
+    bool operator==(udp_channel_t a_udp_channel)
+    {
+      return ((ip == a_udp_channel.ip) && (port == a_udp_channel.port));
+    }
   };
   class channel_equal_t
   {
@@ -688,16 +692,15 @@ private:
   irs_u8* mp_recv_buf;
   irs_u8* mp_recv_buf_cur;
   irs_u8* mp_send_buf;
-  //counter_t m_max_channel_downtime;
   const size_type m_channel_max_count;
   deque<udp_channel_t> m_channel_list;
-  deque<udp_channel_t>::iterator m_channel_list_it;
-  /*mxip_t m_dest_ip_cur;
-  irs_u16 m_dest_port_cur;*/
+  //deque<udp_channel_t>::iterator m_channel_list_it;
   
   void new_channel(mxip_t a_ip, irs_u16 a_port);
   void delete_channels_by_downtime();
   void view_channel_list();
+  size_type channel_list_index(size_type a_channel_ident);
+  size_type channel_ident_from_index(size_type a_list_index);
 };
 
 } // namespace hardflow
