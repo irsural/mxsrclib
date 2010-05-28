@@ -86,9 +86,9 @@
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 // Опции для файла irscpp.h
-#ifdef __ICCAVR__
+#ifdef __embedded_cplusplus
 #define NAMESPACE_STD_NOT_SUPPORT
-#endif //__ICCAVR__
+#endif //__embedded_cplusplus
 
 // Включение 64-битного типа
 #define IRSDEFS_I64
@@ -190,7 +190,7 @@ enum endian_t {
 inline endian_t detect_cpu_endian()
 {
   const irs_u16 endian_test_var = static_cast<irs_u16>(1); /* 0x0001 */
-  endian_t cpu_endian = 
+  endian_t cpu_endian =
     static_cast<endian_t>(IRS_FIRSTBYTE(endian_test_var) == 0);
   return cpu_endian;
 }

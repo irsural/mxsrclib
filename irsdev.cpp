@@ -82,7 +82,17 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq):
   PWM1INTEN = 0;
   PWM2INTEN = 0;
   //  Предел счёта
-  PWM0LOAD = calc_load_reg_value(m_freq);
+  irs_u16 load_value = calc_load_reg_value(m_freq);
+  PWM0LOAD = load_value;
+  PWM1LOAD = load_value;
+  PWM2LOAD = load_value;
+  //  Компаратор
+  PWM0CMPA = 0;
+  PWM0CMPB = 0;
+  PWM1CMPA = 0;
+  PWM1CMPB = 0;
+  PWM2CMPA = 0;
+  PWM2CMPB = 0;
 }
 
 irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()

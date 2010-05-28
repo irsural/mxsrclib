@@ -31,7 +31,7 @@ enum {
 struct mxip_t
 {
   irs_u8 val[ip_length];
-    
+
   static mxip_t zero_ip()
   {
     mxip_t ip = {{0, 0, 0, 0}};
@@ -151,10 +151,10 @@ inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
   }
 }
 
-struct mxmac_t 
+struct mxmac_t
 {
   irs_u8 val[mac_length];
-  
+
   static mxmac_t zero_mac()
   {
     mxmac_t mac = {{0, 0, 0, 0, 0, 0}};
@@ -169,7 +169,7 @@ struct mxmac_t
 
 inline bool operator ==(mxmac_t a_mac1, mxmac_t a_mac2)
 {
-  return (a_mac1.val[0] == a_mac2.val[0]) && 
+  return (a_mac1.val[0] == a_mac2.val[0]) &&
     (a_mac1.val[1] == a_mac2.val[1]) &&
     (a_mac1.val[2] == a_mac2.val[2]) &&
     (a_mac1.val[3] == a_mac2.val[3]) &&
@@ -186,7 +186,7 @@ inline bool operator !=(mxmac_t a_mac1, mxmac_t a_mac2)
     (a_mac1.val[4] != a_mac2.val[4]) ||
     (a_mac1.val[5] != a_mac2.val[5]);
 }
-  
+
 inline void mxmac_to_cstr(char* a_mac_in_str, mxmac_t a_mac)
 {
   ostrstream strm(a_mac_in_str, MAC_STR_LEN);
@@ -286,7 +286,6 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 namespace std {
 #endif //NAMESPACE_STD_NOT_SUPPORT
-
 inline ostream& operator<<(ostream& a_stream, mxip_t a_ip)
 {
   a_stream << int(a_ip.val[0]) << "." << int(a_ip.val[1]) << ".";
@@ -322,7 +321,7 @@ inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
 
 namespace irs {
 
-inline mxip_t make_mxip(int a_first_octet, int a_second_octet, 
+inline mxip_t make_mxip(int a_first_octet, int a_second_octet,
   int a_third_octet, int a_fourth_octet)
 {
   mxip_t ip = {{
@@ -343,7 +342,7 @@ inline mxip_t make_mxip(const irs::char_t* a_ip)
   return ip;
 }
 
-inline mxmac_t make_mxmac(int a_first_octet, int a_second_octet, 
+inline mxmac_t make_mxmac(int a_first_octet, int a_second_octet,
   int a_third_octet, int a_fourth_octet, int a_fifth_octet, int a_sixth_octet)
 {
   mxmac_t mac = {{
