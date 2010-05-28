@@ -1661,7 +1661,7 @@ void irs::akip_ch3_85_3r_t::tick()
       memset(buf_rd, 0, sizeof(buf_rd));
 
       irs_u32 size_rd = mp_hardflow->read(ch, buf_rd, size_buf_rd);
-      buf_rd[size_rd] = '\0';
+      buf_rd[size_rd] = irst('\0');
       m_string_msgs += irs::string((char*)buf_rd);
       if(m_meas_stat == meas_status_busy){
         irs::string message;

@@ -563,30 +563,32 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
     string_msgs_t():
       mv_bad_str()
     {
-      mv_bad_str.push_back("LOC\n");
-      mv_bad_str.push_back("DEG");
-      mv_bad_str.push_back("Hz");
-      mv_bad_str.push_back("s");
+      mv_bad_str.push_back(irst("LOC\n"));
+      mv_bad_str.push_back(irst("DEG"));
+      mv_bad_str.push_back(irst("Hz"));
+      mv_bad_str.push_back(irst("s"));
     }
-    msg_status_t get_message(irs::string& ap_msg_str)
+    msg_status_t get_message(irs::string& a_msg_str)
     {
       msg_status_t msg_stat = MSG_BUSY;
-      irs::string::size_type pos = find('\n');
-      if(pos != irs::string::npos){
+      const size_type line_fit_pos = find(irst('\n'));
+      if(line_fit_pos != irs::string::npos){
         // Удаление мусора из строк
         irs_u32 size_bad_str = mv_bad_str.size();
         for(irs_u32 i = 0; i < size_bad_str; i++){
           irs::string bad_str = mv_bad_str[i];
-          pos = find(bad_str);
-          if(pos != irs::string::npos){
-            erase(pos, bad_str.size());
+          const size_type bad_str_pos = find(bad_str);
+          if(bad_str_pos != irs::string::npos){
+            erase(bad_str_pos, bad_str.size());
           }
         }
-        pos = find('\n');
-        if(pos != irs::string::npos){
+        const size_type new_line_fit_pos = find(irst('\n'));
+        if(new_line_fit_pos != irs::string::npos){
           msg_stat = MSG_SUCCESS;
-          ap_msg_str.assign(*this, 0, pos);
-          clear();
+          const size_type msg_size = new_line_fit_pos;
+          a_msg_str.assign(*this, 0, msg_size);
+          erase(0, msg_size + 1);
+          //clear();
         }else{
           msg_stat = MSG_BUSY;
         }
