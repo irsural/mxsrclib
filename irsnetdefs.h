@@ -295,23 +295,12 @@ inline ostream& operator<<(ostream& a_stream, mxip_t a_ip)
 
 inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
 {
-  #ifndef NOP
-  a_stream << int(a_mac.val[0]) << "-" << int(a_mac.val[1]) << "-";
-  a_stream << int(a_mac.val[2]) << "-" << int(a_mac.val[3]) << "-";
-  a_stream << int(a_mac.val[4]) << "-" << int(a_mac.val[5]);
-  #else // NOP
-  irs::out_hex(a_stream, a_mac.val[0]);
-  a_stream << "-";
-  irs::out_hex(a_stream, a_mac.val[1]);
-  a_stream << "-";
-  irs::out_hex(a_stream, a_mac.val[2]);
-  a_stream << "-";
-  irs::out_hex(a_stream, a_mac.val[3]);
-  a_stream << "-";
-  irs::out_hex(a_stream, a_mac.val[4]);
-  a_stream << "-";
-  irs::out_hex(a_stream, a_mac.val[5]);
-  #endif // NOP
+  irs::ostream_format_save_t format_save(&a_stream);
+  a_stream << hex << setfill('0');
+  for (int mac_index = 0; mac_index < (mac_length - 1); mac_index++) {
+    a_stream << setw(2) << int(a_mac.val[mac_index]) << "-";
+  }
+  a_stream << setw(2) << int(a_mac.val[5]);
   return a_stream;
 }
 
