@@ -2099,45 +2099,47 @@ irs::hardflow::simple_udp_flow_t::size_type
     }
   }
   #else // NOP
-  mxip_t dest_ip_cur = mxip_t::zero_ip();
-  irs_u16 dest_port = 0;
-  if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port,
-    &m_local_port))
-  {
-    deque<udp_channel_t>::iterator channel_list_cur_it =
-      find_if(m_channel_list.begin(), m_channel_list.end(),
-      channel_equal_t(dest_ip_cur, dest_port));
-    if (channel_list_cur_it != m_channel_list.end()) {
-      size_type list_index = channel_list_cur_it - m_channel_list.begin();
-      m_cur_channel = channel_ident_from_index(list_index);
-      mlog() << irsm("channel_list_index(m_cur_channel) = ") <<
-        channel_list_index(m_cur_channel) << endl;
-      mlog() << irsm("list_index = ") << list_index << endl;
-      IRS_LIB_ASSERT(channel_list_index(m_cur_channel) == list_index);
-    } else {
-      m_channel++;
-      if (m_channel != invalid_channel) {
-        if (m_channel <= m_channel_max_count) {
-          m_channel_list[m_channel - 1] =
-            udp_channel_t(dest_ip_cur, dest_port);
-          //mlog() << irsm("Add channel: ") << int(m_channel) << endl;
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Add channel: ") <<
-            int(m_channel) << endl);
-        } else {
-          m_channel_list.pop_front();
-          m_channel_list.push_back(udp_channel_t(dest_ip_cur, dest_port));
-        }
+  if (m_cur_channel == invalid_channel) {
+    mxip_t dest_ip_cur = mxip_t::zero_ip();
+    irs_u16 dest_port = 0;
+    if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port,
+      &m_local_port))
+    {
+      deque<udp_channel_t>::iterator channel_list_cur_it =
+        find_if(m_channel_list.begin(), m_channel_list.end(),
+        channel_equal_t(dest_ip_cur, dest_port));
+      if (channel_list_cur_it != m_channel_list.end()) {
+        size_type list_index = channel_list_cur_it - m_channel_list.begin();
+        m_cur_channel = channel_ident_from_index(list_index);
+        mlog() << irsm("channel_list_index(m_cur_channel) = ") <<
+          channel_list_index(m_cur_channel) << endl;
+        mlog() << irsm("list_index = ") << list_index << endl;
+        IRS_LIB_ASSERT(channel_list_index(m_cur_channel) == list_index);
       } else {
-        m_channel_list.clear();
-        m_channel_list.resize(m_channel_max_count, udp_channel_t());
         m_channel++;
-        m_channel_list.pop_back();
-        m_channel_list.push_front(udp_channel_t(dest_ip_cur, dest_port));
+        if (m_channel != invalid_channel) {
+          if (m_channel <= m_channel_max_count) {
+            m_channel_list[m_channel - 1] =
+              udp_channel_t(dest_ip_cur, dest_port);
+            //mlog() << irsm("Add channel: ") << int(m_channel) << endl;
+            IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Add channel: ") <<
+              int(m_channel) << endl);
+          } else {
+            m_channel_list.pop_front();
+            m_channel_list.push_back(udp_channel_t(dest_ip_cur, dest_port));
+          }
+        } else {
+          m_channel_list.clear();
+          m_channel_list.resize(m_channel_max_count, udp_channel_t());
+          m_channel++;
+          m_channel_list.pop_back();
+          m_channel_list.push_front(udp_channel_t(dest_ip_cur, dest_port));
+        }
+        view_channel_list();
+        m_cur_channel = m_channel;
       }
-      view_channel_list();
-      m_cur_channel = m_channel;
     }
-  }  
+  }
   #endif // NOP
   return m_cur_channel;
 }
@@ -2145,12 +2147,18 @@ irs::hardflow::simple_udp_flow_t::size_type
 bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
   size_type a_channel_ident)
 {
-  if (m_channel >= m_channel_max_count) {
-    return ((m_channel - m_channel_max_count) < a_channel_ident) &&
-      (a_channel_ident <= m_channel);
+  //mxip_t dest_ip_cur = mxip_t::zero_ip();
+  //irs_u16 dest_port = 0;
+  if (channel_next() != invalid_channel) {
+    if (m_channel >= m_channel_max_count) {
+      return (((m_channel - m_channel_max_count) < a_channel_ident) &&
+        (a_channel_ident <= m_channel));
+    } else {
+      return ((a_channel_ident <= m_channel) &&
+        (a_channel_ident != invalid_channel));
+    }
   } else {
-    return (a_channel_ident <= m_channel) &&
-      (a_channel_ident != invalid_channel);
+    return false;
   }
 }
 
@@ -2186,15 +2194,8 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type read_data_size = 0;
-  //IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_read = ") << 
-    //int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident)) {
-    //IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm(" ************** read "
-      //"****************") << endl);
     size_type deque_index = channel_list_index(a_channel_ident);
-    /*mlog() << irsm("m_channel = ") << m_channel << endl;
-    mlog() << irsm("a_channel_ident = ") << a_channel_ident << endl;
-    mlog() << irsm("deque_index = ") << deque_index << endl;*/
     IRS_LIB_ASSERT(deque_index < m_channel_max_count);
     mxip_t dest_ip = mxip_t::zero_ip();
     irs_u16 dest_port = 0;
@@ -2237,13 +2238,8 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs::hardflow::simple_udp_flow_t::write(size_type a_channel_ident, 
   const irs_u8 *ap_buf, size_type a_size)
 {
-  //IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("a_channel_ident_write = ") <<
-    //int(a_channel_ident) << endl);
   if (is_channel_exists(a_channel_ident))
   {
-    m_cur_channel = a_channel_ident;
-    //IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm(" ***************** write "
-      //"************************") << endl);
     size_type deque_index = channel_list_index(a_channel_ident);
     IRS_LIB_ASSERT(deque_index < m_channel_max_count);
     if (a_size > mp_simple_udp->send_data_size_max()) {
@@ -2260,6 +2256,7 @@ irs::hardflow::simple_udp_flow_t::size_type
       }
     //);
     memcpyex(mp_send_buf, ap_buf, a_size);
+    m_cur_channel = invalid_channel;
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist,"
       "write data not posible ") << endl);
