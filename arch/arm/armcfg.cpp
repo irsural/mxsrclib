@@ -1,4 +1,5 @@
 #include <armcfg.h>
+#include <armioregs.h>
 
 void pll_on()
 {

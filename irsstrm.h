@@ -21,7 +21,7 @@
 #endif //__ICCAVR__
 
 #ifdef __ICCARM__
-#include <iolm3sxxxx.h>
+#include <armioregs.h>
 #endif //__ICCARM__
 
 #ifdef IRS_LINUX

@@ -132,61 +132,53 @@ public:
 };
 
 //  Реализация сервера mxnet в виде класса
-class mxnet_t
+class mxnet_t : public mxdata_t
 {
 public:
   typedef irs_i32 var_type;
   typedef hardflow_t::size_type channel_type;
   
-  mxnet_t(hardflow_t& a_hardflow, var_type *ap_vars, irs_size_t a_var_cnt);
+  mxnet_t(hardflow_t& a_hardflow, irs_size_t a_var_cnt);
   ~mxnet_t();
+  irs_uarc size();
+  irs_bool connected();
+  void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   void tick();
 private:
+  typedef mx_beg_pack_proc_fix_flow_t beg_pack_type;
   enum status_t
   {
-    START,
-    READ_HEAD,
-    WAIT_READ_HEAD_AND_ANALYSIS,
-    READ_DATA,
-    CHECKSUM,
-    DECODE_COMM,
-    READ_COUNT_PACKET,
-    READ_PROC,
-    READ_PACKET,
-    WRITE_PROC,
-    GET_VERSION_PACKET,
-    WRITE,
-    WRITE_WAIT,
-    WRITE_PACKET
+    mxn_start,
+    mxn_read_head,
+    mxn_wait_read_head_and_analysis,
+    mxn_read_data,
+    mxn_checksum,
+    mxn_decode_comm,
+    mxn_read_count_packet,
+    mxn_read_proc,
+    mxn_read_packet,
+    mxn_write,
+    mxn_get_version_packet,
+    mxn_write_proc,
+    mxn_write_wait,
+    mxn_write_packet
   };
   enum 
   {
     invalid_channel = hardflow_t::invalid_channel
   };
-  // Структура пакета mxnet
-  /*struct packet_t
-  {
-    var_type ident_beg_pack_first;
-    var_type ident_beg_pack_second;
-    irs_size_t code_comm;
-    irs_u8 code_comm_dummy[MXN_DUMMY_SIZE];
-    irs_size_t var_ind_first;
-    irs_u8 var_ind_first_dummy[MXN_DUMMY_SIZE];
-    irs_size_t var_count;
-    irs_u8 var_count_dummy[MXN_DUMMY_SIZE];
-    var_type var[1];
-  };*/
   
+  raw_data_t<var_type> m_raw_data;
   status_t m_status;
   status_t m_status_next;
   hardflow_t& m_hardflow;
   hardflow::fixed_flow_t m_fixed_flow;
-  mx_beg_pack_proc_fix_flow_t m_beg_pack_proc;
+  beg_pack_type m_beg_pack_proc;
   channel_type m_current_channel;
-  // Количество переменных
-  irs_size_t m_var_cnt;
-  // Внешний массив переменных
-  var_type* mp_vars;
   // Внутренний массив переменных
   mxn_packet_t *mp_packet;
   // Массив помечающий переменные только для чтения

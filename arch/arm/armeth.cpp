@@ -1,7 +1,7 @@
 #include <irsdefs.h>
 
 #include <armeth.h>
-#include <iolm3sxxxx.h>
+#include <armioregs.h>
 #include <irscpu.h>
 #include <irsint.h>
 #include <irsarchint.h>
@@ -37,9 +37,9 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
     EPHY0 = 30
   };
   
-  RCGC2 |= (1 << EMAC0)|(1 << EPHY0);
-  //RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
-  //RCGC2_bit.EMAC0 = 1;
+  //RCGC2 |= (1 << EMAC0)|(1 << EPHY0);
+  RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
+  RCGC2_bit.EMAC0 = 1;
   RCGC2_bit.PORTF = 1;
   for (irs_u8 i = 10; i; i--);
   //  Делитель частоты интерфейса MII
@@ -181,8 +181,6 @@ void irs::arm::arm_ethernet_t::tick()
       irs_u32 fifo_data = 0;
       fifo_data = MACDATA;
       m_rx_size = IRS_LOWORD(fifo_data) - L_size;
-      
-      irs::mlog() << irsm("RX size : ") << m_rx_size << endl;
       
       if (m_rx_size > m_buf_size && MACNP_bit.NPR)
       {

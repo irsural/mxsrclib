@@ -600,33 +600,90 @@ void irs::mxdata_to_u8_t::tick()
 }
 
 //  Реализация сервера mxnet в виде класса
-irs::mxnet_t::mxnet_t(hardflow_t &a_hardflow, var_type *ap_vars, 
-  irs_size_t a_var_cnt):
-  
-  m_status(START),
-  m_status_next(START),
+irs::mxnet_t::mxnet_t(hardflow_t &a_hardflow, irs_size_t a_var_cnt):
+  m_raw_data(a_var_cnt),
+  m_status(mxn_start),
+  m_status_next(mxn_start),
   m_hardflow(a_hardflow),
   m_fixed_flow(&m_hardflow),
   m_beg_pack_proc(m_fixed_flow),
   m_current_channel(0),
-  m_var_cnt(a_var_cnt),
-  mp_vars(ap_vars),
-  m_read_only_vector(m_var_cnt),
+  m_read_only_vector(m_raw_data.size()),
   m_var_cnt_packet(0),
   m_cnt_send(0),
   m_write_error(false),
   m_checksum_type(mxncs_reduced_direct_sum)
 {
   mp_packet = (mxn_packet_t*)IRS_LIB_NEW_ASSERT(
-    var_type[m_var_cnt + MXN_SIZE_OF_HEADER + 1],
+    var_type[m_raw_data.size() + MXN_SIZE_OF_HEADER + 1],
     MXNETCPP_IDX
   );
-  memset(static_cast<void*>(mp_packet), 0, m_var_cnt + MXN_SIZE_OF_HEADER + 1);
+  memset(static_cast<void*>(mp_packet), 0, m_raw_data.size() + MXN_SIZE_OF_HEADER + 1);
 }
 
 irs::mxnet_t::~mxnet_t()
 {
   IRS_LIB_ARRAY_DELETE_ASSERT((var_type*&)mp_packet);
+}
+
+irs_uarc irs::mxnet_t::size()
+{
+  return m_raw_data.size() * sizeof(var_type);
+}
+
+irs_bool irs::mxnet_t::connected()
+{
+  return true;
+}
+
+void irs::mxnet_t::read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size)
+{
+  irs_uarc max_size = m_raw_data.size() * sizeof(var_type);
+  if (a_index >= max_size) return;
+  max_size -= a_index;
+  irs_uarc copy_size = a_size;
+  if (copy_size > max_size) copy_size = max_size;
+  irs_u8* buf = (irs_u8*)m_raw_data.data() + a_index;
+  memcpy(ap_buf, buf, copy_size);
+}
+
+void irs::mxnet_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  irs_uarc max_size = m_raw_data.size() * sizeof(var_type);
+  if (a_index >= max_size) return;
+  max_size -= a_index;
+  irs_uarc copy_size = a_size;
+  if (copy_size > max_size) copy_size = max_size;
+  irs_u8* buf = (irs_u8*)m_raw_data.data() + a_index;
+  memcpy(buf, ap_buf, copy_size);
+}
+
+irs_bool irs::mxnet_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  irs_uarc max_size = m_raw_data.size() * sizeof(var_type);
+  if (a_index >= max_size) return irs_false;
+  irs_uarc bit_index = a_bit_index;
+  if (bit_index > 7) bit_index = 7;
+  return (*((irs_u8*)(m_raw_data.data()) + a_index) & irs_u8(1 << bit_index));
+}
+
+void irs::mxnet_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  irs_uarc max_size = m_raw_data.size() * sizeof(var_type);
+  if (a_index >= max_size) return;
+  irs_uarc bit_index = a_bit_index;
+  if (bit_index > 7) bit_index = 7;
+  *((irs_u8*)(m_raw_data.data()) + a_index) |= irs_u8(1 << bit_index);
+}
+
+void irs::mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
+{
+  irs_uarc max_size = m_raw_data.size() * sizeof(var_type);
+  if (a_index >= max_size) return;
+  irs_uarc bit_index = a_bit_index;
+  if (bit_index > 7) bit_index = 7;
+  *((irs_u8*)(m_raw_data.data()) + a_index) &= 0xFF^irs_u8(1 << bit_index);
 }
 
 void irs::mxnet_t::tick()
@@ -636,130 +693,177 @@ void irs::mxnet_t::tick()
   
   switch (m_status)
   {
-    case START:
+    case mxn_start:
     {
-      m_status = READ_HEAD;
+      m_status = mxn_read_head;
       break;
     }
-    case READ_HEAD:
+    case mxn_read_head:
     {
       m_current_channel = m_hardflow.channel_next();
       if (m_current_channel != invalid_channel)
       {
         m_beg_pack_proc.start((irs_u8*)mp_packet, m_current_channel);
-        m_status = WAIT_READ_HEAD_AND_ANALYSIS;
+        m_status = mxn_wait_read_head_and_analysis;
       }
       break;
     }
-    case WAIT_READ_HEAD_AND_ANALYSIS:
+    case mxn_wait_read_head_and_analysis:
     {
-      if (!m_beg_pack_proc.busy()) 
+      switch (m_beg_pack_proc.status())
       {
-        if (mp_packet->code_comm == MXN_WRITE) 
+        case mx_beg_pack_proc_fix_flow_t::beg_pack_ready:
         {
-          if (mp_packet->var_count <= m_var_cnt) 
+          if (mp_packet->code_comm == MXN_WRITE) 
           {
-            m_var_cnt_packet = mp_packet->var_count;
-            m_status = READ_DATA;
-          } 
+            if (mp_packet->var_count <= m_raw_data.size()) 
+            {
+              m_var_cnt_packet = mp_packet->var_count;
+              m_status = mxn_read_data;
+            } 
+            else 
+            {
+              m_status = mxn_read_head;
+            }
+          }
           else 
           {
-            m_status = READ_HEAD;
+            m_var_cnt_packet = 0;
+            m_status = mxn_read_data;
           }
+          break;
         }
-        else 
+        case mx_beg_pack_proc_fix_flow_t::beg_pack_error:
         {
-          m_var_cnt_packet = 0;
-          m_status = READ_DATA;
+          m_fixed_flow.read_abort();
+          m_status = mxn_read_head;
+          irs::mlog() << irsm(">>>> mxnet ") <<
+            irsm(">> mxn_wait_read_head_and_analysis ") <<
+            irsm(">> BEG_PACK_ERROR") << endl;
+          break;
         }
       }
       break;
     }
-    case READ_DATA:
+    case mxn_read_data:
     {
       irs_u8* p_begin = ((irs_u8*)mp_packet) + mxn_header_size;
       irs_size_t size = sizeof(var_type)*(m_var_cnt_packet + 1);
       m_fixed_flow.read(m_current_channel, p_begin, size);
-      m_status = CHECKSUM;
+      m_status = mxn_checksum;
       break;
     }
-    case CHECKSUM:
+    case mxn_checksum:
     {
-      if (m_fixed_flow.read_status() == hardflow::fixed_flow_t::status_success)
+      switch (m_fixed_flow.read_status())
       {
-        irs_i32 chksum;
-        mxn_calc_checksum(chksum, mp_packet, m_var_cnt_packet, m_checksum_type);
-        if (chksum == mp_packet->var[m_var_cnt_packet])
+        case hardflow::fixed_flow_t::status_success:
         {
-          m_status = DECODE_COMM;
-        } 
-        else m_status = READ_HEAD;
+          irs_i32 chksum;
+          mxn_calc_checksum(chksum, mp_packet, m_var_cnt_packet, 
+            m_checksum_type);
+          if (chksum == mp_packet->var[m_var_cnt_packet])
+          {
+            m_status = mxn_decode_comm;
+          } 
+          else 
+          {
+            m_status = mxn_read_head;
+          }
+          break;
+        }
+        case hardflow::fixed_flow_t::status_error:
+        {
+          m_fixed_flow.read_abort();
+          m_status = mxn_read_head;
+          irs::mlog() << 
+            irsm(">>>> mxnet >> mxn_checksum >> fixed_flow_t::status_error") 
+            << endl;
+          break;
+        }
       }
       break;
     }
-    case DECODE_COMM:
+    case mxn_decode_comm:
     {
       switch (mp_packet->code_comm)
       {
-        case MXN_READ_COUNT:    m_status = READ_COUNT_PACKET;   break;
-        case MXN_READ:          m_status = READ_PROC;           break;
-        case MXN_WRITE:         m_status = WRITE_PROC;          break;
-        case MXN_GET_VERSION:   m_status = GET_VERSION_PACKET;  break;
-        default:                m_status = READ_HEAD;           break;
+        case MXN_READ_COUNT:    m_status = mxn_read_count_packet;   break;
+        case MXN_READ:          m_status = mxn_read_proc;           break;
+        case MXN_WRITE:         m_status = mxn_write_proc;          break;
+        case MXN_GET_VERSION:   m_status = mxn_get_version_packet;  break;
+        default:                m_status = mxn_read_head;           break;
       }
       break;
     }
-    case READ_COUNT_PACKET:
+    case mxn_read_count_packet:
     {
-      mp_packet->var_count = m_var_cnt;
+      mp_packet->var_count = m_raw_data.size();
       mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
       m_cnt_send = sizeof(irs_i32)*(MXN_SIZE_OF_HEADER + 1);
-      m_status = WRITE;
-      m_status_next = READ_HEAD;
+      m_status = mxn_write;
+      m_status_next = mxn_read_head;
       break;
     }
-    case WRITE:
+    case mxn_write:
     {
       m_fixed_flow.write(m_current_channel, (irs_u8*)mp_packet, m_cnt_send);
-      m_status = WRITE_WAIT;
+      m_status = mxn_write_wait;
       break;
     }
-    case WRITE_WAIT:
+    case mxn_write_wait:
     {
-      if (m_fixed_flow.write_status() == hardflow::fixed_flow_t::status_success)
+      switch (m_fixed_flow.write_status())
       {
-        m_status = m_status_next;
+        case hardflow::fixed_flow_t::status_success:
+        {
+          m_status = m_status_next;
+          break;
+        }
+        case hardflow::fixed_flow_t::status_error:
+        {
+          m_fixed_flow.write_abort();
+          m_status = mxn_read_head;
+          irs::mlog() << 
+            irsm(">>>> mxnet >> mxn_write_wait >> fixed_flow_t::status_error") 
+            << endl;
+          break;
+        }
       }
       break;
     }
-    case READ_PROC:
+    case mxn_read_proc:
     {
-      m_status = READ_PACKET;
+      m_status = mxn_read_packet;
       if (mp_packet->var_count > MXN_CNT_MAX - mp_packet->var_ind_first)
-        m_status = READ_HEAD;
-      if (mp_packet->var_ind_first + mp_packet->var_count > m_var_cnt)
-        m_status = READ_HEAD;
+      {
+        m_status = mxn_read_head;
+      }
+      if (mp_packet->var_ind_first + mp_packet->var_count > m_raw_data.size())
+      {
+        m_status = mxn_read_head;
+      }
       break;
     }
-    case READ_PACKET:
+    case mxn_read_packet:
     {
       memcpy((void*)mp_packet->var,
-             (void*)(mp_vars + mp_packet->var_ind_first),
-             sizeof(var_type) * mp_packet->var_count);
+        (void*)(m_raw_data.data() + mp_packet->var_ind_first),
+        sizeof(var_type) * mp_packet->var_count);
       mxn_calc_checksum(mp_packet->var[mp_packet->var_count], mp_packet, 
         mp_packet->var_count, m_checksum_type);
       m_cnt_send = 
         sizeof(var_type) * (mp_packet->var_count + MXN_SIZE_OF_HEADER + 1);
-      m_status = WRITE;
-      m_status_next = READ_HEAD;
+      m_status = mxn_write;
+      m_status_next = mxn_read_head;
       break;
     }
-    case WRITE_PROC:
+    case mxn_write_proc:
     {
       bool over_max =
         (mp_packet->var_count > (MXN_CNT_MAX - mp_packet->var_ind_first));
       bool over_range =
-        ((mp_packet->var_ind_first + mp_packet->var_count) > m_var_cnt);
+        ((mp_packet->var_ind_first + mp_packet->var_count) > m_raw_data.size());
       m_write_error = (over_max || over_range);
     
       if (!m_write_error) 
@@ -769,30 +873,30 @@ void irs::mxnet_t::tick()
              ind_var++, ind_var_ext++) 
         {
           if (!m_read_only_vector[ind_var_ext])
-            mp_vars[ind_var_ext] = mp_packet->var[ind_var];
+            m_raw_data[ind_var_ext] = mp_packet->var[ind_var];
         }
       }
-      m_status = WRITE_PACKET;
+      m_status = mxn_write_packet;
       break;
     }
-    case WRITE_PACKET:
+    case mxn_write_packet:
     {
       mp_packet->var_ind_first = m_write_error;
       mp_packet->var_count = 0;
       mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
       m_cnt_send = sizeof(var_type) * (MXN_SIZE_OF_HEADER + 1);
-      m_status = WRITE;
-      m_status_next = READ_HEAD;
+      m_status = mxn_write;
+      m_status_next = mxn_read_head;
       break;
     }
-    case GET_VERSION_PACKET:
+    case mxn_get_version_packet:
     {
       mp_packet->var_ind_first = 0;
       IRS_LOWORD(mp_packet->var_count) = MXN_VERSION;
       mxn_calc_checksum(mp_packet->var[0], mp_packet, 0, m_checksum_type);
       m_cnt_send = sizeof(var_type) * (MXN_SIZE_OF_HEADER + 1);
-      m_status = WRITE;
-      m_status_next = READ_HEAD;
+      m_status = mxn_write;
+      m_status_next = mxn_read_head;
       break;
     }
   }

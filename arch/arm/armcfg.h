@@ -7,8 +7,6 @@
 
 #include <irsdefs.h>
 
-#include <iolm3sxxxx.h>
-
 #include <irsfinal.h>
 
 void pll_on();

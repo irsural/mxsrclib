@@ -10,7 +10,7 @@
 #include <irscpu.h>
 #include <irserror.h>
 
-#include <iolm3sxxxx.h>
+#include <armioregs.h>
 
 #include <irsfinal.h>
 

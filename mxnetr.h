@@ -40,27 +40,34 @@ public:
   virtual void abort();
 };
 
-// Поиск начала пакета через hardflow
+// Поиск начала пакета через fixed_flow
 class mx_beg_pack_proc_fix_flow_t
 {
 public:
   typedef hardflow_t::size_type channel_t;
+  enum beg_pack_status_type
+  {
+    beg_pack_stop,
+    beg_pack_ready,
+    beg_pack_busy,
+    beg_pack_error
+  };
     
   mx_beg_pack_proc_fix_flow_t(hardflow::fixed_flow_t& a_fixed_flow);
   ~mx_beg_pack_proc_fix_flow_t();
   void start(irs_u8* ap_buf, channel_t a_channel);
   void abort();
-  bool busy();
+  beg_pack_status_type status();
   void tick();
 private:
   enum status_t 
   {
-    WAIT,
-    START,
-    READ_BEGIN,
-    READ_END,
-    READ_CHUNK,
-    STOP
+    wait,
+    start_process,
+    read_begin,
+    read_end,
+    read_chunk,
+    stop
   };
   enum
   {
@@ -68,11 +75,11 @@ private:
   };
 
   status_t m_status;
+  beg_pack_status_type m_out_status;
   hardflow::fixed_flow_t& m_fixed_flow;
   irs_u8* mp_buf;
   irs_u8* mp_buf_end;
   bool m_abort_request;
-  bool m_busy;
   channel_t m_channel;
 };
 

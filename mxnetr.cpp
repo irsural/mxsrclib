@@ -1,5 +1,5 @@
 // Общие утилиты mxnet
-// Дата: 18.05.2010
+// Дата: 27.05.2010
 // Ранняя Дата: 18.02.2009
 
 #include <mxnetr.h>
@@ -199,12 +199,12 @@ irs_i32 irs::checksum_calc(irs::mxn_checksum_t cs_type,
 irs::mx_beg_pack_proc_fix_flow_t::mx_beg_pack_proc_fix_flow_t(
   hardflow::fixed_flow_t& a_fixed_flow):
   
-  m_status(WAIT),
+  m_status(wait),
+  m_out_status(beg_pack_stop),
   m_fixed_flow(a_fixed_flow),
   mp_buf(IRS_NULL),
   mp_buf_end(IRS_NULL),
   m_abort_request(false),
-  m_busy(true),
   m_channel(invalid_channel)
 {
 }
@@ -218,10 +218,10 @@ void irs::mx_beg_pack_proc_fix_flow_t::start(
 {
   mp_buf = ap_buf;
   mp_buf_end = mp_buf + MXN_SIZE_OF_BEG_PACK;
-  m_status = START;
+  m_status = start_process;
+  m_out_status = beg_pack_busy;
   m_abort_request = false;
   m_channel = a_channel;
-  m_busy = true;
 }
 
 void irs::mx_beg_pack_proc_fix_flow_t::abort()
@@ -229,48 +229,51 @@ void irs::mx_beg_pack_proc_fix_flow_t::abort()
   m_abort_request = true;
 }
 
-bool irs::mx_beg_pack_proc_fix_flow_t::busy()
+irs::mx_beg_pack_proc_fix_flow_t::beg_pack_status_type 
+irs::mx_beg_pack_proc_fix_flow_t::status()
 {
-  return m_busy;
+  return m_out_status;
 }
 
 void irs::mx_beg_pack_proc_fix_flow_t::tick()
 {
   switch (m_status) 
   {
-    case WAIT:
+    case wait:
     {
       break;
     }
-    case START: 
+    case start_process: 
     {
       m_fixed_flow.read(m_channel, mp_buf, MXN_SIZE_OF_BEG_PACK);
-      m_status = READ_BEGIN;
+      m_status = read_begin;
+      m_out_status = beg_pack_busy;
       break;
     }
-    case READ_BEGIN: 
+    case read_begin: 
     {
-      if (m_fixed_flow.read_status() == hardflow::fixed_flow_t::status_success)
-      {
+      bool flow_status = m_fixed_flow.read_status();
+      if (flow_status == hardflow::fixed_flow_t::status_success) {
         m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
-        m_status = READ_END;
-      } 
-      else if (m_abort_request) 
-      {
+        m_status = read_end;
+      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
+        m_status = stop;
+        m_out_status = beg_pack_error;
+      }
+      if (m_abort_request) {
         m_fixed_flow.read_abort();
-        m_status = STOP;
+        m_status = stop;
+        m_out_status = beg_pack_stop;
       }
       break;
     }
-    case READ_END: 
+    case read_end: 
     {
-      if (m_fixed_flow.read_status() == hardflow::fixed_flow_t::status_success) 
-      {
+      bool flow_status = m_fixed_flow.read_status();
+      if (flow_status == hardflow::fixed_flow_t::status_success) {
         mxn_sz_t pos = 0;
-        if (find_begin_in_data(mp_buf, mxn_header_size, pos)) 
-        {
-          if (pos) 
-          {
+        if (find_begin_in_data(mp_buf, mxn_header_size, pos)) {
+          if (pos) {
             void* src = (void*)(mp_buf + pos);
             irs_size_t move_size = mxn_header_size - pos;
             void* dest = (void*)mp_buf;
@@ -280,12 +283,12 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
             irs_size_t chunk_size = pos;
             m_fixed_flow.read(m_channel, buf, chunk_size);
 
-            m_status = READ_CHUNK;
-          } 
-          else m_status = STOP;
-        }
-        else 
-        {
+            m_status = read_chunk;
+          } else {
+            m_status = stop;
+            m_out_status = beg_pack_ready;
+          }
+        } else {
           void* src = (void*)(mp_buf + mxn_end_size);
           irs_size_t move_size = MXN_SIZE_OF_BEG_PACK;
           void* dest = (void*)mp_buf;
@@ -293,30 +296,36 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
 
           m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
         }
-      } 
-      else if (m_abort_request) 
-      {
+      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
+        m_status = stop;
+        m_out_status = beg_pack_error;
+      }
+      if (m_abort_request) {
         m_fixed_flow.read_abort();
-        m_status = STOP;
+        m_status = stop;
+        m_out_status = beg_pack_stop;
       }
       break;
     }
-    case READ_CHUNK: 
+    case read_chunk: 
     {
-      if (m_fixed_flow.read_status() == hardflow::fixed_flow_t::status_success) 
-      {
-        m_status = STOP;
+      bool flow_status = m_fixed_flow.read_status();
+      if (flow_status == hardflow::fixed_flow_t::status_success) {
+        m_status = stop;
+        m_out_status = beg_pack_ready;
+      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
+        m_status = start_process;
+        m_out_status = beg_pack_error;
       } 
-      else if (m_abort_request) 
-      {
+      if (m_abort_request) {
         m_fixed_flow.read_abort();
-        m_status = STOP;
+        m_status = stop;
+        m_out_status = beg_pack_stop;
       }
       break;
     }
-    case STOP: 
+    case stop: 
     {
-      m_busy = false;
       m_abort_request = false;
       break;
     }
