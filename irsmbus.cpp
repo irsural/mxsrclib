@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 20.05.2010
+// Дата: 28.05.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -1683,6 +1683,8 @@ irs::modbus_client_t::modbus_client_t(
   m_error_count_max(a_error_count_max),
   m_transaction_id(0)
 {
+  //m_send_request_timer.set(a_update_time/get_packet_number());
+  m_send_request_timer.set(0);
   m_fixed_flow.read_timeout(a_disconnect_time);
   m_fixed_flow.write_timeout(a_disconnect_time);
   init_to_cnt();
@@ -1698,6 +1700,41 @@ irs::modbus_client_t::~modbus_client_t()
 irs_uarc irs::modbus_client_t::size()
 {
   return m_input_registers_end_byte;
+}
+
+size_t irs::modbus_client_t::get_packet_number()
+{
+  size_t di_pack_num = 0;
+  if ((m_discr_inputs_byte_read.size() % m_size_of_data_read_byte) == 0) {
+    di_pack_num = m_discr_inputs_byte_read.size()/m_size_of_data_read_byte;
+  } else {
+    di_pack_num =
+      m_discr_inputs_byte_read.size()/m_size_of_data_read_byte + 1;
+  }
+  size_t coils_pack_num = 0;
+  if ((m_coils_byte_read.size() % m_size_of_data_read_byte) == 0) {
+    coils_pack_num = m_coils_byte_read.size()/m_size_of_data_read_byte;
+  } else {
+    coils_pack_num = m_coils_byte_read.size()/m_size_of_data_read_byte + 1;
+  }
+  size_t hold_reg_pack_num = 0;
+  if ((m_hold_registers_size_reg % m_size_of_data_read_reg) == 0) {
+    hold_reg_pack_num = 
+      m_hold_registers_size_reg/m_size_of_data_read_reg;
+  } else {
+    hold_reg_pack_num =
+      m_hold_registers_size_reg/m_size_of_data_read_reg + 1;
+  }
+  size_t input_reg_pack_num = 0;
+  if ((m_input_registers_size_reg % m_size_of_data_read_reg) == 0) {
+    input_reg_pack_num =
+      m_input_registers_size_reg/m_size_of_data_read_reg;
+  } else {
+    input_reg_pack_num =
+      m_input_registers_size_reg/m_size_of_data_read_reg + 1;
+  }
+  return (di_pack_num + coils_pack_num +
+    hold_reg_pack_num + input_reg_pack_num);
 }
 
 irs_bool irs::modbus_client_t::connected()
@@ -2804,7 +2841,7 @@ void irs::modbus_client_t::tick()
     irs::hardflow::fixed_flow_t::status_error))
   {
     m_mode = wait_command_mode;
-    //m_request_type = request_start;
+    m_request_type = request_start;
     m_start = irs_true;
     m_fixed_flow.read_abort();
     m_fixed_flow.write_abort();
@@ -3019,17 +3056,16 @@ void irs::modbus_client_t::tick()
             m_search_index = 0;
         }
       }
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-      m_mode = send_request_mode;
+      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+      m_mode = convert_request_mode;
     }
     break;
-    case send_request_mode:
+    case convert_request_mode:
     {
       MBAP_header_t& header =
         reinterpret_cast<MBAP_header_t&>(*m_spacket.data());
       m_transaction_id++;
       header.transaction_id = m_transaction_id;
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" send_request_mode"));
       IRS_LIB_IRSMBUS_DBG_MONITOR(
         modbus_pack_request_monitor(m_spacket.data());
       );
@@ -3085,12 +3121,19 @@ void irs::modbus_client_t::tick()
           
         } break;
       }
-      m_fixed_flow.write(m_channel, m_spacket.data(), size_of_MBAP +
-        m_size_byte_end);
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("read_header_mode"));
-      m_mode = read_header_mode;
+      m_mode = send_request_mode;
     }
     break;
+    case send_request_mode:
+    {
+      if (m_send_request_timer.check()) {
+        m_fixed_flow.write(m_channel, m_spacket.data(), size_of_MBAP +
+          m_size_byte_end);
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("read_header_mode"));
+        m_mode = read_header_mode;
+        m_send_request_timer.start();
+      }
+    } break;
     case read_header_mode:
     {
       if(m_fixed_flow.write_status() == 
@@ -3515,8 +3558,8 @@ void irs::modbus_client_t::tick()
     break;
     case request_read_data_mode:
     {
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-      m_mode = send_request_mode;
+      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+      m_mode = convert_request_mode;
       // Чтение discret inputs
       if(m_start_block < m_discret_inputs_size_bit) {
         m_command = read_discrete_inputs;
@@ -3588,7 +3631,7 @@ void irs::modbus_client_t::tick()
           }
         }
       }
-      m_mode = send_request_mode;
+      m_mode = convert_request_mode;
     }
     break;
     case make_request_mode: //чтение полного массива (режим mode_refresh_auto)
@@ -3607,6 +3650,7 @@ void irs::modbus_client_t::tick()
             );
             m_mode = make_request_mode;
             m_request_type = read_discrete_inputs;
+            m_global_read_index = 0;
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" make_request_mode"));
           }
         }
@@ -3620,15 +3664,15 @@ void irs::modbus_client_t::tick()
             make_packet(m_global_read_index,
               static_cast<irs_u16>(m_size_of_data_read_byte*8));
             m_global_read_index += m_size_of_data_read_byte;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           } else {
             make_packet(m_global_read_index,
               irs_u16(m_discret_inputs_size_bit - m_global_read_index*8));
             m_global_read_index = 0;
             m_request_type = read_coils;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           }
         }
         break;
@@ -3641,15 +3685,15 @@ void irs::modbus_client_t::tick()
             make_packet(m_global_read_index,
               static_cast<irs_u16>(m_size_of_data_read_byte*8));
             m_global_read_index += m_size_of_data_read_byte;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           } else {
             make_packet(m_global_read_index,
               irs_u16(m_coils_size_bit - m_global_read_index*8));
             m_global_read_index = 0;
             m_request_type = read_hold_registers;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           }
         }
         break;
@@ -3661,15 +3705,15 @@ void irs::modbus_client_t::tick()
           {
             make_packet(m_global_read_index, m_size_of_data_read_reg);
             m_global_read_index += m_size_of_data_read_reg;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           } else {
             make_packet(m_global_read_index,
               irs_u16(m_hold_registers_size_reg - m_global_read_index));
             m_global_read_index = 0;
             m_request_type = read_input_registers;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           }
         }
         break;
@@ -3681,15 +3725,15 @@ void irs::modbus_client_t::tick()
           {
             make_packet(m_global_read_index, m_size_of_data_read_reg);
             m_global_read_index += m_size_of_data_read_reg;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
           } else {
             make_packet(m_global_read_index,
               irs_u16(m_input_registers_size_reg - m_global_read_index));
             m_global_read_index = 0;
             m_request_type = request_start;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_request_mode"));
-            m_mode = send_request_mode;
+            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+            m_mode = convert_request_mode;
             size_t read_flags_cnt = 0;
             for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
               m_coils_size_bit + m_hold_registers_size_reg + 

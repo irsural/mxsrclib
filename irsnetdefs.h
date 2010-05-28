@@ -1,5 +1,5 @@
 // Определение типов mxip_t, mxmac_t и сопутствующих им функций
-// Дата: 01.04.2010
+// Дата: 28.05.2010
 // Дата создания: 01.04.2010
 
 #ifndef IRSNETDEFSH
@@ -305,6 +305,13 @@ inline mxip_t make_mxip(const irs::char_t* a_ip)
   return ip;
 }
 
+inline ostream& operator<<(ostream& a_stream, mxip_t a_ip)
+{
+  a_stream << int(a_ip.val[0]) << "." << int(a_ip.val[1]) << ".";
+  a_stream << int(a_ip.val[2]) << "." << int(a_ip.val[3]);
+  return a_stream;
+}
+
 inline mxmac_t make_mxmac(int a_first_octet, int a_second_octet, 
   int a_third_octet, int a_fourth_octet, int a_fifth_octet, int a_sixth_octet)
 {
@@ -326,6 +333,14 @@ inline mxmac_t make_mxmac(const irs::char_t* a_mac)
     mac = mxmac_t();
   }
   return mac;
+}
+
+inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
+{
+  a_stream << int(a_mac.val[0]) << "." << int(a_mac.val[1]) << ".";
+  a_stream << int(a_mac.val[2]) << "." << int(a_mac.val[3]) << ".";
+  a_stream << int(a_mac.val[4]) << "." << int(a_mac.val[5]);
+  return a_stream;
 }
 
 } //namespace irs
