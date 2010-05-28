@@ -101,13 +101,53 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq):
     pwm_pin_clear = 0x2,
     pwm_pin_set = 0x3
   };
-  //  Верхний ключ
+  //  Верхний ключ фазы А
   PWM0GENA_bit.ActZero = pwm_pin_do_nothing;
   PWM0GENA_bit.ActLoad = pwm_pin_do_nothing;
   PWM0GENA_bit.ActCmpAU = pwm_pin_set;
   PWM0GENA_bit.ActCmpAD = pwm_pin_clear;
   PWM0GENA_bit.ActCmpBU = pwm_pin_do_nothing;
   PWM0GENA_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Нижний ключ фазы А
+  PWM0GENB_bit.ActZero = pwm_pin_do_nothing;
+  PWM0GENB_bit.ActLoad = pwm_pin_do_nothing;
+  PWM0GENB_bit.ActCmpAU = pwm_pin_clear;
+  PWM0GENB_bit.ActCmpAD = pwm_pin_set;
+  PWM0GENB_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM0GENB_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Верхний ключ фазы B
+  PWM1GENA_bit.ActZero = pwm_pin_do_nothing;
+  PWM1GENA_bit.ActLoad = pwm_pin_do_nothing;
+  PWM1GENA_bit.ActCmpAU = pwm_pin_set;
+  PWM1GENA_bit.ActCmpAD = pwm_pin_clear;
+  PWM1GENA_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM1GENA_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Нижний ключ фазы B
+  PWM1GENB_bit.ActZero = pwm_pin_do_nothing;
+  PWM1GENB_bit.ActLoad = pwm_pin_do_nothing;
+  PWM1GENB_bit.ActCmpAU = pwm_pin_clear;
+  PWM1GENB_bit.ActCmpAD = pwm_pin_set;
+  PWM1GENB_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM1GENB_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Верхний ключ фазы C
+  PWM2GENA_bit.ActZero = pwm_pin_do_nothing;
+  PWM2GENA_bit.ActLoad = pwm_pin_do_nothing;
+  PWM2GENA_bit.ActCmpAU = pwm_pin_set;
+  PWM2GENA_bit.ActCmpAD = pwm_pin_clear;
+  PWM2GENA_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM2GENA_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Нижний ключ фазы C
+  PWM2GENB_bit.ActZero = pwm_pin_do_nothing;
+  PWM2GENB_bit.ActLoad = pwm_pin_do_nothing;
+  PWM2GENB_bit.ActCmpAU = pwm_pin_clear;
+  PWM2GENB_bit.ActCmpAD = pwm_pin_set;
+  PWM2GENB_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM2GENB_bit.ActCmpBD = pwm_pin_do_nothing;
+  //  Dead-time включен
+  PWM0DBCTL_bit.Enable = 1;
+  PWM1DBCTL_bit.Enable = 1;
+  PWM2DBCTL_bit.Enable = 1;
+  //
 }
 
 irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()

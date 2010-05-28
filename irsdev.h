@@ -22,8 +22,6 @@ public:
   virtual cpu_traits_t::frequency_type get_max_frequency() = 0;
 };
 
-#ifdef __ICCARM__
-
 class three_phase_pwm_gen_t : public pwm_gen_t
 {
 public:
@@ -35,11 +33,12 @@ public:
     PHASE_ALL
   };
   virtual ~three_phase_pwm_gen_t() {}
+  using pwm_gen_t::set_duty;
   virtual void set_duty(irs_uarc a_duty, phase_t a_phase) = 0;
   virtual void set_duty(float a_duty, phase_t a_phase) = 0;
 };
 
-//#ifdef __ICCARM__
+#ifdef __ICCARM__
 
 namespace arm
 {
