@@ -93,6 +93,21 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq):
   PWM1CMPB = 0;
   PWM2CMPA = 0;
   PWM2CMPB = 0;
+  //  Поведение ноги
+  enum
+  {
+    pwm_pin_do_nothing = 0x0,
+    pwm_pin_invert = 0x1,
+    pwm_pin_clear = 0x2,
+    pwm_pin_set = 0x3
+  };
+  //  Верхний ключ
+  PWM0GENA_bit.ActZero = pwm_pin_do_nothing;
+  PWM0GENA_bit.ActLoad = pwm_pin_do_nothing;
+  PWM0GENA_bit.ActCmpAU = pwm_pin_set;
+  PWM0GENA_bit.ActCmpAD = pwm_pin_clear;
+  PWM0GENA_bit.ActCmpBU = pwm_pin_do_nothing;
+  PWM0GENA_bit.ActCmpBD = pwm_pin_do_nothing;
 }
 
 irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()

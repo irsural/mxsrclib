@@ -1,7 +1,7 @@
 /***************************************************************************
  **
  **    This file defines the Special Function Registers for
- **    Luminary LM3Sxxxx (Fury class) devices 
+ **    Luminary LM3Sxxxx (Fury class) devices
  **
  **    Used with ARM IAR C/C++ Compiler and Assembler
  **
@@ -126,14 +126,14 @@ typedef struct {
   __REG32  PWM4           : 1;
   __REG32  PWM5           : 1;
   __REG32  C0MINUS        : 1;
-  __REG32  C0PLUS         : 1; 
-  __REG32  C0O            : 1;   
+  __REG32  C0PLUS         : 1;
+  __REG32  C0O            : 1;
   __REG32  C1MINUS        : 1;
-  __REG32  C1PLUS         : 1; 
+  __REG32  C1PLUS         : 1;
   __REG32  C1O            : 1;
   __REG32  C2MINUS        : 1;
-  __REG32  C2PLUS         : 1; 
-  __REG32  C2O            : 1; 
+  __REG32  C2PLUS         : 1;
+  __REG32  C2O            : 1;
   __REG32  MC_FAULT0      : 1;
   __REG32  ADC0           : 1;
   __REG32  ADC1           : 1;
@@ -150,7 +150,7 @@ typedef struct {
   __REG32  CCP4           : 1;
   __REG32  CCP5           : 1;
   __REG32  CCP6           : 1;
-  __REG32  CCP7           : 1;  
+  __REG32  CCP7           : 1;
 } __dc3_bits;
 
 /* Device Capabilities 4 (DC4) */
@@ -161,8 +161,8 @@ typedef struct {
   __REG32  PORTD          : 1;
   __REG32  PORTE          : 1;
   __REG32  PORTF          : 1;
-  __REG32  PORTG          : 1;   
-  __REG32  PORTH          : 1;       
+  __REG32  PORTG          : 1;
+  __REG32  PORTH          : 1;
   __REG32                 :21;
   __REG32  E1588          : 1;
   __REG32  EMAC0          : 1;
@@ -233,8 +233,8 @@ typedef struct {
   __REG32  PORTD          : 1;
   __REG32  PORTE          : 1;
   __REG32  PORTF          : 1;
-  __REG32  PORTG          : 1;   
-  __REG32  PORTH          : 1;       
+  __REG32  PORTG          : 1;
+  __REG32  PORTH          : 1;
   __REG32                 :21;
   __REG32  E1588          : 1;
   __REG32  EMAC0          : 1;
@@ -314,11 +314,11 @@ typedef struct {
   __REG32                 : 4;
   __REG32  BYPASS2        : 1;
   __REG32                 : 1;
-  __REG32  PWRDN2         : 1; 
+  __REG32  PWRDN2         : 1;
   __REG32                 : 9;
-  __REG32  SYSDIV2        : 6;         
+  __REG32  SYSDIV2        : 6;
   __REG32                 : 2;
-  __REG32  USERCC2        : 1;  
+  __REG32  USERCC2        : 1;
 } __rcc2_bits;
 
 /* Run-Mode Clock Gating Control 0 (RCGC0)
@@ -394,8 +394,8 @@ typedef struct {
   __REG32  PORTD          : 1;
   __REG32  PORTE          : 1;
   __REG32  PORTF          : 1;
-  __REG32  PORTG          : 1;   
-  __REG32  PORTH          : 1;       
+  __REG32  PORTG          : 1;
+  __REG32  PORTH          : 1;
   __REG32                 :21;
   __REG32  E1588          : 1;
   __REG32  EMAC0          : 1;
@@ -409,8 +409,8 @@ typedef struct {
   __REG32  PORTD          : 1;
   __REG32  PORTE          : 1;
   __REG32  PORTF          : 1;
-  __REG32  PORTG          : 1;   
-  __REG32  PORTH          : 1;       
+  __REG32  PORTG          : 1;
+  __REG32  PORTH          : 1;
   __REG32                 :20;
   __REG32  EMAC0          : 1;
   __REG32                 : 1;
@@ -1259,7 +1259,7 @@ typedef struct {
   __REG32  PWM0En         : 1;
   __REG32  PWM1En         : 1;
   __REG32  PWM2En         : 1;
-  __REG32  PWM3En         : 1;    
+  __REG32  PWM3En         : 1;
   __REG32                 :28;
 } __pwmenable_bits;
 
@@ -1268,7 +1268,7 @@ typedef struct {
   __REG32  PWM0Inv        : 1;
   __REG32  PWM1Inv        : 1;
   __REG32  PWM2Inv        : 1;
-  __REG32  PWM3Inv        : 1;    
+  __REG32  PWM3Inv        : 1;
   __REG32                 :28;
 } __pwminvert_bits;
 
@@ -1279,7 +1279,7 @@ typedef struct {
   __REG32  Fault2         : 1;
   __REG32  Fault3         : 1;
   __REG32  Fault4         : 1;
-  __REG32  Fault5         : 1;    
+  __REG32  Fault5         : 1;
   __REG32                 :26;
 } __pwmfault_bits;
 
@@ -1289,7 +1289,7 @@ typedef struct {
   __REG32  IntPWM1        : 1;
   __REG32  IntPWM2        : 1;
   __REG32                 :13;
-  __REG32  IntFault       : 1;    
+  __REG32  IntFault       : 1;
   __REG32                 :15;
 } __pwminten_bits;
 
@@ -1298,7 +1298,7 @@ typedef struct {
   __REG32  IntPWM0        : 1;
   __REG32  IntPWM1        : 1;
   __REG32                 :14;
-  __REG32  IntFault       : 1;    
+  __REG32  IntFault       : 1;
   __REG32                 :15;
 } __pwmris_bits;
 
@@ -1307,13 +1307,13 @@ typedef struct {
   __REG32  IntPWM0        : 1;
   __REG32  IntPWM1        : 1;
   __REG32                 :14;
-  __REG32  IntFault       : 1;    
+  __REG32  IntFault       : 1;
   __REG32                 :15;
 } __pwmisc_bits;
 
 /* Pulse Width Modulator Status (PWMSTATUS) */
 typedef struct {
-  __REG32  Fault          : 1;   
+  __REG32  Fault          : 1;
   __REG32                 :31;
 } __pwmstatus_bits;
 
@@ -1322,10 +1322,10 @@ typedef struct {
   __REG32  Enable         : 1;
   __REG32  Mode           : 1;
   __REG32  Debug          : 1;
-  __REG32  LoadUpd        : 1;    
+  __REG32  LoadUpd        : 1;
   __REG32  CmpAUpd        : 1;
   __REG32  CmpBUpd        : 1;
-  __REG32                 :26;                  
+  __REG32                 :26;
 } __pwm0ctl_bits;
 
 /* Pulse Width Modulator 0 Interrupt/Trigger Enable (PWM0INTEN) */
@@ -1333,17 +1333,17 @@ typedef struct {
   __REG32  IntCntZero     : 1;
   __REG32  IntCntLoad     : 1;
   __REG32  IntCmpAU       : 1;
-  __REG32  IntCmpAD       : 1;    
+  __REG32  IntCmpAD       : 1;
   __REG32  IntCmpBU       : 1;
   __REG32  IntCmpBD       : 1;
-  __REG32                 : 2;   
+  __REG32                 : 2;
   __REG32  TrCntZero      : 1;
   __REG32  TrCntLoad      : 1;
   __REG32  TrCmpAU        : 1;
-  __REG32  TrCmpAD        : 1;    
+  __REG32  TrCmpAD        : 1;
   __REG32  TrCmpBU        : 1;
-  __REG32  TrCmpBD        : 1;  
-  __REG32                 :18;                     
+  __REG32  TrCmpBD        : 1;
+  __REG32                 :18;
 } __pwm0inten_bits;
 
 /* Pulse Width Modulator 0 Raw Interrupt Status (PWM0RIS) */
@@ -1351,10 +1351,10 @@ typedef struct {
   __REG32  IntCntZero     : 1;
   __REG32  IntCntLoad     : 1;
   __REG32  IntCmpAU       : 1;
-  __REG32  IntCmpAD       : 1;    
+  __REG32  IntCmpAD       : 1;
   __REG32  IntCmpBU       : 1;
-  __REG32  IntCmpBD       : 1;    
-  __REG32                 :26;                     
+  __REG32  IntCmpBD       : 1;
+  __REG32                 :26;
 } __pwm0ris_bits;
 
 /* Pulse Width Modulator 0 Interrupt Status and Clear (PWM0ISC) */
@@ -1362,74 +1362,74 @@ typedef struct {
   __REG32  IntCntZero     : 1;
   __REG32  IntCntLoad     : 1;
   __REG32  IntCmpAU       : 1;
-  __REG32  IntCmpAD       : 1;    
+  __REG32  IntCmpAD       : 1;
   __REG32  IntCmpBU       : 1;
-  __REG32  IntCmpBD       : 1;    
-  __REG32                 :26;                     
+  __REG32  IntCmpBD       : 1;
+  __REG32                 :26;
 } __pwm0isc_bits;
 
 /* Pulse Width Modulator 0 Load (PWM0LOAD) */
 typedef struct {
-  __REG32  Load           :16;    
-  __REG32                 :16;                     
+  __REG32  Load           :16;
+  __REG32                 :16;
 } __pwm0load_bits;
 
 /* Pulse Width Modulator 0 Counter (PWM0COUNT) */
 typedef struct {
-  __REG32  Count          :16;    
-  __REG32                 :16;                     
+  __REG32  Count          :16;
+  __REG32                 :16;
 } __pwm0count_bits;
 
 /* Pulse Width Modulator 0 Compare A (PWM0CMPA) */
 typedef struct {
-  __REG32  CompA          :16;    
-  __REG32                 :16;                     
+  __REG32  CompA          :16;
+  __REG32                 :16;
 } __pwm0cmpa_bits;
 
 /* Pulse Width Modulator 0 Compare B (PWM0CMPB) */
 typedef struct {
-  __REG32  CompB          :16;    
-  __REG32                 :16;                     
+  __REG32  CompB          :16;
+  __REG32                 :16;
 } __pwm0cmpb_bits;
 
 /* Pulse Width Modulator 0 Generator A Control (PWM0GENA) */
 typedef struct {
-  __REG32  ActZer0        : 2;
+  __REG32  ActZero        : 2;
   __REG32  ActLoad        : 2;
   __REG32  ActCmpAU       : 2;
-  __REG32  ActCmpAD       : 2;    
+  __REG32  ActCmpAD       : 2;
   __REG32  ActCmpBU       : 2;
-  __REG32  ActCmpBD       : 2;    
-  __REG32                 :20;                     
+  __REG32  ActCmpBD       : 2;
+  __REG32                 :20;
 } __pwm0gena_bits;
 
 /* Pulse Width Modulator 0 Generator B Control (PWM0GENB) */
 typedef struct {
-  __REG32  ActZer0        : 2;
+  __REG32  ActZero        : 2;
   __REG32  ActLoad        : 2;
   __REG32  ActCmpAU       : 2;
-  __REG32  ActCmpAD       : 2;    
+  __REG32  ActCmpAD       : 2;
   __REG32  ActCmpBU       : 2;
-  __REG32  ActCmpBD       : 2;    
-  __REG32                 :20;                     
+  __REG32  ActCmpBD       : 2;
+  __REG32                 :20;
 } __pwm0genb_bits;
 
 /* Pulse Width Modulator 0 Dead-Band Control (PWM0DBCTL) */
 typedef struct {
-  __REG32  Enable         : 1;    
-  __REG32                 :31;                     
+  __REG32  Enable         : 1;
+  __REG32                 :31;
 } __pwm0dbctl_bits;
 
 /* Pulse Width Modulator 0 Dead-Band Rising-Edge Delay (PWM0DBRISE) */
 typedef struct {
-  __REG32  RiseDelay      :12;    
-  __REG32                 :20;                     
+  __REG32  RiseDelay      :12;
+  __REG32                 :20;
 } __pwm0dbrise_bits;
 
 /* Pulse Width Modulator 0 Dead-Band Falling-Edge Delay (PWM0DBFALL) */
 typedef struct {
-  __REG32  FallDelay      :12;    
-  __REG32                 :20;                     
+  __REG32  FallDelay      :12;
+  __REG32                 :20;
 } __pwm0dbfall_bits;
 
 /* CAN Control (CANCTL) */
@@ -1441,18 +1441,18 @@ typedef struct {
   __REG32                 : 1;
   __REG32  DAR            : 1;
   __REG32  CCE            : 1;
-  __REG32  TEST           : 1; 
+  __REG32  TEST           : 1;
   __REG32                 :24;
 } __canctl_bits;
 
 /* CAN Status (CANSTS) */
 typedef struct {
   __REG32  LEC            : 3;
-  __REG32  TXOK           : 1;  
-  __REG32  RXOK           : 1;  
-  __REG32  EPASS          : 1;  
+  __REG32  TXOK           : 1;
+  __REG32  RXOK           : 1;
+  __REG32  EPASS          : 1;
   __REG32  EWARN          : 1;
-  __REG32  BOFF           : 1;  
+  __REG32  BOFF           : 1;
   __REG32                 :24;
 } __cansts_bits;
 
@@ -1460,7 +1460,7 @@ typedef struct {
 typedef struct {
   __REG32  TEC            : 8;
   __REG32  REC            : 7;
-  __REG32  RP             : 1;    
+  __REG32  RP             : 1;
   __REG32                 :16;
 } __canerr_bits;
 
@@ -1468,59 +1468,59 @@ typedef struct {
 typedef struct {
   __REG32  BRP            : 6;
   __REG32  SJW            : 2;
-  __REG32  TSEG1          : 4;  
-  __REG32  TSEG2          : 3;    
+  __REG32  TSEG1          : 4;
+  __REG32  TSEG2          : 3;
   __REG32                 :17;
 } __canbit_bits;
 
 /* CAN Interrupt (CANINT) */
 typedef struct {
-  __REG32  INTID          :16; 
-  __REG32                 :16;  
+  __REG32  INTID          :16;
+  __REG32                 :16;
 } __canint_bits;
 
 /* CAN Test  (CANTST) */
 typedef struct {
-  __REG32                 : 2;   
+  __REG32                 : 2;
   __REG32  BASIC          : 1;
   __REG32  SILENT         : 1;
-  __REG32  LBACK          : 1;  
+  __REG32  LBACK          : 1;
   __REG32  TX             : 2;
-  __REG32  RX             : 1;          
+  __REG32  RX             : 1;
   __REG32                 :24;
 } __cantst_bits;
 
 /* CAN Baud Rate Prescaler Extension (CANBRPE) */
 typedef struct {
   __REG32  BRPE           : 4;
-  __REG32                 :28;     
+  __REG32                 :28;
 } __canbrpe_bits;
 
 /* CAN IFn Command Request (CANIFnCRQ) */
 typedef struct {
   __REG32  MNUM           : 6;
   __REG32                 : 9;
-  __REG32  BUSY           : 1;        
+  __REG32  BUSY           : 1;
   __REG32                 :16;
 } __canifcrq_bits;
 
 /* CAN IFn Command Mask (CANIFnCMSK) */
 typedef struct {
   __REG32  DATAB          : 1;
-  __REG32  DATAA          : 1;   
-  __REG32  TXRQST         : 1;   
-  __REG32  CLRINTPND      : 1;  
+  __REG32  DATAA          : 1;
+  __REG32  TXRQST         : 1;
+  __REG32  CLRINTPND      : 1;
   __REG32  CONTROL        : 1;
-  __REG32  ARB            : 1;    
-  __REG32  MASK           : 1;    
-  __REG32  WRNRD          : 1;   
+  __REG32  ARB            : 1;
+  __REG32  MASK           : 1;
+  __REG32  WRNRD          : 1;
   __REG32                 :24;
 } __canifcmsk_bits;
 
 /* CAN IFn Mask1 (CANIFnMSK1) */
 typedef struct {
   __REG32  MSK            :16;
-  __REG32                 :16;   
+  __REG32                 :16;
 } __canifmsk1_bits;
 
 /* CAN IFn Mask2 (CANIFnMSK2) */
@@ -1538,8 +1538,8 @@ typedef struct {
 /* CAN IFn Arbitration 2 (CANIFnARB2) */
 typedef struct {
   __REG32  ID             :13;
-  __REG32  DIR            : 1; 
-  __REG32  XTD            : 1;     
+  __REG32  DIR            : 1;
+  __REG32  XTD            : 1;
   __REG32  MSGVAL         : 1;
   __REG32                 :16;
 } __canifarb2_bits;
@@ -1547,16 +1547,16 @@ typedef struct {
 /* CAN IFn Message Control (CANIFnMCTL) */
 typedef struct {
   __REG32  DLC            : 4;
-  __REG32                 : 3;  
+  __REG32                 : 3;
   __REG32  EOB            : 1;
-  __REG32  TXRQST         : 1;  
-  __REG32  RMTEN          : 1;  
-  __REG32  RXIE           : 1;  
-  __REG32  TXIE           : 1;   
-  __REG32  UMASK          : 1;  
-  __REG32  INTPND         : 1; 
-  __REG32  MSGLST         : 1;  
-  __REG32  NEWDAT         : 1;        
+  __REG32  TXRQST         : 1;
+  __REG32  RMTEN          : 1;
+  __REG32  RXIE           : 1;
+  __REG32  TXIE           : 1;
+  __REG32  UMASK          : 1;
+  __REG32  INTPND         : 1;
+  __REG32  MSGLST         : 1;
+  __REG32  NEWDAT         : 1;
   __REG32                 :16;
 } __canifmctl_bits;
 
@@ -1634,129 +1634,129 @@ typedef struct {
 
 /* Hibernation Module RTC Counter (HIBRTCC) */
 typedef struct {
-  __REG32  RTCC           :32;  
+  __REG32  RTCC           :32;
 } __hibrtcc_bits;
 
 /* Hibernation Module RTC Match 0 (HIBRTCM0) */
 typedef struct {
-  __REG32  RTCM0          :32;  
+  __REG32  RTCM0          :32;
 } __hibrtcm0_bits;
 
 /* Hibernation Module RTC Match 1 (HIBRTCM1) */
 typedef struct {
-  __REG32  RTCM1          :32;  
+  __REG32  RTCM1          :32;
 } __hibrtcm1_bits;
 
 /* Hibernation Module RTC Load (HIBRTCLD) */
 typedef struct {
-  __REG32  RTCLD          :32;  
+  __REG32  RTCLD          :32;
 } __hibrtcld_bits;
 
 /* Hibernation Module Control (HIBCTL) */
 typedef struct {
-  __REG32  RTCEN          : 1; 
-  __REG32  PWRCUT         : 1;   
-  __REG32  CLKSEL         : 1;  
-  __REG32  RTCWEN         : 1;    
+  __REG32  RTCEN          : 1;
+  __REG32  PWRCUT         : 1;
+  __REG32  CLKSEL         : 1;
+  __REG32  RTCWEN         : 1;
   __REG32  EXTWEN         : 1;
   __REG32  LOWBATEN       : 1;
-  __REG32  CLK32EN        : 1;    
-  __REG32  VABORT         : 1;  
-  __REG32                 :24;            
+  __REG32  CLK32EN        : 1;
+  __REG32  VABORT         : 1;
+  __REG32                 :24;
 } __hibctl_bits;
 
 /* Hibernation Module Interrupt Mask (HIBIM) */
 typedef struct {
   __REG32  RTCALT0        : 1;
-  __REG32  RTCALT1        : 1;    
-  __REG32  LOWBAT         : 1;     
+  __REG32  RTCALT1        : 1;
+  __REG32  LOWBAT         : 1;
   __REG32  EXTW           : 1;
-  __REG32                 :28;         
+  __REG32                 :28;
 } __hibim_bits;
 
 /* Hibernation Module Raw Interrupt Status (HIBRIS) */
 typedef struct {
   __REG32  RTCALT0        : 1;
-  __REG32  RTCALT1        : 1;    
-  __REG32  LOWBAT         : 1;     
+  __REG32  RTCALT1        : 1;
+  __REG32  LOWBAT         : 1;
   __REG32  EXTW           : 1;
-  __REG32                 :28;   
+  __REG32                 :28;
 } __hibris_bits;
 
 /* Hibernation Module Masked Interrupt Status (HIBMIS) */
 typedef struct {
   __REG32  RTCALT0        : 1;
-  __REG32  RTCALT1        : 1;    
-  __REG32  LOWBAT         : 1;     
+  __REG32  RTCALT1        : 1;
+  __REG32  LOWBAT         : 1;
   __REG32  EXTW           : 1;
-  __REG32                 :28;  
+  __REG32                 :28;
 } __hibmis_bits;
 
 /* Hibernation Module Interrupt Clear (HIBIC) */
 typedef struct {
   __REG32  RTCALT0        : 1;
-  __REG32  RTCALT1        : 1;    
-  __REG32  LOWBAT         : 1;     
+  __REG32  RTCALT1        : 1;
+  __REG32  LOWBAT         : 1;
   __REG32  EXTW           : 1;
-  __REG32                 :28;  
+  __REG32                 :28;
 } __hibic_bits;
 
 /* Hibernation Module RTC Trim (HIBRTCT) */
 typedef struct {
-  __REG32  TRIM           :16;  
-  __REG32                 :16;   
+  __REG32  TRIM           :16;
+  __REG32                 :16;
 } __hibrtct_bits;
 
 /* Hibernation Module Data (HIBDATA) */
 typedef struct {
-  __REG32  RTD            :32;  
+  __REG32  RTD            :32;
 } __hibdata_bits;
 
 /* Ethernet MAC Interrupt Status (MACIS) */
 typedef struct {
   __REG32  RXINT          : 1;
-  __REG32  TXER           : 1;     
-  __REG32  TXEMP          : 1; 
-  __REG32  FOV            : 1;   
-  __REG32  RXER           : 1; 
-  __REG32  MDINT          : 1;     
-  __REG32                 :26;    
+  __REG32  TXER           : 1;
+  __REG32  TXEMP          : 1;
+  __REG32  FOV            : 1;
+  __REG32  RXER           : 1;
+  __REG32  MDINT          : 1;
+  __REG32                 :26;
 } __macis_bits;
 
 /* Ethernet MAC Interrupt Mask (MACIM) */
 typedef struct {
   __REG32  RXINT          : 1;
-  __REG32  TXER           : 1;     
-  __REG32  TXEMP          : 1; 
-  __REG32  FOV            : 1;   
-  __REG32  RXER           : 1; 
-  __REG32  MDINT          : 1;     
-  __REG32                 :26;   
+  __REG32  TXER           : 1;
+  __REG32  TXEMP          : 1;
+  __REG32  FOV            : 1;
+  __REG32  RXER           : 1;
+  __REG32  MDINT          : 1;
+  __REG32                 :26;
 } __macim_bits;
 
 /* Ethernet MAC Receive Control (MACRCTL) */
 typedef struct {
-  __REG32  RXEN           : 1; 
-  __REG32  AMUL           : 1; 
-  __REG32  PRMS           : 1;   
-  __REG32  BADCRC         : 1;     
-  __REG32  RSTFIFO        : 1;     
-  __REG32                 :27;    
+  __REG32  RXEN           : 1;
+  __REG32  AMUL           : 1;
+  __REG32  PRMS           : 1;
+  __REG32  BADCRC         : 1;
+  __REG32  RSTFIFO        : 1;
+  __REG32                 :27;
 } __macrctl_bits;
 
 /* Ethernet MAC Transmit Control (MACTCTL) */
 typedef struct {
-  __REG32  TXEN           : 1;   
-  __REG32  PADEN          : 1; 
-  __REG32  CRC            : 1;   
-  __REG32                 : 1; 
-  __REG32  DUPLEX         : 1;   
-  __REG32                 : 27;   
+  __REG32  TXEN           : 1;
+  __REG32  PADEN          : 1;
+  __REG32  CRC            : 1;
+  __REG32                 : 1;
+  __REG32  DUPLEX         : 1;
+  __REG32                 : 27;
 } __mactctl_bits;
 
 /* Ethernet MAC Data (MACDATA) */
 typedef struct {
-  __REG32  DATA           :32;   
+  __REG32  DATA           :32;
 } __macdata_bits;
 
 /* Ethernet MAC Individual Address 0 (MACIA0) */
@@ -1764,70 +1764,70 @@ typedef struct {
   __REG32  MACOCT1        : 8;
   __REG32  MACOCT2        : 8;
   __REG32  MACOCT3        : 8;
-  __REG32  MACOCT4        : 8;   
+  __REG32  MACOCT4        : 8;
 } __macia0_bits;
 
 /* Ethernet MAC Individual Address 1 (MACIA1) */
 typedef struct {
   __REG32  MACOCT5        : 8;
-  __REG32  MACOCT6        : 8;    
-  __REG32                 :16;   
+  __REG32  MACOCT6        : 8;
+  __REG32                 :16;
 } __macia1_bits;
 
 /* Ethernet MAC Threshold (MACTHR) */
 typedef struct {
-  __REG32  THRESH         : 6;  
-  __REG32                 :26;   
+  __REG32  THRESH         : 6;
+  __REG32                 :26;
 } __macthr_bits;
 
 /* Ethernet MAC Management Control (MACMCTL) */
 typedef struct {
-  __REG32  START          : 1; 
-  __REG32  WRITE          : 1;   
-  __REG32                 : 1; 
-  __REG32  REGADR         : 5;   
-  __REG32                 :24;   
+  __REG32  START          : 1;
+  __REG32  WRITE          : 1;
+  __REG32                 : 1;
+  __REG32  REGADR         : 5;
+  __REG32                 :24;
 } __macmctl_bits;
 
 /* Ethernet MAC Management Divider (MACMDV) */
 typedef struct {
   __REG32  DIV            : 8;
-  __REG32                 :24;      
+  __REG32                 :24;
 } __macmdv_bits;
 
 /* Ethernet MAC Management Address (MACMADD) */
 typedef struct {
-  __REG32  ADR            :32;   
+  __REG32  ADR            :32;
 } __macmadd_bits;
 
 /* Ethernet MAC Management Transmit Data (MACMTXD) */
 typedef struct {
   __REG32  MDTX           :16;
-  __REG32                 :16;      
+  __REG32                 :16;
 } __macmtxd_bits;
 
 /* Ethernet MAC Management Receive Data (MACMRXD) */
 typedef struct {
-  __REG32  MDRX           :16;   
-  __REG32                 :16;   
+  __REG32  MDRX           :16;
+  __REG32                 :16;
 } __macmrxd_bits;
 
 /* Ethernet MAC Number of Packets (MACNP) */
 typedef struct {
-  __REG32  NPR            : 6;   
-  __REG32                 :26;   
+  __REG32  NPR            : 6;
+  __REG32                 :26;
 } __macnp_bits;
 
 /* Ethernet MAC Transmission Request (MACTR) */
 typedef struct {
-  __REG32  NEWTX          : 1;   
-  __REG32                 :31;   
+  __REG32  NEWTX          : 1;
+  __REG32                 :31;
 } __mactr_bits;
 
 /* Ethernet MAC Timer Support (MACTS) */
 typedef struct {
   __REG32  TSEN           : 1;
-  __REG32                 :31;      
+  __REG32                 :31;
 } __macts_bits;
 
 /* Interrupt Controller Type Register */

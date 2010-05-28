@@ -683,7 +683,8 @@ void irs::mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
   if (a_index >= max_size) return;
   irs_uarc bit_index = a_bit_index;
   if (bit_index > 7) bit_index = 7;
-  *((irs_u8*)(m_raw_data.data()) + a_index) &= 0xFF^irs_u8(1 << bit_index);
+  *((irs_u8*)(m_raw_data.data()) + a_index)
+    &= irs_u8(0xFF^irs_u8(1 << bit_index));
 }
 
 void irs::mxnet_t::tick()
