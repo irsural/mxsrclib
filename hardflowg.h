@@ -620,7 +620,11 @@ class simple_udp_flow_t: public hardflow_t
 {
 public:
   //typedef hardflow_t::size_type size_type;
+  /*********************************
   
+          Сделать режим клиента
+  
+  *********************************/
   simple_udp_flow_t(
     simple_tcpip_t* ap_simple_udp,
     mxip_t a_local_ip,

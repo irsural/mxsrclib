@@ -9,6 +9,7 @@
 
 #include <irsstd.h>
 #include <irsstrdefs.h>
+#include <irsstrm.h>
 #include <ctype.h>
 
 #include <irsfinal.h>
@@ -295,9 +296,23 @@ inline ostream& operator<<(ostream& a_stream, mxip_t a_ip)
 
 inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
 {
-  a_stream << int(a_mac.val[0]) << "." << int(a_mac.val[1]) << ".";
-  a_stream << int(a_mac.val[2]) << "." << int(a_mac.val[3]) << ".";
-  a_stream << int(a_mac.val[4]) << "." << int(a_mac.val[5]);
+  #ifndef NOP
+  a_stream << int(a_mac.val[0]) << "-" << int(a_mac.val[1]) << "-";
+  a_stream << int(a_mac.val[2]) << "-" << int(a_mac.val[3]) << "-";
+  a_stream << int(a_mac.val[4]) << "-" << int(a_mac.val[5]);
+  #else // NOP
+  irs::out_hex(a_stream, a_mac.val[0]);
+  a_stream << "-";
+  irs::out_hex(a_stream, a_mac.val[1]);
+  a_stream << "-";
+  irs::out_hex(a_stream, a_mac.val[2]);
+  a_stream << "-";
+  irs::out_hex(a_stream, a_mac.val[3]);
+  a_stream << "-";
+  irs::out_hex(a_stream, a_mac.val[4]);
+  a_stream << "-";
+  irs::out_hex(a_stream, a_mac.val[5]);
+  #endif // NOP
   return a_stream;
 }
 

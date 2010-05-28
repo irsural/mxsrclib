@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 20.04.2010
+// Дата: 28.05.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -214,7 +214,7 @@ irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
   irs_u16* a_dest_port, irs_u16* a_local_port)
 {
   irs_size_t data = 0;
-  if (m_user_recv_status == true) {
+  if (m_user_recv_status) {
     data = m_user_recv_buf_size;
     if (a_dest_ip) {
       *a_dest_ip = m_cur_dest_ip;
@@ -641,9 +641,9 @@ void irs::simple_tcpip_t::server_udp()
 
 void irs::simple_tcpip_t::client_udp()
 {
-  if (m_user_send_status == true) {
+  if (m_user_send_status) {
     if (cash(m_dest_ip)) {
-      if (m_udp_send_status == false) {
+      if (!m_udp_send_status) {
         IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("send: udp_packet()") << endl);
         udp_packet();
         m_udp_send_status = true;
@@ -658,7 +658,7 @@ void irs::simple_tcpip_t::client_udp()
           m_user_send_status = false;
         }
       } else {
-        if (m_recv_arp == false) {
+        if (!m_recv_arp) {
           m_recv_arp = true;
           arp_request(m_dest_ip);
           m_udp_wait_arp = true;
@@ -671,7 +671,7 @@ void irs::simple_tcpip_t::client_udp()
 
 void irs::simple_tcpip_t::udp()
 {
-  if (m_udp_open == true) {
+  if (m_udp_open) {
     server_udp();
   } else {
     mp_ethernet->set_recv_handled();
@@ -684,13 +684,13 @@ void irs::simple_tcpip_t::ip(void)
     if (mp_recv_buf[ip_proto_type] == icmp_proto) {
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> icmp()") << endl);
       icmp(); 
-    }
-    if (mp_recv_buf[ip_proto_type] == udp_proto) {
+    } else if (mp_recv_buf[ip_proto_type] == udp_proto) {
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> udp()") << endl);
       udp();
-    }
-    if (mp_recv_buf[ip_proto_type] == tcp_proto) {
-      
+    } else if (mp_recv_buf[ip_proto_type] == tcp_proto) {
+      mp_ethernet->set_recv_handled();
+    } else {
+      mp_ethernet->set_recv_handled();
     }
   } else {
     mp_ethernet->set_recv_handled();
@@ -733,10 +733,10 @@ void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
   
-  if (mp_ethernet->is_recv_buf_filled() == true)
+  if (mp_ethernet->is_recv_buf_filled())
   {
-    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ether_type)) && 
-      (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(ether_type)))
+    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(arp_type)) && 
+      (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(arp_type)))
     {
       arp();
     }
@@ -751,33 +751,33 @@ void irs::simple_tcpip_t::tick()
 
   if (m_send_arp) {
     if (((m_buf_num == simple_ethernet_t::double_buf) && 
-      (m_send_buf_filled == false)) || 
+      (!m_send_buf_filled)) || 
       ((m_buf_num == simple_ethernet_t::single_buf) && 
-      (mp_ethernet->is_recv_buf_filled() == false)))
+      (!mp_ethernet->is_recv_buf_filled())))
     {
       send_arp();
     }
   }
   if (m_send_icmp) {
     if (((m_buf_num == simple_ethernet_t::double_buf) &&
-      (m_send_buf_filled == false)) || 
+      (!m_send_buf_filled)) || 
       ((m_buf_num == simple_ethernet_t::single_buf) &&
-      (mp_ethernet->is_recv_buf_filled() == false)))
+      (!mp_ethernet->is_recv_buf_filled())))
     {
       send_icmp();
     }
   }
   if (m_send_udp) {
     if (((m_buf_num == simple_ethernet_t::double_buf) &&
-      (m_send_buf_filled == false)) ||
+      (!m_send_buf_filled)) ||
       ((m_buf_num == simple_ethernet_t::single_buf) &&
-      (mp_ethernet->is_recv_buf_filled() == false)))
+      (!mp_ethernet->is_recv_buf_filled())))
     {
       send_udp();
     }
   }
   
-  if (m_udp_open == true) {
+  if (m_udp_open) {
     client_udp();
   }
 }

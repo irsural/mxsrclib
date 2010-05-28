@@ -28,25 +28,6 @@
 #define GATEWAY_PATH_UNAVALIABLE           0A
 #define GATEWAY_TARGET_FAILED_TO_RESPONSE  0B
 
-ostream &hex_u8(ostream &s)
-{
-  s.setf(ios::hex, ios::basefield);
-  s << setw(2) << setfill('0');
-  return s;
-}
-ostream &hex_u16(ostream &s)
-{
-  s.setf(ios::showbase);
-  s.setf(ios::hex , ios::basefield);
-  s << setw(4) << setfill('0');
-  return s;
-}
-ostream &dec_u8(ostream &s)
-{
-  s.setf(ios::dec, ios::basefield);
-  s << setw(3) << setfill('0');
-  return s;
-}
 template <class T>
 irs_bool to_irs_bool(T a_value)
 {
@@ -1302,6 +1283,7 @@ void irs::modbus_server_t::tick()
           default:
           {
             mlog() << irsm("ILLEGAL_PACKET") << endl;
+            m_mode = read_header_mode;
           } break;
         }
         IRS_LIB_IRSMBUS_DBG_MONITOR(
@@ -1586,6 +1568,11 @@ void irs::modbus_server_t::tick()
           
         } break;
       }
+      request_t &req_header = 
+        reinterpret_cast<request_t&>(*(mp_buf.data() + size_of_MBAP));
+      mlog() << "req_header.function_code = " <<
+        int(req_header.function_code) << endl;
+      mlog() << "m_size_byte_end = " << m_size_byte_end << endl;
       IRS_LIB_ASSERT((size_of_MBAP + m_size_byte_end) <= mp_buf.size());
       m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP + 
         m_size_byte_end);
@@ -3657,95 +3644,111 @@ void irs::modbus_client_t::tick()
         break;
         case read_discrete_inputs:
         {
-          m_command = m_request_type;
-          if((m_global_read_index + m_size_of_data_read_byte) <
-            m_discret_inputs_size_bit/8)
-          {
-            make_packet(m_global_read_index,
-              static_cast<irs_u16>(m_size_of_data_read_byte*8));
-            m_global_read_index += m_size_of_data_read_byte;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
+          if(m_discret_inputs_size_bit) {
+            m_command = m_request_type;
+            if((m_global_read_index + m_size_of_data_read_byte) <
+              m_discret_inputs_size_bit/8)
+            {
+              make_packet(m_global_read_index,
+                static_cast<irs_u16>(m_size_of_data_read_byte*8));
+              m_global_read_index += m_size_of_data_read_byte;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            } else {
+              make_packet(m_global_read_index,
+                irs_u16(m_discret_inputs_size_bit - m_global_read_index*8));
+              m_global_read_index = 0;
+              m_request_type = read_coils;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            }
           } else {
-            make_packet(m_global_read_index,
-              irs_u16(m_discret_inputs_size_bit - m_global_read_index*8));
-            m_global_read_index = 0;
             m_request_type = read_coils;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
           }
         }
         break;
         case read_coils:
         {
-          m_command = m_request_type;
-          if((m_global_read_index + m_size_of_data_read_byte) <
-            m_coils_size_bit/8)
-          {
-            make_packet(m_global_read_index,
-              static_cast<irs_u16>(m_size_of_data_read_byte*8));
-            m_global_read_index += m_size_of_data_read_byte;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
+          if(m_coils_size_bit) {
+            m_command = m_request_type;
+            if((m_global_read_index + m_size_of_data_read_byte) <
+              m_coils_size_bit/8)
+            {
+              make_packet(m_global_read_index,
+                static_cast<irs_u16>(m_size_of_data_read_byte*8));
+              m_global_read_index += m_size_of_data_read_byte;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            } else {
+              make_packet(m_global_read_index,
+                irs_u16(m_coils_size_bit - m_global_read_index*8));
+              m_global_read_index = 0;
+              m_request_type = read_hold_registers;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            }
           } else {
-            make_packet(m_global_read_index,
-              irs_u16(m_coils_size_bit - m_global_read_index*8));
-            m_global_read_index = 0;
             m_request_type = read_hold_registers;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
           }
         }
         break;
         case read_hold_registers:
         {
-          m_command = m_request_type;
-          if(irs_u32(m_global_read_index + m_size_of_data_read_reg) < 
-            irs_u32(m_hold_registers_size_reg))
-          {
-            make_packet(m_global_read_index, m_size_of_data_read_reg);
-            m_global_read_index += m_size_of_data_read_reg;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
+          if(m_hold_registers_size_reg) {
+            m_command = m_request_type;
+            if(irs_u32(m_global_read_index + m_size_of_data_read_reg) < 
+              irs_u32(m_hold_registers_size_reg))
+            {
+              make_packet(m_global_read_index, m_size_of_data_read_reg);
+              m_global_read_index += m_size_of_data_read_reg;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            } else {
+              make_packet(m_global_read_index,
+                irs_u16(m_hold_registers_size_reg - m_global_read_index));
+              m_global_read_index = 0;
+              m_request_type = read_input_registers;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            }
           } else {
-            make_packet(m_global_read_index,
-              irs_u16(m_hold_registers_size_reg - m_global_read_index));
-            m_global_read_index = 0;
             m_request_type = read_input_registers;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
           }
         }
         break;
         case read_input_registers:
         {
-          m_command = m_request_type;
-          if(irs_u32(m_global_read_index + m_size_of_data_read_reg) <
-            irs_u32(m_input_registers_size_reg))
-          {
-            make_packet(m_global_read_index, m_size_of_data_read_reg);
-            m_global_read_index += m_size_of_data_read_reg;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
-          } else {
-            make_packet(m_global_read_index,
-              irs_u16(m_input_registers_size_reg - m_global_read_index));
-            m_global_read_index = 0;
-            m_request_type = request_start;
-            IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
-            m_mode = convert_request_mode;
-            size_t read_flags_cnt = 0;
-            for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
-              m_coils_size_bit + m_hold_registers_size_reg + 
-              m_input_registers_size_reg); read_idx++)
+          if(m_input_registers_size_reg) {
+            m_command = m_request_type;
+            if(irs_u32(m_global_read_index + m_size_of_data_read_reg) <
+              irs_u32(m_input_registers_size_reg))
             {
-              if(m_need_read[read_idx] == 1) {
-                read_flags_cnt++;
+              make_packet(m_global_read_index, m_size_of_data_read_reg);
+              m_global_read_index += m_size_of_data_read_reg;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+            } else {
+              make_packet(m_global_read_index,
+                irs_u16(m_input_registers_size_reg - m_global_read_index));
+              m_global_read_index = 0;
+              m_request_type = request_start;
+              IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("convert_request_mode"));
+              m_mode = convert_request_mode;
+              size_t read_flags_cnt = 0;
+              for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
+                m_coils_size_bit + m_hold_registers_size_reg + 
+                m_input_registers_size_reg); read_idx++)
+              {
+                if(m_need_read[read_idx] == 1) {
+                  read_flags_cnt++;
+                }
+              }
+              if(read_flags_cnt == 0) {
+                m_read_table = false;
               }
             }
-            if(read_flags_cnt == 0) {
-              m_read_table = false;
-            }
+          } else {
+            m_request_type = request_start;
           }
         }
         break;

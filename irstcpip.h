@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// Дата: 23.04.2010
+// Дата: 28.05.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -117,6 +117,7 @@ public:
     icmp_proto = 0x01,
     tcp_proto = 0x6,
     ether_type = 0x0806,
+    arp_type = 0x0806,
     IPv4 = 0x0800,
     Ethernet = 0x0001,
     
