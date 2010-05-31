@@ -134,7 +134,7 @@ private:
     size_of_read_header = 4,
     size_of_resp_header = 2,
     size_of_packet = 260,
-    size_of_req_excep = 1,
+    size_of_req_excep = 3,
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
     read_coils = 1,
