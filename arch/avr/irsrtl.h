@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 25.05.2010
+// Дата: 01.06.2010
 // Дата создания: 15.03.2010
 
 #ifndef IRSRTLH
@@ -93,10 +93,10 @@ public:
 private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
-  size_t m_control_recv_buf;
   raw_data_t<irs_u8> m_recv_buf;
-  size_t m_control_send_buf;
+  size_t m_control_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
+  size_t m_control_send_buf;
   mxmac_t m_mac;
   event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_is_recv_buf_filled;

@@ -1,5 +1,5 @@
 // Глобальные объявления типов
-// Дата: 24.05.2010
+// Дата: 01.06.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -104,6 +104,11 @@
 #endif //compilers
 // Определение модификатора flash для компилятора IAR AVR
 #define IRS_ICCAVR_FLASH __flash
+#ifdef __ICCAVR__
+#define IRS_CSTR_NONVOLATILE IRS_ICCAVR_FLASH
+#else //__ICCAVR__
+#define IRS_CSTR_NONVOLATILE
+#endif //__ICCAVR__
 
 // GCC версии < 3.4
 #if (defined(__GNUC__) && \

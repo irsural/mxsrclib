@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 31.05.2010
+// Дата: 01.06.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -427,14 +427,14 @@ void irs::simple_tcpip_t::arp()
         //ARP-ответ
         //добавляем ip и mac в ARP-таблицу
         arp_cash(); 
-        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
           irsm("добавляем ip и mac в ARP-таблицу") << endl);
       }
       if (mp_send_buf[arp_operation_code_1] == arp_operation_request) { 
         //ARP-запрос
         //формируем ответ на пришедший ARP-запрос 
         arp_response();
-        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
           irsm("формируем ответ на пришедший ARP-запрос") << endl);
       }
     } else {
@@ -638,7 +638,7 @@ void irs::simple_tcpip_t::client_udp()
   if (m_user_send_status) {
     if (cash(m_dest_ip)) {
       if (!m_udp_send_status) {
-        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("send: udp_packet()") << endl);
+        IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send: udp_packet()") << endl);
         udp_packet();
         m_udp_send_status = true;
         m_udp_wait_arp = false;
@@ -676,10 +676,10 @@ void irs::simple_tcpip_t::ip(void)
 {
   if(IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) == m_ip) {
     if (mp_recv_buf[ip_proto_type] == icmp_proto) {
-      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> icmp()") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: ip() -> icmp()") << endl);
       icmp(); 
     } else if (mp_recv_buf[ip_proto_type] == udp_proto) {
-      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("recv: ip() -> udp()") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: ip() -> udp()") << endl);
       udp();
     } else if (mp_recv_buf[ip_proto_type] == tcp_proto) {
       mp_ethernet->set_recv_handled();

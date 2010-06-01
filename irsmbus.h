@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 31.05.2010
+// Дата: 01.06.2010
 // Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
@@ -18,13 +18,13 @@
 # if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
 #   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
 #   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
-#   define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg)
+#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)
 #   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl)
 #   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 # elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
 #   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
 #   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
+#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
 #   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
 #   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
 # endif
@@ -32,7 +32,7 @@
 # define IRS_LIB_IRSMBUS_DEBUG_TYPE IRS_LIB_DEBUG_NONE
 # define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg)
 # define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
-# define IRS_LIB_IRSMBUS_DBG_MSG_DETAIL(msg) 
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg) 
 # define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) 
 # define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 #endif // IRS_LIB_IRSMBUS_DEBUG_TYPE
@@ -184,10 +184,18 @@ private:
   hardflow::fixed_flow_t                m_fixed_flow;
   size_t                                m_num_of_elem;
   status_t                              m_operation_status;
+  static char const IRS_CSTR_NONVOLATILE       m_read_header_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_read_request_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_send_response_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_read_end_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_write_end[];
+  static IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
+    m_ident_name_list[];
   
   void error_response(irs_u8 error_code);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
+  void view_mode();
 };
 
 class modbus_client_t : public mxdata_ext_t
@@ -327,10 +335,24 @@ private:
   irs_u8                                m_error_count_max;
   irs_u16                               m_transaction_id;
   timer_t                               m_send_request_timer;
+  static char const IRS_CSTR_NONVOLATILE       m_wait_command_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_search_write_data_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_request_write_data_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_convert_request_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_send_request_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_read_header_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_read_response_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_treatment_response_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_search_read_data_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_request_read_data_mode[];
+  static char const IRS_CSTR_NONVOLATILE       m_make_request_mode[];
+  static IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
+    m_ident_name_list[];
 
   void make_packet(size_t a_index, irs_u16 a_size);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
+  void view_mode();
   size_t get_packet_number();
 };
 

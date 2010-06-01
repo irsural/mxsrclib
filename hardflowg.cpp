@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 31.05.2010
+// Дата: 01.06.2010
 // Дата создания: 8.09.2009
 
 #include <irsdefs.h>
@@ -2216,12 +2216,14 @@ irs::hardflow::simple_udp_flow_t::size_type
         {
           mp_recv_buf_cur += a_size;
         } else {
-          // Пакет полностью прочитан
           mp_recv_buf_cur = mp_recv_buf;
           mp_simple_udp->read_udp_complete();
           IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Пакет полностью"
             " прочитан") << endl);
         }
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(
+          IRS_LIB_ASSERT(!mp_recv_buf[2]);
+        );
       } else {
         return 0;
       }
