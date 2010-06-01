@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 28.05.2010
+// Дата: 31.05.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -395,7 +395,7 @@ irs::modbus_server_t::modbus_server_t(
   m_hold_registers_start_byte(0),
   m_input_registers_size_byte(0),
   m_input_registers_start_byte(0),
-  m_channel(0),
+  m_channel(hardflow_t::invalid_channel),
   mp_hardflow_server(ap_hardflow),
   m_fixed_flow(mp_hardflow_server),
   m_num_of_elem(0),
@@ -1194,7 +1194,7 @@ void irs::modbus_server_t::tick()
     irs::hardflow::fixed_flow_t::status_error))
   {
     IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" abort"));
-    m_channel = mp_hardflow_server->channel_next();
+    //m_channel = mp_hardflow_server->channel_next();
     m_mode = read_header_mode;
     IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_header_mode"));
   }
@@ -1203,12 +1203,12 @@ void irs::modbus_server_t::tick()
   {
     case read_header_mode:
     {
-      if (m_channel) {
-        mlog() << "current channel = " << int(m_channel) << endl;
+      m_channel = mp_hardflow_server->channel_next();
+      if (m_channel != hardflow_t::invalid_channel) {
+        m_fixed_flow.read(m_channel, mp_buf.data(), size_of_MBAP);
+        m_mode = read_request_mode;
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_request_mode"));
       }
-      m_fixed_flow.read(m_channel, mp_buf.data(), size_of_MBAP);
-      m_mode = read_request_mode;
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_request_mode"));
     }
     break;
     case read_request_mode:
@@ -1285,6 +1285,10 @@ void irs::modbus_server_t::tick()
           default:
           {
             mlog() << irsm("ILLEGAL_PACKET") << endl;
+            for(size_t idx = 0; idx < 20; idx++)
+            {
+              mlog() << "mp_buf[" << idx << "] = " << int(mp_buf[idx]) << endl;
+            }
           } break;
         }
         IRS_LIB_IRSMBUS_DBG_MONITOR(
@@ -1505,7 +1509,6 @@ void irs::modbus_server_t::tick()
           }
           break;
         }
-        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_response_mode"));
         m_mode = send_response_mode;
         IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" send_response_mode"));
         m_size_byte_end = header.length - 1;
@@ -1572,9 +1575,6 @@ void irs::modbus_server_t::tick()
       }
       request_t &req_header = 
         reinterpret_cast<request_t&>(*(mp_buf.data() + size_of_MBAP));
-      mlog() << "req_header.function_code = " <<
-        int(req_header.function_code) << endl;
-      mlog() << "m_size_byte_end = " << m_size_byte_end << endl;
       IRS_LIB_ASSERT((size_of_MBAP + m_size_byte_end) <= mp_buf.size());
       m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP + 
         m_size_byte_end);
@@ -1590,7 +1590,6 @@ void irs::modbus_server_t::tick()
         memset(mp_buf.data(), 0, mp_buf.size());
         m_mode = read_header_mode;
         IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" read_header_mode"));
-        m_channel = mp_hardflow_server->channel_next();
       }
     }
     break;

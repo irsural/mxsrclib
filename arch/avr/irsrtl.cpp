@@ -23,16 +23,6 @@
 //Запрет прерываний при чтении/записи байтов:
 #define RTL_DISABLE_INT_BYTE 
 
-struct rtl_port_str_t
-{
-  p_avr_port_t rtl_data_port_set;
-  p_avr_port_t rtl_data_port_get;
-  p_avr_port_t rtl_data_port_dir;
-  p_avr_port_t rtl_address_port_set;
-  p_avr_port_t rtl_address_port_get;
-  p_avr_port_t rtl_address_port_dir;
-} rtl_port_str;
-
 irs::rtl8019as_t::rtl8019as_t(
   buffer_num_t a_buf_num,
   size_t a_buf_size,
@@ -45,12 +35,12 @@ irs::rtl8019as_t::rtl8019as_t(
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
     ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
     ETHERNET_PACKET_MAX),
+  m_control_recv_buf(8),
   m_recv_buf(m_size_buf),
+  m_control_send_buf(8),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
   m_mac(a_mac),
-  #ifndef SERGEY_OFF_INT4
   m_rtl_interrupt_event(this, rtl_interrupt),
-  #endif //SERGEY_OFF_INT4
   m_is_recv_buf_filled(false),
   m_send_status(false),
   m_recv_buf_size(0),
@@ -58,16 +48,14 @@ irs::rtl8019as_t::rtl8019as_t(
   mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
   m_recv_timeout(a_recv_timeout_cnt)
 {
-  rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
-  rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
-  rtl_port_str.rtl_data_port_dir = avr_port_map[a_data_port].dir;
-  rtl_port_str.rtl_address_port_set = avr_port_map[a_address_port].set;
-  rtl_port_str.rtl_address_port_get = avr_port_map[a_address_port].get;
-  rtl_port_str.rtl_address_port_dir = avr_port_map[a_address_port].dir;
+  m_rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
+  m_rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
+  m_rtl_port_str.rtl_data_port_dir = avr_port_map[a_data_port].dir;
+  m_rtl_port_str.rtl_address_port_set = avr_port_map[a_address_port].set;
+  m_rtl_port_str.rtl_address_port_get = avr_port_map[a_address_port].get;
+  m_rtl_port_str.rtl_address_port_dir = avr_port_map[a_address_port].dir;
   
-  #ifndef SERGEY_OFF_INT4
   irs_avr_int4_int.add(&m_rtl_interrupt_event);
-  #endif // SERGEY_OFF_INT4
   
   init_rtl();
 }
@@ -83,15 +71,15 @@ irs_u8 irs::rtl8019as_t::read_rtl(irs_u8 a_reg_addr)
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
   
-  *rtl_port_str.rtl_data_port_dir = 0x00;
-  *rtl_port_str.rtl_data_port_set = 0xFF;
-  *rtl_port_str.rtl_address_port_set &= (0xFF^0x1F);
-  *rtl_port_str.rtl_address_port_set |= a_reg_addr;
-  *rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IORB));
+  *m_rtl_port_str.rtl_data_port_dir = 0x00;
+  *m_rtl_port_str.rtl_data_port_set = 0xFF;
+  *m_rtl_port_str.rtl_address_port_set &= (0xFF^0x1F);
+  *m_rtl_port_str.rtl_address_port_set |= a_reg_addr;
+  *m_rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IORB));
   __no_operation();
-  irs_u8 READ = *rtl_port_str.rtl_data_port_get;
+  irs_u8 READ = *m_rtl_port_str.rtl_data_port_get;
   __no_operation();
-  *rtl_port_str.rtl_address_port_set |= (1 << IORB);
+  *m_rtl_port_str.rtl_address_port_set |= (1 << IORB);
   __no_operation();
 
   #ifdef RTL_DISABLE_INT_BYTE
@@ -108,17 +96,17 @@ void irs::rtl8019as_t::write_rtl(irs_u8 a_reg_addr,
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
 
-  *rtl_port_str.rtl_address_port_set &= (0xFF^0x1F);
-  *rtl_port_str.rtl_address_port_set |= a_reg_addr;
-  *rtl_port_str.rtl_data_port_dir = 0xFF;
-  *rtl_port_str.rtl_data_port_set = a_reg_data;
+  *m_rtl_port_str.rtl_address_port_set &= (0xFF^0x1F);
+  *m_rtl_port_str.rtl_address_port_set |= a_reg_addr;
+  *m_rtl_port_str.rtl_data_port_dir = 0xFF;
+  *m_rtl_port_str.rtl_data_port_set = a_reg_data;
   __no_operation();
-  *rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));
+  *m_rtl_port_str.rtl_address_port_set &= (0xFF^(1 << IOWB));
   __no_operation();
-  *rtl_port_str.rtl_address_port_set |= (1 << IOWB);
+  *m_rtl_port_str.rtl_address_port_set |= (1 << IOWB);
   __no_operation();
-  *rtl_port_str.rtl_data_port_dir = 0x00;
-  *rtl_port_str.rtl_data_port_set = 0xFF;
+  *m_rtl_port_str.rtl_data_port_dir = 0x00;
+  *m_rtl_port_str.rtl_data_port_set = 0xFF;
 
   #ifdef RTL_DISABLE_INT_BYTE
   irs_enable_interrupt();
@@ -224,12 +212,12 @@ void irs::rtl8019as_t::init_rtl()
   irs_disable_interrupt();
 
   // Все линии PORTA выходы
-  *rtl_port_str.rtl_address_port_dir = 0xFF;
+  *m_rtl_port_str.rtl_address_port_dir = 0xFF;
 
   // Линию RTL RESDRV выставляем в 1
-  *rtl_port_str.rtl_address_port_set |= (1 << RSTDRV);
+  *m_rtl_port_str.rtl_address_port_set |= (1 << RSTDRV);
   // Линию RTL RESDRV выставляем в 0
-  *rtl_port_str.rtl_address_port_set &= (0xFF^(1 << RSTDRV));
+  *m_rtl_port_str.rtl_address_port_set &= (0xFF^(1 << RSTDRV));
   // Задержка после сброса RTL
   counter_t to_wait_rst;
   set_to_cnt(to_wait_rst, TIME_TO_CNT(1,320));
@@ -244,15 +232,15 @@ void irs::rtl8019as_t::init_rtl()
   // Демаскирование INT4
   EIMSK |= ((1 << INT4));
   // Все линии PORT1 входы
-  *rtl_port_str.rtl_data_port_dir = 0x00;
+  *m_rtl_port_str.rtl_data_port_dir = 0x00;
   // Все линии PORT1 заполняются 1
-  *rtl_port_str.rtl_data_port_set = 0xFF;
+  *m_rtl_port_str.rtl_data_port_set = 0xFF;
   // Адресные биты сбрасываем в 0
-  *rtl_port_str.rtl_address_port_set &= 0xE0;
+  *m_rtl_port_str.rtl_address_port_set &= 0xE0;
   // Линию RTL IORB выставляем в 1
-  *rtl_port_str.rtl_address_port_set |= (1 << IORB);
+  *m_rtl_port_str.rtl_address_port_set |= (1 << IORB);
   // Линию RTL IOWB выставляем в 1
-  *rtl_port_str.rtl_address_port_set |= (1 << IOWB);
+  *m_rtl_port_str.rtl_address_port_set |= (1 << IOWB);
   
   irs_u8 byte = read_rtl(rstport);
   write_rtl(rstport, byte);
@@ -394,4 +382,6 @@ void irs::rtl8019as_t::tick()
   if (m_recv_timeout.check()) {
     set_recv_handled();
   }
+  IRS_LIB_ASSERT(m_control_recv_buf == 8);
+  IRS_LIB_ASSERT(m_control_send_buf == 8);
 }

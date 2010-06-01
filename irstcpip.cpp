@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 28.05.2010
+// Дата: 31.05.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -440,11 +440,6 @@ void irs::simple_tcpip_t::arp()
     } else {
       mp_ethernet->set_recv_handled();
     }
-    /*mlog() << irsm("TCPIP TEST ARP recieve buffer:") << endl;
-    for(int buf_idx = 0; buf_idx < 20; buf_idx++) {
-      irs::mlog() << irsm("arp_buf[") << buf_idx << irsm("] = ") <<
-        int(mp_recv_buf[0x2a + buf_idx]) << endl;
-    }*/
   }
 }
 
@@ -619,8 +614,7 @@ void irs::simple_tcpip_t::server_udp()
   irs_u16 local_port = 0;
   IRS_HIBYTE(local_port) = mp_recv_buf[udp_dest_port_0];
   IRS_LOBYTE(local_port) = mp_recv_buf[udp_dest_port_1];
-  if (m_port_list.find(local_port) != m_port_list.end())
-  {
+  if (m_port_list.find(local_port) != m_port_list.end()) {
     IRS_HIBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_0];
     IRS_LOBYTE(m_cur_dest_port) = mp_recv_buf[udp_local_port_1];
     m_cur_local_port = local_port;
@@ -733,8 +727,7 @@ void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
   
-  if (mp_ethernet->is_recv_buf_filled())
-  {
+  if (mp_ethernet->is_recv_buf_filled()) {
     if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(arp_type)) && 
       (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(arp_type)))
     {

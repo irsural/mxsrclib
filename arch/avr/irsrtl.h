@@ -16,6 +16,16 @@
 
 namespace irs {
 
+struct rtl_port_str_t
+{
+  p_avr_port_t rtl_data_port_set;
+  p_avr_port_t rtl_data_port_get;
+  p_avr_port_t rtl_data_port_dir;
+  p_avr_port_t rtl_address_port_set;
+  p_avr_port_t rtl_address_port_get;
+  p_avr_port_t rtl_address_port_dir;
+};
+
 class rtl8019as_t: public simple_ethernet_t
 {
 public:
@@ -79,29 +89,25 @@ public:
   virtual buffer_num_t get_buf_num();
   virtual mxmac_t get_local_mac();
   virtual void tick();
-  #ifdef SERGEY_OFF_INT4
-  void rtl_interrupt();
-  #endif //SERGEY_OFF_INT4
   
 private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
+  size_t m_control_recv_buf;
   raw_data_t<irs_u8> m_recv_buf;
+  size_t m_control_send_buf;
   raw_data_t<irs_u8> m_send_buf;
   mxmac_t m_mac;
-  #ifndef SERGEY_OFF_INT4
   event_connect_t<this_type> m_rtl_interrupt_event;
-  #endif //SERGEY_OFF_INT4
   bool m_is_recv_buf_filled;
   bool m_send_status;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
   timer_t m_recv_timeout;
+  rtl_port_str_t m_rtl_port_str;
   
-  #ifndef SERGEY_OFF_INT4
   void rtl_interrupt();
-  #endif //SERGEY_OFF_INT4
   irs_u8 read_rtl(irs_u8 a_reg_addr);
   void write_rtl(irs_u8 a_reg_addr, irs_u8 a_reg_data);
   void init_rtl();
