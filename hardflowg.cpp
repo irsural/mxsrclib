@@ -2144,7 +2144,7 @@ irs::hardflow::simple_udp_flow_t::size_type
 }
 
 bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
-  size_type a_channel_ident)
+  size_type /*a_channel_ident*/)
 {
   //mxip_t dest_ip_cur = mxip_t::zero_ip();
   //irs_u16 dest_port = 0;
