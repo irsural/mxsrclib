@@ -2023,7 +2023,7 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
 }
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
-  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
     mlog() << irsm("Channel List updated: m_channel = ") <<
       int(m_channel) << endl;
     for (size_t list_idx = 0; list_idx < m_channel_list.size(); list_idx++) {
@@ -2060,8 +2060,7 @@ void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
     } else {
       if (m_channel <= m_channel_max_count) {
         m_channel_list[m_channel - 1] = udp_channel_t(a_ip, a_port);
-        mlog() << irsm("Add channel: ") << int(m_channel) << endl;
-        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Add channel: ") <<
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Add channel: ") <<
           int(m_channel) << endl);
       } else {
         m_channel_list.pop_front();
@@ -2119,8 +2118,7 @@ irs::hardflow::simple_udp_flow_t::size_type
         if (m_channel <= m_channel_max_count) {
           m_channel_list[m_channel - 1] =
             udp_channel_t(dest_ip_cur, dest_port);
-          //mlog() << irsm("Add channel: ") << int(m_channel) << endl;
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Add channel: ") <<
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Add channel: ") <<
             int(m_channel) << endl);
         } else {
           m_channel_list.pop_front();
@@ -2221,7 +2219,7 @@ irs::hardflow::simple_udp_flow_t::size_type
           // Пакет полностью прочитан
           mp_recv_buf_cur = mp_recv_buf;
           mp_simple_udp->read_udp_complete();
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Пакет полностью"
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Пакет полностью"
             " прочитан") << endl);
         }
       } else {
@@ -2229,7 +2227,7 @@ irs::hardflow::simple_udp_flow_t::size_type
       }
     }
   } else {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist, "
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist, "
       "read data not posible ") << endl);
   }
   return read_data_size;
@@ -2259,7 +2257,7 @@ irs::hardflow::simple_udp_flow_t::size_type
     memcpyex(mp_send_buf, ap_buf, a_size);
     //m_cur_channel = invalid_channel;
   } else {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("Channel don't exist,"
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist,"
       "write data not posible ") << endl);
   }
   return a_size;
