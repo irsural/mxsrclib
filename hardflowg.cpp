@@ -2268,6 +2268,8 @@ irs::hardflow::simple_udp_flow_t::size_type
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
         irsm("memcpyex in hardflow write") << endl);
       memcpyex(mp_send_buf, ap_buf, a_size);
+    } else {
+      return 0;
     }
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist,"
