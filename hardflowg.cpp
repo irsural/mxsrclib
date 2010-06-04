@@ -2195,6 +2195,7 @@ irs::hardflow::simple_udp_flow_t::size_type
   irs::hardflow::simple_udp_flow_t::read(size_type a_channel_ident,
   irs_u8 *ap_buf, size_type a_size)
 {
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("hardflow read begin") << endl);
   size_type read_data_size = 0;
   if (is_channel_exists(a_channel_ident)) {
     size_type deque_index = channel_list_index(a_channel_ident);
@@ -2216,17 +2217,22 @@ irs::hardflow::simple_udp_flow_t::size_type
         if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
           (mp_simple_udp->recv_buf_size()))
         {
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+            irsm("считан кусок пакета размером = ") << a_size << endl);
           mp_recv_buf_cur += a_size;
         } else {
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+            irsm("считан остаток пакета размером = ") << a_size << endl);
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+            irsm("пакет считан полностью") << endl);
           mp_recv_buf_cur = mp_recv_buf;
           mp_simple_udp->read_udp_complete();
           IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Пакет полностью"
             " прочитан") << endl);
         }
-        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(
-          IRS_LIB_ASSERT(!mp_recv_buf[2]);
-        );
       } else {
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("hardflow read end, return 0") << endl);
         return 0;
       }
     }
@@ -2234,6 +2240,8 @@ irs::hardflow::simple_udp_flow_t::size_type
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist, "
       "read data not posible ") << endl);
   }
+  IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+    irsm("hardflow read end, return value not zero") << endl);
   return read_data_size;
 }
 
@@ -2251,15 +2259,16 @@ irs::hardflow::simple_udp_flow_t::size_type
     if (mp_simple_udp->is_write_udp_complete()) {
       mp_simple_udp->write_udp(m_channel_list[deque_index].ip,
         m_channel_list[deque_index].port, m_local_port, a_size);
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+        if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
+          mlog() << irsm("dest ip: ") << m_channel_list[deque_index].ip <<
+            irsm(" port: ") << m_channel_list[deque_index].port << endl;
+        }
+      );
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+        irsm("memcpyex in hardflow write") << endl);
+      memcpyex(mp_send_buf, ap_buf, a_size);
     }
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
-      if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
-        mlog() << irsm("dest ip: ") << m_channel_list[deque_index].ip <<
-          irsm(" port: ") << m_channel_list[deque_index].port << endl;
-      }
-    );
-    memcpyex(mp_send_buf, ap_buf, a_size);
-    //m_cur_channel = invalid_channel;
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist,"
       "write data not posible ") << endl);

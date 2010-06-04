@@ -3181,6 +3181,15 @@ void irs::modbus_client_t::tick()
     case send_request_mode:
     {
       if (m_send_request_timer.check()) {
+        // > ”брать в дебаг
+        MBAP_header_t &send_pack_header = 
+          reinterpret_cast<MBAP_header_t&>(*m_spacket.data());
+        IRS_LIB_ASSERT(!send_pack_header.proto_id);
+        request_t &convert_pack_for_read =
+          reinterpret_cast<request_t&>(*(m_spacket.data() + 
+          size_of_MBAP));
+        IRS_LIB_ASSERT(convert_pack_for_read.function_code);
+        // ”брать в дебаг <
         m_fixed_flow.write(m_channel, m_spacket.data(), size_of_MBAP +
           m_size_byte_end);
         m_mode = read_header_mode;
@@ -3319,6 +3328,13 @@ void irs::modbus_client_t::tick()
               static_cast<int>(m_discret_inputs_size_bit/8)))
             {
               m_first_read = irs_true;
+              IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
+                double time_delta_read = m_measure_time.get() - 
+                  m_measure_int_time;
+                m_measure_int_time = m_measure_time.get();
+                mlog() << stime << irsm(" ") <<
+                  time_delta_read << irsm(" read end") << endl;
+              );
             }
           }
           break;
@@ -3350,6 +3366,13 @@ void irs::modbus_client_t::tick()
               static_cast<int>(m_coils_size_bit/8)))
             {
               m_first_read = irs_true;
+              IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
+                double time_delta_read = m_measure_time.get() - 
+                  m_measure_int_time;
+                m_measure_int_time = m_measure_time.get();
+                mlog() << stime << irsm(" ") <<
+                  time_delta_read << irsm(" read end") << endl;
+              );
             }
           }
           break;
@@ -3389,6 +3412,13 @@ void irs::modbus_client_t::tick()
               m_hold_registers_size_reg)
             {  
               m_first_read = irs_true;
+              IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
+                double time_delta_read = m_measure_time.get() - 
+                  m_measure_int_time;
+                m_measure_int_time = m_measure_time.get();
+                mlog() << stime << irsm(" ") <<
+                  time_delta_read << irsm(" read end") << endl;
+              );
             }
           }
           break;

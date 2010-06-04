@@ -14,6 +14,17 @@
 
 #include <irsfinal.h>
 
+//#define IRS_LIB_IRSRTL_DEBUG_TYPE IRS_LIB_DEBUG_BASE
+
+#ifdef IRS_LIB_IRSRTL_DEBUG_TYPE
+#if (IRS_LIB_IRSRTL_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+# define IRS_LIB_RTL_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#endif
+#else // IRS_LIB_IRSRTL_DEBUG_TYPE
+#define IRS_LIB_RTL_DBG_RAW_MSG_BASE(msg)
+#endif // IRS_LIB_IRSRTL_DEBUG_TYPE
+
+
 namespace irs {
 
 struct rtl_port_str_t
@@ -81,7 +92,9 @@ public:
   virtual ~rtl8019as_t();
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
+  virtual void set_send_buf_locked();
   virtual bool is_recv_buf_filled();
+  virtual bool is_send_buf_empty();
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual irs_size_t recv_buf_size();
@@ -94,17 +107,16 @@ private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
   raw_data_t<irs_u8> m_recv_buf;
-  size_t m_control_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
-  size_t m_control_send_buf;
   mxmac_t m_mac;
   event_connect_t<this_type> m_rtl_interrupt_event;
-  bool m_is_recv_buf_filled;
+  bool m_recv_buf_locked;
   bool m_send_status;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
   timer_t m_recv_timeout;
+  bool m_send_buf_empty;
   rtl_port_str_t m_rtl_port_str;
   
   void rtl_interrupt();

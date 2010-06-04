@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 01.06.2010
+// Дата: 02.06.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -9,6 +9,12 @@
 #include <timer.h>
 
 #include <irsfinal.h>
+
+/*************************************************
+
+                Неработающий вариант
+
+*************************************************/
 
 #define IRS_TCPIP_MAC(data) (*(mxmac_t*)(data))
 #define IRS_TCPIP_IP(data) (*(mxip_t*)(data))
@@ -124,7 +130,7 @@ irs::simple_tcpip_t::simple_tcpip_t(
 ):
   mp_ethernet(ap_ethernet),
   m_buf_num(mp_ethernet->get_buf_num()),
-  m_ip(a_local_ip),
+  m_local_ip(a_local_ip),
   m_mac(mp_ethernet->get_local_mac()),
   m_recv_buf_size_icmp(0),
   m_dest_ip(a_dest_ip),
@@ -147,7 +153,6 @@ irs::simple_tcpip_t::simple_tcpip_t(
   mp_user_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
     mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
   m_udp_wait_arp(false),
-  m_recv_buf_filled(mp_ethernet->is_recv_buf_filled()),
   m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
     mp_ethernet->is_recv_buf_filled()),
   m_udp_wait_arp_time(make_cnt_s(1)),
@@ -160,8 +165,8 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_send_icmp(false),
   m_send_udp(false),
   m_recv_arp(false),
-  m_recv_icmp(false),
-  m_port_list()
+  m_port_list(),
+  m_new_recv_packet(true)
 {
 }
 
@@ -182,7 +187,8 @@ void irs::simple_tcpip_t::close_udp()
 
 bool irs::simple_tcpip_t::is_write_udp_complete()
 {
-  return !m_user_send_status;
+  //return !m_user_send_status;
+  return mp_ethernet->is_send_buf_empty();
 }
 
 void irs::simple_tcpip_t::write_udp(mxip_t a_dest_ip, 
@@ -206,8 +212,17 @@ void irs::simple_tcpip_t::write_udp(mxip_t a_dest_ip,
   } else {
     m_user_send_buf_size = 18;
   }
-  m_user_send_buf_udp_size = a_size;
-  m_user_send_status = true;
+
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("вызов write") << endl);
+  if (mp_ethernet->is_send_buf_empty()) {
+    if (m_buf_num == simple_ethernet_t::single_buf) {
+      m_new_recv_packet = false;
+    }
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("старт записи") << endl);
+    mp_ethernet->set_send_buf_locked();
+    m_user_send_buf_udp_size = a_size;
+    m_user_send_status = true;
+  }
 }
 
 irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
@@ -215,6 +230,7 @@ irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
 {
   irs_size_t data = 0;
   if (m_user_recv_status) {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("read_udp") << endl);
     data = m_user_recv_buf_size;
     if (a_dest_ip) {
       *a_dest_ip = m_cur_dest_ip;
@@ -232,6 +248,23 @@ irs_size_t irs::simple_tcpip_t::read_udp(mxip_t* a_dest_ip,
 void irs::simple_tcpip_t::read_udp_complete()
 {
   m_user_recv_status = false;
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+    irsm("read_udp_complete, m_user_recv_status = false;") << endl);
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(
+    if (mp_recv_buf[ip_proto_type] == udp_proto) {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("получен udp packet"));
+      irs_u16 local_port = 0;
+      IRS_HIBYTE(local_port) = mp_recv_buf[udp_dest_port_0];
+      IRS_LOBYTE(local_port) = mp_recv_buf[udp_dest_port_1];
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm(" ip:") <<
+        IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) << irsm(" port: ") <<
+        local_port << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("входящий пакет обработан") << endl);
+    } else {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("получен не udp!!!!!!!!!!") << endl);
+    }
+  );
+  m_new_recv_packet = true;
   mp_ethernet->set_recv_handled();
 }
 
@@ -293,10 +326,8 @@ irs_u16 irs::simple_tcpip_t::check_sum(irs_size_t a_count, irs_u8* a_addr)
 
 irs_u16 irs::simple_tcpip_t::cheksumUDP(irs_size_t a_count, irs_u8* a_addr)
 {
-  // Длина псевдозаголовка
-  #define ph_count 12
   // Массив для псевдозаголовка
-  irs_u8 pseudo_header[ph_count];
+  irs_u8 pseudo_header[pseudo_header_length];
 
   /// Формирование псевдозаголовка
   IRS_TCPIP_IP(pseudo_header) = IRS_TCPIP_IP(mp_send_buf + udp_source_ip);
@@ -312,7 +343,8 @@ irs_u16 irs::simple_tcpip_t::cheksumUDP(irs_size_t a_count, irs_u8* a_addr)
   // Вычисление контрольной суммы
   irs_u16 ip_check_sum = 0;
 
-  for (irs_size_t check_sum_cnt = 0; check_sum_cnt < ph_count; check_sum_cnt++)
+  for (irs_size_t check_sum_cnt = 0; check_sum_cnt < pseudo_header_length;
+    check_sum_cnt++)
   {
     ip_check_sum = 
       ip_checksum(ip_check_sum, pseudo_header[check_sum_cnt], check_sum_cnt);
@@ -366,7 +398,7 @@ void irs::simple_tcpip_t::arp_request(mxip_t a_dest_ip)
   IRS_TCPIP_MAC(mp_send_buf + arp_sender_mac) = m_mac;
 
   //Логический адрес отправителя
-  IRS_TCPIP_IP(mp_send_buf + arp_sender_ip) = m_ip;
+  IRS_TCPIP_IP(mp_send_buf + arp_sender_ip) = m_local_ip;
 
   //Физический адрес получателя
   IRS_TCPIP_MAC(mp_send_buf + arp_target_mac) = mxmac_t::broadcast_mac();
@@ -393,7 +425,7 @@ void irs::simple_tcpip_t::arp_response(void)
 
   IRS_TCPIP_MAC(mp_send_buf + arp_sender_mac) = m_mac;
 
-  IRS_TCPIP_IP(mp_send_buf + arp_sender_ip) = m_ip;
+  IRS_TCPIP_IP(mp_send_buf + arp_sender_ip) = m_local_ip;
 
   IRS_TCPIP_MAC(mp_send_buf + arp_target_mac) = 
     IRS_TCPIP_MAC(mp_recv_buf + arp_sender_mac);
@@ -407,39 +439,52 @@ void irs::simple_tcpip_t::arp_response(void)
 //Заполнение ARP-таблицы:
 void irs::simple_tcpip_t::arp_cash(void)
 {
-  mxip_t& arp_ip = ip_from_data(mp_recv_buf[arp_sender_ip]);
+  /*mxip_t& arp_ip = ip_from_data(mp_recv_buf[arp_sender_ip]);
   mxmac_t& arp_mac = mac_from_data(mp_recv_buf[arp_sender_mac]);
   m_arp_cash.add(arp_ip, arp_mac);
     
-  m_recv_arp = false;
+  m_recv_arp = false;*/
 }
 
 void irs::simple_tcpip_t::arp()
 {
-  if(IRS_TCPIP_IP(mp_recv_buf + arp_target_ip) == m_ip) {
-    if (!m_recv_arp) {
-      m_recv_arp = true;
-      for (irs_u8 i = 0; i < ARPBUF_SIZE; i++) {
-        mp_send_buf[i] = mp_recv_buf[i];
+  if(IRS_TCPIP_IP(mp_recv_buf + arp_target_ip) == m_local_ip) {
+    if (mp_recv_buf[arp_operation_code_1] == arp_operation_response) {
+      //ARP-ответ
+      //добавляем ip и mac запрашиваемой цели в ARP-таблицу
+      mxip_t& arp_ip = ip_from_data(mp_recv_buf[arp_sender_ip]);
+      mxmac_t& arp_mac = mac_from_data(mp_recv_buf[arp_sender_mac]);
+      m_arp_cash.add(arp_ip, arp_mac);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        irsm("добавляем ip и mac в ARP-таблицу") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
+        irsm("добавляем ip и mac в ARP-таблицу") << endl);
+    } else if (mp_recv_buf[arp_operation_code_1] == arp_operation_request) { 
+      //ARP-запрос
+      //добавляем ip и mac запрашивающего в ARP-таблицу
+      mxip_t& arp_ip = ip_from_data(mp_recv_buf[arp_target_ip]);
+      if (cash(arp_ip)) {
+        mxmac_t& arp_mac = mac_from_data(mp_recv_buf[arp_target_mac]);
+        m_arp_cash.add(arp_ip, arp_mac);
       }
-      mp_ethernet->set_recv_handled();
-      if (mp_send_buf[arp_operation_code_1] == arp_operation_response) {
-        //ARP-ответ
-        //добавляем ip и mac в ARP-таблицу
-        arp_cash(); 
-        IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
-          irsm("добавляем ip и mac в ARP-таблицу") << endl);
+      if (m_buf_num == simple_ethernet_t::double_buf) {
+        memcpyex(mp_send_buf, mp_recv_buf, ARPBUF_SIZE);
       }
-      if (mp_send_buf[arp_operation_code_1] == arp_operation_request) { 
-        //ARP-запрос
-        //формируем ответ на пришедший ARP-запрос 
-        arp_response();
-        IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
-          irsm("формируем ответ на пришедший ARP-запрос") << endl);
-      }
-    } else {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        irsm("формируем ответ на пришедший ARP-запрос") << endl);
+      mp_ethernet->set_send_buf_locked();
+      //формируем ответ на пришедший ARP-запрос
+      arp_response();
+      IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
+        irsm("формируем ответ на пришедший ARP-запрос") << endl);
+    }
+    if (m_buf_num == simple_ethernet_t::double_buf) {
       mp_ethernet->set_recv_handled();
     }
+  } else {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("arp-запрос отклонен по ip") << endl);
+    m_new_recv_packet = true;
+    mp_ethernet->set_recv_handled();
   }
 }
 
@@ -448,8 +493,9 @@ void irs::simple_tcpip_t::send_arp(void)
   mp_ethernet->send_packet(ARPBUF_SENDSIZE);
   IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send_arp() size = ") <<
     int(ARPBUF_SENDSIZE) << endl);
-  m_recv_arp = false;
   m_send_arp = false;
+  m_new_recv_packet = true;
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправлен arp-пакет"));
 }
 
 void irs::simple_tcpip_t::icmp_packet()
@@ -475,7 +521,7 @@ void irs::simple_tcpip_t::icmp_packet()
     IRS_TCPIP_IP(mp_send_buf + icmp_sender_ip);
 
   // IP-адрес источника
-  IRS_TCPIP_IP(mp_send_buf + icmp_sender_ip) = m_ip;
+  IRS_TCPIP_IP(mp_send_buf + icmp_sender_ip) = m_local_ip;
 
   // Тип ICMP - эхо-ответ
   mp_send_buf[icmp_type] = icmp_echo_response;
@@ -503,7 +549,8 @@ void irs::simple_tcpip_t::send_icmp()
   IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send_icmp() size = ") <<
     int(m_recv_buf_size_icmp) << endl);
   m_send_icmp = false;
-  m_recv_icmp = false;
+  m_new_recv_packet = true;
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправлен icmp-ответ") << endl);
 }
 
 void irs::simple_tcpip_t::icmp()
@@ -511,22 +558,23 @@ void irs::simple_tcpip_t::icmp()
   if ((mp_recv_buf[icmp_type] == icmp_echo_request) && 
     (mp_recv_buf[icmp_code] == 0)) // Эхо-запрос
   {
-    if (!m_recv_icmp) {
-      m_recv_buf_size_icmp = mp_ethernet->recv_buf_size() - 4;
-      if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
-        m_recv_icmp = true;
-        if (m_buf_num == simple_ethernet_t::double_buf) {
-          IRS_LIB_ASSERT(m_recv_buf_size_icmp <=
-            mp_ethernet->send_buf_max_size());
-          for (irs_size_t i = 0; i < m_recv_buf_size_icmp; i++) {
-            mp_send_buf[i] = mp_recv_buf[i];
-          }
-        }
-        icmp_packet();
+    m_recv_buf_size_icmp = mp_ethernet->recv_buf_size() - 4;
+    if (m_recv_buf_size_icmp <= ICMPBUF_SIZE) {
+      if (m_buf_num == simple_ethernet_t::double_buf) {
+        memcpyex(mp_send_buf, mp_recv_buf, m_recv_buf_size_icmp);
+      }
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("icmp запрос обработан") << endl);
+      mp_ethernet->set_send_buf_locked();
+      icmp_packet();
+      if (m_buf_num == simple_ethernet_t::double_buf) {
+        mp_ethernet->set_recv_handled();
       }
     }
+  } else {
+    m_new_recv_packet = true;
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("неправильный icmp-пакет") << endl);
+    mp_ethernet->set_recv_handled();
   }
-  mp_ethernet->set_recv_handled();
 }
 
 void irs::simple_tcpip_t::udp_packet()
@@ -564,7 +612,7 @@ void irs::simple_tcpip_t::udp_packet()
   IRS_TCPIP_IP(mp_send_buf + udp_dest_ip) = m_dest_ip;
   
   //ip sourse
-  IRS_TCPIP_IP(mp_send_buf + udp_source_ip) = m_ip;
+  IRS_TCPIP_IP(mp_send_buf + udp_source_ip) = m_local_ip;
   //clear checsum
 
   //checksum
@@ -605,7 +653,10 @@ void irs::simple_tcpip_t::send_udp()
     int(m_user_send_buf_size + HEADERS_SIZE) << endl);
   m_send_udp = false;
   m_udp_send_status = false;
-  m_user_send_status = false;
+  //m_user_send_status = false;
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("send_udp() size = ") <<
+    int(m_user_send_buf_size + HEADERS_SIZE) << endl;);
+  m_new_recv_packet = true;
 }
 
 void irs::simple_tcpip_t::server_udp()
@@ -623,29 +674,47 @@ void irs::simple_tcpip_t::server_udp()
     IRS_LOBYTE(udp_size) = mp_recv_buf[udp_length_1];
     m_user_recv_buf_size = static_cast<irs_u16>(udp_size - 8);
     
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("размер полученного udp пакета = ") <<
+      m_user_recv_buf_size << endl);
+    
     mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
     mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
     m_cur_dest_ip = ip;
     m_arp_cash.add(ip, mac);
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("port: ") << local_port <<
+      irsm(" пакет принят") << endl);
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("m_user_recv_status = true") << endl);
     m_user_recv_status = true;
   } else {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("port: ") << local_port <<
+      irsm(" пакет отклонен") << endl);
+    m_new_recv_packet = true;
     mp_ethernet->set_recv_handled();
   }
 }
 
 void irs::simple_tcpip_t::client_udp()
 {
+  #ifdef NOP
   if (m_user_send_status) {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("client_udp: write") << endl);
     if (cash(m_dest_ip)) {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        irsm("dest_ip содержится в arp_cash") << endl);
       if (!m_udp_send_status) {
+        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("заполнение udp-пакета") << endl);
         IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("send: udp_packet()") << endl);
         udp_packet();
         m_udp_send_status = true;
         m_udp_wait_arp = false;
       }
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("udp не ждет arp-запрос") << endl);
     } else {
       if (m_udp_wait_arp) {
+        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("udp ждет arp-запрос") << endl);
         if (m_udp_wait_arp_time.check()) {
+          IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+            irsm("отмена отправки udp-пакета") << endl);
           m_udp_wait_arp = false;
           m_send_udp = false;
           m_udp_send_status = false;
@@ -653,6 +722,7 @@ void irs::simple_tcpip_t::client_udp()
         }
       } else {
         if (!m_recv_arp) {
+          IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправка arp-запроса") << endl);
           m_recv_arp = true;
           arp_request(m_dest_ip);
           m_udp_wait_arp = true;
@@ -661,6 +731,18 @@ void irs::simple_tcpip_t::client_udp()
       }
     }
   }
+  #else // NOP
+  if (m_user_send_status) {
+    if (cash(m_dest_ip)) {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("заполнение udp-пакета") << endl);
+      udp_packet();
+      m_user_send_status = false;
+    } else {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("заполнение arp_request") << endl);
+      arp_request(m_dest_ip);
+    }
+  }
+  #endif // NOP
 }
 
 void irs::simple_tcpip_t::udp()
@@ -668,25 +750,45 @@ void irs::simple_tcpip_t::udp()
   if (m_udp_open) {
     server_udp();
   } else {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("udp не открыт") << endl);
+    m_new_recv_packet = true;
     mp_ethernet->set_recv_handled();
   }
 }
 
 void irs::simple_tcpip_t::ip(void)
 {
-  if(IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) == m_ip) {
+  if(IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) == m_local_ip) {
     if (mp_recv_buf[ip_proto_type] == icmp_proto) {
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: ip() -> icmp()") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
+        IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
+        irsm(" пакет принят как icmp") << endl);
       icmp(); 
     } else if (mp_recv_buf[ip_proto_type] == udp_proto) {
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: ip() -> udp()") << endl);
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
+        IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
+        irsm(" пакет принят как udp") << endl);
       udp();
     } else if (mp_recv_buf[ip_proto_type] == tcp_proto) {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
+        IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
+        irsm(" пакет отклонен как tcp") << endl);
+      m_new_recv_packet = true;
       mp_ethernet->set_recv_handled();
     } else {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
+        IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
+        irsm(" пакет отклонен как неизвестный протокол") << endl);
+      m_new_recv_packet = true;
       mp_ethernet->set_recv_handled();
     }
   } else {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
+      IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
+      irsm(" пакет отклонен") << endl);
+    m_new_recv_packet = true;
     mp_ethernet->set_recv_handled();
   }
 }
@@ -727,50 +829,38 @@ void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
   
-  if (mp_ethernet->is_recv_buf_filled()) {
-    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(arp_type)) && 
-      (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(arp_type)))
+  if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet)
+  {
+    m_new_recv_packet = false;
+    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ARP)) &&
+      (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(ARP)))
     {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("получен arp - запрос") << endl);
       arp();
-    }
-    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(IPv4)) && 
+    } else if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(IPv4)) &&
       (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(IPv4)))
     {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("получен ip - пакет") << endl);
       ip();
     } else {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+        irsm("получен неизвестный пакет") << endl);
+      m_new_recv_packet = true;
       mp_ethernet->set_recv_handled();
     }
-  }  
+  }
 
-  if (m_send_arp) {
-    if (((m_buf_num == simple_ethernet_t::double_buf) && 
-      (!m_send_buf_filled)) || 
-      ((m_buf_num == simple_ethernet_t::single_buf) && 
-      (!mp_ethernet->is_recv_buf_filled())))
-    {
-      send_arp();
-    }
-  }
-  if (m_send_icmp) {
-    if (((m_buf_num == simple_ethernet_t::double_buf) &&
-      (!m_send_buf_filled)) || 
-      ((m_buf_num == simple_ethernet_t::single_buf) &&
-      (!mp_ethernet->is_recv_buf_filled())))
-    {
-      send_icmp();
-    }
-  }
-  if (m_send_udp) {
-    if (((m_buf_num == simple_ethernet_t::double_buf) &&
-      (!m_send_buf_filled)) ||
-      ((m_buf_num == simple_ethernet_t::single_buf) &&
-      (!mp_ethernet->is_recv_buf_filled())))
-    {
-      send_udp();
-    }
-  }
-  
   if (m_udp_open) {
     client_udp();
+  }
+
+  if (!mp_ethernet->is_send_buf_empty()) {
+    if (m_send_arp) {
+      send_arp();
+    } else if (m_send_icmp) {
+      send_icmp();
+    } else if (m_send_udp) {
+      send_udp();
+    }
   }
 }

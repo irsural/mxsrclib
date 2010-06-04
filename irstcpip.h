@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// Дата: 01.06.2010
+// Дата: 02.06.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -12,6 +12,8 @@
 #include <irsavrutil.h>
 #endif //__ICCAVR__
 #include <irsnetdefs.h>
+
+#define NEW_PACK
 
 #include <irsfinal.h>
 
@@ -47,8 +49,12 @@ public:
   virtual void send_packet(irs_size_t a_size) = 0;
   //  Очистить буфер для приёма нового пакета
   virtual void set_recv_handled() = 0;
+  //  Заблокировать буфер для отправки пакета
+  virtual void set_send_buf_locked() = 0;
   //  Есть ли в приёмном буфере пакет
   virtual bool is_recv_buf_filled() = 0;
+  //  Свободен ли буфер на запись
+  virtual bool is_send_buf_empty() = 0;
   //  Указатель на буфер приёма
   virtual irs_u8* get_recv_buf() = 0;
   //  Указатель на буфер передачи
@@ -120,7 +126,7 @@ public:
     icmp_proto = 0x01,
     tcp_proto = 0x6,
     ether_type = 0x0806,
-    arp_type = 0x0806,
+    ARP = 0x0806,
     IPv4 = 0x0800,
     Ethernet = 0x0001,
     
@@ -169,7 +175,8 @@ public:
     udp_ident_1 = 0x13,
     udp_fragment_0 = 0x14,
     udp_fragment_1 = 0x15,
-    TTL = 0x16
+    TTL = 0x16,
+    pseudo_header_length = 12
   };
   
   simple_tcpip_t(
@@ -198,7 +205,7 @@ public:
 private:  
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
-  mxip_t m_ip;
+  mxip_t m_local_ip;
   mxmac_t m_mac;
   irs_size_t m_recv_buf_size_icmp;
   mxip_t m_dest_ip;
@@ -219,7 +226,6 @@ private:
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
   bool m_udp_wait_arp;
-  bool m_recv_buf_filled;
   bool m_send_buf_filled;
   timer_t m_udp_wait_arp_time;
   arp_cash_t m_arp_cash;
@@ -231,8 +237,8 @@ private:
   bool m_send_icmp;
   bool m_send_udp;
   bool m_recv_arp;
-  bool m_recv_icmp;
   set<irs_u16> m_port_list;
+  bool m_new_recv_packet;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);

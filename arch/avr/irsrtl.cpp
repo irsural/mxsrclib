@@ -35,18 +35,17 @@ irs::rtl8019as_t::rtl8019as_t(
   m_size_buf((a_buf_size < ETHERNET_PACKET_MAX) ? 
     ((a_buf_size > ETHERNET_PACKET_MIN) ? a_buf_size : ETHERNET_PACKET_MIN) : 
     ETHERNET_PACKET_MAX),
-  m_control_recv_buf(8),
   m_recv_buf(m_size_buf),
-  m_control_send_buf(8),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
   m_mac(a_mac),
   m_rtl_interrupt_event(this, rtl_interrupt),
-  m_is_recv_buf_filled(false),
+  m_recv_buf_locked(false),
   m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
   mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
-  m_recv_timeout(a_recv_timeout_cnt)
+  m_recv_timeout(a_recv_timeout_cnt),
+  m_send_buf_empty(true)
 {
   m_rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
   m_rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
@@ -145,7 +144,7 @@ void irs::rtl8019as_t::recv_packet()
   IRS_LOBYTE(recv_size_cur) = read_rtl(rdmaport);
   IRS_HIBYTE(recv_size_cur) = read_rtl(rdmaport);
   
-  if (m_is_recv_buf_filled == false) {
+  if (!m_recv_buf_locked) {
     if (recv_size_cur <= m_size_buf) {
       m_recv_buf_size = recv_size_cur;
       IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
@@ -153,7 +152,9 @@ void irs::rtl8019as_t::recv_packet()
       for (irs_size_t i = 0; i < m_recv_buf_size; i++) {
         mp_recv_buf[i] = read_rtl(rdmaport);
       }
-      m_is_recv_buf_filled = true;
+      m_recv_buf_locked = true;
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(
+        irsm("ethernet принимает пакет и блокирует его на запись") << endl);
       m_recv_timeout.start();
     } else {
       for (irs_size_t i = 0; i < recv_size_cur; i++) {
@@ -271,27 +272,26 @@ void irs::rtl8019as_t::init_rtl()
   write_rtl(isr, 0xff);
   write_rtl(imr, imrval);
   write_rtl(tcr, tcrval);
-
+  
+  m_send_buf_empty = true;
   // Разрешение прерываний
   irs_enable_interrupt();
 }
 
 bool irs::rtl8019as_t::wait_dma()
 {
+  #ifdef RTL_RESET_ON_TIMEOUT
   counter_t to_wait_end_dma;
   set_to_cnt(to_wait_end_dma, TIME_TO_CNT(1, 2));
   irs_u8 isr_cont = read_rtl(isr);
   while ((isr_cont&rdc) == 0) {
     isr_cont = read_rtl(isr);
     if (test_to_cnt(to_wait_end_dma)) {
-      #ifdef RTL_RESET_ON_TIMEOUT
       init_rtl();
       return false;
-      #else //RTL_RESET_ON_TIMEOUT
-      return true;
-      #endif //RTL_RESET_ON_TIMEOUT
     }
   }
+  #endif //RTL_RESET_ON_TIMEOUT
   return true;
 }
 
@@ -321,14 +321,31 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
     write_rtl(rdmaport, mp_send_buf[i]);
   }
   
-  
   if (!wait_dma()) {
+    IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("!wait_dma()") << endl);
     return;
   }
 
   write_rtl(tbcr0, IRS_LOBYTE(a_size));
   write_rtl(tbcr1, IRS_HIBYTE(a_size));
   write_rtl(cr, 0x24);
+  
+  switch(m_buf_num) {
+    case single_buf:
+    {
+      m_recv_buf_locked = false;
+      m_recv_timeout.stop();
+    } break;
+    case double_buf:
+    {
+      m_send_buf_empty = true;
+    } break;
+    default:
+    {
+      IRS_LIB_ASSERT_MSG("неверно указан параметр: число буферов");
+    } break;
+  }
+  IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("буфер записи разблокирован") << endl);
   
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
@@ -337,14 +354,52 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
 
 void irs::rtl8019as_t::set_recv_handled()
 {
-  m_is_recv_buf_filled = false;
+  m_recv_buf_locked = false;
+  IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("буфер чтения обработан") << endl);
   m_recv_timeout.stop();
-  
+}
+
+void irs::rtl8019as_t::set_send_buf_locked()
+{
+  switch(m_buf_num) {
+    case single_buf:
+    {
+      m_recv_buf_locked = true;
+    } break;
+    case double_buf:
+    {
+      m_send_buf_empty = false;
+    } break;
+    default:
+    {
+      IRS_LIB_ASSERT_MSG("неверно указан параметр: число буферов");
+    } break;
+  }
+  IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("буфер записи заблокирован") << endl);
 }
 
 bool irs::rtl8019as_t::is_recv_buf_filled()
 {
-  return m_is_recv_buf_filled;
+  return m_recv_buf_locked;
+}
+
+bool irs::rtl8019as_t::is_send_buf_empty()
+{
+  switch(m_buf_num) {
+    case single_buf:
+    {
+      return !m_recv_buf_locked;
+    }
+    case double_buf:
+    {
+      return m_send_buf_empty;
+    }
+    default:
+    {
+      IRS_LIB_ASSERT_MSG("неверно указан параметр: число буферов");
+    }
+  }
+  return false;
 }
 
 irs_u8* irs::rtl8019as_t::get_recv_buf()
@@ -380,8 +435,8 @@ mxmac_t irs::rtl8019as_t::get_local_mac()
 void irs::rtl8019as_t::tick()
 {
   if (m_recv_timeout.check()) {
+    IRS_LIB_RTL_DBG_RAW_MSG_BASE(
+      irsm("буфер разблокирован по таймауту") << endl);
     set_recv_handled();
   }
-  IRS_LIB_ASSERT(m_control_recv_buf == 8);
-  IRS_LIB_ASSERT(m_control_send_buf == 8);
 }
