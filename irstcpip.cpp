@@ -359,7 +359,8 @@ irs_u16 irs::simple_tcpip_t::check_sum_udp(irs_size_t a_count, irs_u8* a_addr)
   return ip_check_sum;
 }
 
-irs_u16 irs::simple_tcpip_t::check_sum_tcp(irs_size_t a_count, irs_u8* a_addr)
+irs_u16 irs::simple_tcpip_t::check_sum_tcp(irs_size_t /*a_count*/,
+  irs_u8* /*a_addr*/)
 {
   irs_u16 tcp_check_sum = 0;
   return tcp_check_sum;
@@ -811,7 +812,6 @@ void irs::simple_tcpip_t::tcp_packet()
   mp_send_buf[tcp_local_port_0] = IRS_HIBYTE(m_local_port);
   mp_send_buf[tcp_local_port_1] = IRS_LOBYTE(m_local_port);
   
-  
   #ifdef NOP
   mp_send_buf[tcp_sequence_number] = ;
   
@@ -853,10 +853,25 @@ void irs::simple_tcpip_t::recv_tcp()
     irs_size_t incoming_ip_header_length =
       (mp_recv_buf[ip_version] & 0x0F) * 4;
     irs_size_t incoming_tcp_header_length =
-      (mp_recv_buf[tcp_flags] & 0xF0 >> 4) * 4;
+      (mp_recv_buf[tcp_flags_1] & 0xF0) * 4; ///????
       
     m_tcp_data_length_in = static_cast<irs_size_t>(ip_length -
       incoming_ip_header_length - incoming_tcp_header_length);
+      
+    if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && !m_tcp_data_length_in) {
+    
+    } else if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && m_tcp_data_length_in) {
+    
+    } else if (mp_recv_buf[tcp_flags_1] & tcp_SYN) {
+      // запоминаем номер последовательности и посылаем сегмент с флагом ACK
+      if (mp_recv_buf[tcp_flags_1] & tcp_ACK) {
+        // переход в состояние ESTABLISHED
+      }
+    } else if (mp_recv_buf[tcp_flags_1] & tcp_FIN) {
+    
+    } else if (mp_recv_buf[tcp_flags_1] & tcp_RST) {
+      // прекращение попыток соединиться
+    }
   } else {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("port: ") << local_port <<
       irsm(" пакет отклонен") << endl);

@@ -188,7 +188,14 @@ public:
     tcp_local_port_1 = 0x23,
     tcp_sequence_number = 0x26, // 4 byte
     tcp_acknowledgment_number = 0x2a, // 4 byte
-    tcp_flags = 0x2e,
+    tcp_flags_0 = 0x2e,
+    tcp_flags_1 = 0x2f,
+    tcp_FIN = 0x01,
+    tcp_SYN = 0x02,
+    tcp_RST = 0x04,
+    tcp_PSH = 0x08,
+    tcp_ACK = 0x10,
+    tcp_URG = 0x20,
     tcp_window_size_0 = 0x30,
     tcp_window_size_1 = 0x31,
     tcp_check_sum_0 = 0x32,
