@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// Дата: 02.06.2010
+// Дата: 07.06.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -13,9 +13,9 @@
 #endif //__ICCAVR__
 #include <irsnetdefs.h>
 
-#define NEW_PACK
-
 #include <irsfinal.h>
+
+//define TCP_ENABLED
 
 #ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
 # if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
@@ -36,7 +36,7 @@
 
 namespace irs {
 
-//Ethernet interface for RTL
+// Ethernet interface
 class simple_ethernet_t
 {
 public:
@@ -129,6 +129,9 @@ public:
     ARP = 0x0806,
     IPv4 = 0x0800,
     Ethernet = 0x0001,
+    ip_header_length = 20,
+    udp_header_length = 8,
+    tcp_header_length = 20,
     
     dest_mac = 0x0,
     sourse_mac = 0x6,
@@ -176,7 +179,23 @@ public:
     udp_fragment_0 = 0x14,
     udp_fragment_1 = 0x15,
     TTL = 0x16,
-    pseudo_header_length = 12
+    udp_pseudo_header_length = 12,
+    tcp_dest_ip = 0x1e,
+    tcp_source_ip = 0x1a,
+    tcp_dest_port_0 = 0x24,
+    tcp_dest_port_1 = 0x25,
+    tcp_local_port_0 = 0x22,
+    tcp_local_port_1 = 0x23,
+    tcp_sequence_number = 0x26, // 4 byte
+    tcp_acknowledgment_number = 0x2a, // 4 byte
+    tcp_flags = 0x2e,
+    tcp_window_size_0 = 0x30,
+    tcp_window_size_1 = 0x31,
+    tcp_check_sum_0 = 0x32,
+    tcp_check_sum_1 = 0x33,
+    tcp_urgent_pointer_0 = 0x34, // указатель срочности
+    tcp_urgent_pointer_1 = 0x35,
+    tcp_data = 0x36 // options(если есть) + data
   };
   
   simple_tcpip_t(
@@ -217,6 +236,7 @@ private:
   irs_size_t m_user_recv_buf_size;
   irs_size_t m_user_send_buf_size;
   irs_size_t m_user_send_buf_udp_size;
+  irs_size_t m_user_send_buf_tcp_size;
   irs_u16 m_dest_port;
   irs_u16 m_dest_port_def;
   irs_u16 m_local_port;
@@ -236,14 +256,18 @@ private:
   bool m_send_arp;
   bool m_send_icmp;
   bool m_send_udp;
+  bool m_send_tcp;
   bool m_recv_arp;
   set<irs_u16> m_port_list;
   bool m_new_recv_packet;
+  bool m_tcp_connect;
+  irs_size_t m_tcp_data_length_in;
   
   bool cash(mxip_t a_dest_ip);
-  irs_u16 ip_checksum(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
+  irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
   irs_u16 check_sum(irs_size_t a_count, irs_u8* a_addr);
-  irs_u16 cheksumUDP(irs_size_t a_count, irs_u8* a_addr);
+  irs_u16 check_sum_udp(irs_size_t a_count, irs_u8* a_addr);
+  irs_u16 check_sum_tcp(irs_size_t a_count, irs_u8* a_addr);
   void arp_request(mxip_t a_dest_ip);
   void arp_response(void);
   void arp_cash(void);
@@ -258,6 +282,9 @@ private:
   void client_udp();
   void udp();
   void ip(void);
+  void tcp_packet();
+  void recv_tcp();
+  void send_tcp();
 };
 
 } //namespace irs

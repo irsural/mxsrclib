@@ -24,7 +24,8 @@
 # elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
 #   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
 #   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
+#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)\
+      IRS_LIB_DBG_RAW_MSG(msg << endl) 
 #   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
 #   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
 # endif
