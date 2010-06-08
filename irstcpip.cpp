@@ -167,7 +167,8 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_server_sequence_num(0),
   m_tcp_client_mode(disconnected_mode),
   m_tcp_server_mode(disconnected_mode),
-  m_udp_wait_arp(false)
+  m_udp_wait_arp(false),
+  m_tcp_wait_arp(false)
 {
 }
 
@@ -499,6 +500,7 @@ void irs::simple_tcpip_t::arp()
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
         irsm("добавляем ip и mac в ARP-таблицу") << endl);
       mp_ethernet->set_recv_handled();
+      m_new_recv_packet = true;
     } else if (mp_recv_buf[arp_operation_code_1] == arp_operation_request) { 
       //ARP-запрос
       //добавляем ip и mac запрашивающего в ARP-таблицу
@@ -694,7 +696,7 @@ void irs::simple_tcpip_t::send_udp()
     int(m_user_send_buf_size + HEADERS_SIZE) << endl);
   m_send_udp = false;
   m_udp_send_status = false;
-  //m_user_send_status = false;
+  m_user_send_status = false;
   IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("send_udp() size = ") <<
     int(m_user_send_buf_size + HEADERS_SIZE) << endl;);
   m_new_recv_packet = true;
@@ -736,6 +738,7 @@ void irs::simple_tcpip_t::server_udp()
 
 void irs::simple_tcpip_t::client_udp()
 {
+  #ifdef NOP
   #ifdef NOP
   if (m_user_send_status) {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("client_udp: write") << endl);
@@ -782,6 +785,38 @@ void irs::simple_tcpip_t::client_udp()
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("заполнение arp_request") << endl);
       arp_request(m_dest_ip);
       m_udp_wait_arp = true;
+    }
+  }
+  #endif // NOP
+  #endif // NOP
+  
+  #ifndef NOP
+  if (m_user_send_status) {
+    if (cash(m_dest_ip)) {
+      IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("заполнение udp-пакета") << endl);
+      if (m_udp_wait_arp) {
+        if (mp_ethernet->is_send_buf_empty()) {
+          if (m_buf_num == simple_ethernet_t::single_buf) {
+            m_new_recv_packet = false;
+          }
+          mp_ethernet->set_send_buf_locked();
+          udp_packet();
+        }
+      } else {
+        udp_packet();
+      }
+      m_udp_wait_arp = false;
+    } else {
+      if (m_udp_wait_arp) {
+        if (m_udp_wait_arp_time.check()) {
+          m_udp_wait_arp = false;
+          m_user_send_status = false;
+        }
+      } else {
+        arp_request(m_dest_ip);
+        m_udp_wait_arp = true;
+        m_udp_wait_arp_time.start();
+      }
     }
   }
   #endif // NOP
@@ -869,6 +904,7 @@ void irs::simple_tcpip_t::tcp_packet()
 void irs::simple_tcpip_t::send_tcp()
 {
   mp_ethernet->send_packet(200);
+  m_new_recv_packet = true;
 }
 
 void irs::simple_tcpip_t::server_tcp()
@@ -919,6 +955,7 @@ void irs::simple_tcpip_t::server_tcp()
         m_client_sequence_num = mp_recv_buf[tcp_sequence_number];
         memcpyex(mp_send_buf, mp_recv_buf, TCP_HANDSHAKE_SIZE);
         m_tcp_client_mode = send_ACK_SYN;
+        mp_ethernet->set_recv_handled();
       } else if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && m_tcp_data_length_in) {
         IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("получаем данные TCP") << endl);
       } else if (mp_recv_buf[tcp_flags_1] & tcp_RST) {
@@ -947,6 +984,7 @@ void irs::simple_tcpip_t::client_tcp()
         } break;
         case send_SYN:
         {
+          mp_ethernet->set_send_buf_locked();
           mp_send_buf[tcp_flags_1] |= tcp_SYN;
           mp_send_buf[tcp_sequence_number] = 0;
           tcp_packet();
@@ -956,6 +994,7 @@ void irs::simple_tcpip_t::client_tcp()
         } break;
         case send_ACK_SYN:
         {
+          mp_ethernet->set_send_buf_locked();
           mp_send_buf[tcp_flags_1] |= tcp_SYN;
           mp_send_buf[tcp_flags_1] |= tcp_ACK;
           mp_send_buf[tcp_sequence_number] = 0;
@@ -973,6 +1012,7 @@ void irs::simple_tcpip_t::client_tcp()
         } break;
         case send_ACK_data:
         {
+          mp_ethernet->set_send_buf_locked();
           mp_send_buf[tcp_flags_1] |= tcp_ACK;
           mp_send_buf[tcp_sequence_number] = m_client_sequence_num + 1;
           mp_send_buf[tcp_acknowledgment_number] = m_server_sequence_num + 1;
@@ -986,8 +1026,22 @@ void irs::simple_tcpip_t::client_tcp()
       }
     }
   } else {
-    /*mp_ethernet->set_send_buf_locked();
-    arp_request(m_dest_ip);*/
+    if (m_tcp_wait_arp) {
+      if (m_udp_wait_arp_time.check()) {
+        m_tcp_wait_arp = false;
+      }
+    } else {
+      if (mp_ethernet->is_send_buf_empty()) {
+        if (m_buf_num == simple_ethernet_t::single_buf) {
+          m_new_recv_packet = false;
+        }
+        mp_ethernet->set_send_buf_locked();
+        arp_request(m_dest_ip);
+        m_tcp_wait_arp = true;
+        m_udp_wait_arp_time.start();
+        IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправка arp_request") << endl);
+      }
+    }
   }
 }
 
@@ -1073,6 +1127,8 @@ void irs::simple_tcpip_t::tick()
   
   if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet)
   {
+    IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
+      irsm("обрабатываем полученный пакет") << endl);
     m_new_recv_packet = false;
     if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ARP)) &&
       (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(ARP)))
@@ -1099,6 +1155,7 @@ void irs::simple_tcpip_t::tick()
   if (!mp_ethernet->is_send_buf_empty()) {
     if (m_send_arp) {
       send_arp();
+      #ifdef NOP
       if (m_udp_wait_arp) {
         m_udp_wait_arp = false;
         if (m_buf_num == simple_ethernet_t::single_buf) {
@@ -1106,11 +1163,15 @@ void irs::simple_tcpip_t::tick()
         }
         mp_ethernet->set_send_buf_locked();
       }
+      #endif // NOP
     } else if (m_send_icmp) {
       send_icmp();
     } else if (m_send_udp) {
       send_udp();
     }
   }
+  
+  #ifdef TCP_ENABLED
   client_tcp();
+  #endif // TCP_ENABLED
 }

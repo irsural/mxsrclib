@@ -283,6 +283,7 @@ private:
   mode_t m_tcp_client_mode;
   mode_t m_tcp_server_mode;
   bool m_udp_wait_arp;
+  bool m_tcp_wait_arp;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
