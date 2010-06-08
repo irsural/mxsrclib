@@ -204,7 +204,8 @@ public:
     tcp_check_sum_1 = 0x33,
     tcp_urgent_pointer_0 = 0x34, // указатель срочности
     tcp_urgent_pointer_1 = 0x35,
-    tcp_data = 0x36 // options(если есть) + data
+    tcp_data = 0x36, // options(если есть) + data
+    tcp_pseudo_header_length = 12
   };
   
   simple_tcpip_t(
@@ -235,8 +236,7 @@ private:
     disconnected_mode,
     send_SYN,
     send_ACK_SYN,
-    send_ACK_data,
-    send_data
+    send_ACK_data
   };
   
   simple_ethernet_t* mp_ethernet;
@@ -283,6 +283,7 @@ private:
   irs_u32 m_server_sequence_num;
   mode_t m_tcp_client_mode;
   mode_t m_tcp_server_mode;
+  bool m_udp_wait_arp;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
@@ -306,6 +307,7 @@ private:
   void tcp_packet();
   void server_tcp();
   void client_tcp();
+  void send_tcp();
 };
 
 } //namespace irs

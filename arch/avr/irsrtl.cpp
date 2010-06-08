@@ -323,6 +323,7 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   
   if (!wait_dma()) {
     IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("!wait_dma()") << endl);
+    mlog() << irsm("!wait_dma()") << endl;
     return;
   }
 
