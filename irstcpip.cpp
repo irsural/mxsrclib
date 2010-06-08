@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// ƒата: 07.06.2010
+// ƒата: 08.06.2010
 // ƒата создани€: 16.03.2010
 
 #include <irsdefs.h>
@@ -163,7 +163,11 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_recv_arp(false),
   m_port_list(),
   m_new_recv_packet(true),
-  m_tcp_connect(false)
+  m_tcp_connected(false),
+  m_client_sequence_num(0),
+  m_server_sequence_num(0),
+  m_tcp_client_mode(disconnected_mode),
+  m_tcp_server_mode(disconnected_mode)
 {
 }
 
@@ -465,6 +469,7 @@ void irs::simple_tcpip_t::arp()
         irsm("добавл€ем ip и mac в ARP-таблицу") << endl);
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
         irsm("добавл€ем ip и mac в ARP-таблицу") << endl);
+      mp_ethernet->set_recv_handled();
     } else if (mp_recv_buf[arp_operation_code_1] == arp_operation_request) { 
       //ARP-запрос
       //добавл€ем ip и mac запрашивающего в ARP-таблицу
@@ -483,10 +488,10 @@ void irs::simple_tcpip_t::arp()
       arp_response();
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(
         irsm("формируем ответ на пришедший ARP-запрос") << endl);
+      if (m_buf_num == simple_ethernet_t::double_buf) {
+        mp_ethernet->set_recv_handled();
+      }
     }
-    //if (m_buf_num == simple_ethernet_t::double_buf) {
-      mp_ethernet->set_recv_handled();
-    //}
   } else {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("arp-запрос отклонен по ip") << endl);
     m_new_recv_packet = true;
@@ -602,11 +607,11 @@ void irs::simple_tcpip_t::udp_packet()
   mp_send_buf[ip_length_1] = IRS_LOBYTE(length_ip);
   //рисуем идентификатор
   m_identif++;
-  mp_send_buf[udp_ident_0] = IRS_HIBYTE(m_identif);
-  mp_send_buf[udp_ident_1] = IRS_LOBYTE(m_identif);
+  mp_send_buf[ip_ident_0] = IRS_HIBYTE(m_identif);
+  mp_send_buf[ip_ident_1] = IRS_LOBYTE(m_identif);
   //fragment
-  mp_send_buf[udp_fragment_0] = 0;
-  mp_send_buf[udp_fragment_1] = 0;
+  mp_send_buf[ip_fragment_0] = 0;
+  mp_send_buf[ip_fragment_1] = 0;
   //рисуем TTL
   mp_send_buf[TTL] = 128;
   //protocol
@@ -781,11 +786,11 @@ void irs::simple_tcpip_t::tcp_packet()
   mp_send_buf[ip_length_1] = IRS_LOBYTE(length_ip);
   //рисуем идентификатор
   m_identif++;
-  mp_send_buf[udp_ident_0] = IRS_HIBYTE(m_identif);
-  mp_send_buf[udp_ident_1] = IRS_LOBYTE(m_identif);
+  mp_send_buf[ip_ident_0] = IRS_HIBYTE(m_identif);
+  mp_send_buf[ip_ident_1] = IRS_LOBYTE(m_identif);
   //fragment
-  mp_send_buf[udp_fragment_0] = 0;
-  mp_send_buf[udp_fragment_1] = 0;
+  mp_send_buf[ip_fragment_0] = 0;
+  mp_send_buf[ip_fragment_1] = 0;
   //рисуем TTL
   mp_send_buf[TTL] = 128;
   //protocol
@@ -827,7 +832,7 @@ void irs::simple_tcpip_t::tcp_packet()
   m_send_tcp = true;
 }
 
-void irs::simple_tcpip_t::recv_tcp()
+void irs::simple_tcpip_t::server_tcp()
 {
   /*if () { // получение пакета SYN дл€ установки соединени€
   
@@ -857,20 +862,27 @@ void irs::simple_tcpip_t::recv_tcp()
       
     m_tcp_data_length_in = static_cast<irs_size_t>(ip_length -
       incoming_ip_header_length - incoming_tcp_header_length);
-      
-    if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && !m_tcp_data_length_in) {
-    
-    } else if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && m_tcp_data_length_in) {
-    
-    } else if (mp_recv_buf[tcp_flags_1] & tcp_SYN) {
-      // запоминаем номер последовательности и посылаем сегмент с флагом ACK
-      if (mp_recv_buf[tcp_flags_1] & tcp_ACK) {
-        // переход в состо€ние ESTABLISHED
+
+    if (m_tcp_connected) {  
+      if (mp_recv_buf[tcp_flags_1] & tcp_FIN) {
+        // сигнализирует об окончании передачи
       }
-    } else if (mp_recv_buf[tcp_flags_1] & tcp_FIN) {
-    
-    } else if (mp_recv_buf[tcp_flags_1] & tcp_RST) {
-      // прекращение попыток соединитьс€
+    } else { // –ежим установлени€ соединени€
+      if ((mp_recv_buf[tcp_flags_1] & tcp_SYN) &&
+        (mp_recv_buf[tcp_flags_1] & tcp_ACK))
+      {
+        // переход в состо€ние ESTABLISHED
+        m_tcp_connected = true;
+      } else if (mp_recv_buf[tcp_flags_1] & tcp_SYN) {
+          // запоминаем номер последовательности и посылаем сегмент с флагом ACK
+          m_client_sequence_num = mp_recv_buf[tcp_sequence_number];
+          memcpyex(mp_send_buf, mp_recv_buf, TCP_HANDSHAKE_SIZE);
+          m_tcp_client_mode = send_ACK_SYN;
+      } else if ((mp_recv_buf[tcp_flags_1] & tcp_ACK) && m_tcp_data_length_in) {
+      
+      } else if (mp_recv_buf[tcp_flags_1] & tcp_RST) {
+        // прекращение попыток соединитьс€
+      }
     }
   } else {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("port: ") << local_port <<
@@ -880,13 +892,47 @@ void irs::simple_tcpip_t::recv_tcp()
   }
 }
 
-void irs::simple_tcpip_t::send_tcp()
+void irs::simple_tcpip_t::client_tcp()
 {
-  // ѕосылаем пакет ј—  дл€ подтверждени€ приема SYN
+  if (m_tcp_connected) {
   
-  // ѕосылаем пакет FIN, сообщающий о том, что передача закончена
-  
-  // ѕосылаем ответ
+  } else { // –ежим установлени€ соединени€
+    switch (m_tcp_client_mode)
+    {
+      case disconnected_mode:
+      {
+      
+      } break;
+      case send_SYN:
+      {
+        mp_send_buf[tcp_flags_1] |= tcp_SYN;
+        mp_send_buf[tcp_sequence_number] = 0;
+        tcp_packet();
+      } break;
+      case send_ACK_SYN:
+      {
+        mp_send_buf[tcp_flags_1] |= tcp_SYN;
+        mp_send_buf[tcp_flags_1] |= tcp_ACK;
+        mp_send_buf[tcp_sequence_number] = 0;
+        mp_send_buf[tcp_acknowledgment_number] = m_server_sequence_num + 1;
+        tcp_packet();
+      } break;
+      case send_ACK_data:
+      {
+        mp_send_buf[tcp_flags_1] |= tcp_ACK;
+        mp_send_buf[tcp_sequence_number] = m_client_sequence_num + 1;
+        mp_send_buf[tcp_acknowledgment_number] = m_server_sequence_num + 1;
+        tcp_packet();
+      } break;
+      case send_data:
+      {
+        
+      } break;
+      default:
+      {
+      } break;
+    }
+  }
 }
 
 void irs::simple_tcpip_t::ip(void)
@@ -915,7 +961,7 @@ void irs::simple_tcpip_t::ip(void)
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
         IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
         irsm(" пакет получен как tcp") << endl);
-      recv_tcp();
+      server_tcp();
       #endif // TCP_ENABLED
     } else {
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<

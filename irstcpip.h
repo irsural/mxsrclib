@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// ƒата: 07.06.2010
+// ƒата: 08.06.2010
 // дата создани€: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -15,7 +15,7 @@
 
 #include <irsfinal.h>
 
-//define TCP_ENABLED
+//#define TCP_ENABLED
 
 #ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
 # if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
@@ -118,6 +118,7 @@ public:
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 200,
+    TCP_HANDSHAKE_SIZE = 54,
     mac_length = 0x6,
     ip_length = 0x4,
     arp_operation_request = 0x0001,
@@ -174,10 +175,10 @@ public:
     ip_type_of_service = 0xf,
     ip_length_0 = 0x10,
     ip_length_1 = 0x11,
-    udp_ident_0 = 0x12,
-    udp_ident_1 = 0x13,
-    udp_fragment_0 = 0x14,
-    udp_fragment_1 = 0x15,
+    ip_ident_0 = 0x12,
+    ip_ident_1 = 0x13,
+    ip_fragment_0 = 0x14,
+    ip_fragment_1 = 0x15,
     TTL = 0x16,
     udp_pseudo_header_length = 12,
     tcp_dest_ip = 0x1e,
@@ -190,12 +191,13 @@ public:
     tcp_acknowledgment_number = 0x2a, // 4 byte
     tcp_flags_0 = 0x2e,
     tcp_flags_1 = 0x2f,
-    tcp_FIN = 0x01,
-    tcp_SYN = 0x02,
-    tcp_RST = 0x04,
-    tcp_PSH = 0x08,
-    tcp_ACK = 0x10,
-    tcp_URG = 0x20,
+    tcp_FIN = 0x01, // передача окончена
+    tcp_SYN = 0x02, // синхронизаци€ при установлении соединени€
+    tcp_RST = 0x04, // запрос на восстановление соединени€
+    tcp_PSH = 0x08, // запрос на отправку сообщени€ без ожидани€
+                      // заполнени€ буфера
+    tcp_ACK = 0x10, // квитанци€ на прин€тый сегмент
+    tcp_URG = 0x20, // срочное сообщение
     tcp_window_size_0 = 0x30,
     tcp_window_size_1 = 0x31,
     tcp_check_sum_0 = 0x32,
@@ -229,6 +231,14 @@ public:
   void tick();
   
 private:  
+  enum mode_t{
+    disconnected_mode,
+    send_SYN,
+    send_ACK_SYN,
+    send_ACK_data,
+    send_data
+  };
+  
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
   mxip_t m_local_ip;
@@ -267,8 +277,12 @@ private:
   bool m_recv_arp;
   set<irs_u16> m_port_list;
   bool m_new_recv_packet;
-  bool m_tcp_connect;
+  bool m_tcp_connected;
   irs_size_t m_tcp_data_length_in;
+  irs_u32 m_client_sequence_num;
+  irs_u32 m_server_sequence_num;
+  mode_t m_tcp_client_mode;
+  mode_t m_tcp_server_mode;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
@@ -290,8 +304,8 @@ private:
   void udp();
   void ip(void);
   void tcp_packet();
-  void recv_tcp();
-  void send_tcp();
+  void server_tcp();
+  void client_tcp();
 };
 
 } //namespace irs

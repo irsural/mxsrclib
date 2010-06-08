@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 04.06.2010
+// Дата: 08.06.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -1597,8 +1597,6 @@ void irs::modbus_server_t::tick()
           
         } break;
       }
-      request_t &req_header = 
-        reinterpret_cast<request_t&>(*(mp_buf.data() + size_of_MBAP));
       IRS_LIB_ASSERT((size_of_MBAP + m_size_byte_end) <= mp_buf.size());
       m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP + 
         m_size_byte_end);
