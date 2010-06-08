@@ -262,7 +262,6 @@ private:
   irs_u8* mp_send_buf;
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
-  bool m_udp_wait_arp;
   bool m_send_buf_filled;
   timer_t m_udp_wait_arp_time;
   arp_cash_t m_arp_cash;

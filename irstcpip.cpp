@@ -147,7 +147,6 @@ irs::simple_tcpip_t::simple_tcpip_t(
   mp_user_recv_buf(mp_ethernet->get_recv_buf()),
   mp_user_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
     mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
-  m_udp_wait_arp(false),
   m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
     mp_ethernet->is_recv_buf_filled()),
   m_udp_wait_arp_time(make_cnt_s(1)),
