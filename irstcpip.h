@@ -15,7 +15,7 @@
 
 #include <irsfinal.h>
 
-//#define TCP_ENABLED
+#define TCP_ENABLED
 
 #ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
 # if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
@@ -123,7 +123,7 @@ public:
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 200,
-    TCP_HANDSHAKE_SIZE = 54,
+    TCP_HANDSHAKE_SIZE = 62,
     mac_len = 0x6,
     ip_len = 0x4,
     arp_operation_request = 0x0001,

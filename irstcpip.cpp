@@ -359,7 +359,7 @@ irs_u16 irs::simple_tcpip_t::check_sum(irs_size_t a_count, irs_u8* a_addr)
       check_sum_ip(ip_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
-	ip_checksum = ~ip_checksum;
+	ip_checksum = static_cast<irs_u16>(~ip_checksum);
 
   return ip_checksum;
 }
@@ -395,7 +395,7 @@ irs_u16 irs::simple_tcpip_t::check_sum_udp(irs_size_t a_count, irs_u8* a_addr)
       check_sum_ip(udp_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
-  udp_checksum = ~udp_checksum;
+  udp_checksum = static_cast<irs_u16>(~udp_checksum);
 
   return udp_checksum;
 }
@@ -432,7 +432,7 @@ irs_u16 irs::simple_tcpip_t::check_sum_tcp(irs_size_t a_count,
       check_sum_ip(tcp_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
-  tcp_checksum = ~tcp_checksum;
+  tcp_checksum = static_cast<irs_u16>(~tcp_checksum);
 
   return tcp_checksum;
 }
@@ -659,7 +659,7 @@ void irs::simple_tcpip_t::udp_packet()
   //all length
   irs_size_t length_ip = m_user_send_buf_udp_size + ip_header_length +
     udp_header_length;
-  hton16(&mp_send_buf[ip_length], length_ip);
+  hton16(&mp_send_buf[ip_length], static_cast<irs_u16>(length_ip));
   //рисуем идентификатор
   m_identif++;
   hton16(&mp_send_buf[ip_ident], m_identif);
@@ -688,7 +688,7 @@ void irs::simple_tcpip_t::udp_packet()
   hton16(&mp_send_buf[udp_local_port], m_local_port);
   //udp length
   irs_size_t length_udp = m_user_send_buf_udp_size + udp_header_length;
-  hton16(&mp_send_buf[udp_length], length_udp);
+  hton16(&mp_send_buf[udp_length], static_cast<irs_u16>(length_udp));
   //checsum
   hton16(&mp_send_buf[udp_check_sum], 0);
 
@@ -860,7 +860,7 @@ void irs::simple_tcpip_t::tcp_packet()
   //all length
   irs_size_t length_ip = m_user_send_buf_tcp_size + ip_header_length +
     tcp_header_length;
-  hton16(&mp_send_buf[ip_length], length_ip);
+  hton16(&mp_send_buf[ip_length], static_cast<irs_u16>(length_ip));
   //рисуем идентификатор
   m_identif++;
   hton16(&mp_send_buf[ip_ident], m_identif);
@@ -884,12 +884,14 @@ void irs::simple_tcpip_t::tcp_packet()
   hton16(&mp_send_buf[ip_check_sum], chksum_ip);
   
   //TCP packet:
-  hton16(&mp_send_buf[tcp_dest_port], m_dest_port);
+  //hton16(&mp_send_buf[tcp_dest_port], m_dest_port);
+  hton16(&mp_send_buf[tcp_dest_port], m_cur_dest_port);
 
-  hton16(&mp_send_buf[tcp_local_port], m_local_port);
+  //hton16(&mp_send_buf[tcp_local_port], m_local_port);
+  hton16(&mp_send_buf[tcp_local_port], m_cur_local_port);
   
   irs_size_t tcp_length = m_user_send_buf_tcp_size + tcp_header_length;
-  hton16(&mp_send_buf[tcp_window_size], tcp_length);
+  hton16(&mp_send_buf[tcp_window_size], static_cast<irs_u16>(tcp_length));
   
   // обнуляем check_sum_tcp
   hton16(&mp_send_buf[tcp_check_sum], 0);
@@ -996,7 +998,10 @@ void irs::simple_tcpip_t::client_tcp()
           hton32(&mp_send_buf[tcp_sequence_number], m_server_sequence_num);
           hton32(&mp_send_buf[tcp_acknowledgment_number],
             m_client_sequence_num + 1);
+          m_user_send_buf_tcp_size = 8;
           tcp_packet();
+          /*hton16(&mp_send_buf[tcp_dest_port], m_cur_dest_port);
+          hton16(&mp_send_buf[tcp_local_port], m_cur_local_port);*/
           send_tcp();
           m_tcp_client_mode = disconnected_mode;
           IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("посылаем ответ на SYN") << endl);
