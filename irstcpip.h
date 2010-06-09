@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// ƒата: 08.06.2010
+// ƒата: 09.06.2010
 // дата создани€: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -35,6 +35,11 @@
 #endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
 
 namespace irs {
+
+irs_u16 ntoh16(irs_u8* ap_network_in);
+void hton16(irs_u8* ap_network_out, irs_u16 a_host_in);
+irs_u32 ntoh32(irs_u8* ap_network_in);
+void hton32(irs_u8* ap_network_out, irs_u32 a_host_in);
 
 // Ethernet interface
 class simple_ethernet_t
@@ -119,8 +124,8 @@ public:
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 200,
     TCP_HANDSHAKE_SIZE = 54,
-    mac_length = 0x6,
-    ip_length = 0x4,
+    mac_len = 0x6,
+    ip_len = 0x4,
     arp_operation_request = 0x0001,
     arp_operation_response = 0x0002,
     udp_proto = 0x11,
@@ -132,7 +137,9 @@ public:
     Ethernet = 0x0001,
     ip_header_length = 20,
     udp_header_length = 8,
+    udp_pseudo_header_length = 12,
     tcp_header_length = 20,
+    tcp_pseudo_header_length = 12,
     
     dest_mac = 0x0,
     sourse_mac = 0x6,
@@ -150,10 +157,8 @@ public:
     arp_sender_ip = 0x1c,
     arp_target_mac = 0x20,
     arp_target_ip = 0x26,
-    check_sum_ip_0 = 0x18,
-    check_sum_ip_1 = 0x19,
-    check_sum_icmp_0 = 0x24,
-    check_sum_icmp_1 = 0x25,
+    ip_check_sum = 0x18,
+    icmp_check_sum = 0x24,
     icmp_target_ip = 0x1e,
     icmp_sender_ip = 0x1a,
     icmp_type = 0x22,
@@ -162,31 +167,21 @@ public:
     icmp_echo_response = 0,
     udp_dest_ip = 0x1e,
     udp_source_ip = 0x1a,
-    udp_dest_port_0 = 0x24,
-    udp_dest_port_1 = 0x25,
-    udp_local_port_0 = 0x22,
-    udp_local_port_1 = 0x23,
-    udp_length_0 = 0x26,
-    udp_length_1 = 0x27,
-    udp_check_sum_0 = 0x28,
-    udp_check_sum_1 = 0x29,
+    udp_dest_port = 0x24,
+    udp_local_port = 0x22,
+    udp_length = 0x26,
+    udp_check_sum = 0x28,
     ip_proto_type = 0x17,
     ip_version = 0xe,
     ip_type_of_service = 0xf,
-    ip_length_0 = 0x10,
-    ip_length_1 = 0x11,
-    ip_ident_0 = 0x12,
-    ip_ident_1 = 0x13,
-    ip_fragment_0 = 0x14,
-    ip_fragment_1 = 0x15,
+    ip_length = 0x10,
+    ip_ident = 0x12,
+    ip_fragment = 0x14,
     TTL = 0x16,
-    udp_pseudo_header_length = 12,
     tcp_dest_ip = 0x1e,
     tcp_source_ip = 0x1a,
-    tcp_dest_port_0 = 0x24,
-    tcp_dest_port_1 = 0x25,
-    tcp_local_port_0 = 0x22,
-    tcp_local_port_1 = 0x23,
+    tcp_dest_port = 0x24,
+    tcp_local_port = 0x22,
     tcp_sequence_number = 0x26, // 4 byte
     tcp_acknowledgment_number = 0x2a, // 4 byte
     tcp_flags_0 = 0x2e,
@@ -198,14 +193,10 @@ public:
                       // заполнени€ буфера
     tcp_ACK = 0x10, // квитанци€ на прин€тый сегмент
     tcp_URG = 0x20, // срочное сообщение
-    tcp_window_size_0 = 0x30,
-    tcp_window_size_1 = 0x31,
-    tcp_check_sum_0 = 0x32,
-    tcp_check_sum_1 = 0x33,
-    tcp_urgent_pointer_0 = 0x34, // указатель срочности
-    tcp_urgent_pointer_1 = 0x35,
-    tcp_data = 0x36, // options(если есть) + data
-    tcp_pseudo_header_length = 12
+    tcp_window_size = 0x30,
+    tcp_check_sum = 0x32,
+    tcp_urgent_pointer = 0x34, // указатель срочности
+    tcp_data = 0x36 // options(если есть) + data
   };
   
   simple_tcpip_t(
@@ -292,7 +283,6 @@ private:
   irs_u16 check_sum_tcp(irs_size_t a_count, irs_u8* a_addr);
   void arp_request(mxip_t a_dest_ip);
   void arp_response(void);
-  void arp_cash(void);
   void arp();
   void send_arp(void);
   void icmp_packet();
