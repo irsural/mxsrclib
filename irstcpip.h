@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// Дата: 09.06.2010
+// Дата: 11.06.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -14,8 +14,6 @@
 #include <irsnetdefs.h>
 
 #include <irsfinal.h>
-
-#define TCP_ENABLED
 
 #ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
 # if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
@@ -167,8 +165,8 @@ public:
     icmp_echo_response = 0,
     udp_dest_ip = 0x1e,
     udp_source_ip = 0x1a,
-    udp_dest_port = 0x24,
     udp_local_port = 0x22,
+    udp_dest_port = 0x24,
     udp_length = 0x26,
     udp_check_sum = 0x28,
     ip_proto_type = 0x17,
@@ -206,6 +204,8 @@ public:
     irs_size_t a_arp_cash_size = arp_cash_t::arp_table_size
   );
   ~simple_tcpip_t();
+
+  // UDP
   void open_udp();
   void close_udp();
   bool is_write_udp_complete();
@@ -214,6 +214,20 @@ public:
   irs_size_t read_udp(mxip_t* a_dest_ip, irs_u16* a_dest_port,
     irs_u16* a_local_port);
   void read_udp_complete();
+
+  // TCP
+  void active_open_tcp();
+  void passive_open_tcp();
+  void close_tcp();
+  #ifdef NOP
+  bool is_write_tcp_complete();
+  void write_tcp(mxip_t a_dest_ip, irs_u16 a_dest_port,
+    irs_u16 a_local_port, irs_size_t a_size);
+  irs_size_t read_tcp(mxip_t* a_dest_ip, irs_u16* a_dest_port,
+    irs_u16* a_local_port);
+  void read_tcp_complete();
+  #endif // NOP
+
   irs_u8* get_recv_buf();
   irs_u8* get_send_buf();
   bool open_port(irs_u16 a_port);
@@ -224,10 +238,32 @@ public:
   
 private:  
   enum mode_t{
-    disconnected_mode,
+    wait_send_command_mode,
     send_SYN,
     send_ACK_SYN,
-    send_ACK_data
+    send_ACK,
+    send_FIN
+  };
+  enum tcp_state_t {
+    CLOSED,
+    LISTEN,
+    SYN_SENT,
+    SYN_RECEIVED,
+    ESTABLISHED,
+    FIN_WAIT_1,
+    CLOSE_WAIT,
+    FIN_WAIT_2,
+    LAST_ACK,
+    TIME_WAIT,
+    CLOSING
+  };
+  enum open_t {
+    // соединение не открыто
+    non_open,
+    // открытие приложения и ожидание запроса на создание соединения
+    passive_open,
+    // открытие приложения и инициация соединения
+    active_open
   };
   
   simple_ethernet_t* mp_ethernet;
@@ -249,12 +285,13 @@ private:
   irs_u16 m_dest_port_def;
   irs_u16 m_local_port;
   bool m_udp_open;
+  bool m_tcp_open;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
   irs_u8* mp_user_recv_buf;
   irs_u8* mp_user_send_buf;
   bool m_send_buf_filled;
-  timer_t m_udp_wait_arp_time;
+  timer_t m_connection_wait_arp_timer;
   arp_cash_t m_arp_cash;
   mxmac_t& m_dest_mac;
   mxip_t m_cur_dest_ip;
@@ -264,17 +301,17 @@ private:
   bool m_send_icmp;
   bool m_send_udp;
   bool m_send_tcp;
-  bool m_recv_arp;
   set<irs_u16> m_port_list;
   bool m_new_recv_packet;
   bool m_tcp_connected;
   irs_size_t m_tcp_data_length_in;
-  irs_u32 m_client_sequence_num;
-  irs_u32 m_server_sequence_num;
-  mode_t m_tcp_client_mode;
-  mode_t m_tcp_server_mode;
+  irs_u32 m_seq_num;
+  irs_u32 m_ack_num;
+  mode_t m_tcp_send_mode;
   bool m_udp_wait_arp;
   bool m_tcp_wait_arp;
+  tcp_state_t m_tcp_state;
+  open_t m_open_type;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
@@ -293,6 +330,7 @@ private:
   void send_udp();
   void client_udp();
   void udp();
+  void tcp();
   void ip(void);
   void tcp_packet();
   void server_tcp();
