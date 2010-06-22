@@ -160,7 +160,7 @@ template<class N, class S>
 void num_to_str_classic(const N& a_num, S* ap_str)
 {
   typename base_str_type<S>::type base_str;
-  number_to_string_classic(a_num, base_str);
+  number_to_string_classic(a_num, &base_str);
   *ap_str = str_conv<S>(base_str);
 }
 
