@@ -56,22 +56,38 @@ inline bool str_to_number(const AnsiString& a_str, T& a_number)
   irs::string str = a_str.c_str();
   return str.to_number(a_number);
 };
-#endif // #if IRS_LIB_VERSION_SUPPORT_LESS(390)  
+#endif // #if IRS_LIB_VERSION_SUPPORT_LESS(390)
 
 // Структура версии файла
 struct file_version_t
 {
-  unsigned short major;
-  unsigned short minor;
-  unsigned short release;
-  unsigned short build;
+  typedef unsigned short size_type;
+  size_type major;
+  size_type minor;
+  size_type release;
+  size_type build;
+  file_version_t();
+  file_version_t(
+    size_type a_major,
+    size_type a_minor,
+    size_type a_release,
+    size_type a_build
+  );
+  bool operator<(const file_version_t& a_file_version) const;
+  bool operator==(const file_version_t& a_file_version) const;
+  bool operator!=(const file_version_t& a_file_version) const;
 };
 
-// Запрос версии файла
-bool get_file_version(
-  const irs::string& a_file_name, file_version_t& a_version);
-// Перевод структуры о версии файла в строку
-irs::string file_version_to_str(const file_version_t& a_file_version);
+// Запрос версии файла  
+bool get_file_version(const irs::string_t& a_file_name,
+  file_version_t& a_version);
+
+// Переводит структуру о версии файла в строку
+irs::string_t file_version_to_str(const file_version_t& a_file_version);
+
+// Переводит строку в тип file_version_t
+bool str_to_file_version(const irs::string_t& a_str,
+  file_version_t* ap_file_version);
 
 void file_xls_table_read(const string_t& a_book_name,
   const string_t& a_sheet,

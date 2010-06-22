@@ -11,9 +11,64 @@
 
 #include <irsfinal.h>
 
+// struct file_version_t
+irs::cbuilder::file_version_t::file_version_t():
+  major(0),
+  minor(0),
+  release(0),
+  build(0)
+{
+}
+
+irs::cbuilder::file_version_t::file_version_t(
+  size_type a_major,
+  size_type a_minor,
+  size_type a_release,
+  size_type a_build
+):
+  major(a_major),
+  minor(a_minor),
+  release(a_release),
+  build(a_build)
+{
+}
+
+bool irs::cbuilder::file_version_t::operator<(
+  const file_version_t& a_file_version) const
+{
+  bool less = true;
+  if (major == a_file_version.major) {
+    if (minor == a_file_version.minor) {
+      if (release == a_file_version.release) {
+        less = (build < a_file_version.build);
+      } else {
+        less = (release < a_file_version.release);
+      }
+    } else {
+      less = (major < a_file_version.major);
+    }
+  } else {
+    less = (major < a_file_version.major);
+  }
+  return less;
+}
+
+bool irs::cbuilder::file_version_t::operator==(
+  const file_version_t& a_file_version) const
+{
+  return (major == a_file_version.major) && (minor == a_file_version.minor) &&
+    (release == a_file_version.release) && (build == a_file_version.build);
+}
+
+bool irs::cbuilder::file_version_t::operator!=(
+  const file_version_t& a_file_version) const
+{
+  return !operator==(a_file_version);
+}
+
 // Запрос версии файла
 bool irs::cbuilder::get_file_version(
-  const irs::string& a_file_name, irs::cbuilder::file_version_t& a_version)
+  const irs::string_t& a_file_name, irs::cbuilder::file_version_t& a_version)
 {
   bool fsuccess = true;
   const int file_name_size = a_file_name.size();
@@ -60,16 +115,67 @@ bool irs::cbuilder::get_file_version(
 }
 
 // Перевод структуры о версии файла в строку   
-irs::string irs::cbuilder::file_version_to_str(
+irs::string_t irs::cbuilder::file_version_to_str(
   const irs::cbuilder::file_version_t& a_file_version)
 {
-  irs::string file_version_str;
-  file_version_str =
-    static_cast<irs::string>(a_file_version.major) + "." +
-    static_cast<irs::string>(a_file_version.minor) + "." +
-    static_cast<irs::string>(a_file_version.release) + "." +
-    static_cast<irs::string>(a_file_version.build);
+  irs::string_t file_version_str;
+  irs::string_t item_str;
+  number_to_string(a_file_version.major, &item_str);
+  file_version_str = item_str + ".";
+  number_to_string(a_file_version.minor, &item_str);
+  file_version_str += item_str + ".";
+  number_to_string(a_file_version.release, &item_str);
+  file_version_str += item_str + ".";
+  number_to_string(a_file_version.build, &item_str);
+  file_version_str += item_str;
   return file_version_str;
+}
+
+bool irs::cbuilder::str_to_file_version(const irs::string_t& a_str,
+  file_version_t* ap_file_version)
+{
+  IRS_LIB_ASSERT(ap_file_version);
+  typedef size_t size_type;
+  typedef irs::string string_type;
+  bool convert_success = true;
+  const size_type item_count = 4;
+  vector<file_version_t::size_type> item_array(item_count);
+  size_type dot_pos = 0;
+  size_type begin_prev_item_pos = 0;
+  for (size_type item_i = 0; item_i < item_count; item_i++) {
+    if (convert_success) {
+      dot_pos = a_str.find(irst("."), dot_pos + 1);
+      string_type item_str;
+      if (dot_pos != irs::string::npos) {
+        item_str = a_str.substr(begin_prev_item_pos,
+          dot_pos - begin_prev_item_pos);
+      } else if (item_i == 3) {
+        item_str = a_str.substr(begin_prev_item_pos);
+      } else {
+        convert_success = false;
+        break;
+      }
+      begin_prev_item_pos = dot_pos + 1;
+      file_version_t::size_type item = 0;
+      if (string_to_number(item_str, &item)) {
+        item_array[item_i] = item;
+      } else {
+        convert_success = false;
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  if (convert_success) {
+    ap_file_version->major = item_array[0];
+    ap_file_version->minor = item_array[1];
+    ap_file_version->release = item_array[2];
+    ap_file_version->build = item_array[3];
+  } else {
+    // Возвращаем статус неудачи
+  }
+  return convert_success;
 }
 
 void irs::cbuilder::file_xls_table_read(const string_t& a_book_name,

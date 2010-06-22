@@ -140,6 +140,12 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
   );
 }
 
+template<class T, class C>
+void number_to_string_classic(const T& a_num, basic_string<C>* ap_str)
+{
+  number_to_string(a_num, ap_str, locale::classic());
+}
+
 inline bool string_to_number_is_range_valid(int a_num)
 {
   int signed_char_min = ::numeric_limits<signed char>::min();
@@ -176,6 +182,12 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
   return convert_success;
 }
 
+template<class T, class C>
+bool string_to_number_classic(const basic_string<C>& a_str, T* ap_num)
+{
+  return string_to_number(a_str, ap_num, locale::classic());
+}
+
 #else  // IRS_FULL_STDCPPLIB_SUPPORT
 
 template<class T>
@@ -194,7 +206,13 @@ void number_to_string(const T& a_num, string* ap_str)
   }
   *ap_str = ostr.str();
   ostr.rdbuf()->freeze(false);
-}  
+}
+
+template<class T, class C>
+void number_to_string_classic(const T& a_num, string* ap_str)
+{
+  number_to_string(a_num, ap_str);
+}
 
 template<class T>
 bool string_to_number(const string& a_str, T* ap_num)
@@ -221,6 +239,12 @@ bool string_to_number(const string& a_str, T* ap_num)
     // Поток в нормальном состоянии
   }
   return convert_success;
+}
+
+template<class T>
+bool string_to_number_classic(const string& a_str, T* ap_num)
+{
+  return string_to_number(a_str, ap_num);
 }
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
