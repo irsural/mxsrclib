@@ -19,6 +19,40 @@
 
 namespace irs {
 
+template<class T>
+struct base_str_type
+{
+  //typedef irs::string type;
+};
+
+template<>
+struct base_str_type<irs::string>
+{
+  typedef irs::string type;
+};
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+template<>
+struct base_str_type<std::wstring>
+{
+  typedef std::wstring type;
+};
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+#if defined(__BORLANDC__)
+template<>
+struct base_str_type<AnsiString>
+{
+  typedef irs::string type;
+};
+
+template<>
+struct base_str_type<WideString>
+{
+  typedef std::wstring type;
+};
+#endif // __BORLANDC__
+
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 template<class T>
@@ -93,16 +127,20 @@ inline WideString str_conv<WideString>(const std::wstring& a_str_in)
 template<class T>
 T str_conv(const AnsiString& a_str_in)
 {
-  // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
+  if (is_equal_types<T, AnsiString>::value) {
+    return a_str_in;  
+  } else {
+    // Непроверенное преобразование
+    IRS_STATIC_ASSERT(false);
+    return T(a_str_in);
+  }
 }
 
-template<>
+/*template<>
 AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
 {
   return a_str_in;
-}
+}*/
 
 template<>
 inline std::wstring str_conv<std::wstring>(const AnsiString& a_str_in)
@@ -152,7 +190,7 @@ template<>
 inline AnsiString str_conv<AnsiString>(const WideString& a_str_in)
 {
   return AnsiString(a_str_in);
-}
+} 
 #endif // defined(__BORLANDC__)
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT

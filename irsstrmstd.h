@@ -199,7 +199,9 @@ inline void irs_strm_buf::tick()
 } //функци€ - начать мигать курсором
 inline void irs_strm_buf::blink_cursor(irs_i8 a_parametr_immediate_blink_cursor)
 {
-  const char ChCursor[2]="_";       //вид курсора
+  char ChCursor[2]; //вид курсора
+  ChCursor[0] = '_';
+  ChCursor[1] = '\0';       
   irs_u8 one=0;
   if(test_to_cnt(m_test_to_cur) || a_parametr_immediate_blink_cursor != 0)
   {
@@ -327,8 +329,9 @@ inline void irs_strm_buf::processing_key_event()  //обработка событий клавиатуры
 }
 inline void irs_strm_buf::outputbuf(irs_i32 a_ich)      //вывод в экранный буфер
 {
-  char ChTime[2]="\0";
+  char ChTime[2];
   ChTime[0]=(char)a_ich;
+  ChTime[1] = '\0';
   if(m_left_activecursor_buf >= m_width_display || ChTime[0] == '\n')
   { //если текуща€ строка последн€€, делаем скроллинг
     if(m_top_activecursor_buf > m_height_display-2)

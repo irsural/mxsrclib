@@ -17,6 +17,7 @@
 #include <irsstrdefs.h>
 #include <irserror.h>
 #include <irscpp.h>
+#include <irsstrconv.h>
 
 #include <irsfinal.h>
 
@@ -133,17 +134,34 @@ void number_to_string(const T& a_num, basic_string<C>* ap_str,
   const locale& a_loc = irs::loc().get())
 {
   number_to_string<T, C>(
-    a_num, 
-    ap_str, 
+    a_num,
+    ap_str,
     num_precision_default,
     num_mode_general, a_loc
   );
+}
+
+template<class N, class S>
+void num_to_str(const N& a_num, S* ap_str,
+  const locale& a_loc = irs::loc().get())
+{
+  typename base_str_type<S>::type base_str;
+  number_to_string(a_num, &base_str, a_loc);
+  *ap_str = str_conv<S>(base_str);
 }
 
 template<class T, class C>
 void number_to_string_classic(const T& a_num, basic_string<C>* ap_str)
 {
   number_to_string(a_num, ap_str, locale::classic());
+}
+
+template<class N, class S>
+void num_to_str_classic(const N& a_num, S* ap_str)
+{
+  typename base_str_type<S>::type base_str;
+  number_to_string_classic(a_num, base_str);
+  *ap_str = str_conv<S>(base_str);
 }
 
 inline bool string_to_number_is_range_valid(int a_num)
@@ -153,7 +171,7 @@ inline bool string_to_number_is_range_valid(int a_num)
   return (a_num >= signed_char_min) && (a_num <= unsigned_char_max );
 }
 
-template<class T, class C>
+template<class C, class T>
 bool string_to_number(const basic_string<C>& a_str, T* ap_num,
   const locale& a_loc = irs::loc().get())
 {
@@ -182,13 +200,30 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
   return convert_success;
 }
 
-template<class T, class C>
+template<class S, class N>
+bool str_to_num(const S& a_str, N* ap_num,
+  const locale& a_loc = irs::loc().get())
+{
+  typedef typename base_str_type<S>::type str_type;
+  return string_to_number(str_conv<str_type>(a_str),
+    ap_num, a_loc);
+}
+
+template<class C, class T>
 bool string_to_number_classic(const basic_string<C>& a_str, T* ap_num)
 {
   return string_to_number(a_str, ap_num, locale::classic());
 }
 
-#else  // IRS_FULL_STDCPPLIB_SUPPORT
+template<class S, class N>
+bool str_to_num_classic(const S& a_str, N* ap_num)
+{
+  typedef typename base_str_type<S>::type str_type;
+  return string_to_number_classic(str_conv<str_type>(a_str),
+    ap_num);
+}
+
+#else  // !IRS_FULL_STDCPPLIB_SUPPORT
 
 template<class T>
 void number_to_string(const T& a_num, string* ap_str)
@@ -208,10 +243,22 @@ void number_to_string(const T& a_num, string* ap_str)
   ostr.rdbuf()->freeze(false);
 }
 
-template<class T, class C>
+template<class T>
+void num_to_str(const T& a_num, string* ap_str)
+{
+  number_to_string(a_num, ap_str);
+}
+
+template<class T>
 void number_to_string_classic(const T& a_num, string* ap_str)
 {
   number_to_string(a_num, ap_str);
+}
+
+template<class T>
+void num_to_str_classic(const T& a_num, string* ap_str)
+{
+  number_to_string_classic(a_num, ap_str);
 }
 
 template<class T>
@@ -242,12 +289,24 @@ bool string_to_number(const string& a_str, T* ap_num)
 }
 
 template<class T>
+bool str_to_num(const string& a_str, T* ap_num)
+{
+  return string_to_number(a_str, ap_num);
+}
+
+template<class T>
 bool string_to_number_classic(const string& a_str, T* ap_num)
 {
   return string_to_number(a_str, ap_num);
 }
 
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+template<class T>
+bool str_to_num_classic(const string& a_str, T* ap_num)
+{
+  return string_to_number_classic(a_str, ap_num);
+}
+
+#endif // !IRS_FULL_STDCPPLIB_SUPPORT
 
 inline bool get_closed_file_size(const irs::string& a_file_name, int& a_size)
 {

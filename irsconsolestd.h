@@ -6,8 +6,11 @@
 #define IRSCONSOLESTDH
 
 #include <irsdefs.h>
+
 //#include <irsstrmstd.h>
 #include <timer.h>
+
+#include <irsfinal.h>
 
 // Тип для позции на дисплее
 typedef size_t mxdisp_pos_t;
@@ -139,7 +142,7 @@ public:
   inline bool check();
   inline bool check(irs_pin_t pin);
 };
-mxantibounce_t::mxantibounce_t():
+inline mxantibounce_t::mxantibounce_t():
   f_pin(irs_off),
   f_time(0),
   f_to(0),

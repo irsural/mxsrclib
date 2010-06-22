@@ -555,7 +555,24 @@ bool is_type_signed()
     static_cast<signed_t>(integer_sign_detect_t<T>::signed_value);
   return signT == signed_idx;
 }
-
+struct no_type
+{
+};
+struct yes_type
+{
+};
+template<class T1, class T2>
+struct is_equal_types
+{
+  enum { value = 0 };
+  typedef no_type type;
+};
+template<class T>
+struct is_equal_types<T, T>
+{
+  enum { value = 1 };
+  typedef yes_type type;
+};
 // ¬з€тие типов относительно указанного по размеру
 template <size_t size_of_type, class sign_of_type>
 struct type_relative_by_size_t
