@@ -1,5 +1,5 @@
 // Алгоритмы
-// Дата: 24.04.2010
+// Дата: 23.06.2010
 // Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
@@ -213,6 +213,13 @@ double phase_normalize(double a_phase_in, double a_phase_begin = 0.,
   double a_phase_end = 360.);
 // Приведение фазы к диапазону -180 - +180
 double phase_normalize_180(double a_phase_in);
+
+// Приведение фазы к диапазону a_phase_begin - a_phase_end
+template <class T>
+T phase_norm(T a_phase_in, T a_phase_begin = 0., T a_phase_end = 360.);
+// Приведение фазы к диапазону -180 - +180
+template <class T>
+T phase_norm_180(T a_phase_in);
 
 // функция интерполяции массива точек прямой методом МНК.
 // Записывает в a_korf_k и a_koef_b коэффициенты прямой y=a_korf_k*x+a_koef_b,

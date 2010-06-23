@@ -16,7 +16,7 @@ namespace irs
 
 namespace arm
 {
-  
+
 class arm_ethernet_t : public simple_ethernet_t
 {
 public:
@@ -33,7 +33,9 @@ public:
   virtual ~arm_ethernet_t();
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
+  virtual void set_send_buf_locked();
   virtual bool is_recv_buf_filled();
+  virtual bool is_send_buf_empty();
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
   virtual irs_size_t recv_buf_size();
@@ -53,7 +55,7 @@ private:
   {
     max_packet_size = 2032
   };
-  
+
   buffer_num_t m_buf_num;
   irs_size_t m_buf_size;
   irs_u8* mp_rx_buf;
@@ -64,7 +66,9 @@ private:
   bool m_rx_int_flag;
   event_connect_t<arm_ethernet_t> m_rx_int_event;
   const use_int_t m_use_interrupt;
-  
+  bool m_send_buf_locked;
+  bool m_send_packet_action;
+
   void rx_interrupt();
 };
 
