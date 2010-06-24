@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 19.04.2010
+// Дата: 23.06.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -402,16 +402,21 @@ public:
 };
 
 template <class T>
-void out_hex(ostream *ap_strm, T& a_value)
+void out_hex(ostream *ap_strm, const T& a_value)
 {
   ostream_format_save_t format_save(ap_strm);
   enum { hex_chars_in_byte = 2 };
   (*ap_strm) << hex << setw(hex_chars_in_byte*sizeof(T));
-  (*ap_strm) << uppercase << setfill('0') << a_value;
+  (*ap_strm) << uppercase << setfill('0');
+  if (sizeof(T) != sizeof(char)) {
+    (*ap_strm) << a_value;
+  } else {
+    (*ap_strm) << static_cast<int>(a_value);
+  }
 }
 
 template <class T>
-void out_hex_0x(ostream *ap_strm, T& a_value)
+void out_hex_0x(ostream *ap_strm, const T& a_value)
 {
   (*ap_strm) << "0x";
   out_hex(ap_strm, a_value);

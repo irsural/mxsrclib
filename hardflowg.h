@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 16.05.2010
+// Дата: 18.06.2010
 // Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -705,6 +705,42 @@ private:
   void view_channel_list();
   size_type channel_list_index(size_type a_channel_ident);
   size_type channel_ident_from_index(size_type a_list_index);
+};
+
+class simple_tcp_flow_t: public hardflow_t
+{
+public:
+  simple_tcp_flow_t(
+    simple_tcpip_t* ap_simple_tcp,
+    mxip_t a_local_ip,
+    irs_u16 a_local_port,
+    mxip_t a_dest_ip,
+    irs_u16 a_dest_port,
+    size_type a_channel_max_count = 3
+  );
+  virtual ~simple_tcp_flow_t();
+  virtual string_type param(const string_type& a_name);
+  virtual void set_param(const string_type& a_name,
+    const string_type& a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8* ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8* ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+private:
+  simple_tcpip_t* mp_simple_tcp;
+  mxip_t m_local_ip;
+  irs_u16 m_local_port;
+  mxip_t m_dest_ip;
+  irs_u16 m_dest_port;
+  size_type m_cur_channel;
+  irs_u8* mp_recv_buf;
+  irs_u8* mp_recv_buf_cur;
+  irs_u8* mp_send_buf;
+  mxip_t m_cur_dest_ip;
+  irs_u16 m_cur_dest_port;
 };
 
 } // namespace hardflow

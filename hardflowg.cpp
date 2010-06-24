@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 04.06.2010
+// Дата: 18.06.2010
 // Дата создания: 8.09.2009
 
 #include <irsdefs.h>
@@ -2007,15 +2007,15 @@ irs::hardflow::simple_udp_flow_t::simple_udp_flow_t(
   m_dest_port(a_dest_port),
   m_channel(invalid_channel),
   m_cur_channel(invalid_channel),
-  mp_recv_buf(mp_simple_udp->get_recv_buf()),
-  mp_recv_buf_cur(mp_simple_udp->get_recv_buf()),
-  mp_send_buf(mp_simple_udp->get_send_buf()),
   m_channel_max_count(a_channel_max_count),
   m_channel_list(m_channel_max_count, udp_channel_t())
   //m_channel_list_it(m_channel_list.begin())
 {
   mp_simple_udp->open_udp();
   mp_simple_udp->open_port(m_local_port);
+  mp_recv_buf = mp_simple_udp->get_recv_buf();
+  mp_recv_buf_cur = mp_simple_udp->get_recv_buf();
+  mp_send_buf = mp_simple_udp->get_send_buf();
 }
 
 irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
@@ -2023,6 +2023,7 @@ irs::hardflow::simple_udp_flow_t::~simple_udp_flow_t()
   mp_simple_udp->close_udp();
   mp_simple_udp->close_port(m_local_port);
 }
+
 void irs::hardflow::simple_udp_flow_t::view_channel_list()
 {
   IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -2101,7 +2102,7 @@ irs::hardflow::simple_udp_flow_t::size_type
   #else // NOP
   mxip_t dest_ip_cur = mxip_t::zero_ip();
   irs_u16 dest_port = 0;
-  if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port,
+  if (mp_simple_udp->read(&dest_ip_cur, &dest_port,
     &m_local_port))
   {
     deque<udp_channel_t>::iterator channel_list_cur_it =
@@ -2110,9 +2111,6 @@ irs::hardflow::simple_udp_flow_t::size_type
     if (channel_list_cur_it != m_channel_list.end()) {
       size_type list_index = channel_list_cur_it - m_channel_list.begin();
       m_cur_channel = channel_ident_from_index(list_index);
-      /*mlog() << irsm("channel_list_index(m_cur_channel) = ") <<
-        channel_list_index(m_cur_channel) << endl;
-      mlog() << irsm("list_index = ") << list_index << endl;*/
       IRS_LIB_ASSERT(channel_list_index(m_cur_channel) == list_index);
     } else {
       m_channel++;
@@ -2199,13 +2197,11 @@ irs::hardflow::simple_udp_flow_t::size_type
   size_type read_data_size = 0;
   if (is_channel_exists(a_channel_ident)) {
     size_type deque_index = channel_list_index(a_channel_ident);
-    /*mlog() << "channel = " << int(a_channel_ident) << endl;
-    mlog() << "deque_index = " << int(deque_index) << endl;*/
     IRS_LIB_ASSERT(deque_index < m_channel_max_count);
     mxip_t dest_ip = mxip_t::zero_ip();
     irs_u16 dest_port = 0;
     read_data_size =
-      mp_simple_udp->read_udp(&dest_ip, &dest_port, &m_local_port);
+      mp_simple_udp->read(&dest_ip, &dest_port, &m_local_port);
     if (read_data_size >= a_size) {
       if (udp_channel_t(dest_ip, dest_port) == m_channel_list[deque_index])
       {
@@ -2215,7 +2211,7 @@ irs::hardflow::simple_udp_flow_t::size_type
         )
         memcpyex(ap_buf, mp_recv_buf_cur, a_size);
         if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
-          (mp_simple_udp->recv_buf_size()))
+          (mp_simple_udp->recv_data_size()))
         {
           IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
             irsm("считан кусок пакета размером = ") << a_size << endl);
@@ -2226,7 +2222,7 @@ irs::hardflow::simple_udp_flow_t::size_type
           IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
             irsm("пакет считан полностью") << endl);
           mp_recv_buf_cur = mp_recv_buf;
-          mp_simple_udp->read_udp_complete();
+          mp_simple_udp->read_complete();
           IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Пакет полностью"
             " прочитан") << endl);
         }
@@ -2256,8 +2252,8 @@ irs::hardflow::simple_udp_flow_t::size_type
     if (a_size > mp_simple_udp->send_data_size_max()) {
       a_size = mp_simple_udp->send_data_size_max();
     }
-    if (mp_simple_udp->is_write_udp_complete()) {
-      mp_simple_udp->write_udp(m_channel_list[deque_index].ip,
+    if (mp_simple_udp->is_write_complete()) {
+      mp_simple_udp->write(m_channel_list[deque_index].ip,
         m_channel_list[deque_index].port, m_local_port, a_size);
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
         if (m_channel_list[deque_index].ip != mxip_t::zero_ip()) {
@@ -2292,14 +2288,130 @@ void irs::hardflow::simple_udp_flow_t::set_param(const string_type &/*a_name*/,
 void irs::hardflow::simple_udp_flow_t::tick()
 {
   mp_simple_udp->tick();
-  #ifdef NOP
-  mxip_t dest_ip_cur = mxip_t::zero_ip();
-  irs_u16 dest_port = 0;
-  if (mp_simple_udp->read_udp(&dest_ip_cur, &dest_port,
-    &m_local_port))
-  {
-    new_channel(dest_ip_cur, dest_port);
-  }
-  #endif // NOP
   delete_channels_by_downtime();
+}
+
+irs::hardflow::simple_tcp_flow_t::simple_tcp_flow_t(
+  simple_tcpip_t* ap_simple_tcp,
+  mxip_t a_local_ip,
+  irs_u16 a_local_port,
+  mxip_t a_dest_ip,
+  irs_u16 a_dest_port,
+  size_type a_channel_max_count
+):
+  mp_simple_tcp(ap_simple_tcp),
+  m_local_ip(a_local_ip),
+  m_local_port(a_local_port),
+  m_dest_ip(a_dest_ip),
+  m_dest_port(a_dest_port),
+  m_cur_channel(invalid_channel),
+  m_cur_dest_ip(mxip_t::zero_ip()),
+  m_cur_dest_port(0)
+{
+  mp_simple_tcp->passive_open_tcp();
+  mp_simple_tcp->open_port(m_local_port);
+  mp_recv_buf = mp_simple_tcp->get_recv_buf();
+  mp_recv_buf_cur = mp_simple_tcp->get_recv_buf();
+  mp_send_buf = mp_simple_tcp->get_send_buf();
+}
+
+irs::hardflow::simple_tcp_flow_t::~simple_tcp_flow_t()
+{
+
+}
+
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::simple_tcp_flow_t::channel_next()
+{
+  /*mxip_t dest_ip = mxip_t::zero_ip();
+  irs_u16 dest_port = 0;*/
+  if (mp_simple_tcp->tcp_cur_channel(&m_cur_channel, &m_cur_dest_ip,
+    &m_cur_dest_port))
+  {
+    return m_cur_channel;
+  } else {
+    return invalid_channel;
+  }
+}
+
+bool irs::hardflow::simple_tcp_flow_t::is_channel_exists(
+  size_type /*a_channel_ident*/)
+{
+  return (m_cur_channel != invalid_channel);
+}
+
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::simple_tcp_flow_t::read(size_type a_channel_ident,
+  irs_u8* ap_buf, size_type a_size)
+{
+  size_type read_data_size = 0;
+  if (is_channel_exists(a_channel_ident)) {
+    //IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("channel ") << a_channel_ident <<
+      //irsm(" exists") << endl);
+    mxip_t dest_ip = mxip_t::zero_ip();
+    irs_u16 dest_port = 0;
+    read_data_size =
+      mp_simple_tcp->read(&dest_ip, &dest_port, &m_local_port);
+    if (read_data_size >= a_size) {
+      memcpyex(ap_buf, mp_recv_buf_cur, a_size);
+      if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
+        (mp_simple_tcp->recv_data_size()))
+      {
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("считан кусок пакета размером = ") << a_size << endl);
+        mp_recv_buf_cur += a_size;
+      } else {
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("считан остаток пакета размером = ") << a_size << endl);
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("пакет считан полностью") << endl);
+        mp_recv_buf_cur = mp_recv_buf;
+        mp_simple_tcp->read_complete();
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Пакет полностью"
+          " прочитан") << endl);
+      }
+    }
+  } else {
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist, "
+      "read data not posible ") << endl);
+  }
+  return read_data_size;
+}
+
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::simple_tcp_flow_t::write(size_type a_channel_ident,
+  const irs_u8* ap_buf, size_type a_size)
+{
+  if (is_channel_exists(a_channel_ident)) {
+    if (a_size > mp_simple_tcp->send_data_size_max()) {
+      a_size = mp_simple_tcp->send_data_size_max();
+    }
+    if (mp_simple_tcp->is_write_complete()) {
+      mp_simple_tcp->write(m_cur_dest_ip, m_cur_dest_port,
+        m_local_port, a_size);
+      memcpyex(mp_send_buf, ap_buf, a_size);
+    } else {
+      return 0;
+    }
+  } else {
+    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist,"
+      "write data not posible ") << endl);
+  }
+  return a_size;
+}
+
+irs::hardflow::simple_tcp_flow_t::string_type
+  irs::hardflow::simple_tcp_flow_t::param(const string_type& /*a_name*/)
+{
+  return string_type();
+}
+
+void irs::hardflow::simple_tcp_flow_t::set_param(const string_type &/*a_name*/,
+  const string_type& /*a_value*/)
+{
+}
+
+void irs::hardflow::simple_tcp_flow_t::tick()
+{
+  mp_simple_tcp->tick();
 }

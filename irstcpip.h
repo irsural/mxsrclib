@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// ƒата: 11.06.2010
+// ƒата: 22.06.2010
 // дата создани€: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -117,7 +117,6 @@ public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
 
   enum {
-    HEADERS_SIZE = 42,
     ARPBUF_SIZE = 42,
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 200,
@@ -129,7 +128,6 @@ public:
     udp_proto = 0x11,
     icmp_proto = 0x01,
     tcp_proto = 0x6,
-    ether_type = 0x0806,
     ARP = 0x0806,
     IPv4 = 0x0800,
     Ethernet = 0x0001,
@@ -169,6 +167,7 @@ public:
     udp_dest_port = 0x24,
     udp_length = 0x26,
     udp_check_sum = 0x28,
+    udp_data = 0x2a,
     ip_proto_type = 0x17,
     ip_version = 0xe,
     ip_type_of_service = 0xf,
@@ -196,6 +195,9 @@ public:
     tcp_urgent_pointer = 0x34, // указатель срочности
     tcp_data = 0x36 // options(если есть) + data
   };
+  enum {
+    invalid_socket = 0
+  };
   
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
@@ -208,35 +210,30 @@ public:
   // UDP
   void open_udp();
   void close_udp();
-  bool is_write_udp_complete();
-  void write_udp(mxip_t a_dest_ip, irs_u16 a_dest_port,
-    irs_u16 a_local_port, irs_size_t a_size);
-  irs_size_t read_udp(mxip_t* a_dest_ip, irs_u16* a_dest_port,
-    irs_u16* a_local_port);
-  void read_udp_complete();
 
   // TCP
   void active_open_tcp();
   void passive_open_tcp();
   void close_tcp();
-  #ifdef NOP
-  bool is_write_tcp_complete();
-  void write_tcp(mxip_t a_dest_ip, irs_u16 a_dest_port,
+  
+  bool is_write_complete();
+  void write(mxip_t a_dest_ip, irs_u16 a_dest_port,
     irs_u16 a_local_port, irs_size_t a_size);
-  irs_size_t read_tcp(mxip_t* a_dest_ip, irs_u16* a_dest_port,
+  irs_size_t read(mxip_t* a_dest_ip, irs_u16* a_dest_port,
     irs_u16* a_local_port);
-  void read_tcp_complete();
-  #endif // NOP
+  void read_complete();
+  bool tcp_cur_channel(irs_size_t* a_socket, mxip_t* a_dest_ip,
+    irs_u16* a_dest_port);
 
   irs_u8* get_recv_buf();
   irs_u8* get_send_buf();
   bool open_port(irs_u16 a_port);
   void close_port(irs_u16 a_port);
-  irs_size_t recv_buf_size();
+  irs_size_t recv_data_size();
   irs_size_t send_data_size_max();
   void tick();
-  
-private:  
+
+public:  
   enum mode_t{
     wait_send_command_mode,
     send_SYN,
@@ -265,6 +262,73 @@ private:
     // открытие приложени€ и инициаци€ соединени€
     active_open
   };
+private:
+  struct tcp_socket_t {
+    irs_size_t socket;
+    tcp_state_t state;
+    mxip_t remote_ip;
+    irs_u16 remote_port;
+    irs_u16 local_port;
+    
+    tcp_socket_t():
+      socket(invalid_socket),
+      state(CLOSED),
+      remote_ip(mxip_t::zero_ip()),
+      remote_port(0),
+      local_port(0)
+    {
+    }
+    tcp_socket_t(
+      irs_size_t a_socket_num,
+      tcp_state_t a_state,
+      mxip_t a_remote_ip,
+      irs_u16 a_remote_port,
+      irs_u16 a_local_port
+    ):
+      socket(a_socket_num),
+      state(a_state),
+      remote_ip(a_remote_ip),
+      remote_port(a_remote_port),
+      local_port(a_local_port)
+    {
+    }
+    bool operator==(tcp_socket_t a_tcp_socket)
+    {
+      return ((remote_ip == a_tcp_socket.remote_ip) &&
+        (remote_port == a_tcp_socket.remote_port) &&
+        (local_port == a_tcp_socket.local_port));
+    }
+  };
+  class socket_equal_t
+  {
+  public:
+    socket_equal_t(
+      mxip_t a_remote_ip,
+      irs_u16 a_remote_port,
+      irs_u16 a_local_port
+    ):
+      m_remote_ip(a_remote_ip),
+      m_remote_port(a_remote_port),
+      m_local_port(a_local_port)
+    {
+    
+    }
+    bool operator()(tcp_socket_t a_tcp_socket)
+    {
+      if (a_tcp_socket.remote_port == m_remote_port) {
+        if (a_tcp_socket.remote_ip == m_remote_ip) {
+          if (a_tcp_socket.local_port == m_local_port) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  private:
+    mxip_t m_remote_ip;
+    irs_u16 m_remote_port;
+    irs_u16 m_local_port;
+  };
   
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
@@ -275,10 +339,8 @@ private:
   mxip_t m_dest_ip_def;
   bool m_user_recv_status;
   bool m_user_send_status;
-  bool m_udp_send_status;
   irs_u16 m_identif;
   irs_size_t m_user_recv_buf_size;
-  irs_size_t m_user_send_buf_size;
   irs_size_t m_user_send_buf_udp_size;
   irs_size_t m_user_send_buf_tcp_size;
   irs_u16 m_dest_port;
@@ -300,18 +362,21 @@ private:
   bool m_send_arp;
   bool m_send_icmp;
   bool m_send_udp;
-  bool m_send_tcp;
   set<irs_u16> m_port_list;
   bool m_new_recv_packet;
-  bool m_tcp_connected;
-  irs_size_t m_tcp_data_length_in;
-  irs_u32 m_seq_num;
-  irs_u32 m_ack_num;
   mode_t m_tcp_send_mode;
   bool m_udp_wait_arp;
   bool m_tcp_wait_arp;
+  irs_u32 m_seq_num;
+  irs_u32 m_ack_num;
   tcp_state_t m_tcp_state;
   open_t m_open_type;
+  irs_size_t m_sock_max_count;
+  deque<tcp_socket_t> m_tcp_socket_list;
+  irs_size_t m_socket;
+  irs_size_t m_list_index;
+  irs_size_t m_cur_socket;
+  irs_size_t m_tcp_options_size;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
@@ -336,6 +401,10 @@ private:
   void server_tcp();
   void client_tcp();
   void send_tcp();
+  irs_size_t new_socket(mxip_t a_remote_ip, irs_u16 a_remote_port,
+    irs_u16 a_local_port);
+  void view_sockets_list();
+  void view_tcp_packet(irs_u8* ap_buf);
 };
 
 } //namespace irs
