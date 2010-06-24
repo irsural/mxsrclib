@@ -715,8 +715,7 @@ public:
     mxip_t a_local_ip,
     irs_u16 a_local_port,
     mxip_t a_dest_ip,
-    irs_u16 a_dest_port,
-    size_type a_channel_max_count = 3
+    irs_u16 a_dest_port
   );
   virtual ~simple_tcp_flow_t();
   virtual string_type param(const string_type& a_name);

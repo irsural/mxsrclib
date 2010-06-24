@@ -2296,8 +2296,7 @@ irs::hardflow::simple_tcp_flow_t::simple_tcp_flow_t(
   mxip_t a_local_ip,
   irs_u16 a_local_port,
   mxip_t a_dest_ip,
-  irs_u16 a_dest_port,
-  size_type a_channel_max_count
+  irs_u16 a_dest_port
 ):
   mp_simple_tcp(ap_simple_tcp),
   m_local_ip(a_local_ip),
