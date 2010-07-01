@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 04.06.2010
+// Дата: 01.07.2010
 // Дата создания: 15.03.2010
 
 #include <irsdefs.h>
@@ -40,12 +40,14 @@ irs::rtl8019as_t::rtl8019as_t(
   m_mac(a_mac),
   m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_buf_locked(false),
-  m_send_status(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
   mp_send_buf((a_buf_num == single_buf) ? mp_recv_buf : m_send_buf.data()),
   m_recv_timeout(a_recv_timeout_cnt),
-  m_send_buf_empty(true)
+  m_send_buf_empty(true),
+  m_FIFO_new_packets(0),
+  m_cur_pack_pointer(0),
+  m_next_pack_pointer(0)
 {
   m_rtl_port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
   m_rtl_port_str.rtl_data_port_get = avr_port_map[a_data_port].get;
@@ -114,43 +116,61 @@ void irs::rtl8019as_t::write_rtl(irs_u8 a_reg_addr,
 
 void irs::rtl8019as_t::overrun() 
 {
-  irs_u8 cr_save = read_rtl(cr);
-  write_rtl(cr, 0x21);
-  __no_operation();
-  write_rtl(rbcr0, 0x0);
-  write_rtl(rbcr1, 0x0);
-
-  if((cr_save&0x4) == 0) {
-    read_rtl(isr);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+  
+  if (read_rtl(ISR) & 0x10) {
+    write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_stop);
+    write_rtl(RBCR0, 0x00);
+    write_rtl(RBCR1, 0x00);
+    while((read_rtl(ISR) & 0x80) == 0);
+    write_rtl(TCR, 0x02);
+    write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+    if (read_rtl(BNRY) != m_next_pack_pointer) {
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("Normal Overflow") << endl);
+      write_rtl(BNRY, m_next_pack_pointer);
+    } else {
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("Unrecognized Overflow") << endl);
+      write_rtl(CR, cr_page1|cr_dma_abort_complete|cr_rtl_start);
+      irs_u8 byte = read_rtl(CURR);
+      write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+      write_rtl(BNRY, byte);
+      m_next_pack_pointer = byte;
+      m_cur_pack_pointer = byte;
+    }
+    write_rtl(ISR, 0xFF);
+    write_rtl(TCR, 0xE0);
   }
-  write_rtl(tcr, 0x2);
-  write_rtl(cr, 0x22);
-  write_rtl(bnry, rxstart);
-  write_rtl(cr, 0x62);
-  write_rtl(curr, rxstart);
-  write_rtl(cr, 0x22);
-  write_rtl(isr, 0x10);
-  write_rtl(tcr, tcrval);
 }
 
 void irs::rtl8019as_t::recv_packet() 
 {
-  write_rtl(cr, 0x1a);
-  
-  read_rtl(rdmaport);
-  read_rtl(rdmaport);
-  
-  size_t recv_size_cur = 0;
-  IRS_LOBYTE(recv_size_cur) = read_rtl(rdmaport);
-  IRS_HIBYTE(recv_size_cur) = read_rtl(rdmaport);
-  
-  if (!m_recv_buf_locked) {
+  if (new_rx_packet() && !m_recv_buf_locked) {
+    m_cur_pack_pointer = read_rtl(BNRY);
+    IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_cur_pack_pointer = ") <<
+      int(m_cur_pack_pointer) << endl);
+    write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+    
+    write_rtl(RSAR0, 0);
+    write_rtl(RSAR1, m_cur_pack_pointer);
+    write_rtl(RBCR0, 0xFF);
+    write_rtl(RBCR1, 0x0F);
+    
+    write_rtl(CR, cr_page0|cr_remote_read|cr_rtl_start);
+    
+    read_rtl(RDMAPORT);
+    m_next_pack_pointer = read_rtl(RDMAPORT);
+    IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_next_pack_pointer = ") <<
+      int(m_next_pack_pointer) << endl);
+    size_t recv_size_cur = 0;
+    IRS_LOBYTE(recv_size_cur) = read_rtl(RDMAPORT);
+    IRS_HIBYTE(recv_size_cur) = read_rtl(RDMAPORT);
+    
     if (recv_size_cur <= m_size_buf) {
       m_recv_buf_size = recv_size_cur;
       IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
         (m_recv_buf_size <= m_recv_buf.size()));
       for (irs_size_t i = 0; i < m_recv_buf_size; i++) {
-        mp_recv_buf[i] = read_rtl(rdmaport);
+        mp_recv_buf[i] = read_rtl(RDMAPORT);
       }
       m_recv_buf_locked = true;
       IRS_LIB_RTL_DBG_RAW_MSG_BASE(
@@ -158,15 +178,10 @@ void irs::rtl8019as_t::recv_packet()
       m_recv_timeout.start();
     } else {
       for (irs_size_t i = 0; i < recv_size_cur; i++) {
-        read_rtl(rdmaport);
+        read_rtl(RDMAPORT);
       }
     }
-  } else {
-    for (irs_size_t i = 0; i < recv_size_cur; i++) {
-      read_rtl(rdmaport);
-    }
   }
-  write_rtl(isr, 0xF5);
 }
 
 void irs::rtl8019as_t::rtl_interrupt() 
@@ -177,34 +192,46 @@ void irs::rtl8019as_t::rtl_interrupt()
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
   
-  irs_u8 byte = read_rtl(isr);
+  IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("rtl_interrupt") << endl);
+  
+  irs_u8 byte = read_rtl(ISR);
   if(byte&0x10) { //буфер приема переполнен
     overrun();
   }
   if(byte&0x01) { //получено без ошибок
     recv_packet();
   }
-  if (byte&0xA) { //данные отправлены
-    m_send_status = false;
-  }
 
-  byte = read_rtl(bnry);
-  write_rtl(cr, 0x62);
-  irs_u8 _byte = read_rtl(curr);
-  write_rtl(cr, 0x22);
+  byte = read_rtl(BNRY);
+  write_rtl(CR, cr_page1|cr_dma_abort_complete|cr_rtl_start);
+  irs_u8 _byte = read_rtl(CURR);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
 
-  //buffer is not empty, get next packet
+  //buffer is not empty, get next packet/
   if (byte != _byte) {
     //mlog() << irsm("buffer is not empty, get next packet") << endl;
-    overrun();//overrun(); //recv_packet(); 
+    overrun();//overrun(); //recv_packet();
   }
 
-  write_rtl(isr, 0xff);
-  write_rtl(cr, 0x22);
+  write_rtl(ISR, 0xff);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
 
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
+}
+
+bool irs::rtl8019as_t::new_rx_packet()
+{
+  write_rtl(CR, cr_page1|cr_dma_abort_complete|cr_rtl_start);
+  irs_u8 byte = read_rtl(CURR);
+  write_rtl(CR, cr_page0|cr_rtl_start);
+  if (byte != read_rtl(BNRY)) {
+    if (read_rtl(RCR) & 0x01) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void irs::rtl8019as_t::init_rtl() 
@@ -217,21 +244,16 @@ void irs::rtl8019as_t::init_rtl()
 
   // Линию RTL RESDRV выставляем в 1
   *m_rtl_port_str.rtl_address_port_set |= (1 << RSTDRV);
+  pause(make_cnt_ms(3));
   // Линию RTL RESDRV выставляем в 0
   *m_rtl_port_str.rtl_address_port_set &= (0xFF^(1 << RSTDRV));
+  pause(make_cnt_ms(3));
+  
+  // Сброс RTL
+  write_rtl(RSTPORT, 0x00);
   // Задержка после сброса RTL
-  counter_t to_wait_rst;
-  set_to_cnt(to_wait_rst, TIME_TO_CNT(1,320));
-  while (!test_to_cnt(to_wait_rst));
-
-  // Линия прерывания INT4 - вход
-  DDRE &= 0xFF^((1 << DDE4));
-  // Линия прерывания INT4 - подтянута к 5 В
-  PORTE |= (1 << PORTE4);
-  // INT4 генерируется по заднему фронту
-  EICRB |= ((1 << ISC41)|(1 << ISC40));
-  // Демаскирование INT4
-  EIMSK |= ((1 << INT4));
+  pause(make_cnt_ms(9));
+  
   // Все линии PORT1 входы
   *m_rtl_port_str.rtl_data_port_dir = 0x00;
   // Все линии PORT1 заполняются 1
@@ -243,35 +265,66 @@ void irs::rtl8019as_t::init_rtl()
   // Линию RTL IOWB выставляем в 1
   *m_rtl_port_str.rtl_address_port_set |= (1 << IOWB);
   
-  irs_u8 byte = read_rtl(rstport);
-  write_rtl(rstport, byte);
+  #ifdef NOP
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_stop);//stop, page0
   __no_operation();
-  
-  write_rtl(cr, 0x21);//stop, page0
+  write_rtl(DCR, dcrval);
+  write_rtl(RBCR0, 0x0);
+  write_rtl(RBCR1, 0x0);
+  write_rtl(RCR, 0x04);
+  write_rtl(TPSR, txstart);
+  write_rtl(TCR, 0x02);
+  write_rtl(PSTART, rxstart);
+  write_rtl(BNRY, rxstart);
+  write_rtl(PSTOP, rxstop);
+  write_rtl(CR, cr_page1|cr_dma_abort_complete|cr_rtl_stop); //stop, page1
   __no_operation();
-  write_rtl(dcr, dcrval);
-  write_rtl(rbcr0, 0x0);
-  write_rtl(rbcr1, 0x0);
-  write_rtl(rcr, 0x04);
-  write_rtl(tpsr, txtstart);
-  write_rtl(tcr, 0x02);
-  write_rtl(pstart, rxstart);
-  write_rtl(bnry, rxstart);
-  write_rtl(pstop, rxstop);
-  write_rtl(cr, 0x61); //stop, page1
-  __no_operation();
-  write_rtl(curr, rxstart);
+  write_rtl(CURR, rxstart);
 
   for (int mac_index = 0; mac_index < mac_size; mac_index++) {
-    write_rtl(par0 + mac_index, m_mac.val[mac_index]);
+    write_rtl(PAR0 + mac_index, m_mac.val[mac_index]);
   }
 
-  write_rtl(cr, 0x21); //stop, page0
-  write_rtl(dcr, dcrval);
-  write_rtl(cr, 0x22); //start
-  write_rtl(isr, 0xff);
-  write_rtl(imr, imrval);
-  write_rtl(tcr, tcrval);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_stop); //stop, page0
+  write_rtl(DCR, dcrval);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start); //start
+  write_rtl(ISR, 0xff);
+  write_rtl(IMR, imrval);
+  write_rtl(TCR, tcrval);
+  #endif // NOP
+  
+  /* Goto page 3 and set registers */
+  write_rtl(CR, cr_page3|cr_rtl_stop); /* page3, stop */
+ 	write_rtl(0x01, 0xC0);		/* config reg. write enble */
+ 	write_rtl(0x05, 0);			/* link test enable */
+ 	/* write_rtl( 0x06, 0x70 );		//Full duplex, leds */
+ 	
+ 	/* Goto page 1 and set registers */
+ 	
+ 	write_rtl(CR, cr_page1|cr_rtl_stop); /* page1, stop */
+  /* Set MAC Address  */
+  for (int mac_index = 0; mac_index < mac_size; mac_index++) {
+    write_rtl(PAR0 + mac_index, m_mac.val[mac_index]);
+  }
+	
+ 	write_rtl( CURR, rxstart );	/* Current address */
+ 	m_next_pack_pointer = rxstart;
+ 	m_cur_pack_pointer = rxstart;
+ 	
+ 	/* Goto page 0 and set registers */
+ 	
+ 	write_rtl(CR, 0);				 		/* page0, Stop */
+ 	write_rtl(PSTART, rxstart); 		/* Rx buffer start address */
+ 	write_rtl(PSTOP, rxstop);	 		/* Rx buffer end address */
+ 	write_rtl(BNRY, rxstart);	 	/* Boundary */
+ 	write_rtl(ISR, 0xFF );			 		/* Interrupt services */
+ 	write_rtl(RCR, 0xC4);			 		/* Rx config (Accept all), was C4 */
+ 	write_rtl(TCR, 0xE0);			 		/* Tx config */
+ 	write_rtl(DCR, 0xB8);			 		/* Dataconfig */
+ 	
+ 	/* Start action ! */
+ 	
+ 	write_rtl( CR, cr_page0|cr_dma_abort_complete|cr_rtl_start );
   
   m_send_buf_empty = true;
   // Разрешение прерываний
@@ -283,9 +336,9 @@ bool irs::rtl8019as_t::wait_dma()
   #ifdef RTL_RESET_ON_TIMEOUT
   counter_t to_wait_end_dma;
   set_to_cnt(to_wait_end_dma, TIME_TO_CNT(1, 2));
-  irs_u8 isr_cont = read_rtl(isr);
-  while ((isr_cont&rdc) == 0) {
-    isr_cont = read_rtl(isr);
+  irs_u8 isr_cont = read_rtl(ISR);
+  while ((isr_cont&RDC) == 0) {
+    isr_cont = read_rtl(ISR);
     if (test_to_cnt(to_wait_end_dma)) {
       init_rtl();
       return false;
@@ -307,18 +360,18 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT
   
-  write_rtl(cr, 0x22);
-  write_rtl(tpsr, txtstart);
-  write_rtl(rsar0, 0x00);
-  write_rtl(rsar1, 0x40);
-  write_rtl(isr, 0xff);
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+  write_rtl(TPSR, txstart);
+  write_rtl(RSAR0, 0x00);
+  write_rtl(RSAR1, 0x40);
+  write_rtl(ISR, 0xff);
 
-  write_rtl(rbcr0, IRS_LOBYTE(a_size));
-  write_rtl(rbcr1, IRS_HIBYTE(a_size));
-  write_rtl(cr, 0x12);
+  write_rtl(RBCR0, IRS_LOBYTE(a_size));
+  write_rtl(RBCR1, IRS_HIBYTE(a_size));
+  write_rtl(CR, cr_page0|cr_remote_write|cr_rtl_start);
   
   for (irs_size_t i = 0; i < a_size; i++) {
-    write_rtl(rdmaport, mp_send_buf[i]);
+    write_rtl(RDMAPORT, mp_send_buf[i]);
   }
   
   if (!wait_dma()) {
@@ -327,9 +380,9 @@ void irs::rtl8019as_t::send_packet(irs_size_t a_size)
     return;
   }
 
-  write_rtl(tbcr0, IRS_LOBYTE(a_size));
-  write_rtl(tbcr1, IRS_HIBYTE(a_size));
-  write_rtl(cr, 0x24);
+  write_rtl(TBCR0, IRS_LOBYTE(a_size));
+  write_rtl(TBCR1, IRS_HIBYTE(a_size));
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|(1 << TXP));
   
   switch(m_buf_num) {
     case single_buf:
@@ -358,6 +411,8 @@ void irs::rtl8019as_t::set_recv_handled()
   m_recv_buf_locked = false;
   IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("буфер чтения обработан") << endl);
   m_recv_timeout.stop();
+  write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+  write_rtl(BNRY, m_next_pack_pointer);
 }
 
 void irs::rtl8019as_t::set_send_buf_locked()
@@ -440,4 +495,6 @@ void irs::rtl8019as_t::tick()
       irsm("буфер разблокирован по таймауту") << endl);
     set_recv_handled();
   }
+  recv_packet();
+  overrun();
 }

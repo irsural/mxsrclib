@@ -1,5 +1,5 @@
 // Драйвер Ethernet для RTL8019AS 
-// Дата: 01.06.2010
+// Дата: 01.07.2010
 // Дата создания: 15.03.2010
 
 #ifndef IRSRTLH
@@ -44,42 +44,91 @@ public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
   
   enum {
+    // Регистры
+    CR = 0x0,
+    PAR0 = 0x01,
+    
+    PSTART = 0x01,
+    PSTOP = 0x02,
+    BNRY = 0x03,
+    // Адресс страницы в которой находится пакет для передачи
+    TPSR = 0x04,
+    TBCR0 = 0x05,
+    TBCR1 = 0x06,
+    ISR = 0x07,
+    RSAR0 = 0x08,
+    RSAR1 = 0x09,
+    RBCR0 = 0x0a,
+    RBCR1 = 0x0b,
+    RCR = 0x0c,
+    TCR = 0x0d,
+    DCR = 0x0e,
+    IMR = 0x0f,
+    
+    CURR = 0x07,
+
+    CONFIG3 = 0x06,
+      
+    RDMAPORT = 0x10,
+    RSTPORT = 0x18,
+    
+    // Биты CR
+    STP = 0,
+    STA = 1,
+    TXP = 2,
+    RD0 = 3,
+    RD1 = 4,
+    RD2 = 5,
+    PS0 = 6,
+    PS1 = 7,
+    cr_page0 = ((0 << PS1)|(0 << PS0)),
+    cr_page1 = ((0 << PS1)|(1 << PS0)),
+    cr_page2 = ((1 << PS1)|(0 << PS0)),
+    cr_page3 = ((1 << PS1)|(1 << PS0)),
+    cr_remote_read = ((0 << RD2)|(0 << RD1)|(1 << RD0)),
+    cr_remote_write = ((0 << RD2)|(1 << RD1)|(0 << RD0)),
+    cr_remote_send = ((0 << RD2)|(1 << RD1)|(1 << RD0)),
+    cr_dma_abort_complete = ((1 << RD2)|(1 << RD1)|(1 << RD0)),
+    cr_rtl_start = ((1 << STA)|(0 << STP)),
+    cr_rtl_stop = ((0 << STA)|(1 << STP)),
+
+    // Биты ISR
+    RDC = 0x40,
+    
+    // Биты DCR
+    WTS = 0,
+    BOS = 1,
+    LAS = 2,
+    LS = 3,
+    ARM = 4,
+    FT0 = 5,
+    FT1 = 6,
+    
+    // Биты CONFIG3
+    // Тип 0-го светодиода
+    LEDS0 = 4,
+    
+    // Готовые значения для регистров
+    //dcrval = 0x58,
+    dcrval = ((1 << LS)|(1 << ARM)|(1 << FT1)),
+    // Адрес для TPSR
+    txstart = 0x40,
+    rxstart = 0x46,
+    rxstop = 0x60,
+    imrval = 0x1b,
+    tcrval = 0x00
+  };
+  // Пины AVR для RTL
+  enum {
+    IORB = 5,
+    IOWB  = 6,
+    RSTDRV = 7
+  };
+  enum {
     ETHERNET_PACKET_MAX = 1554,
     ETHERNET_PACKET_MIN = 64
   };
-  enum {
-    IORB = 5,
-    IOWB = 6,
-    RSTDRV = 7,
-    rstport = 0x18,
-    isr = 0x07,
-    cr = 0x0,
-    dcrval = 0x58,
-    dcr = 0x0e,
-    rbcr0 = 0x0a,
-    rbcr1 = 0x0b,
-    rcr = 0x0c,
-    tpsr = 0x04,
-    txtstart = 0x40,
-    tcr = 0x0d,
-    pstart = 0x01,
-    rxstart = 0x46,
-    bnry = 0x03,
-    pstop = 0x02,
-    rxstop = 0x60,
-    curr = 0x07,
-    imr = 0x0f,
-    imrval = 0x1b,
-    tcrval = 0x00,
-    rsar0 = 0x8,
-    rsar1 = 0x9,
-    tbcr0 = 0x5,
-    tbcr1 = 0x6,
-    rdmaport = 0x10,
-    rdc = 0x40,
-    mac_size = 6,
-    par0 = 0x01
-  };
+  enum { mac_size = 6};
   
   rtl8019as_t(
     buffer_num_t a_buf_num,
@@ -111,12 +160,14 @@ private:
   mxmac_t m_mac;
   event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_recv_buf_locked;
-  bool m_send_status;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;
   irs_u8* mp_send_buf;
   timer_t m_recv_timeout;
   bool m_send_buf_empty;
+  irs_u8 m_FIFO_new_packets;
+  irs_u8 m_cur_pack_pointer;
+  irs_u8 m_next_pack_pointer;
   rtl_port_str_t m_rtl_port_str;
   
   void rtl_interrupt();
@@ -126,6 +177,7 @@ private:
   bool wait_dma();
   void overrun();
   void recv_packet();
+  bool new_rx_packet();
 };
 
 } //namespace irs
