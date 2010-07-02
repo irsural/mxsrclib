@@ -10,7 +10,7 @@
 
 #ifdef PWM_ZERO_PULSE
   #include <irsint.h>
-  #if !defined(IRS_LINUX)
+  #if defined (__ICC_AVR__) || defined (__ICC_ARM__)
     #include <irsarchint.h>
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
