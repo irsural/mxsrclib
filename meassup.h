@@ -306,13 +306,13 @@ private:
   // Запрос на прерывание операции
   irs_bool f_abort_request;
 
-  irs::modbus_client_t m_modbus_client;
+
   #ifdef UDP_ENABLED
   irs::hardflow::udp_flow_t m_hardflow;
   #else  //UDP_ENABLED
   irs::hardflow::tcp_client_t m_hardflow;
   #endif  //UDP_ENABLEDm
-
+  irs::modbus_client_t m_modbus_client;
 
   eth_data_t m_eth_data;
 

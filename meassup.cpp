@@ -194,11 +194,7 @@ void mx_agilent_6675a_t::tick()
 
 // Конструктор
 mx_cs_stab_t::mx_cs_stab_t():
-  m_parameter(0),
-  m_argument(0),
   m_supply_number(m_supply_null),
-  m_voltage(0),
-  m_current(0),
   m_status(meas_status_success),
   f_abort_request(irs_false),
   #ifdef UDP_ENABLED
@@ -209,7 +205,11 @@ mx_cs_stab_t::mx_cs_stab_t():
   m_modbus_client(&m_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
     discr_inputs_size_byte, coils_size_byte,
     hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
-    3, 2, 50)
+    3, 2, 50),
+  m_voltage(0),
+  m_current(0),
+  m_parameter(0),
+  m_argument(0)
 {
   m_eth_data.connect(&m_modbus_client, 0);
 }
