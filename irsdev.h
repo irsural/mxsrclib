@@ -10,7 +10,9 @@
 
 #ifdef PWM_ZERO_PULSE
   #include <irsint.h>
-  #include <irsarchint.h>
+  #if !defined(IRS_LINUX)
+    #include <irsarchint.h>
+  #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
 
 namespace irs
