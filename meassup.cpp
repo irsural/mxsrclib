@@ -194,7 +194,6 @@ void mx_agilent_6675a_t::tick()
 
 // Конструктор
 mx_cs_stab_t::mx_cs_stab_t():
-  SR_set(false),
   m_parameter(0),
   m_argument(0),
   m_supply_number(m_supply_null),
@@ -202,9 +201,12 @@ mx_cs_stab_t::mx_cs_stab_t():
   m_current(0),
   m_status(meas_status_success),
   f_abort_request(irs_false),
-  //hardflow(irs::make_mxip(192,168,0,45), 5006),
-  hardflow("", "", "192.168.0.46", "5006"),
-  m_modbus_client(&hardflow, irs::mxdata_ext_t::mode_refresh_auto,
+  #ifdef UDP_ENABLED
+  m_hardflow("", "", "192.168.0.46", "5006"),
+  #else  //UDP_ENABLED
+  m_hardflow(irs::make_mxip(192,168,0,45), 5006),
+  #endif //UDP_ENABLED
+  m_modbus_client(&m_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
     discr_inputs_size_byte, coils_size_byte,
     hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
     3, 2, 50)

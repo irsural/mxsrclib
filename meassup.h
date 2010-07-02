@@ -257,6 +257,29 @@ public:
 
 class mx_cs_stab_t: public mxsupply_t
 {
+public:
+  // Конструктор
+  mx_cs_stab_t();
+  // Деструктор
+  ~mx_cs_stab_t();
+  // Постоянный ток поддерживается прибором или нет
+  virtual irs_bool dc_supported();
+  // Установка тока
+  virtual void set_current(double current);
+  // Установка напряжения
+  virtual void set_voltage(double voltage);
+  // Включение источника
+  virtual void on();
+  // Выключение источника
+  virtual void off();
+  // Чтение статуса текущей операции
+  virtual meas_status_t status();
+  // Прерывание текущей операции
+  virtual void abort();
+  // Элементарное действие
+  virtual void tick();
+
+private:
   // Тип для текущего режима
   typedef enum _supply_number_t {
     m_supply_null,
@@ -285,10 +308,10 @@ class mx_cs_stab_t: public mxsupply_t
 
   irs::modbus_client_t m_modbus_client;
   #ifdef UDP_ENABLED
-  irs::hardflow::udp_flow_t hardflow;
-  #else
-  irs::hardflow::tcp_client_t hardflow;
-  #endif
+  irs::hardflow::udp_flow_t m_hardflow;
+  #else  //UDP_ENABLED
+  irs::hardflow::tcp_client_t m_hardflow;
+  #endif  //UDP_ENABLEDm
 
 
   eth_data_t m_eth_data;
@@ -298,30 +321,6 @@ class mx_cs_stab_t: public mxsupply_t
   //Стабилизируемый параметр
   double m_parameter;
   double m_argument;
-  bool SR_set;
-
-public:
-  // Конструктор
-  mx_cs_stab_t();
-  // Деструктор
-  ~mx_cs_stab_t();
-  // Постоянный ток поддерживается прибором или нет
-  virtual irs_bool dc_supported();
-  // Установка тока
-  virtual void set_current(double current);
-  // Установка напряжения
-  virtual void set_voltage(double voltage);
-  // Включение источника
-  virtual void on();
-  // Выключение источника
-  virtual void off();
-  // Чтение статуса текущей операции
-  virtual meas_status_t status();
-  // Прерывание текущей операции
-  virtual void abort();
-  // Элементарное действие
-  virtual void tick();
 };
-
 
 #endif
