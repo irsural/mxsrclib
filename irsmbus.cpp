@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 08.06.2010
+// Дата: 30.06.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -1214,15 +1214,6 @@ void irs::modbus_server_t::tick()
 {
   mp_hardflow_server->tick();
   m_fixed_flow.tick();
-  if((m_fixed_flow.write_status() == 
-    irs::hardflow::fixed_flow_t::status_error) ||
-    (m_fixed_flow.read_status() == 
-    irs::hardflow::fixed_flow_t::status_error))
-  {
-    IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" abort"));
-    m_mode = read_header_mode;
-    view_mode();
-  }
   
   switch(m_mode)
   {
@@ -1242,7 +1233,7 @@ void irs::modbus_server_t::tick()
         irs::hardflow::fixed_flow_t::status_success)
       {
         convert(mp_buf.data(), 0, size_of_MBAP - 1);
-        MBAP_header_t& header = 
+        MBAP_header_t& header =
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
         if(header.length != 0) {
           m_fixed_flow.read(m_channel, mp_buf.data() + size_of_MBAP,
@@ -1251,6 +1242,11 @@ void irs::modbus_server_t::tick()
         } else {
           m_mode = read_header_mode;
         }
+        view_mode();
+      } else if (m_fixed_flow.read_status() == 
+        irs::hardflow::fixed_flow_t::status_error)
+      {
+        m_mode = read_header_mode;
         view_mode();
       }
     }
@@ -1536,6 +1532,11 @@ void irs::modbus_server_t::tick()
         m_mode = send_response_mode;
         view_mode();
         m_size_byte_end = header.length - 1;
+      } else if (m_fixed_flow.read_status() == 
+        irs::hardflow::fixed_flow_t::status_success)
+      {
+        m_mode = read_header_mode;
+        view_mode();
       }
     }
     break;
@@ -1610,6 +1611,11 @@ void irs::modbus_server_t::tick()
         irs::hardflow::fixed_flow_t::status_success)
       { 
         memset(mp_buf.data(), 0, mp_buf.size());
+        m_mode = read_header_mode;
+        view_mode();
+      } else if (m_fixed_flow.write_status() == 
+        irs::hardflow::fixed_flow_t::status_error)
+      {
         m_mode = read_header_mode;
         view_mode();
       }
