@@ -10,9 +10,6 @@
 #include <meassup.h>
 #include <stdio.h>
 #include <irscpp.h>
-#include <hardflowg.h>
-#include <irsnetdefs.h>
-#include <irsmbus.h>
 
 //---------------------------------------------------------------------------
 //  ласс дл€ работы с источником посто€нного тока Agilent 6675A
@@ -196,7 +193,6 @@ void mx_agilent_6675a_t::tick()
 mx_cs_stab_t::mx_cs_stab_t():
   m_supply_number(m_supply_null),
   m_status(meas_status_success),
-  f_abort_request(irs_false),
   #ifdef UDP_ENABLED
   m_hardflow("", "", "192.168.0.46", "5006"),
   #else  //UDP_ENABLED

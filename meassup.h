@@ -2,8 +2,6 @@
 // Для Borland C++ Builder
 // Версия 0.1
 
-#define UDP_ENABLED
-
 #ifndef meassupH
 #define meassupH
 
@@ -15,18 +13,16 @@
 #include <measdef.h>
 #include <mxifa.h>
 
-#include <hardflowg.h>
 #include <irsnetdefs.h>
 #include <irsmbus.h>
 
-
 #include <irsfinal.h>
-#include <irsdefs.h>
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30
 // Число цифр для irs_gcvt
 #define supag_ndig 7
+#define UDP_ENABLED
 
 struct header_conn_data_t
 {
@@ -290,28 +286,24 @@ private:
   } supply_number_t;
 
   enum {
-  discr_inputs_size_byte = 0,//1,//8,//8192,  //bit = discr_inputs_size_byte*8
-  coils_size_byte = 6,//2,//6,//8192,         //bit = coils_size_byte*8
-  hold_regs_size = 112,//94,//94,//10,//65536,         //16-bit word
-  input_regs_size = 0,//10,//65536,        //16-bit word
-  sum_size_byte = discr_inputs_size_byte + coils_size_byte +
-    hold_regs_size*2 + input_regs_size*2
+    discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
+    coils_size_byte = 6,         //bit = coils_size_byte*8
+    hold_regs_size = 112,        //16-bit word
+    input_regs_size = 0,         //16-bit word
+    sum_size_byte = discr_inputs_size_byte + coils_size_byte +
+      hold_regs_size*2 + input_regs_size*2
   };
-
   // Текущий режим работы
   supply_number_t m_supply_number;
 
   // Статус текущей операции
   meas_status_t m_status;
-  // Запрос на прерывание операции
-  irs_bool f_abort_request;
-
 
   #ifdef UDP_ENABLED
   irs::hardflow::udp_flow_t m_hardflow;
   #else  //UDP_ENABLED
   irs::hardflow::tcp_client_t m_hardflow;
-  #endif  //UDP_ENABLEDm
+  #endif  //UDP_ENABLED
   irs::modbus_client_t m_modbus_client;
 
   eth_data_t m_eth_data;
@@ -323,4 +315,4 @@ private:
   double m_argument;
 };
 
-#endif
+#endif // meassupH
