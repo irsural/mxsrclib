@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 19.05.2010
+// Дата: 07.07.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -170,13 +170,25 @@ inline ios &noskipws(ios &strm, int)
   strm.unsetf(ios::skipws);
   return strm;
 }
+#endif //NOP
+
+#ifdef __WATCOMC__
+// В deque Watcom нет операции минус на итераторах, добавим
+template <class T, class A, int P>
+deque<T, A, P>::difference_type operator-(
+  deque<T, A, P>::iterator a_left, 
+  deque<T, A, P>::iterator a_right
+)
+{
+  return distance(a_left, a_right, input_iterator_tag());
+}
+#endif //__WATCOMC__
 
 // Cygwin не полностью поддерживает wchar_t и wstring
 #ifdef __CYGWIN__
 //template<> struct char_traits<wchar_t>;
 typedef basic_string<wchar_t> wstring;
 #endif //__CYGWIN__
-#endif //NOP
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 } //namespace std
