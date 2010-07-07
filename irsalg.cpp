@@ -212,35 +212,13 @@ irs_u8 irs::crc8(irs_u8 *a_buf, irs_u8 a_start, irs_u8 a_cnt)
 double irs::phase_normalize(double a_phase_in, double a_phase_begin,
   double a_phase_end)
 {
-  const double phase_period = a_phase_end - a_phase_begin;
-  double div_int = floor((a_phase_in - a_phase_begin)/phase_period);
-  double phase_out = a_phase_in - div_int*phase_period;
-
-  return phase_out;
+  return phase_norm(a_phase_in, a_phase_begin, a_phase_end);
 }
 
 // Приведение фазы к диапазону -180 - +180
 double irs::phase_normalize_180(double a_phase_in)
 {
   return phase_normalize(a_phase_in, -180., +180.);
-}
-
-// Приведение фазы к диапазону a_phase_begin - a_phase_end
-template <class T>
-T irs::phase_norm(T a_phase_in, T a_phase_begin, T a_phase_end)
-{
-  const T phase_period = a_phase_end - a_phase_begin;
-  T div_int = floor((a_phase_in - a_phase_begin)/phase_period);
-  T phase_out = a_phase_in - div_int*phase_period;
-
-  return phase_out;
-}
-
-// Приведение фазы к диапазону -180 - +180
-template <class T>
-T irs::phase_norm_180(T a_phase_in)
-{
-  return phase_norm(a_phase_in, -180., +180.);
 }
 
 // Функция возвращает среднее арифметическое значение элементов массива

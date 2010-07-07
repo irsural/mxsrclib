@@ -216,10 +216,20 @@ double phase_normalize_180(double a_phase_in);
 
 // Приведение фазы к диапазону a_phase_begin - a_phase_end
 template <class T>
-T phase_norm(T a_phase_in, T a_phase_begin = 0., T a_phase_end = 360.);
+T phase_norm(T a_phase_in, T a_phase_begin = 0., T a_phase_end = 360.)
+{
+  const T phase_period = a_phase_end - a_phase_begin;
+  T div_int = floor((a_phase_in - a_phase_begin)/phase_period);
+  T phase_out = a_phase_in - div_int*phase_period;
+
+  return phase_out;
+}
 // Приведение фазы к диапазону -180 - +180
 template <class T>
-T phase_norm_180(T a_phase_in);
+T phase_norm_180(T a_phase_in)
+{
+  return phase_norm(a_phase_in, T(-180.), T(+180.));
+}
 
 // функция интерполяции массива точек прямой методом МНК.
 // Записывает в a_korf_k и a_koef_b коэффициенты прямой y=a_korf_k*x+a_koef_b,

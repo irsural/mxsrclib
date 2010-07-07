@@ -6,6 +6,7 @@
 
 #include <irsarchint.h>
 #include <irsconfig.h>
+#include <armioregs.h>
 
 #include <irsfinal.h>
 
@@ -16,8 +17,8 @@ irs::interrupt_array_base_t* irs::arm::interrupt_array()
   {
     default_interrupt_count = 5
   };
-  static auto_ptr<interrupt_array_t> 
-    p_interrupt_array(new interrupt_array_t(interrupt_count, 
+  static auto_ptr<interrupt_array_t>
+    p_interrupt_array(new interrupt_array_t(interrupt_count,
     default_interrupt_count));
   return p_interrupt_array.get();
 }
@@ -124,7 +125,9 @@ void irs_arm_qei0_func()
 }
 void irs_arm_adc_seq0_func()
 {
+  GPIOBDATA_bit.no5 = 1;
   irs::arm::interrupt_array()->exec_event(irs::arm::adc_seq0_int);
+  GPIOBDATA_bit.no5 = 0;
 }
 void irs_arm_adc_seq1_func()
 {
@@ -219,7 +222,7 @@ void irs_arm_default_int_func()
 typedef void( *intfunc )( void );
 
 #pragma location = ".periph_intvec"
-__root const intfunc __int_vector_table[] = 
+__root const intfunc __int_vector_table[] =
 {
   irs_arm_gpio_porta_func,
   irs_arm_gpio_portb_func,

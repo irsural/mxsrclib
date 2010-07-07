@@ -248,11 +248,11 @@ public:
     fast_mode = 128
   };
 
-  pid_regulator_t(const &T a_proportional_gain, const &T a_integral_gain, 
+  pid_regulator_t(const &T a_proportional_gain, const &T a_integral_gain,
     const &T a_derivative_gain, const &T a_out_min, const &T a_out_max,
     options_t a_options = sync_gains);
   ~pid_regulator_t();
-  
+
   void start(const &T a_integrator = T());
   void stop();
   void proportional_gain(const &T a_proportional_gain);
@@ -584,34 +584,7 @@ public:
 };
 
 template <class T, irs_uarc N>
-class thd_process_t
-{
-  enum status_t
-  {
-    FREE,
-    START,
-    PROCESS
-  };
-  status_t m_status;
-  mxdata_t &m_source_data;
-  array_data_t<T> m_source_array;
-  irs_uarc m_current_point;
-  T m_result;
-  T m_thd;
-  bool m_ready;
-public:
-  thd_process_t(mxdata_t &a_source_data);
-  ~thd_process_t();
-  void start();
-  bool ready();
-  T get_thd();
-  void tick();
-};
-
-} //namespace irs
-
-template <class T, irs_uarc N>
-irs::fft_process_t<T, N>::fft_process_t(mxdata_t &a_source_data):
+fft_process_t<T, N>::fft_process_t(mxdata_t &a_source_data):
   m_status(FREE),
   m_source_data(a_source_data),
   m_source_vector(N),
@@ -645,24 +618,24 @@ irs::fft_process_t<T, N>::fft_process_t(mxdata_t &a_source_data):
 }
 
 template <class T, irs_uarc N>
-irs::fft_process_t<T, N>::~fft_process_t()
+fft_process_t<T, N>::~fft_process_t()
 {
 }
 
 template <class T, irs_uarc N>
-irs_uarc irs::fft_process_t<T, N>::size()
+irs_uarc fft_process_t<T, N>::size()
 {
   return m_real_size;
 }
 
 template <class T, irs_uarc N>
-irs_bool irs::fft_process_t<T, N>::connected()
+irs_bool fft_process_t<T, N>::connected()
 {
   return true;
 }
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>
+void fft_process_t<T, N>
   ::read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size)
 {
   if (a_index >= m_size) return;
@@ -672,7 +645,7 @@ void irs::fft_process_t<T, N>
 }
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>
+void fft_process_t<T, N>
   ::write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size)
 {
   if (a_index >= m_size) return;
@@ -682,7 +655,7 @@ void irs::fft_process_t<T, N>
 }
 
 template <class T, irs_uarc N>
-irs_bool irs::fft_process_t<T, N>::bit(irs_uarc a_index, irs_uarc a_bit_index)
+irs_bool fft_process_t<T, N>::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
@@ -690,7 +663,7 @@ irs_bool irs::fft_process_t<T, N>::bit(irs_uarc a_index, irs_uarc a_bit_index)
 }
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+void fft_process_t<T, N>::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
@@ -698,7 +671,7 @@ void irs::fft_process_t<T, N>::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 }
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>::clear_bit(irs_uarc a_index,
+void fft_process_t<T, N>::clear_bit(irs_uarc a_index,
   irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
@@ -709,20 +682,20 @@ void irs::fft_process_t<T, N>::clear_bit(irs_uarc a_index,
 //  Посторонние функции
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>::start()
+void fft_process_t<T, N>::start()
 {
   m_status = START;
   m_ready = false;
 }
 
 template <class T, irs_uarc N>
-bool irs::fft_process_t<T, N>::ready()
+bool fft_process_t<T, N>::ready()
 {
   return m_ready;
 }
 
 template <class T, irs_uarc N>
-void irs::fft_process_t<T, N>::tick()
+void fft_process_t<T, N>::tick()
 {
   switch (m_status)
   {
@@ -838,7 +811,32 @@ void irs::fft_process_t<T, N>::tick()
 //------------------------------  THD PROCESS  ---------------------------------
 
 template <class T, irs_uarc N>
-irs::thd_process_t<T, N>::thd_process_t(mxdata_t &a_source_data):
+class thd_process_t
+{
+  enum status_t
+  {
+    FREE,
+    START,
+    PROCESS
+  };
+  status_t m_status;
+  mxdata_t &m_source_data;
+  array_data_t<T> m_source_array;
+  irs_uarc m_current_point;
+  T m_result;
+  T m_thd;
+  bool m_ready;
+public:
+  thd_process_t(mxdata_t &a_source_data);
+  ~thd_process_t();
+  void start();
+  bool ready();
+  T get_thd();
+  void tick();
+};
+
+template <class T, irs_uarc N>
+thd_process_t<T, N>::thd_process_t(mxdata_t &a_source_data):
   m_status(FREE),
   m_source_data(a_source_data),
   m_source_array(&m_source_data, 0, N),
@@ -850,31 +848,31 @@ irs::thd_process_t<T, N>::thd_process_t(mxdata_t &a_source_data):
 }
 
 template <class T, irs_uarc N>
-irs::thd_process_t<T, N>::~thd_process_t()
+thd_process_t<T, N>::~thd_process_t()
 {
 }
 
 template <class T, irs_uarc N>
-void irs::thd_process_t<T, N>::start()
+void thd_process_t<T, N>::start()
 {
   m_status = START;
   m_ready = false;
 }
 
 template <class T, irs_uarc N>
-bool irs::thd_process_t<T, N>::ready()
+bool thd_process_t<T, N>::ready()
 {
   return m_ready;
 }
 
 template <class T, irs_uarc N>
-T irs::thd_process_t<T, N>::get_thd()
+T thd_process_t<T, N>::get_thd()
 {
   return m_result;
 }
 
 template <class T, irs_uarc N>
-void irs::thd_process_t<T, N>::tick()
+void thd_process_t<T, N>::tick()
 {
   switch (m_status)
   {
@@ -908,6 +906,177 @@ void irs::thd_process_t<T, N>::tick()
     }
   }
 }
+
+//  Колебательный контур
+
+template <class T>
+class osc_cir_t
+{
+public:
+  osc_cir_t(T a_n_period, T a_n_fade, T a_y_init);
+  ~osc_cir_t();
+  //  Число точек на период центральной частоты
+  void set_num_of_period_points(T a_n_period);
+  //  Число периодов центральной частоты, когда колебания затухают в e раз
+  void set_num_of_fade_points(T a_n_fade);
+  void sync(T a_y);
+  T filt(T a_x);
+private:
+  T m_n_period;
+  T m_freq_2;
+  T m_fade;
+  T m_a;
+  T m_b;
+  T m_c;
+  T m_denom;
+  T m_x1;
+  T m_x2;
+  T m_y1;
+  T m_y2;
+  //
+  T calc_a();
+  T calc_b();
+  T calc_c();
+  T calc_denom();
+};
+
+template <class T>
+osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y_init):
+  m_n_period(a_n_period),
+  m_fade(1. / a_n_fade),
+  m_freq_2(sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade)),
+  m_denom(calc_denom()),
+  m_a(m_denom * calc_a()),
+  m_b(m_denom * calc_b()),
+  m_c(m_denom * calc_c()),
+  m_x1(a_y_init),
+  m_x2(a_y_init),
+  m_y1(a_y_init),
+  m_y2(a_y_init)
+{
+}
+
+template <class T>
+osc_cir_t<T>::~osc_cir_t()
+{
+}
+
+template <class T>
+void osc_cir_t<T>::set_num_of_period_points(T a_n_period)
+{
+  if (a_n_period <= 0) return;
+  m_n_period = a_n_period;
+  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade);
+  m_denom = calc_denom();
+  m_a = m_denom * calc_a();
+  m_b = m_denom * calc_b();
+  m_c = m_denom * calc_c();
+}
+
+template <class T>
+void osc_cir_t<T>::set_num_of_fade_points(T a_n_fade)
+{
+  m_fade = 1. / a_n_fade;
+  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade);
+  m_denom = calc_denom();
+  m_a = m_denom * calc_a();
+  m_b = m_denom * calc_b();
+  m_c = m_denom * calc_c();
+}
+
+template <class T>
+void osc_cir_t<T>::sync(T a_y)
+{
+  m_x1 = a_y;
+  m_x2 = a_y;
+  m_y1 = 0;
+  m_y2 = 0;
+}
+
+template <class T>
+T osc_cir_t<T>::filt(T a_x)
+{
+  T y = m_a * (a_x - m_x2) - m_b * m_y2 - m_c * m_y1;
+  if (is_inf_or_nan(y))
+  {
+    return m_y1;
+  }
+  m_y2 = m_y1;
+  m_y1 = y;
+  m_x2 = m_x1;
+  m_x1 = a_x;
+  return y;
+}
+
+template <class T>
+T osc_cir_t<T>::calc_a()
+{
+  return 4. * m_fade;
+}
+
+template <class T>
+T osc_cir_t<T>::calc_b()
+{
+  return 4. + sqr(m_fade) - 4. * m_fade + m_freq_2;
+}
+
+template <class T>
+T osc_cir_t<T>::calc_c()
+{
+  return 2. * (sqr(m_fade) - 4. + m_freq_2);
+}
+
+template <class T>
+T osc_cir_t<T>::calc_denom()
+{
+  return 1. / (4. + sqr(m_fade) + 4. * m_fade + m_freq_2);
+}
+
+//  Инерционное звено
+
+template <class T>
+class fade_t
+{
+public:
+  fade_t(T a_t, T a_y_init);
+  ~fade_t();
+  T filt(T a_x);
+  void set_t(T a_t);
+private:
+  T m_x1; // x[n-1]
+  T m_y1; // y[n-1]
+  T m_t;  // Постоянная времени
+};
+
+template <class T>
+fade_t<T>::fade_t(T a_t, T a_y_init):
+  m_x1(a_y_init),
+  m_y1(a_y_init),
+  m_t(a_t)
+{
+}
+
+template <class T>
+fade_t<T>::~fade_t()
+{
+}
+
+template <class T>
+T fade_t<T>::filt(T a_x)
+{
+  T y = (a_x + m_x1 - (1 - 2 * m_t) * m_y1) / (1 + 2 * m_t);
+  m_x1 = a_x;
+  m_y1 = y;
+  return y;
+}
+
+template <class T>
+void fade_t<T>::set_t(T a_t)
+{
+  m_t = a_t;
+}
+
+} //  irs
 
 #endif //irsdspH
 

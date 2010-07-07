@@ -185,6 +185,11 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   SHPR2_bit.PRI_15 = 0x7F;
   IP4_bit.PRI_19 = 0xFF;
 #endif  //  PWM_ZERO_PULSE
+  /*PWMSYNC_bit.Sync0 = 1;
+  for (irs_u16 i = 2*load_value / 3; i; i--);
+  PWMSYNC_bit.Sync1 = 1;
+  for (irs_u16 i = 2*load_value / 3; i; i--);
+  PWMSYNC_bit.Sync2 = 1;*/
 }
 
 irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()
@@ -247,6 +252,11 @@ irs::arm::arm_three_phase_pwm_t::set_frequency(
   PWM1LOAD = load_value;
   PWM2LOAD = load_value;
   PWMSYNC = pwm_all_sync;
+  /*PWMSYNC_bit.Sync0 = 1;
+  for (irs_u16 i = 2*load_value / 3; i; i--);
+  PWMSYNC_bit.Sync1 = 1;
+  for (irs_u16 i = 2*load_value / 3; i; i--);
+  PWMSYNC_bit.Sync2 = 1;*/
   return m_freq;
 }
 
@@ -270,13 +280,9 @@ irs_u16 irs::arm::arm_three_phase_pwm_t::calc_load_reg_value(freq_t a_freq)
 #ifdef PWM_ZERO_PULSE
 void irs::arm::arm_three_phase_pwm_t::interrupt()
 {
-  //gpio_t::hall_a_on();
-  GPIOBDATA_bit.no4 = 1;
-  //
+  //GPIOBDATA_bit.no6 = 1;
   PWM0ISC_bit.IntCntLoad = 1;
-  //
-  //gpio_t::hall_a_off();
-  GPIOBDATA_bit.no4 = 0;
+  //GPIOBDATA_bit.no6 = 0;
 }
 #endif  //  PWM_ZERO_PULSE
 
