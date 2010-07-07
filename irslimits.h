@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 30.04.2010
+// Дата: 1.07.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -7,10 +7,15 @@
 
 #include <irsdefs.h>
 
+#if defined(__BORLANDC__)
+#include <dstring.h>
+#endif // defined(__BORLANDC__)
+
 #include <float.h>
 #include <string.h>
 
 #include <irscpp.h>
+#include <irsstring.h>
 //#include <irsstrdefs.h>
 
 #include <irsfinal.h>
@@ -483,21 +488,21 @@ template<>
 struct is_floating_point_type<float>
 {
   enum {
-    value = false
+    value = true
   };
 };
 template<>
 struct is_floating_point_type<double>
 {
   enum {
-    value = false
+    value = true
   };
 };
 template<>
 struct is_floating_point_type<long double>
 {
   enum {
-    value = false
+    value = true
   };
 };
 
@@ -519,6 +524,68 @@ struct is_fundamental_type
       is_floating_point_type<T>::value
   };
 };
+
+template<class T>
+struct is_string_type
+{
+  enum {
+    value = false
+  };
+};
+
+template<>
+struct is_string_type< ::string>
+{
+  enum {
+    value = true
+  };
+};
+
+#ifndef __embedded_cplusplus
+template<>
+struct is_string_type< ::wstring>
+{
+  enum {
+    value = true
+  };
+};
+#endif // !__embedded_cplusplus
+
+template<>
+struct is_string_type<irs_string_t>
+{
+  enum {
+    value = true
+  };
+};
+
+#ifndef __embedded_cplusplus
+template<>
+struct is_string_type<irs_wstring_t>
+{
+  enum {
+    value = true
+  };
+};
+#endif // !__embedded_cplusplus
+
+#if defined(__BORLANDC__)
+template<>
+struct is_string_type<AnsiString>
+{
+  enum {
+    value = true
+  };
+};
+
+template<>
+struct is_string_type<WideString>
+{
+  enum {
+    value = true
+  };
+};
+#endif // defined(__BORLANDC__)
 
 // Определение знаковости типа
 struct signed_type_tag {};

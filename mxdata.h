@@ -851,8 +851,16 @@ class handle_t
 public:
   handle_t(T* ap_object = IRS_NULL);
   handle_t(const handle_t& a_handle);
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  template <class T2>
+  handle_t(const handle_t<T2>& a_handle);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   ~handle_t();
   void operator=(const handle_t& a_handle);
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  template <class T2>
+  void operator=(const handle_t<T2>& a_handle);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   T& operator*() const;
   T* operator->() const;
   T* get() const;
@@ -860,11 +868,20 @@ public:
   inline bool is_equal(const handle_t& a_handle) const;
   inline bool is_empty() const;
   inline void swap(handle_t& a_handle);
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  template <class T2>
+  inline void swap(handle_t<T2>& a_handle);
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
 private:
   handle_rep_t<T>* mp_rep;
 };
 template <class T>
 inline void swap(handle_t<T>& a_first_handle, handle_t<T>& a_second_handle)
+{
+  a_first_handle.swap(a_second_handle);
+}
+template <class T, class T2>
+inline void swap(handle_t<T>& a_first_handle, handle_t<T2>& a_second_handle)
 {
   a_first_handle.swap(a_second_handle);
 }
@@ -894,6 +911,23 @@ handle_t<T>::handle_t(const handle_t& a_handle):
     a_handle.mp_rep->counter++;
   }
 }
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+template <class T>
+template <class T2>
+handle_t<T>::handle_t(const handle_t<T2>& a_handle):
+  mp_rep(reinterpret_cast<handle_rep_t<T>*>(a_handle.mp_rep))
+{
+  #ifdef IRS_LIB_DEBUG
+  // Проверяем, что объект T2 является дочерним от Т
+  static_cast<T*>(a_handle.mp_rep.object);
+  #endif // IRS_LIB_DEBUG
+  if (mp_rep != IRS_NULL) {
+    a_handle.mp_rep->counter++;
+  }
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
 template <class T>
 handle_t<T>::~handle_t()
 {
@@ -916,6 +950,23 @@ void handle_t<T>::operator=(const handle_t& a_handle)
     // Если дескрипторы равны, то ничего не делаем
   }
 }
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+template <class T>
+template <class T2>
+void handle_t<T>::operator=(const handle_t<T2>& a_handle)
+{
+  const bool hanldes_equals =
+    (this->mp_rep.object == static_cast<T*>(a_handle.mp_rep.object)) &&
+    (this->mp_rep.counter == static_cast<T*>(a_handle.mp_rep.counter));
+
+  if (!hanldes_equals) {
+    handle_t handle_copy(a_handle);
+    swap(handle_copy);
+  } else {
+    // Если дескрипторы равны, то ничего не делаем
+  }
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 template <class T>
 T& handle_t<T>::operator*() const
 {
@@ -956,6 +1007,18 @@ inline void handle_t<T>::swap(handle_t& a_handle)
 {
   ::swap(mp_rep, a_handle.mp_rep);
 }
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+template <class T>
+template <class T2>
+inline void handle_t<T>::swap(handle_t<T2>& a_handle)
+{
+  handle_rep_t<T>* p_rep_helper = static_cast<T*>(a_handle.mp_rep);
+  a_handle.mp_rep = mp_rep;
+  mp_rep = p_rep_helper;
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
 #ifdef NOP
 inline void handle_test()
 {

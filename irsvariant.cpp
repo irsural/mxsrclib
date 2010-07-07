@@ -710,8 +710,37 @@ void irs::variant::binary_operation(
   } else {
     IRS_LIB_ASSERT_MSG("Недопустимая операция");
   }
-  
+
   switch (operation_vars_type) {
+    case var_type_unknown: {
+      if ((a_operation_type == operation_equal) ||
+        (a_operation_type == operation_not_equal)) {
+
+        bool variants_equals = true;
+        if (a_first_variant.type() == a_second_variant.type()) {
+          if (a_first_variant.type() == var_type_unknown) {
+            variants_equals = true;
+          } else {
+            IRS_LIB_ASSERT_MSG("Недопустимая операция");
+          }
+        } else {
+          variants_equals = false;
+        }
+        switch (a_operation_type) {
+          case operation_equal: {
+            *ap_result_bool = variants_equals;
+          } break;
+          case operation_not_equal: {
+            *ap_result_bool = !variants_equals;
+          } break;
+          default : {
+            IRS_LIB_ASSERT_MSG("Недопустимый тип операции");
+          }
+        }
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация переменных");
+      }
+    } break;
     case var_type_int: {
       int first_var = a_first_variant.value_get<int>();
       int second_var = a_second_variant.value_get<int>();
@@ -842,7 +871,7 @@ void irs::variant::binary_operation(
       vector_variant_type first_var =
         a_first_variant.value_get<vector_variant_type>();
       vector_variant_type second_var =
-        a_second_variant.value_get<vector_variant_type>();  
+        a_second_variant.value_get<vector_variant_type>();
       operation_helper(a_operation_type,
         first_var,
         second_var,
@@ -852,7 +881,7 @@ void irs::variant::binary_operation(
 
     } break;
     default : {
-      IRS_LIB_ASSERT_MSG("Недопустимая комбинация переменных");
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация переменных");    
     }
   }
 } 

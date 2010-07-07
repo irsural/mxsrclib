@@ -2191,6 +2191,37 @@ bool variant_compare(const operation_type_t a_var_operation_type,
   return result;
 }
 
+/*template <>
+bool variant_compare<variant_t>(
+  const operation_type_t a_var_operation_type,
+  const variant_t& a_first_var,
+  const variant_t& a_last_var)
+{
+  bool variants_equals = true;
+  bool result = false;
+  if (a_first_var.type() == a_last_var.type()) {
+    if (a_first_var.type() == var_type_unknown) {
+      variants_equals = true;
+    } else {
+      variants_equals = (a_first_var == a_last_var);
+    }
+  } else {
+    variants_equals = false;
+  }
+  switch (a_var_operation_type) {
+    case operation_equal: {
+      result = variants_equals;
+    } break;
+    case operation_not_equal: {
+      result = !variants_equals;
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Недопустимый тип операции");
+    }
+  }
+  return result;
+}*/
+
 template <class T>
 bool binary_operation_helper(
   const operation_type_t /*a_var_operation_type*/,
@@ -2301,13 +2332,13 @@ void operation_helper(
   bool* ap_result_bool)
 {
   if ((a_var_operation_type >= operation_equal) &&
-      (a_var_operation_type <= operation_more_or_equal))
+    (a_var_operation_type <= operation_more_or_equal))
   {
     IRS_LIB_ASSERT(ap_result_bool != IRS_NULL);
     *ap_result_bool =
       variant_compare(a_var_operation_type, a_first_variant, a_second_variant);
   } else if ((a_var_operation_type >= operation_sum) &&
-      (a_var_operation_type <= operation_integer_division))
+    (a_var_operation_type <= operation_integer_division))
   {
     IRS_LIB_ASSERT(ap_result_value != IRS_NULL);
     binary_operation(a_var_operation_type, a_first_variant,
