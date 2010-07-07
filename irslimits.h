@@ -95,6 +95,18 @@ inline const char* type_to_string_helper(irs_u64)
   return "irs_u64";
 }
 #endif //IRSDEFS_I64
+inline const char* type_to_string_helper(float)
+{
+  return "float";
+}
+inline const char* type_to_string_helper(double)
+{
+  return "double";
+}
+inline const char* type_to_string_helper(long double)
+{
+  return "long double";
+}
 template <class T>
 const char* type_to_string()
 {
@@ -541,7 +553,7 @@ struct is_string_type< ::string>
   };
 };
 
-#ifndef __embedded_cplusplus
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 template<>
 struct is_string_type< ::wstring>
 {
@@ -549,7 +561,7 @@ struct is_string_type< ::wstring>
     value = true
   };
 };
-#endif // !__embedded_cplusplus
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 template<>
 struct is_string_type<irs_string_t>
@@ -559,7 +571,7 @@ struct is_string_type<irs_string_t>
   };
 };
 
-#ifndef __embedded_cplusplus
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 template<>
 struct is_string_type<irs_wstring_t>
 {
@@ -567,7 +579,7 @@ struct is_string_type<irs_wstring_t>
     value = true
   };
 };
-#endif // !__embedded_cplusplus
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #if defined(__BORLANDC__)
 template<>
