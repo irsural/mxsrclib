@@ -14,6 +14,7 @@
 #include <mxifa.h>
 
 #include <irsfinal.h>
+#include <mxdatastd.h>
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30
@@ -112,4 +113,70 @@ public:
   virtual void tick();
 };
 
-#endif
+class mx_cs_stab_t: public mxsupply_t
+{
+public:
+  // Конструктор
+  //mx_cs_stab_t(irs::hardflow_t* ap_hardflow);
+  mx_cs_stab_t();
+  // Деструктор
+  ~mx_cs_stab_t();
+  // Постоянный ток поддерживается прибором или нет
+  virtual irs_bool dc_supported();
+  // Установка тока
+  virtual void set_current(double current);
+  // Установка напряжения
+  virtual void set_voltage(double voltage);
+  // Включение источника
+  virtual void on();
+  // Выключение источника
+  virtual void off();
+  // Чтение статуса текущей операции
+  virtual meas_status_t status();
+  // Прерывание текущей операции
+  virtual void abort();
+  // Элементарное действие
+  virtual void tick();
+
+private:
+  // Тип для текущего режима
+  typedef enum _supply_number_t {
+    m_supply_null,
+    m_supply_200V,
+    m_supply_20V,
+    m_supply_1A,
+    m_supply_17A
+  } supply_number_t;
+
+  enum {
+    discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
+    coils_size_byte = 6,         //bit = coils_size_byte*8
+    hold_regs_size = 112,        //16-bit word
+    input_regs_size = 0,         //16-bit word
+    sum_size_byte = discr_inputs_size_byte + coils_size_byte +
+      hold_regs_size*2 + input_regs_size*2
+  };
+
+  // Текущий режим работы
+  supply_number_t m_supply_number;
+
+  // Статус текущей операции
+  meas_status_t m_status;
+
+  //irs::mxdata_ext_t* mp_client;
+
+  eth_data_t m_eth_data;
+
+  irs::hardflow::udp_flow_t hardflow;
+
+  irs::modbus_client_t m_modbus_client;
+
+
+  double m_voltage;
+  double m_current;
+  //Стабилизируемый параметр
+  double m_parameter;
+  double m_argument;
+};
+
+#endif // meassupH
