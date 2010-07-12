@@ -181,16 +181,15 @@ void mx_agilent_6675a_t::tick()
 }
 //---------------------------------------------------------------------------
 
+
 // Класс для работы с источником постоянного тока CS_STAB
 
 // Конструктор
-mx_cs_stab_t::mx_cs_stab_t():
+u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t* ap_hardflow):
   m_supply_number(m_supply_null),
   m_status(meas_status_success),
-  //mp_client(ap_mxdata),
   m_eth_data(),
-  hardflow("", "", "192.168.0.46", "5006"),
-  m_modbus_client(&hardflow,
+  m_modbus_client(ap_hardflow,
     irs::mxdata_ext_t::mode_refresh_auto, discr_inputs_size_byte,
     coils_size_byte, hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
     3, 2, 50),
@@ -202,26 +201,26 @@ mx_cs_stab_t::mx_cs_stab_t():
   m_eth_data.connect(&m_modbus_client, 0);
 }
 // Деструктор
-mx_cs_stab_t::~mx_cs_stab_t()
+u309m_current_supply_t::~u309m_current_supply_t()
 {
 }
 // Постоянный ток поддерживается прибором или нет
-irs_bool mx_cs_stab_t::dc_supported()
+irs_bool u309m_current_supply_t::dc_supported()
 {
   return irs_true;
 }
 // Установка тока
-void mx_cs_stab_t::set_current(double a_current)
+void u309m_current_supply_t::set_current(double a_current)
 {
   m_current = a_current;
 }
 // Установка напряжения
-void mx_cs_stab_t::set_voltage(double a_voltage)
+void u309m_current_supply_t::set_voltage(double a_voltage)
 {
   m_voltage = a_voltage;
 }
 // Включение источника
-void mx_cs_stab_t::on()
+void u309m_current_supply_t::on()
 {
   bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210)
        && (m_current < 0.01);
@@ -235,12 +234,12 @@ void mx_cs_stab_t::on()
   if (is_supply_200V) {
     m_supply_number = m_supply_200V;
     m_parameter = m_voltage;
-    m_eth_data.header_data.SR_supply_200V = 1;
+    m_eth_data.header_data.SR_supply_200V_rele_bit = 1;
   } else {
     if (is_supply_20V) {
       m_supply_number = m_supply_20V;
       m_parameter = m_voltage;
-      m_eth_data.header_data.SR_supply_20V = 1;
+      m_eth_data.header_data.SR_supply_20V_rele_bit = 1;
     } else {
       if (is_supply_1A) {
         m_supply_number = m_supply_1A;
@@ -285,7 +284,7 @@ void mx_cs_stab_t::on()
 
 }
 // Выключение источника
-void mx_cs_stab_t::off()
+void u309m_current_supply_t::off()
 {
   m_argument = 0;
 
@@ -298,24 +297,41 @@ void mx_cs_stab_t::off()
  // m_eth_data.supply_17A.sense_regA = m_argument;
  // m_eth_data.supply_17A.sense_regB = m_argument;
 
-  m_eth_data.header_data.SR_supply_200V = 0;
-  m_eth_data.header_data.SR_supply_20V = 0;
+  m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
+  m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
 
   m_supply_number = m_supply_null;
   m_eth_data.header_data.supply_number = m_supply_number;
 }
 // Чтение статуса текущей операции
-meas_status_t mx_cs_stab_t::status()
+meas_status_t u309m_current_supply_t::status()
 {
   return m_status;
 }
 // Прерывание текущей операции
-void mx_cs_stab_t::abort()
+void u309m_current_supply_t::abort()
 {
+  m_argument = 0;
+
+  m_eth_data.supply_200V.sense_regA = m_argument;
+  m_eth_data.supply_20V.sense_regA = m_argument;
+
+ // m_eth_data.supply_1A.sense_regA = m_argument;
+ // m_eth_data.supply_1A.sense_regB = m_argument;
+
+ // m_eth_data.supply_17A.sense_regA = m_argument;
+ // m_eth_data.supply_17A.sense_regB = m_argument;
+
+  m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
+  m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
+
+  m_supply_number = m_supply_null;
+  m_eth_data.header_data.supply_number = m_supply_number;
 }
 // Элементарное действие
-void mx_cs_stab_t::tick()
+void u309m_current_supply_t::tick()
 {
   m_modbus_client.tick();
 
 }
+

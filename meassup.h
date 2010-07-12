@@ -15,6 +15,7 @@
 
 #include <irsfinal.h>
 #include <mxdatastd.h>
+#include <irsmbus.h>
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30
@@ -113,14 +114,192 @@ public:
   virtual void tick();
 };
 
-class mx_cs_stab_t: public mxsupply_t
+struct header_conn_data_t
+{
+  irs::conn_data_t<irs_u8> supply_number;
+  // установка реле земли:
+  irs::bit_data_t ground_rele_bit;
+  // установка реле питания:
+  irs::bit_data_t power_rele_bit;
+  irs::bit_data_t SR_supply_200V_rele_bit;
+  irs::bit_data_t SR_supply_20V_rele_bit;
+  irs::bit_data_t bit4;
+  irs::bit_data_t bit5;
+  irs::bit_data_t bit6;
+  irs::bit_data_t bit7;
+  irs::conn_data_t<irs_u8> rele_data;
+  irs::bit_data_t ADC_200V_overflow; 
+  irs::bit_data_t ADC_20V_overflow;
+  irs::bit_data_t ADC_1A_overflow;
+  irs::bit_data_t ADC_17A_overflow;
+  irs::bit_data_t bit_adc_4;
+  irs::bit_data_t bit_adc_5;
+  irs::bit_data_t bit_adc_6;
+  irs::bit_data_t bit_adc_7;
+  irs::conn_data_t<irs_u8> ADC_supply_overflow_bits;
+  irs::bit_data_t reset_supply_overflow_bit;
+  irs::bit_data_t reset_eeprom_bit;
+  irs::bit_data_t bit_command_2;
+  irs::bit_data_t bit_command_3;
+  irs::bit_data_t bit_command_4;
+  irs::bit_data_t bit_command_5;
+  irs::bit_data_t bit_command_6;
+  irs::bit_data_t bit_command_7;
+  irs::conn_data_t<irs_u8> command_bits;
+  irs::conn_data_t<irs_i32> counter;
+  
+  header_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
+    irs_uarc* ap_size = IRS_NULL)
+  {
+    irs_uarc size = connect(ap_data, a_index);
+    if(ap_size != IRS_NULL){
+      *ap_size = size;
+    }
+  }
+  
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
+  {
+    irs_uarc index = a_index;
+    
+    index = supply_number.connect(ap_data, index);
+    ground_rele_bit.connect(ap_data, index, 0);
+    power_rele_bit.connect(ap_data, index, 1);
+    SR_supply_200V_rele_bit.connect(ap_data, index, 2);
+    SR_supply_20V_rele_bit.connect(ap_data, index, 3);
+    bit4.connect(ap_data, index, 4);
+    bit5.connect(ap_data, index, 5);
+    bit6.connect(ap_data, index, 6);
+    bit7.connect(ap_data, index, 7);
+    index = rele_data.connect(ap_data, index);
+    ADC_200V_overflow.connect(ap_data, index, 0);
+    ADC_20V_overflow.connect(ap_data, index, 1);
+    ADC_1A_overflow.connect(ap_data, index, 2);
+    ADC_17A_overflow.connect(ap_data, index, 3);
+    bit_adc_4.connect(ap_data, index, 4);
+    bit_adc_5.connect(ap_data, index, 5);
+    bit_adc_6.connect(ap_data, index, 6);
+    bit_adc_7.connect(ap_data, index, 7);
+    index = ADC_supply_overflow_bits.connect(ap_data, index);
+    reset_supply_overflow_bit.connect(ap_data, index, 0);
+    reset_eeprom_bit.connect(ap_data, index, 1);
+    bit_command_2.connect(ap_data, index, 2);
+    bit_command_3.connect(ap_data, index, 3);
+    bit_command_4.connect(ap_data, index, 4);
+    bit_command_5.connect(ap_data, index, 5);
+    bit_command_6.connect(ap_data, index, 6);
+    bit_command_7.connect(ap_data, index, 7);
+    index = command_bits.connect(ap_data, index);
+    index = counter.connect(ap_data, index);
+    
+    return index;
+  }
+};
+
+struct supply_conn_data_t
+{
+  enum supply_type_t{
+    supply_200V,
+    supply_20V,
+    supply_1A,
+    supply_17A
+  };
+  
+  irs::conn_data_t<float> temperature;
+  irs::conn_data_t<float> ADC_output;
+  irs::conn_data_t<float> temperature_ref;
+  irs::conn_data_t<float> correct_koef;
+  irs::conn_data_t<float> ADC_correct_koef;
+  // пропорциональный коэффициент регулятора температуры (write only)
+  irs::conn_data_t<float> temp_k;
+  // интегральный коэффициент регулятора температуры (write only) 
+  irs::conn_data_t<float> temp_ki;
+  // дифференциальный коэффициент регулятора температуры (write only)
+  irs::conn_data_t<float> temp_kd;
+  // значение записываемое в регистр А (write only)
+  irs::conn_data_t<float> sense_regA;
+  // значение записываемое в регистр B (write only)
+  irs::conn_data_t<float> sense_regB;
+  // значение цифрового потенциометра (read only)
+  irs::conn_data_t<irs_i32> temp_dac_value;
+  // значение интегратора (read only)
+  irs::conn_data_t<irs_i32> int_val;
+  // постоянная времени фильтра температуры (read only)
+  irs::conn_data_t<float> temp_time_const;
+  // фильтрованная температура (read only)
+  irs::conn_data_t<float> temp_filtered;
+  
+  supply_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
+    irs_uarc* ap_size = IRS_NULL)
+  {
+    irs_uarc size = connect(ap_data, a_index);
+    if(ap_size != IRS_NULL){
+      *ap_size = size;
+    }
+  }
+  
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
+  {
+    irs_uarc index = a_index;
+    
+    index = temperature.connect(ap_data, index);
+    index = ADC_output.connect(ap_data, index);
+    index = temperature_ref.connect(ap_data, index);
+    index = correct_koef.connect(ap_data, index);
+    index = ADC_correct_koef.connect(ap_data, index);
+    index = temp_k.connect(ap_data, index);
+    index = temp_ki.connect(ap_data, index);
+    index = temp_kd.connect(ap_data, index);
+    index = sense_regA.connect(ap_data, index);
+    index = sense_regB.connect(ap_data, index);
+    index = temp_dac_value.connect(ap_data, index);
+    index = int_val.connect(ap_data, index);
+    index = temp_time_const.connect(ap_data, index);
+    index = temp_filtered.connect(ap_data, index);
+    
+    return index;
+  }
+};
+
+struct eth_data_t
+{
+  header_conn_data_t header_data;
+  supply_conn_data_t supply_200V;
+  supply_conn_data_t supply_20V;
+  supply_conn_data_t supply_1A;
+  supply_conn_data_t supply_17A;
+  
+  eth_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
+    irs_uarc* ap_size = IRS_NULL)
+  {
+    irs_uarc size = connect(ap_data, a_index);
+    if(ap_size != IRS_NULL){
+      *ap_size = size;
+    }
+  }
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
+  {
+    irs_uarc index = a_index;
+    
+    index = header_data.connect(ap_data, index);
+    index = supply_200V.connect(ap_data, index);
+    index = supply_20V.connect(ap_data, index);
+    index = supply_1A.connect(ap_data, index);
+    index = supply_17A.connect(ap_data, index);
+    
+    return index;
+  }
+};
+
+
+
+
+class u309m_current_supply_t: public mxsupply_t
 {
 public:
   // Конструктор
-  //mx_cs_stab_t(irs::hardflow_t* ap_hardflow);
-  mx_cs_stab_t();
+  u309m_current_supply_t(irs::hardflow_t* ap_hardflow);
   // Деструктор
-  ~mx_cs_stab_t();
+  ~u309m_current_supply_t();
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported();
   // Установка тока
@@ -150,8 +329,8 @@ private:
 
   enum {
     discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
-    coils_size_byte = 6,         //bit = coils_size_byte*8
-    hold_regs_size = 112,        //16-bit word
+    coils_size_byte = 4,         //bit = coils_size_byte*8
+    hold_regs_size = 114,        //16-bit word
     input_regs_size = 0,         //16-bit word
     sum_size_byte = discr_inputs_size_byte + coils_size_byte +
       hold_regs_size*2 + input_regs_size*2
@@ -163,11 +342,7 @@ private:
   // Статус текущей операции
   meas_status_t m_status;
 
-  //irs::mxdata_ext_t* mp_client;
-
   eth_data_t m_eth_data;
-
-  irs::hardflow::udp_flow_t hardflow;
 
   irs::modbus_client_t m_modbus_client;
 
@@ -180,3 +355,4 @@ private:
 };
 
 #endif // meassupH
+
