@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС
-// Дата: 19.05.2010
+// Дата: 12.07.2010
 // Ранняя дата: 25.11.2007
 
 // Номер файла
@@ -170,7 +170,8 @@ void *irs_renew(void *pointer, size_t old_size, size_t new_size)
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
+    irs_u8*& pointer_u8 = reinterpret_cast<irs_u8*&>(pointer);
+    IRS_LIB_ARRAY_DELETE_ASSERT(pointer_u8);
   }
   return new_pointer;
 }
@@ -1266,8 +1267,8 @@ void irs_win32_console_display_t::outtextpos(
     (a_top < static_cast<mxdisp_pos_t>(m_BufInfo.srWindow.Bottom+1)))
   {
     irs_u32 width=get_width();
-	  m_Coord.X=static_cast<short>(a_left);
-	  m_Coord.Y=static_cast<short>(a_top+m_top_displey);
+    m_Coord.X=static_cast<short>(a_left);
+    m_Coord.Y=static_cast<short>(a_top+m_top_displey);
     irs_u32 lentext=min(strlen(text), static_cast<size_t>(width-a_left));
     irs::auto_arr<wchar_t> unicode_text(new wchar_t[lentext+1]);
     MultiByteToWideChar(
@@ -1480,12 +1481,7 @@ int irs::memobuf::sync()
 }
 #endif //__BORLANDC__
 
-#ifdef __WATCOMC__
-#include <irsstdl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
+#if defined(__WATCOMC__)
 // Преобразование числа double в строку в %g формате
 irs_u8 *irs_gcvt(double value, int ndigits, irs_u8 *buffer)
 {
@@ -1645,4 +1641,18 @@ irskey_t irs_win32_console_key_drv_t::operator()()
   m_temporary_irs_key=irskey_none;
   return m_temporary_irs_key;
 }
+#endif //defined(__WATCOMC__)
+
+// Закоментарено, т. к. Watcom выдает здесь exception при компиляции
+#ifdef NOP
+#ifdef __WATCOMC__
+// Конфигурация консоли для Watcom C++
+irs::conio_cfg_t& irs::arch_conio_cfg::def()
+{
+  static irs_win32_console_key_drv_t key_drv;
+  static irs_win32_console_display_t display;
+  static conio_cfg_t conio_cfg_i(key_drv, display);
+  return conio_cfg_i;
+}
 #endif //__WATCOMC__
+#endif //NOP

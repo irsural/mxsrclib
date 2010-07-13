@@ -32,10 +32,10 @@
 #include <irserror.h>
 #include <mxifar.h>
 #include <mxdata.h>
-#include <irssysutils.h>
 #include <irscpp.h>
 #include <irstcpip.h>
 #include <irsnetdefs.h>
+#include <irssysutils.h>
 
 #include <irsfinal.h>
 

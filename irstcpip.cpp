@@ -1,5 +1,5 @@
 // UDP/IP-стек 
-// Дата: 22.06.2010
+// Дата: 07.07.2010
 // Дата создания: 16.03.2010
 
 #include <irsdefs.h>
@@ -576,9 +576,11 @@ irs_size_t irs::simple_tcpip_t::new_socket(mxip_t a_remote_ip,
   } else {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
       irsm("сокет уже есть в списке сокетов") << endl);
-    list_index = find_if(m_tcp_socket_list.begin(), m_tcp_socket_list.end(),
-      socket_equal_t(a_remote_ip, a_remote_port, a_local_port)) -
-      m_tcp_socket_list.begin();
+    socket_equal_t socket_equal(a_remote_ip, a_remote_port, a_local_port);
+    typedef deque<tcp_socket_t>::iterator iterator_t;
+    iterator_t finded_it = find_if(m_tcp_socket_list.begin(),
+      m_tcp_socket_list.end(), socket_equal);
+    list_index = irs_deque_distance(finded_it, m_tcp_socket_list.begin());
   }
   return list_index;
 }
@@ -1186,7 +1188,8 @@ void irs::simple_tcpip_t::server_tcp()
         socket_equal_t(m_cur_dest_ip, m_cur_dest_port, m_cur_local_port));
       if (tcp_sock_it_cur != m_tcp_socket_list.end())
       {
-        m_list_index = tcp_sock_it_cur - m_tcp_socket_list.begin();
+        m_list_index = irs_deque_distance(tcp_sock_it_cur,
+          m_tcp_socket_list.begin());
       } else {
         IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
           irsm("В списке нет места для нового сокета") << endl);

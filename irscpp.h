@@ -1,6 +1,6 @@
 // Заголовки стандартной библиотеки С++
 // Используется для переносимости на разные компиляторы
-// Дата: 07.07.2010
+// Дата: 12.07.2010
 // Ранняя дата: 26.09.2007
 
 #ifndef IRSCPPH
@@ -172,23 +172,68 @@ inline ios &noskipws(ios &strm, int)
 }
 #endif //NOP
 
-#ifdef __WATCOMC__
-// В deque Watcom нет операции минус на итераторах, добавим
-template <class T, class A, int P>
-deque<T, A, P>::difference_type operator-(
-  deque<T, A, P>::iterator a_left, 
-  deque<T, A, P>::iterator a_right
-)
-{
-  return distance(a_left, a_right, input_iterator_tag());
-}
-#endif //__WATCOMC__
-
 // Cygwin не полностью поддерживает wchar_t и wstring
 #ifdef __CYGWIN__
 //template<> struct char_traits<wchar_t>;
 typedef basic_string<wchar_t> wstring;
 #endif //__CYGWIN__
+
+#ifdef __WATCOMC__
+typedef int irs_streamsize_t;
+
+// В deque Watcom нет операции минус на итераторах
+template <class input_type> inline typename iterator_traits<input_type>::
+  difference_type irs_deque_distance(input_type a_first, input_type a_last)
+{
+  return ::distance(a_first, a_last, input_iterator_tag());
+}
+template <class container_type>
+inline void irs_container_resize(
+  container_type* ap_container,
+  typename container_type::size_type a_size
+)
+{
+  typedef typename container_type::size_type cont_size_t;
+  typedef typename container_type::value_type cont_value_t;
+  cont_size_t old_size = ap_container->size();
+  cont_size_t new_size = a_size;
+  if (new_size > old_size) {
+    cont_size_t diff_size = new_size - old_size;
+    for (cont_size_t diff_idx = 0; diff_idx < diff_size; diff_idx++) {
+      ap_container->push_back(cont_value_t());
+    }
+  } else {
+    cont_size_t diff_size = old_size - new_size;
+    for (cont_size_t diff_idx = 0; diff_idx < diff_size; diff_idx++) {
+      ap_container->pop_back();
+    }
+  }
+  #ifdef NOP
+  container_type container_copy(a_size);
+  typename container_type::size_type copy_size =
+    min(ap_container->size(), a_size);
+  ::copy(ap_container->begin(), ap_container->begin() + copy_size,
+    container_copy.begin());
+  ap_container->swap(container_copy);
+  #endif //NOP
+}
+#else //__WATCOMC__
+typedef streamsize irs_streamsize_t;
+
+template <class input_type> inline typename iterator_traits<input_type>::
+  difference_type irs_deque_distance(input_type a_first, input_type a_last)
+{
+  return ::distance(a_first, a_last);
+}
+template <class container_type>
+inline void irs_container_resize(
+  container_type* ap_container,
+  typename container_type::size_type a_size
+)
+{
+  ap_container->resize(a_size);
+}
+#endif //__WATCOMC__
 
 #ifndef NAMESPACE_STD_NOT_SUPPORT
 } //namespace std

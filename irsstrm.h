@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 23.06.2010
+// Дата: 02.07.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -87,7 +87,7 @@ inline int union_streambuf::overflow(int c)
     size_type put_byte_count = 0;
     size_type buf_fill_size = pptr() - pbase();
     while (put_byte_count < buf_fill_size) {
-      streamsize sended_count =
+      int sended_count =
         m_streambufs[buf_i]->sputn(m_outbuf.data()+put_byte_count,
         buf_fill_size-put_byte_count);
       put_byte_count += sended_count;
@@ -106,7 +106,11 @@ inline int union_streambuf::overflow(int c)
     if (c != EOF) {
       result = m_streambufs[buf_i]->sputc(static_cast<char>(c));
     }
+    #ifdef __WATCOMC__
+    m_streambufs[buf_i]->sync();
+    #else //__WATCOMC__
     m_streambufs[buf_i]->pubsync();
+    #endif //__WATCOMC__
   }
   setp(m_outbuf.data(), m_outbuf.data() + m_outbuf.size());
   return result;
@@ -360,8 +364,8 @@ class ostream_format_save_t
 private:
   ostream *mp_ostream;
   ios::fmtflags m_format_flags;
-  streamsize m_width;
-  streamsize m_precision;
+  irs_streamsize_t m_width;
+  irs_streamsize_t m_precision;
 public:
   ostream_format_save_t(ostream *ap_ostream = IRS_NULL):
     mp_ostream(ap_ostream),

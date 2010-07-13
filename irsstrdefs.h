@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 19.05.2010
+// Дата: 29.06.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -34,22 +34,7 @@
 #define IRS_TYPE_FROM_SIMPLE_STR(str) (str)
 #endif //IRS_UNICODE
 
-// Поддержка экзотических строк типа __flash в IAR и др.
-#ifdef IRS_LIB_FLASH_ASSERT
-#define IRS_SPEC_CSTR_DECLARE(a_name, a_cstr)\
-  static char const IRS_ICCAVR_FLASH a_name[] = a_cstr;
-#define IRS_SPEC_CSTR_ASSIGN(a_name, a_cstr)\
-  {\
-    static char const IRS_ICCAVR_FLASH irs_spec_cstr_assign_name[] = a_cstr;\
-    a_name = irs_spec_cstr_assign_name;\
-  }
-#else //IRS_LIB_FLASH_ASSERT
-#define IRS_SPEC_CSTR_DECLARE(a_name, a_cstr)\
-  static const char a_name[] = a_cstr;
-#define IRS_SPEC_CSTR_ASSIGN(a_name, a_cstr) a_name = a_cstr;
-#endif //IRS_LIB_FLASH_ASSERT
-
-//#define IRSSTRDEFS_DEBUG
+#define IRSSTRDEFS_DEBUG
 #ifdef IRSSTRDEFS_DEBUG
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
     #define IRSSTRDEFS_ASSERT(expr)\
@@ -440,7 +425,7 @@ public:
         p_outstr_next
       );
 
-     if (convert_result != codecvt_base::ok) {
+    if (convert_result != codecvt_base::ok) {
       stringstream stream;
       stream << "convert_str_t codecvt result: " <<
         cstr_from_codecvt_result<char>(convert_result);
@@ -454,7 +439,7 @@ public:
   {
     IRSSTRDEFS_ASSERT(ap_instr != IRS_NULL);
     convert_str_t convert_str_copy(ap_instr);
-    swap(mp_outstr, convert_str_copy.mp_outstr);
+    ::swap(mp_outstr, convert_str_copy.mp_outstr);
     return *this;
   }
   ~convert_str_t()

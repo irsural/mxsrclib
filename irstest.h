@@ -1,5 +1,5 @@
 // Набор тестов
-// Дата: 28.04.2010
+// Дата: 22.06.2010
 // Дата создания: 20.09.2009
 
 #ifndef IRSTESTH
@@ -10,6 +10,9 @@
 #include <irscpp.h>
 #include <mxdata.h>
 #include <irserror.h>
+#include <irsstring.h>
+#include <irsstrconv.h>
+//#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -55,6 +58,7 @@ inline void exec(ostream& a_strm)
 } //namespace compiler_test
 
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 namespace cstr_convert {
 
 template <class T>
@@ -318,6 +322,7 @@ inline void exec(ostream& a_strm)
 }
 
 } //namespace cstr_convert
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef NOP
 // Простой динамический буфер
@@ -359,6 +364,121 @@ struct dyn_data_t
   }
 };
 #endif //NOP
+
+namespace string_test {
+
+inline irs_string_t locale_style_to_str(irsstrloc_t a_locale_style)
+{
+  switch (a_locale_style)
+  {
+    case irsstrloc_classic: {
+      return "locale_classic";
+    }
+    case irsstrloc_current: {
+      return "locale_current";
+    }
+    case irsstrloc_russian: {
+      return "locale_russian";
+    }
+    default: {
+      return "locale_unknown";
+    }
+  }
+  //return "unknown error in locale_style_to_str";
+}
+inline const char* str_name(char)
+{
+  return "simple";
+}
+inline const char* str_name(wchar_t)
+{
+  return "unicode";
+}
+inline const char* str_convert(const char* ap_string)
+{
+  return ap_string;
+}
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+inline const char* str_convert(const wchar_t* ap_string)
+{
+  static convert_str_t<wchar_t, char> convert_str;
+  convert_str = ap_string;
+  return convert_str.get();
+}
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+template <class T>
+inline void float_conv_part(const T* a_string,
+  ostream& a_stream, irsstrloc_t a_locale_style)
+{
+  a_stream << str_name(T()) << ", ";
+  a_stream << locale_style_to_str(a_locale_style) << endl;
+
+  a_stream << "Из числа в " << str_name(T()) << "-строку" << endl;
+  a_stream << "3.14 --> ";
+  irs_string_t float_str = irsstr_from_number(char(), 3.14, a_locale_style);
+  a_stream << float_str << endl;
+
+  a_stream << "Из " << str_name(T()) << "-строки в число" << endl;
+  a_stream << str_convert(a_string) << " --> ";
+  double float_val = 0.0;
+  if (cstr_to_number(a_string, float_val, a_locale_style)) {
+    a_stream << float_val << endl;
+  } else {
+    a_stream << "Ошибка преобразования" << endl;
+  }
+
+  a_stream << "=====================================" << endl;
+}
+inline void float_conv(ostream& a_stream)
+{
+  a_stream << endl << endl;
+  
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  loc().set(locale::classic());
+  a_stream.imbue(loc().get());
+  #endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+  float_conv_part("3,14", a_stream, irsstrloc_classic);
+  float_conv_part("3.14", a_stream, irsstrloc_classic);
+  float_conv_part("3,14", a_stream, irsstrloc_current);
+  float_conv_part("3.14", a_stream, irsstrloc_current);
+  float_conv_part("3,14", a_stream, irsstrloc_russian);
+  float_conv_part("3.14", a_stream, irsstrloc_russian);
+
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  float_conv_part(L"3,14", a_stream, irsstrloc_classic);
+  float_conv_part(L"3.14", a_stream, irsstrloc_classic);
+  float_conv_part(L"3,14", a_stream, irsstrloc_current);
+  float_conv_part(L"3.14", a_stream, irsstrloc_current);
+  float_conv_part(L"3,14", a_stream, irsstrloc_russian);
+  float_conv_part(L"3.14", a_stream, irsstrloc_russian);
+
+  loc().set(locale("Russian_Russia.1251"));
+  a_stream << endl << endl;
+  a_stream << "*************************************" << endl;
+  a_stream << "loc.get().name() = " << loc().get().name() << endl;
+  a_stream << "*************************************" << endl;
+  a_stream << endl << endl;
+
+  float_conv_part("3,14", a_stream, irsstrloc_classic);
+  float_conv_part("3.14", a_stream, irsstrloc_classic);
+  float_conv_part("3,14", a_stream, irsstrloc_current);
+  float_conv_part("3.14", a_stream, irsstrloc_current);
+  float_conv_part("3,14", a_stream, irsstrloc_russian);
+  float_conv_part("3.14", a_stream, irsstrloc_russian);
+
+  float_conv_part(L"3,14", a_stream, irsstrloc_classic);
+  float_conv_part(L"3.14", a_stream, irsstrloc_classic);
+  float_conv_part(L"3,14", a_stream, irsstrloc_current);
+  float_conv_part(L"3.14", a_stream, irsstrloc_current);
+  float_conv_part(L"3,14", a_stream, irsstrloc_russian);
+  float_conv_part(L"3.14", a_stream, irsstrloc_russian);
+  #endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+  a_stream << endl << endl;
+}
+
+} //namespace string_test
 
 } //namespace irs
 

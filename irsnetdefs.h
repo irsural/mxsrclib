@@ -1,5 +1,5 @@
 // Определение типов mxip_t, mxmac_t и сопутствующих им функций
-// Дата: 28.05.2010
+// Дата: 07.07.2010
 // Дата создания: 01.04.2010
 
 #ifndef IRSNETDEFSH
@@ -10,6 +10,7 @@
 #include <irsstd.h>
 #include <irsstrdefs.h>
 #include <irsstrm.h>
+#include <irscpp.h>
 #include <ctype.h>
 
 #include <irsfinal.h>
@@ -283,17 +284,16 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
   }
 }
 
-#ifndef NAMESPACE_STD_NOT_SUPPORT
-namespace std {
-#endif //NAMESPACE_STD_NOT_SUPPORT
-inline ostream& operator<<(ostream& a_stream, mxip_t a_ip)
+namespace irs_shift_operator_ip_mac {
+
+inline ostream& operator<<(ostream& a_stream, const mxip_t& a_ip)
 {
   a_stream << int(a_ip.val[0]) << "." << int(a_ip.val[1]) << ".";
   a_stream << int(a_ip.val[2]) << "." << int(a_ip.val[3]);
   return a_stream;
 }
 
-inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
+inline ostream& operator<<(ostream& a_stream, const mxmac_t& a_mac)
 {
   irs::ostream_format_save_t format_save(&a_stream);
   a_stream << hex << setfill('0');
@@ -304,9 +304,9 @@ inline ostream& operator<<(ostream& a_stream, mxmac_t a_mac)
   return a_stream;
 }
 
-#ifndef NAMESPACE_STD_NOT_SUPPORT
-} //namespace std
-#endif //NAMESPACE_STD_NOT_SUPPORT
+} //namespace irs_shift_operator_ip_mac
+
+using namespace irs_shift_operator_ip_mac;
 
 namespace irs {
 

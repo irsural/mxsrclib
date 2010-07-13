@@ -1,13 +1,18 @@
 // Калибровка приборов
-// Дата: 2.09.2009
+// Дата: 06.07.2010
+// Ранняя дата: 27.03.2009
 
 #ifndef correct_algH
 #define correct_algH
 
 #include <irsdefs.h>
+
+#include <irsdefs.h>
 #include <irsstd.h>
 #include <timer.h>
 #include <mxnetc.h>
+
+#include <irsfinal.h>
 
 namespace irs
 {

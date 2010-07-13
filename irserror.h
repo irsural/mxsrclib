@@ -1,5 +1,5 @@
 // Обработка ошибок
-// Дата: 20.05.2010
+// Дата: 08.07.2010
 // Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -176,12 +176,14 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_LIB_DELETE_ASSERT(delete_var)\
   {\
     delete (delete_var);\
-    (delete_var) = IRS_NULL;\
+    void** void_ptr = reinterpret_cast<void**>(&(delete_var));\
+    *void_ptr = IRS_NULL;\
   }
 #define IRS_LIB_ARRAY_DELETE_ASSERT(delete_var)\
   {\
     delete[] (delete_var);\
-    (delete_var) = IRS_NULL;\
+    void** void_ptr = reinterpret_cast<void**>(&(delete_var));\
+    *void_ptr = IRS_NULL;\
   }
 
 #ifdef IRS_LIB_FLASH_ASSERT

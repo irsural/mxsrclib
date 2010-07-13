@@ -1,5 +1,5 @@
 // Утилиты ИРС
-// Дата: 19.05.2010
+// Дата: 07.07.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
@@ -265,7 +265,7 @@ template<class T>
 bool string_to_number(const string& a_str, T* ap_num)
 {
   bool convert_success = true;
-  istrstream istr(a_str.c_str());
+  istrstream istr(const_cast<char *>(a_str.c_str()));
   if ((type_to_index<T>() == char_idx) ||
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
@@ -516,9 +516,8 @@ private:
   enum { num_base = 16 };
 };
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 // В переданном имени файла изменяется расширение
-
-#ifndef __embedded_cplusplus
 template<class T>
 void change_file_ext(
   const basic_string<T>& a_ext,
@@ -574,7 +573,7 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
   }
   return file_dir;
 }
-#endif // !__embedded_cplusplus
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 } //namespace irs
 

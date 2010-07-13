@@ -1,8 +1,13 @@
 // Калибровка приборов
-// Дата: 27.03.2009
+// Дата: 06.07.2010
+// Ранняя дата: 27.03.2009
+
+#include <irsdefs.h>
 
 #include <correct_alg.h>
 #include <irsalg.h>
+
+#include <irsfinal.h>
 
 irs::avr::step_correct_t::step_correct_t(correct_map_t *ap_map):
   m_current_error(error_null),
@@ -179,4 +184,3 @@ void irs::quasi_eeprom_t::tick()
 {
   //
 }
-

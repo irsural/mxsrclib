@@ -1,7 +1,12 @@
+// Устройства
+// Дата: 08.07.2010
+// Ранняя дата: 08.07.2010
+
 #ifndef irsdevH
 #define irsdevH
 
 #include <irsdefs.h>
+
 #include <irsdev.h>
 #include <irscpu.h>
 #include <timer.h>
@@ -14,6 +19,8 @@
     #include <irsarchint.h>
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
+
+#include <irsfinal.h>
 
 namespace irs
 {
@@ -32,6 +39,7 @@ public:
   virtual cpu_traits_t::frequency_type get_max_frequency() = 0;
 };
 
+#ifndef __WATCOMC__
 class three_phase_pwm_gen_t : public pwm_gen_t
 {
 public:
@@ -43,10 +51,11 @@ public:
     PHASE_ALL
   };
   virtual ~three_phase_pwm_gen_t() {}
-  using pwm_gen_t::set_duty;
+  using irs::pwm_gen_t::set_duty;
   virtual void set_duty(irs_uarc a_duty, phase_t a_phase) = 0;
   virtual void set_duty(float a_duty, phase_t a_phase) = 0;
 };
+#endif //__WATCOMC__
 
 #ifdef __ICCARM__
 

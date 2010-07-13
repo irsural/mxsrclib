@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС
-// Дата: 19.05.2010
+// Дата: 12.07.2010
 // Ранняя дата: 25.11.2007
 
 #ifndef irsstdH
@@ -419,7 +419,7 @@ private:
 } //namespace irs
 #endif //__BORLANDC__
 
-#ifdef __WATCOMC__
+#if defined(__WATCOMC__)
 // Преобразование числа double в строку в %g формате
 irs_u8 *irs_gcvt(double value, int ndigits, irs_u8 *buffer);
 
@@ -463,6 +463,19 @@ public:
   irs_win32_console_key_drv_t();
   virtual irskey_t operator()();
 };
+#endif //defined(__WATCOMC__)
+
+#ifdef NOP
+#ifdef __WATCOMC__
+namespace irs {
+
+// Конфигурация консоли для Watcom C++
+namespace arch_conio_cfg {
+  conio_cfg_t& def();
+} //namespace arch_conio_cfg
+
+} //namespace irs
 #endif //__WATCOMC__
+#endif //NOP
 
 #endif //irsstdH

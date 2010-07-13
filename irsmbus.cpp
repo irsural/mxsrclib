@@ -3022,7 +3022,8 @@ void irs::modbus_client_t::tick()
             irsm(" запись полного пакета coils"));
           make_packet(m_start_block,
             static_cast<irs_u16>(m_size_of_data_write_byte*8));
-          coils_packet.byte_count = m_size_of_data_write_byte;
+          coils_packet.byte_count =
+            static_cast<irs_u8>(m_size_of_data_write_byte);
           bit_copy(m_coils_byte_write.data(), 
             reinterpret_cast<irs_u8*>(coils_packet.value), 
             m_start_block, 0, m_size_of_data_write_byte*8);
@@ -3061,7 +3062,7 @@ void irs::modbus_client_t::tick()
             reinterpret_cast<request_multiple_write_regs_t&>(
             *(m_spacket.data() + size_of_MBAP));
           hr_packet.byte_count =
-            static_cast<irs_u16>(m_size_of_data_write_reg*2);
+            static_cast<irs_u8>(m_size_of_data_write_reg*2);
           irs_u8* hold_regs_data =
             reinterpret_cast<irs_u8*>(m_hold_regs_reg_write.data());
           irs_u8* hr_packet_data =

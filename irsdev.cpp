@@ -1,13 +1,23 @@
-#include <irsdev.h>
+// Устройства
+// Дата: 08.07.2010
+// Ранняя дата: 08.07.2010
+
+#include <irsdefs.h>
 
 #ifdef __ICCARM__
-
 #include <armioregs.h>
 #include <irsdsp.h>
+#include <irsdev.h>
+#endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE
 #include <irserror.h>
 #endif  //  PWM_ZERO_PULSE
+
+#include <irsfinal.h>
+
+
+#ifdef __ICCARM__
 
 irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   counter_t a_dead_time):

@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 18.06.2010
+// Дата: 07.07.2010
 // Дата создания: 8.09.2009
 
 #include <irsdefs.h>
@@ -2056,7 +2056,8 @@ void irs::hardflow::simple_udp_flow_t::new_channel(mxip_t a_ip, irs_u16 a_port)
     m_channel++;
     if (m_channel == invalid_channel) {
       m_channel_list.clear();
-      m_channel_list.resize(m_channel_max_count, udp_channel_t());
+      //m_channel_list.resize(m_channel_max_count, udp_channel_t());
+      irs_container_resize(&m_channel_list, m_channel_max_count);
       m_channel++;
       m_channel_list.pop_back();
       m_channel_list.push_front(udp_channel_t(a_ip, a_port));
@@ -2109,7 +2110,10 @@ irs::hardflow::simple_udp_flow_t::size_type
       find_if(m_channel_list.begin(), m_channel_list.end(),
       channel_equal_t(dest_ip_cur, dest_port));
     if (channel_list_cur_it != m_channel_list.end()) {
-      size_type list_index = channel_list_cur_it - m_channel_list.begin();
+      // В deque Watcom нет операции минус на итераторах
+      //size_type list_index = channel_list_cur_it - m_channel_list.begin();
+      size_type list_index = irs_deque_distance(channel_list_cur_it,
+        m_channel_list.begin());
       m_cur_channel = channel_ident_from_index(list_index);
       IRS_LIB_ASSERT(channel_list_index(m_cur_channel) == list_index);
     } else {
@@ -2126,7 +2130,8 @@ irs::hardflow::simple_udp_flow_t::size_type
         }
       } else {
         m_channel_list.clear();
-        m_channel_list.resize(m_channel_max_count, udp_channel_t());
+        //m_channel_list.resize(m_channel_max_count, udp_channel_t());
+        irs_container_resize(&m_channel_list, m_channel_max_count);
         m_channel++;
         m_channel_list.pop_back();
         m_channel_list.push_front(udp_channel_t(dest_ip_cur, dest_port));

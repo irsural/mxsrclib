@@ -12,10 +12,10 @@
 
 #include <mxnetd.h>
 #include <mxnetda.h>
-#include <mxifa.h>
 #include <timer.h>
 #include <irsstd.h>
 #include <mxnetr.h>
+#include <mxifa.h>
 
 #include <irsfinal.h>
 
@@ -65,6 +65,7 @@ typedef enum _mxnc_error_t {
 } mxnc_error_t;
 
 class mx_broadcast_proc_t;
+
 
 // Класс для
 class mxnetc

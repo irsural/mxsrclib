@@ -1,7 +1,12 @@
 // Локализация ИРС
-// Дата: 12.10.2009
+// Дата: 12.06.2010
+// Ранняя дата: 12.04.2010
+
+#include <irsdefs.h>
 
 #include <irslocale.h>
+
+#include <irsfinal.h>
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
