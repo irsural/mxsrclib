@@ -14,7 +14,7 @@
 
 #include <irsfinal.h>
 
-#define IRS_LIB_IRSRTL_DEBUG_TYPE IRS_LIB_DEBUG_BASE
+//#define IRS_LIB_IRSRTL_DEBUG_TYPE IRS_LIB_DEBUG_BASE
 
 #ifdef IRS_LIB_IRSRTL_DEBUG_TYPE
 #if (IRS_LIB_IRSRTL_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
@@ -158,7 +158,7 @@ private:
   raw_data_t<irs_u8> m_recv_buf;
   raw_data_t<irs_u8> m_send_buf;
   mxmac_t m_mac;
-  event_connect_t<this_type> m_rtl_interrupt_event;
+  //event_connect_t<this_type> m_rtl_interrupt_event;
   bool m_recv_buf_locked;
   size_t m_recv_buf_size;
   irs_u8* mp_recv_buf;

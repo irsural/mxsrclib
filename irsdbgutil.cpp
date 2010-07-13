@@ -475,7 +475,7 @@ void irs::avr_memory_checker_t::select_max(ident_type a_ident,
     lock_interrupt_t lock_interrupt;
     IRS_LIB_DBG_RAW_MSG(irsm("\n\n"));
     IRS_LIB_DBG_RAW_MSG(m_ident_name_list[a_ident]);
-    IRS_LIB_DBG_RAW_MSG(irsm(" owerflow!!!") << endl);
+    IRS_LIB_DBG_RAW_MSG(irsm(" overflow!!!") << endl);
     out_param(&mlog(), a_ident);
     bool range_param_is_overflow =
       (param_cur_size < range_param_size(a_ident));

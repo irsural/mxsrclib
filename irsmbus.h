@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 01.06.2010
+// Дата: 13.07.2010
 // Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
@@ -183,7 +183,6 @@ private:
   channel_type                          m_channel;
   hardflow_t*                           mp_hardflow_server;
   hardflow::fixed_flow_t                m_fixed_flow;
-  size_t                                m_num_of_elem;
   status_t                              m_operation_status;
   static char const IRS_CSTR_NONVOLATILE       m_read_header_mode[];
   static char const IRS_CSTR_NONVOLATILE       m_read_request_mode[];
@@ -335,6 +334,8 @@ private:
   irs_u16                               m_read_quantity;
   irs_u8                                m_error_count_max;
   irs_u16                               m_transaction_id;
+  irs_u16                               m_request_quantity_discr_inputs_bit;
+  irs_u16                               m_request_quantity_coils_bit;
   timer_t                               m_send_request_timer;
   static char const IRS_CSTR_NONVOLATILE       m_wait_command_mode[];
   static char const IRS_CSTR_NONVOLATILE       m_search_write_data_mode[];

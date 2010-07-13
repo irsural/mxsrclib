@@ -38,7 +38,7 @@ irs::rtl8019as_t::rtl8019as_t(
   m_recv_buf(m_size_buf),
   m_send_buf((a_buf_num == single_buf) ? 0 : m_size_buf),
   m_mac(a_mac),
-  m_rtl_interrupt_event(this, rtl_interrupt),
+  //m_rtl_interrupt_event(this, rtl_interrupt),
   m_recv_buf_locked(false),
   m_recv_buf_size(0),
   mp_recv_buf(m_recv_buf.data()),
@@ -56,7 +56,7 @@ irs::rtl8019as_t::rtl8019as_t(
   m_rtl_port_str.rtl_address_port_get = avr_port_map[a_address_port].get;
   m_rtl_port_str.rtl_address_port_dir = avr_port_map[a_address_port].dir;
   
-  irs_avr_int4_int.add(&m_rtl_interrupt_event);
+  //irs_avr_int4_int.add(&m_rtl_interrupt_event);
   
   init_rtl();
 }
@@ -144,42 +144,50 @@ void irs::rtl8019as_t::overrun()
 
 void irs::rtl8019as_t::recv_packet() 
 {
-  if (new_rx_packet() && !m_recv_buf_locked) {
-    m_cur_pack_pointer = read_rtl(BNRY);
-    IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_cur_pack_pointer = ") <<
-      int(m_cur_pack_pointer) << endl);
-    write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
-    
-    write_rtl(RSAR0, 0);
-    write_rtl(RSAR1, m_cur_pack_pointer);
-    write_rtl(RBCR0, 0xFF);
-    write_rtl(RBCR1, 0x0F);
-    
-    write_rtl(CR, cr_page0|cr_remote_read|cr_rtl_start);
-    
-    read_rtl(RDMAPORT);
-    m_next_pack_pointer = read_rtl(RDMAPORT);
-    IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_next_pack_pointer = ") <<
-      int(m_next_pack_pointer) << endl);
-    size_t recv_size_cur = 0;
-    IRS_LOBYTE(recv_size_cur) = read_rtl(RDMAPORT);
-    IRS_HIBYTE(recv_size_cur) = read_rtl(RDMAPORT);
-    
-    if (recv_size_cur <= m_size_buf) {
-      m_recv_buf_size = recv_size_cur;
-      IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
-        (m_recv_buf_size <= m_recv_buf.size()));
-      for (irs_size_t i = 0; i < m_recv_buf_size; i++) {
-        mp_recv_buf[i] = read_rtl(RDMAPORT);
+  if (new_rx_packet()) {
+    if (!m_recv_buf_locked) {
+      m_cur_pack_pointer = read_rtl(BNRY);
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_cur_pack_pointer = ") <<
+        int(m_cur_pack_pointer) << endl);
+      write_rtl(CR, cr_page0|cr_dma_abort_complete|cr_rtl_start);
+      
+      write_rtl(RSAR0, 0);
+      write_rtl(RSAR1, m_cur_pack_pointer);
+      write_rtl(RBCR0, 0xFF);
+      write_rtl(RBCR1, 0x0F);
+      
+      write_rtl(CR, cr_page0|cr_remote_read|cr_rtl_start);
+      
+      read_rtl(RDMAPORT);
+      m_next_pack_pointer = read_rtl(RDMAPORT);
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(irsm("m_next_pack_pointer = ") <<
+        int(m_next_pack_pointer) << endl);
+      size_t recv_size_cur = 0;
+      IRS_LOBYTE(recv_size_cur) = read_rtl(RDMAPORT);
+      IRS_HIBYTE(recv_size_cur) = read_rtl(RDMAPORT);
+      
+      if (recv_size_cur <= m_size_buf) {
+        m_recv_buf_size = recv_size_cur;
+        IRS_LIB_ASSERT((m_recv_buf_size < ETHERNET_PACKET_MAX) &&
+          (m_recv_buf_size <= m_recv_buf.size()));
+        for (irs_size_t i = 0; i < m_recv_buf_size; i++) {
+          mp_recv_buf[i] = read_rtl(RDMAPORT);
+        }
+        m_recv_buf_locked = true;
+        IRS_LIB_RTL_DBG_RAW_MSG_BASE(
+          irsm("ethernet принимает пакет и блокирует его на запись") << endl);
+        m_recv_timeout.start();
+      } else {
+        for (irs_size_t i = 0; i < recv_size_cur; i++) {
+          read_rtl(RDMAPORT);
+        }
+        IRS_LIB_RTL_DBG_RAW_MSG_BASE(
+          irsm("принятый пакет размером = ") << recv_size_cur <<
+          irsm(" превышает размер буфера - отбрасываем") << endl);
       }
-      m_recv_buf_locked = true;
-      IRS_LIB_RTL_DBG_RAW_MSG_BASE(
-        irsm("ethernet принимает пакет и блокирует его на запись") << endl);
-      m_recv_timeout.start();
     } else {
-      for (irs_size_t i = 0; i < recv_size_cur; i++) {
-        read_rtl(RDMAPORT);
-      }
+      IRS_LIB_RTL_DBG_RAW_MSG_BASE(
+        irsm("Буфер занят, пакет будет обработан позже") << endl);
     }
   }
 }
@@ -210,7 +218,7 @@ void irs::rtl8019as_t::rtl_interrupt()
   //buffer is not empty, get next packet/
   if (byte != _byte) {
     //mlog() << irsm("buffer is not empty, get next packet") << endl;
-    overrun();//overrun(); //recv_packet();
+    overrun();//overrun();//recv_packet();
   }
 
   write_rtl(ISR, 0xff);

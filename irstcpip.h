@@ -234,12 +234,13 @@ public:
   void tick();
 
 public:  
-  enum mode_t{
+  enum send_mode_t{
     wait_send_command_mode,
     send_SYN,
     send_ACK_SYN,
     send_ACK,
-    send_FIN
+    send_FIN,
+    send_DATA
   };
   enum tcp_state_t {
     CLOSED,
@@ -272,7 +273,7 @@ private:
     
     tcp_socket_t():
       socket(invalid_socket),
-      state(CLOSED),
+      state(LISTEN),
       remote_ip(mxip_t::zero_ip()),
       remote_port(0),
       local_port(0)
@@ -364,7 +365,7 @@ private:
   bool m_send_udp;
   set<irs_u16> m_port_list;
   bool m_new_recv_packet;
-  mode_t m_tcp_send_mode;
+  send_mode_t m_tcp_send_mode;
   bool m_udp_wait_arp;
   bool m_tcp_wait_arp;
   irs_u32 m_seq_num;
@@ -405,6 +406,7 @@ private:
     irs_u16 a_local_port);
   void view_sockets_list();
   void view_tcp_packet(irs_u8* ap_buf);
+  void tcp_send_control(send_mode_t a_send_mode);
 };
 
 } //namespace irs
