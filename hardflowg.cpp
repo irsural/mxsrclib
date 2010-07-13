@@ -2128,8 +2128,8 @@ irs::hardflow::simple_udp_flow_t::size_type
     if (channel_list_cur_it != m_channel_list.end()) {
       // В deque Watcom нет операции минус на итераторах
       //size_type list_index = channel_list_cur_it - m_channel_list.begin();
-      size_type list_index = irs_deque_distance(channel_list_cur_it,
-        m_channel_list.begin());
+      size_type list_index = irs_deque_distance(m_channel_list.begin(),
+        channel_list_cur_it);
       m_cur_channel = channel_ident_from_index(list_index);
       IRS_LIB_ASSERT(channel_list_index(m_cur_channel) == list_index);
     } else {
