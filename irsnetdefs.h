@@ -1,5 +1,5 @@
 // Определение типов mxip_t, mxmac_t и сопутствующих им функций
-// Дата: 07.07.2010
+// Дата: 13.07.2010
 // Дата создания: 01.04.2010
 
 #ifndef IRSNETDEFSH
@@ -284,7 +284,7 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
   }
 }
 
-namespace irs_shift_operator_ip_mac {
+//namespace irs_shift_operator_ip_mac {
 
 inline ostream& operator<<(ostream& a_stream, const mxip_t& a_ip)
 {
@@ -304,9 +304,9 @@ inline ostream& operator<<(ostream& a_stream, const mxmac_t& a_mac)
   return a_stream;
 }
 
-} //namespace irs_shift_operator_ip_mac
+//} //namespace irs_shift_operator_ip_mac
 
-using namespace irs_shift_operator_ip_mac;
+//using namespace irs_shift_operator_ip_mac;
 
 namespace irs {
 

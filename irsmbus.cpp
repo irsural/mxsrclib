@@ -1457,7 +1457,7 @@ void irs::modbus_server_t::tick()
             response_single_write_t &response_write_coil = 
               reinterpret_cast<response_single_write_t&>(*(mp_buf.data() + 
               size_of_MBAP));
-            mlog() << "coil_address = " <<
+            mlog() << " coil_address = " <<
               int(response_write_coil.address) << endl;
             irs_u8 coil_byte = 
               static_cast<irs_u8>(response_write_coil.address/8);
@@ -1478,9 +1478,9 @@ void irs::modbus_server_t::tick()
               request_multiple_write_byte_t &write_multi_coils =
                 reinterpret_cast<request_multiple_write_byte_t&>(
                 *(mp_buf.data() + size_of_MBAP));
-              mlog() << "starting_address = " <<
+              mlog() << " starting_address = " <<
                 int(write_multi_coils.starting_address) << endl;
-              mlog() << "quantity = " <<
+              mlog() << " quantity = " <<
                 int(write_multi_coils.quantity) << endl;
               IRS_LIB_ASSERT(static_cast<size_t>(
                 (write_multi_coils.starting_address +

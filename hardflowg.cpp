@@ -73,7 +73,6 @@ void irs::hardflow::udp_channel_list_t::insert(adress_type a_adress,
   *ap_insert_success = false;
   // »щем, есть ли уже такой адрес в списке
   map_adress_id_type::iterator it_map_addr_id = m_map_adress_id.find(a_adress);
-  adress_type adress = m_map_adress_id.begin()->first;
   if (it_map_addr_id == m_map_adress_id.end()) {
     bool allow_add = false;
     switch (m_mode) {
