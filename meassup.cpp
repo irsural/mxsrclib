@@ -182,7 +182,7 @@ void mx_agilent_6675a_t::tick()
 //---------------------------------------------------------------------------
 
 
-// Класс для работы с источником постоянного тока CS_STAB
+// Класс для работы с источником постоянного тока u309m_current_supply_t
 
 // Конструктор
 u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t* ap_hardflow):
@@ -332,6 +332,5 @@ void u309m_current_supply_t::abort()
 void u309m_current_supply_t::tick()
 {
   m_modbus_client.tick();
-
 }
 
