@@ -39,10 +39,10 @@
 #include <utility>
 #include <vector>
 #include <fstream>
-#ifndef __embedded_cplusplus 
+#ifndef __embedded_cplusplus
 #include <locale>
 #include <limits>
-#endif //__embedded_cplusplus 
+#endif //__embedded_cplusplus
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #include <stdexcept>
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
@@ -223,7 +223,7 @@ typedef streamsize irs_streamsize_t;
 template <class input_type> inline typename iterator_traits<input_type>::
   difference_type irs_deque_distance(input_type a_first, input_type a_last)
 {
-  return ::distance(a_first, a_last);
+  return distance(a_first, a_last);
 }
 template <class container_type>
 inline void irs_container_resize(

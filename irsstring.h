@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 08.07.2010
+// Дата: 13.07.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -133,7 +133,7 @@ inline void irsstr_error_helper(char const IRS_CSTR_NONVOLATILE* ap_message)
   #ifdef __BORLANDC__
   throw Exception(ap_message);
   #else //__BORLANDC__
-  throw exception(ap_message);
+  throw runtime_error(ap_message);
   #endif //__BORLANDC__
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   ap_message = ap_message;
@@ -243,7 +243,7 @@ public:
   void locale_style(irsstrloc_t a_locale_style)
   {
     m_data.locale_style = a_locale_style;
-  } 
+  }
 
   IRS_STRING_TYPE& operator=(const IRS_STRING_BASE& strg)
   {
@@ -835,7 +835,7 @@ inline IRS_STRING_ISTREAM& operator>>(IRS_STRING_ISTREAM& strm,
   irs::IRS_STRING_TYPE_SPEC& strg)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  IRS_STRING_BASE& strg_base = static_cast<IRS_STRING_TYPE_SPEC&>(strg);
+  IRS_STRING_BASE& strg_base = static_cast<IRS_STRING_BASE&>(strg);
   return strm >> strg_base;
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   strg = "";
