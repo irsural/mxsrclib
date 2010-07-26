@@ -231,6 +231,8 @@ void u309m_current_supply_t::on()
   bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5)
        && (1.1 <= m_current) && (m_current < 17);
 
+  m_eth_data.header_data.ground_rele_bit = 0;
+
   if (is_supply_200V) {
     m_supply_number = m_supply_200V;
     m_parameter = m_voltage;
@@ -268,13 +270,13 @@ void u309m_current_supply_t::on()
     } break;
     case m_supply_1A: {
       m_argument = m_parameter;
-      //m_eth_data.supply_1A.sense_regA = m_argument;
-      //m_eth_data.supply_1A.sense_regB = 1;
+      m_eth_data.supply_1A.sense_regA = m_argument;
+      m_eth_data.supply_1A.sense_regB = 65000;
     } break;
     case m_supply_17A: {
       m_argument = m_parameter;
-      //m_eth_data.supply_17A.sense_regA = m_argument;
-      //m_eth_data.supply_17A.sense_regB = 17;
+      m_eth_data.supply_17A.sense_regA = m_argument;
+      m_eth_data.supply_17A.sense_regB = 32000;
     } break;
     default: {
       m_argument = 0;
@@ -291,17 +293,19 @@ void u309m_current_supply_t::off()
   m_eth_data.supply_200V.sense_regA = m_argument;
   m_eth_data.supply_20V.sense_regA = m_argument;
 
- // m_eth_data.supply_1A.sense_regA = m_argument;
- // m_eth_data.supply_1A.sense_regB = m_argument;
+  m_eth_data.supply_1A.sense_regA = m_argument;
+  m_eth_data.supply_1A.sense_regB = m_argument;
 
- // m_eth_data.supply_17A.sense_regA = m_argument;
- // m_eth_data.supply_17A.sense_regB = m_argument;
+  m_eth_data.supply_17A.sense_regA = m_argument;
+  m_eth_data.supply_17A.sense_regB = m_argument;
 
   m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
   m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
 
   m_supply_number = m_supply_null;
   m_eth_data.header_data.supply_number = m_supply_number;
+
+  m_eth_data.header_data.ground_rele_bit = 1;
 }
 // Чтение статуса текущей операции
 meas_status_t u309m_current_supply_t::status()
@@ -316,14 +320,15 @@ void u309m_current_supply_t::abort()
   m_eth_data.supply_200V.sense_regA = m_argument;
   m_eth_data.supply_20V.sense_regA = m_argument;
 
- // m_eth_data.supply_1A.sense_regA = m_argument;
- // m_eth_data.supply_1A.sense_regB = m_argument;
+  m_eth_data.supply_1A.sense_regA = m_argument;
+  m_eth_data.supply_1A.sense_regB = m_argument;
 
- // m_eth_data.supply_17A.sense_regA = m_argument;
- // m_eth_data.supply_17A.sense_regB = m_argument;
+  m_eth_data.supply_17A.sense_regA = m_argument;
+  m_eth_data.supply_17A.sense_regB = m_argument;
 
   m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
   m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
+  //m_eth_data.header_data.ground_rele_bit = 1;
 
   m_supply_number = m_supply_null;
   m_eth_data.header_data.supply_number = m_supply_number;
