@@ -1917,7 +1917,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_coil:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single coil") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -2382,6 +2382,9 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       m_coil_write_bit = 1;
       m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit + 
         a_bit_index;
+      irs_u8 mask = mask_gen(8 - (m_coil_bit_index%8 + 1), 1);
+      m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
+      m_coils_byte_write[m_coil_bit_index/8] |= static_cast<irs_u8>(mask);
       if(m_refresh_mode == mode_refresh_auto) {
         m_need_writes[m_coil_bit_index] = 1;
       }
@@ -2443,6 +2446,8 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
       m_coil_write_bit = 0;
       m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit + 
         a_bit_index;
+      irs_u8 mask = mask_gen(8 - (m_coil_bit_index%8 + 1), 1);
+      m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
       if(m_refresh_mode == mode_refresh_auto) {
         m_need_writes[m_coil_bit_index] = irs_true;
       }
@@ -2955,7 +2960,7 @@ void irs::modbus_client_t::tick()
     break;
     case search_write_data_mode:
     {
-      if (m_coils_size_bit || m_hold_registers_size_reg) { 
+      if (m_coils_size_bit || m_hold_registers_size_reg) {
         m_mode = request_write_data_mode;
         irs_bool catch_block = irs_false;
         m_write_quantity = 0;
@@ -2993,7 +2998,7 @@ void irs::modbus_client_t::tick()
             }
             break;
           }
-          if((!catch_block) && 
+          if((!catch_block) &&
             (m_search_index >= (m_coils_size_bit + m_hold_registers_size_reg)))
           {
             m_search_index = 0;
@@ -3043,7 +3048,7 @@ void irs::modbus_client_t::tick()
         } else {
           IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(
             irsm(" запись не полного пакета coils"));
-          if(m_write_quantity > 1) {
+          if (m_write_quantity > 1) {
             make_packet(m_start_block, m_write_quantity);
             bit_copy(m_coils_byte_write.data(),
               reinterpret_cast<irs_u8*>(coils_packet.value), 
