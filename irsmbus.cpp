@@ -409,10 +409,12 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
               ap_data_in[last_external_byte_index], index_bit, last_mask);
           }
         }
-      } else {     
+      } else {
+        #ifdef NOP
         second_part(ap_data_out[last_internal_byte_index], 
-          ap_data_in[last_external_byte_index - 1 + offset_idx],
+          ap_data_in[last_external_byte_index /*- 1*/ + offset_idx],
           index_bit, middle_mask);
+        #endif // NOP
         if (static_cast<irs_u32>(last_part_size) >
           ((8 - 2*offset)*offset_idx + offset))
         {
@@ -434,7 +436,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
               static_cast<irs_u8>(~mask_int);
             ap_data_out[last_internal_byte_index] |= data_ext;
           }
-        } 
+        }
       }
     }
     for(size_t data_idx = 0; data_idx < data_cnt + offset_index;
