@@ -311,7 +311,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     irs_u8 middle_mask = 0;
     irs_u32 offset = 0;
     IRS_LIB_ASSERT(index_in != index_out);
-    if ((index_out - index_in) > 0) {
+    if (static_cast<int>(index_out - index_in) > 0) {
       offset = a_index_data_out%8 - a_index_data_in%8;
       middle_mask = mask_gen(0, 8 - offset);
       index_bit = offset;
@@ -319,7 +319,14 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       if ((index_out != 0) && (index_in != 0)) {
         first_part_size = 8 - index_in;
       }
-      last_part_size = (a_size_data_bit + offset - first_part_size)%8;
+      size_t rest_size = a_size_data_bit + offset - first_part_size;
+      if (!rest_size) {
+        last_part_size = rest_size;
+      } else if (!(rest_size%8)) {
+        last_part_size = 8;
+      } else {
+        last_part_size = rest_size%8;
+      }
     } else if ((index_in - index_out) > 0) {
       offset = a_index_data_in%8 - a_index_data_out%8;
       middle_mask = mask_gen(0, offset);
@@ -373,14 +380,13 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     if (last_part_size > 0) {
       size_t last_external_byte_index = data_cnt + data_start_in + 
         first_part_idx;
-      size_t last_internal_byte_index = 0;
-      last_internal_byte_index = data_cnt + data_start_out +
+      size_t last_internal_byte_index = data_cnt + data_start_out +
         first_part_idx; 
       irs_u8 last_mask = 0;
       if (static_cast<irs_u32>(last_part_size) <
         ((8 - 2*offset)*offset_idx + offset))
       {
-        if ((index_out - index_in) > 0) {
+        if (static_cast<int>(index_out - index_in) > 0) {
           last_mask = mask_gen(8 - last_part_size, last_part_size);
           irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
           irs_u8 mask_ext = mask_gen(1, last_part_size);
@@ -439,6 +445,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         }
       }
     }
+    // Middle Part
     for(size_t data_idx = 0; data_idx < data_cnt + offset_index;
       data_idx++)
     {
