@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 13.07.2010
+// Дата: 27.07.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -63,6 +63,7 @@ void second_part(irs_u8 &internal_byte, irs_u8 external_byte,
   internal_byte |= external_byte;
 }
 
+#ifdef NOP
 void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
 {
@@ -253,6 +254,208 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   }
 }
 
+#endif // NOP
+
+irs::irs_string_t int_to_str(int a_number, int a_radix, int a_cnt);
+
+void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
+  size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
+{
+  size_t index_in = a_index_data_in%8;
+  size_t index_out = a_index_data_out%8;
+  size_t data_start_in = a_index_data_in/8;
+  size_t data_start_out = a_index_data_out/8;
+  size_t first_part_size = 0;
+  size_t last_part_size = 0;
+  if (index_in == index_out) {
+    if ((index_out != 0) && (index_in != 0)) {
+      if ((a_size_data_bit + index_out) >= 8) {
+        first_part_size = 8 - index_out;
+      } else {
+        first_part_size = a_size_data_bit;
+      }
+    }
+    last_part_size = (a_size_data_bit - first_part_size)%8;
+    size_t middle_part_size_byte = (a_size_data_bit - 
+      (first_part_size + last_part_size))/8;
+    int part_idx = 0;
+    if (first_part_size != 0) {
+      irs_u8 first_mask = 0;
+      if ((a_size_data_bit + index_out) >= 8) {
+        first_mask = mask_gen(0, first_part_size);
+      } else {
+        first_mask = mask_gen(8 - (a_size_data_bit + index_out),
+          first_part_size);
+      }
+      irs_u8 first_data_in = ap_data_in[data_start_in];
+      first_data_in &= first_mask;
+      ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_mask);
+      ap_data_out[data_start_out] |= first_data_in;
+      part_idx = 1;
+    }
+    if (last_part_size != 0) {
+      irs_u8 last_mask = mask_gen(8 - last_part_size, last_part_size);
+      irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size_byte + 
+        first_part_size];
+      last_data_in &= last_mask;
+      ap_data_out[data_start_out + middle_part_size_byte + part_idx] &= 
+        static_cast<irs_u8>(~last_mask);
+      ap_data_out[data_start_out + middle_part_size_byte + part_idx] |=
+        last_data_in;
+    }
+    irs::memcpyex(ap_data_out + data_start_out + part_idx, ap_data_in +
+      data_start_in + part_idx, middle_part_size_byte);
+  } else {
+    int offset_idx = 0;
+    irs_u32 index_bit = 0;
+    irs_u8 middle_mask = 0;
+    irs_u32 offset = 0;
+    IRS_LIB_ASSERT(index_in != index_out);
+    if ((index_out - index_in) > 0) {
+      offset = a_index_data_out%8 - a_index_data_in%8;
+      middle_mask = mask_gen(0, 8 - offset);
+      index_bit = offset;
+      offset_idx = 0;
+      if ((index_out != 0) && (index_in != 0)) {
+        first_part_size = 8 - index_in;
+      }
+      last_part_size = (a_size_data_bit + offset - first_part_size)%8;
+    } else if ((index_in - index_out) > 0) {
+      offset = a_index_data_in%8 - a_index_data_out%8;
+      middle_mask = mask_gen(0, offset);
+      index_bit = 8 - offset;
+      offset_idx = 1;
+      if ((index_out != 0) && (index_in != 0)) {
+        first_part_size = 8 - index_out;
+      }
+      last_part_size = (a_size_data_bit /*+ offset*/ - first_part_size)%8;
+    } 
+    size_t data_cnt = (a_size_data_bit - first_part_size)/8;
+    irs::mlog() << "middle_mask = " << int_to_str(middle_mask, 2, 8) << endl;
+    int first_part_idx = 0;
+    if (first_part_size > 0) {
+      first_part_idx = 1;
+      if (index_out < index_in) {
+        irs_u8 out_mask = mask_gen(8 - offset, offset);
+        irs_u8 first_in_mask = mask_gen(0, 8 - index_in);
+        irs_u8 data_first_in = ap_data_in[data_start_in];
+        irs_u8 data_out = 0;
+        data_first_in &= first_in_mask;
+        data_first_in >>= offset;
+        irs_u8 data_second_in = ap_data_in[data_start_in + 1];
+        irs_u8 second_in_mask = mask_gen(8 - offset, offset);
+        data_second_in &= second_in_mask;
+        data_second_in <<= (8 - offset);
+        data_out |= data_first_in;
+        data_out |= data_second_in;
+        ap_data_out[data_start_out] &= out_mask;
+        ap_data_out[data_start_out] |= data_out;
+      }
+      if (index_out > index_in) {
+        irs_u8 data_first_in = ap_data_in[data_start_in];
+        irs_u8 data_second_in = ap_data_in[data_start_in];
+        irs_u8 first_in_mask = mask_gen(offset, 8 - index_out);
+        data_first_in &= first_in_mask;
+        data_first_in <<= offset;
+        irs_u8 second_in_mask = mask_gen(0, offset);
+        data_second_in &= second_in_mask;
+        data_second_in >>= (8 - offset);
+        irs_u8 first_out_mask = mask_gen(0, 8 - index_out);
+        ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_out_mask);
+        ap_data_out[data_start_out] |= data_first_in;
+        irs_u8 second_out_mask = mask_gen(8 - offset, offset);
+        ap_data_out[data_start_out + 1] &=
+          static_cast<irs_u8>(~second_out_mask);
+        ap_data_out[data_start_out + 1] |= data_second_in;
+      }
+    }
+    int offset_index = 0;
+    if (last_part_size > 0) {
+      size_t last_external_byte_index = data_cnt + data_start_in + 
+        first_part_idx;
+      size_t last_internal_byte_index = 0;
+      last_internal_byte_index = data_cnt + data_start_out +
+        first_part_idx; 
+      irs_u8 last_mask = 0;
+      if (static_cast<irs_u32>(last_part_size) <
+        ((8 - 2*offset)*offset_idx + offset))
+      {
+        if ((index_out - index_in) > 0) {
+          last_mask = mask_gen(8 - last_part_size, last_part_size);
+          irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
+          irs_u8 mask_ext = mask_gen(1, last_part_size);
+          irs::mlog() << "mask_ext = " << int_to_str(mask_ext, 2, 8) << endl;
+          irs_u8 data_ext = ap_data_in[last_external_byte_index];
+          data_ext &= mask_ext;
+          data_ext >>= 8 - (last_part_size + 1);
+          ap_data_out[last_internal_byte_index + 1] &=
+            static_cast<irs_u8>(~last_mask);
+          ap_data_out[last_internal_byte_index + 1] |= data_ext;
+          offset_index = 1;
+        }
+        if (static_cast<int>(index_in - index_out) > 0) {
+          if ((index_in + a_size_data_bit) < 8) {
+            irs_u8 data_in = ap_data_in[last_external_byte_index];
+            irs_u8 mask_ext = mask_gen(8 - (a_size_data_bit%8 + index_in),
+              a_size_data_bit%8);
+            irs_u8 mask_int = mask_gen(0, 8 - a_size_data_bit);
+            data_in &= mask_ext;
+            data_in >>= offset;
+            ap_data_out[last_internal_byte_index] &= mask_int;
+            ap_data_out[last_internal_byte_index] |= data_in;
+          } else {
+            last_mask = mask_gen(8 - offset, offset);
+            first_part(ap_data_out[last_internal_byte_index], 
+              ap_data_in[last_external_byte_index], index_bit, last_mask);
+          }
+        }
+      } else {     
+        second_part(ap_data_out[last_internal_byte_index], 
+          ap_data_in[last_external_byte_index - 1 + offset_idx],
+          index_bit, middle_mask);
+        if (static_cast<irs_u32>(last_part_size) >
+          ((8 - 2*offset)*offset_idx + offset))
+        {
+          if ((index_out - index_in) > 0) {
+            last_mask = mask_gen(8 - last_part_size, 
+              last_part_size - offset);  
+            first_part(ap_data_out[last_internal_byte_index], 
+              ap_data_in[last_external_byte_index], index_bit, last_mask);
+          }
+          if ((index_in - index_out) > 0) {
+            irs_u8 mask_ext = mask_gen(8 - (last_part_size - (8 - offset)),
+              last_part_size - (8 - offset));
+            irs_u8 mask_int = mask_gen(8 - last_part_size,
+              last_part_size - (8 - offset));
+            irs_u8 data_ext = ap_data_in[last_external_byte_index+1];
+            data_ext &= mask_ext;
+            data_ext <<= 8 - offset;
+            ap_data_out[last_internal_byte_index] &=
+              static_cast<irs_u8>(~mask_int);
+            ap_data_out[last_internal_byte_index] |= data_ext;
+          }
+        } 
+      }
+    }
+    for(size_t data_idx = 0; data_idx < data_cnt + offset_index;
+      data_idx++)
+    {
+      size_t external_idx = data_idx + data_start_in + first_part_idx;
+      size_t internal_idx = data_idx + data_start_out + first_part_idx;
+      first_part(ap_data_out[internal_idx], 
+        ap_data_in[external_idx + offset_idx], index_bit, middle_mask);
+    }
+    for(size_t data_idx = 0; data_idx < data_cnt; data_idx++) {
+      size_t external_idx = data_idx + data_start_in + 
+        first_part_idx*offset_idx;
+      size_t internal_idx = data_idx + data_start_out + 
+        first_part_idx*offset_idx;
+      second_part(ap_data_out[internal_idx + 1 - offset_idx],
+        ap_data_in[external_idx], index_bit, middle_mask);
+    }
+  }
+}
+
 char digit_to_char(int a_digit)
 {
   if (a_digit <= 9) {
@@ -284,14 +487,14 @@ void irs::test_bit_copy(ostream& a_strm, size_t a_size_data_in,
   rand();
   for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
   {
-    irs_i64 rand_val = rand();
-    ap_data_in[idx_in] = static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
+    //irs_i64 rand_val = rand();
+    ap_data_in[idx_in] = 0;//static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
   }
   for(int idx_out = 0; idx_out < static_cast<int>(ap_data_out.size());
     idx_out ++)
   {
-    int rand_val = rand();
-    ap_data_out[idx_out] = static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
+    //int rand_val = rand();
+    ap_data_out[idx_out] = IRS_U8_MAX;//static_cast<irs_u8>(rand_val*IRS_U8_MAX/RAND_MAX);
   }
   a_strm << irsm("IN before operation") << endl;
   for(int idx_in = 0; idx_in < static_cast<int>(ap_data_in.size()); idx_in ++)
@@ -443,13 +646,13 @@ irs_bool irs::modbus_server_t::connected()
 
 void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
-  mlog() << irsm("\n recieved packet") << endl;
+  //mlog() << irsm("\n recieved packet") << endl;
   MBAP_header_t &header = 
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
   request_exception_t &req_header = 
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
     
-  mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
+  /*mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
   mlog() << irsm(" transaction_id_hi .... ") <<
@@ -466,12 +669,12 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     int(header.unit_identifier) << endl;
     
   mlog() << irsm(" function_code ........ ") <<
-    int(req_header.function_code);
+    int(req_header.function_code);*/
   switch(req_header.function_code)
   {
     case read_discrete_inputs:
     {
-      request_t &req_header_inner = 
+      /*request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -481,11 +684,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
     } break;
     case read_coils:
     {
-      request_t &req_header_inner = 
+      /*request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -495,11 +698,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
     } break;
     case read_hold_registers:
     {
-      request_t &req_header_inner = 
+      /*request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -509,11 +712,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
     } break;
     case read_input_registers:
     {
-      request_t &req_header_inner = 
+      /*request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -523,7 +726,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
     } break;
     case write_single_coil:
     {
@@ -1311,6 +1514,7 @@ void irs::modbus_server_t::tick()
         }
         IRS_LIB_IRSMBUS_DBG_MONITOR(
           modbus_pack_request_monitor(mp_buf.data()););
+        modbus_pack_request_monitor(mp_buf.data());
         MBAP_header_t &header = 
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
         request_t &req_header = 
@@ -1485,9 +1689,13 @@ void irs::modbus_server_t::tick()
               IRS_LIB_ASSERT(static_cast<size_t>(
                 (write_multi_coils.starting_address +
                 write_multi_coils.quantity)) <= m_coils_byte.size()*8);
+              mlog() << "m_coils_byte[1] = " << int(m_coils_byte[1]) << endl;
+              mlog() << "write_multi_coils.value = " <<
+                int(write_multi_coils.value[0]) << endl;
               bit_copy(write_multi_coils.value, m_coils_byte.data(), 0,
                 size_t(write_multi_coils.starting_address), 
                 size_t(write_multi_coils.quantity));
+              mlog() << "m_coils_byte[1] = " << int(m_coils_byte[1]) << endl;
               header.length = irs_u16(1 + 1 + size_of_read_header);
             } else {
               error_response(ILLEGAL_DATA_ADDRESS);
