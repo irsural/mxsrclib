@@ -336,6 +336,7 @@ private:
   irs_u16                               m_transaction_id;
   irs_u16                               m_request_quantity_discr_inputs_bit;
   irs_u16                               m_request_quantity_coils_bit;
+  irs_u8                                m_error_count;
   timer_t                               m_send_request_timer;
   static char const IRS_CSTR_NONVOLATILE       m_wait_command_mode[];
   static char const IRS_CSTR_NONVOLATILE       m_search_write_data_mode[];
