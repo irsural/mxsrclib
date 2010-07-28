@@ -38,6 +38,8 @@ irs_bool to_irs_bool(T a_value)
   }
 }
 
+irs::irs_string_t int_to_str(int a_number, int a_radix, int a_cnt);
+
 inline irs_u8 mask_gen(int a_start, int a_size)
 {
   int left_shift = 8 - a_size;
@@ -256,8 +258,6 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
 
 #endif // NOP
 
-irs::irs_string_t int_to_str(int a_number, int a_radix, int a_cnt);
-
 void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
 {
@@ -268,7 +268,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   size_t first_part_size = 0;
   size_t last_part_size = 0;
   if (index_in == index_out) {
-    if ((index_out != 0) && (index_in != 0)) {
+    if (index_out && index_in) {
       if ((a_size_data_bit + index_out) >= 8) {
         first_part_size = 8 - index_out;
       } else {
@@ -279,7 +279,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     size_t middle_part_size_byte = (a_size_data_bit - 
       (first_part_size + last_part_size))/8;
     int part_idx = 0;
-    if (first_part_size != 0) {
+    if (first_part_size) {
       irs_u8 first_mask = 0;
       if ((a_size_data_bit + index_out) >= 8) {
         first_mask = mask_gen(0, first_part_size);
@@ -293,7 +293,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       ap_data_out[data_start_out] |= first_data_in;
       part_idx = 1;
     }
-    if (last_part_size != 0) {
+    if (last_part_size) {
       irs_u8 last_mask = mask_gen(8 - last_part_size, last_part_size);
       irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size_byte + 
         first_part_size];
@@ -310,14 +310,15 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     irs_u32 index_bit = 0;
     irs_u8 middle_mask = 0;
     irs_u32 offset = 0;
-    IRS_LIB_ASSERT(index_in != index_out);
-    if (static_cast<int>(index_out - index_in) > 0) {
+    if (static_cast<int>(index_out - index_in)) {
       offset = a_index_data_out%8 - a_index_data_in%8;
       middle_mask = mask_gen(0, 8 - offset);
       index_bit = offset;
       offset_idx = 0;
-      if ((index_out != 0) && (index_in != 0)) {
-        first_part_size = 8 - index_in;
+      if (index_out && index_in) {
+        if ((index_in + a_size_data_bit) > 8) {
+          first_part_size = 8 - index_in;
+        }
       }
       size_t rest_size = a_size_data_bit + offset - first_part_size;
       if (!rest_size) {
@@ -327,20 +328,23 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       } else {
         last_part_size = rest_size%8;
       }
-    } else if ((index_in - index_out) > 0) {
+    } else if (static_cast<int>(index_in - index_out)) {
       offset = a_index_data_in%8 - a_index_data_out%8;
       middle_mask = mask_gen(0, offset);
       index_bit = 8 - offset;
       offset_idx = 1;
-      if ((index_out != 0) && (index_in != 0)) {
+      if (index_out && index_in) {
         first_part_size = 8 - index_out;
       }
       last_part_size = (a_size_data_bit /*+ offset*/ - first_part_size)%8;
-    } 
-    size_t data_cnt = (a_size_data_bit - first_part_size)/8;
+    }
+    size_t data_cnt = 0;
+    if (a_size_data_bit >= 8) {
+      data_cnt = (a_size_data_bit - first_part_size)/8;
+    }
     irs::mlog() << "middle_mask = " << int_to_str(middle_mask, 2, 8) << endl;
     int first_part_idx = 0;
-    if (first_part_size > 0) {
+    if (first_part_size) {
       first_part_idx = 1;
       if (index_out < index_in) {
         irs_u8 out_mask = mask_gen(8 - offset, offset);
@@ -357,8 +361,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         data_out |= data_second_in;
         ap_data_out[data_start_out] &= out_mask;
         ap_data_out[data_start_out] |= data_out;
-      }
-      if (index_out > index_in) {
+      } else if (index_out > index_in) {
         irs_u8 data_first_in = ap_data_in[data_start_in];
         irs_u8 data_second_in = ap_data_in[data_start_in];
         irs_u8 first_in_mask = mask_gen(offset, 8 - index_out);
@@ -377,7 +380,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       }
     }
     int offset_index = 0;
-    if (last_part_size > 0) {
+    if (last_part_size) {
       size_t last_external_byte_index = data_cnt + data_start_in + 
         first_part_idx;
       size_t last_internal_byte_index = data_cnt + data_start_out +
@@ -386,11 +389,11 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       if (static_cast<irs_u32>(last_part_size) <
         ((8 - 2*offset)*offset_idx + offset))
       {
-        if (static_cast<int>(index_out - index_in) > 0) {
+        if (static_cast<int>(index_out - index_in)) {
           last_mask = mask_gen(8 - last_part_size, last_part_size);
-          irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
+          //irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
           irs_u8 mask_ext = mask_gen(1, last_part_size);
-          irs::mlog() << "mask_ext = " << int_to_str(mask_ext, 2, 8) << endl;
+          //irs::mlog() << "mask_ext = " << int_to_str(mask_ext, 2, 8) << endl;
           irs_u8 data_ext = ap_data_in[last_external_byte_index];
           data_ext &= mask_ext;
           data_ext >>= 8 - (last_part_size + 1);
@@ -399,7 +402,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
           ap_data_out[last_internal_byte_index + 1] |= data_ext;
           offset_index = 1;
         }
-        if (static_cast<int>(index_in - index_out) > 0) {
+        if (static_cast<int>(index_in - index_out)) {
           if ((index_in + a_size_data_bit) < 8) {
             irs_u8 data_in = ap_data_in[last_external_byte_index];
             irs_u8 mask_ext = mask_gen(8 - (a_size_data_bit%8 + index_in),
@@ -416,21 +419,26 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
           }
         }
       } else {
-        #ifdef NOP
-        second_part(ap_data_out[last_internal_byte_index], 
-          ap_data_in[last_external_byte_index /*- 1*/ + offset_idx],
-          index_bit, middle_mask);
-        #endif // NOP
+        /*if (index_in > index_out) {
+          second_part(ap_data_out[last_internal_byte_index], 
+            ap_data_in[last_external_byte_index - 1 + offset_idx],
+            index_bit, middle_mask);
+        }*/
         if (static_cast<irs_u32>(last_part_size) >
           ((8 - 2*offset)*offset_idx + offset))
         {
-          if ((index_out - index_in) > 0) {
-            last_mask = mask_gen(8 - last_part_size, 
-              last_part_size - offset);  
-            first_part(ap_data_out[last_internal_byte_index], 
+          if (static_cast<int>(index_out - index_in)) {
+            last_mask = mask_gen(8 - last_part_size,
+              last_part_size - offset);
+            /*last_mask = mask_gen(8 - last_part_size - index_in,
+              last_part_size - offset);*/
+            irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
+            first_part(ap_data_out[last_internal_byte_index],
               ap_data_in[last_external_byte_index], index_bit, last_mask);
+            /*first_part(ap_data_out[last_internal_byte_index],
+              ap_data_in[last_external_byte_index], index_bit + index_in, last_mask);*/
           }
-          if ((index_in - index_out) > 0) {
+          if (static_cast<int>(index_in - index_out)) {
             irs_u8 mask_ext = mask_gen(8 - (last_part_size - (8 - offset)),
               last_part_size - (8 - offset));
             irs_u8 mask_int = mask_gen(8 - last_part_size,
@@ -1924,7 +1932,8 @@ irs::modbus_client_t::modbus_client_t(
   m_error_count_max(a_error_count_max),
   m_transaction_id(0),
   m_request_quantity_discr_inputs_bit(0),
-  m_request_quantity_coils_bit(0)
+  m_request_quantity_coils_bit(0),
+  m_error_count(0)
 {  
   //m_send_request_timer.set(a_update_time/get_packet_number());
   m_send_request_timer.set(0);
@@ -3136,30 +3145,7 @@ void irs::modbus_client_t::tick()
 { 
   mp_hardflow_client->tick();
   m_fixed_flow.tick();
-  if((m_fixed_flow.write_status() == 
-    irs::hardflow::fixed_flow_t::status_error) ||
-    (m_fixed_flow.read_status() == 
-    irs::hardflow::fixed_flow_t::status_error))
-  {
-    m_mode = wait_command_mode;
-    m_request_type = request_start;
-    m_start = irs_true;
-    m_fixed_flow.read_abort();
-    m_fixed_flow.write_abort();
-    IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
-    static irs_u8 error_count = 0;
-    error_count++;
-    if(error_count >= m_error_count_max) {
-      IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
-      error_count = 0;
-      m_operation_status = status_error;
-      m_read_table = false;
-      m_write_table = false;
-      m_start = irs_false;
-    }
-    view_mode();
-  }
-    
+  
   switch(m_mode)
   {
     case wait_command_mode:
@@ -3445,6 +3431,25 @@ void irs::modbus_client_t::tick()
         m_fixed_flow.read(m_channel, m_rpacket.data(), size_of_MBAP);
         m_mode = read_response_mode;
         view_mode();
+      } else if (m_fixed_flow.write_status() == 
+        irs::hardflow::fixed_flow_t::status_error)
+      {
+        m_mode = wait_command_mode;
+        m_request_type = request_start;
+        m_start = irs_true;
+        m_fixed_flow.read_abort();
+        m_fixed_flow.write_abort();
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
+        m_error_count++;
+        if(m_error_count >= m_error_count_max) {
+          IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
+          m_error_count = 0;
+          m_operation_status = status_error;
+          m_read_table = false;
+          m_write_table = false;
+          m_start = irs_false;
+        }
+        view_mode();
       }
     }
     break;
@@ -3473,6 +3478,25 @@ void irs::modbus_client_t::tick()
             recv_pack_response.function_code);*/
         } else {
           m_mode = read_header_mode;
+        }
+        view_mode();
+      } else if (m_fixed_flow.read_status() == 
+        irs::hardflow::fixed_flow_t::status_error)
+      {  
+        m_mode = wait_command_mode;
+        m_request_type = request_start;
+        m_start = irs_true;
+        m_fixed_flow.read_abort();
+        m_fixed_flow.write_abort();
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
+        m_error_count++;
+        if(m_error_count >= m_error_count_max) {
+          IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
+          m_error_count = 0;
+          m_operation_status = status_error;
+          m_read_table = false;
+          m_write_table = false;
+          m_start = irs_false;
         }
         view_mode();
       }
@@ -3806,6 +3830,25 @@ void irs::modbus_client_t::tick()
           }
         } else {
           m_mode = search_write_data_mode;
+        }
+        view_mode();
+      } else if (m_fixed_flow.read_status() == 
+        irs::hardflow::fixed_flow_t::status_error)
+      {  
+        m_mode = wait_command_mode;
+        m_request_type = request_start;
+        m_start = irs_true;
+        m_fixed_flow.read_abort();
+        m_fixed_flow.write_abort();
+        IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
+        m_error_count++;
+        if(m_error_count >= m_error_count_max) {
+          IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
+          m_error_count = 0;
+          m_operation_status = status_error;
+          m_read_table = false;
+          m_write_table = false;
+          m_start = irs_false;
         }
         view_mode();
       }
