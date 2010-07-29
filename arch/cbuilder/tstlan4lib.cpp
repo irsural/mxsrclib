@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 14.04.2010
+// Дата: 29.07.2010
 // Дата создания: 17.09.2009
 
 #include <irsdefs.h>
@@ -254,6 +254,7 @@ __fastcall irs::tstlan4_t::controls_t::~controls_t()
 void irs::tstlan4_t::controls_t::connect(mxdata_t *ap_data)
 {
   mp_data = ap_data;
+  m_refresh_grid = true;
 }
 void irs::tstlan4_t::controls_t::save_conf()
 {
