@@ -1,5 +1,5 @@
 // Классы для работы с источниками тока
-// Дата: 1.12.2008
+// Дата: 29.07.2010
 
 //#include <vcl.h>
 //#pragma hdrstop
@@ -126,6 +126,13 @@ void mx_agilent_6675a_t::on()
   f_status = meas_status_busy;
 }
 // Выключение источника
+void mx_agilent_6675a_t::supply_off()
+{
+  if (f_create_error) return;
+  //f_command = com_output_off;
+  ::strcpy((char *)f_gpib_command, "OUTPUT OFF");
+  f_status = meas_status_busy;
+}
 void mx_agilent_6675a_t::off()
 {
   if (f_create_error) return;
@@ -144,6 +151,10 @@ void mx_agilent_6675a_t::abort()
 {
   if (f_create_error) return;
   f_abort_request = irs_true;
+}
+
+void mx_agilent_6675a_t::ground_rele()
+{
 }
 // Элементарное действие
 void mx_agilent_6675a_t::tick()
@@ -192,17 +203,37 @@ u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t* ap_hardflow):
   m_modbus_client(ap_hardflow,
     irs::mxdata_ext_t::mode_refresh_auto, discr_inputs_size_byte,
     coils_size_byte, hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
-    3, 2, 50),
+    3, irs::make_cnt_s(2), 240),
   m_voltage(0),
   m_current(0),
   m_parameter(0),
-  m_argument(0)
+  m_argument(0),
+  m_mode(mode_free)
 {
   m_eth_data.connect(&m_modbus_client, 0);
+
+  m_argument = 0;
+
+  m_eth_data.supply_200V.sense_regA = m_argument;
+  m_eth_data.supply_20V.sense_regA = m_argument;
+
+  m_eth_data.supply_1A.sense_regA = m_argument;
+  m_eth_data.supply_1A.sense_regB = m_argument;
+
+  m_eth_data.supply_17A.sense_regA = m_argument;
+  m_eth_data.supply_17A.sense_regB = m_argument;
+  
+  m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
+  m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
+
+  m_supply_number = m_supply_null;
+  m_eth_data.header_data.supply_number = m_supply_number;
+
 }
 // Деструктор
 u309m_current_supply_t::~u309m_current_supply_t()
 {
+
 }
 // Постоянный ток поддерживается прибором или нет
 irs_bool u309m_current_supply_t::dc_supported()
@@ -222,70 +253,76 @@ void u309m_current_supply_t::set_voltage(double a_voltage)
 // Включение источника
 void u309m_current_supply_t::on()
 {
-  bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210)
-       && (m_current < 0.01);
-  bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21)
-       && (0.01 <= m_current) && (m_current < 0.25);
-  bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5)
-       && (0.25 <= m_current) && (m_current < 1.1);
-  bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5)
-       && (1.1 <= m_current) && (m_current < 17);
+   bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210)
+         && (m_current < 0.01);
+    bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21)
+         && (0.01 <= m_current) && (m_current < 0.25);
+    bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5)
+         && (0.25 <= m_current) && (m_current < 1.1);
+    bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5)
+         && (1.1 <= m_current) && (m_current < 17);
 
-  m_eth_data.header_data.ground_rele_bit = 0;
+    m_eth_data.header_data.ground_rele_bit = 0;
 
-  if (is_supply_200V) {
-    m_supply_number = m_supply_200V;
-    m_parameter = m_voltage;
-    m_eth_data.header_data.SR_supply_200V_rele_bit = 1;
-  } else {
-    if (is_supply_20V) {
-      m_supply_number = m_supply_20V;
+    if (is_supply_200V) {
+      m_supply_number = m_supply_200V;
       m_parameter = m_voltage;
-      m_eth_data.header_data.SR_supply_20V_rele_bit = 1;
+      //m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
     } else {
-      if (is_supply_1A) {
-        m_supply_number = m_supply_1A;
-        m_parameter = m_current;
+      if (is_supply_20V) {
+        m_supply_number = m_supply_20V;
+        m_parameter = m_voltage;
+        //m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
       } else {
-        if (is_supply_17A) {
-          m_supply_number = m_supply_17A;
+        if (is_supply_1A) {
+          m_supply_number = m_supply_1A;
           m_parameter = m_current;
         } else {
-          m_supply_number = m_supply_null;
+          if (is_supply_17A) {
+            m_supply_number = m_supply_17A;
+            m_parameter = m_current;
+          } else {
+            m_supply_number = m_supply_null;
+          }
         }
       }
     }
-  }
 
-  m_eth_data.header_data.supply_number = m_supply_number;
+    m_eth_data.header_data.supply_number = m_supply_number;
 
-  switch (m_supply_number) {
-    case m_supply_200V: {
-      m_argument = m_parameter;
-      m_eth_data.supply_200V.sense_regA = m_argument;
-    } break;
-    case m_supply_20V: {
-      m_argument = m_parameter;
-      m_eth_data.supply_20V.sense_regA = m_argument;
-    } break;
-    case m_supply_1A: {
-      m_argument = m_parameter;
-      m_eth_data.supply_1A.sense_regA = m_argument;
-      m_eth_data.supply_1A.sense_regB = 65000;
-    } break;
-    case m_supply_17A: {
-      m_argument = m_parameter;
-      m_eth_data.supply_17A.sense_regA = m_argument;
-      m_eth_data.supply_17A.sense_regB = 32000;
-    } break;
-    default: {
-      m_argument = 0;
-    } break;
-  }
-
-
+    switch (m_supply_number) {
+      case m_supply_200V: {
+        m_argument = m_parameter;
+        m_eth_data.supply_200V.sense_regA = m_argument;
+      } break;
+      case m_supply_20V: {
+        m_argument = m_parameter;
+        m_eth_data.supply_20V.sense_regA = m_argument;
+      } break;
+      case m_supply_1A: {
+        m_argument = m_parameter;
+        m_eth_data.supply_1A.sense_regA = m_argument;
+        m_eth_data.supply_1A.sense_regB = 65000;
+      } break;
+      case m_supply_17A: {
+        m_argument = m_parameter;
+        m_eth_data.supply_17A.sense_regA = m_argument;
+        m_eth_data.supply_17A.sense_regB = 32000;
+      } break;
+      default: {
+        m_argument = 0;
+      } break;
+    }
+  //m_mode = mode_supply_on;
 }
 // Выключение источника
+void u309m_current_supply_t::supply_off()
+{
+  m_supply_number = m_supply_null;
+  m_eth_data.header_data.supply_number = m_supply_number;
+  //m_mode = mode_supply_output_off;
+}
+
 void u309m_current_supply_t::off()
 {
   m_argument = 0;
@@ -299,43 +336,205 @@ void u309m_current_supply_t::off()
   m_eth_data.supply_17A.sense_regA = m_argument;
   m_eth_data.supply_17A.sense_regB = m_argument;
 
-  m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
-  m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
-
   m_supply_number = m_supply_null;
   m_eth_data.header_data.supply_number = m_supply_number;
 
   m_eth_data.header_data.ground_rele_bit = 1;
+  //m_mode = mode_off;
 }
 // Чтение статуса текущей операции
 meas_status_t u309m_current_supply_t::status()
 {
+  if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
+    m_status = meas_status_success;
+  } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
+  {
+    m_status = meas_status_error;
+  } else if(m_modbus_client.status() == irs::mxdata_ext_t::status_wait)
+  {
+    m_status = meas_status_busy;
+  }
   return m_status;
 }
+
 // Прерывание текущей операции
 void u309m_current_supply_t::abort()
 {
-  m_argument = 0;
-
-  m_eth_data.supply_200V.sense_regA = m_argument;
-  m_eth_data.supply_20V.sense_regA = m_argument;
-
-  m_eth_data.supply_1A.sense_regA = m_argument;
-  m_eth_data.supply_1A.sense_regB = m_argument;
-
-  m_eth_data.supply_17A.sense_regA = m_argument;
-  m_eth_data.supply_17A.sense_regB = m_argument;
-
-  m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
-  m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
-  //m_eth_data.header_data.ground_rele_bit = 1;
-
   m_supply_number = m_supply_null;
   m_eth_data.header_data.supply_number = m_supply_number;
+  //m_mode = mode_supply_output_off;
 }
+
+void u309m_current_supply_t::ground_rele()
+{
+  m_eth_data.header_data.ground_rele_bit = 1;
+}
+
 // Элементарное действие
 void u309m_current_supply_t::tick()
 {
   m_modbus_client.tick();
+  /*switch (m_mode) {
+
+     case mode_free: {
+
+    } break;
+
+    case mode_supply_on: {
+        bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210)
+             && (m_current < 0.01);
+        bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21)
+             && (0.01 <= m_current) && (m_current < 0.25);
+        bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5)
+             && (0.25 <= m_current) && (m_current < 1.1);
+        bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5)
+             && (1.1 <= m_current) && (m_current < 17);
+
+        m_eth_data.header_data.ground_rele_bit = 0;
+
+        if (is_supply_200V) {
+          m_supply_number = m_supply_200V;
+          m_parameter = m_voltage;
+          m_eth_data.header_data.SR_supply_200V_rele_bit = 0;
+        } else {
+          if (is_supply_20V) {
+            m_supply_number = m_supply_20V;
+            m_parameter = m_voltage;
+            //m_eth_data.header_data.SR_supply_20V_rele_bit = 0;
+          } else {
+            if (is_supply_1A) {
+              m_supply_number = m_supply_1A;
+              m_parameter = m_current;
+            } else {
+              if (is_supply_17A) {
+                m_supply_number = m_supply_17A;
+                m_parameter = m_current;
+              } else {
+                m_supply_number = m_supply_null;
+              }
+            }
+          }
+        }
+
+        m_eth_data.header_data.supply_number = m_supply_number;
+
+        switch (m_supply_number) {
+          case m_supply_200V: {
+            m_argument = m_parameter;
+            m_eth_data.supply_200V.sense_regA = m_argument;
+          } break;
+          case m_supply_20V: {
+            m_argument = m_parameter;
+            m_eth_data.supply_20V.sense_regA = m_argument;
+          } break;
+          case m_supply_1A: {
+            m_argument = m_parameter;
+            m_eth_data.supply_1A.sense_regA = m_argument;
+            m_eth_data.supply_1A.sense_regB = 65000;
+          } break;
+          case m_supply_17A: {
+            m_argument = m_parameter;
+            m_eth_data.supply_17A.sense_regA = m_argument;
+            m_eth_data.supply_17A.sense_regB = 32000;
+          } break;
+          default: {
+            m_argument = 0;
+          } break;
+        }
+      m_mode = mode_supply_on_wait;
+      m_status =  meas_status_busy;
+    } break;
+
+    case mode_supply_on_wait: {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
+        m_mode = mode_free;
+        m_status = meas_status_success;
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
+      {
+        m_mode = mode_supply_output_off;
+        m_status = meas_status_error;
+      } else if(m_modbus_client.status() == irs::mxdata_ext_t::status_wait)
+      {
+        m_status = meas_status_busy;
+      }
+    } break;
+
+    case mode_supply_output_off: {
+      m_supply_number = m_supply_null;
+      m_eth_data.header_data.supply_number = m_supply_number;
+      m_mode = mode_supply_output_off_wait;
+      m_status =  meas_status_busy;
+    } break;
+
+    case mode_supply_output_off_wait: {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
+        m_mode = mode_ground_rele;
+        m_status = meas_status_success;
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
+      {
+        m_mode = mode_ground_rele;
+        m_status = meas_status_error;
+      }
+    } break;
+
+    case mode_ground_rele: {
+        m_eth_data.header_data.ground_rele_bit = 1;
+        m_mode = mode_ground_rele_wait;
+        m_status =  meas_status_busy;
+    } break;
+
+    case mode_ground_rele_wait: {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed)
+      {
+        m_mode = mode_free;
+        m_status = meas_status_success;
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
+      {
+        m_mode = mode_ground_rele;
+        m_status = meas_status_error;
+      }
+    } break;
+
+    case mode_off: {
+        m_argument = 0;
+
+        m_eth_data.supply_200V.sense_regA = m_argument;
+        m_eth_data.supply_20V.sense_regA = m_argument;
+
+        m_eth_data.supply_1A.sense_regA = m_argument;
+        m_eth_data.supply_1A.sense_regB = m_argument;
+
+        m_eth_data.supply_17A.sense_regA = m_argument;
+        m_eth_data.supply_17A.sense_regB = m_argument;
+
+        m_supply_number = m_supply_null;
+        m_eth_data.header_data.supply_number = m_supply_number;
+
+        m_eth_data.header_data.ground_rele_bit = 1;
+
+        m_mode = mode_off_wait;
+        m_status = meas_status_busy;
+    } break;
+
+
+    case mode_off_wait: {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed)
+      {
+        m_mode = mode_free;
+        m_status = meas_status_success;
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
+      {
+        m_mode = mode_ground_rele;
+        m_status = meas_status_error;
+      }
+    } break;
+
+
+
+
+  } */
+
 }
+
+
 

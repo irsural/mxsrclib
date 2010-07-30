@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 24.05.2010
+// Дата: 30.07.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -244,6 +244,7 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   // Компенсация наведенного напряжения смещения (Время счета * 2
   // для сопротивления)
   m_init_commands.push_back("OCOMP ON");
+  //m_init_commands.push_back("RANGE 1000");
   //m_init_commands.push_back("RES 1E-6");
   // Входное сопротивление фиксируется на 10 МОм для всех пределов
   //m_init_commands.push_back("FIXEDZ ON");
@@ -340,14 +341,16 @@ void mx_agilent_3458a_t::set_ac()
 }
 // Установить положителный фронт запуска
 void mx_agilent_3458a_t::set_positive()
-{}
+{
+}
 // Установить отрицательный фронт канала
 void mx_agilent_3458a_t::set_negative()
-{}
+{
+}
 // Чтение значения при текущем типа измерения
 void mx_agilent_3458a_t::get_value(double *ap_value)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   measure_create_commands(meas_value);
   m_voltage = ap_value;
   m_command = mac_get_param;
@@ -356,7 +359,7 @@ void mx_agilent_3458a_t::get_value(double *ap_value)
 // Чтение напряжения
 void mx_agilent_3458a_t::get_voltage(double *voltage)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   measure_create_commands(meas_voltage);
   m_voltage = voltage;
   m_command = mac_get_param;
@@ -382,7 +385,7 @@ void mx_agilent_3458a_t::get_time_interval_average(
 // Чтения силы тока
 void mx_agilent_3458a_t::get_current(double *current)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   measure_create_commands(meas_current);
   m_voltage = current;
   m_command = mac_get_param;
@@ -391,7 +394,7 @@ void mx_agilent_3458a_t::get_current(double *current)
 // Чтение сопротивления
 void mx_agilent_3458a_t::get_resistance2x(double *resistance)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_2x;
   m_resistance = resistance;
   m_command = mac_get_resistance;
@@ -400,7 +403,7 @@ void mx_agilent_3458a_t::get_resistance2x(double *resistance)
 // Чтение сопротивления
 void mx_agilent_3458a_t::get_resistance4x(double *resistance)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_4x;
   m_resistance = resistance;
   m_command = mac_get_resistance;
@@ -413,20 +416,20 @@ void mx_agilent_3458a_t::get_frequency(double* /*frequency*/)
 // Запуск автокалибровки (команда ACAL) мультиметра
 void mx_agilent_3458a_t::auto_calibration()
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   m_command = mac_auto_calibration;
   m_status = meas_status_busy;
 }
 // Чтение статуса текущей операции
 meas_status_t mx_agilent_3458a_t::status()
 {
-  if (m_create_error) return meas_status_busy;
+  //if (m_create_error) return meas_status_busy;
   return m_status;
 }
 // Прерывание текущей операции
 void mx_agilent_3458a_t::abort()
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   m_abort_request = true;
 }
 // Отправка команд инициализации в мультиметр
@@ -679,7 +682,7 @@ void mx_agilent_3458a_t::set_start_level(double /*level*/)
 void mx_agilent_3458a_t::set_range(
   type_meas_t a_type_meas, double a_range)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   irs::string range_str = a_range;
   switch(a_type_meas) {
     case tm_volt_dc: {

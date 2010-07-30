@@ -16,6 +16,7 @@
 #include <irsfinal.h>
 #include <mxdatastd.h>
 #include <irsmbus.h>
+#include <mxdata.h>
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30
@@ -26,6 +27,7 @@
 class mxsupply_t
 {
 public:
+  virtual ~mxsupply_t(){}
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported() = 0;
   // Установка тока
@@ -42,6 +44,11 @@ public:
   virtual void abort() = 0;
   // Элементарное действие
   virtual void tick() = 0;
+  // Замыкание выхода на землю
+  virtual void ground_rele() = 0;
+
+  virtual void supply_off() = 0;
+
 };
 
 class mx_agilent_6675a_t: public mxsupply_t
@@ -75,6 +82,7 @@ class mx_agilent_6675a_t: public mxsupply_t
   mode_t f_mode;
   // Статус текущей операции
   meas_status_t f_status;
+  irs::mxdata_ext_t::status_t m_status;
   // Текущая команда
   //command_t f_command;
   // Запрос на прерывание операции
@@ -95,7 +103,7 @@ public:
   mx_agilent_6675a_t(mxifa_ch_t channel,
     gpib_addr_t address);
   // Деструктор
-  ~mx_agilent_6675a_t();
+  virtual ~mx_agilent_6675a_t();
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported();
   // Установка тока
@@ -112,6 +120,11 @@ public:
   virtual void abort();
   // Элементарное действие
   virtual void tick();
+  // Замыкание выхода на землю
+  virtual void ground_rele();
+
+  virtual void supply_off();
+
 };
 
 struct header_conn_data_t
@@ -299,7 +312,7 @@ public:
   // Конструктор
   u309m_current_supply_t(irs::hardflow_t* ap_hardflow);
   // Деструктор
-  ~u309m_current_supply_t();
+  virtual ~u309m_current_supply_t();
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported();
   // Установка тока
@@ -316,6 +329,12 @@ public:
   virtual void abort();
   // Элементарное действие
   virtual void tick();
+  // Замыкание выхода на землю
+  virtual void ground_rele();
+
+  virtual void supply_off();
+
+
 
 private:
   // Тип для текущего режима
@@ -336,11 +355,34 @@ private:
       hold_regs_size*2 + input_regs_size*2
   };
 
+  //Режимы работы
+  typedef enum _mode_t {
+    mode_free,
+    mode_start,
+    mode_supply_param_wait,
+
+    mode_supply_on,
+    mode_supply_on_wait,
+
+    mode_supply_output_off,
+    mode_supply_output_off_wait,
+
+    mode_ground_rele,
+    mode_ground_rele_wait,
+
+    mode_off,
+    mode_off_wait,
+  } mode_t;
+
+  mode_t m_mode;
+
   // Текущий режим работы
   supply_number_t m_supply_number;
 
   // Статус текущей операции
   meas_status_t m_status;
+
+  irs::mxdata_ext_t::status_t m_status_modbus;
 
   eth_data_t m_eth_data;
 
