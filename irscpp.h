@@ -208,14 +208,6 @@ inline void irs_container_resize(
       ap_container->pop_back();
     }
   }
-  #ifdef NOP
-  container_type container_copy(a_size);
-  typename container_type::size_type copy_size =
-    min(ap_container->size(), a_size);
-  ::copy(ap_container->begin(), ap_container->begin() + copy_size,
-    container_copy.begin());
-  ap_container->swap(container_copy);
-  #endif //NOP
 }
 #else //__WATCOMC__
 typedef streamsize irs_streamsize_t;
