@@ -3061,8 +3061,16 @@ void irs::modbus_client_t::tick()
             response_single_write_t &sec_head =
               reinterpret_cast<response_single_write_t&>(*(m_spacket.data() + 
               size_of_MBAP));
-            sec_head.value = m_coil_write_bit;
-            make_packet(m_coil_bit_index, 0);
+            //sec_head.value = m_coil_write_bit;
+            //make_packet(m_coil_bit_index, 0);
+            irs_u8 coil_index = static_cast<irs_u8>(m_start_block%8);
+            irs_u8 mask = mask_gen(8 - (coil_index + 1), 1);
+            if (m_coils_byte_write[m_start_block/8] & mask) {
+              sec_head.value = 1;
+            } else {
+              sec_head.value = 0;
+            }
+            make_packet(m_start_block, 0);
           }
           m_search_index = m_start_block + m_write_quantity;
         }
