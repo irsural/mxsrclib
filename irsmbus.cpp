@@ -65,199 +65,6 @@ void second_part(irs_u8 &internal_byte, irs_u8 external_byte,
   internal_byte |= external_byte;
 }
 
-#ifdef NOP
-void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
-  size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
-{
-  size_t index_in = a_index_data_in%8;
-  size_t index_out = a_index_data_out%8;
-  size_t data_start_in = a_index_data_in/8;
-  size_t data_start_out = a_index_data_out/8;
-  size_t first_part_size = 0;
-  size_t last_part_size = 0;
-  if (index_in == index_out)
-  {
-    if((index_out != 0) && (index_in != 0))
-      first_part_size = 8 - index_out;
-    last_part_size = (a_size_data_bit - first_part_size)%8;
-    size_t middle_part_size = (a_size_data_bit - 
-      (first_part_size + last_part_size))/8;
-    int part_idx = 0;
-    if(first_part_size != 0) {
-      irs_u8 first_mask = mask_gen(0, first_part_size);
-      irs_u8 first_data_in = ap_data_in[data_start_in];
-      first_data_in &= first_mask;
-      ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_mask);
-      ap_data_out[data_start_out] |= first_data_in;
-      part_idx = 1;
-    }
-    if(last_part_size != 0) {
-      irs_u8 last_mask = mask_gen(8 - last_part_size, last_part_size);
-      irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size + 
-        first_part_size];
-      last_data_in &= last_mask;
-      ap_data_out[data_start_out + middle_part_size + part_idx] &= 
-        static_cast<irs_u8>(~last_mask);
-      ap_data_out[data_start_out + middle_part_size + part_idx] |=
-        last_data_in;
-    }
-    irs::memcpyex(ap_data_out + data_start_out + part_idx, ap_data_in + 
-      data_start_in + part_idx, middle_part_size);
-  }
-  else
-  {
-    int offset_idx = 0;
-    irs_u32 index_bit = 0;
-    irs_u8 middle_mask = 0;
-    irs_u32 offset = 0;
-    IRS_LIB_ASSERT(index_in != index_out);
-    if((index_out - index_in) > 0) {
-      offset = a_index_data_out%8 - a_index_data_in%8;
-      middle_mask = mask_gen(0, 8 - offset);
-      index_bit = offset;
-      offset_idx = 0;
-      if((index_out != 0) && (index_in != 0))
-        first_part_size = 8 - index_in;
-      last_part_size = (a_size_data_bit + offset - first_part_size)%8;
-    } else if((index_in - index_out) > 0) {
-      offset = a_index_data_in%8 - a_index_data_out%8;
-      middle_mask = mask_gen(0, offset);
-      index_bit = 8 - offset;
-      offset_idx = 1;
-      if((index_out != 0) && (index_in != 0))
-        first_part_size = 8 - index_out;
-      last_part_size = (a_size_data_bit /*+ offset*/ - first_part_size)%8;
-    } 
-    size_t data_cnt = (a_size_data_bit - first_part_size)/8;
-    int first_part_idx = 0;
-    if(first_part_size > 0) {
-      first_part_idx = 1;
-      if(index_out < index_in) {
-        irs_u8 out_mask = mask_gen(8 - offset, offset);
-        irs_u8 first_in_mask = mask_gen(0, 8 - index_in);
-        irs_u8 data_first_in = ap_data_in[data_start_in];
-        irs_u8 data_out = 0;
-        data_first_in &= first_in_mask;
-        data_first_in >>= offset;
-        irs_u8 data_second_in = ap_data_in[data_start_in + 1];
-        irs_u8 second_in_mask = mask_gen(8 - offset, offset);
-        data_second_in &= second_in_mask;
-        data_second_in <<= (8 - offset);
-        data_out |= data_first_in;
-        data_out |= data_second_in;
-        ap_data_out[data_start_out] &= out_mask;
-        ap_data_out[data_start_out] |= data_out;
-      }
-      if(index_out > index_in) {
-        irs_u8 data_first_in = ap_data_in[data_start_in];
-        irs_u8 data_second_in = ap_data_in[data_start_in];
-        irs_u8 first_in_mask = mask_gen(offset, 8 - index_out);
-        data_first_in &= first_in_mask;
-        data_first_in <<= offset;
-        irs_u8 second_in_mask = mask_gen(0, offset);
-        data_second_in &= second_in_mask;
-        data_second_in >>= (8 - offset);
-        irs_u8 first_out_mask = mask_gen(0, 8 - index_out);
-        ap_data_out[data_start_out] &= static_cast<irs_u8>(~first_out_mask);
-        ap_data_out[data_start_out] |= data_first_in;
-        irs_u8 second_out_mask = mask_gen(8 - offset, offset);
-        ap_data_out[data_start_out + 1] &=
-          static_cast<irs_u8>(~second_out_mask);
-        ap_data_out[data_start_out + 1] |= data_second_in;
-      }
-    }
-    int offset_index = 0;
-    if(last_part_size > 0) {
-      size_t last_external_byte_index = data_cnt + data_start_in + 
-        first_part_idx;
-      size_t last_internal_byte_index = data_cnt + data_start_out + 
-        first_part_idx; 
-      irs_u8 last_mask = 0;
-      if(static_cast<irs_u32>(last_part_size) <
-        ((8 - 2*offset)*offset_idx + offset))
-      {
-        if((index_out - index_in) > 0)
-        {
-          last_mask = mask_gen(8 - last_part_size, last_part_size);
-          irs_u8 mask_ext = mask_gen(1, last_part_size);
-          irs_u8 data_ext = ap_data_in[last_external_byte_index];
-          data_ext &= mask_ext;
-          data_ext >>= 8 - (last_part_size + 1);
-          ap_data_out[last_internal_byte_index + 1] |= data_ext;
-          offset_index = 1;
-        }
-        if((index_in - index_out) > 0)
-        {
-          if((index_in + a_size_data_bit) < 8) {
-            irs_u8 data_in = ap_data_in[last_external_byte_index];
-            irs_u8 mask_ext = mask_gen(8 - (a_size_data_bit%8 + index_in),
-              a_size_data_bit%8);
-            irs_u8 mask_int = mask_gen(0, 8 - a_size_data_bit);
-            data_in &= mask_ext;
-            data_in >>= offset;
-            ap_data_out[last_internal_byte_index] &= mask_int;
-            ap_data_out[last_internal_byte_index] |= data_in;
-          }
-          else {
-            last_mask = mask_gen(8 - offset, offset);
-            first_part(ap_data_out[last_internal_byte_index], 
-              ap_data_in[last_external_byte_index], index_bit, last_mask);
-          }
-        }
-      }
-      else
-      {     
-        second_part(ap_data_out[last_internal_byte_index], 
-          ap_data_in[last_external_byte_index - 1 + offset_idx],
-          index_bit, middle_mask);
-        if(static_cast<irs_u32>(last_part_size) >
-          ((8 - 2*offset)*offset_idx + offset))
-        {
-          if((index_out - index_in) > 0)
-          {
-            last_mask = mask_gen(8 - last_part_size, 
-              last_part_size - offset);  
-            first_part(ap_data_out[last_internal_byte_index], 
-              ap_data_in[last_external_byte_index], index_bit, last_mask);
-          }
-          if((index_in - index_out) > 0)
-          {
-            irs_u8 mask_ext = mask_gen(8 - (last_part_size - (8 - offset)),
-              last_part_size - (8 - offset));
-            irs_u8 mask_int = mask_gen(8 - last_part_size,
-              last_part_size - (8 - offset));
-            irs_u8 data_ext = ap_data_in[last_external_byte_index+1];
-            data_ext &= mask_ext;
-            data_ext <<= 8 - offset;
-            ap_data_out[last_internal_byte_index] &=
-              static_cast<irs_u8>(~mask_int);
-            ap_data_out[last_internal_byte_index] |= data_ext;
-          }
-        }  
-      }
-    }
-    for(size_t data_idx = 0; data_idx < data_cnt + offset_index;
-      data_idx++)
-    {
-      size_t external_idx = data_idx + data_start_in + first_part_idx;
-      size_t internal_idx = data_idx + data_start_out + first_part_idx;
-      first_part(ap_data_out[internal_idx], 
-        ap_data_in[external_idx + offset_idx], index_bit, middle_mask);
-    }
-    for(size_t data_idx = 0; data_idx < data_cnt; data_idx++)
-    {
-      size_t external_idx = data_idx + data_start_in + 
-        first_part_idx*offset_idx;
-      size_t internal_idx = data_idx + data_start_out + 
-        first_part_idx*offset_idx;
-      second_part(ap_data_out[internal_idx + 1 - offset_idx], 
-        ap_data_in[external_idx], index_bit, middle_mask);
-    }
-  }
-}
-
-#endif // NOP
-
 void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
 {
@@ -296,7 +103,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     if (last_part_size) {
       irs_u8 last_mask = mask_gen(8 - last_part_size, last_part_size);
       irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size_byte + 
-        first_part_size];
+        first_part_size/8];
       last_data_in &= last_mask;
       ap_data_out[data_start_out + middle_part_size_byte + part_idx] &= 
         static_cast<irs_u8>(~last_mask);
@@ -311,13 +118,15 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     irs_u8 middle_mask = 0;
     irs_u32 offset = 0;
     if (static_cast<int>(index_out - index_in)) {
-      offset = a_index_data_out%8 - a_index_data_in%8;
+      offset = index_out - index_in;
       middle_mask = mask_gen(0, 8 - offset);
       index_bit = offset;
       offset_idx = 0;
       if (index_out && index_in) {
         if ((index_in + a_size_data_bit) > 8) {
           first_part_size = 8 - index_in;
+        } else {
+          first_part_size = a_size_data_bit;
         }
       }
       size_t rest_size = a_size_data_bit + offset - first_part_size;
@@ -329,7 +138,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
         last_part_size = rest_size%8;
       }
     } else if (static_cast<int>(index_in - index_out)) {
-      offset = a_index_data_in%8 - a_index_data_out%8;
+      offset = index_in - index_out;
       middle_mask = mask_gen(0, offset);
       index_bit = 8 - offset;
       offset_idx = 1;
@@ -342,7 +151,6 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     if (a_size_data_bit >= 8) {
       data_cnt = (a_size_data_bit - first_part_size)/8;
     }
-    irs::mlog() << "middle_mask = " << int_to_str(middle_mask, 2, 8) << endl;
     int first_part_idx = 0;
     if (first_part_size) {
       first_part_idx = 1;
@@ -391,9 +199,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
       {
         if (static_cast<int>(index_out - index_in)) {
           last_mask = mask_gen(8 - last_part_size, last_part_size);
-          //irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
           irs_u8 mask_ext = mask_gen(1, last_part_size);
-          //irs::mlog() << "mask_ext = " << int_to_str(mask_ext, 2, 8) << endl;
           irs_u8 data_ext = ap_data_in[last_external_byte_index];
           data_ext &= mask_ext;
           data_ext >>= 8 - (last_part_size + 1);
@@ -401,8 +207,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
             static_cast<irs_u8>(~last_mask);
           ap_data_out[last_internal_byte_index + 1] |= data_ext;
           offset_index = 1;
-        }
-        if (static_cast<int>(index_in - index_out)) {
+        } else if (static_cast<int>(index_in - index_out)) {
           if ((index_in + a_size_data_bit) < 8) {
             irs_u8 data_in = ap_data_in[last_external_byte_index];
             irs_u8 mask_ext = mask_gen(8 - (a_size_data_bit%8 + index_in),
@@ -419,24 +224,19 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
           }
         }
       } else {
-        /*if (index_in > index_out) {
+        if (index_in > index_out) {
           second_part(ap_data_out[last_internal_byte_index], 
             ap_data_in[last_external_byte_index - 1 + offset_idx],
             index_bit, middle_mask);
-        }*/
+        }
         if (static_cast<irs_u32>(last_part_size) >
           ((8 - 2*offset)*offset_idx + offset))
         {
           if (static_cast<int>(index_out - index_in)) {
             last_mask = mask_gen(8 - last_part_size,
               last_part_size - offset);
-            /*last_mask = mask_gen(8 - last_part_size - index_in,
-              last_part_size - offset);*/
-            irs::mlog() << "last_mask = " << int_to_str(last_mask, 2, 8) << endl;
             first_part(ap_data_out[last_internal_byte_index],
               ap_data_in[last_external_byte_index], index_bit, last_mask);
-            /*first_part(ap_data_out[last_internal_byte_index],
-              ap_data_in[last_external_byte_index], index_bit + index_in, last_mask);*/
           }
           if (static_cast<int>(index_in - index_out)) {
             irs_u8 mask_ext = mask_gen(8 - (last_part_size - (8 - offset)),
@@ -4155,23 +3955,23 @@ void irs::modbus_client_t::tick()
               m_global_read_index = 0;
               m_request_type = request_start;
               m_mode = convert_request_mode;
-              size_t read_flags_cnt = 0;
-              for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
-                m_coils_size_bit + m_hold_registers_size_reg + 
-                m_input_registers_size_reg); read_idx++)
-              {
-                if(m_need_read[read_idx] == 1) {
-                  read_flags_cnt++;
-                }
-              }
-              if(read_flags_cnt == 0) {
-                m_read_table = false;
-              }
             }
             view_mode();
           } else {
             m_read_table = false;
             m_request_type = request_start;
+          }
+          size_t read_flags_cnt = 0;
+          for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
+            m_coils_size_bit + m_hold_registers_size_reg + 
+            m_input_registers_size_reg); read_idx++)
+          {
+            if(m_need_read[read_idx] == 1) {
+              read_flags_cnt++;
+            }
+          }
+          if(read_flags_cnt == 0) {
+            m_read_table = false;
           }
         }
         break;
