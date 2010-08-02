@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 30.07.2010
+// Дата: 02.08.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include <irsstrdefs.h>
+#include <irsstring.h>
 
 #include <measmul.h>
 
@@ -599,25 +600,25 @@ void mx_agilent_3458a_t::tick()
         if ((size > 0) && (size < ma_read_buf_size)) {
           mxifa_sz_t read_count =
             mxifa_fast_read(m_handle, IRS_NULL, buf, size);
-
-          #ifndef NOP
-          if (read_count) {
-            int i = 0;
-            i++;
-          }
-          #endif //NOP
-
           buf[read_count] = 0;
           char end_chars[3] = {0x0D, 0x0A, 0x00};
           char *end_number = strstr((char *)m_read_buf, end_chars);
           if (end_number) {
             *end_number = 0;
+            char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+            if (irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
+              m_mode = ma_mode_macro;
+            } else {
+              *m_value = 0;
+            }
+            #ifdef NOP
             char *end_ptr = IRS_NULL;
             double val = strtod((char *)m_read_buf, &end_ptr);
             if (end_ptr == end_number) {
               *m_value = val;
               m_mode = ma_mode_macro;
             }
+            #endif //NOP
             irs_u8 *read_bytes_end_ptr = buf + read_count;
             irs_u8 *next_str_ptr = (irs_u8 *)end_number + 2;
             mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
@@ -1188,12 +1189,20 @@ void irs::v7_78_1_t::tick()
           char *end_number = strstr((char *)f_read_buf, end_chars);
           if (end_number) {
             *end_number = 0;
+            char* p_number_in_cstr = reinterpret_cast<char*>(f_read_buf);
+            if (irs::cstr_to_number_classic(p_number_in_cstr, *f_value)) {
+              f_mode = ma_mode_macro;
+            } else {
+              *f_value = 0;
+            }
+            #ifdef NOP
             char *end_ptr = IRS_NULL;
             double val = strtod((char *)f_read_buf, &end_ptr);
             if (end_ptr == end_number) {
               *f_value = val;
               f_mode = ma_mode_macro;
             }
+            #endif // NOP
             irs_u8 *read_bytes_end_ptr = buf + read_count;
             irs_u8 *next_str_ptr = (irs_u8 *)end_number + end_chars_size;
             mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;

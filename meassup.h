@@ -389,11 +389,11 @@ private:
   irs::modbus_client_t m_modbus_client;
 
 
-  double m_voltage;
-  double m_current;
+  float m_voltage;
+  float m_current;
   //Стабилизируемый параметр
-  double m_parameter;
-  double m_argument;
+  float m_parameter;
+  float m_argument;
 };
 
 #endif // meassupH

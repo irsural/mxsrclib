@@ -1,5 +1,5 @@
 // Функции конвертирования строк
-// Дата: 30.06.2010
+// Дата: 29.07.2010
 // Дата создания: 2.05.2010
 
 #ifndef irsstrconvH
@@ -14,6 +14,8 @@
 #include <irsstrdefs.h>
 #include <string.h>
 #include <irscpp.h>
+//#include <irsstring.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -227,7 +229,7 @@ AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
 template<>
 inline std_wstring_t str_conv<std_wstring_t>(const AnsiString& a_str_in)
 {
-  return std_wstring_t(WideString(a_str_in).Copy());
+  return std::wstring(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
 }
 
 template<>
@@ -258,15 +260,20 @@ inline WideString str_conv<WideString>(const WideString& a_str_in)
 
 template<>
 inline irs_string_t str_conv<irs_string_t>(const WideString& a_str_in)
-{
-  return irs_string_t(irs::convert_str_t<wchar_t, char>(
-    a_str_in.Copy()).get());
+{     
+  return irs::string(String(a_str_in).c_str());
 }
 
 template<>
 inline std_wstring_t str_conv<std_wstring_t>(const WideString& a_str_in)
 {
-  return std_wstring_t(a_str_in.Copy());
+  const irs_size_t str_size = a_str_in.Length();
+  std::wstring str_out;
+  str_out.resize(str_size);
+  for (irs_size_t ch_i = 0; ch_i < str_size; ch_i++) {
+    str_out[ch_i] = a_str_in[ch_i + 1];
+  }
+  return str_out;
 }
 
 template<>

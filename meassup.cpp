@@ -243,12 +243,12 @@ irs_bool u309m_current_supply_t::dc_supported()
 // Установка тока
 void u309m_current_supply_t::set_current(double a_current)
 {
-  m_current = a_current;
+  m_current = static_cast<float>(a_current);
 }
 // Установка напряжения
 void u309m_current_supply_t::set_voltage(double a_voltage)
 {
-  m_voltage = a_voltage;
+  m_voltage = static_cast<float>(a_voltage);
 }
 // Включение источника
 void u309m_current_supply_t::on()
