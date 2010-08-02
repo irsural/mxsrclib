@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 13.07.2010
+// Дата: 02.08.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -471,6 +471,9 @@ public:
       case irsstrloc_classic: {
         ::replace(str_modif.begin(), str_modif.end(), ',', '.');
       } break;
+      default: {
+        // Игнорируем
+      }
     }
     basic_istringstream<T> strm(str_modif);
     switch (m_data.locale_style)
@@ -482,6 +485,9 @@ public:
       case irsstrloc_current: {
         strm.imbue(irs::loc().get());
       } break;
+      default: {
+        // Игнорируем
+      }
     }
     strm >> val;
     return strm;
