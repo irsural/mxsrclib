@@ -2969,12 +2969,12 @@ void irs::modbus_client_t::tick()
         m_write_quantity = 0;
         for(; m_search_index < (m_coils_size_bit + m_hold_registers_size_reg);)
         {
-          if((m_need_writes[m_search_index]) && (!catch_block)) {
+          if(m_need_writes[m_search_index] && !catch_block) {
             m_start_block = m_search_index;
             catch_block = irs_true;
             m_write_complete = false;
           }
-          if((catch_block) && (!m_need_writes[m_search_index])) {
+          if(catch_block && !m_need_writes[m_search_index]) {
             m_write_quantity =
               static_cast<irs_u16>(m_search_index - m_start_block);
             if((irs_u32(m_search_index) > irs_u32(m_coils_size_bit))&&
@@ -2987,7 +2987,7 @@ void irs::modbus_client_t::tick()
             break;
           }
           m_search_index++;
-          if((catch_block) &&
+          if(catch_block &&
             (m_search_index == (m_coils_size_bit + m_hold_registers_size_reg)))
           { 
             m_write_quantity =
@@ -3001,7 +3001,7 @@ void irs::modbus_client_t::tick()
             }
             break;
           }
-          if((!catch_block) &&
+          if(!catch_block &&
             (m_search_index >= (m_coils_size_bit + m_hold_registers_size_reg)))
           {
             m_search_index = 0;
@@ -3014,7 +3014,7 @@ void irs::modbus_client_t::tick()
                 write_flags_cnt++;
               }
             }
-            if(write_flags_cnt == 0) {
+            if(!write_flags_cnt) {
               m_write_complete = true;
             }
             m_mode = search_read_data_mode;
@@ -3031,7 +3031,7 @@ void irs::modbus_client_t::tick()
     break;
     case request_write_data_mode:
     {
-      if (((m_start_block) < m_coils_size_bit) && (m_coils_size_bit)) {
+      if ((m_start_block < m_coils_size_bit) && m_coils_size_bit) {
         m_write_table = true;
         m_command = write_multiple_coils;
         request_multiple_write_byte_t &coils_packet =
@@ -3078,7 +3078,7 @@ void irs::modbus_client_t::tick()
       //запись hold regs
       else if((m_start_block >= m_coils_size_bit) && 
         (m_start_block <= static_cast<size_t>(m_coils_size_bit + 
-        m_hold_registers_size_reg)) && (m_hold_registers_size_reg))
+        m_hold_registers_size_reg)) && m_hold_registers_size_reg)
       {
         m_write_table = true;
         m_command = write_multiple_registers;
@@ -3118,10 +3118,6 @@ void irs::modbus_client_t::tick()
               reinterpret_cast<irs_u8*>(m_hold_regs_reg_write.data());
             irs_u8* hr_packet_data =
               reinterpret_cast<irs_u8*>(&hr_packet.value);
-            if (hr_packet_data == IRS_NULL) {
-              int i = 0;
-              i++;
-            }
             memcpyex(hr_packet_data, hold_regs_data + hr_start*2,
               m_write_quantity*2);
           } else {
@@ -3619,17 +3615,18 @@ void irs::modbus_client_t::tick()
           }
           break;
         }
-        for(irs_u16 send_pack_index = 0; send_pack_index < m_size_of_packet;
+        /*for(irs_u16 send_pack_index = 0; send_pack_index < m_size_of_packet;
           send_pack_index++)
         {
           m_spacket[send_pack_index] = 0;
-        }
-        if(!m_write_table) {
+        }*/
+        memsetex(m_spacket.data(), m_size_of_packet);
+        if (!m_write_table) {
           m_mode = search_read_data_mode;
           IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("write complete "));
-          if(!m_read_table) {
+          if (!m_read_table) {
             m_mode = wait_command_mode;
-            if(m_write_complete) {
+            if (m_write_complete) {
               m_operation_status = status_completed;
             }
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("read complete "));
@@ -3650,7 +3647,7 @@ void irs::modbus_client_t::tick()
         m_fixed_flow.write_abort();
         IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
         m_error_count++;
-        if(m_error_count >= m_error_count_max) {
+        if (m_error_count >= m_error_count_max) {
           IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
           m_error_count = 0;
           m_operation_status = status_error;
@@ -3664,27 +3661,23 @@ void irs::modbus_client_t::tick()
     break;
     case search_read_data_mode:
     {
-      if(m_refresh_mode == mode_refresh_manual) {
+      if (m_refresh_mode == mode_refresh_manual) {
         m_mode = request_read_data_mode;
-        irs_bool catch_block = irs_false;
+        bool catch_block = false;
         m_read_quantity = 0;
         for(; m_search_index < (m_discret_inputs_size_bit + m_coils_size_bit + 
           m_hold_registers_size_reg + m_input_registers_size_reg);)
         {
-          if((m_need_read[m_search_index] == true) && 
-            (catch_block == irs_false)) 
-          {
+          if (m_need_read[m_search_index] && !catch_block) {
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" block catched"));
             m_start_block = m_search_index;
-            catch_block = irs_true;
+            catch_block = true;
           }
-          if((catch_block == irs_true) && 
-            (m_need_read[m_search_index] == false)) 
-          {
+          if (catch_block && !m_need_read[m_search_index]) {
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_data_mode"));
             m_read_quantity =
               static_cast<irs_u16>(m_search_index - m_start_block);
-            if((m_start_block > m_discret_inputs_size_bit) && 
+            if ((m_start_block > m_discret_inputs_size_bit) && 
               (m_start_block < (m_discret_inputs_size_bit + 
               m_coils_size_bit)) && 
               (m_search_index > (m_discret_inputs_size_bit + m_coils_size_bit)))
@@ -3692,8 +3685,7 @@ void irs::modbus_client_t::tick()
               m_search_index = m_discret_inputs_size_bit + m_coils_size_bit;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
-            }
-            else if((m_start_block > (m_discret_inputs_size_bit + 
+            } else if ((m_start_block > (m_discret_inputs_size_bit + 
               m_coils_size_bit)) && 
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg)) && 
@@ -3704,8 +3696,7 @@ void irs::modbus_client_t::tick()
                 m_hold_registers_size_reg;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
-            }
-            else if((m_start_block > (m_discret_inputs_size_bit + 
+            } else if ((m_start_block > (m_discret_inputs_size_bit + 
               m_coils_size_bit + m_hold_registers_size_reg)) && 
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg + m_input_registers_size_reg)) && 
@@ -3720,28 +3711,25 @@ void irs::modbus_client_t::tick()
             break;
           }
           m_search_index++;
-          if((catch_block == irs_true) &&
+          if (catch_block &&
             (m_search_index == (m_discret_inputs_size_bit + m_coils_size_bit + 
             m_hold_registers_size_reg + m_input_registers_size_reg)))
           { 
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_data_mode"));
             m_write_quantity =
               static_cast<irs_u16>(m_search_index - m_start_block);
-            if(m_start_block < m_discret_inputs_size_bit)
-            {
+            if (m_start_block < m_discret_inputs_size_bit) {
               m_search_index = m_discret_inputs_size_bit;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
-            }
-            else if((m_start_block > m_discret_inputs_size_bit) && 
+            } else if ((m_start_block > m_discret_inputs_size_bit) && 
               (m_start_block < (m_discret_inputs_size_bit + 
               m_coils_size_bit)))
             {
               m_search_index = m_discret_inputs_size_bit + m_coils_size_bit;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
-            }
-            else if((m_start_block > (m_discret_inputs_size_bit + 
+            } else if ((m_start_block > (m_discret_inputs_size_bit + 
               m_coils_size_bit)) && 
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg)))
@@ -3750,8 +3738,7 @@ void irs::modbus_client_t::tick()
                 m_hold_registers_size_reg;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
-            }
-            else if((m_start_block > (m_discret_inputs_size_bit + 
+            } else if ((m_start_block > (m_discret_inputs_size_bit + 
               m_coils_size_bit + m_hold_registers_size_reg)) && 
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg + m_input_registers_size_reg)))
@@ -3760,7 +3747,7 @@ void irs::modbus_client_t::tick()
             }
             break;
           }
-          if((catch_block == irs_false) && 
+          if (!catch_block && 
             (m_search_index >= (m_discret_inputs_size_bit + m_coils_size_bit + 
             m_hold_registers_size_reg + m_input_registers_size_reg)))
           {
@@ -3772,7 +3759,7 @@ void irs::modbus_client_t::tick()
             break;
           }
         }
-      } else if(m_refresh_mode == mode_refresh_auto) {
+      } else if (m_refresh_mode == mode_refresh_auto) {
         m_mode = make_request_mode;
       }
       view_mode();
@@ -3781,10 +3768,9 @@ void irs::modbus_client_t::tick()
     case request_read_data_mode:
     {
       // Чтение discret inputs
-      if(m_start_block < m_discret_inputs_size_bit) {
+      if (m_start_block < m_discret_inputs_size_bit) {
         m_command = read_discrete_inputs;
-        if(m_read_quantity/8 > m_size_of_data_read_byte)
-        {
+        if (m_read_quantity/8 > m_size_of_data_read_byte) {
           make_packet(m_start_block,
             static_cast<irs_u16>(m_size_of_data_read_byte*8));
           m_search_index = m_start_block + m_size_of_data_read_byte*8;
@@ -3792,14 +3778,12 @@ void irs::modbus_client_t::tick()
           make_packet(m_start_block, m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
         }
-      }
-      // Чтение coils
-      else if((m_start_block >= m_discret_inputs_size_bit) &&
+      } else if ((m_start_block >= m_discret_inputs_size_bit) &&
         (m_start_block < m_discret_inputs_size_bit + m_coils_size_bit))
       {
+        // Чтение coils
         m_command = read_coils;
-        if(m_read_quantity/8 > m_size_of_data_read_byte)
-        {
+        if (m_read_quantity/8 > m_size_of_data_read_byte) {
           make_packet(m_start_block - m_discret_inputs_size_bit,
             static_cast<irs_u16>(m_size_of_data_read_byte*8));
           m_search_index = m_start_block + m_size_of_data_read_byte*8;
@@ -3808,15 +3792,13 @@ void irs::modbus_client_t::tick()
             m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
         }
-      }
-      // Чтение holding registers
-      else if((m_start_block >= (m_discret_inputs_size_bit + 
+      } else if ((m_start_block >= (m_discret_inputs_size_bit + 
         m_coils_size_bit)) && (m_start_block < (m_discret_inputs_size_bit + 
         m_coils_size_bit + m_hold_registers_size_reg)))
       {
+        // Чтение holding registers
         m_command = read_hold_registers;
-        if(m_read_quantity*2 > m_size_of_data_read_byte)
-        {
+        if (m_read_quantity*2 > m_size_of_data_read_byte) {
           make_packet(m_start_block - m_discret_inputs_size_bit - 
             m_coils_size_bit, m_size_of_data_read_reg);
           m_search_index = m_start_block + m_size_of_data_read_reg;
@@ -3825,16 +3807,14 @@ void irs::modbus_client_t::tick()
             m_coils_size_bit, m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
         }
-      }
-      // Чтение input registers
-      else if((m_start_block >= (m_discret_inputs_size_bit + 
+      } else if ((m_start_block >= (m_discret_inputs_size_bit + 
         m_coils_size_bit + m_hold_registers_size_reg)) && 
         (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit + 
         m_hold_registers_size_reg + m_input_registers_size_reg))) 
       {
+        // Чтение input registers
         m_command = read_input_registers;
-        if(m_read_quantity*2 > m_size_of_data_read_byte)
-        {
+        if (m_read_quantity*2 > m_size_of_data_read_byte) {
           make_packet(m_start_block - (m_discret_inputs_size_bit +
             m_coils_size_bit + m_hold_registers_size_reg),
             m_size_of_data_read_reg);
@@ -3843,7 +3823,7 @@ void irs::modbus_client_t::tick()
           make_packet(m_start_block - (m_discret_inputs_size_bit +
             m_coils_size_bit + m_hold_registers_size_reg), m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
-          if(m_search_index == (m_input_registers_size_reg + 
+          if (m_search_index == (m_input_registers_size_reg + 
             m_hold_registers_size_reg + m_discret_inputs_size_bit + 
             m_coils_size_bit))
           {
@@ -3861,7 +3841,7 @@ void irs::modbus_client_t::tick()
       {
         case request_start:
         {
-          if((m_loop_timer.check()) && (m_refresh_mode == mode_refresh_auto)) {
+          if(m_loop_timer.check() && (m_refresh_mode == mode_refresh_auto)) {
             IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
               double time_delta_write = m_measure_time.get() - 
                 m_measure_int_time;
@@ -3878,9 +3858,9 @@ void irs::modbus_client_t::tick()
         break;
         case read_discrete_inputs:
         {
-          if(m_discret_inputs_size_bit) {
+          if (m_discret_inputs_size_bit) {
             m_command = m_request_type;
-            if((m_global_read_index + m_size_of_data_read_byte) <
+            if ((m_global_read_index + m_size_of_data_read_byte) <
               m_discret_inputs_size_bit/8)
             {
               make_packet(m_global_read_index,
@@ -3902,9 +3882,9 @@ void irs::modbus_client_t::tick()
         break;
         case read_coils:
         {
-          if(m_coils_size_bit) {
+          if (m_coils_size_bit) {
             m_command = m_request_type;
-            if((m_global_read_index + m_size_of_data_read_byte) <
+            if ((m_global_read_index + m_size_of_data_read_byte) <
               m_coils_size_bit/8)
             {
               make_packet(m_global_read_index,
@@ -3926,9 +3906,9 @@ void irs::modbus_client_t::tick()
         break;
         case read_hold_registers:
         {
-          if(m_hold_registers_size_reg) {
+          if (m_hold_registers_size_reg) {
             m_command = m_request_type;
-            if(irs_u32(m_global_read_index + m_size_of_data_read_reg) < 
+            if (irs_u32(m_global_read_index + m_size_of_data_read_reg) < 
               irs_u32(m_hold_registers_size_reg))
             {
               make_packet(m_global_read_index, m_size_of_data_read_reg);
@@ -3949,9 +3929,9 @@ void irs::modbus_client_t::tick()
         break;
         case read_input_registers:
         {
-          if(m_input_registers_size_reg) {
+          if (m_input_registers_size_reg) {
             m_command = m_request_type;
-            if(irs_u32(m_global_read_index + m_size_of_data_read_reg) <
+            if (irs_u32(m_global_read_index + m_size_of_data_read_reg) <
               irs_u32(m_input_registers_size_reg))
             {
               make_packet(m_global_read_index, m_size_of_data_read_reg);
@@ -3974,11 +3954,11 @@ void irs::modbus_client_t::tick()
             m_coils_size_bit + m_hold_registers_size_reg + 
             m_input_registers_size_reg); read_idx++)
           {
-            if(m_need_read[read_idx] == 1) {
+            if (m_need_read[read_idx]) {
               read_flags_cnt++;
             }
           }
-          if(read_flags_cnt == 0) {
+          if(!read_flags_cnt) {
             m_read_table = false;
           }
         }

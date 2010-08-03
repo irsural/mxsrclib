@@ -227,7 +227,7 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_vars_grid->DefaultRowHeight = 17;
   mp_vars_grid->RowCount = m_grid_size;
   mp_vars_grid->ColCount = m_col_count;
-  mp_vars_grid->Options << goEditing;
+  mp_vars_grid->Options = mp_vars_grid->Options << goEditing;
   mp_vars_grid->OnGetEditText = VarsGridGetEditText;
   mp_vars_grid->OnKeyDown = VarsGridKeyDown;
   mp_vars_grid->Rows[m_header_row]->Strings[m_index_col] = "¹";
