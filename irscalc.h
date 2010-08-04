@@ -764,12 +764,12 @@ template <class T>
 inline bool detector_token_t::str_to_num(
   const string_type a_str, T* a_number)
 {
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  /*#ifdef IRS_FULL_STDCPPLIB_SUPPORT
   bool convert_success = string_to_number(a_str, a_number, m_locale);
   #else // !IRS_FULL_STDCPPLIB_SUPPORT
   bool convert_success = string_to_number(a_str, a_number);
-  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
-  return convert_success;
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT*/
+  return str_to_num_classic(a_str, a_number);
 }
 
 inline bool detector_token_t::detect_token(const string_type* ap_prog,
