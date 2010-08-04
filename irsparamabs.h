@@ -20,7 +20,14 @@ public:
   virtual ~param_box_base_t() {}
   virtual void show() = 0;
   virtual void hide() = 0;
-  virtual void add(const String& a_param_name, const String& a_param_value) = 0;
+  virtual void add_edit(const String& a_param_name,
+    const String& a_param_value) = 0;
+  virtual bool add_combo_by_item(const String& a_param_name,
+    const String& a_param_value) = 0;
+  virtual void add_combo(const String& a_param_name,
+    vector<string_type>* ap_param_values_list) = 0;
+  virtual void add_bool(const String& a_param_name,
+    bool a_param_value) = 0;
   virtual bool get_param(const string_type& a_param_name,
     String* ap_param_value) = 0;
   virtual bool set_param(const string_type& a_param_name,

@@ -6,6 +6,12 @@
 
 #include <irsdefs.h>
 
+#include <Forms.hpp>
+#include <ExtCtrls.hpp>
+#include <StdCtrls.hpp>
+#include <Grids.hpp>
+#include <ValEdit.hpp>
+
 #include <irsparamabs.h>
 #include <mxini.h>
 #include <mxdata.h>
@@ -37,51 +43,31 @@ public:
 private:
   static const char_type* def_param_box_name();
   static const char_type* def_ini_section();
-  static const char_type* def_ini_name();
+  static const char_type* empty_string();
 public:
   param_box_t(
     const string_type& a_param_box_name = def_param_box_name(),
     const string_type& a_ini_section_prefix = def_ini_section(),
-    const string_type& a_ini_name = def_ini_name()
+    const string_type& a_prefix_name = empty_string(),
+    const string_type& a_ini_name = empty_string()
   );
   virtual ~param_box_t();
   virtual void show();
   virtual void hide();
-  virtual void add(const builder_string_type& a_param_name,
+  virtual void add_edit(const builder_string_type& a_param_name,
     const builder_string_type& a_param_value);
-  #ifdef NOP
-  builder_string_type get_param_as_string(const string_type& a_param_name);
-  #endif // NOP
+  virtual bool add_combo_by_item(const builder_string_type& a_param_name,
+    const builder_string_type& a_param_value);
+  virtual void add_combo(const builder_string_type& a_param_name,
+    vector<string_type>* ap_param_values_list);
+  virtual void add_bool(const builder_string_type& a_param_name,
+    bool a_param_value);
   virtual bool get_param(const string_type& a_param_name,
     builder_string_type* ap_param_value);
   virtual bool set_param(const string_type& a_param_name,
     const string_type& a_param_value);
   virtual void set_ini_name(const string_type& a_ini_name);
   virtual string_type ini_name();
-  #ifdef NOP
-  bool get_param_as_u8(const string_type& a_param_name,
-    irs_u8* ap_param_value);
-  bool get_param_as_i8(const string_type& a_param_name,
-    irs_i8* ap_param_value);
-  bool get_param_as_u16(const string_type& a_param_name,
-    irs_u16* ap_param_value);
-  bool get_param_as_i16(const string_type& a_param_name,
-    irs_i16* ap_param_value);
-  bool get_param_as_u32(const string_type& a_param_name,
-    irs_u32* ap_param_value);
-  bool get_param_as_i32(const string_type& a_param_name,
-    irs_i32* ap_param_value);
-  bool get_param_as_u64(const string_type& a_param_name,
-    irs_u64* ap_param_value);
-  bool get_param_as_i64(const string_type& a_param_name,
-    irs_i64* ap_param_value);
-  bool get_param_as_float(const string_type& a_param_name,
-    float* ap_param_value);
-  bool get_param_as_double(const string_type& a_param_name,
-    double* ap_param_value);
-  bool get_param_as_long_double(const string_type& a_param_name,
-    long double* ap_param_value);
-  #endif // NOP
   virtual void save();
   virtual void load();
 private:
@@ -91,30 +77,12 @@ private:
   TPanel* mp_panel;
   TButton* mp_ok_btn;
   TButton* mp_cansel_btn;
-  TStringGrid* mp_param_grid;
+  TValueListEditor* mp_value_list_editor;
   irs_u8 m_cur_param_row;
   
-  void __fastcall OK_BtnClick(TObject *Sender);
-  void __fastcall Cancel_BtnClick(TObject *Sender);
-  bool get_row_by_param_name(builder_string_type& a_param_name,
-    size_t* ap_row_index);
-  #ifdef NOP
-  template<class T>
-  bool get_param(const string_type& a_param_name, T* ap_param_value)
-  {
-    bool result = false;
-    builder_string_type param_name = a_param_name.c_str();
-    size_t grid_index = 0;
-    if (get_row_by_param_name(param_name, &grid_index)) {
-      if (str_to_num(mp_param_grid->Cells[option_col][grid_index],
-        ap_param_value))
-      {
-        result = true;
-      }
-    }
-    return result;
-  }
-  #endif // NOP
+  void __fastcall ok_btn_click(TObject *Sender);
+  void __fastcall cancel_btn_click(TObject *Sender);
+  void __fastcall on_close_event(TObject *Sender, TCloseAction &Action);
 }; // param_box_t
 
 } // namespace irs

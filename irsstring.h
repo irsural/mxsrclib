@@ -1,5 +1,5 @@
 // Строки ИРС
-// Дата: 02.08.2010
+// Дата: 04.08.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
@@ -751,21 +751,24 @@ inline IRS_STRING_TYPE_SPEC irsstr_from_number_classic(
   IRS_STRING_CHAR_TYPE,
   const V& a_value)
 {
-  return irsstr_from_number(a_value, irsstrloc_classic);
+  return irsstr_from_number(IRS_STRING_CHAR_TYPE(), a_value,
+    irsstrloc_classic);
 }
 IRS_STRING_NUMBER_TEMPLATE
 inline IRS_STRING_TYPE_SPEC irsstr_from_number_current(
   IRS_STRING_CHAR_TYPE,
   const V& a_value)
 {
-  return irsstr_from_number(a_value, irsstrloc_current);
+  return irsstr_from_number(IRS_STRING_CHAR_TYPE(), a_value,
+    irsstrloc_current);
 }
 IRS_STRING_NUMBER_TEMPLATE
 inline IRS_STRING_TYPE_SPEC irsstr_from_number_russian(
   IRS_STRING_CHAR_TYPE,
   const V& a_value)
 {
-  return irsstr_from_number(a_value, irsstrloc_russian);
+  return irsstr_from_number(IRS_STRING_CHAR_TYPE(), a_value,
+    irsstrloc_russian);
 }
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 IRS_STRING_NUMBER_TEMPLATE

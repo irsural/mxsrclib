@@ -1,5 +1,5 @@
 // Работа с ini-файлами
-// Дата: 16.05.2010
+// Дата: 04.08.2010
 // Ранняя дата: 27.08.2009
 
 #ifndef mxiniH
@@ -12,6 +12,7 @@
 #include <comctrls.hpp>
 #include <cspin.h>
 #include <grids.hpp>
+#include <ValEdit.hpp>
 #include <vcl/dstring.h>
 #include <SysUtils.hpp>
 
@@ -57,6 +58,7 @@ public:
   void add(const String& a_name, TStringGrid *a_control);
   void add(const String& a_name, TStringGrid *a_control,
     const String& a_column_name, int a_column_index);
+  void add(const String& a_name, TValueListEditor* a_control);
   void load();
   void save() const;
   void save_grid_row(TStringGrid *a_control, int a_row_index) const;
@@ -109,6 +111,7 @@ private:
   typedef generalized_control_t<TGroupBox> group_box_t;
   typedef generalized_control_t<TComboBox> combo_box_t;
   typedef generalized_control_t<TRadioGroup> radio_group_t;
+  typedef generalized_control_t<TValueListEditor> value_list_editor_t;
 
   typedef generalized_control_t<AnsiString> ansi_string_t;
   typedef generalized_control_t<bool> bool_t;
@@ -178,6 +181,7 @@ private:
   vector<combo_box_t> m_combo_boxs;
   vector<radio_group_t> m_radio_groups;
   map<TStringGrid*, string_grid_t> m_string_grids;
+  vector<value_list_editor_t> m_value_list_editors;
   string_t m_ini_name;
   string_t m_section;
 

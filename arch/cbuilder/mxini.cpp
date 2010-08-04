@@ -1,5 +1,5 @@
 // Работа с ini-файлами
-// Дата: 16.05.2010
+// Дата: 04.08.2010
 // Ранняя дата: 27.08.2009
 
 #include <irsdefs.h>
@@ -17,12 +17,28 @@
 // Работа с ini-файлами
 
 irs::ini_file_t::ini_file_t():
+  mv_bools(),
+  mv_irs_u8s(),
+  mv_irs_i8s(),
+  mv_irs_u16s(),
+  mv_irs_i16s(),
+  mv_irs_u32s(),
+  mv_irs_i32s(),
+  mv_irs_u64s(),
+  mv_irs_i64s(),
+  mv_floats(),
+  mv_doubles(),
+  mv_long_doubles(),
+  mv_irs_strings(),
+  mv_ansi_strings(),
   m_edits(),
   m_check_boxs(),
   m_page_controls(),
   m_group_boxs(),
   m_combo_boxs(),
   m_radio_groups(),
+  m_string_grids(),
+  m_value_list_editors(),
   m_ini_name(),
   m_section(irst("Options"))
 {
@@ -303,6 +319,16 @@ void irs::ini_file_t::add(const String& a_name, TStringGrid *a_control,
   string_t column_name = a_column_name.c_str();
   m_string_grids[a_control].add(a_column_index, column_name);
 }
+void irs::ini_file_t::add(const String& a_name, TValueListEditor* a_control)
+{
+  string_t name = a_name.c_str();
+  value_list_editor_t value_list_editor(m_section, name, a_control);
+  if (find(m_value_list_editors.begin(), m_value_list_editors.end(),
+    value_list_editor) == m_value_list_editors.end())
+  { 
+    m_value_list_editors.push_back(value_list_editor);
+  }
+}
 void irs::ini_file_t::load()
 {
   if (FileExists(m_ini_name.c_str())) {
@@ -521,6 +547,36 @@ void irs::ini_file_t::load()
         }
       }
     }
+    for (vector<value_list_editor_t>::iterator
+      value_list_editor_it = m_value_list_editors.begin();
+      value_list_editor_it != m_value_list_editors.end();
+      value_list_editor_it++)
+    {
+      int row_cnt = IniFile->ReadInteger(
+        value_list_editor_it->section.c_str(),
+        (value_list_editor_it->name + irst("count")).c_str(),
+        value_list_editor_it->control->RowCount
+      );
+      //value_list_editor_it->control->Strings->Clear();
+      for (int row_idx = 1; row_idx < row_cnt; row_idx++) {
+        String key = IniFile->ReadString(
+          value_list_editor_it->section.c_str(),
+          (value_list_editor_it->name + irst("key") +
+          irsstr_from_number_classic(char_t(), row_idx)).c_str(),
+          irst("")
+        );
+        int row_from_key_index = 0;
+        if (value_list_editor_it->control->FindRow(key, row_from_key_index)) {
+          value_list_editor_it->control->Values[key] = IniFile->ReadString(
+            value_list_editor_it->section.c_str(),
+            (value_list_editor_it->name + irst("value") +
+            irsstr_from_number_classic(char_t(), row_idx)).c_str(),
+            value_list_editor_it->control->Values[key]
+          );
+        }
+        //value_list_editor_it->control->InsertRow(key, value, true);
+      }
+    }
   }                        
 }
 
@@ -673,16 +729,37 @@ void irs::ini_file_t::save() const
     sg_it++
   ) {
     const int row_count = sg_it->first->RowCount;
-    if (sg_it->second.all_columns) {
-      for (int row = 1; row < row_count; row++) {
-        load_save_grid_row(IniFile.get(), ls_save, sg_it->first, row);
-      }
-    } else {
-      for (int row = 1; row < row_count; row++) {
-        load_save_grid_row(IniFile.get(), ls_save, sg_it->first, row);
-      }
+    for (int row = 1; row < row_count; row++) {
+      load_save_grid_row(IniFile.get(), ls_save, sg_it->first, row);
     }
     load_save_grid_size(IniFile.get(), ls_save, sg_it->first);
+  }
+  for (vector<value_list_editor_t>::const_iterator
+    value_list_editor_it = m_value_list_editors.begin();
+    value_list_editor_it != m_value_list_editors.end();
+    value_list_editor_it++)
+  {
+    int row_cnt = value_list_editor_it->control->RowCount;
+    IniFile->WriteInteger(
+      value_list_editor_it->section.c_str(),
+      (value_list_editor_it->name + irst("count")).c_str(),
+      row_cnt
+    );
+    for (int row_idx = 1; row_idx < row_cnt; row_idx++) {
+      IniFile->WriteString(
+        value_list_editor_it->section.c_str(),
+        (value_list_editor_it->name + irst("key") +
+        irsstr_from_number_classic(char_t(), row_idx)).c_str(),
+        value_list_editor_it->control->Keys[row_idx]
+      );
+      String key = value_list_editor_it->control->Keys[row_idx];
+      IniFile->WriteString(
+        value_list_editor_it->section.c_str(),
+        (value_list_editor_it->name + irst("value") +
+        irsstr_from_number_classic(char_t(), row_idx)).c_str(),
+        value_list_editor_it->control->Values[key]
+      );
+    }
   }
 }
 void irs::ini_file_t::save_grid_row(TStringGrid *a_control,
@@ -721,6 +798,7 @@ void irs::ini_file_t::clear_control()
   m_combo_boxs.clear();
   m_radio_groups.clear();
   m_string_grids.clear();
+  m_value_list_editors.clear();
 }
 TTabSheet *irs::ini_file_t::FindTabSheet(TPageControl *a_control,
   const String &a_name)
