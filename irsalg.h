@@ -166,8 +166,17 @@ struct crc32_data_t
   enum {
     size = 256
   };
-  irs_u32 table[size];
+  #ifdef __ICCAVR__
+    #define STATIC_MEMORY_MODIFIER static IRS_ICCAVR_FLASH
+    #define MEMORY_MODIFIER IRS_ICCAVR_FLASH
+  #else //__ICCAVR__
+    #define STATIC_MEMORY_MODIFIER
+    #define MEMORY_MODIFIER
+  #endif //__ICCAVR__
+  STATIC_MEMORY_MODIFIER irs_u32 table[size];
+  #ifndef __ICCAVR__
   crc32_data_t();
+  #endif //__ICCAVR__
 };
 // «еркальный табличный метод расчета crc32
 // «аркальный метод €вл€етс€ наиболее распространенным

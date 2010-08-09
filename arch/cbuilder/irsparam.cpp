@@ -1,4 +1,4 @@
-// Дата: 03.08.2010
+// Дата: 09.08.2010
 // Дата создания: 29.07.2010
 
 #include <irsdefs.h>
@@ -62,6 +62,8 @@ irs::param_box_t::param_box_t(
   mp_value_list_editor->Parent = mp_form.get();
   mp_value_list_editor->Align = alClient;
   mp_value_list_editor->DefaultRowHeight = 17;
+  mp_value_list_editor->TitleCaptions->Strings[header_col] = "Параметр";
+  mp_value_list_editor->TitleCaptions->Strings[option_col] = "Значение";
 
   if (a_ini_name == irst("")) {
     m_ini_file.set_ini_name(m_ini_file.ini_name().c_str());
@@ -71,6 +73,9 @@ irs::param_box_t::param_box_t(
   m_ini_file.set_section(m_ini_section.c_str());
   m_ini_file.add(a_prefix_name.c_str(), mp_value_list_editor);
   m_ini_file.load();
+  
+  mp_form->Width = mp_value_list_editor->ColWidths[header_col] +
+    mp_value_list_editor->ColWidths[option_col];
 }
 
 void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
