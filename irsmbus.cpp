@@ -3593,7 +3593,8 @@ void irs::modbus_client_t::tick()
               coils_index++)
             {
               m_need_writes[start_addr + coils_index] = 0;
-              m_coils_byte_write[coils_index/8] = 0;
+              irs_u8 mask = mask_gen(8 - (coils_index%8 + 1), 1);
+              m_coils_byte_write[coils_index/8] &= static_cast<irs_u8>(~mask);
             }
           }
           break;
