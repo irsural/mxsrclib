@@ -3,7 +3,8 @@
 // Ранняя Дата: 19.08.2009
 
 
-// Для сохранения данных в eeprom при перепрошивке необходимо выставить Fuse:
+// Для сохранения данных в eeprom при перепрошивке
+// необходимо выставить Fuse:
 // Preserve EEPROM memory through Chip Erase cycle
 
 #ifndef irseepromh
@@ -75,19 +76,29 @@ private:
   bool m_error;
 };
 
-struct eeprom_data_t {
-  irs_uarc index;
-  irs_uarc size;
-};
 
 class eeprom_protected_t : public mxdata_t
 {
 public:
+  struct old_eeprom_data_t {
+    irs_uarc index;
+    irs_uarc size;
+    
+    old_eeprom_data_t(
+      irs_uarc a_index,
+      irs_uarc a_size
+    ):
+      index(a_index),
+      size(a_size)
+    {
+    }
+  };
+  
   eeprom_protected_t(
     irs_uarc a_start_index,
     irs_uarc a_size,
     irs_u32 a_eeprom_id = 0,
-    eeprom_data_t* ap_old_eeprom_data = IRS_NULL);
+    old_eeprom_data_t* ap_old_eeprom_data = IRS_NULL);
   ~eeprom_protected_t();
   irs_uarc size();
   irs_bool connected();
@@ -100,21 +111,17 @@ public:
   bool error();
 private:
   enum {
-    m_irs_u32_size = sizeof(irs_u32),
-    m_irs_uarc_size = sizeof(irs_uarc),
-    m_eeprom_header_size = m_irs_uarc_size + m_irs_u32_size,
+    m_eeprom_header_size = sizeof(irs_uarc) + sizeof(irs_u32),
     m_eeprom_begin_address = eeprom_t::m_begin_address,
     m_eeprom_size = irs_uarc((E2END - m_eeprom_begin_address)/4) * 4,
-    m_crc_size = m_irs_u32_size
+    m_crc_size = sizeof(irs_u32)
   };
   
-  eeprom_data_t* mp_old_eeprom_data;
   handle_t<eeprom_t> mp_eeprom_header;
   handle_t<eeprom_t> mp_eeprom1;
   handle_t<eeprom_t> mp_eeprom2;
   bool m_error;
 
-  void crc32_for_all_eeprom(irs_uarc a_start_index, irs_uarc a_size);
   bool old_eeprom_id_index(irs_u32 a_search_id, irs_uarc& a_old_eeprom_id_idx);
 };
 
