@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 15.10.2010
+// Дата: 10.08.2010
 // Ранняя дата: 3.12.2009
 
 // Номер файла
@@ -146,10 +146,10 @@ void irs::collect_data_t::read_write(read_write_t a_read_write,
       irs_uarc size = out_end - out_begin;
       switch (a_read_write) {
         case rw_read: {
-          it->p_data->read(ap_buf_read + begin, index, size);
+          it->p_data->read(ap_buf_read, index, size);
         } break;
         case rw_write: {
-          it->p_data->write(ap_buf_write + begin, index, size);
+          it->p_data->write(ap_buf_write, index, size);
         } break;
         case rw_bit_read: {
           irs_bool bit = it->p_data->bit(index, a_bit_index);
