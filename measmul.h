@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 13.04.2010
+// Дата: 05.08.2010
 
 #ifndef measmulH
 #define measmulH
@@ -50,6 +50,8 @@ enum multimeter_mode_type_t {mul_mode_type_active, mul_mode_type_passive};
 class mxmultimeter_t
 {
 public:
+  virtual ~mxmultimeter_t() {};
+
   // Установить режим измерения постоянного напряжения
   virtual void set_dc() = 0;
   // Установить режим измерения переменного напряжения
@@ -753,5 +755,63 @@ inline void irs::akip_ch3_85_3r_t::set_ac()
   {m_meas_type = AC_MEAS;}
 */
 }
+
+class dummy_multimeter_t: public mxmultimeter_t
+{
+public:
+  // Установить режим измерения постоянного напряжения
+  virtual void set_dc() {}
+  // Установить режим измерения переменного напряжения
+  virtual void set_ac() {}
+  // Установить положителный фронт запуска
+  virtual void set_positive() {}
+  // Установить отрицательный фронт канала
+  virtual void set_negative() {}
+  // Чтение значения при текущем типа измерения
+  virtual void get_value(double *value) {}
+  // Чтение напряжения
+  virtual void get_voltage(double *voltage) {}
+  // Чтения силы тока
+  virtual void get_current(double *current) {}
+  // Чтение сопротивления
+  virtual void get_resistance2x(double *resistance) {}
+  // Чтение сопротивления
+  virtual void get_resistance4x(double *resistance) {}
+  // Чтение частоты
+  virtual void get_frequency(double *frequency) {}
+  // Чтение усредненного сдвира фаз
+  virtual void get_phase_average(double *phase_average) {}
+  // Чтение фазового сдвига
+  virtual void get_phase(double *phase) {}
+  // Чтение временного интервала
+  virtual void get_time_interval(double *time_interval) {}
+  // Чтение усредненного временного интервала
+  virtual void get_time_interval_average(double *ap_time_interval) {}
+
+  // Запуск автокалибровки мультиметра
+  virtual void auto_calibration() {}
+  // Чтение статуса текущей операции
+  virtual meas_status_t status() { return meas_status_success; }
+  // Прерывание текущей операции
+  virtual void abort() {}
+  // Элементарное действие
+  virtual void tick() {}
+  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  virtual void set_nplc(double nplc) {}
+  // Установка времени интегрирования в c
+  virtual void set_aperture(double aperture) {}
+  // Установка полосы фильтра
+  virtual void set_bandwidth(double bandwidth) {}
+  // Установка входного сопротивления канала
+  virtual void set_input_impedance(double impedance) {}
+  // Устсновка уровня запуска канала
+  virtual void set_start_level(double level) {}
+  // Установка диапазона измерений
+  virtual void set_range(type_meas_t a_type_meas, double a_range) {}
+  // Установка автоматического выбора диапазона измерений
+  virtual void set_range_auto() {}
+  // Установка входного сопротивления канала
+  //virtual void set_filter(double ) {}
+};
 
 #endif //measmulH

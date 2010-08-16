@@ -1,6 +1,6 @@
 // Классы для работы с источниками тока
-// Для Borland C++ Builder
-// Версия 0.1
+// Дата: 05.08.2010
+// Ранняя дата: 15.01.2008
 
 #ifndef meassupH
 #define meassupH
@@ -27,7 +27,7 @@
 class mxsupply_t
 {
 public:
-  virtual ~mxsupply_t(){}
+  virtual ~mxsupply_t() {}
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported() = 0;
   // Установка тока
@@ -47,7 +47,7 @@ public:
   // Замыкание выхода на землю
   virtual void ground_rele() = 0;
 
-  virtual void supply_off() = 0;
+  virtual void output_off() = 0;
 
 };
 
@@ -123,7 +123,7 @@ public:
   // Замыкание выхода на землю
   virtual void ground_rele();
 
-  virtual void supply_off();
+  virtual void output_off();
 
 };
 
@@ -151,8 +151,8 @@ struct header_conn_data_t
   irs::bit_data_t bit_adc_7;
   irs::conn_data_t<irs_u8> ADC_supply_overflow_bits;
   irs::bit_data_t reset_supply_overflow_bit;
-  irs::bit_data_t reset_eeprom_bit;
-  irs::bit_data_t bit_command_2;
+  irs::bit_data_t reset_to_default_bit;
+  irs::bit_data_t measure_overflow_guard_bit;
   irs::bit_data_t bit_command_3;
   irs::bit_data_t bit_command_4;
   irs::bit_data_t bit_command_5;
@@ -194,8 +194,8 @@ struct header_conn_data_t
     bit_adc_7.connect(ap_data, index, 7);
     index = ADC_supply_overflow_bits.connect(ap_data, index);
     reset_supply_overflow_bit.connect(ap_data, index, 0);
-    reset_eeprom_bit.connect(ap_data, index, 1);
-    bit_command_2.connect(ap_data, index, 2);
+    reset_to_default_bit.connect(ap_data, index, 1);
+    measure_overflow_guard_bit.connect(ap_data, index, 2);
     bit_command_3.connect(ap_data, index, 3);
     bit_command_4.connect(ap_data, index, 4);
     bit_command_5.connect(ap_data, index, 5);
@@ -203,10 +203,11 @@ struct header_conn_data_t
     bit_command_7.connect(ap_data, index, 7);
     index = command_bits.connect(ap_data, index);
     index = counter.connect(ap_data, index);
-    
+
     return index;
   }
 };
+
 
 struct supply_conn_data_t
 {
@@ -240,6 +241,12 @@ struct supply_conn_data_t
   irs::conn_data_t<float> temp_time_const;
   // фильтрованная температура (read only)
   irs::conn_data_t<float> temp_filtered;
+  // коэффициент передачи пропорциональной части изодромного звена
+  irs::conn_data_t<float> temp_prop_koef;
+  irs::conn_data_t<float> temp_k_stable;
+  irs::conn_data_t<float> temp_ki_stable;
+  irs::conn_data_t<float> temp_kd_stable;
+  irs::conn_data_t<float> stable_time_sec;
   
   supply_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
     irs_uarc* ap_size = IRS_NULL)
@@ -285,7 +292,7 @@ struct eth_data_t
     irs_uarc* ap_size = IRS_NULL)
   {
     irs_uarc size = connect(ap_data, a_index);
-    if(ap_size != IRS_NULL){
+    if (ap_size != IRS_NULL) {
       *ap_size = size;
     }
   }
@@ -298,13 +305,29 @@ struct eth_data_t
     index = supply_20V.connect(ap_data, index);
     index = supply_1A.connect(ap_data, index);
     index = supply_17A.connect(ap_data, index);
-    
+    index = supply_200V.temp_prop_koef.connect(ap_data, index);
+    index = supply_20V.temp_prop_koef.connect(ap_data, index);
+    index = supply_1A.temp_prop_koef.connect(ap_data, index);
+    index = supply_17A.temp_prop_koef.connect(ap_data, index);
+    index = supply_200V.temp_k_stable.connect(ap_data, index);
+    index = supply_200V.temp_ki_stable.connect(ap_data, index);
+    index = supply_200V.temp_kd_stable.connect(ap_data, index);
+    index = supply_20V.temp_k_stable.connect(ap_data, index);
+    index = supply_20V.temp_ki_stable.connect(ap_data, index);
+    index = supply_20V.temp_kd_stable.connect(ap_data, index);
+    index = supply_1A.temp_k_stable.connect(ap_data, index);
+    index = supply_1A.temp_ki_stable.connect(ap_data, index);
+    index = supply_1A.temp_kd_stable.connect(ap_data, index);
+    index = supply_17A.temp_k_stable.connect(ap_data, index);
+    index = supply_17A.temp_ki_stable.connect(ap_data, index);
+    index = supply_17A.temp_kd_stable.connect(ap_data, index);
+    index = supply_200V.stable_time_sec.connect(ap_data, index);
+    index = supply_20V.stable_time_sec.connect(ap_data, index);
+    index = supply_1A.stable_time_sec.connect(ap_data, index);
+    index = supply_17A.stable_time_sec.connect(ap_data, index);
     return index;
   }
 };
-
-
-
 
 class u309m_current_supply_t: public mxsupply_t
 {
@@ -332,7 +355,7 @@ public:
   // Замыкание выхода на землю
   virtual void ground_rele();
 
-  virtual void supply_off();
+  virtual void output_off();
 
 
 
@@ -349,7 +372,7 @@ private:
   enum {
     discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
     coils_size_byte = 4,         //bit = coils_size_byte*8
-    hold_regs_size = 114,        //16-bit word
+    hold_regs_size = 154,        //16-bit word
     input_regs_size = 0,         //16-bit word
     sum_size_byte = discr_inputs_size_byte + coils_size_byte +
       hold_regs_size*2 + input_regs_size*2
@@ -358,20 +381,33 @@ private:
   //Режимы работы
   typedef enum _mode_t {
     mode_free,
+
     mode_start,
-    mode_supply_param_wait,
+    mode_start_wait,
+
+    mode_start_value,
+    mode_start_value_wait,
+
+    mode_start_supply,
+    mode_start_supply_wait,
+
+    mode_supply_on_ground_rele_off,
+    mode_supply_on_ground_rele_off_wait,
 
     mode_supply_on,
     mode_supply_on_wait,
 
+    mode_supply_on_value,
+    mode_supply_on_value_wait,
+
     mode_supply_output_off,
     mode_supply_output_off_wait,
 
-    mode_ground_rele,
-    mode_ground_rele_wait,
+    mode_ground_rele_on,
+    mode_ground_rele_on_wait,
 
-    mode_off,
-    mode_off_wait,
+    mode_value_off,
+    mode_value_off_wait
   } mode_t;
 
   mode_t m_mode;
@@ -394,6 +430,32 @@ private:
   //Стабилизируемый параметр
   float m_parameter;
   float m_argument;
+};
+
+class dummy_supply_t: public mxsupply_t
+{
+public:
+  // Постоянный ток поддерживается прибором или нет
+  virtual irs_bool dc_supported() {return irs_true;}
+  // Установка тока
+  virtual void set_current(double current) {}
+  // Установка напряжения
+  virtual void set_voltage(double voltage) {}
+  // Включение источника
+  virtual void on() {}
+  // Выключение источника
+  virtual void off() {}
+  // Чтение статуса текущей операции
+  virtual meas_status_t status() {return meas_status_success;}
+  // Прерывание текущей операции
+  virtual void abort() {}
+  // Элементарное действие
+  virtual void tick() {}
+  // Замыкание выхода на землю
+  virtual void ground_rele() {}
+
+  virtual void output_off() {}
+
 };
 
 #endif // meassupH

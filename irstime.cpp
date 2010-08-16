@@ -65,3 +65,21 @@ IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_strm)
   return a_strm;
 }
 
+irs::irs_string_t irs::file_name_time(irs_string_t a_extension)
+{
+  const tm* data;
+  time_t timer = time(NULL);
+  data = localtime(&timer);
+  ostrstream stream;
+  stream << setfill('0');
+  stream<<setw(4)<<(data->tm_year+1900);
+  stream<<setw(2)<<(data->tm_mon+1);
+  stream<<setw(2)<<data->tm_mday<<' ';
+  stream<<setw(2)<<data->tm_hour;
+  stream<<setw(2)<<data->tm_min;
+  stream<<setw(2)<<data->tm_sec<<a_extension<<'\0';
+  irs_string_t file_name_time = stream.str();
+  stream.rdbuf()->freeze(false);
+  return file_name_time;
+}
+

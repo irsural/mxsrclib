@@ -66,6 +66,24 @@ bool irs::cbuilder::file_version_t::operator!=(
   return !operator==(a_file_version);
 }
 
+irs::irs_string_t irs::cbuilder::file_path(irs_string_t a_file_name,
+  irs_string_t a_extension)
+{
+  irs_string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
+  irs_string_t file_name = a_file_name;
+
+  if (find(a_file_name.begin(), a_file_name.end(), '\\') ==
+    a_file_name.end())
+  {
+    file_name = ExePath + file_name;
+  }
+  if (find(a_file_name.begin(), a_file_name.end(), '.') ==
+    a_file_name.end())
+  {
+    file_name = file_name + a_extension;
+  }
+  return file_name;
+}
 // Запрос версии файла
 bool irs::cbuilder::get_file_version(
   const irs::string_t& a_file_name, irs::cbuilder::file_version_t& a_version)

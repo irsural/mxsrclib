@@ -1,5 +1,5 @@
 // Работа со временем
-// Дата: 13.04.2010
+// Дата: 13.08.2010
 // Ранняя дата: 10.07.2009
 
 #ifndef irstimeH
@@ -30,6 +30,9 @@ irs::string cnt_to_strtime(counter_t cnt, bool show_ms = false);
 millisecond_t system_time();
 // Запись в поток текущего времени
 IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
+//возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
+//расширение вводить с точкой
+irs_string_t file_name_time(irs_string_t a_extension = "");
 
 } //namespace irs
 

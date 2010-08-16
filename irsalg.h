@@ -161,6 +161,117 @@ data_t irs::sko_calc_t<data_t, calc_t>::average()
 
 namespace irs {
 
+// Расчет Дельта
+template <class T>
+class delta_calc_t
+{
+public:
+  delta_calc_t();
+  ~delta_calc_t();
+  void add(T a_val);
+  T max();
+  T min();
+  T delta();
+  void clear();
+  void array_size(size_t a_count);
+  T average();
+private:
+  deque<T> m_array;
+  irs_u32 m_count;
+};
+
+} //namespace irs
+
+template <class T>
+irs::delta_calc_t<T>::delta_calc_t():
+  m_array(),
+  m_count(100)
+{
+}
+template <class T>
+irs::delta_calc_t<T>::~delta_calc_t()
+{
+}
+template <class T>
+void irs::delta_calc_t<T>::array_size(size_t a_count)
+{
+  m_count = a_count;
+}
+template <class T>
+void irs::delta_calc_t<T>::add(T a_val)
+{
+  size_t size = m_array.size();
+  if (size < m_count) {
+    m_array.push_back(a_val);
+  } else if (size == m_count) {
+    m_array.pop_front();
+    m_array.push_back(a_val);
+  } else if (size > m_count) {
+    size_t margin = size - m_count;
+    for (size_t i = 0; i < margin; i++) {
+      m_array.pop_front();
+    }
+  }
+}
+template <class T>
+T irs::delta_calc_t<T>::max()
+{
+  size_t size = m_array.size();
+  T max = m_array[0];
+  for (size_t i = 0; i < size; i++)
+  {
+    if (m_array[i] > max) max = m_array[i];
+  }
+  return max;
+}
+template <class T>
+T irs::delta_calc_t<T>::min()
+{
+  size_t size = m_array.size();
+  T min = m_array[0];
+  for (size_t i = 0; i < size; i++)
+  {
+    if (m_array[i] < min) min = m_array[i];
+  }
+  return min;
+}
+template <class T>
+T irs::delta_calc_t<T>::delta()
+{
+  size_t size = m_array.size();
+  T min = m_array[0];
+  for (size_t i = 0; i < size; i++)
+  {
+    if (m_array[i] < min) min = m_array[i];
+  }
+  T max = m_array[0];
+  for (size_t i = 0; i < size; i++)
+  {
+    if (m_array[i] > max) max = m_array[i];
+  }
+  T delta = max - min;
+  return delta;
+}
+template <class T>
+void irs::delta_calc_t<T>::clear()
+{
+  m_array.resize(0);
+}
+template <class T>
+T irs::delta_calc_t<T>::average()
+{
+  size_t size = m_array.size();
+  T sum =0;
+  for (size_t i = 0; i < size; i++)
+  {
+    sum = sum + m_array[i];
+  }
+  return sum/size;
+}
+
+
+namespace irs {
+
 struct crc32_data_t
 {
   enum {

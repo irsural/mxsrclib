@@ -34,6 +34,7 @@ class local_data_t: public mxdata_t
 {
 public:
   inline local_data_t(irs_uarc a_size);
+  inline void resize(irs_size_t a_size);
   virtual inline irs_uarc size();
   virtual inline irs_bool connected();
   virtual inline void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -51,6 +52,10 @@ private:
 inline local_data_t::local_data_t(irs_uarc a_size):
   m_data(a_size)
 {
+}
+inline void irs::local_data_t::resize(irs_size_t a_size)
+{
+  m_data.resize(a_size);
 }
 inline irs_uarc irs::local_data_t::size()
 {
