@@ -213,8 +213,8 @@ u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t *ap_hardflow):
 {
   m_eth_data.connect(&m_modbus_client, 0);
 
-  m_mode = mode_start;
-  m_status =  meas_status_busy;
+  /*m_mode = mode_start;
+  m_status =  meas_status_busy;*/
 }
 // Деструктор
 u309m_current_supply_t::~u309m_current_supply_t()
@@ -250,7 +250,7 @@ void u309m_current_supply_t::output_off()
 
 void u309m_current_supply_t::off()
 {
-  m_mode = mode_value_off;
+  m_mode = mode_off_value_off;
   m_status =  meas_status_busy;
 }
 // Чтение статуса текущей операции
@@ -460,7 +460,7 @@ void u309m_current_supply_t::tick()
       }
     } break;
 
-    case mode_value_off: {
+    case mode_off_value_off: {
         m_argument = 0;
 
         m_eth_data.supply_200V.sense_regA = m_argument;
@@ -472,21 +472,20 @@ void u309m_current_supply_t::tick()
         m_eth_data.supply_17A.sense_regA = m_argument;
         m_eth_data.supply_17A.sense_regB = m_argument;
 
-        m_mode = mode_value_off_wait;
+        m_mode = mode_off_value_off_wait;
         m_status = meas_status_busy;
     } break;
-    case mode_value_off_wait: {
+    case mode_off_value_off_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed)
       {
-        m_mode = mode_free;
+        m_mode = mode_supply_output_off;
         m_status = meas_status_success;
       } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
       {
         m_status = meas_status_error;
       }
     } break;
-  }
-
+  }  
 }
 
 

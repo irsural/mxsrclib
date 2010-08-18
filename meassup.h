@@ -406,8 +406,8 @@ private:
     mode_ground_rele_on,
     mode_ground_rele_on_wait,
 
-    mode_value_off,
-    mode_value_off_wait
+    mode_off_value_off,
+    mode_off_value_off_wait
   } mode_t;
 
   mode_t m_mode;

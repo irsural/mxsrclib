@@ -563,7 +563,7 @@ void irs::tstlan4_t::controls_t::creation_csv()
   irs_string_t file_name = file_name_time(".csv");
   irs_string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
   irs_string_t path = cbuilder::file_path
-    (ExePath + "old\\" + file_name, ".csv");
+    (ExePath + "Out\\" + file_name, ".csv");
   m_csv_file.open(path.c_str());
 
   TStrings* name_list = mp_vars_grid->Cols[m_name_col];
@@ -670,10 +670,10 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     if (col_size > 0) {
       col_size = col_size-1;
     }
-    bool flag = false;
-    //size_t max_col_index = col_size - 1;
-    //size_t max_row_index = row_size - 1;
-    //size_t col_index = 0;
+    bool is_null = false;
+    double time_chart = m_time.get();
+    irs_string_t time_zero_str =  m_table.read_cell(0, 1);
+    double time_zero = StrToFloat(time_zero_str.c_str());
     for (size_t col_index = 1; col_index < col_size; col_index++) {
       irs_string_t chart_name = m_table.read_cell(col_index, 0);
       if (!m_chart_names[chart_name]) {
@@ -682,15 +682,17 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
       for (size_t row_index = 1; row_index < row_size; row_index++) {
         irs_string_t value = m_table.read_cell(col_index, row_index);
         if (value == "") {
-          flag = true;
+          is_null = true;
         }
-        if (!flag) {
+        if (!is_null) {
           irs_string_t time =  m_table.read_cell(0, row_index);
+          double delta_time =  time_chart + StrToFloat(time.c_str()) -
+            time_zero;
           mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
-            StrToFloat(time.c_str()),
+            delta_time,
             StrToFloat(value.c_str()));
         }
-        flag = false;
+        is_null = false;
       }
     }
     //m_table.clear();
