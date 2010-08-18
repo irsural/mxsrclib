@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 28.04.2010
+// Дата: 06.08.2010
 // Дата создания: 17.09.2009
 
 #ifndef tstlan4libH
@@ -13,6 +13,9 @@
 #include <timer.h>
 #include <mxini.h>
 #include <MxChart.h>
+#include <csvwork.h>
+#include <cbsysutils.h>
+#include <irstable.h>
 
 #include <irsfinal.h>
 
@@ -76,8 +79,8 @@ private:
   private:
     struct netconn_t {
       struct item_t {
-        enum type_t { type_unknown, type_bit, type_u8, type_i16, type_u16,
-          type_u32, type_i32, type_u64, type_float, type_double };
+        enum type_t { type_unknown, type_bit, type_bool ,type_u8, type_i16,
+          type_u16, type_u32, type_i32, type_u64, type_float, type_double };
 
         type_t type;
         int index;
@@ -92,13 +95,16 @@ private:
       static const int bit_in_byte = 8;
 
       const char *name_bit;
+      const char *name_bool;
       const char *name_u8;
       const char *name_i16;
       const char *name_u16;
       const char *name_i32;
       const char *name_float;
+      const char *name_double;
 
       vector<bit_data_t> bit_vec;
+      vector<conn_data_t<bool> > bool_vec;
       vector<conn_data_t<irs_u8> > u8_vec;
       vector<conn_data_t<irs_i16> > i16_vec;
       vector<conn_data_t<irs_u16> > u16_vec;
@@ -112,13 +118,16 @@ private:
 
       netconn_t():
         name_bit("bit"),
+        name_bool("bool"),
         name_u8("u8"),
         name_i16("i16"),
         name_u16("u16"),
         name_i32("long"),
         name_float("float"),
+        name_double("double"),
 
         bit_vec(),
+        bool_vec(),
         u8_vec(),
         i16_vec(),
         u16_vec(),
@@ -173,6 +182,7 @@ private:
         mp_data = ap_data;
 
         bit_vec.clear();
+        bool_vec.clear();
         u8_vec.clear();
         i32_vec.clear();
         float_vec.clear();
@@ -197,6 +207,9 @@ private:
             add_conn(bit_vec, var_index, conn_index, bit_index);
             is_cur_item_bit = true;
 
+          } else if (type_str == name_bool) {
+            add_conn(bool_vec, var_index, conn_index, bit_index,
+              item_t::type_bool);
           } else if (type_str == name_u8) {
             add_conn(u8_vec, var_index, conn_index, bit_index,
               item_t::type_u8);
@@ -209,6 +222,9 @@ private:
           } else if (type_str == name_i32) {
             add_conn(i32_vec, var_index, conn_index, bit_index,
               item_t::type_i32);
+          } else if (type_str == name_double) {
+            add_conn(double_vec, var_index, conn_index, bit_index,
+              item_t::type_double);
           } else { //type_float
             add_conn(float_vec, var_index, conn_index, bit_index,
               item_t::type_float);
@@ -250,6 +266,8 @@ private:
 
     TForm* mp_form;
     TPanel* mp_top_panel;
+    TOpenDialog* mp_open_dialog;
+    TButton* mp_load_btn;
     TButton* mp_start_btn;
     TButton* mp_chart_btn;
     TMemo* mp_log_memo;
@@ -275,6 +293,9 @@ private:
     int write_var_index;
     irs::chart::builder_chart_window_t m_builder_chart;
     chart_window_t* mp_chart;
+    csv_file m_csv_file;
+    csvwork::csv_file_synchro_t m_csv_open_file;
+    table_string_t m_table;
     bool m_is_edit_chart_items;
     bool m_refresh_chart_items;
     measure_time_t m_time;
@@ -287,7 +308,12 @@ private:
     int m_grid_edit_col;
     int m_grid_edit_row;
     map<string_type, bool> m_chart_names;
+    map<string_type, bool> m_csv_names;
+    measure_time_t m_timer;
     const string_type m_ini_section_prefix;
+    bool m_start;
+    bool m_first;
+    bool m_is_close_csv;
 
     template <class T>
     void integer_to_string(const T& a_value, string_type* ap_string);
@@ -297,11 +323,14 @@ private:
     void fill_grid_index_col();
     bool is_saveable_col(int a_col);
     void save_grid_row(int a_row);
+    void creation_csv();
     void __fastcall VarsGridGetEditText(
       TObject *Sender, int ACol, int ARow, String &Value);
     void __fastcall VarsGridKeyDown(
       TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall ChartBtnClick(TObject *Sender);
+    void __fastcall CsvSaveBtnClick(TObject *Sender);
+    void __fastcall CsvLoadBtnClick(TObject *Sender);
     void __fastcall GridInsertClick(TObject *Sender);
     void __fastcall GridDeleteClick(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);
