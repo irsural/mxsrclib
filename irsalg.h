@@ -175,6 +175,7 @@ public:
   void clear();
   void array_size(size_t a_count);
   T average();
+  size_t size();
 private:
   deque<T> m_array;
   irs_u32 m_count;
@@ -217,10 +218,9 @@ template <class T>
 T irs::delta_calc_t<T>::max()
 {
   size_t size = m_array.size();
-  T max = m_array[0];
-  for (size_t i = 0; i < size; i++)
-  {
-    if (m_array[i] > max) max = m_array[i];
+  T max = 0;
+  if (size != 0) {
+     max =  *max_element(m_array.begin(), m_array.end());
   }
   return max;
 }
@@ -228,28 +228,16 @@ template <class T>
 T irs::delta_calc_t<T>::min()
 {
   size_t size = m_array.size();
-  T min = m_array[0];
-  for (size_t i = 0; i < size; i++)
-  {
-    if (m_array[i] < min) min = m_array[i];
+  T min = 0;
+  if (size != 0) {
+    min =  *min_element(m_array.begin(), m_array.end());
   }
   return min;
 }
 template <class T>
 T irs::delta_calc_t<T>::delta()
 {
-  size_t size = m_array.size();
-  T min = m_array[0];
-  for (size_t i = 0; i < size; i++)
-  {
-    if (m_array[i] < min) min = m_array[i];
-  }
-  T max = m_array[0];
-  for (size_t i = 0; i < size; i++)
-  {
-    if (m_array[i] > max) max = m_array[i];
-  }
-  T delta = max - min;
+  T delta = max() - min();
   return delta;
 }
 template <class T>
@@ -261,12 +249,21 @@ template <class T>
 T irs::delta_calc_t<T>::average()
 {
   size_t size = m_array.size();
-  T sum =0;
+  T sum = 0;
   for (size_t i = 0; i < size; i++)
   {
     sum = sum + m_array[i];
   }
+  if (size == 0) {
+    size = 1;
+  }
   return sum/size;
+}
+template <class T>
+size_t irs::delta_calc_t<T>::size()
+{
+  size_t size = m_array.size();
+  return size;
 }
 
 
