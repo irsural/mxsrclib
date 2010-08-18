@@ -60,8 +60,8 @@ inline bool operator !=(mxip_t a_ip1, mxip_t a_ip2)
 inline void mxip_to_cstr(char* a_ip_in_str, mxip_t a_ip)
 {
   ostrstream strm(a_ip_in_str, IP_STR_LEN);
-  strm << a_ip.val[0] << "." << a_ip.val[1] << ".";
-  strm << a_ip.val[2] << "." << a_ip.val[3] << "\0";
+  strm << (int)a_ip.val[0] << "." << (int)a_ip.val[1] << ".";
+  strm << (int)a_ip.val[2] << "." << (int)a_ip.val[3] << '\0';
   a_ip_in_str[IP_STR_LEN - 1] = 0;
 }
 
