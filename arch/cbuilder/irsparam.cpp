@@ -1,4 +1,4 @@
-// Дата: 09.08.2010
+// Дата: 16.08.2010
 // Дата создания: 29.07.2010
 
 #include <irsdefs.h>
@@ -75,7 +75,7 @@ irs::param_box_t::param_box_t(
   m_ini_file.load();
   
   mp_form->Width = mp_value_list_editor->ColWidths[header_col] +
-    mp_value_list_editor->ColWidths[option_col];
+    mp_value_list_editor->ColWidths[option_col] + 14/*???*/;
 }
 
 void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
