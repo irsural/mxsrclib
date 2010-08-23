@@ -154,9 +154,6 @@ void mx_agilent_6675a_t::abort()
   f_abort_request = irs_true;
 }
 
-void mx_agilent_6675a_t::ground_rele()
-{
-}
 // Ёлементарное действие
 void mx_agilent_6675a_t::tick()
 {
@@ -216,6 +213,7 @@ u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t *ap_hardflow):
   /*m_mode = mode_start;
   m_status =  meas_status_busy;*/
 }
+
 // ƒеструктор
 u309m_current_supply_t::~u309m_current_supply_t()
 {
@@ -258,19 +256,16 @@ meas_status_t u309m_current_supply_t::status()
 {
   return m_status;
 }
-
 // ѕрерывание текущей операции
 void u309m_current_supply_t::abort()
 {
   m_mode = mode_supply_output_off;
   m_status =  meas_status_busy;
 }
-
-void u309m_current_supply_t::ground_rele()
+irs::mxdata_t* u309m_current_supply_t::get_supply_data()
 {
-  //m_eth_data.header_data.ground_rele_bit = 1;
+  return &m_modbus_client;
 }
-
 // Ёлементарное действие
 void u309m_current_supply_t::tick()
 {

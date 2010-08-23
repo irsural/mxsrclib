@@ -44,9 +44,7 @@ public:
   virtual void abort() = 0;
   // Элементарное действие
   virtual void tick() = 0;
-  // Замыкание выхода на землю
-  virtual void ground_rele() = 0;
-
+  //отключение от выхода источника
   virtual void output_off() = 0;
 
 };
@@ -120,8 +118,6 @@ public:
   virtual void abort();
   // Элементарное действие
   virtual void tick();
-  // Замыкание выхода на землю
-  virtual void ground_rele();
 
   virtual void output_off();
 
@@ -352,13 +348,8 @@ public:
   virtual void abort();
   // Элементарное действие
   virtual void tick();
-  // Замыкание выхода на землю
-  virtual void ground_rele();
-
   virtual void output_off();
-
-
-
+  irs::mxdata_t* get_supply_data();
 private:
   // Тип для текущего режима
   typedef enum _supply_number_t {
@@ -451,8 +442,6 @@ public:
   virtual void abort() {}
   // Элементарное действие
   virtual void tick() {}
-  // Замыкание выхода на землю
-  virtual void ground_rele() {}
 
   virtual void output_off() {}
 

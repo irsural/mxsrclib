@@ -171,6 +171,8 @@ irs::tstlan4_t::controls_t::controls_t(
   m_is_edit_chart_items(true),
   m_refresh_chart_items(true),
   m_time(),
+  m_shift_time(0),
+  m_refresh_table(true),
   m_saveable_is_edit(false),
   m_saveable_col(0),
   m_saveable_row(0),
@@ -299,7 +301,7 @@ void irs::tstlan4_t::controls_t::tick()
       m_first_connect = false;
       m_ini_file.load();
     }
-    if (m_read_loop_timer.check()) {
+    if (m_read_loop_timer.check() && m_refresh_table) {
       // Обработка столбца "Значение" при чтении
       int row_count = mp_vars_grid->RowCount;
       TStrings* value_list = mp_vars_grid->Cols[m_value_col];
@@ -352,7 +354,7 @@ void irs::tstlan4_t::controls_t::tick()
           }
         }
       }
-      double chart_time = m_time.get();
+      double chart_time = m_time.get() + m_shift_time;
       for (int row = m_header_size; row < row_count; row++) {
         if (chart_list->Strings[row] == "1") {
           int var_index = row - m_header_size;
@@ -562,21 +564,24 @@ void irs::tstlan4_t::controls_t::creation_csv()
   m_timer.start();
   irs_string_t file_name = file_name_time(".csv");
   irs_string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
-  irs_string_t path = cbuilder::file_path
-    (ExePath + "Out\\" + file_name, ".csv");
-  m_csv_file.open(path.c_str());
-
-  TStrings* name_list = mp_vars_grid->Cols[m_name_col];
-  TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];
-  int row_count = mp_vars_grid->RowCount;
-  m_csv_file.add_col("Time", ec_str_type);
-  for (int row = m_header_size; row < row_count; row++) {
-    string_type csv_names = name_list->Strings[row].c_str();
-    m_csv_names[csv_names] = false;
-    if (chart_list->Strings[row] == "1") {
-      if (!m_csv_names[csv_names]) {
-        m_csv_names[csv_names] = true;
-        m_csv_file.add_col(csv_names.c_str(), ec_str_type);
+  irs_string_t path =  ExePath + "Out\\";
+  MkDir(path.c_str());
+  irs_string_t path_file = cbuilder::file_path(path + file_name, ".csv");
+  if (!m_csv_file.open(path_file.c_str())) {
+    MessageBox(NULL,"CSV Файл не создан!!", "Error", MB_OK);
+  } else {
+    TStrings* name_list = mp_vars_grid->Cols[m_name_col];
+    TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];
+    int row_count = mp_vars_grid->RowCount;
+    m_csv_file.add_col("Time", ec_str_type);
+    for (int row = m_header_size; row < row_count; row++) {
+      string_type csv_names = name_list->Strings[row].c_str();
+      m_csv_names[csv_names] = false;
+      if (chart_list->Strings[row] == "1") {
+        if (!m_csv_names[csv_names]) {
+          m_csv_names[csv_names] = true;
+          m_csv_file.add_col(csv_names.c_str(), ec_str_type);
+        }
       }
     }
   }
@@ -649,10 +654,12 @@ void __fastcall irs::tstlan4_t::controls_t::CsvSaveBtnClick(TObject *Sender)
 {
   if (!m_start) {
     m_start = true;
+    m_refresh_table = false;
     m_is_close_csv = m_csv_file.close();
     mp_start_btn->Caption = mp_read_on_text;
   } else {
     m_start = false;
+    m_refresh_table = true;
     m_is_close_csv = false;
     creation_csv();
     mp_start_btn->Caption = mp_read_off_text;
@@ -671,7 +678,7 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
       col_size = col_size-1;
     }
     bool is_null = false;
-    double time_chart = m_time.get();
+    double time_chart = m_time.get() + m_shift_time;
     irs_string_t time_zero_str =  m_table.read_cell(0, 1);
     double time_zero = StrToFloat(time_zero_str.c_str());
     for (size_t col_index = 1; col_index < col_size; col_index++) {
@@ -695,8 +702,8 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
         is_null = false;
       }
     }
-    //m_table.clear();
-    //m_csv_open_file.save(m_table);
+    irs_string_t time_end =  m_table.read_cell(0, row_size - 1);
+    m_shift_time = m_shift_time + StrToFloat(time_end.c_str()) - time_zero;
     m_csv_open_file.close();
   }
 }
