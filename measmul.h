@@ -15,6 +15,7 @@
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irserror.h>
+#include <irsmbus.h>
 
 #include <irsfinal.h>
 
@@ -804,7 +805,7 @@ public:
   virtual void set_bandwidth(double bandwidth) {}
   // Установка входного сопротивления канала
   virtual void set_input_impedance(double impedance) {}
-  // Устсновка уровня запуска канала
+  // Установка уровня запуска канала
   virtual void set_start_level(double level) {}
   // Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range) {}
@@ -813,5 +814,147 @@ public:
   // Установка входного сопротивления канала
   //virtual void set_filter(double ) {}
 };
+
+namespace irs {
+
+// Класс для работы с мультиметром National Instruments PXI-4071
+class ni_pxi_4071_t: public mxmultimeter_t
+{
+public:
+  enum filter_type {
+    butterworth,
+    chebyshev,
+    elliptic
+  };
+  struct filter_settings_t {
+    filter_type type;
+    irs_u8 order;
+    irs_u32 sampling_freq; // Hz
+    irs_u32 low_cutoff_freq; // Hz
+    irs_u16 stopband_ripple; // dB
+    irs_u16 passband_ripple; // dB
+    
+    filter_settings_t(
+      filter_type a_type,
+      irs_u8 a_order,
+      irs_u32 a_sampling_freq,
+      irs_u32 a_low_cutoff_freq,
+      irs_u16 a_stopband_ripple = 0,
+      irs_u16 a_passband_ripple = 0
+    ):
+      type(a_type),
+      order(a_order),
+      sampling_freq(a_sampling_freq),
+      low_cutoff_freq(a_low_cutoff_freq),
+      stopband_ripple(a_stopband_ripple),
+      passband_ripple(a_passband_ripple)
+    {
+    }
+  };
+  
+  ni_pxi_4071_t(
+    hardflow_t* ap_hardflow,
+    filter_settings_t* ap_filter,
+    counter_t a_update_time
+  );
+  ~ni_pxi_4071_t();
+  // Установить режим измерения постоянного напряжения
+  virtual void set_dc();
+  // Установить режим измерения переменного напряжения
+  virtual void set_ac();
+  // Установить положителный фронт запуска
+  virtual void set_positive();
+  // Установить отрицательный фронт канала
+  virtual void set_negative();
+  // Чтение значения при текущем типа измерения
+  virtual void get_value(double *ap_value);
+  // Чтение напряжения
+  virtual void get_voltage(double *ap_voltage);
+  // Чтения силы тока
+  virtual void get_current(double *ap_current);
+  // Чтение сопротивления
+  virtual void get_resistance2x(double *ap_resistance);
+  // Чтение сопротивления
+  virtual void get_resistance4x(double *ap_resistance);
+  // Чтение частоты
+  virtual void get_frequency(double *ap_frequency);
+  // Чтение усредненного сдвира фаз
+  virtual void get_phase_average(double *ap_phase_average);
+  // Чтение фазового сдвига
+  virtual void get_phase(double *ap_phase);
+  // Чтение временного интервала
+  virtual void get_time_interval(double *ap_time_interval);
+  // Чтение усредненного временного интервала
+  virtual void get_time_interval_average(double *ap_time_interval);
+
+  // Запуск автокалибровки мультиметра
+  virtual void auto_calibration();
+  // Чтение статуса текущей операции
+  virtual meas_status_t status();
+  // Прерывание текущей операции
+  virtual void abort();
+  // Элементарное действие
+  virtual void tick();
+  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  virtual void set_nplc(double a_nplc);
+  // Установка времени интегрирования в c
+  virtual void set_aperture(double a_aperture);
+  // Установка полосы фильтра
+  virtual void set_bandwidth(double a_bandwidth);
+  // Установка входного сопротивления канала
+  virtual void set_input_impedance(double a_impedance);
+  // Установка уровня запуска канала
+  virtual void set_start_level(double a_level);
+  // Установка диапазона измерений
+  virtual void set_range(type_meas_t a_type_meas, double a_range);
+  // Установка автоматического выбора диапазона измерений
+  virtual void set_range_auto();
+  // Установка входного сопротивления канала
+  //virtual void set_filter(double a_time_interval);
+private:
+  struct eth_mul_data_t {
+    // Установки:
+    bit_data_t filtering;
+    bit_data_t auto_zero;
+    bit_data_t power_freq; // 0 - 60 Hz; 1 - 50 Hz
+    bit_data_t integrate_time_unit; // 0 - Seconds; 1 - PLCs
+    conn_data_t<irs_u8> range;
+    conn_data_t<irs_u8> resolution_digits;
+    conn_data_t<irs_u8> meas_type;
+    conn_data_t<irs_u8> filter_type;
+    conn_data_t<irs_u8> filter_order;
+    conn_data_t<irs_u16> integrate_time;
+    conn_data_t<irs_u32> sampling_freq;
+    conn_data_t<irs_u32> low_cutoff_freq;
+    conn_data_t<irs_u16> stopband_ripple;
+    conn_data_t<irs_u16> passband_ripple;
+    
+    // Считываемые значения:
+    conn_data_t<double> meas_value;
+    bit_data_t out_of_range;
+  
+    eth_mul_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
+      irs_uarc* ap_size = IRS_NULL)
+    {
+      irs_uarc size = connect(ap_data, a_index);
+      if(ap_size != IRS_NULL){
+        *ap_size = size;
+      }
+    }
+    irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
+    {
+      irs_uarc index = a_index;
+      
+      return index;
+    }
+  };
+  
+  hardflow_t* mp_hardflow;
+  modbus_client_t m_modbus_client;
+  eth_mul_data_t m_eth_mul_data;
+  meas_status_t m_meas_status;
+};
+
+} //namespace irs
 
 #endif //measmulH

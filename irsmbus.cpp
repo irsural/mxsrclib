@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 10.08.2010
+// Дата: 18.08.2010
 // Ранняя дата: 16.09.2008
 
 #include <irsmbus.h>
@@ -1667,7 +1667,8 @@ irs::modbus_client_t::modbus_client_t(
   counter_t a_update_time,
   irs_u8 a_error_count_max,
   counter_t a_disconnect_time,
-  irs_u16 a_size_of_packet
+  irs_u16 a_size_of_packet,
+  irs_u8 a_unit_id
 ):
   m_size_of_packet((a_size_of_packet > packet_size_max)? packet_size_max :
     ((a_size_of_packet < packet_size_min)? packet_size_min : a_size_of_packet)),
@@ -1733,7 +1734,8 @@ irs::modbus_client_t::modbus_client_t(
   m_transaction_id(0),
   m_request_quantity_discr_inputs_bit(0),
   m_request_quantity_coils_bit(0),
-  m_error_count(0)
+  m_error_count(0),
+  m_unit_id(a_unit_id)
 {  
   //m_send_request_timer.set(a_update_time/get_packet_number());
   m_send_request_timer.set(0);
@@ -2918,7 +2920,8 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
   }
   header.transaction_id = IRS_NULL;
   header.proto_id = IRS_NULL;
-  header.unit_identifier  = 1;
+  //header.unit_identifier  = 1;
+  header.unit_identifier  = m_unit_id;
   m_size_byte_end = header.length - 1;
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
     for(irs_u16 send_pack_index = 0;

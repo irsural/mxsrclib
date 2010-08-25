@@ -509,9 +509,9 @@ public:
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   virtual void tick();
-  virtual string_type param(const string_type &a_name);
-  virtual void set_param(const string_type &a_name,
-    const string_type &a_value);
+  virtual string_type param(const string_type &a_param_name);
+  virtual void set_param(const string_type &a_param_name,
+    const string_type &a_param_value);
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   

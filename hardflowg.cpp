@@ -1,5 +1,5 @@
 // Коммуникационные потоки
-// Дата: 07.07.2010
+// Дата: 13.08.2010
 // Дата создания: 8.09.2009
 
 #include <irsdefs.h>
@@ -1777,14 +1777,38 @@ irs::hardflow::tcp_client_t::size_type
 }
 
 irs::hardflow::tcp_client_t::string_type
-  irs::hardflow::tcp_client_t::param(const string_type &a_name)
+  irs::hardflow::tcp_client_t::param(const string_type &a_param_name)
 {
-  return string_type();
+  string_type param_value;
+  if (a_param_name == irst("remote_port")) {
+    number_to_string(m_dest_port, &param_value);
+  } else if (a_param_name == irst("remote_adress")) {
+    char ip_str[IP_STR_LEN];
+    memsetex(ip_str, IP_STR_LEN);
+    mxip_to_cstr(ip_str, m_dest_ip);
+    param_value = ip_str;
+  }
+  return param_value;
 }
 
-void irs::hardflow::tcp_client_t::set_param(const string_type &a_name,
-  const string_type &a_value)
+void irs::hardflow::tcp_client_t::set_param(const string_type &a_param_name,
+  const string_type &a_param_value)
 {
+  if (a_param_name == irst("remote_port")) {
+    irs_u16 new_dest_port = 0;
+    str_to_num(a_param_value, &new_dest_port);
+    if (m_dest_port != new_dest_port) {
+      m_dest_port = new_dest_port;
+      m_state_info.connect_sock_success = false;
+    }
+  } else if (a_param_name == irst("remote_adress")) {
+    mxip_t new_dest_ip = mxip_t::zero_ip();
+    new_dest_ip = make_mxip(a_param_value.c_str());
+    if (m_dest_ip != new_dest_ip) {
+      m_dest_ip = new_dest_ip;
+      m_state_info.connect_sock_success = false;
+    }
+  }
 }
 
 void irs::hardflow::tcp_client_t::tick()
@@ -2360,6 +2384,8 @@ irs::hardflow::simple_tcp_flow_t::simple_tcp_flow_t(
   m_cur_dest_ip(mxip_t::zero_ip()),
   m_cur_dest_port(0)
 {
+  mp_simple_tcp->tcp_init();
+  mp_simple_tcp->tcp_listen(1 /*channel*/, m_dest_port);
   mp_simple_tcp->passive_open_tcp();
   mp_simple_tcp->open_port(m_local_port);
   mp_recv_buf = mp_simple_tcp->get_recv_buf();

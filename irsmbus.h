@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 13.07.2010
+// Дата: 18.08.2010
 // Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
@@ -213,7 +213,8 @@ public:
     counter_t a_update_time = make_cnt_ms(200),
     irs_u8 a_error_count_max = 3,
     counter_t a_disconnect_time = make_cnt_s(2),
-    irs_u16 a_size_of_packet = 260
+    irs_u16 a_size_of_packet = 260,
+    irs_u8 a_unit_id = 0
   );
   void set_delay_time(double time);
   virtual ~modbus_client_t();
@@ -337,6 +338,7 @@ private:
   irs_u16                               m_request_quantity_discr_inputs_bit;
   irs_u16                               m_request_quantity_coils_bit;
   irs_u8                                m_error_count;
+  irs_u8                                m_unit_id;
   timer_t                               m_send_request_timer;
   static char const IRS_CSTR_NONVOLATILE       m_wait_command_mode[];
   static char const IRS_CSTR_NONVOLATILE       m_search_write_data_mode[];

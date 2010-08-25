@@ -1799,7 +1799,127 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
 
+// Класс для работы с мультиметром National Instruments PXI-4071
+irs::ni_pxi_4071_t::ni_pxi_4071_t(
+  hardflow_t* ap_hardflow,
+  filter_settings_t* ap_filter,
+  counter_t a_update_time
+):
+  mp_hardflow(ap_hardflow),
+  m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
+    0, 0, 0, 0, a_update_time),
+  m_eth_mul_data(),
+  m_meas_status(meas_status_success)
+{
+  m_eth_mul_data.connect(&m_modbus_client, 0);
+}
 
+irs::ni_pxi_4071_t::~ni_pxi_4071_t()
+{
+}
+
+void irs::ni_pxi_4071_t::set_dc()
+{
+}
+
+void irs::ni_pxi_4071_t::set_ac()
+{
+}
+
+void irs::ni_pxi_4071_t::set_positive()
+{
+}
+
+void irs::ni_pxi_4071_t::set_negative()
+{
+}
+
+void irs::ni_pxi_4071_t::get_value(double* ap_value)
+{
+}
+
+void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
+{
+}
+
+void irs::ni_pxi_4071_t::get_current(double* ap_current)
+{
+}
+
+void irs::ni_pxi_4071_t::get_resistance2x(double* ap_resistance)
+{
+}
+
+void irs::ni_pxi_4071_t::get_resistance4x(double* ap_resistance)
+{
+}
+
+void irs::ni_pxi_4071_t::get_frequency(double* ap_frequency)
+{
+}
+
+void irs::ni_pxi_4071_t::get_phase_average(double* ap_phase_average)
+{
+}
+
+void irs::ni_pxi_4071_t::get_phase(double* ap_phase)
+{
+}
+
+void irs::ni_pxi_4071_t::get_time_interval(double* ap_time_interval)
+{
+}
+
+void irs::ni_pxi_4071_t::get_time_interval_average(
+  double* ap_time_interval_average)
+{
+}
+
+void irs::ni_pxi_4071_t::auto_calibration()
+{
+}
+
+meas_status_t irs::ni_pxi_4071_t::status()
+{
+  return m_meas_status;
+}
+
+void irs::ni_pxi_4071_t::abort()
+{
+}
+
+void irs::ni_pxi_4071_t::tick()
+{
+  m_modbus_client.tick();
+}
+
+void irs::ni_pxi_4071_t::set_nplc(double a_nplc)
+{
+}
+
+void irs::ni_pxi_4071_t::set_aperture(double a_aperture)
+{
+}
+
+void irs::ni_pxi_4071_t::set_bandwidth(double /*a_bandwidth*/)
+{
+}
+
+void irs::ni_pxi_4071_t::set_input_impedance(double /*a_impedance*/)
+{
+}
+
+void irs::ni_pxi_4071_t::set_start_level(double /*a_level*/)
+{
+}
+
+void irs::ni_pxi_4071_t::set_range(type_meas_t a_type_meas, double a_range)
+{
+}
+
+void irs::ni_pxi_4071_t::set_range_auto()
+{
+}
 
 //---------------------------------------------------------------------------
 //#pragma package(smart_init)
