@@ -2384,8 +2384,8 @@ irs::hardflow::simple_tcp_flow_t::simple_tcp_flow_t(
   m_cur_dest_ip(mxip_t::zero_ip()),
   m_cur_dest_port(0)
 {
-  mp_simple_tcp->tcp_init();
-  mp_simple_tcp->tcp_listen(1 /*channel*/, m_dest_port);
+  //mp_simple_tcp->tcp_init();
+  //mp_simple_tcp->tcp_listen(1 /*channel*/, m_dest_port);
   mp_simple_tcp->passive_open_tcp();
   mp_simple_tcp->open_port(m_local_port);
   mp_recv_buf = mp_simple_tcp->get_recv_buf();
