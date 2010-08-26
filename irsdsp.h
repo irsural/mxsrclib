@@ -1076,6 +1076,42 @@ void fade_t<T>::set_t(T a_t)
   m_t = a_t;
 }
 
+enum filter_type_t {
+  ft_butterworth,
+  ft_chebyshev,
+  ft_elliptic
+};
+
+struct filter_settings_t {
+  typedef size_t size_type;
+  filter_type_t type;
+  size_type order;
+  double sampling_time_s;
+  double low_cutoff_freq_hz;
+  double high_cutoff_freq_hz;
+  double stopband_ripple_db;
+  double passband_ripple_db;
+
+  filter_settings_t(
+    filter_type_t a_type,
+    size_type a_order,
+    double a_sampling_freq_hz,
+    double a_low_cutoff_freq_hz,
+    double a_high_cutoff_freq_hz,
+    double a_stopband_ripple_db = 0,
+    double a_passband_ripple_db = 0
+  ):
+    type(a_type),
+    order(a_order),
+    sampling_time_s(a_sampling_freq_hz),
+    low_cutoff_freq_hz(a_low_cutoff_freq_hz),
+    high_cutoff_freq_hz(a_high_cutoff_freq_hz),
+    stopband_ripple_db(a_stopband_ripple_db),
+    passband_ripple_db(a_passband_ripple_db)
+  {
+  }
+};
+
 } //  irs
 
 #endif //irsdspH

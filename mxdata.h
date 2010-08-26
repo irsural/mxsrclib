@@ -503,17 +503,24 @@ void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   IRS_LIB_ASSERT((ap_pos >= data()) && (ap_pos <= data()+size()));
   const size_type insert_bloc_size = ap_last - ap_first;
   const size_type new_size = m_size + insert_bloc_size;
-  // Блок памяти должен быть внешним по отношению к приемному контейнеру
-  IRS_LIB_ASSERT((ap_last < data()) || (ap_first >= data()+size()));
-  const size_type pos = ap_pos - data();
-  const size_type move_bloc_size = (data()+size()) - ap_pos;
-  resize(new_size);
-  // Смещаем данные на размер вставляемого блока вправо
-  pointer p_pos = data() + pos;
-  pointer dest = p_pos + insert_bloc_size;
-  memmoveex(dest, p_pos, move_bloc_size);
-  // Вставляем блок
-  memcpyex(p_pos, ap_first, insert_bloc_size);
+  
+  // Это условие нужно, чтобы исключить вызов функции memmoveex,
+  // когда size() == 0, ибо тогда параметры ap_first, new_size могут
+  // быть равны IRS_NULL, и функция memmoveex поднимет исключение
+  if (new_size > 0) {
+    // Блок памяти должен быть внешним по отношению к приемному контейнеру
+    IRS_LIB_ASSERT((ap_last < data()) || (ap_first >= data()+size()));
+    const size_type pos = ap_pos - data();
+    const size_type move_bloc_size = (data()+size()) - ap_pos;
+
+    resize(new_size);
+    // Смещаем данные на размер вставляемого блока вправо
+    pointer p_pos = data() + pos;
+    pointer dest = p_pos + insert_bloc_size;
+    memmoveex(dest, p_pos, move_bloc_size);
+    // Вставляем блок
+    memcpyex(p_pos, ap_first, insert_bloc_size);
+  } 
 }
 template <class T>
 void raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
@@ -521,9 +528,14 @@ void raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
   IRS_LIB_ASSERT((ap_first >= data()) && (ap_first <= (data()+size())));
   IRS_LIB_ASSERT((ap_last >= data()) && (ap_last <= (data()+size())));
   size_type new_size = size() - (ap_last - ap_first);
-  const size_type move_bloc_size = (data()+size()) - ap_last;
-  memmoveex(ap_first, ap_last, move_bloc_size);
-  resize(new_size);
+  // Это условие нужно, чтобы исключить вызов функции memmoveex,
+  // когда size() == 0, ибо тогда параметры ap_first, new_size могут
+  // быть равны IRS_NULL, и функция memmoveex поднимет исключение
+  if (size() > 0) {
+    const size_type move_bloc_size = (data()+size()) - ap_last;
+    memmoveex(ap_first, ap_last, move_bloc_size);
+    resize(new_size);
+  }
 }
 template <class T>
 inline void raw_data_t<T>::clear()

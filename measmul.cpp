@@ -721,6 +721,299 @@ void mx_agilent_3458a_t::set_range_auto()
   m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
 }
 
+// Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
+
+irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
+  irs::hardflow_t* ap_hardflow,
+  multimeter_mode_type_t /*a_mul_mode_type*/
+):
+  mp_hardflow(ap_hardflow),
+  m_command_terminator(),
+  m_commands(),
+  m_buf_send(),
+  m_buf_receive(),
+  m_samples(),
+  m_initialization_complete(false),
+  m_coefficient_receive_ok(false),
+  m_coefficient(0),
+  mp_value(IRS_NULL),
+  m_status(meas_status_success),
+  m_delay_timer(irs::make_cnt_s(0))
+{
+  m_command_terminator.resize(2);
+  m_command_terminator[0] = 0x0D;
+  m_command_terminator[1] = 0x0A;
+
+  m_commands.push_back("RESET");
+  //m_commands.push_back("INBUF ON");
+  //m_commands.push_back("BEEP");
+  //m_commands.push_back("TARM HOLD");
+  //m_commands.push_back("TRIG HOLD");
+  m_commands.push_back("PRESET DIG");
+
+  //m_commands.push_back("DISP ON");
+  //m_commands.push_back("MFORMAT SINT");
+  //m_commands.push_back("OFORMAT SINT");
+  //m_commands.push_back("DCV 10");
+  //m_commands.push_back("EXTOUT SRQ, POS");
+  //m_commands.push_back("EXTOUT ICOMP, NEG");
+  //m_commands.push_back("BEEP");
+  //m_commands.push_back("OFORMAT DREAL");
+  //m_commands.push_back("BEEP");
+  m_commands.push_back("MEM OFF");
+  //m_commands.push_back("DSDC 100");
+  //m_commands.push_back("DELAY 2");
+  m_commands.push_back("APER 1E-6");
+  //m_commands.push_back("TRIG LEVEL");
+  //m_commands.push_back("LEVEL 0, DC");
+  irs_string_t sample_count_str;
+  const size_type sample_count = static_cast<size_type>(m_need_samples_count);
+  num_to_str(sample_count, &sample_count_str);
+  irs_string_t sweep_cmd = "SWEEP 17E-6, " + sample_count_str;
+  m_commands.push_back(sweep_cmd);
+
+  m_commands.push_back("ISCALE?");
+  //m_commands.push_back("BEEP");
+  //m_commands.push_back("BEEP");
+
+  //m_commands.push_back("TIMER 10E-6");
+  //m_commands.push_back("TRIG AUTO");
+  //m_commands.push_back("TARM SYN");
+  //m_commands.push_back("TRIG SYN");
+  mp_hardflow->set_param("read_timeout", "3");
+
+
+  /*m_commands.push_back("NRDGS 10, TIMER");
+  m_commands.push_back("TIMER 1E-2");*/
+  //m_commands.push_back("BEEP");
+  //m_commands.push_back("BEEP");
+  //m_commands.push_back("TRIG AUTO"); 
+}
+irs::agilent_3458a_digitizer_t::~agilent_3458a_digitizer_t()
+{
+}
+void irs::agilent_3458a_digitizer_t::set_dc()
+{
+}
+// Установить режим измерения переменного напряжения
+void irs::agilent_3458a_digitizer_t::set_ac()
+{
+}
+// Установить положителный фронт запуска
+void irs::agilent_3458a_digitizer_t::set_positive()
+{
+}
+// Установить отрицательный фронт канала
+void irs::agilent_3458a_digitizer_t::set_negative()
+{
+}
+// Чтение значения при текущем типа измерения
+void irs::agilent_3458a_digitizer_t::get_value(double *ap_value)
+{
+  mp_value = ap_value;
+  m_status = meas_status_busy;
+  m_buf_receive.clear();
+  //m_commands.push_back("TARM SYN");
+  //m_commands.push_back("TRIG SGL");
+}
+// Чтение напряжения
+void irs::agilent_3458a_digitizer_t::get_voltage(double *voltage)
+{
+  mp_value = voltage;
+  m_status = meas_status_busy;
+  m_buf_receive.clear();
+  //m_commands.push_back("TARM SYN");
+  //m_commands.push_back("TRIG SGL");
+}
+// Чтения силы тока
+void irs::agilent_3458a_digitizer_t::get_current(double */*current*/)
+{
+}
+// Чтение сопротивления
+void irs::agilent_3458a_digitizer_t::get_resistance2x(double */*resistance*/)
+{
+}
+// Чтение сопротивления
+void irs::agilent_3458a_digitizer_t::get_resistance4x(double */*resistance*/)
+{
+}
+// Чтение частоты
+void irs::agilent_3458a_digitizer_t::get_frequency(double */*frequency*/)
+{
+}
+// Чтение усредненного сдвира фаз
+void irs::agilent_3458a_digitizer_t::get_phase_average(double */*phase_average*/)
+{
+}
+// Чтение фазового сдвига
+void irs::agilent_3458a_digitizer_t::get_phase(double * /*phase*/)
+{
+}
+// Чтение временного интервала
+void irs::agilent_3458a_digitizer_t::get_time_interval(double * /*time_interval*/)
+{
+}
+// Чтение усредненного временного интервала
+void irs::agilent_3458a_digitizer_t::get_time_interval_average(
+  double * /*ap_time_interval*/)
+{
+}
+// Запуск автокалибровки (команда ACAL) мультиметра
+void irs::agilent_3458a_digitizer_t::auto_calibration()
+{
+}
+// Чтение статуса текущей операции
+meas_status_t irs::agilent_3458a_digitizer_t::status()
+{
+  return m_status;
+}
+// Прерывание текущей операции
+void irs::agilent_3458a_digitizer_t::abort()
+{
+}
+
+template <class T>
+T flip_data(const T& a_data)
+{
+  T fliped_data = T();
+  for (size_t byte_i = 0; byte_i < sizeof(T); byte_i++) {
+    *(reinterpret_cast<irs_u8*>(&fliped_data) + byte_i) =
+      *(reinterpret_cast<const irs_u8*>(&a_data) + (sizeof(T) - byte_i - 1));
+  }
+  return fliped_data;
+}
+
+// Элементарное действие
+void irs::agilent_3458a_digitizer_t::tick()
+{
+  IRS_LIB_ASSERT(mp_hardflow);
+  
+  //Sleep(2000);
+  mp_hardflow->tick();
+  commands_to_buf_send();
+  if (!m_buf_send.empty()) {
+    const size_type write_size = mp_hardflow->write(
+      mp_hardflow->channel_next(), m_buf_send.data(), m_buf_send.size());
+    IRS_DBG_MSG("Записано = " << write_size);
+    const size_type buf_new_size = m_buf_send.size() - write_size;
+    memmoveex(m_buf_send.data(), m_buf_send.data() + write_size,
+      buf_new_size);
+    m_buf_send.resize(buf_new_size);
+    if (m_buf_send.empty()) {
+      m_delay_timer.start();
+    }
+  } else {
+    // Нет данных на отправку
+  }
+  if (m_initialization_complete &&
+    (m_status == meas_status_busy) &&
+    (m_buf_receive.size() == static_cast<size_type>(m_need_receive_data_size))) {
+
+    m_samples.clear();
+    for (size_type samples_i = 0; samples_i < static_cast<size_type>(m_need_samples_count);
+      samples_i++) {
+
+      typedef irs_u16 mul_data_t;
+      const irs_u16 multim_value = reinterpret_cast<mul_data_t&>(
+        *(m_buf_receive.data() + (samples_i * sizeof(irs_u16))));
+      double sample = flip_data(multim_value) * m_coefficient;
+      m_samples.push_back(sample);
+    }
+    *mp_value = m_samples.front();
+    m_status = meas_status_success;
+  } else {
+    // Недостаточно данных для формирования результата
+  }
+  if ((m_status == meas_status_busy) && m_buf_send.empty()) {
+    #ifdef IRS_LIB_DEBUG
+    irs::measure_time_t measure_time;
+    #endif // IRS_LIB_DEBUG
+
+    const size_type buf_receive_cur_size =  m_buf_receive.size();
+    m_buf_receive.resize(static_cast<size_type>(m_need_receive_data_size));
+    const size_type read_size = mp_hardflow->read(
+      mp_hardflow->channel_next(), m_buf_receive.data() + buf_receive_cur_size,
+      m_need_receive_data_size - buf_receive_cur_size);
+    m_buf_receive.resize(buf_receive_cur_size + read_size);                 
+    IRS_LIB_DBG_MSG_IF(read_size > 0, "Прочитано = " << read_size);
+  } else {
+
+  }
+  if (!m_initialization_complete) {
+    std_string_t buf(reinterpret_cast<char*>(m_buf_receive.data()),
+      m_buf_receive.size());
+    size_type pos = buf.find("\r\n");
+    if (pos != irs_string_t::npos) {
+      irs_string_t coefficient_str = buf.substr(0, pos);
+      if (str_to_num_classic(coefficient_str, &m_coefficient)) {
+        m_buf_receive.clear();
+        mp_hardflow->set_param("read_timeout", "10");
+        m_commands.push_back("TARM SYN");
+        m_commands.push_back("TRIG SYN");
+        m_initialization_complete = true;
+      } else {
+        IRS_LIB_ASSERT_MSG("Значение коэффициента считать не удалось");
+      }
+    } else {
+      // Конец команды не найден
+    }
+  } else {
+    // Инициализация уже завершена
+  }
+}
+// Установка времени интегрирования в периодах частоты сети (20 мс)
+void irs::agilent_3458a_digitizer_t::set_nplc(double /*nplc*/)
+{
+}
+// Установка времени интегрирования в c
+void irs::agilent_3458a_digitizer_t::set_aperture(double /*aperture*/)
+{
+}
+// Установка полосы фильтра
+void irs::agilent_3458a_digitizer_t::set_bandwidth(double /*bandwidth*/)
+{
+}
+// Установка входного сопротивления канала
+void irs::agilent_3458a_digitizer_t::set_input_impedance(double /*impedance*/)
+{
+}
+// Устсновка уровня запуска канала
+void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
+{
+}
+// Установка диапазона измерений
+void irs::agilent_3458a_digitizer_t::set_range(type_meas_t /*a_type_meas*/, double /*a_range*/)
+{
+}
+// Установка автоматического выбора диапазона измерений
+void irs::agilent_3458a_digitizer_t::set_range_auto()
+{
+}
+
+void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
+{
+  const irs_u8* p_cmd_terminator_begin =
+    m_command_terminator.data();
+  const irs_u8* p_cmd_terminator_end =
+    m_command_terminator.data() + m_command_terminator.size();
+
+  const size_type cmd_count = m_commands.size();
+  for (size_type cmd_i = 0; cmd_i < cmd_count; cmd_i++) {
+    const irs_u8* p_cmd_begin = reinterpret_cast<const irs_u8*>(
+      m_commands[cmd_i].c_str());
+    const irs_u8* p_cmd_end = p_cmd_begin +
+      m_commands[cmd_i].size();
+    m_buf_send.insert(m_buf_send.data() + m_buf_send.size(), p_cmd_begin,
+      p_cmd_end);
+    if (true/*cmd_i != (cmd_count - 1)*/) {
+      m_buf_send.insert(m_buf_send.data() + m_buf_send.size(),
+        p_cmd_terminator_begin, p_cmd_terminator_end);
+    } else {
+      // После последней команды терминатор не вставляем
+    }
+  }
+  m_commands.clear();
+}
 
 // Класс для работы с мультиметром b7-78/1
 

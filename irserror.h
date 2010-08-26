@@ -219,11 +219,15 @@ inline ostream& operator<<(ostream& a_strm,
   {\
     IRS_ERROR_HELPER(error_code, msg);\
   }
-#define IRS_ERROR_IF_NOT(assert_expr, error_code, msg)\
+#define IRS_ERROR_IF(assert_expr, error_code, msg)\
   {\
-    if (!(assert_expr)) {\
+    if (assert_expr) {\
       IRS_ERROR_HELPER(error_code, msg);\
     }\
+  }
+#define IRS_ERROR_IF_NOT(assert_expr, error_code, msg)\
+  {\
+    IRS_ERROR_IF(!assert_expr, error_code, msg);\
   }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
 
@@ -234,6 +238,12 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_DBG_MSG(msg)\
   {\
     irs::mlog() << irs::stime << msg << endl;\
+  }
+#define IRS_DBG_MSG_IF(assert_expr, msg)\
+  {\
+    if (assert_expr) {\
+      IRS_DBG_MSG(msg);\
+    }\
   }
 #define IRS_DBG_MSG_SRC(msg)\
   {\
@@ -274,12 +284,15 @@ inline ostream& operator<<(ostream& a_strm,
   IRS_NEW_ASSERT(new_expr, file_idx)
 
 #define IRS_LIB_ERROR(error_code, msg) IRS_ERROR(error_code, msg)
+#define IRS_LIB_ERROR_IF(assert_expr, error_code, msg)\
+  IRS_ERROR_IF(assert_expr, error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)\
   IRS_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg) IRS_FATAL_ERROR(msg)
 
 #define IRS_LIB_DBG_RAW_MSG(msg) IRS_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg) IRS_DBG_MSG(msg)
+#define IRS_LIB_DBG_MSG_IF(assert_expr, msg) IRS_DBG_MSG_IF(assert_expr, msg)
 #define IRS_LIB_DBG_MSG_SRC(msg) IRS_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg) IRS_DBG_MSG_SRC_ENG(msg)
 
@@ -295,11 +308,13 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_LIB_NEW_ASSERT(new_expr, file_idx) (new new_expr)
 
 #define IRS_LIB_ERROR(error_code, msg)
+#define IRS_LIB_ERROR_IF(assert_expr, error_code, msg)
 #define IRS_LIB_ERROR_IF_NOT(assert_expr, error_code, msg)
 #define IRS_LIB_FATAL_ERROR(msg)
 
 #define IRS_LIB_DBG_RAW_MSG(msg)
 #define IRS_LIB_DBG_MSG(msg)
+#define IRS_LIB_DBG_MSG_IF(assert_expr, msg)
 #define IRS_LIB_DBG_MSG_SRC(msg)
 #define IRS_LIB_DBG_MSG_SRC_ENG(msg)
 
