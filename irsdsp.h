@@ -1095,7 +1095,7 @@ struct filter_settings_t {
   filter_settings_t(
     filter_type_t a_type,
     size_type a_order,
-    double a_sampling_freq_hz,
+    double a_sampling_time_s,
     double a_low_cutoff_freq_hz,
     double a_high_cutoff_freq_hz,
     double a_stopband_ripple_db = 0,
@@ -1103,7 +1103,7 @@ struct filter_settings_t {
   ):
     type(a_type),
     order(a_order),
-    sampling_time_s(a_sampling_freq_hz),
+    sampling_time_s(a_sampling_time_s),
     low_cutoff_freq_hz(a_low_cutoff_freq_hz),
     high_cutoff_freq_hz(a_high_cutoff_freq_hz),
     stopband_ripple_db(a_stopband_ripple_db),

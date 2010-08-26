@@ -17,6 +17,7 @@
 #include <irserror.h>
 #include <irsstring.h>
 #include <irsmbus.h>
+#include <irsdsp.h>
 
 #include <irsfinal.h>
 
@@ -399,7 +400,7 @@ private:
   raw_data_t<irs_u8> m_buf_receive;
   vector<double> m_samples;
   enum { m_need_samples_count = 300000 };
-  enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };  ;
+  enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;
   double m_coefficient;
@@ -909,38 +910,7 @@ namespace irs {
 // Класс для работы с мультиметром National Instruments PXI-4071
 class ni_pxi_4071_t: public mxmultimeter_t
 {
-public:
-  enum filter_type {
-    butterworth,
-    chebyshev,
-    elliptic
-  };
-  struct filter_settings_t {
-    filter_type type;
-    irs_u8 order;
-    irs_u32 sampling_freq; // Hz
-    irs_u32 low_cutoff_freq; // Hz
-    irs_u16 stopband_ripple; // dB
-    irs_u16 passband_ripple; // dB
-    
-    filter_settings_t(
-      filter_type a_type,
-      irs_u8 a_order,
-      irs_u32 a_sampling_freq,
-      irs_u32 a_low_cutoff_freq,
-      irs_u16 a_stopband_ripple = 0,
-      irs_u16 a_passband_ripple = 0
-    ):
-      type(a_type),
-      order(a_order),
-      sampling_freq(a_sampling_freq),
-      low_cutoff_freq(a_low_cutoff_freq),
-      stopband_ripple(a_stopband_ripple),
-      passband_ripple(a_passband_ripple)
-    {
-    }
-  };
-  
+public:  
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     filter_settings_t* ap_filter,
@@ -989,11 +959,11 @@ public:
   // Установка времени интегрирования в c
   virtual void set_aperture(double a_aperture);
   // Установка полосы фильтра
-  virtual void set_bandwidth(double a_bandwidth);
+  virtual void set_bandwidth(double /*a_bandwidth*/);
   // Установка входного сопротивления канала
-  virtual void set_input_impedance(double a_impedance);
+  virtual void set_input_impedance(double /*a_impedance*/);
   // Установка уровня запуска канала
-  virtual void set_start_level(double a_level);
+  virtual void set_start_level(double /*a_level*/);
   // Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
   // Установка автоматического выбора диапазона измерений
