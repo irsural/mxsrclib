@@ -18,7 +18,18 @@ namespace irs {
 #define UNK
 #define MACHEP 1.11022302462515654042E-16   /* 2**-53 */
 
-
+template <class T>
+class iir_filter_t
+{
+public:
+  typedef vector<T> coef_list_type;
+  void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
+  void push(const T& a_sample);
+  void reset();
+private:
+  coef_list_type m_num_coef_list;
+  coef_list_type m_denum_coef_list;
+};
 
 template <class T>
 void get_coef_iir_filter(
