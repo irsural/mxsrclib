@@ -4,239 +4,11 @@
 
 #include <irsdefs.h>
 
-#include <iirfilter.h>
+#include <irsfilter.h>
 
 #include <irsfinal.h>
 
-using namespace std;
-void iir_filter(const irs::filter_settings_t& a_filter_settings)
-{
-  bool fsuccess = true;
-  const int kind = a_filter_settings.family + 1;
-  const int type = a_filter_settings.bandform + 1;
-  double rn = a_filter_settings.order;
-  const int n = rn;
-  rn = n;
-  double phi = 0;
-  const double dbfac = 10.0 / log(10.0);
-  double scale = 0;
-  double eps = 0;
-  if(kind > 1) /* not Butterworth */ {
-    const double dbr = a_filter_settings.passband_ripple_db;
-    if(kind == 2) {
-      /* For Chebyshev filter, ripples go from 1.0 to 1/sqrt(1+eps^2) */
-      phi = exp( 0.5 * dbr / dbfac);
-
-      if((n & 1) == 0)
-        scale = phi;
-      else
-        scale = 1.0;
-    } else { /* elliptic */
-      eps = exp(dbr / dbfac);
-      scale = 1.0;
-      if( (n & 1) == 0 )
-        scale = sqrt( eps );
-        eps = sqrt( eps - 1.0 );
-    }
-  }
-  const double fs = 1/a_filter_settings.sampling_time_s;
-  const double fnyq = fs / 2;
-  double f2 = a_filter_settings.low_cutoff_freq_hz;
-  double f1 = 0;
-  if((type & 1) == 0) {
-    f1 = a_filter_settings.high_cutoff_freq_hz;
-  } else {
-    f1 = 0.0;
-  }
-  double a = 0;
-  double bw = 0;
-  if( f2 < f1 ) {
-    a = f2;
-    f2 = f1;
-    f1 = a;
-  }
-  if(type == 3) /* high pass */ {
-    bw = f2;
-    a = fnyq;
-  } else {
-    bw = f2 - f1;
-    a = f2;
-  }
-  /* Frequency correspondence for bilinear transformation
-   *
-   *  Wanalog = tan( 2 pi Fdigital T / 2 )
-   *
-   * where T = 1/fs
-   */
-  double ang = bw * M_PI / fs;
-  double cang = cos(ang);
-  const double c = sin(ang) / cang; /* Wanalog */
-  double wc = 0;
-  if(kind != 3) {
-    wc = c;
-    /*printf( "cos( 1/2 (Whigh-Wlow) T ) = %.5e, wc = %.5e\n", cang, wc );*/
-  }
-
-  double cgam = 0.0;
-  double k = 0;
-  double wr = 0;
-  double cbp = 0;
-  const int ARRSIZE = 50;
-  vector<double> y_array(ARRSIZE);
-  vector<double> aa_array(ARRSIZE);
-  vector<double> pp_array(ARRSIZE);
-  double m = 0;
-  double Kk = 0;
-  double u = 0;
-  if(kind == 3) { /* elliptic */
-    cgam = cos( (a+f1) * M_PI / fs ) / cang;
-    double dbd = a_filter_settings.stopband_ripple_db;
-    double f3 = 0;
-    if(dbd > 0.0) {
-      f3 = dbd;
-    } else { /* calculate band edge from db down */
-      a = exp( -dbd/dbfac );
-      double m1 = eps/sqrt( a - 1.0 );
-      m1 *= m1;
-      const double m1p = 1.0 - m1;
-      const double Kk1 = ellpk(m1p);
-      const double Kpk1 = ellpk(m1);
-      const double q = exp(-M_PI * Kpk1 / (rn * Kk1));
-      k = cay(q);
-      if(type >= 3) {
-        wr = k;
-      } else {
-        wr = 1.0/k;
-      }
-      if( type & 1 ) {
-        f3 = atan( c * wr ) * fs / M_PI;
-      } else {
-        a = c * wr;
-        a *= a;
-        double b = a * (1.0 - cgam * cgam) + a * a;
-        b = (cgam + sqrt(b))/(1.0 + a);
-        f3 = (M_PI / 2.0 - asin(b)) * fs / (2.0 * M_PI);
-      }
-    }
-    switch(type) {
-      case 1:
-        if( f3 <= f2 )
-          fsuccess = false;
-        break;
-      case 2:
-        if( (f3 > f2) || (f3 < f1) )
-          break;
-        fsuccess = false;
-      case 3:
-        if( f3 >= f2 )
-          fsuccess = false;
-        break;
-      case 4:
-        if((f3 <= f1) || (f3 >= f2))
-          fsuccess = false;
-        break;
-    }
-    ang = f3 * M_PI / fs;
-    cang = cos(ang);
-    double sang = sin(ang);
-
-    if(type & 1) {
-      wr = sang/(cang*c);
-    } else {
-      const double q = cang * cang  -  sang * sang;
-      sang = 2.0 * cang * sang;
-      cang = q;
-      wr = (cgam - cang)/(sang * c);
-    }
-
-    if(type >= 3)
-      wr = 1.0/wr;
-    if(wr < 0.0)
-      wr = -wr;
-    y_array[0] = 1.0;
-    y_array[1] = wr;
-    cbp = wr;
-
-    if(type >= 3)
-      y_array[1] = 1.0 / y_array[1];
-
-    if( type & 1 ) {
-      for(size_t i = 1; i <= 2; i++ ) {
-        aa_array[i] = atan(c * y_array[i-1]) * fs / M_PI ;
-      }
-      IRS_LIB_DBG_MSG("pass band " << aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << aa_array[2]);
-    } else {
-      for(size_t i = 1; i <= 2; i++) {
-        const double a = c * y_array[i-1];
-        const double b = atan(a);
-        double q = sqrt(1.0 + a * a  -  cgam * cgam);
-        #ifdef ANSIC
-        q = atan2(q, cgam);
-        #else
-        q = atan2(cgam, q);
-        #endif
-        aa_array[i] = (q + b) * fnyq / M_PI;
-        pp_array[i] = (q - b) * fnyq / M_PI;
-      }
-      IRS_LIB_DBG_MSG("pass band " << pp_array[1] << " " << aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << pp_array[2] << " " << aa_array[2]);
-    }
-
-    lampln(eps, wr, rn, &m, &k, &wc, &Kk, &phi, &u); /* find locations in lambda plane */
-  }
-
-/* Transformation from low-pass to band-pass critical frequencies
- *
- * Center frequency
- *                     cos( 1/2 (Whigh+Wlow) T )
- *  cos( Wcenter T ) = ----------------------
- *                     cos( 1/2 (Whigh-Wlow) T )
- *
- *
- * Band edges
- *            cos( Wcenter T) - cos( Wdigital T )
- *  Wanalog = -----------------------------------
- *                        sin( Wdigital T )
- */
-
-  if( kind == 2 ) { /* Chebyshev */
-    a = M_PI * (a+f1) / fs ;
-    cgam = cos(a) / cang;
-    a = 2.0 * M_PI * f2 / fs;
-    cbp = (cgam - cos(a))/sin(a);
-  }
-
-  if( kind == 1 ) { /* Butterworth */
-    a = M_PI * (a+f1) / fs ;
-    cgam = cos(a) / cang;
-    a = 2.0 * M_PI * f2 / fs;
-    cbp = (cgam - cos(a))/sin(a);
-    scale = 1.0;
-  }
-  int np = 0;
-  int nz = 0;
-  const int ir = 0;
-  const complex<double> cone;
-
-  vector<double> zs_array(50);
-  int jt = 0;
-  int zord = 0;
-  double an = 0;
-  double pn = 0;
-  double gain = 0;
-  vector<complex<double> > z_array(ARRSIZE);
-
-
-  spln(kind, type, n, rn, m, u, k, Kk, wc, phi, &nz, &np, &zs_array);
-  zplna(kind, type, np, nz, c, wc, cbp, ir, cone, cgam, zs_array, &jt, &zord, &z_array); /* convert s plane to z plane */
-  zplnb(kind, type, jt, zord, cgam, &an, &pn, &z_array, &aa_array, &pp_array, &y_array);
-  zplnc(kind, an, pn, scale, zord, fs, fnyq, z_array, aa_array, pp_array, &gain);
-  // tabulate transfer function 
-  xfun(fs, zord, gain, fnyq, dbfac, z_array);
-}
-
-int lampln(
+int irs::lampln(
   const double a_eps,
   const double a_wr,
   const double a_rn,
@@ -288,7 +60,7 @@ int lampln(
 }
 
 /* calculate s plane poles and zeros, normalized to wc = 1 */
-int spln(
+int irs::spln(
   const int a_kind,
   const int a_type,
   const int a_n,
@@ -477,7 +249,7 @@ int spln(
   return 0;
 }
 
-int zplna(
+int irs::zplna(
   const int a_kind,
   const int a_type,
   const int a_np,
@@ -630,7 +402,7 @@ int zplna(
   return 0;
 }
 
-int zplnb(
+int irs::zplnb(
   const int a_kind,
   const int a_type,
   const int a_jt,
@@ -744,7 +516,7 @@ int zplnb(
   return 0;
 }
 
-int zplnc(
+int irs::zplnc(
   const int a_kind,
   const double a_an,
   const double a_pn,
@@ -795,7 +567,7 @@ int zplnc(
 
 /* display quadratic factors
  */
-int quadf(
+int irs::quadf(
   const double a_x,
   const double a_y,
   const int a_pzflg,
@@ -835,12 +607,12 @@ int quadf(
     if(g != 0.0) {
       g = 1.0/g;
     } else {
-      g = numeric_limits<double>::max();
+      g = std::numeric_limits<double>::max();
     }
     if(g0 != 0.0) {
       g0 = 1.0/g0;
     } else {
-      g = numeric_limits<double>::max();
+      g = std::numeric_limits<double>::max();
     }
   }
   IRS_LIB_DBG_MSG("f0 " << f << " gain " << g << " DC gain " << g0);
@@ -849,7 +621,7 @@ int quadf(
 
 /* Print table of filter frequency response
  */
-int xfun(
+int irs::xfun(
   const double a_fs,
   const double a_zord,
   const double a_gain,
@@ -869,9 +641,9 @@ int xfun(
     f = f + 0.05 * a_fnyq;
   }
   return 0;
-}
+}   
 
-double response(
+double irs::response(
   const double a_f,
   const double a_fs,
   const double a_amp,
@@ -909,7 +681,7 @@ double response(
   return abs(w*a_amp);
 }
 
-void csqrt(const complex<double>& z, complex<double>* ap_w)
+void irs::csqrt(const complex<double>& z, complex<double>* ap_w)
 {
   complex<double> q, s;
   double x, y, r, t;
@@ -962,7 +734,7 @@ void csqrt(const complex<double>& z, complex<double>* ap_w)
   ap_w->imag(ap_w->imag() * 0.5) ;
 }
 
-int ellpj(
+int irs::ellpj(
   const double a_u,
   const double a_m,
   double* ap_sn,
@@ -1192,7 +964,7 @@ static double C1 = 1.3862943611198906188E0; /* log(4) */
 #endif
 
 
-double ellpk(const double a_x)
+double irs::ellpk(const double a_x)
 {    
   if((a_x < 0.0) || (a_x > 1.0)) {
     IRS_LIB_ERROR(irs::ec_standard, "domain");
@@ -1203,14 +975,14 @@ double ellpk(const double a_x)
   } else {
     if(a_x == 0.0) {
       IRS_LIB_ERROR(irs::ec_standard, "sing");
-      return(numeric_limits<double>::max());
+      return(std::numeric_limits<double>::max());
     } else {
       return(C1 - 0.5 * log(a_x));
     }
   }
 }
 
-double ellik(const double a_phi, const double a_m)
+double irs::ellik(const double a_phi, const double a_m)
 { 
   if(a_m == 0.0) {
     return(a_phi);
@@ -1219,7 +991,7 @@ double ellik(const double a_phi, const double a_m)
   if(a == 0.0) {
     if(abs(a_phi) >= M_PI_2 ) {
       IRS_LIB_ERROR(irs::ec_standard, "sing");
-      return(numeric_limits<double>::max());
+      return(std::numeric_limits<double>::max());
     }
     return(log(tan((M_PI_2 + a_phi) / 2.0)));
   }
@@ -1284,7 +1056,7 @@ double ellik(const double a_phi, const double a_m)
   return( temp );
 }
 
-double polevl(const double a_x, const double* ap_coef, const int a_n)
+double irs::polevl(const double a_x, const double* ap_coef, const int a_n)
 {
   double ans = *ap_coef++;
   int i = a_n;
@@ -1294,7 +1066,7 @@ double polevl(const double a_x, const double* ap_coef, const int a_n)
   return(ans);
 }
 
-double cay(const double a_q)
+double irs::cay(const double a_q)
 {
   double t1, t2;
 
