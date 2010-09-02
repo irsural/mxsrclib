@@ -23,6 +23,7 @@ template <class T>
 class iir_filter_t
 {
 public:
+  typedef irs_size_t size_type;
   iir_filter_t();
   typedef vector<T> coef_list_type;
   void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
@@ -32,6 +33,10 @@ public:
 private:
   coef_list_type m_num_coef_list;
   coef_list_type m_denum_coef_list;
+
+  vector<T> m_num_delay_line;
+  vector<T> m_denum_delay_line;
+  size_type m_pos;
 };
 
 template <class T>
@@ -63,8 +68,8 @@ int spln(
   const T a_Kk,
   const T a_wc,
   const T a_phi,
-  int* ap_nz,
-  int* ap_np,
+  size_t* ap_nz,
+  size_t* ap_np,
   vector<T>* ap_zs_array
 );
 
@@ -90,8 +95,8 @@ template <class T>
 int zplnb (
   const filter_family_t a_family,
   const filter_bandform_t a_bandform,
-  const int a_jt,
-  const int a_zord,
+  const size_t a_jt,
+  const size_t a_zord,
   const T a_cgam,
   T* ap_an,
   T* ap_pn,
@@ -107,7 +112,7 @@ int zplnc(
   const T a_an,
   const T a_pn,
   const T a_scale,
-  const int a_zord,
+  const size_t a_zord,
   const T a_fs,
   const T a_fnyq,
   const vector<complex<T> >& a_z_array,
@@ -128,7 +133,7 @@ int quadf(
 template <class T>
 int xfun(
   const T a_fs,
-  const T a_zord,
+  const size_t a_zord,
   const T a_gain,
   const T a_fnyq,
   const T a_dbfac,
@@ -140,7 +145,7 @@ T response(
   const T a_f,
   const T a_fs,
   const T a_amp,
-  const int a_zord,
+  const size_t a_zord,
   const vector<complex<T> >& a_z_array);
 
 template <class T>
@@ -171,9 +176,11 @@ T cay(const T a_q);
 template <class T>
 iir_filter_t<T>::iir_filter_t():
   m_num_coef_list(),
-  m_denum_coef_list()
-{
-
+  m_denum_coef_list(),
+  m_num_delay_line(),
+  m_denum_delay_line(),
+  m_pos(0)
+{    
 }
 
 template <class T>
@@ -181,21 +188,53 @@ void iir_filter_t<T>::set_filter_settings(
   const irs::filter_settings_t& a_filter_setting)
 {
   get_coef_iir_filter(a_filter_setting, &m_num_coef_list, &m_denum_coef_list);
+  m_delay_line.resize(m_num_coef_list.size(), 0);
+  m_pos = 0;
+  m_num_delay_line.resize(m_num_coef_list.size(), 0);
+  m_denum_delay_line.resize(m_denum_coef_list.size(), 0);
 }
 
 template <class T>
 void iir_filter_t<T>::push(const T& a_sample)
 {
+  const size_type delay_line_size = m_delay_line.size();
+
+  m_pos--;
+  if (static_cast<int>(m_pos) < 0) {
+    m_pos = delay_line_size - 1;
+  } else {
+    // За диапазон еще не вышли
+  }
+  T num = 0;
+  T denum = 0;
+  const size_type denum_delay_line_pos = m_pos + i;
+  for (size_type i = 0; i < delay_line_size - 1; i++) {
+    num += m_num_delay_line[(m_pos + i)  % delay_line_size] *
+      m_num_coef_list[i];
+    denum += m_denum_delay_line[(num_delay_line_pos + i) % delay_line_size] *
+      m_denum_coef_list[i];
+  }
+  num += m_num_delay_line[(m_pos + delay_line_size - 1)  % delay_line_size] *
+    m_num_coef_list[i];
+  m_num_delay_line[m_pos] = num/denum;
 }
 
 template <class T>
 T iir_filter_t<T>::get() const
 {
+  IRS_LIB_ERROR_IF(m_pos >= m_num_delay_line.size(), irs::ec_standard,
+    "Сначало необходимо инициализировать фильтр");
+  return m_num_delay_line[m_pos];
 }
 
 template <class T>
 void iir_filter_t<T>::reset()
 {
+  const size_type size = m_num_delay_line.size();
+  m_num_delay_line.clear();
+  m_denum_delay_line.clear();
+  m_num_delay_line.resize(m_num_delay_line.size(), 0);
+  m_denum_delay_line.resize(m_denum_delay_line.size(), 0);
 }
 
 template <class T>
@@ -229,11 +268,6 @@ void get_coef_iir_filter(
   if (order <= 0) {
     fsuccess = false;
   }
-  //const int kind = a_filter_settings.family + 1;
-  //const int type = a_filter_settings.bandform + 1;
-  //T rn = a_filter_settings.order;
-  //const int n = rn;
-  //rn = n;
   T phi = 0;
   const T dbfac = 10.0 / log(10.0);
   T scale = 0;
@@ -293,7 +327,7 @@ void get_coef_iir_filter(
   T wc = 0;
   if(family != ff_cauer) {
     wc = c;
-    /*printf( "cos( 1/2 (Whigh-Wlow) T ) = %.5e, wc = %.5e\n", cang, wc );*/
+    IRS_LIB_DBG_MSG("cos( 1/2 (Whigh-Wlow) T ) = " << cang << " wc = " << wc);
   }
 
   T cgam = 0.0;
@@ -302,8 +336,10 @@ void get_coef_iir_filter(
   T cbp = 0;
   const int ARRSIZE = 50;
   vector<T> y_array(ARRSIZE);
-  vector<T> aa_array(ARRSIZE);
-  vector<T> pp_array(ARRSIZE);
+  ap_num_coef_list->resize(ARRSIZE);
+  //vector<T> aa_array(ARRSIZE);
+  ap_denum_coef_list->resize(ARRSIZE);
+  //vector<T> pp_array(ARRSIZE);
   T m = 0;
   T Kk = 0;
   T u = 0;
@@ -381,10 +417,10 @@ void get_coef_iir_filter(
 
     if(bandform & 1) {
       for(size_t i = 1; i <= 2; i++ ) {
-        aa_array[i] = atan(c * y_array[i-1]) * fs / M_PI ;
+        (*ap_num_coef_list)[i] = atan(c * y_array[i-1]) * fs / M_PI ;
       }
-      IRS_LIB_DBG_MSG("pass band " << aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << aa_array[2]);
+      IRS_LIB_DBG_MSG("pass band " << (*ap_num_coef_list)[1]);
+      IRS_LIB_DBG_MSG("stop band " << (*ap_num_coef_list)[2]);
     } else {
       for(size_t i = 1; i <= 2; i++) {
         const T a = c * y_array[i-1];
@@ -395,11 +431,13 @@ void get_coef_iir_filter(
         #else
         q = atan2(cgam, q);
         #endif
-        aa_array[i] = (q + b) * fnyq / M_PI;
-        pp_array[i] = (q - b) * fnyq / M_PI;
+        (*ap_num_coef_list)[i] = (q + b) * fnyq / M_PI;
+        (*ap_denum_coef_list)[i] = (q - b) * fnyq / M_PI;
       }
-      IRS_LIB_DBG_MSG("pass band " << pp_array[1] << " " << aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << pp_array[2] << " " << aa_array[2]);
+      IRS_LIB_DBG_MSG("pass band " << (*ap_denum_coef_list)[1] << " " <<
+        (*ap_num_coef_list)[1]);
+      IRS_LIB_DBG_MSG("stop band " << (*ap_denum_coef_list)[2] << " " <<
+        (*ap_num_coef_list)[2]);
     }
 
     lampln(eps, wr, order, &m, &k, &wc, &Kk, &phi, &u); /* find locations in lambda plane */
@@ -433,8 +471,8 @@ void get_coef_iir_filter(
     cbp = (cgam - cos(a))/sin(a);
     scale = 1.0;
   }
-  int np = 0;
-  int nz = 0;
+  size_type np = 0;
+  size_type nz = 0;
   const int ir = 0;
   const complex<T> cone;
 
@@ -447,12 +485,16 @@ void get_coef_iir_filter(
   vector<complex<T> > z_array(ARRSIZE);
 
 
-  spln<double>(family, bandform, order, m, u, k, Kk, wc, phi, &nz, &np, &zs_array);
-  zplna(family, bandform, np, nz, c, wc, cbp, ir, cone, cgam, zs_array, &jt, &zord, &z_array); /* convert s plane to z plane */
-  zplnb(family, bandform, jt, zord, cgam, &an, &pn, &z_array, &aa_array, &pp_array, &y_array);
-  zplnc(family, an, pn, scale, zord, fs, fnyq, z_array, aa_array, pp_array, &gain);
+  spln(family, bandform, order, m, u, k, Kk, wc, phi, &nz,
+    &np, &zs_array);
+  zplna(family, bandform, np, nz, c, wc, cbp, ir, cone, cgam, zs_array,
+    &jt, &zord, &z_array); /* convert s plane to z plane */
+  zplnb(family, bandform, jt, zord, cgam, &an, &pn, &z_array,
+    ap_num_coef_list, ap_denum_coef_list, &y_array);
+  zplnc(family, an, pn, scale, zord, fs, fnyq, z_array,
+    *ap_num_coef_list, *ap_denum_coef_list, &gain);
   // tabulate transfer function
-  xfun<double>(fs, zord, gain, fnyq, dbfac, z_array);
+  xfun(fs, zord, gain, fnyq, dbfac, z_array);
 }
 
 template <class T>
@@ -519,8 +561,8 @@ int spln(
   const T a_Kk,
   const T a_wc,
   const T a_phi,
-  int* ap_nz,
-  int* ap_np,
+  size_t* ap_nz,
+  size_t* ap_np,
   vector<T>* ap_zs_array)
 {
   for(size_t i = 0; i < ap_zs_array->size(); i++) {
@@ -858,8 +900,8 @@ template <class T>
 int zplnb(
   const filter_family_t a_family,
   const filter_bandform_t a_bandform,
-  const int a_jt,
-  const int a_zord,
+  const size_t a_jt,
+  const size_t a_zord,
   const T a_cgam,
   T* ap_an,
   T* ap_pn,
@@ -870,9 +912,9 @@ int zplnb(
 {
   complex<T> lin[2];
 
-  lin[1].real(1.0);
-  lin[1].imag(0.0);
-  int jt = a_jt;
+  lin[1].real(1.0);                
+  lin[1].imag(0.0);    
+  size_t jt = a_jt;
   if ((a_family == ff_butterworth) || (a_family == ff_chebyshev_ripple_pass)) {
     /* Butterworth or Chebyshev */
     /* generate the remaining zeros */
@@ -979,7 +1021,7 @@ int zplnc(
   const T a_an,
   const T a_pn,
   const T a_scale,
-  const int a_zord,
+  const size_t a_zord,
   const T a_fs,
   const T a_fnyq,  
   const vector<complex<T> >& a_z_array,
@@ -1085,7 +1127,7 @@ int quadf(
 template <class T>
 int xfun(
   const T a_fs,
-  const T a_zord,
+  const size_t a_zord,
   const T a_gain,
   const T a_fnyq,
   const T a_dbfac,
@@ -1110,7 +1152,7 @@ T response(
   const T a_f,
   const T a_fs,
   const T a_amp,
-  const int a_zord,
+  const size_t a_zord,
   const vector<complex<T> >& a_z_array)
 {
   /* exp( j omega T ) */
@@ -1331,7 +1373,7 @@ T response(
     }
     return(log(tan((M_PI_2 + a_phi) / 2.0)));
   }
-  int npio2 = floor(a_phi / M_PI_2);
+  int npio2 = static_cast<int>(floor(a_phi / M_PI_2));
   if(npio2 & 1) {
     npio2 += 1;
   }
@@ -1375,7 +1417,7 @@ T response(
     while(fabs(c/a) > MACHEP) {
       temp = b/a;
       phi = phi + atan(t*temp) + mod * M_PI;
-      mod = (phi + M_PI_2)/M_PI;
+      mod = static_cast<int>((phi + M_PI_2)/M_PI);
       t = t * ( 1.0 + temp )/( 1.0 - temp * t * t );
       c = ( a - b )/2.0;
       temp = sqrt( a * b );
