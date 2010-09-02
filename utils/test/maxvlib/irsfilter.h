@@ -11,6 +11,7 @@
 #include <math.h>
 #include <irserror.h>
 #include <irsdsp.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -22,9 +23,11 @@ template <class T>
 class iir_filter_t
 {
 public:
+  iir_filter_t();
   typedef vector<T> coef_list_type;
   void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
   void push(const T& a_sample);
+  T get() const;
   void reset();
 private:
   coef_list_type m_num_coef_list;
@@ -153,7 +156,8 @@ int ellpj(
   T* ap_ph
 );
 
-double ellpk(const double a_x);
+template <class T>
+T ellpk(const T a_x);
 
 template <class T>
 T ellik(const T a_phi, const T a_m);
@@ -163,6 +167,36 @@ T polevl(const T a_x, const T* ap_coef, const int a_n);
 
 template <class T>
 T cay(const T a_q);
+
+template <class T>
+iir_filter_t<T>::iir_filter_t():
+  m_num_coef_list(),
+  m_denum_coef_list()
+{
+
+}
+
+template <class T>
+void iir_filter_t<T>::set_filter_settings(
+  const irs::filter_settings_t& a_filter_setting)
+{
+  get_coef_iir_filter(a_filter_setting, &m_num_coef_list, &m_denum_coef_list);
+}
+
+template <class T>
+void iir_filter_t<T>::push(const T& a_sample)
+{
+}
+
+template <class T>
+T iir_filter_t<T>::get() const
+{
+}
+
+template <class T>
+void iir_filter_t<T>::reset()
+{
+}
 
 template <class T>
 void get_coef_iir_filter(
@@ -1260,6 +1294,29 @@ T response(
   return(0);
 }
 
+double* get_p();
+double* get_q();
+double get_c1();
+
+template <class T>
+T irs::ellpk(const T a_x)
+{
+  if((a_x < 0.0) || (a_x > 1.0)) {
+    IRS_LIB_ERROR(irs::ec_standard, "domain");
+    return(0.0);
+  }
+  if(a_x > MACHEP) {
+    return(polevl(a_x, get_p(), 10) - log(a_x) * polevl(a_x, get_q(), 10));
+  } else {
+    if(a_x == 0.0) {
+      IRS_LIB_ERROR(irs::ec_standard, "sing");
+      return(std::numeric_limits<T>::max());
+    } else {
+      return(get_c1() - 0.5 * log(a_x));
+    }
+  }
+}
+
 template <class T>
 T ellik(const T a_phi, const T a_m)
 { 
@@ -1372,9 +1429,8 @@ T response(
   a = 4.0 * sqrt(a_q) * a * a;	/* see above formulas, solved for m */
   return(a);
 }
-
 
-} // namespace irs
+} // namespace irs
 
 
 #endif // iirfilterH
