@@ -274,6 +274,9 @@ void get_coef_iir_filter(
   T eps = 0;
   if(family != ff_butterworth) /* not Butterworth */ {
     const T dbr = a_filter_settings.passband_ripple_db;
+    if( dbr <= 0.0 ) {
+      fsuccess = false;
+    }
     const bool is_order_even = (order & 1) == 0;
     if(family == ff_chebyshev_ripple_pass) {
       /* For Chebyshev filter, ripples go from 1.0 to 1/sqrt(1+eps^2) */
@@ -293,11 +296,20 @@ void get_coef_iir_filter(
     }
   }
   const T fs = 1/a_filter_settings.sampling_time_s;
+  if(fs <= 0.0) {
+    fsuccess =false;
+  }
   const T fnyq = fs / 2;
   T f2 = a_filter_settings.low_cutoff_freq_hz;
+  if((f2 <= 0.0) || (f2 >= fnyq)) {
+    fsuccess = false;
+  }
   T f1 = 0;
-  if((bandform & 1) == 0) {
+  if((bandform == fb_band_pass) || (bandform == fb_band_stop)) {
     f1 = a_filter_settings.high_cutoff_freq_hz;
+    if((f1 <= 0.0) || (f1 >= fnyq)) {
+      fsuccess = false;
+    }
   } else {
     f1 = 0.0;
   }
@@ -308,7 +320,7 @@ void get_coef_iir_filter(
     f2 = f1;
     f1 = a;
   }
-  if(bandform == 3) /* high pass */ {
+  if(bandform == fb_high_pass) /* high pass */ {
     bw = f2;
     a = fnyq;
   } else {
@@ -358,12 +370,12 @@ void get_coef_iir_filter(
       const T Kpk1 = ellpk(m1);
       const T q = exp(-M_PI * Kpk1 / (order * Kk1));
       k = cay(q);
-      if(bandform >= 3) {
+      if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
         wr = k;
       } else {
         wr = 1.0/k;
       }
-      if (bandform & 1) {
+      if ((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
         f3 = atan( c * wr ) * fs / M_PI;
       } else {
         a = c * wr;
@@ -374,19 +386,19 @@ void get_coef_iir_filter(
       }
     }
     switch(bandform) {
-      case 1:
+      case fb_low_pass:
         if( f3 <= f2 )
           fsuccess = false;
         break;
-      case 2:
+      case fb_band_pass:
         if( (f3 > f2) || (f3 < f1) )
           break;
         fsuccess = false;
-      case 3:
+      case fb_high_pass:
         if( f3 >= f2 )
           fsuccess = false;
         break;
-      case 4:
+      case fb_band_stop:
         if((f3 <= f1) || (f3 >= f2))
           fsuccess = false;
         break;
@@ -395,7 +407,7 @@ void get_coef_iir_filter(
     cang = cos(ang);
     T sang = sin(ang);
 
-    if(bandform & 1) {
+    if((bandform == fb_band_pass) || (bandform == fb_band_stop)) {
       wr = sang/(cang*c);
     } else {
       const T q = cang * cang  -  sang * sang;
@@ -404,20 +416,22 @@ void get_coef_iir_filter(
       wr = (cgam - cang)/(sang * c);
     }
 
-    if(bandform >= 3)
+    if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
       wr = 1.0/wr;
+    }
     if(wr < 0.0)
       wr = -wr;
     y_array[0] = 1.0;
     y_array[1] = wr;
     cbp = wr;
 
-    if(bandform >= 3)
+    if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
       y_array[1] = 1.0 / y_array[1];
+    }
 
-    if(bandform & 1) {
+    if((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
       for(size_t i = 1; i <= 2; i++ ) {
-        (*ap_num_coef_list)[i] = atan(c * y_array[i-1]) * fs / M_PI ;
+        (*ap_num_coef_list)[i] = atan(c*y_array[i-1])*fs/M_PI;
       }
       IRS_LIB_DBG_MSG("pass band " << (*ap_num_coef_list)[1]);
       IRS_LIB_DBG_MSG("stop band " << (*ap_num_coef_list)[2]);
@@ -474,7 +488,7 @@ void get_coef_iir_filter(
   size_type np = 0;
   size_type nz = 0;
   const int ir = 0;
-  const complex<T> cone;
+  const complex<T> cone(1.0, 0.0);
 
   vector<T> zs_array(50);
   int jt = 0;
@@ -844,7 +858,7 @@ int zplna(
           // csub( &b4ac, &cnum, &b4ac ); /* b^2 - 4 ac */
           b4ac = cnum - b4ac;
           csqrt(b4ac, &b4ac );
-          cb.real(cb.real());  /* -b */
+          cb.real(-cb.real());  /* -b */
           cb.imag(-cb.imag());
           ca.real(ca.real() * 2.0); /* 2a */
           ca.imag(ca.imag() * 2.0);
@@ -970,8 +984,8 @@ int zplnb(
         (*ap_y_array)[jh+1] =  (*ap_y_array)[jh+1]  - b * (*ap_pp_array)[jh] - a * (*ap_y_array)[jh];
       }
     }
-    if( icnt == 0 ) {
-      for(size_t j=0; j <= a_zord; j++ )
+    if(icnt == 0) {
+      for(size_t j = 0; j <= a_zord; j++ )
       (*ap_aa_array)[j] = (*ap_pp_array)[j];
     }
   }
@@ -1233,7 +1247,7 @@ T response(
   q.real(y/(2.0 * r));
   /* Heron iteration in complex arithmetic */
   //cdiv( &q, z, &s );
-  s = z - q;
+  s = z/q;
   //cadd( &q, &s, ap_w );
   *ap_w = s + q;
   ap_w->real(ap_w->real() * 0.5) ;
