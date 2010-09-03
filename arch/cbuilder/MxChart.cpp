@@ -1,6 +1,6 @@
 // Построение графиков
 // C++ Builder
-// Дата: 14.04.2010
+// Дата: 03.09.2010
 // Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
 #include <irsdefs.h>
@@ -2540,11 +2540,11 @@ void __fastcall TMxChartSelect::SetControl(TControl *AControl)
 //---------------------------------------------------------------------------
 void __fastcall TMxChartSelect::Connect()
 {
-  TForm *Form = (TForm *)FControl;
-  Form->OnMouseDown = DoMouseDown;
-  Form->OnMouseMove = DoMouseMove;
-  Form->OnMouseUp = DoMouseUp;
-  Form->OnDblClick = DoDblClick;
+  TPaintBox *PaintBox = (TPaintBox *)FControl;
+  PaintBox->OnMouseDown = DoMouseDown;
+  PaintBox->OnMouseMove = DoMouseMove;
+  PaintBox->OnMouseUp = DoMouseUp;
+  PaintBox->OnDblClick = DoDblClick;
   Chart->Select = this;
   SaveAutoScales();
   RestoreAreas();
@@ -2552,11 +2552,11 @@ void __fastcall TMxChartSelect::Connect()
 //---------------------------------------------------------------------------
 void __fastcall TMxChartSelect::Disconnect()
 {
-  TForm *Form = (TForm *)FControl;
-  Form->OnMouseDown = NULL;
-  Form->OnMouseMove = NULL;
-  Form->OnMouseUp = NULL;
-  Form->OnDblClick = NULL;
+  TPaintBox *PaintBox = (TPaintBox *)FControl;
+  PaintBox->OnMouseDown = NULL;
+  PaintBox->OnMouseMove = NULL;
+  PaintBox->OnMouseUp = NULL;
+  PaintBox->OnDblClick = NULL;
   Chart->Select = NULL;
   SaveAreas();
   RestoreAutoScales();
