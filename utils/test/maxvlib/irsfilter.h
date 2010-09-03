@@ -843,25 +843,20 @@ int zplna(
           }
           cwc.imag(0.0);
           cnum = cwc * r;// cmul( &r, &cwc, &cnum );     /* r wc */
-          //csub( &cnum, &cone, &ca );   /* a = 1 - r wc */
+          /* a = 1 - r wc */
           ca = a_cone - cnum;
-          //cmul( &cnum, &cnum, &b4ac ); /* 1 - (r wc)^2 */
+          /* 1 - (r wc)^2 */
           b4ac = cnum * cnum;
-          //csub( &b4ac, &cone, &b4ac );
           b4ac = a_cone - b4ac;
-          b4ac.real(b4ac.real() * 4.0);               /* 4ac */
-          b4ac.imag(b4ac.imag() * 4.0);
+          b4ac *= 4.0;                     /* 4ac */
           cb.real(-2.0 * a_cgam);          /* b */
           cb.imag(0.0);
-          //cmul( &cb, &cb, &cnum );     /* b^2 */
-          cnum = cb * cb;
-          // csub( &b4ac, &cnum, &b4ac ); /* b^2 - 4 ac */
+          cnum = cb * cb;      /* b^2 */
+          /* b^2 - 4 ac */
           b4ac = cnum - b4ac;
           csqrt(b4ac, &b4ac );
-          cb.real(-cb.real());  /* -b */
-          cb.imag(-cb.imag());
-          ca.real(ca.real() * 2.0); /* 2a */
-          ca.imag(ca.imag() * 2.0);
+          cb *= -1;              /* -b */ 
+          ca *= 2;              /* 2a */
           //cadd( &b4ac, &cb, &cnum );   /* -b + sqrt( b^2 - 4ac) */
           cnum = cb + b4ac;
           // cdiv( &ca, &cnum, &cnum );   /* ... /2a */
@@ -967,26 +962,42 @@ int zplnb(
   * denominator polynomials
   */
   for(size_t icnt = 0; icnt < 2; icnt++) {
+    //IRS_LIB_DBG_MSG("icnt=" << icnt);
     for(size_t j = 0; j < ap_pp_array->size(); j++) {
       (*ap_pp_array)[j] = 0.0;
       (*ap_y_array)[j] = 0.0;
     }
     (*ap_pp_array)[0] = 1.0;
     for(size_t j = 0; j < a_zord; j++) {
+      //IRS_LIB_DBG_MSG("j=" << j);
       int jj = j;
       if (icnt)
         jj += a_zord;
       const T a = (*ap_z_array)[jj].real();
       const T b = (*ap_z_array)[jj].imag();
+      //IRS_LIB_DBG_MSG(setprecision(15) << "a=" << a << " b=" << b);
+      //IRS_LIB_DBG_MSG(hex << "a=" << *reinterpret_cast<const __int64*>(&a) <<
+        //" b=" << *reinterpret_cast<const __int64*>(&b) << dec);
       for(size_t i = 0; i <= j; i++) {
         const size_t jh = j - i;
-        (*ap_pp_array)[jh+1] = (*ap_pp_array)[jh+1] - a * (*ap_pp_array)[jh] + b * (*ap_y_array)[jh];
-        (*ap_y_array)[jh+1] =  (*ap_y_array)[jh+1]  - b * (*ap_pp_array)[jh] - a * (*ap_y_array)[jh];
+        (*ap_pp_array)[jh+1] = (*ap_pp_array)[jh+1] - a * (*ap_pp_array)[jh] +
+          b * (*ap_y_array)[jh];
+        (*ap_y_array)[jh+1] =  (*ap_y_array)[jh+1]  - b * (*ap_pp_array)[jh] -
+          a * (*ap_y_array)[jh];
+        //IRS_LIB_DBG_MSG(setprecision(15) <<
+          //"pp[jh+1]=" << (*ap_pp_array)[jh+1] <<
+          //" y[jh+1]=" << (*ap_y_array)[jh+1]);
+        /*IRS_LIB_DBG_MSG("jh+1=" << jh+1 << hex <<   " pp[jh+1]=" <<
+          *reinterpret_cast<const __int64*>(&(*ap_pp_array)[jh+1]) <<
+          " y[jh+1]=" <<
+          *reinterpret_cast<const __int64*>(&(*ap_y_array)[jh+1]) <<
+          dec);*/
       }
     }
     if(icnt == 0) {
-      for(size_t j = 0; j <= a_zord; j++ )
-      (*ap_aa_array)[j] = (*ap_pp_array)[j];
+      for(size_t j = 0; j <= a_zord; j++ ) {
+        (*ap_aa_array)[j] = (*ap_pp_array)[j];
+      }
     }
   }
   /* Scale factors of the pole and zero polynomials */
@@ -994,15 +1005,14 @@ int zplnb(
   switch(a_bandform) {
     case fb_high_pass:
       a = -1.0;
-
     case fb_low_pass:
     case fb_band_stop:
 
       *ap_pn = 1.0;
       *ap_an = 1.0;
       for(size_t j = 1; j <= a_zord; j++) {
-        *ap_pn = a * *ap_pn + (*ap_pp_array)[j];
-        *ap_an = a * *ap_an + (*ap_aa_array)[j];
+        *ap_pn = a*(*ap_pn) + (*ap_pp_array)[j];
+        *ap_an = a*(*ap_an) + (*ap_aa_array)[j];
       }
       break;
 
@@ -1022,10 +1032,12 @@ int zplnb(
         const T cng = cos(a);
         const size_t jh = mh + j;
         const size_t jl = mh - j;
-        *ap_pn = *ap_pn + cng * ((*ap_pp_array)[jh] + (1.0 - 2.0 * ai) * (*ap_pp_array)[jl]);
-        *ap_an = *ap_an + cng * ((*ap_aa_array)[jh] + (1.0 - 2.0 * ai) * (*ap_aa_array)[jl]);
+        *ap_pn = (*ap_pn) + cng*((*ap_pp_array)[jh] +
+          (1.0 - 2.0 * ai)*(*ap_pp_array)[jl]);
+        *ap_an = (*ap_an) + cng*((*ap_aa_array)[jh] +
+          (1.0 - 2.0 * ai)*(*ap_aa_array)[jl]);
       }
-    }
+  }
   return 0;
 }
 
@@ -1052,14 +1064,13 @@ int zplnc(
   vector<T> pp_array = a_pp_array;
   IRS_LIB_DBG_MSG("constant gain factor " << *ap_gain);
   for(size_t j = 0; j <= a_zord; j++) {
-    pp_array[j] = *ap_gain * pp_array[j];
+    pp_array[j] = (*ap_gain)*pp_array[j];
   }
 
   IRS_LIB_DBG_MSG("z plane Denominator Numerator");
   for(size_t j = 0; j <= a_zord; j++) {
-    IRS_LIB_DBG_MSG(setw(4) << j << scientific << setw(20) <<
-      a_aa_array[j] << setw(20) << pp_array[j] << fixed);
-
+    IRS_LIB_DBG_MSG(setw(4) << j << scientific << setprecision(15) <<
+      setw(25) << a_aa_array[j] << setw(25) << pp_array[j] << fixed);
   }
 
   IRS_LIB_DBG_MSG("poles and zeros with corresponding quadratic factors");
