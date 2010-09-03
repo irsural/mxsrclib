@@ -117,7 +117,7 @@ int zplnc(
   const T a_fnyq,
   const vector<complex<T> >& a_z_array,
   const vector<T>& a_aa_array,
-  const vector<T>& a_pp_array,
+  vector<T>* ap_pp_array,
   T* ap_gain
 );
 
@@ -348,16 +348,16 @@ void get_coef_iir_filter(
   T cbp = 0;
   const int ARRSIZE = 50;
   vector<T> y_array(ARRSIZE);
-  ap_num_coef_list->resize(ARRSIZE);
-  //vector<T> aa_array(ARRSIZE);
-  ap_denum_coef_list->resize(ARRSIZE);
-  //vector<T> pp_array(ARRSIZE);
+  //ap_num_coef_list->resize(ARRSIZE);
+  vector<T> aa_array(ARRSIZE);
+  //ap_denum_coef_list->resize(ARRSIZE);
+  vector<T> pp_array(ARRSIZE);
   T m = 0;
   T Kk = 0;
   T u = 0;
   if(family == ff_cauer) { /* elliptic */
     cgam = cos( (a+f1) * M_PI / fs ) / cang;
-    T dbd = a_filter_settings.stopband_ripple_db;
+    T dbd = a_filter_settings.high_cutoff_freq_hz;
     T f3 = 0;
     if(dbd > 0.0) {
       f3 = dbd;
@@ -407,7 +407,7 @@ void get_coef_iir_filter(
     cang = cos(ang);
     T sang = sin(ang);
 
-    if((bandform == fb_band_pass) || (bandform == fb_band_stop)) {
+    if((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
       wr = sang/(cang*c);
     } else {
       const T q = cang * cang  -  sang * sang;
@@ -431,10 +431,10 @@ void get_coef_iir_filter(
 
     if((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
       for(size_t i = 1; i <= 2; i++ ) {
-        (*ap_num_coef_list)[i] = atan(c*y_array[i-1])*fs/M_PI;
+        aa_array[i] = atan(c*y_array[i-1])*fs/M_PI;
       }
-      IRS_LIB_DBG_MSG("pass band " << (*ap_num_coef_list)[1]);
-      IRS_LIB_DBG_MSG("stop band " << (*ap_num_coef_list)[2]);
+      IRS_LIB_DBG_MSG("pass band " << aa_array[1]);
+      IRS_LIB_DBG_MSG("stop band " << aa_array[2]);
     } else {
       for(size_t i = 1; i <= 2; i++) {
         const T a = c * y_array[i-1];
@@ -445,13 +445,13 @@ void get_coef_iir_filter(
         #else
         q = atan2(cgam, q);
         #endif
-        (*ap_num_coef_list)[i] = (q + b) * fnyq / M_PI;
-        (*ap_denum_coef_list)[i] = (q - b) * fnyq / M_PI;
+        aa_array[i] = (q + b) * fnyq / M_PI;
+        pp_array[i] = (q - b) * fnyq / M_PI;
       }
-      IRS_LIB_DBG_MSG("pass band " << (*ap_denum_coef_list)[1] << " " <<
-        (*ap_num_coef_list)[1]);
-      IRS_LIB_DBG_MSG("stop band " << (*ap_denum_coef_list)[2] << " " <<
-        (*ap_num_coef_list)[2]);
+      IRS_LIB_DBG_MSG("pass band " << pp_array[1] << " " <<
+        aa_array[1]);
+      IRS_LIB_DBG_MSG("stop band " << pp_array[2] << " " <<
+        aa_array[2]);
     }
 
     lampln(eps, wr, order, &m, &k, &wc, &Kk, &phi, &u); /* find locations in lambda plane */
@@ -504,9 +504,14 @@ void get_coef_iir_filter(
   zplna(family, bandform, np, nz, c, wc, cbp, ir, cone, cgam, zs_array,
     &jt, &zord, &z_array); /* convert s plane to z plane */
   zplnb(family, bandform, jt, zord, cgam, &an, &pn, &z_array,
-    ap_num_coef_list, ap_denum_coef_list, &y_array);
+    &aa_array, &pp_array, &y_array);
   zplnc(family, an, pn, scale, zord, fs, fnyq, z_array,
-    *ap_num_coef_list, *ap_denum_coef_list, &gain);
+    aa_array, &pp_array, &gain);
+  ap_num_coef_list->clear();
+  ap_num_coef_list->insert(ap_num_coef_list->begin(),
+    aa_array.begin(), aa_array.begin() + zord + 1);
+  ap_denum_coef_list->insert(ap_denum_coef_list->begin(),
+    pp_array.begin(), pp_array.begin() + zord + 1); 
   // tabulate transfer function
   xfun(fs, zord, gain, fnyq, dbfac, z_array);
 }
@@ -1049,7 +1054,7 @@ int zplnc(
   const T a_fnyq,  
   const vector<complex<T> >& a_z_array,
   const vector<T>& a_aa_array,
-  const vector<T>& a_pp_array,
+  vector<T>* ap_pp_array,
   T* ap_gain)
 {
   *ap_gain = a_an/(a_pn * a_scale);
@@ -1058,16 +1063,16 @@ int zplnc(
   if(butterworth_or_chebyshev_ripple_pass && (a_pn == 0)) {
     *ap_gain = 1.0;
   }
-  vector<T> pp_array = a_pp_array;
+  //vector<T> pp_array = a_pp_array;
   IRS_LIB_DBG_MSG("constant gain factor " << *ap_gain);
   for(size_t j = 0; j <= a_zord; j++) {
-    pp_array[j] = (*ap_gain)*pp_array[j];
+    (*ap_pp_array)[j] = (*ap_gain)*(*ap_pp_array)[j];
   }
 
   IRS_LIB_DBG_MSG("z plane Denominator Numerator");
   for(size_t j = 0; j <= a_zord; j++) {
     IRS_LIB_DBG_MSG(setw(4) << j << scientific << setprecision(15) <<
-      setw(25) << a_aa_array[j] << setw(25) << pp_array[j] << fixed);
+      setw(25) << a_aa_array[j] << setw(25) << (*ap_pp_array)[j] << fixed);
   }
 
   IRS_LIB_DBG_MSG("poles and zeros with corresponding quadratic factors");
