@@ -848,21 +848,20 @@ int zplna(
           /* 1 - (r wc)^2 */
           b4ac = cnum * cnum;
           b4ac = a_cone - b4ac;
-          b4ac *= 4.0;                     /* 4ac */
-          cb.real(-2.0 * a_cgam);          /* b */
+          b4ac *= 4.0;              // 4ac
+          cb.real(-2.0 * a_cgam);   // b
           cb.imag(0.0);
-          cnum = cb * cb;      /* b^2 */
-          /* b^2 - 4 ac */
+          cnum = cb * cb;           // b^2
+          // b^2 - 4 ac
           b4ac = cnum - b4ac;
           csqrt(b4ac, &b4ac );
-          cb *= -1;              /* -b */ 
-          ca *= 2;              /* 2a */
-          //cadd( &b4ac, &cb, &cnum );   /* -b + sqrt( b^2 - 4ac) */
+          cb *= -1;                 // -b
+          ca *= 2;                  // 2a
+          // -b + sqrt( b^2 - 4ac)
           cnum = cb + b4ac;
-          // cdiv( &ca, &cnum, &cnum );   /* ... /2a */
+          // ... /2a
           cnum = cnum / ca;
           *ap_jt += 1;
-          // cmov( &cnum, &z[*ap_jt] );
           (*ap_z_array)[*ap_jt] = cnum;
           if(cnum.imag() != 0.0) {
             *ap_jt += 1;
@@ -870,13 +869,11 @@ int zplna(
             (*ap_z_array)[*ap_jt].imag(-cnum.imag());
           }
           if( (r.imag() != 0.0) || (cnum.imag() == 0) ) {
-            // csub( &b4ac, &cb, &cnum );  /* -b - sqrt( b^2 - 4ac) */
+            // -b - sqrt( b^2 - 4ac)
             cnum = cb - b4ac;
-            //cdiv( &ca, &cnum, &cnum );  /* ... /2a */
+            // ... /2a
             cnum = cnum / ca;
             *ap_jt += 1;
-            // cmov( &cnum, &z[*ap_jt] );
-            (*ap_z_array)[*ap_jt] = cnum;
             (*ap_z_array)[*ap_jt] = cnum;
             if(cnum.imag() != 0.0) {
               *ap_jt += 1;
@@ -885,7 +882,7 @@ int zplna(
             }
           }
         }
-      } /* end switch */
+      } // end switch 
     } while(--nc > 0);
 
     if(icnt == 0) {
@@ -901,7 +898,7 @@ int zplna(
       }
     }
     nc = a_nz;
-  } /* end for() loop */
+  } // end for() loop 
   return 0;
 }
 
