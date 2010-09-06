@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 02.08.2010
+// Дата: 27.08.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -907,10 +907,12 @@ void irs::agilent_3458a_digitizer_t::tick()
   }
   if (m_initialization_complete &&
     (m_status == meas_status_busy) &&
-    (m_buf_receive.size() == static_cast<size_type>(m_need_receive_data_size))) {
+    (m_buf_receive.size() == static_cast<size_type>(m_need_receive_data_size)))
+  {
 
     m_samples.clear();
-    for (size_type samples_i = 0; samples_i < static_cast<size_type>(m_need_samples_count);
+    for (size_type samples_i = 0;
+      samples_i < static_cast<size_type>(m_need_samples_count);
       samples_i++) {
 
       typedef irs_u16 mul_data_t;
@@ -982,7 +984,8 @@ void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
 {
 }
 // Установка диапазона измерений
-void irs::agilent_3458a_digitizer_t::set_range(type_meas_t /*a_type_meas*/, double /*a_range*/)
+void irs::agilent_3458a_digitizer_t::set_range(type_meas_t /*a_type_meas*/,
+  double /*a_range*/)
 {
 }
 // Установка автоматического выбора диапазона измерений
@@ -2100,9 +2103,13 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
 ):
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 0, 0, 0, a_update_time),
+    0, 5, 32, 4, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
   m_eth_mul_data(),
-  m_meas_status(meas_status_success)
+  m_status(meas_status_success),
+  mp_value(IRS_NULL),
+  m_abort_request(false),
+  m_mode(start_mode),
+  mp_filter(ap_filter)
 {
   m_eth_mul_data.connect(&m_modbus_client, 0);
 }
@@ -2113,10 +2120,38 @@ irs::ni_pxi_4071_t::~ni_pxi_4071_t()
 
 void irs::ni_pxi_4071_t::set_dc()
 {
+  switch(m_eth_mul_data.meas_type)
+  {
+    case tm_volt_ac:
+    {
+      m_eth_mul_data.meas_type = tm_volt_dc;
+    } break;
+    case tm_current_ac:
+    {
+      m_eth_mul_data.meas_type = tm_current_dc;
+    } break;
+    default:
+    {
+    }
+  }
 }
 
 void irs::ni_pxi_4071_t::set_ac()
 {
+  switch(m_eth_mul_data.meas_type)
+  {
+    case tm_volt_dc:
+    {
+      m_eth_mul_data.meas_type = tm_volt_ac;
+    } break;
+    case tm_current_dc:
+    {
+      m_eth_mul_data.meas_type = tm_current_ac;
+    } break;
+    default:
+    {
+    }
+  }
 }
 
 void irs::ni_pxi_4071_t::set_positive()
@@ -2129,42 +2164,56 @@ void irs::ni_pxi_4071_t::set_negative()
 
 void irs::ni_pxi_4071_t::get_value(double* ap_value)
 {
+  mp_value = ap_value;
+  m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
 {
+  m_eth_mul_data.meas_type = tm_volt_dc;
+  mp_value = ap_voltage;
+  m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_current(double* ap_current)
 {
+  m_eth_mul_data.meas_type = tm_current_dc;
+  mp_value = ap_current;
+  m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_resistance2x(double* ap_resistance)
 {
+  m_eth_mul_data.meas_type = tm_resistance_2x;
+  mp_value = ap_resistance;
+  m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_resistance4x(double* ap_resistance)
 {
+  m_eth_mul_data.meas_type = tm_resistance_4x;
+  mp_value = ap_resistance;
+  m_status = meas_status_busy;
 }
 
-void irs::ni_pxi_4071_t::get_frequency(double* ap_frequency)
+void irs::ni_pxi_4071_t::get_frequency(double* /*ap_frequency*/)
 {
 }
 
-void irs::ni_pxi_4071_t::get_phase_average(double* ap_phase_average)
+void irs::ni_pxi_4071_t::get_phase_average(double* /*ap_phase_average*/)
 {
 }
 
-void irs::ni_pxi_4071_t::get_phase(double* ap_phase)
+void irs::ni_pxi_4071_t::get_phase(double* /*ap_phase*/)
 {
 }
 
-void irs::ni_pxi_4071_t::get_time_interval(double* ap_time_interval)
+void irs::ni_pxi_4071_t::get_time_interval(double* /*ap_time_interval*/)
 {
 }
 
 void irs::ni_pxi_4071_t::get_time_interval_average(
-  double* ap_time_interval_average)
+  double* /*ap_time_interval_average*/)
 {
 }
 
@@ -2174,24 +2223,60 @@ void irs::ni_pxi_4071_t::auto_calibration()
 
 meas_status_t irs::ni_pxi_4071_t::status()
 {
-  return m_meas_status;
+  return m_status;
 }
 
 void irs::ni_pxi_4071_t::abort()
 {
+  m_abort_request = true;
 }
 
 void irs::ni_pxi_4071_t::tick()
 {
   m_modbus_client.tick();
+  switch(m_eth_mul_data.meas_mode)
+  {
+    case precision:
+    {
+      // range, meas_type, (nplc/aperture), resolution
+    } break;
+    case high_speed:
+    {
+      // range, meas_type, sample/sec, filter options
+    } break;
+  }
 }
 
 void irs::ni_pxi_4071_t::set_nplc(double a_nplc)
 {
+  double nplc = 0;
+  if (a_nplc > 0.0004445) {
+    if (a_nplc < 7450) {
+      nplc = a_nplc;
+    } else {
+      nplc = 7450;
+    }
+  } else {
+    nplc = 0.0004445;
+  }
+  m_eth_mul_data.integrate_time_units = plc;
+  m_eth_mul_data.integrate_time = nplc;
 }
 
 void irs::ni_pxi_4071_t::set_aperture(double a_aperture)
 {
+  double aperture = 0;
+  if (a_aperture > 0.00000889) {
+    if (a_aperture < 149) {
+      aperture = a_aperture;
+    } else {
+      aperture = 149;
+    }
+  } else {
+    aperture = 0.00000889;
+  }
+  m_eth_mul_data.integrate_time_units = sec;
+  m_eth_mul_data.integrate_time = aperture;
 }
 
 void irs::ni_pxi_4071_t::set_bandwidth(double /*a_bandwidth*/)
@@ -2208,13 +2293,86 @@ void irs::ni_pxi_4071_t::set_start_level(double /*a_level*/)
 
 void irs::ni_pxi_4071_t::set_range(type_meas_t a_type_meas, double a_range)
 {
+  m_eth_mul_data.meas_type = a_type_meas;
+  double range = 0;
+  switch(a_type_meas)
+  {
+    case tm_volt_dc:
+    {
+      if (a_range > 300) {
+        range = 300;
+      } else if ((a_range <= 300) && (a_range > 100)) {
+        range = 300;
+      } else if ((a_range <= 100) && (a_range > 10)) {
+        range = 100;
+      } else if ((a_range <= 10) && (a_range > 1)) {
+        range = 10;
+      } else if ((a_range <= 1) && (a_range > 0.1)) {
+        range = 1;
+      } else if (a_range <= 0.1) {
+        range = 0.1;
+      }
+      m_eth_mul_data.range = range;
+    } break;
+    case tm_volt_ac:
+    {
+      if (a_range > 300) {
+        range = 300;
+      } else if ((a_range <= 300) && (a_range > 50)) {
+        range = 300;
+      } else if ((a_range <= 50) && (a_range > 5)) {
+        range = 50;
+      } else if ((a_range <= 5) && (a_range > 0.5)) {
+        range = 5;
+      } else if ((a_range <= 0.5) && (a_range > 0.05)) {
+        range = 0.5;
+      } else if (a_range <= 0.05) {
+        range = 0.05;
+      }
+      m_eth_mul_data.range = range;
+    } break;
+    case tm_current_dc:
+    {
+      if (a_range > 1) {
+        range = 1;
+      } else if ((a_range <= 1) && (a_range > 0.2)) {
+        range = 1;
+      } else if ((a_range <= 0.2) && (a_range > 0.02)) {
+        range = 0.2;
+      } else if (a_range <= 0.02) {
+        range = 0.02;
+      }
+      m_eth_mul_data.range = range;
+    } break;
+    case tm_current_ac:
+    {
+      if (a_range > 1) {
+        range = 1;
+      } else if ((a_range <= 1) && (a_range > 0.1)) {
+        range = 1;
+      } else if ((a_range <= 0.1) && (a_range > 0.01)) {
+        range = 0.1;
+      } else if (a_range <= 0.01) {
+        range = 0.01;
+      }
+      m_eth_mul_data.range = range;
+    } break;
+    default:
+    {
+      IRS_ERROR(irs::ec_standard, "Unknown type range!");
+    }
+  }
 }
 
 void irs::ni_pxi_4071_t::set_range_auto()
 {
+  m_eth_mul_data.range = auto_range;
+}
+
+irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
+{
+  return &m_modbus_client;
 }
 
 //---------------------------------------------------------------------------
 //#pragma package(smart_init)
-
-

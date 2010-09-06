@@ -859,25 +859,25 @@ public:
   // Установить отрицательный фронт канала
   virtual void set_negative() {}
   // Чтение значения при текущем типа измерения
-  virtual void get_value(double *value) {}
+  virtual void get_value(double* /*value*/) {}
   // Чтение напряжения
-  virtual void get_voltage(double *voltage) {}
+  virtual void get_voltage(double* /*voltage*/) {}
   // Чтения силы тока
-  virtual void get_current(double *current) {}
+  virtual void get_current(double* /*current*/) {}
   // Чтение сопротивления
-  virtual void get_resistance2x(double *resistance) {}
+  virtual void get_resistance2x(double* /*resistance*/) {}
   // Чтение сопротивления
-  virtual void get_resistance4x(double *resistance) {}
+  virtual void get_resistance4x(double* /*resistance*/) {}
   // Чтение частоты
-  virtual void get_frequency(double *frequency) {}
+  virtual void get_frequency(double* /*frequency*/) {}
   // Чтение усредненного сдвира фаз
-  virtual void get_phase_average(double *phase_average) {}
+  virtual void get_phase_average(double* /*phase_average*/) {}
   // Чтение фазового сдвига
-  virtual void get_phase(double *phase) {}
+  virtual void get_phase(double* /*phase*/) {}
   // Чтение временного интервала
-  virtual void get_time_interval(double *time_interval) {}
+  virtual void get_time_interval(double* /*time_interval*/) {}
   // Чтение усредненного временного интервала
-  virtual void get_time_interval_average(double *ap_time_interval) {}
+  virtual void get_time_interval_average(double* /*ap_time_interval*/) {}
 
   // Запуск автокалибровки мультиметра
   virtual void auto_calibration() {}
@@ -888,17 +888,17 @@ public:
   // Элементарное действие
   virtual void tick() {}
   // Установка времени интегрирования в периодах частоты сети (20 мс)
-  virtual void set_nplc(double nplc) {}
+  virtual void set_nplc(double /*nplc*/) {}
   // Установка времени интегрирования в c
-  virtual void set_aperture(double aperture) {}
+  virtual void set_aperture(double /*aperture*/) {}
   // Установка полосы фильтра
-  virtual void set_bandwidth(double bandwidth) {}
+  virtual void set_bandwidth(double /*bandwidth*/) {}
   // Установка входного сопротивления канала
-  virtual void set_input_impedance(double impedance) {}
+  virtual void set_input_impedance(double /*impedance*/) {}
   // Установка уровня запуска канала
-  virtual void set_start_level(double level) {}
+  virtual void set_start_level(double /*level*/) {}
   // Установка диапазона измерений
-  virtual void set_range(type_meas_t a_type_meas, double a_range) {}
+  virtual void set_range(type_meas_t /*a_type_meas*/, double /*a_range*/) {}
   // Установка автоматического выбора диапазона измерений
   virtual void set_range_auto() {}
   // Установка входного сопротивления канала
@@ -910,7 +910,28 @@ namespace irs {
 // Класс для работы с мультиметром National Instruments PXI-4071
 class ni_pxi_4071_t: public mxmultimeter_t
 {
-public:  
+public:
+  enum { // power_freq
+    power_50_Hz,
+    power_60_Hz
+  };
+  enum { // resolution
+    digits_3_5,
+    digits_4_5,
+    digits_5_5,
+    digits_6_5,
+    digits_7_5
+  };
+  enum { // meas_type
+    precision,
+    high_speed
+  };
+  enum { // intergation time units
+    sec,
+    plc
+  };
+  
+  
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     filter_settings_t* ap_filter,
@@ -970,27 +991,40 @@ public:
   virtual void set_range_auto();
   // Установка входного сопротивления канала
   //virtual void set_filter(double a_time_interval);
+  
+  mxdata_t* mxdata();
 private:
+  enum {
+    auto_range = -1
+  };
+  enum mode_t {
+    start_mode,
+    get_value_mode,
+    stop_mode
+  };
   struct eth_mul_data_t {
     // Установки:
-    bit_data_t filtering;
-    bit_data_t auto_zero;
-    bit_data_t power_freq; // 0 - 60 Hz; 1 - 50 Hz
-    bit_data_t integrate_time_unit; // 0 - Seconds; 1 - PLCs
-    conn_data_t<irs_u8> range;
-    conn_data_t<irs_u8> resolution_digits;
+    //bit_data_t auto_zero;
+    //bit_data_t power_freq; // 0 - 60 Hz; 1 - 50 Hz
     conn_data_t<irs_u8> meas_type;
+    conn_data_t<irs_u8> meas_mode;
+    conn_data_t<irs_u8> integrate_time_units; // 0 - Seconds; 1 - PLCs
     conn_data_t<irs_u8> filter_type;
     conn_data_t<irs_u8> filter_order;
-    conn_data_t<irs_u16> integrate_time;
-    conn_data_t<irs_u32> sampling_freq;
-    conn_data_t<irs_u32> low_cutoff_freq;
-    conn_data_t<irs_u16> stopband_ripple;
-    conn_data_t<irs_u16> passband_ripple;
+    
+    conn_data_t<double> samples_per_sec;
+    conn_data_t<double> integrate_time;
+    conn_data_t<double> resolution_digits;
+    conn_data_t<double> range;
+    //bit_data_t filtering;
+    conn_data_t<double> sampling_freq;
+    conn_data_t<double> low_cutoff_freq;
+    conn_data_t<double> stopband_ripple;
+    conn_data_t<double> passband_ripple;
     
     // Считываемые значения:
     conn_data_t<double> meas_value;
-    bit_data_t out_of_range;
+    //bit_data_t out_of_range;
   
     eth_mul_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
       irs_uarc* ap_size = IRS_NULL)
@@ -1004,6 +1038,23 @@ private:
     {
       irs_uarc index = a_index;
       
+      index = meas_type.connect(ap_data, index);
+      index = meas_mode.connect(ap_data, index);
+      index = integrate_time_units.connect(ap_data, index);
+      index = filter_type.connect(ap_data, index);
+      index = filter_order.connect(ap_data, index);
+      
+      index = samples_per_sec.connect(ap_data, index);
+      index = integrate_time.connect(ap_data, index);
+      index = resolution_digits.connect(ap_data, index);
+      index = range.connect(ap_data, index);
+      index = sampling_freq.connect(ap_data, index);
+      index = low_cutoff_freq.connect(ap_data, index);
+      index = stopband_ripple.connect(ap_data, index);
+      index = passband_ripple.connect(ap_data, index);
+      
+      index = meas_value.connect(ap_data, index);
+      
       return index;
     }
   };
@@ -1011,7 +1062,11 @@ private:
   hardflow_t* mp_hardflow;
   modbus_client_t m_modbus_client;
   eth_mul_data_t m_eth_mul_data;
-  meas_status_t m_meas_status;
+  meas_status_t m_status;
+  double* mp_value;
+  bool m_abort_request;
+  mode_t m_mode;
+  filter_settings_t* mp_filter;
 };
 
 } //namespace irs

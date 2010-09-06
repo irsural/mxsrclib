@@ -429,9 +429,9 @@ public:
   // Постоянный ток поддерживается прибором или нет
   virtual irs_bool dc_supported() {return irs_true;}
   // Установка тока
-  virtual void set_current(double current) {}
+  virtual void set_current(double /*current*/) {}
   // Установка напряжения
-  virtual void set_voltage(double voltage) {}
+  virtual void set_voltage(double /*voltage*/) {}
   // Включение источника
   virtual void on() {}
   // Выключение источника
