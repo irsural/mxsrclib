@@ -15,7 +15,7 @@
 
 #include <measmul.h>
 
-#include <irsdefs.h>
+#include <irsfinal.h>
 
 namespace {
 
