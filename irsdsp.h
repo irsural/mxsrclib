@@ -380,6 +380,7 @@ double fade(fade_data_t *fd, double x);
 // x - входное значение
 double isodr(isodr_data_t *id, double x);
 #endif //NEW
+
 // Ограничитель темпа
 // otd - структура данных для ограничителя темпа
 // in - ограничиваемая последовательность
@@ -409,8 +410,13 @@ T bound(T in, T min, T max)
   if (in > max) in = max;
   return in;
 }
+
 // Возведение в квадрат
-template <class T> T sqr(T x) { return x*x; }
+template <class T>
+T sqr(T x)
+{
+  return x*x;
+}
 
 // БПФ от комплексного массива
 #ifdef __WATCOMC__
@@ -908,7 +914,6 @@ void thd_process_t<T, N>::tick()
 }
 
 //  Колебательный контур
-
 template <class T>
 class osc_cir_t
 {
@@ -1033,7 +1038,6 @@ T osc_cir_t<T>::calc_denom()
 }
 
 //  Инерционное звено
-
 template <class T>
 class fade_t
 {
@@ -1112,7 +1116,7 @@ struct filter_settings_t {
   }
 };
 
-} //  irs
+} //namespace irs
 
 #endif //irsdspH
 
