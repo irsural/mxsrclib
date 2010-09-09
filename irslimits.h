@@ -1,5 +1,5 @@
 // Характеристики чисел
-// Дата: 1.07.2010
+// Дата: 09.09.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -1434,12 +1434,20 @@ struct numeric_limits<float>: float_limits_by_type<float>
 template<>
 struct numeric_limits<double>: float_limits_by_type<double>
 {
+  static value_type (max)()
+  { // return maximum value
+    return (DBL_MAX);
+  }
 };
 
 // CLASS numeric_limits<long double>
 template<>
 struct numeric_limits<long double>: float_limits_by_type<long double>
 {
+  static value_type (max)()
+  { // return maximum value
+    return (LDBL_MAX);
+  }
 };
 
 template <class T>

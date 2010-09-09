@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 05.08.2010
+// Дата: 09.09.2010
 
 #ifndef measmulH
 #define measmulH
@@ -17,6 +17,7 @@
 #include <irserror.h>
 #include <irsstring.h>
 #include <irsmbus.h>
+#include <irsfilter.h>
 #include <irsdsp.h>
 
 #include <irsfinal.h>
@@ -49,12 +50,24 @@ bool str_to_type_meas(
 
 enum multimeter_mode_type_t {mul_mode_type_active, mul_mode_type_passive};
 
+enum multimeter_param_t {
+  mul_param_source_values,
+  mul_param_filtered_values,
+  mul_param_standard_deviation,
+  mul_param_standard_deviation_relative,
+  mul_param_variation
+};
+
 // Абстрактный базовый класс для работы с мультиметрами
 class mxmultimeter_t
 {
 public:
   virtual ~mxmultimeter_t() {};
-
+  virtual void get_param(const multimeter_param_t a_param,
+    irs::raw_data_t<irs_u8> *ap_value) const;
+  virtual void set_param(const multimeter_param_t a_param,
+    const irs::raw_data_t<irs_u8> &a_value);
+  virtual bool is_param_exists(const multimeter_param_t a_param) const;
   // Установить режим измерения постоянного напряжения
   virtual void set_dc() = 0;
   // Установить режим измерения переменного напряжения
@@ -328,18 +341,26 @@ public:
 
 namespace irs{
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
 // Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 class agilent_3458a_digitizer_t: public mxmultimeter_t
 {
 public:
   typedef irs_size_t size_type;
+  typedef long double math_value_type;
   // Конструктор
   agilent_3458a_digitizer_t(
     irs::hardflow_t* ap_hardflow,
-    multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active
+    const filter_settings_t& a_filter_settings
   );
   // Деструктор
   ~agilent_3458a_digitizer_t();
+  virtual void get_param(const multimeter_param_t a_param,
+    irs::raw_data_t<irs_u8> *ap_value) const;
+  virtual void set_param(const multimeter_param_t a_param,
+    const irs::raw_data_t<irs_u8> &a_value);
+  virtual bool is_param_exists(const multimeter_param_t a_param) const;
   // Установить режим измерения постоянного напряжения
   virtual void set_dc();
   // Установить режим измерения переменного напряжения
@@ -393,13 +414,16 @@ public:
 private:
   void commands_to_buf_send();
   irs::hardflow_t* mp_hardflow;
+  filter_settings_t m_filter_settings;
+  iir_filter_t<math_value_type> m_iir_filter;
   // Команды при инициализации
   raw_data_t<irs_u8> m_command_terminator;
   vector<irs_string_t> m_commands;
   raw_data_t<irs_u8> m_buf_send;
   raw_data_t<irs_u8> m_buf_receive;
-  vector<double> m_samples;
-  enum { m_need_samples_count = 300000 };
+  raw_data_t<double> m_samples;
+  raw_data_t<double> m_filtered_values;
+  enum { m_need_samples_count = 1500000 };
   enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;
@@ -407,7 +431,9 @@ private:
   double* mp_value;
   meas_status_t m_status;
   irs::timer_t m_delay_timer;
-}; // class agilent_3458a_t
+}; // class agilent_3458a_digitizer_t
+
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 // Класс для работы с мультиметром В7-78/1
 class v7_78_1_t: public mxmultimeter_t

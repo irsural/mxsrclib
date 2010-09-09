@@ -227,7 +227,7 @@ inline ostream& operator<<(ostream& a_strm,
   }
 #define IRS_ERROR_IF_NOT(assert_expr, error_code, msg)\
   {\
-    IRS_ERROR_IF(!assert_expr, error_code, msg);\
+    IRS_ERROR_IF(!(assert_expr), error_code, msg);\
   }
 #define IRS_FATAL_ERROR(msg) IRS_ERROR(irs::ec_fatal_error, msg)
 

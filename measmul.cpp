@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 27.08.2010
+// Дата: 09.09.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -12,10 +12,28 @@
 
 #include <irsstrdefs.h>
 #include <irsstring.h>
+#include <irsdsp.h>
+#include <irsalg.h>
 
 #include <measmul.h>
 
 #include <irsfinal.h>
+
+// class mxmultimeter_t
+void mxmultimeter_t::get_param(const multimeter_param_t a_param,
+  irs::raw_data_t<irs_u8> *ap_value) const
+{
+  // Игнорируем
+}
+void mxmultimeter_t::set_param(const multimeter_param_t a_param,
+  const irs::raw_data_t<irs_u8> &a_value)
+{
+  // Игнорируем
+}
+bool mxmultimeter_t::is_param_exists(const multimeter_param_t a_param) const
+{
+  return false;
+}
 
 namespace {
 
@@ -721,18 +739,22 @@ void mx_agilent_3458a_t::set_range_auto()
   m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
 }
 
-// Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
+// Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   irs::hardflow_t* ap_hardflow,
-  multimeter_mode_type_t /*a_mul_mode_type*/
+  const filter_settings_t& a_filter_settings
 ):
   mp_hardflow(ap_hardflow),
+  m_filter_settings(a_filter_settings),
+  m_iir_filter(a_filter_settings),
   m_command_terminator(),
   m_commands(),
   m_buf_send(),
   m_buf_receive(),
   m_samples(),
+  m_filtered_values(),
   m_initialization_complete(false),
   m_coefficient_receive_ok(false),
   m_coefficient(0),
@@ -769,7 +791,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   irs_string_t sample_count_str;
   const size_type sample_count = static_cast<size_type>(m_need_samples_count);
   num_to_str(sample_count, &sample_count_str);
-  irs_string_t sweep_cmd = "SWEEP 17E-6, " + sample_count_str;
+  irs_string_t sweep_cmd = "SWEEP 20E-6, " + sample_count_str;
   m_commands.push_back(sweep_cmd);
 
   m_commands.push_back("ISCALE?");
@@ -787,10 +809,84 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_commands.push_back("TIMER 1E-2");*/
   //m_commands.push_back("BEEP");
   //m_commands.push_back("BEEP");
-  //m_commands.push_back("TRIG AUTO"); 
+  //m_commands.push_back("TRIG AUTO");
 }
 irs::agilent_3458a_digitizer_t::~agilent_3458a_digitizer_t()
 {
+}
+
+void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
+  irs::raw_data_t<irs_u8> *ap_value) const
+{
+  IRS_LIB_ASSERT(ap_value);
+  switch (a_param) {
+    case mul_param_source_values: {
+      const irs_u8* p_src_first =
+        reinterpret_cast<const irs_u8*>(m_samples.data());
+      const irs_u8* p_src_last = p_src_first + m_samples.size() * sizeof(double);
+      ap_value->insert(ap_value->data(), p_src_first, p_src_last);
+    } break;
+    case mul_param_filtered_values: {
+      const irs_u8* p_src_first =
+        reinterpret_cast<const irs_u8*>(m_filtered_values.data());
+      const irs_u8* p_src_last = p_src_first +
+        m_filtered_values.size() * sizeof(double);
+      ap_value->insert(ap_value->data(), p_src_first, p_src_last);
+    } break;
+    case mul_param_standard_deviation:
+    case mul_param_standard_deviation_relative: {
+      double deviation = 0.;
+      if (!m_samples.empty()) {
+        const size_type sample_count = m_samples.size();
+        irs::sko_calc_t<double, double> sko_calc(sample_count);
+        for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
+          sko_calc.add(m_samples[sample_i]);
+        }
+        if (a_param == mul_param_standard_deviation) {
+          deviation = sko_calc;
+        } else {
+          deviation = sko_calc.relative();
+        }
+      } else {
+        // Возвращаем ноль
+      }
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&deviation),
+        reinterpret_cast<irs_u8*>(&deviation) + sizeof(deviation));
+    } break;
+    case mul_param_variation: {
+      double variation = 0.;
+      if (!m_samples.empty()) {
+        const double min = *min_element(m_samples.data(),
+          m_samples.data() + m_samples.size());
+        const double max = *max_element(m_samples.data(),
+          m_samples.data() + m_samples.size());
+        variation = max - min;
+      } else {
+        // Возвращаем ноль
+      }
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&variation),
+        reinterpret_cast<const irs_u8*>(&variation) + sizeof(variation));
+    } break;
+    default : {
+      // Игнорируем
+    }
+  }   
+}
+void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
+  const irs::raw_data_t<irs_u8> &a_value)
+{
+  // Игнорируем
+}
+bool irs::agilent_3458a_digitizer_t::is_param_exists(
+  const multimeter_param_t a_param) const
+{
+  return (a_param == mul_param_source_values) ||
+    (a_param == mul_param_filtered_values) ||
+    (a_param == mul_param_standard_deviation) ||
+    (a_param == mul_param_standard_deviation_relative) ||
+    (a_param == mul_param_variation);
 }
 void irs::agilent_3458a_digitizer_t::set_dc()
 {
@@ -812,9 +908,7 @@ void irs::agilent_3458a_digitizer_t::get_value(double *ap_value)
 {
   mp_value = ap_value;
   m_status = meas_status_busy;
-  m_buf_receive.clear();
-  //m_commands.push_back("TARM SYN");
-  //m_commands.push_back("TRIG SGL");
+  m_buf_receive.clear();    
 }
 // Чтение напряжения
 void irs::agilent_3458a_digitizer_t::get_voltage(double *voltage)
@@ -822,8 +916,6 @@ void irs::agilent_3458a_digitizer_t::get_voltage(double *voltage)
   mp_value = voltage;
   m_status = meas_status_busy;
   m_buf_receive.clear();
-  //m_commands.push_back("TARM SYN");
-  //m_commands.push_back("TRIG SGL");
 }
 // Чтения силы тока
 void irs::agilent_3458a_digitizer_t::get_current(double */*current*/)
@@ -911,17 +1003,49 @@ void irs::agilent_3458a_digitizer_t::tick()
   {
 
     m_samples.clear();
-    for (size_type samples_i = 0;
-      samples_i < static_cast<size_type>(m_need_samples_count);
-      samples_i++) {
-
+    m_filtered_values.clear();
+    const size_type order = 10;
+    vector<fade_data_t> fade_data_array(order);
+    //double y = 0.;
+    const size_type sample_count = static_cast<size_type>(m_need_samples_count);
+    for (size_type samples_i = 0; samples_i < sample_count; samples_i++) {
       typedef irs_u16 mul_data_t;
       const irs_u16 multim_value = reinterpret_cast<mul_data_t&>(
         *(m_buf_receive.data() + (samples_i * sizeof(irs_u16))));
       double sample = flip_data(multim_value) * m_coefficient;
-      m_samples.push_back(sample);
+      m_samples.resize(m_samples.size() + 1);
+      m_samples[m_samples.size() - 1] = sample;
     }
-    *mp_value = m_samples.front();
+
+    irs::sko_calc_t<math_value_type, math_value_type> sko_calc(sample_count);
+    for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
+      sko_calc.add(m_samples[sample_i]);
+    }
+    // Предустанавливаем фильтр
+    m_iir_filter.sync(sko_calc.average());
+    m_filtered_values.resize(sample_count);
+    for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
+      /*if (samples_i == 0) {
+        // Предустанавливаем цепочку
+        const size_type sample_count = m_samples.size();
+        irs::sko_calc_t<double, double> sko_calc(sample_count);
+        for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
+          sko_calc.add(m_samples[sample_i]);
+        }
+        for (size_type order_i = 0; order_i < order; order_i++) {
+          fade_data_array[order_i].x1 = sko_calc.average();
+          fade_data_array[order_i].y1 = sko_calc.average();
+          fade_data_array[order_i].t = 0.1/20e-6;
+        }
+      }*/
+      /*y = sample;
+      for (size_type order_i = 0; order_i < order; order_i++) {
+        y = fade(&fade_data_array[order_i], y);
+      }*/
+      m_iir_filter.set(m_samples[sample_i]);
+      m_filtered_values[sample_i] = static_cast<double>(m_iir_filter.get());
+    }
+    *mp_value = static_cast<double>(m_iir_filter.get());
     m_status = meas_status_success;
   } else {
     // Недостаточно данных для формирования результата
@@ -949,7 +1073,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       irs_string_t coefficient_str = buf.substr(0, pos);
       if (str_to_num_classic(coefficient_str, &m_coefficient)) {
         m_buf_receive.clear();
-        mp_hardflow->set_param("read_timeout", "10");
+        mp_hardflow->set_param("read_timeout", "100");
         m_commands.push_back("TARM SYN");
         m_commands.push_back("TRIG SYN");
         m_initialization_complete = true;
@@ -1017,6 +1141,8 @@ void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
   }
   m_commands.clear();
 }
+
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 // Класс для работы с мультиметром b7-78/1
 

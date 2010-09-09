@@ -46,6 +46,7 @@ struct basic_pid_data_t {
   // Рекомендуемое значение 0.1
   T k_d_pid;
 };
+
 typedef basic_pid_data_t<float> pid_data_float_t;
 typedef basic_pid_data_t<double> pid_data_double_t;
 typedef pid_data_double_t pid_data_t;
@@ -1080,38 +1081,48 @@ void fade_t<T>::set_t(T a_t)
   m_t = a_t;
 }
 
-enum filter_type_t {
-  ft_butterworth,
-  ft_chebyshev,
-  ft_elliptic
+enum filter_family_t {
+  ff_butterworth,
+  ff_chebyshev_ripple_pass,
+  ff_chebyshev_ripple_stop,
+  ff_cauer
+};
+
+enum filter_bandform_t {
+  fb_low_pass,
+  fb_band_pass,
+  fb_high_pass,
+  fb_band_stop
 };
 
 struct filter_settings_t {
   typedef size_t size_type;
-  filter_type_t type;
+  filter_family_t family;
+  filter_bandform_t bandform;
   size_type order;
   double sampling_time_s;
   double low_cutoff_freq_hz;
   double high_cutoff_freq_hz;
-  double stopband_ripple_db;
   double passband_ripple_db;
-
+  double stopband_ripple_db; 
   filter_settings_t(
-    filter_type_t a_type,
-    size_type a_order,
-    double a_sampling_time_s,
-    double a_low_cutoff_freq_hz,
-    double a_high_cutoff_freq_hz,
-    double a_stopband_ripple_db = 0,
-    double a_passband_ripple_db = 0
+    filter_family_t a_family = ff_butterworth,
+    filter_bandform_t a_bandform = fb_low_pass,
+    size_type a_order = 2,
+    double a_sampling_time_s = 10e-6,
+    double a_low_cutoff_freq_hz = 1000,
+    double a_high_cutoff_freq_hz = 10000,
+    double a_passband_ripple_db = 0.1,
+    double a_stopband_ripple_db = 80
   ):
-    type(a_type),
+    family(a_family),
+    bandform(a_bandform),
     order(a_order),
     sampling_time_s(a_sampling_time_s),
     low_cutoff_freq_hz(a_low_cutoff_freq_hz),
     high_cutoff_freq_hz(a_high_cutoff_freq_hz),
-    stopband_ripple_db(a_stopband_ripple_db),
-    passband_ripple_db(a_passband_ripple_db)
+    passband_ripple_db(a_passband_ripple_db),
+    stopband_ripple_db(a_stopband_ripple_db)
   {
   }
 };
