@@ -12,12 +12,22 @@
 #include <irserror.h>
 #include <irsdsp.h>
 #include <mxdata.h>
+#include <irsmath.h>
 
 #include <irsfinal.h>
 
-namespace irs {
+#define IRS_LIB_FILTER_DEBUG_TYPE IRS_LIB_DEBUG_NONE
+
+#if (IRS_LIB_FILTER_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+# define IRS_LIB_FILTER_DBG_MSG(msg) IRS_LIB_DBG_MSG(msg)
+#else
+# define IRS_LIB_FILTER_DBG_MSG(msg)
+#endif // IRS_LIB_FILTER_DEBUG_TYPE != IRS_LIB_DEBUG_FULL
+
 #define UNK
 #define MACHEP 1.11022302462515654042E-16   /* 2**-53 */
+
+namespace irs {
 
 template <class T>
 class iir_filter_t
@@ -26,6 +36,7 @@ public:
   typedef T value_type;
   typedef irs_size_t size_type;
   iir_filter_t();
+  iir_filter_t(const irs::filter_settings_t& a_filter_setting);
   typedef deque<T> coef_list_type;
   typedef deque<T> delay_line_type;
   void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
@@ -119,8 +130,7 @@ int zplnc(
   const T a_pn,
   const T a_scale,
   const size_t a_zord,
-  const T a_fs,
-  const T a_fnyq,
+  const T a_sampling_rate, 
   const vector<complex<T> >& a_z_array,
   const vector<T>& a_aa_array,
   vector<T>* ap_pp_array,
@@ -132,8 +142,7 @@ int quadf(
   const T a_x,
   const T a_y,
   const int a_pzflg /* 1 if poles, 0 if zeros */,
-  const T a_fs,
-  const T a_fnyq
+  const T a_sampling_rate
 );
 
 template <class T>
@@ -179,6 +188,8 @@ T polevl(const T a_x, const double* ap_coef, const int a_n);
 template <class T>
 T cay(const T a_q);
 
+bool get_coef_iir_filter_test();
+
 template <class T>
 iir_filter_t<T>::iir_filter_t():
   m_num_coef_list(),
@@ -186,6 +197,16 @@ iir_filter_t<T>::iir_filter_t():
   m_in_delay_line(),
   m_out_delay_line()
 {
+}
+
+template <class T>
+iir_filter_t<T>::iir_filter_t(const irs::filter_settings_t& a_filter_setting):
+  m_num_coef_list(),
+  m_denum_coef_list(),
+  m_in_delay_line(),
+  m_out_delay_line()
+{
+  set_filter_settings(a_filter_setting);
 }
 
 template <class T>
@@ -216,10 +237,8 @@ template <class T>
 void iir_filter_t<T>::sync(T a_value)
 {
   const size_type size = m_in_delay_line.size();
-  m_in_delay_line.clear();
-  m_out_delay_line.clear();
-  m_in_delay_line.resize(m_in_delay_line.size(), a_value);
-  m_out_delay_line.resize(m_out_delay_line.size(), a_value);
+  m_in_delay_line. assign(m_in_delay_line.size(), a_value);
+  m_out_delay_line.assign(m_out_delay_line.size(), a_value);
 }
 
 template <class T>
@@ -299,77 +318,76 @@ bool get_coef_iir_filter(
     fsuccess = false;
   }
   value_type phi = 0;
-  const value_type dbfac = 10.0 / log(10.0);
+  const value_type dbfac = 10.0/log(10.0);
   value_type scale = 0;
   value_type eps = 0;
   if(family != ff_butterworth) /* not Butterworth */ {
-    const value_type dbr = a_filter_settings.passband_ripple_db;
-    if( dbr <= 0.0 ) {
+    const value_type passband_ripple_db = a_filter_settings.passband_ripple_db;
+    if(passband_ripple_db <= 0.0) {
       fsuccess = false;
     }
     const bool is_order_even = (order & 1) == 0;
     if(family == ff_chebyshev_ripple_pass) {
       /* For Chebyshev filter, ripples go from 1.0 to 1/sqrt(1+eps^2) */
-      phi = exp( 0.5 * dbr / dbfac); 
+      phi = exp(0.5*passband_ripple_db/dbfac);
       if(is_order_even) {
         scale = phi;
       } else {
         scale = 1.0;
       }
     } else { /* elliptic */
-      eps = exp(dbr / dbfac);
+      eps = exp(passband_ripple_db/dbfac);
       scale = 1.0;
       if(is_order_even) {
         scale = sqrt( eps );
       }
-      eps = sqrt( eps - 1.0 );
+      eps = sqrt(eps - 1.0);
     }
   }
-  const value_type fs = 1/a_filter_settings.sampling_time_s;
-  if(fs <= 0.0) {
+  const value_type sampling_rate = 1/a_filter_settings.sampling_time_s;
+  if(sampling_rate <= 0.0) {
     fsuccess =false;
   }
-  const value_type fnyq = fs / 2;
+  const value_type nyquist_freq = sampling_rate/2;
   value_type f2 = a_filter_settings.low_cutoff_freq_hz;
-  if((f2 <= 0.0) || (f2 >= fnyq)) {
+  if((f2 <= 0.0) || (f2 >= nyquist_freq)) {
     fsuccess = false;
   }
   value_type f1 = 0;
   if((bandform == fb_band_pass) || (bandform == fb_band_stop)) {
     f1 = a_filter_settings.high_cutoff_freq_hz;
-    if((f1 <= 0.0) || (f1 >= fnyq)) {
+    if((f1 <= 0.0) || (f1 >= nyquist_freq)) {
       fsuccess = false;
     }
   } else {
     f1 = 0.0;
   }
   value_type a = 0;
-  value_type bw = 0;
+  value_type bandwidth = 0;
   if( f2 < f1 ) {
-    a = f2;
-    f2 = f1;
-    f1 = a;
+    ::swap(f2, f1);
   }
   if(bandform == fb_high_pass) /* high pass */ {
-    bw = f2;
-    a = fnyq;
+    bandwidth = f2;
+    a = nyquist_freq;
   } else {
-    bw = f2 - f1;
+    bandwidth = f2 - f1;
     a = f2;
   }
   /* Frequency correspondence for bilinear transformation
    *
    *  Wanalog = tan( 2 pi Fdigital T / 2 )
    *
-   * where T = 1/fs
+   * where T = 1/sampling_rate
    */
-  value_type ang = bw * M_PI / fs;
+  value_type ang = bandwidth*M_PI/sampling_rate;
   value_type cang = cos(ang);
-  const value_type c = sin(ang) / cang; /* Wanalog */
+  const value_type c = sin(ang)/cang; /* Wanalog */
   value_type wc = 0;
   if(family != ff_cauer) {
     wc = c;
-    IRS_LIB_DBG_MSG("cos( 1/2 (Whigh-Wlow) T ) = " << cang << " wc = " << wc);
+    IRS_LIB_FILTER_DBG_MSG("cos( 1/2 (Whigh-Wlow) T ) = " << cang <<
+      " wc = " << wc);
   }
 
   value_type cgam = 0.0;
@@ -377,28 +395,28 @@ bool get_coef_iir_filter(
   value_type wr = 0;
   value_type cbp = 0;
   const int ARRSIZE = 50;
-  vector<value_type> y_array(ARRSIZE);
+  vector<value_type> y_array;
   //ap_num_coef_list->resize(ARRSIZE);
-  vector<value_type> aa_array(ARRSIZE);
+  vector<value_type> aa_array;
   //ap_denum_coef_list->resize(ARRSIZE);
-  vector<value_type> pp_array(ARRSIZE);
+  vector<value_type> pp_array;
   value_type m = 0;
   value_type Kk = 0;
   value_type u = 0;
   if(family == ff_cauer) { /* elliptic */
-    cgam = cos( (a+f1) * M_PI / fs ) / cang;
-    value_type dbd = a_filter_settings.high_cutoff_freq_hz;
+    cgam = cos((a + f1)*M_PI/sampling_rate) / cang;
+    value_type dbd = -abs(a_filter_settings.stopband_ripple_db);
     value_type f3 = 0;
     if(dbd > 0.0) {
       f3 = dbd;
     } else { /* calculate band edge from db down */
       a = exp(-dbd/dbfac);
-      value_type m1 = eps/sqrt( a - 1.0 );
+      value_type m1 = eps/sqrt(a - 1.0);
       m1 *= m1;
       const value_type m1p = 1.0 - m1;
       const value_type Kk1 = ellpk(m1p);
       const value_type Kpk1 = ellpk(m1);
-      const value_type q = exp(-M_PI * Kpk1 / (order * Kk1));
+      const value_type q = exp(-M_PI*Kpk1/(order*Kk1));
       k = cay(q);
       if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
         wr = k;
@@ -406,13 +424,13 @@ bool get_coef_iir_filter(
         wr = 1.0/k;
       }
       if ((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
-        f3 = atan( c * wr ) * fs / M_PI;
+        f3 = atan(c*wr)*sampling_rate/M_PI;
       } else {
         a = c * wr;
         a *= a;
         value_type b = a * (1.0 - cgam * cgam) + a * a;
         b = (cgam + sqrt(b))/(1.0 + a);
-        f3 = (M_PI / 2.0 - asin(b)) * fs / (2.0 * M_PI);
+        f3 = (M_PI/2.0 - asin(b))*sampling_rate/(2.0*M_PI);
       }
     }
     switch(bandform) {
@@ -433,7 +451,7 @@ bool get_coef_iir_filter(
           fsuccess = false;
         break;
     }
-    ang = f3 * M_PI / fs;
+    ang = f3*M_PI/sampling_rate;
     cang = cos(ang);
     value_type sang = sin(ang);
 
@@ -449,41 +467,39 @@ bool get_coef_iir_filter(
     if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
       wr = 1.0/wr;
     }
-    if(wr < 0.0)
+    if(wr < 0.0) {
       wr = -wr;
-    y_array[0] = 1.0;
-    y_array[1] = wr;
+    }
     cbp = wr;
 
+    value_type h = 0;
     if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
-      y_array[1] = 1.0/y_array[1];
-    }
-
-    if((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
-      for(size_t i = 1; i <= 2; i++ ) {
-        aa_array[i] = atan(c*y_array[i-1])*fs/M_PI;
-      }
-      IRS_LIB_DBG_MSG("pass band " << aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << aa_array[2]);
+      h = 1./wr;
     } else {
-      for(size_t i = 1; i <= 2; i++) {
-        const value_type a = c * y_array[i-1];
-        const value_type b = atan(a);
-        value_type q = sqrt(1.0 + a*a  -  cgam*cgam);
-        #ifdef ANSIC
-        q = atan2(q, cgam);
-        #else
-        q = atan2(cgam, q);
-        #endif
-        aa_array[i] = (q + b) * fnyq / M_PI;
-        pp_array[i] = (q - b) * fnyq / M_PI;
-      }
-      IRS_LIB_DBG_MSG("pass band " << pp_array[1] << " " <<
-        aa_array[1]);
-      IRS_LIB_DBG_MSG("stop band " << pp_array[2] << " " <<
-        aa_array[2]);
+      h = wr;
     }
-
+    if((bandform == fb_low_pass) || (bandform == fb_high_pass)) {
+      const value_type pass_band = atan(c)*sampling_rate/M_PI;
+      const value_type stop_band = atan(c*h)*sampling_rate/M_PI;
+      IRS_LIB_FILTER_DBG_MSG("pass band " << pass_band);
+      IRS_LIB_FILTER_DBG_MSG("stop band " << stop_band);
+    } else {
+      value_type b1 = atan(c);
+      value_type q1 = sqrt(1.0 + c*c  -  cgam*cgam);
+      q1 = atan2(q1, cgam);
+      value_type pass_band_begin = (q1 - b1)*nyquist_freq/M_PI;
+      value_type pass_band_end = (q1 + b1)*nyquist_freq/M_PI;
+      value_type a2 = c*h;
+      value_type b2 = atan(a2);
+      value_type q2 = sqrt(1.0 + a2*a2  -  cgam*cgam);
+      q2 = atan2(q2, cgam);
+      value_type stop_band_begin = (q2 - b2)*nyquist_freq/M_PI;
+      value_type stop_band_end = (q2 + b2)*nyquist_freq/M_PI;
+      IRS_LIB_FILTER_DBG_MSG("pass band " << pass_band_begin << " " <<
+        pass_band_end);
+      IRS_LIB_FILTER_DBG_MSG("stop band " << stop_band_begin << " " <<
+        stop_band_end); 
+    } 
     lampln(eps, wr, order, &m, &k, &wc, &Kk, &phi, &u); /* find locations in lambda plane */
   }
 
@@ -502,16 +518,14 @@ bool get_coef_iir_filter(
    */
 
   if(family == ff_chebyshev_ripple_pass) { /* Chebyshev */
-    a = M_PI * (a+f1) / fs;
+    a = M_PI*(a+f1)/sampling_rate;
     cgam = cos(a) / cang;
-    a = 2.0 * M_PI * f2 / fs;
+    a = 2.0*M_PI*f2/sampling_rate;
     cbp = (cgam - cos(a))/sin(a);
-  }
-
-  if(family == ff_butterworth) { /* Butterworth */
-    a = M_PI * (a+f1) / fs ;
+  } else if(family == ff_butterworth) { /* Butterworth */
+    a = M_PI*(a+f1)/sampling_rate ;
     cgam = cos(a) / cang;
-    a = 2.0 * M_PI * f2 / fs;
+    a = 2.0*M_PI*f2/sampling_rate;
     cbp = (cgam - cos(a))/sin(a);
     scale = 1.0;
   }
@@ -535,15 +549,16 @@ bool get_coef_iir_filter(
     &jt, &zord, &z_array); /* convert s plane to z plane */
   zplnb(family, bandform, jt, zord, cgam, &an, &pn, &z_array,
     &aa_array, &pp_array, &y_array);
-  zplnc(family, an, pn, scale, zord, fs, fnyq, z_array,
+  zplnc(family, an, pn, scale, zord, sampling_rate, z_array,
     aa_array, &pp_array, &gain);
   ap_num_coef_list->clear();
   ap_num_coef_list->insert(ap_num_coef_list->begin(),
-    pp_array.begin(), pp_array.begin() + zord + 1);
+    pp_array.begin(), pp_array.end());
+  ap_denum_coef_list->clear();
   ap_denum_coef_list->insert(ap_denum_coef_list->begin(),
-    aa_array.begin(), aa_array.begin() + zord + 1);
+    aa_array.begin(), aa_array.end());
   // tabulate transfer function
-  xfun(fs, zord, gain, fnyq, dbfac, z_array);
+  xfun(sampling_rate, zord, gain, nyquist_freq, dbfac, z_array);
   return fsuccess;
 }
 
@@ -570,31 +585,32 @@ int lampln(
   T a = a_eps/m1;
   a =  a * a + 1;
   a = 10.0 * log(a) / log(10.0);
-  IRS_LIB_DBG_MSG("dbdown " << a );
+  IRS_LIB_FILTER_DBG_MSG("dbdown " << a );
   a = 180.0 * asin(*ap_k) / M_PI;
   T b = 1.0/(1.0 + a_eps*a_eps);
   b = sqrt( 1.0 - b );
-  IRS_LIB_DBG_MSG("theta " << a << " rho " << b );
+  IRS_LIB_FILTER_DBG_MSG("theta " << a << " rho " << b );
   m1 *= m1;
   const T m1p = 1.0 - m1;
   const T Kk1 = ellpk(m1p);
   const T Kpk1 = ellpk(m1);
   const T r = Kpk1 * *ap_Kk / (Kk1 * Kpk);
-  IRS_LIB_DBG_MSG("consistency check: n= " << r);
+  IRS_LIB_FILTER_DBG_MSG("consistency check: n= " << r);
   /*   -1
    * sn   j/eps\m  =  j ellik( atan(1/eps), m )
    */
   b = 1.0 / a_eps;
   *ap_phi = atan(b);
   *ap_u = ellik(*ap_phi, m1p);
-  IRS_LIB_DBG_MSG("phi " << *ap_phi <<" m " << m1p << " u " << *ap_u);
+  IRS_LIB_FILTER_DBG_MSG("phi " << *ap_phi <<" m " << m1p << " u " << *ap_u);
   /* consistency check on inverse sn */
   T sn = 0;
   T cn = 0;
   T dn = 0;
   ellpj(*ap_u, m1p, &sn, &cn, &dn, ap_phi);
   a = sn/cn;
-  IRS_LIB_DBG_MSG("consistency check: sn/cn =" << a << "=" << b << "= 1/eps");
+  IRS_LIB_FILTER_DBG_MSG("consistency check: sn/cn =" << a << "=" <<
+    b << "= 1/eps");
   *ap_u = *ap_u * *ap_Kk / (a_rn * Kk1);	/* or, u = u * Kpk / Kpk1 */
   return 0;
 }
@@ -776,16 +792,16 @@ int spln(
       }
     } break;
   }
-  IRS_LIB_DBG_MSG("s plane poles:" );
+  IRS_LIB_FILTER_DBG_MSG("s plane poles:" );
   size_t j = 0;
   for(size_t i=0; i < *ap_np + *ap_nz; i++) {
     const T a = (*ap_zs_array)[j];
     ++j;
     const T b = (*ap_zs_array)[j];
     ++j;
-    IRS_LIB_DBG_MSG(a << b);
+    IRS_LIB_FILTER_DBG_MSG(a << b);
     if(i == *ap_np - 1) {
-      IRS_LIB_DBG_MSG("s plane zeros:" );
+      IRS_LIB_FILTER_DBG_MSG("s plane zeros:" );
     }
   }
   return 0;
@@ -966,16 +982,16 @@ int zplnb(
         (a_bandform == fb_band_pass) ||
         (a_bandform == fb_band_stop)) {
         
-        IRS_LIB_DBG_MSG("adding zero at Nyquist frequency");
+        IRS_LIB_FILTER_DBG_MSG("adding zero at Nyquist frequency");
         jt += 1;
         (*ap_z_array)[jt].real(-1.0); /* zero at Nyquist frequency */
         (*ap_z_array)[jt].imag(0.0);
       }
       if((a_bandform == fb_band_pass) || (a_bandform == fb_high_pass)) {
-        IRS_LIB_DBG_MSG("adding zero at 0 Hz");
+        IRS_LIB_FILTER_DBG_MSG("adding zero at 0 Hz");
         jt += 1;
         (*ap_z_array)[jt].real(1.0); /* zero at 0 Hz */
-				(*ap_z_array)[jt].imag(0.0);
+        (*ap_z_array)[jt].imag(0.0);
       }
     }
   } else { /* elliptic */
@@ -990,27 +1006,28 @@ int zplnb(
       }
     }
   }
-  IRS_LIB_DBG_MSG("order = " << a_zord);
+  IRS_LIB_FILTER_DBG_MSG("order = " << a_zord);
 
   /* Expand the poles and zeros into numerator and
   * denominator polynomials
   */
+  ap_pp_array->resize(a_zord + 1);
+  ap_y_array->resize(a_zord + 1);
   for(size_t icnt = 0; icnt < 2; icnt++) {
-    //IRS_LIB_DBG_MSG("icnt=" << icnt);
-    for(size_t j = 0; j < ap_pp_array->size(); j++) {
-      (*ap_pp_array)[j] = 0.0;
-      (*ap_y_array)[j] = 0.0;
-    }
+    //IRS_LIB_FILTER_DBG_MSG("icnt=" << icnt);
+    ap_pp_array->assign(ap_pp_array->size(), 0.);
+    ap_y_array->assign(ap_y_array->size(), 0.);
     (*ap_pp_array)[0] = 1.0;
     for(size_t j = 0; j < a_zord; j++) {
-      //IRS_LIB_DBG_MSG("j=" << j);
+      //IRS_LIB_FILTER_DBG_MSG("j=" << j);
       int jj = j;
       if (icnt)
         jj += a_zord;
       const T a = (*ap_z_array)[jj].real();
       const T b = (*ap_z_array)[jj].imag();
-      //IRS_LIB_DBG_MSG(setprecision(15) << "a=" << a << " b=" << b);
-      //IRS_LIB_DBG_MSG(hex << "a=" << *reinterpret_cast<const __int64*>(&a) <<
+      //IRS_LIB_FILTER_DBG_MSG(setprecision(15) << "a=" << a << " b=" << b);
+      //IRS_LIB_FILTER_DBG_MSG(hex << "a=" <<
+        // *reinterpret_cast<const __int64*>(&a) <<
         //" b=" << *reinterpret_cast<const __int64*>(&b) << dec);
       for(size_t i = 0; i <= j; i++) {
         const size_t jh = j - i;
@@ -1018,20 +1035,22 @@ int zplnb(
           b * (*ap_y_array)[jh];
         (*ap_y_array)[jh+1] =  (*ap_y_array)[jh+1]  - b * (*ap_pp_array)[jh] -
           a * (*ap_y_array)[jh];
-        //IRS_LIB_DBG_MSG(setprecision(15) <<
+        //IRS_LIB_FILTER_DBG_MSG(setprecision(15) <<
           //"pp[jh+1]=" << (*ap_pp_array)[jh+1] <<
           //" y[jh+1]=" << (*ap_y_array)[jh+1]);
-        /*IRS_LIB_DBG_MSG("jh+1=" << jh+1 << hex <<   " pp[jh+1]=" <<
+        /*IRS_LIB_FILTER_DBG_MSG("jh+1=" << jh+1 << hex <<   " pp[jh+1]=" <<
           *reinterpret_cast<const __int64*>(&(*ap_pp_array)[jh+1]) <<
           " y[jh+1]=" <<
           *reinterpret_cast<const __int64*>(&(*ap_y_array)[jh+1]) <<
           dec);*/
-      }
+      } 
     }
     if(icnt == 0) {
-      for(size_t j = 0; j <= a_zord; j++) {
+      ap_aa_array->insert(ap_aa_array->begin(), ap_pp_array->begin(),
+        ap_pp_array->end());
+      /*for(size_t j = 0; j <= a_zord; j++) {
         (*ap_aa_array)[j] = (*ap_pp_array)[j];
-      }
+      }*/
     }
   }
   /* Scale factors of the pole and zero polynomials */
@@ -1082,8 +1101,7 @@ int zplnc(
   const T a_pn,
   const T a_scale,
   const size_t a_zord,
-  const T a_fs,
-  const T a_fnyq,
+  const T a_sampling_rate,
   const vector<complex<T> >& a_z_array,
   const vector<T>& a_aa_array,
   vector<T>* ap_pp_array,
@@ -1096,31 +1114,32 @@ int zplnc(
     *ap_gain = 1.0;
   }
   //vector<T> pp_array = a_pp_array;
-  IRS_LIB_DBG_MSG("constant gain factor " << *ap_gain);
+  IRS_LIB_FILTER_DBG_MSG("constant gain factor " << *ap_gain);
   for(size_t j = 0; j <= a_zord; j++) {
     (*ap_pp_array)[j] = (*ap_gain)*(*ap_pp_array)[j];
   }
 
-  IRS_LIB_DBG_MSG("z plane Denominator Numerator");
+  IRS_LIB_FILTER_DBG_MSG("z plane Denominator Numerator");
   for(size_t j = 0; j <= a_zord; j++) {
-    IRS_LIB_DBG_MSG(setw(4) << j << scientific << setprecision(15) <<
+    IRS_LIB_FILTER_DBG_MSG(setw(4) << j << scientific << setprecision(15) <<
       setw(25) << a_aa_array[j] << setw(25) << (*ap_pp_array)[j] << fixed);
   }
 
-  IRS_LIB_DBG_MSG("poles and zeros with corresponding quadratic factors");
+  IRS_LIB_FILTER_DBG_MSG("poles and zeros with corresponding "
+    "quadratic factors");
   for(size_t j = 0; j < a_zord; j++) {
     T a = a_z_array[j].real();
     T b = a_z_array[j].imag();
     if( b >= 0.0 ) {
-      IRS_LIB_DBG_MSG("pole " << a << " " << b);
-      quadf(a, b, 1, a_fs, a_fnyq);
+      IRS_LIB_FILTER_DBG_MSG("pole " << a << " " << b);
+      quadf(a, b, 1, a_sampling_rate);
     }
     const size_t jj = j + a_zord;
     a = a_z_array[jj].real();
     b = a_z_array[jj].imag();
     if( b >= 0.0 ) {
-      IRS_LIB_DBG_MSG("zero " << a << " " << b);
-      quadf( a, b, 0, a_fs, a_fnyq);
+      IRS_LIB_FILTER_DBG_MSG("zero " << a << " " << b);
+      quadf( a, b, 0, a_sampling_rate);
     }
   }
   return 0;
@@ -1133,8 +1152,7 @@ int quadf(
   const T a_x,
   const T a_y,
   const int a_pzflg,
-  const T a_fs,
-  const T a_fnyq)
+  const T a_sampling_rate)
 {
   T a, b, r, f, g, g0;
 
@@ -1145,12 +1163,12 @@ int quadf(
     a = -a_x;
     b = 0.0;
   }
-  IRS_LIB_DBG_MSG("q. f.\nz**2" << b << "\nz**1" << a);
+  IRS_LIB_FILTER_DBG_MSG("q. f.\nz**2" << b << "\nz**1" << a);
   if(b != 0.0) {
     /* resonant frequency */
     r = sqrt(b);
     f = M_PI / 2.0 - asin( -a / (2.0 * r) );
-    f = f * a_fs / (2.0 * M_PI );
+    f = f*a_sampling_rate/(2.0*M_PI );
     /* gain at resonance */
     g = 1.0 + r;
     g = g*g - (a*a/r);
@@ -1158,9 +1176,9 @@ int quadf(
     g0 = 1.0 + a + b;	/* gain at d.c. */
   } else {
     /* It is really a first-order network.
-    * Give the gain at fnyq and D.C.
+    * Give the gain at nyquist_freq and D.C.
     */
-    f = a_fnyq;
+    f = a_sampling_rate/2;
     g = 1.0 - a;
     g0 = 1.0 + a;
   }
@@ -1177,7 +1195,7 @@ int quadf(
       g = std::numeric_limits<T>::max();
     }
   }
-  IRS_LIB_DBG_MSG("f0 " << f << " gain " << g << " DC gain " << g0);
+  IRS_LIB_FILTER_DBG_MSG("f0 " << f << " gain " << g << " DC gain " << g0);
   return 0;
 }
 
@@ -1200,7 +1218,7 @@ int xfun(
     } else {
       r = 2.0 * a_dbfac * log(r);
     }
-    IRS_LIB_DBG_MSG(f << " " << r);
+    IRS_LIB_FILTER_DBG_MSG(f << " " << r);
     f = f + 0.05 * a_fnyq;
   }
   return 0;
@@ -1408,7 +1426,7 @@ T response(
 
 template <class T>
 T ellik(const T a_phi, const T a_m)
-{ 
+{
   if(a_m == 0.0) {
     return(a_phi);
   }
@@ -1518,6 +1536,174 @@ T response(
   a = 4.0 * sqrt(a_q) * a * a;	/* see above formulas, solved for m */
   return(a);
 }
+
+bool get_coef_iir_filter_test()
+{
+  bool success = true;
+  filter_settings_t filter_settings;
+  typedef size_t size_type;
+  typedef double value_type;
+  typedef vector<value_type> coef_list_type;
+  const double epsilon = 1e-11;
+  coef_list_type num_coef_list;
+  coef_list_type denum_coef_list;
+  // Тест фильтра нижних частот чебышева 3 порядка
+  filter_settings.family = ff_chebyshev_ripple_pass;
+  filter_settings.bandform = fb_low_pass;
+  size_type order = 3;
+  filter_settings.order = order;
+  filter_settings.sampling_time_s = 10e-6;
+  filter_settings.low_cutoff_freq_hz = 10000;
+  filter_settings.passband_ripple_db = 0.1;
+  success = get_coef_iir_filter(filter_settings, &num_coef_list,
+    &denum_coef_list);
+  if (success) {
+    success &= num_coef_list.size() == denum_coef_list.size();
+    success &= num_coef_list.size() == (order + 1);   
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= (equals_value ==
+      compare_value(num_coef_list[0], 2.861337762404367e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[1], 8.584013287213102e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[2], 8.584013287213102e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[3], 2.861337762404367e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[0], 1.000000000000000e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[1], -1.621278205051458e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[2], 1.151371927426478e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[3], -3.011867013826700e-01, epsilon));
+  } else {
+    // Прекращаем проверку
+  }
+  // Тест фильтра нижних частот баттерворда 2 порядка
+  if (success) {
+    order = 2;
+    filter_settings.family = ff_butterworth;
+    filter_settings.bandform = fb_low_pass;
+    filter_settings.order = order;
+    filter_settings.sampling_time_s = 10e-6;
+    filter_settings.low_cutoff_freq_hz = 10000;
+    filter_settings.passband_ripple_db = 0.1;
+    success = get_coef_iir_filter(filter_settings, &num_coef_list,
+      &denum_coef_list);
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= num_coef_list.size() == denum_coef_list.size();
+    success &= num_coef_list.size() == (order + 1);   
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= (equals_value ==
+      compare_value(num_coef_list[0], 6.745527388907192e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[1], 1.349105477781438e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[2], 6.745527388907192e-02, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[0], 1.000000000000000e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[1], -1.142980502539901e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[2], 4.128015980961886e-01, epsilon));
+  } else {
+    // Прекращаем проверку
+  }
+  // Тест фильтра верхних частот кауэра 2 порядка
+  if (success) {
+    order = 2;
+    filter_settings.family = ff_cauer;
+    filter_settings.bandform = fb_high_pass;
+    filter_settings.order = order;
+    filter_settings.sampling_time_s = 10e-6;
+    filter_settings.low_cutoff_freq_hz = 10000;
+    filter_settings.passband_ripple_db = 0.1;
+    filter_settings.stopband_ripple_db = 80;
+    success = get_coef_iir_filter(filter_settings, &num_coef_list,
+      &denum_coef_list);
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= num_coef_list.size() == denum_coef_list.size();
+    success &= num_coef_list.size() == (order + 1);
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= (equals_value ==
+      compare_value(num_coef_list[0], 7.818169187532143e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[1], -1.563623760031081e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[2], 7.818169187532143e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[0], 1.000000000000000e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[1], -1.531347390185103e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[2], 6.321221436620125e-01, epsilon));
+  } else {
+    // Прекращаем проверку
+  }
+  // Тест полосового фильтра кауэра 2 порядка
+  if (success) {
+    order = 2;
+    filter_settings.family = ff_cauer;
+    filter_settings.bandform = fb_band_pass;
+    filter_settings.order = order;
+    filter_settings.sampling_time_s = 10e-6;
+    filter_settings.low_cutoff_freq_hz = 10000;
+    filter_settings.high_cutoff_freq_hz = 20000;
+    filter_settings.passband_ripple_db = 0.1;
+    filter_settings.stopband_ripple_db = 80;
+    success = get_coef_iir_filter(filter_settings, &num_coef_list,
+      &denum_coef_list);
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= num_coef_list.size() == denum_coef_list.size();
+    success &= num_coef_list.size() == (order*2 + 1);
+  } else {
+    // Прекращаем проверку
+  }
+  if (success) {
+    success &= (equals_value ==
+      compare_value(num_coef_list[0], 1.631435038562584e-01, epsilon));
+    success &= (equals_value ==                                        
+      compare_value(num_coef_list[1], -1.165736846345882e-04, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[2], -3.260263410292863e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[3], -1.165736846345881e-04, epsilon));
+    success &= (equals_value ==
+      compare_value(num_coef_list[4], 1.631435038562584e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[0], 1.000000000000000e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[1], -1.615003829826376e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[2], 1.333596081600205e+00, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[3], -7.164698628654187e-01, epsilon));
+    success &= (equals_value ==
+      compare_value(denum_coef_list[4], 2.730707507054483e-01, epsilon));
+  } else {
+    // Прекращаем проверку
+  }
+  return success;
+}
 
 } // namespace irs
 
