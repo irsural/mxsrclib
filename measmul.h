@@ -1032,12 +1032,6 @@ private:
     // Установки:
     //bit_data_t auto_zero;
     //bit_data_t power_freq; // 0 - 60 Hz; 1 - 50 Hz
-    conn_data_t<irs_u8> meas_type;
-    conn_data_t<irs_u8> meas_mode;
-    conn_data_t<irs_u8> integrate_time_units; // 0 - Seconds; 1 - PLCs
-    conn_data_t<irs_u8> filter_type;
-    conn_data_t<irs_u8> filter_order;
-    
     conn_data_t<double> samples_per_sec;
     conn_data_t<double> integrate_time;
     conn_data_t<double> resolution_digits;
@@ -1047,7 +1041,12 @@ private:
     conn_data_t<double> low_cutoff_freq;
     conn_data_t<double> stopband_ripple;
     conn_data_t<double> passband_ripple;
-    
+    conn_data_t<irs_u16> meas_type;
+    conn_data_t<irs_u16> meas_mode;
+    conn_data_t<irs_u16> integrate_time_units; // 0 - Seconds; 1 - PLCs
+    conn_data_t<irs_u16> filter_type;
+    conn_data_t<irs_u16> filter_order;
+        
     // Считываемые значения:
     conn_data_t<double> meas_value;
     //bit_data_t out_of_range;
@@ -1064,12 +1063,6 @@ private:
     {
       irs_uarc index = a_index;
       
-      index = meas_type.connect(ap_data, index);
-      index = meas_mode.connect(ap_data, index);
-      index = integrate_time_units.connect(ap_data, index);
-      index = filter_type.connect(ap_data, index);
-      index = filter_order.connect(ap_data, index);
-      
       index = samples_per_sec.connect(ap_data, index);
       index = integrate_time.connect(ap_data, index);
       index = resolution_digits.connect(ap_data, index);
@@ -1078,7 +1071,12 @@ private:
       index = low_cutoff_freq.connect(ap_data, index);
       index = stopband_ripple.connect(ap_data, index);
       index = passband_ripple.connect(ap_data, index);
-      
+      index = meas_type.connect(ap_data, index);
+      index = meas_mode.connect(ap_data, index);
+      index = integrate_time_units.connect(ap_data, index);
+      index = filter_type.connect(ap_data, index);
+      index = filter_order.connect(ap_data, index);
+            
       index = meas_value.connect(ap_data, index);
       
       return index;
