@@ -9,13 +9,14 @@
 
 //#include <Forms.hpp>
 #include <tstlan4abs.h>
-#include <irsstd.h>
+//#include <irsstd.h>
 #include <timer.h>
 #include <mxini.h>
 #include <MxChart.h>
 #include <csvwork.h>
 #include <cbsysutils.h>
 #include <irstable.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -317,8 +318,29 @@ private:
     bool m_first;
     bool m_is_close_csv;
 
+
     template <class T>
-    void integer_to_string(const T& a_value, string_type* ap_string);
+    void out_number(ostream_t& a_stream, const T& a_value);
+    template <class T>
+    void integer_to_string_helper(const T& a_value, string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(bool a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(unsigned char a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(signed char a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(unsigned short a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(signed short a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(unsigned int a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(signed int a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(unsigned long a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
+      string_type* ap_string);
     String var_to_bstr(int a_var_index);
     void bstr_to_var(int a_var_index, const String& a_bstr_val);
     double var_to_double(int a_var_index);

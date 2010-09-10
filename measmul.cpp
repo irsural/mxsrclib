@@ -2229,7 +2229,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
 ):
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 5, 32, 4, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
+    0, 0, 37, 4, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
   m_eth_mul_data(),
   m_status(meas_status_success),
   mp_value(IRS_NULL),
@@ -2292,6 +2292,7 @@ void irs::ni_pxi_4071_t::get_value(double* ap_value)
 {
   mp_value = ap_value;
   m_status = meas_status_busy;
+  m_mode = get_value_mode;
 }
 
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
@@ -2360,6 +2361,25 @@ void irs::ni_pxi_4071_t::abort()
 void irs::ni_pxi_4071_t::tick()
 {
   m_modbus_client.tick();
+  switch(m_mode)
+  {
+    case start_mode:
+    {
+      
+    } break;
+    case get_value_mode:
+    {
+      *mp_value = m_eth_mul_data.meas_value;
+      m_mode = stop_mode;
+    } break;
+    case stop_mode:
+    {
+    
+    } break;
+    default:
+    {
+    };
+  }
   switch(m_eth_mul_data.meas_mode)
   {
     case precision:

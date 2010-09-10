@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 02.09.2010
+// Дата: 10.09.2010
 // Дата создания: 17.09.2009
 
 #include <irsdefs.h>
@@ -11,6 +11,7 @@
 #include <irstime.h>
 #include <MxBase.h>
 #include <irserror.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -407,16 +408,78 @@ void irs::tstlan4_t::controls_t::tick()
   }
 }
 template <class T>
-void irs::tstlan4_t::controls_t::integer_to_string(
-  const T& a_value, string_type* ap_string)
+void irs::tstlan4_t::controls_t::out_number(ostream_t& a_stream,
+  const T& a_value)
+{
+  switch (type_to_index<T>())
+  {
+    case bool_idx:
+    case signed_char_idx:
+    case unsigned_char_idx: {
+      a_stream << static_cast<int>(a_value);
+    } break;
+    default: {
+      a_stream << a_value;
+    } break;
+  }
+}
+template <class T>
+void irs::tstlan4_t::controls_t::integer_to_string_helper(const T& a_value,
+  string_type* ap_string)
 {
   stringstream_t strm;
-  strm << a_value;
+  out_number(strm, a_value);
   strm << internal << setfill(irst('0')) << hex << uppercase;
-  const int i16_hex_width = 2*sizeof(irs_i16);
-  strm << irst(" (0x") << setw(i16_hex_width) << a_value;
+  const int type_hex_width = 2*sizeof(T);
+  strm << irst(" (0x") << setw(type_hex_width);
+  out_number(strm, a_value);
   strm << irst(")\0");
   *ap_string = strm.str();
+}
+void irs::tstlan4_t::controls_t::integer_to_string(bool a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(unsigned char a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(signed char a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(unsigned short a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(signed short a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(unsigned int a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(signed int a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(unsigned long a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
 }
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
@@ -427,10 +490,10 @@ String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
       val = m_netconn.bit_vec[item.index];
     } break;
     case netconn_t::item_t::type_bool: {
-      integer_to_string(static_cast<int>(m_netconn.bool_vec[item.index]), &val);
+      integer_to_string(m_netconn.bool_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_u8: {
-      integer_to_string(static_cast<int>(m_netconn.u8_vec[item.index]), &val);
+      integer_to_string(m_netconn.u8_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_i16: {
       integer_to_string(m_netconn.i16_vec[item.index], &val);
