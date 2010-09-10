@@ -28,7 +28,7 @@ struct base_str_type
 };
 
 template<>
-struct base_str_type<irs::string>
+struct base_str_type<irs_string_t>
 {
   typedef irs::string type;
 };
@@ -61,7 +61,12 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 template<>
-struct base_str_type<std::wstring>
+struct base_str_type<irs_wstring_t>
+{
+  typedef std::wstring type;
+};
+template<>
+struct base_str_type<std_wstring_t>
 {
   typedef std::wstring type;
 };
@@ -145,9 +150,15 @@ inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 }
 
 template<>
-inline std::wstring str_conv<std::wstring>(const irs_string_t& a_str_in)
+inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
 {
-  return std::wstring(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+  return std_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+}
+
+template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
+{
+  return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
 }
 
 #if defined(__BORLANDC__)
@@ -248,7 +259,7 @@ template<class T>
 inline T str_conv(const WideString& a_str_in)
 {
   // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);  
+  IRS_STATIC_ASSERT(false);
   return T(a_str_in);
 }
 
@@ -260,7 +271,7 @@ inline WideString str_conv<WideString>(const WideString& a_str_in)
 
 template<>
 inline irs_string_t str_conv<irs_string_t>(const WideString& a_str_in)
-{     
+{
   return irs::string(String(a_str_in).c_str());
 }
 
@@ -280,7 +291,23 @@ template<>
 inline AnsiString str_conv<AnsiString>(const WideString& a_str_in)
 {
   return AnsiString(a_str_in);
-} 
+}
+
+#if (__BORLANDC__ >= IRS_CPP_BUILDER2010)
+template<class T>
+inline T str_conv(const UnicodeString& a_str_in)
+{
+  // Непроверенное преобразование
+  IRS_STATIC_ASSERT(false);
+  return T(a_str_in);
+}
+
+template<>
+inline irs_string_t str_conv<irs_string_t>(const UnicodeString& a_str_in)
+{
+  return irs::string(a_str_in.c_str());
+}
+#endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
 #endif // defined(__BORLANDC__)
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
