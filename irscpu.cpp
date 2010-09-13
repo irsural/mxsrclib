@@ -2,7 +2,14 @@
 // Дата: 17.05.2010
 // Дата создания: 1.10.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irscpu.h>
+
+#include <irsfinal.h>
 
 #ifdef __ICCAVR__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;

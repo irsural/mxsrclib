@@ -2,10 +2,16 @@
 // Дата: 20.09.2009
 // Ранняя Дата: 27.08.2009
 
-#include <math.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
+
+#include <math.h>
 
 #include <irsdsp.h>
+
+#include <irsfinal.h>
 
 #ifndef NEW
 // ПИД-регулятор

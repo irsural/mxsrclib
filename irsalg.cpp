@@ -5,7 +5,10 @@
 // Номер файла
 #define IRSALGCPP_IDX 9
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <string.h>
 #include <math.h>

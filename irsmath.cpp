@@ -2,7 +2,14 @@
 // Математические функции
 // Дата: 01.10.2008
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsmath.h>
+
+#include <irsfinal.h>
 
 int irs::compare_value(
   const double& a_a, const double& a_b, const double& a_epsilon)
@@ -23,5 +30,6 @@ int irs::compare_value(
 
 
 //---------------------------------------------------------------------------
+
 
 

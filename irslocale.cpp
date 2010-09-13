@@ -2,7 +2,10 @@
 // Дата: 12.06.2010
 // Ранняя дата: 12.04.2010
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irslocale.h>
 
@@ -27,3 +30,4 @@ irs::locale_manager_t& irs::loc()
 }
 
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
+

@@ -2,7 +2,10 @@
 // Дата: 08.07.2010
 // Ранняя дата: 08.07.2010
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #ifdef __ICCARM__
 #include <armioregs.h>

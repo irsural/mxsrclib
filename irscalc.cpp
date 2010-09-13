@@ -10,12 +10,10 @@
 // по стандарту C++
 //#if defined(IRS_UNICODE) || defined(IRS_GNUC_VERSION_LESS_3_4)
 
-#include <irsdefs.h>
-
+#include <irspch.h>
 #ifdef __BORLANDC__
-#include <vcl.h>
 #pragma hdrstop
-#endif //__BORLANDC__
+#endif // __BORLANDC__
 
 #include <irscalc.h>
 

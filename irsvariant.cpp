@@ -6,11 +6,9 @@
 // bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
 // отсутствует инициализация локальных перменных !!!
 
-#include <irsdefs.h>
-
+#include <irspch.h>
 #ifdef __BORLANDC__
-# include <vcl.h>
-# pragma hdrstop
+#pragma hdrstop
 #endif // __BORLANDC__
 
 #include <irsvariant.h>

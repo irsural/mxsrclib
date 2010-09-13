@@ -5,7 +5,10 @@
 // Номер файла
 #define IRSDBGUTILCPP_IDX 3
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <timer.h>
 #include <irserror.h>

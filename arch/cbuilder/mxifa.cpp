@@ -6,7 +6,10 @@
 
 #define MXIFA_NEW
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <string.h>
 
@@ -1673,3 +1676,4 @@ static void win32_ni_usb_gpib_write(void *pchdata)
   }
 }
 //---------------------------------------------------------------------------
+

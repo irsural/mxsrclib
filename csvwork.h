@@ -133,8 +133,9 @@ class csv_file_t
 public:
   typedef size_t size_type;
   typedef char_t char_type;
-  typedef irs_string_t string_type;
+  typedef string_t string_type;
   typedef int delimiter_row_type;
+  typedef basic_fstream<char_type, char_traits<char_type> > fstream_type;
   enum pos_mode_t {pos_mode_beg, pos_mode_end};
 private:
   char_type m_delimiter_col;
@@ -143,8 +144,8 @@ private:
   const size_type m_delimiter_row_size;
 
   //size_type m_pos;
-  string m_filename;
-  fstream m_file;
+  string_type m_filename;
+  fstream_type m_file;
   double m_progress;
   csv_file_status_t m_status;
   enum cur_instruction_t {
@@ -177,10 +178,10 @@ private:
   size_type m_ch_count_row_mean;
   size_type* mp_col_count_user;
   size_type* mp_row_count_user;
-  vector<string>* mp_row_user;
-  vector<string> m_row_user_buf;
+  vector<string_type>* mp_row_user;
+  vector<string_type> m_row_user_buf;
   table_string_t* mp_table_user;
-  string m_cell_buf;
+  irs_string_t m_cell_buf;
   size_type m_table_uses_col_count;
   size_type m_table_uses_row_count;
   size_type m_table_uses_cell_count;
@@ -193,7 +194,7 @@ private:
   size_type m_row_pos_file;
   const char_type m_quote;
   size_type m_quote_count;
-  string m_special_character;
+  string_type m_special_character;
   //csv_file_t();
 
 public:   
@@ -208,17 +209,17 @@ public:
   void get_row_count(size_type* ap_row_count);
   // Добавить строку в конец CSV файла
   // Буфер внутрь не копируется, а считываюется прямо из буфера пользователя
-  void row_push_back(vector<string>* const  ap_row);
+  void row_push_back(vector<string_type>* const  ap_row);
   // Добавить строку в конец CSV файла
   // Буфер строк копируется во внутренний буфер
-  void row_push_back(vector<string>& a_row);
+  void row_push_back(vector<string_type>& a_row);
   // Сохранение в файл таблицы. Старое содержимое удаляется
   // Таблица внутрь не копируется
   void save(table_string_t* const ap_table_user);
   void load(table_string_t* const ap_table_user);
   // Прочитать строку
   void get_row(
-    vector<string>* ap_row,
+    vector<string_type>* ap_row,
     const int a_row_index,
     const pos_mode_t a_pos_mode = pos_mode_beg);
   bool clear();
@@ -240,52 +241,57 @@ inline csv_file_status_t csv_file_t::get_status()
 
 class csv_file_synchro_t
 {
-  char m_delimiter_col;
-  char m_delimiter_row;
-  char m_delimiter_cell;
-  string m_special_character;
-  string m_filename;
-  fstream m_file;
-  enum status_file_t {stat_file_close, stat_file_open};
-  status_file_t m_status_file;
 public:
-  csv_file_synchro_t(const string& a_filename = "");
+  typedef irs_size_t size_type;
+  typedef char_t char_type;
+  typedef string_t string_type;
+  typedef basic_fstream<char_type, char_traits<char_type> > fstream_type;
+  csv_file_synchro_t(const string_type& a_filename = irst(""));
   ~csv_file_synchro_t();
-  inline void set_delimiter_col(char a_delimiter_col);
-  inline void set_delimiter_row(char a_delimiter_row);
-  inline void set_delimiter_coll(char a_delimiter_cell);
-  inline void open(const string& a_filename);
+  inline void set_delimiter_col(char_type a_delimiter_col);
+  inline void set_delimiter_row(char_type a_delimiter_row);
+  inline void set_delimiter_coll(char_type a_delimiter_cell);
+  inline void open(const string_type& a_filename);
   void close();
   bool save(const table_string_t& a_table_string);
   bool load(table_string_t& a_table_string);
+private:
+  char_type m_delimiter_col;
+  char_type m_delimiter_row;
+  char_type m_delimiter_cell;
+  string_type m_special_character;
+  string_type m_filename;
+  fstream_type m_file;
+  enum status_file_t {stat_file_close, stat_file_open};
+  status_file_t m_status_file;
 };
 
-inline void csv_file_synchro_t::set_delimiter_col(char a_delimiter_col)
+inline void csv_file_synchro_t::set_delimiter_col(char_type a_delimiter_col)
 {
   IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_row);
   IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_cell);
   m_delimiter_col = a_delimiter_col;
-  m_special_character = static_cast<string>(m_delimiter_col) +
-    static_cast<string>(m_delimiter_cell);
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+    static_cast<string_type>(m_delimiter_cell);
 }
 
-inline void csv_file_synchro_t::set_delimiter_row(char a_delimiter_row)
+inline void csv_file_synchro_t::set_delimiter_row(char_type a_delimiter_row)
 {
   IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_col);
   IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_cell);
   m_delimiter_row = a_delimiter_row;
 }
 
-inline void csv_file_synchro_t::set_delimiter_coll(char a_delimiter_cell)
+inline void csv_file_synchro_t::set_delimiter_coll(char_type a_delimiter_cell)
 {
   IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_col);
   IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_row);
   m_delimiter_cell = a_delimiter_cell;
-  m_special_character = static_cast<string>(m_delimiter_col) +
-    static_cast<string>(m_delimiter_cell);
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+    static_cast<string_type>(m_delimiter_cell);
 }
 
-inline void csv_file_synchro_t::open(const string& a_filename)
+inline void csv_file_synchro_t::open(const string_type& a_filename)
 {
   //bool fsuccess = true;
   m_filename = a_filename;

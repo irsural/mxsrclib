@@ -2,7 +2,10 @@
 // Дата: 06.08.2010
 // Дата создания: 06.08.2010
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <niusbgpib_hardflow.h>
 

@@ -2,10 +2,11 @@
 // Дата: 09.08.2010
 // Ранняя дата: 27.08.2009
 
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
+
 #pragma link "cspin"
 
 #include <cbsysutils.h>
@@ -955,7 +956,8 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
   }
 }
 
-#pragma package(smart_init)
+
+
 
 
 

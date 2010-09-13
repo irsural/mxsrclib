@@ -1,7 +1,10 @@
 // Работа с таймером
 // Дата 13.04.2010
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <timer.h>
 

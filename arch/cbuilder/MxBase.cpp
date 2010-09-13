@@ -3,10 +3,10 @@
 // Дата: 14.04.2010
 // Дата создания: 9.09.2009
 //---------------------------------------------------------------------------
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <MxBase.h>
 
@@ -460,3 +460,4 @@ TPrinterDC::~TPrinterDC()
 //---------------------------------------------------------------------------
 
 } // namespace Mxbase
+

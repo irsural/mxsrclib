@@ -2,7 +2,14 @@
 // Дата: 04.10.2009
 // Ранняя дата: 9.06.2008
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsexcept.h>
+
+#include <irsfinal.h>
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 

@@ -3,7 +3,10 @@
 // Дата: 14.04.2010
 // Дата создания: 6.08.2009
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <mem.h>
 

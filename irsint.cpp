@@ -2,11 +2,18 @@
 // Дата: 18.05.2010
 // Ранняя дата: 2.09.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsint.h>
 #include <irserror.h>
 #if defined(__ICCAVR__) || defined(__ICCARM__)
 #include <irsarchint.h>
 #endif //__ICCAVR__ || __ICCARM__
+
+#include <irsfinal.h>
 
 namespace irs {
 
@@ -228,3 +235,4 @@ void irs::interrupt_array_t::exec_event(size_type a_index)
   gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
   m_int_event_gens[gen_index].exec();
 }
+

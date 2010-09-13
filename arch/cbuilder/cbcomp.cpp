@@ -3,10 +3,10 @@
 // Дата: 14.04.2010
 // Дата создания: 14.11.2008
 
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <cbcomp.h>
 

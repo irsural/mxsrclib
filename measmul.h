@@ -352,7 +352,9 @@ public:
   // Конструктор
   agilent_3458a_digitizer_t(
     irs::hardflow_t* ap_hardflow,
-    const filter_settings_t& a_filter_settings
+    const filter_settings_t& a_filter_settings,
+    const double a_sampling_time_s = 25e-6,
+    const double a_interval_s = 30.0
   );
   // Деструктор
   ~agilent_3458a_digitizer_t();
@@ -425,6 +427,7 @@ private:
   raw_data_t<double> m_filtered_values;
   enum { m_need_samples_count = 1500000 };
   enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
+  const double m_sampling_time_default;
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;
   double m_coefficient;

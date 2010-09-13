@@ -5,7 +5,14 @@
 // Номер файла
 #define IRSERRORCPP_IDX 5
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irserror.h>
+
+#include <irsfinal.h>
 
 namespace irs {
 

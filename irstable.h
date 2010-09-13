@@ -540,10 +540,24 @@ inline void table_t<cell_type_t, column_type_t, container_t>::
   m_row_count = 0;
 }
 
+#if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010))
+template <class T>
+class basic_table_string_t: public table_t<
+  basic_irs_string_t<T>,
+  deque<basic_irs_string_t<T> >,
+  deque<deque<basic_irs_string_t<T> > > >
+{
+};
+
+typedef basic_table_string_t<irs::char_t> table_string_t;
+typedef basic_table_string_t<char> table_string_a_t;
+typedef basic_table_string_t<wchar_t> table_string_w_t;
+#else // !(defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010))
 typedef table_t<
-  irs::string,
-  deque<irs::string>,
-  deque<deque<irs::string> > > table_string_t;
+  irs::string_t,
+  deque<irs::string_t>,
+  deque<deque<irs::string_t> > > table_string_t;
+#endif // !(defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010))
 
 template <class cell_type_t>
 class composite_table_t : public table_size_t

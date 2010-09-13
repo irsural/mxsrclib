@@ -5,7 +5,10 @@
 // Номер файла
 #define MXNETCPP_IDX 7
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <string.h>
 

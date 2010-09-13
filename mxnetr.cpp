@@ -2,9 +2,16 @@
 // Дата: 27.05.2010
 // Ранняя Дата: 18.02.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <mxnetr.h>
 #include <irsalg.h>
 //#include <irsavrutil.h>
+
+#include <irsfinal.h>
 
 // Поиск начала в пакете
 irs_bool find_begin_in_data(irs_u8 *buf, mxn_sz_t size, mxn_sz_t &pos);

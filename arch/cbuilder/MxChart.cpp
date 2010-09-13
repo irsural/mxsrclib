@@ -3,10 +3,10 @@
 // Дата: 03.09.2010
 // Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <timer.h>
 
@@ -3615,4 +3615,5 @@ set_base_item(int a_base_item)
     m_base_chart_name = m_unsort_data.name();
   }
 }
+
 

@@ -5,12 +5,10 @@
 // Номер файла
 #define IRSSTDCPP_IDX 15
 
-#include <irsdefs.h>
-
+#include <irspch.h>
 #ifdef __BORLANDC__
-#include <vcl.h>
 #pragma hdrstop
-#endif //__BORLANDC__
+#endif // __BORLANDC__
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -1656,3 +1654,4 @@ irs::conio_cfg_t& irs::arch_conio_cfg::def()
 }
 #endif //__WATCOMC__
 #endif //NOP
+

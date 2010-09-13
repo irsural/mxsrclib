@@ -5,12 +5,19 @@
 //#include <vcl.h>
 //#pragma hdrstop
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsstd.h>
 #include <timer.h>
 #include <string.h>
 #include <meassup.h>
 #include <stdio.h>
 #include <irscpp.h>
+
+#include <irsfinal.h>
 //---------------------------------------------------------------------------
 //  ласс дл€ работы с источником посто€нного тока Agilent 6675A
 

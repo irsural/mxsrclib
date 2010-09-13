@@ -2,6 +2,11 @@
 // Дата: 02.09.2010
 // Ранняя дата: 16.09.2008
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsmbus.h>
 #include <string.h>
 #include <timer.h>
@@ -12,6 +17,8 @@
 #ifdef __ICCAVR__
 #include <irsdbgutil.h>
 #endif // __ICCAVR__
+
+#include <irsfinal.h>
 
 //#define bit_msize   65535
 //#define reg_msize   65535
@@ -4011,3 +4018,4 @@ void irs::modbus_client_t::tick()
     break;
   }
 }
+

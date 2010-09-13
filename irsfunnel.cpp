@@ -5,7 +5,10 @@
 // Номер файла
 #define IRSFUNNELCPP_IDX 13
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irserror.h>
 

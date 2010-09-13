@@ -8,7 +8,10 @@
 //#define INSERT_LEFT_BYTES // Втавка дополнительных байтов для проверки mxnet
 //#define MXDATA_TO_MXNET_CHECKED // mxdata_to_mxnet_t c проверкой диапазона
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <mxnetc.h>
 #include <string.h>

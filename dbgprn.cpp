@@ -1,9 +1,10 @@
 // Отладочный вывод
 // 18.06.2008
 
-//---------------------------------------------------------------------------
-//#include <vcl.h>
-//#pragma hdrstop
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -11,6 +12,8 @@
 //#include <alloc.h>
 
 #include <dbgprn.h>
+
+#include <irsfinal.h>
 
 //***************************************************************************
 // Класс dbg_out

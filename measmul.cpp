@@ -5,7 +5,10 @@
 //#define OFF_EXTCOM // Отключение расширенных команд
 //#define RESMEAS // Сброс перед измерением
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <string.h>
 #include <stdlib.h>
@@ -20,17 +23,18 @@
 #include <irsfinal.h>
 
 // class mxmultimeter_t
-void mxmultimeter_t::get_param(const multimeter_param_t a_param,
-  irs::raw_data_t<irs_u8> *ap_value) const
+void mxmultimeter_t::get_param(const multimeter_param_t /*a_param*/,
+  irs::raw_data_t<irs_u8>* /*ap_value*/) const
 {
   // Игнорируем
 }
-void mxmultimeter_t::set_param(const multimeter_param_t a_param,
-  const irs::raw_data_t<irs_u8> &a_value)
+void mxmultimeter_t::set_param(const multimeter_param_t /*a_param*/,
+  const irs::raw_data_t<irs_u8>& /*a_value*/)
 {
   // Игнорируем
 }
-bool mxmultimeter_t::is_param_exists(const multimeter_param_t a_param) const
+bool mxmultimeter_t::is_param_exists(
+  const multimeter_param_t /*a_param*/) const
 {
   return false;
 }
@@ -744,7 +748,9 @@ void mx_agilent_3458a_t::set_range_auto()
 // Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   irs::hardflow_t* ap_hardflow,
-  const filter_settings_t& a_filter_settings
+  const filter_settings_t& a_filter_settings,
+  const double a_sampling_time_s,
+  const double a_interval_s
 ):
   mp_hardflow(ap_hardflow),
   m_filter_settings(a_filter_settings),
@@ -755,6 +761,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_buf_receive(),
   m_samples(),
   m_filtered_values(),
+  m_sampling_time_default(25e-6),   
   m_initialization_complete(false),
   m_coefficient_receive_ok(false),
   m_coefficient(0),
@@ -762,6 +769,10 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_status(meas_status_success),
   m_delay_timer(irs::make_cnt_s(0))
 {
+  IRS_LIB_ERROR_IF(a_sampling_time_s <= 0, ec_standard,
+    "Период дискретизации должен быть положительным числом");
+  IRS_LIB_ERROR_IF(a_interval_s < 0, ec_standard,
+    "Интервал должен быть неотрицательным числом");
   m_command_terminator.resize(2);
   m_command_terminator[0] = 0x0D;
   m_command_terminator[1] = 0x0A;
@@ -785,13 +796,23 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_commands.push_back("MEM OFF");
   //m_commands.push_back("DSDC 100");
   //m_commands.push_back("DELAY 2");
-  m_commands.push_back("APER 1E-6");
+  //m_commands.push_back("APER 1E-6");
   //m_commands.push_back("TRIG LEVEL");
   //m_commands.push_back("LEVEL 0, DC");
-  irs_string_t sample_count_str;
-  const size_type sample_count = static_cast<size_type>(m_need_samples_count);
-  num_to_str(sample_count, &sample_count_str);
-  irs_string_t sweep_cmd = "SWEEP 20E-6, " + sample_count_str;
+  const double sampling_time = (a_sampling_time_s > 0) ?
+    a_sampling_time_s : m_sampling_time_default;
+  const double aperture = sampling_time/2.0;
+  irs_string_t aperture_str = aperture;
+  const irs_string_t aper_cmd = "APER " + aperture_str;
+  m_commands.push_back(aper_cmd);
+  irs_string_t sampling_time_str = sampling_time;
+  const double interval = (a_interval_s >= 0) ? a_interval_s : 0;
+  const size_type sample_count =
+    static_cast<size_type>(ceil(interval/sampling_time + 0.5));
+  //const size_type sample_count = static_cast<size_type>(m_need_samples_count);
+  irs_string_t sample_count_str = sample_count;
+  const irs_string_t sweep_cmd = "SWEEP " + sampling_time_str + ", " +
+    sample_count_str;
   m_commands.push_back(sweep_cmd);
 
   m_commands.push_back("ISCALE?");

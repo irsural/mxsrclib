@@ -1,12 +1,19 @@
 // Текстовое меню
 // Дата: 19.10.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsmenu.h>
 #include <irsdefs.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <mxifa.h>
+
+#include <irsfinal.h>
 
 #define blink_accept_time TIME_TO_CNT(1, 2)
 
@@ -3449,5 +3456,6 @@ void irs_menu_creep_t::reset()
   }
   for (size_type i = f_static_len; i < f_buffer_len; f_buffer[i++] = ' ');
 }
+
 
 

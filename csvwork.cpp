@@ -2,7 +2,10 @@
 // Дата: 16.05.2010
 // Ранняя дата: 17.09.2009
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 //#include <assert.h>
 
@@ -303,8 +306,8 @@ irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
   m_quote(irst('"')),
   m_quote_count(0)
 {
-  m_special_character = static_cast<irs::string>(m_delimiter_col) +
-      static_cast<irs::string>(m_quote);
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+      static_cast<string_type>(m_quote);
 }
 
 irs::csvwork::csv_file_t::~csv_file_t()
@@ -393,7 +396,7 @@ void irs::csvwork::csv_file_t::tick()
                 m_file.seekg(-static_cast<fstream::pos_type>(
                   m_delimiter_row_size), ios::end);
                 success = m_file ? success : false;
-                char* p_buf = new char[m_delimiter_row_size + 1];
+                char_type* p_buf = new char_type[m_delimiter_row_size + 1];
                 if (success) {
                   m_file.read(p_buf, m_delim_row.size());
                   p_buf[m_delimiter_row_size] = '\0';
@@ -461,7 +464,7 @@ void irs::csvwork::csv_file_t::tick()
         case ci_calc_col_count: {
           // Читаем до EOF или ошибки
           if (m_file.good()) {
-            char ch = 0;
+            char_type ch = 0;
             m_file.get(ch);
             m_pos_file++;
             if (ch == m_delimiter_col) {
@@ -501,7 +504,7 @@ void irs::csvwork::csv_file_t::tick()
         case ci_calc_row_count: {
           // Читаем до EOF или ошибки
           if (m_file.good()) {
-            char ch = '\0';
+            char_type ch = '\0';
             m_file.get(ch);
             m_pos_file++;
             if (ch == m_delimiter_row) {
@@ -539,17 +542,18 @@ void irs::csvwork::csv_file_t::tick()
               break;
             } else {
               if (m_cell_index > 0) {
-                m_file.write(reinterpret_cast<const char*>(&m_delimiter_col),
+                m_file.write(
+                  reinterpret_cast<const char_type*>(&m_delimiter_col),
                   sizeof(m_delimiter_col));
               }
-              std::vector<irs::string>::iterator it_cell =
-                ((*mp_row_user).begin()+m_cell_index);
+              std::vector<string_type>::iterator it_cell =
+                ((*mp_row_user).begin() + m_cell_index);
               if((*it_cell).find_first_of(
-                m_special_character) == irs::string::npos)
+                m_special_character) == string_type::npos)
               {
                 m_file.write(it_cell->c_str(), it_cell->size());
               } else {
-                irs::string cell_modified;
+                string_type cell_modified;
                 size_type cell_size = (*it_cell).size();
                 for (size_type i = 0; i < cell_size; i++) {
                   if ((*it_cell)[i] == m_quote) {
@@ -557,8 +561,8 @@ void irs::csvwork::csv_file_t::tick()
                   }
                   cell_modified += (*it_cell)[i];
                 }
-                cell_modified = "\"" + cell_modified + "\"";
-                m_file.write(cell_modified.c_str(), cell_modified.size());  
+                cell_modified = irst("\"") + cell_modified + irst("\"");
+                m_file.write(cell_modified.c_str(), cell_modified.size());
               }
               m_cell_index++;
             }
@@ -600,7 +604,7 @@ void irs::csvwork::csv_file_t::tick()
         case ci_find_row_pos: {
           // Читаем до EOF или ошибки или до нужной строки pos
           if ((m_file.good()) && (m_delimiter_row_count < m_row_index)) {
-            char ch = '\0';
+            char_type ch = '\0';
             m_file.get(ch);
             m_pos_file++;
             if (ch == m_delimiter_row) {
@@ -635,7 +639,7 @@ void irs::csvwork::csv_file_t::tick()
           bool on_add_ch = false;
           // Читаем до EOF
           if (m_file.good()) {
-            char ch = '\0';
+            char_type ch = '\0';
             m_file.get(ch);
             m_pos_file++;
             m_progress = (m_pos_file /
@@ -648,10 +652,10 @@ void irs::csvwork::csv_file_t::tick()
             if (ch == m_delimiter_col) {
               if (m_quote_count % 2 == 0) {
                 if (m_quote_count != 0) {
-                  std::vector<irs::string>::iterator it_cell_str =
-                    mp_row_user->begin()+m_cell_index;
+                  vector<string_type>::iterator it_cell_str =
+                    mp_row_user->begin() + m_cell_index;
                   *it_cell_str = it_cell_str->substr(1, it_cell_str->size()-2);
-                  irs::string buf = *it_cell_str;
+                  string_type buf = *it_cell_str;
                   int index = 0;
                   int index_end = it_cell_str->size();
                   while (index < index_end) {
@@ -726,14 +730,14 @@ void irs::csvwork::csv_file_t::tick()
               if (m_col_index > 0) {
                 m_file << m_delimiter_col;
               }
-              std::string cell =
-                mp_table_user->read_cell(m_col_index, m_row_index);
+              string_type cell = mp_table_user->read_cell(
+                m_col_index, m_row_index);
               if(cell.find_first_of(
-                m_special_character) == irs::string::npos)
+                m_special_character) == string_type::npos)
               {
                 m_file << cell;
               } else {
-                irs::string cell_modified;
+                string_type cell_modified;
                 int cell_size = cell.size();
                 for (int i = 0; i < cell_size; i++) {
                   if (cell[i] == m_quote) {
@@ -773,7 +777,7 @@ void irs::csvwork::csv_file_t::tick()
           bool on_add_ch = false;
           // Читаем до EOF
           if (m_file.good()) {
-            char ch = '\0';
+            char_type ch = '\0';
             m_file.get(ch);
             m_pos_file++;
             if (m_file_size > 0) {
@@ -808,8 +812,9 @@ void irs::csvwork::csv_file_t::tick()
                 if (mp_table_user->get_row_count() < (m_row_index+1)) {
                   mp_table_user->set_row_count(m_row_index+1);
                 }
+                const string_type cell_buf = str_conv<string_type>(m_cell_buf);
                 mp_table_user->write_cell(
-                  m_col_index, m_row_index, m_cell_buf);
+                  m_col_index, m_row_index, cell_buf);
                 if (ch == m_delimiter_col) {
                   m_col_index++;
                 } else {
@@ -889,7 +894,7 @@ void irs::csvwork::csv_file_t::get_row_count(size_type* ap_row_count)
 }
 
 void irs::csvwork::csv_file_t::row_push_back(
-  std::vector<irs::string>* const ap_row)
+  std::vector<string_type>* const ap_row)
 {
   IRS_LIB_ASSERT((m_command == cmd_none_command) && (ap_row != IRS_NULL));
   if (m_command == cmd_none_command) {
@@ -900,7 +905,7 @@ void irs::csvwork::csv_file_t::row_push_back(
   }
 }
 
-void irs::csvwork::csv_file_t::row_push_back(std::vector<irs::string>& a_row)
+void irs::csvwork::csv_file_t::row_push_back(vector<string_type>& a_row)
 {
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
@@ -957,7 +962,7 @@ bool irs::csvwork::csv_file_t::clear()
 }
 
 void irs::csvwork::csv_file_t::get_row(
-  std::vector<irs::string>* ap_row,
+  std::vector<string_type>* ap_row,
   const int a_row_index,
   const pos_mode_t a_pos_mode)
 {
@@ -1010,18 +1015,18 @@ void irs::csvwork::csv_file_t::set_mode_success()
 //class csv_file_synchro_t
 
 irs::csvwork::csv_file_synchro_t::csv_file_synchro_t(
-  const irs::string& a_filename):
-  m_delimiter_col(';'),
-  m_delimiter_row('\n'),
-  m_delimiter_cell('"'),
+  const string_type& a_filename):
+  m_delimiter_col(irst(';')),
+  m_delimiter_row(irst('\n')),
+  m_delimiter_cell(irst('"')),
   m_special_character(),
-  m_filename(""),
+  m_filename(irst("")),
   m_file(),
   m_status_file(stat_file_close)
 {
-  m_special_character = static_cast<irs::string>(m_delimiter_col) +
-    static_cast<irs::string>(m_delimiter_cell);
-  if (a_filename != "") {
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+    static_cast<string_type>(m_delimiter_cell);
+  if (!a_filename.empty()) {
     open(a_filename);
   }
 }
@@ -1050,26 +1055,26 @@ bool irs::csvwork::csv_file_synchro_t::save(
   }
 
   if (fsuccess) {
-    irs::string cell_modified_str;
+    string_type cell_modified_str;
     const size_type col_count = a_table_string.get_col_count();
     const size_type row_count = a_table_string.get_row_count();
     for (size_type row = 0; row < row_count; row++) {
       bool find_not_empty_cell_success = false;
       for (size_type col = 0; col < col_count; col++) {
-        irs::string cell_str = a_table_string.read_cell(col, row);
-        if (cell_str != "") {
+        string_type cell_str = a_table_string.read_cell(col, row);
+        if (!cell_str.empty()) {
           if (!find_not_empty_cell_success) {
-            // std вместо irs !!!
-            std::string delimiter_col_array(col, m_delimiter_col);
+            string_type delimiter_col_array(col, m_delimiter_col);
             m_file << delimiter_col_array;
             find_not_empty_cell_success = true;
-
           } else {
             m_file << m_delimiter_col;
           }
           bool find_special_character_success = false;
-          if(cell_str.find_first_of(m_special_character) != irs::string::npos) {
-              find_special_character_success = true;
+          if (cell_str.find_first_of(m_special_character) !=
+            string_type::npos) {
+
+            find_special_character_success = true;
           }
           size_type cell_str_size = cell_str.size();
           for (size_type i = 0; i < cell_str_size; i++) {
@@ -1079,7 +1084,7 @@ bool irs::csvwork::csv_file_synchro_t::save(
             cell_modified_str += cell_str[i];
           }
           if (find_special_character_success) {
-            cell_modified_str = "\"" + cell_modified_str + "\"";
+            cell_modified_str = irst("\"") + cell_modified_str + irst("\"");
           }
           m_file << cell_modified_str;
           cell_modified_str.clear();
@@ -1110,9 +1115,9 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
     fsuccess = false;
   }
   if (fsuccess) {
-    irs::string cell_str;
+    string_type cell_str;
     const size_type rdbuf_size = 1024;
-    char rdbuf[rdbuf_size];
+    char_type rdbuf[rdbuf_size];
     size_type quote_count = 0;
     enum mode_t {
       inspection_begin_ch_quote, find_delimiter, processing_str} mode;
@@ -1222,3 +1227,4 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
 }
 
 #endif //!defined(__embedded_cplusplus) && !defined(__WATCOMC__)
+

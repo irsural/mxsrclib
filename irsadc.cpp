@@ -1,7 +1,14 @@
 // Аналоговый ввод-вывод
 // Дата: 11.09.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irsadc.h>
+
+#include <irsfinal.h>
 
 //--------------------------  LM95071 ------------------------------------------
 
@@ -1380,9 +1387,10 @@ void irs::dac_ltc2622_t::tick()
         mp_cs_pin->set();
         mp_spi->unlock();
         m_need_write = false;
-        m_status = DAC_FREE; 
+        m_status = DAC_FREE;
       }
       break;
     }
   }
 }
+

@@ -1,10 +1,10 @@
 // Дата: 16.08.2010
 // Дата создания: 29.07.2010
 
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irsparam.h>
 #include <irssysutils.h>
@@ -233,3 +233,4 @@ void irs::param_box_t::load()
 {
   m_ini_file.load();
 }
+

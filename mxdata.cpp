@@ -5,9 +5,16 @@
 // Номер файла
 #define MXDATACPP_IDX 2
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <string.h>
 
 #include <mxdata.h>
+
+#include <irsfinal.h>
 
 // Класс проверки изменения для bit_data_t
 irs::change_bit_t::change_bit_t(const bit_data_t *ap_bit_data,

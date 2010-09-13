@@ -3,10 +3,10 @@
 // Дата: 14.04.2010
 // Дата создания: 17.10.2009
 
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irserror.h>
 #include <irsstd.h>
@@ -227,4 +227,5 @@ void irs::cbuilder::set_error_handler(
   static error_handler_t error_handler_i(
     handler_type, irs::error_trans(), ap_log_msg);
 }
+
 

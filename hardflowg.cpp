@@ -2,12 +2,10 @@
 // Дата: 13.08.2010
 // Дата создания: 8.09.2009
 
-#include <irsdefs.h>
-
+#include <irspch.h>
 #ifdef __BORLANDC__
-#include <vcl.h>
 #pragma hdrstop
-#endif //__BORLANDC__
+#endif // __BORLANDC__
 
 #include <hardflowg.h>
 #include <irscpp.h>

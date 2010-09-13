@@ -2,9 +2,16 @@
 // Дата: 20.09.2009
 // Ранняя дата: 10.07.2009
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irstime.h>
 #include <irscpp.h>
 #include <time.h>
+
+#include <irsfinal.h>
 
 // Преобразование числа в мс в строку в формате: ЧЧ:ММ:СС.МСЕ
 irs::string irs::ms_to_strtime(irs::millisecond_t ms, bool show_ms)

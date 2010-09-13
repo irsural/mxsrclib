@@ -2,7 +2,10 @@
 // Дата: 12.07.2010
 // Дата создания: 16.03.2010
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <irscpp.h>
 #include <irstcpip.h>
@@ -1793,3 +1796,4 @@ void irs::simple_tcpip_t::tick()
     client_tcp();
   }
 }
+

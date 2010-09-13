@@ -2,7 +2,10 @@
 // Дата: 06.07.2010
 // Ранняя дата: 27.03.2009
 
-#include <irsdefs.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #include <correct_alg.h>
 #include <irsalg.h>
@@ -184,3 +187,4 @@ void irs::quasi_eeprom_t::tick()
 {
   //
 }
+

@@ -2,10 +2,10 @@
 // Дата: 13.09.2010
 // Дата создания: 17.09.2009
 
-#include <irsdefs.h>
-
-#include <vcl.h>
+#include <irspch.h>
+#ifdef __BORLANDC__
 #pragma hdrstop
+#endif // __BORLANDC__
 
 #include <tstlan4lib.h>
 #include <irstime.h>

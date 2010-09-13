@@ -2,6 +2,11 @@
 // Дата: 12.03.2010
 // Дата создания: 11.03.2010
 
+#include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
+
 #include <irskbd.h>
 
 #ifdef IRS_LINUX
@@ -16,6 +21,8 @@
 #include <mxdata.h>
 
 #endif //IRS_LINUX
+
+#include <irsfinal.h>
 
 #ifdef IRS_LINUX
 

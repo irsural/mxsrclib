@@ -32,7 +32,7 @@ namespace irs {
 
 namespace cbuilder {
 
-typedef irs::string string_t;
+typedef irs::string stringns_t;
 typedef size_t sizens_t;
 
 #if IRS_LIB_VERSION_SUPPORT_LESS(390)

@@ -32,7 +32,7 @@ millisecond_t system_time();
 IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
 //возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
 //расширение вводить с точкой
-irs_string_t file_name_time(irs_string_t a_extension = "");
+irs_string_t file_name_time(irs_string_t a_extension = irs_string_t());
 
 } //namespace irs
 
