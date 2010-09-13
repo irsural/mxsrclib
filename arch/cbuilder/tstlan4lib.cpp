@@ -188,7 +188,7 @@ irs::tstlan4_t::controls_t::controls_t(
   m_ini_section_prefix(a_ini_section_prefix),
   m_start(false),
   m_first(true),
-  m_is_close_csv(true)
+  m_is_close_csv(false)
 {
   m_buf.connect(mp_log_memo);
   m_ini_file.set_ini_name(a_ini_name.c_str());
@@ -208,7 +208,7 @@ irs::tstlan4_t::controls_t::controls_t(
 
   mp_start_btn->Left = btn_gap;
   mp_start_btn->Top = mp_top_panel->Height/2 - mp_start_btn->Height/2;
-  mp_start_btn->Caption = mp_read_on_text;
+  mp_start_btn->Caption = mp_read_off_text;
   mp_start_btn->Parent = mp_top_panel;
   mp_start_btn->OnClick = CsvSaveBtnClick;
 
