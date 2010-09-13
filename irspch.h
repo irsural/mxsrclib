@@ -37,14 +37,6 @@
 #include <stdexcept>
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#include <irsstrconv.h>
-#include <irserror.h>
-#include <irsstrdefs.h>
-#include <irsstring.h>
-#include <irsstrm.h>
-#include <irsstrmstd.h>
-#include <irssysutils.h>
-#include <mxdata.h>
 #endif // __BORLANDC__
 
 #endif // irspchH
