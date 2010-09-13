@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 10.09.2010
+// Дата: 13.09.2010
 // Дата создания: 17.09.2009
 
 #include <irsdefs.h>
@@ -370,10 +370,11 @@ void irs::tstlan4_t::controls_t::tick()
           string_type csv_names = name_list->Strings[row].c_str();
           if (m_csv_names[csv_names] && (!m_is_close_csv)) {
             m_csv_file.set_var("Time",
-              FloatToStr(m_timer.get()).c_str());
+              irsstr_from_number_russian(char(), m_timer.get()).c_str());
             double value = var_to_double(var_index);
             String value_str = FloatToStr(value);
-            m_csv_file.set_var(csv_names.c_str(), value_str.c_str());
+            m_csv_file.set_var(IRS_SIMPLE_FROM_TYPE_STR(csv_names.c_str()),
+              IRS_SIMPLE_FROM_TYPE_STR(value_str.c_str()));
           }
         }
       }
@@ -643,7 +644,8 @@ void irs::tstlan4_t::controls_t::creation_csv()
       if (chart_list->Strings[row] == "1") {
         if (!m_csv_names[csv_names]) {
           m_csv_names[csv_names] = true;
-          m_csv_file.add_col(csv_names.c_str(), ec_str_type);
+          m_csv_file.add_col(IRS_SIMPLE_FROM_TYPE_STR(csv_names.c_str()),
+            ec_str_type);
         }
       }
     }
@@ -731,7 +733,7 @@ void __fastcall irs::tstlan4_t::controls_t::CsvSaveBtnClick(TObject *Sender)
 void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
 {
   if (mp_open_dialog->Execute()) {
-    irs_string_t csv_file_name = mp_open_dialog->FileName.c_str();
+    string_type csv_file_name = mp_open_dialog->FileName.c_str();
     m_csv_open_file.open(csv_file_name);
     m_csv_open_file.load(m_table);
 
@@ -742,31 +744,32 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     }
     bool is_null = false;
     double time_chart = m_time.get() + m_shift_time;
-    irs_string_t time_zero_str =  m_table.read_cell(0, 1);
-    double time_zero = StrToFloat(time_zero_str.c_str());
+    string_type time_zero_str =  m_table.read_cell(0, 1);
+    double time_zero = static_cast<double>(StrToFloat(time_zero_str.c_str()));
     for (size_t col_index = 1; col_index < col_size; col_index++) {
-      irs_string_t chart_name = m_table.read_cell(col_index, 0);
+      string_type chart_name = m_table.read_cell(col_index, 0);
       if (!m_chart_names[chart_name]) {
         mp_chart->add_param(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
       }
       for (size_t row_index = 1; row_index < row_size; row_index++) {
-        irs_string_t value = m_table.read_cell(col_index, row_index);
-        if (value == "") {
+        string_type value = m_table.read_cell(col_index, row_index);
+        if (value.empty()) {
           is_null = true;
         }
         if (!is_null) {
-          irs_string_t time =  m_table.read_cell(0, row_index);
-          double delta_time =  time_chart + StrToFloat(time.c_str()) -
-            time_zero;
+          string_type time =  m_table.read_cell(0, row_index);
+          double delta_time =  time_chart +
+            static_cast<double>(StrToFloat(time.c_str())) - time_zero;
           mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
             delta_time,
-            StrToFloat(value.c_str()));
+            static_cast<double>(StrToFloat(value.c_str())));
         }
         is_null = false;
       }
     }
-    irs_string_t time_end =  m_table.read_cell(0, row_size - 1);
-    m_shift_time = m_shift_time + StrToFloat(time_end.c_str()) - time_zero;
+    string_type time_end =  m_table.read_cell(0, row_size - 1);
+    m_shift_time = m_shift_time +
+      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
     m_csv_open_file.close();
   }
 }
