@@ -3242,13 +3242,10 @@ void irs::modbus_client_t::tick()
       m_channel = mp_hardflow_client->channel_next();
       if (m_send_request_timer.check()) {
         // > ”брать в дебаг
-        MBAP_header_t &send_pack_header = 
-          reinterpret_cast<MBAP_header_t&>(*m_spacket.data());
-        IRS_LIB_ASSERT(!send_pack_header.proto_id);
-        request_t &convert_pack_for_read =
-          reinterpret_cast<request_t&>(*(m_spacket.data() + 
-          size_of_MBAP));
-        IRS_LIB_ASSERT(convert_pack_for_read.function_code);
+        IRS_LIB_ASSERT(!reinterpret_cast<MBAP_header_t&>(
+          *m_spacket.data()).proto_id);        
+        IRS_LIB_ASSERT(reinterpret_cast<request_t&>(*(m_spacket.data() + 
+          size_of_MBAP)).function_code);
         // ”брать в дебаг <
         m_fixed_flow.write(m_channel, m_spacket.data(), size_of_MBAP +
           m_size_byte_end);
@@ -3453,6 +3450,7 @@ void irs::modbus_client_t::tick()
             response_read_byte_t &read_coils = 
               reinterpret_cast<response_read_byte_t&>(*(m_rpacket.data() +
               size_of_MBAP));
+            #ifdef IRS_LIB_DEBUG
             irs_u16 request_byte = 0;
             if (!(m_request_quantity_coils_bit%8)) {
               request_byte =
@@ -3463,6 +3461,7 @@ void irs::modbus_client_t::tick()
             }
             //irs_u16 byte_count = read_coils.byte_count;
             IRS_LIB_ASSERT(request_byte == read_coils.byte_count);
+            #endif // IRS_LIB_DEBUG
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr/8 +
               read_coils.byte_count) <= m_coils_byte_read.size());
             bit_copy(read_coils.value, m_coils_byte_read.data(), 0, 

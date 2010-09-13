@@ -2290,8 +2290,8 @@ irs::hardflow::simple_udp_flow_t::size_type
   if (is_channel_exists(a_channel_ident)) {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("read channel cur = ") <<
       a_channel_ident << endl);
-    size_type deque_index = channel_list_index(a_channel_ident);
-    IRS_LIB_ASSERT(deque_index < m_channel_max_count);
+    //size_type deque_index = channel_list_index(a_channel_ident);
+    IRS_LIB_ASSERT(channel_list_index(a_channel_ident) < m_channel_max_count);
     memcpyex(ap_buf, mp_recv_buf_cur, a_size);
     if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
       mp_simple_udp->recv_data_size())
