@@ -125,7 +125,7 @@ namespace csvwork {
 
 // В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
 // Watcom не переваривает irstable.h в котором определен тип table_string_t
-#if !defined(__embedded_cplusplus) && !defined(__WATCOMC__)
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 enum csv_file_status_t {cfs_success = 0, cfs_busy = 1, cfs_error = 2};
 class csv_file_t
@@ -307,7 +307,7 @@ inline void csv_file_synchro_t::close()
 
 }
 
-#endif //!defined(__embedded_cplusplus) && !defined(__WATCOMC__)
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 } // namespace csvwork
 

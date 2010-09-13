@@ -263,9 +263,7 @@ void csv_file::clear_pars()
 }
 //---------------------------------------------------------------------------
 
-// В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
-// Watcom не переваривает irstable.h в котором определен тип table_string_t
-#if !defined(__embedded_cplusplus) && !defined(__WATCOMC__)
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 //class csv_file_t
 irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
@@ -1226,5 +1224,5 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
   return fsuccess;
 }
 
-#endif //!defined(__embedded_cplusplus) && !defined(__WATCOMC__)
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 
