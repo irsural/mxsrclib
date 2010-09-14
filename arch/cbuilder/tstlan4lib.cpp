@@ -188,7 +188,7 @@ irs::tstlan4_t::controls_t::controls_t(
   m_ini_section_prefix(a_ini_section_prefix),
   m_start(false),
   m_first(true),
-  m_is_close_csv(false)
+  m_is_created_csv(false)
 {
   m_buf.connect(mp_log_memo);
   m_ini_file.set_ini_name(a_ini_name.c_str());
@@ -362,13 +362,12 @@ void irs::tstlan4_t::controls_t::tick()
           string_type chart_name = name_list->Strings[row].c_str();
           mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
             chart_time, var_to_double(var_index));
-
           if (m_first) {
             creation_csv();
             m_first = false;
           }
           string_type csv_names = name_list->Strings[row].c_str();
-          if (m_csv_names[csv_names] && (!m_is_close_csv)) {
+          if (m_csv_names[csv_names] && (m_is_created_csv)) {
             m_csv_file.set_var("Time",
               irsstr_from_number_russian(char(), m_timer.get()).c_str());
             double value = var_to_double(var_index);
@@ -378,7 +377,7 @@ void irs::tstlan4_t::controls_t::tick()
           }
         }
       }
-      if(!m_is_close_csv) {
+      if(m_is_created_csv) {
         m_csv_file.write_line();
       }
     }
@@ -634,6 +633,7 @@ void irs::tstlan4_t::controls_t::creation_csv()
   if (!m_csv_file.open(path_file.c_str())) {
     MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
   } else {
+    m_is_created_csv = true;
     TStrings* name_list = mp_vars_grid->Cols[m_name_col];
     TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];
     int row_count = mp_vars_grid->RowCount;
@@ -720,12 +720,13 @@ void __fastcall irs::tstlan4_t::controls_t::CsvSaveBtnClick(TObject *Sender)
   if (!m_start) {
     m_start = true;
     m_refresh_table = false;
-    m_is_close_csv = m_csv_file.close();
+    if (m_csv_file.close()) {
+      m_is_created_csv = false;
+    }
     mp_start_btn->Caption = mp_read_on_text;
   } else {
     m_start = false;
     m_refresh_table = true;
-    m_is_close_csv = false;
     creation_csv();
     mp_start_btn->Caption = mp_read_off_text;
   }

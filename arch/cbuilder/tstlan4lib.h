@@ -316,7 +316,7 @@ private:
     const string_type m_ini_section_prefix;
     bool m_start;
     bool m_first;
-    bool m_is_close_csv;
+    bool m_is_created_csv;
 
 
     template <class T>
