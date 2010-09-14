@@ -339,7 +339,7 @@ public:
 };
 
 
-namespace irs{
+namespace irs {
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -639,10 +639,7 @@ inline void irs::v7_78_1_t::set_ac()
   m_meas_type = AC_MEAS;
 }
 
-} // namespace irs
-
 // Класс для работы с частотомером электронно-счетным акип чз-85/3R
-namespace irs{
 enum msg_status_t{MSG_BUSY, MSG_SUCCESS};
 class akip_ch3_85_3r_t: public mxmultimeter_t
 {
@@ -874,7 +871,6 @@ private:
 inline void irs::akip_ch3_85_3r_t::set_ac()
   {m_meas_type = AC_MEAS;}
 */
-}
 
 class dummy_multimeter_t: public mxmultimeter_t
 {
@@ -934,7 +930,7 @@ public:
   //virtual void set_filter(double ) {}
 };
 
-namespace irs {
+
 
 // Класс для работы с мультиметром National Instruments PXI-4071
 class ni_pxi_4071_t: public mxmultimeter_t
