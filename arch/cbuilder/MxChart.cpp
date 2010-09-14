@@ -3610,7 +3610,7 @@ set_base_item(int a_base_item)
   if (a_base_item < 0) return;
   m_base_item = a_base_item;
   
-  m_base_chart_name = "";
+  m_base_chart_name.clear();
   if (m_base_item < (int)m_unsort_data.size()) {
     m_unsort_data.set(m_base_item);
     m_base_chart_name = m_unsort_data.name();

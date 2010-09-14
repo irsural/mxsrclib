@@ -888,9 +888,9 @@ public:
   // Установить отрицательный фронт канала
   virtual void set_negative() {}
   // Чтение значения при текущем типа измерения
-  virtual void get_value(double* /*value*/) {}
+  virtual void get_value(double* value) { *value = rand(); }
   // Чтение напряжения
-  virtual void get_voltage(double* /*voltage*/) {}
+  virtual void get_voltage(double* /*voltage*/) { }
   // Чтения силы тока
   virtual void get_current(double* /*current*/) {}
   // Чтение сопротивления
