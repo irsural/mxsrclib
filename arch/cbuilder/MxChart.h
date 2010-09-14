@@ -451,6 +451,7 @@ namespace chart {
 class color_gen_t
 {
 public:
+  typedef irs::string_t string_type;
   color_gen_t();
   void start();
   TColor next();
@@ -460,7 +461,7 @@ public:
   int size() const;
 private:
   vector<TColor> m_colors;
-  vector<irs::string> m_names;
+  vector<string_type> m_names;
   int m_index;
 };
 
@@ -468,6 +469,7 @@ private:
 class builder_chart_window_t: public irs::chart_window_t
 {
 public:
+  typedef irs::string_t string_type;
   enum stay_on_top_t { stay_on_top_on, stay_on_top_off };
 
   builder_chart_window_t(irs_u32 a_size = 1000,
@@ -477,15 +479,15 @@ public:
   virtual void hide();
   virtual rect_t position() const;
   virtual void set_position(const rect_t &a_position);
-  virtual void add_param(const irs::string &a_name);
-  virtual void delete_param(const irs::string &a_name);
+  virtual void add_param(const string_type &a_name);
+  virtual void delete_param(const string_type &a_name);
   virtual void clear_param();
-  virtual void set_value(const irs::string &a_name, double a_value);
-  virtual void set_value(const irs::string &a_name, double a_time,
+  virtual void set_value(const string_type &a_name, double a_value);
+  virtual void set_value(const string_type &a_name, double a_time,
     double a_value);
   virtual void set_time(double a_time);
   virtual void add();
-  virtual void add(const irs::string &a_name, double a_time, double a_value);
+  virtual void add(const string_type &a_name, double a_time, double a_value);
   virtual void clear();
   virtual void resize(irs_u32 a_size);
   virtual irs_u32 size() const;
@@ -496,7 +498,7 @@ private:
   struct chart_point_t;
 
   typedef deque<double> chart_vec_t;
-  typedef map<irs::string, chart_point_t> data_t;
+  typedef map<string_type, chart_point_t> data_t;
 
   class chart_func_t: public TObject
   {
@@ -533,6 +535,7 @@ private:
   {
   public:
     typedef data_t::size_type size_type;
+    typedef irs::string_t string_type;
 
     unsort_data_t();
     void connect(const data_t &a_data);
@@ -540,19 +543,20 @@ private:
     void start();
     void next();
     void set(size_type a_index);
-    irs::string name();
+    string_type name();
     const chart_point_t& vec();
     size_type size();
   private:
     const data_t* mp_data;
-    map<int, irs::string> m_unsort_data;
-    map<int, irs::string>::iterator unsort_data_it;
+    map<int, string_type> m_unsort_data;
+    map<int, string_type>::iterator unsort_data_it;
     chart_point_t bad_point;
   };
   // Форма с графиком
   class TChartForm: public TForm
   {
   public:
+    typedef irs::string_t string_type;
     TChartForm(const data_t &a_data, chart_event_t &a_event,
       irs_i32 a_refresh_time_ms, stay_on_top_t a_stay_on_top);
     virtual __fastcall ~TChartForm();
@@ -594,7 +598,7 @@ private:
     color_gen_t m_colors;
     bool m_is_lock;
     bool m_is_chart_list_changed;
-    irs::string m_base_chart_name;
+    string_type m_base_chart_name;
     unsort_data_t m_unsort_data;
 
     void __fastcall FormResize(TObject *Sender);

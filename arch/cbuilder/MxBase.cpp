@@ -10,6 +10,8 @@
 
 #include <MxBase.h>
 
+#include <irsstrdefs.h>
+
 #include <irsfinal.h>
 
 //---------------------------------------------------------------------------
@@ -191,7 +193,7 @@ void __fastcall DeleteClipRect(TCanvas *Canvas)
 TSize __fastcall TextExtent(TCanvas *Canvas, String Text)
 {
   TSize Size;
-  GetTextExtentPoint32(Canvas->Handle, static_cast<AnsiString>(Text).c_str(),
+  GetTextExtentPoint32(Canvas->Handle, Text.c_str(),
     Text.Length(), (LPSIZE)&Size);
   return Size;
 }
@@ -224,7 +226,7 @@ bool __fastcall GetWaveFormat(String FileName, TWaveFormat &WaveFormat)
   MMCKINFO    mmckinfoSubchunk;   // структура с информацией о подкуске
   int         FmtSize;            // размер куска "fmt"
   WAVEFORMATEX *Format;           // стуктура содержаща€ формат
-  hmmio = mmioOpen(static_cast<AnsiString>(FileName).c_str(), NULL,
+  hmmio = mmioOpen(FileName.c_str(), NULL,
     MMIO_READ | MMIO_ALLOCBUF);
   if(!hmmio) return false;
   mmckinfoParent.fccType = mmioFOURCC('W', 'A', 'V', 'E');
@@ -283,7 +285,7 @@ bool __fastcall GetPCMWaveData(String FileName, TWaveFormat &WaveFormat,
   Data = (short *)realloc(Data, 0);
   Data = (short *)realloc(Data, Size*sizeof(short));
   DataSize = Size*WaveFormat.Sample;
-  hmmio = mmioOpen(static_cast<AnsiString>(FileName).c_str(), NULL,
+  hmmio = mmioOpen(FileName.c_str(), NULL,
     MMIO_READ | MMIO_ALLOCBUF);
   if(!hmmio) return false;
 
@@ -364,13 +366,13 @@ TModalResult __fastcall ShowMsg(String Caption, String Text,
 //---------------------------------------------------------------------------
 TModalResult __fastcall ShowMsg(String Text, TMsgDlgButtons Buttons)
 {
-  if (AppName != "") return ShowMsg(AppName, Text, mtCustom, Buttons);
+  if (!AppName.IsEmpty()) return ShowMsg(AppName, Text, mtCustom, Buttons);
   else return ShowMsg(Application->Title, Text, mtCustom, Buttons);
 }
 //---------------------------------------------------------------------------
 void __fastcall ShowMsg(String Text)
 {
-  if (AppName != "")
+  if (!AppName.IsEmpty())
     ShowMsg(AppName, Text, mtCustom, TMsgDlgButtons () << mbOK);
   else ShowMsg(Application->Title, Text, mtCustom, TMsgDlgButtons () << mbOK);
 }
@@ -412,16 +414,16 @@ int __fastcall Align2(int Number, int Shift)
 // ѕредположительно возвращает указатель первый элемент из списка разделенного
 // зап€тыми на который уазывает Str без лидирующих пробелов и модифицирует Str
 // так, чтобы она указывала на следующий элемент.
-char *__fastcall FetchStr(char *&Str)
+irs::char_t *__fastcall FetchStr(irs::char_t *&Str)
 {
-  char *P, *Result;
+  irs::char_t *P, *Result;
   Result = Str;
   if (Str == NULL) return(Result);
   P = Str;
-  while (*P == ' ') P++;
+  while (*P == irst(' ')) P++;
   Result = P;
-  while ((*P != 0) && (*P != ',')) P++;
-  if (*P == ',') { *P = 0; P++; }
+  while ((*P != 0) && (*P != irst(','))) P++;
+  if (*P == irst(',')) { *P = 0; P++; }
   Str = P;
   return Result;
 }
@@ -429,8 +431,8 @@ char *__fastcall FetchStr(char *&Str)
 TPrinterDC::TPrinterDC()
 {
   DWORD ByteCnt, StructCnt;
-  char DefaultPrinter[79];
-  char *Cur, *Device;
+  irs::char_t DefaultPrinter[79];
+  irs::char_t *Cur, *Device;
   PPRINTER_INFO_5 PrinterInfo;
   ByteCnt = 0;
   StructCnt = 0;
@@ -443,7 +445,7 @@ TPrinterDC::TPrinterDC()
     Device = PrinterInfo->pPrinterName;
   else
   {
-    GetProfileString("windows", "device", "", DefaultPrinter,
+    GetProfileString(irst("windows"), irst("device"), irst(""), DefaultPrinter,
       sizeof(DefaultPrinter) - 1);
     Cur = DefaultPrinter;
     Device = FetchStr(Cur);

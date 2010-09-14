@@ -266,11 +266,11 @@ void csv_file::clear_pars()
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 //class csv_file_t
-irs::csvwork::csv_file_t::csv_file_t(const irs::string& a_filename
+irs::csvwork::csv_file_t::csv_file_t(const string_type& a_filename
 ):
   m_delimiter_col(irst(';')),
   m_delimiter_row(irst('\n')),
-  m_delim_row("\r\n"),
+  m_delim_row(irst("\r\n")),
   m_delimiter_row_size(m_delim_row.size()),
   //m_delimiter_size(2),
   //m_pos(0),

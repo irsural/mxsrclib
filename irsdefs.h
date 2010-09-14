@@ -17,10 +17,37 @@
 #define IRS_LINUX // Платформа Linux
 #endif // Определения платформы
 
+// Определение версии Builder
+#define IRS_CPP_BUILDER4    0x0540
+#define IRS_CPP_BUILDER6    0x0560
+#define IRS_CPP_BUILDER2006 0x0580
+#define IRS_CPP_BUILDER2007 0x0590
+#define IRS_CPP_BUILDER2010 0x0620
+
+// Включение Unicode
+#ifdef __BORLANDC__
+// _DELPHI_STRING_UNICODE
+# if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+#   define IRS_UNICODE_GLOBAL
+    // Для заголовочных файлов Windows
+#   define UNICODE
+# endif //(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+#else //__BORLANDC__
+  //#define IRS_UNICODE_GLOBAL
+#endif //__BORLANDC__
+
+#ifdef IRS_UNICODE_GLOBAL
+# if defined(__ICCAVR__)
+  //#define IRS_UNICODE
+# else //compilers
+#   define IRS_UNICODE
+# endif //compilers
+#endif //IRS_UNICODE_GLOBAL
 
 #ifdef IRS_WIN32
-#include <winsock2.h>
+# include <winsock2.h>
 #endif // __WIN32__
+
 #ifdef __BORLANDC__
 #include <System.hpp>
 #endif //__BORLANDC__
@@ -41,30 +68,6 @@
 #else //__ICCAVR__
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
 #endif //__ICCAVR__
-
-// Определение версии Builder
-#define IRS_CPP_BUILDER4    0x0540
-#define IRS_CPP_BUILDER6    0x0560
-#define IRS_CPP_BUILDER2006 0x0580
-#define IRS_CPP_BUILDER2007 0x0590
-#define IRS_CPP_BUILDER2010 0x0620
-
-// Включение Unicode
-#ifdef __BORLANDC__
-#ifdef _DELPHI_STRING_UNICODE
-#define IRS_UNICODE_GLOBAL
-#endif //_DELPHI_STRING_UNICODE
-#else //__BORLANDC__
-//#define IRS_UNICODE_GLOBAL
-#endif //__BORLANDC__
-
-#ifdef IRS_UNICODE_GLOBAL
-#if defined(__ICCAVR__)
-//#define IRS_UNICODE
-#else //compilers
-#define IRS_UNICODE
-#endif //compilers
-#endif //IRS_UNICODE_GLOBAL
 
 // Возможности компиляторов
 // __ICCAVR__ - Компилятор IAR для AVR

@@ -105,52 +105,53 @@ struct com_param_t
 };
 struct com_param_str_t
 {
-  const irs::string baud_rate;
-  const irs::string f_parity;
-  const irs::string f_outx_cts_flow;
-  const irs::string f_outx_dsr_flow;
-  const irs::string f_dtr_control;
-  const irs::string f_dsr_sensitivity;
-  const irs::string f_tx_continue_on_xoff;
-  const irs::string f_out_x;
-  const irs::string f_in_x;
-  const irs::string f_error_char;
-  const irs::string f_null;
-  const irs::string f_abort_on_error;
-  const irs::string xon_lim;
-  const irs::string xoff_lim;
-  const irs::string byte_size;
-  const irs::string parity;
-  const irs::string stop_bits;
-  const irs::string xon_char;
-  const irs::string xoff_char;
-  const irs::string error_char;
-  const irs::string eof_char;
-  const irs::string evt_char;
+  typedef irs::string_t string_type;
+  const string_type baud_rate;
+  const string_type f_parity;
+  const string_type f_outx_cts_flow;
+  const string_type f_outx_dsr_flow;
+  const string_type f_dtr_control;
+  const string_type f_dsr_sensitivity;
+  const string_type f_tx_continue_on_xoff;
+  const string_type f_out_x;
+  const string_type f_in_x;
+  const string_type f_error_char;
+  const string_type f_null;
+  const string_type f_abort_on_error;
+  const string_type xon_lim;
+  const string_type xoff_lim;
+  const string_type byte_size;
+  const string_type parity;
+  const string_type stop_bits;
+  const string_type xon_char;
+  const string_type xoff_char;
+  const string_type error_char;
+  const string_type eof_char;
+  const string_type evt_char;
 
   com_param_str_t():
-    baud_rate("baud_rate"),
-    f_parity("f_parity"),
-    f_outx_cts_flow("f_outx_cts_flow"),
-    f_outx_dsr_flow("f_outx_dsr_flow"),
-    f_dtr_control("f_dtr_control"),
-    f_dsr_sensitivity("f_dsr_sensitivity"),
-    f_tx_continue_on_xoff("f_tx_continue_on_xoff"),
-    f_out_x("f_out_x"),
-    f_in_x("f_in_x"),
-    f_error_char("f_error_char"),
-    f_null("f_null"),
-    f_abort_on_error("f_abort_on_error"),
-    xon_lim("xon_lim"),
-    xoff_lim("xoff_lim"),
-    byte_size("byte_size"),
-    stop_bits("stop_bits"),
-    parity("parity"),
-    xon_char("xon_char"),
-    xoff_char("xoff_char"),
-    error_char("error_char"),
-    eof_char("eof_char"),
-    evt_char("evt_char")
+    baud_rate(irst("baud_rate")),
+    f_parity(irst("f_parity")),
+    f_outx_cts_flow(irst("f_outx_cts_flow")),
+    f_outx_dsr_flow(irst("f_outx_dsr_flow")),
+    f_dtr_control(irst("f_dtr_control")),
+    f_dsr_sensitivity(irst("f_dsr_sensitivity")),
+    f_tx_continue_on_xoff(irst("f_tx_continue_on_xoff")),
+    f_out_x(irst("f_out_x")),
+    f_in_x(irst("f_in_x")),
+    f_error_char(irst("f_error_char")),
+    f_null(irst("f_null")),
+    f_abort_on_error(irst("f_abort_on_error")),
+    xon_lim(irst("xon_lim")),
+    xoff_lim(irst("xoff_lim")),
+    byte_size(irst("byte_size")),
+    stop_bits(irst("stop_bits")),
+    parity(irst("parity")),
+    xon_char(irst("xon_char")),
+    xoff_char(irst("xoff_char")),
+    error_char(irst("error_char")),
+    eof_char(irst("eof_char")),
+    evt_char(irst("evt_char"))
   {}
 };
 
@@ -172,7 +173,7 @@ private:
   void resource_free();
 public:
   com_flow_t(
-    const irs::string& a_portname,
+    const string_type& a_portname,
     const irs_u32 a_baud_rate = CBR_9600,
     const irs_u32 a_f_parity = FALSE,
     const irs_u8 a_parity = NOPARITY,
@@ -180,8 +181,8 @@ public:
     const irs_u8 a_stop_bits = ONESTOPBIT,
     const irs_u32 a_f_dtr_control = DTR_CONTROL_ENABLE);
   virtual ~com_flow_t();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name, const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name, const string_type &a_value);
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
@@ -194,12 +195,14 @@ public:
 
 class named_pipe_server_t: public hardflow_t
 {
+public:
+  typedef string_t string_type;
 private:
   const irs_uarc m_max_size_write;
   irs_u32 m_size_inbuf;
   irs_u32 m_size_outbuf;
   error_trans_base_t *mp_error_trans;
-  irs::string m_name;
+  string_type m_name;
   irs_u32 m_count_instances;
   struct instance_named_pipe_t
   {
@@ -217,12 +220,12 @@ private:
 
 public:
   named_pipe_server_t(
-    const irs::string& a_name,
+    const string_type& a_name,
     const irs_u32 a_count_instances = 1);
   virtual ~named_pipe_server_t();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
@@ -234,10 +237,12 @@ private:
 };
 class named_pipe_client_t: public hardflow_t
 {
+public:
+  typedef string_t string_type;
 private:
   const irs_uarc m_max_size_write;
   error_trans_base_t *mp_error_trans;
-  irs::string m_name;
+  string_type m_name;
   HANDLE m_handle_named_pipe;
   OVERLAPPED m_ovl;
   named_pipe_client_t();
@@ -246,11 +251,11 @@ private:
   bool m_connected;
 
 public:
-  named_pipe_client_t(const irs::string& a_name);
+  named_pipe_client_t(const string_type& a_name);
   virtual ~named_pipe_client_t();
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
@@ -295,9 +300,9 @@ public:
 private:
   void start();
 public:
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
@@ -344,9 +349,9 @@ public:
 private:
   void start();
 public:
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
   virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
     irs_uarc a_size);
   virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,

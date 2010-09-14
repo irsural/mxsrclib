@@ -632,7 +632,7 @@ void irs::tstlan4_t::controls_t::creation_csv()
   MkDir(path.c_str());
   irs_string_t path_file = cbuilder::file_path(path + file_name, ".csv");
   if (!m_csv_file.open(path_file.c_str())) {
-    MessageBox(NULL,"CSV Файл не создан!!", "Error", MB_OK);
+    MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
   } else {
     TStrings* name_list = mp_vars_grid->Cols[m_name_col];
     TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];

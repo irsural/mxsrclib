@@ -16,7 +16,7 @@
 
 // class com_flow_t
 irs::com_flow_t::com_flow_t(
-  const irs::string& a_portname,
+  const string_type& a_portname,
   const irs_u32 a_baud_rate,      //CBR_9600
   const irs_u32 a_f_parity,       //NOPARITY
   const irs_u8 a_parity,
@@ -91,9 +91,9 @@ irs::com_flow_t::~com_flow_t()
   resource_free();
 }
 
-irs::string irs::com_flow_t::param(const irs::string &a_name)
+irs::com_flow_t::string_type irs::com_flow_t::param(const string_type &a_name)
 {
-  irs::string param_value_str = "";
+  string_type param_value_str = irst("");
   if(m_port_status == PS_PREFECT){
     if(a_name == m_com_param_str.baud_rate){
       param_value_str = m_com_param.baud_rate;
@@ -144,8 +144,8 @@ irs::string irs::com_flow_t::param(const irs::string &a_name)
   return param_value_str;
 }
 
-void irs::com_flow_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::com_flow_t::set_param(const string_type &a_name,
+  const string_type &a_value)
 {
   bool fsuccess = true;
   if(m_port_status == PS_PREFECT){
@@ -388,14 +388,14 @@ void irs::com_flow_t::resource_free()
 
 //class named_pipe_t
 irs::named_pipe_server_t::named_pipe_server_t(
-  const irs::string& a_name,
+  const string_type& a_name,
   const irs_u32 a_count_instances
 ):
   m_max_size_write(65535),
   m_size_inbuf(65535),
   m_size_outbuf(65535),
   mp_error_trans(irs::error_trans()),
-  m_name("\\\\.\\pipe\\"+a_name),
+  m_name(irst("\\\\.\\pipe\\") + a_name),
   m_count_instances(a_count_instances),
   mv_named_pipe(),
   m_delay_control(make_cnt_ms(3000)),
@@ -422,12 +422,13 @@ irs::named_pipe_server_t::~named_pipe_server_t()
     CloseHandle(handle);
   }
 }
-irs::string irs::named_pipe_server_t::param(const irs::string &a_name)
+irs::named_pipe_server_t::string_type
+irs::named_pipe_server_t::param(const string_type &a_name)
 {
-  return irs::string();
+  return string_type();
 }
 void irs::named_pipe_server_t::set_param(
-  const irs::string &a_name, const irs::string &a_value)
+  const string_type &a_name, const string_type &a_value)
 {
 }
 irs_uarc irs::named_pipe_server_t::read(
@@ -566,11 +567,11 @@ void irs::named_pipe_server_t::add_named_pipe(const irs_u32 a_count)
 }
 
 //class named_pipe_client_t
-irs::named_pipe_client_t::named_pipe_client_t(const irs::string& a_name
+irs::named_pipe_client_t::named_pipe_client_t(const string_type& a_name
 ):
   m_max_size_write(65535),
   mp_error_trans(irs::error_trans()),
-  m_name("\\\\.\\pipe\\"+a_name),
+  m_name(irst("\\\\.\\pipe\\") + a_name),
   m_delay_control(make_cnt_ms(300)),
   m_control_timer(m_delay_control),
   m_connected(false)
@@ -586,12 +587,13 @@ irs::named_pipe_client_t::~named_pipe_client_t()
 {
   CloseHandle(m_handle_named_pipe);
 }
-irs::string irs::named_pipe_client_t::param(const irs::string &a_name)
+irs::named_pipe_client_t::string_type
+irs::named_pipe_client_t::param(const string_type &a_name)
 {
-  return irs::string();
+  return string_type();
 }
 void irs::named_pipe_client_t::set_param(
-  const irs::string &a_name, const irs::string &a_value)
+  const string_type &a_name, const string_type &a_value)
 {
 }
 irs_uarc irs::named_pipe_client_t::read(
@@ -778,14 +780,15 @@ void irs::tcp_server_t::start()
   }
 }
 
-irs::string irs::tcp_server_t::param(const irs::string &a_name)
+irs::tcp_server_t::string_type
+irs::tcp_server_t::param(const string_type &a_name)
 {
-  irs::string str = "";
+  string_type str = irst("");
   return str;
 }
 
-void irs::tcp_server_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::tcp_server_t::set_param(const string_type &a_name,
+  const string_type &a_value)
 {
 }
 
@@ -1024,14 +1027,15 @@ void irs::tcp_client_t::start()
   }
 }
 
-irs::string irs::tcp_client_t::param(const irs::string &a_name)
+irs::tcp_client_t::string_type
+irs::tcp_client_t::param(const string_type &a_name)
 {
-  irs::string str;
+  string_type str;
   return str;
 }
 
-void irs::tcp_client_t::set_param(const irs::string &a_name,
-  const irs::string &a_value)
+void irs::tcp_client_t::set_param(const string_type &a_name,
+  const string_type &a_value)
 { }
 
 irs_uarc irs::tcp_client_t::read(

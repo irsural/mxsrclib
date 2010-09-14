@@ -30,7 +30,7 @@ struct base_str_type
 template<>
 struct base_str_type<irs_string_t>
 {
-  typedef irs::string type;
+  typedef irs_string_t type;
 };
 
 //std_string_t
@@ -63,12 +63,12 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
 template<>
 struct base_str_type<irs_wstring_t>
 {
-  typedef std::wstring type;
+  typedef irs_wstring_t type;
 };
 template<>
 struct base_str_type<std_wstring_t>
 {
-  typedef std::wstring type;
+  typedef irs_wstring_t type;
 };
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -76,14 +76,23 @@ struct base_str_type<std_wstring_t>
 template<>
 struct base_str_type<AnsiString>
 {
-  typedef irs::string type;
+  typedef irs_string_t type;
 };
 
 template<>
 struct base_str_type<WideString>
 {
-  typedef std::wstring type;
+  typedef irs_wstring_t type;
 };
+
+#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+template<>
+struct base_str_type<UnicodeString>
+{
+  typedef irs_wstring_t type;
+};
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+
 #endif // __BORLANDC__
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
@@ -116,6 +125,7 @@ inline irs_string_t str_conv_simple(const irs_string_t&,
 {
   return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
 }
+
 template<class T>
 inline T str_conv(const std_wstring_t& a_str_in)
 {
@@ -132,6 +142,15 @@ inline WideString str_conv<WideString>(const std_wstring_t& a_str_in)
 {
   return WideString(a_str_in.c_str(), a_str_in.size());
 }
+
+#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+template<>
+inline UnicodeString str_conv<UnicodeString>(const std_wstring_t& a_str_in)
+{
+  return UnicodeString(a_str_in.c_str(), a_str_in.size());
+}
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+
 #endif // defined(__BORLANDC__)
 
 //irs_string_t
@@ -173,6 +192,15 @@ inline WideString str_conv<WideString>(const irs_string_t& a_str_in)
 {
   return WideString(AnsiString(a_str_in.c_str()));
 }
+
+#if (__BORLANDC__ >= IRS_CPP_BUILDER2010)
+template<>
+inline UnicodeString str_conv<UnicodeString>(const irs_string_t& a_str_in)
+{
+  return UnicodeString(AnsiString(a_str_in.c_str()));
+}
+#endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
+
 #endif // defined(__BORLANDC__)
 
 
@@ -212,6 +240,8 @@ inline WideString str_conv<WideString>(const std_wstring_t& a_str_in)
 {
   return WideString(a_str_in.c_str(), a_str_in.size());
 }
+
+
 #endif // defined(__BORLANDC__)
 #endif //NOP
 
@@ -294,6 +324,7 @@ inline AnsiString str_conv<AnsiString>(const WideString& a_str_in)
 }
 
 #if (__BORLANDC__ >= IRS_CPP_BUILDER2010)
+// UnicodeString
 template<class T>
 inline T str_conv(const UnicodeString& a_str_in)
 {
@@ -303,9 +334,21 @@ inline T str_conv(const UnicodeString& a_str_in)
 }
 
 template<>
+inline UnicodeString str_conv<UnicodeString>(const UnicodeString& a_str_in)
+{
+  return a_str_in;
+}
+
+template<>
 inline irs_string_t str_conv<irs_string_t>(const UnicodeString& a_str_in)
 {
-  return irs::string(a_str_in.c_str());
+  return irs_string_t(convert_str_t<wchar_t, char>(a_str_in.c_str()).get());
+}
+
+template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
+{
+  return irs_wstring_t(a_str_in.c_str());
 }
 #endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
 #endif // defined(__BORLANDC__)

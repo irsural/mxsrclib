@@ -5,11 +5,15 @@
 #ifndef niusbgpibH
 #define niusbgpibH
 
+//#define UNICODE
+//#include <winsock2.h>
 #include <irsdefs.h>
 
 #if defined(IRS_WIN32)
 #include <winsock2.h>
 #endif // IRS_WIN32
+
+#include <irsstrdefs.h>
 
 #include <irsfinal.h>
 
@@ -18,6 +22,7 @@
 // Класс для работы с National Instruments USB-GPIB
 class ni_usb_gpib_t
 {
+private:
   // Макросы для подключения функций и переменных gpib-32.dll
   #define DEF_DLL_PROC(_LIB_, _PROC_)\
   {\
@@ -125,9 +130,9 @@ public:
   void init()
   {
     if (!f_count_init) {
-      f_Gpib32Lib = LoadLibrary("GPIB-32.DLL");
+      f_Gpib32Lib = LoadLibrary(irst("GPIB-32.DLL"));
       if (!f_Gpib32Lib) {
-        f_Gpib32Lib = LoadLibrary("agtgpib32.dll");
+        f_Gpib32Lib = LoadLibrary(irst("agtgpib32.dll"));
       }                                            
       if (!f_Gpib32Lib) {
         //ShowMessage("Библиотека GPIB-32.DLL не найдена");

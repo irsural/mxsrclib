@@ -198,7 +198,7 @@ private:
   //csv_file_t();
 
 public:   
-  csv_file_t(const string& a_filename = "");
+  csv_file_t(const string_type& a_filename = string_type());
   ~csv_file_t();
   // Выдает текущее состояние выполняемой операции. Значения от 0 до 1
   inline double get_progress();

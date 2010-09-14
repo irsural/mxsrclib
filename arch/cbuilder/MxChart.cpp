@@ -2980,16 +2980,16 @@ irs::chart::color_gen_t::color_gen_t():
   m_colors.push_back(clLime);
   m_colors.push_back(clNavy);
 
-  m_names.push_back("Красный");
-  m_names.push_back("Синий");
-  m_names.push_back("Зеленый");
-  m_names.push_back("Сиреневый");
-  m_names.push_back("Коричневый");
-  m_names.push_back("Розовый");
-  m_names.push_back("Оливковый");
-  m_names.push_back("Голубой");
-  m_names.push_back("Светло-зеленый");
-  m_names.push_back("Темно-синий");
+  m_names.push_back(irst("Красный"));
+  m_names.push_back(irst("Синий"));
+  m_names.push_back(irst("Зеленый"));
+  m_names.push_back(irst("Сиреневый"));
+  m_names.push_back(irst("Коричневый"));
+  m_names.push_back(irst("Розовый"));
+  m_names.push_back(irst("Оливковый"));
+  m_names.push_back(irst("Голубой"));
+  m_names.push_back(irst("Светло-зеленый"));
+  m_names.push_back(irst("Темно-синий"));
 }
 void irs::chart::color_gen_t::start()
 {
@@ -3065,7 +3065,7 @@ set_position(const rect_t &a_position)
   mp_form->Height = a_position.height();
 }
 void irs::chart::builder_chart_window_t::
-add_param(const irs::string &a_name)
+add_param(const string_type &a_name)
 {
   m_data[a_name] = chart_point_t();
   m_data[a_name].vec.push_back(0.);
@@ -3076,7 +3076,7 @@ add_param(const irs::string &a_name)
   mp_form->chart_list_changed();
 }
 void irs::chart::builder_chart_window_t::
-delete_param(const irs::string &a_name)
+delete_param(const string_type &a_name)
 {
   data_t::iterator data_it = m_data.find(a_name);
   if (data_it != m_data.end()) {
@@ -3094,7 +3094,7 @@ clear_param()
   mp_form->chart_list_changed();
 }
 void irs::chart::builder_chart_window_t::
-set_value(const irs::string &a_name, double a_value)
+set_value(const string_type &a_name, double a_value)
 {
   data_t::iterator it = m_data.find(a_name);
   if (it != m_data.end()) {
@@ -3104,7 +3104,7 @@ set_value(const irs::string &a_name, double a_value)
   }
 }
 void irs::chart::builder_chart_window_t::
-set_value(const irs::string &a_name, double a_time, double a_value)
+set_value(const string_type &a_name, double a_time, double a_value)
 {
   data_t::iterator it = m_data.find(a_name);
   if (it != m_data.end()) {
@@ -3137,7 +3137,7 @@ add()
   mp_form->invalidate();
 }
 void irs::chart::builder_chart_window_t::
-add(const irs::string &a_name, double a_time, double a_value)
+add(const string_type &a_name, double a_time, double a_value)
 {
   data_t::iterator it = m_data.find(a_name);
   if (it != m_data.end()) {
@@ -3295,7 +3295,8 @@ next()
     }
   }
 }
-irs::string irs::chart::builder_chart_window_t::unsort_data_t::
+irs::chart::builder_chart_window_t::string_type
+irs::chart::builder_chart_window_t::unsort_data_t::
 name()
 {
   if (unsort_data_it == m_unsort_data.end()) {
@@ -3362,12 +3363,12 @@ TChartForm(const data_t &a_data, chart_event_t &a_event,
   m_colors(),
   m_is_lock(true),
   m_is_chart_list_changed(false),
-  m_base_chart_name(""),
+  m_base_chart_name(irst("")),
   m_unsort_data()
 {
   m_unsort_data.connect(m_data);
 
-  Caption = "График";
+  Caption = irst("График");
   Width = 700;
   Height = 500;
   if (a_stay_on_top == stay_on_top_on) {

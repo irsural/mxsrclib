@@ -540,7 +540,7 @@ inline void table_t<cell_type_t, column_type_t, container_t>::
   m_row_count = 0;
 }
 
-#if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010))
+#if (false /*defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010)*/)
 template <class T>
 class basic_table_string_t: public table_t<
   basic_irs_string_t<T>,
