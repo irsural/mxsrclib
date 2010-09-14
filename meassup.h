@@ -409,8 +409,6 @@ private:
   // Статус текущей операции
   meas_status_t m_status;
 
-  irs::mxdata_ext_t::status_t m_status_modbus;
-
   eth_data_t m_eth_data;
 
   irs::modbus_client_t m_modbus_client;
