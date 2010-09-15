@@ -22,7 +22,8 @@
 //---------------------------------------------------------------------------
 // Конструктор
 csv_file::csv_file():
-  m_lines_writed_count(0),
+  //m_lines_writed_count(0),
+  m_is_first_line(false),
   m_pars(),
   m_vars(),
   //mp_ini_file(0)
@@ -158,7 +159,8 @@ irs_bool csv_file::open(const string_type& file_name)
   if (m_csv_file.is_open()) return irs_true;
   //if (mp_ini_file) return irs_true;
 
-  m_lines_writed_count = 0;
+  //m_lines_writed_count = 0;
+  m_is_first_line = false;
 
   //mp_ini_file = fopen(file_name, "wt");
   m_csv_file.open(file_name.c_str());
@@ -196,11 +198,13 @@ irs_bool csv_file::close()
 // irs_false
 irs_bool csv_file::write_line()
 {
-  // Обработка лимита по количеству строк
-  if (m_lines_writed_count >= max_line_count) return irs_false;
-  m_lines_writed_count++;
+  // (Сейчас лимит выключен) Обработка лимита по количеству строк
+  //if (m_lines_writed_count >= max_line_count) return irs_false;
+  //m_lines_writed_count++;
 
-  if (1 == m_lines_writed_count) {
+  if (m_is_first_line) {
+    m_is_first_line = true;
+
     // Список параметров в начале файла
     for (list_it_type it = m_pars.begin(); it != m_pars.end(); it++) {
       //fprintf(mp_ini_file, "%s", it->first.c_str());

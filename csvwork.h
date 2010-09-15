@@ -23,7 +23,7 @@ typedef enum {ec_i32_type, ec_float_type, ec_str_type} e_val_type;
 typedef void (*dbg_text_out_fn)(const char *dbg_text);
 //---------------------------------------------------------------------------
 // Константы
-const csv_int max_line_count = 30000;
+//const csv_int max_line_count = 30000;
 //---------------------------------------------------------------------------
 // Определения составных типов
 struct var_val_t {
@@ -103,7 +103,8 @@ private:
     }
   };
 
-  csv_int m_lines_writed_count;
+  //csv_int m_lines_writed_count;
+  bool m_is_first_line;
   list_type m_pars;
   list_type m_vars;
   //FILE* mp_ini_file;
