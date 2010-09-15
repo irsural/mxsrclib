@@ -1,5 +1,5 @@
 // Определения для автоматического переключения строк между char и wchar_t
-// Дата: 29.06.2010
+// Дата: 15.09.2010
 // Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
@@ -83,7 +83,10 @@ typedef wchar_t char_t;
 typedef irs_wstring_t string_t;
 typedef wostream ostream_t;
 typedef wistream istream_t;
-typedef wstringstream stringstream_t; 
+typedef wfstream fstream_t;
+typedef wofstream ofstream_t;
+typedef wifstream ifstream_t;
+typedef wstringstream stringstream_t;
 typedef wistringstream istringstream_t;
 typedef wostringstream ostringstream_t;
 
@@ -96,6 +99,11 @@ typedef char char_t;
 typedef irs_string_t string_t;
 typedef ostream ostream_t;
 typedef istream istream_t;
+#ifndef __embedded_cplusplus
+typedef fstream fstream_t;
+#endif // __embedded_cplusplus
+typedef ofstream ofstream_t;
+typedef ifstream ifstream_t;
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #ifndef __embedded_cplusplus
 typedef stringstream stringstream_t;

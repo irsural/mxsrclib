@@ -1,5 +1,5 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 13.08.2010
+// Дата: 15.09.2010
 // Дата создания: 9.09.2009
 
 #ifndef cbsysutilsH
@@ -131,7 +131,7 @@ void table_string_to_string_grid(
 
 //функция добавляет полный адрес в имя файла, если его нет
 //и подставляет введенное расширение(вводить с точкой .ехе), если его нет
-irs_string_t file_path(irs_string_t a_file_name, irs_string_t a_extension = "");
+string_t file_path(string_t a_file_name, string_t a_extension = string_t());
 // Вывод в компонент
 //void out_to_tree_view();
 

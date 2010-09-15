@@ -1,5 +1,5 @@
 // Работа с csv-файлами
-// Дата: 16.05.2010
+// Дата: 15.09.2010
 // Ранняя дата: 17.09.2009
 
 #ifndef csvworkH
@@ -12,6 +12,7 @@
 
 #include <irsstd.h>
 #include <irstable.h>
+#include <irsstrdefs.h>
 
 #include <irsfinal.h>
 
@@ -24,18 +25,54 @@ typedef void (*dbg_text_out_fn)(const char *dbg_text);
 // Константы
 const csv_int max_line_count = 30000;
 //---------------------------------------------------------------------------
-// typedef-определения составных типов
-typedef struct _var_val_t {
+// Определения составных типов
+struct var_val_t {
   union {
     irs_i32 uf_i32_type;
     float uf_float_type;
   };
-  irs::string uf_str_type;
-} var_val_t;
+  irs::string_t uf_str_type;
+};
 //---------------------------------------------------------------------------
 // Класс для работы с csv-файлами
 class csv_file
 {
+public:
+  typedef irs::char_t char_type;
+  typedef irs::string_t string_type;
+  //typedef map_elem_t::reverse_iterator map_elem_revit_t;
+  //typedef reverse_iterator<map_elem_it_t> map_elem_revit_t;
+
+  // Конструкторы и деструкторы
+  csv_file();
+  ~csv_file();
+
+  // Методы
+  // Установка функции для вывода отладочной информации
+  void set_dbg_text_out_fn(dbg_text_out_fn a_dbg_text_out_fn);
+  // Запись переменной, при ошибке возвращает irs_false
+  irs_bool set_var(const string_type& var_name, irs_i32 var_value);
+  irs_bool set_var(const string_type& var_name, float var_value);
+  irs_bool set_var(const string_type& var_name, const string_type& var_value);
+  // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
+  irs_bool add_par(const string_type& par_name, irs_i32 par_value);
+  irs_bool add_par(const string_type& par_name, float par_value);
+  irs_bool add_par(const string_type& par_name, const string_type& par_value);
+  // Добавить название столбца csv-файла, при ошибке возвращает irs_false
+  irs_bool add_col(const string_type& col_name, e_val_type val_type);
+  // Открыть файл name, при ошибке возвращает irs_false
+  irs_bool open(const string_type& file_name);
+  // Закрыть файл
+  irs_bool close();
+  // Запись строки в csv-файл, при превышении количества записей
+  // возвращает irs_false
+  irs_bool write_line();
+
+  // Очистить столбцы
+  void clear_cols();
+  // Очистить переменные
+  void clear_pars();
+
 private:
   struct elem_t {
     e_val_type type;
@@ -49,73 +86,44 @@ private:
       val(a_val)
     {}
   };
+  typedef pair<string_type, elem_t> list_item_type;
+  typedef vector<list_item_type> list_type;
+  typedef list_type::iterator list_it_type;
+
   // Эквивалентность для первого элемента пары
   struct pair_first_equal: public unary_function<string, bool>
   {
-    const string &m_elem_for_find;
-    pair_first_equal(const string &a_elem_for_find):
+    const string_type& m_elem_for_find;
+    pair_first_equal(const string_type& a_elem_for_find):
       m_elem_for_find(a_elem_for_find)
     {}
-    bool operator()(pair<string, elem_t> a_pair) const
+    bool operator()(list_item_type a_pair) const
     {
       return a_pair.first == m_elem_for_find;
     }
   };
 
-  typedef vector<pair<string, elem_t> > map_elem_t;
-  typedef map_elem_t::iterator map_elem_it_t;
-  //typedef map_elem_t::reverse_iterator map_elem_revit_t;
-  //typedef reverse_iterator<map_elem_it_t> map_elem_revit_t;
-
-  csv_int     f_lines_writed_count;
-  map_elem_t  f_pars;
-  map_elem_t  f_vars;
-  FILE*       f_ini_file;
+  csv_int m_lines_writed_count;
+  list_type m_pars;
+  list_type m_vars;
+  //FILE* mp_ini_file;
+  irs::ofstream_t m_csv_file;
 
   // Методы
   // Вывод отладочной информации
-  void dbg_msg(const char *msg);
+  void dbg_msg(const string_type& msg);
   // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-  irs_bool add_par(const char *par_name, e_val_type val_type,
+  irs_bool add_par(const string_type& par_name, e_val_type val_type,
     var_val_t par_value);
   // Запись переменной, при ошибке возвращает irs_false
-  irs_bool set_var(const char *var_name, var_val_t var_value);
-  // Запись в map_elem_t подобно map[]
-  void assign_elem(map_elem_t &a_elem_array, const string &a_name,
+  irs_bool set_var(const string_type& var_name, var_val_t var_value);
+  // Запись в list_type подобно map[]
+  void assign_elem(list_type &a_elem_array, const string_type& a_name,
     const elem_t &a_elem);
-  // Поиск елемента в map_elem_t
-  map_elem_it_t find_elem(map_elem_t &a_elem_array, const string &a_name);
+  // Поиск елемента в list_type
+  list_it_type find_elem(list_type &a_elem_array,
+    const string_type& a_name);
 
-public:
-  // Конструкторы и деструкторы
-  csv_file();
-  ~csv_file();
-
-  // Методы
-  // Установка функции для вывода отладочной информации
-  void set_dbg_text_out_fn(dbg_text_out_fn a_dbg_text_out_fn);
-  // Запись переменной, при ошибке возвращает irs_false
-  irs_bool set_var(const char *var_name, irs_i32 var_value);
-  irs_bool set_var(const char *var_name, float var_value);
-  irs_bool set_var(const char *var_name, const char *var_value);
-  // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-  irs_bool add_par(const char *par_name, irs_i32 par_value);
-  irs_bool add_par(const char *par_name, float par_value);
-  irs_bool add_par(const char *par_name, const char *par_value);
-  // Добавить название столбца csv-файла, при ошибке возвращает irs_false
-  irs_bool add_col(const char *col_name, e_val_type val_type);
-  // Открыть файл name, при ошибке возвращает irs_false
-  irs_bool open(const char *file_name);
-  // Закрыть файл
-  irs_bool close();
-  // Запись строки в csv-файл, при превышении количества записей
-  // возвращает irs_false
-  irs_bool write_line();
-
-  // Очистить столбцы
-  void clear_cols();
-  // Очистить переменные
-  void clear_pars();
 }; //csv_file
 //---------------------------------------------------------------------------
 

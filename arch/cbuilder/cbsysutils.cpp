@@ -1,5 +1,5 @@
 // Функции для работы с компонентами C++Builder
-// Дата: 14.04.2010
+// Дата: 15.09.2010
 // Дата создания: 3.12.2009
 
 #include <irspch.h>
@@ -66,24 +66,6 @@ bool irs::cbuilder::file_version_t::operator!=(
   return !operator==(a_file_version);
 }
 
-irs::irs_string_t irs::cbuilder::file_path(irs_string_t a_file_name,
-  irs_string_t a_extension)
-{
-  irs_string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
-  irs_string_t file_name = a_file_name;
-
-  if (find(a_file_name.begin(), a_file_name.end(), '\\') ==
-    a_file_name.end())
-  {
-    file_name = ExePath + file_name;
-  }
-  if (find(a_file_name.begin(), a_file_name.end(), '.') ==
-    a_file_name.end())
-  {
-    file_name = file_name + a_extension;
-  }
-  return file_name;
-}
 // Запрос версии файла
 bool irs::cbuilder::get_file_version(
   const irs::string_t& a_file_name, irs::cbuilder::file_version_t& a_version)
@@ -455,6 +437,22 @@ void irs::cbuilder::table_string_to_string_grid(
   }
 }
 
+irs::string_t irs::cbuilder::file_path(string_t a_file_name,
+  string_t a_extension)
+{
+  string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
+  string_t file_name = a_file_name;
 
-
+  if (find(a_file_name.begin(), a_file_name.end(), '\\') ==
+    a_file_name.end())
+  {
+    file_name = ExePath + file_name;
+  }
+  if (find(a_file_name.begin(), a_file_name.end(), '.') ==
+    a_file_name.end())
+  {
+    file_name = file_name + a_extension;
+  }
+  return file_name;
+}
 

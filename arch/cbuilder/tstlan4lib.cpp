@@ -1,5 +1,5 @@
 // Тест сети 4 - библиотека
-// Дата: 13.09.2010
+// Дата: 15.09.2010
 // Дата создания: 17.09.2009
 
 #include <irspch.h>
@@ -66,14 +66,6 @@ irs::tstlan4_t::tstlan4_t(
 // На предыдущей форме все компоненты уничтожаются
 void irs::tstlan4_t::init(TForm *ap_form)
 {
-  #ifdef NOP
-  ostringstream stream;
-  stream << 17;
-  string strnum = stream.str();
-  ShowMessage(strnum.c_str());
-  //const char* cstr = stream.str().c_str();
-  #endif //NOP
-
   irs::chart::builder_chart_window_t::stay_on_top_t stay_on_top =
     irs::chart::builder_chart_window_t::stay_on_top_on;
   if (m_form_type == ft_internal) {
@@ -341,15 +333,13 @@ void irs::tstlan4_t::controls_t::tick()
           if (chart_list->Strings[row] == "1") {
             if (!m_chart_names[chart_name]) {
               m_chart_names[chart_name] = true;
-              mp_chart->add_param(
-                IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
+              mp_chart->add_param(chart_name);
             }
           } else {
             #ifdef NOP
             if (m_chart_names[chart_name]) {
               m_chart_names[chart_name] = false;
-              mp_chart->delete_param(
-                IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
+              mp_chart->delete_param(chart_name);
             }
             #endif //NOP
           }
@@ -360,20 +350,18 @@ void irs::tstlan4_t::controls_t::tick()
         if (chart_list->Strings[row] == "1") {
           int var_index = row - m_header_size;
           string_type chart_name = name_list->Strings[row].c_str();
-          mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
-            chart_time, var_to_double(var_index));
+          mp_chart->add(chart_name, chart_time, var_to_double(var_index));
           if (m_first) {
             creation_csv();
             m_first = false;
           }
           string_type csv_names = name_list->Strings[row].c_str();
           if (m_csv_names[csv_names] && (m_is_created_csv)) {
-            m_csv_file.set_var("Time",
-              irsstr_from_number_russian(char(), m_timer.get()).c_str());
+            m_csv_file.set_var(irst("Time"),
+              irsstr_from_number_russian(char_t(), m_timer.get()));
             double value = var_to_double(var_index);
-            String value_str = FloatToStr(value);
-            m_csv_file.set_var(IRS_SIMPLE_FROM_TYPE_STR(csv_names.c_str()),
-              IRS_SIMPLE_FROM_TYPE_STR(value_str.c_str()));
+            string_type value_str = FloatToStr(value).c_str();
+            m_csv_file.set_var(csv_names, value_str);
           }
         }
       }
@@ -625,30 +613,29 @@ void irs::tstlan4_t::controls_t::save_grid_row(int a_row)
 void irs::tstlan4_t::controls_t::creation_csv()
 {
   m_timer.start();
-  irs_string_t file_name = file_name_time(".csv");
-  irs_string_t ExePath = ExtractFilePath(Application->ExeName).c_str();
-  irs_string_t path =  ExePath + "Out\\";
+  string_type file_name = file_name_time(irst(".csv"));
+  string_type ExePath = ExtractFilePath(Application->ExeName).c_str();
+  string_type path =  ExePath + irst("Out\\");
   MkDir(path.c_str());
-  irs_string_t path_file = cbuilder::file_path(path + file_name, ".csv");
-  if (!m_csv_file.open(path_file.c_str())) {
-    MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
-  } else {
+  string_type path_file = cbuilder::file_path(path + file_name, irst(".csv"));
+  if (m_csv_file.open(path_file)) {
     m_is_created_csv = true;
     TStrings* name_list = mp_vars_grid->Cols[m_name_col];
     TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];
     int row_count = mp_vars_grid->RowCount;
-    m_csv_file.add_col("Time", ec_str_type);
+    m_csv_file.add_col(irst("Time"), ec_str_type);
     for (int row = m_header_size; row < row_count; row++) {
       string_type csv_names = name_list->Strings[row].c_str();
       m_csv_names[csv_names] = false;
-      if (chart_list->Strings[row] == "1") {
+      if (chart_list->Strings[row] == irst("1")) {
         if (!m_csv_names[csv_names]) {
           m_csv_names[csv_names] = true;
-          m_csv_file.add_col(IRS_SIMPLE_FROM_TYPE_STR(csv_names.c_str()),
-            ec_str_type);
+          m_csv_file.add_col(csv_names, ec_str_type);
         }
       }
     }
+  } else {
+    MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
   }
 }
 void __fastcall irs::tstlan4_t::controls_t::VarsGridGetEditText(
@@ -750,7 +737,7 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     for (size_t col_index = 1; col_index < col_size; col_index++) {
       string_type chart_name = m_table.read_cell(col_index, 0);
       if (!m_chart_names[chart_name]) {
-        mp_chart->add_param(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()));
+        mp_chart->add_param(chart_name);
       }
       for (size_t row_index = 1; row_index < row_size; row_index++) {
         string_type value = m_table.read_cell(col_index, row_index);
@@ -761,8 +748,7 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
           string_type time =  m_table.read_cell(0, row_index);
           double delta_time =  time_chart +
             static_cast<double>(StrToFloat(time.c_str())) - time_zero;
-          mp_chart->add(IRS_SIMPLE_FROM_TYPE_STR(chart_name.c_str()),
-            delta_time,
+          mp_chart->add(chart_name, delta_time,
             static_cast<double>(StrToFloat(value.c_str())));
         }
         is_null = false;

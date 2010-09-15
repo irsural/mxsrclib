@@ -1,5 +1,5 @@
 // Работа с csv-файлами
-// Дата: 16.05.2010
+// Дата: 15.09.2010
 // Ранняя дата: 17.09.2009
 
 #include <irspch.h>
@@ -22,10 +22,11 @@
 //---------------------------------------------------------------------------
 // Конструктор
 csv_file::csv_file():
-  f_lines_writed_count(0),
-  f_pars(),
-  f_vars(),
-  f_ini_file(0)
+  m_lines_writed_count(0),
+  m_pars(),
+  m_vars(),
+  //mp_ini_file(0)
+  m_csv_file()
 {
 }
 //---------------------------------------------------------------------------
@@ -34,12 +35,12 @@ csv_file::~csv_file()
 {
 }
 //---------------------------------------------------------------------------
-// Запись в map_elem_t подобно map[]
-void csv_file::assign_elem(map_elem_t &a_elem_array, const string &a_name,
-  const elem_t &a_elem)
+// Запись в list_type подобно map[]
+void csv_file::assign_elem(list_type &a_elem_array,
+  const string_type& a_name, const elem_t &a_elem)
 {
-  string name_str = a_name;
-  map_elem_it_t it = find_if(a_elem_array.begin(), a_elem_array.end(),
+  string_type name_str = a_name;
+  list_it_type it = find_if(a_elem_array.begin(), a_elem_array.end(),
     pair_first_equal(name_str));
   if (it == a_elem_array.end()) {
     a_elem_array.push_back(make_pair(name_str, a_elem));
@@ -49,15 +50,15 @@ void csv_file::assign_elem(map_elem_t &a_elem_array, const string &a_name,
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::add_par(const char *par_name, e_val_type val_type,
+irs_bool csv_file::add_par(const string_type& par_name, e_val_type val_type,
   var_val_t par_value)
 {
-  assign_elem(f_pars, par_name, elem_t(val_type, par_value));
+  assign_elem(m_pars, par_name, elem_t(val_type, par_value));
   return irs_true;
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::add_par(const char *par_name, irs_i32 par_value)
+irs_bool csv_file::add_par(const string_type& par_name, irs_i32 par_value)
 {
   var_val_t par_value_vvt;
   par_value_vvt.uf_i32_type = par_value;
@@ -65,7 +66,7 @@ irs_bool csv_file::add_par(const char *par_name, irs_i32 par_value)
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::add_par(const char *par_name, float par_value)
+irs_bool csv_file::add_par(const string_type& par_name, float par_value)
 {
   var_val_t par_value_vvt;
   par_value_vvt.uf_float_type = par_value;
@@ -73,29 +74,30 @@ irs_bool csv_file::add_par(const char *par_name, float par_value)
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::add_par(const char *par_name, const char *par_value)
+irs_bool csv_file::add_par(const string_type& par_name,
+  const string_type& par_value)
 {
   var_val_t par_value_vvt;
   par_value_vvt.uf_str_type = par_value;
   return add_par(par_name, ec_float_type, par_value_vvt);
 }
 //---------------------------------------------------------------------------
-// Поиск елемента в map_elem_t
-csv_file::map_elem_it_t csv_file::find_elem(map_elem_t &a_elem_array,
-  const string &a_name)
+// Поиск елемента в list_type
+csv_file::list_it_type csv_file::find_elem(list_type &a_elem_array,
+  const string_type& a_name)
 {
-  string name_str = a_name;
+  string_type name_str = a_name;
   return find_if(a_elem_array.begin(), a_elem_array.end(),
     pair_first_equal(name_str));
 }
 //---------------------------------------------------------------------------
 // Запись переменной, при ошибке возвращает irs_false
-irs_bool csv_file::set_var(const char *var_name, var_val_t var_value)
+irs_bool csv_file::set_var(const string_type& var_name, var_val_t var_value)
 {
-  //map_elem_it_t it = f_vars.find(var_name);
-  map_elem_it_t it = find_elem(f_vars, var_name);
+  //list_it_type it = m_vars.find(var_name);
+  list_it_type it = find_elem(m_vars, var_name);
 
-  if (it != f_vars.end()) {
+  if (it != m_vars.end()) {
     switch (it->second.type) {
       case ec_i32_type:
         it->second.val.uf_i32_type = var_value.uf_i32_type;
@@ -118,7 +120,7 @@ irs_bool csv_file::set_var(const char *var_name, var_val_t var_value)
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::set_var(const char *var_name, irs_i32 var_value)
+irs_bool csv_file::set_var(const string_type& var_name, irs_i32 var_value)
 {
   var_val_t var_value_vvt;
   var_value_vvt.uf_i32_type = var_value;
@@ -126,7 +128,7 @@ irs_bool csv_file::set_var(const char *var_name, irs_i32 var_value)
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::set_var(const char *var_name, float var_value)
+irs_bool csv_file::set_var(const string_type& var_name, float var_value)
 {
   var_val_t var_value_vvt;
   var_value_vvt.uf_float_type = var_value;
@@ -134,7 +136,8 @@ irs_bool csv_file::set_var(const char *var_name, float var_value)
 }
 //---------------------------------------------------------------------------
 // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::set_var(const char *var_name, const char *var_value)
+irs_bool csv_file::set_var(const string_type& var_name,
+  const string_type& var_value)
 {
   var_val_t var_value_vvt;
   var_value_vvt.uf_str_type = var_value;
@@ -142,22 +145,24 @@ irs_bool csv_file::set_var(const char *var_name, const char *var_value)
 }
 //---------------------------------------------------------------------------
 // Добавить название столбца csv-файла, при ошибке возвращает irs_false
-irs_bool csv_file::add_col(const char *col_name, e_val_type val_type)
+irs_bool csv_file::add_col(const string_type& col_name, e_val_type val_type)
 {
-  //f_vars[col_name] = elem_t(val_type, var_val_t());
-  assign_elem(f_vars, col_name, elem_t(val_type, var_val_t()));
+  //m_vars[col_name] = elem_t(val_type, var_val_t());
+  assign_elem(m_vars, col_name, elem_t(val_type, var_val_t()));
   return irs_true;
 }
 //---------------------------------------------------------------------------
 // Открыть файл name, при ошибке возвращает irs_false
-irs_bool csv_file::open(const char *file_name)
+irs_bool csv_file::open(const string_type& file_name)
 {
-  if (f_ini_file) return irs_true;
+  if (m_csv_file.is_open()) return irs_true;
+  //if (mp_ini_file) return irs_true;
 
-  f_lines_writed_count = 0;
+  m_lines_writed_count = 0;
 
-  f_ini_file = fopen(file_name, "wt");
-  if (!f_ini_file) goto _error;
+  //mp_ini_file = fopen(file_name, "wt");
+  m_csv_file.open(file_name.c_str());
+  if (!m_csv_file) goto _error;
 
   return irs_true;
 
@@ -168,13 +173,22 @@ irs_bool csv_file::open(const char *file_name)
 // Закрыть файл
 irs_bool csv_file::close()
 {
-  if (f_ini_file) {
-    if (!fclose(f_ini_file)) {
-      f_ini_file = NULL;
+  #ifndef NOP
+  if (m_csv_file.is_open()) {
+    m_csv_file.close();
+    if (!m_csv_file) {
+      return irs_false;
+    }
+  }
+  #else //NOP
+  if (mp_ini_file) {
+    if (!fclose(mp_ini_file)) {
+      mp_ini_file = NULL;
     } else {
       return irs_false;
     }
   }
+  #endif //NOP
   return irs_true;
 }
 //---------------------------------------------------------------------------
@@ -183,16 +197,18 @@ irs_bool csv_file::close()
 irs_bool csv_file::write_line()
 {
   // Обработка лимита по количеству строк
-  if (f_lines_writed_count >= max_line_count) return irs_false;
-  f_lines_writed_count++;
+  if (m_lines_writed_count >= max_line_count) return irs_false;
+  m_lines_writed_count++;
 
-  if (1 == f_lines_writed_count) {
+  if (1 == m_lines_writed_count) {
     // Список параметров в начале файла
-    for (map_elem_it_t it = f_pars.begin(); it != f_pars.end(); it++) {
-      fprintf(f_ini_file, "%s", it->first.c_str());
+    for (list_it_type it = m_pars.begin(); it != m_pars.end(); it++) {
+      //fprintf(mp_ini_file, "%s", it->first.c_str());
+      m_csv_file << it->first;
       switch (it->second.type) {
         case ec_i32_type: {
-          fprintf(f_ini_file, ";%ld\n", it->second.val.uf_i32_type);
+          //fprintf(mp_ini_file, ";%ld\n", it->second.val.uf_i32_type);
+          m_csv_file << it->second.val.uf_i32_type;
         } break;
         case ec_float_type: {
           ostrstream strm;
@@ -200,32 +216,38 @@ irs_bool csv_file::write_line()
           char *sbeg = strm.str();
           char *send = sbeg + strm.pcount();
           replace(sbeg, send, '.', ',');
-          fprintf(f_ini_file, sbeg);
+          //fprintf(mp_ini_file, sbeg);
+          m_csv_file << IRS_TYPE_FROM_SIMPLE_STR(sbeg);
           strm.rdbuf()->freeze(false);
         } break;
         case ec_str_type: {
-          fprintf(f_ini_file, ";%s\n", it->second.val.uf_str_type.c_str());
+          //fprintf(mp_ini_file, ";%s\n", it->second.val.uf_str_type.c_str());
+          m_csv_file << it->second.val.uf_str_type;
         }  break;
         default: {
           //int invalid_type = 0;
           //assert(invalid_type);
         } break;
       }
-      fprintf(f_ini_file, "*\n");
+      //fprintf(mp_ini_file, "*\n");
+      m_csv_file << irst("\n");
     }
 
     // Строка с названиями переменных
-    for (map_elem_it_t it = f_vars.begin(); it != f_vars.end(); it++) {
-      fprintf(f_ini_file, "%s;", it->first.c_str());
+    for (list_it_type it = m_vars.begin(); it != m_vars.end(); it++) {
+      //fprintf(mp_ini_file, "%s;", it->first.c_str());
+      m_csv_file << it->first;
     }
-    fprintf(f_ini_file, "\n");
+    //fprintf(mp_ini_file, "\n");
+    m_csv_file << irst('\n');
   }
 
   // Строка со значениями переменных
-  for (map_elem_it_t it = f_vars.begin(); it != f_vars.end(); it++) {
+  for (list_it_type it = m_vars.begin(); it != m_vars.end(); it++) {
     switch (it->second.type) {
       case ec_i32_type: {
-        fprintf(f_ini_file, "%ld;", it->second.val.uf_i32_type);
+        //fprintf(mp_ini_file, "%ld;", it->second.val.uf_i32_type);
+        m_csv_file << it->second.val.uf_i32_type;
       } break;
       case ec_float_type: {
         ostrstream strm;
@@ -233,11 +255,13 @@ irs_bool csv_file::write_line()
         char *sbeg = strm.str();
         char *send = sbeg + strm.pcount();
         replace(sbeg, send, '.', ',');
-        fprintf(f_ini_file, sbeg);
+        //fprintf(mp_ini_file, sbeg);
+        m_csv_file << IRS_TYPE_FROM_SIMPLE_STR(sbeg);
         strm.rdbuf()->freeze(false);
       } break;
       case ec_str_type: {
-        fprintf(f_ini_file, "%s;", it->second.val.uf_str_type.c_str());
+        //fprintf(mp_ini_file, "%s;", it->second.val.uf_str_type.c_str());
+        m_csv_file << it->second.val.uf_str_type;
       } break;
       default: {
         //int invalid_type = 0;
@@ -245,7 +269,8 @@ irs_bool csv_file::write_line()
       } break;
     }
   }
-  fprintf(f_ini_file, "\n");
+  //fprintf(mp_ini_file, "\n");
+  m_csv_file << irst('\n');
 
   return true;
 }
@@ -253,13 +278,13 @@ irs_bool csv_file::write_line()
 // Очистить столбцы
 void csv_file::clear_cols()
 {
-  f_vars.clear();
+  m_vars.clear();
 }
 //---------------------------------------------------------------------------
 // Очистить столбцы
 void csv_file::clear_pars()
 {
-  f_pars.clear();
+  m_pars.clear();
 }
 //---------------------------------------------------------------------------
 

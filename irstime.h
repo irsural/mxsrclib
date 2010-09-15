@@ -1,5 +1,5 @@
 // Работа со временем
-// Дата: 13.08.2010
+// Дата: 15.09.2010
 // Ранняя дата: 10.07.2009
 
 #ifndef irstimeH
@@ -8,6 +8,7 @@
 #include <irsdefs.h>
 
 #include <irsstring.h>
+#include <irsstrdefs.h>
 #include <timer.h>
 
 #include <irsfinal.h>
@@ -32,7 +33,7 @@ millisecond_t system_time();
 IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
 //возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
 //расширение вводить с точкой
-irs_string_t file_name_time(irs_string_t a_extension = irs_string_t());
+string_t file_name_time(string_t a_extension = string_t());
 
 } //namespace irs
 

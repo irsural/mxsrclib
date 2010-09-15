@@ -1,5 +1,5 @@
 // Работа со временем
-// Дата: 20.09.2009
+// Дата: 15.09.2010
 // Ранняя дата: 10.07.2009
 
 #include <irspch.h>
@@ -72,7 +72,7 @@ IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_strm)
   return a_strm;
 }
 
-irs::irs_string_t irs::file_name_time(irs_string_t a_extension)
+irs::string_t irs::file_name_time(string_t a_extension)
 {
   const tm* data;
   time_t timer = time(NULL);
@@ -84,9 +84,10 @@ irs::irs_string_t irs::file_name_time(irs_string_t a_extension)
   stream<<setw(2)<<data->tm_mday<<' ';
   stream<<setw(2)<<data->tm_hour;
   stream<<setw(2)<<data->tm_min;
-  stream<<setw(2)<<data->tm_sec<<a_extension<<'\0';
+  stream<<setw(2)<<data->tm_sec;
+  stream << IRS_SIMPLE_FROM_TYPE_STR(a_extension.c_str()) << '\0';
   irs_string_t file_name_time = stream.str();
   stream.rdbuf()->freeze(false);
-  return file_name_time;
+  return IRS_TYPE_FROM_SIMPLE_STR(file_name_time.c_str());
 }
 
