@@ -803,14 +803,17 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
     a_sampling_time_s : m_sampling_time_default;
   const double aperture = sampling_time/2.0;
   irs_string_t aperture_str = aperture;
+  //num_to_str_classic(aperture, &aperture_str);
   const irs_string_t aper_cmd = "APER " + aperture_str;
+  irs::string_t s = aperture;
   m_commands.push_back(aper_cmd);
   irs_string_t sampling_time_str = sampling_time;
   const double interval = (a_interval_s >= 0) ? a_interval_s : 0;
   const size_type sample_count =
     static_cast<size_type>(ceil(interval/sampling_time + 0.5));
   //const size_type sample_count = static_cast<size_type>(m_need_samples_count);
-  irs_string_t sample_count_str = sample_count;
+  irs_string_t sample_count_str;
+  num_to_str_classic(sample_count, &sample_count_str);
   const irs_string_t sweep_cmd = "SWEEP " + sampling_time_str + ", " +
     sample_count_str;
   m_commands.push_back(sweep_cmd);
@@ -823,7 +826,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   //m_commands.push_back("TRIG AUTO");
   //m_commands.push_back("TARM SYN");
   //m_commands.push_back("TRIG SYN");
-  mp_hardflow->set_param("read_timeout", "3");
+  mp_hardflow->set_param(irst("read_timeout"), irst("3"));
 
 
   /*m_commands.push_back("NRDGS 10, TIMER");
