@@ -70,7 +70,11 @@ irs::param_box_t::param_box_t(
   } else {
     m_ini_file.set_ini_name(a_ini_name.c_str());
   }
-  m_ini_file.set_section(m_ini_section.c_str());
+  if (m_ini_section == irst("")) {
+    m_ini_file.set_section(def_ini_section());
+  } else {
+    m_ini_file.set_section(m_ini_section.c_str());
+  }
   m_ini_file.add(a_prefix_name.c_str(), mp_value_list_editor);
   m_ini_file.load();
   
