@@ -1048,6 +1048,7 @@ private:
         
     // —читываемые значени€:
     conn_data_t<double> meas_value;
+    conn_data_t<double> meas_value_not_filtered;
     //bit_data_t out_of_range;
   
     eth_mul_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
@@ -1077,6 +1078,7 @@ private:
       index = filter_order.connect(ap_data, index);
             
       index = meas_value.connect(ap_data, index);
+      index = meas_value_not_filtered.connect(ap_data, index);
       
       return index;
     }

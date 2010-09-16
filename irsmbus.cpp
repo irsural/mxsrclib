@@ -432,6 +432,10 @@ irs::modbus_server_t::modbus_server_t(
   mlog() << irsm("SERVER START!") << endl;
 }
 
+irs::modbus_server_t::~modbus_server_t()
+{
+}
+
 char const IRS_CSTR_NONVOLATILE irs::modbus_server_t::m_read_header_mode[] =
   "read_header_mode";
 char const IRS_CSTR_NONVOLATILE irs::modbus_server_t::m_read_request_mode[] =

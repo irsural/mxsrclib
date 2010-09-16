@@ -2253,7 +2253,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
 ):
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 0, 37, 4, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
+    0, 0, 37, 8, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
   m_eth_mul_data(),
   m_status(meas_status_success),
   mp_value(IRS_NULL),

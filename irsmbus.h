@@ -111,7 +111,7 @@ public:
     size_t a_input_regs_reg = 7,
     counter_t a_disconnect_time = make_cnt_s(2)
   );
-  virtual ~modbus_server_t() {}
+  virtual ~modbus_server_t();
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
