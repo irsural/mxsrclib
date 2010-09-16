@@ -761,7 +761,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_buf_receive(),
   m_samples(),
   m_filtered_values(),
-  m_sampling_time_default(25e-6),   
+  m_nplc_coef(20e-3),
+  m_sampling_time_default(25e-6),
+  m_sampling_time(25e-6),
+  m_interval(0),
+  m_need_receive_data_size(0),
   m_initialization_complete(false),
   m_coefficient_receive_ok(false),
   m_coefficient(0),
@@ -778,62 +782,20 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_command_terminator[1] = 0x0A;
 
   m_commands.push_back("RESET");
-  //m_commands.push_back("INBUF ON");
-  //m_commands.push_back("BEEP");
-  //m_commands.push_back("TARM HOLD");
-  //m_commands.push_back("TRIG HOLD");
   m_commands.push_back("PRESET DIG");
-
-  //m_commands.push_back("DISP ON");
-  //m_commands.push_back("MFORMAT SINT");
-  //m_commands.push_back("OFORMAT SINT");
-  //m_commands.push_back("DCV 10");
-  //m_commands.push_back("EXTOUT SRQ, POS");
-  //m_commands.push_back("EXTOUT ICOMP, NEG");
-  //m_commands.push_back("BEEP");
-  //m_commands.push_back("OFORMAT DREAL");
-  //m_commands.push_back("BEEP");
   m_commands.push_back("MEM OFF");
-  //m_commands.push_back("DSDC 100");
-  //m_commands.push_back("DELAY 2");
-  //m_commands.push_back("APER 1E-6");
-  //m_commands.push_back("TRIG LEVEL");
-  //m_commands.push_back("LEVEL 0, DC");
-  const double sampling_time = (a_sampling_time_s > 0) ?
+
+  m_sampling_time = (a_sampling_time_s > 0) ?
     a_sampling_time_s : m_sampling_time_default;
-  const double aperture = sampling_time/2.0;
-  irs_string_t aperture_str = aperture;
-  //num_to_str_classic(aperture, &aperture_str);
-  const irs_string_t aper_cmd = "APER " + aperture_str;
-  irs::string_t s = aperture;
-  m_commands.push_back(aper_cmd);
-  irs_string_t sampling_time_str = sampling_time;
-  const double interval = (a_interval_s >= 0) ? a_interval_s : 0;
-  const size_type sample_count =
-    static_cast<size_type>(ceil(interval/sampling_time + 0.5));
-  //const size_type sample_count = static_cast<size_type>(m_need_samples_count);
-  irs_string_t sample_count_str;
-  num_to_str_classic(sample_count, &sample_count_str);
-  const irs_string_t sweep_cmd = "SWEEP " + sampling_time_str + ", " +
-    sample_count_str;
-  m_commands.push_back(sweep_cmd);
-
+  const double aperture = m_sampling_time/10.0;
+  m_commands.push_back(make_aper_cmd(aperture));
+  m_interval = (a_interval_s >= 0) ? a_interval_s : 0;
+  // Округляем по правилам математики
+  const size_type sample_count = get_sample_count(m_sampling_time, m_interval);
+  m_need_receive_data_size = sample_count * sizeof(irs_u16);
+  m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
   m_commands.push_back("ISCALE?");
-  //m_commands.push_back("BEEP");
-  //m_commands.push_back("BEEP");
-
-  //m_commands.push_back("TIMER 10E-6");
-  //m_commands.push_back("TRIG AUTO");
-  //m_commands.push_back("TARM SYN");
-  //m_commands.push_back("TRIG SYN");
   mp_hardflow->set_param(irst("read_timeout"), irst("3"));
-
-
-  /*m_commands.push_back("NRDGS 10, TIMER");
-  m_commands.push_back("TIMER 1E-2");*/
-  //m_commands.push_back("BEEP");
-  //m_commands.push_back("BEEP");
-  //m_commands.push_back("TRIG AUTO");
 }
 irs::agilent_3458a_digitizer_t::~agilent_3458a_digitizer_t()
 {
@@ -1003,8 +965,6 @@ T flip_data(const T& a_data)
 void irs::agilent_3458a_digitizer_t::tick()
 {
   IRS_LIB_ASSERT(mp_hardflow);
-  
-  //Sleep(2000);
   mp_hardflow->tick();
   commands_to_buf_send();
   if (!m_buf_send.empty()) {
@@ -1025,13 +985,10 @@ void irs::agilent_3458a_digitizer_t::tick()
     (m_status == meas_status_busy) &&
     (m_buf_receive.size() == static_cast<size_type>(m_need_receive_data_size)))
   {
-
     m_samples.clear();
     m_filtered_values.clear();
-    const size_type order = 10;
-    vector<fade_data_t> fade_data_array(order);
-    //double y = 0.;
-    const size_type sample_count = static_cast<size_type>(m_need_samples_count);
+    const size_type sample_count =
+      get_sample_count(m_sampling_time, m_interval);
     for (size_type samples_i = 0; samples_i < sample_count; samples_i++) {
       typedef irs_u16 mul_data_t;
       const irs_u16 multim_value = reinterpret_cast<mul_data_t&>(
@@ -1049,23 +1006,6 @@ void irs::agilent_3458a_digitizer_t::tick()
     m_iir_filter.sync(sko_calc.average());
     m_filtered_values.resize(sample_count);
     for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-      /*if (samples_i == 0) {
-        // Предустанавливаем цепочку
-        const size_type sample_count = m_samples.size();
-        irs::sko_calc_t<double, double> sko_calc(sample_count);
-        for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-          sko_calc.add(m_samples[sample_i]);
-        }
-        for (size_type order_i = 0; order_i < order; order_i++) {
-          fade_data_array[order_i].x1 = sko_calc.average();
-          fade_data_array[order_i].y1 = sko_calc.average();
-          fade_data_array[order_i].t = 0.1/20e-6;
-        }
-      }*/
-      /*y = sample;
-      for (size_type order_i = 0; order_i < order; order_i++) {
-        y = fade(&fade_data_array[order_i], y);
-      }*/
       m_iir_filter.set(m_samples[sample_i]);
       m_filtered_values[sample_i] = static_cast<double>(m_iir_filter.get());
     }
@@ -1079,12 +1019,12 @@ void irs::agilent_3458a_digitizer_t::tick()
     irs::measure_time_t measure_time;
     #endif // IRS_LIB_DEBUG
 
-    const size_type buf_receive_cur_size =  m_buf_receive.size();
+    const size_type buf_receive_cur_size = m_buf_receive.size();
     m_buf_receive.resize(static_cast<size_type>(m_need_receive_data_size));
     const size_type read_size = mp_hardflow->read(
       mp_hardflow->channel_next(), m_buf_receive.data() + buf_receive_cur_size,
-      m_need_receive_data_size - buf_receive_cur_size);
-    m_buf_receive.resize(buf_receive_cur_size + read_size);                 
+        m_need_receive_data_size - buf_receive_cur_size);
+    m_buf_receive.resize(buf_receive_cur_size + read_size);
     IRS_LIB_DBG_MSG_IF(read_size > 0, "Прочитано = " << read_size);
   } else {
 
@@ -1097,7 +1037,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       irs_string_t coefficient_str = buf.substr(0, pos);
       if (str_to_num_classic(coefficient_str, &m_coefficient)) {
         m_buf_receive.clear();
-        mp_hardflow->set_param("read_timeout", "100");
+        mp_hardflow->set_param(irst("read_timeout"), irst("100"));
         m_commands.push_back("TARM SYN");
         m_commands.push_back("TRIG SYN");
         m_initialization_complete = true;
@@ -1112,8 +1052,18 @@ void irs::agilent_3458a_digitizer_t::tick()
   }
 }
 // Установка времени интегрирования в периодах частоты сети (20 мс)
-void irs::agilent_3458a_digitizer_t::set_nplc(double /*nplc*/)
+void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)
 {
+  if (m_status != meas_status_busy) {
+    m_interval = nplc*m_nplc_coef;
+    const size_type sample_count =
+      get_sample_count(m_sampling_time, m_interval);
+    m_need_receive_data_size = sample_count*sizeof(irs_u16);
+    m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
+    m_status = meas_status_success;
+  } else {
+    IRS_LIB_ERROR(irs::ec_standard, "Предыдущая операция еще не завершена");
+  }
 }
 // Установка времени интегрирования в c
 void irs::agilent_3458a_digitizer_t::set_aperture(double /*aperture*/)
@@ -1164,6 +1114,31 @@ void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
     }
   }
   m_commands.clear();
+}
+
+irs::agilent_3458a_digitizer_t::size_type
+irs::get_sample_count(const double a_sampling_time, const double a_interval)
+{
+  typedef agilent_3458a_digitizer_t::size_type size_type;
+  return static_cast<size_type>(floor(a_interval/a_sampling_time + 0.5));
+}
+
+irs::irs_string_t irs::make_sweep_cmd(const double a_sampling_time,
+  const size_t a_sample_count)
+{
+  irs_string_t sampling_time_str;
+  num_to_str_classic(a_sampling_time, &sampling_time_str);
+  irs_string_t sample_count_str;
+  num_to_str_classic(a_sample_count, &sample_count_str);
+  return irs_string_t("SWEEP " + sampling_time_str + ", " +
+    sample_count_str);
+}
+
+irs::irs_string_t irs::make_aper_cmd(const double a_aperture)
+{
+  irs_string_t aperture_str;
+  num_to_str_classic(a_aperture, &aperture_str);
+  return irs_string_t("APER " + aperture_str);
 }
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT

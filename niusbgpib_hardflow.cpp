@@ -225,7 +225,8 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
     }
     const int debug_ibcntl = mp_ni_usb_gpib->get_ibcntl();
     m_write_buf.erase(m_write_buf.data(),
-      m_write_buf.data() + mp_ni_usb_gpib->get_ibcntl());
+      m_write_buf.data() + min(m_write_buf.size(),
+      static_cast<size_t>(mp_ni_usb_gpib->get_ibcntl())));
     if (write_status & ERR) {
       IRS_LIB_ASSERT("Ошибка при асинхронной операции записи");
     } else {

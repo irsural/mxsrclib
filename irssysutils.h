@@ -161,7 +161,21 @@ void num_to_str_classic(const N& a_num, S* ap_str)
 {
   typename base_str_type<S>::type base_str;
   number_to_string_classic(a_num, &base_str);
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  S str = str_conv<S>(base_str);
+  const S::value_type dot_ch = '.';
+  const S dot_str = dot_ch;
+  const S::value_type comma_ch = ',';
+  S::size_type pos = str.find(comma_ch);
+  while (pos != S::npos) {
+    str.replace(pos, 1, dot_str);
+    pos = str.find(comma_ch, pos + 1);
+  }
+  //str.find
+  *ap_str = str;
+  #else // !(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   *ap_str = str_conv<S>(base_str);
+  #endif
 }
 
 inline bool string_to_number_is_range_valid(int a_num)

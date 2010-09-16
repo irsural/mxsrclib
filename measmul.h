@@ -415,6 +415,7 @@ public:
   virtual void set_range_auto();
 private:
   void commands_to_buf_send();
+
   irs::hardflow_t* mp_hardflow;
   filter_settings_t m_filter_settings;
   iir_filter_t<math_value_type> m_iir_filter;
@@ -425,9 +426,13 @@ private:
   raw_data_t<irs_u8> m_buf_receive;
   raw_data_t<double> m_samples;
   raw_data_t<double> m_filtered_values;
-  enum { m_need_samples_count = 1500000 };
-  enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
+  //enum { m_need_samples_count = 1500000 };
+  //enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
+  const double m_nplc_coef;
   const double m_sampling_time_default;
+  double m_sampling_time;
+  double m_interval;
+  size_type m_need_receive_data_size;
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;
   double m_coefficient;
@@ -435,6 +440,12 @@ private:
   meas_status_t m_status;
   irs::timer_t m_delay_timer;
 }; // class agilent_3458a_digitizer_t
+
+agilent_3458a_digitizer_t::size_type
+get_sample_count(const double a_sampling_time, const double a_interval);
+irs_string_t make_sweep_cmd(const double sampling_time,
+  const agilent_3458a_digitizer_t::size_type a_sample_count);
+irs_string_t make_aper_cmd(const double a_aperture);
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
