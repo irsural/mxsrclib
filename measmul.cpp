@@ -2224,6 +2224,7 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
 irs::ni_pxi_4071_t::ni_pxi_4071_t(
   hardflow_t* ap_hardflow,
   const filter_settings_t& a_filter,
+  const double a_sampling_time_s,
   counter_t a_update_time
 ):
   mp_hardflow(ap_hardflow),
@@ -2239,14 +2240,9 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_eth_mul_data.connect(&m_modbus_client, 0);
 
   m_eth_mul_data.meas_mode = high_speed;
+  m_eth_mul_data.samples_per_sec = 1/a_sampling_time_s;
   
-  //if (a_filter != filter_settings_t()) {
-  const irs_u8* p_user_struct = reinterpret_cast<const irs_u8*>(&a_filter);
-  filter_settings_t default_struct = zero_struct_t<filter_settings_t>::get();
-  irs_u8* p_default_struct = reinterpret_cast<irs_u8*>(&default_struct);
-  if (!equal(p_user_struct, p_user_struct + sizeof(a_filter),
-    p_default_struct))
-  {
+  if (a_filter != zero_struct_t<filter_settings_t>::get()) {
     m_eth_mul_data.filter_type = m_filter.family;
     m_eth_mul_data.filter_order = static_cast<irs_u8>(m_filter.order);
     m_eth_mul_data.sampling_freq = 1/m_filter.sampling_time_s;

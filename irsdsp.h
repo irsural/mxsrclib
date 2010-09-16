@@ -1127,6 +1127,25 @@ struct filter_settings_t {
   }
 };
 
+inline bool operator==(filter_settings_t a_fs_first,
+  filter_settings_t a_fs_second)
+{
+  return ((a_fs_first.family == a_fs_second.family) &&
+    (a_fs_first.bandform == a_fs_second.bandform) &&
+    (a_fs_first.order == a_fs_second.order) &&
+    (a_fs_first.sampling_time_s == a_fs_second.sampling_time_s) &&
+    (a_fs_first.low_cutoff_freq_hz == a_fs_second.low_cutoff_freq_hz) &&
+    (a_fs_first.high_cutoff_freq_hz == a_fs_second.high_cutoff_freq_hz) &&
+    (a_fs_first.passband_ripple_db == a_fs_second.passband_ripple_db) &&
+    (a_fs_first.stopband_ripple_db == a_fs_second.stopband_ripple_db));
+}
+
+inline bool operator!=(filter_settings_t a_fs_first,
+  filter_settings_t a_fs_second)
+{
+  return !(a_fs_first == a_fs_second);
+}
+
 } //namespace irs
 
 #endif //irsdspH

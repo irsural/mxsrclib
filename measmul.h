@@ -971,6 +971,7 @@ public:
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     const filter_settings_t& a_filter = zero_struct_t<filter_settings_t>::get(),
+    const double a_sampling_time_s = 1/1.8e6,
     counter_t a_update_time = make_cnt_ms(200)
   );
   ~ni_pxi_4071_t();
