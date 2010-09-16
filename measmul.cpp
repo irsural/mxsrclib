@@ -2248,7 +2248,7 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
 // Класс для работы с мультиметром National Instruments PXI-4071
 irs::ni_pxi_4071_t::ni_pxi_4071_t(
   hardflow_t* ap_hardflow,
-  filter_settings_t* ap_filter,
+  filter_settings_t a_filter,
   counter_t a_update_time
 ):
   mp_hardflow(ap_hardflow),
@@ -2259,9 +2259,18 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   mp_value(IRS_NULL),
   m_abort_request(false),
   m_mode(start_mode),
-  mp_filter(ap_filter)
+  m_filter(a_filter)
 {
   m_eth_mul_data.connect(&m_modbus_client, 0);
+
+  m_eth_mul_data.meas_mode = high_speed;
+  
+  m_eth_mul_data.filter_type = m_filter.family;
+  m_eth_mul_data.filter_order = static_cast<irs_u8>(m_filter.order);
+  m_eth_mul_data.sampling_freq = 1/m_filter.sampling_time_s;
+  m_eth_mul_data.low_cutoff_freq = m_filter.low_cutoff_freq_hz;
+  m_eth_mul_data.passband_ripple = m_filter.passband_ripple_db;
+  m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;
 }
 
 irs::ni_pxi_4071_t::~ni_pxi_4071_t()
@@ -2406,7 +2415,7 @@ void irs::ni_pxi_4071_t::tick()
   }
   switch(m_eth_mul_data.meas_mode)
   {
-    case precision:
+    case digitizer:
     {
       // range, meas_type, (nplc/aperture), resolution
     } break;
@@ -2536,7 +2545,11 @@ void irs::ni_pxi_4071_t::set_range(type_meas_t a_type_meas, double a_range)
 
 void irs::ni_pxi_4071_t::set_range_auto()
 {
-  m_eth_mul_data.range = auto_range;
+  if (m_eth_mul_data.meas_mode == digitizer) {
+    m_eth_mul_data.range = auto_range;
+  } else {
+    // digitizer mode: auto_range not supported
+  }
 }
 
 irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()

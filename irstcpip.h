@@ -1,5 +1,5 @@
 // UDP/IP-стек
-// Дата: 22.06.2010
+// Дата: 23.07.2010
 // дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
@@ -215,6 +215,10 @@ public:
   void active_open_tcp();
   void passive_open_tcp();
   void close_tcp();
+  void tcp_init();
+  bool tcp_connect(irs_size_t a_socket, irs_u16 a_local_port,
+    mxip_t a_dest_ip, irs_u16 a_dest_port);
+  bool tcp_listen(irs_size_t a_socket, irs_u16 a_port);
   
   bool is_write_complete();
   void write(mxip_t a_dest_ip, irs_u16 a_dest_port,
@@ -240,7 +244,8 @@ public:
     send_ACK_SYN,
     send_ACK,
     send_FIN,
-    send_DATA
+    send_DATA,
+    send_RST
   };
   enum tcp_state_t {
     CLOSED,
@@ -270,27 +275,39 @@ private:
     mxip_t remote_ip;
     irs_u16 remote_port;
     irs_u16 local_port;
+    irs_u32 send_unacked;
+    irs_u32 send_next;
+    irs_u32 receive_next;
     
     tcp_socket_t():
       socket(invalid_socket),
-      state(LISTEN),
+      state(CLOSED),
       remote_ip(mxip_t::zero_ip()),
       remote_port(0),
-      local_port(0)
+      local_port(0),
+      send_unacked(0),
+      send_next(0),
+      receive_next(0)
     {
     }
     tcp_socket_t(
-      irs_size_t a_socket_num,
+      irs_size_t a_socket_number,
       tcp_state_t a_state,
       mxip_t a_remote_ip,
       irs_u16 a_remote_port,
-      irs_u16 a_local_port
+      irs_u16 a_local_port,
+      irs_u32 a_send_unacked,
+      irs_u32 a_send_next,
+      irs_u32 a_receive_next
     ):
-      socket(a_socket_num),
+      socket(a_socket_number),
       state(a_state),
       remote_ip(a_remote_ip),
       remote_port(a_remote_port),
-      local_port(a_local_port)
+      local_port(a_local_port),
+      send_unacked(a_send_unacked),
+      send_next(a_send_next),
+      receive_next(a_receive_next)
     {
     }
     bool operator==(tcp_socket_t a_tcp_socket)
@@ -378,6 +395,9 @@ private:
   irs_size_t m_list_index;
   irs_size_t m_cur_socket;
   irs_size_t m_tcp_options_size;
+  irs_u32 m_tcp_init_seq;
+  timer_t m_disconnect_timer;
+  loop_timer_t m_base_timer;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
@@ -385,9 +405,9 @@ private:
   irs_u16 check_sum_udp(irs_size_t a_count, irs_u8* a_addr);
   irs_u16 check_sum_tcp(irs_size_t a_count, irs_u8* a_addr);
   void arp_request(mxip_t a_dest_ip);
-  void arp_response(void);
+  void arp_response();
   void arp();
-  void send_arp(void);
+  void send_arp();
   void icmp_packet();
   void send_icmp();
   void icmp();
@@ -397,7 +417,7 @@ private:
   void client_udp();
   void udp();
   void tcp();
-  void ip(void);
+  void ip();
   void tcp_packet();
   void server_tcp();
   void client_tcp();
@@ -407,6 +427,9 @@ private:
   void view_sockets_list();
   void view_tcp_packet(irs_u8* ap_buf);
   void tcp_send_control(send_mode_t a_send_mode);
+  void tcp_close();
+  void socket_close();
+  irs_size_t get_tcp_connection();
 };
 
 } //namespace irs

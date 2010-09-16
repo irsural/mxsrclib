@@ -947,8 +947,8 @@ public:
     digits_6_5,
     digits_7_5
   };
-  enum { // meas_type
-    precision,
+  enum { // meas_mode
+    digitizer,
     high_speed
   };
   enum { // intergation time units
@@ -959,8 +959,8 @@ public:
   
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
-    filter_settings_t* ap_filter,
-    counter_t a_update_time
+    filter_settings_t a_filter = filter_settings_t(),
+    counter_t a_update_time = make_cnt_ms(200)
   );
   ~ni_pxi_4071_t();
   // ”становить режим измерени€ посто€нного напр€жени€
@@ -1089,7 +1089,7 @@ private:
   double* mp_value;
   bool m_abort_request;
   mode_t m_mode;
-  filter_settings_t* mp_filter;
+  filter_settings_t m_filter;
 };
 
 } //namespace irs
