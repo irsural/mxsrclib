@@ -2379,6 +2379,7 @@ void irs::ni_pxi_4071_t::tick()
     {
       *mp_value = m_eth_mul_data.meas_value;
       m_mode = stop_mode;
+      m_status = meas_status_success;
     } break;
     case stop_mode:
     {
