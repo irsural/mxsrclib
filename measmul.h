@@ -51,11 +51,20 @@ bool str_to_type_meas(
 enum multimeter_mode_type_t {mul_mode_type_active, mul_mode_type_passive};
 
 enum multimeter_param_t {
+  // Исходные значения
   mul_param_source_values,
+  // Отфильтрованные значения
   mul_param_filtered_values,
+  // Стандартное оклонение
   mul_param_standard_deviation,
+  // Стаднартное относительное отклонение
   mul_param_standard_deviation_relative,
-  mul_param_variation
+  // Вариация
+  mul_param_variation,
+  // Относительная вариация
+  mul_param_sampling_time_s,
+  // Настройки фильтра
+  mul_param_filter_settings
 };
 
 // Абстрактный базовый класс для работы с мультиметрами
@@ -432,6 +441,8 @@ private:
   const double m_sampling_time_default;
   double m_sampling_time;
   double m_interval;
+  double m_new_interval;
+  bool m_interval_changed;
   size_type m_need_receive_data_size;
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;
