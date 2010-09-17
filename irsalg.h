@@ -175,6 +175,7 @@ public:
   void clear();
   void array_size(size_t a_count);
   T average();
+  T relative();
   size_t size();
 private:
   deque<T> m_array;
@@ -258,6 +259,16 @@ T irs::delta_calc_t<T>::average()
     size = 1;
   }
   return sum/size;
+}
+template <class T>
+T irs::delta_calc_t<T>::relative()
+{
+  T aver =
+    average();
+  if (aver == 0) {
+    aver = 1;
+  }
+  return delta()/aver;
 }
 template <class T>
 size_t irs::delta_calc_t<T>::size()
