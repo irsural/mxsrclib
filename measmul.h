@@ -62,6 +62,8 @@ enum multimeter_param_t {
   // Вариация
   mul_param_variation,
   // Относительная вариация
+  mul_param_variation_relative,
+  // Время дискретизации
   mul_param_sampling_time_s,
   // Настройки фильтра
   mul_param_filter_settings
@@ -442,7 +444,7 @@ private:
   double m_sampling_time;
   double m_interval;
   double m_new_interval;
-  bool m_interval_changed;
+  event_t m_interval_change_event;
   size_type m_need_receive_data_size;
   bool m_initialization_complete;
   bool m_coefficient_receive_ok;

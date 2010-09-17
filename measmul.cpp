@@ -765,6 +765,8 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_sampling_time_default(25e-6),
   m_sampling_time(25e-6),
   m_interval(0),
+  m_new_interval(0),
+  m_interval_change_event(),
   m_need_receive_data_size(0),
   m_initialization_complete(false),
   m_coefficient_receive_ok(false),
@@ -863,7 +865,15 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
 void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
   const irs::raw_data_t<irs_u8> &a_value)
 {
-  // Игнорируем
+  switch (a_param) {
+    case mul_param_sampling_time_s: {
+    } break;
+    case mul_param_filter_settings: {
+    } break;
+    default : {
+      // Игнорируем
+    }
+  }
 }
 bool irs::agilent_3458a_digitizer_t::is_param_exists(
   const multimeter_param_t a_param) const
@@ -1029,6 +1039,20 @@ void irs::agilent_3458a_digitizer_t::tick()
   } else {
 
   }
+  if (m_status != meas_status_busy) {
+    if (m_interval_change_event.check()) {
+      m_interval = m_new_interval;
+      const size_type sample_count =
+        get_sample_count(m_sampling_time, m_interval);
+      m_need_receive_data_size = sample_count*sizeof(irs_u16);
+      m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
+    } else {
+      // Интервал не изменен
+    }
+
+  } else {
+    // Ожидаем окончания предыдущей операции
+  }
   if (!m_initialization_complete) {
     std_string_t buf(reinterpret_cast<char*>(m_buf_receive.data()),
       m_buf_receive.size());
@@ -1054,16 +1078,8 @@ void irs::agilent_3458a_digitizer_t::tick()
 // Установка времени интегрирования в периодах частоты сети (20 мс)
 void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)
 {
-  if (m_status != meas_status_busy) {
-    m_interval = nplc*m_nplc_coef;
-    const size_type sample_count =
-      get_sample_count(m_sampling_time, m_interval);
-    m_need_receive_data_size = sample_count*sizeof(irs_u16);
-    m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
-    m_status = meas_status_success;
-  } else {
-    IRS_LIB_ERROR(irs::ec_standard, "Предыдущая операция еще не завершена");
-  }
+  m_interval_change_event.exec();
+  m_new_interval = nplc*m_nplc_coef;
 }
 // Установка времени интегрирования в c
 void irs::agilent_3458a_digitizer_t::set_aperture(double /*aperture*/)
