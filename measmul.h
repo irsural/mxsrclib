@@ -19,6 +19,7 @@
 #include <irsmbus.h>
 #include <irsfilter.h>
 #include <irsdsp.h>
+#include <irsint.h>
 
 #include <irsfinal.h>
 
@@ -66,7 +67,16 @@ enum multimeter_param_t {
   // Время дискретизации
   mul_param_sampling_time_s,
   // Настройки фильтра
-  mul_param_filter_settings
+  mul_param_filter_settings,
+  // Формат отсчетов
+  mul_param_sample_format,
+  mul_param_count
+};
+
+enum mul_sample_format_t {
+  mul_sample_format_str,
+  mul_sample_format_int16,
+  mul_sample_format_int32
 };
 
 // Абстрактный базовый класс для работы с мультиметрами
@@ -437,16 +447,26 @@ private:
   raw_data_t<irs_u8> m_buf_receive;
   raw_data_t<double> m_samples;
   raw_data_t<double> m_filtered_values;
-  //enum { m_need_samples_count = 1500000 };
-  //enum { m_need_receive_data_size = m_need_samples_count * sizeof(irs_u16) };
   const double m_nplc_coef;
   const double m_sampling_time_default;
+  const double m_interval_default;
+  const size_type m_iscale_byte_count;
+  size_type m_sample_size;
   double m_sampling_time;
   double m_interval;
   double m_new_interval;
   event_t m_interval_change_event;
+  double m_new_sampling_time;
+  event_t m_sampling_time_s_change_event;
+  filter_settings_t m_new_filter_settings;
+  event_t m_filter_settings_change_event;
+  double m_new_range;
+  event_t m_range_change_event;
+  mul_sample_format_t m_new_sample_format;
+  event_t m_sample_format_change_event;
   size_type m_need_receive_data_size;
   bool m_initialization_complete;
+  bool m_set_settings_complete;
   bool m_coefficient_receive_ok;
   double m_coefficient;
   double* mp_value;
@@ -454,11 +474,22 @@ private:
   irs::timer_t m_delay_timer;
 }; // class agilent_3458a_digitizer_t
 
-agilent_3458a_digitizer_t::size_type
-get_sample_count(const double a_sampling_time, const double a_interval);
-irs_string_t make_sweep_cmd(const double sampling_time,
-  const agilent_3458a_digitizer_t::size_type a_sample_count);
-irs_string_t make_aper_cmd(const double a_aperture);
+template <class SAMLE_TYPE>
+void multimeter_data_to_sample_array(const raw_data_t<irs_u8>& a_data,
+  const double a_coefficient, raw_data_t<double>* ap_samples)
+{
+  typedef size_t size_type;
+  const size_type sample_count = a_data.size()/sizeof(SAMLE_TYPE);
+  ap_samples->resize(sample_count);
+  for (size_type samples_i = 0; samples_i < sample_count; samples_i++) {
+    typedef SAMLE_TYPE mul_data_t;
+    const mul_data_t multim_value = *reinterpret_cast<const mul_data_t*>(
+      (a_data.data() + (samples_i*sizeof(SAMLE_TYPE))));
+    const double sample = flip_data(multim_value)*a_coefficient;
+    //ap_samples->resize(ap_samples->size() + 1);
+    (*ap_samples)[samples_i] = sample;
+  }
+}
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 

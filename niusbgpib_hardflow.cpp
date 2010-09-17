@@ -13,6 +13,14 @@
 
 #if defined(IRS_WIN32)
 
+namespace {
+
+double time_s_normalize(const double a_time_s);
+
+int time_s_to_timecode(const double a_time_s);
+
+} // empty namespace
+
 // class ni_usb_gpib_flow_t
 irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   const size_type a_board_index,
@@ -200,8 +208,13 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
     if ((read_status & ERR) ||
       !m_write_buf.empty() ||
       session_read_timeout) {
-
-      IRS_DBG_MSG("Чтение прервано");
+      if (read_status & ERR) {
+        IRS_DBG_MSG("Чтение прервано по причине ошибки при записи");
+      } else if (!m_write_buf.empty()) {
+        IRS_DBG_MSG("Чтение прервано, потому что есть данные на отправку");
+      } else {
+        IRS_DBG_MSG("Чтение прервано по тайм-ауту");
+      }
     } else {
       IRS_DBG_MSG("Чтение завершено");
     }
@@ -405,7 +418,9 @@ void irs::hardflow::ni_usb_gpib_flow_syn_t::tick()
 
 }
 
-double irs::hardflow::time_s_normalize(const double a_time_s)
+namespace {
+
+double time_s_normalize(const double a_time_s)
 {
   double time_normalize = 0.;
   if (a_time_s > 1000.) {
@@ -452,7 +467,7 @@ double irs::hardflow::time_s_normalize(const double a_time_s)
   return time_normalize;
 }
 
-int irs::hardflow::time_s_to_timecode(const double a_time_s)
+int time_s_to_timecode(const double a_time_s)
 {
   int timecode = TNONE;
   if (a_time_s > 1000.) {
@@ -498,5 +513,7 @@ int irs::hardflow::time_s_to_timecode(const double a_time_s)
   }
   return timecode;
 }
+
+} // empty namespace
 
 #endif // defined(IRS_WIN32)

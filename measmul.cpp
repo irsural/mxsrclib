@@ -745,6 +745,28 @@ void mx_agilent_3458a_t::set_range_auto()
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
+namespace {
+
+double sampling_time_normalize(const double a_sampling_time,
+  const double a_sampling_time_default);
+double interval_normalize(const double a_interval,
+  const double a_interval_default);
+irs::filter_settings_t filter_settings_normalize(
+  const irs::filter_settings_t a_filter_settings,
+  const irs::filter_settings_t a_filter_settings_default);
+mul_sample_format_t sample_format_normalize(
+  const mul_sample_format_t a_sample_format);
+double range_normalize(const double a_range);
+irs::agilent_3458a_digitizer_t::size_type
+get_sample_count(const double a_sampling_time, const double a_interval);
+double get_aperture(const double a_sampling_time);
+irs::irs_string_t make_sweep_cmd(const double sampling_time,
+  const irs::agilent_3458a_digitizer_t::size_type a_sample_count);
+irs::irs_string_t make_aperture_cmd(const double a_aperture);
+irs::irs_string_t make_range_cmd(const double a_range);
+
+} // empty namespace
+
 // Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   irs::hardflow_t* ap_hardflow,
@@ -763,17 +785,29 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_filtered_values(),
   m_nplc_coef(20e-3),
   m_sampling_time_default(25e-6),
+  m_interval_default(30),
+  m_iscale_byte_count(30),
+  m_sample_size(sizeof(irs_u16)),
   m_sampling_time(25e-6),
   m_interval(0),
   m_new_interval(0),
   m_interval_change_event(),
-  m_need_receive_data_size(0),
+  m_new_sampling_time(0),
+  m_sampling_time_s_change_event(),
+  m_new_filter_settings(),
+  m_filter_settings_change_event(),
+  m_new_range(10),
+  m_range_change_event(),
+  m_new_sample_format(mul_sample_format_int16),
+  m_sample_format_change_event(),
+  m_need_receive_data_size(m_iscale_byte_count),
   m_initialization_complete(false),
+  m_set_settings_complete(false),
   m_coefficient_receive_ok(false),
   m_coefficient(0),
   mp_value(IRS_NULL),
   m_status(meas_status_success),
-  m_delay_timer(irs::make_cnt_s(0))
+  m_delay_timer(irs::make_cnt_ms(1))
 {
   IRS_LIB_ERROR_IF(a_sampling_time_s <= 0, ec_standard,
     "Период дискретизации должен быть положительным числом");
@@ -787,14 +821,13 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_commands.push_back("PRESET DIG");
   m_commands.push_back("MEM OFF");
 
-  m_sampling_time = (a_sampling_time_s > 0) ?
-    a_sampling_time_s : m_sampling_time_default;
-  const double aperture = m_sampling_time/10.0;
-  m_commands.push_back(make_aper_cmd(aperture));
-  m_interval = (a_interval_s >= 0) ? a_interval_s : 0;
+  m_sampling_time = sampling_time_normalize(a_sampling_time_s,
+    m_sampling_time_default);
+  const double aperture = get_aperture(m_sampling_time);
+  m_commands.push_back(make_aperture_cmd(aperture));
+  m_interval = interval_normalize(a_interval_s, m_interval_default);
   // Округляем по правилам математики
   const size_type sample_count = get_sample_count(m_sampling_time, m_interval);
-  m_need_receive_data_size = sample_count * sizeof(irs_u16);
   m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
   m_commands.push_back("ISCALE?");
   mp_hardflow->set_param(irst("read_timeout"), irst("3"));
@@ -867,8 +900,37 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
 {
   switch (a_param) {
     case mul_param_sampling_time_s: {
+      if (sizeof(double) == a_value.size()) {
+        m_new_sampling_time = sampling_time_normalize(
+          *reinterpret_cast<const double*>(a_value.data()),
+          m_sampling_time_default);
+        m_sampling_time_s_change_event.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_sampling_time_s");
+      }
     } break;
     case mul_param_filter_settings: {
+      if (sizeof(filter_settings_t) == a_value.size()) {
+        filter_settings_t filter_settings =
+          *reinterpret_cast<const filter_settings_t*>(a_value.data());
+        m_new_filter_settings = filter_settings_normalize(filter_settings,
+          filter_settings);
+        m_filter_settings_change_event.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_filter_settings");
+      }
+    } break;
+    case mul_param_sample_format: {
+      if (sizeof(mul_sample_format_t) == a_value.size()) {
+        m_new_sample_format = sample_format_normalize(
+          *reinterpret_cast<const mul_sample_format_t*>(a_value.data()));
+        m_sample_format_change_event.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_filter_settings");
+      }
     } break;
     default : {
       // Игнорируем
@@ -999,15 +1061,23 @@ void irs::agilent_3458a_digitizer_t::tick()
     m_filtered_values.clear();
     const size_type sample_count =
       get_sample_count(m_sampling_time, m_interval);
-    for (size_type samples_i = 0; samples_i < sample_count; samples_i++) {
-      typedef irs_u16 mul_data_t;
-      const irs_u16 multim_value = reinterpret_cast<mul_data_t&>(
-        *(m_buf_receive.data() + (samples_i * sizeof(irs_u16))));
-      double sample = flip_data(multim_value) * m_coefficient;
-      m_samples.resize(m_samples.size() + 1);
-      m_samples[m_samples.size() - 1] = sample;
+    m_samples.reserve(sample_count);
+    if (m_sample_size == sizeof(irs_u16)) {
+      multimeter_data_to_sample_array<irs_u16>(m_buf_receive, m_coefficient,
+        &m_samples);
+      /*for (size_type samples_i = 0; samples_i < sample_count; samples_i++) {
+        typedef irs_u16 mul_data_t;
+        const irs_u16 multim_value = reinterpret_cast<mul_data_t&>(
+          *(m_buf_receive.data() + (samples_i * sizeof(irs_u16))));
+        double sample = flip_data(multim_value) * m_coefficient;
+        m_samples.resize(m_samples.size() + 1);
+        m_samples[m_samples.size() - 1] = sample;
+      }*/
+    } else {
+      multimeter_data_to_sample_array<irs_u32>(m_buf_receive, m_coefficient,
+        &m_samples);
     }
-
+    m_buf_receive.clear();
     irs::sko_calc_t<math_value_type, math_value_type> sko_calc(sample_count);
     for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
       sko_calc.add(m_samples[sample_i]);
@@ -1024,7 +1094,9 @@ void irs::agilent_3458a_digitizer_t::tick()
   } else {
     // Недостаточно данных для формирования результата
   }
-  if ((m_status == meas_status_busy) && m_buf_send.empty()) {
+  if (((m_status == meas_status_busy) || !m_coefficient_receive_ok) &&
+    m_buf_send.empty()) {
+
     #ifdef IRS_LIB_DEBUG
     irs::measure_time_t measure_time;
     #endif // IRS_LIB_DEBUG
@@ -1044,16 +1116,64 @@ void irs::agilent_3458a_digitizer_t::tick()
       m_interval = m_new_interval;
       const size_type sample_count =
         get_sample_count(m_sampling_time, m_interval);
-      m_need_receive_data_size = sample_count*sizeof(irs_u16);
+      m_need_receive_data_size = sample_count*m_sample_size;
       m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
     } else {
       // Интервал не изменен
     }
-
+    if (m_sampling_time_s_change_event.check()) {
+      m_sampling_time = m_new_sampling_time;
+      const double aperture = get_aperture(m_sampling_time);
+      m_commands.push_back(make_aperture_cmd(aperture));
+      const size_type sample_count = get_sample_count(m_sampling_time,
+        m_interval);
+      m_need_receive_data_size = sample_count*m_sample_size;
+      m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
+      m_commands.push_back("TARM HOLD");
+      m_commands.push_back("ISCALE?");
+      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
+      m_need_receive_data_size = m_iscale_byte_count;
+      m_coefficient_receive_ok = false;
+    } else {
+      // Время дискретизации не изменено
+    }
+    if (m_filter_settings_change_event.check()) {
+      m_filter_settings = m_new_filter_settings;
+    } else {
+      // Параметры фильтра не изменены
+    }
+    if (m_sample_format_change_event.check()) {
+      if (m_new_sample_format == mul_sample_format_int16) {
+        m_sample_size = sizeof(irs_u16);
+        m_commands.push_back("MFORMAT SINT");
+        m_commands.push_back("OFORMAT SINT");
+      } else {
+        m_sample_size = sizeof(irs_u32);
+        m_commands.push_back("MFORMAT DINT");
+        m_commands.push_back("OFORMAT DINT");
+      }
+      m_commands.push_back("TARM HOLD");
+      m_commands.push_back("ISCALE?");
+      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
+      m_need_receive_data_size = m_iscale_byte_count;
+      m_coefficient_receive_ok = false;
+    } else {
+      // Формат отсчетов не изменен
+    }
+    if (m_range_change_event.check()) {
+      m_commands.push_back(make_range_cmd(m_new_range));
+      m_commands.push_back("TARM HOLD");
+      m_commands.push_back("ISCALE?");
+      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
+      m_need_receive_data_size = m_iscale_byte_count;
+      m_coefficient_receive_ok = false;
+    } else {
+      // Диапазон не изменился
+    }
   } else {
     // Ожидаем окончания предыдущей операции
   }
-  if (!m_initialization_complete) {
+  if (!m_initialization_complete || !m_coefficient_receive_ok) {
     std_string_t buf(reinterpret_cast<char*>(m_buf_receive.data()),
       m_buf_receive.size());
     size_type pos = buf.find("\r\n");
@@ -1062,8 +1182,15 @@ void irs::agilent_3458a_digitizer_t::tick()
       if (str_to_num_classic(coefficient_str, &m_coefficient)) {
         m_buf_receive.clear();
         mp_hardflow->set_param(irst("read_timeout"), irst("100"));
+
+        //if (!m_initialization_complete) {
+
+        //}
         m_commands.push_back("TARM SYN");
         m_commands.push_back("TRIG SYN");
+        m_need_receive_data_size =
+          get_sample_count(m_sampling_time, m_interval)*m_sample_size;
+        m_coefficient_receive_ok = true;
         m_initialization_complete = true;
       } else {
         IRS_LIB_ASSERT_MSG("Значение коэффициента считать не удалось");
@@ -1078,9 +1205,10 @@ void irs::agilent_3458a_digitizer_t::tick()
 // Установка времени интегрирования в периодах частоты сети (20 мс)
 void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)
 {
+  m_new_interval = interval_normalize(nplc*m_nplc_coef, m_interval_default);
   m_interval_change_event.exec();
-  m_new_interval = nplc*m_nplc_coef;
 }
+
 // Установка времени интегрирования в c
 void irs::agilent_3458a_digitizer_t::set_aperture(double /*aperture*/)
 {
@@ -1098,9 +1226,11 @@ void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
 {
 }
 // Установка диапазона измерений
-void irs::agilent_3458a_digitizer_t::set_range(type_meas_t /*a_type_meas*/,
-  double /*a_range*/)
+void irs::agilent_3458a_digitizer_t::set_range(type_meas_t a_type_meas,
+  double a_range)
 {
+  m_new_range = range_normalize(a_range);
+  m_range_change_event.exec();
 }
 // Установка автоматического выбора диапазона измерений
 void irs::agilent_3458a_digitizer_t::set_range_auto()
@@ -1132,30 +1262,103 @@ void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
   m_commands.clear();
 }
 
-irs::agilent_3458a_digitizer_t::size_type
-irs::get_sample_count(const double a_sampling_time, const double a_interval)
+namespace {
+
+double sampling_time_normalize(const double a_sampling_time,
+  const double a_sampling_time_default)
 {
-  typedef agilent_3458a_digitizer_t::size_type size_type;
+  return (a_sampling_time > 0) ? a_sampling_time : a_sampling_time_default;
+}
+
+double interval_normalize(const double a_interval,
+  const double a_interval_default)
+{
+  return (a_interval > 0) ? a_interval : a_interval_default;
+}
+
+irs::filter_settings_t filter_settings_normalize(
+  const irs::filter_settings_t a_filter_settings,
+  const irs::filter_settings_t a_filter_settings_default)
+{
+  irs::filter_settings_t filter_settings_normal;
+  if ((a_filter_settings.family == irs::ff_chebyshev_ripple_stop) ||
+    (a_filter_settings.order <= 0)) {
+    filter_settings_normal = a_filter_settings_default;
+  } else {
+    filter_settings_normal = a_filter_settings;
+  }
+  return filter_settings_normal;
+}
+
+mul_sample_format_t sample_format_normalize(
+  const mul_sample_format_t a_sample_format)
+{
+  mul_sample_format_t mul_sample_format = mul_sample_format_int16;
+  if ((a_sample_format == mul_sample_format_int16) ||
+    (a_sample_format == mul_sample_format_int32)) {
+
+    mul_sample_format = a_sample_format;
+  } else {
+    // Возвращаем стандартное значение
+  }
+  return mul_sample_format;
+}
+
+double range_normalize(const double a_range)
+{
+  double range = 0;
+  if (a_range >= 1000) {
+    range = 1000.0;
+  } else if (a_range >= 100) {
+    range = 100.0;
+  } else if (a_range >= 10) {
+    range = 10.0;
+  } else if (a_range >= 1) {
+    range = 1.0;
+  } else {
+    range = 0.1;
+  }
+  return range;
+}
+
+irs::agilent_3458a_digitizer_t::size_type
+get_sample_count(const double a_sampling_time, const double a_interval)
+{
+  typedef irs::agilent_3458a_digitizer_t::size_type size_type;
   return static_cast<size_type>(floor(a_interval/a_sampling_time + 0.5));
 }
 
-irs::irs_string_t irs::make_sweep_cmd(const double a_sampling_time,
+double get_aperture(const double a_sampling_time)
+{
+  return a_sampling_time/10.0;
+}
+
+irs::irs_string_t make_sweep_cmd(const double a_sampling_time,
   const size_t a_sample_count)
 {
-  irs_string_t sampling_time_str;
+  irs::irs_string_t sampling_time_str;
   num_to_str_classic(a_sampling_time, &sampling_time_str);
-  irs_string_t sample_count_str;
+  irs::irs_string_t sample_count_str;
   num_to_str_classic(a_sample_count, &sample_count_str);
-  return irs_string_t("SWEEP " + sampling_time_str + ", " +
+  return irs::irs_string_t("SWEEP " + sampling_time_str + ", " +
     sample_count_str);
 }
 
-irs::irs_string_t irs::make_aper_cmd(const double a_aperture)
+irs::irs_string_t make_aperture_cmd(const double a_aperture)
 {
-  irs_string_t aperture_str;
+  irs::irs_string_t aperture_str;
   num_to_str_classic(a_aperture, &aperture_str);
-  return irs_string_t("APER " + aperture_str);
+  return irs::irs_string_t("APER " + aperture_str);
 }
+
+irs::irs_string_t make_range_cmd(const double a_range)
+{
+  irs::irs_string_t range_str;
+  num_to_str_classic(a_range, &range_str);
+  return irs::irs_string_t("RANGE " + range_str);
+}
+
+} // empty namespace
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -2557,4 +2760,4 @@ irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
 }
 
 //---------------------------------------------------------------------------
-//#pragma package(smart_init)
+

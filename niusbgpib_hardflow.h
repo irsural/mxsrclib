@@ -111,10 +111,6 @@ private:
   double m_write_timeout;
 };
 
-double time_s_normalize(const double a_time_s);
-
-int time_s_to_timecode(const double a_time_s);
-
 #endif // defined(IRS_WIN32)
 
 } // namespace hardflow_t
