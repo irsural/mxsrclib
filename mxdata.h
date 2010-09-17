@@ -468,9 +468,11 @@ void raw_data_t<T>::reserve_raw(size_type a_capacity)
   size_type new_capacity = a_capacity;
   pointer new_data =
     IRS_LIB_NEW_ASSERT(value_type[new_capacity], MXDATAH_IDX);
+
   size_type new_size = min(new_capacity, m_size);
   memcpyex(new_data, mp_data, new_size);
   IRS_LIB_ARRAY_DELETE_ASSERT(mp_data);
+
   mp_data = new_data;
   m_capacity = new_capacity;
   m_size = new_size;

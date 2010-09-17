@@ -365,8 +365,6 @@ private:
     coils_size_byte = 4,         //bit = coils_size_byte*8
     hold_regs_size = 154,        //16-bit word
     input_regs_size = 0,         //16-bit word
-    sum_size_byte = discr_inputs_size_byte + coils_size_byte +
-      hold_regs_size*2 + input_regs_size*2
   };
 
   //Режимы работы

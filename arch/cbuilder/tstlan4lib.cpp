@@ -416,6 +416,7 @@ void irs::tstlan4_t::controls_t::integer_to_string_helper(const T& a_value,
   string_type* ap_string)
 {
   stringstream_t strm;
+  strm.imbue(locale::classic());
   out_number(strm, a_value);
   strm << internal << setfill(irst('0')) << hex << uppercase;
   const int type_hex_width = 2*sizeof(T);
@@ -471,7 +472,13 @@ void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
 }
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
+  if ((a_var_index == 19) || (a_var_index == 30)) {
+    int i = 0;
+    i++;
+  }
+
   string_type val = 0;
+  val.locale_style(irsstrloc_current);
   netconn_t::item_t item = m_netconn.items[a_var_index];
   switch (item.type) {
     case netconn_t::item_t::type_bit: {

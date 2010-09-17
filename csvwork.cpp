@@ -1,5 +1,5 @@
 // Работа с csv-файлами
-// Дата: 15.09.2010
+// Дата: 16.09.2010
 // Ранняя дата: 17.09.2009
 
 #include <irspch.h>
@@ -23,7 +23,7 @@
 // Конструктор
 csv_file::csv_file():
   //m_lines_writed_count(0),
-  m_is_first_line(false),
+  m_is_first_line(true),
   m_pars(),
   m_vars(),
   //mp_ini_file(0)
@@ -160,7 +160,7 @@ irs_bool csv_file::open(const string_type& file_name)
   //if (mp_ini_file) return irs_true;
 
   //m_lines_writed_count = 0;
-  m_is_first_line = false;
+  m_is_first_line = true;
 
   //mp_ini_file = fopen(file_name, "wt");
   m_csv_file.open(file_name.c_str());
@@ -203,30 +203,30 @@ irs_bool csv_file::write_line()
   //m_lines_writed_count++;
 
   if (m_is_first_line) {
-    m_is_first_line = true;
+    m_is_first_line = false;
 
     // Список параметров в начале файла
     for (list_it_type it = m_pars.begin(); it != m_pars.end(); it++) {
       //fprintf(mp_ini_file, "%s", it->first.c_str());
-      m_csv_file << it->first;
+      m_csv_file << it->first << ';';
       switch (it->second.type) {
         case ec_i32_type: {
           //fprintf(mp_ini_file, ";%ld\n", it->second.val.uf_i32_type);
-          m_csv_file << it->second.val.uf_i32_type;
+          m_csv_file << it->second.val.uf_i32_type << irst('\n');
         } break;
         case ec_float_type: {
           ostrstream strm;
           strm << setprecision(30) << it->second.val.uf_float_type << ends;
           char *sbeg = strm.str();
           char *send = sbeg + strm.pcount();
-          replace(sbeg, send, '.', ',');
+          ::replace(sbeg, send, '.', ',');
           //fprintf(mp_ini_file, sbeg);
-          m_csv_file << IRS_TYPE_FROM_SIMPLE_STR(sbeg);
+          m_csv_file << IRS_TYPE_FROM_SIMPLE_STR(sbeg) << irst('\n');
           strm.rdbuf()->freeze(false);
         } break;
         case ec_str_type: {
           //fprintf(mp_ini_file, ";%s\n", it->second.val.uf_str_type.c_str());
-          m_csv_file << it->second.val.uf_str_type;
+          m_csv_file << it->second.val.uf_str_type << irst('\n');
         }  break;
         default: {
           //int invalid_type = 0;
@@ -234,13 +234,13 @@ irs_bool csv_file::write_line()
         } break;
       }
       //fprintf(mp_ini_file, "*\n");
-      m_csv_file << irst("\n");
+      m_csv_file << irst('\n');
     }
 
     // Строка с названиями переменных
     for (list_it_type it = m_vars.begin(); it != m_vars.end(); it++) {
       //fprintf(mp_ini_file, "%s;", it->first.c_str());
-      m_csv_file << it->first;
+      m_csv_file << it->first << irst(';');
     }
     //fprintf(mp_ini_file, "\n");
     m_csv_file << irst('\n');
@@ -272,6 +272,7 @@ irs_bool csv_file::write_line()
         //assert(invalid_type);
       } break;
     }
+    m_csv_file << irst(';');
   }
   //fprintf(mp_ini_file, "\n");
   m_csv_file << irst('\n');
