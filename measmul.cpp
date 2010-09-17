@@ -2240,7 +2240,10 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_eth_mul_data.connect(&m_modbus_client, 0);
 
   m_eth_mul_data.meas_mode = high_speed;
-  m_eth_mul_data.samples_per_sec = 1/a_sampling_time_s;
+  
+  if (a_sampling_time_s) {
+    m_eth_mul_data.samples_per_sec = 1/a_sampling_time_s;
+  }
   
   if (a_filter != zero_struct_t<filter_settings_t>::get()) {
     m_eth_mul_data.filter_type = m_filter.family;
