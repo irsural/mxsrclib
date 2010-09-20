@@ -1328,13 +1328,13 @@ mul_sample_format_t sample_format_normalize(
 double range_normalize(const double a_range)
 {
   double range = 0;
-  if (a_range >= 1000) {
+  if (a_range > 100) {
     range = 1000.0;
-  } else if (a_range >= 100) {
+  } else if (a_range > 10) {
     range = 100.0;
-  } else if (a_range >= 10) {
+  } else if (a_range > 1) {
     range = 10.0;
-  } else if (a_range >= 1) {
+  } else if (a_range > 0.1) {
     range = 1.0;
   } else {
     range = 0.1;
