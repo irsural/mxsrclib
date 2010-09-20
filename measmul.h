@@ -452,6 +452,7 @@ private:
   const double m_nplc_coef;
   const double m_sampling_time_default;
   const double m_interval_default;
+  const double m_range_default;
   const size_type m_iscale_byte_count;
   size_type m_sample_size;
   double m_sampling_time;

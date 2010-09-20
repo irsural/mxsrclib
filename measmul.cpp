@@ -785,7 +785,8 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_filtered_values(),
   m_nplc_coef(20e-3),
   m_sampling_time_default(25e-6),
-  m_interval_default(30),
+  m_interval_default(30.0),
+  m_range_default(1000.0),
   m_iscale_byte_count(30),
   m_sample_size(sizeof(irs_u16)),
   m_sampling_time(25e-6),
@@ -796,7 +797,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_sampling_time_s_change_event(),
   m_new_filter_settings(),
   m_filter_settings_change_event(),
-  m_new_range(10),
+  m_new_range(1000),
   m_range_change_event(),
   m_new_sample_format(mul_sample_format_int16),
   m_sample_format_change_event(),
@@ -829,6 +830,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   // Округляем по правилам математики
   const size_type sample_count = get_sample_count(m_sampling_time, m_interval);
   m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
+  m_commands.push_back(make_range_cmd(m_range_default));
   m_commands.push_back("ISCALE?");
   mp_hardflow->set_param(irst("read_timeout"), irst("3"));
 }
@@ -1327,17 +1329,19 @@ mul_sample_format_t sample_format_normalize(
 
 double range_normalize(const double a_range)
 {
-  double range = 0;
-  if (a_range > 100) {
+  double range = 1000.0;
+  if (a_range > 100.0) {
     range = 1000.0;
-  } else if (a_range > 10) {
+  } else if (a_range > 10.0) {
     range = 100.0;
-  } else if (a_range > 1) {
+  } else if (a_range > 1.0) {
     range = 10.0;
   } else if (a_range > 0.1) {
     range = 1.0;
-  } else {
+  } else if (a_range >= 0.0) {
     range = 0.1;
+  } else {
+    range = 1000.0;
   }
   return range;
 }
