@@ -1159,6 +1159,7 @@ void irs::agilent_3458a_digitizer_t::tick()
     }
     if (m_filter_settings_change_event.check()) {
       m_filter_settings = m_new_filter_settings;
+      m_iir_filter.set_filter_settings(m_filter_settings);
     } else {
       // Параметры фильтра не изменены
     }
@@ -2468,7 +2469,6 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
 irs::ni_pxi_4071_t::ni_pxi_4071_t(
   hardflow_t* ap_hardflow,
   const filter_settings_t& a_filter,
-  const double a_sampling_time_s,
   counter_t a_update_time
 ):
   mp_hardflow(ap_hardflow),
@@ -2479,15 +2479,12 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   mp_value(IRS_NULL),
   m_abort_request(false),
   m_mode(start_mode),
-  m_filter(a_filter)
+  m_filter(a_filter),
+  m_window_size(0)
 {
   m_eth_mul_data.connect(&m_modbus_client, 0);
 
   m_eth_mul_data.meas_mode = high_speed;
-  
-  if (a_sampling_time_s) {
-    m_eth_mul_data.samples_per_sec = 1/a_sampling_time_s;
-  }
   
   if (a_filter != zero_struct_t<filter_settings_t>::get()) {
     m_eth_mul_data.filter_type = m_filter.family;
@@ -2496,11 +2493,113 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
     m_eth_mul_data.low_cutoff_freq = m_filter.low_cutoff_freq_hz;
     m_eth_mul_data.passband_ripple = m_filter.passband_ripple_db;
     m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;
+  } else {
+    m_filter.family =
+      static_cast<filter_family_t>(
+      static_cast<irs_u8>(m_eth_mul_data.filter_type));
+    m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
+    m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+    m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
+    m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
+    m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
   }
 }
 
 irs::ni_pxi_4071_t::~ni_pxi_4071_t()
 {
+}
+
+void irs::ni_pxi_4071_t::get_param(const multimeter_param_t a_param,
+  irs::raw_data_t<irs_u8> *ap_value) const
+{
+  IRS_LIB_ASSERT(ap_value);
+  switch(a_param)
+  {
+    case mul_param_source_values:
+    {
+      double source_value = m_eth_mul_data.meas_value_not_filtered;
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&source_value),
+        reinterpret_cast<const irs_u8*>(&source_value) + sizeof(source_value));
+    } break;
+    case mul_param_filtered_values:
+    {
+      double filtered_value = m_eth_mul_data.meas_value_not_filtered;
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&filtered_value),
+        reinterpret_cast<const irs_u8*>(&filtered_value) +
+        sizeof(filtered_value));
+    } break;
+    // СКО
+    case mul_param_standard_deviation:
+    {
+    
+    } break;
+    // Относительное СКО
+    case mul_param_standard_deviation_relative:
+    {
+    
+    } break;
+    // Дельта
+    case mul_param_variation:
+    {
+    
+    } break;
+    // Относительная дельта
+    case mul_param_variation_relative:
+    {
+    
+    } break;
+    case mul_param_sampling_time_s:
+    {
+      double sampling_time_s = 1/m_eth_mul_data.samples_per_sec;
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&sampling_time_s),
+        reinterpret_cast<const irs_u8*>(&sampling_time_s) +
+        sizeof(sampling_time_s));
+    } break;
+    case mul_param_filter_settings:
+    {
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&m_filter),
+        reinterpret_cast<const irs_u8*>(&m_filter) + sizeof(m_filter));
+    } break;
+    default:
+    {
+    }
+  }
+}
+
+void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
+  const irs::raw_data_t<irs_u8> &a_value)
+{
+  switch (a_param)
+  {
+    case mul_param_sampling_time_s:
+    {
+    
+    } break;
+    case mul_param_filter_settings:
+    {
+    
+    } break;
+    default:
+    {
+    }
+  }
+}
+
+bool irs::ni_pxi_4071_t::is_param_exists(
+  const multimeter_param_t a_param) const
+{
+  return (a_param == mul_param_source_values) ||
+    (a_param == mul_param_filtered_values) ||
+    (a_param == mul_param_standard_deviation) ||
+    (a_param == mul_param_standard_deviation_relative) ||
+    (a_param == mul_param_variation) ||
+    (a_param == mul_param_variation_relative) ||
+    (a_param == mul_param_sampling_time_s) ||
+    (a_param == mul_param_filter_settings);
 }
 
 void irs::ni_pxi_4071_t::set_dc()

@@ -994,6 +994,7 @@ public:
 class ni_pxi_4071_t: public mxmultimeter_t
 {
 public:
+  typedef irs_size_t size_type;
   enum { // power_freq
     power_50_Hz,
     power_60_Hz
@@ -1018,10 +1019,14 @@ public:
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     const filter_settings_t& a_filter = zero_struct_t<filter_settings_t>::get(),
-    const double a_sampling_time_s = 0,
     counter_t a_update_time = make_cnt_ms(200)
   );
   ~ni_pxi_4071_t();
+  virtual void get_param(const multimeter_param_t a_param,
+    irs::raw_data_t<irs_u8> *ap_value) const;
+  virtual void set_param(const multimeter_param_t a_param,
+    const irs::raw_data_t<irs_u8> &a_value);
+  virtual bool is_param_exists(const multimeter_param_t a_param) const;
   // ”становить режим измерени€ посто€нного напр€жени€
   virtual void set_dc();
   // ”становить режим измерени€ переменного напр€жени€
@@ -1151,6 +1156,7 @@ private:
   bool m_abort_request;
   mode_t m_mode;
   filter_settings_t m_filter;
+  size_type m_window_size;
 };
 
 } //namespace irs

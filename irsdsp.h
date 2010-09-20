@@ -1082,10 +1082,10 @@ void fade_t<T>::set_t(T a_t)
 }
 
 enum filter_family_t {
-  ff_butterworth,
-  ff_chebyshev_ripple_pass,
-  ff_chebyshev_ripple_stop,
-  ff_cauer
+  ff_butterworth = 0,
+  ff_chebyshev_ripple_pass = 1,
+  ff_chebyshev_ripple_stop = 2,
+  ff_cauer = 3
 };
 
 enum filter_bandform_t {
@@ -1127,8 +1127,8 @@ struct filter_settings_t {
   }
 };
 
-inline bool operator==(filter_settings_t a_fs_first,
-  filter_settings_t a_fs_second)
+inline bool operator==(const filter_settings_t& a_fs_first,
+  const filter_settings_t& a_fs_second)
 {
   return ((a_fs_first.family == a_fs_second.family) &&
     (a_fs_first.bandform == a_fs_second.bandform) &&
@@ -1140,8 +1140,8 @@ inline bool operator==(filter_settings_t a_fs_first,
     (a_fs_first.stopband_ripple_db == a_fs_second.stopband_ripple_db));
 }
 
-inline bool operator!=(filter_settings_t a_fs_first,
-  filter_settings_t a_fs_second)
+inline bool operator!=(const filter_settings_t& a_fs_first,
+  const filter_settings_t& a_fs_second)
 {
   return !(a_fs_first == a_fs_second);
 }
