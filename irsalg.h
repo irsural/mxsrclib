@@ -166,14 +166,14 @@ template <class T>
 class delta_calc_t
 {
 public:
-  delta_calc_t();
+  delta_calc_t(size_t a_count = 100);
   ~delta_calc_t();
   void add(T a_val);
   T max();
   T min();
   T delta();
   void clear();
-  void array_size(size_t a_count);
+  void resize(size_t a_count);
   T average();
   T relative();
   size_t size();
@@ -185,9 +185,9 @@ private:
 } //namespace irs
 
 template <class T>
-irs::delta_calc_t<T>::delta_calc_t():
+irs::delta_calc_t<T>::delta_calc_t(size_t a_count):
   m_array(),
-  m_count(100)
+  m_count(a_count)
 {
 }
 template <class T>
@@ -195,7 +195,7 @@ irs::delta_calc_t<T>::~delta_calc_t()
 {
 }
 template <class T>
-void irs::delta_calc_t<T>::array_size(size_t a_count)
+void irs::delta_calc_t<T>::resize(size_t a_count)
 {
   m_count = a_count;
 }
@@ -263,12 +263,14 @@ T irs::delta_calc_t<T>::average()
 template <class T>
 T irs::delta_calc_t<T>::relative()
 {
-  T aver =
-    average();
-  if (aver == 0) {
-    aver = 1;
+  T average_value = average();
+  T relative_value = 0.;
+  if (average_value != 0) {
+    relative_value = delta()/average_value;
+  } else {
+    relative_value = numeric_limits<double>::max();
   }
-  return delta()/aver;
+  return relative_value;
 }
 template <class T>
 size_t irs::delta_calc_t<T>::size()

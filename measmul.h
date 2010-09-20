@@ -52,8 +52,9 @@ bool str_to_type_meas(
 enum multimeter_mode_type_t {mul_mode_type_active, mul_mode_type_passive};
 
 enum multimeter_param_t {
+  mul_param_first,
   // Исходные значения
-  mul_param_source_values,
+  mul_param_source_values = mul_param_first,
   // Отфильтрованные значения
   mul_param_filtered_values,
   // Стандартное оклонение
@@ -369,6 +370,7 @@ class agilent_3458a_digitizer_t: public mxmultimeter_t
 {
 public:
   typedef irs_size_t size_type;
+  typedef string_t string_type;
   typedef long double math_value_type;
   // Конструктор
   agilent_3458a_digitizer_t(

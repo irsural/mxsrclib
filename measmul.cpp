@@ -844,7 +844,7 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
     case mul_param_source_values: {
       const irs_u8* p_src_first =
         reinterpret_cast<const irs_u8*>(m_samples.data());
-      const irs_u8* p_src_last = p_src_first + m_samples.size() * sizeof(double);
+      const irs_u8* p_src_last = p_src_first + m_samples.size()*sizeof(double);
       ap_value->insert(ap_value->data(), p_src_first, p_src_last);
     } break;
     case mul_param_filtered_values: {
@@ -875,16 +875,31 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
         reinterpret_cast<const irs_u8*>(&deviation),
         reinterpret_cast<irs_u8*>(&deviation) + sizeof(deviation));
     } break;
-    case mul_param_variation: {
+    case mul_param_variation:
+    case mul_param_variation_relative: {
+      const size_type sample_count = m_samples.size();
+      delta_calc_t<double> delta_calc(sample_count);
+      for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
+        delta_calc.add(m_samples[sample_i]);
+      }
       double variation = 0.;
+      /*
+      double variation2 = 0.;
       if (!m_samples.empty()) {
         const double min = *min_element(m_samples.data(),
           m_samples.data() + m_samples.size());
         const double max = *max_element(m_samples.data(),
           m_samples.data() + m_samples.size());
-        variation = max - min;
+        variation2 = max - min;
       } else {
         // Возвращаем ноль
+      }
+      */
+
+      if (a_param == mul_param_variation) {
+        variation = delta_calc.delta();
+      } else {
+        variation = delta_calc.relative();
       }
       ap_value->insert(ap_value->data(),
         reinterpret_cast<const irs_u8*>(&variation),
@@ -893,7 +908,7 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
     default : {
       // Игнорируем
     }
-  }   
+  }
 }
 void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
   const irs::raw_data_t<irs_u8> &a_value)
@@ -1118,6 +1133,9 @@ void irs::agilent_3458a_digitizer_t::tick()
         get_sample_count(m_sampling_time, m_interval);
       m_need_receive_data_size = sample_count*m_sample_size;
       m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
+      string_type read_timeout_str;
+      num_to_str(m_interval*2 + 1, &read_timeout_str);
+      mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
     } else {
       // Интервал не изменен
     }
@@ -1181,7 +1199,10 @@ void irs::agilent_3458a_digitizer_t::tick()
       irs_string_t coefficient_str = buf.substr(0, pos);
       if (str_to_num_classic(coefficient_str, &m_coefficient)) {
         m_buf_receive.clear();
-        mp_hardflow->set_param(irst("read_timeout"), irst("100"));
+
+        string_type read_timeout_str;
+        num_to_str(m_interval*2 + 1, &read_timeout_str);
+        mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
 
         //if (!m_initialization_complete) {
 
