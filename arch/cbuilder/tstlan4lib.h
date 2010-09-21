@@ -59,6 +59,7 @@ public:
   virtual void set_position(const rect_t &a_position);
   virtual void connect(mxdata_t *ap_data);
   virtual void save_conf();
+  virtual void update_time(counter_t a_update_time);
 private:
   class controls_t: public TObject
   {
@@ -74,6 +75,7 @@ private:
     virtual __fastcall ~controls_t();
     void connect(mxdata_t *ap_data);
     void save_conf();
+    void update_time(counter_t a_update_time);
     // Консоль внутри tstlan4
     TMemo* log();
     void tick();

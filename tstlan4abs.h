@@ -24,6 +24,7 @@ public:
   virtual void set_position(const rect_t &a_position) = 0;
   virtual void connect(mxdata_t *ap_data) = 0;
   virtual void save_conf() = 0;
+  virtual void update_time(counter_t a_update_time) = 0;
 };
 
 } //namespace irs

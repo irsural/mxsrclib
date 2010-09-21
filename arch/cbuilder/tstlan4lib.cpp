@@ -120,6 +120,10 @@ void irs::tstlan4_t::save_conf()
 {
   mp_controls->save_conf();
 }
+void irs::tstlan4_t::update_time(counter_t a_update_time)
+{
+  mp_controls->update_time(a_update_time);
+}
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
@@ -272,6 +276,10 @@ void irs::tstlan4_t::controls_t::connect(mxdata_t *ap_data)
 void irs::tstlan4_t::controls_t::save_conf()
 {
   //m_ini_file.save();
+}
+void irs::tstlan4_t::controls_t::update_time(counter_t a_update_time)
+{
+  m_read_loop_timer = a_update_time;
 }
 void irs::tstlan4_t::controls_t::tick()
 {
