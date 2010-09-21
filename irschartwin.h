@@ -35,6 +35,7 @@ public:
   virtual void add(const string_type &a_name, double a_time,
     double a_value) = 0;
   virtual void clear() = 0;
+  virtual void set_refresh_time(irs_i32 a_refresh_time_ms) = 0; 
   virtual void resize(irs_u32 a_size) = 0;
   virtual irs_u32 size() const = 0;
   virtual void group_all() = 0;

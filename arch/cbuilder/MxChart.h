@@ -489,6 +489,7 @@ public:
   virtual void add();
   virtual void add(const string_type &a_name, double a_time, double a_value);
   virtual void clear();
+  virtual void set_refresh_time(irs_i32 a_refresh_time_ms);
   virtual void resize(irs_u32 a_size);
   virtual irs_u32 size() const;
   virtual void group_all();
@@ -622,6 +623,7 @@ private:
   chart_event_t m_event;
   auto_ptr<TChartForm> mp_form;
   rect_t m_position;
+  stay_on_top_t m_stay_on_top;
   irs_i32 m_chart_index;
 
   irs_u32 cur_size() const;

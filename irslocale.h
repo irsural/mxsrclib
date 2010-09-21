@@ -38,6 +38,25 @@ inline void locale_manager_t::set(const locale& a_loc)
 
 locale_manager_t& loc();
 
+template<class T>
+class irs_numpunct_t: public numpunct<T>
+{
+public:
+  explicit irs_numpunct_t(size_t r = 0):
+    numpunct<T>(r)
+  {
+  }
+protected:
+  T do_decimal_point() const
+  {
+    return ',';
+  }
+  T do_thousands_sep() const
+  {
+    return ' ';
+  }
+};
+
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 } // namespace irs

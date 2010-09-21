@@ -3036,6 +3036,7 @@ builder_chart_window_t(irs_u32 a_size, irs_i32 a_refresh_time_ms,
   m_event(*this),
   mp_form(new TChartForm(m_data, m_event, a_refresh_time_ms, a_stay_on_top)),
   m_position(),
+  m_stay_on_top(a_stay_on_top),
   m_chart_index(0)
 {
 }
@@ -3166,6 +3167,12 @@ clear()
     vec.push_back(0.);
   }
   mp_form->invalidate();
+}
+void irs::chart::builder_chart_window_t::
+set_refresh_time(irs_i32 a_refresh_time_ms)
+{
+  mp_form.reset(new TChartForm(m_data, m_event, a_refresh_time_ms,
+    m_stay_on_top));
 }
 void irs::chart::builder_chart_window_t::
 resize(irs_u32 a_size)
