@@ -1,5 +1,5 @@
 // Алгоритмы
-// Дата: 23.06.2010
+// Дата: 21.09.2010
 // Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
@@ -12,6 +12,7 @@
 
 #include <irserror.h>
 #include <mxdata.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -257,7 +258,7 @@ T irs::delta_calc_t<T>::average()
   }
   if (size == 0) {
     size = 1;
-  }
+  }                        
   return sum/size;
 }
 template <class T>
@@ -268,7 +269,7 @@ T irs::delta_calc_t<T>::relative()
   if (average_value != 0) {
     relative_value = delta()/average_value;
   } else {
-    relative_value = numeric_limits<double>::max();
+    relative_value = irs::numeric_limits<double>::max()/2;
   }
   return relative_value;
 }
