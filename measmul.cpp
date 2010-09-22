@@ -1,5 +1,5 @@
 // Классы для работы с мультиметрами
-// Дата: 09.09.2010
+// Дата: 22.09.2010
 // Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -267,6 +267,7 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   // Компенсация наведенного напряжения смещения (Время счета * 2
   // для сопротивления)
   m_init_commands.push_back("OCOMP ON");
+  m_init_commands.push_back("LFILTER ON");
   //m_init_commands.push_back("RANGE 1000");
   //m_init_commands.push_back("RES 1E-6");
   // Входное сопротивление фиксируется на 10 МОм для всех пределов
@@ -820,6 +821,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
 
   m_commands.push_back("RESET");
   m_commands.push_back("PRESET DIG");
+  m_commands.push_back("LFILTER ON");
   m_commands.push_back("MEM OFF");
 
   m_sampling_time = sampling_time_normalize(a_sampling_time_s,
