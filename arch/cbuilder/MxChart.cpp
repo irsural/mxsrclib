@@ -3171,8 +3171,7 @@ clear()
 void irs::chart::builder_chart_window_t::
 set_refresh_time(irs_i32 a_refresh_time_ms)
 {
-  mp_form.reset(new TChartForm(m_data, m_event, a_refresh_time_ms,
-    m_stay_on_top));
+  mp_form->set_refresh_time_ms(a_refresh_time_ms);
 }
 void irs::chart::builder_chart_window_t::
 resize(irs_u32 a_size)
@@ -3336,7 +3335,7 @@ set(size_type a_index)
 
 // Форма с графиком
 irs::chart::builder_chart_window_t::TChartForm::
-TChartForm(const data_t &a_data, chart_event_t &a_event,
+  TChartForm(const data_t &a_data, chart_event_t &a_event,
   irs_i32 a_refresh_time_ms, stay_on_top_t a_stay_on_top):
   TForm(IRS_NULL, 1),
   m_group_all(irs_false),
@@ -3428,16 +3427,16 @@ TChartForm(const data_t &a_data, chart_event_t &a_event,
   mp_base_chart_combo->Parent = this;
 }
 __fastcall irs::chart::builder_chart_window_t::TChartForm::
-~TChartForm()
+  ~TChartForm()
 {
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-FormResize(TObject *Sender)
+  FormResize(TObject *Sender)
 {
   mp_chart->BoundsRect = mp_chart_box->ClientRect;
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-TimerEvent(TObject *Sender)
+  TimerEvent(TObject *Sender)
 {
   try {
 
@@ -3468,7 +3467,7 @@ TimerEvent(TObject *Sender)
   }
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-PauseBtnClick(TObject *Sender)
+  PauseBtnClick(TObject *Sender)
 {
   if (m_pause) {
     m_pause = irs_false;
@@ -3481,7 +3480,7 @@ PauseBtnClick(TObject *Sender)
   }
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-FixBtnClick(TObject *Sender)
+  FixBtnClick(TObject *Sender)
 {
   if (m_fix) {
     m_fix = irs_false;
@@ -3492,7 +3491,7 @@ FixBtnClick(TObject *Sender)
   }
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-ClearBtnClick(TObject *Sender)
+  ClearBtnClick(TObject *Sender)
 {
   m_event.clear();
 }
@@ -3502,26 +3501,26 @@ ChartPaint(TObject *Sender)
   mp_chart->Paint();
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-FormShow(TObject *Sender)
+  FormShow(TObject *Sender)
 {
   m_is_lock = false;
   m_invalidate = irs_true;
   TimerEvent(this);
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-FormHide(TObject *Sender)
+  FormHide(TObject *Sender)
 {
   m_is_lock = true;
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-BaseChartComboChange(TObject *Sender)
+  BaseChartComboChange(TObject *Sender)
 {
   set_base_item(mp_base_chart_combo->ItemIndex);
   m_invalidate = irs_true;
   TimerEvent(this);
 }
 void irs::chart::builder_chart_window_t::TChartForm::
-connect_data(const data_t &a_data)
+  connect_data(const data_t &a_data)
 {
   mp_data = &a_data;
   if (m_is_chart_list_changed) {
@@ -3562,34 +3561,45 @@ connect_data(const data_t &a_data)
   }
 }
 inline irs_bool irs::chart::builder_chart_window_t::TChartForm::
-fix()
+  fix()
 {
   return m_fix;
 }
 inline void irs::chart::builder_chart_window_t::TChartForm::
-group_all()
+  group_all()
 {
   m_group_all = irs_true;
   m_invalidate = irs_true;
 }
 inline void irs::chart::builder_chart_window_t::TChartForm::
-ungroup_all()
+  ungroup_all()
 {
   m_group_all = irs_false;
   m_invalidate = irs_true;
 }
 inline void irs::chart::builder_chart_window_t::TChartForm::
-invalidate()
+  invalidate()
 {
   m_invalidate = irs_true;
 }
 void irs::chart::builder_chart_window_t::TChartForm::
-chart_list_changed()
+  chart_list_changed()
 {
   m_is_chart_list_changed = true;
 }
 void irs::chart::builder_chart_window_t::TChartForm::
-update_chart_combo()
+  set_refresh_time_ms(irs_i32 a_refresh_time_ms)
+{
+  if (a_refresh_time_ms != 0) {
+    mp_timer->Interval = a_refresh_time_ms;
+  } else {
+    mp_timer->Interval = 1;
+  }
+  mp_timer->Enabled = false;
+  mp_timer->Enabled = true;
+}
+void irs::chart::builder_chart_window_t::TChartForm::
+  update_chart_combo()
 {
   mp_base_chart_combo->Items->Clear();
   m_colors.start();
@@ -3612,7 +3622,7 @@ update_chart_combo()
   }
 }
 void irs::chart::builder_chart_window_t::TChartForm::
-set_base_item(int a_base_item)
+  set_base_item(int a_base_item)
 {
   if (a_base_item < 0) return;
   m_base_item = a_base_item;

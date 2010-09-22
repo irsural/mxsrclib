@@ -120,13 +120,10 @@ void irs::tstlan4_t::save_conf()
 {
   mp_controls->save_conf();
 }
-void irs::tstlan4_t::update_time(const counter_t a_update_time)
+void irs::tstlan4_t::update_time(const irs_i32 a_update_time)
 {
   mp_controls->update_time(a_update_time);
-}
-void irs::tstlan4_t::set_refresh_time_chart(const irs_i32 a_refresh_time)
-{
-  mp_controls->set_refresh_time_chart(a_refresh_time);
+
 }
 void irs::tstlan4_t::resize_chart(const irs_u32 a_size)
 {
@@ -285,14 +282,15 @@ void irs::tstlan4_t::controls_t::save_conf()
 {
   //m_ini_file.save();
 }
-void irs::tstlan4_t::controls_t::set_refresh_time_chart
-  (const irs_i32 a_refresh_time)
+void irs::tstlan4_t::controls_t::update_time(const irs_i32 a_update_time)
 {
-  m_builder_chart.set_refresh_time(a_refresh_time);
-}
-void irs::tstlan4_t::controls_t::update_time(const counter_t a_update_time)
-{
-  m_read_loop_timer = a_update_time;
+  m_read_loop_timer = irs::make_cnt_ms(a_update_time);
+  int def_time = 1000;
+  if (a_update_time > def_time) {
+    m_builder_chart.set_refresh_time(a_update_time);
+  } else {
+    m_builder_chart.set_refresh_time(def_time);
+  }
 }
 void irs::tstlan4_t::controls_t::resize_chart(const irs_u32 a_size)
 {

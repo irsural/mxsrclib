@@ -24,8 +24,7 @@ public:
   virtual void set_position(const rect_t &a_position) = 0;
   virtual void connect(mxdata_t *ap_data) = 0;
   virtual void save_conf() = 0;
-  virtual void update_time(const counter_t a_update_time) = 0;
-  virtual void set_refresh_time_chart(const irs_i32 a_refresh_time) = 0;
+  virtual void update_time(const irs_i32 a_update_time) = 0;
   virtual void resize_chart(const irs_u32 a_size) = 0;
 };
 

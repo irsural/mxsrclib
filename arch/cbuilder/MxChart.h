@@ -566,6 +566,7 @@ private:
     inline void ungroup_all();
     inline void invalidate();
     void chart_list_changed();
+    void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
   private:
     irs_bool m_group_all;
     //chart_point_t m_pause_time;
