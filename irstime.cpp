@@ -1,5 +1,5 @@
 // Работа со временем
-// Дата: 15.09.2010
+// Дата: 23.09.2010
 // Ранняя дата: 10.07.2009
 
 #include <irspch.h>
@@ -77,7 +77,7 @@ irs::string_t irs::file_name_time(string_t a_extension)
   time_t timer = time(NULL);
   const tm* data = localtime(&timer);
   ostrstream stream;
-  stream.imbue(locale::classic());
+  //stream.imbue(locale::classic());
   stream << setfill('0');
   stream << setw(4) << (data->tm_year + 1900);
   stream << setw(2) << (data->tm_mon + 1);
