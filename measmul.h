@@ -1019,7 +1019,8 @@ public:
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     const filter_settings_t& a_filter = zero_struct_t<filter_settings_t>::get(),
-    counter_t a_update_time = make_cnt_ms(200)
+    counter_t a_update_time = make_cnt_ms(200),
+    multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active
   );
   ~ni_pxi_4071_t();
   virtual void get_param(const multimeter_param_t a_param,
