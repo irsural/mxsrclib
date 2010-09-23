@@ -1148,7 +1148,8 @@ private:
       return index;
     }
   };
-  
+
+  multimeter_mode_type_t m_mul_mode_type;
   hardflow_t* mp_hardflow;
   modbus_client_t m_modbus_client;
   eth_mul_data_t m_eth_mul_data;

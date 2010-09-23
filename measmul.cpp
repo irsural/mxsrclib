@@ -2474,6 +2474,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   counter_t a_update_time,
   multimeter_mode_type_t a_mul_mode_type
 ):
+  m_mul_mode_type(a_mul_mode_type),
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
     0, 0, 37, 8, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
@@ -2489,7 +2490,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
 
   m_eth_mul_data.meas_mode = high_speed;
   
-  if (a_mul_mode_type == mul_mode_type_active) {
+  if (m_mul_mode_type == mul_mode_type_active) {
     if (a_filter != zero_struct_t<filter_settings_t>::get()) {
       m_eth_mul_data.filter_type = m_filter.family;
       m_eth_mul_data.filter_order = static_cast<irs_u8>(m_filter.order);
@@ -2498,16 +2499,17 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
       m_eth_mul_data.passband_ripple = m_filter.passband_ripple_db;
       m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;
     } else {
-      m_filter.family =
+     /* m_filter.family =
         static_cast<filter_family_t>(
         static_cast<irs_u8>(m_eth_mul_data.filter_type));
       m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
       m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
       m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
       m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
-      m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
+      m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple; */
     }
   }
+  //работает не правильно т.к в начале нет коннекта и все значения 0
 }
 
 irs::ni_pxi_4071_t::~ni_pxi_4071_t()
@@ -2586,7 +2588,7 @@ void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
     } break;
     case mul_param_filter_settings:
     {
-    
+      m_filter = *reinterpret_cast<const filter_settings_t*>(a_value.data());
     } break;
     default:
     {
@@ -2724,6 +2726,17 @@ void irs::ni_pxi_4071_t::abort()
 void irs::ni_pxi_4071_t::tick()
 {
   m_modbus_client.tick();
+  if (m_modbus_client.connected() &&
+    (m_mul_mode_type == mul_mode_type_passive)) {
+    m_filter.family =
+      static_cast<filter_family_t>(
+      static_cast<irs_u8>(m_eth_mul_data.filter_type));
+    m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
+    m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+    m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
+    m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
+    m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
+  }
   switch(m_mode)
   {
     case start_mode:
