@@ -91,7 +91,7 @@ irs_u32 alg_ring::get_end()
   return end;
 }
 // Чтение элемента буфера
-void *alg_ring::operator[](irs_u32 index)
+void *alg_ring::operator[](irs_u32 index) const
 {
   if (index < f_size) {
     irs_u32 buf_index = f_begin + index;

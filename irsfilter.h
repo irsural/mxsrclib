@@ -269,6 +269,7 @@ void iir_filter_t<T>::set(const T a_sample)
     m_num_coef_list[delay_line_size - 1];
   m_out_delay_line.pop_back();
   m_out_delay_line.push_front(sum_in + sub_out);
+
 }
 
 template <class T>

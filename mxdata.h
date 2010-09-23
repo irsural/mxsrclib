@@ -351,13 +351,19 @@ public:
   const raw_data_t& operator=(const raw_data_t<T>& a_raw_data);
   inline pointer data();
   inline const_pointer data() const;
+  inline pointer begin();
+  inline const_pointer begin() const;
+  inline pointer end();
+  inline const_pointer end() const;
   inline size_type size() const;
   inline size_type capacity() const;
   inline bool empty() const;
   void reserve(size_type a_capacity);
   void resize(size_type a_size);
-  void insert(pointer ap_pos, const_pointer ap_first, const_pointer ap_last);
-  void erase(pointer ap_first, pointer ap_last);
+  pointer insert(pointer ap_pos, const_pointer ap_first, const_pointer ap_last);
+  pointer insert(pointer ap_pos, const_reference a_value);
+  pointer erase(pointer ap_first, pointer ap_last);
+  pointer erase(pointer ap_pos);
   inline void clear();
   inline void swap(raw_data_t<T>* ap_raw_data);
 private:
@@ -433,6 +439,26 @@ inline typename raw_data_t<T>::const_pointer
   return mp_data;
 }
 template <class T>
+inline typename raw_data_t<T>::pointer raw_data_t<T>::begin()
+{
+  return data();
+}
+template <class T>
+inline typename raw_data_t<T>::const_pointer raw_data_t<T>::begin() const
+{
+  return data();
+}
+template <class T>
+inline typename raw_data_t<T>::pointer raw_data_t<T>::end()
+{
+  return begin() + size();
+}
+template <class T>
+inline typename raw_data_t<T>::const_pointer raw_data_t<T>::end() const
+{
+  return begin() + size();
+}
+template <class T>
 inline typename raw_data_t<T>::size_type
   raw_data_t<T>::size() const
 {
@@ -499,19 +525,21 @@ void raw_data_t<T>::resize(size_type a_size)
   m_size = new_size;
 }
 template <class T>
-void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
+typename raw_data_t<T>::pointer
+raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   const_pointer ap_last)
 {
   IRS_LIB_ASSERT((ap_pos >= data()) && (ap_pos <= data()+size()));
   const size_type insert_bloc_size = ap_last - ap_first;
   const size_type new_size = m_size + insert_bloc_size;
-  
+
+  pointer p_last_incut = end();
   // Это условие нужно, чтобы исключить вызов функции memmoveex,
   // когда size() == 0, ибо тогда параметры ap_first, new_size могут
   // быть равны IRS_NULL, и функция memmoveex поднимет исключение
-  if (new_size > 0) {
+  if (new_size > m_size) {
     // Блок памяти должен быть внешним по отношению к приемному контейнеру
-    IRS_LIB_ASSERT((ap_last < data()) || (ap_first >= data()+size()));
+    IRS_LIB_ASSERT((ap_last < data()) || (ap_first >= (data()+size())));
     const size_type pos = ap_pos - data();
     const size_type move_bloc_size = (data()+size()) - ap_pos;
 
@@ -522,10 +550,30 @@ void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
     memmoveex(dest, p_pos, move_bloc_size);
     // Вставляем блок
     memcpyex(p_pos, ap_first, insert_bloc_size);
-  } 
+    p_last_incut = (p_pos + move_bloc_size);
+  } else {
+    p_last_incut = end();
+  }
+  return p_last_incut;
 }
 template <class T>
-void raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
+typename raw_data_t<T>::pointer raw_data_t<T>::insert(pointer ap_pos,
+  const_reference a_value)
+{
+  IRS_LIB_ASSERT((ap_pos >= data()) && (ap_pos <= data()+size()));
+  // Позиция от нуля
+  const size_type pos = ap_pos - data();
+  resize(size() + 1);
+  pointer p_pos = data() + pos;
+  pointer dest = p_pos + 1;
+  // Смещаем данные на одну позицию вправо
+  memmoveex(dest, p_pos, 1);
+  *p_pos = a_value;
+  return p_pos;
+}
+template <class T>
+typename raw_data_t<T>::pointer raw_data_t<T>::erase(
+  pointer ap_first, pointer ap_last)
 {
   IRS_LIB_ASSERT((ap_first >= data()) && (ap_first <= (data()+size())));
   IRS_LIB_ASSERT((ap_last >= data()) && (ap_last <= (data()+size())));
@@ -538,6 +586,24 @@ void raw_data_t<T>::erase(pointer ap_first, pointer ap_last)
     memmoveex(ap_first, ap_last, move_bloc_size);
     resize(new_size);
   }
+  pointer p_returned = IRS_NULL;
+  if (!empty()) {
+    p_returned = ap_first;
+  } else {
+    p_returned = end();
+  }
+  return p_returned;
+}
+template <class T>
+typename raw_data_t<T>::pointer raw_data_t<T>::erase(pointer ap_pos)
+{
+  pointer p_returned = IRS_NULL;
+  if (!empty()) {
+    p_returned = erase(ap_pos, ap_pos + 1);
+  } else {
+    p_returned = end();
+  }
+  return p_returned;
 }
 template <class T>
 inline void raw_data_t<T>::clear()
