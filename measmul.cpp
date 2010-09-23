@@ -3094,10 +3094,6 @@ bool irs::ni_pxi_4071_t::is_param_exists(
 {
   return (a_param == mul_param_source_values) ||
     (a_param == mul_param_filtered_values) ||
-    (a_param == mul_param_standard_deviation) ||
-    (a_param == mul_param_standard_deviation_relative) ||
-    (a_param == mul_param_variation) ||
-    (a_param == mul_param_variation_relative) ||
     (a_param == mul_param_sampling_time_s) ||
     (a_param == mul_param_filter_settings);
 }
