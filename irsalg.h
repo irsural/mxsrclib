@@ -1,5 +1,5 @@
 // Алгоритмы
-// Дата: 21.09.2010
+// Дата: 23.09.2010
 // Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
@@ -271,12 +271,11 @@ T irs::delta_calc_t<T>::average()const {
 template<class T>
 T irs::delta_calc_t<T>::relative()const {
   T average_value = average();
-  T relative_value = 0.;
+  T relative_value = 0;
   if (average_value != 0) {
     relative_value = absolute() / average_value;
-  }
-  else {
-    relative_value = irs::numeric_limits<double>::max() / 2;
+  } else {
+    relative_value = 0;
   }
 
   return relative_value;
