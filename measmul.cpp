@@ -3030,6 +3030,14 @@ void irs::ni_pxi_4071_t::get_param(const multimeter_param_t a_param,
         reinterpret_cast<const irs_u8*>(&filtered_value) +
         sizeof(filtered_value));
     } break;
+    case mul_param_sampling_time_s:
+    {
+      double sampling_time_s = 1/m_eth_mul_data.samples_per_sec;
+      ap_value->insert(ap_value->data(),
+        reinterpret_cast<const irs_u8*>(&sampling_time_s),
+        reinterpret_cast<const irs_u8*>(&sampling_time_s) +
+        sizeof(sampling_time_s));
+    } break;
     // ÑÊÎ
     case mul_param_standard_deviation:
     {
@@ -3049,14 +3057,6 @@ void irs::ni_pxi_4071_t::get_param(const multimeter_param_t a_param,
     case mul_param_variation_relative:
     {
     
-    } break;
-    case mul_param_sampling_time_s:
-    {
-      double sampling_time_s = 1/m_eth_mul_data.samples_per_sec;
-      ap_value->insert(ap_value->data(),
-        reinterpret_cast<const irs_u8*>(&sampling_time_s),
-        reinterpret_cast<const irs_u8*>(&sampling_time_s) +
-        sizeof(sampling_time_s));
     } break;
     case mul_param_filter_settings:
     {
@@ -3082,6 +3082,12 @@ void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
     case mul_param_filter_settings:
     {
       m_filter = *reinterpret_cast<const filter_settings_t*>(a_value.data());
+      /*m_eth_mul_data.filter_type = m_filter.family;
+      m_eth_mul_data.filter_order = static_cast<irs_u8>(m_filter.order);
+      m_eth_mul_data.sampling_freq = 1/m_filter.sampling_time_s;
+      m_eth_mul_data.low_cutoff_freq = m_filter.low_cutoff_freq_hz;
+      m_eth_mul_data.passband_ripple = m_filter.passband_ripple_db;
+      m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;*/
     } break;
     default:
     {
@@ -3221,7 +3227,11 @@ void irs::ni_pxi_4071_t::tick()
       static_cast<filter_family_t>(
       static_cast<irs_u8>(m_eth_mul_data.filter_type));
     m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
-    m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+    if (m_eth_mul_data.sampling_freq == 0) {
+      m_filter.sampling_time_s = 0;
+    } else {
+      m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+    }
     m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
     m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
     m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
