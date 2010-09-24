@@ -8,6 +8,7 @@
 #include <irsdefs.h>
 
 #include <irslimits.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 

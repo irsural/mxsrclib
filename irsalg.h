@@ -1,5 +1,5 @@
 // Алгоритмы
-// Дата: 23.09.2010
+// Дата: 24.09.2010
 // Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
@@ -142,7 +142,9 @@ irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
         square_sum += val * val;
       }
     }
-    return sqrt(square_sum / size);
+    calc_t calced_sko = sqrt(square_sum / size);
+    return calced_sko;
+    //return sqrt(square_sum / size);
   }
 
   return 0.;
@@ -153,10 +155,16 @@ data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
   irs_u32 size = m_val_ring.get_size();
   if (size) {
     calc_t average = m_sum / size;
-    return *this / average;
+    calc_t sko = *this;
+    if (average != 0) {
+      calc_t sko_reltive = sko / average;
+      return sko_reltive;
+    } else {
+      return 0;
+    }
+  } else {
+    return 0;
   }
-
-  return 0.;
 }
 
 template<class data_t, class calc_t>
