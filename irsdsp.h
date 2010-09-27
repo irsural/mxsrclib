@@ -442,7 +442,7 @@ void fft(vector<complex<T> >& signal)
       second_idx |= ((first_idx >> (degree - create_idx - 1))&1) << create_idx;
     }
     if (second_idx > first_idx) {
-      swap(signal[first_idx], signal[second_idx]);
+      ::swap(signal[first_idx], signal[second_idx]);
     }
   }
   complex<T> divider = -1.;
