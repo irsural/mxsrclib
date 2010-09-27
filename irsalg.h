@@ -209,6 +209,9 @@ irs::delta_calc_t<T>::~delta_calc_t() {
 template<class T>
 void irs::delta_calc_t<T>::resize(size_t a_count) {
   m_count = a_count;
+  if (m_array.size() > m_count) {
+    m_array.resize(m_count);
+  }
 }
 
 template<class T>
@@ -236,7 +239,6 @@ T irs::delta_calc_t<T>::max()const {
   if (size != 0) {
     max = *max_element(m_array.begin(), m_array.end());
   }
-
   return max;
 }
 
@@ -247,14 +249,12 @@ T irs::delta_calc_t<T>::min()const {
   if (size != 0) {
     min = *min_element(m_array.begin(), m_array.end());
   }
-
   return min;
 }
 
 template<class T>
 T irs::delta_calc_t<T>::absolute()const {
   T delta = max() - min();
-
   return delta;
 }
 
@@ -285,14 +285,12 @@ T irs::delta_calc_t<T>::relative()const {
   } else {
     relative_value = 0;
   }
-
   return relative_value;
 }
 
 template<class T>
 size_t irs::delta_calc_t<T>::size() {
   size_t size = m_array.size();
-
   return size;
 }
 

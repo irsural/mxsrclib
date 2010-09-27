@@ -305,6 +305,8 @@ private:
     bool m_refresh_chart_items;
     measure_time_t m_time;
     double m_shift_time;
+    double m_chart_time;
+    double m_minus_shift_time;
     bool m_refresh_table;
     bool m_saveable_is_edit;
     int m_saveable_col;

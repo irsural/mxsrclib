@@ -174,6 +174,8 @@ irs::tstlan4_t::controls_t::controls_t(
   m_refresh_chart_items(true),
   m_time(),
   m_shift_time(0),
+  m_chart_time(0),
+  m_minus_shift_time(0),
   m_refresh_table(true),
   m_saveable_is_edit(false),
   m_saveable_col(0),
@@ -368,12 +370,12 @@ void irs::tstlan4_t::controls_t::tick()
           }
         }
       }
-      double chart_time = m_time.get() + m_shift_time;
+      m_chart_time = m_time.get() + m_shift_time - m_minus_shift_time;
       for (int row = m_header_size; row < row_count; row++) {
         if (chart_list->Strings[row] == "1") {
           int var_index = row - m_header_size;
           string_type chart_name = name_list->Strings[row].c_str();
-          mp_chart->add(chart_name, chart_time, var_to_double(var_index));
+          mp_chart->add(chart_name, m_chart_time, var_to_double(var_index));
           if (m_first) {
             creation_csv();
             m_first = false;
@@ -736,11 +738,13 @@ void __fastcall irs::tstlan4_t::controls_t::CsvSaveBtnClick(TObject *Sender)
       m_is_created_csv = false;
     }
     mp_start_btn->Caption = mp_read_on_text;
+    m_minus_shift_time = m_time.get();
   } else {
     m_start = false;
     m_refresh_table = true;
     creation_csv();
     mp_start_btn->Caption = mp_read_off_text;
+    m_minus_shift_time = m_time.get() - m_minus_shift_time;
   }
 }
 void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
@@ -756,7 +760,8 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
       col_size = col_size-1;
     }
     bool is_null = false;
-    double time_chart = m_time.get() + m_shift_time;
+    //double time_chart = m_time.get() + m_shift_time;
+    double time_chart = m_chart_time;
     string_type time_zero_str =  m_table.read_cell(0, 1);
     double time_zero = static_cast<double>(StrToFloat(time_zero_str.c_str()));
     for (size_t col_index = 1; col_index < col_size; col_index++) {
@@ -781,6 +786,8 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     }
     string_type time_end =  m_table.read_cell(0, row_size - 1);
     m_shift_time = m_shift_time +
+      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
+    m_chart_time = m_chart_time +
       static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
     m_csv_open_file.close();
   }
