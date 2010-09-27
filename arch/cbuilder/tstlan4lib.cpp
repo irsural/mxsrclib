@@ -495,11 +495,6 @@ void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
 }
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
-  if ((a_var_index == 19) || (a_var_index == 30)) {
-    int i = 0;
-    i++;
-  }
-
   string_type val = 0;
   val.locale_style(irsstrloc_current);
   netconn_t::item_t item = m_netconn.items[a_var_index];
