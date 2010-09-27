@@ -3032,7 +3032,13 @@ void irs::ni_pxi_4071_t::get_param(const multimeter_param_t a_param,
     } break;
     case mul_param_sampling_time_s:
     {
-      double sampling_time_s = 1/m_eth_mul_data.samples_per_sec;
+      double sampling_time_s = 0;
+      if (m_eth_mul_data.sampling_freq == 0) {
+        sampling_time_s = 0;
+      } else {
+        sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+      }
+      //double sampling_time_s = 1/m_eth_mul_data.samples_per_sec;
       ap_value->insert(ap_value->data(),
         reinterpret_cast<const irs_u8*>(&sampling_time_s),
         reinterpret_cast<const irs_u8*>(&sampling_time_s) +
