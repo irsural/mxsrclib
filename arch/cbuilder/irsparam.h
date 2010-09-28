@@ -52,7 +52,7 @@ public:
     const string_type& a_ini_name = empty_string()
   );
   virtual ~param_box_t();
-  virtual void show();
+  virtual bool show();
   virtual void hide();
   virtual void add_edit(const builder_string_type& a_param_name,
     const builder_string_type& a_param_value);

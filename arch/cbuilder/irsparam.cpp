@@ -129,9 +129,9 @@ irs::param_box_t::string_type irs::param_box_t::ini_name()
   return m_ini_file.ini_name().c_str();
 }
 
-void irs::param_box_t::show()
+bool irs::param_box_t::show()
 {
-  mp_form->ShowModal();
+  return mp_form->ShowModal() == mrOk;
 }
 
 void irs::param_box_t::hide()

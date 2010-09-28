@@ -18,7 +18,7 @@ public:
   typedef string_t string_type;
   
   virtual ~param_box_base_t() {}
-  virtual void show() = 0;
+  virtual bool show() = 0;
   virtual void hide() = 0;
   virtual void add_edit(const String& a_param_name,
     const String& a_param_value) = 0;
