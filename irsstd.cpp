@@ -580,6 +580,7 @@ __flash irs_u8 lcd_table[] =
   0xDF, // 'Х':149
   0x2D, // 'Ц':150
   0x2D, // 'Ч':151
+  0x20, // '~':152
   0x20, // 'Щ':153
   0x20, // 'Ъ':154
   0x3E, // 'Ы':155
@@ -1294,7 +1295,7 @@ irs_win32_console_key_drv_t::irs_win32_console_key_drv_t():
   m_flag_event_KeyDown(false),
   m_temporary_irs_key(irskey_none),
   m_Written(0)
-{ 
+{
   //просим десриптор стандартного ввода
   m_InpHandle=GetStdHandle(STD_INPUT_HANDLE);
   m_fdwMode = ENABLE_WINDOW_INPUT;
@@ -1374,7 +1375,7 @@ irskey_t irs_win32_console_key_drv_t::operator()()
         else  if(m_flag_event_KeyDown==true)  //если все еще клавиша нажата
         {
           return m_temporary_irs_key;
-        }             
+        }
       }
   }
   else  if(m_flag_event_KeyDown==true)        //если все еще клавиша нажата
@@ -1433,7 +1434,7 @@ void irs::memobuf::connect(TMemo *ap_memo)
 int irs::memobuf::overflow(int c)
 {
   if (!mp_memo) return 0;
-  
+
   int len_s = pptr() - pbase();
   TStrings *Console = mp_memo->Lines;
   if (len_s > 0) {
@@ -1504,7 +1505,7 @@ irs_win32_console_display_t::irs_win32_console_display_t():
   GetConsoleCursorInfo(m_OutHandle,&lpConsoleCursorInfo);
   lpConsoleCursorInfo.bVisible=false;   //гасим курсор
   SetConsoleCursorInfo(m_OutHandle,&lpConsoleCursorInfo);
-  m_textbuf=new char[get_width()];           
+  m_textbuf=new char[get_width()];
 }
 
 mxdisp_pos_t irs_win32_console_display_t::get_height()
@@ -1545,7 +1546,7 @@ irs_win32_console_key_drv_t::irs_win32_console_key_drv_t():
   m_flag_event_KeyDown(irs_false),
   m_temporary_irs_key(irskey_none),
   m_Written(0)
-{ 
+{
   //просим десриптор стандартного ввода
   m_InpHandle=GetStdHandle(STD_INPUT_HANDLE);
   m_fdwMode = ENABLE_WINDOW_INPUT;
@@ -1628,7 +1629,7 @@ irskey_t irs_win32_console_key_drv_t::operator()()
         else  if(m_flag_event_KeyDown==irs_true)  //если все еще клавиша нажата
         {
           return m_temporary_irs_key;
-        }             
+        }
       }
   }
   else  if(m_flag_event_KeyDown==irs_true)        //если все еще клавиша нажата

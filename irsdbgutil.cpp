@@ -55,11 +55,11 @@ private:
 struct memory_checker_range_param_t
 {
   typedef memory_checker_t::value_type value_type;
-  
+
   value_type begin;
   value_type current;
   value_type end;
-  
+
   memory_checker_range_param_t():
     begin(0),
     current(0),
@@ -79,7 +79,7 @@ struct memory_checker_range_param_t
 class avr_memory_checker_t;
 struct memory_checker_traits_t
 {
-  typedef memory_checker_t::value_type 
+  typedef memory_checker_t::value_type
     (avr_memory_checker_t::*param_get_method_type)(
     memory_checker_t::ident_type a_ident) const;
   typedef void (avr_memory_checker_t::*param_set_method_type)(
@@ -87,13 +87,13 @@ struct memory_checker_traits_t
 };
 struct memory_checker_range_param_ext_t
 {
-  typedef memory_checker_traits_t::param_get_method_type 
+  typedef memory_checker_traits_t::param_get_method_type
     range_param_get_method_type;
 
   memory_checker_range_param_t param;
   range_param_get_method_type cur_size_method;
   range_param_get_method_type rest_method;
-  
+
   memory_checker_range_param_ext_t():
     param(memory_checker_range_param_t()),
     cur_size_method(range_param_get_method_type()),
@@ -114,15 +114,15 @@ struct memory_checker_range_param_ext_t
 struct memory_checker_param_t
 {
   typedef memory_checker_t::value_type value_type;
-  typedef memory_checker_traits_t::param_get_method_type 
+  typedef memory_checker_traits_t::param_get_method_type
     param_get_method_type;
-  typedef memory_checker_traits_t::param_set_method_type 
+  typedef memory_checker_traits_t::param_set_method_type
     param_set_method_type;
-  
+
   value_type param;
   param_get_method_type get_method;
   param_set_method_type set_method;
-  
+
   memory_checker_param_t():
     param(),
     get_method(),
@@ -130,7 +130,7 @@ struct memory_checker_param_t
   {
   }
   memory_checker_param_t(
-    value_type a_param, 
+    value_type a_param,
     param_get_method_type a_get_method,
     param_set_method_type a_set_method
   ):
@@ -146,7 +146,7 @@ public:
   typedef avr_memory_checker_t this_type;
   typedef memory_checker_range_param_ext_t range_param_type;
   typedef memory_checker_param_t param_type;
-  
+
   avr_memory_checker_t();
   virtual value_type range_param_begin(ident_type a_ident) const;
   virtual void range_param_begin(ident_type a_ident,
@@ -170,7 +170,7 @@ private:
     m_heap_array_max_size = 4096,
     m_out_time_s_def = 10
   };
-  
+
   static char const IRS_ICCAVR_FLASH m_call_stack_ident_name[];
   static char const IRS_ICCAVR_FLASH m_heap_ident_name[];
   static char const IRS_ICCAVR_FLASH m_return_stack_ident_name[];
@@ -183,13 +183,16 @@ private:
   event_connect_t<this_type> m_check_event;
   loop_timer_t m_out_timer;
   irs_u16& m_reg_Y;
-  
+
   value_type first_delta(ident_type a_ident) const;
   value_type second_delta(ident_type a_ident) const;
   void out_param(ostream* ap_strm, ident_type a_ident) const;
   void select_max(ident_type a_ident, irs_u16 a_value);
   void timer0_init();
   void timer0_deinit();
+  void timer4_init();
+  void timer4_deinit();
+
   value_type simple_param_get(ident_type a_ident) const;
   void simple_param_set(ident_type a_ident, value_type a_value);
   void interrupt_set(ident_type a_ident, value_type a_value);
@@ -219,7 +222,7 @@ void irs::default_memory_checker_t::range_param_begin(
   ident_type /*a_ident*/, value_type /*a_value*/)
 {
 }
-irs::default_memory_checker_t::value_type 
+irs::default_memory_checker_t::value_type
   irs::default_memory_checker_t::range_param_current(
   ident_type /*a_ident*/) const
 {
@@ -300,19 +303,19 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_reg_Y(*reinterpret_cast<irs_u16*>(0x1C))
 {
   lock_interrupt_t lock_interrupt;
-  
+
   m_range_param_list[mcrpi_avr_return_stack] = range_param_type(
     memory_checker_range_param_t(), second_delta, first_delta);
   m_range_param_list[mcrpi_avr_call_stack] = range_param_type(
     memory_checker_range_param_t(), second_delta, first_delta);
   m_range_param_list[mcrpi_avr_heap] = range_param_type(
     memory_checker_range_param_t(), first_delta, second_delta);
-  
+
   m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
     simple_param_get, interrupt_set);
   m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
     simple_param_get, out_time_set);
-  
+
   m_range_param_list[mcrpi_avr_call_stack].param.current = m_reg_Y;
   m_range_param_list[mcrpi_avr_heap].param.current = heap_pointer();
   m_range_param_list[mcrpi_avr_return_stack].param.current = SP;
@@ -391,7 +394,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
 {
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "--- ");
   (*ap_strm) << m_ident_name_list[a_ident] << endl;
-  
+
   // begin
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "begin: ");
   irs_size_t begin = range_param_begin(a_ident);
@@ -399,7 +402,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), ", ");
   out_hex_0x(ap_strm, begin);
   (*ap_strm) << endl;
-  
+
   // current
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "current: ");
   irs_size_t current = range_param_current(a_ident);
@@ -407,7 +410,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), ", ");
   out_hex_0x(ap_strm, current);
   (*ap_strm) << endl;
-  
+
   // end
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "end: ");
   irs_size_t end = range_param_end(a_ident);
@@ -415,7 +418,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), ", ");
   out_hex_0x(ap_strm, end);
   (*ap_strm) << endl;
-  
+
   // size
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "size: ");
   irs_size_t size = range_param_size(a_ident);
@@ -423,7 +426,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), ", ");
   out_hex_0x(ap_strm, size);
   (*ap_strm) << endl;
-  
+
   // cur_size
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "cur_size: ");
   irs_size_t cur_size = range_param_cur_size(a_ident);
@@ -431,7 +434,7 @@ void irs::avr_memory_checker_t::out_param(ostream* ap_strm,
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), ", ");
   out_hex_0x(ap_strm, cur_size);
   (*ap_strm) << endl;
-  
+
   // rest
   IRS_STRM_ICCAVR_FLASH_OUT((*ap_strm), "rest: ");
   irs_size_t rest = range_param_rest(a_ident);
@@ -472,7 +475,7 @@ void irs::avr_memory_checker_t::select_max(ident_type a_ident,
   value_type param_cur_size_prev = range_param_cur_size(a_ident);
   param_current = static_cast<value_type>(a_value);
   value_type param_cur_size = range_param_cur_size(a_ident);
-  
+
   #ifdef IRS_LIB_DEBUG
   if (param_cur_size >= range_param_size(a_ident)) {
     lock_interrupt_t lock_interrupt;
@@ -485,7 +488,7 @@ void irs::avr_memory_checker_t::select_max(ident_type a_ident,
     IRS_LIB_ASSERT(range_param_is_overflow);
   }
   #endif //IRS_LIB_DEBUG
-  
+
   if (param_cur_size_prev > param_cur_size) {
     param_current = param_current_prev;
   }
@@ -494,7 +497,7 @@ void irs::avr_memory_checker_t::timer0_init()
 {
   irs::avr::interrupt_array()->int_event_gen(irs::avr::timer0_ovf_int)->
     add(&m_check_event);
-    
+
   #ifdef __ATmega128__
   TCCR0 = (0 << FOC0)|(0 << WGM01)|(0 << COM01)|(0 << COM00)|(0 << WGM00)|
     (1 << CS02)|(1 << CS01)|(1 << CS00);
@@ -528,6 +531,56 @@ void irs::avr_memory_checker_t::timer0_deinit()
   TIMSK0_TOIE0 = 0;
   #endif //__ATmega128__
 };
+void irs::avr_memory_checker_t::timer4_init()
+{
+  #ifdef __ATmega2561__
+  irs::avr::interrupt_array()->int_event_gen(irs::avr::timer4_ovf_int)->
+    add(&m_check_event);
+
+  TCCR4A_COM4A1 = 0;  //  Выходы отключены
+  TCCR4A_COM4A0 = 0;
+  TCCR4A_COM4B1 = 0;
+  TCCR4A_COM4B0 = 0;
+  TCCR4A_COM4C1 = 0;
+  TCCR4A_COM4C0 = 0;
+
+  TCCR4B_WGM43 = 0;   //  Fast PWM 8-bit
+  TCCR4B_WGM42 = 1;
+  TCCR4A_WGM41 = 0;
+  TCCR4A_WGM40 = 1;
+
+  TCCR4B_ICNC4 = 0;   //  Бесполезное
+  TCCR4B_ICES4 = 0;
+  TCCR4C = 0;
+
+  TCCR4B_CS42 = 1;    //  Делитель на 1024
+  TCCR4B_CS41 = 0;
+  TCCR4B_CS40 = 1;
+
+  TCNT4 = 0;
+  OCR4A = 0;
+  OCR4B = 0;
+  OCR4C = 0;
+  ICR4 = 0;
+  TIMSK4 = 0;
+  TIMSK4_TOIE4 = 1;   //  Прерывание по переполнению
+  TIFR4_TOV4 = 1;     //  Сброс флага прерывания
+
+  #else //__ATmega2561__
+  IRS_LIB_ASSERT_MSG(irsm("Неподдерживаемый контроллер!"));
+  #endif //__ATmega2561__
+}
+void irs::avr_memory_checker_t::timer4_deinit()
+{
+  #ifdef __ATmega2561__
+  TCCR4A = 0;
+  TCCR4B = 0;
+  TCNT4 = 0;
+  TIMSK4 = 0;
+  #else //__ATmega2561__
+  IRS_LIB_ASSERT_MSG(irsm("Неподдерживаемый контроллер!"));
+  #endif //__ATmega2561__
+};
 irs::avr_memory_checker_t::value_type
   irs::avr_memory_checker_t::simple_param_get(ident_type a_ident) const
 {
@@ -546,9 +599,16 @@ void irs::avr_memory_checker_t::interrupt_set(ident_type a_ident,
   switch (interrupt_param) {
     case mcp_avr_interrupt_none: {
       timer0_deinit();
+      timer4_deinit();
+      break;
     }
     case mcp_avr_interrupt_timer0: {
       timer0_init();
+      break;
+    }
+    case mcp_avr_interrupt_timer4: {
+      timer4_init();
+      break;
     }
   };
 }
@@ -569,7 +629,7 @@ irs::avr_memory_checker_t::value_type
 void irs::avr_memory_checker_t::check()
 {
   lock_interrupt_t lock_interrupt;
-  
+
   select_max(mcrpi_avr_return_stack, SP);
   select_max(mcrpi_avr_call_stack, m_reg_Y);
   select_max(mcrpi_avr_heap, heap_pointer());
@@ -638,11 +698,11 @@ irs::memory_checker_t* irs::memory_checker_avr_init(
   memory_checker_t::value_type call_stack_begin = 0x200;
   irs_u8 multiplier = 3;
   #endif // __ATmega128__
-  
-  memory_checker_t::value_type heap_begin = call_stack_begin + 
+
+  memory_checker_t::value_type heap_begin = call_stack_begin +
     a_call_stack_size;
   return memory_checker_init(call_stack_begin, heap_begin, heap_begin,
-    heap_begin + a_heap_size, heap_begin + a_heap_size, heap_begin + 
+    heap_begin + a_heap_size, heap_begin + a_heap_size, heap_begin +
     a_heap_size + a_return_stack_size*multiplier,
     memory_checker_t::heap_array_size_def);
 }

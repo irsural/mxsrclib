@@ -27,7 +27,7 @@ public:
   enum {
     m_begin_address = 0x0002
   };
-  
+
   eeprom_t(irs_uarc a_start_index, irs_uarc a_size);
   ~eeprom_t();
   irs_uarc size();
@@ -46,9 +46,9 @@ private:
       irs_uarc((E2END - m_begin_address)/4) * 4,
     m_data_size = m_end_address - m_begin_address
   };
-  
+
   static __no_init __eeprom irs_u8 mp_ee_data[m_data_size] @ m_begin_address;
-  
+
   irs_uarc m_start_index;
   irs_uarc m_size;
   bool m_crc_error;
@@ -83,7 +83,7 @@ public:
   struct old_eeprom_data_t {
     irs_uarc index;
     irs_uarc size;
-    
+
     old_eeprom_data_t(
       irs_uarc a_index,
       irs_uarc a_size
@@ -93,7 +93,7 @@ public:
     {
     }
   };
-  
+
   eeprom_protected_t(
     irs_uarc a_start_index,
     irs_uarc a_size,
@@ -111,12 +111,14 @@ public:
   bool error();
 private:
   enum {
-    m_eeprom_header_size = sizeof(irs_uarc) + sizeof(irs_u32),
+    m_eeprom_id_size = sizeof(irs_u32),
+    m_eeprom_size_size = sizeof(irs_uarc),
+    m_eeprom_header_size = m_eeprom_size_size + m_eeprom_id_size,
     m_eeprom_begin_address = eeprom_t::m_begin_address,
     m_eeprom_size = irs_uarc((E2END - m_eeprom_begin_address)/4) * 4,
     m_crc_size = sizeof(irs_u32)
   };
-  
+
   handle_t<eeprom_t> mp_eeprom_header;
   handle_t<eeprom_t> mp_eeprom1;
   handle_t<eeprom_t> mp_eeprom2;

@@ -1,5 +1,5 @@
 // Алгоритмы
-// Дата: 24.04.2010
+// Дата: 29.09.2010
 // Ранняя дата: 2.09.2009
 
 // Номер файла
@@ -102,7 +102,7 @@ void *alg_ring::operator[](irs_u32 index) const
 }
 
 #ifdef __ICCAVR__
-MEMORY_MODIFIER irs_u32 irs::crc32_data_t::table[size] = 
+MEMORY_MODIFIER irs_u32 irs::crc32_data_t::table[size] =
 #else //__ICCAVR__
 irs::crc32_data_t::crc32_data_t()
 {
@@ -172,29 +172,12 @@ irs::crc32_data_t::crc32_data_t()
   0xBDBDF21CL, 0xCABAC28AL, 0x53B39330L, 0x24B4A3A6L,
   0xBAD03605L, 0xCDD70693L, 0x54DE5729L, 0x23D967BFL,
   0xB3667A2EL, 0xC4614AB8L, 0x5D681B02L, 0x2A6F2B94L,
-  0xB40BBE37L, 0xC30C8EA1L, 0x5A05DF1BL, 0x2D02EF8DL 
+  0xB40BBE37L, 0xC30C8EA1L, 0x5A05DF1BL, 0x2D02EF8DL
 };
 #ifndef __ICCAVR__
   ::memcpy(table, table_src, size*sizeof(irs_u32));
 }
 #endif //__ICCAVR__
-
-// Зеркальный табличный метод расчета crc32
-// Заркальный метод является наиболее распространенным
-// Необходимый объем оперативной памяти не менее 1024 байт
-// Значительный прирост в скорости вычисления по сравнению с нетабличным
-// методом
-irs_u32 irs::crc32_table(const irs_u8* ap_buf, const size_t a_size)
-{
-  static handle_t<crc32_data_t> crc32_data = new crc32_data_t();
-  irs_u32 crc = 0xFFFFFFFF;
-  for (size_t i = 0; i < a_size; i++) {
-    crc = ((crc >> 8) & 0x00FFFFFF) ^
-      crc32_data->table[(crc ^ *(ap_buf++)) & 0xFF];
-  }
-  return ~crc;
-}
-
 
 irs_u8 irs::crc8(irs_u8 *a_buf, irs_u8 a_start, irs_u8 a_cnt)
 { //  Взято с википедии
