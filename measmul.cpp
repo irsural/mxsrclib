@@ -3088,12 +3088,12 @@ void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
     case mul_param_filter_settings:
     {
       m_filter = *reinterpret_cast<const filter_settings_t*>(a_value.data());
-      /*m_eth_mul_data.filter_type = m_filter.family;
+      m_eth_mul_data.filter_type = m_filter.family;
       m_eth_mul_data.filter_order = static_cast<irs_u8>(m_filter.order);
       m_eth_mul_data.sampling_freq = 1/m_filter.sampling_time_s;
       m_eth_mul_data.low_cutoff_freq = m_filter.low_cutoff_freq_hz;
       m_eth_mul_data.passband_ripple = m_filter.passband_ripple_db;
-      m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;*/
+      m_eth_mul_data.stopband_ripple = m_filter.stopband_ripple_db;
     } break;
     default:
     {
