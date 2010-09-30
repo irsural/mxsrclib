@@ -1027,6 +1027,8 @@ bool irs::agilent_3458a_digitizer_t::is_param_exists(
     (a_param == mul_param_sampling_time_s) ||
     (a_param == mul_param_filter_settings) ||
     (a_param == mul_param_sample_format) ||
+    (a_param == mul_param_window_function_form) ||
+    (a_param == mul_param_filter_impulse_response_type) ||
     (a_param == mul_param_tick_max_time_s);
 }
 void irs::agilent_3458a_digitizer_t::set_dc()
