@@ -986,7 +986,6 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
               m_updated = true;
-              mp_disp_drv->outtextpos(0, 0, f_value_string);
             }
             *a_cur_menu = f_master_menu;
             f_show_needed = irs_true;
