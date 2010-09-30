@@ -324,6 +324,12 @@ inline ostream& operator<<(ostream& a_strm,
 
 #endif // IRS_LIB_DEBUG
 
+#ifdef IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
+#define IRS_LIB_DBG_MSG_KMV(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#else //IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
+#define IRS_LIB_DBG_MSG_KMV(msg)
+#endif //IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
+
 namespace irs {
 
 // Тип для кодов ошибок

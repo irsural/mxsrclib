@@ -364,7 +364,7 @@ private:
     discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
     coils_size_byte = 4,         //bit = coils_size_byte*8
     hold_regs_size = 154,        //16-bit word
-    input_regs_size = 0,         //16-bit word
+    input_regs_size = 0          //16-bit word
   };
 
   //Режимы работы
