@@ -74,6 +74,10 @@ enum multimeter_param_t {
   mul_param_sample_format,
   // Максимальное время одного тика
   mul_param_tick_max_time_s,
+  // Установка ких-фильтра в виде окна хемминга
+  mul_param_window_function_form,
+  // Установка типа фильтра по типу импульсной характеристики
+  mul_param_filter_impulse_response_type,
   mul_param_count
 };
 
@@ -535,7 +539,7 @@ public:
   typedef deque<value_t> delay_line_type;
   void set_filter_settings(const filter_settings_t& a_filter_setting);
   template <class coef_list_type>
-  void set_coefficiens(const coef_list_type& a_num_coef_list,
+  void set_coefficients(const coef_list_type& a_num_coef_list,
     const coef_list_type& a_denom_coef_list);
   void set_filt_value_buf(container_t* ap_filt_values,
     const size_type a_filt_value_count);
@@ -566,6 +570,53 @@ private:
 
 bool iir_filter_asynch_test();
 
+// Класс асинхронной фильтрации фильтром с конечной импульсной характеристикой.
+// Параметры шаблона: value_t - тип переменных, для расчета,
+// iterator_t - тип итератора для получения входных значений,
+// container_t - тип контейнера, принимающего отфильтрованные значения
+template <class value_t, class iterator_t, class container_t>
+class fir_filter_asynch_t
+{
+public:
+  typedef value_t value_type;
+  typedef iterator_t iterator_type;
+  typedef irs_size_t size_type;
+  typedef deque<value_t> coef_list_type;
+  typedef deque<value_t> delay_line_type;
+  fir_filter_asynch_t();
+  template <class coef_iterator_t>
+  fir_filter_asynch_t(coef_iterator_t a_coef_list_begin,
+    coef_iterator_t a_coef_list_end);
+  template <class coef_iterator_t>
+  void set_coefficients(coef_iterator_t a_coef_list_begin,
+    coef_iterator_t a_coef_list_end);
+  void set_filt_value_buf(container_t* ap_filt_values,
+    const size_type a_filt_value_count);
+  void sync(value_t a_value);
+  value_t filt(const value_t a_sample);
+  void set(const value_t a_sample);
+  void set(iterator_t ap_first, iterator_t ap_last);
+  value_t get() const;
+  void reset();
+  // Вовзращает статус завершенности
+  bool completed() const;
+  // Элементарное действие
+  void tick();
+  // Прерывание операции
+  void abort();
+  // Установка времени тика
+  void set_tick_max_time(const double a_set_tick_max_time_s);
+private:
+  fir_filter_t<value_t> m_fir_filter;
+  bool m_completed;
+  size_type m_delta_tick;
+  timer_t m_tick_timer;
+  iterator_t mp_first;
+  iterator_t mp_last;
+  container_t* mp_filt_values;
+  size_type m_filt_value_max_count;
+};
+
 // Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 class agilent_3458a_digitizer_t: public mxmultimeter_t
 {
@@ -582,6 +633,8 @@ public:
     delta_calc_asynch_type;
   typedef iir_filter_asynch_t<math_type, raw_data_t<double>::pointer,
     raw_data_t<double> > iir_filter_asynch_type;
+  typedef fir_filter_asynch_t<math_type, raw_data_t<double>::pointer,
+    raw_data_t<double> > fir_filter_asynch_type;
   // Конструктор
   agilent_3458a_digitizer_t(
     irs::hardflow_t* ap_hardflow,
@@ -654,8 +707,15 @@ private:
   void set_interval();
   void set_sampling_time();
   void set_filter_settings();
+  void set_filter_impulse_response_type();
+  void set_window_function_form();
   void set_sample_format();
   void set_range();
+  void set_coef_fir_filter();
+  void filter_start();
+  void filter_tick();
+  bool filter_completed();
+  math_type filter_get();
   irs::hardflow_t* mp_hardflow;
   enum process_t {
     process_wait,
@@ -667,7 +727,9 @@ private:
     process_get_coefficient
   };
   process_t m_process;
+  filter_impulse_response_type_t m_filter_impulse_response_type;
   filter_settings_t m_filter_settings;
+  window_function_form_t m_window_function_form;
   iir_filter_t<math_type> m_iir_filter;
   // Команды при инициализации
   raw_data_t<irs_u8> m_command_terminator;
@@ -685,21 +747,35 @@ private:
   double m_sampling_time;
   double m_interval;
   event_t m_settings_change_event;
+
   double m_new_interval;
   event_t m_interval_change_event;
   generator_events_t m_interval_change_gen_events;
+
   double m_new_sampling_time;
   event_t m_sampling_time_s_change_event;
   generator_events_t m_sampling_time_s_change_gen_events;
+
   filter_settings_t m_new_filter_settings;
   event_t m_filter_settings_change_event;
   generator_events_t m_filter_settings_change_gen_events;
+
+  filter_impulse_response_type_t m_new_filter_impulse_response_type;
+  event_t m_filter_impulse_response_type_change_event;
+  generator_events_t m_filter_impulse_response_type_change_gen_events;
+
+  window_function_form_t m_new_window_function_form;
+  event_t m_window_function_form_change_event;
+  generator_events_t m_window_function_form_change_gen_events;
+
   double m_new_range;
   event_t m_range_change_event;
   generator_events_t m_range_change_gen_events;
+
   mul_sample_format_t m_new_sample_format;
   event_t m_sample_format_change_event;
   generator_events_t m_sample_format_change_gen_events;
+
   double m_tick_max_time_s;
   size_type m_need_receive_data_size;
   bool m_set_settings_complete;
@@ -712,6 +788,7 @@ private:
   sko_calc_asynch_type m_sko_calc_asynch;
   delta_calc_asynch_type m_delta_calc_asynch;
   iir_filter_asynch_type m_iir_filter_asynch;
+  fir_filter_asynch_type m_fir_filter_asynch;
 }; // class agilent_3458a_digitizer_t
 
 template <class SAMLE_TYPE>
@@ -991,11 +1068,11 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_filter_settings(
 
 template <class value_t, class iterator_t, class container_t>
 template <class coef_list_t>
-void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_coefficiens(
+void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_coefficients(
   const coef_list_t& a_num_coef_list,
   const coef_list_t& a_denom_coef_list)
 {
-  m_iir_filter.set_coefficiens(a_num_coef_list, a_denom_coef_list);
+  m_iir_filter.set_coefficients(a_num_coef_list, a_denom_coef_list);
 }
 
 template <class value_t, class iterator_t, class container_t>
@@ -1041,8 +1118,7 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::set(
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
-  IRS_LIB_ERROR_IF
-  (ap_first > ap_last, ec_standard,
+  IRS_LIB_ERROR_IF(ap_first > ap_last, ec_standard,
     "Итератор начала должен быть меньше итератора конца");
   mp_first = ap_first;
   mp_last = ap_last;
@@ -1110,6 +1186,166 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::abort()
 
 template <class value_t, class iterator_t, class container_t>
 void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_tick_max_time(
+  const double a_set_tick_max_time_s)
+{
+  IRS_LIB_ERROR_IF(a_set_tick_max_time_s <= 0, ec_standard,
+    "Максимальное время тика должно быть больше нуля");
+  m_tick_timer.set(make_cnt_s(a_set_tick_max_time_s));
+}
+
+// class fir_filter_asynch_t
+template <class value_t, class iterator_t, class container_t>
+fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t():
+  m_fir_filter(),
+  m_completed(true),
+  m_delta_tick(1000),
+  m_tick_timer(make_cnt_s(0.001)),
+  mp_first(),
+  mp_last(mp_first),
+  mp_filt_values(IRS_NULL),
+  m_filt_value_max_count(1000)
+{
+}
+
+template <class value_t, class iterator_t, class container_t>
+template <class coef_iterator_t>
+fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t(
+  coef_iterator_t a_coef_list_begin,
+  coef_iterator_t a_coef_list_end
+):
+  m_fir_filter(a_coef_list_begin, a_coef_list_end),
+  m_completed(true),
+  m_delta_tick(1000),
+  m_tick_timer(make_cnt_s(0.001)),
+  mp_first(),
+  mp_last(mp_first),
+  mp_filt_values(IRS_NULL),
+  m_filt_value_max_count(1000)
+{
+}
+
+template <class value_t, class iterator_t, class container_t>
+template <class coef_iterator_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::set_coefficients(
+  coef_iterator_t a_coef_list_begin,
+  coef_iterator_t a_coef_list_end)
+{
+  m_fir_filter.set_coefficients(a_coef_list_begin, a_coef_list_end);
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::set_filt_value_buf(
+  container_t* ap_filt_values,
+  const size_type a_filt_value_count)
+{
+  mp_filt_values = ap_filt_values;
+  if (mp_filt_values) {
+    mp_filt_values->clear();
+  } else {
+    // Пользователь удалил буфер
+  }
+  m_filt_value_max_count = a_filt_value_count;
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::sync(
+  value_t a_value)
+{
+  m_fir_filter.sync(a_value);
+}
+
+template <class value_t, class iterator_t, class container_t>
+typename fir_filter_asynch_t<value_t, iterator_t, container_t>::value_type
+fir_filter_asynch_t<value_t, iterator_t, container_t>::filt(
+  const value_t a_sample)
+{
+  m_fir_filter.filt(a_sample);
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::set(
+  const value_t a_sample)
+{
+  IRS_LIB_ERROR_IF(!m_completed, ec_standard,
+    "Предыдущая операция еще не завершена");
+  m_fir_filter.set(a_sample);
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::set(
+  iterator_t ap_first, iterator_t ap_last)
+{
+  IRS_LIB_ERROR_IF(!m_completed, ec_standard,
+    "Предыдущая операция еще не завершена");
+  IRS_LIB_ERROR_IF(ap_first > ap_last, ec_standard,
+    "Итератор начала должен быть меньше итератора конца");
+  mp_first = ap_first;
+  mp_last = ap_last;
+  m_completed = false;
+}
+
+template <class value_t, class iterator_t, class container_t>
+typename fir_filter_asynch_t<value_t, iterator_t, container_t>::value_type
+fir_filter_asynch_t<value_t, iterator_t, container_t>::get() const
+{
+  return m_fir_filter.get();
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::reset()
+{
+  m_fir_filter.reset();
+}
+
+template <class value_t, class iterator_t, class container_t>
+bool fir_filter_asynch_t<value_t, iterator_t, container_t>::completed() const
+{
+  return m_completed;
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
+{
+  if (!m_completed) {
+    m_tick_timer.start();
+    while (!m_tick_timer.check() && !m_completed) {
+      size_type count = 0;
+      while ((count < m_delta_tick) && (mp_first != mp_last) && !m_completed) {
+        m_fir_filter.set(*mp_first);
+        if (mp_filt_values) {
+          if (mp_filt_values->size() >= m_filt_value_max_count) {
+            mp_filt_values->erase(mp_filt_values->begin());
+          } else {
+            // Размер еще не достиг максимума
+          }
+          mp_filt_values->insert(mp_filt_values->end(),
+            static_cast<typename container_t::value_type>(m_fir_filter.get()));
+        } else {
+          // Пользователь не установил буфер фильтрованных значений
+        }
+        ++mp_first;
+        count++;
+      }
+      m_completed = (mp_first == mp_last);
+    }
+  } else {
+    // Операция завершена
+  }
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::abort()
+{
+  if (!m_completed) {
+    mp_last = mp_first;
+    m_completed = true;
+  } else {
+    // Ничего не делаем
+  }
+}
+
+template <class value_t, class iterator_t, class container_t>
+void fir_filter_asynch_t<value_t, iterator_t, container_t>::set_tick_max_time(
   const double a_set_tick_max_time_s)
 {
   IRS_LIB_ERROR_IF(a_set_tick_max_time_s <= 0, ec_standard,

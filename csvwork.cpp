@@ -1074,8 +1074,9 @@ bool irs::csvwork::csv_file_synchro_t::save(
     fsuccess = false;
   }
   if (fsuccess) {
-    m_file.clear();
+    // Переоткрываем файл, чтобы уничтожить содержимое файла
     m_file.close();
+    m_file.clear();
     m_file.open(m_filename.c_str(), ios::in|ios::out|ios::trunc);
     if (!m_file.good()) {
       fsuccess = false;
@@ -1137,9 +1138,7 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
   IRS_LIB_ASSERT(m_status_file == stat_file_open);
   bool fsuccess = true;
   a_table_string.clear();
-  if (m_status_file != stat_file_open) {
-    fsuccess = false;
-  } else if (!m_file.good()) {
+  if ((m_status_file != stat_file_open) || !m_file.good()) {
     fsuccess = false;
   }
   if (fsuccess) {

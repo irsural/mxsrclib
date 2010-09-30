@@ -1095,6 +1095,11 @@ enum filter_bandform_t {
   fb_band_stop
 };
 
+enum filter_impulse_response_type_t {
+  firt_finite,
+  firt_infinite
+};
+
 struct filter_settings_t {
   typedef size_t size_type;
   filter_family_t family;
@@ -1146,7 +1151,7 @@ inline bool operator!=(const filter_settings_t& a_fs_first,
   return !(a_fs_first == a_fs_second);
 }
 
-} //namespace irs
+} // namespace irs
 
 #endif //irsdspH
 

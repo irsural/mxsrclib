@@ -42,7 +42,7 @@ public:
   typedef deque<T> delay_line_type;
   void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
   template <class COEF_LIST_TYPE>
-  void set_coefficiens(const COEF_LIST_TYPE& a_num_coef_list,
+  void set_coefficients(const COEF_LIST_TYPE& a_num_coef_list,
     const COEF_LIST_TYPE& a_denom_coef_list);
   void sync(T a_value);
   T filt(const T a_sample);
@@ -57,11 +57,93 @@ private:
   delay_line_type m_out_delay_line;
 };
 
+enum window_function_form_t {
+  // С окна с высокой и умеренной разрешающей способностью
+  wff_hann,
+  wff_hamming,
+  wff_blackman,
+  // С низкой разрешающей способностью(высоким динамическим диапазоном)
+  wff_nutall,
+  wff_blackman_harris,
+  wff_blackman_nutall
+};
+
+template <class value_t>
+class fir_filter_t
+{
+public:
+  typedef value_t value_type;
+  typedef irs_size_t size_type;
+  typedef deque<value_type> coef_list_type;
+  typedef deque<value_type> delay_line_type;
+  fir_filter_t();
+  template <class iterator_t>
+  fir_filter_t(iterator_t a_coef_list_begin,
+    iterator_t a_coef_list_end);
+  template <class iterator_t>
+  void set_coefficients(iterator_t a_coef_list_begin,
+    iterator_t a_coef_list_end);
+  void sync(value_type a_value);
+  value_type filt(const value_type a_sample);
+  void set(const value_type a_sample);
+  value_type get() const;
+  void reset();
+private:
+  coef_list_type m_coef_list;
+  delay_line_type m_delay_line;
+  value_t m_sum;
+};
+
 template <class coef_list_type>
 bool get_coef_iir_filter(
   const irs::filter_settings_t& a_filter_settings,
   coef_list_type* ap_num_coef_list,
   coef_list_type* ap_denom_coef_list);
+
+template <class coef_list_type>
+void get_coef_window_func_hann(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void get_coef_window_func_hamming(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void get_coef_window_func_blackman(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+
+template <class coef_list_type>
+void  get_coef_window_func_nutall(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void  get_coef_window_func_blackman_harris(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void  get_coef_window_func_blackman_nutall(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void  get_coef_window_func_kaiser(
+  // Порядок фильтра
+  const irs_size_t a_order,
+  // Период дискретизации
+  const double a_sampling_time_s,
+  // Центрированная частота среза
+  const double a_centered_cutoff_freq,
+  // Коэффициент, определяемый требованием к затуханию в полосе подавления
+  const double a_beta,
+  // Список коэффициентов фильтра
+  coef_list_type* ap_coef_list
+);
 
 template <class T>
 int lampln(
@@ -222,7 +304,7 @@ void iir_filter_t<T>::set_filter_settings(
 
 template <class T>
 template <class COEF_LIST_TYPE>
-void iir_filter_t<T>::set_coefficiens(const COEF_LIST_TYPE& a_num_coef_list,
+void iir_filter_t<T>::set_coefficients(const COEF_LIST_TYPE& a_num_coef_list,
   const COEF_LIST_TYPE& a_denom_coef_list)
 {
   IRS_LIB_ASSERT(a_num_coef_list.size() == a_denom_coef_list.size());
@@ -282,6 +364,78 @@ T iir_filter_t<T>::get() const
 
 template <class T>
 void iir_filter_t<T>::reset()
+{
+  sync(0);
+}
+
+// class fir_filter_t
+template <class value_t>
+fir_filter_t<value_t>::fir_filter_t():
+  m_coef_list(),
+  m_delay_line(),
+  m_sum(0)
+{
+
+}
+
+template <class value_t>
+template <class iterator_t>
+fir_filter_t<value_t>::fir_filter_t(iterator_t a_coef_list_begin,
+  iterator_t a_coef_list_end
+):
+  m_coef_list(a_coef_list_begin, a_coef_list_end),
+  m_delay_line(m_coef_list.size(), 0),
+  m_sum(0)
+{
+
+}
+
+template <class value_t>
+template <class iterator_t>
+void fir_filter_t<value_t>::set_coefficients(iterator_t a_coef_list_begin,
+  iterator_t a_coef_list_end)
+{
+  m_coef_list.assign(a_coef_list_begin, a_coef_list_end);
+  m_delay_line.assign(m_coef_list.size(), 0);
+}
+
+template <class value_t>
+void fir_filter_t<value_t>::sync(value_type a_value)
+{
+  m_delay_line.assign(m_delay_line.size(), a_value);
+  m_sum = 0;
+}
+
+template <class value_t>
+typename fir_filter_t<value_t>::value_type fir_filter_t<value_t>::filt(
+  const value_type a_sample)
+{
+  set(a_sample);
+  return get();
+}
+
+template <class value_t>
+void fir_filter_t<value_t>::set(const value_type a_sample)
+{
+  const size_type delay_line_size = m_delay_line.size();
+  m_delay_line.pop_back();
+  m_delay_line.push_front(a_sample);
+  m_sum = 0;
+  for (size_type i = 0; i < delay_line_size - 1; i++) {
+    m_sum += m_delay_line[i]*m_coef_list[i];
+  }
+}
+
+template <class value_t>
+typename fir_filter_t<value_t>::value_type fir_filter_t<value_t>::get() const
+{
+  IRS_LIB_ERROR_IF(m_delay_line.empty(), irs::ec_standard,
+    "Сначало необходимо инициализировать фильтр");
+  return m_sum;
+}
+
+template <class value_t>
+void fir_filter_t<value_t>::reset()
 {
   sync(0);
 }
@@ -581,6 +735,113 @@ bool get_coef_iir_filter(
   // tabulate transfer function
   xfun(sampling_rate, zord, gain, nyquist_freq, dbfac, z_array);
   return fsuccess;
+}
+
+template <class coef_list_type>
+void  get_coef_window_func_hann(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(0.5 - 0.5*cos(2*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_hamming(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(0.53836 - 0.46164*cos(2*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_blackman(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(0.42 - 0.5*cos(2*IRS_PI*index/last_index) +
+      0.08*cos(4*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_nutall(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(
+      0.355768 -
+      0.487396*cos(2*IRS_PI*index/last_index) +
+      0.144232*cos(4*IRS_PI*index/last_index) -
+      0.012604*cos(6*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_blackman_harris(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(
+      0.35875 -
+      0.48829*cos(2*IRS_PI*index/last_index) +
+      0.14128*cos(4*IRS_PI*index/last_index) -
+      0.01168*cos(6*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_blackman_nutall(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(
+      0.3635819 -
+      0.4891775*cos(2*IRS_PI*index/last_index) +
+      0.1365995*cos(4*IRS_PI*index/last_index) -
+      0.01064411*cos(6*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_kaiser(
+  const irs_size_t a_order,
+  const double a_sampling_time_s,
+  const double a_centered_cutoff_freq,
+  const double a_beta,
+  coef_list_type* ap_coef_list)
+{
 }
 
 template <class T>

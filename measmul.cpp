@@ -778,7 +778,9 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
 ):
   mp_hardflow(ap_hardflow),
   m_process(process_get_coefficient),
+  m_filter_impulse_response_type(firt_infinite),
   m_filter_settings(a_filter_settings),
+  m_window_function_form(wff_hann),
   m_iir_filter(a_filter_settings),
   m_command_terminator(),
   m_commands(),
@@ -804,6 +806,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_new_filter_settings(),
   m_filter_settings_change_event(),
   m_filter_settings_change_gen_events(),
+  m_new_filter_impulse_response_type(firt_infinite),
+  m_filter_impulse_response_type_change_event(),
+  m_filter_impulse_response_type_change_gen_events(),
+  m_window_function_form_change_event(),
+  m_window_function_form_change_gen_events(),
   m_new_range(1000),
   m_range_change_event(),
   m_range_change_gen_events(),
@@ -821,20 +828,39 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_data_to_values(),
   m_sko_calc_asynch(1000),
   m_delta_calc_asynch(),
-  m_iir_filter_asynch(a_filter_settings, &m_filtered_values, 0)
+  m_iir_filter_asynch(a_filter_settings, &m_filtered_values, 0),
+  m_fir_filter_asynch()
 {
   m_interval_change_gen_events.push_back(&m_interval_change_event);
   m_interval_change_gen_events.push_back(&m_settings_change_event);
+
   m_sampling_time_s_change_gen_events.push_back(
     &m_sampling_time_s_change_event);
   m_sampling_time_s_change_gen_events.push_back(&m_settings_change_event);
+
   m_filter_settings_change_gen_events.push_back(
     &m_filter_settings_change_event);
   m_filter_settings_change_gen_events.push_back(&m_settings_change_event);
+
+  m_filter_impulse_response_type_change_gen_events.push_back(
+    &m_filter_impulse_response_type_change_event);
+  m_filter_impulse_response_type_change_gen_events.push_back(
+    &m_settings_change_event);
+
+  m_window_function_form_change_gen_events.push_back(
+    &m_window_function_form_change_event);
+  m_window_function_form_change_gen_events.push_back(&m_settings_change_event);
+
   m_range_change_gen_events.push_back(&m_range_change_event);
   m_range_change_gen_events.push_back(&m_settings_change_event);
+
   m_sample_format_change_gen_events.push_back(&m_sample_format_change_event);
   m_sample_format_change_gen_events.push_back(&m_settings_change_event);
+
+  vector<math_type> coefficients;
+  const size_type order = get_sample_count(a_sampling_time_s, a_interval_s);
+  get_coef_window_func_hann(order, &coefficients);
+  m_fir_filter_asynch.set_coefficients(coefficients.begin(), coefficients.end());
 
   IRS_LIB_ERROR_IF(a_sampling_time_s <= 0, ec_standard,
     "Период дискретизации должен быть положительным числом");
@@ -960,6 +986,28 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
       } else {
         IRS_LIB_ERROR(ec_standard,
           "Недопустимый размер параметра mul_param_filter_settings");
+      }
+    } break;
+    case mul_param_filter_impulse_response_type: {
+      if (sizeof(mul_sample_format_t) == a_value.size()) {
+        m_new_filter_impulse_response_type =
+          *reinterpret_cast<const filter_impulse_response_type_t*>(
+          a_value.data());
+        m_filter_impulse_response_type_change_gen_events.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра "
+            "mul_param_filter_impulse_response_type");
+      }
+    } break;
+    case mul_param_window_function_form: {
+      if (sizeof(window_function_form_t) == a_value.size()) {
+        m_new_window_function_form =
+          *reinterpret_cast<const window_function_form_t*>(a_value.data());
+        m_window_function_form_change_gen_events.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_window_function_form");
       }
     } break;
     default : {
@@ -1088,10 +1136,15 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
         m_delta_calc_asynch.set_tick_max_time(m_tick_max_time_s);
-        m_iir_filter_asynch.set_filter_settings(m_filter_settings);
-        m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+        if (m_filter_impulse_response_type == firt_infinite) {
+          m_iir_filter_asynch.set_filter_settings(m_filter_settings);
+          m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+          m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+            get_sample_count(m_sampling_time, m_interval));
+        } else {
+          set_coef_fir_filter();
+        }
         m_process = process_calc;
-
         measure_time_calc.start();
         IRS_LIB_DBG_MSG("Начинаем вычисления");
       } else {
@@ -1118,15 +1171,14 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_delta_calc_asynch.completed()) {
         m_delta_calc_asynch.tick();
         if (m_delta_calc_asynch.completed()) {
-          m_iir_filter_asynch.sync(m_sko_calc_asynch.average());
-          m_iir_filter_asynch.set(m_samples.begin(), m_samples.end());
+          filter_start();
         } else {
           // Операция еще не завершена
         }
-      } else if (!m_iir_filter_asynch.completed()) {
-        m_iir_filter_asynch.tick();
+      } else if (!filter_completed()) {
+        filter_tick();
       } else {
-        *mp_value = static_cast<double>(m_iir_filter_asynch.get());
+        *mp_value = static_cast<double>(filter_get());
         m_status = meas_status_success;
         m_process = process_wait;
         IRS_LIB_DBG_MSG("Вычисления завершены. " << measure_time_calc.get() <<
@@ -1168,6 +1220,18 @@ void irs::agilent_3458a_digitizer_t::tick()
       }
       if (m_filter_settings_change_event.check()) {
         set_filter_settings();
+        m_process = process_write_data;
+      } else {
+        // Параметры фильтра не изменены
+      }
+      if (m_filter_impulse_response_type_change_event.check()) {
+        set_filter_impulse_response_type();
+        m_process = process_write_data;
+      } else {
+        // Тип фильтра (ких или бих) не изменился
+      }
+      if (m_window_function_form_change_event.check()) {
+        set_window_function_form();
         m_process = process_write_data;
       } else {
         // Параметры фильтра не изменены
@@ -1516,6 +1580,16 @@ void irs::agilent_3458a_digitizer_t::set_filter_settings()
   m_filter_settings = m_new_filter_settings;
 }
 
+void irs::agilent_3458a_digitizer_t::set_filter_impulse_response_type()
+{
+  m_filter_impulse_response_type = m_new_filter_impulse_response_type;
+}
+
+void irs::agilent_3458a_digitizer_t::set_window_function_form()
+{
+  m_filter_impulse_response_type = m_new_filter_impulse_response_type;
+}
+
 void irs::agilent_3458a_digitizer_t::set_sample_format()
 {
   if (m_new_sample_format == mul_sample_format_int16) {
@@ -1540,6 +1614,80 @@ void irs::agilent_3458a_digitizer_t::set_range()
   m_commands.push_back("ISCALE?");
   mp_hardflow->set_param(irst("read_timeout"), irst("3"));
   m_need_receive_data_size = m_iscale_byte_count;
+}
+
+void irs::agilent_3458a_digitizer_t::set_coef_fir_filter()
+{
+  vector<math_type> coefficients;
+  const size_type order = get_sample_count(m_sampling_time, m_interval);
+  switch (m_filter_impulse_response_type) {
+    case wff_hann: {
+      get_coef_window_func_hann(order, &coefficients);
+    } break;
+    case wff_hamming: {
+      get_coef_window_func_hamming(order, &coefficients);
+    } break;
+    case wff_blackman: {
+      get_coef_window_func_blackman(order, &coefficients);
+    } break;
+    case wff_nutall: {
+      get_coef_window_func_nutall(order, &coefficients);
+    } break;
+    case wff_blackman_harris: {
+      get_coef_window_func_blackman_harris(order, &coefficients);
+    } break;
+    case wff_blackman_nutall: {
+      get_coef_window_func_blackman_nutall(order, &coefficients);
+    } break;
+    default : {
+      IRS_LIB_DBG_MSG("Заданный тип окна не поддерживается");
+    }
+  }
+  m_fir_filter_asynch.set_coefficients(coefficients.begin(),
+    coefficients.end());
+}
+
+void irs::agilent_3458a_digitizer_t::filter_start()
+{
+  if (m_filter_impulse_response_type == firt_infinite) {
+    m_iir_filter_asynch.sync(m_sko_calc_asynch.average());
+    m_iir_filter_asynch.set(m_samples.begin(), m_samples.end());
+  } else {
+    m_fir_filter_asynch.sync(m_sko_calc_asynch.average());
+    m_fir_filter_asynch.set(m_samples.begin(), m_samples.end());
+  }
+}
+
+void irs::agilent_3458a_digitizer_t::filter_tick()
+{
+  if (m_filter_impulse_response_type == firt_infinite) {
+    m_iir_filter_asynch.tick();
+  } else {
+    m_fir_filter_asynch.tick();
+  }
+}
+
+bool irs::agilent_3458a_digitizer_t::filter_completed()
+{
+  bool completed = true;
+  if (m_filter_impulse_response_type == firt_infinite) {
+    completed = m_iir_filter_asynch.completed();
+  } else {
+    completed = m_fir_filter_asynch.completed();
+  }
+  return completed;
+}
+
+irs::agilent_3458a_digitizer_t::math_type
+irs::agilent_3458a_digitizer_t::filter_get()
+{
+  math_type value = 0;
+  if (m_filter_impulse_response_type == firt_infinite) {
+    value = m_iir_filter_asynch.get();
+  } else {
+    value = m_fir_filter_asynch.get();
+  }
+  return value;
 }
 
 namespace {
