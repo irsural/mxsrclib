@@ -81,7 +81,7 @@ enum multimeter_param_t {
   // (enum filter_impulse_response_type_t פאיכ irsdsp.h)
   mul_param_filter_impulse_response_type,
   mul_param_last = mul_param_filter_impulse_response_type,
-  mul_param_count = mul_param_last - mul_param_first
+  mul_param_count = (mul_param_last - mul_param_first) + 1
 };
 
 enum mul_sample_format_t {
