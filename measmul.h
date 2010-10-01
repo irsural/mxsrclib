@@ -613,6 +613,7 @@ private:
   fir_filter_t<value_t> m_fir_filter;
   bool m_completed;
   size_type m_delta_tick;
+  size_type m_insert_point_count;
   timer_t m_tick_timer;
   iterator_t mp_begin;
   iterator_t mp_end;
@@ -1203,6 +1204,7 @@ fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t():
   m_fir_filter(),
   m_completed(true),
   m_delta_tick(1000),
+  m_insert_point_count(100000),
   m_tick_timer(make_cnt_s(0.001)),
   mp_begin(),
   mp_end(mp_begin),
@@ -1220,6 +1222,7 @@ fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t(
   m_fir_filter(a_coef_list_begin, a_coef_list_end),
   m_completed(true),
   m_delta_tick(1),
+  m_insert_point_count(100000),
   m_tick_timer(make_cnt_s(0.001)),
   mp_begin(),
   mp_end(mp_begin),
@@ -1313,7 +1316,7 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
   if (!m_completed) {
     m_tick_timer.start();
     while (!m_tick_timer.check() && !m_completed) {
-      if (m_filt_value_max_count > 0) {
+      if (mp_filt_values && (m_filt_value_max_count > 0)) {
         size_type count = 0;
         while ((count < m_delta_tick) && (mp_begin != mp_end) && !m_completed) {
           m_fir_filter.set(*mp_begin);
@@ -1334,7 +1337,7 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
       } else {
         iterator_t end = mp_begin;
         advance(end, min(static_cast<size_type>(distance(mp_begin, mp_end)),
-          m_delta_tick));
+          m_insert_point_count));
         m_fir_filter.set(mp_begin, end);
         mp_begin = end;
       }
