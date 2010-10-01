@@ -1145,8 +1145,8 @@ void irs::agilent_3458a_digitizer_t::tick()
             get_sample_count(m_sampling_time, m_interval));
         } else {
           m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
-          m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
-            get_sample_count(m_sampling_time, m_interval));
+          //m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+            //get_sample_count(m_sampling_time, m_interval));
           set_coef_fir_filter();
         }
         m_process = process_calc;

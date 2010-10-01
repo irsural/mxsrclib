@@ -466,7 +466,7 @@ public:
   sko_calc_asynch_t(irs_u32 a_count);
   void resize(irs_u32 a_count);
   void add(data_t a_val);
-  void add(iterator_t ap_first, iterator_t ap_last);
+  void add(iterator_t ap_begin, iterator_t ap_end);
   operator data_t() const;
   data_t relative() const;
   data_t average() const;
@@ -484,8 +484,8 @@ private:
   bool m_completed;
   size_type m_delta_tick;
   timer_t m_tick_timer;
-  iterator_t mp_first;
-  iterator_t mp_last;
+  iterator_t mp_begin;
+  iterator_t mp_end;
 };
 
 bool sko_calc_asynch_test();
@@ -498,7 +498,7 @@ public:
   delta_calc_asynch_t(const size_type a_count = 100);
   void resize(const size_type a_count);
   void add(value_t a_val);
-  void add(iterator_t ap_first, iterator_t ap_last);
+  void add(iterator_t ap_begin, iterator_t ap_end);
   value_t absolute() const;
   value_t relative() const;
   value_t average() const;
@@ -516,8 +516,8 @@ private:
   bool m_completed;
   size_type m_delta_tick;
   timer_t m_tick_timer;
-  iterator_t mp_first;
-  iterator_t mp_last;
+  iterator_t mp_begin;
+  iterator_t mp_end;
 };
 
 bool delta_calc_asynch_test();
@@ -549,7 +549,7 @@ public:
   void sync(value_t a_value);
   value_t filt(const value_t a_sample);
   void set(const value_t a_sample);
-  void set(iterator_t ap_first, iterator_t ap_last);
+  void set(iterator_t ap_begin, iterator_t ap_end);
   value_t get() const;
   void reset();
   // Вовзращает статус завершенности
@@ -565,8 +565,8 @@ private:
   bool m_completed;
   size_type m_delta_tick;
   timer_t m_tick_timer;
-  iterator_t mp_first;
-  iterator_t mp_last;
+  iterator_t mp_begin;
+  iterator_t mp_end;
   container_t* mp_filt_values;
   size_type m_filt_value_max_count;
 };
@@ -598,7 +598,7 @@ public:
   void sync(value_t a_value);
   value_t filt(const value_t a_sample);
   void set(const value_t a_sample);
-  void set(iterator_t ap_first, iterator_t ap_last);
+  void set(iterator_t ap_begin, iterator_t ap_end);
   value_t get() const;
   void reset();
   // Вовзращает статус завершенности
@@ -614,8 +614,8 @@ private:
   bool m_completed;
   size_type m_delta_tick;
   timer_t m_tick_timer;
-  iterator_t mp_first;
-  iterator_t mp_last;
+  iterator_t mp_begin;
+  iterator_t mp_end;
   container_t* mp_filt_values;
   size_type m_filt_value_max_count;
 };
@@ -819,8 +819,8 @@ sko_calc_asynch_t<data_t, calc_t, iterator_t>::sko_calc_asynch_t(irs_u32 a_count
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first)
+  mp_begin(),
+  mp_end(mp_begin)
 {
 }
 
@@ -839,15 +839,15 @@ void sko_calc_asynch_t<data_t, calc_t, iterator_t>::add(data_t a_val)
 }
 
 template <class data_t, class calc_t, class iterator_t>
-void sko_calc_asynch_t<data_t, calc_t, iterator_t>::add(iterator_t ap_first,
-  iterator_t ap_last)
+void sko_calc_asynch_t<data_t, calc_t, iterator_t>::add(iterator_t ap_begin,
+  iterator_t ap_end)
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
-  IRS_LIB_ERROR_IF(ap_first > ap_last, ec_standard,
+  IRS_LIB_ERROR_IF(ap_begin > ap_end, ec_standard,
     "Итератор начала должен быть меньше итератора конца");
-  mp_first = ap_first;
-  mp_last = ap_last;
+  mp_begin = ap_begin;
+  mp_end = ap_end;
   m_completed = false;
 }
 
@@ -888,12 +888,12 @@ void sko_calc_asynch_t<data_t, calc_t, iterator_t>::tick()
     m_tick_timer.start();
     while (!m_tick_timer.check() && !m_completed) {
       size_type count = 0;
-      while ((count < m_delta_tick) && (mp_first != mp_last)) {
-        mp_sko_calc->add(*mp_first);
-        ++mp_first;
+      while ((count < m_delta_tick) && (mp_begin != mp_end)) {
+        mp_sko_calc->add(*mp_begin);
+        ++mp_begin;
         count++;
       }
-      m_completed = (mp_first == mp_last);
+      m_completed = (mp_begin == mp_end);
     }
   } else {
     // Операция завершена
@@ -931,8 +931,8 @@ delta_calc_asynch_t<value_t, iterator_t>::delta_calc_asynch_t(
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first)
+  mp_begin(),
+  mp_end(mp_begin)
 {
 }
 
@@ -950,14 +950,15 @@ void delta_calc_asynch_t<value_t, iterator_t>::add(value_t a_val)
 }
 
 template <class value_t, class iterator_t>
-void delta_calc_asynch_t<value_t, iterator_t>::add(iterator_t ap_first, iterator_t ap_last)
+void delta_calc_asynch_t<value_t, iterator_t>::add(iterator_t ap_begin,
+  iterator_t ap_end)
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
-  IRS_LIB_ERROR_IF(mp_first > mp_last, ec_standard, "Итератор начала должен"
+  IRS_LIB_ERROR_IF(mp_begin > mp_end, ec_standard, "Итератор начала должен"
     " быть меньше итератора конца");
-  mp_first = ap_first;
-  mp_last = ap_last;
+  mp_begin = ap_begin;
+  mp_end = ap_end;
   m_completed = false;
 }
 
@@ -998,12 +999,12 @@ void delta_calc_asynch_t<value_t, iterator_t>::tick()
     m_tick_timer.start();
     while (!m_tick_timer.check() && !m_completed) {
       size_type count = 0;
-      while ((count < m_delta_tick) && (mp_first != mp_last)) {
-        m_delta_calc.add(*mp_first);
-        ++mp_first;
+      while ((count < m_delta_tick) && (mp_begin != mp_end)) {
+        m_delta_calc.add(*mp_begin);
+        ++mp_begin;
         count++;
       }
-      m_completed = (mp_first == mp_last);
+      m_completed = (mp_begin == mp_end);
     }
   } else {
     // Операция завершена
@@ -1014,7 +1015,7 @@ template <class value_t, class iterator_t>
 void delta_calc_asynch_t<value_t, iterator_t>::abort()
 {
   if (!m_completed) {
-    mp_last = mp_first;
+    mp_end = mp_begin;
     m_completed = true;
   } else {
     // Операция уже завершена
@@ -1037,8 +1038,8 @@ iir_filter_asynch_t<value_t, iterator_t, container_t>::iir_filter_asynch_t():
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first),
+  mp_begin(),
+  mp_end(mp_begin),
   mp_filt_values(IRS_NULL),
   m_filt_value_max_count(1000)
 {
@@ -1054,8 +1055,8 @@ iir_filter_asynch_t<value_t, iterator_t, container_t>::iir_filter_asynch_t(
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first),
+  mp_begin(),
+  mp_end(mp_begin),
   mp_filt_values(IRS_NULL),
   m_filt_value_max_count(1000)
 {
@@ -1117,14 +1118,14 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::set(
 
 template <class value_t, class iterator_t, class container_t>
 void iir_filter_asynch_t<value_t, iterator_t, container_t>::set(
-  iterator_t ap_first, iterator_t ap_last)
+  iterator_t ap_begin, iterator_t ap_end)
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
-  IRS_LIB_ERROR_IF(ap_first > ap_last, ec_standard,
+  IRS_LIB_ERROR_IF(ap_begin > ap_end, ec_standard,
     "Итератор начала должен быть меньше итератора конца");
-  mp_first = ap_first;
-  mp_last = ap_last;
+  mp_begin = ap_begin;
+  mp_end = ap_end;
   m_completed = false;
 }
 
@@ -1153,8 +1154,8 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
     m_tick_timer.start();
     while (!m_tick_timer.check() && !m_completed) {
       size_type count = 0;
-      while ((count < m_delta_tick) && (mp_first != mp_last) && !m_completed) {
-        m_iir_filter.set(*mp_first);
+      while ((count < m_delta_tick) && (mp_begin != mp_end) && !m_completed) {
+        m_iir_filter.set(*mp_begin);
         if (mp_filt_values) {
           if (mp_filt_values->size() >= m_filt_value_max_count) {
             mp_filt_values->erase(mp_filt_values->begin());
@@ -1166,10 +1167,10 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
         } else {
           // Пользователь не установил буфер фильтрованных значений
         }
-        ++mp_first;
+        ++mp_begin;
         count++;
       }
-      m_completed = (mp_first == mp_last);
+      m_completed = (mp_begin == mp_end);
     }
   } else {
     // Операция завершена
@@ -1180,7 +1181,7 @@ template <class value_t, class iterator_t, class container_t>
 void iir_filter_asynch_t<value_t, iterator_t, container_t>::abort()
 {
   if (!m_completed) {
-    mp_last = mp_first;
+    mp_end = mp_begin;
     m_completed = true;
   } else {
     // Ничего не делаем
@@ -1203,8 +1204,8 @@ fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t():
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first),
+  mp_begin(),
+  mp_end(mp_begin),
   mp_filt_values(IRS_NULL),
   m_filt_value_max_count(1000)
 {
@@ -1218,10 +1219,10 @@ fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t(
 ):
   m_fir_filter(a_coef_list_begin, a_coef_list_end),
   m_completed(true),
-  m_delta_tick(1000),
+  m_delta_tick(1),
   m_tick_timer(make_cnt_s(0.001)),
-  mp_first(),
-  mp_last(mp_first),
+  mp_begin(),
+  mp_end(mp_begin),
   mp_filt_values(IRS_NULL),
   m_filt_value_max_count(1000)
 {
@@ -1276,14 +1277,14 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::set(
 
 template <class value_t, class iterator_t, class container_t>
 void fir_filter_asynch_t<value_t, iterator_t, container_t>::set(
-  iterator_t ap_first, iterator_t ap_last)
+  iterator_t ap_begin, iterator_t ap_end)
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
-  IRS_LIB_ERROR_IF(ap_first > ap_last, ec_standard,
+  IRS_LIB_ERROR_IF(ap_begin > ap_end, ec_standard,
     "Итератор начала должен быть меньше итератора конца");
-  mp_first = ap_first;
-  mp_last = ap_last;
+  mp_begin = ap_begin;
+  mp_end = ap_end;
   m_completed = false;
 }
 
@@ -1312,24 +1313,32 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
   if (!m_completed) {
     m_tick_timer.start();
     while (!m_tick_timer.check() && !m_completed) {
-      size_type count = 0;
-      while ((count < m_delta_tick) && (mp_first != mp_last) && !m_completed) {
-        m_fir_filter.set(*mp_first);
-        if (mp_filt_values) {
-          if (mp_filt_values->size() >= m_filt_value_max_count) {
-            mp_filt_values->erase(mp_filt_values->begin());
+      if (m_filt_value_max_count > 0) {
+        size_type count = 0;
+        while ((count < m_delta_tick) && (mp_begin != mp_end) && !m_completed) {
+          m_fir_filter.set(*mp_begin);
+          if (mp_filt_values) {
+            if (mp_filt_values->size() >= m_filt_value_max_count) {
+              mp_filt_values->erase(mp_filt_values->begin());
+            } else {
+              // Размер еще не достиг максимума
+            }
+            mp_filt_values->insert(mp_filt_values->end(),
+              static_cast<typename container_t::value_type>(m_fir_filter.get()));
           } else {
-            // Размер еще не достиг максимума
+            // Пользователь не установил буфер фильтрованных значений
           }
-          mp_filt_values->insert(mp_filt_values->end(),
-            static_cast<typename container_t::value_type>(m_fir_filter.get()));
-        } else {
-          // Пользователь не установил буфер фильтрованных значений
+          ++mp_begin;
+          count++;
         }
-        ++mp_first;
-        count++;
+      } else {
+        iterator_t end = mp_begin;
+        advance(end, min(static_cast<size_type>(distance(mp_begin, mp_end)),
+          m_delta_tick));
+        m_fir_filter.set(mp_begin, end);
+        mp_begin = end;
       }
-      m_completed = (mp_first == mp_last);
+      m_completed = (mp_begin == mp_end);
     }
   } else {
     // Операция завершена
@@ -1340,7 +1349,7 @@ template <class value_t, class iterator_t, class container_t>
 void fir_filter_asynch_t<value_t, iterator_t, container_t>::abort()
 {
   if (!m_completed) {
-    mp_last = mp_first;
+    mp_end = mp_begin;
     m_completed = true;
   } else {
     // Ничего не делаем

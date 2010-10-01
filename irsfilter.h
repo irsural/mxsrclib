@@ -77,6 +77,8 @@ public:
   typedef irs_size_t size_type;
   typedef deque<value_type> coef_list_type;
   typedef deque<value_type> delay_line_type;
+  typedef typename deque<value_type>::iterator delay_line_iterator;
+  typedef typename deque<value_type>::const_iterator delay_line_const_iterator;
   fir_filter_t();
   template <class iterator_t>
   fir_filter_t(iterator_t a_coef_list_begin,
@@ -87,6 +89,8 @@ public:
   void sync(value_type a_value);
   value_type filt(const value_type a_sample);
   void set(const value_type a_sample);
+  template <class iterator_t>
+  void set(iterator_t a_begin, iterator_t a_end);
   value_type get() const;
   void reset();
 private:
@@ -432,6 +436,25 @@ void fir_filter_t<value_t>::set(const value_type a_sample)
   const size_type delay_line_size = m_delay_line.size();
   m_delay_line.pop_back();
   m_delay_line.push_front(a_sample);
+  m_sum = 0;
+  for (size_type i = 0; i < delay_line_size - 1; i++) {
+    m_sum += m_delay_line[i]*m_coef_list[i];
+  }
+}
+
+template <class value_t>
+template <class iterator_t>
+void fir_filter_t<value_t>::set(iterator_t a_begin, iterator_t a_end)
+{
+  const size_type delay_line_size = m_delay_line.size();
+  const size_type erase_elem_count =
+    min(static_cast<size_type>(distance(a_begin, a_end)), m_delay_line.size());
+  delay_line_iterator end_erase = m_delay_line.begin();
+  advance(end_erase, erase_elem_count);
+  m_delay_line.erase(m_delay_line.begin(), end_erase);
+  iterator_t end = a_begin;
+  advance(end, erase_elem_count);
+  m_delay_line.insert(m_delay_line.end(), a_begin, end);
   m_sum = 0;
   for (size_type i = 0; i < delay_line_size - 1; i++) {
     m_sum += m_delay_line[i]*m_coef_list[i];
