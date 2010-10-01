@@ -945,7 +945,7 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
 void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
   const irs::raw_data_t<irs_u8> &a_value)
 {
-  switch (a_param) {
+  switch (a_param) {   
     case mul_param_sampling_time_s: {
       if (sizeof(double) == a_value.size()) {
         m_new_sampling_time = sampling_time_normalize(
