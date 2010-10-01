@@ -1144,6 +1144,9 @@ void irs::agilent_3458a_digitizer_t::tick()
           m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
             get_sample_count(m_sampling_time, m_interval));
         } else {
+          m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+          m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+            get_sample_count(m_sampling_time, m_interval));
           set_coef_fir_filter();
         }
         m_process = process_calc;
@@ -1157,6 +1160,8 @@ void irs::agilent_3458a_digitizer_t::tick()
       if (!m_data_to_values.completed()) {
         m_data_to_values.tick();
         if (m_data_to_values.completed()) {
+          IRS_LIB_DBG_MSG("Конвертация значений завершена: " <<
+            measure_time_calc.get() << " с");
           m_sko_calc_asynch.resize(m_samples.size());
           m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
         } else {
@@ -1165,6 +1170,8 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_sko_calc_asynch.completed()) {
         m_sko_calc_asynch.tick();
         if (m_sko_calc_asynch.completed()) {
+          IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
+            measure_time_calc.get() << " с");
           m_delta_calc_asynch.resize(m_samples.size());
           m_delta_calc_asynch.add(m_samples.begin(), m_samples.end());
         } else {
@@ -1173,6 +1180,8 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_delta_calc_asynch.completed()) {
         m_delta_calc_asynch.tick();
         if (m_delta_calc_asynch.completed()) {
+          IRS_LIB_DBG_MSG("Вычисление дельты завершено: " <<
+            measure_time_calc.get() << " с");
           filter_start();
         } else {
           // Операция еще не завершена
@@ -1180,6 +1189,8 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!filter_completed()) {
         filter_tick();
       } else {
+        IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
+          measure_time_calc.get() << " с");
         *mp_value = static_cast<double>(filter_get());
         m_status = meas_status_success;
         m_process = process_wait;
