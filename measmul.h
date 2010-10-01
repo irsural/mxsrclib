@@ -54,31 +54,34 @@ enum multimeter_mode_type_t {mul_mode_type_active, mul_mode_type_passive};
 
 enum multimeter_param_t {
   mul_param_first,
-  // Исходные значения
+  // Исходные значения (массив double)
   mul_param_source_values = mul_param_first,
-  // Отфильтрованные значения
+  // Отфильтрованные значения (массив double)
   mul_param_filtered_values,
-  // Стандартное оклонение
+  // Стандартное оклонение (double)
   mul_param_standard_deviation,
-  // Стаднартное относительное отклонение
+  // Стаднартное относительное отклонение (double)
   mul_param_standard_deviation_relative,
-  // Вариация
+  // Вариация (double)
   mul_param_variation,
-  // Относительная вариация
+  // Относительная вариация (double)
   mul_param_variation_relative,
-  // Время дискретизации
+  // Время дискретизации (double)
   mul_param_sampling_time_s,
-  // Настройки фильтра
+  // Настройки фильтра (struct filter_settings_t файл irsdsp.h)
   mul_param_filter_settings,
-  // Формат отсчетов
+  // Формат отсчетов (enum mul_sample_format_t файл measmul.h)
   mul_param_sample_format,
-  // Максимальное время одного тика
+  // Максимальное время одного тика (double)
   mul_param_tick_max_time_s,
-  // Установка ких-фильтра в виде окна хемминга
+  // Установка типа окна для КИХ-фильтра
+  // (enum window_function_form_t файл irsfilter.h)
   mul_param_window_function_form,
   // Установка типа фильтра по типу импульсной характеристики
+  // (enum filter_impulse_response_type_t файл irsdsp.h)
   mul_param_filter_impulse_response_type,
-  mul_param_count
+  mul_param_last = mul_param_filter_impulse_response_type,
+  mul_param_count = mul_param_last - mul_param_first
 };
 
 enum mul_sample_format_t {

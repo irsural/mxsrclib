@@ -989,7 +989,7 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
       }
     } break;
     case mul_param_filter_impulse_response_type: {
-      if (sizeof(mul_sample_format_t) == a_value.size()) {
+      if (sizeof(filter_impulse_response_type_t) == a_value.size()) {
         m_new_filter_impulse_response_type =
           *reinterpret_cast<const filter_impulse_response_type_t*>(
           a_value.data());
