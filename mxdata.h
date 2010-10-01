@@ -563,11 +563,14 @@ typename raw_data_t<T>::pointer raw_data_t<T>::insert(pointer ap_pos,
   IRS_LIB_ASSERT((ap_pos >= data()) && (ap_pos <= data()+size()));
   // Позиция от нуля
   const size_type pos = ap_pos - data();
+  const size_type old_size = m_size;
   resize(size() + 1);
   pointer p_pos = data() + pos;
-  pointer dest = p_pos + 1;
-  // Смещаем данные на одну позицию вправо
-  memmoveex(dest, p_pos, 1);
+  if ((old_size != 0) && (pos != old_size)) {
+    pointer dest = p_pos + 1;
+    // Смещаем данные на одну позицию вправо
+    memmoveex(dest, p_pos, 1);
+  }
   *p_pos = a_value;
   return p_pos;
 }
