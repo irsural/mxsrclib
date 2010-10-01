@@ -65,7 +65,8 @@ enum window_function_form_t {
   // — низкой разрешающей способностью(высоким динамическим диапазоном)
   wff_nutall,
   wff_blackman_harris,
-  wff_blackman_nutall
+  wff_blackman_nutall,
+  wff_flat_top
 };
 
 template <class value_t>
@@ -101,6 +102,12 @@ bool get_coef_iir_filter(
   coef_list_type* ap_denom_coef_list);
 
 template <class coef_list_type>
+void get_coef_fir_filter(
+  const window_function_form_t a_window_function_form,
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
 void get_coef_window_func_hann(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list);
@@ -117,17 +124,22 @@ void get_coef_window_func_blackman(
 
 
 template <class coef_list_type>
-void  get_coef_window_func_nutall(
+void get_coef_window_func_nutall(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list);
 
 template <class coef_list_type>
-void  get_coef_window_func_blackman_harris(
+void get_coef_window_func_blackman_harris(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list);
 
 template <class coef_list_type>
-void  get_coef_window_func_blackman_nutall(
+void get_coef_window_func_blackman_nutall(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list);
+
+template <class coef_list_type>
+void get_coef_window_func_flat_top(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list);
 
@@ -738,7 +750,41 @@ bool get_coef_iir_filter(
 }
 
 template <class coef_list_type>
-void  get_coef_window_func_hann(
+void get_coef_fir_filter(
+  const window_function_form_t a_window_function_form,
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  switch (a_window_function_form) {
+    case wff_hann: {
+      get_coef_window_func_hann(a_order, ap_coef_list);
+    } break;
+    case wff_hamming: {
+      get_coef_window_func_hamming(a_order, ap_coef_list);
+    } break;
+    case wff_blackman: {
+      get_coef_window_func_blackman(a_order, ap_coef_list);
+    } break;
+    case wff_nutall: {
+      get_coef_window_func_nutall(a_order, ap_coef_list);
+    } break;
+    case wff_blackman_harris: {
+      get_coef_window_func_blackman_harris(a_order, ap_coef_list);
+    } break;
+    case wff_blackman_nutall: {
+      get_coef_window_func_blackman_nutall(a_order, ap_coef_list);
+    } break;
+    case wff_flat_top: {
+      get_coef_window_func_flat_top(a_order, ap_coef_list);
+    } break;
+    default : {
+      IRS_LIB_DBG_MSG("«аданный тип окна не поддерживаетс€");
+    }
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_hann(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list)
 {
@@ -831,6 +877,25 @@ void get_coef_window_func_blackman_nutall(
       0.4891775*cos(2*IRS_PI*index/last_index) +
       0.1365995*cos(4*IRS_PI*index/last_index) -
       0.01064411*cos(6*IRS_PI*index/last_index));
+  }
+}
+
+template <class coef_list_type>
+void get_coef_window_func_flat_top(
+  const irs_size_t a_order,
+  coef_list_type* ap_coef_list)
+{
+  typedef irs_size_t size_type;
+  ap_coef_list->clear();
+  ap_coef_list->reserve(a_order);
+  const size_type last_index = a_order - 1;
+  for (size_type index = 0; index < a_order; index++) {
+    ap_coef_list->push_back(
+      1 -
+      1.93*cos(2*IRS_PI*index/last_index) +
+      1.29*cos(4*IRS_PI*index/last_index) -
+      0.388*cos(6*IRS_PI*index/last_index) +
+      0.032*cos(8*IRS_PI*index/last_index));
   }
 }
 

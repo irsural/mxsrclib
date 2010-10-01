@@ -1622,29 +1622,7 @@ void irs::agilent_3458a_digitizer_t::set_coef_fir_filter()
 {
   vector<math_type> coefficients;
   const size_type order = get_sample_count(m_sampling_time, m_interval);
-  switch (m_filter_impulse_response_type) {
-    case wff_hann: {
-      get_coef_window_func_hann(order, &coefficients);
-    } break;
-    case wff_hamming: {
-      get_coef_window_func_hamming(order, &coefficients);
-    } break;
-    case wff_blackman: {
-      get_coef_window_func_blackman(order, &coefficients);
-    } break;
-    case wff_nutall: {
-      get_coef_window_func_nutall(order, &coefficients);
-    } break;
-    case wff_blackman_harris: {
-      get_coef_window_func_blackman_harris(order, &coefficients);
-    } break;
-    case wff_blackman_nutall: {
-      get_coef_window_func_blackman_nutall(order, &coefficients);
-    } break;
-    default : {
-      IRS_LIB_DBG_MSG("Заданный тип окна не поддерживается");
-    }
-  }
+  get_coef_fir_filter(m_window_function_form, order, &coefficients);
   m_fir_filter_asynch.set_coefficients(coefficients.begin(),
     coefficients.end());
 }
