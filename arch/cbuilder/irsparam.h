@@ -70,6 +70,7 @@ public:
   virtual string_type ini_name();
   virtual void save();
   virtual void load();
+  virtual void delete_edit(const builder_string_type& a_param_name);
 private:
   const string_type m_ini_section;
   irs::ini_file_t m_ini_file;

@@ -36,6 +36,7 @@ public:
   virtual string_type ini_name() = 0;
   virtual void save() = 0;
   virtual void load() = 0;
+  virtual void delete_edit(const String& a_param_name) = 0;
   
 }; // param_box_base_t 
 

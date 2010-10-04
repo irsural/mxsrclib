@@ -238,3 +238,11 @@ void irs::param_box_t::load()
   m_ini_file.load();
 }
 
+
+void irs::param_box_t::delete_edit(const builder_string_type& a_param_name)
+{
+  int row_index = 0;
+  if (mp_value_list_editor->FindRow(a_param_name, row_index)) {
+    mp_value_list_editor->DeleteRow(row_index);
+  }
+}
