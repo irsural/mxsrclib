@@ -3460,11 +3460,8 @@ void irs::ni_pxi_4071_t::set_start_level(double /*a_level*/)
 
 void irs::ni_pxi_4071_t::set_range(type_meas_t a_type_meas, double a_range)
 {
-  if (a_type_meas == tm_volt_dc) {
-    m_eth_mul_data.meas_type = 0;
-  } else {
-    m_eth_mul_data.meas_type = a_type_meas;
-  }
+  m_eth_mul_data.meas_type = a_type_meas;
+  
   double range = 0;
   switch(a_type_meas)
   {
