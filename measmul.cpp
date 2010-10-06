@@ -3109,7 +3109,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_mul_mode_type(a_mul_mode_type),
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 0, 37, 8, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
+    0, 0, 37, 24, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
   m_eth_mul_data(),
   m_status(meas_status_success),
   mp_value(IRS_NULL),
@@ -3243,10 +3243,10 @@ void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
 bool irs::ni_pxi_4071_t::is_param_exists(
   const multimeter_param_t a_param) const
 {
-  return (a_param == mul_param_source_values) ||
+  return (a_param == mul_param_sampling_time_s) ||
+    (a_param == mul_param_filter_settings) ||
     (a_param == mul_param_filtered_values) ||
-    (a_param == mul_param_sampling_time_s) ||
-    (a_param == mul_param_filter_settings);
+    (a_param == mul_param_source_values);
 }
 
 void irs::ni_pxi_4071_t::set_dc()
