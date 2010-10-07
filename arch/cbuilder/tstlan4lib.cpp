@@ -269,6 +269,9 @@ irs::tstlan4_t::controls_t::controls_t(
   fill_grid_index_col();
 
   //m_out << irs::stime << "start\n";
+  string_type ExePath = ExtractFilePath(Application->ExeName).c_str();
+  string_type path =  ExePath + irst("Out\\");
+  MkDir(path.c_str());
 }
 __fastcall irs::tstlan4_t::controls_t::~controls_t()
 {
@@ -643,7 +646,7 @@ void irs::tstlan4_t::controls_t::creation_csv()
   string_type file_name = file_name_time(irst(".csv"));
   string_type ExePath = ExtractFilePath(Application->ExeName).c_str();
   string_type path =  ExePath + irst("Out\\");
-  MkDir(path.c_str());
+
   string_type path_file = cbuilder::file_path(path + file_name, irst(".csv"));
   if (m_csv_file.open(path_file)) {
     m_is_created_csv = true;
