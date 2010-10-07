@@ -25,7 +25,8 @@ int time_s_to_timecode(const double a_time_s);
 irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   const size_type a_board_index,
   const size_type a_gpib_adress,
-  const double a_session_read_timeout_s
+  const double a_session_read_timeout_s,
+  const double a_session_write_timeout_s
 ):
   m_process(process_wait),
   m_proc_array(),
@@ -34,7 +35,9 @@ irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   m_channel(invalid_channel),
   m_read_buf(),
   m_write_buf(),
-  m_session_read_timeout(a_session_read_timeout_s), 
+  m_session_read_timeout(a_session_read_timeout_s),
+  m_session_write_timeout(a_session_write_timeout_s),
+  m_session_write_timer(make_cnt_s(a_session_write_timeout_s)),
   m_session_read_timer(make_cnt_s(a_session_read_timeout_s)),
   m_timeout_delta(0.05)
 {
@@ -72,16 +75,21 @@ irs::hardflow::ni_usb_gpib_flow_t::param(const string_type &a_name)
 void irs::hardflow::ni_usb_gpib_flow_t::set_param(const string_type& a_name,
   const string_type& a_value)
 {
-  if (a_name == irst("read_timeout")) {
-
+  if ((a_name == irst("read_timeout")) || (a_name == irst("write_timeout"))) {
     double value = 0;
     if (str_to_num(a_value, &value)) {
-      m_session_read_timeout = value;
-      m_session_read_timer.set(make_cnt_s(time_s_normalize(value) +
-        m_timeout_delta));
+      if (a_name == irst("read_timeout")) {
+        m_session_read_timeout = value;
+        m_session_read_timer.set(make_cnt_s(time_s_normalize(value) +
+          m_timeout_delta));
+      } else {
+        m_session_read_timeout = value;
+        m_session_write_timer.set(make_cnt_s(time_s_normalize(value)));
+      }
     } else {
       IRS_LIB_ERROR(ec_standard, "Недопустимое значение параметра");
     }
+  } else if (a_name == irst("write_timeout")) {
   } else {
     IRS_LIB_ERROR(ec_standard, "Неизвестный параметр");
   }   
@@ -143,8 +151,12 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
     const int write_status = mp_ni_usb_gpib->ibwrta(m_device_id,
       m_write_buf.data(), m_write_buf.size());
     write_count = a_size;
+    if (time_s_normalize(m_session_write_timeout) != 0.) {
+      m_session_write_timer.start();
+    } else {
+      m_session_write_timer.stop();
+    }
     m_process = process_write;
-
   } else {
     // Канал не создан
   }
@@ -247,11 +259,16 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
     }
     if (m_write_buf.empty()) {
       m_process = process_wait;
+      IRS_DBG_MSG("Запись завершена");
     } else {
       const int new_write_status = mp_ni_usb_gpib->ibwrta(m_device_id,
         m_write_buf.data(), m_write_buf.size());
-    }
-    IRS_DBG_MSG("Запись завершена");
+      if (time_s_normalize(m_session_write_timeout) != 0.) {
+        m_session_write_timer.start();
+      } else {
+        m_session_write_timer.stop();
+      }
+    }                                 
   } else {
     // Продолжаем запись
   }

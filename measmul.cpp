@@ -781,7 +781,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_filter_impulse_response_type(firt_infinite),
   m_filter_settings(a_filter_settings),
   m_window_function_form(wff_hann),
-  m_iir_filter(a_filter_settings),
+  m_iir_filter(),
   m_command_terminator(),
   m_commands(),
   m_buf_send(),
@@ -828,7 +828,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_data_to_values(),
   m_sko_calc_asynch(1000),
   m_delta_calc_asynch(),
-  m_iir_filter_asynch(a_filter_settings, &m_filtered_values, 0),
+  m_iir_filter_asynch(),
   m_fir_filter_asynch()
 {
   m_interval_change_gen_events.push_back(&m_interval_change_event);
@@ -857,10 +857,21 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_sample_format_change_gen_events.push_back(&m_sample_format_change_event);
   m_sample_format_change_gen_events.push_back(&m_settings_change_event);
 
+  vector<math_type> num_coef_list;
+  vector<math_type> denom_coef_list;
+  get_coef_iir_filter(a_filter_settings, &num_coef_list, &denom_coef_list);
+  m_iir_filter.set_coefficients(num_coef_list.begin(), num_coef_list.end(),
+    denom_coef_list.begin(), denom_coef_list.end());
+
+  m_iir_filter_asynch.set_coefficients(num_coef_list.begin(),
+    num_coef_list.end(), denom_coef_list.begin(), denom_coef_list.end());
+
   vector<math_type> coefficients;
   const size_type order = get_sample_count(a_sampling_time_s, a_interval_s);
   get_coef_window_func_hann(order, &coefficients);
-  m_fir_filter_asynch.set_coefficients(coefficients.begin(), coefficients.end());
+  m_fir_filter_asynch.set_coefficients(coefficients.begin(),
+    coefficients.end());
+  m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values, 0);
 
   IRS_LIB_ERROR_IF(a_sampling_time_s <= 0, ec_standard,
     "Период дискретизации должен быть положительным числом");
@@ -1138,16 +1149,13 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
         m_delta_calc_asynch.set_tick_max_time(m_tick_max_time_s);
+        set_coef_filter();
         if (m_filter_impulse_response_type == firt_infinite) {
-          m_iir_filter_asynch.set_filter_settings(m_filter_settings);
           m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
           m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
             get_sample_count(m_sampling_time, m_interval));
         } else {
           m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
-          //m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
-            //get_sample_count(m_sampling_time, m_interval));
-          set_coef_fir_filter();
         }
         m_process = process_calc;
         measure_time_calc.start();
@@ -1629,13 +1637,21 @@ void irs::agilent_3458a_digitizer_t::set_range()
   m_need_receive_data_size = m_iscale_byte_count;
 }
 
-void irs::agilent_3458a_digitizer_t::set_coef_fir_filter()
+void irs::agilent_3458a_digitizer_t::set_coef_filter()
 {
-  vector<math_type> coefficients;
-  const size_type order = get_sample_count(m_sampling_time, m_interval);
-  get_coef_fir_filter(m_window_function_form, order, &coefficients);
-  m_fir_filter_asynch.set_coefficients(coefficients.begin(),
-    coefficients.end());
+  if (m_filter_impulse_response_type == firt_infinite) {
+    vector<math_type> num_coef_list;
+    vector<math_type> denom_coef_list;
+    get_coef_iir_filter(m_filter_settings, &num_coef_list, &denom_coef_list);
+    m_iir_filter_asynch.set_coefficients(num_coef_list.begin(),
+      num_coef_list.end(), denom_coef_list.begin(), denom_coef_list.end());
+  } else {
+    vector<math_type> coefficients;
+    const size_type order = get_sample_count(m_sampling_time, m_interval);
+    get_coef_fir_filter(m_window_function_form, order, &coefficients);
+    m_fir_filter_asynch.set_coefficients(coefficients.begin(),
+      coefficients.end());
+  }
 }
 
 void irs::agilent_3458a_digitizer_t::filter_start()
@@ -1997,7 +2013,11 @@ bool irs::iir_filter_asynch_test()
   filter_settings.sampling_time_s = 20e-6;
   filter_settings.low_cutoff_freq_hz = 20;
   filter_settings.passband_ripple_db = 0.3;
-  iir_filter_t<math_type> iir_filter(filter_settings);
+  vector<math_type> num_coef_list;
+  vector<math_type> denom_coef_list;
+  get_coef_iir_filter(filter_settings, &num_coef_list, &denom_coef_list);
+  iir_filter_t<math_type> iir_filter(num_coef_list.begin(), num_coef_list.end(),
+    denom_coef_list.begin(), denom_coef_list.end());
   raw_data_t<double> filt_values_first(sample_count);
   for (irs_size_t sample_i = 0; sample_i < sample_count; sample_i++) {
     samples[sample_i] = rand();
@@ -2009,7 +2029,10 @@ bool irs::iir_filter_asynch_test()
   typedef iir_filter_asynch_t<math_type, vector<math_type>::iterator,
     raw_data_t<double> > iir_filter_asynch_type;
   iir_filter_asynch_type iir_filter_asynch(
-    filter_settings,
+    num_coef_list.begin(),
+    num_coef_list.end(),
+    denom_coef_list.begin(),
+    denom_coef_list.end(),
     &filt_values_second,
     sample_count);
   iir_filter_asynch.set(samples.begin(), samples.end());

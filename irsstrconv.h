@@ -289,7 +289,7 @@ template<class T>
 inline T str_conv(const WideString& a_str_in)
 {
   // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
+  //IRS_STATIC_ASSERT(false);
   return T(a_str_in);
 }
 
@@ -302,7 +302,13 @@ inline WideString str_conv<WideString>(const WideString& a_str_in)
 template<>
 inline irs_string_t str_conv<irs_string_t>(const WideString& a_str_in)
 {
-  return irs::string(String(a_str_in).c_str());
+  return irs_string_t(AnsiString(a_str_in).c_str());
+}
+
+template<>
+inline std_string_t str_conv<std_string_t>(const WideString& a_str_in)
+{
+  return std_string_t(AnsiString(a_str_in).c_str());
 }
 
 template<>

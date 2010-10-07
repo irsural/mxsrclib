@@ -36,14 +36,21 @@ class iir_filter_t
 public:
   typedef T value_type;
   typedef irs_size_t size_type;
-  iir_filter_t();
-  iir_filter_t(const irs::filter_settings_t& a_filter_setting);
   typedef deque<T> coef_list_type;
   typedef deque<T> delay_line_type;
-  void set_filter_settings(const irs::filter_settings_t& a_filter_setting);
-  template <class COEF_LIST_TYPE>
-  void set_coefficients(const COEF_LIST_TYPE& a_num_coef_list,
-    const COEF_LIST_TYPE& a_denom_coef_list);
+  iir_filter_t();
+  template <class iterator_t>
+  iir_filter_t(
+    iterator_t a_num_coef_list_begin,
+    iterator_t a_num_coef_list_end,
+    iterator_t a_denom_coef_list_begin,
+    iterator_t a_denom_coef_list_end);
+  template <class iterator_t>
+  void set_coefficients(
+    iterator_t a_num_coef_list_begin,
+    iterator_t a_num_coef_list_end,
+    iterator_t a_denum_coef_list_begin,
+    iterator_t a_denum_coef_list_end);
   void sync(T a_value);
   T filt(const T a_sample);
   void set(const T a_sample);
@@ -76,6 +83,8 @@ public:
   typedef value_t value_type;
   typedef irs_size_t size_type;
   typedef deque<value_type> coef_list_type;
+  typedef typename deque<value_type>::iterator coef_list_iterator;
+  typedef typename deque<value_type>::const_iterator coef_list_const_iterator;
   typedef deque<value_type> delay_line_type;
   typedef typename deque<value_type>::iterator delay_line_iterator;
   typedef typename deque<value_type>::const_iterator delay_line_const_iterator;
@@ -94,6 +103,7 @@ public:
   value_type get() const;
   void reset();
 private:
+  void calc_sum();
   coef_list_type m_coef_list;
   delay_line_type m_delay_line;
   value_t m_sum;
@@ -299,43 +309,52 @@ iir_filter_t<T>::iir_filter_t():
 }
 
 template <class T>
-iir_filter_t<T>::iir_filter_t(const irs::filter_settings_t& a_filter_setting):
+template <class iterator_t>
+iir_filter_t<T>::iir_filter_t(
+  iterator_t a_num_coef_list_begin,
+  iterator_t a_num_coef_list_end,
+  iterator_t a_denom_coef_list_begin,
+  iterator_t a_denom_coef_list_end
+):
   m_num_coef_list(),
   m_denom_coef_list(),
   m_in_delay_line(),
   m_out_delay_line()
 {
-  set_filter_settings(a_filter_setting);
+  set_coefficients(a_num_coef_list_begin, a_num_coef_list_end,
+    a_denom_coef_list_begin, a_denom_coef_list_end);
 }
 
 template <class T>
-void iir_filter_t<T>::set_filter_settings(
-  const irs::filter_settings_t& a_filter_setting)
+template <class iterator_t>
+void iir_filter_t<T>::set_coefficients(
+  iterator_t a_num_coef_list_begin,
+  iterator_t a_num_coef_list_end,
+  iterator_t a_denum_coef_list_begin,
+  iterator_t a_denum_coef_list_end)
 {
-  get_coef_iir_filter(a_filter_setting, &m_num_coef_list, &m_denom_coef_list);
+  IRS_LIB_ASSERT(distance(a_num_coef_list_begin, a_num_coef_list_end) ==
+    distance(a_denum_coef_list_begin, a_denum_coef_list_end));
+  m_num_coef_list.clear();
+  m_denom_coef_list.clear();
+  m_num_coef_list.insert(m_num_coef_list.begin(), a_num_coef_list_begin,
+    a_num_coef_list_end);
+  m_denom_coef_list.insert(m_denom_coef_list.begin(),
+    a_denum_coef_list_begin, a_denum_coef_list_end);
   m_denom_coef_list.pop_front();
+  if (m_num_coef_list.empty()) {
+    m_num_coef_list.resize(1, 1);
+  } else {
+    // Размер линии задержки допустим
+  }
   m_in_delay_line.resize(m_num_coef_list.size(), 0);
   m_out_delay_line.resize(m_denom_coef_list.size(), 0);
 }
 
 template <class T>
-template <class COEF_LIST_TYPE>
-void iir_filter_t<T>::set_coefficients(const COEF_LIST_TYPE& a_num_coef_list,
-  const COEF_LIST_TYPE& a_denom_coef_list)
-{
-  IRS_LIB_ASSERT(a_num_coef_list.size() == a_denom_coef_list.size());
-  m_num_coef_list.clear();
-  a_denom_coef_list.clear();
-  m_num_coef_list.insert(m_num_coef_list.begin(), a_num_coef_list.begin(),
-    a_num_coef_list.end());
-  a_denom_coef_list.insert(a_denom_coef_list.begin(),
-    a_denom_coef_list.begin(), a_denom_coef_list.end());
-}
-
-template <class T>
 void iir_filter_t<T>::sync(T a_value)
 { 
-  m_in_delay_line. assign(m_in_delay_line.size(), a_value);
+  m_in_delay_line.assign(m_in_delay_line.size(), a_value);
   m_out_delay_line.assign(m_out_delay_line.size(), a_value);
 }
 
@@ -433,12 +452,14 @@ typename fir_filter_t<value_t>::value_type fir_filter_t<value_t>::filt(
 template <class value_t>
 void fir_filter_t<value_t>::set(const value_type a_sample)
 {
-  const size_type delay_line_size = m_delay_line.size();
-  m_delay_line.pop_back();
-  m_delay_line.push_front(a_sample);
+  IRS_LIB_ASSERT(m_coef_list.size() == m_delay_line.size());
   m_sum = 0;
-  for (size_type i = 0; i < delay_line_size - 1; i++) {
-    m_sum += m_delay_line[i]*m_coef_list[i];
+  if (!m_delay_line.empty()) {
+    m_delay_line.pop_back();
+    m_delay_line.insert(m_delay_line.begin(), a_sample);   
+    calc_sum();
+  } else {
+    // Для фильтра нулевого порядка в качестве выходного сигнала возвращаем ноль
   }
 }
 
@@ -446,18 +467,34 @@ template <class value_t>
 template <class iterator_t>
 void fir_filter_t<value_t>::set(iterator_t a_begin, iterator_t a_end)
 {
-  const size_type delay_line_size = m_delay_line.size();
-  const size_type erase_elem_count =
-    min(static_cast<size_type>(distance(a_begin, a_end)), m_delay_line.size());
-  delay_line_iterator end_erase = m_delay_line.begin();
-  advance(end_erase, erase_elem_count);
-  m_delay_line.erase(m_delay_line.begin(), end_erase);
-  iterator_t end = a_begin;
-  advance(end, erase_elem_count);
-  m_delay_line.insert(m_delay_line.end(), a_begin, end);
+  IRS_LIB_ASSERT(m_coef_list.size() == m_delay_line.size());
   m_sum = 0;
-  for (size_type i = 0; i < delay_line_size - 1; i++) {
-    m_sum += m_delay_line[i]*m_coef_list[i];
+  if (!m_delay_line.empty()) {
+    const size_type erase_elem_count =
+      min(static_cast<size_type>(distance(a_begin, a_end)),
+      m_delay_line.size());
+    delay_line_iterator end_erase = m_delay_line.begin();
+    // Любой компилятор кроме C++Builder6 с обновлениями или без
+    #if (!(defined(__BORLANDC__) &&\
+      (__BORLANDC__ >= IRS_CPP_BUILDER6) &&\
+      (__BORLANDC__ < IRS_CPP_BUILDER2006)))
+    advance(end_erase, erase_elem_count);
+    m_delay_line.erase(m_delay_line.begin(), end_erase);
+    #else // Если компилятор C++Builder6 с обновлениями или без
+    // Так как диапазонная операция erase для deque работает неправильно,
+    // заменяем ее на комбинацию цикла for и поэлементную операцию erase
+    for (size_type erase_i = 0; erase_i < erase_elem_count; erase_i++) {
+      m_delay_line.erase(end_erase);
+      ++end_erase;
+    }
+    #endif // Если компилятор C++Builder6 с обновлениями или без
+    iterator_t end = a_begin;
+    advance(end, erase_elem_count);
+    m_delay_line.insert(m_delay_line.end(), a_begin, end);
+    IRS_LIB_ASSERT(m_coef_list.size() == m_delay_line.size());
+    calc_sum();
+  } else {
+    // Для фильтра нулевого порядка в качестве выходного сигнала возвращаем ноль
   }
 }
 
@@ -473,6 +510,19 @@ template <class value_t>
 void fir_filter_t<value_t>::reset()
 {
   sync(0);
+}
+
+template <class value_t>
+void fir_filter_t<value_t>::calc_sum()
+{
+  IRS_LIB_ASSERT(m_coef_list.size() == m_delay_line.size());
+  delay_line_const_iterator delay_line_const_it = m_delay_line.begin();
+  coef_list_const_iterator coef_list_const_it = m_coef_list.begin();
+  while (delay_line_const_it != m_delay_line.end()) {
+    m_sum += (*delay_line_const_it)*(*coef_list_const_it);
+    ++delay_line_const_it;
+    ++coef_list_const_it;
+  }
 }
 
 template <class coef_list_type>

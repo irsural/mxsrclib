@@ -36,7 +36,8 @@ public:
   ni_usb_gpib_flow_t(
     const size_type a_board_index,
     const size_type a_gpib_adress,
-    const double a_session_read_timeout_s = 1
+    const double a_session_read_timeout_s = 1,
+    const double a_session_write_timeout_s = 1
   );
   virtual ~ni_usb_gpib_flow_t();
   virtual string_type param(const string_type &a_name);
@@ -62,7 +63,7 @@ private:
     process_wait,
     process_read,
     process_write
-  };
+  };   
   process_t m_process;
   typedef void (ni_usb_gpib_flow_t::*p_process)();
   vector<p_process> m_proc_array;

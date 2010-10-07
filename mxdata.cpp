@@ -222,9 +222,14 @@ bool irs::raw_data_test()
   typedef size_t size_type;
   typedef int testing_type;
   bool test_success = true;
+  typedef irs::raw_data_t<testing_type> raw_data_type;
   irs::raw_data_t<testing_type> raw_data;
   // Создаем и заполняем буфер тестовыми данными
   const size_type buf_size = 100;
+  // Размер буфера должен быть больше нуля
+  IRS_LIB_ASSERT(buf_size > 0);
+  // Размер буфера должен быть четным
+  IRS_LIB_ASSERT(!(buf_size & 1));
   testing_type test_data_buf[buf_size];
   for (size_type i = 0; i < buf_size; i++) {
     test_data_buf[i] = i;
@@ -241,32 +246,71 @@ bool irs::raw_data_test()
   }
   if (test_success) {
     const size_type pop_data_size = buf_size/2;
+
     // Удаление из начала количества элементов, равного половине буфера
     raw_data.erase(raw_data.data(), raw_data.data() + pop_data_size);
+
     // Вставка в конец буфера
     raw_data.insert(raw_data.data() + raw_data.size(), test_data_buf,
       test_data_buf + buf_size);
+
     // Вставка в конец буфера
     raw_data.insert(raw_data.data() + raw_data.size(),
       test_data_buf, test_data_buf + buf_size);
+
     // Удаление из начала количества элементов, равного половине буфера
     raw_data.erase(raw_data.data(), raw_data.data() + buf_size - pop_data_size);
+
     // Удаление из конца количества элементов, равного размеру буфера
     raw_data.erase(
       raw_data.data() + (raw_data.size() - buf_size),
       raw_data.data() + raw_data.size());
+
+    // Удаляем первый элемент и опять вставляем
+    raw_data_type::pointer p_first_elem = raw_data.erase(raw_data.begin(),
+      raw_data.begin() + 1);
+    raw_data.insert(p_first_elem, test_data_buf[0]);
+    
+    // Вставляем в начало элемент и сразу же удаляем его
+    raw_data_type::pointer p_inserted_elem = raw_data.insert(raw_data.begin(),
+      testing_type());
+    raw_data.erase(p_inserted_elem);
 
     test_success = (raw_data.size() == buf_size);
     IRS_LIB_ASSERT(test_success);
   } else {
     // Произошла ошибка
   }
+
+  // Проверка на равенство данных контейнера данным тестового буфера
   if (test_success) {
     test_success = (memcmpex(raw_data.data(), test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
     // Произошла ошибка
   }
+
+  // Проверка удаления пустого количества элементов
+  if (test_success) {
+    raw_data.erase(raw_data.begin(), raw_data.begin());
+    raw_data.erase(raw_data.end(), raw_data.end());
+    test_success = (memcmpex(raw_data.data(), test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+
+  // Проверка вставки пустого количества элементов
+  if (test_success) {
+    raw_data.insert(raw_data.begin(), raw_data.begin(), raw_data.begin());
+    raw_data.insert(raw_data.end(), raw_data.end(), raw_data.end());
+    test_success = (memcmpex(raw_data.data(), test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+
+  // Проверка функции resize
   if (test_success) {
     raw_data.reserve(buf_size * 10);
     raw_data.resize(buf_size);   
@@ -275,6 +319,8 @@ bool irs::raw_data_test()
   } else {
     // Произошла ошибка
   }
+
+  // Проверка функции clear
   if (test_success) {
     raw_data.clear();
     test_success = (raw_data.size() == 0);
@@ -282,6 +328,8 @@ bool irs::raw_data_test()
   } else {
     // Произошла ошибка
   }
+
+  // Опять вставляем тестовый буфер в пустой контейнер
   if (test_success) {
     raw_data.reserve(0);
     raw_data.insert(raw_data.data() + raw_data.size(),
@@ -291,12 +339,16 @@ bool irs::raw_data_test()
   } else {
     // Произошла ошибка
   }
+
+  // Проверяем на равенство с тестовым буфером
   if (test_success) {
     test_success = (memcmpex(raw_data.data(), test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
     // Произошла ошибка
   }
+
+  // Проверяем оператор operator[]
   if (test_success) {
     for (size_type i = 0; i < buf_size; i++) {
       if (raw_data[i] != test_data_buf[i]) {
@@ -310,6 +362,8 @@ bool irs::raw_data_test()
   } else {
     // Произошла ошибка
   }
+
+  // Проверяем копирование одного контейнера в другой
   if (test_success) {            
     irs::raw_data_t<testing_type> raw_data_second;
     raw_data_second = raw_data;

@@ -534,16 +534,23 @@ public:
   typedef iterator_t iterator_type;
   typedef irs_size_t size_type;
   iir_filter_asynch_t();
+  template <class coef_iterator>
   iir_filter_asynch_t(
-    const filter_settings_t& a_filter_setting,
+    coef_iterator a_num_coef_list_begin,
+    coef_iterator a_num_coef_list_end,
+    coef_iterator a_denom_coef_list_begin,
+    coef_iterator a_denom_coef_list_end,
     container_t* ap_filt_values = IRS_NULL,
     const size_type a_filt_value_max_count = 1000);
   typedef deque<value_t> coef_list_type;
   typedef deque<value_t> delay_line_type;
-  void set_filter_settings(const filter_settings_t& a_filter_setting);
-  template <class coef_list_type>
-  void set_coefficients(const coef_list_type& a_num_coef_list,
-    const coef_list_type& a_denom_coef_list);
+  //void set_filter_settings(const filter_settings_t& a_filter_setting);
+  template <class coef_iterator>
+  void set_coefficients(
+    coef_iterator a_num_coef_list_begin,
+    coef_iterator a_num_coef_list_end,
+    coef_iterator a_denom_coef_list_begin,
+    coef_iterator a_denom_coef_list_end);
   void set_filt_value_buf(container_t* ap_filt_values,
     const size_type a_filt_value_count);
   void sync(value_t a_value);
@@ -715,7 +722,7 @@ private:
   void set_window_function_form();
   void set_sample_format();
   void set_range();
-  void set_coef_fir_filter();
+  void set_coef_filter();
   void filter_start();
   void filter_tick();
   bool filter_completed();
@@ -1047,12 +1054,17 @@ iir_filter_asynch_t<value_t, iterator_t, container_t>::iir_filter_asynch_t():
 }
 
 template <class value_t, class iterator_t, class container_t>
+template <class coef_iterator>
 iir_filter_asynch_t<value_t, iterator_t, container_t>::iir_filter_asynch_t(
-  const filter_settings_t& a_filter_setting,
+  coef_iterator a_num_coef_list_begin,
+  coef_iterator a_num_coef_list_end,
+  coef_iterator a_denom_coef_list_begin,
+  coef_iterator a_denom_coef_list_end,
   container_t* ap_filt_values,
   const size_type a_filt_value_max_count
 ):
-  m_iir_filter(a_filter_setting),
+  m_iir_filter(a_num_coef_list_begin, a_num_coef_list_end,
+    a_denom_coef_list_begin, a_denom_coef_list_end),
   m_completed(true),
   m_delta_tick(1000),
   m_tick_timer(make_cnt_s(0.001)),
@@ -1064,20 +1076,23 @@ iir_filter_asynch_t<value_t, iterator_t, container_t>::iir_filter_asynch_t(
   set_filt_value_buf(ap_filt_values, a_filt_value_max_count);
 }
 
-template <class value_t, class iterator_t, class container_t>
+/*template <class value_t, class iterator_t, class container_t>
 void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_filter_settings(
   const filter_settings_t& a_filter_setting)
 {
   m_iir_filter.set_filter_settings(a_filter_setting);
-}
+}*/
 
 template <class value_t, class iterator_t, class container_t>
-template <class coef_list_t>
+template <class coef_iterator>
 void iir_filter_asynch_t<value_t, iterator_t, container_t>::set_coefficients(
-  const coef_list_t& a_num_coef_list,
-  const coef_list_t& a_denom_coef_list)
+  coef_iterator a_num_coef_list_begin,
+  coef_iterator a_num_coef_list_end,
+  coef_iterator a_denom_coef_list_begin,
+  coef_iterator a_denom_coef_list_end)
 {
-  m_iir_filter.set_coefficients(a_num_coef_list, a_denom_coef_list);
+  m_iir_filter.set_coefficients(a_num_coef_list_begin, a_num_coef_list_end,
+    a_denom_coef_list_begin, a_denom_coef_list_end);
 }
 
 template <class value_t, class iterator_t, class container_t>
@@ -1157,7 +1172,7 @@ void iir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
       size_type count = 0;
       while ((count < m_delta_tick) && (mp_begin != mp_end) && !m_completed) {
         m_iir_filter.set(*mp_begin);
-        if (mp_filt_values) {
+        if (mp_filt_values && (m_filt_value_max_count > 0)) {
           if (mp_filt_values->size() >= m_filt_value_max_count) {
             mp_filt_values->erase(mp_filt_values->begin());
           } else {
@@ -1320,14 +1335,15 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::tick()
         size_type count = 0;
         while ((count < m_delta_tick) && (mp_begin != mp_end) && !m_completed) {
           m_fir_filter.set(*mp_begin);
-          if (mp_filt_values) {
+          if (mp_filt_values && (m_filt_value_max_count > 0)) {
             if (mp_filt_values->size() >= m_filt_value_max_count) {
               mp_filt_values->erase(mp_filt_values->begin());
             } else {
               // Размер еще не достиг максимума
             }
             mp_filt_values->insert(mp_filt_values->end(),
-              static_cast<typename container_t::value_type>(m_fir_filter.get()));
+              static_cast<typename container_t::value_type>(
+              m_fir_filter.get()));
           } else {
             // Пользователь не установил буфер фильтрованных значений
           }
