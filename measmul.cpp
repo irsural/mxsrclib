@@ -788,7 +788,9 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_buf_send(),
   m_buf_receive(),
   m_samples(),
+  m_samples_for_user(),
   m_filtered_values(),
+  m_filtered_values_for_user(),
   m_nplc_coef(20e-3),
   m_sampling_time_default(25e-6),
   m_interval_default(30.0),
@@ -828,7 +830,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_delay_timer(irs::make_cnt_ms(1)),
   m_data_to_values(),
   m_sko_calc_asynch(1000),
+  m_sko_for_user(0),
+  m_sko_relative_for_user(0),
   m_delta_calc_asynch(),
+  m_delta_absolute_for_user(0),
+  m_delta_relative_for_user(0),
   m_iir_filter_asynch(),
   m_fir_filter_asynch()
 {
@@ -909,28 +915,25 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
   switch (a_param) {
     case mul_param_source_values: {
       const irs_u8* p_src_first =
-        reinterpret_cast<const irs_u8*>(m_samples.data());
-      const irs_u8* p_src_last = p_src_first + m_samples.size()*sizeof(double);
+        reinterpret_cast<const irs_u8*>(m_samples_for_user.data());
+      const irs_u8* p_src_last = p_src_first +
+        m_samples_for_user.size()*sizeof(double);
       ap_value->insert(ap_value->data(), p_src_first, p_src_last);
     } break;
     case mul_param_filtered_values: {
       const irs_u8* p_src_first =
-        reinterpret_cast<const irs_u8*>(m_filtered_values.data());
+        reinterpret_cast<const irs_u8*>(m_filtered_values_for_user.data());
       const irs_u8* p_src_last = p_src_first +
-        m_filtered_values.size() * sizeof(double);
+        m_filtered_values_for_user.size() * sizeof(double);
       ap_value->insert(ap_value->data(), p_src_first, p_src_last);
     } break;
     case mul_param_standard_deviation:
     case mul_param_standard_deviation_relative: {
       double deviation = 0.;
-      if (!m_samples.empty()) {
-        if (a_param == mul_param_standard_deviation) {
-          deviation = m_sko_calc_asynch;
-        } else {
-          deviation = m_sko_calc_asynch.relative();
-        }
+      if (a_param == mul_param_standard_deviation) {
+        deviation = m_sko_for_user;
       } else {
-        // Возвращаем ноль
+        deviation = m_sko_relative_for_user;
       }
       ap_value->insert(ap_value->begin(),
         reinterpret_cast<const irs_u8*>(&deviation),
@@ -940,9 +943,9 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
     case mul_param_variation_relative: {
       double variation = 0.;
       if (a_param == mul_param_variation) {
-        variation = m_delta_calc_asynch.absolute();
+        variation = m_delta_absolute_for_user;
       } else {
-        variation = m_delta_calc_asynch.relative();
+        variation = m_delta_relative_for_user;
       }
       ap_value->insert(ap_value->data(),
         reinterpret_cast<const irs_u8*>(&variation),
@@ -1144,6 +1147,7 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_data_to_values.set_tick_max_time(m_tick_max_time_s);
         m_data_to_values.set(flip_data_enabled, m_sample_size,
           m_coefficient, &m_buf_receive, &m_samples);
+        m_samples_for_user = m_samples;
         m_sko_calc_asynch.clear();
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
@@ -1179,6 +1183,8 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (m_sko_calc_asynch.completed()) {
           IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
             measure_time_calc.get() << " с");
+          m_sko_for_user = m_sko_calc_asynch;
+          m_sko_relative_for_user = m_sko_calc_asynch.relative();
           m_delta_calc_asynch.resize(m_samples.size());
           m_delta_calc_asynch.add(m_samples.begin(), m_samples.end());
         } else {
@@ -1189,6 +1195,8 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (m_delta_calc_asynch.completed()) {
           IRS_LIB_DBG_MSG("Вычисление дельты завершено: " <<
             measure_time_calc.get() << " с");
+          m_delta_absolute_for_user = m_delta_calc_asynch.absolute();
+          m_delta_relative_for_user = m_delta_calc_asynch.relative();
           filter_start();
         } else {
           // Операция еще не завершена
@@ -1198,6 +1206,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else {
         IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
           measure_time_calc.get() << " с");
+        m_filtered_values_for_user = m_filtered_values;
         *mp_value = static_cast<double>(filter_get());
         m_status = meas_status_success;
         m_process = process_wait;
@@ -1349,12 +1358,9 @@ void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
       m_commands[cmd_i].size();
     m_buf_send.insert(m_buf_send.data() + m_buf_send.size(), p_cmd_begin,
       p_cmd_end);
-    if (true/*cmd_i != (cmd_count - 1)*/) {
-      m_buf_send.insert(m_buf_send.data() + m_buf_send.size(),
-        p_cmd_terminator_begin, p_cmd_terminator_end);
-    } else {
-      // После последней команды терминатор не вставляем
-    }
+    // Вставляем терминатор после каждой команды
+    m_buf_send.insert(m_buf_send.data() + m_buf_send.size(),
+      p_cmd_terminator_begin, p_cmd_terminator_end);
   }
   m_commands.clear();
 }

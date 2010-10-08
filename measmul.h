@@ -749,7 +749,9 @@ private:
   raw_data_t<irs_u8> m_buf_send;
   raw_data_t<irs_u8> m_buf_receive;
   raw_data_t<double> m_samples;
+  raw_data_t<double> m_samples_for_user;
   raw_data_t<double> m_filtered_values;
+  raw_data_t<double> m_filtered_values_for_user;
   const double m_nplc_coef;
   const double m_sampling_time_default;
   const double m_interval_default;
@@ -798,7 +800,11 @@ private:
   irs::timer_t m_delay_timer;
   data_to_values_type m_data_to_values;
   sko_calc_asynch_type m_sko_calc_asynch;
+  double m_sko_for_user;
+  double m_sko_relative_for_user;
   delta_calc_asynch_type m_delta_calc_asynch;
+  double m_delta_absolute_for_user;
+  double m_delta_relative_for_user;
   iir_filter_asynch_type m_iir_filter_asynch;
   fir_filter_asynch_type m_fir_filter_asynch;
 }; // class agilent_3458a_digitizer_t
