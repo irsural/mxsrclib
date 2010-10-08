@@ -1147,7 +1147,6 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_data_to_values.set_tick_max_time(m_tick_max_time_s);
         m_data_to_values.set(flip_data_enabled, m_sample_size,
           m_coefficient, &m_buf_receive, &m_samples);
-        m_samples_for_user = m_samples;
         m_sko_calc_asynch.clear();
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
@@ -1173,6 +1172,7 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (m_data_to_values.completed()) {
           IRS_LIB_DBG_MSG("Конвертация значений завершена: " <<
             measure_time_calc.get() << " с");
+          m_samples_for_user = m_samples;  
           m_sko_calc_asynch.resize(m_samples.size());
           m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
         } else {
