@@ -741,6 +741,7 @@ private:
   filter_impulse_response_type_t m_filter_impulse_response_type;
   filter_settings_t m_filter_settings;
   window_function_form_t m_window_function_form;
+  vector<math_type> m_fir_filter_coefficients;
   iir_filter_t<math_type> m_iir_filter;
   // Команды при инициализации
   raw_data_t<irs_u8> m_command_terminator;

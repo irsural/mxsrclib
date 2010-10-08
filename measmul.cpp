@@ -781,6 +781,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_filter_impulse_response_type(firt_infinite),
   m_filter_settings(a_filter_settings),
   m_window_function_form(wff_hann),
+  m_fir_filter_coefficients(),
   m_iir_filter(),
   m_command_terminator(),
   m_commands(),
@@ -866,11 +867,10 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_iir_filter_asynch.set_coefficients(num_coef_list.begin(),
     num_coef_list.end(), denom_coef_list.begin(), denom_coef_list.end());
 
-  vector<math_type> coefficients;
   const size_type order = get_sample_count(a_sampling_time_s, a_interval_s);
-  get_coef_window_func_hann(order, &coefficients);
-  m_fir_filter_asynch.set_coefficients(coefficients.begin(),
-    coefficients.end());
+  get_coef_window_func_hann(order, &m_fir_filter_coefficients);
+  m_fir_filter_asynch.set_coefficients(m_fir_filter_coefficients.begin(),
+    m_fir_filter_coefficients.end());
   m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values, 0);
 
   IRS_LIB_ERROR_IF(a_sampling_time_s <= 0, ec_standard,
@@ -1125,7 +1125,6 @@ void irs::agilent_3458a_digitizer_t::tick()
   mp_hardflow->tick();
   commands_to_buf_send();
   static measure_time_t measure_time_calc;
-  #ifndef OLD
   switch (m_process) {
     case process_write_data: {
       write_data_tick();
@@ -1205,26 +1204,6 @@ void irs::agilent_3458a_digitizer_t::tick()
         IRS_LIB_DBG_MSG("Вычисления завершены. " << measure_time_calc.get() <<
           " c");
       }
-      /*if (m_sample_size == sizeof(short_int_sample_format_type)) {
-        multimeter_data_to_sample_array<short_int_sample_format_type>(
-          m_buf_receive, m_coefficient, &m_samples);
-      } else {
-        multimeter_data_to_sample_array<double_int_sample_format_type>(
-          m_buf_receive, m_coefficient, &m_samples);
-      }
-      const size_type sample_count = m_samples.size();
-      m_buf_receive.clear();
-      irs::sko_calc_t<math_type, math_type> sko_calc(sample_count);
-      for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-        sko_calc.add(m_samples[sample_i]);
-      }
-      // Предустанавливаем фильтр
-      m_iir_filter.sync(sko_calc.average());
-      m_filtered_values.resize(sample_count);
-      for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-        m_iir_filter.set(m_samples[sample_i]);
-        m_filtered_values[sample_i] = static_cast<double>(m_iir_filter.get());
-      }*/
     } break;
     case process_set_settings: {
       if (m_interval_change_event.check()) {
@@ -1319,165 +1298,6 @@ void irs::agilent_3458a_digitizer_t::tick()
       IRS_LIB_ASSERT("Недопустимый процесс");
     }
   }
-  #else // OLD
-  if (!m_buf_send.empty()) {
-    const size_type write_size = mp_hardflow->write(
-      mp_hardflow->channel_next(), m_buf_send.data(), m_buf_send.size());
-    IRS_DBG_MSG("Записано = " << write_size);
-    const size_type buf_new_size = m_buf_send.size() - write_size;
-    memmoveex(m_buf_send.data(), m_buf_send.data() + write_size,
-      buf_new_size);
-    m_buf_send.resize(buf_new_size);
-    if (m_buf_send.empty()) {
-      m_delay_timer.start();
-    }
-  } else {
-    // Нет данных на отправку
-  }
-  if (m_coefficient_receive_ok &&
-    (m_status == meas_status_busy) &&
-    (m_buf_receive.size() == static_cast<size_type>(m_need_receive_data_size)))
-  {
-    m_samples.clear();
-    m_filtered_values.clear();
-    const size_type sample_count =
-      get_sample_count(m_sampling_time, m_interval);
-    m_samples.reserve(sample_count);
-    if (m_sample_size == sizeof(irs_u16)) {
-      multimeter_data_to_sample_array<irs_u16>(m_buf_receive, m_coefficient,
-        &m_samples);
-    } else {
-      multimeter_data_to_sample_array<irs_u32>(m_buf_receive, m_coefficient,
-        &m_samples);
-    }
-    m_buf_receive.clear();
-    irs::sko_calc_t<math_type, math_type> sko_calc(sample_count);
-    for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-      sko_calc.add(m_samples[sample_i]);
-    }
-    // Предустанавливаем фильтр
-    m_iir_filter.sync(sko_calc.average());
-    m_filtered_values.resize(sample_count);
-    for (size_type sample_i = 0; sample_i < sample_count; sample_i++) {
-      m_iir_filter.set(m_samples[sample_i]);
-      m_filtered_values[sample_i] = static_cast<double>(m_iir_filter.get());
-    }
-    *mp_value = static_cast<double>(m_iir_filter.get());
-    m_status = meas_status_success;
-  } else {
-    // Недостаточно данных для формирования результата
-  }
-  if (((m_status == meas_status_busy) || !m_coefficient_receive_ok) &&
-    m_buf_send.empty()) {
-
-    #ifdef IRS_LIB_DEBUG
-    irs::measure_time_t measure_time;
-    #endif // IRS_LIB_DEBUG
-
-    const size_type buf_receive_cur_size = m_buf_receive.size();
-    m_buf_receive.resize(static_cast<size_type>(m_need_receive_data_size));
-    const size_type read_size = mp_hardflow->read(
-      mp_hardflow->channel_next(), m_buf_receive.data() + buf_receive_cur_size,
-        m_need_receive_data_size - buf_receive_cur_size);
-    m_buf_receive.resize(buf_receive_cur_size + read_size);
-    IRS_LIB_DBG_MSG_IF(read_size > 0, "Прочитано = " << read_size);
-  } else {
-
-  }
-  if (m_status != meas_status_busy) {
-    if (m_interval_change_event.check()) {
-      m_interval = m_new_interval;
-      const size_type sample_count =
-        get_sample_count(m_sampling_time, m_interval);
-      m_need_receive_data_size = sample_count*m_sample_size;
-      m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
-      string_type read_timeout_str;
-      num_to_str(m_interval*2 + 1, &read_timeout_str);
-      mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
-    } else {
-      // Интервал не изменен
-    }
-    if (m_sampling_time_s_change_event.check()) {
-      m_sampling_time = m_new_sampling_time;
-      const double aperture = get_aperture(m_sampling_time);
-      m_commands.push_back(make_aperture_cmd(aperture));
-      const size_type sample_count = get_sample_count(m_sampling_time,
-        m_interval);
-      m_need_receive_data_size = sample_count*m_sample_size;
-      m_commands.push_back(make_sweep_cmd(m_sampling_time, sample_count));
-      m_commands.push_back("TARM HOLD");
-      m_commands.push_back("ISCALE?");
-      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
-      m_need_receive_data_size = m_iscale_byte_count;
-      m_coefficient_receive_ok = false;
-    } else {
-      // Время дискретизации не изменено
-    }
-    if (m_filter_settings_change_event.check()) {
-      m_filter_settings = m_new_filter_settings;
-      m_iir_filter_asynch.set_filter_settings(m_filter_settings);
-    } else {
-      // Параметры фильтра не изменены
-    }
-    if (m_sample_format_change_event.check()) {
-      if (m_new_sample_format == mul_sample_format_int16) {
-        m_sample_size = sizeof(short_int_sample_format_type);
-        m_commands.push_back("MFORMAT SINT");
-        m_commands.push_back("OFORMAT SINT");
-      } else {
-        m_sample_size = sizeof(double_int_sample_format_type);
-        m_commands.push_back("MFORMAT DINT");
-        m_commands.push_back("OFORMAT DINT");
-      }
-      m_commands.push_back("TARM HOLD");
-      m_commands.push_back("ISCALE?");
-      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
-      m_need_receive_data_size = m_iscale_byte_count;
-      m_coefficient_receive_ok = false;
-    } else {
-      // Формат отсчетов не изменен
-    }
-    if (m_range_change_event.check()) {
-      m_commands.push_back(make_range_cmd(m_new_range));
-      m_commands.push_back("TARM HOLD");
-      m_commands.push_back("ISCALE?");
-      mp_hardflow->set_param(irst("read_timeout"), irst("3"));
-      m_need_receive_data_size = m_iscale_byte_count;
-      m_coefficient_receive_ok = false;
-    } else {
-      // Диапазон не изменился
-    }
-  } else {
-    // Ожидаем окончания предыдущей операции
-  }
-  if (!m_coefficient_receive_ok) {
-    std_string_t buf(reinterpret_cast<char*>(m_buf_receive.data()),
-      m_buf_receive.size());
-    size_type pos = buf.find("\r\n");
-    if (pos != irs_string_t::npos) {
-      irs_string_t coefficient_str = buf.substr(0, pos);
-      if (str_to_num_classic(coefficient_str, &m_coefficient)) {
-        m_buf_receive.clear();
-
-        string_type read_timeout_str;
-        num_to_str(m_interval*2 + 1, &read_timeout_str);
-        mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
-
-        m_commands.push_back("TARM SYN");
-        m_commands.push_back("TRIG SYN");
-        m_need_receive_data_size =
-          get_sample_count(m_sampling_time, m_interval)*m_sample_size;
-        m_coefficient_receive_ok = true;
-      } else {
-        IRS_LIB_ASSERT_MSG("Значение коэффициента считать не удалось");
-      }
-    } else {
-      // Конец команды не найден
-    }
-  } else {
-    // Инициализация уже завершена
-  }
-  #endif // OLD
 }
 // Установка времени интегрирования в периодах частоты сети (20 мс)
 void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)
@@ -1646,11 +1466,11 @@ void irs::agilent_3458a_digitizer_t::set_coef_filter()
     m_iir_filter_asynch.set_coefficients(num_coef_list.begin(),
       num_coef_list.end(), denom_coef_list.begin(), denom_coef_list.end());
   } else {
-    vector<math_type> coefficients;
     const size_type order = get_sample_count(m_sampling_time, m_interval);
-    get_coef_fir_filter(m_window_function_form, order, &coefficients);
-    m_fir_filter_asynch.set_coefficients(coefficients.begin(),
-      coefficients.end());
+    get_coef_fir_filter(m_window_function_form, order,
+      &m_fir_filter_coefficients);
+    m_fir_filter_asynch.set_coefficients(m_fir_filter_coefficients.begin(),
+      m_fir_filter_coefficients.end());
   }
 }
 
@@ -1692,7 +1512,17 @@ irs::agilent_3458a_digitizer_t::filter_get()
   if (m_filter_impulse_response_type == firt_infinite) {
     value = m_iir_filter_asynch.get();
   } else {
-    value = m_fir_filter_asynch.get();
+    math_type coef_sum = 0;
+    coef_sum = accumulate(m_fir_filter_coefficients.begin(),
+      m_fir_filter_coefficients.end(), coef_sum);
+    if (coef_sum != 0) {
+      value = m_fir_filter_asynch.get()/coef_sum;
+      IRS_LIB_DBG_MSG("Чистое значение фильтра " << m_fir_filter_asynch.get());
+      IRS_LIB_DBG_MSG("Итоговое значение фильтра " << value);
+    } else {
+      value = 0;
+    }
+    IRS_LIB_DBG_MSG("Сумма коэффициентов " << coef_sum);
   }
   return value;
 }
