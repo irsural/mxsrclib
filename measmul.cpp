@@ -1036,7 +1036,7 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
     } break;
     case mul_param_filtered_values_enabled: {
       if (sizeof(bool) == a_value.size()) {
-        m_calc_filtered_values_enabled =
+        m_new_calc_filtered_values_enabled =
           *reinterpret_cast<const bool*>(a_value.data());
         m_calc_filtered_values_enabled_change_gen_events.exec();
       } else {
@@ -1424,7 +1424,7 @@ void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
 void irs::agilent_3458a_digitizer_t::set_range(type_meas_t a_type_meas,
   double a_range)
 {
-  if (m_status != meas_status_success) {
+  if (m_status != meas_status_busy) {
     m_new_range = range_normalize(a_range);
     m_range_change_gen_events.exec();
     m_status = meas_status_success;
