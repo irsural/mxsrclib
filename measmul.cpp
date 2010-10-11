@@ -2990,6 +2990,7 @@ void irs::akip_ch3_85_3r_t::tick()
     }
   }
 }
+
 // Установка времени интегрирования в c
 void irs::akip_ch3_85_3r_t::set_aperture(double a_aperture)
 {
