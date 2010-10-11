@@ -110,25 +110,25 @@ public:
   virtual void set_positive() = 0;
   // Установить отрицательный фронт канала
   virtual void set_negative() = 0;
-  // Чтение значения при текущем типа измерения
+  // Чтение значения при текущем типа измерения (статусная команда)
   virtual void get_value(double *value) = 0;
-  // Чтение напряжения
+  // Чтение напряжения (статусная команда)
   virtual void get_voltage(double *voltage) = 0;
-  // Чтения силы тока
+  // Чтения силы тока (статусная команда)
   virtual void get_current(double *current) = 0;
-  // Чтение сопротивления
+  // Чтение сопротивления (статусная команда)
   virtual void get_resistance2x(double *resistance) = 0;
-  // Чтение сопротивления
+  // Чтение сопротивления (статусная команда)
   virtual void get_resistance4x(double *resistance) = 0;
-  // Чтение частоты
+  // Чтение частоты (статусная команда)
   virtual void get_frequency(double *frequency) = 0;
-  // Чтение усредненного сдвира фаз
+  // Чтение усредненного сдвира фаз (статусная команда)
   virtual void get_phase_average(double *phase_average) = 0;
-  // Чтение фазового сдвига
+  // Чтение фазового сдвига (статусная команда)
   virtual void get_phase(double *phase) = 0;
-  // Чтение временного интервала
+  // Чтение временного интервала (статусная команда)
   virtual void get_time_interval(double *time_interval) = 0;
-  // Чтение усредненного временного интервала
+  // Чтение усредненного временного интервала (статусная команда)
   virtual void get_time_interval_average(double *ap_time_interval) = 0;
 
   // Запуск автокалибровки мультиметра
@@ -149,7 +149,7 @@ public:
   virtual void set_input_impedance(double impedance) = 0;
   // Устсновка уровня запуска канала
   virtual void set_start_level(double level) = 0;
-  // Установка диапазона измерений
+  // Установка диапазона измерений (статусная команда)
   virtual void set_range(type_meas_t a_type_meas, double a_range) = 0;
   // Установка автоматического выбора диапазона измерений
   virtual void set_range_auto() = 0;

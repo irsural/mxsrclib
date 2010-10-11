@@ -1317,53 +1317,34 @@ void irs::agilent_3458a_digitizer_t::tick()
       }*/
     } break;
     case process_set_settings: {
+      m_settings_change_event.exec();
       if (m_interval_change_event.check()) {
         set_interval();
         m_process = process_write_data;
-      } else {
-        // Интервал не изменен
-      }
-      if (m_sampling_time_s_change_event.check()) {
+      } else if (m_sampling_time_s_change_event.check()) {
         set_sampling_time();
         m_process = process_get_coefficient;
-      } else {
-        // Время дискретизации не изменено
-      }
-      if (m_filter_settings_change_event.check()) {
+      } else if (m_filter_settings_change_event.check()) {
         set_filter_settings();
         m_process = process_write_data;
-      } else {
-        // Параметры фильтра не изменены
-      }
-      if (m_filter_impulse_response_type_change_event.check()) {
+      } else if (m_filter_impulse_response_type_change_event.check()) {
         set_filter_impulse_response_type();
         m_process = process_write_data;
-      } else {
-        // Тип фильтра (ких или бих) не изменился
-      }
-      if (m_window_function_form_change_event.check()) {
+      } else if (m_window_function_form_change_event.check()) {
         set_window_function_form();
         m_process = process_write_data;
-      } else {
-        // Параметры фильтра не изменены
-      }
-      if (m_sample_format_change_event.check()) {
+      } else if (m_sample_format_change_event.check()) {
         set_sample_format();
         m_process = process_get_coefficient;
-      } else {
-        // Формат отсчетов не изменен
-      }
-      if (m_range_change_event.check()) {
+      } else if (m_range_change_event.check()) {
         set_range();
         m_process = process_get_coefficient;
-      } else {
-        // Диапазон не изменился
-      }
-      if (m_calc_filtered_values_enabled_change_event.check()) {
+      } else if (m_calc_filtered_values_enabled_change_event.check()) {
         set_filtered_values_enabled();
         m_process = process_write_data;
       } else {
-        // Переключение расчета фильтрованных значений не произошло
+        m_settings_change_event.check();
+        m_process = process_wait;
       }
     } break;
     case process_get_coefficient: {
@@ -1443,8 +1424,13 @@ void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
 void irs::agilent_3458a_digitizer_t::set_range(type_meas_t a_type_meas,
   double a_range)
 {
-  m_new_range = range_normalize(a_range);
-  m_range_change_gen_events.exec();
+  if (m_status != meas_status_success) {
+    m_new_range = range_normalize(a_range);
+    m_range_change_gen_events.exec();
+    m_status = meas_status_success;
+  } else {
+    IRS_LIB_ERROR(ec_standard, "Предыдущая команда еще не завершена");
+  }
 }
 
 // Установка автоматического выбора диапазона измерений
