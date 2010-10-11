@@ -1,5 +1,5 @@
 // Утилиты для работы с mxdata_t
-// Дата: 28.04.2010
+// Дата: 08.10.2010
 // Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
@@ -25,7 +25,7 @@ public:
   enum status_t { status_completed, status_wait, status_error };
   enum mode_refresh_t { mode_refresh_invalid, mode_refresh_auto,
     mode_refresh_manual };
-  
+
   virtual ~mxdata_ext_t() {};
   virtual void mark_to_send(irs_uarc a_index, irs_uarc a_size) = 0;
   virtual void mark_to_recieve(irs_uarc a_index, irs_uarc a_size) = 0;
@@ -735,7 +735,7 @@ const typename irs::deque_data_t<T>&
   deque_data_t<T> deque_data(a_deque_data);
   swap(&deque_data);
   return *this;
-} 
+}
 
 template <class T>
 inline typename irs::deque_data_t<T>::size_type
@@ -809,7 +809,7 @@ void irs::deque_data_t<T>::pop_back(size_type a_size)
   IRS_LIB_ASSERT(a_size <= m_ring_size);
   const size_type erase_data_size = min(a_size, m_ring_size);
   m_ring_size -= erase_data_size;
-}    
+}
 
 template <class T>
 void irs::deque_data_t<T>::pop_front(size_type a_size)
@@ -864,13 +864,13 @@ template <class T>
 void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
-  if (a_capacity != m_capacity) {  
+  if (a_capacity != m_capacity) {
     size_type new_capacity = a_capacity;
     pointer p_new_buf = new value_type[new_capacity];
     size_type new_ring_size = min(new_capacity, m_ring_size);
     const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
     size_type size_copy_data_from_buf_right_part =
-      min(buf_right_part_size, new_ring_size);  
+      min(buf_right_part_size, new_ring_size);
     memcpyex(p_new_buf, mp_buf + m_ring_begin_pos,
       size_copy_data_from_buf_right_part);
     if (size_copy_data_from_buf_right_part < new_ring_size) {
@@ -885,7 +885,7 @@ void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
     m_ring_size = new_ring_size;
     m_ring_begin_pos = 0;
   } else {
-    // Запрашиваемое количество памяти уже выделено 
+    // Запрашиваемое количество памяти уже выделено
   }
 }
 
@@ -1043,11 +1043,13 @@ void handle_t<T>::operator=(const handle_t<T2>& a_handle)
 template <class T>
 T& handle_t<T>::operator*() const
 {
+  IRS_LIB_ASSERT((mp_rep != IRS_NULL) && (mp_rep->object != IRS_NULL));
   return *mp_rep->object;
 }
 template <class T>
 T* handle_t<T>::operator->() const
 {
+  IRS_LIB_ASSERT((mp_rep != IRS_NULL) && (mp_rep->object != IRS_NULL));
   return mp_rep->object;
 }
 template <class T>

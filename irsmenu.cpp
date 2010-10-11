@@ -1,5 +1,6 @@
 // Текстовое меню
-// Дата: 19.10.2009
+// Дата: 11.10.2010
+// Ранняя дата: 15.09.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__
@@ -12,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <mxifa.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
@@ -40,7 +42,8 @@ irs_menu_base_t::irs_menu_base_t():
   f_show_needed(irs_true),
   mp_disp_drv(IRS_NULL),
   mp_event(IRS_NULL),
-  m_updated(true)
+  m_updated(true),
+  mp_data_attached(IRS_NULL)
 {
   f_cursor[0] = f_cursor_symbol;
   f_cursor[1] = 0;
@@ -88,6 +91,16 @@ char *irs_menu_base_t::get_header()
 irs_bool irs_menu_base_t::can_edit()
 {
   return f_can_edit;
+}
+
+void* irs_menu_base_t::get_data_attached()
+{
+  return mp_data_attached;
+}
+
+void irs_menu_base_t::set_data_attached(void* ap_data)
+{
+  mp_data_attached = ap_data;
 }
 
 void irs_menu_base_t::set_message(char *a_message)
@@ -871,7 +884,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
         //mp_disp_drv->clear_line(EDIT_LINE);
         mp_disp_drv->outtextpos(0, 0, f_header);
         afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
-
+        
         const size_type space = 1;
         size_type prf_x_pos = 0;
         size_type val_x_pos = strlen(f_prefix) + space;
@@ -961,7 +974,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               f_cur_symbol--;
               mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "  ");
-              if (f_value_string[f_cur_symbol] == '.') f_point_flag = irs_false;
+              if (f_value_string[f_cur_symbol] == '.') {
+                f_point_flag = irs_false;
+              }
               f_value_string[f_cur_symbol] = ' ';
             }
             else

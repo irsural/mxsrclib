@@ -1,9 +1,17 @@
 // Доступ к EEPROM AVR
-// Дата: 29.09-.2010
+// Дата: 08.10.2010
 // Ранняя Дата: 19.08.2009
+
+// Номер файла
+#define IRSEEPROMCPP_IDX 19
+
+#include <irspch.h>
 
 #include <irseeprom.h>
 #include <irserror.h>
+#include <mxdata.h>
+
+#include <irsfinal.h>
 
 __no_init __eeprom irs_u8
   irs::avr::eeprom_t::mp_ee_data[irs::avr::eeprom_t::m_data_size] @
@@ -14,15 +22,21 @@ irs::avr::eeprom_t::eeprom_t(irs_uarc a_start_index, irs_uarc a_size):
   m_size(a_size),
   m_crc_error(false)
 {
+  // !!! В crc32_table использовалось преобразование из __eeprom указателя
+  //  в не __eeprom. Так делать нельзя!
+  // !!! В crc32_table передавался размер равный 0
   irs_u32 crc = crc32_table(&mp_ee_data[m_start_index +
     m_crc_size], m_size);
   if (crc == *(__eeprom irs_u32*)&mp_ee_data[m_start_index]) {
     m_crc_error = false;
   } else {
     m_crc_error = true;
+    #ifdef NOP
+    // Зануление EEPROM при ошибке убираем как вредное
     fill_n(&mp_ee_data[m_start_index + m_crc_size], m_size, 0);
     *(__eeprom irs_u32*)&mp_ee_data[m_start_index] =
       crc32_table(&mp_ee_data[m_start_index + m_crc_size], m_size);
+    #endif //NOP
   }
 }
 
@@ -176,219 +190,183 @@ bool irs::avr::eeprom_reserve_t::double_error()
 }
 
 //----------------------------- EEPROM PROTECTED -------------------------------
+namespace irs {
+
+namespace avr {
+
+class raw_eeprom_t
+{
+public:
+  typedef irs_u8 value_type;
+  typedef value_type* pointer;
+  typedef const value_type* const_pointer;
+  typedef size_t size_type;
+
+  static void write(const_pointer ap_buf, size_type a_buf_size,
+    size_type a_eeprom_idx);
+  static void read(pointer ap_buf, size_type a_buf_size,
+    size_type a_eeprom_idx);
+  static size_type size();
+  static void copy(size_type a_src_idx, size_type a_dest_idx,
+    size_type a_size);
+  template <class T>
+  static bool is_equal(size_type a_eeprom_idx, const T& a_value);
+  static irs_u32 crc32(size_type a_eeprom_idx, size_type a_size);
+private:
+  enum write_read_t { wr_write, wr_read };
+
+  typedef value_type __eeprom* eeprom_pointer;
+
+  enum {
+    m_size = eeprom_t::m_end_address - eeprom_t::m_begin_address
+  };
+
+  static void write_read(write_read_t a_write_read,
+    const_pointer ap_write_buf, pointer ap_read_buf,
+    size_type a_buf_size, size_type a_eeprom_idx);
+  static eeprom_pointer data();
+};
+raw_eeprom_t::eeprom_pointer raw_eeprom_t::data()
+{
+  return reinterpret_cast<eeprom_pointer>(eeprom_t::m_begin_address);
+}
+void raw_eeprom_t::write_read(write_read_t a_write_read,
+  const_pointer ap_write_buf, pointer ap_read_buf, size_type a_buf_size,
+  size_type a_eeprom_idx)
+{
+  IRS_LIB_ERROR_IF(a_eeprom_idx + a_buf_size > m_size, ec_standard, "");
+  if (a_eeprom_idx > m_size) return;
+  size_type eeprom_size = ::min(a_buf_size, m_size - a_eeprom_idx);
+  switch (a_write_read) {
+    case wr_write: {
+      ::copy(ap_write_buf, ap_write_buf + eeprom_size,
+        data() + a_eeprom_idx);
+    } break;
+    case wr_read: {
+      ::copy(data() + a_eeprom_idx, data() + a_eeprom_idx + eeprom_size,
+        ap_read_buf);
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("switch default error");
+    } break;
+  }
+}
+void raw_eeprom_t::write(const_pointer ap_buf, size_type a_buf_size,
+  size_type a_eeprom_idx)
+{
+  write_read(wr_write, ap_buf, IRS_NULL, a_buf_size, a_eeprom_idx);
+}
+void raw_eeprom_t::read(pointer ap_buf, size_type a_buf_size,
+  size_type a_eeprom_idx)
+{
+  write_read(wr_read, IRS_NULL, ap_buf, a_buf_size, a_eeprom_idx);
+}
+raw_eeprom_t::size_type raw_eeprom_t::size()
+{
+  return m_size;
+}
+void raw_eeprom_t::copy(size_type a_src_idx, size_type a_dest_idx,
+  size_type a_size)
+{
+  IRS_LIB_ERROR_IF((a_src_idx + a_size > m_size) ||
+    (a_dest_idx + a_size > m_size), ec_standard, "");
+  if (a_src_idx != a_dest_idx) {
+    eeprom_pointer p_src = data() + a_src_idx;
+    eeprom_pointer p_dest = data() + a_dest_idx;
+    if (a_dest_idx < a_src_idx) {
+      ::copy(p_src, p_src + a_size, p_dest);
+    } else if (a_dest_idx > a_src_idx) {
+      ::copy_backward(p_src, p_src + a_size, p_dest);
+    }
+  } else {
+    // Ничего не делаем если индексы совпадают - бесполезное занятие :)
+  }
+}
+template <class T>
+bool raw_eeprom_t::is_equal(size_type a_eeprom_idx, const T& a_value)
+{
+  IRS_LIB_ERROR_IF(a_eeprom_idx + sizeof(a_value) > m_size, ec_standard, "");
+  return reinterpret_cast<T __eeprom&>(data()[a_eeprom_idx]) == a_value;
+}
+irs_u32 raw_eeprom_t::crc32(size_type a_eeprom_idx, size_type a_size)
+{
+  return crc32_table(data() + a_eeprom_idx, a_size);
+}
+
+} //namespace avr
+
+} //namespace irs
+
 
 irs::avr::eeprom_protected_t::eeprom_protected_t(
-  irs_uarc a_start_index,
-  irs_uarc a_size,
-  irs_u32 a_eeprom_id,
+  size_type a_start_index,
+  size_type a_size,
+  id_type a_eeprom_id,
   old_eeprom_data_t* ap_old_eeprom_data
 ):
-  mp_eeprom_header(IRS_NULL),
-  mp_eeprom1(IRS_NULL),
-  mp_eeprom2(IRS_NULL),
-  m_error(false)
+  mp_eeprom_header(),
+  mp_eeprom1(),
+  mp_eeprom2(),
+  m_error(false),
+  m_partial_error(false),
+  mp_header_conn()
 {
-  irs_u8 __eeprom* p_ee_data = (irs_u8 __eeprom*)m_eeprom_begin_address;
-  if (a_eeprom_id) {
-    if (*(__eeprom irs_u32*)&p_ee_data[a_start_index + m_crc_size] ==
-      a_eeprom_id)
+  eeprom_protected_init_t eeprom_init =
+    zero_struct_t<eeprom_protected_init_t>::get();
+  
+  if (a_eeprom_id != m_old_eeprom_id) {
+    // работаем с новым EEPROM
+    new_eeprom_data_init(a_start_index, a_size, &eeprom_init);
+    
+    bool is_pos_changed = false;
+    size_type finded_idx = 0;
+    if (find_eeprom(a_eeprom_id, a_start_index, &finded_idx,
+      &is_pos_changed))
     {
-      // eeprom на месте
-      mp_eeprom_header.reset(new eeprom_t(a_start_index,
-        m_eeprom_header_size));
-      conn_data_t<irs_u32> eeprom_id(mp_eeprom_header.get(),
-        static_cast<irs_uarc>(0));
-      eeprom_id = a_eeprom_id;
-      conn_data_t<irs_uarc> eeprom_size(mp_eeprom_header.get(),
-        static_cast<irs_uarc>(m_eeprom_id_size));
-      eeprom_size = a_size;
-      mp_eeprom1.reset(new eeprom_t(a_start_index + m_crc_size +
-        m_eeprom_header_size, a_size));
-      mp_eeprom2.reset(new eeprom_t(a_start_index + m_crc_size*2 +
-        m_eeprom_header_size + a_size, a_size));
-      if (!(mp_eeprom1->error() && mp_eeprom2->error())) {
-        if (mp_eeprom1->error()) {
-          // копируем из еепром2 в еепром1
-          copy(
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size +
-              m_crc_size + a_size,
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size +
-              m_crc_size + a_size + m_crc_size + a_size,
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size
-          );
-        } else if (mp_eeprom2->error()) {
-          // копируем из еепром1 в еепром2
-          copy(
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size,
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size +
-              m_crc_size + a_size,
-            p_ee_data + a_start_index + m_crc_size + m_eeprom_header_size +
-              m_crc_size + a_size
-          );
-        } else {
-          // Сюда входить не должен
-        }
+      // новый найден
+      eeprom_t prev_header_eeprom(finded_idx, m_eeprom_header_size);
+      header_conn_t prev_header_conn(&prev_header_eeprom);
+      size_type prev_eeprom_size = prev_header_conn.eeprom_size;
+      bool is_size_changed = (prev_eeprom_size != eeprom_init.size);
+      if (is_pos_changed || is_size_changed) {
+        // положение или размер изменились
+        // копируем пердыдущий EEPROM в новый
+        size_type prev_eeprom_first_idx =
+          finded_idx + m_eeprom_header_full_size;
+        copy_prev_to_new(&eeprom_init, prev_eeprom_first_idx,
+          prev_eeprom_size);
+        m_partial_error = true;
       } else {
+        // положение и размер не изменились
+        // ничего не копируется
+      }
+      
+      new_eeprom_init(&eeprom_init);
+      restore_proc(&eeprom_init);
+    } else {
+      // новый не найден
+      if (ap_old_eeprom_data != IRS_NULL) {
+        // есть ap_old_eeprom_data
+        // копируем старый EEPROM в новый
+        size_type prev_eeprom_size = ap_old_eeprom_data->size;
+        size_type prev_eeprom_first_idx = ap_old_eeprom_data->index;
+        copy_prev_to_new(&eeprom_init, prev_eeprom_first_idx,
+          prev_eeprom_size);
+      } else {
+        // нет ap_old_eeprom_data
+        // создаем новый EEPROM со значениями по умолчанию
         m_error = true;
       }
-    } else { //a_eeprom_id
-      // eeprom не найден на своем месте
-      irs_uarc old_id_idx = 0;
-      if (old_eeprom_id_index(a_eeprom_id, old_id_idx)) {
-        // eeprom нового типа (3 блока)
-        irs_uarc old_size = reinterpret_cast<irs_uarc __eeprom&>(*(p_ee_data +
-          old_id_idx + sizeof(irs_u32)));
-        irs_uarc copy_size = (old_size > a_size) ? a_size : old_size;
-        eeprom_t old_eeprom1(old_id_idx + sizeof(irs_u32) + sizeof(irs_uarc),
-          old_size);
-        eeprom_t old_eeprom2(old_id_idx + sizeof(irs_u32) + sizeof(irs_uarc) +
-          m_crc_size + old_size, old_size);
-        if (!old_eeprom2.error()) {
-          if (old_id_idx >= a_start_index) {
-            copy(p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size*2 + old_size, p_ee_data + old_id_idx +
-              m_eeprom_header_size + m_crc_size*2 + old_size + copy_size,
-              p_ee_data + a_start_index + m_eeprom_header_size + m_crc_size*3 +
-              a_size);
-          } else {
-            copy_backward(p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size*2 + old_size, p_ee_data + old_id_idx +
-              m_eeprom_header_size + m_crc_size*2 + old_size + copy_size,
-              p_ee_data + a_start_index + m_eeprom_header_size + m_crc_size*3 +
-              a_size + copy_size);
-          }
-          // копируем из еепром2 в еепром1
-          copy(p_ee_data + a_start_index + m_eeprom_header_size +
-            m_crc_size*3 + a_size, p_ee_data + a_start_index +
-            m_eeprom_header_size + m_crc_size*3 + a_size*2,
-            p_ee_data + a_start_index + m_eeprom_header_size + m_crc_size*2);
-        } else if (!old_eeprom1.error()) {
-          if (old_id_idx >= a_start_index) {
-            copy(p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size, p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size + copy_size, p_ee_data +
-              a_start_index + m_eeprom_header_size + m_crc_size*2);
-          } else {
-            copy_backward(p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size, p_ee_data + old_id_idx + m_eeprom_header_size +
-              m_crc_size + copy_size, p_ee_data +
-              a_start_index + m_eeprom_header_size + m_crc_size*2 + copy_size);
-          }
-          // копируем из еепром1 в еепром2
-          copy(p_ee_data + a_start_index + m_eeprom_header_size + m_crc_size*2,
-            p_ee_data + a_start_index + m_eeprom_header_size + m_crc_size*2 +
-            a_size, p_ee_data + a_start_index + m_eeprom_header_size +
-            m_crc_size*3 + a_size);
-        } else if (old_eeprom1.error() && old_eeprom2.error()) {
-          m_error = true;
-        }
-      } else {
-        if (ap_old_eeprom_data == IRS_NULL) {
-          // eeprom нового типа (3 блока) впервые
-          m_error = true;
-        } else {
-          // eeprom старого типа (2 блока)
-          eeprom_t old_eeprom1(ap_old_eeprom_data->index, ap_old_eeprom_data->size);
-          eeprom_t old_eeprom2(ap_old_eeprom_data->index +
-            ap_old_eeprom_data->size + m_crc_size, ap_old_eeprom_data->size);
-          irs_uarc copy_size = (ap_old_eeprom_data->size > a_size) ?
-            a_size : ap_old_eeprom_data->size;
-          if (!old_eeprom2.error()) {
-            irs_uarc in_begin = ap_old_eeprom_data->index + m_crc_size*2 +
-              ap_old_eeprom_data->size;
-            irs_uarc in_end = ap_old_eeprom_data->index + m_crc_size*2 +
-              ap_old_eeprom_data->size + copy_size;
-            if (ap_old_eeprom_data->index >= (a_start_index + m_crc_size +
-              m_eeprom_header_size))
-            {
-              irs_uarc out_begin = a_start_index + m_eeprom_header_size +
-                m_crc_size*3 + a_size;
-              copy(p_ee_data + in_begin, p_ee_data + in_end, p_ee_data + out_begin);
-            } else {
-              irs_uarc out_end = a_start_index + m_eeprom_header_size +
-                m_crc_size*3 + a_size + copy_size;
-              copy_backward(p_ee_data + in_begin, p_ee_data + in_end,
-                p_ee_data + out_end);
-            }
-            // копируем из еепром2 в еепром1
-            copy(p_ee_data + a_start_index + m_eeprom_header_size +
-              m_crc_size*3 + a_size, p_ee_data + a_start_index +
-              m_eeprom_header_size + m_crc_size*3 + a_size*2,
-              p_ee_data + a_start_index + m_eeprom_header_size +
-              m_crc_size*2);
-          } else if (!old_eeprom1.error()) {
-            if (ap_old_eeprom_data->index >= (a_start_index + m_crc_size +
-              m_eeprom_header_size))
-            {
-              copy(p_ee_data + m_crc_size,
-                p_ee_data + m_crc_size + copy_size,
-                p_ee_data + a_start_index + m_eeprom_header_size +
-                m_crc_size*2);
-            } else {
-              copy_backward(p_ee_data + m_crc_size,
-                p_ee_data + m_crc_size + copy_size,
-                p_ee_data + a_start_index + m_eeprom_header_size +
-                m_crc_size*2 + copy_size);
-            }
-            // копируем из еепром1 в еепром2
-            copy(
-              p_ee_data + a_start_index + m_eeprom_header_size +
-                m_crc_size*2,
-              p_ee_data + a_start_index + m_eeprom_header_size +
-                m_crc_size*2 + a_size,
-              p_ee_data + a_start_index + m_eeprom_header_size +
-                m_crc_size*3 + a_size
-            );
-          } else if (old_eeprom1.error() && old_eeprom2.error()) {
-            m_error = true;
-          }
-          // CRC32 для eeprom1
-          *(__eeprom irs_u32*)&p_ee_data[a_start_index + m_crc_size +
-            m_eeprom_header_size] = crc32_table(&p_ee_data[
-            a_start_index + m_crc_size*2 + m_eeprom_header_size], a_size);
-          // CRC32 для eeprom2
-          *(__eeprom irs_u32*)&p_ee_data[a_start_index + m_crc_size*2 +
-            m_eeprom_header_size + a_size] =
-            crc32_table(&p_ee_data[a_start_index + m_crc_size*3 +
-            m_eeprom_header_size + a_size], a_size);
-        }
-      }
-#ifdef NOP
-      *(__eeprom irs_u32*)&p_ee_data[a_start_index + m_crc_size] =
-        a_eeprom_id;
-      *(__eeprom irs_u32*)&p_ee_data[a_start_index + m_crc_size +
-        sizeof(irs_u32)] = a_size;
-#endif //NOP
-      mp_eeprom_header.reset(new eeprom_t(a_start_index,
-        m_eeprom_header_size));
-
-      conn_data_t<irs_u32> eeprom_id(mp_eeprom_header.get(),
-        static_cast<irs_uarc>(0));
-      eeprom_id = a_eeprom_id;
-      conn_data_t<irs_uarc> eeprom_size(mp_eeprom_header.get(),
-        static_cast<irs_uarc>(m_eeprom_id_size));
-      eeprom_size = a_size;
-
-      mp_eeprom1.reset(new eeprom_t(a_start_index + m_crc_size +
-        m_eeprom_header_size, a_size));
-      mp_eeprom2.reset(new eeprom_t(a_start_index + m_crc_size*2 +
-        m_eeprom_header_size + a_size, a_size));
-    } //a_eeprom_id
-  } else {
-    mp_eeprom1.reset(new eeprom_t(a_start_index, a_size));
-    mp_eeprom2.reset(new eeprom_t(a_start_index + m_crc_size + a_size,
-      a_size));
-    if (mp_eeprom1->error() && !mp_eeprom2->error()) {
-      copy(p_ee_data + a_start_index + a_size + m_crc_size*2,
-        p_ee_data + a_start_index + (a_size + m_crc_size)*2,
-        p_ee_data + a_start_index + m_crc_size);
-    } else if (!mp_eeprom1->error() && mp_eeprom2->error()) {
-      copy(p_ee_data + a_start_index + m_crc_size,
-        p_ee_data + a_start_index + m_crc_size + a_size,
-        p_ee_data + a_start_index + a_size + m_crc_size*2);
-    } else if (mp_eeprom1->error() && mp_eeprom2->error()) {
-      m_error = true;
     }
+    
+    new_eeprom_init(&eeprom_init);
+    restore_proc(&eeprom_init);
+  } else {
+    // работаем со старым EEPROM
+    // стандартная обработка старого EEPROM
+    old_eeprom_data_init(a_start_index, a_size, &eeprom_init);
+    old_eeprom_init(&eeprom_init);
+    restore_proc(&eeprom_init);
   }
 }
 
@@ -396,37 +374,133 @@ irs::avr::eeprom_protected_t::~eeprom_protected_t()
 {
 }
 
-bool irs::avr::eeprom_protected_t::old_eeprom_id_index(irs_u32 a_search_id,
-  irs_uarc& a_old_eeprom_id_idx)
+bool irs::avr::eeprom_protected_t::find_eeprom(id_type a_finding_id,
+  size_t a_expected_id_idx, size_t* a_finded_idx,
+  bool* a_is_pos_changed)
 {
-  irs_u8 __eeprom* p_ee_data = (irs_u8 __eeprom*)m_eeprom_begin_address;
-  for (irs_uarc old_index = 0; old_index < (m_eeprom_size - sizeof(irs_u32));
-    old_index++)
-  {
-    irs_u32 old_id = reinterpret_cast<irs_u32 __eeprom&>(
-      *(p_ee_data + old_index));
-    if (a_search_id == old_id) {
-      a_old_eeprom_id_idx = old_index;
-      return true;
+  bool is_finded = false;
+  size_t eeprom_size = raw_eeprom_t::size() - sizeof(id_type);
+  if (!raw_eeprom_t::is_equal(a_expected_id_idx, a_finding_id)) {
+    *a_is_pos_changed = true;
+    for (size_t eeprom_idx = m_crc_size; eeprom_idx < eeprom_size;
+      eeprom_idx++)
+    {
+      if (raw_eeprom_t::is_equal(eeprom_idx, a_finding_id)) {
+        *a_finded_idx = eeprom_idx - m_crc_size;
+        is_finded = true;
+        break;
+      }
     }
+  } else {
+    is_finded = true;
   }
-  return false;
+  return is_finded;
 }
 
-irs_uarc irs::avr::eeprom_protected_t::size()
+void irs::avr::eeprom_protected_t::restore_proc(
+  const eeprom_protected_init_t* ap_eeprom_init)
 {
-  irs_uarc size = 0;
-  mp_eeprom_header->read((irs_u8*)&size, m_crc_size + sizeof(irs_u32),
-    sizeof(irs_uarc));
-  return size;
+  if (mp_eeprom1->error() && !mp_eeprom2->error()) {
+    raw_eeprom_t::copy(ap_eeprom_init->second_array_idx,
+      ap_eeprom_init->first_array_idx, ap_eeprom_init->size);
+  } else if (!mp_eeprom1->error() && mp_eeprom2->error()) {
+    raw_eeprom_t::copy(ap_eeprom_init->first_array_idx,
+      ap_eeprom_init->second_array_idx, ap_eeprom_init->size);
+  } else if (mp_eeprom1->error() && mp_eeprom2->error()) {
+    m_error = true;
+  }
+}
+
+void irs::avr::eeprom_protected_t::eeprom_data_init(size_type a_shift,
+  size_type a_start_index, size_type a_size,
+  eeprom_protected_init_t* ap_eeprom_init) const
+{
+  ap_eeprom_init->start_index = a_start_index;
+  ap_eeprom_init->size = a_size;
+  ap_eeprom_init->first_array_idx = ap_eeprom_init->start_index + a_shift;
+  //m_crc_size + m_eeprom_header_size;
+  ap_eeprom_init->second_array_idx = ap_eeprom_init->first_array_idx +
+    m_crc_size + a_size;
+}
+void irs::avr::eeprom_protected_t::new_eeprom_data_init(
+  size_type a_start_index, size_type a_size,
+  eeprom_protected_init_t* ap_eeprom_init) const
+{
+  eeprom_data_init(m_crc_size + m_eeprom_header_size, a_start_index, a_size,
+    ap_eeprom_init);
+}
+void irs::avr::eeprom_protected_t::old_eeprom_data_init(
+  size_type a_start_index, size_type a_size,
+  eeprom_protected_init_t* ap_eeprom_init) const
+{
+  eeprom_data_init(0, a_start_index, a_size, ap_eeprom_init);
+}
+
+void irs::avr::eeprom_protected_t::new_eeprom_init(
+  const eeprom_protected_init_t* ap_eeprom_init)
+{
+  //new_eeprom_data_init(a_start_index, a_size, ap_eeprom_init);
+  mp_eeprom_header.reset(new eeprom_t(ap_eeprom_init->start_index,
+    ap_eeprom_init->size));
+  mp_header_conn.reset(
+    IRS_LIB_NEW_ASSERT(header_conn_t(mp_eeprom_header.get(), 0),
+    IRSEEPROMCPP_IDX));
+  array_handle_init(ap_eeprom_init);
+}
+void irs::avr::eeprom_protected_t::old_eeprom_init(
+  const eeprom_protected_init_t* ap_eeprom_init)
+{
+  //old_eeprom_data_init(a_start_index, a_size, ap_eeprom_init);
+  array_handle_init(ap_eeprom_init);
+}
+void irs::avr::eeprom_protected_t::array_handle_init(
+  const eeprom_protected_init_t* ap_eeprom_init)
+{
+  mp_eeprom1.reset(IRS_LIB_NEW_ASSERT(
+    eeprom_t(ap_eeprom_init->first_array_idx, ap_eeprom_init->size),
+    IRSEEPROMCPP_IDX));
+  mp_eeprom2.reset(IRS_LIB_NEW_ASSERT(
+    eeprom_t(ap_eeprom_init->second_array_idx, ap_eeprom_init->size),
+    IRSEEPROMCPP_IDX));
+}
+
+void irs::avr::eeprom_protected_t::copy_prev_to_new(
+  const eeprom_protected_init_t* ap_eeprom_init,
+  size_type a_prev_eeprom_first_idx, size_type a_prev_eeprom_size)
+{
+  size_type prev_eeprom_full_size = m_crc_size + a_prev_eeprom_size;
+  eeprom_t prev_eeprom_first(a_prev_eeprom_first_idx, a_prev_eeprom_size);
+  size_type prev_eeprom_second_idx =
+    a_prev_eeprom_first_idx + prev_eeprom_full_size;
+  eeprom_t prev_eeprom_second(prev_eeprom_second_idx, a_prev_eeprom_size);
+  
+  if (!prev_eeprom_first.error()) {
+    raw_eeprom_t::copy(a_prev_eeprom_first_idx,
+      ap_eeprom_init->first_array_idx,
+      min(a_prev_eeprom_size, ap_eeprom_init->size));
+  } else if (!prev_eeprom_second.error()) {
+    raw_eeprom_t::copy(prev_eeprom_second_idx,
+      ap_eeprom_init->first_array_idx,
+      min(a_prev_eeprom_size, ap_eeprom_init->size));
+  } else {
+    m_error = true;
+  }
+  
+  irs_u32 check_sum =
+    raw_eeprom_t::crc32(ap_eeprom_init->first_array_idx, ap_eeprom_init->size);
+  raw_eeprom_t::write(
+    reinterpret_cast<raw_eeprom_t::pointer>(&check_sum),
+    sizeof(check_sum), ap_eeprom_init->first_array_idx + m_crc_shift);
+}
+
+irs::avr::eeprom_protected_t::size_type irs::avr::eeprom_protected_t::size()
+{
+  return mp_eeprom1->size();
 }
 
 irs_bool irs::avr::eeprom_protected_t::connected()
 {
-  irs_uarc size = 0;
-  mp_eeprom_header->read((irs_u8*)&size, m_crc_size + sizeof(irs_u32),
-    sizeof(irs_uarc));
-  return size;
+  return irs_true;
 }
 
 void irs::avr::eeprom_protected_t::read(irs_u8 *buf, irs_uarc index,
@@ -453,7 +527,8 @@ void irs::avr::eeprom_protected_t::set_bit(irs_uarc index, irs_uarc bit_index)
   mp_eeprom2->set_bit(index, bit_index);
 }
 
-void irs::avr::eeprom_protected_t::clear_bit(irs_uarc index, irs_uarc bit_index)
+void irs::avr::eeprom_protected_t::clear_bit(irs_uarc index,
+  irs_uarc bit_index)
 {
   mp_eeprom1->clear_bit(index, bit_index);
   mp_eeprom2->clear_bit(index, bit_index);
@@ -466,4 +541,9 @@ void irs::avr::eeprom_protected_t::tick()
 bool irs::avr::eeprom_protected_t::error()
 {
   return m_error;
+}
+
+bool irs::avr::eeprom_protected_t::partial_error()
+{
+  return m_partial_error;
 }

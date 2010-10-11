@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС
-// Дата: 02.07.2010
+// Дата: 08.10.2010
 // Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -182,6 +182,8 @@ inline com_buf::com_buf(
   irs_u16 ubrr = FOSC/16/m_baud_rate - 1;
 
   if (a_com_index == 1) {
+    PRR0_PRUSART0 = 0; //Включение питания USART0
+    
     UBRR0H = IRS_HIBYTE(ubrr);
     UBRR0L = IRS_LOBYTE(ubrr);
     UCSR0B_RXEN0 = 0;//Разрешение приема
@@ -210,6 +212,8 @@ inline com_buf::com_buf(
     UCSR0A_MPCM0 = 0;//режим мультипроцессорного обмена
     UCSR0A_U2X0 = 0;//удвоение скорости обмена
   } else {
+    PRR1_PRUSART1 = 0; //Включение питания USART1
+    
     UBRR1H = IRS_HIBYTE(ubrr);
     UBRR1L = IRS_LOBYTE(ubrr);
     UCSR1B_RXEN1 = 0;//Разрешение приема

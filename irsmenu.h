@@ -1,5 +1,5 @@
 // Текстовое меню
-// Дата: 14.04.2010
+// Дата: 08.10.2010
 // Ранняя дата: 15.09.2009
 
 #ifndef IRSMENUH
@@ -112,6 +112,7 @@ protected:
   mxdisplay_drv_service_t *mp_disp_drv;
   mxfact_event_t *mp_event;
   bool m_updated;
+  void* mp_data_attached;
 public:
   irs_menu_base_t();
   ~irs_menu_base_t();
@@ -130,6 +131,9 @@ public:
   void hide();
   void edit();
   irs_bool can_edit();
+  void* get_data_attached();
+  void set_data_attached(void* ap_data);
+  
   virtual size_type get_parametr_string(
     char *a_parametr_string,
     size_type a_length = 0,
