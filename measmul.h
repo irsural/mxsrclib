@@ -1374,7 +1374,7 @@ fir_filter_asynch_t<value_t, iterator_t, container_t>::fir_filter_asynch_t(
 ):
   m_fir_filter(a_coef_list_begin, a_coef_list_end),
   m_completed(true),
-  m_delta_tick(1),
+  m_delta_tick(1000),
   m_insert_point_count(100000),
   m_tick_timer(make_cnt_s(0.001)),
   mp_begin(),
@@ -1401,8 +1401,9 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::set_filt_value_buf(
   mp_filt_values = ap_filt_values;
   if (mp_filt_values) {
     mp_filt_values->clear();
+    m_delta_tick = 100;
   } else {
-    // Пользователь удалил буфер
+    m_delta_tick = 1000;
   }
   m_filt_value_max_count = a_filt_value_count;
 }
