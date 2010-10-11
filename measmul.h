@@ -80,7 +80,9 @@ enum multimeter_param_t {
   // Установка типа фильтра по типу импульсной характеристики
   // (enum filter_impulse_response_type_t файл irsdsp.h)
   mul_param_filter_impulse_response_type,
-  mul_param_last = mul_param_filter_impulse_response_type,
+  // Включение расчета фильтрованных значений (bool)
+  mul_param_filtered_values_enabled,
+  mul_param_last = mul_param_filtered_values_enabled,
   mul_param_count = (mul_param_last - mul_param_first) + 1
 };
 
@@ -458,6 +460,36 @@ private:
 
 bool data_to_values_test();
 
+template <class data_t, class iterator_t>
+class accumulate_asynch_t
+{
+public:
+  typedef size_t size_type;
+  typedef data_t value_type;
+  accumulate_asynch_t();
+  void add(data_t a_val);
+  void add(iterator_t ap_begin, iterator_t ap_end);
+  data_t get() const;
+  void clear();
+  // Вовзращает статус завершенности
+  bool completed() const;
+  // Элементарное действие
+  void tick();
+  // Прерывание операции
+  void abort();
+  // Установка времени тика
+  void set_tick_max_time(const double a_set_tick_max_time_s);
+private:
+  value_type m_sum;
+  bool m_completed;
+  size_type m_delta_tick;
+  timer_t m_tick_timer;
+  iterator_t mp_begin;
+  iterator_t mp_end;
+};
+
+bool accumulate_asynch_test();
+
 template <class data_t, class calc_t, class iterator_t>
 class sko_calc_asynch_t
 {
@@ -638,6 +670,8 @@ public:
   typedef irs_i16 short_int_sample_format_type;
   typedef irs_i32 double_int_sample_format_type;
   typedef data_to_values_t data_to_values_type;
+  typedef accumulate_asynch_t<double, raw_data_t<double>::pointer>
+    accumulate_asynch_type;
   typedef sko_calc_asynch_t<double, double,
     raw_data_t<double>::pointer> sko_calc_asynch_type;
   typedef delta_calc_asynch_t<double, raw_data_t<double>::pointer>
@@ -722,6 +756,7 @@ private:
   void set_window_function_form();
   void set_sample_format();
   void set_range();
+  void set_filtered_values_enabled();
   void set_coef_filter();
   void filter_start();
   void filter_tick();
@@ -790,6 +825,11 @@ private:
   event_t m_sample_format_change_event;
   generator_events_t m_sample_format_change_gen_events;
 
+  bool m_calc_filtered_values_enabled;
+  bool m_new_calc_filtered_values_enabled;
+  event_t m_calc_filtered_values_enabled_change_event;
+  generator_events_t m_calc_filtered_values_enabled_change_gen_events;
+
   double m_tick_max_time_s;
   size_type m_need_receive_data_size;
   bool m_set_settings_complete;
@@ -799,6 +839,7 @@ private:
   meas_status_t m_status;
   irs::timer_t m_delay_timer;
   data_to_values_type m_data_to_values;
+  accumulate_asynch_type m_accumulate_asynch;
   sko_calc_asynch_type m_sko_calc_asynch;
   double m_sko_for_user;
   double m_sko_relative_for_user;
@@ -824,6 +865,96 @@ void multimeter_data_to_sample_array(const raw_data_t<irs_u8>& a_data,
     //ap_samples->resize(ap_samples->size() + 1);
     (*ap_samples)[samples_i] = sample;
   }
+}
+
+// class accumulate_asynch_t
+template <class data_t, class iterator_t>
+accumulate_asynch_t<data_t, iterator_t>::accumulate_asynch_t():
+  m_sum(0),
+  m_completed(true),
+  m_delta_tick(1000),
+  m_tick_timer(make_cnt_s(0.001)),
+  mp_begin(),
+  mp_end(mp_begin)
+{
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::add(data_t a_val)
+{
+  IRS_LIB_ERROR_IF(!m_completed, ec_standard,
+    "Предыдущая операция еще не завершена");
+  m_sum += a_val;
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::add(iterator_t ap_begin, iterator_t ap_end)
+{
+  IRS_LIB_ERROR_IF(!m_completed, ec_standard,
+    "Предыдущая операция еще не завершена");
+  IRS_LIB_ERROR_IF(ap_begin > ap_end, ec_standard,
+    "Итератор начала должен быть меньше итератора конца");
+  mp_begin = ap_begin;
+  mp_end = ap_end;
+  m_completed = false;
+}
+
+template <class data_t, class iterator_t>
+accumulate_asynch_t<data_t, iterator_t>::value_type
+accumulate_asynch_t<data_t, iterator_t>::get() const
+{
+  return m_sum;
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::clear()
+{
+  m_sum = 0;
+}
+
+template <class data_t, class iterator_t>
+bool accumulate_asynch_t<data_t, iterator_t>::completed() const
+{
+  return m_completed;
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::tick()
+{
+  if (!m_completed) {
+    m_tick_timer.start();
+    while (!m_tick_timer.check() && !m_completed) {
+      size_type count = 0;
+      while ((count < m_delta_tick) && (mp_begin != mp_end)) {
+        m_sum += *mp_begin;
+        ++mp_begin;
+        count++;
+      }
+      m_completed = (mp_begin == mp_end);
+    }
+  } else {
+    // Операция завершена
+  }
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::abort()
+{
+  if (!m_completed) {
+    mp_sko_calc->clear();
+    m_completed = true;
+  } else {
+    // Операция уже завершена
+  }
+}
+
+template <class data_t, class iterator_t>
+void accumulate_asynch_t<data_t, iterator_t>::set_tick_max_time(
+  const double a_set_tick_max_time_s)
+{
+  IRS_LIB_ERROR_IF(a_set_tick_max_time_s <= 0, ec_standard,
+    "Максимальное время тика должно быть больше нуля");
+  m_tick_timer.set(make_cnt_s(a_set_tick_max_time_s));
 }
 
 // class sko_calc_asynch_t

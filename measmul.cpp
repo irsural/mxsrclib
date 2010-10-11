@@ -820,6 +820,10 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_new_sample_format(mul_sample_format_int16),
   m_sample_format_change_event(),
   m_sample_format_change_gen_events(),
+  m_calc_filtered_values_enabled(false),
+  m_new_calc_filtered_values_enabled(false),
+  m_calc_filtered_values_enabled_change_event(),
+  m_calc_filtered_values_enabled_change_gen_events(),
   m_tick_max_time_s(0.005),
   m_need_receive_data_size(m_iscale_byte_count),
   m_set_settings_complete(false),
@@ -829,6 +833,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_status(meas_status_success),
   m_delay_timer(irs::make_cnt_ms(1)),
   m_data_to_values(),
+  m_accumulate_asynch(),
   m_sko_calc_asynch(1000),
   m_sko_for_user(0),
   m_sko_relative_for_user(0),
@@ -863,6 +868,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
 
   m_sample_format_change_gen_events.push_back(&m_sample_format_change_event);
   m_sample_format_change_gen_events.push_back(&m_settings_change_event);
+
+  m_calc_filtered_values_enabled_change_gen_events.push_back(
+    &m_calc_filtered_values_enabled_change_event);
+  m_calc_filtered_values_enabled_change_gen_events.push_back(
+    &m_settings_change_event);
 
   vector<math_type> num_coef_list;
   vector<math_type> denom_coef_list;
@@ -1024,6 +1034,16 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
           "Недопустимый размер параметра mul_param_window_function_form");
       }
     } break;
+    case mul_param_filtered_values_enabled: {
+      if (sizeof(bool) == a_value.size()) {
+        m_calc_filtered_values_enabled =
+          *reinterpret_cast<const bool*>(a_value.data());
+        m_calc_filtered_values_enabled_change_gen_events.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_filtered_values_enabled");
+      }
+    } break;
     default : {
       // Игнорируем
     }
@@ -1043,7 +1063,8 @@ bool irs::agilent_3458a_digitizer_t::is_param_exists(
     (a_param == mul_param_sample_format) ||
     (a_param == mul_param_window_function_form) ||
     (a_param == mul_param_filter_impulse_response_type) ||
-    (a_param == mul_param_tick_max_time_s);
+    (a_param == mul_param_tick_max_time_s) ||
+    (a_param == mul_param_filtered_values_enabled);
 }
 void irs::agilent_3458a_digitizer_t::set_dc()
 {
@@ -1147,6 +1168,8 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_data_to_values.set_tick_max_time(m_tick_max_time_s);
         m_data_to_values.set(flip_data_enabled, m_sample_size,
           m_coefficient, &m_buf_receive, &m_samples);
+        m_accumulate_asynch.clear();
+        m_accumulate_asynch.set_tick_max_time(m_tick_max_time_s);
         m_sko_calc_asynch.clear();
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
@@ -1158,6 +1181,12 @@ void irs::agilent_3458a_digitizer_t::tick()
             get_sample_count(m_sampling_time, m_interval));
         } else {
           m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+          if (m_calc_filtered_values_enabled) {
+            m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+              get_sample_count(m_sampling_time, m_interval));
+          } else {
+            m_fir_filter_asynch.set_filt_value_buf(IRS_NULL, 0);
+          }
         }
         m_process = process_calc;
         measure_time_calc.start();
@@ -1172,13 +1201,78 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (m_data_to_values.completed()) {
           IRS_LIB_DBG_MSG("Конвертация значений завершена: " <<
             measure_time_calc.get() << " с");
-          m_samples_for_user = m_samples;  
-          m_sko_calc_asynch.resize(m_samples.size());
-          m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
+          m_samples_for_user = m_samples;
+          m_accumulate_asynch.add(m_samples.begin(), m_samples.end());
         } else {
           // Операция еще не завершена
         }
+      } else if (!m_accumulate_asynch.completed()) {
+        m_accumulate_asynch.tick();
+        if (m_accumulate_asynch.completed()) {
+          IRS_LIB_DBG_MSG("Вычисление суммы завершено: " <<
+            measure_time_calc.get() << " с");
+          filter_start();
+        } else {
+          // Операция еще не завершена
+        }
+      } else if (!filter_completed()) {
+        filter_tick();
+        if (filter_completed()) {
+          *mp_value = static_cast<double>(filter_get());
+          IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
+            measure_time_calc.get() << " с");
+          if (m_calc_filtered_values_enabled) {
+            m_filtered_values_for_user = m_filtered_values;
+            m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
+            m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
+              m_filtered_values_for_user.end());
+          } else {
+            m_sko_calc_asynch.resize(m_samples.size());
+            m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
+          }
+        } else {
+          // Фильтрация еще не завершена
+        }
       } else if (!m_sko_calc_asynch.completed()) {
+        m_sko_calc_asynch.tick();
+        if (m_sko_calc_asynch.completed()) {
+          IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
+            measure_time_calc.get() << " с");
+          m_sko_for_user = m_sko_calc_asynch;
+          m_sko_relative_for_user = m_sko_calc_asynch.relative();
+          if (m_calc_filtered_values_enabled) {
+            m_delta_calc_asynch.resize(m_filtered_values_for_user.size());
+            m_delta_calc_asynch.add(m_filtered_values_for_user.begin(),
+              m_filtered_values_for_user.end());
+          } else {
+            m_delta_calc_asynch.resize(m_samples.size());
+            m_delta_calc_asynch.add(m_samples.begin(), m_samples.end());
+          }
+        } else {
+          // Операция еще не завершена
+        }
+      } else if (!m_delta_calc_asynch.completed()) {
+        m_delta_calc_asynch.tick();
+        if (m_delta_calc_asynch.completed()) {
+
+        } else {
+          // Операция еще не завершена
+        }
+      } else {
+        IRS_LIB_DBG_MSG("Вычисление дельты завершено: " <<
+          measure_time_calc.get() << " с");
+        m_delta_absolute_for_user = m_delta_calc_asynch.absolute();
+        m_delta_relative_for_user = m_delta_calc_asynch.relative();
+        m_status = meas_status_success;
+        m_process = process_wait;
+        IRS_LIB_DBG_MSG("Вычисления завершены. " <<
+          measure_time_calc.get() << " c");
+      }
+
+
+
+
+      /*} else if (!m_sko_calc_asynch.completed()) {
         m_sko_calc_asynch.tick();
         if (m_sko_calc_asynch.completed()) {
           IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
@@ -1203,6 +1297,14 @@ void irs::agilent_3458a_digitizer_t::tick()
         }
       } else if (!filter_completed()) {
         filter_tick();
+        if (m_calc_filtered_values_enabled) {
+          m_sko_calc_asynch.clear();
+          m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
+          m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
+            m_filtered_values_for_user.end());
+        } else {
+
+        }
       } else {
         IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
           measure_time_calc.get() << " с");
@@ -1212,7 +1314,7 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_process = process_wait;
         IRS_LIB_DBG_MSG("Вычисления завершены. " << measure_time_calc.get() <<
           " c");
-      }
+      }*/
     } break;
     case process_set_settings: {
       if (m_interval_change_event.check()) {
@@ -1256,6 +1358,12 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_process = process_get_coefficient;
       } else {
         // Диапазон не изменился
+      }
+      if (m_calc_filtered_values_enabled_change_event.check()) {
+        set_filtered_values_enabled();
+        m_process = process_write_data;
+      } else {
+        // Переключение расчета фильтрованных значений не произошло
       }
     } break;
     case process_get_coefficient: {
@@ -1338,6 +1446,7 @@ void irs::agilent_3458a_digitizer_t::set_range(type_meas_t a_type_meas,
   m_new_range = range_normalize(a_range);
   m_range_change_gen_events.exec();
 }
+
 // Установка автоматического выбора диапазона измерений
 void irs::agilent_3458a_digitizer_t::set_range_auto()
 {
@@ -1463,6 +1572,11 @@ void irs::agilent_3458a_digitizer_t::set_range()
   m_need_receive_data_size = m_iscale_byte_count;
 }
 
+void irs::agilent_3458a_digitizer_t::set_filtered_values_enabled()
+{
+  m_calc_filtered_values_enabled = m_new_calc_filtered_values_enabled;
+}
+
 void irs::agilent_3458a_digitizer_t::set_coef_filter()
 {
   if (m_filter_impulse_response_type == firt_infinite) {
@@ -1482,11 +1596,17 @@ void irs::agilent_3458a_digitizer_t::set_coef_filter()
 
 void irs::agilent_3458a_digitizer_t::filter_start()
 {
+  math_type average = 0;
+  if (m_samples.empty()) {
+    average = m_accumulate_asynch.get()/m_samples.size();
+  } else {
+    // Среднее оставляем нулем
+  }
   if (m_filter_impulse_response_type == firt_infinite) {
-    m_iir_filter_asynch.sync(m_sko_calc_asynch.average());
+    m_iir_filter_asynch.sync(average);
     m_iir_filter_asynch.set(m_samples.begin(), m_samples.end());
   } else {
-    m_fir_filter_asynch.sync(m_sko_calc_asynch.average());
+    m_fir_filter_asynch.sync(average);
     m_fir_filter_asynch.set(m_samples.begin(), m_samples.end());
   }
 }
@@ -1783,6 +1903,26 @@ bool irs::data_to_values_test()
   return equal(samples_first.data(),
     samples_first.data() + samples_first.size(),
     samples_second.data());;
+}
+
+bool irs::accumulate_asynch_test()
+{
+  typedef irs_size_t size_type;
+  typedef double math_type;
+  const irs_size_t sample_count = 100000;
+  vector<math_type> samples(sample_count, 0);
+
+  math_type sum = 0;
+  for (irs_size_t sample_i = 0; sample_i < sample_count; sample_i++) {
+    samples[sample_i] = rand();
+    sum += samples[sample_i];
+  }
+  accumulate_asynch_t<math_type, vector<math_type>::iterator> accumulate_asynch;
+  accumulate_asynch.add(samples.begin(), samples.end());
+  while(!accumulate_asynch.completed()) {
+    accumulate_asynch.tick();
+  }
+  return sum == accumulate_asynch.get();
 }
 
 bool irs::sko_calc_asynch_test()
