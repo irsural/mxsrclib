@@ -23,7 +23,7 @@ class blink_t
   p_avr_port_t mp_port_dir;
   irs_u8 m_bit;
 public:
-  blink_t(irs_avr_port_t a_port, irs_u8 a_bit, 
+  blink_t(irs_avr_port_t a_port, irs_u8 a_bit,
     counter_t a_blink_time = 0):
     m_blink_to(0),
     m_blink_time(0),
