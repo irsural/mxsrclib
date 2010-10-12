@@ -3230,9 +3230,9 @@ bool irs::ni_pxi_4071_t::is_param_exists(
   const multimeter_param_t a_param) const
 {
   return (a_param == mul_param_sampling_time_s) ||
-    (a_param == mul_param_filter_settings);
-    /*(a_param == mul_param_filtered_values) ||
-    (a_param == mul_param_source_values); */
+    (a_param == mul_param_filter_settings) ||
+    (a_param == mul_param_filtered_values) ||
+    (a_param == mul_param_source_values);
 }
 
 void irs::ni_pxi_4071_t::set_dc()
