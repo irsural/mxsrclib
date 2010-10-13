@@ -1237,7 +1237,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!filter_completed()) {
         filter_tick();
         if (filter_completed()) {
-          *mp_value = static_cast<double>(filter_get());
+          *mp_value = static_cast<double>(filter_get());   
           IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
             measure_time_calc.get() << " с");
           if (m_calc_filtered_values_enabled) {
@@ -1246,6 +1246,7 @@ void irs::agilent_3458a_digitizer_t::tick()
             m_sko_calc_asynch.add(m_filtered_values.begin(),
               m_filtered_values.end());
           } else {
+            m_filtered_values_for_user.clear();
             m_sko_calc_asynch.resize(m_samples.size());
             m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
           }
