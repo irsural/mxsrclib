@@ -761,11 +761,12 @@ private:
   void set_range();
   void set_filtered_values_enabled();
   void set_coef_filter();
+  void calc_coef_fir_filter();
   void filter_start();
   void filter_tick();
   bool filter_completed();
   math_type filter_get();
-  void filtered_values_normalize();
+  //void filtered_values_normalize();
   irs::hardflow_t* mp_hardflow;
   enum process_t {
     process_wait,

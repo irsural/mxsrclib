@@ -1177,7 +1177,6 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
         m_delta_calc_asynch.set_tick_max_time(m_tick_max_time_s);
-        set_coef_filter();
         if (m_filter_impulse_response_type == firt_infinite) {
           m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
           m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
@@ -1214,47 +1213,44 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (m_accumulate_asynch.completed()) {
           IRS_LIB_DBG_MSG("Вычисление суммы завершено: " <<
             measure_time_calc.get() << " с");
-          filter_start();
+          if (m_filter_impulse_response_type == firt_finite) {
+            calc_coef_fir_filter();
+            m_filter_coef_sum_asynch.add(m_fir_filter_coefficients.begin(),
+              m_fir_filter_coefficients.end());
+          } else {
+            set_coef_filter();
+            filter_start();
+          }
         } else {
           // Операция еще не завершена
+        }
+      } else if ((m_filter_impulse_response_type == firt_finite) &&
+        !m_filter_coef_sum_asynch.completed()) {
+
+        m_filter_coef_sum_asynch.tick();
+        if (m_filter_coef_sum_asynch.completed()) {
+          set_coef_filter();
+          filter_start();
+        } else {
+          // Подсчет суммы коэффициентов еще не завершен
         }
       } else if (!filter_completed()) {
         filter_tick();
         if (filter_completed()) {
+          *mp_value = static_cast<double>(filter_get());
           IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
             measure_time_calc.get() << " с");
           if (m_calc_filtered_values_enabled) {
-            if (m_filter_impulse_response_type == firt_finite) {
-              m_filter_coef_sum_asynch.add(m_fir_filter_coefficients.begin(),
-                m_fir_filter_coefficients.end());
-            } else {
-              *mp_value = static_cast<double>(filter_get());
-              m_filtered_values_for_user = m_filtered_values;
-              m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
-              m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
-                m_filtered_values_for_user.end());
-            }
+            m_filtered_values_for_user = m_filtered_values;
+            m_sko_calc_asynch.resize(m_filtered_values.size());
+            m_sko_calc_asynch.add(m_filtered_values.begin(),
+              m_filtered_values.end());
           } else {
             m_sko_calc_asynch.resize(m_samples.size());
             m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
           }
         } else {
           // Фильтрация еще не завершена
-        }
-      } else if (m_calc_filtered_values_enabled &&
-        (m_filter_impulse_response_type == firt_finite) &&
-        !m_filter_coef_sum_asynch.completed()) {
-        
-        m_filter_coef_sum_asynch.tick();
-        if (m_filter_coef_sum_asynch.completed()) {
-          *mp_value = static_cast<double>(filter_get());
-          filtered_values_normalize();
-          m_filtered_values_for_user = m_filtered_values;
-          m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
-          m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
-            m_filtered_values_for_user.end());
-        } else {
-          // Подсчет суммы коэффициентов еще не завершен
         }
       } else if (!m_sko_calc_asynch.completed()) {
         m_sko_calc_asynch.tick();
@@ -1264,9 +1260,9 @@ void irs::agilent_3458a_digitizer_t::tick()
           m_sko_for_user = m_sko_calc_asynch;
           m_sko_relative_for_user = m_sko_calc_asynch.relative();
           if (m_calc_filtered_values_enabled) {
-            m_delta_calc_asynch.resize(m_filtered_values_for_user.size());
-            m_delta_calc_asynch.add(m_filtered_values_for_user.begin(),
-              m_filtered_values_for_user.end());
+            m_delta_calc_asynch.resize(m_filtered_values.size());
+            m_delta_calc_asynch.add(m_filtered_values.begin(),
+              m_filtered_values.end());
           } else {
             m_delta_calc_asynch.resize(m_samples.size());
             m_delta_calc_asynch.add(m_samples.begin(), m_samples.end());
@@ -1595,18 +1591,33 @@ void irs::agilent_3458a_digitizer_t::set_coef_filter()
     m_iir_filter_asynch.set_coefficients(num_coef_list.begin(),
       num_coef_list.end(), denom_coef_list.begin(), denom_coef_list.end());
   } else {
-    const size_type order = get_sample_count(m_sampling_time, m_interval);
-    get_coef_fir_filter(m_window_function_form, order,
-      &m_fir_filter_coefficients);
+    const math_type coef_sum = m_filter_coef_sum_asynch.get();
+    const size_type coef_count = m_fir_filter_coefficients.size();
+    if (coef_sum != 0) {
+      for (size_type coef_i = 0; coef_i < coef_count; coef_i++) {
+        m_fir_filter_coefficients[coef_i] /= coef_sum;
+      }
+    } else {
+      for (size_type coef_i = 0; coef_i < coef_count; coef_i++) {
+        m_fir_filter_coefficients[coef_i] = 0;
+      }
+    }
     m_fir_filter_asynch.set_coefficients(m_fir_filter_coefficients.begin(),
       m_fir_filter_coefficients.end());
   }
 }
 
+void irs::agilent_3458a_digitizer_t::calc_coef_fir_filter()
+{
+  const size_type order = get_sample_count(m_sampling_time, m_interval);
+  get_coef_fir_filter(m_window_function_form, order,
+    &m_fir_filter_coefficients);
+}
+
 void irs::agilent_3458a_digitizer_t::filter_start()
 {
   math_type average = 0;
-  if (m_samples.empty()) {
+  if (!m_samples.empty()) {
     average = m_accumulate_asynch.get()/m_samples.size();
   } else {
     // Среднее оставляем нулем
@@ -1647,30 +1658,27 @@ irs::agilent_3458a_digitizer_t::filter_get()
   if (m_filter_impulse_response_type == firt_infinite) {
     value = m_iir_filter_asynch.get();
   } else {
-    /*coef_sum = accumulate(m_fir_filter_coefficients.begin(),
-      m_fir_filter_coefficients.end(), coef_sum);*/
-    if (m_filter_coef_sum_asynch.get() != 0) {
+    value = m_fir_filter_asynch.get();
+    /*if (m_filter_coef_sum_asynch.get() != 0) {
       value = m_fir_filter_asynch.get()/m_filter_coef_sum_asynch.get();
       IRS_LIB_DBG_MSG("Чистое значение фильтра " << m_fir_filter_asynch.get());
       IRS_LIB_DBG_MSG("Итоговое значение фильтра " << value);
     } else {
       value = 0;
-    }
+    }*/
     IRS_LIB_DBG_MSG("Сумма коэффициентов " << m_filter_coef_sum_asynch.get());
   }
   return value;
 }
 
-void irs::agilent_3458a_digitizer_t::filtered_values_normalize()
+/*void irs::agilent_3458a_digitizer_t::filtered_values_normalize()
 {
   if (m_calc_filtered_values_enabled &&
     (m_filter_impulse_response_type == firt_finite)) {
 
     const math_type coef_sum = m_filter_coef_sum_asynch.get();
-    /*coef_sum = accumulate(m_fir_filter_coefficients.begin(),
-      m_fir_filter_coefficients.end(), coef_sum);*/
     const size_type value_count = m_filtered_values.size();
-    if (coef_sum != 0) {                         
+    if (coef_sum != 0) {
       for (size_type value_i = 0; value_i < value_count; value_i++) {
         m_filtered_values[value_i] /= coef_sum;
       }
@@ -1680,7 +1688,7 @@ void irs::agilent_3458a_digitizer_t::filtered_values_normalize()
       }
     }
   }
-}
+}*/
 
 namespace {
 
