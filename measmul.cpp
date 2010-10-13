@@ -834,6 +834,7 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_delay_timer(irs::make_cnt_ms(1)),
   m_data_to_values(),
   m_accumulate_asynch(),
+  m_filter_coef_sum_asynch(),
   m_sko_calc_asynch(1000),
   m_sko_for_user(0),
   m_sko_relative_for_user(0),
@@ -1170,6 +1171,8 @@ void irs::agilent_3458a_digitizer_t::tick()
           m_coefficient, &m_buf_receive, &m_samples);
         m_accumulate_asynch.clear();
         m_accumulate_asynch.set_tick_max_time(m_tick_max_time_s);
+        m_filter_coef_sum_asynch.clear();
+        m_filter_coef_sum_asynch.set_tick_max_time(m_tick_max_time_s);
         m_sko_calc_asynch.clear();
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
@@ -1218,20 +1221,40 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!filter_completed()) {
         filter_tick();
         if (filter_completed()) {
-          *mp_value = static_cast<double>(filter_get());
           IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
             measure_time_calc.get() << " с");
           if (m_calc_filtered_values_enabled) {
-            m_filtered_values_for_user = m_filtered_values;
-            m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
-            m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
-              m_filtered_values_for_user.end());
+            if (m_filter_impulse_response_type == firt_finite) {
+              m_filter_coef_sum_asynch.add(m_fir_filter_coefficients.begin(),
+                m_fir_filter_coefficients.end());
+            } else {
+              *mp_value = static_cast<double>(filter_get());
+              m_filtered_values_for_user = m_filtered_values;
+              m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
+              m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
+                m_filtered_values_for_user.end());
+            }
           } else {
             m_sko_calc_asynch.resize(m_samples.size());
             m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
           }
         } else {
           // Фильтрация еще не завершена
+        }
+      } else if (m_calc_filtered_values_enabled &&
+        (m_filter_impulse_response_type == firt_finite) &&
+        !m_filter_coef_sum_asynch.completed()) {
+        
+        m_filter_coef_sum_asynch.tick();
+        if (m_filter_coef_sum_asynch.completed()) {
+          *mp_value = static_cast<double>(filter_get());
+          filtered_values_normalize();
+          m_filtered_values_for_user = m_filtered_values;
+          m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
+          m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
+            m_filtered_values_for_user.end());
+        } else {
+          // Подсчет суммы коэффициентов еще не завершен
         }
       } else if (!m_sko_calc_asynch.completed()) {
         m_sko_calc_asynch.tick();
@@ -1624,19 +1647,39 @@ irs::agilent_3458a_digitizer_t::filter_get()
   if (m_filter_impulse_response_type == firt_infinite) {
     value = m_iir_filter_asynch.get();
   } else {
-    math_type coef_sum = 0;
-    coef_sum = accumulate(m_fir_filter_coefficients.begin(),
-      m_fir_filter_coefficients.end(), coef_sum);
-    if (coef_sum != 0) {
-      value = m_fir_filter_asynch.get()/coef_sum;
+    /*coef_sum = accumulate(m_fir_filter_coefficients.begin(),
+      m_fir_filter_coefficients.end(), coef_sum);*/
+    if (m_filter_coef_sum_asynch.get() != 0) {
+      value = m_fir_filter_asynch.get()/m_filter_coef_sum_asynch.get();
       IRS_LIB_DBG_MSG("Чистое значение фильтра " << m_fir_filter_asynch.get());
       IRS_LIB_DBG_MSG("Итоговое значение фильтра " << value);
     } else {
       value = 0;
     }
-    IRS_LIB_DBG_MSG("Сумма коэффициентов " << coef_sum);
+    IRS_LIB_DBG_MSG("Сумма коэффициентов " << m_filter_coef_sum_asynch.get());
   }
   return value;
+}
+
+void irs::agilent_3458a_digitizer_t::filtered_values_normalize()
+{
+  if (m_calc_filtered_values_enabled &&
+    (m_filter_impulse_response_type == firt_finite)) {
+
+    const math_type coef_sum = m_filter_coef_sum_asynch.get();
+    /*coef_sum = accumulate(m_fir_filter_coefficients.begin(),
+      m_fir_filter_coefficients.end(), coef_sum);*/
+    const size_type value_count = m_filtered_values.size();
+    if (coef_sum != 0) {                         
+      for (size_type value_i = 0; value_i < value_count; value_i++) {
+        m_filtered_values[value_i] /= coef_sum;
+      }
+    } else {
+      for (size_type value_i = 0; value_i < value_count; value_i++) {
+        m_filtered_values[value_i] = 0;
+      }
+    }
+  }
 }
 
 namespace {

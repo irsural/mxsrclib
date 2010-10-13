@@ -673,6 +673,8 @@ public:
   typedef data_to_values_t data_to_values_type;
   typedef accumulate_asynch_t<double, raw_data_t<double>::pointer>
     accumulate_asynch_type;
+  typedef accumulate_asynch_t<math_type, raw_data_t<math_type>::pointer>
+    filter_coef_sum_asynch_type;
   typedef sko_calc_asynch_t<double, double,
     raw_data_t<double>::pointer> sko_calc_asynch_type;
   typedef delta_calc_asynch_t<double, raw_data_t<double>::pointer>
@@ -763,6 +765,7 @@ private:
   void filter_tick();
   bool filter_completed();
   math_type filter_get();
+  void filtered_values_normalize();
   irs::hardflow_t* mp_hardflow;
   enum process_t {
     process_wait,
@@ -841,6 +844,7 @@ private:
   irs::timer_t m_delay_timer;
   data_to_values_type m_data_to_values;
   accumulate_asynch_type m_accumulate_asynch;
+  filter_coef_sum_asynch_type m_filter_coef_sum_asynch;
   sko_calc_asynch_type m_sko_calc_asynch;
   double m_sko_for_user;
   double m_sko_relative_for_user;
