@@ -3340,7 +3340,9 @@ void irs::ni_pxi_4071_t::get_value(double* ap_value)
 
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
 {
-  m_eth_mul_data.meas_type = tm_volt_dc;
+  if (m_eth_mul_data.meas_type != tm_volt_dc) {
+    m_eth_mul_data.meas_type = tm_volt_dc;
+  }
   m_mode = get_voltage;
   mp_value = ap_voltage;
   m_status = meas_status_busy;
@@ -3348,21 +3350,27 @@ void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
 
 void irs::ni_pxi_4071_t::get_current(double* ap_current)
 {
-  m_eth_mul_data.meas_type = tm_current_dc;
+  if (m_eth_mul_data.meas_type != tm_current_dc) {
+    m_eth_mul_data.meas_type = tm_current_dc;
+  }
   mp_value = ap_current;
   m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_resistance2x(double* ap_resistance)
 {
-  m_eth_mul_data.meas_type = tm_resistance_2x;
+  if (m_eth_mul_data.meas_type != tm_resistance_2x) {
+    m_eth_mul_data.meas_type = tm_resistance_2x;
+  }
   mp_value = ap_resistance;
   m_status = meas_status_busy;
 }
 
 void irs::ni_pxi_4071_t::get_resistance4x(double* ap_resistance)
 {
-  m_eth_mul_data.meas_type = tm_resistance_4x;
+  if (m_eth_mul_data.meas_type != tm_resistance_4) {
+    m_eth_mul_data.meas_type = tm_resistance_4x;
+  }
   mp_value = ap_resistance;
   m_status = meas_status_busy;
 }
