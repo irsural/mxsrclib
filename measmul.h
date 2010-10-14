@@ -2125,6 +2125,10 @@ private:
   enum mode_t {
     start_mode,
     get_value_mode,
+    get_voltage,
+    get_current,
+    get_resistance2x,
+    get_resistance4x,
     stop_mode
   };
   struct eth_mul_data_t {

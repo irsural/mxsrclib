@@ -3341,6 +3341,7 @@ void irs::ni_pxi_4071_t::get_value(double* ap_value)
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
 {
   m_eth_mul_data.meas_type = tm_volt_dc;
+  m_mode = get_voltage;
   mp_value = ap_voltage;
   m_status = meas_status_busy;
 }
@@ -3430,6 +3431,30 @@ void irs::ni_pxi_4071_t::tick()
       *mp_value = m_eth_mul_data.meas_value;
       m_mode = stop_mode;
       m_status = meas_status_success;
+    } break;
+    case get_voltage:
+    {
+      if (m_eth_mul_data.meas_type == tm_volt_dc) {
+        m_mode = get_value_mode;
+      }
+    } break;
+    case get_current:
+    {
+      if (m_eth_mul_data.meas_type == tm_current_dc) {
+        m_mode = get_value_mode;
+      }
+    } break;
+    case get_resistance2x:
+    {
+      if (m_eth_mul_data.meas_type == tm_resistance_2x) {
+        m_mode = get_value_mode;
+      }
+    } break;
+    case get_resistance4x:
+    {
+      if (m_eth_mul_data.meas_type == tm_resistance_4x) {
+        m_mode = get_value_mode;
+      }
     } break;
     case stop_mode:
     {
