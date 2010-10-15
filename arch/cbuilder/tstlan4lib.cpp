@@ -99,7 +99,7 @@ const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_section_prefix()
 
 void irs::tstlan4_t::show()
 {
-  mp_form->ShowModal();
+  mp_form->Show();
 }
 void irs::tstlan4_t::hide()
 {
