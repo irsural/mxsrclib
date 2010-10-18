@@ -1,5 +1,5 @@
 // Клиент и сервер modbus
-// Дата: 18.08.2010
+// Дата: 15.10.2010
 // Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
@@ -310,6 +310,7 @@ private:
   size_t                                m_input_registers_start_byte;
   vector<bool>                          m_need_read;
   vector<bool>                          m_need_writes;
+  vector<bool>                          m_need_writes_reserve;
   raw_data_t<irs_u8>                    m_discr_inputs_byte_read;
   raw_data_t<irs_u8>                    m_coils_byte_read;
   raw_data_t<irs_u8>                    m_coils_byte_write;
