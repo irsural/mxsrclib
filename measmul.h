@@ -1985,7 +1985,12 @@ public:
   // Чтение сопротивления
   virtual void get_resistance2x(double* /*resistance*/) {}
   // Чтение сопротивления
-  virtual void get_resistance4x(double* /*resistance*/) {}
+  virtual void get_resistance4x(double* resistance)
+  {
+    static int i = 0;
+    //*resistance = abs( rand() );
+    *resistance = i++;
+  }
   // Чтение частоты
   virtual void get_frequency(double* /*frequency*/) {}
   // Чтение усредненного сдвира фаз
