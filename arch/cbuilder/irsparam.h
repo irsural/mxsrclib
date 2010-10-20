@@ -73,6 +73,7 @@ public:
   virtual void delete_edit(const builder_string_type& a_param_name);
 private:
   const string_type m_ini_section;
+  const string_type m_prefix_name;
   irs::ini_file_t m_ini_file;
   handle_t<TForm> mp_form;
   TPanel* mp_panel;
@@ -81,6 +82,8 @@ private:
   TValueListEditor* mp_value_list_editor;
   irs_u8 m_cur_param_row;
   
+  void save_form_params();
+  void load_form_params();
   void __fastcall ok_btn_click(TObject *Sender);
   void __fastcall cancel_btn_click(TObject *Sender);
   void __fastcall on_close_event(TObject *Sender, TCloseAction &Action);

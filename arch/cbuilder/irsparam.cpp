@@ -1,4 +1,4 @@
-// Дата: 16.08.2010
+// Дата: 20.10.2010
 // Дата создания: 29.07.2010
 
 #include <irspch.h>
@@ -18,6 +18,7 @@ irs::param_box_t::param_box_t(
   const string_type& a_ini_name
 ):
   m_ini_section(a_ini_section),
+  m_prefix_name(a_prefix_name),
   m_ini_file(),
   mp_form(new TForm(IRS_NULL, 1)),
   mp_panel(new TPanel(mp_form.get())),
@@ -77,9 +78,52 @@ irs::param_box_t::param_box_t(
   }
   m_ini_file.add(a_prefix_name.c_str(), mp_value_list_editor);
   m_ini_file.load();
-  
-  mp_form->Width = mp_value_list_editor->ColWidths[header_col] +
-    mp_value_list_editor->ColWidths[option_col] + 14/*???*/;
+  load_form_params();
+}
+
+void irs::param_box_t::save_form_params()
+{
+  TIniFile *IniFile;
+  IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  int key_col_width = mp_value_list_editor->ColWidths[0];
+  IniFile->WriteInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("key_col_width")).c_str(),
+    key_col_width
+  );
+  int form_width = mp_form->Width;
+  IniFile->WriteInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("form_width")).c_str(),
+    form_width
+  );
+  int form_height = mp_form->Height;
+  IniFile->WriteInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("form_height")).c_str(),
+    form_height
+  );
+}
+
+void irs::param_box_t::load_form_params()
+{
+  TIniFile *IniFile;
+  IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  mp_value_list_editor->ColWidths[0] = IniFile->ReadInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("key_col_width")).c_str(),
+    mp_value_list_editor->ColWidths[0]
+  );
+  mp_form->Width = IniFile->ReadInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("form_width")).c_str(),
+    mp_form->Width
+  );
+  mp_form->Height = IniFile->ReadInteger(
+    m_ini_section.c_str(),
+    (m_prefix_name + irst("form_height")).c_str(),
+    mp_form->Height
+  );
 }
 
 void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
@@ -89,12 +133,14 @@ void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
 
 void __fastcall irs::param_box_t::cancel_btn_click(TObject *Sender)
 {
+  save_form_params();
   m_ini_file.load();
 }
 
 void __fastcall irs::param_box_t::on_close_event(TObject *Sender,
   TCloseAction &Action)
 {
+  save_form_params();
   m_ini_file.load();
   Action = caHide;
 }
