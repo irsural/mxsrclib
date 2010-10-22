@@ -1,9 +1,15 @@
-// Протокол MxNet defines
-// Дата: 05.04.2010
-// Ранняя дата: 18.06.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Протокол MxNet defines
+//!
+//! Дата: 05.04.2010\n
+//! Ранняя дата: 18.06.2008
 
 #ifndef MXNETDH
 #define MXNETDH
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Размер заголовка, 4 байта (32-битное целое)
 #define MXN_SIZE_OF_HEADER 5
@@ -32,5 +38,7 @@
 #define MXN_CONST_IDENT_BEG_PACK_SECOND ((irs_i32)0xE81F3AAD)
 
 #define MXN_UDP_IP_ETHERNET_HEADER_SIZE 70
+
+//! @}
 
 #endif //MXNETDH

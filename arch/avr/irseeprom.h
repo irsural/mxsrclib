@@ -1,6 +1,9 @@
-// Доступ к EEPROM AVR
-// Дата: 08.10.2010
-// Ранняя дата: 19.08.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Доступ к EEPROM AVR
+//!
+//! Дата: 08.10.2010\n
+//! Ранняя дата: 19.08.2009
 
 
 #ifndef irseepromh
@@ -26,6 +29,9 @@ namespace irs
 {
 namespace avr
 {
+
+//! \addtogroup drivers_group
+//! @{
 
 class eeprom_t : public mxdata_t
 {
@@ -185,7 +191,10 @@ private:
     size_type a_prev_eeprom_first_idx, size_type a_prev_eeprom_size);
 };
 
+//! @}
+
 } // namespace avr
+
 } // namespace irs
 
 #endif  //  irseepromh

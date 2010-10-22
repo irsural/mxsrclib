@@ -1,8 +1,9 @@
-// Модуль счетчика
-// C++ Builder
-// Используем встроенный счетчик процессора
-// Дата: 14.04.2010
-// Дата создания: 14.09.2009
+//! \file
+//! \ingroup time_processing_group
+//! \brief Модуль счетчика для C++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 14.09.2009
 
 #ifndef COUNTERH
 #define COUNTERH
@@ -12,6 +13,9 @@
 #include <irslimits.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup time_processing_group
+//! @{
 
 // Тип основного счетчика
 typedef irs_i64 basic_counter_t;
@@ -38,6 +42,8 @@ void counter_refresh();
 counter_t counter_get();
 // Деинициализация счетчика
 void counter_deinit();
+
+//! @}
 
 #endif //COUNTERH
 

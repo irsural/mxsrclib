@@ -1,6 +1,9 @@
-// Функции конвертирования строк
-// Дата: 29.07.2010
-// Дата создания: 2.05.2010
+//! \file
+//! \ingroup string_processing_group
+//! \brief Функции конвертирования строк
+//!
+//! Дата: 29.07.2010
+//! Дата создания: 2.05.2010
 
 #ifndef irsstrconvH
 #define irsstrconvH
@@ -20,6 +23,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup string_processing_group
+//! @{
 
 template<class T>
 struct base_str_type
@@ -360,6 +366,8 @@ inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
 #endif // defined(__BORLANDC__)
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+//! @}
 
 } // namespace irs
 

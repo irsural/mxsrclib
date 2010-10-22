@@ -1,9 +1,15 @@
-// Протокол MxNet (Max Network)
-// Дата 14.04.2010
-// Ранняя дата 16.04.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Протокол MxNet (Max Network)
+//!
+//! Дата 14.04.2010\n
+//! Ранняя дата 16.04.2008
 
 #ifndef MXNETH
 #define MXNETH
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Номер файла
 #define MXNETH_IDX 8
@@ -110,7 +116,12 @@ irs::mxn_checksum_t mxn_get_checksum_type(mxn_data_t &data);
 void mxn_set_ether_bufs_size(mxn_data_t &data, irs_size_t bufs_size);
 irs_size_t mxn_get_ether_bufs_size(mxn_data_t &data);
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Преобразование из внешнего массива irs_u8 в mxdata_t
 class mxdata_to_u8_t : public mxdata_t
@@ -192,6 +203,8 @@ private:
   // Текущий тип контрольной суммы
   mxn_checksum_t m_checksum_type;
 };
+
+//! @}
 
 } //namespace irs
 

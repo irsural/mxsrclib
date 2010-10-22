@@ -1,6 +1,9 @@
-// Общие утилиты mxnet
-// Дата: 27.05.2010
-// Ранняя Дата: 18.02.2009
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Общие утилиты mxnet
+//!
+//! Дата: 27.05.2010\n
+//! Ранняя Дата: 18.02.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__

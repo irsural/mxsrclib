@@ -1,5 +1,8 @@
-// Работа с таймером
-// Дата 13.04.2010
+//! \file
+//! \ingroup time_processing_group
+//! \brief Работа с таймером
+
+//! Дата 13.04.2010
 
 #include <irspch.h>
 #ifdef __BORLANDC__

@@ -1,5 +1,8 @@
-// Аналоговый ввод-вывод
-// Дата: 11.09.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Аналоговый ввод-вывод
+//!
+//! Дата: 11.09.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__

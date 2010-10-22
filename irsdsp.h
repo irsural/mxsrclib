@@ -1,6 +1,9 @@
-// Цифровая обработка сигналов
-// Дата: 13.04.2010
-// Ранняя дата: 27.08.2009
+//! \file
+//! \ingroup signal_processing_group
+//! \brief Цифровая обработка сигналов
+//!
+//! Дата: 13.04.2010\n
+//! Ранняя дата: 27.08.2009
 
 #ifndef irsdspH
 #define irsdspH
@@ -15,6 +18,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup signal_processing_group
+//! @{
 
 #ifdef NEW
 template <class T>
@@ -1150,6 +1156,8 @@ inline bool operator!=(const filter_settings_t& a_fs_first,
 {
   return !(a_fs_first == a_fs_second);
 }
+
+//! @}
 
 } // namespace irs
 

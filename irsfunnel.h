@@ -1,6 +1,9 @@
-// Класс для расширения количества переменнных в mxnet "Воронка"
-// Дата 28.04.2010
-// Ранняя дата: 12.02.2009
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Класс для расширения количества переменнных в mxnet "Воронка"
+//!
+//! Дата 28.04.2010\n
+//! Ранняя дата: 12.02.2009
 
 #ifndef irsfunnelH
 #define irsfunnelH
@@ -17,6 +20,9 @@
 
 namespace irs
 {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 enum fannel_client_mode_t {fcm_full_size, fcm_reduce};
 
@@ -103,6 +109,8 @@ public:
   ~funnel_server_t();
   void tick();
 };
+
+//! @}
 
 } //  irs
 

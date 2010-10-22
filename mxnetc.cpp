@@ -1,6 +1,9 @@
-// Протокол MxNetC (Max Network Client)
-// Дата: 29.04.2010
-// Ранняя дата: 12.02.2009
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Протокол MxNetC (Max Network Client)
+//!
+//! Дата: 29.04.2010\n
+//! Ранняя дата: 12.02.2009
 
 // Номер файла
 #define MXNETCCPP_IDX 17

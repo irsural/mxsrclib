@@ -1,7 +1,9 @@
-// Обработка ошибок
-// С++ Builder
-// Дата: 14.04.2010
-// Дата создания: 17.10.2009
+//! \file
+//! \ingroup error_processing_group
+//! \brief Обработка ошибок в С++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 17.10.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__

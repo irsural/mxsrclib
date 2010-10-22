@@ -1,6 +1,9 @@
-// UDP/IP-стек
-// Дата: 23.07.2010
-// дата создания: 16.03.2010
+//! \file
+//! \ingroup network_in_out_group
+//! \brief UDP/IP-стек
+//!
+//! Дата: 23.07.2010\n
+//! дата создания: 16.03.2010
 
 #ifndef IRSTCPIPH
 #define IRSTCPIPH
@@ -33,6 +36,9 @@
 #endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
 
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 irs_u16 ntoh16(irs_u8* ap_network_in);
 void hton16(irs_u8* ap_network_out, irs_u16 a_host_in);
@@ -432,5 +438,8 @@ private:
   irs_size_t get_tcp_connection();
 };
 
+//! @}
+
 } //namespace irs
+
 #endif //IRSTCPIPH

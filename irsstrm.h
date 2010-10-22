@@ -1,6 +1,9 @@
-// Потоки ввода/вывода ИРС
-// Дата: 08.10.2010
-// Ранняя дата: 14.09.2009
+//! \file
+//! \ingroup in_out_group
+//! \brief Потоки ввода/вывода ИРС
+//!
+//! Дата: 08.10.2010\n
+//! Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
 #define IRSSTRMH
@@ -36,6 +39,7 @@
 
 namespace irs {
 
+//! \ingroup in_out_group
 //typedef<class container_type = vector<streambuf*> >
 class union_streambuf: public streambuf
 {

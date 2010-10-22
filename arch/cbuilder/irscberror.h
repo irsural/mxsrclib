@@ -1,7 +1,9 @@
-// Обработка ошибок
-// С++ Builder
-// Дата: 14.04.2010
-// Дата создания: 17.10.2009
+//! \file
+//! \ingroup error_processing_group
+//! \brief Обработка ошибок в С++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 17.10.2009
 
 #ifndef irscberrorH
 #define irscberrorH
@@ -16,6 +18,9 @@ namespace irs {
 
 namespace cbuilder {
 
+//! \addtogroup error_processing_group
+//! @{
+
 enum handler_type_t { ht_exception, ht_message, ht_log, ht_none };
 enum handler_format_t{hf_fixed, hf_variable};
 
@@ -29,6 +34,8 @@ public:
 void set_error_handler(
   handler_type_t handler_type = ht_exception,
   log_msg_t* ap_log_msg = 0);
+
+//! @}
 
 } //namespace cbuilder
 

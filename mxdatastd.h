@@ -1,6 +1,9 @@
-// Стандартаная библиотека ИРС, класс mxdata_t
-// Дата: 10.08.2010
-// Дата создания: 26.09.2009
+//! \file
+//! \ingroup in_out_group
+//! \brief Стандартаная библиотека ИРС, класс mxdata_t
+//!
+//! Дата: 10.08.2010\n
+//! Дата создания: 26.09.2009
 
 #ifndef MXDATASTDH
 #define MXDATASTDH
@@ -13,6 +16,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup in_out_group
+//! @{
 
 // Абстактный базовый класс для массива данных
 class mxdata_t
@@ -359,6 +365,8 @@ inline irs_uarc bit_data_t::bit_index() const
 {
   return m_bit_index;
 }
+
+//! @}
 
 } //namespace irs
 

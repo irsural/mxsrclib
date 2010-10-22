@@ -1,6 +1,9 @@
-// Библиотека исключений ИРС
-// Дата: 04.10.2009
-// Ранняя дата: 17.11.2008
+//! \file
+//! \ingroup error_processing_group
+//! \brief Библиотека исключений ИРС
+//!
+//! Дата: 04.10.2009\n
+//! Ранняя дата: 17.11.2008
 
 #ifndef irsexceptH
 #define irsexceptH
@@ -12,6 +15,9 @@
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 namespace irs {
+
+//! \addtogroup error_processing_group
+//! @{
 
 // Базовый класс для всех исключений программ ИРС
 class mxexception: public exception
@@ -40,6 +46,8 @@ private:
   bool m_user_message;
   string m_full_message;
 };
+
+//! @}
 
 } //namespace irs
 

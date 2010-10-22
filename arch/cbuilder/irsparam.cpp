@@ -1,5 +1,9 @@
-// Дата: 20.10.2010
-// Дата создания: 29.07.2010
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Таблица параметров
+//!
+//! Дата: 16.08.2010\n
+//! Дата создания: 29.07.2010
 
 #include <irspch.h>
 #ifdef __BORLANDC__

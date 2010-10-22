@@ -1,6 +1,9 @@
-// Клиент и сервер modbus
-// Дата: 15.10.2010
-// Ранняя дата: 16.09.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Клиент и сервер modbus
+//!
+//! Дата: 18.08.2010\n
+//! Ранняя дата: 16.09.2008
 
 #ifndef irsmbusH
 #define irsmbusH
@@ -39,6 +42,9 @@
 #endif // IRS_LIB_IRSMBUS_DEBUG_TYPE
 
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 #pragma pack(push, 1)
 
@@ -361,6 +367,8 @@ private:
   void view_mode();
   size_t get_packet_number();
 };
+
+//! @}
 
 } //namespace irs
 

@@ -1,18 +1,9 @@
-// Тип variant
-// Дата: 16.05.2010
-// Ранняя дата: 12.10.2009
-
-//  Component Variant
-//  Data: 12.10.2009
-//
-//  Copyright (c) 2009
-//  IRS Company
-//
-//  Copyright (c) 2009
-//  Maksim Lyashchov
-//
-//  This material is provided "as is", with absolutely no warranty expressed
-//  or implied. Any use is at your own risk.
+//! \file
+//! \ingroup single_type_group
+//! \brief Тип variant
+//!
+//! Дата: 16.05.2010\n
+//! Ранняя дата: 12.10.2009
 
 #ifndef irsvariantH
 #define irsvariantH
@@ -40,6 +31,9 @@
 namespace irs {
 
 namespace variant {
+
+//! \addtogroup single_type_group
+//! @{
 
 typedef size_t sizens_t;
 typedef char_t charns_t;
@@ -2403,6 +2397,8 @@ void variant_to_tree_view(
 #ifdef IRS_LIB_DEBUG
 void test_variant();
 #endif // IRS_LIB_DEBUG
+
+//! @}
 
 } // namespace variant
 

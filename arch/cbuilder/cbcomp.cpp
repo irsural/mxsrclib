@@ -1,7 +1,9 @@
-// Компоненты
-// С++ Builder
-// Дата: 14.04.2010
-// Дата создания: 14.11.2008
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Компоненты С++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 14.11.2008
 
 #include <irspch.h>
 #ifdef __BORLANDC__

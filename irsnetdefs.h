@@ -1,6 +1,9 @@
-// Определение типов mxip_t, mxmac_t и сопутствующих им функций
-// Дата: 13.07.2010
-// Дата создания: 01.04.2010
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Определение типов mxip_t, mxmac_t и сопутствующих им функций
+//!
+//! Дата: 13.07.2010\n
+//! Дата создания: 01.04.2010
 
 #ifndef IRSNETDEFSH
 #define IRSNETDEFSH
@@ -14,6 +17,9 @@
 #include <ctype.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Длина строки для ip-адреса
 #define IP_STR_LEN 16
@@ -308,7 +314,12 @@ inline ostream& operator<<(ostream& a_stream, const mxmac_t& a_mac)
 
 //using namespace irs_shift_operator_ip_mac;
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 inline mxip_t make_mxip(int a_first_octet, int a_second_octet,
   int a_third_octet, int a_fourth_octet)
@@ -353,6 +364,8 @@ inline mxmac_t make_mxmac(const irs::char_t* a_mac)
   }
   return mac;
 }
+
+//! @}
 
 } //namespace irs
 

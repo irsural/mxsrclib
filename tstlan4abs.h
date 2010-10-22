@@ -1,5 +1,8 @@
-// Тест сети 4 - абстрактный базовый класс
-// Дата: 14.04.2010
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Тест сети 4 - абстрактный базовый класс
+
+//! Дата: 14.04.2010\n
 // Дата создания: 14.05.2008
 
 #ifndef tstlan4absH
@@ -12,6 +15,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 class tstlan4_base_t
 {
@@ -27,6 +33,8 @@ public:
   virtual void update_time(const irs_i32 a_update_time) = 0;
   virtual void resize_chart(const irs_u32 a_size) = 0;
 };
+
+//! @}
 
 } //namespace irs
 

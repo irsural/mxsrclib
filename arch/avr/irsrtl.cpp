@@ -1,6 +1,9 @@
-// Драйвер Ethernet для RTL8019AS 
-// Дата: 01.07.2010
-// Дата создания: 15.03.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Драйвер Ethernet для RTL8019AS
+//!
+//! Дата: 01.07.2010\n
+//! Дата создания: 15.03.2010
 
 #include <irsdefs.h>
 

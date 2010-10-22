@@ -1,6 +1,9 @@
-// Калибровка приборов
-// Дата: 06.07.2010
-// Ранняя дата: 27.03.2009
+//! \file
+//! \ingroup math_group
+//! \brief Калибровка приборов
+//!
+//! Дата: 06.07.2010\n
+//! Ранняя дата: 27.03.2009
 
 #ifndef correct_algH
 #define correct_algH
@@ -19,6 +22,9 @@ namespace irs
 
 namespace avr
 {
+
+//! \addtogroup math_group
+//! @{
 
 class step_correct_t
 {
@@ -51,7 +57,12 @@ private:
   correct_map_t *mp_map;
 };
 
+//! @}
+
 } //  avr
+
+//! \addtogroup math_group
+//! @{
 
 template <class IN_X, class IN_Y, class OUT_Z, class K>
 class correct_lin_t
@@ -531,6 +542,8 @@ public:
   void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   void tick();
 };
+
+//! @}
 
 } //  irs
 

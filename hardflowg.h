@@ -1,6 +1,10 @@
-// Коммуникационные потоки
-// Дата: 18.06.2010
-// Дата создания: 27.08.2009
+//! \file
+//! \ingroup in_out_group
+//! \ingroup network_in_out_group
+//! \brief Коммуникационные потоки
+//!
+//! Дата: 18.06.2010\n
+//! Дата создания: 27.08.2009
 
 #ifndef hardflowgH
 #define hardflowgH
@@ -71,6 +75,7 @@
 
 namespace irs {
 
+//! \ingroup in_out_group
 class hardflow_t {
 public:
   typedef size_t size_type;
@@ -95,6 +100,10 @@ public:
 };
 
 namespace hardflow {
+
+//! \addtogroup network_in_out_group
+//! @{
+
 typedef hardflow_t::string_type stringns_t;
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
@@ -109,13 +118,12 @@ typedef hardflow_t::string_type stringns_t;
 #define HARDFLOW_DBG_MSG(error_code)
 #endif // IRS_LIB_DEBUG
 
-
 class error_sock_t
 {
 public:
   #if defined(IRS_WIN32)
   enum error_t {
-    eacess = WSAEACCES,                   // For Windows only
+    eacess = WSAEACCES,                   //!< Только для Windows
     eaddrenuse = WSAEADDRINUSE,
     eaddrnotavail = WSAEADDRNOTAVAIL,
     eafnosupport = WSAEAFNOSUPPORT,
@@ -123,14 +131,14 @@ public:
     econnrefused = WSAECONNREFUSED,
     econnreset = WSAECONNRESET,
     edestaddrreq = WSAEDESTADDRREQ,
-    efault = WSAEFAULT,                   // For Windows only
+    efault = WSAEFAULT,                   //!< Только для Windows
     ehostdown = WSAEHOSTDOWN,
     ehostunread = WSAEHOSTUNREACH,
-    einprogress = WSAEINPROGRESS,         // For Windows only
-    eintr = WSAEINTR,                     // For Windows only
+    einprogress = WSAEINPROGRESS,         //!< Только для Windows
+    eintr = WSAEINTR,                     //!< Только для Windows
     eisconn = WSAEISCONN,
-    einval = WSAEINVAL,                   // For Windows only
-    emfile = WSAEMFILE,                   // For Windows only
+    einval = WSAEINVAL,                   //!< Только для Windows
+    emfile = WSAEMFILE,                   //!< Только для Windows
     emsgsize = WSAEMSGSIZE,
     enetdown = WSAENETDOWN,
     enetreset = WSAENETRESET,
@@ -141,16 +149,16 @@ public:
     enotsock = WSAENOTSOCK,
     eopnotsupp = WSAEOPNOTSUPP,
     epfnosupport = WSAEPFNOSUPPORT,
-    eproclim = WSAEPROCLIM,               // For Windows only
+    eproclim = WSAEPROCLIM,               //!< Только для Windows
     eprotonosupport = WSAEPROTONOSUPPORT,
     eprototype = WSAEPROTOTYPE,
     esocktnosupport = WSAESOCKTNOSUPPORT,
-    eshutdown = WSAESHUTDOWN,             // For Windows only
+    eshutdown = WSAESHUTDOWN,             //!< Только для Windows
     etimedout = WSAETIMEDOUT,
     ewouldblock = WSAEWOULDBLOCK,
-    notinitialised = WSANOTINITIALISED,   // For Windows only
-    sysnotready = WSASYSNOTREADY,         // For Windows only
-    vernotsupported = WSAVERNOTSUPPORTED  // For Windows only
+    notinitialised = WSANOTINITIALISED,   //!< Только для Windows
+    sysnotready = WSASYSNOTREADY,         //!< Только для Windows
+    vernotsupported = WSAVERNOTSUPPORTED  //!< Только для Windows
   };
   #elif defined(IRS_LINUX)
   enum error_t {
@@ -186,8 +194,6 @@ public:
   error_sock_t();
   errcode_type get_last_error();
 };
-
-
 
 #if defined(IRS_WIN32)
 typedef SOCKET socketns_t;
@@ -342,10 +348,10 @@ public:
   //typedef string_t string_type;
   typedef udp_channel_list_t::adress_type adress_type;
   enum mode_t {
-    invalid_mode,             // Недопустимый режим
-    mode_queue,               // Учитывается переменная m_max_size
-    mode_limited_vector,      // Учитывается переменная m_max_size
-    mode_unlimited_vector};   // Переменная m_max_size не учитывается
+    invalid_mode,             //!< \brief Недопустимый режим
+    mode_queue,               //!< \brief Учитывается переменная m_max_size
+    mode_limited_vector,      //!< \brief Учитывается переменная m_max_size
+    mode_unlimited_vector};   //!< \brief Переменная m_max_size не учитывается
   typedef int errcode_type;
   #if defined(IRS_WIN32)
   typedef SOCKET socket_type;
@@ -451,7 +457,7 @@ public:
   virtual void tick();
 };
 
-#if defined(IRS_WIN32) || defined(IRS_LINUX)
+//#if defined(IRS_WIN32) || defined(IRS_LINUX)
 
 class tcp_server_t: public hardflow_t
 {
@@ -560,7 +566,7 @@ private:
   void stop_client();
 };
 
-#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
+//#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -741,6 +747,8 @@ private:
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
 };
+
+//! @}
 
 } // namespace hardflow
 

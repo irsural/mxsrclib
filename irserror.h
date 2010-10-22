@@ -1,6 +1,9 @@
-// Обработка ошибок
-// Дата: 08.07.2010
-// Ранняя дата: 16.09.2009
+//! \file
+//! \ingroup error_processing_group
+//! \brief Обработка ошибок
+//!
+//! Дата: 08.07.2010\n
+//! Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
 #define IRSERRORH
@@ -38,6 +41,9 @@
 #endif // defined(IRS_LINUX)
 
 #include <irsfinal.h>
+
+//! \addtogroup error_processing_group
+//! @{
 
 // Операторы специального вывода irsm и irsu
 #ifdef __ICCAVR__
@@ -330,7 +336,12 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_LIB_DBG_MSG_KMV(msg)
 #endif //IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup error_processing_group
+//! @{
 
 // Тип для кодов ошибок
 typedef irs_u16 error_code_t;
@@ -618,6 +629,8 @@ T* new_assert(T* a_new_expr, error_trans_base_t::cstr_type a_file,
   return a_new_expr;
 }
 #endif //IRS_LIB_FLASH_ASSERT
+
+//! @}
 
 } //namespace irs
 

@@ -1,12 +1,18 @@
-// Модуль счетчика
-// Дата 01.10.2009
-// Ранняя дата 29.01.2008
+//! \file
+//! \ingroup time_processing_group
+//! \brief Модуль счетчика для avr
+//!
+//! Дата 01.10.2009\n
+//! Ранняя дата 29.01.2008
 
 #ifndef COUNTERH
 #define COUNTERH
 
 #include <irsdefs.h>
 #include <irslimits.h>
+
+//! \addtogroup time_processing_group
+//! @{
 
 // Тип основного счетчика
 typedef irs_i32 basic_counter_t;
@@ -30,5 +36,7 @@ void counter_init();
 counter_t counter_get();
 // Деинициализация счетчика
 void counter_deinit();
+
+//! @}
 
 #endif //COUNTERH

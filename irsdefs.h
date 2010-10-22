@@ -1,9 +1,15 @@
-// Глобальные объявления типов
-// Дата: 12.07.2010
-// Ранняя дата: 16.09.2009
+//! \file
+//! \ingroup configuration_group
+//! \brief Глобальные объявления типов
+//!
+//! Дата: 12.07.2010\n
+//! Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
 #define IRSDEFSH
+
+//! \addtogroup configuration_group
+//! @{
 
 #define IRS_LIB_VERSION_SUPPORT_LESS(ver) (IRS_LIB_VERSION_SUPPORT < ver)
 
@@ -187,7 +193,12 @@ typedef double irs_float64;
 #define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
 #define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup configuration_group
+//! @{
 
 // Определение порядка байтов во время выполнения
 enum endian_t {
@@ -203,7 +214,12 @@ inline endian_t detect_cpu_endian()
   return cpu_endian;
 }
 
-}//namespace irs
+//! @}
+
+} // namespace irs
+
+//! \addtogroup configuration_group
+//! @{
 
 // Определение порядка байтов во время компиляции
 #define IRS_LITTLE_ENDIAN 0
@@ -413,6 +429,8 @@ const int npos = -1;
 #pragma warn -8091
 #endif //__BCPLUSPLUS__ >= IRS_CPP_BUILDER6
 #endif //__BCPLUSPLUS__
+
+//! @}
 
 #endif //IRSDEFSH
 

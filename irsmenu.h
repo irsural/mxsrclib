@@ -1,6 +1,9 @@
-// Текстовое меню
-// Дата: 08.10.2010
-// Ранняя дата: 15.09.2009
+//! \file
+//! \ingroup text_user_interface_group
+//! \brief Текстовое меню
+//!
+//! Дата: 08.10.2010\n
+//! Ранняя дата: 15.09.2009
 
 #ifndef IRSMENUH
 #define IRSMENUH
@@ -12,6 +15,9 @@
 #include <irsstd.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup text_user_interface_group
+//! @{
 
 #define CUR_BLINK 500//ms
 #define EDIT_LINE 2
@@ -758,5 +764,7 @@ public:
   virtual size_type get_dynamic_string(char *ap_buffer, size_type a_length = 0);
   virtual void draw(irs_menu_base_t **ap_cur_menu);
 };
+
+//! @}
 
 #endif //IRSMENUH

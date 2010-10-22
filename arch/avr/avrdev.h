@@ -1,3 +1,6 @@
+//! \file
+//! \ingroup drivers_group
+
 #ifndef avrdevH
 #define avrdefH
 
@@ -8,6 +11,9 @@ namespace irs
 {
 namespace avr
 {
+
+//! \addtogroup drivers_group
+//! @{
 
 #ifndef __ATmega128__
 
@@ -70,7 +76,10 @@ public:
 
 #endif //__ATmega128__
 
-} //  avr
-} //  irs
+//! @}
+
+} // namespace avr
+
+} // namespace irs
 
 #endif  //  avrdevH

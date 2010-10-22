@@ -1,6 +1,9 @@
-// Клавиатура
-// Дата: 15.03.2010
-// Дата создания: 11.03.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Клавиатура
+//!
+//! Дата: 15.03.2010\n
+//! Дата создания: 11.03.2010
 
 #ifndef IRSKBDH
 #define IRSKBDH
@@ -14,6 +17,9 @@
 namespace irs {
 
 namespace gcc_linux {
+
+//! \addtogroup drivers_group
+//! @{
 
 class keyboard_t
 {
@@ -31,6 +37,8 @@ private:
   struct termios m_old_terminal;
   struct termios m_new_terminal;
 };
+
+//! @}
 
 } //namespace gcc_linux
 

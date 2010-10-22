@@ -1,6 +1,9 @@
-// Свойства
-// Дата: 18.05.2010
-// Ранняя дата: 17.08.2009
+//! \file
+//! \ingroup auxiliary_type_group
+//! \brief Свойства
+//!
+//! Дата: 18.05.2010\n
+//! Ранняя дата: 17.08.2009
 
 #ifndef irspropH
 #define irspropH
@@ -15,6 +18,9 @@
 
 //#ifdef NOP
 namespace irs {
+
+//! \addtogroup auxiliary_type_group
+//! @{
 
 // Свойство только для чтерения
 template<class owner_t, class value_t>
@@ -569,6 +575,8 @@ public:
 };
 
 //#endif // NOP
+
+//! @}
 
 } // namespace irs
 

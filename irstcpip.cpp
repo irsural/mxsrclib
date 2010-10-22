@@ -1,6 +1,9 @@
-// UDP/IP-стек 
-// Дата: 23.07.2010
-// Дата создания: 16.03.2010
+//! \file
+//! \ingroup network_in_out_group
+//! \brief UDP/IP-стек
+//!
+//! Дата: 23.07.2010\n
+//! Дата создания: 16.03.2010
 
 #include <irspch.h>
 #ifdef __BORLANDC__

@@ -1,6 +1,9 @@
-// Функции для работы с компонентами C++Builder
-// Дата: 15.09.2010
-// Дата создания: 9.09.2009
+//! \file
+//! \ingroup system_utils_group
+//! \brief Функции для работы с компонентами C++Builder
+//!
+//! Дата: 15.09.2010\n
+//! Дата создания: 9.09.2009
 
 #ifndef cbsysutilsH
 #define cbsysutilsH
@@ -28,12 +31,16 @@
 
 #include <irsfinal.h>
 
+
 namespace irs {
 
 namespace cbuilder {
 
 typedef irs::string stringns_t;
 typedef size_t sizens_t;
+
+//! \addtogroup system_utils_group
+//! @{
 
 #if IRS_LIB_VERSION_SUPPORT_LESS(390)
 // Универсальная функция перевода чисел в текст
@@ -135,6 +142,7 @@ string_t file_path(string_t a_file_name, string_t a_extension = string_t());
 // Вывод в компонент
 //void out_to_tree_view();
 
+//! @}
 
 }; //namespace cbuilder
 

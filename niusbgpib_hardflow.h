@@ -1,6 +1,10 @@
-// Работа с National Instruments USB-GPIB
-// Дата: 06.08.2010
-// Дата создания: 06.08.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Работа с National Instruments USB-GPIB через интерфейс
+//!   irs::hardflow_t
+//!
+//! Дата: 06.08.2010\n
+//! Дата создания: 06.08.2010
 
 #ifndef niusbgpib_hardflowH
 #define niusbgpib_hardflowH
@@ -25,11 +29,15 @@ namespace irs {
 
 namespace hardflow {
 
+//! \addtogroup drivers_group
+//! @{
+
 #if defined(IRS_WIN32)
 
 //#define SYNCHRONOUS_IO
 
-// Класс для работы с National Instruments USB-GPIB
+//! \brief Класс для работы с National Instruments USB-GPIB
+//!   в асинхронном режиме
 class ni_usb_gpib_flow_t: public hardflow_t
 {
 public:
@@ -81,6 +89,8 @@ private:
   const double m_timeout_delta;
 };
 
+//! \brief Класс для работы с National Instruments USB-GPIB
+//!   в синхронном режиме
 class ni_usb_gpib_flow_syn_t: public hardflow_t
 {
 public:
@@ -113,6 +123,8 @@ private:
 };
 
 #endif // defined(IRS_WIN32)
+
+//! @}
 
 } // namespace hardflow_t
 

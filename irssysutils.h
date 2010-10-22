@@ -1,6 +1,9 @@
-// Утилиты ИРС
-// Дата: 07.07.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup system_utils_group
+//! \brief Утилиты ИРС
+//!
+//! Дата: 07.07.2010\n
+//! Ранняя дата: 17.09.2009
 
 #ifndef irssysutilsH
 #define irssysutilsH
@@ -22,6 +25,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup system_utils_group
+//! @{
 
 typedef irs_size_t sizens_t;
 
@@ -588,6 +594,8 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
   return file_dir;
 }
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+//! @}
 
 } //namespace irs
 

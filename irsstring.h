@@ -1,6 +1,9 @@
-// Строки ИРС
-// Дата: 04.08.2010
-// Дата создания: 17.09.2009
+//! \file
+//! \ingroup string_processing_group
+//! \brief Строки ИРС
+
+//! Дата: 04.08.2010\n
+//! Дата создания: 17.09.2009
 
 #ifndef IRSSTRINGH
 #define IRSSTRINGH
@@ -17,6 +20,9 @@
 
 #include <irsfinal.h>
 
+//! \addtogroup string_processing_group
+//! @{
+
 // Поддержка экзотических строк типа __flash в IAR и др.
 #ifdef IRS_LIB_FLASH_ASSERT
 #define IRS_SPEC_CSTR_DECLARE(a_name, a_cstr)\
@@ -32,7 +38,12 @@
 #define IRS_SPEC_CSTR_ASSIGN(a_name, a_cstr) a_name = a_cstr;
 #endif //IRS_LIB_FLASH_ASSERT
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup string_processing_group
+//! @{
 
 // Работа с массивами по типу auto_ptr
 template <class T>
@@ -212,6 +223,7 @@ template <class T>
 inline irs_string_t& string_assign(irs_string_t& strg, const T& val,
   irsstrloc_t a_locale_style);
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
+
 struct irsstrdata_t
 {
   irsstrloc_t locale_style;
@@ -823,9 +835,14 @@ inline bool cstr_to_number_locale(
 }
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+//! @}
+
 } //namespace irs
 
 namespace irs_shift_operator_irsstr {
+
+//! \addtogroup string_processing_group
+//! @{
 
 IRS_STRING_TEMPLATE
 inline IRS_STRING_OSTREAM& operator<<(IRS_STRING_OSTREAM& strm,
@@ -872,6 +889,8 @@ inline IRS_STRING_ISTREAM& operator>>(IRS_STRING_ISTREAM& strm,
   return strm;
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 }
+
+//! @}
 
 } //namespace irs_shift_operator_irsstr
 

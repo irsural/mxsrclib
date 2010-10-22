@@ -1,7 +1,9 @@
-// Компоненты
-// С++ Builder
-// Дата: 14.04.2010
-// Дата создания: 10.12.2008
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Компоненты С++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 10.12.2008
 
 #ifndef cbcompH
 #define cbcompH
@@ -20,6 +22,9 @@
 namespace irs {
 
 namespace cbuilder {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 const int npos = -1;
 
@@ -96,6 +101,8 @@ struct change_obj_check_box_pred_t {
 // Тип для проверки изменения TCheckBox
 typedef irs::change_obj_t<TCheckBox, bool, change_obj_check_box_pred_t>
   change_check_box_t;
+
+//! @}
 
 }; //namespace cbuilder
 

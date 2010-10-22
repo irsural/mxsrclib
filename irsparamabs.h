@@ -1,5 +1,7 @@
-// Дата: 03.08.2010
-// Дата создания: 29.07.2010
+//! \file
+//! \ingroup graphical_user_interface_group
+//! Дата: 03.08.2010
+//! Дата создания: 29.07.2010
 
 #ifndef irsparamabsh
 #define irsparamabsh
@@ -11,6 +13,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 class param_box_base_t
 {
@@ -38,7 +43,9 @@ public:
   virtual void load() = 0;
   virtual void delete_edit(const String& a_param_name) = 0;
   
-}; // param_box_base_t 
+}; // param_box_base_t
+
+//! @}
 
 } // namespace irs
 

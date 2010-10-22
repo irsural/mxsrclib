@@ -1,6 +1,9 @@
-// Утилиты для отладки программы
-// Дата: 23.09.2010
-// Дата создания: 09.04.2010
+//! \file
+//! \ingroup system_utils_group
+//! \brief Утилиты для отладки программы
+//!
+//! Дата: 23.09.2010
+//! Дата создания: 09.04.2010
 
 #ifndef IRSDBGUTILH
 #define IRSDBGUTILH
@@ -15,6 +18,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup system_utils_group
+//! @{
 
 enum mc_range_param_ident_avr_t {
   mcrpi_avr_call_stack,
@@ -90,6 +96,8 @@ memory_checker_t* memory_checker_avr_init(
   memory_checker_t::value_type a_heap_size,
   memory_checker_t::value_type a_return_stack_size
 );
+
+//! @}
 
 } //namespace irs
 

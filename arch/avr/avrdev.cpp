@@ -1,3 +1,6 @@
+//! \file
+//! \ingroup drivers_group
+
 #include <avrdev.h>
 
 #ifndef __ATmega128__

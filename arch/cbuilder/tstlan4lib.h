@@ -1,6 +1,9 @@
-// Тест сети 4 - библиотека
-// Дата: 06.08.2010
-// Дата создания: 17.09.2009
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Тест сети 4 - библиотека
+//!
+//! Дата: 06.08.2010\n
+//! Дата создания: 17.09.2009
 
 #ifndef tstlan4libH
 #define tstlan4libH
@@ -21,6 +24,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 class tstlan4_t: public tstlan4_base_t
 {
@@ -377,6 +383,8 @@ private:
   counter_t m_update_time_cnt;
   global_log_connect_t m_global_log_connect;
 }; //tstlan4_t
+
+//! @}
 
 } //namespace irs
 

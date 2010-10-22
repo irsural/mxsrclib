@@ -1,6 +1,9 @@
-// Реализация БИФ фильтра
-// Дата: 09.09.2010
-// Дата создания: 01.09.2010
+//! \file
+//! \ingroup signal_processing_group
+//! \brief Фильтры сигналов
+//!
+//! Дата: 09.09.2010
+//! Дата создания: 01.09.2010
 
 #ifndef irsfilterH
 #define irsfilterH
@@ -27,6 +30,9 @@
 #define MACHEP 1.11022302462515654042E-16   /* 2**-53 */
 
 namespace irs {
+
+//! \addtogroup signal_processing_group
+//! @{
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
@@ -2113,6 +2119,8 @@ inline bool get_coef_iir_filter_test()
 }
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+//! @}
 
 } // namespace irs
 

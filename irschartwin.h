@@ -1,6 +1,9 @@
-// Базовый класс для окна с графиком
-// Дата: 28.09.2009
-// Дата создания: 27.09.2009
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Базовый класс для окна с графиком
+//!
+//! Дата: 28.09.2009\n
+//! Дата создания: 27.09.2009
 
 #ifndef IRSCHARTWINH
 #define IRSCHARTWINH
@@ -14,6 +17,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 // Окно с графиком
 class chart_window_t {
@@ -41,6 +47,8 @@ public:
   virtual void group_all() = 0;
   virtual void ungroup_all() = 0;
 };
+
+//! @}
 
 } //namespace irs
 

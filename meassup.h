@@ -1,6 +1,9 @@
-// Классы для работы с источниками тока
-// Дата: 05.08.2010
-// Ранняя дата: 15.01.2008
+//! \file
+//! \ingroup drivers_group
+//! \brief Классы для работы с источниками тока
+//!
+//! Дата: 05.08.2010\n
+//! Ранняя дата: 15.01.2008
 
 #ifndef meassupH
 #define meassupH
@@ -17,6 +20,9 @@
 #include <mxdatastd.h>
 #include <irsmbus.h>
 #include <mxdata.h>
+
+//! \addtogroup drivers_group
+//! @{
 
 // Размер буфера комманд GPIB
 #define supag_gpib_com_buf_size 30
@@ -442,6 +448,8 @@ public:
   virtual void output_off() {}
 
 };
+
+//! @}
 
 #endif // meassupH
 

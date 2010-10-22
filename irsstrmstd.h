@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС из irsstd
-// Дата: 13.04.2010
+// Дата: 13.04.2010\n
 // Дата создания: 27.09.2009
 
 #ifndef IRSSTRMSTDH
@@ -11,6 +11,9 @@
 #include <irsconsolestd.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup text_user_interface_group
+//! @{
 
 // класс буфер
 class irs_strm_buf: public streambuf
@@ -498,6 +501,8 @@ inline void irs_iostream::stop_get()
 {
   m_strm_buf.stop_get();
 }
+
+//! @}
 
 namespace irs {
 

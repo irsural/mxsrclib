@@ -1,6 +1,9 @@
-// Клавиатура
-// Дата: 12.03.2010
-// Дата создания: 11.03.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Клавиатура
+//!
+//! Дата: 12.03.2010\n
+//! Дата создания: 11.03.2010
 
 #include <irspch.h>
 #ifdef __BORLANDC__
@@ -23,6 +26,9 @@
 #endif //IRS_LINUX
 
 #include <irsfinal.h>
+
+//! \addtogroup drivers_group
+//! @{
 
 #ifdef IRS_LINUX
 
@@ -62,3 +68,5 @@ char irs::gcc_linux::keyboard_t::key()
 }
 
 #endif //IRS_LINUX
+
+//! @}

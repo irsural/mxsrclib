@@ -1,6 +1,9 @@
-// Работа со временем
-// Дата: 15.09.2010
-// Ранняя дата: 10.07.2009
+//! \file
+//! \ingroup time_processing_group
+//! \brief Работа со временем
+//!
+//! Дата: 15.09.2010\n
+//! Ранняя дата: 10.07.2009
 
 #ifndef irstimeH
 #define irstimeH
@@ -14,6 +17,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup time_processing_group
+//! @{
 
 typedef irs_u32 millisecond_t;
 
@@ -34,6 +40,8 @@ IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
 //возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
 //расширение вводить с точкой
 string_t file_name_time(string_t a_extension = string_t());
+
+//! @}
 
 } //namespace irs
 

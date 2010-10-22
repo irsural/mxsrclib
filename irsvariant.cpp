@@ -1,6 +1,9 @@
-// Тип variant
-// Дата: 16.05.2010
-// Ранняя дата: 12.10.2009
+//! \file
+//! \ingroup single_type_group
+//! \brief Тип variant
+//!
+//! Дата: 16.05.2010\n
+//! Ранняя дата: 12.10.2009
 
 // В функции
 // bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)

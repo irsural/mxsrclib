@@ -1,6 +1,9 @@
-// Rect
-// Дата: 14.04.2010
-// Дата создания: 15.04.2010
+//! \file
+//! \ingroup single_type_group
+//! \brief Rect
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 15.04.2010
 
 #ifndef IRSRECTH
 #define IRSRECTH
@@ -14,6 +17,9 @@
 namespace irs {
 
 typedef size_t sizens_t;
+
+//! \addtogroup single_type_group
+//! @{
 
 struct point_t {
   typedef sizens_t size_type;
@@ -189,6 +195,8 @@ inline bool rect_t::intersects_with(const rect_t& a_rect) const
     contains(a_rect.right, a_rect.bottom) ||
     contains(a_rect.left, a_rect.bottom);
 }
+
+//! @}
 
 } //namespace irs
 

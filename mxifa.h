@@ -1,7 +1,9 @@
-// Абстакция интерфейса для каналов обмена (интерфейсов)
-// Max Interface Abstraction
-// Дата: 12.05.2010
-// Ранняя дата: 06.03.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Абстакция интерфейса для каналов обмена (интерфейсов)
+
+//! Дата: 12.05.2010\n
+//! Ранняя дата: 06.03.2008
 
 #ifndef MXIFAH
 #define MXIFAH
@@ -17,6 +19,8 @@
 
 #include <irsfinal.h>
 
+//! \addtogroup network_in_out_group
+//! @{
 
 //extern irs_bool dbg_write;
 
@@ -354,5 +358,7 @@ irs_bool mxifa_open_end_ex(void *pchdata, bool abort);
 // Возврат - тип канала
 mxifa_ei_t mxifa_get_channel_type_ex(mxifa_ch_t channel);
 #endif //defined(__WATCOMC__)
+
+//! @}
 
 #endif //MXIFAH

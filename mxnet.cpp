@@ -1,6 +1,9 @@
-// Протокол MxNet (Max Network)
-// Дата: 29.04.2010
-// Ранняя дата: 18.06.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Протокол MxNet (Max Network)
+
+//! Дата: 29.04.2010\n
+//! Ранняя дата: 18.06.2008
 
 // Номер файла
 #define MXNETCPP_IDX 7

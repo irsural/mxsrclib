@@ -1,6 +1,9 @@
-// Характеристики чисел
-// Дата: 09.09.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup type_processing_group
+//! \brief Характеристики чисел
+//!
+//! Дата: 09.09.2010\n
+//! Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
 #define IRSLIMITSH
@@ -21,6 +24,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup type_processing_group
+//! @{
 
 // Глобальные константы
 struct global_limits_t
@@ -1480,6 +1486,8 @@ bool is_inf(const T& a_val)
 {
   return numeric_limits<T>::is_inf(a_val);
 }
+
+//! @}
 
 } //namespace irs
 

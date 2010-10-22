@@ -1,6 +1,9 @@
-// Работа с ini-файлами
-// Дата: 04.08.2010
-// Ранняя дата: 27.08.2009
+//! \file
+//! \ingroup file_in_out_group
+//! \brief Работа с ini-файлами
+//!
+//! Дата: 04.08.2010\n
+//! Ранняя дата: 27.08.2009
 
 #ifndef mxiniH
 #define mxiniH
@@ -24,7 +27,10 @@
 
 namespace irs {
 
-// Работа с ini-файлами
+//! \addtogroup file_in_out_group
+//! @{
+
+//! \brief Работа с ini-файлами
 class ini_file_t
 {
 public:
@@ -198,7 +204,9 @@ private:
   void load_save_grid_size(TIniFile *ap_ini_file, load_save_t a_load_save,
     TStringGrid *a_control) const;
 
-}; //class ini_file_t    
+}; //class ini_file_t
+
+//! @}
 
 } //namespace irs
 

@@ -1,6 +1,10 @@
-// Определения для автоматического переключения строк между char и wchar_t
-// Дата: 15.09.2010
-// Дата создания: 17.09.2009
+//! \file
+//! \ingroup string_processing_group
+//! \brief Определения для автоматического переключения строк между
+//!   char и wchar_t
+//!
+//! Дата: 15.09.2010\n
+//! Дата создания: 17.09.2009
 
 #ifndef IRSSTRDEFSH
 #define IRSSTRDEFSH
@@ -17,6 +21,9 @@
 #include <irsconfig.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup string_processing_group
+//! @{
 
 #ifdef IRS_UNICODE
 #define IRS_WIDE_FROM_TYPE_STR(str) (str)
@@ -73,7 +80,12 @@
   #define IRSSTRDEFS_LOG(oper)
 #endif //IRSSTRDEFS_DEBUG
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup string_processing_group
+//! @{
 
 #ifdef IRS_UNICODE
 
@@ -465,6 +477,8 @@ public:
     return mp_outstr;
   }
 };
+
+//! @}
 
 // Проверка преобразования строк
 template <class F>

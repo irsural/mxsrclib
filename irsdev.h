@@ -1,6 +1,9 @@
-// Устройства
-// Дата: 08.07.2010
-// Ранняя дата: 08.07.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Устройства
+//!
+//! Дата: 08.07.2010
+//! Ранняя дата: 08.07.2010
 
 #ifndef irsdevH
 #define irsdevH
@@ -24,6 +27,9 @@
 
 namespace irs
 {
+
+//! \addtogroup drivers_group
+//! @{
 
 class pwm_gen_t
 {
@@ -96,6 +102,8 @@ private:
     void interrupt();
   #endif  //  PWM_ZERO_PULSE
 };
+
+//! @}
 
 } //  arm
 

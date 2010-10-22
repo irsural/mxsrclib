@@ -1,6 +1,9 @@
-// Работа с National Instruments USB-GPIB
-// Дата: 06.08.2010
-// Дата создания: 06.08.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Работа с National Instruments USB-GPIB
+
+//! Дата: 06.08.2010\n
+//! Дата создания: 06.08.2010
 
 #ifndef niusbgpibH
 #define niusbgpibH
@@ -16,6 +19,9 @@
 #include <irsstrdefs.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup drivers_group
+//! @{
 
 #if defined(IRS_WIN32)
 
@@ -275,5 +281,7 @@ public:
 };
 
 #endif // defined(IRS_WIN32)
+
+//! @}
 
 #endif // niusbgpibH

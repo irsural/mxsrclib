@@ -1,6 +1,9 @@
-// Прерывания AVR
-// Дата: 11.05.2010
-// Ранняя дата: 26.02.2009
+//! \file
+//! \ingroup event_processing_group
+//! \brief Прерывания AVR
+//!
+//! Дата: 11.05.2010\n
+//! Ранняя дата: 26.02.2009
 
 #ifndef irsarchintH
 #define irsarchintH
@@ -15,6 +18,9 @@
 namespace irs {
   
 namespace avr {
+
+//! \addtogroup event_processing_group
+//! @{
 
 // Номера прерываний AVR
 enum {
@@ -76,6 +82,8 @@ enum {
 
 // Возвращает массив прерываний AVR
 interrupt_array_base_t* interrupt_array();
+
+//! @}
 
 } //namespace avr
 

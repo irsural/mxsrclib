@@ -1,5 +1,8 @@
-// Порты ввода-вывода для AVR
-// Дата: 19.12.2008
+//! \file
+//! \ingroup drivers_group
+//! \brief Порты ввода-вывода для AVR
+//!
+//! Дата: 19.12.2008
 
 #ifndef avrgpioH
 #define avrgpioH
@@ -12,6 +15,9 @@ namespace irs
 {
 namespace avr
 {
+
+//! \addtogroup drivers_group
+//! @{
 
 class io_pin_t : public gpio_pin_t
 {
@@ -165,7 +171,10 @@ inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
   return *(&a_port + in_idx);
 }
 
-} //  avr
-} //  irs
+//! @}
+
+} // namespace avr
+
+} // namespace irs
 
 #endif //avrgpioH

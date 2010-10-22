@@ -1,6 +1,9 @@
-// Математические функции
-// Дата: 18.05.2010
-// Ранняя дата: 16.09.2009
+//! \file
+//! \ingroup math_group
+//! \brief Математические функции
+//!
+//! Дата: 18.05.2010
+//! Ранняя дата: 16.09.2009
 
 #ifndef irsmathH
 #define irsmathH
@@ -14,6 +17,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup math_group
+//! @{
 
 // a < b
 const int less_than_value = -1;
@@ -230,6 +236,8 @@ inline int lcm(int a, int b)
 {
   return (a * b) / gcd(a, b);
 }
+
+//! @}
 
 } // namespace irs
 //---------------------------------------------------------------------------

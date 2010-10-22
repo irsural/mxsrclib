@@ -1,5 +1,9 @@
-// Дата: 03.08.2010
-// Дата создания: 29.07.2010
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Таблица параметров
+//!
+//! Дата: 03.08.2010\n
+//! Дата создания: 29.07.2010
 
 #ifndef irsparamh
 #define irsparamh
@@ -19,6 +23,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 class param_box_t: public param_box_base_t
 {
@@ -88,6 +95,8 @@ private:
   void __fastcall cancel_btn_click(TObject *Sender);
   void __fastcall on_close_event(TObject *Sender, TCloseAction &Action);
 }; // param_box_t
+
+//! @}
 
 } // namespace irs
 

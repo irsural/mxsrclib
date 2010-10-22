@@ -1,6 +1,9 @@
-// Работа с csv-файлами
-// Дата: 15.09.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup file_in_out_group
+//! \brief Работа с csv-файлами
+//!
+//! Дата: 15.09.2010\n
+//! Ранняя дата: 17.09.2009
 
 #ifndef csvworkH
 #define csvworkH
@@ -15,6 +18,9 @@
 #include <irsstrdefs.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup file_in_out_group
+//! @{
 
 //---------------------------------------------------------------------------
 // typedef-определения
@@ -128,9 +134,14 @@ private:
 }; //csv_file
 //---------------------------------------------------------------------------
 
+//! @}
+
 namespace irs {
 
 namespace csvwork {
+
+//! \addtogroup file_in_out_group
+//! @{
 
 // В Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
 // Watcom не переваривает irstable.h в котором определен тип table_string_t
@@ -317,6 +328,8 @@ inline void csv_file_synchro_t::close()
 }
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+//! @}
 
 } // namespace csvwork
 

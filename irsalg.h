@@ -1,6 +1,9 @@
-// Алгоритмы
-// Дата: 29.09.2010
-// Ранняя дата: 2.09.2009
+//! \file
+//! \ingroup signal_processing_group
+//! \brief Алгоритмы
+//!
+//! Дата: 29.09.2010\n
+//! Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
 #define IRSALGH
@@ -16,49 +19,55 @@
 
 #include <irsfinal.h>
 
+//! \addtogroup signal_processing_group
+//! @{
+
 // Реализация алгоритма кольцевого буфера
 class alg_ring {
-  // Текущее начало буфера
+  //! \brief Текущее начало буфера
   irs_u32 f_begin;
-  // Текущая длина буфера
+  //! \brief Текущая длина буфера
   irs_u32 f_size;
-  // Максимальная длина буфера
+  //! \brief Максимальная длина буфера
   irs_u32 f_size_max;
-  // Кольцевой буфер
+  //! \brief Кольцевой буфер
   void **f_buf_ring;
-  // Ошибка в конструкторе
+  //! \brief Ошибка в конструкторе
   irs_bool f_create_error;
 
-  // Запрет конструктора по умолчанию
+  //! \brief Запрет конструктора по умолчанию
   alg_ring();
-  // Увеличение начала буфера на 1 с учетом границы
+  //! \brief Увеличение начала буфера на 1 с учетом границы
   void begin_inc();
-  // Вычисление конца буфера
+  //! \brief Вычисление конца буфера
   irs_u32 get_end();
 
 public:
-  // Конструктор
+  //! \brief Конструктор
   alg_ring(int size_max);
-  // Деструктор
+  //! brief Деструктор
   ~alg_ring();
-  // Чтение и удаление первого элемента буфера
+  //! brief Чтение и удаление первого элемента буфера
   void *read_and_remove_first();
-  // Добавление нового элемента в конец буфера
+  //! \brief Добавление нового элемента в конец буфера
   void *add_last_and_get_removed(void *buf_elem);
-  // Ошибка в конструкторе
+  //! \brief Ошибка в конструкторе
   irs_bool create_error();
 
-  // Чтение длины буфера
+  //! \brief Чтение длины буфера
   irs_u32 get_size()const {
     return f_size;
   }
-  // Чтение элемента буфера
+  //! \brief Чтение элемента буфера
   void *operator[](irs_u32 index)const;
 };
 
+//! @}
+
 namespace irs {
 
-  // Расчет СКО
+  //! \ingroup signal_processing_group
+  //! \brief Расчет СКО
   // template <class data_t = double, class calc_t = double>
   template<class data_t, class calc_t>
   class sko_calc_t {
@@ -174,7 +183,8 @@ data_t irs::sko_calc_t<data_t, calc_t>::average()const {
 
 namespace irs {
 
-  // Расчет Дельта
+  //! \ingroup signal_processing_group
+  //! \brief Расчет Дельта
   template<class T>
   class delta_calc_t {
   public:
@@ -295,6 +305,9 @@ size_t irs::delta_calc_t<T>::size() {
 }
 
 namespace irs {
+
+//! \addtogroup signal_processing_group
+//! @{
 
 struct crc32_data_t {
   enum {
@@ -439,6 +452,8 @@ Out copy_if(In a_first, In a_last, Out a_res, Pred a_pred) {
   }
   return a_res;
 }
+
+//! @}
 
 } // namespace irs
 

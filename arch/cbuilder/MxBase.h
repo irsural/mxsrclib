@@ -1,7 +1,9 @@
-// Полезные функции
-// C++ Builder
-// Дата: 14.04.2010
-// Дата создания: 8.09.2008
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Полезные функции для C++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 8.09.2008
 
 //---------------------------------------------------------------------------
 #ifndef MxBaseH
@@ -16,7 +18,8 @@
 #include <irscpp.h>
 
 #include <irsfinal.h>
-//---------------------------------------------------------------------------
+
+//! \ingroup graphical_user_interface_group
 #define SAFEOPER(__operator__) try { __operator__; } catch (...) {}
 //---------------------------------------------------------------------------
 extern void __fastcall Point(TCanvas *Canvas, TPoint P);
@@ -24,13 +27,17 @@ extern void __fastcall Point(TCanvas *Canvas, TPoint P);
 
 namespace irs {
 
-// Копирование свойств формы
+//! \ingroup graphical_user_interface_group
+//! \brief Копирование свойств формы
 void mxcopy(TForm *dest, TForm *src);
 
 } //namespace irs
 
 namespace Mxbase
 {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 //---------------------------------------------------------------------------
 extern String AppName;
@@ -389,7 +396,7 @@ public:
     }
   }
 };
-//---------------------------------------------------------------------------
+
 class TPrinterDC
 {
   HDC PDC;
@@ -400,7 +407,8 @@ public:
   TPrinterDC();
   ~TPrinterDC();
 };
-//---------------------------------------------------------------------------
+
+//! @}
 
 } // namespace Mxbase
 

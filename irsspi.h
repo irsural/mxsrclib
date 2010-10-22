@@ -1,5 +1,8 @@
-// Абстрактный базовый класс для SPI
-// Дата: 29.02.2008
+//! \file
+//! \ingroup drivers_group
+//! \brief Абстрактный базовый класс для SPI
+//!
+//! Дата: 29.02.2008
 
 #ifndef irsspiH
 #define irsspiH
@@ -8,6 +11,9 @@
 
 namespace irs
 {
+
+//! \addtogroup string_processing_group
+//! @{
 
 class spi_t
 {
@@ -31,6 +37,8 @@ public:
   virtual bool set_order(order_t a_order) = 0;
   virtual void tick() = 0;
 };
+
+//! @}
 
 }
 

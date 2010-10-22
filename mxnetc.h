@@ -1,6 +1,9 @@
-// Протокол MxNetC (Max Network Client)
-// Дата: 28.04.2010
-// Ранняя дата: 12.02.2009
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Протокол MxNetC (Max Network Client)
+//!
+//! Дата: 28.04.2010\n
+//! Ранняя дата: 12.02.2009
 
 #ifndef mxnetcH
 #define mxnetcH
@@ -19,6 +22,8 @@
 
 #include <irsfinal.h>
 
+//! \addtogroup network_in_out_group
+//! @{
 
 // Версия (<старший байт>.<младший байт>)
 #define MXNC_VERSION 0x0001
@@ -225,7 +230,12 @@ public:
   mxn_cnt_t get_count();
 };
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
 
 #define irs_mxdata_to_mxnet_def_interval ((counter_t)-1)
 
@@ -273,6 +283,8 @@ public:
   double measured_interval();
   void tick();
 };
+
+//! @}
 
 } //namespace irs
 

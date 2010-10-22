@@ -1,6 +1,9 @@
-// Утилиты для AVR
-// Дата: 01.04.2010
-// Ранняя дата: 11.04.2008
+//! \file
+//! \ingroup system_utils_group
+//! \brief Утилиты для AVR
+//!
+//! Дата: 01.04.2010\n
+//! Ранняя дата: 11.04.2008
 
 #ifndef IRSAVRUTILH
 #define IRSAVRUTILH
@@ -13,6 +16,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup drivers_group
+//! @{
 
 // Мигание портом
 class blink_t
@@ -101,6 +107,8 @@ public:
   }
 };
 
-}
+//! @}
+
+} // namespace irs
 
 #endif //IRSAVRUTILH

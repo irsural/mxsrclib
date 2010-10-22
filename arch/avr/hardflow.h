@@ -1,5 +1,8 @@
-// Низкоуровневая передача через SPI
-// Дата: 26.02.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Низкоуровневая передача через SPI
+//!
+//! Дата: 26.02.2009
 
 #ifndef hardflowH
 #define hardflowH
@@ -14,6 +17,9 @@
 namespace irs {
 
 namespace avr {
+
+//! \addtogroup drivers_group
+//! @{
 
 class spi_master_flow_t : public hardflow_t
 {
@@ -137,9 +143,11 @@ public:
   virtual void tick();
 };
 
-} //  avr
+//! @}
 
-} //  irs
+} // namespace avr
+
+} // namespace irs
 
 #endif //__ATmega128__
 

@@ -1,6 +1,9 @@
-// Функции для mxifa (mxifa routines)
-// Дата: 01.04.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Функции для mxifa (mxifa routines)
+//!
+//! Дата: 01.04.2010\n
+//! Ранняя дата: 17.09.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__

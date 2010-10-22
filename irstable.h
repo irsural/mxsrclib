@@ -1,6 +1,9 @@
-// Абстракция таблицы Лящова Максима
-// Дата: 18.05.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup container_group
+//! \brief Абстракция таблицы
+//!
+//! Дата: 18.05.2010\n
+//! Ранняя дата: 17.09.2009
 
 #ifndef tablegH
 #define tablegH
@@ -18,6 +21,9 @@
 //---------------------------------------------------------------------------
 
 namespace irs {
+
+//! \addtogroup container_group
+//! @{
 
 #ifndef __WATCOMC__
 
@@ -1366,6 +1372,8 @@ inline void table_data_t::write_cell(
 };
 
 */
+
+//! @}
 template<typename owner_t, typename value_t>
 struct domen
 {

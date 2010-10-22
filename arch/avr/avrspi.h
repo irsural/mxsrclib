@@ -1,6 +1,9 @@
-// Драйвер SPI
-// Дата 26.02.2009
-// AVR
+//! \file
+//! \ingroup drivers_group
+//! \brief Драйвер SPI для AVR
+//!
+//! Дата 26.02.2009
+
 
 #ifndef avrspiH
 #define avrspiH
@@ -15,6 +18,9 @@ namespace irs
 
 namespace avr
 {
+
+//! \addtogroup drivers_group
+//! @{
 
 class avr_spi_t : public spi_t
 {
@@ -72,9 +78,11 @@ public:
   virtual void tick();
 };
 
-} //  avr
+//! @}
 
-} //  irs
+} // namespace avr
+
+} // namespace irs
 
 #endif //__ATmega128__
 

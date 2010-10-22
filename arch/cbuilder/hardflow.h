@@ -1,7 +1,9 @@
-// Коммуникационные потоки
-// Для Borland C++ Builder
-// Дата: 14.04.2010 
-// Дата создания: 27.03.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Коммуникационные потоки для Borland C++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 27.03.2009
 
 #ifndef hardflowH
 #define hardflowH
@@ -53,6 +55,9 @@ typedef struct _DCB {
 */
 
 namespace irs {
+
+//! \addtogroup drivers_group
+//! @{
 
 struct com_param_t
 {
@@ -192,6 +197,8 @@ public:
   virtual void tick();
 };
 
+//! @}
+
 
 class named_pipe_server_t: public hardflow_t
 {
@@ -263,169 +270,6 @@ public:
   virtual void tick();
 private:
 };
-
-class tcp_server_t : public hardflow_t
-{
-private:
-  typedef vector<SOCKET> sock_container_t;
-private:
-  error_trans_base_t *mp_error_trans;
-  struct state_info_t
-  {
-    bool lib_socket_loaded;
-    bool slsock_created;
-    bool set_io_mode_slsock_success;
-    bool bind_slsock_and_ladr_success;
-    bool listen_slsock_success;
-    state_info_t(
-    ):
-      lib_socket_loaded(false),
-      slsock_created(false),
-      set_io_mode_slsock_success(false),
-      bind_slsock_and_ladr_success(false),
-      listen_slsock_success(false)
-    { }
-  } m_state_info;
-  WSADATA m_wsd;
-  SOCKET m_server_listen_sock;
-  sock_container_t m_client_sock;
-  sockaddr_in m_local_addr;
-  timeval m_func_select_timeout;
-  FD_SET m_sls_kit_read;
-  FD_SET m_cs_kit_read;
-  FD_SET m_cs_kit_write;
-public:
-  tcp_server_t();
-  virtual ~tcp_server_t();
-private:
-  void start();
-public:
-  virtual string_type param(const string_type &a_name);
-  virtual void set_param(const string_type &a_name,
-    const string_type &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual void tick();
-};
-
-class tcp_client_t : public hardflow_t
-{
-private:
-  error_trans_base_t *mp_error_trans;
-  struct state_info_t
-  {
-    bool lib_socket_loaded;
-    bool csock_created;
-    bool set_io_mode_csock_success;
-    bool csock_connected;
-    state_info_t(
-    ):
-      lib_socket_loaded(false),
-      csock_created(false),
-      set_io_mode_csock_success(false),
-      csock_connected(false)
-    { }
-    bool get_state_start()
-    {
-      bool start_success =
-        lib_socket_loaded &&
-        csock_created &&
-        set_io_mode_csock_success &&
-        csock_connected;
-      return start_success;
-    }
-  } m_state_info;
-  WSADATA m_wsd;
-  SOCKET m_client_sock;
-  sockaddr_in m_server_addr;
-  timeval m_func_select_timeout;
-  FD_SET m_cs_kit_read;
-  FD_SET m_cs_kit_write;
-public:
-  tcp_client_t();
-  virtual ~tcp_client_t();
-private:
-  void start();
-public:
-  virtual string_type param(const string_type &a_name);
-  virtual void set_param(const string_type &a_name,
-    const string_type &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual void tick();
-};
-
-//#define UDP_FLOW_PREVIOUS_VERSION
-#ifdef UDP_FLOW_PREVIOUS_VERSION
-class udp_flow_t : public hardflow_t
-{
-public:
-  typedef size_t size_type;
-  typedef irs::string string_type;
-private:
-  error_trans_base_t *mp_error_trans;
-  struct state_info_t
-  {
-    bool lib_socket_loaded;
-    bool sock_created;
-    bool set_io_mode_sock_success;
-    bool bind_sock_and_ladr_success;
-    state_info_t(
-    ):
-      lib_socket_loaded(false),
-      sock_created(false),
-      set_io_mode_sock_success(false),
-      bind_sock_and_ladr_success(false)
-    { }
-    bool get_state_start()
-    {
-      bool start_success =
-        lib_socket_loaded &&
-        sock_created &&
-        set_io_mode_sock_success &&
-        bind_sock_and_ladr_success;
-      return start_success;
-    }
-  } m_state_info;
-  WSADATA m_wsd;
-  SOCKET m_sock;
-  sockaddr_in m_recipient_addr;
-  string_type m_local_name;
-  string_type m_local_port;
-  string_type m_recipient_name;
-  string_type m_recipient_port;
-  timeval m_func_select_timeout;
-  fd_set m_s_kit;
-  size_type m_send_msg_max_size;
-private:
-  udp_flow_t();
-public:
-  udp_flow_t(
-    const string_type& a_recipient_name,
-    const string_type& a_recipient_port,
-    const string_type& a_local_name,
-    const string_type& a_local_port);
-  virtual ~udp_flow_t();
-private:
-  void start();
-  void sock_close();
-  void local_addr_init(sockaddr_in* ap_sockaddr, bool* ap_init_success);
-  void recipient_addr_init(sockaddr_in* ap_sockaddr, bool* ap_init_success);
-public:
-  virtual irs::string param(const irs::string &a_name);
-  virtual void set_param(const irs::string &a_name,
-    const irs::string &a_value);
-  virtual irs_uarc read(irs_uarc &a_channel_ident, irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual irs_uarc write(irs_uarc a_channel_ident, const irs_u8 *ap_buf,
-    irs_uarc a_size);
-  virtual void tick();
-};
-#endif // UDP_FLOW_PREVIOUS_VERSION
 
 } // namespace irs
 

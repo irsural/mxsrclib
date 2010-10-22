@@ -1,6 +1,10 @@
-// Утилиты для работы с mxdata_t
-// Дата: 10.08.2010
-// Ранняя дата: 3.12.2009
+//! \file
+//! \ingroup container_group
+//! \ingroup in_out_group
+//! \brief Утилиты для работы с mxdata_t
+//!
+//! Дата: 10.08.2010\n
+//! Ранняя дата: 3.12.2009
 
 // Номер файла
 #define MXDATACPP_IDX 2

@@ -1,5 +1,8 @@
-// Работа с таймером
-// Дата: 13.04.2010
+//! \file
+//! \ingroup time_processing_group
+//! \brief Работа с таймером
+
+//! Дата: 13.04.2010
 
 #ifndef TIMERH
 #define TIMERH
@@ -46,6 +49,9 @@
   )
 
 namespace irs {
+
+//! \addtogroup time_processing_group
+//! @{
 
 // Инициализация таймера
 void init_timer();
@@ -191,7 +197,12 @@ inline void pause(counter_t a_counter)
   while(!pause_timer.check());
 }
 
+//! @}
+
 } //namespace irs
+
+//! \addtogroup time_processing_group
+//! @{
 
 // Установка таймаута t по переменной counter
 void set_to_cnt(counter_t &to, counter_t t);
@@ -250,5 +261,8 @@ public:
   const double &operator()();
   const double &time();
 };
+
+//! @}
+
 #endif //TIMERH
 

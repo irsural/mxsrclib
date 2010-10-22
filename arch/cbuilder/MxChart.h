@@ -1,7 +1,9 @@
-// Построение графиков
-// C++ Builder
-// Дата: 14.04.2010
-// Дата создания: 8.09.2008
+//! \file
+//! \ingroup graphical_user_interface_group
+//! \brief Построение графиков в C++ Builder
+//!
+//! Дата: 14.04.2010\n
+//! Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
 #ifndef MxChartH
 #define MxChartH
@@ -27,6 +29,9 @@
 
 namespace Mxchart
 {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 using namespace std;
 
@@ -433,7 +438,7 @@ public:
   __fastcall ~TMxChartSelect();
 };
 
-//---------------------------------------------------------------------------
+//! @}
 
 } // namespace Mxchart
 
@@ -446,6 +451,9 @@ using namespace Mxchart;
 namespace irs {
 
 namespace chart {
+
+//! \addtogroup graphical_user_interface_group
+//! @{
 
 // Генератор цветов
 class color_gen_t
@@ -629,6 +637,8 @@ private:
 
   irs_u32 cur_size() const;
 }; //class builder_chart_window_t
+
+//! @}
 
 } //namespace chart
 

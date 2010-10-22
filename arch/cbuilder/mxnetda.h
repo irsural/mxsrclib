@@ -1,8 +1,14 @@
-// Протокол MxNet - объявления зависящие от архитектуры 
-// (MxNet defines architecture depended)
-// Версия 0.1
+//! \file
+//! \ingroup network_in_out_group
+//! \brief  Протокол MxNet - объявления зависящие от архитектуры
+//!   (MxNet defines architecture depended)
+//!
+//! Версия 0.1
 #ifndef MXNETDAH
 #define MXNETDAH
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Тип для счетчика переменных (Всегда должен быть unsigned)
 typedef irs_u32 mxn_cnt_t;
@@ -25,5 +31,7 @@ typedef struct _mxn_packet_t {
   irs_i32 var[1];
 } mxn_packet_t;
 #pragma pack ( pop )
+
+//! @}
 
 #endif //MXNETDAH

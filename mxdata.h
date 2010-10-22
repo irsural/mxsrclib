@@ -1,6 +1,10 @@
-// Утилиты для работы с mxdata_t
-// Дата: 08.10.2010
-// Ранняя дата: 21.09.2009
+//! \file
+//! \ingroup container_group
+//! \ingroup in_out_group
+//! \brief Утилиты для работы с mxdata_t
+//!
+//! Дата: 08.10.2010
+//! Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
@@ -19,6 +23,7 @@
 
 namespace irs {
 
+//! \ingroup in_out_group
 class mxdata_ext_t : public mxdata_t
 {
 public:

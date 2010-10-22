@@ -1,5 +1,8 @@
-// MTL version 2.0
-// Дата: 01.10.2008
+//! \file
+//! \ingroup single_type_group
+//! \brief MTL version 2.0
+//!
+//! Дата: 01.10.2008
 
 #include <irspch.h>
 #ifdef __BORLANDC__

@@ -1,5 +1,8 @@
-// Аналоговый ввод-вывод
-// Дата: 14.04.2010
+//! \file
+//! \ingroup drivers_group
+//! \brief Аналоговый ввод-вывод
+//!
+//! Дата: 14.04.2010
 
 #ifndef irsadcH
 #define irsadcH
@@ -15,6 +18,8 @@
 namespace irs
 {
 
+//! \addtogroup drivers_group
+//! @{
 //--------------------------  LM95071 ------------------------------------------
 
 class th_lm95071_t : public mxdata_t
@@ -822,6 +827,8 @@ struct dac_ltc2622_data_t
   }
 };
 
-} //  irs
+//! @}
+
+} // namespace irs
 
 #endif // irsadcH

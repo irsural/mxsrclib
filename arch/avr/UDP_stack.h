@@ -1,7 +1,11 @@
-// UDP/IP-стэк Димы Уржумцева
-// Откорректирован Крашенинников М. В.
-// Дата: 26.04.2010
-// Ранняя дата: 30.05.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief UDP/IP-стэк Димы Уржумцева
+//!
+//! Дата: 26.04.2010\n
+//! Ранняя дата: 30.05.2008
+//!
+//! Откорректирован Крашенинников М. В.
 
 #ifndef UDPSTACKH
 #define UDPSTACKH
@@ -17,6 +21,9 @@
 
 // Размер заголовков Ethernet + IP + UDP
 #define HEADERS_SIZE 42
+
+//! \addtogroup network_in_out_group
+//! @{
 
 // Размер IP-адреса
 #define IRS_UDP_IP_SIZE 4
@@ -48,5 +55,7 @@ irs_size_t udp_buf_size();
 extern irs_u8 *user_rx_buf;
 // Укзатель на буфер передачи
 extern irs_u8 *user_tx_buf;
+
+//! @}
 
 #endif //UDPSTACKH

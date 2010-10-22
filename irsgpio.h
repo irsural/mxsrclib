@@ -1,5 +1,8 @@
-// Базовый класс для дискретного ввода/вывода
-// Дата: 2.02.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Базовый класс для дискретного ввода/вывода
+//!
+//! Дата: 2.02.2009
 
 #ifndef irsgpioH
 #define irsgpioH
@@ -7,6 +10,9 @@
 #include <irsdefs.h>
 
 namespace irs {
+
+//! \addtogroup drivers_group
+//! @{
 
 enum port_dir_t
 {
@@ -68,5 +74,7 @@ inline irs::bit_gpio_t::operator bit_t()
 {
   return m_pin->pin();
 }
+
+//! @}
 
 #endif //irsgpioH

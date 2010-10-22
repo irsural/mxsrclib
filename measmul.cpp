@@ -1,6 +1,9 @@
-// Классы для работы с мультиметрами
-// Дата: 14.10.2010
-// Ранняя дата: 10.09.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Классы для работы с мультиметрами
+//!
+//! Дата: 22.09.2010\n
+//! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
 //#define RESMEAS // Сброс перед измерением
@@ -147,8 +150,604 @@ bool str_to_type_meas(
   return fsuccess;
 }
 
-// Класс для работы с мультиметром Agilent 3458A
+// Класс для работы с мультиметром Agilent 3458A через irs::hardflow_t
+// Конструктор
+irs::agilent_3458a_t::agilent_3458a_t(
+  hardflow_t* ap_hardflow,
+  multimeter_mode_type_t a_mul_mode_type
+):
+  m_mul_mode_type(a_mul_mode_type),
+  m_init_commands(),
+  m_voltage_type_direct("DCV"),
+  m_voltage_type_alternate("ACV"),
+  m_current_type_direct("DCI"),
+  m_current_type_alternate("ACI"),
+  m_voltage_type_direct_range("DCV AUTO"),
+  m_voltage_type_alternate_range("ACV AUTO"),
+  m_current_type_direct_range("DCI AUTO"),
+  m_current_type_alternate_range("ACI AUTO"),
+  m_volt_curr_type(vct_direct),
+  //m_time_int_voltage_index(0),
+  m_time_int_measure_command("NPLC 100"),
+  m_get_measure_commands(),
+  m_resistance_type_index(0),
+  m_resistance_type_2x("OHM AUTO"),
+  m_resistance_type_4x("OHMF AUTO"),
+  m_time_int_resistance_index(0),
+  m_get_resistance_commands(),
+  mp_hardflow(ap_hardflow),
+  m_fixed_flow(mp_hardflow),
+  m_create_error(true),
+  m_mode(ma_mode_start),
+  m_macro_mode(macro_mode_stop),
+  m_status(meas_status_success),
+  m_command(mac_free),
+  m_voltage(IRS_NULL),
+  m_resistance(IRS_NULL),
+  m_abort_request(false),
+  m_read_pos(0),
+  m_cur_mul_command(),
+  m_mul_commands(IRS_NULL),
+  m_mul_commands_index(0),
+  //m_command_prev(mac_free),
+  m_value(IRS_NULL),
+  m_get_parametr_needed(false),
+  m_oper_time(0),
+  m_oper_to(0),
+  m_acal_time(0),
+  m_acal_to(0),
+  m_init_timer(irs::make_cnt_s(1)),
+  m_init_mode(im_start),
+  m_ic_index(0)
+{
+  IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
+    "указатель в качестве hardflow_t*");
 
+  init_to_cnt();
+
+  m_oper_time = TIME_TO_CNT(1, 1);
+  m_acal_time = TIME_TO_CNT(20*60, 1);
+
+  // Команды при инициализации
+  m_init_commands.push_back("RESET");
+  m_init_commands.push_back("PRESET NORM");
+  /*
+  Автоматическая коррекция нуля (время счета * 2, обязательна
+  для четырехпроводной схемы)
+    AZERO ON
+  Звуковой сигнал разрешен
+    BEEP ON
+  Измерение напряжения постоянного тока, автопереключение пределов
+    DCV AUTO
+  Значение задержки по умолчанию
+    DELAY -1
+  Индикатор включен
+    DISP ON
+  Фиксация входного сопротивления запрещена
+    FIXEDZ OFF
+  Входной буфер запрещен
+    INBUF OFF
+  Клавиатура мультиметра включена
+    LOCK OFF
+  Математические операции в реальном времени запрещены
+    MATH OFF
+  Память отсчетов запрещена
+    MEM OFF
+  Отсчеты в памяти вещественные одинарные
+    MFORMAT SREAL
+  Математическая постобработка зпрещена
+    MMATH OFF
+  Число разрядов индикации 6,5
+    NDIG 6
+  Время интегрирования
+    NPLC 1
+  1 отсчет на запуск, событие запуска - автозапуск
+    NRDGS 1,AUTO
+  Компенсация смещения при измерении сопротивлений запрещена
+    OCOMP OFF
+  Формат вывода - ASCII
+    OFORMAT ASCII
+  Событие подготовки запуска установлено на Auto
+    TARM AUTO
+  Таймер 1 с
+    TIMER 1
+  Событие запуска установлено на SYN
+    TRIG SYN
+  */
+  #ifndef OFF_EXTCOM
+  // Запоминание чисел в виде вещественных чисел двойной точности
+  m_init_commands.push_back("MFORMAT DREAL");
+  // Компенсация наведенного напряжения смещения (Время счета * 2
+  // для сопротивления)
+  m_init_commands.push_back("OCOMP ON");
+  m_init_commands.push_back("LFILTER ON");
+  //m_init_commands.push_back("RANGE 1000");
+  //m_init_commands.push_back("RES 1E-6");
+  // Входное сопротивление фиксируется на 10 МОм для всех пределов
+  //m_init_commands.push_back("FIXEDZ ON");
+  // Автоматическая коррекция нуля (время счета * 2, обязательна
+  // для четырехпроводной схемы)
+  //m_init_commands.push_back("AZERO OFF");
+  #endif //OFF_EXTCOM
+
+  // Команды при чтении сопротивления
+  m_resistance_type_index = m_get_resistance_commands.size();
+  m_get_resistance_commands.push_back("OHMF AUTO");
+  m_time_int_resistance_index = m_get_resistance_commands.size();
+  m_get_resistance_commands.push_back("NPLC 20");
+  m_get_resistance_commands.push_back("TRIG SGL");
+
+  // Очистка буфера приема
+  memset(m_read_buf, 0, ma_read_buf_size);
+  return;
+}
+// Создание команд для напряжени/тока
+void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
+{
+  m_get_measure_commands.clear();
+  switch (a_measure) {
+    case meas_value: {
+      // Команды чтения значения при произвольном типе измерения
+      //m_get_measure_commands.push_back(m_value_type);
+      //m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
+    } break;
+    case meas_voltage: {
+      // Команды при чтении напряжения
+      //m_voltage_type_index = m_get_measure_commands.size();
+      switch (m_volt_curr_type) {
+        case vct_direct: {
+          m_get_measure_commands.push_back(m_voltage_type_direct_range);
+        } break;
+        case vct_alternate: {
+          m_get_measure_commands.push_back(m_voltage_type_alternate_range);
+          //m_get_measure_commands.push_back("SETACV SYNC");
+        } break;
+      }
+      //m_time_int_voltage_index = m_get_measure_commands.size();
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
+    } break;
+    case meas_current: {
+      // Команды при чтении тока
+      //m_voltage_type_index = m_get_measure_commands.size();
+      switch (m_volt_curr_type) {
+        case vct_direct: {
+          m_get_measure_commands.push_back(m_current_type_direct_range);
+        } break;
+        case vct_alternate: {
+          m_get_measure_commands.push_back(m_current_type_alternate_range);
+        } break;
+      }
+      //m_time_int_voltage_index = m_get_measure_commands.size();
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
+    } break;
+    case meas_frequency: {
+      m_get_measure_commands.push_back("FREQ");
+      m_get_measure_commands.push_back("FSOURCE ACV");
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back("TRIG SGL");
+   } break;
+   case meas_set_range: {
+      m_get_measure_commands.push_back(m_set_range_command);
+   } break;
+  }
+  //m_get_measure_commands.push_back(m_range_measute_command);
+}
+// Деструктор
+irs::agilent_3458a_t::~agilent_3458a_t()
+{
+  deinit_to_cnt();
+}
+// Установить режим измерения постоянного напряжения
+void irs::agilent_3458a_t::set_dc()
+{
+  //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_direct;
+  m_volt_curr_type = vct_direct;
+}
+// Установить режим измерения переменного напряжения
+void irs::agilent_3458a_t::set_ac()
+{
+  //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_alternate;
+  m_volt_curr_type = vct_alternate;
+}
+// Установить положителный фронт запуска
+void irs::agilent_3458a_t::set_positive()
+{
+}
+// Установить отрицательный фронт канала
+void irs::agilent_3458a_t::set_negative()
+{
+}
+// Чтение значения при текущем типа измерения
+void irs::agilent_3458a_t::get_value(double *ap_value)
+{
+  //if (m_create_error) return;
+  measure_create_commands(meas_value);
+  m_voltage = ap_value;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
+}
+// Чтение напряжения
+void irs::agilent_3458a_t::get_voltage(double *voltage)
+{
+  //if (m_create_error) return;
+  measure_create_commands(meas_voltage);
+  m_voltage = voltage;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
+}
+// Чтение усредненного сдвира фаз
+void irs::agilent_3458a_t::get_phase_average(double * /*phase_average*/)
+{
+}
+// Чтение фазового сдвига
+void irs::agilent_3458a_t::get_phase(double * /*phase*/)
+{
+}
+// Чтение временного интервала
+void irs::agilent_3458a_t::get_time_interval(double * /*time_interval*/)
+{
+}
+// Чтение усредненного временного интервала
+void irs::agilent_3458a_t::get_time_interval_average(
+  double * /*ap_time_interval*/)
+{
+}
+// Чтения силы тока
+void irs::agilent_3458a_t::get_current(double *current)
+{
+  //if (m_create_error) return;
+  measure_create_commands(meas_current);
+  m_voltage = current;
+  m_command = mac_get_param;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления
+void irs::agilent_3458a_t::get_resistance2x(double *resistance)
+{
+  //if (m_create_error) return;
+  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_2x;
+  m_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления
+void irs::agilent_3458a_t::get_resistance4x(double *resistance)
+{
+  //if (m_create_error) return;
+  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_4x;
+  m_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_status = meas_status_busy;
+}
+// Чтение частоты
+void irs::agilent_3458a_t::get_frequency(double* /*frequency*/)
+{
+}
+// Запуск автокалибровки (команда ACAL) мультиметра
+void irs::agilent_3458a_t::auto_calibration()
+{
+  //if (m_create_error) return;
+  m_command = mac_auto_calibration;
+  m_status = meas_status_busy;
+}
+// Чтение статуса текущей операции
+meas_status_t irs::agilent_3458a_t::status()
+{
+  //if (m_create_error) return meas_status_busy;
+  return m_status;
+}
+// Прерывание текущей операции
+void irs::agilent_3458a_t::abort()
+{
+  //if (m_create_error) return;
+  m_abort_request = true;
+}
+// Отправка команд инициализации в мультиметр
+void irs::agilent_3458a_t::initialize_tick()
+{
+  switch (m_mul_mode_type) {
+    case mul_mode_type_active: {
+      // Запись команд инициализации
+      switch (m_init_mode) {
+        case im_start: {
+          if (m_create_error) {
+            m_init_timer.start();
+            m_ic_index = 0;
+            m_init_mode = im_write_command;
+          }
+        } break;
+        case im_write_command: {
+          irs::string& icomm = m_init_commands[m_ic_index];
+          size_t icomm_size = icomm.size();
+          const irs_u8* icomm_u8 =
+            reinterpret_cast<const irs_u8*>(icomm.c_str());
+          m_fixed_flow.write(mp_hardflow->channel_next(), icomm_u8, icomm_size);
+          m_fixed_flow.write_timeout(m_oper_time);
+          //mxifa_write_begin(m_handle, IRS_NULL, icomm_u8, icomm_size);
+          //set_to_cnt(m_oper_to, m_oper_time);
+          m_init_mode = im_next_command;
+        } break;
+        case im_next_command: {
+          switch (m_fixed_flow.write_status()) {
+            case irs::hardflow::fixed_flow_t::status_success: {
+              m_ic_index++;
+              if (m_ic_index < static_cast<index_t>(m_init_commands.size())) {
+                m_init_mode = im_write_command;
+              } else {
+                m_create_error = false;
+                m_init_mode = im_start;
+              }
+            } break;
+            case irs::hardflow::fixed_flow_t::status_error: {
+              m_init_mode = im_write_command;
+            } break;
+            case irs::hardflow::fixed_flow_t::status_wait: {
+              m_init_mode = im_start;
+            } break;
+            default : {
+              IRS_LIB_ASSERT_MSG("Неучтенный статус");
+            }
+          }
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("m_init_mode не должен быть default");
+        } break;
+      } //switch (m_init_mode)
+    } break;
+    case mul_mode_type_passive: {
+      m_create_error = false;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("m_mul_mode_type не должен быть default");
+    } break;
+  } //switch (m_mul_mode_type)
+}
+// Элементарное действие
+void irs::agilent_3458a_t::tick()
+{
+  m_fixed_flow.tick();
+  initialize_tick();
+  if (m_create_error) return;
+  switch (m_mode) {
+    case ma_mode_start: {
+      m_abort_request = false;
+      switch (m_command) {
+        case mac_get_param: {
+          m_get_parametr_needed = false;
+          m_macro_mode = macro_mode_get_voltage;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_resistance: {
+          m_get_parametr_needed = false;
+          m_macro_mode = macro_mode_get_resistance;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_auto_calibration: {
+          m_macro_mode = macro_mode_stop;
+          m_mode = ma_mode_auto_calibration;
+        } break;
+        case mac_send_commands: {
+          m_macro_mode = macro_mode_send_commands;
+          m_mode = ma_mode_macro;
+        } break;
+        default : {
+          // Добавлено для подовления warning'а. Компилятор gcc4.
+        }
+      }
+    } break;
+    case ma_mode_macro: {
+      if (m_abort_request) {
+        m_abort_request = false;
+        m_macro_mode = macro_mode_stop;
+      }
+      switch (m_macro_mode) {
+        case macro_mode_get_voltage: {
+          if (m_get_parametr_needed) {
+            m_value = m_voltage;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = true;
+            m_mul_commands = &m_get_measure_commands;
+            m_mul_commands_index = 0;
+            //m_command_prev = m_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_resistance: {
+          if (m_get_parametr_needed) {
+            m_value = m_resistance;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = true;
+            m_mul_commands = &m_get_resistance_commands;
+            m_mul_commands_index = 0;
+            //m_command_prev = m_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_send_commands: {
+          m_mul_commands = &m_get_measure_commands;
+          m_mul_commands_index = 0;
+          m_mode = ma_mode_commands;
+          m_macro_mode = macro_mode_stop;
+        } break;
+        case macro_mode_stop: {
+          m_command = mac_free;
+          m_status = meas_status_success;
+          m_mode = ma_mode_start;
+        } break;
+      }
+    } break;
+    case ma_mode_commands: {
+      m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
+      irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
+      irs_u32 len = strlen((char *)command);
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_oper_time);
+      m_mode = ma_mode_commands_wait;
+    } break;
+    case ma_mode_commands_wait: {
+      switch (m_fixed_flow.write_status()) {
+        case irs::hardflow::fixed_flow_t::status_success: {
+          m_mul_commands_index++;
+          if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
+            m_mode = ma_mode_macro;
+          } else {
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case irs::hardflow::fixed_flow_t::status_error: {
+          m_mode = ma_mode_commands;
+        } break;
+        case irs::hardflow::fixed_flow_t::status_wait: {
+          m_mode = ma_mode_macro;
+        } break;
+        default : {
+          IRS_LIB_ASSERT_MSG("Неучтенный статус");
+        }
+      }
+    } break;
+    case ma_mode_get_value: {
+      if (m_abort_request) {
+        m_mode = ma_mode_macro;
+      } else {
+        irs_u8 *buf = m_read_buf + m_read_pos;
+        mxifa_sz_t size = (ma_read_buf_size - 1) - m_read_pos;
+        if ((size > 0) && (size < ma_read_buf_size)) {
+          mxifa_sz_t read_count = mp_hardflow->read(
+            mp_hardflow->channel_next(),
+            buf,
+            size
+          );
+          //mxifa_fast_read(m_handle, IRS_NULL, buf, size);
+          buf[read_count] = 0;
+          char end_chars[3] = {0x0D, 0x0A, 0x00};
+          char *end_number = strstr((char *)m_read_buf, end_chars);
+          if (end_number) {
+            *end_number = 0;
+            char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+            if (irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
+              m_mode = ma_mode_macro;
+            } else {
+              *m_value = 0;
+            }
+            #ifdef NOP
+            char *end_ptr = IRS_NULL;
+            double val = strtod((char *)m_read_buf, &end_ptr);
+            if (end_ptr == end_number) {
+              *m_value = val;
+              m_mode = ma_mode_macro;
+            }
+            #endif //NOP
+            irs_u8 *read_bytes_end_ptr = buf + read_count;
+            irs_u8 *next_str_ptr = (irs_u8 *)end_number + 2;
+            mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
+            memmove((void *)m_read_buf, (void *)next_str_ptr, rest_bytes);
+            m_read_pos = rest_bytes;
+          } else {
+            m_read_pos += read_count;
+          }
+        } else {
+          m_read_buf[0] = m_read_buf[ma_read_buf_size - 1];
+          m_read_pos = 1;
+        }
+      }
+    } break;
+
+    case ma_mode_auto_calibration: {
+      irs_u8 *command = (irs_u8 *)"ACAL ALL";
+      irs_u32 len = strlen((char *)command);
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_acal_time);
+      m_mode = ma_mode_auto_calibration_wait;
+    } break;
+    case ma_mode_auto_calibration_wait: {
+      if (test_to_cnt(m_acal_to)) {
+        const fixed_flow_status_type status = m_fixed_flow.write_status();
+        if (status == irs::hardflow::fixed_flow_t::status_success)
+          m_mode = ma_mode_macro;
+      } else if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      }
+    } break;
+  }
+}
+// Установка времени интегрирования в периодах частоты сети (20 мс)
+void irs::agilent_3458a_t::set_nplc(double nplc)
+{
+  irs::string nplc_str = nplc;
+  nplc_str = "NPLC " + nplc_str;
+  //m_get_measure_commands[m_time_int_voltage_index] = nplc_str;
+  m_time_int_measure_command = nplc_str;
+  m_get_resistance_commands[m_time_int_resistance_index] = nplc_str;
+}
+// Установка времени интегрирования в c
+void irs::agilent_3458a_t::set_aperture(double aperture)
+{
+  irs::string aperture_str = aperture;
+  aperture_str = "APER " + aperture_str;
+  //m_get_measure_commands[m_time_int_voltage_index] = aperture_str;
+  m_time_int_measure_command = aperture_str;
+  m_get_resistance_commands[m_time_int_resistance_index] = aperture_str;
+}
+// Установка полосы фильтра
+void irs::agilent_3458a_t::set_bandwidth(double /*bandwidth*/)
+{
+}
+void irs::agilent_3458a_t::set_input_impedance(double /*impedance*/)
+{
+}
+void irs::agilent_3458a_t::set_start_level(double /*level*/)
+{
+}
+void irs::agilent_3458a_t::set_range(
+  type_meas_t a_type_meas, double a_range)
+{
+  //if (m_create_error) return;
+  irs::string range_str = a_range;
+  switch(a_type_meas) {
+    case tm_volt_dc: {
+      m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
+      m_set_range_command = m_voltage_type_direct_range;
+    } break;
+    case tm_volt_ac: {
+      m_voltage_type_alternate_range = m_voltage_type_alternate+" "+range_str;
+      m_set_range_command = m_voltage_type_alternate_range;
+    } break;
+    case tm_current_dc: {
+      m_current_type_direct_range = m_current_type_direct+" "+range_str;
+      m_set_range_command = m_current_type_direct_range;
+    } break;
+    case tm_current_ac: {
+      m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
+      m_set_range_command = m_current_type_alternate_range;
+    } break;
+    default : {
+      // Остальные типы в данном мультиметре не используются
+      IRS_ERROR(irs::ec_standard, "Unknown type range!");
+    }
+  }
+  measure_create_commands(meas_set_range);
+  m_command = mac_send_commands;
+  m_status = meas_status_busy;
+}
+
+void irs::agilent_3458a_t::set_range_auto()
+{
+  irs::string range_str = "AUTO";
+  m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
+  m_voltage_type_alternate_range = m_voltage_type_alternate+" "+range_str;
+  m_current_type_direct_range = m_current_type_direct+" "+range_str;
+  m_current_type_alternate_range = m_current_type_alternate+" "+range_str;
+}
+
+// Класс для работы с мультиметром Agilent 3458A
 // Конструктор
 mx_agilent_3458a_t::mx_agilent_3458a_t(
   mxifa_ch_t channel,

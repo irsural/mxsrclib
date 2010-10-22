@@ -1,6 +1,8 @@
-// Драйвер SPI
-// Дата 17.08.2009
-// AVR
+//! \file
+//! \ingroup drivers_group
+//! \brief Драйвер SPI для AVR
+//!
+//! Дата 17.08.2009
 
 #include <ioavr.h>
 

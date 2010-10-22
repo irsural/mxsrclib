@@ -1,6 +1,9 @@
-// Свойства процессора
-// Дата: 14.10.2009
-// Дата создания: 1.10.2009
+//! \file
+//! \ingroup configuration_group
+//! \brief Свойства процессора
+//!
+//! Дата: 14.10.2009\n
+//! Дата создания: 1.10.2009
 
 #ifndef IRSCPUH
 #define IRSCPUH
@@ -8,6 +11,9 @@
 #include <irsdefs.h>
 
 namespace irs {
+
+//! \addtogroup system_utils_group
+//! @{
 
 class cpu_traits_t
 {
@@ -26,6 +32,8 @@ public:
 private:
   static frequency_type m_frequency;
 };
+
+//! @}
 
 } //namespace irs
 

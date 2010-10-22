@@ -1,5 +1,8 @@
-// Общие утилиты mxnet
-// Дата: 13.04.2010
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Общие утилиты mxnet
+//!
+//! Дата: 13.04.2010
 
 #ifndef MXNETRH
 #define MXNETRH
@@ -13,6 +16,9 @@
 #include <irsfinal.h>
 
 namespace irs {
+
+//! \addtogroup network_in_out_group
+//! @{
   
 // Поиск начала пакета
 class mx_beg_pack_proc_t: public mx_proc_t
@@ -100,6 +106,8 @@ enum mxn_checksum_t {
 // Контрольная сумма для mxnet
 irs_i32 checksum_calc(mxn_checksum_t cs_type, mxn_packet_t *packet, 
   mxn_cnt_t var_count);
+
+//! @}
 
 } //namespace irs
 

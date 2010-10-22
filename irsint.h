@@ -1,6 +1,9 @@
-// Прерывания
-// Дата: 20.05.2010
-// Ранняя дата: 17.09.2009
+//! \file
+//! \ingroup event_processing_group
+//! \brief Прерывания
+//!
+//! Дата: 20.05.2010\n
+//! Ранняя дата: 17.09.2009
 
 #ifndef irsintH
 #define irsintH
@@ -14,6 +17,9 @@
 #include <irscpp.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup drivers_group
+//! @{
 
 // Класс действий
 class irs_action_t
@@ -71,7 +77,12 @@ inline void irs_int_event_gen_t::add(mxfact_event_t *ap_event)
   ap_event->connect(mp_event);
 }
 
+//! @}
+
 namespace irs {
+
+//! \addtogroup drivers_group
+//! @{
 
 // Подключение событий к функциям-членам класса
 template <class T>
@@ -252,6 +263,8 @@ private:
   
   interrupt_array_t(const interrupt_array_t&);
 };
+
+//! @}
 
 } //namespace irs
 

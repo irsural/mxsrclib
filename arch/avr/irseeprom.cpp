@@ -1,6 +1,9 @@
-// Доступ к EEPROM AVR
-// Дата: 08.10.2010
-// Ранняя Дата: 19.08.2009
+//! \file
+//! \ingroup drivers_group
+//! \brief Доступ к EEPROM AVR
+//!
+//! Дата: 08.10.2010
+//! Ранняя Дата: 19.08.2009
 
 // Номер файла
 #define IRSEEPROMCPP_IDX 19

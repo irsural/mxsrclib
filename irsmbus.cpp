@@ -1,6 +1,9 @@
-// Клиент и сервер modbus
-// Дата: 18.10.2010
-// Ранняя дата: 16.09.2008
+//! \file
+//! \ingroup network_in_out_group
+//! \brief Клиент и сервер modbus
+//!
+//! Дата: 02.09.2010\n
+//! Ранняя дата: 16.09.2008
 
 #include <irspch.h>
 #ifdef __BORLANDC__
