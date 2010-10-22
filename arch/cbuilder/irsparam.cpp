@@ -132,6 +132,7 @@ void irs::param_box_t::load_form_params()
 
 void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
 {
+  save_form_params();
   m_ini_file.save();
 }
 

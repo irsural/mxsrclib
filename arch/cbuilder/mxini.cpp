@@ -556,6 +556,11 @@ void irs::ini_file_t::load()
       value_list_editor_it != m_value_list_editors.end();
       value_list_editor_it++)
     {
+      value_list_editor_it->control->ColWidths[0] = IniFile->ReadInteger(
+        value_list_editor_it->section.c_str(),
+        (value_list_editor_it->name + irst("key_col_width")).c_str(),
+        value_list_editor_it->control->ColWidths[0]
+      );      
       int row_cnt = IniFile->ReadInteger(
         value_list_editor_it->section.c_str(),
         (value_list_editor_it->name + irst("count")).c_str(),
@@ -743,6 +748,12 @@ void irs::ini_file_t::save() const
     value_list_editor_it != m_value_list_editors.end();
     value_list_editor_it++)
   {
+    int key_col_width = value_list_editor_it->control->ColWidths[0];
+    IniFile->WriteInteger(
+      value_list_editor_it->section.c_str(),
+      (value_list_editor_it->name + irst("key_col_width")).c_str(),
+      key_col_width
+    );
     int row_cnt = value_list_editor_it->control->RowCount;
     IniFile->WriteInteger(
       value_list_editor_it->section.c_str(),
