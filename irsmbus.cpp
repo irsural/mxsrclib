@@ -2,7 +2,7 @@
 //! \ingroup network_in_out_group
 //! \brief Клиент и сервер modbus
 //!
-//! Дата: 02.09.2010\n
+//! Дата: 25.10.2010\n
 //! Ранняя дата: 16.09.2008
 
 #include <irspch.h>
@@ -473,8 +473,8 @@ irs_bool irs::modbus_server_t::connected()
 void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
   //mlog() << irsm("\n recieved packet") << endl;
-  MBAP_header_t &header = 
-    reinterpret_cast<MBAP_header_t&>(*ap_buf);
+  //MBAP_header_t &header = 
+    //reinterpret_cast<MBAP_header_t&>(*ap_buf);
   request_exception_t &req_header = 
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
     
@@ -3661,11 +3661,14 @@ void irs::modbus_client_t::tick()
             for(irs_u16 coils_index = 0; coils_index < sec_head.quantity;
               coils_index++)
             {
-              irs_u8 mask = mask_gen(8 - ((start_addr + coils_index)%8 + 1), 1);
-              //m_coils_byte_write[coils_index/8] &= static_cast<irs_u8>(~mask);
+              //irs_u8 mask = mask_gen(8 -
+                //((start_addr + coils_index)%8 + 1), 1);
+              //m_coils_byte_write[coils_index/8] &=
+                //static_cast<irs_u8>(~mask);
               if (m_need_writes_reserve[start_addr + coils_index]) {
                 m_need_writes_reserve[start_addr + coils_index] = 0;
-                //m_coils_byte_write[coils_index/8] &= static_cast<irs_u8>(~mask);
+                //m_coils_byte_write[coils_index/8] &=
+                  //static_cast<irs_u8>(~mask);
               } else {
                 m_need_writes[start_addr + coils_index] = 0;
               }
