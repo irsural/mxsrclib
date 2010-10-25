@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Доступ к EEPROM AVR
 //!
-//! Дата: 08.10.2010\n
+//! Дата: 22.10.2010\n
 //! Ранняя дата: 19.08.2009
 
 
@@ -64,6 +64,10 @@ private:
   irs_uarc m_start_index;
   irs_uarc m_size;
   bool m_crc_error;
+  
+  irs_u32 calc_old_crc() const;
+  irs_u32 calc_new_crc() const;
+  irs_u32 __eeprom& crc_eeprom() const;
 };
 
 class eeprom_reserve_t : public mxdata_t
@@ -89,11 +93,18 @@ private:
 };
 
 
-struct eeprom_protected_init_t {
+struct eeprom_protected_traits_t {
+  typedef irs_u32 id_type;
   typedef size_t size_type;
+};
+
+struct eeprom_protected_init_t {
+  typedef eeprom_protected_traits_t::id_type id_type;
+  typedef eeprom_protected_traits_t::size_type size_type;
   
   size_type start_index;
   size_type size;
+  id_type id;
   size_type first_array_idx;
   size_type second_array_idx;
 };
@@ -101,8 +112,8 @@ struct eeprom_protected_init_t {
 class eeprom_protected_t : public mxdata_t
 {
 public:
-  typedef irs_u32 id_type;
-  typedef size_t size_type;
+  typedef eeprom_protected_traits_t::id_type id_type;
+  typedef eeprom_protected_traits_t::size_type size_type;
 
   enum {
     m_old_eeprom_id = 0
@@ -177,9 +188,11 @@ private:
     size_type* a_finded_idx, bool* a_is_pos_changed);
   void restore_proc(const eeprom_protected_init_t* ap_eeprom_init);
   void eeprom_data_init(size_type a_shift, size_type a_start_index,
-    size_type a_size, eeprom_protected_init_t* ap_eeprom_init) const;
+    size_type a_size, id_type a_id,
+    eeprom_protected_init_t* ap_eeprom_init) const;
   void new_eeprom_data_init(size_type a_start_index,
-    size_type a_size, eeprom_protected_init_t* ap_eeprom_init) const;
+    size_type a_size, id_type a_id,
+    eeprom_protected_init_t* ap_eeprom_init) const;
   void old_eeprom_data_init(size_type a_start_index,
     size_type a_size, eeprom_protected_init_t* ap_eeprom_init) const;
   void eeprom_data_init(size_type a_shift, size_type a_start_index,

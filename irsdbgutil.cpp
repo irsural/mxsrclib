@@ -2,7 +2,7 @@
 //! \ingroup system_utils_group
 //! \brief Утилиты для отладки программы
 //!
-//! Дата: 23.04.2010\n
+//! Дата: 18.10.2010\n
 //! Дата создания: 09.04.2010
 
 // Номер файла
@@ -709,3 +709,12 @@ irs::memory_checker_t* irs::memory_checker_avr_init(
     a_heap_size + a_return_stack_size*multiplier,
     memory_checker_t::heap_array_size_def);
 }
+
+#ifdef __ICCAVR__
+size_t irs::avr::heap_pointer(size_t a_heap_array_size)
+{
+  auto_arr<irs_u8> p_heap_check_var(
+    IRS_LIB_NEW_ASSERT(irs_u8[a_heap_array_size], IRSDBGUTILCPP_IDX));
+  return reinterpret_cast<size_t>(p_heap_check_var.get());
+}
+#endif //__ICCAVR__

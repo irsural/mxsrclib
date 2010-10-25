@@ -1,5 +1,5 @@
 // Стандартаная библиотека ИРС
-// Дата: 12.07.2010
+// Дата: 20.07.2010
 // Ранняя дата: 25.11.2007
 
 // Номер файла
@@ -178,7 +178,8 @@ mxapplication_t *mxapplication = IRS_NULL;
 void afloat_to_str(char *str, double N, size_t len, size_t accur)
 {
   ostrstream strm(str, len + 1);
-  strm << setiosflags(ios::fixed) << setw(len) << setprecision(accur) << N;
+  //strm << setiosflags(ios::fixed) << setw(len) << setprecision(accur) << N;
+  strm << fixed << setw(len) << setprecision(accur) << N;
   strm << '\0';
   str[len] = '\0';
   //str[strm.pcount()] = 0;

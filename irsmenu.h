@@ -2,7 +2,7 @@
 //! \ingroup text_user_interface_group
 //! \brief Текстовое меню
 //!
-//! Дата: 08.10.2010\n
+//! Дата: 19.10.2010\n
 //! Ранняя дата: 15.09.2009
 
 #ifndef IRSMENUH
@@ -13,6 +13,8 @@
 #include <timer.h>
 //#include <irslcd.h>
 #include <irsstd.h>
+#include <irserror.h>
+#include <irsdbgutil.h>
 
 #include <irsfinal.h>
 
@@ -375,7 +377,7 @@ void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
   m_copy_parametr = *mp_parametr;
   
   ostrstream strm(mp_value_string, m_len + 1);
-  strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+  strm << fixed << setw(m_len) << setprecision(m_accur);
   strm << m_copy_parametr << '\0';
   mp_value_string[m_len] = '\0';
   
@@ -401,7 +403,7 @@ void irs_menu_simply_item_t<T>::draw(irs_menu_base_t **a_cur_menu)
       mp_disp_drv->outtextpos(0, 0, f_header);
       
       ostrstream strm(mp_value_string, m_len + 1);
-      strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+      strm << fixed << setw(m_len) << setprecision(m_accur);
       strm << m_copy_parametr << '\0';
       mp_value_string[m_len] = '\0';
       
@@ -449,7 +451,7 @@ irs_menu_base_t::size_type irs_menu_simply_item_t<T>::get_parametr_string(
     {
       m_copy_parametr = *mp_parametr;
       ostrstream strm(mp_value_string, m_len + 1);
-      strm << setiosflags(ios::fixed) << setw(m_len) << setprecision(m_accur);
+      strm << fixed << setw(m_len) << setprecision(m_accur);
       strm << m_copy_parametr << '\0';
       mp_value_string[m_len] = '\0';
       strcpy(mp_copy_parametr_string, mp_value_string);
@@ -717,6 +719,7 @@ public:
   bool check_process_start();
   bool check_process_stop();
   bool check_out_param_change();
+  void reserve(size_t a_size);
 };
 
 //------------------------------------------------------------------------------

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <mxifa.h>
 #include <irserror.h>
+#include <irsdbgutil.h>
 
 #include <irsfinal.h>
 
@@ -3315,6 +3316,11 @@ void irs_menu_2param_master_item_t::external_process_stop()
     m_operating_duty = false;
     m_prev_operating_duty = false;
   }
+}
+
+void irs_menu_2param_master_item_t::reserve(size_t a_size)
+{
+  m_point_vector.reserve(a_size);
 }
 
 //------------------------- ¡≈√”ÿÿ¿ﬂ —“–Œ ¿ -----------------------------
