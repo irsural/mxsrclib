@@ -2,7 +2,7 @@
 //! \ingroup configuration_group
 //! \brief Локальная конфигурация для каждого программиста
 //!
-//! Дата 29.09.2010\n
+//! Дата 25.10.2010\n
 //! Дата создания 25.09.2009\n
 //!
 //! Скопируйте этот файл "irsconfig0.h" в файл с именем "irsconfig.h".
@@ -30,7 +30,7 @@
 
 // Индивидуальные отладочные define-определения
 // Крашенинников Максим
-#define IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
+//#define IRS_LIB_DBG_KRASHENINNIKOV_MAXIM
 
 #ifdef __ICCAVR__
 #define IRS_LIB_FLASH_ASSERT
