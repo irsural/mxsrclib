@@ -1870,9 +1870,9 @@ void irs::hardflow::fixed_flow_t::read_timeout(counter_t a_read_timeout)
   m_read_timeout.set(a_read_timeout);
 }
 
-double irs::hardflow::fixed_flow_t::read_timeout() const
+counter_t irs::hardflow::fixed_flow_t::read_timeout() const
 {
-  return CNT_TO_DBLTIME(m_read_timeout.get());
+  return m_read_timeout.get();
 }
 
 void irs::hardflow::fixed_flow_t::write_timeout(counter_t a_write_timeout)
@@ -1880,9 +1880,9 @@ void irs::hardflow::fixed_flow_t::write_timeout(counter_t a_write_timeout)
   m_write_timeout.set(a_write_timeout);
 }
 
-double irs::hardflow::fixed_flow_t::write_timeout() const
+counter_t irs::hardflow::fixed_flow_t::write_timeout() const
 {
-  return CNT_TO_DBLTIME(m_write_timeout.get());
+  return m_write_timeout.get();
 }
 
 void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident,

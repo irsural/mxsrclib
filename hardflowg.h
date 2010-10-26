@@ -76,6 +76,8 @@
 namespace irs {
 
 //! \ingroup in_out_group
+//! \brief Абстрактный интерфейс для классов, реализующих обмен данными по
+//! различным протоколам
 class hardflow_t {
 public:
   typedef size_t size_type;
@@ -85,17 +87,39 @@ public:
   enum {
     invalid_channel = 0
   };
-
+  //! \brief Деструктор
   virtual ~hardflow_t() {}
+  //! \brief Чтение специфического параметра
+  //!
+  //! \param[in] a_name - имя читаемого параметра
   virtual string_type param(const string_type &a_name) = 0;
+  //! \brief Установка специфического параметра
+  //!
+  //! \param[in] a_name - имя устанавливаемого параметра
+  //! \param[in] a_value - новое значение параметра
   virtual void set_param(const string_type &a_name,
     const string_type &a_value) = 0;
+  //! \brief Чтения данных
+  //!
+  //! \param[in] a_channel_ident – канал, из которого читаются данные;
+  //! \param[out] ap_buf – буфер, в который считываются данные;
+  //! \param[in] a_size – размер считываемых данных.
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size) = 0;
+  //! \brief Запись данных
+  //!
+  //! \param[in] a_channel_ident – канал, в который пишутся данные;
+  //! \param[in] ap_buf – указатель на начало буфера с данными;
+  //! \param[in] a_size – размер передаваемых данных.
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size) = 0;
+  //! \brief переход к следующему существующему каналу
   virtual size_type channel_next() = 0;
+  //! \brief Проверка на наличие канала
+  //!
+  //! \param[in] a_channel_ident - проверяемый канал
   virtual bool is_channel_exists(size_type a_channel_ident) = 0;
+  //! \brief Элементарная операция
   virtual void tick() = 0;
 };
 
@@ -201,6 +225,7 @@ typedef SOCKET socketns_t;
 typedef int socketns_t;
 #endif // IRS_WINDOWS IRS_LINUX
 
+//! \brief Закрытие сокета. Работает в Windows и Linux
 inline void close_socket(socketns_t a_socket)
 {
   #if defined(IRS_WIN32)
@@ -216,10 +241,10 @@ bool lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
 #endif // defined(IRS_WIN32)
 
 enum udp_limit_connections_mode_t {
-  udplc_mode_invalid,      // Недопустимый режим
-  udplc_mode_queue,        // Учитывается переменная m_max_size
-  udplc_mode_limited,      // Учитывается переменная m_max_size
-  udplc_mode_unlimited     // Переменная m_max_size не учитывается*/
+  udplc_mode_invalid,      //!< \brief Недопустимый режим
+  udplc_mode_queue,        //!< \brief Учитывается переменная m_max_size
+  udplc_mode_limited,      //!< \brief Учитывается переменная m_max_size
+  udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
 };
 
 class udp_channel_list_t
@@ -341,12 +366,14 @@ private:
   counter_t m_max_downtime;
 };
 
+//! \brief Реализует обмен данными по UDP протоколу
 class udp_flow_t: public hardflow_t
 {
 public:
   //typedef hardflow_t::size_type size_type;
   //typedef string_t string_type;
   typedef udp_channel_list_t::adress_type adress_type;
+  //! \brief Режим работы с каналами
   enum mode_t {
     invalid_mode,             //!< \brief Недопустимый режим
     mode_queue,               //!< \brief Учитывается переменная m_max_size
@@ -443,22 +470,40 @@ private:
   bool detect_func_single_arg(string_type a_param, string_type* ap_func_name,
     string_type* ap_arg) const;
 public:
+  //! \copydoc hardflow_t::param(const string_type &a_param_name)
   virtual string_type param(const string_type &a_param_name);
+  //! \copydoc hardflow_t::set_param(const string_type &a_param_name,
+  //!   const string_type &a_value)
   virtual void set_param(const string_type &a_param_name,
     const string_type &a_value);
-  // В случае если функция read возвращает size_type == 0, буфер ap_buf может
-  // быть испорчен
+  //! \copydoc hardflow_t::read(size_type, irs_u8*, size_type)
+  //! В случае если функция read возвращает size_type == 0, буфер ap_buf может
+  //! быть испорчен
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
+  //! \copydoc hardflow_t::write(size_type, const irs_u8*, size_type)
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
+  //! \copydoc hardflow_t::channel_next()
   virtual size_type channel_next();
+  //! \copydoc hardflow_t::is_channel_exists(size_type)
   virtual bool is_channel_exists(size_type a_channel_ident);
+  //! \copydoc hardflow_t::tick()
   virtual void tick();
 };
 
-//#if defined(IRS_WIN32) || defined(IRS_LINUX)
-
+//! \brief Сервер для передачи данных по TCP протоколу
+//!
+//! Создаем сокет сервера(socket()) и присваиваем ему локальный порт и
+//! адрес (bind()), при этом адреса для входящих соединений могут быть
+//! произвольными. Создаем очередь запросов на соединение (listen()),
+//! при этом сокет переводится в режим ожидания запросов со стороны клиентов.
+//! Если очередь заполнена, то последующие запросы будут игнорироваться.
+//! Когда сервер готов обслужить очередной запрос, он создает сокет для
+//! входящего соединения (accept()) и присваивает ему незанятый номер
+//! канала (new_channel()). После завершения работы с клиентом, выделенный
+//! для соединения сокет и связанный с ним канал удаляются
+//! (close_socket(), m_map_channel_sock.erase()).
 class tcp_server_t: public hardflow_t
 {
 public:
@@ -497,11 +542,21 @@ private:
   bool m_channel_id_overflow;
   const size_type m_channel_max_count;
 
+  //! \brief Запуск сервера
   void start_server();
+  //! \brief Остановка сервера
   void stop_server();
+  //! \brief Создание нового канала
   void new_channel();
 };
 
+//! \brief Клиент для передачи данных по TCP протоколу
+//!
+//! Создаем сокет клиента (socket()) и переводим его в неблокирующий
+//! режим (fcntl()). Устанавливаем соединение с сервером (connect())
+//! по заданному порту и адресу. Теперь клиент готов к выполнению операций
+//! чтения и записи. В случае разрыва соединения сокет клиента
+//! закрывается (close_socket()).
 class tcp_client_t: public hardflow_t
 {
 public:
@@ -561,24 +616,33 @@ private:
   mxip_t m_dest_ip;
   irs_u16 m_dest_port;
   size_type m_channel;
-  
+  //! \brief Запуск работы клиента
   void start_client();
+  //! \brief Запуск работы сервера
   void stop_client();
 };
 
-//#endif //defined(IRS_WIN32) || defined(IRS_LINUX)
-
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
-// Прием/передача фиксированных объемов данных
+//! \brief Прием/передача фиксированных объемов данных с
+//! использованием hardflow_t
+//!
+//! Позволяет устанавливать независимый тайм-аут на прием и передачу
 class fixed_flow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
 
+  //! \brief Статус операции чтения или записи
   enum status_t {
+    //! \brief Операция выполняется
     status_wait,
+    //! \brief Операция завершилась успешно
     status_success,
+    //! \brief Операция завершилась с ошибкой
+    //!
+    //! Ошибка может произойти по причине тайм-аута или
+    //! по причине разрыва соединения
     status_error
   };
 
@@ -587,18 +651,31 @@ public:
     size_type a_size);
   void write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
+  //! \brief Возвращает статус операции чтения
   status_t read_status();
+  //! \brief Обрывает чтение и возвращает количество прочитанных байт
   size_type read_abort();
+  //! \brief Возвращает статус операции записи
   status_t write_status();
+  //! \brief Обрывает запись и возвращает количество записанных байт
   size_type write_abort();
+  //! \brief Элементарная операция
   void tick();
+  //! \brief Устанавливает указатель на интерфейс hardflow_t объекта,
+  //! реализующего обмен данными
   void connect(hardflow_t* ap_hardflow);
+  //! \brief Возвращает количество прочитанных данных на текущий момент
   size_type read_byte_count() const;
+  //! \brief Возвращает колечество записанных данных на текущий момент
   size_type write_byte_count() const;
+  //! \brief Устанавливает тайм-аут чтения
   void read_timeout(counter_t a_read_timeout);
-  double read_timeout() const;
+  //! \brief Возвращает тайм-аут записи
+  counter_t read_timeout() const;
+  //! \brief Устанавливает тайм-аут чтения
   void write_timeout(counter_t a_write_timeout);
-  double write_timeout() const;
+  //! \brief Возвращает тайм-аут записи
+  counter_t write_timeout() const;
 private:
   hardflow_t* mp_hardflow;   
   size_type m_read_channel;

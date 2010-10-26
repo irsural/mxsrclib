@@ -75,6 +75,24 @@ void second_part(irs_u8 &internal_byte, irs_u8 external_byte,
   internal_byte |= external_byte;
 }
 
+//! \brief Копирует данные в битах
+//!
+//! \param[in] ap_data_in – указатель на начало массива, источника данных;
+//! \param[out] ap_data_out – указатель на начало массива, приемника данных;
+//! \param[in] a_index_data_in - индекс в битах, по которому располагаются
+//!   данные в массиве – источнике данных;
+//! \param[out] a_index_data_out – индекс в битах, по которому нужно переслать
+//!   данные в массив – приемник данных;
+//! \param[in] a_size_data_bit – размер копируемых данных в битах.\n
+//! Передаваемые данные бьются на 3 части:
+//!   - middle_part участок, занимающий число бит кратное 8; \n
+//!   - first_part участок, стоящий перед middle_part;\n
+//!   - last_part участок, стоящий после middle_part.\n
+//! Если a_index_data_in и a_index_data_out равны 0, то для копирования участка
+//!   middle_part используется функция memcpyex(). В остальных случаях
+//!   используются маски для копирования последовательностей битов, смещенных
+//!   относительно начала байта.
+
 void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
   size_t a_index_data_in, size_t a_index_data_out, size_t a_size_data_bit)
 {
@@ -347,6 +365,13 @@ void irs::test_bit_copy(ostream& a_strm, size_t a_size_data_in,
   a_strm << endl;
 }
 
+//! \brief Преобразование порядка байтов в big_endian (от старшего
+//!   к младшему), если такая операция требуется для данной архитектуры.
+//!
+//! \param[in, out] ap_mess – указатель на начало массива, в котором следует
+//!   провести такое преобразование;
+//! \param[in] a_start – начало области преобразования;
+//! \param[in] a_length – длина участка преобразования.
 void convert(irs_u8 *ap_mess, irs_u8 a_start, irs_u8 a_length)
 {
   if (irs::cpu_traits_t::endian() == irs::little_endian) {
