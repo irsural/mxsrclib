@@ -112,7 +112,9 @@ void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
 //! \param[out] a_start – индекс на начало совпадающей области.
 void range(size_t a_index, size_t a_size, size_t a_start_range, 
   size_t a_end_range, size_t *a_num, size_t *a_start);
-  
+
+//! \author Sergeev Sergey
+//! \brief Сервер протокола Modbus  
 class modbus_server_t : public mxdata_ext_t
 {
 public:
@@ -270,6 +272,8 @@ private:
   void view_mode();
 };
 
+//! \author Sergeev Sergey
+//! \brief Клиент протокола Modbus  
 class modbus_client_t : public mxdata_ext_t
 {
 public:
