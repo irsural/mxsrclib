@@ -27,7 +27,11 @@ namespace irs {
 class mxdata_ext_t : public mxdata_t
 {
 public:
-  enum status_t { status_completed, status_wait, status_error };
+  enum status_t {
+    status_completed,
+    status_wait,
+    status_error
+  };
   enum mode_refresh_t { mode_refresh_invalid, mode_refresh_auto,
     mode_refresh_manual };
 
