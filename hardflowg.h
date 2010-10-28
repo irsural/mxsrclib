@@ -492,10 +492,10 @@ public:
   virtual void tick();
 };
 
-//! \author 
+//! \brief —ервер дл€ передачи данных по TCP протоколу
+//! \authors 
 //!   \li Sergeev Sergey
 //!   \li Lyashchov Maksim
-//! \brief —ервер дл€ передачи данных по TCP протоколу
 //!
 //! \details —оздаем сокет сервера(socket()) и присваиваем ему локальный порт и
 //! адрес (bind()), при этом адреса дл€ вход€щих соединений могут быть
@@ -554,7 +554,7 @@ private:
 };
 
 //! \brief  лиент дл€ передачи данных по TCP протоколу
-//! \author 
+//! \authors 
 //!   \li Sergeev Sergey
 //!   \li Lyashchov Maksim
 //!
