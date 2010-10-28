@@ -113,6 +113,7 @@ void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
 void range(size_t a_index, size_t a_size, size_t a_start_range, 
   size_t a_end_range, size_t *a_num, size_t *a_start);
 
+//! \class modbus_server_t
 //! \brief Сервер протокола Modbus.
 //! \author Sergeev Sergey
 //! \example modbus_server.cpp
