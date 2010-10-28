@@ -494,8 +494,10 @@ public:
 
 //! \brief Сервер для передачи данных по TCP протоколу
 //! \authors 
-//!   \li Sergeev Sergey
-//!   \li Lyashchov Maksim
+//! - Sergeev Sergey
+//!     Реализация под Linux
+//! - Lyashchov Maksim
+//!     Реализация под Windows
 //!
 //! \details Создаем сокет сервера(socket()) и присваиваем ему локальный порт и
 //! адрес (bind()), при этом адреса для входящих соединений могут быть
@@ -555,8 +557,10 @@ private:
 
 //! \brief Клиент для передачи данных по TCP протоколу
 //! \authors 
-//!   \li Sergeev Sergey
-//!   \li Lyashchov Maksim
+//! - Sergeev Sergey
+//!     Реализация под Linux
+//! - Lyashchov Maksim
+//!     Реализация под Windows
 //!
 //! \details Создаем сокет клиента (socket()) и переводим его в неблокирующий
 //! режим (fcntl()). Устанавливаем соединение с сервером (connect())
@@ -631,6 +635,7 @@ private:
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 //! \author Sergeev Sergey
+//!
 //! \brief Прием/передача фиксированных объемов данных с
 //! использованием hardflow_t
 //!
@@ -707,6 +712,7 @@ private:
 };
 
 //! \author Sergeev Sergey
+//!
 //! \brief Поток для передачи данных по протоколу UDP
 class simple_udp_flow_t: public hardflow_t
 {
@@ -800,6 +806,7 @@ private:
 };
 
 //! \author Sergeev Sergey
+//!
 //! \brief Поток для передачи данных по протоколу TCP
 class simple_tcp_flow_t: public hardflow_t
 {
