@@ -43,8 +43,10 @@ struct rtl_port_str_t
   p_avr_port_t rtl_address_port_dir;
 };
 
-//! \author Sergeev Sergey
-//! \brief Драйвер Ethernet для RTL8019AS
+/** \brief Драйвер Ethernet для RTL8019AS
+*   \author
+*     \li Sergeev Sergey
+*/
 class rtl8019as_t: public simple_ethernet_t
 {
 public:
@@ -52,14 +54,14 @@ public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
   
   enum {
-    // Регистры
+    //! \brief Регистры
     CR = 0x0,
     PAR0 = 0x01,
     
     PSTART = 0x01,
     PSTOP = 0x02,
     BNRY = 0x03,
-    // Адресс страницы в которой находится пакет для передачи
+    //! \brief Адресс страницы в которой находится пакет для передачи
     TPSR = 0x04,
     TBCR0 = 0x05,
     TBCR1 = 0x06,
@@ -80,7 +82,7 @@ public:
     RDMAPORT = 0x10,
     RSTPORT = 0x18,
     
-    // Биты CR
+    //! \brief Биты CR
     STP = 0,
     STA = 1,
     TXP = 2,
@@ -100,10 +102,10 @@ public:
     cr_rtl_start = ((1 << STA)|(0 << STP)),
     cr_rtl_stop = ((0 << STA)|(1 << STP)),
 
-    // Биты ISR
+    //! \brief Биты ISR
     RDC = 0x40,
     
-    // Биты DCR
+    //! \brief Биты DCR
     WTS = 0,
     BOS = 1,
     LAS = 2,
@@ -112,21 +114,21 @@ public:
     FT0 = 5,
     FT1 = 6,
     
-    // Биты CONFIG3
-    // Тип 0-го светодиода
+    //! \brief Биты CONFIG3
+    //! \brief Тип 0-го светодиода
     LEDS0 = 4,
     
-    // Готовые значения для регистров
+    //! \brief Готовые значения для регистров
     //dcrval = 0x58,
     dcrval = ((1 << LS)|(1 << ARM)|(1 << FT1)),
-    // Адрес для TPSR
+    //! \brief Адрес для TPSR
     txstart = 0x40,
     rxstart = 0x46,
     rxstop = 0x60,
     imrval = 0x1b,
     tcrval = 0x00
   };
-  // Пины AVR для RTL
+  //! \brief Пины AVR для RTL
   enum {
     IORB = 5,
     IOWB  = 6,
