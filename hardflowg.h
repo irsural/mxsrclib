@@ -492,8 +492,10 @@ public:
   virtual void tick();
 };
 
-//! \author Sergeev Sergey, Lyashchov Maksim
 //! \brief —ервер дл€ передачи данных по TCP протоколу
+//! \author 
+//!   \li Sergeev Sergey
+//!   \li Lyashchov Maksim
 //!
 //! —оздаем сокет сервера(socket()) и присваиваем ему локальный порт и
 //! адрес (bind()), при этом адреса дл€ вход€щих соединений могут быть
@@ -551,8 +553,10 @@ private:
   void new_channel();
 };
 
-//! \author Sergeev Sergey, Lyashchov Maksim
 //! \brief  лиент дл€ передачи данных по TCP протоколу
+//! \author 
+//!   \li Sergeev Sergey
+//!   \li Lyashchov Maksim
 //!
 //! —оздаем сокет клиента (socket()) и переводим его в неблокирующий
 //! режим (fcntl()). ”станавливаем соединение с сервером (connect())
