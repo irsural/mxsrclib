@@ -114,7 +114,7 @@ void range(size_t a_index, size_t a_size, size_t a_start_range,
   size_t a_end_range, size_t *a_num, size_t *a_start);
 
 // \class modbus_server_t
-//! \brief Сервер протокола Modbus
+//! \brief Сервер протокола Modbus jhgyjy..
 //! \author Sergeev Sergey
 // \example modbus_server.cpp
 
@@ -280,9 +280,9 @@ private:
 };
 
 
-//! \brief Клиент протокола Modbus.
+//! \brief Клиент протокола Modbus
 //! \author Sergeev Sergey
-//! \example modbus_client.cpp
+// \example modbus_client.cpp
 class modbus_client_t : public mxdata_ext_t
 {
 public:
