@@ -492,10 +492,10 @@ public:
   virtual void tick();
 };
 
+//! \author 
+//!   \li Sergeev Sergey
+//!   \li Lyashchov Maksim
 //! \brief Сервер для передачи данных по TCP протоколу
-// \author 
-//   \li Sergeev Sergey
-//   \li Lyashchov Maksim
 //!
 //! \details Создаем сокет сервера(socket()) и присваиваем ему локальный порт и
 //! адрес (bind()), при этом адреса для входящих соединений могут быть
