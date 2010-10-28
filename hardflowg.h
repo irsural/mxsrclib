@@ -77,7 +77,7 @@ namespace irs {
 
 //! \ingroup in_out_group
 //! \brief Абстрактный интерфейс для классов, реализующих обмен данными по
-//! различным протоколам
+//!   различным протоколам.
 class hardflow_t {
 public:
   typedef size_t size_type;
@@ -147,7 +147,7 @@ class error_sock_t
 public:
   #if defined(IRS_WIN32)
   enum error_t {
-    eacess = WSAEACCES,                   //!< Только для Windows
+    eacess = WSAEACCES,                   //!< \brief Только для Windows
     eaddrenuse = WSAEADDRINUSE,
     eaddrnotavail = WSAEADDRNOTAVAIL,
     eafnosupport = WSAEAFNOSUPPORT,
@@ -155,14 +155,14 @@ public:
     econnrefused = WSAECONNREFUSED,
     econnreset = WSAECONNRESET,
     edestaddrreq = WSAEDESTADDRREQ,
-    efault = WSAEFAULT,                   //!< Только для Windows
+    efault = WSAEFAULT,                   //!< \brief Только для Windows
     ehostdown = WSAEHOSTDOWN,
     ehostunread = WSAEHOSTUNREACH,
-    einprogress = WSAEINPROGRESS,         //!< Только для Windows
-    eintr = WSAEINTR,                     //!< Только для Windows
+    einprogress = WSAEINPROGRESS,         //!< \brief Только для Windows
+    eintr = WSAEINTR,                     //!< \brief Только для Windows
     eisconn = WSAEISCONN,
-    einval = WSAEINVAL,                   //!< Только для Windows
-    emfile = WSAEMFILE,                   //!< Только для Windows
+    einval = WSAEINVAL,                   //!< \brief Только для Windows
+    emfile = WSAEMFILE,                   //!< \brief Только для Windows
     emsgsize = WSAEMSGSIZE,
     enetdown = WSAENETDOWN,
     enetreset = WSAENETRESET,
@@ -173,16 +173,16 @@ public:
     enotsock = WSAENOTSOCK,
     eopnotsupp = WSAEOPNOTSUPP,
     epfnosupport = WSAEPFNOSUPPORT,
-    eproclim = WSAEPROCLIM,               //!< Только для Windows
+    eproclim = WSAEPROCLIM,               //!< \brief Только для Windows
     eprotonosupport = WSAEPROTONOSUPPORT,
     eprototype = WSAEPROTOTYPE,
     esocktnosupport = WSAESOCKTNOSUPPORT,
-    eshutdown = WSAESHUTDOWN,             //!< Только для Windows
+    eshutdown = WSAESHUTDOWN,             //!< \brief Только для Windows
     etimedout = WSAETIMEDOUT,
     ewouldblock = WSAEWOULDBLOCK,
-    notinitialised = WSANOTINITIALISED,   //!< Только для Windows
-    sysnotready = WSASYSNOTREADY,         //!< Только для Windows
-    vernotsupported = WSAVERNOTSUPPORTED  //!< Только для Windows
+    notinitialised = WSANOTINITIALISED,   //!< \brief Только для Windows
+    sysnotready = WSASYSNOTREADY,         //!< \brief Только для Windows
+    vernotsupported = WSAVERNOTSUPPORTED  //!< \brief Только для Windows
   };
   #elif defined(IRS_LINUX)
   enum error_t {

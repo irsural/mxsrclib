@@ -113,8 +113,9 @@ void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
 void range(size_t a_index, size_t a_size, size_t a_start_range, 
   size_t a_end_range, size_t *a_num, size_t *a_start);
 
+//! \brief —ервер протокола Modbus.
 //! \author Sergeev Sergey
-//! \brief —ервер протокола Modbus  
+//! \example modbus_server.cpp
 class modbus_server_t : public mxdata_ext_t
 {
 public:
@@ -272,8 +273,10 @@ private:
   void view_mode();
 };
 
+
+//! \brief  лиент протокола Modbus.
 //! \author Sergeev Sergey
-//! \brief  лиент протокола Modbus  
+//! \example modbus_client.cpp
 class modbus_client_t : public mxdata_ext_t
 {
 public:
@@ -284,9 +287,9 @@ public:
   //!   протокол
   //! \param[in] a_refresh_mode Ц режим работы клиента: mode_refresh_auto или
   //!   mode_refresh_manual
-  //! \param[in] a_discr_inputs_size Ц количество discret inputs в
+  //! \param[in] a_discr_inputs_size_byte Ц количество discret inputs в
   //!   байтах 0 .. 8192
-  //! \param[in] a_coils_size Ц размер coils в байтах 0 .. 8192
+  //! \param[in] a_coils_size_byte Ц размер coils в байтах 0 .. 8192
   //! \param[in] a_hold_regs_reg Ц размер holding registers в
   //!   регистрах 0 .. 65536
   //! \param[in] a_input_regs_reg Ц размер input registers в
@@ -296,7 +299,7 @@ public:
   //! \param[in] a_error_count_max Ц максимальное количество попыток передачи
   //!   запроса до выставлени€ status_error. ѕопытка считаетс€ неудачной,
   //!   если получены данные об ошибке или не получен ответ на запрос
-  //! \param[in] double a_disconnect_time_sec Ц врем€, через которое сервер
+  //! \param[in] a_disconnect_time Ц врем€, через которое сервер
   //!   реагирует на обрыв св€зи в случае сбоев при попытках совершить
   //!   обмен данными
   modbus_client_t(
