@@ -21,6 +21,8 @@ namespace gcc_linux {
 //! \addtogroup drivers_group
 //! @{
 
+//! \author Sergeev Sergey
+//! \brief Драйвер клавиатуры для Linux
 class keyboard_t
 {
 public:

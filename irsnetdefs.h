@@ -21,6 +21,9 @@
 //! \addtogroup network_in_out_group
 //! @{
 
+//! \author Sergeev Sergey
+//! \brief Определение типов mxip_t, mxmac_t и сопутствующих им функций
+
 // Длина строки для ip-адреса
 #define IP_STR_LEN 16
 // Длина строки для mac-адреса

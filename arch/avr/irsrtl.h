@@ -43,6 +43,8 @@ struct rtl_port_str_t
   p_avr_port_t rtl_address_port_dir;
 };
 
+//! \author Sergeev Sergey
+//! \brief Äנאיגונ Ethernet הכÿ RTL8019AS
 class rtl8019as_t: public simple_ethernet_t
 {
 public:

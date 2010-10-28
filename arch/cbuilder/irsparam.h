@@ -27,6 +27,8 @@ namespace irs {
 //! \addtogroup graphical_user_interface_group
 //! @{
 
+//! \author Sergeev Sergey
+//! \brief Таблица параметров
 class param_box_t: public param_box_base_t
 {
 public:

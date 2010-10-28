@@ -45,7 +45,8 @@ void hton16(irs_u8* ap_network_out, irs_u16 a_host_in);
 irs_u32 ntoh32(irs_u8* ap_network_in);
 void hton32(irs_u8* ap_network_out, irs_u32 a_host_in);
 
-// Ethernet interface
+//! \author Sergeev Sergey
+//! \brief Ethernet interface
 class simple_ethernet_t
 {
 public:
@@ -79,7 +80,8 @@ public:
   virtual void tick() = 0;
 };
 
-// ARP-кэш
+//! \author Sergeev Sergey
+//! \brief ARP-cash
 class arp_cash_t
 {
 public:
@@ -117,6 +119,8 @@ private:
   irs::loop_timer_t m_reset_timer;
 };
 
+//! \author Sergeev Sergey
+//! \brief Стек протоколов TCP/IP
 class simple_tcpip_t
 {
 public:

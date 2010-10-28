@@ -492,6 +492,7 @@ public:
   virtual void tick();
 };
 
+//! \author Sergeev Sergey, Lyashchov Maksim
 //! \brief —ервер дл€ передачи данных по TCP протоколу
 //!
 //! —оздаем сокет сервера(socket()) и присваиваем ему локальный порт и
@@ -550,6 +551,7 @@ private:
   void new_channel();
 };
 
+//! \author Sergeev Sergey, Lyashchov Maksim
 //! \brief  лиент дл€ передачи данных по TCP протоколу
 //!
 //! —оздаем сокет клиента (socket()) и переводим его в неблокирующий
@@ -624,6 +626,7 @@ private:
 
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
+//! \author Sergeev Sergey
 //! \brief ѕрием/передача фиксированных объемов данных с
 //! использованием hardflow_t
 //!
@@ -699,6 +702,8 @@ private:
   timer_t m_write_timeout;
 };
 
+//! \author Sergeev Sergey
+//! \brief ѕоток дл€ передачи данных по протоколу UDP
 class simple_udp_flow_t: public hardflow_t
 {
 public:
@@ -790,6 +795,8 @@ private:
   size_type channel_ident_from_index(size_type a_list_index);
 };
 
+//! \author Sergeev Sergey
+//! \brief ѕоток дл€ передачи данных по протоколу TCP
 class simple_tcp_flow_t: public hardflow_t
 {
 public:
