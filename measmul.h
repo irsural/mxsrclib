@@ -848,10 +848,12 @@ private:
 
 bool iir_filter_asynch_test();
 
-// Класс асинхронной фильтрации фильтром с конечной импульсной характеристикой.
-// Параметры шаблона: value_t - тип переменных, для расчета,
-// iterator_t - тип итератора для получения входных значений,
-// container_t - тип контейнера, принимающего отфильтрованные значения
+//! \brief Класс асинхронной фильтрации фильтром с конечной импульсной
+//!   характеристикой.
+//!
+//! Параметры шаблона: value_t - тип переменных, для расчета,
+//!   iterator_t - тип итератора для получения входных значений,
+//!   container_t - тип контейнера, принимающего отфильтрованные значения.
 template <class value_t, class iterator_t, class container_t>
 class fir_filter_asynch_t
 {
@@ -876,13 +878,13 @@ public:
   void set(iterator_t ap_begin, iterator_t ap_end);
   value_t get() const;
   void reset();
-  // Вовзращает статус завершенности
+  //! \brief Вовзращает статус завершенности
   bool completed() const;
-  // Элементарное действие
+  //! \brief Элементарное действие
   void tick();
-  // Прерывание операции
+  //! \brief Прерывание операции
   void abort();
-  // Установка времени тика
+  //! \brief Установка времени тика
   void set_tick_max_time(const double a_set_tick_max_time_s);
 private:
   fir_filter_t<value_t> m_fir_filter;
@@ -896,7 +898,7 @@ private:
   size_type m_filt_value_max_count;
 };
 
-// Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
+//! \brief Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
 class agilent_3458a_digitizer_t: public mxmultimeter_t
 {
 public:
@@ -918,69 +920,69 @@ public:
     raw_data_t<double> > iir_filter_asynch_type;
   typedef fir_filter_asynch_t<math_type, raw_data_t<double>::pointer,
     raw_data_t<double> > fir_filter_asynch_type;
-  // Конструктор
+  //! \brief Конструктор
   agilent_3458a_digitizer_t(
     irs::hardflow_t* ap_hardflow,
     const filter_settings_t& a_filter_settings,
     const double a_sampling_time_s = 25e-6,
     const double a_interval_s = 30.0
   );
-  // Деструктор
+  //! \brief Деструктор
   ~agilent_3458a_digitizer_t();
   virtual void get_param(const multimeter_param_t a_param,
     irs::raw_data_t<irs_u8> *ap_value) const;
   virtual void set_param(const multimeter_param_t a_param,
     const irs::raw_data_t<irs_u8> &a_value);
   virtual bool is_param_exists(const multimeter_param_t a_param) const;
-  // Установить режим измерения постоянного напряжения
+  //! \brief Установить режим измерения постоянного напряжения
   virtual void set_dc();
-  // Установить режим измерения переменного напряжения
+  //! \brief Установить режим измерения переменного напряжения
   virtual void set_ac();
-  // Установить положителный фронт запуска
+  //! \brief Установить положителный фронт запуска
   virtual void set_positive();
-  // Установить отрицательный фронт канала
+  //! \brief Установить отрицательный фронт канала
   virtual void set_negative();
-  // Чтение значения при текущем типа измерения
+  //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
-  // Чтение напряжения
+  //! \brief Чтение напряжения
   virtual void get_voltage(double *voltage);
-  // Чтения силы тока
+  //! \brief Чтения силы тока
   virtual void get_current(double *current);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance2x(double *resistance);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance4x(double *resistance);
-  // Чтение частоты
+  //! \brief Чтение частоты
   virtual void get_frequency(double *frequency);
-  // Чтение усредненного сдвира фаз
+  //! \brief Чтение усредненного сдвира фаз
   virtual void get_phase_average(double *phase_average);
-  // Чтение фазового сдвига
+  //! \brief Чтение фазового сдвига
   virtual void get_phase(double *phase);
-  // Чтение временного интервала
+  //! \brief Чтение временного интервала
   virtual void get_time_interval(double *time_interval);
-  // Чтение усредненного временного интервала
+  //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval); 
-  // Запуск автокалибровки (команда ACAL) мультиметра
+  //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
-  // Чтение статуса текущей операции
+  //! \brief Чтение статуса текущей операции
   virtual meas_status_t status();
-  // Прерывание текущей операции
+  //! \brief Прерывание текущей операции
   virtual void abort();
-  // Элементарное действие
+  //! \brief Элементарное действие
   virtual void tick();
-  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
   virtual void set_nplc(double nplc);
-  // Установка времени интегрирования в c
+  //! \brief Установка времени интегрирования в c
   virtual void set_aperture(double aperture);
-  // Установка полосы фильтра
+  //! \brief Установка полосы фильтра
   virtual void set_bandwidth(double bandwidth);
-  // Установка входного сопротивления канала
+  //! \brief Установка входного сопротивления канала
   virtual void set_input_impedance(double impedance);
-  // Устсновка уровня запуска канала
+  //! \brief Устсновка уровня запуска канала
   virtual void set_start_level(double level);
-  // Установка диапазона измерений
+  //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
-  // Установка автоматического выбора диапазона измерений
+  //! \brief Установка автоматического выбора диапазона измерений
   virtual void set_range_auto();
 private:
   void commands_to_buf_send();
@@ -1766,10 +1768,10 @@ void fir_filter_asynch_t<value_t, iterator_t, container_t>::set_tick_max_time(
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
-// Класс для работы с мультиметром В7-78/1
+//! \brief Класс для работы с мультиметром В7-78/1
 class v7_78_1_t: public mxmultimeter_t
 {
-  // Тип для текущего режима
+  //! \brief Тип для текущего режима
   typedef enum _ma_mode_t {
     ma_mode_start,
     ma_mode_macro,
@@ -1779,7 +1781,7 @@ class v7_78_1_t: public mxmultimeter_t
     ma_mode_auto_calibration,
     ma_mode_auto_calibration_wait
   } ma_mode_t;
-  // Тип для текущей команды
+  //! \brief Тип для текущей команды
   typedef enum _ma_command_t {
     mac_free,
     mac_get_value,
@@ -1800,7 +1802,7 @@ class v7_78_1_t: public mxmultimeter_t
   } macro_mode_t;
   enum meas_type_t{DC_MEAS, AC_MEAS} m_meas_type;
   enum resistance_meas_type_t{RES_MEAS_2x, RES_MEAS_4x} m_res_meas_type;
-  // Тип для индексов
+  //! \brief Тип для индексов
   typedef irs_i32 index_t;
 
 
@@ -1808,166 +1810,166 @@ class v7_78_1_t: public mxmultimeter_t
 
   multimeter_mode_type_t m_mul_mode_type;
 
-  // Команды при инициализации
+  //! \brief Команды при инициализации
   vector<irs::string> f_init_commands;
-  /* Индекс команды установки времени интегрирования для
-  постоянного напряжения*/
+  //! \brief Индекс команды установки времени интегрирования для
+  //!  постоянного напряжения
   index_t m_nplc_voltage_dc_index;
-  // Индекс команды установки полосы фильтра для переменного напряжения
+  //! \brief Индекс команды установки полосы фильтра для переменного напряжения
   index_t m_band_width_voltage_ac_index;
-  // Команды чтения значения при произвольных настройках
+  //! \brief Команды чтения значения при произвольных настройках
   vector<irs::string> m_get_value_commands;
-  // Команды при чтении напряжения
+  //! \brief Команды при чтении напряжения
   vector<irs::string> m_get_voltage_dc_commands;
   vector<irs::string> m_get_voltage_ac_commands;
 
-  // Индекс команды установки времени интегрирования для сопротивления
+  //! \brief Индекс команды установки времени интегрирования для сопротивления
   index_t m_nplc_resistance_2x_index;
   index_t m_nplc_resistance_4x_index;
-  // Команды при чтении сопротивления
+  //! \brief Команды при чтении сопротивления
   vector<irs::string> m_get_resistance_2x_commands;
   vector<irs::string> m_get_resistance_4x_commands;
 
-  // Индекс команды установки времени интегрирования для тока
+  //! \brief Индекс команды установки времени интегрирования для тока
   index_t m_nplc_current_dc_index;
   index_t m_nplc_current_ac_index;
-  // Команды при чтении тока
+  //! \brief Команды при чтении тока
   vector<irs::string> m_get_current_dc_commands;
   vector<irs::string> m_get_current_ac_commands;
 
-  // Индекс команды установки времени счета
+  //! \brief Индекс команды установки времени счета
   index_t m_aperture_frequency_index;
-  // Команды при чтении частоты
+  //! \brief Команды при чтении частоты
   vector<irs::string> m_get_frequency_commands;
 
-  // Дескриптор канала mxifa
+  //! \brief Дескриптор канала mxifa
   void *f_handle;
-  // Ощибка создания
+  //! \brief Ощибка создания
   irs_bool f_create_error;
-  // Текущий режим работы
+  //! \brief Текущий режим работы
   ma_mode_t f_mode;
-  // Текущий макрорежим работы
+  //! \brief Текущий макрорежим работы
   macro_mode_t f_macro_mode;
-  // Статус текущей операции
+  //! \brief Статус текущей операции
   meas_status_t f_status;
-  // Текущая команда
+  //! \brief Текущая команда
   ma_command_t f_command;
-  // Указатель на переменную измеряемой величины,
-  // при произвольном типе измерения
+  //! \brief Указатель на переменную измеряемой величины,
+  //!  при произвольном типе измерения
   double* mp_value;
-  // Указатель на перменную напряжение пользователя
+  //! \brief Указатель на перменную напряжение пользователя
   double* mp_voltage;
-  // Указатель на перменную сопротивление пользователя
+  //! \brief Указатель на перменную сопротивление пользователя
   double* mp_resistance;
-  // Указатель на перменную ток пользователя
+  //! \brief Указатель на перменную ток пользователя
   double* mp_current;
-  // Указатель на перменную частота пользователя
+  //! \brief Указатель на перменную частота пользователя
   double* mp_frequency;
-  // Запрос на прерывание операции
+  //! \brief Запрос на прерывание операции
   irs_bool f_abort_request;
-  // Буфер приема
+  //! \brief Буфер приема
   irs_u8 f_read_buf[ma_read_buf_size];
-  // Текущая позиция в буфере приема
+  //! \brief Текущая позиция в буфере приема
   index_t f_read_pos;
-  // Текущая команда
+  //! \brief Текущая команда
   irs::string f_cur_mul_command;
-  // Команды для мультиметра
+  //! \brief Команды для мультиметра
   vector<irs::string> *f_mul_commands;
-  // Индекс команд для мультиметра
+  //! \brief Индекс команд для мультиметра
   index_t f_mul_commands_index;
   // Предыдущая команда
   //ma_command_t f_command_prev;
-  // Указатель на переменную в которую будет считано значение
+  //! \brief Указатель на переменную в которую будет считано значение
   double *f_value;
-  // Выполнить чтение параметра
+  //! \brief Выполнить чтение параметра
   irs_bool f_get_parametr_needed;
-  // Время таймаута операций
+  //! \brief Время таймаута операций
   counter_t f_oper_time;
-  // Таймаут операций
+  //! \brief Таймаут операций
   counter_t f_oper_to;
-  // Время таймаута калибровки
+  //! \brief Время таймаута калибровки
   counter_t f_acal_time;
-  // Таймаут калибровки
+  //! \brief Таймаут калибровки
   counter_t f_acal_to;
 
   bool m_current_volt_dc_meas;
-  // Запрещение конструктора по умолчанию
+  //! \brief Запрещение конструктора по умолчанию
   v7_78_1_t();
 public:
-  // Конструктор
+  //! \brief Конструктор
   v7_78_1_t(
     mxifa_ch_t channel,
     gpib_addr_t address,
     multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active);
-  // Деструктор
+  //! \brief Деструктор
   ~v7_78_1_t();
-  // Установить режим измерения постоянного напряжения
+  //! \brief Установить режим измерения постоянного напряжения
   virtual inline void set_dc();
-  // Установить режим измерения переменного напряжения
+  //! \brief Установить режим измерения переменного напряжения
   virtual inline void set_ac();
-  // Установить положителный фронт запуска
+  //! \brief Установить положителный фронт запуска
   virtual void set_positive();
-  // Установить отрицательный фронт канала
+  //! \brief Установить отрицательный фронт канала
   virtual void set_negative();
-  // Чтение значения при текущем типа измерения
+  //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
-  // Чтение напряжения
+  //! \brief Чтение напряжения
   virtual void get_voltage(double *voltage);
-  // Чтения силы тока
+  //! \brief Чтения силы тока
   virtual void get_current(double *current);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance2x(double *resistance);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance4x(double *resistance);
-  // Чтение частоты
+  //! \brief Чтение частоты
   virtual void get_frequency(double *frequency);
-  // Чтение усредненного сдвира фаз
+  //! \brief Чтение усредненного сдвира фаз
   virtual void get_phase_average(double *phase_average);
-  // Чтение фазового сдвига
+  //! \brief Чтение фазового сдвига
   virtual void get_phase(double *phase);
-  // Чтение временного интервала
+  //! \brief Чтение временного интервала
   virtual void get_time_interval(double *time_interval);
-  // Чтение усредненного временного интервала
+  //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval);
 
-  // Запуск автокалибровки (команда ACAL) мультиметра
+  //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
-  // Чтение статуса текущей операции
+  //! \brief Чтение статуса текущей операции
   virtual meas_status_t status();
-  // Прерывание текущей операции
+  //! \brief Прерывание текущей операции
   virtual void abort();
-  // Элементарное действие
+  //! \brief Элементарное действие
   virtual void tick();
-  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
   virtual void set_nplc(double nplc);
-  // Установка времени интегрирования в c
+  //! \brief Установка времени интегрирования в c
   virtual void set_aperture(double aperture);
-  // Установка полосы фильтра
+  //! \brief Установка полосы фильтра
   virtual void set_bandwidth(double bandwidth);
-  // Установка входного сопротивления канала
+  //! \brief Установка входного сопротивления канала
   virtual void set_input_impedance(double impedance);
-  // Устсновка уровня запуска канала
+  //! \brief Устсновка уровня запуска канала
   virtual void set_start_level(double level);
-  // Установка диапазона измерений
+  //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
-  // Установка автоматического выбора диапазона измерений
+  //! \brief Установка автоматического выбора диапазона измерений
 virtual void set_range_auto();
 private:
-  // Установка временного интервала измерения
+  //! \brief Установка временного интервала измерения
   void set_time_interval_meas(const double a_time_interval_meas);
 };
-// Установить режим измерения постоянного напряжения
+//! \brief Установить режим измерения постоянного напряжения
 inline void irs::v7_78_1_t::set_dc()
 {
   m_meas_type = DC_MEAS;
 }
-// Установить режим измерения переменного напряжения
+//! \brief Установить режим измерения переменного напряжения
 inline void irs::v7_78_1_t::set_ac()
 {
   m_meas_type = AC_MEAS;
 }
 
-// Класс для работы с частотомером электронно-счетным акип чз-85/3R
+//! \brief Класс для работы с частотомером электронно-счетным акип чз-85/3R
 enum msg_status_t{MSG_BUSY, MSG_SUCCESS};
 class akip_ch3_85_3r_t: public mxmultimeter_t
 {
@@ -2061,135 +2063,135 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
   string_msgs_t m_string_msgs;
 
   enum command_status_t{CS_SUCCESS = 0, CS_BUSY = 1, CS_ERROR = 2};
-  // Статус текущей операции
+  //! \brief Статус текущей операции
   command_status_t m_send_command_stat;
   meas_status_t m_meas_stat;
 
-  // Указатель на пользовательскую переменную, в которую
-  //будет сохранен результат.
+  //! \brief Указатель на пользовательскую переменную, в которую
+  //!  будет сохранен результат.
   double* mp_result;
-  // Тип для индексов
+  //! \brief Тип для индексов
   typedef irs_i32 index_t;
-  // Указатель на последнюю команду ИЗМЕРЕНИЙ
+  //! \brief Указатель на последнюю команду ИЗМЕРЕНИЙ
   vector<irs::string>* mp_last_commands;
 
-  // Команды при инициализации
+  //! \brief Команды при инициализации
   vector<irs::string> mv_init_commands;
 
-  // Команды при перезакгрузке мультиметра
+  //! \brief Команды при перезакгрузке мультиметра
   vector<irs::string> mv_reset_multimetr_commands;
 
-  // Указатели на команды настроек мультиметра
+  //! \brief Указатели на команды настроек мультиметра
   vector<irs::string*> mv_multimetr_p_commands_setting;
 
-  // Команды при чтении значения измеряемой величины,
-  // при произвольном типе измерения
+  //! \brief Команды при чтении значения измеряемой величины,
+  //!  при произвольном типе измерения
   vector<irs::string> mv_get_value_commands;
 
-  // Команды при чтении усредненной разности фаз
+  //! \brief Команды при чтении усредненной разности фаз
   vector<irs::string> mv_get_phase_average_commands;
 
-  // Команды при чтении разности фаз
+  //! \brief Команды при чтении разности фаз
   vector<irs::string> mv_get_phase_commands;
 
-  // Команды при чтении временного интервала
+  //! \brief Команды при чтении временного интервала
   vector<irs::string> mv_get_time_interval_commands;
 
-  // Команды при чтении усредненного временного интервала
+  //! \brief Команды при чтении усредненного временного интервала
   vector<irs::string> mv_get_time_interval_average_commands;
 
-  // Команды при чтении частоты
+  //! \brief Команды при чтении частоты
   vector<irs::string> mv_get_frequency_commands;
 
-  // Команды, большие по времении выполнения
+  //! \brief Команды, большие по времении выполнения
   vector<irs::string> mv_big_time_commands;
 
-  // Команды установки времени счета
+  //! \brief Команды установки времени счета
   irs::string ms_set_interval_command;
 
-  // Команды установки входного сопротивления каналов
+  //! \brief Команды установки входного сопротивления каналов
   irs::string ms_set_in_impedance_channel_1_command;
   irs::string ms_set_in_impedance_channel_2_command;
 
-  // Команды установки вида связи входа канала
+  //! \brief Команды установки вида связи входа канала
   irs::string ms_set_type_coupling_channel_1_command;
   irs::string ms_set_type_coupling_channel_2_command;
 
-  // Команды установки типа фронта запуска канала
+  //! \brief Команды установки типа фронта запуска канала
   irs::string ms_set_type_slope_channel_1_command;
   irs::string ms_set_type_slope_channel_2_command;
 
-  // Команды установки фильтра канала
+  //! \brief Команды установки фильтра канала
   irs::string ms_set_filter_channel_1_command;
   irs::string ms_set_filter_channel_2_command;
 
-  // Установка уровня запуска канала
+  //! \brief Установка уровня запуска канала
   irs::string ms_set_level_channel_1_command;
   irs::string ms_set_level_channel_2_command;
 
-  // Запрещение конструктора по умолчанию
+  //! \brief Запрещение конструктора по умолчанию
   akip_ch3_85_3r_t();
 public:
-  // Конструктор
+  //! \brief Конструктор
   akip_ch3_85_3r_t(
     hardflow_t* ap_hardflow,
     multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active);
-  // Деструктор
+  //! \brief Деструктор
   ~akip_ch3_85_3r_t();
   void connect(hardflow_t* ap_hardflow);
-  // Установить режим измерения постоянного напряжения
+  //! \brief Установить режим измерения постоянного напряжения
   virtual void set_dc();
-  // Установить режим измерения переменного напряжения
+  //! \brief Установить режим измерения переменного напряжения
   virtual void set_ac();
-  // Установить положителный фронт запуска
+  //! \brief Установить положителный фронт запуска
   virtual void set_positive();
-  // Установить отрицательный фронт канала
+  //! \brief Установить отрицательный фронт канала
   virtual void set_negative();
-  // Чтение значения при текущем типа измерения
+  //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
-  // Чтение напряжения
+  //! \brief Чтение напряжения
   virtual void get_voltage(double *ap_voltage);
-  // Чтения силы тока
+  //! \brief Чтения силы тока
   virtual void get_current(double *ap_current);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance2x(double *ap_resistance);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance4x(double *ap_resistance);
 
-  // Чтение частоты
+  //! \brief Чтение частоты
   virtual void get_frequency(double *ap_frequency);
-  // Чтение усредненного сдвира фаз
+  //! \brief Чтение усредненного сдвира фаз
   virtual void get_phase_average(double *ap_phase_average);
-  // Чтение фазового сдвига
+  //! \brief Чтение фазового сдвига
   virtual void get_phase(double *ap_phase);
-  // Чтение временного интервала
+  //! \brief Чтение временного интервала
   virtual void get_time_interval(double *ap_time_interval);
-  // Чтение усредненного временного интервала
+  //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval);
-  // Запуск автокалибровки (команда ACAL) мультиметра
+  //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
-  // Чтение статуса текущей операции
+  //! \brief Чтение статуса текущей операции
   virtual meas_status_t status();
-  // Перезагрузка с восстановлением параматров
+  //! \brief Перезагрузка с восстановлением параматров
   virtual void abort();
-  // Элементарное действие
+  //! \brief Элементарное действие
   virtual void tick();
-  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
   virtual void set_nplc(double a_nplc);
-  // Установка времени счета в cек
+  //! \brief Установка времени счета в cек
   virtual void set_aperture(double a_aperture);
-  // Установка фильтра в герцах
+  //! \brief Установка фильтра в герцах
   virtual void set_bandwidth(double a_bandwidth);
-  // Установка входного сопротивления канала
+  //! \brief Установка входного сопротивления канала
   virtual void set_input_impedance(double impedance);
-  // Устсновка уровня запуска канала
+  //! \brief Устсновка уровня запуска канала
   virtual void set_start_level(double a_level);
-  // Установка диапазона измерений
+  //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
-  // Установка автоматического выбора диапазона измерений
+  //! \brief Установка автоматического выбора диапазона измерений
   virtual void set_range_auto();
 private:
-  // Установка временного интервала измерения
+  //! \brief Установка временного интервала измерения
   void set_time_interval_meas(const double a_time_interval_meas);
 };
   // Установить режим измерения постоянного напряжения
@@ -2203,61 +2205,61 @@ inline void irs::akip_ch3_85_3r_t::set_ac()
 class dummy_multimeter_t: public mxmultimeter_t
 {
 public:
-  // Установить режим измерения постоянного напряжения
+  //! \brief Установить режим измерения постоянного напряжения
   virtual void set_dc() {}
-  // Установить режим измерения переменного напряжения
+  //! \brief Установить режим измерения переменного напряжения
   virtual void set_ac() {}
-  // Установить положителный фронт запуска
+  //! \brief Установить положителный фронт запуска
   virtual void set_positive() {}
-  // Установить отрицательный фронт канала
+  //! \brief Установить отрицательный фронт канала
   virtual void set_negative() {}
-  // Чтение значения при текущем типа измерения
+  //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double* value) { *value = rand(); }
-  // Чтение напряжения
+  //! \brief Чтение напряжения
   virtual void get_voltage(double* /*voltage*/) { }
-  // Чтения силы тока
+  //! \brief Чтения силы тока
   virtual void get_current(double* /*current*/) {}
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance2x(double* /*resistance*/) {}
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance4x(double* resistance)
   {
     static int i = 0;
     //*resistance = abs( rand() );
     *resistance = i++;
   }
-  // Чтение частоты
+  //! \brief Чтение частоты
   virtual void get_frequency(double* /*frequency*/) {}
-  // Чтение усредненного сдвира фаз
+  //! \brief Чтение усредненного сдвира фаз
   virtual void get_phase_average(double* /*phase_average*/) {}
-  // Чтение фазового сдвига
+  //! \brief Чтение фазового сдвига
   virtual void get_phase(double* /*phase*/) {}
-  // Чтение временного интервала
+  //! \brief Чтение временного интервала
   virtual void get_time_interval(double* /*time_interval*/) {}
-  // Чтение усредненного временного интервала
+  //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double* /*ap_time_interval*/) {}
 
-  // Запуск автокалибровки мультиметра
+  //! \brief Запуск автокалибровки мультиметра
   virtual void auto_calibration() {}
-  // Чтение статуса текущей операции
+  //! \brief Чтение статуса текущей операции
   virtual meas_status_t status() { return meas_status_success; }
-  // Прерывание текущей операции
+  //! \brief Прерывание текущей операции
   virtual void abort() {}
-  // Элементарное действие
+  //! \brief Элементарное действие
   virtual void tick() {}
-  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
   virtual void set_nplc(double /*nplc*/) {}
-  // Установка времени интегрирования в c
+  //! \brief Установка времени интегрирования в c
   virtual void set_aperture(double /*aperture*/) {}
-  // Установка полосы фильтра
+  //! \brief Установка полосы фильтра
   virtual void set_bandwidth(double /*bandwidth*/) {}
-  // Установка входного сопротивления канала
+  //! \brief Установка входного сопротивления канала
   virtual void set_input_impedance(double /*impedance*/) {}
-  // Установка уровня запуска канала
+  //! \brief Установка уровня запуска канала
   virtual void set_start_level(double /*level*/) {}
-  // Установка диапазона измерений
+  //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t /*a_type_meas*/, double /*a_range*/) {}
-  // Установка автоматического выбора диапазона измерений
+  //! \brief Установка автоматического выбора диапазона измерений
   virtual void set_range_auto() {}
   // Установка входного сопротивления канала
   //virtual void set_filter(double ) {}
@@ -2265,7 +2267,9 @@ public:
 
 
 
-// Класс для работы с мультиметром National Instruments PXI-4071
+//! \author Sergeev Sergey
+//!
+//! \brief Класс для работы с мультиметром National Instruments PXI-4071
 class ni_pxi_4071_t: public mxmultimeter_t
 {
 public:
@@ -2274,18 +2278,21 @@ public:
     power_50_Hz,
     power_60_Hz
   };
-  enum { // resolution
+  //! \brief resolution
+  enum {
     digits_3_5,
     digits_4_5,
     digits_5_5,
     digits_6_5,
     digits_7_5
   };
+  //! \brief тип измерений
   enum { // meas_mode
     digitizer,
     high_speed
   };
-  enum { // intergation time units
+  //! \brief intergation time units
+  enum { 
     sec,
     plc
   };
@@ -2303,56 +2310,56 @@ public:
   virtual void set_param(const multimeter_param_t a_param,
     const irs::raw_data_t<irs_u8> &a_value);
   virtual bool is_param_exists(const multimeter_param_t a_param) const;
-  // Установить режим измерения постоянного напряжения
+  //! \brief Установить режим измерения постоянного напряжения
   virtual void set_dc();
-  // Установить режим измерения переменного напряжения
+  //! \brief Установить режим измерения переменного напряжения
   virtual void set_ac();
-  // Установить положителный фронт запуска
+  //! \brief Установить положителный фронт запуска
   virtual void set_positive();
-  // Установить отрицательный фронт канала
+  //! \brief Установить отрицательный фронт канала
   virtual void set_negative();
-  // Чтение значения при текущем типа измерения
+  //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
-  // Чтение напряжения
+  //! \brief Чтение напряжения
   virtual void get_voltage(double *ap_voltage);
-  // Чтения силы тока
+  //! \brief Чтения силы тока
   virtual void get_current(double *ap_current);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance2x(double *ap_resistance);
-  // Чтение сопротивления
+  //! \brief Чтение сопротивления
   virtual void get_resistance4x(double *ap_resistance);
-  // Чтение частоты
+  //! \brief Чтение частоты
   virtual void get_frequency(double *ap_frequency);
-  // Чтение усредненного сдвира фаз
+  //! \brief Чтение усредненного сдвира фаз
   virtual void get_phase_average(double *ap_phase_average);
-  // Чтение фазового сдвига
+  //! \brief Чтение фазового сдвига
   virtual void get_phase(double *ap_phase);
-  // Чтение временного интервала
+  //! \brief Чтение временного интервала
   virtual void get_time_interval(double *ap_time_interval);
-  // Чтение усредненного временного интервала
+  //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval);
 
-  // Запуск автокалибровки мультиметра
+  //! \brief Запуск автокалибровки мультиметра
   virtual void auto_calibration();
-  // Чтение статуса текущей операции
+  //! \brief Чтение статуса текущей операции
   virtual meas_status_t status();
-  // Прерывание текущей операции
+  //! \brief Прерывание текущей операции
   virtual void abort();
-  // Элементарное действие
+  //! \brief Элементарное действие
   virtual void tick();
-  // Установка времени интегрирования в периодах частоты сети (20 мс)
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
   virtual void set_nplc(double a_nplc);
-  // Установка времени интегрирования в c
+  //! \brief Установка времени интегрирования в c
   virtual void set_aperture(double a_aperture);
-  // Установка полосы фильтра
+  //! \brief Установка полосы фильтра
   virtual void set_bandwidth(double /*a_bandwidth*/);
-  // Установка входного сопротивления канала
+  //! \brief Установка входного сопротивления канала
   virtual void set_input_impedance(double /*a_impedance*/);
-  // Установка уровня запуска канала
+  //! \brief Установка уровня запуска канала
   virtual void set_start_level(double /*a_level*/);
-  // Установка диапазона измерений
+  //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
-  // Установка автоматического выбора диапазона измерений
+  //! \brief Установка автоматического выбора диапазона измерений
   virtual void set_range_auto();
   // Установка входного сопротивления канала
   //virtual void set_filter(double a_time_interval);
@@ -2438,6 +2445,7 @@ private:
   mode_t m_mode;
   filter_settings_t m_filter;
   size_type m_window_size;
+  //timer_t m_pause;
 };
 
 //! @}

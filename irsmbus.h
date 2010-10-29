@@ -533,6 +533,7 @@ private:
   irs_u16                               m_transaction_id;
   irs_u16                               m_request_quantity_discr_inputs_bit;
   irs_u16                               m_request_quantity_coils_bit;
+  //! \brief Текущее количество неудачных попыток передачи запроса
   irs_u8                                m_error_count;
   irs_u8                                m_unit_id;
   timer_t                               m_send_request_timer;

@@ -1115,7 +1115,6 @@ void mx_agilent_3458a_t::tick()
 {
   mxifa_tick();
   initialize_tick();
-
   if (m_create_error) return;
   switch (m_mode) {
     case ma_mode_start: {
@@ -3753,7 +3752,8 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_abort_request(false),
   m_mode(start_mode),
   m_filter(a_filter),
-  m_window_size(0)
+  m_window_size(0)/*,
+  m_pause(irs::make_cnt_ms(500))*/
 {
   m_eth_mul_data.connect(&m_modbus_client, 0);
 
@@ -3935,6 +3935,7 @@ void irs::ni_pxi_4071_t::get_value(double* ap_value)
   mp_value = ap_value;
   m_status = meas_status_busy;
   m_mode = get_value_mode;
+  //m_pause.start();
 }
 
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
@@ -4038,9 +4039,12 @@ void irs::ni_pxi_4071_t::tick()
     } break;
     case get_value_mode:
     {
-      *mp_value = m_eth_mul_data.meas_value;
-      m_mode = stop_mode;
-      m_status = meas_status_success;
+      //if (m_pause.check()) {
+        *mp_value = m_eth_mul_data.meas_value;
+        m_mode = stop_mode;
+        m_status = meas_status_success;
+        //m_pause.stop();
+      //}
     } break;
     case get_voltage_mode:
     {
