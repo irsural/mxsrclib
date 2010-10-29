@@ -75,9 +75,10 @@
 
 namespace irs {
 
-//! \ingroup in_out_group
 //! \brief Абстрактный интерфейс для классов, реализующих обмен данными по
 //!   различным протоколам.
+//! \ingroup in_out_group
+//! \author Krasheninnikov Maxim
 class hardflow_t {
 public:
   typedef size_t size_type;
@@ -99,7 +100,7 @@ public:
   //! \param[in] a_value - новое значение параметра
   virtual void set_param(const string_type &a_name,
     const string_type &a_value) = 0;
-  //! \brief Чтения данных
+  //! \brief Чтение данных
   //!
   //! \param[in] a_channel_ident – канал, из которого читаются данные;
   //! \param[out] ap_buf – буфер, в который считываются данные;
@@ -142,6 +143,8 @@ typedef hardflow_t::string_type stringns_t;
 #define HARDFLOW_DBG_MSG(error_code)
 #endif // IRS_LIB_DEBUG
 
+//! \brief Класс для получения последней ошибки
+//! \author Lyashchov Maxim
 class error_sock_t
 {
 public:
@@ -246,7 +249,8 @@ enum udp_limit_connections_mode_t {
   udplc_mode_limited,      //!< \brief Учитывается переменная m_max_size
   udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
 };
-
+//! \brief Вспомогательный класс для udp_flow_t
+//! \author Lyashchov Maxim
 class udp_channel_list_t
 {
 public:
@@ -367,6 +371,7 @@ private:
 };
 
 //! \brief Реализует обмен данными по UDP протоколу
+//! \author Lyashchov Maxim
 class udp_flow_t: public hardflow_t
 {
 public:
@@ -470,25 +475,17 @@ private:
   bool detect_func_single_arg(string_type a_param, string_type* ap_func_name,
     string_type* ap_arg) const;
 public:
-  //! \copydoc hardflow_t::param(const string_type &a_param_name)
   virtual string_type param(const string_type &a_param_name);
-  //! \copydoc hardflow_t::set_param(const string_type &a_param_name,
-  //!   const string_type &a_value)
   virtual void set_param(const string_type &a_param_name,
     const string_type &a_value);
-  //! \copydoc hardflow_t::read(size_type, irs_u8*, size_type)
-  //! В случае если функция read возвращает size_type == 0, буфер ap_buf может
-  //! быть испорчен
+  //! \details В случае если функция read возвращает size_type == 0, буфер
+  //!   ap_buf может быть испорчен.
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
     size_type a_size);
-  //! \copydoc hardflow_t::write(size_type, const irs_u8*, size_type)
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
-  //! \copydoc hardflow_t::channel_next()
   virtual size_type channel_next();
-  //! \copydoc hardflow_t::is_channel_exists(size_type)
   virtual bool is_channel_exists(size_type a_channel_ident);
-  //! \copydoc hardflow_t::tick()
   virtual void tick();
 };
 

@@ -43,7 +43,7 @@ typedef size_t sizens_t;
 //! @{
 
 #if IRS_LIB_VERSION_SUPPORT_LESS(390)
-// Универсальная функция перевода чисел в текст
+//! \brief Универсальная функция перевода чисел в текст.
 template<class T>
 inline AnsiString number_to_str(
   const T a_num,
@@ -56,7 +56,7 @@ inline AnsiString number_to_str(
   AnsiString astring_value = str_value.c_str();
   return astring_value;
 };
-// Универсальная функция перевода текста в число
+//! \brief Универсальная функция перевода текста в число.
 template<class T>
 inline bool str_to_number(const AnsiString& a_str, T& a_number)
 {
@@ -65,7 +65,8 @@ inline bool str_to_number(const AnsiString& a_str, T& a_number)
 };
 #endif // #if IRS_LIB_VERSION_SUPPORT_LESS(390)
 
-// Структура версии файла
+//! \brief Структура версии файла
+//! \author Lyashchov Maxim
 struct file_version_t
 {
   typedef unsigned short size_type;
@@ -85,17 +86,22 @@ struct file_version_t
   bool operator!=(const file_version_t& a_file_version) const;
 };
 
-// Запрос версии файла  
+//! \brief Запрос версии файла
+//! \author Lyashchov Maxim
 bool get_file_version(const irs::string_t& a_file_name,
   file_version_t& a_version);
 
-// Переводит структуру о версии файла в строку
+//! \brief Переводит структуру о версии файла в строку
+//! \author Lyashchov Maxim
 irs::string_t file_version_to_str(const file_version_t& a_file_version);
 
-// Переводит строку в тип file_version_t
+//! \brief Переводит строку в тип file_version_t
+//! \author Lyashchov Maxim
 bool str_to_file_version(const irs::string_t& a_str,
   file_version_t* ap_file_version);
 
+//! \brief Читает данные из файла MSExel(xls) в таблицу
+//! \author Lyashchov Maxim
 void file_xls_table_read(const string_t& a_book_name,
   const string_t& a_sheet,
   const string_t& a_cell_first,
@@ -103,20 +109,30 @@ void file_xls_table_read(const string_t& a_book_name,
   table_string_t* ap_table_string,
   bool* ap_read_success);
 
+//! \brief Записывает данные из таблицы в файл MSExel(xls).
+//! \author Lyashchov Maxim
 void file_xls_table_write(const string_t& a_book_name,
   const string_t& a_sheet,
   const string_t& a_cell_first,
   const table_string_t& a_table_string,
   bool* ap_read_success);
 
-// Функции, обеспечивающие безопасное копирование из StringGrid в table_string_t
-// и обратно. При недостаточном размере таблицы-приемника, ее размеры будут
-// автоматически увеличены
+//! \brief Копирует данные из TStringGrid в table_string_t.
+//! \author Lyashchov Maxim
+//!
+//! Если размер таблицы table_string_t недостаточен для приема данных, ее
+//!   размеры будут автоматически увеличены.
 void string_grid_to_table_string(
   const TStringGrid& a_string_grid,
   irs::table_string_t* ap_table_string
 );
 
+//! \brief Копирует диапазон ячеек из TStringGrid в table_string_t, с указанием
+//!   начальной позиции.
+//! \author Lyashchov Maxim
+//!
+//! Если размер таблицы table_string_t недостаточен для приема данных, ее
+//!   размеры будут автоматически увеличены.
 void string_grid_to_table_string(
   const rect_t& a_string_grid_rect,
   const TStringGrid& a_string_grid,
@@ -124,11 +140,22 @@ void string_grid_to_table_string(
   irs::table_string_t* ap_table_string
 );
 
+//! \brief Копирует данные из table_string_t в TStringGrig.
+//! \author Lyashchov Maxim
+//!
+//! Если размер TStringGrig недостаточен для приема данных, размер будет
+//!   автоматически увеличен.
 void table_string_to_string_grid(
   const table_string_t& a_table_string,
   TStringGrid* ap_string_grid
 );
 
+//! \brief Копирует диапазон ячеек из table_string_t в TStringGrig, с указанием
+//!   начальной позиции.
+//! \author Lyashchov Maxim
+//!
+//! Если размер TStringGrig недостаточен для приема данных, размер будет
+//!   автоматически увеличен.
 void table_string_to_string_grid(
   const rect_t& a_table_string_rect,
   const table_string_t& a_table_string,

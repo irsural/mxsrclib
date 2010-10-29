@@ -38,6 +38,7 @@ namespace hardflow {
 
 //! \brief Класс для работы с National Instruments USB-GPIB
 //!   в асинхронном режиме
+//! \author Lyashchov Maxim
 class ni_usb_gpib_flow_t: public hardflow_t
 {
 public:
@@ -91,6 +92,7 @@ private:
 
 //! \brief Класс для работы с National Instruments USB-GPIB
 //!   в синхронном режиме
+//! \author Lyashchov Maxim
 class ni_usb_gpib_flow_syn_t: public hardflow_t
 {
 public:

@@ -40,7 +40,8 @@ struct var_val_t {
   irs::string_t uf_str_type;
 };
 //---------------------------------------------------------------------------
-// Класс для работы с csv-файлами
+//! \brief Класс для работы с csv-файлами.
+//! \author Krasheninnikov Maxim
 class csv_file
 {
 public:
@@ -54,29 +55,31 @@ public:
   ~csv_file();
 
   // Методы
-  // Установка функции для вывода отладочной информации
+  //! \brief Установка функции для вывода отладочной информации.
   void set_dbg_text_out_fn(dbg_text_out_fn a_dbg_text_out_fn);
-  // Запись переменной, при ошибке возвращает irs_false
+  //! \brief Запись переменной, при ошибке возвращает irs_false.
   irs_bool set_var(const string_type& var_name, irs_i32 var_value);
   irs_bool set_var(const string_type& var_name, float var_value);
   irs_bool set_var(const string_type& var_name, const string_type& var_value);
-  // Добавить параметр в начале csv-файла, при ошибке возвращает irs_false
+  //! \brief Добавить параметр в начале csv-файла, при ошибке
+  //!   возвращает irs_false.
   irs_bool add_par(const string_type& par_name, irs_i32 par_value);
   irs_bool add_par(const string_type& par_name, float par_value);
   irs_bool add_par(const string_type& par_name, const string_type& par_value);
-  // Добавить название столбца csv-файла, при ошибке возвращает irs_false
+  //! \brief Добавить название столбца csv-файла, при ошибке
+  //!   возвращает irs_false.
   irs_bool add_col(const string_type& col_name, e_val_type val_type);
-  // Открыть файл name, при ошибке возвращает irs_false
+  //! \brief Открыть файл name, при ошибке возвращает irs_false.
   irs_bool open(const string_type& file_name);
-  // Закрыть файл
+  //! \brief Закрыть файл.
   irs_bool close();
-  // Запись строки в csv-файл, при превышении количества записей
-  // возвращает irs_false
+  //! \brief Запись строки в csv-файл, при превышении количества записей
+  //!   возвращает irs_false.
   irs_bool write_line();
 
-  // Очистить столбцы
+  //! \brief Очистить столбцы.
   void clear_cols();
-  // Очистить переменные
+  //! \brief Очистить переменные.
   void clear_pars();
 
 private:
@@ -147,7 +150,14 @@ namespace csvwork {
 // Watcom не переваривает irstable.h в котором определен тип table_string_t
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-enum csv_file_status_t {cfs_success = 0, cfs_busy = 1, cfs_error = 2};
+//! \brief Статус операции.
+enum csv_file_status_t {
+  cfs_success = 0, //!< \brief Последняя операция успешно выполнилась.
+  cfs_busy = 1,    //!< \brief Операция выполняется.
+  cfs_error = 2    //!< \brief Последняя операция завершилась с ошибкой.
+};
+//! \brief Чтение/запись csv файла в неблокирующем режиме.
+//! \author Lyashchov Maxim
 class csv_file_t
 {
 public:
@@ -220,24 +230,27 @@ private:
 public:   
   csv_file_t(const string_type& a_filename = string_type());
   ~csv_file_t();
-  // Выдает текущее состояние выполняемой операции. Значения от 0 до 1
+  //! \brief Выдает текущее состояние выполняемой операции. Значения от 0 до 1.
   inline double get_progress();
   inline csv_file_status_t get_status();
   void tick();
   void set_file(const string_type& a_file_name);
   void get_col_count(size_type* ap_col_count);
   void get_row_count(size_type* ap_row_count);
-  // Добавить строку в конец CSV файла
-  // Буфер внутрь не копируется, а считываюется прямо из буфера пользователя
+  //! \brief Добавить строку в конец CSV файла.
+  //!
+  //! Буфер внутрь не копируется, а считываюется прямо из буфера пользователя.
   void row_push_back(vector<string_type>* const  ap_row);
-  // Добавить строку в конец CSV файла
-  // Буфер строк копируется во внутренний буфер
+  //! \brief Добавить строку в конец CSV файла.
+  //!
+  //! Буфер строк копируется во внутренний буфер.
   void row_push_back(vector<string_type>& a_row);
-  // Сохранение в файл таблицы. Старое содержимое удаляется
-  // Таблица внутрь не копируется
+  //! \brief Сохранение в файл таблицы. Старое содержимое удаляется.
+  //!
+  //! Таблица внутрь не копируется.
   void save(table_string_t* const ap_table_user);
   void load(table_string_t* const ap_table_user);
-  // Прочитать строку
+  //! \brief Прочитать строку.
   void get_row(
     vector<string_type>* ap_row,
     const int a_row_index,
@@ -259,6 +272,8 @@ inline csv_file_status_t csv_file_t::get_status()
   return m_status;
 }
 
+//! \brief Чтение/запись csv файла в блокирующем режиме.
+//! \author Lyashchov Maxim
 class csv_file_synchro_t
 {
 public:
