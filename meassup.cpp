@@ -416,7 +416,7 @@ void u309m_current_supply_t::tick()
         case m_supply_17A: {
           m_argument = m_parameter;
           m_eth_data.supply_17A.sense_regA = m_argument;
-          m_eth_data.supply_17A.sense_regB = 32000;
+          m_eth_data.supply_17A.sense_regB = 64000;
         } break;
         default: {
           m_argument = 0;
