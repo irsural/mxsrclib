@@ -55,27 +55,27 @@ public:
     double_buf
   };
   virtual ~simple_ethernet_t() {}
-  //  Отправить пакет с размером a_size ( = DA + SA + L + DATA)
+  //! \brief  Отправить пакет с размером a_size ( = DA + SA + L + DATA)
   virtual void send_packet(irs_size_t a_size) = 0;
-  //  Очистить буфер для приёма нового пакета
+  //! \brief  Очистить буфер для приёма нового пакета
   virtual void set_recv_handled() = 0;
-  //  Заблокировать буфер для отправки пакета
+  //! \brief  Заблокировать буфер для отправки пакета
   virtual void set_send_buf_locked() = 0;
-  //  Есть ли в приёмном буфере пакет
+  //! \brief  Есть ли в приёмном буфере пакет
   virtual bool is_recv_buf_filled() = 0;
-  //  Свободен ли буфер на запись
+  //! \brief  Свободен ли буфер на запись
   virtual bool is_send_buf_empty() = 0;
-  //  Указатель на буфер приёма
+  //! \brief  Указатель на буфер приёма
   virtual irs_u8* get_recv_buf() = 0;
-  //  Указатель на буфер передачи
+  //! \brief  Указатель на буфер передачи
   virtual irs_u8* get_send_buf() = 0;
-  //  Размер принятого пакета ( = DA + SA + L + DATA + FCS)
+  //! \brief  Размер принятого пакета ( = DA + SA + L + DATA + FCS)
   virtual irs_size_t recv_buf_size() = 0;
-  //  Размер буфера передачи ( = DA + SA + L + DATA)
+  //! \brief  Размер буфера передачи ( = DA + SA + L + DATA)
   virtual irs_size_t send_buf_max_size() = 0;
-  //  Один общий буфер или два отдельных буфера на приём и передачу
+  //! \brief  Один общий буфер или два отдельных буфера на приём и передачу
   virtual buffer_num_t get_buf_num() = 0;
-  //  Собственный MAC-адрес
+  //! \brief  Собственный MAC-адрес
   virtual mxmac_t get_local_mac() = 0;
   virtual void tick() = 0;
 };
