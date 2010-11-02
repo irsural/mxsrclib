@@ -49,8 +49,7 @@ mx_agilent_6675a_t::mx_agilent_6675a_t(mxifa_ch_t channel,
   mxifa_init();
 
   // Открытие канала MXIFA_SUPPLY
-  if (mxifa_get_channel_type_ex(channel) ==
-      mxifa_ei_win32_ni_usb_gpib) {
+  if (mxifa_get_channel_type_ex(channel) == mxifa_ei_win32_ni_usb_gpib) {
     mxifa_win32_ni_usb_gpib_cfg config;
     config.address = address;
     f_handle = mxifa_open_ex(channel, &config, irs_false);
@@ -294,8 +293,7 @@ void u309m_current_supply_t::tick()
     case mode_start_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_start_value;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -317,8 +315,7 @@ void u309m_current_supply_t::tick()
     case mode_start_value_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_start_supply;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -333,8 +330,7 @@ void u309m_current_supply_t::tick()
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_free;
         m_status = meas_status_success;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -347,8 +343,7 @@ void u309m_current_supply_t::tick()
     case mode_supply_on_ground_rele_off_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_supply_on;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -384,8 +379,7 @@ void u309m_current_supply_t::tick()
     case mode_supply_on_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_supply_on_value;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -420,8 +414,7 @@ void u309m_current_supply_t::tick()
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_free;
         m_status = meas_status_success;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -456,8 +449,7 @@ void u309m_current_supply_t::tick()
         m_supply_number = m_supply_null;
         m_eth_data.header_data.supply_number = m_supply_number;
         m_mode = mode_ground_rele_on;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
@@ -467,44 +459,39 @@ void u309m_current_supply_t::tick()
         m_eth_data.header_data.ground_rele_bit = 1;
         m_mode = mode_ground_rele_on_wait;
         m_status =  meas_status_busy;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
     case mode_ground_rele_on_wait: {
-      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed)
-      {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_free;
         m_status = meas_status_success;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
 
     case mode_off_value_off: {
-        m_argument = 0;
+      m_argument = 0;
 
-        m_eth_data.supply_200V.sense_regA = m_argument;
-        m_eth_data.supply_20V.sense_regA = m_argument;
+      m_eth_data.supply_200V.sense_regA = m_argument;
+      m_eth_data.supply_20V.sense_regA = m_argument;
 
-        m_eth_data.supply_1A.sense_regA = m_argument;
-        m_eth_data.supply_1A.sense_regB = m_argument;
+      m_eth_data.supply_1A.sense_regA = m_argument;
+      m_eth_data.supply_1A.sense_regB = m_argument;
 
-        m_eth_data.supply_17A.sense_regA = m_argument;
-        m_eth_data.supply_17A.sense_regB = m_argument;
+      m_eth_data.supply_17A.sense_regA = m_argument;
+      m_eth_data.supply_17A.sense_regB = m_argument;
 
-        m_mode = mode_off_value_off_wait;
-        m_status = meas_status_busy;
+      m_mode = mode_off_value_off_wait;
+      m_status = meas_status_busy;
     } break;
     case mode_off_value_off_wait: {
-      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed)
-      {
+      if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
         m_mode = mode_supply_output_off;
         m_status = meas_status_success;
-      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error)
-      {
+      } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
     } break;
