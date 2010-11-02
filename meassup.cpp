@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с источниками тока
 //!
-//! Дата: 29.07.2010\n
+//! Дата: 02.11.2010\n
 //! Ранняя дата: 15.01.2008
 
 //#include <vcl.h>
@@ -354,37 +354,29 @@ void u309m_current_supply_t::tick()
     } break;
 
     case mode_supply_on: {
-      bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210)
-             && (m_current < 0.01);
-      bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21)
-             && (0.01 <= m_current) && (m_current < 0.25);
-      bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5)
-             && (0.25 <= m_current) && (m_current < 1.1);
-      bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5)
-             && (1.1 <= m_current) && (m_current < 17);
-
-
+      bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210) &&
+        (m_current < 0.01);
+      bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
+        (0.01 <= m_current) && (m_current < 0.25);
+      bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5) &&
+        (0.25 <= m_current) && (m_current < 1.1);
+      bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5) &&
+        (1.1 <= m_current) && (m_current < 17);
 
       if (is_supply_200V) {
         m_supply_number = m_supply_200V;
         m_parameter = m_voltage;
+      } else if (is_supply_20V) {
+        m_supply_number = m_supply_20V;
+        m_parameter = m_voltage;
+      } else if (is_supply_1A) {
+        m_supply_number = m_supply_1A;
+        m_parameter = m_current;
+      } else if (is_supply_17A) {
+        m_supply_number = m_supply_17A;
+        m_parameter = m_current;
       } else {
-        if (is_supply_20V) {
-          m_supply_number = m_supply_20V;
-          m_parameter = m_voltage;
-        } else {
-          if (is_supply_1A) {
-            m_supply_number = m_supply_1A;
-            m_parameter = m_current;
-          } else {
-            if (is_supply_17A) {
-              m_supply_number = m_supply_17A;
-              m_parameter = m_current;
-            } else {
-              m_supply_number = m_supply_null;
-            }
-          }
-        }
+        m_supply_number = m_supply_null;
       }
       m_eth_data.header_data.supply_number = m_supply_number;
       m_mode = mode_supply_on_wait;
