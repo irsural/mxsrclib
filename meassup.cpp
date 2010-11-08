@@ -356,7 +356,7 @@ void u309m_current_supply_t::tick()
       bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5) &&
         (0.25 <= m_current) && (m_current < 1.1);
       bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5) &&
-        (1.1 <= m_current) && (m_current < 17);
+        (1.1 <= m_current) && (m_current < 17.5);
 
       if (is_supply_200V) {
         m_supply_number = m_supply_200V;
