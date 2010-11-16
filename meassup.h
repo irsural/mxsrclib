@@ -21,6 +21,27 @@
 #include <irsmbus.h>
 #include <mxdata.h>
 
+
+#define MEASSUP_DEBUG
+
+#ifdef MEASSUP_DEBUG
+
+#define MEASSUP_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
+#define MEASSUP_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
+#define MEASSUP_ASSERT_MSG(msg) IRS_ASSERT_MSG(msg)
+#define MEASSUP_NEW_ASSERT(new_expr, file_idx)\
+  IRS_NEW_ASSERT(new_expr, file_idx)
+
+#else // U309M_TEST_DEBUG
+
+#define MEASSUP_ASSERT(assert_expr)
+#define MEASSUP_ASSERT_EX(assert_expr, msg)
+#define MEASSUP_ASSERT_MSG(msg)
+#define MEASSUP_NEW_ASSERT(new_expr, file_idx) (new new_expr)
+
+#endif // U309M_TEST_DEBUG
+
+
 //! \addtogroup drivers_group
 //! @{
 
@@ -423,6 +444,7 @@ private:
   //Стабилизируемый параметр
   float m_parameter;
   float m_argument;
+  irs::timer_t m_timer;
 };
 
 class dummy_supply_t: public mxsupply_t
