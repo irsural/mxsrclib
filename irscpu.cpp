@@ -2,7 +2,7 @@
 //! \ingroup configuration_group
 //! \brief Свойства процессора
 //!
-//! Дата: 17.05.2010\n
+//! Дата: 12.11.2010\n
 //! Дата создания: 1.10.2009
 
 #include <irspch.h>
@@ -17,7 +17,11 @@
 #ifdef __ICCAVR__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;
 #elif __ICCARM__
+#ifdef __LM3Sx9xx__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 50000000;
+#elif __LM3SxBxx__
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 80000000;
+#endif // ARM_device
 #else //__ICCAVR
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;
 #endif //__ICCAVR__

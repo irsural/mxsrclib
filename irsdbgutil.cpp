@@ -15,7 +15,6 @@
 
 #include <timer.h>
 #include <irserror.h>
-#include <irsstrm.h>
 #ifdef __ICCAVR__
 #include <irsarchint.h>
 #endif //__ICCAVR__

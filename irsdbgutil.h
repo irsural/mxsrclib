@@ -14,6 +14,7 @@
 #include <irsdefs.h>
 
 #include <irscpp.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -112,7 +113,7 @@ enum {
 
 size_t heap_pointer(size_t a_heap_array_size = 20);
 
-// Порядок параметров как опциях проекта
+// Порядок параметров как в опциях проекта
 template <size_t heap_size, size_t call_stack_size, size_t return_stack_size>
 inline void memcheck(ostream* ap_stream)
 {

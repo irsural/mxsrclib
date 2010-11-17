@@ -40,6 +40,18 @@
 #endif
 
 
+#ifdef __LM3SxBxx__
+#define GPIO_PORTA (*((volatile irs_u32 *) 0x40004000))
+#define GPIO_PORTB (*((volatile irs_u32 *) 0x40005000))
+#define GPIO_PORTC (*((volatile irs_u32 *) 0x40006000))
+#define GPIO_PORTD (*((volatile irs_u32 *) 0x40007000))
+#define GPIO_PORTE (*((volatile irs_u32 *) 0x40024000))
+#define GPIO_PORTF (*((volatile irs_u32 *) 0x40025000))
+#define GPIO_PORTG (*((volatile irs_u32 *) 0x40026000))
+#define GPIO_PORTH (*((volatile irs_u32 *) 0x40027000))
+#define GPIO_PORTJ (*((volatile irs_u32 *) 0x4003D000))
+#endif // __LM3SxBxx__
+
 /* Device Identification 0 (DID0) */
 typedef struct {
   __REG32  MINOR          : 8;
@@ -315,9 +327,20 @@ typedef struct {
   __REG32  BYPASS2        : 1;
   __REG32                 : 1;
   __REG32  PWRDN2         : 1;
+#ifdef __LM3SxBxx__
+  __REG32  USBPWRDN       : 1;
+  __REG32                 : 7;
+  __REG32  SYSDIV2LSB     : 1;
+#else // __LM3SxBxx__
   __REG32                 : 9;
+#endif // __LM3SxBxx__
   __REG32  SYSDIV2        : 6;
+#ifdef __LM3SxBxx__
+  __REG32                 : 1;
+  __REG32  DIV400         : 1;
+#else //__LM3SxBxx__
   __REG32                 : 2;
+#endif // __LM3SxBxx__
   __REG32  USERCC2        : 1;
 } __rcc2_bits;
 
@@ -411,7 +434,16 @@ typedef struct {
   __REG32  PORTF          : 1;
   __REG32  PORTG          : 1;
   __REG32  PORTH          : 1;
+#ifdef __LM3SxBxx__
+  __REG32  PORTJ          : 1;
+  __REG32                 : 4;
+  __REG32  UDMA           : 1;
+  __REG32                 : 2;
+  __REG32  USB0           : 1;
+  __REG32                 :11;
+ #else // __LM3Sx9xx__
   __REG32                 :20;
+#endif // __LM3SxBxx__
   __REG32  EMAC0          : 1;
   __REG32                 : 1;
   __REG32  EPHY0          : 1;

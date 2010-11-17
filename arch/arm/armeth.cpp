@@ -1,3 +1,7 @@
+// Интерфейс Ethernet (MAC) для ARM
+// Дата: 16.11.2010
+// Дата создания: 20.05.2010
+
 #include <irsdefs.h>
 
 #include <armeth.h>
@@ -27,11 +31,12 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   m_send_buf_locked(false),
   m_send_packet_action(false)
 {
-  mp_rx_buf
-    = new irs_u8[DA_size + SA_size + L_size + m_buf_size + FCS_size];
-  if (m_buf_num == single_buf) mp_tx_buf = mp_rx_buf;
-  else mp_tx_buf
-    = new irs_u8[DA_size + SA_size + L_size + m_buf_size];
+  mp_rx_buf = new irs_u8[DA_size + SA_size + L_size + m_buf_size + FCS_size];
+  if (m_buf_num == single_buf) {
+    mp_tx_buf = mp_rx_buf;
+  } else {
+    mp_tx_buf = new irs_u8[DA_size + SA_size + L_size + m_buf_size];
+  }
 
   RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
   RCGC2_bit.EMAC0 = 1;
@@ -39,8 +44,7 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   for (irs_u8 i = 10; i; i--);
   //  Делитель частоты интерфейса MII
   const irs_u32 MII_freq = 2500000; //  max MII freq, Hz
-  MACMDV_bit.DIV
-    = irs_u8((irs::cpu_traits_t::frequency() / (2 * MII_freq)) - 1);
+  MACMDV_bit.DIV = irs_u8((irs::cpu_traits_t::frequency()/(2 * MII_freq)) - 1);
   //  MAC-адрес
   MACIA0 = *(irs_u32*)a_mac.val;
   MACIA1_bit.MACOCT5 = a_mac.val[4];
@@ -66,14 +70,11 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   GPIOFAFSEL_bit.no2 = 1;
   GPIOFAFSEL_bit.no3 = 1;
   //  Прерывание приёма пакета
-  if (m_use_interrupt == USE_INT)
-  {
+  if (m_use_interrupt == USE_INT) {
     interrupt_array()->int_event_gen(ethernet_int)->add(&m_rx_int_event);
     MACIM_bit.RXINT = 1;
     SETENA1_bit.SETENA42 = 1;  //  Разрешение прерывания в NVIC
-  }
-  else
-  {
+  } else {
     MACIM_bit.RXINT = 0;
     SETENA1_bit.SETENA42 = 0;
   }
@@ -82,7 +83,9 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
 irs::arm::arm_ethernet_t::~arm_ethernet_t()
 {
   delete []mp_rx_buf;
-  if (m_buf_num == double_buf) delete []mp_tx_buf;
+  if (m_buf_num == double_buf) {
+    delete []mp_tx_buf;
+  }
   SETENA1_bit.SETENA42 = 0;
   MACIM_bit.RXINT = 0;
   MACTCTL_bit.TXEN = 0;
@@ -103,14 +106,12 @@ void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
   irs_u32* p_shifted_buf = (irs_u32*)(mp_tx_buf + shift);
   const irs_size_t whole_dwords_cnt = (a_size - shift) / sizeof(fifo_data);
   irs_size_t current_dword = 0;
-  for (; current_dword < whole_dwords_cnt; current_dword++)
-  {
+  for (; current_dword < whole_dwords_cnt; current_dword++) {
     MACDATA = p_shifted_buf[current_dword];
   }
   irs_size_t current_byte = current_dword * sizeof(fifo_data) + shift;
   fifo_data = 0;
-  for (irs_u8 i = 0; current_byte < a_size; current_byte++, i++)
-  {
+  for (irs_u8 i = 0; current_byte < a_size; current_byte++, i++) {
     *((irs_u8*)&fifo_data + i) = mp_tx_buf[current_byte];
   }
   MACDATA = fifo_data;
@@ -137,14 +138,10 @@ bool irs::arm::arm_ethernet_t::is_recv_buf_filled()
 bool irs::arm::arm_ethernet_t::is_send_buf_empty()
 {
   if (m_send_buf_locked) return false;
-  if (MACTR_bit.NEWTX == 0)
-  {
-    if (m_buf_num == double_buf)
-    {
+  if (MACTR_bit.NEWTX == 0) {
+    if (m_buf_num == double_buf) {
       return true;
-    }
-    else if (!m_rx_buf_filled && !m_send_buf_locked)
-    {
+    } else if (!m_rx_buf_filled && !m_send_buf_locked) {
       return true;
     }
   }
@@ -187,41 +184,33 @@ mxmac_t irs::arm::arm_ethernet_t::get_local_mac()
 
 void irs::arm::arm_ethernet_t::tick()
 {
-  if (m_send_packet_action && (MACTR_bit.NEWTX == 0))
-  {
+  if (m_send_packet_action && (MACTR_bit.NEWTX == 0)) {
     m_send_packet_action = false;
     m_send_buf_locked = false;
   }
-  if (m_rx_buf_handled)
-  {
-    if (m_use_interrupt == NO_USE_INT) m_rx_int_flag = (MACIS_bit.RXINT);
-    bool can_read_fifo = ((m_buf_num == single_buf) && (!m_send_buf_locked))
-      || (m_buf_num == double_buf);
+  if (m_rx_buf_handled) {
+    if (m_use_interrupt == NO_USE_INT) {
+      m_rx_int_flag = (MACIS_bit.RXINT);
+    }
+    bool can_read_fifo = ((m_buf_num == single_buf) && (!m_send_buf_locked)) ||
+      (m_buf_num == double_buf);
 
-    if (m_rx_int_flag && can_read_fifo)
-    {
+    if (m_rx_int_flag && can_read_fifo) {
       m_rx_int_flag = false;
       irs_u32 fifo_data = 0;
       fifo_data = MACDATA;
       m_rx_size = IRS_LOWORD(fifo_data) - L_size;
 
-      if (m_rx_size > m_buf_size && MACNP_bit.NPR)
-      {
-        if (m_rx_size > max_packet_size)
-        {
+      if (m_rx_size > m_buf_size && MACNP_bit.NPR) {
+        if (m_rx_size > max_packet_size) {
           MACRCTL_bit.RSTFIFO = 1;
-        }
-        else
-        {
+        } else {
           const irs_size_t skip_dwords_cnt = m_rx_size / sizeof(fifo_data);
-          for (irs_size_t i = 0; i < skip_dwords_cnt; i++)
-          {
+          for (irs_size_t i = 0; i < skip_dwords_cnt; i++) {
             fifo_data = MACDATA;
           }
         }
-      }
-      else
-      {
+      } else {
         *(irs_u16*)mp_rx_buf = IRS_HIWORD(fifo_data);
 
         const irs_size_t shift = sizeof(irs_u16);
@@ -231,20 +220,20 @@ void irs::arm::arm_ethernet_t::tick()
           = (m_rx_size - shift) / sizeof(fifo_data);
         irs_size_t current_dword = 0;
 
-        for (; current_dword < whole_dwords_cnt; current_dword++)
-        {
+        for (; current_dword < whole_dwords_cnt; current_dword++) {
           p_shifted_buf[current_dword] = MACDATA;
         }
         irs_size_t current_byte = current_dword * sizeof(fifo_data) + shift;
         fifo_data = MACDATA;
-        for (irs_u8 i = 0; current_byte < m_rx_size; current_byte++, i++)
-        {
+        for (irs_u8 i = 0; current_byte < m_rx_size; current_byte++, i++) {
           mp_rx_buf[current_byte] = *((irs_u8*)&fifo_data + i);
         }
         m_rx_buf_filled = true;
         m_rx_buf_handled = false;
       }
-      if (m_use_interrupt == USE_INT) MACIM_bit.RXINT = 1;
+      if (m_use_interrupt == USE_INT) {
+        MACIM_bit.RXINT = 1;
+      }
     }
   }
 }
