@@ -348,35 +348,32 @@ void u309m_current_supply_t::tick()
     } break;
 
     case mode_supply_on: {
-      if (m_timer.check()) {
-        m_timer.stop();
-        bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210) &&
-          (m_current < 0.01);
-        bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
-          (0.01 <= m_current) && (m_current < 0.25);
-        bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5) &&
-          (0.25 <= m_current) && (m_current < 1.1);
-        bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5) &&
-          (1.1 <= m_current) && (m_current < 17.5);
+      bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210) &&
+        (m_current < 0.01);
+      bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
+        (0.01 <= m_current) && (m_current < 0.25);
+      bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5) &&
+        (0.25 <= m_current) && (m_current < 1.1);
+      bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5) &&
+        (1.1 <= m_current) && (m_current < 17.5);
 
-        if (is_supply_200V) {
-          m_supply_number = m_supply_200V;
-          m_parameter = m_voltage;
-        } else if (is_supply_20V) {
-          m_supply_number = m_supply_20V;
-          m_parameter = m_voltage;
-        } else if (is_supply_1A) {
-          m_supply_number = m_supply_1A;
-          m_parameter = m_current;
-        } else if (is_supply_17A) {
-          m_supply_number = m_supply_17A;
-          m_parameter = m_current;
-        } else {
-          m_supply_number = m_supply_null;
-        }
-        m_eth_data.header_data.supply_number = m_supply_number;
-        m_mode = mode_supply_on_wait;
+      if (is_supply_200V) {
+        m_supply_number = m_supply_200V;
+        m_parameter = m_voltage;
+      } else if (is_supply_20V) {
+        m_supply_number = m_supply_20V;
+        m_parameter = m_voltage;
+      } else if (is_supply_1A) {
+        m_supply_number = m_supply_1A;
+        m_parameter = m_current;
+      } else if (is_supply_17A) {
+        m_supply_number = m_supply_17A;
+        m_parameter = m_current;
+      } else {
+        m_supply_number = m_supply_null;
       }
+      m_eth_data.header_data.supply_number = m_supply_number;
+      m_mode = mode_supply_on_wait;
     } break;
     case mode_supply_on_wait: {
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed) {
@@ -388,8 +385,11 @@ void u309m_current_supply_t::tick()
     } break;
 
     case mode_supply_on_ground_rele_off: {
-      m_eth_data.header_data.ground_rele_bit = 0;
-      m_mode = mode_supply_on_ground_rele_off_wait;
+      if (m_timer.check()) {
+        m_timer.stop();
+        m_eth_data.header_data.ground_rele_bit = 0;
+        m_mode = mode_supply_on_ground_rele_off_wait;
+      }
     } break;
 
     case mode_supply_on_ground_rele_off_wait: {
