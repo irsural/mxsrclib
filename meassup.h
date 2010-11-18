@@ -445,6 +445,7 @@ private:
   float m_parameter;
   float m_argument;
   irs::timer_t m_timer;
+  bool m_supply_off;
 };
 
 class dummy_supply_t: public mxsupply_t
