@@ -2,7 +2,8 @@
 //! \ingroup drivers_group
 //! \brief Порты ввода-вывода для ARM
 //!
-//! Дата: 10.11.2010
+//! Дата: 22.11.2010
+//! Дата создания: 10.11.2010
 
 #ifndef armgpioH
 #define armgpioH
@@ -14,6 +15,8 @@
 #include <armioregs.h>
 
 #include <irsfinal.h>
+
+#define HWREG(x) (*((volatile irs_u32*)(x)))
 
 namespace irs
 {
@@ -31,11 +34,9 @@ public:
   virtual void set_dir(dir_t a_dir);
 private:
   enum {
-    den_idx = 0x51C,
-    dir_idx = 0x400,
-    data_idx = 0
-  };
-  enum {
+    SYSTEM_CONTROL_BASE = 0x400FE000,
+    RCGC2 = 0x108,
+  
     PORTA_BASE = 0x40004000,
     PORTB_BASE = 0x40005000,
     PORTC_BASE = 0x40006000,
@@ -46,45 +47,56 @@ private:
     PORTH_BASE = 0x40027000,
     PORTJ_BASE = 0x4003D000
   };
+  enum gpio_port_bit {
+    GPIO_DEN = 0x51C,
+    GPIO_DIR = 0x400,
+    GPIO_DATA = 0,
+    GPIO_LOCK = 0x520
+  };
   
-  const irs_u8 m_mask;
   const p_arm_port_t mp_port;
+  const irs_u32 m_bit;
   
-  inline void clock_gating_control(p_arm_port_t ap_port)
+  
+  inline irs_u8 port_base_to_port_number(p_arm_port_t ap_port)
   {
-    switch(*ap_port) {
+    irs_u8 port_number = 0;
+    switch(reinterpret_cast<irs_u32>(ap_port)) {
       case PORTA_BASE: {
-        RCGC2_bit.PORTA = 1;
+        port_number = 0;
       } break;
       case PORTB_BASE: {
-        RCGC2_bit.PORTB = 1;
+        port_number = 1;
       } break;
       case PORTC_BASE: {
-        RCGC2_bit.PORTC = 1;
+        port_number = 2;
       } break;
       case PORTD_BASE: {
-        RCGC2_bit.PORTD = 1;
+        port_number = 3;
       } break;
       case PORTE_BASE: {
-        RCGC2_bit.PORTE = 1;
+        port_number = 4;
       } break;
       case PORTF_BASE: {
-        RCGC2_bit.PORTF = 1;
+        port_number = 5;
       } break;
       case PORTG_BASE: {
-        RCGC2_bit.PORTG = 1;
+        port_number = 6;
       } break;
       case PORTH_BASE: {
-        RCGC2_bit.PORTH = 1;
+        port_number = 7;
       } break;
       case PORTJ_BASE: {
-        RCGC2_bit.PORTJ = 1;
+        port_number = 8;
       } break;
     }
+    return port_number;
   }
-  inline arm_port_t& den() { return *(mp_port + den_idx);}
-  inline arm_port_t& dir() { return *(mp_port + dir_idx);}
-  inline arm_port_t& data() { return *(mp_port + data_idx);}
+  inline void clock_gating_control(p_arm_port_t ap_port)
+  {
+    irs_u8 port_number = port_base_to_port_number(ap_port);
+    HWREG(SYSTEM_CONTROL_BASE + RCGC2) |= (1 << port_number);
+  }
 };
 
 } // namespace arm
