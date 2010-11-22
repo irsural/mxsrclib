@@ -274,15 +274,27 @@ AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
 }*/
 
 template<>
-inline std_wstring_t str_conv<std_wstring_t>(const AnsiString& a_str_in)
+inline AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
 {
-  return std::wstring(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+  return a_str_in;
 }
 
 template<>
 inline irs_string_t str_conv<irs_string_t>(const AnsiString& a_str_in)
 {
-  return irs_string_t(a_str_in.c_str());
+  return irs_string_t(a_str_in.c_str(), a_str_in.Length());
+}
+
+template<>
+inline std_string_t str_conv<std_string_t>(const AnsiString& a_str_in)
+{
+  return std_string_t(a_str_in.c_str(), a_str_in.Length());
+}
+
+template<>
+inline std_wstring_t str_conv<std_wstring_t>(const AnsiString& a_str_in)
+{
+  return std::wstring(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
 }
 
 template<>

@@ -391,6 +391,10 @@ public:
     IRS_STRING_BASE(a_count, a_char)
   {
   }
+  IRS_STRING_TYPE(const IRS_STRING_CHAR_TYPE* cstr, size_type a_count):
+    IRS_STRING_BASE(cstr, a_count)
+  {
+  }
   IRS_STRING_TYPE(const IRS_STRING_BASE& strg)
   {
     IRS_STRING_BASE& base = ( IRS_STRING_BASE&)(*this);
