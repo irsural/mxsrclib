@@ -33,6 +33,7 @@ public:
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
 private:
+  #ifdef __LM3SxBxx__
   enum {
     SYSTEM_CONTROL_BASE = 0x400FE000,
     RCGC2 = 0x108,
@@ -53,6 +54,7 @@ private:
     GPIO_DATA = 0,
     GPIO_LOCK = 0x520
   };
+  #endif // __LM3SxBxx__
   
   const p_arm_port_t mp_port;
   const irs_u32 m_bit;
