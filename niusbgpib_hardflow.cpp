@@ -219,7 +219,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
     }
 
     const size_type debug_ibcntl = mp_ni_usb_gpib->get_ibcntl();
-    m_read_buf.resize(mp_ni_usb_gpib->get_ibcntl());      
+    m_read_buf.resize(mp_ni_usb_gpib->get_ibcntl());
     m_process = process_wait;
     if ((read_status & ERR) ||
       !m_write_buf.empty() ||
@@ -229,10 +229,12 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
       } else if (!m_write_buf.empty()) {
         IRS_DBG_MSG("Чтение прервано, потому что есть данные на отправку");
       } else {
-        IRS_DBG_MSG("Чтение прервано по тайм-ауту");
+        IRS_DBG_MSG("Чтение прервано по тайм-ауту, прочитано: " <<
+          m_read_buf.size());
       }
     } else {
-      IRS_DBG_MSG("Чтение завершено");
+      IRS_DBG_MSG("Чтение завершено, прочитано: " <<
+        m_read_buf.size());
     }
   } else {
     // Продолжаем чтение
@@ -280,48 +282,6 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
 
 void irs::hardflow::ni_usb_gpib_flow_t::proc_wait()
 {
-  /*if (!m_write_buf.empty()) {
-    const size_type need_write_byte_count =
-      min(m_write_buf.size(), m_write_buf_max_size);
-    if (need_write_byte_count > 0) {
-      mp_session_write_buf.insert(
-        mp_session_write_buf.data(),
-        m_write_buf.data(),
-        m_write_buf.data() + need_write_byte_count);
-      IRS_DBG_MSG("Запрашиваем запись " << mp_session_write_buf.size() <<
-        " байт");
-      const int set_timeout_status = mp_ni_usb_gpib->ibtmo(
-        m_device_id, time_s_to_timecode(m_session_write_timeout));
-      const int write_status = mp_ni_usb_gpib->ibwrta(m_device_id,
-        mp_session_write_buf.data(), mp_session_write_buf.size());
-      if (time_s_normalize(m_session_write_timeout) != 0.) {
-        m_session_write_timer.start();
-      } else {
-        m_session_write_timer.stop();
-      }
-      m_process = process_write;
-    } else {
-      // Пустой буфер не записываем
-    }
-  } else if ((m_read_buf_max_size - m_read_buf.size()) >=
-    mp_session_read_buf.size()) {
-
-    IRS_DBG_MSG("Запрашиваем чтение " << mp_session_read_buf.size() <<
-      " байт");
-    const int set_timeout_status = mp_ni_usb_gpib->ibtmo(
-      m_device_id, time_s_to_timecode(m_session_read_timeout));
-    const int read_status = mp_ni_usb_gpib->ibrda(m_device_id,
-      mp_session_read_buf.data(), mp_session_read_buf.size());
-    if (time_s_normalize(m_session_read_timeout) != 0.) {
-      m_session_read_timer.start();
-    } else {
-      m_session_read_timer.stop();
-    }
-    m_process = process_read;
-  } else {
-    // Ожидаем появления данных на запись или освобождения места
-    // в буфере чтения
-  }*/
 }
 
 // class ni_usb_gpib_flow_syn_t

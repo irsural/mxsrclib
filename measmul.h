@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 09.09.2010
+//! Дата: 23.11.2010
 
 #ifndef measmulH
 #define measmulH

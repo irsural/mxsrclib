@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 22.09.2010\n
+//! Дата: 23.11.2010\n
 //! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -202,6 +202,9 @@ irs::agilent_3458a_t::agilent_3458a_t(
 {
   IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
     "указатель в качестве hardflow_t*");
+  const int read_timeout_s = 100;
+  irs::string_t read_timeout_str = read_timeout_s;
+  mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
 
   init_to_cnt();
 
@@ -275,7 +278,7 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_get_resistance_commands.push_back("OHMF AUTO");
   m_time_int_resistance_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("NPLC 20");
-  m_get_resistance_commands.push_back("TRIG SGL");
+  m_get_resistance_commands.push_back("TRIG SYN");
 
   // Очистка буфера приема
   memset(m_read_buf, 0, ma_read_buf_size);
@@ -290,7 +293,7 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       // Команды чтения значения при произвольном типе измерения
       //m_get_measure_commands.push_back(m_value_type);
       //m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SGL");
+      m_get_measure_commands.push_back("TRIG SYN");
     } break;
     case meas_voltage: {
       // Команды при чтении напряжения
@@ -306,7 +309,7 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SGL");
+      m_get_measure_commands.push_back("TRIG SYN");
     } break;
     case meas_current: {
       // Команды при чтении тока
@@ -321,13 +324,13 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SGL");
+      m_get_measure_commands.push_back("TRIG SYN");
     } break;
     case meas_frequency: {
       m_get_measure_commands.push_back("FREQ");
       m_get_measure_commands.push_back("FSOURCE ACV");
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SGL");
+      m_get_measure_commands.push_back("TRIG SYN");
    } break;
    case meas_set_range: {
       m_get_measure_commands.push_back(m_set_range_command);
@@ -508,6 +511,8 @@ void irs::agilent_3458a_t::initialize_tick()
 // Элементарное действие
 void irs::agilent_3458a_t::tick()
 {
+  IRS_LIB_ASSERT(mp_hardflow);
+  mp_hardflow->tick();
   m_fixed_flow.tick();
   initialize_tick();
   if (m_create_error) return;
@@ -1886,53 +1891,6 @@ void irs::agilent_3458a_digitizer_t::tick()
         IRS_LIB_DBG_MSG("Вычисления завершены. " <<
           measure_time_calc.get() << " c");
       }
-
-
-
-
-      /*} else if (!m_sko_calc_asynch.completed()) {
-        m_sko_calc_asynch.tick();
-        if (m_sko_calc_asynch.completed()) {
-          IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
-            measure_time_calc.get() << " с");
-          m_sko_for_user = m_sko_calc_asynch;
-          m_sko_relative_for_user = m_sko_calc_asynch.relative();
-          m_delta_calc_asynch.resize(m_samples.size());
-          m_delta_calc_asynch.add(m_samples.begin(), m_samples.end());
-        } else {
-          // Операция еще не завершена
-        }
-      } else if (!m_delta_calc_asynch.completed()) {
-        m_delta_calc_asynch.tick();
-        if (m_delta_calc_asynch.completed()) {
-          IRS_LIB_DBG_MSG("Вычисление дельты завершено: " <<
-            measure_time_calc.get() << " с");
-          m_delta_absolute_for_user = m_delta_calc_asynch.absolute();
-          m_delta_relative_for_user = m_delta_calc_asynch.relative();
-          filter_start();
-        } else {
-          // Операция еще не завершена
-        }
-      } else if (!filter_completed()) {
-        filter_tick();
-        if (m_calc_filtered_values_enabled) {
-          m_sko_calc_asynch.clear();
-          m_sko_calc_asynch.resize(m_filtered_values_for_user.size());
-          m_sko_calc_asynch.add(m_filtered_values_for_user.begin(),
-            m_filtered_values_for_user.end());
-        } else {
-
-        }
-      } else {
-        IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
-          measure_time_calc.get() << " с");
-        m_filtered_values_for_user = m_filtered_values;
-        *mp_value = static_cast<double>(filter_get());
-        m_status = meas_status_success;
-        m_process = process_wait;
-        IRS_LIB_DBG_MSG("Вычисления завершены. " << measure_time_calc.get() <<
-          " c");
-      }*/
     } break;
     case process_set_settings: {
       m_settings_change_event.exec();
