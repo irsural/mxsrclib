@@ -1,5 +1,5 @@
 // Интерфейс Ethernet (MAC) для ARM
-// Дата: 20.05.2010
+// Дата: 24.11.2010
 // Дата создания: 20.05.2010
 
 #ifndef armethH
@@ -54,6 +54,10 @@ private:
   enum
   {
     max_packet_size = 2032
+  };
+  enum {
+    PORTF2_LED1 = 0x100,
+    PORTF3_LED0 = 0x1000
   };
 
   buffer_num_t m_buf_num;

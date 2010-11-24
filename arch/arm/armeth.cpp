@@ -1,5 +1,5 @@
 // Интерфейс Ethernet (MAC) для ARM
-// Дата: 16.11.2010
+// Дата: 24.11.2010
 // Дата создания: 20.05.2010
 
 #include <irsdefs.h>
@@ -40,7 +40,11 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
 
   RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
   RCGC2_bit.EMAC0 = 1;
+  #ifdef __LM3Sx9xx__
   RCGC2_bit.PORTF = 1;
+  #elif defined __LM3SxBxx__
+  RCGC2 |= (1 << 5);
+  #endif // __LM3SxBxx__
   for (irs_u8 i = 10; i; i--);
   //  Делитель частоты интерфейса MII
   const irs_u32 MII_freq = 2500000; //  max MII freq, Hz
@@ -67,8 +71,15 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   GPIOFDEN_bit.no3 = 1;
   GPIOFDIR_bit.no2 = 1;
   GPIOFDIR_bit.no3 = 1;
+  #ifdef __LM3SxBxx__
+  (*((volatile irs_u32*)(PORTF_BASE + GPIO_LOCK))) = GPIO_UNLOCK_VALUE;
+  #endif // __LM3SxBxx__
   GPIOFAFSEL_bit.no2 = 1;
   GPIOFAFSEL_bit.no3 = 1;
+  #ifdef __LM3SxBxx__
+  (*((volatile irs_u32*)(PORTF_BASE + GPIO_PCTL))) |= PORTF2_LED1;
+  (*((volatile irs_u32*)(PORTF_BASE + GPIO_PCTL))) |= PORTF3_LED0;
+  #endif // __LM3SxBxx__
   //  Прерывание приёма пакета
   if (m_use_interrupt == USE_INT) {
     interrupt_array()->int_event_gen(ethernet_int)->add(&m_rx_int_event);

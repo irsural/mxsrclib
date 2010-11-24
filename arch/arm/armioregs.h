@@ -41,15 +41,35 @@
 
 
 #ifdef __LM3SxBxx__
-#define GPIO_PORTA (*((volatile irs_u32 *) 0x40004000))
-#define GPIO_PORTB (*((volatile irs_u32 *) 0x40005000))
-#define GPIO_PORTC (*((volatile irs_u32 *) 0x40006000))
-#define GPIO_PORTD (*((volatile irs_u32 *) 0x40007000))
-#define GPIO_PORTE (*((volatile irs_u32 *) 0x40024000))
-#define GPIO_PORTF (*((volatile irs_u32 *) 0x40025000))
-#define GPIO_PORTG (*((volatile irs_u32 *) 0x40026000))
-#define GPIO_PORTH (*((volatile irs_u32 *) 0x40027000))
-#define GPIO_PORTJ (*((volatile irs_u32 *) 0x4003D000))
+//#define SYSTEM_CONTROL_BASE 0x400FE000
+//#define RCGC2 0x108
+
+#define PORTA_BASE 0x40004000
+#define PORTB_BASE 0x40005000
+#define PORTC_BASE 0x40006000
+#define PORTD_BASE 0x40007000
+#define PORTE_BASE 0x40024000
+#define PORTF_BASE 0x40025000
+#define PORTG_BASE 0x40026000
+#define PORTH_BASE 0x40027000
+#define PORTJ_BASE 0x4003D000
+
+#define GPIO_PORTA (*((volatile irs_u32 *) PORTA_BASE))
+#define GPIO_PORTB (*((volatile irs_u32 *) PORTB_BASE))
+#define GPIO_PORTC (*((volatile irs_u32 *) PORTC_BASE))
+#define GPIO_PORTD (*((volatile irs_u32 *) PORTD_BASE))
+#define GPIO_PORTE (*((volatile irs_u32 *) PORTE_BASE))
+#define GPIO_PORTF (*((volatile irs_u32 *) PORTF_BASE))
+#define GPIO_PORTG (*((volatile irs_u32 *) PORTG_BASE))
+#define GPIO_PORTH (*((volatile irs_u32 *) PORTH_BASE))
+#define GPIO_PORTJ (*((volatile irs_u32 *) PORTJ_BASE))
+
+#define GPIO_DATA 0
+#define GPIO_DIR 0x400
+#define GPIO_DEN 0x51C
+#define GPIO_LOCK 0x520
+#define GPIO_UNLOCK_VALUE 0x4C4F434B
+#define GPIO_PCTL 0x52C
 #endif // __LM3SxBxx__
 
 /* Device Identification 0 (DID0) */
@@ -441,7 +461,7 @@ typedef struct {
   __REG32                 : 2;
   __REG32  USB0           : 1;
   __REG32                 :11;
- #else // __LM3Sx9xx__
+#else // __LM3Sx9xx__
   __REG32                 :20;
 #endif // __LM3SxBxx__
   __REG32  EMAC0          : 1;

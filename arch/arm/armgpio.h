@@ -32,32 +32,10 @@ public:
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
-private:
-  #ifdef __LM3SxBxx__
-  enum {
-    SYSTEM_CONTROL_BASE = 0x400FE000,
-    RCGC2 = 0x108,
-  
-    PORTA_BASE = 0x40004000,
-    PORTB_BASE = 0x40005000,
-    PORTC_BASE = 0x40006000,
-    PORTD_BASE = 0x40007000,
-    PORTE_BASE = 0x40024000,
-    PORTF_BASE = 0x40025000,
-    PORTG_BASE = 0x40026000,
-    PORTH_BASE = 0x40027000,
-    PORTJ_BASE = 0x4003D000
-  };
-  enum gpio_port_bit {
-    GPIO_DEN = 0x51C,
-    GPIO_DIR = 0x400,
-    GPIO_DATA = 0,
-    GPIO_LOCK = 0x520
-  };
-  #endif // __LM3SxBxx__
-  
+private:  
   const p_arm_port_t mp_port;
-  const irs_u32 m_bit;
+  const irs_u16 m_data_mask;
+  const irs_u8 m_port_mask;
   
   
   inline irs_u8 port_base_to_port_number(p_arm_port_t ap_port)
@@ -97,7 +75,8 @@ private:
   inline void clock_gating_control(p_arm_port_t ap_port)
   {
     irs_u8 port_number = port_base_to_port_number(ap_port);
-    HWREG(SYSTEM_CONTROL_BASE + RCGC2) |= (1 << port_number);
+    //HWREG(SYSTEM_CONTROL_BASE + RCGC2) |= (1 << port_number);
+    RCGC2 |= (1 << port_number);
   }
 };
 
