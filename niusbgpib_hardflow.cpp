@@ -23,6 +23,8 @@ double time_s_normalize(const double a_time_s);
 
 int time_s_to_timecode(const double a_time_s);
 
+irs::irs_string_t data_to_string_for_mlog(const irs::raw_data_t<irs_u8>& a_data);
+
 } // empty namespace
 
 // class ni_usb_gpib_flow_t
@@ -115,7 +117,8 @@ irs::hardflow::ni_usb_gpib_flow_t::read(size_type a_channel_ident,
       m_read_buf.erase(m_read_buf.data(), m_read_buf.data() + read_count);
     } else {
       m_read_buf.resize(a_size);
-      IRS_DBG_MSG("Запрашиваем чтение " << a_size << " байт");
+      IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запрашиваем чтение " << a_size <<
+        " байт.");
       const int set_timeout_status = mp_ni_usb_gpib->ibtmo(
         m_device_id, time_s_to_timecode(m_session_read_timeout));
       const int read_status = mp_ni_usb_gpib->ibrda(m_device_id,
@@ -150,7 +153,10 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
     }  
     IRS_LIB_ASSERT(m_write_buf.empty());
     m_write_buf.insert(m_write_buf.data(), ap_buf, ap_buf + a_size);
-    IRS_DBG_MSG("Запрашиваем запись " << a_size << " байт");
+    IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запрашиваем запись " << a_size <<
+      " байт.");
+    IRS_LIB_NIUSBGPIBHF_DBG_MSG_DETAIL("Данные:" <<
+      data_to_string_for_mlog(raw_data_t<irs_u8>(ap_buf, a_size)));
     const int set_timeout_status = mp_ni_usb_gpib->ibtmo(m_device_id, TNONE);
     const int write_status = mp_ni_usb_gpib->ibwrta(m_device_id,
       m_write_buf.data(), m_write_buf.size());
@@ -186,7 +192,6 @@ void irs::hardflow::ni_usb_gpib_flow_t::tick()
 
 void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
 {
-  const size_type debug_ibcntl = mp_ni_usb_gpib->get_ibcntl();
   const bool session_read_timeout = m_session_read_timer.check();
   const int read_status = mp_ni_usb_gpib->ibwait(m_device_id, 0);
   if ((read_status & CMPL) ||
@@ -225,17 +230,21 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
       !m_write_buf.empty() ||
       session_read_timeout) {
       if (read_status & ERR) {
-        IRS_DBG_MSG("Чтение прервано по причине ошибки при записи");
+        IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Чтение прервано по причине "
+          "ошибки при чтении");
       } else if (!m_write_buf.empty()) {
-        IRS_DBG_MSG("Чтение прервано, потому что есть данные на отправку");
+        IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Чтение прервано, потому что есть "
+          "данные на отправку");
       } else {
-        IRS_DBG_MSG("Чтение прервано по тайм-ауту, прочитано: " <<
-          m_read_buf.size());
+        IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Чтение прервано по тайм-ауту, "
+          "прочитано: " << m_read_buf.size());
       }
     } else {
-      IRS_DBG_MSG("Чтение завершено, прочитано: " <<
+      IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Чтение завершено, прочитано: " <<
         m_read_buf.size());
     }
+    IRS_LIB_NIUSBGPIBHF_DBG_MSG_DETAIL("Данные:" <<
+      data_to_string_for_mlog(m_read_buf));
   } else {
     // Продолжаем чтение
   }
@@ -248,13 +257,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
   if ((write_status & CMPL) ||
     (write_status & ERR) ||
     session_write_timeout) {
-
-    if (session_write_timeout) {
-      const int stop_status = mp_ni_usb_gpib->ibstop(m_device_id);
-    } else {
-      // Тайм-аут не сработал
-    }
-    const int debug_ibcntl = mp_ni_usb_gpib->get_ibcntl();
+      
     m_write_buf.erase(m_write_buf.data(),
       m_write_buf.data() + min(m_write_buf.size(),
       static_cast<size_t>(mp_ni_usb_gpib->get_ibcntl())));
@@ -265,7 +268,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
     }
     if (m_write_buf.empty()) {
       m_process = process_wait;
-      IRS_DBG_MSG("Запись завершена");
+      IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запись завершена");
     } else {
       const int new_write_status = mp_ni_usb_gpib->ibwrta(m_device_id,
         m_write_buf.data(), m_write_buf.size());
@@ -493,6 +496,25 @@ int time_s_to_timecode(const double a_time_s)
     timecode = TNONE;
   }
   return timecode;
+}
+
+irs::irs_string_t data_to_string_for_mlog(const irs::raw_data_t<irs_u8>& a_data)
+{
+  strstream ostr;
+  for (size_t i = 0; i < a_data.size(); i++) {
+    const char ch = a_data[i];
+
+    if (irs::isprintt(ch) && !irs::iscntrlt(ch)) {
+      ostr << ch;
+    } else {
+      const width_not_graph_char = 2;
+      ostr << "\\x" << setfill('0') << setw(width_not_graph_char) << hex <<
+        uppercase << (int)a_data[i];
+    }
+  }
+  ostr << '\0';
+  ostr.rdbuf()->freeze(false);
+  return ostr.str();
 }
 
 } // empty namespace

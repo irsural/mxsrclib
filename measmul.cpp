@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 23.11.2010\n
+//! Дата: 24.11.2010\n
 //! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -201,10 +201,11 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_ic_index(0)
 {
   IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
-    "указатель в качестве hardflow_t*");
-  const int read_timeout_s = 100;
+    "указатель в качестве hardflow_t*");  
   irs::string_t read_timeout_str = read_timeout_s;
   mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
+  m_fixed_flow.read_timeout(make_cnt_s(
+    read_timeout_s + fixed_flow_read_timeout_delta_s));
 
   init_to_cnt();
 
@@ -257,6 +258,7 @@ irs::agilent_3458a_t::agilent_3458a_t(
   Событие запуска установлено на SYN
     TRIG SYN
   */
+  //m_init_commands.push_back("MEM FIFO");
   #ifndef OFF_EXTCOM
   // Запоминание чисел в виде вещественных чисел двойной точности
   m_init_commands.push_back("MFORMAT DREAL");
@@ -278,7 +280,7 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_get_resistance_commands.push_back("OHMF AUTO");
   m_time_int_resistance_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("NPLC 20");
-  m_get_resistance_commands.push_back("TRIG SYN");
+  m_get_resistance_commands.push_back("TRIG SGL");
 
   // Очистка буфера приема
   memset(m_read_buf, 0, ma_read_buf_size);
@@ -293,7 +295,7 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       // Команды чтения значения при произвольном типе измерения
       //m_get_measure_commands.push_back(m_value_type);
       //m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SYN");
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_voltage: {
       // Команды при чтении напряжения
@@ -309,7 +311,7 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SYN");
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_current: {
       // Команды при чтении тока
@@ -324,13 +326,13 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SYN");
+      m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_frequency: {
       m_get_measure_commands.push_back("FREQ");
       m_get_measure_commands.push_back("FSOURCE ACV");
       m_get_measure_commands.push_back(m_time_int_measure_command);
-      m_get_measure_commands.push_back("TRIG SYN");
+      m_get_measure_commands.push_back("TRIG SGL");
    } break;
    case meas_set_range: {
       m_get_measure_commands.push_back(m_set_range_command);
@@ -469,8 +471,6 @@ void irs::agilent_3458a_t::initialize_tick()
             reinterpret_cast<const irs_u8*>(icomm.c_str());
           m_fixed_flow.write(mp_hardflow->channel_next(), icomm_u8, icomm_size);
           m_fixed_flow.write_timeout(m_oper_time);
-          //mxifa_write_begin(m_handle, IRS_NULL, icomm_u8, icomm_size);
-          //set_to_cnt(m_oper_to, m_oper_time);
           m_init_mode = im_next_command;
         } break;
         case im_next_command: {
@@ -488,7 +488,9 @@ void irs::agilent_3458a_t::initialize_tick()
               m_init_mode = im_write_command;
             } break;
             case irs::hardflow::fixed_flow_t::status_wait: {
-              m_init_mode = im_start;
+              if (m_init_timer.check()) {
+                m_init_mode = im_start;
+              }
             } break;
             default : {
               IRS_LIB_ASSERT_MSG("Неучтенный статус");
@@ -597,70 +599,50 @@ void irs::agilent_3458a_t::tick()
       m_mode = ma_mode_commands_wait;
     } break;
     case ma_mode_commands_wait: {
-      switch (m_fixed_flow.write_status()) {
-        case irs::hardflow::fixed_flow_t::status_success: {
-          m_mul_commands_index++;
-          if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
-            m_mode = ma_mode_macro;
-          } else {
+      if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      } else {
+        switch (m_fixed_flow.write_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_mul_commands_index++;
+            if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
+              m_mode = ma_mode_macro;
+            } else {
+              m_mode = ma_mode_commands;
+            }
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
             m_mode = ma_mode_commands;
+          } break;
+          default : {
+            // Ожидаем окончания операции
           }
-        } break;
-        case irs::hardflow::fixed_flow_t::status_error: {
-          m_mode = ma_mode_commands;
-        } break;
-        case irs::hardflow::fixed_flow_t::status_wait: {
-          m_mode = ma_mode_macro;
-        } break;
-        default : {
-          IRS_LIB_ASSERT_MSG("Неучтенный статус");
         }
       }
     } break;
     case ma_mode_get_value: {
-      if (m_abort_request) {
-        m_mode = ma_mode_macro;
-      } else {
-        irs_u8 *buf = m_read_buf + m_read_pos;
-        mxifa_sz_t size = (ma_read_buf_size - 1) - m_read_pos;
-        if ((size > 0) && (size < ma_read_buf_size)) {
-          mxifa_sz_t read_count = mp_hardflow->read(
-            mp_hardflow->channel_next(),
-            buf,
-            size
-          );
-          //mxifa_fast_read(m_handle, IRS_NULL, buf, size);
-          buf[read_count] = 0;
-          char end_chars[3] = {0x0D, 0x0A, 0x00};
-          char *end_number = strstr((char *)m_read_buf, end_chars);
-          if (end_number) {
-            *end_number = 0;
+      m_fixed_flow.read(mp_hardflow->channel_next(),
+        m_read_buf, sample_size);
+      m_mode = ma_mode_get_value_wait;
+    } break;
+    case ma_mode_get_value_wait: {
+      if (!m_abort_request) {
+        switch (m_fixed_flow.read_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
             char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
-            if (irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
-              m_mode = ma_mode_macro;
-            } else {
+            if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
               *m_value = 0;
             }
-            #ifdef NOP
-            char *end_ptr = IRS_NULL;
-            double val = strtod((char *)m_read_buf, &end_ptr);
-            if (end_ptr == end_number) {
-              *m_value = val;
-              m_mode = ma_mode_macro;
-            }
-            #endif //NOP
-            irs_u8 *read_bytes_end_ptr = buf + read_count;
-            irs_u8 *next_str_ptr = (irs_u8 *)end_number + 2;
-            mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
-            memmove((void *)m_read_buf, (void *)next_str_ptr, rest_bytes);
-            m_read_pos = rest_bytes;
-          } else {
-            m_read_pos += read_count;
-          }
-        } else {
-          m_read_buf[0] = m_read_buf[ma_read_buf_size - 1];
-          m_read_pos = 1;
+            m_mode = ma_mode_macro;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            m_mode = ma_mode_macro;
+          } break;
         }
+      } else {
+        m_fixed_flow.read_abort();
+        m_mode = ma_mode_macro;
       }
     } break;
 

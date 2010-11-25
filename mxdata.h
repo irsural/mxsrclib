@@ -363,6 +363,7 @@ public:
 
   raw_data_t(size_type a_size = 0);
   raw_data_t(const raw_data_t<T>& a_raw_data);
+  raw_data_t(const T* ap_data, size_type a_size);
   ~raw_data_t();
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
@@ -414,6 +415,14 @@ raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memcpyex(mp_data, a_raw_data.mp_data, m_size);
+}
+template <class T>
+raw_data_t<T>::raw_data_t(const T* ap_data, size_type a_size):
+  m_size(a_size),
+  m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
+  mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
+{
+  memcpyex(mp_data, ap_data, m_size);
 }
 template <class T>
 raw_data_t<T>::~raw_data_t()

@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 23.11.2010
+//! Дата: 24.11.2010
 
 #ifndef measmulH
 #define measmulH
@@ -181,6 +181,7 @@ class agilent_3458a_t: public mxmultimeter_t
     ma_mode_commands,
     ma_mode_commands_wait,
     ma_mode_get_value,
+    ma_mode_get_value_wait,
     ma_mode_auto_calibration,
     ma_mode_auto_calibration_wait
   } ma_mode_t;
@@ -218,6 +219,18 @@ class agilent_3458a_t: public mxmultimeter_t
     im_write_command,
     im_next_command,
     im_stop
+  };
+
+  enum {
+    sample_size = 18
+  };
+
+  enum {
+    read_timeout_s = 100
+  };
+  
+  enum {
+    fixed_flow_read_timeout_delta_s = 2
   };
 
   // Режим работы мультиметра
