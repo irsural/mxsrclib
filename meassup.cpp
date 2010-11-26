@@ -456,6 +456,7 @@ void u309m_current_supply_t::tick()
             m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
+            m_supply_off = false;
           }
         } break;
         case m_supply_17A: {
@@ -463,6 +464,7 @@ void u309m_current_supply_t::tick()
             m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
+            m_supply_off = false;
           }
           /*m_argument = 0;
           m_eth_data.supply_17A.sense_regA = m_argument;
