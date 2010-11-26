@@ -17,11 +17,14 @@
 #endif // IRS_WIN32
 
 #include <irsstrdefs.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
 //! \addtogroup drivers_group
 //! @{
+
+#define TRY_LOAD_FIRST_GPIB_32_DLL
 
 #if defined(IRS_WIN32)
 
@@ -136,10 +139,27 @@ public:
   void init()
   {
     if (!f_count_init) {
+      #ifdef TRY_LOAD_FIRST_GPIB_32_DLL
       f_Gpib32Lib = LoadLibrary(irst("GPIB-32.DLL"));
       if (!f_Gpib32Lib) {
         f_Gpib32Lib = LoadLibrary(irst("agtgpib32.dll"));
-      }                                            
+        if (f_Gpib32Lib) {
+          IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
+        }
+      } else {
+        IRS_LIB_DBG_MSG("Загружена gpib-32.dll");
+      }
+      #else // !TRY_LOAD_FIRST_GPIB_32_DLL
+      f_Gpib32Lib = LoadLibrary(irst("agtgpib32.dll"));
+      if (!f_Gpib32Lib) {
+        f_Gpib32Lib = LoadLibrary(irst("GPIB-32.DLL"));
+        if (f_Gpib32Lib) {
+          IRS_LIB_DBG_MSG("Загружена gpib-32.dll");
+        }
+      } else {
+        IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
+      }
+      #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
       if (!f_Gpib32Lib) {
         //ShowMessage("Библиотека GPIB-32.DLL не найдена");
         return;
