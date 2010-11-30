@@ -1966,7 +1966,7 @@ typedef struct {
   __REG32  SETENA39       : 1;
   __REG32  SETENA40       : 1;
   __REG32  SETENA41       : 1;
-  __REG32  SETENA42       : 1;
+  __REG32  NVIC_ETH_INT   : 1;
   __REG32  SETENA43       : 1;
   __REG32  SETENA44       : 1;
   __REG32  SETENA45       : 1;

@@ -84,10 +84,10 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   if (m_use_interrupt == USE_INT) {
     interrupt_array()->int_event_gen(ethernet_int)->add(&m_rx_int_event);
     MACIM_bit.RXINT = 1;
-    SETENA1_bit.SETENA42 = 1;  //  Разрешение прерывания в NVIC
+    SETENA1_bit.NVIC_ETH_INT = 1;  //  Разрешение прерывания в NVIC
   } else {
     MACIM_bit.RXINT = 0;
-    SETENA1_bit.SETENA42 = 0;
+    SETENA1_bit.NVIC_ETH_INT = 0;
   }
 }
 
@@ -97,7 +97,7 @@ irs::arm::arm_ethernet_t::~arm_ethernet_t()
   if (m_buf_num == double_buf) {
     delete []mp_tx_buf;
   }
-  SETENA1_bit.SETENA42 = 0;
+  SETENA1_bit.NVIC_ETH_INT = 0;
   MACIM_bit.RXINT = 0;
   MACTCTL_bit.TXEN = 0;
   MACRCTL_bit.RXEN = 0;
