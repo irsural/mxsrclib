@@ -424,7 +424,10 @@ private:
     mode_ground_rele_on_wait,
 
     mode_off_value_off,
-    mode_off_value_off_wait
+    mode_off_value_off_wait,
+
+    mode_supply_on_ground_rele_off_voltage,
+    mode_supply_on_ground_rele_off_voltage_wait
   } mode_t;
 
   mode_t m_mode;
