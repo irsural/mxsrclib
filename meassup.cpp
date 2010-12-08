@@ -211,7 +211,7 @@ u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t *ap_hardflow):
   m_modbus_client(ap_hardflow,
     irs::mxdata_ext_t::mode_refresh_auto, discr_inputs_size_byte,
     coils_size_byte, hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
-    3, irs::make_cnt_s(2), 240),
+    3, irs::make_cnt_s(3), 240),
   m_voltage(0),
   m_current(0),
   m_parameter(0),
