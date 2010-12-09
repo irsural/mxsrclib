@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 24.11.2010
+//! Дата: 09.12.2010
 
 #ifndef measmulH
 #define measmulH
@@ -1144,7 +1144,8 @@ void accumulate_asynch_t<data_t, iterator_t>::add(data_t a_val)
 }
 
 template <class data_t, class iterator_t>
-void accumulate_asynch_t<data_t, iterator_t>::add(iterator_t ap_begin, iterator_t ap_end)
+void accumulate_asynch_t<data_t, iterator_t>::add(
+  iterator_t ap_begin, iterator_t ap_end)
 {
   IRS_LIB_ERROR_IF(!m_completed, ec_standard,
     "Предыдущая операция еще не завершена");
@@ -1156,7 +1157,7 @@ void accumulate_asynch_t<data_t, iterator_t>::add(iterator_t ap_begin, iterator_
 }
 
 template <class data_t, class iterator_t>
-accumulate_asynch_t<data_t, iterator_t>::value_type
+typename accumulate_asynch_t<data_t, iterator_t>::value_type
 accumulate_asynch_t<data_t, iterator_t>::get() const
 {
   return m_sum;
@@ -1197,7 +1198,8 @@ template <class data_t, class iterator_t>
 void accumulate_asynch_t<data_t, iterator_t>::abort()
 {
   if (!m_completed) {
-    mp_sko_calc->clear();
+    mp_end = mp_begin;
+    clear();
     m_completed = true;
   } else {
     // Операция уже завершена
@@ -1307,6 +1309,7 @@ void sko_calc_asynch_t<data_t, calc_t, iterator_t>::abort()
 {
   if (!m_completed) {
     mp_sko_calc->clear();
+    mp_begin = mp_end;
     m_completed = true;
   } else {
     // Операция уже завершена

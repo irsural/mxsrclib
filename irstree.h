@@ -34,8 +34,6 @@
 #define IRS_LIB_TREE_ASSERT_MSG(msg)
 #endif // IRS_LIB_TREE_DEBUG
 
-#define NEW_TREE_ITERATOR
-
 namespace irs {
 
 #ifdef NOP
@@ -577,8 +575,8 @@ struct tree_iterator_tags
   typedef typename Iterator::pointer pointer;
   typedef typename Iterator::reference reference;
   typedef typename Iterator::iterator_category iterator_category;
-  typedef Iterator::tree_pointer tree_pointer;
-  typedef Iterator::node_pointer node_pointer;
+  typedef typename Iterator::tree_pointer tree_pointer;
+  typedef typename Iterator::node_pointer node_pointer;
 };
 
 template <class T>
@@ -605,34 +603,32 @@ struct tree_iterator_tags<const T*>
   typedef const tree_node_t<T>* node_pointer;
 };
 
-#ifdef NEW_TREE_ITERATOR
-
 template <class T>
 class tree_iterator_t;
 template <class T>
 class const_tree_iterator_t;
+template <class IteratorTag>
+class basic_tree_child_iterator_t;
+template <class T>
+class tree_child_iterator_t;
+template <class T>
+class const_tree_child_iterator_t;
 
 template <class IteratorTag>
 class basic_tree_iterator_t
 {
 public:
-  typedef IteratorTag::difference_type difference_type;
-  typedef IteratorTag::value_type value_type;
-  typedef IteratorTag::pointer pointer;
-  typedef IteratorTag::reference reference;
-  typedef IteratorTag::iterator_category iterator_category;
+  typedef typename IteratorTag::difference_type difference_type;
+  typedef typename IteratorTag::value_type value_type;
+  typedef typename IteratorTag::pointer pointer;
+  typedef typename IteratorTag::reference reference;
+  typedef typename IteratorTag::iterator_category iterator_category;
 public:
-  typedef IteratorTag::tree_pointer tree_pointer;
-  typedef IteratorTag::node_pointer node_pointer;
+  typedef typename IteratorTag::tree_pointer tree_pointer;
+  typedef typename IteratorTag::node_pointer node_pointer;
 public:
   basic_tree_iterator_t(node_pointer ap_node  = IRS_NULL);
   basic_tree_iterator_t(const basic_tree_iterator_t& a_basic_tree_iterator);
-  /*basic_tree_iterator_t(
-    const basic_tree_iterator_t<tree_iterator_tags<value_type*> >&
-    a_basic_tree_iterator);
-  basic_tree_iterator_t(
-    const basic_tree_iterator_t<tree_iterator_tags<const value_type*> >&
-    a_basic_tree_iterator);*/
   void swap(basic_tree_iterator_t& a_basic_tree_iterator);
   basic_tree_iterator_t operator=(
     const basic_tree_iterator_t& a_basic_tree_iterator);
@@ -660,10 +656,14 @@ protected:
     const bool a_children_allowed = true);
   node_pointer mp_node;
   friend class tree_t<value_type>;
-  //friend class tree_iterator_t<value_type>;
   friend class const_tree_iterator_t<value_type>;
   friend class basic_tree_iterator_t<tree_iterator_tags<value_type*> >;
   friend class basic_tree_iterator_t<tree_iterator_tags<const value_type*> >;
+  friend class basic_tree_child_iterator_t<tree_iterator_tags<value_type*> >;
+  friend class basic_tree_child_iterator_t<
+    tree_iterator_tags<const value_type*> >;
+  friend class tree_child_iterator_t<value_type>;
+  friend class const_tree_child_iterator_t<value_type>;
 };
 
 template <class T>
@@ -679,26 +679,6 @@ basic_tree_iterator_t<T>::basic_tree_iterator_t(
   mp_node(a_basic_tree_iterator.mp_node)
 {
 }
-/*
-template <class IteratorTag>
-basic_tree_iterator_t<IteratorTag>::basic_tree_iterator_t(
-  const basic_tree_iterator_t<tree_iterator_tags<value_type*> >&
-  a_basic_tree_iterator
-):
-  mp_node(a_basic_tree_iterator.mp_node)
-{
-
-}
-
-template <class IteratorTag>
-basic_tree_iterator_t<IteratorTag>::basic_tree_iterator_t(
-  const basic_tree_iterator_t<tree_iterator_tags<const value_type*> >&
-  a_basic_tree_iterator
-):
-  mp_node(a_basic_tree_iterator.mp_node)
-{
-
-} */
 
 template <class T>
 void basic_tree_iterator_t<T>::swap(
@@ -731,7 +711,8 @@ bool basic_tree_iterator_t<T>::operator!=(
 }
 
 template <class T>
-basic_tree_iterator_t<T>::reference basic_tree_iterator_t<T>::operator*()
+typename basic_tree_iterator_t<T>::reference
+basic_tree_iterator_t<T>::operator*()
 {
   return mp_node->value;
 }
@@ -769,20 +750,20 @@ basic_tree_iterator_t<T> basic_tree_iterator_t<T>::operator++(int)
 template <class T>
 void basic_tree_iterator_t<T>::go_root()
 {
-  IRS_LIB_ASSERT(mp_tree);
-  *this = mp_tree->root();
+  IRS_LIB_ASSERT(mp_node->mp_tree);
+  *this = mp_node->mp_tree->root();
 }
 
 template <class T>
 void basic_tree_iterator_t<T>::go_begin()
 {
-  *this = mp_tree->begin();
+  *this = mp_node->mp_tree->begin();
 }
 
 template <class T>
 void basic_tree_iterator_t<T>::go_end()
 {
-  *this = mp_tree->end();
+  *this = mp_node->mp_tree->end();
 }
 
 template <class T>
@@ -852,7 +833,7 @@ void basic_tree_iterator_t<T>::go_siblings_end()
 }
 
 template <class T>
-basic_tree_iterator_t<T>::node_pointer
+typename basic_tree_iterator_t<T>::node_pointer
 basic_tree_iterator_t<T>::get_next_node(node_pointer ap_cur_node,
   const bool a_children_allowed)
 {
@@ -877,7 +858,7 @@ class tree_iterator_t: public basic_tree_iterator_t<tree_iterator_tags<T*> >
 private:
   typedef basic_tree_iterator_t<tree_iterator_tags<T*> > base_iterator;
 public:
-  typedef base_iterator::node_pointer node_pointer;
+  typedef typename base_iterator::node_pointer node_pointer;
   tree_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
   tree_iterator_t(const tree_iterator_t& a_tree_iterator);
   tree_iterator_t& operator=(const tree_iterator_t& a_tree_iterator);
@@ -903,7 +884,7 @@ tree_iterator_t<T>& tree_iterator_t<T>::operator=(
   const tree_iterator_t& a_tree_iterator)
 {
   tree_iterator_t tree_iterator(a_tree_iterator);
-  swap(tree_iterator);
+  base_iterator::swap(tree_iterator);
   return *this;
 }
 
@@ -916,7 +897,7 @@ private:
   typedef basic_tree_iterator_t<tree_iterator_tags<const T*> > base_iterator;
   typedef basic_tree_iterator_t<tree_iterator_tags<T*> > iterator;
 public:
-  typedef base_iterator::node_pointer node_pointer;
+  typedef typename base_iterator::node_pointer node_pointer;
   const_tree_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
   const_tree_iterator_t(const const_tree_iterator_t& a_const_tree_iterator);
   const_tree_iterator_t(const tree_iterator_t<T>& a_tree_iterator);
@@ -945,7 +926,8 @@ template <class T>
 const_tree_iterator_t<T>::const_tree_iterator_t(
   const tree_iterator_t<T>& a_tree_iterator
 ):
-  base_iterator(static_cast<const iterator*>(&a_tree_iterator)->mp_node)
+  //base_iterator(static_cast<const iterator*>(&a_tree_iterator)->mp_node)
+  base_iterator(a_tree_iterator.mp_node)
 {
 }
 
@@ -957,228 +939,222 @@ const_tree_iterator_t<T>& const_tree_iterator_t<T>::operator=(
   swap(const_tree_iterator);
   return *this;
 }
-#else // !NEW_TREE_ITERATOR
-template <class T>
-class tree_iterator_t
+
+template <class IteratorTag>
+class basic_tree_child_iterator_t: public basic_tree_iterator_t<IteratorTag>
 {
 private:
-  typedef T value_type;
-  typedef tree_t<T>* tree_pointer;
-  typedef tree_node_t<T>* node_pointer;
+  typedef basic_tree_iterator_t<IteratorTag> basic_tree_iterator;
+protected:
+  typedef typename IteratorTag::node_pointer node_pointer;
 public:
-  tree_iterator_t(node_pointer ap_node = IRS_NULL);
-  tree_iterator_t(const tree_iterator_t& a_tree_iterator);
-  void swap(tree_iterator_t&);
-  tree_iterator_t operator=(const tree_iterator_t& a_tree_iterator);
-  bool operator==(const tree_iterator_t& a_tree_iterator) const;
-  bool operator!=(const tree_iterator_t& a_tree_iterator) const;
-  value_type& operator*();
-  tree_iterator_t<T>& operator--();
-  tree_iterator_t<T> operator--(int);
-  tree_iterator_t<T>& operator++();
-  tree_iterator_t<T> operator++(int);
-  void go_root();
+  basic_tree_child_iterator_t(const node_pointer ap_node_pointer = IRS_NULL);
+  basic_tree_iterator_t<IteratorTag> tree_iterator();
+  basic_tree_child_iterator_t& operator--();
+  basic_tree_child_iterator_t operator--(int);
+  basic_tree_child_iterator_t& operator++();
+  basic_tree_child_iterator_t operator++(int);
   void go_begin();
   void go_end();
   void go_next();
   void go_prev();
-  void go_parent();
-  void go_children_begin();
-  void go_children_end();
-  void go_prev_sibling();
-  void go_next_sibling();
-  void go_siblings_begin();
-  void go_siblings_end();
+  using basic_tree_iterator::swap;
+  using basic_tree_iterator::go_prev_sibling;
+  using basic_tree_iterator::go_next_sibling;
 private:
-  node_pointer get_next_node(node_pointer ap_cur_node,
-    const bool a_children_allowed = true);
-  node_pointer mp_node;
-  template <class T>
-  friend class tree_t;
+  using basic_tree_iterator::mp_node;
+};
+
+template <class IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>::basic_tree_child_iterator_t(
+  const node_pointer ap_node_pointer
+):
+  basic_tree_iterator(ap_node_pointer)
+{
+}
+
+template <class IteratorTag>
+basic_tree_iterator_t<IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>::tree_iterator()
+{
+  return basic_tree_iterator_t<IteratorTag>(mp_node);
+}
+
+template <class IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>&
+basic_tree_child_iterator_t<IteratorTag>::operator--()
+{
+  go_prev_sibling();
+  return *this;
+}
+
+template <class IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>::operator--(int)
+{
+  basic_tree_child_iterator_t basic_tree_child_iterator(*this);
+  go_prev_sibling();
+  return basic_tree_child_iterator;
+}
+
+template <class IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>&
+basic_tree_child_iterator_t<IteratorTag>::operator++()
+{
+  go_next_sibling();
+  return *this;
+}
+
+template <class IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>
+basic_tree_child_iterator_t<IteratorTag>::operator++(int)
+{
+  basic_tree_child_iterator_t basic_tree_child_iterator(*this);
+  go_next_sibling();
+  return basic_tree_child_iterator;
+}
+
+template <class IteratorTag>
+void basic_tree_child_iterator_t<IteratorTag>::go_begin()
+{
+  if (mp_node != mp_node->p_tree->root().mp_node) {
+    mp_node = mp_node->p_parent->p_children_begin;
+  }
+}
+
+template <class IteratorTag>
+void basic_tree_child_iterator_t<IteratorTag>::go_end()
+{
+  if (mp_node != mp_node->p_tree->root().mp_node) {
+    mp_node = mp_node->p_parent->p_children_begin;
+  } else {
+    mp_node = mp_node->p_tree->end().mp_node;
+  }
+}
+
+template <class IteratorTag>
+void basic_tree_child_iterator_t<IteratorTag>::go_next()
+{
+  go_next_sibling();
+}
+
+template <class IteratorTag>
+void basic_tree_child_iterator_t<IteratorTag>::go_prev()
+{
+  go_prev_sibling();
+}
+
+template <class T>
+class tree_child_iterator_t:
+  public basic_tree_child_iterator_t<tree_iterator_tags<T*> >
+{
+private:
+  typedef basic_tree_child_iterator_t<tree_iterator_tags<T*> > base_iterator;
+public:
+  typedef typename base_iterator::node_pointer node_pointer;
+  tree_child_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
+  tree_child_iterator_t(const tree_child_iterator_t& a_tree_child_iterator);
+  tree_child_iterator_t(const tree_iterator_t<T>& a_tree_iterator);
+  tree_child_iterator_t& operator=(
+    const tree_child_iterator_t& a_tree_child_iterator);
+  tree_child_iterator_t& operator=(const tree_iterator_t<T>& a_tree_iterator);
+  using base_iterator::swap;
 };
 
 template <class T>
-tree_iterator_t<T>::tree_iterator_t(node_pointer ap_node):
-  mp_node(ap_node)
+tree_child_iterator_t<T>::tree_child_iterator_t(
+  node_pointer ap_node_pointer
+):
+  base_iterator(ap_node_pointer)
 {
 }
 
 template <class T>
-tree_iterator_t<T>::tree_iterator_t(const tree_iterator_t& a_tree_iterator):
-  mp_node(a_tree_iterator.mp_node)
+tree_child_iterator_t<T>::tree_child_iterator_t(
+  const tree_child_iterator_t& a_tree_child_iterator
+):
+  base_iterator(a_tree_child_iterator.mp_node)
 {
 }
 
 template <class T>
-void tree_iterator_t<T>::swap(tree_iterator_t& a_tree_iterator)
+tree_child_iterator_t<T>::tree_child_iterator_t(
+  const tree_iterator_t<T>& a_tree_iterator
+):
+  base_iterator(a_tree_iterator.mp_node)
 {
-  ::swap(mp_node, a_tree_iterator.mp_node);
 }
 
 template <class T>
-tree_iterator_t<T> tree_iterator_t<T>::operator=(
-  const tree_iterator_t& a_tree_iterator)
+tree_child_iterator_t<T>& tree_child_iterator_t<T>::operator=(
+  const tree_child_iterator_t<T>& a_tree_child_iterator)
 {
-  tree_iterator_t tree_iterator(a_tree_iterator);
-  swap(tree_iterator);
+  tree_child_iterator_t<T> tree_child_iterator(a_tree_child_iterator);
+  swap(tree_child_iterator);
   return *this;
 }
 
 template <class T>
-bool tree_iterator_t<T>::operator==(
-  const tree_iterator_t& a_tree_iterator) const
+tree_child_iterator_t<T>& tree_child_iterator_t<T>::operator=(
+  const tree_iterator_t<T>& a_tree_iterator)
 {
-  return mp_node == a_tree_iterator.mp_node;
-}
-
-template <class T>
-bool tree_iterator_t<T>::operator!=(
-  const tree_iterator_t& a_tree_iterator) const
-{
-  return mp_node != a_tree_iterator.mp_node;
-}
-
-template <class T>
-tree_iterator_t<T>::value_type& tree_iterator_t<T>::operator*()
-{
-  return mp_node->value;
-}
-
-template <class T>
-tree_iterator_t<T>& tree_iterator_t<T>::operator--()
-{
-  go_prev();
+  tree_child_iterator_t<T> tree_child_iterator(a_tree_iterator);
+  swap(tree_child_iterator);
   return *this;
 }
 
 template <class T>
-tree_iterator_t<T> tree_iterator_t<T>::operator--(int)
+class const_tree_child_iterator_t:
+  public basic_tree_child_iterator_t<tree_iterator_tags<const T*> >
 {
-  tree_iterator_t<T> it(*this);
-  go_prev();
-  return it;
+private:
+  typedef basic_tree_child_iterator_t<tree_iterator_tags<const T*> >
+    base_iterator;
+public:
+  typedef typename base_iterator::node_pointer node_pointer;
+  const_tree_child_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
+  const_tree_child_iterator_t(
+    const const_tree_child_iterator_t<T>& a_const_tree_child_iterator);
+  const_tree_child_iterator_t(
+    const tree_child_iterator_t<T>& a_tree_child_iterator);
+  const_tree_child_iterator_t& operator=(
+    const const_tree_child_iterator_t& a_const_tree_child_iterator);
+};
+
+template <class T>
+const_tree_child_iterator_t<T>::const_tree_child_iterator_t(
+  node_pointer ap_node_pointer
+):
+  base_iterator(ap_node_pointer)
+{
 }
 
 template <class T>
-tree_iterator_t<T>& tree_iterator_t<T>::operator++()
+const_tree_child_iterator_t<T>::const_tree_child_iterator_t(
+  const const_tree_child_iterator_t<T>& a_const_tree_child_iterator
+):
+  base_iterator(a_const_tree_child_iterator.mp_node)
 {
-  go_next();
+}
+
+template <class T>
+const_tree_child_iterator_t<T>::
+const_tree_child_iterator_t(
+  const tree_child_iterator_t<T>& a_tree_child_iterator
+):
+  base_iterator(a_tree_child_iterator.mp_node)
+{
+}
+
+template <class T>
+const_tree_child_iterator_t<T>& const_tree_child_iterator_t<T>::operator=(
+  const const_tree_child_iterator_t& a_const_tree_child_iterator)
+{
+  const_tree_child_iterator_t const_tree_child_iterator(
+    a_const_tree_child_iterator);
+  swap(const_tree_child_iterator);
   return *this;
 }
-
-template <class T>
-tree_iterator_t<T> tree_iterator_t<T>::operator++(int)
-{
-  tree_iterator_t<T> it(*this);
-  go_next();
-  return it;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_root()
-{
-  IRS_LIB_ASSERT(mp_tree);
-  *this = mp_tree->root();
-}
-
-template <class T>
-void tree_iterator_t<T>::go_begin()
-{
-  *this = mp_tree->begin();
-}
-
-template <class T>
-void tree_iterator_t<T>::go_end()
-{
-  *this = mp_tree->end();
-}
-
-template <class T>
-void tree_iterator_t<T>::go_next()
-{
-  mp_node = get_next_node(mp_node);
-}
-
-template <class T>
-void tree_iterator_t<T>::go_prev()
-{
-  if (mp_node == mp_node->p_tree->begin().mp_node) {
-    mp_node = mp_node->p_tree->root().mp_node;
-  } else if (mp_node == mp_node->p_parent->p_children_begin) {
-    mp_node = mp_node->p_parent;
-  } else {
-    mp_node = mp_node->p_prev;
-    while (mp_node->p_children_begin != mp_node->p_children_end) {
-      mp_node = mp_node->p_children_end;
-      mp_node = mp_node->p_prev;
-    }
-  }
-}
-
-template <class T>
-void tree_iterator_t<T>::go_parent()
-{
-  mp_node = mp_node->p_parent;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_children_begin()
-{
-  mp_node = mp_node->p_children_begin;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_children_end()
-{
-  mp_node = mp_node->p_children_end;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_prev_sibling()
-{
-  mp_node = mp_node->p_prev;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_next_sibling()
-{
-  mp_node = mp_node->p_next;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_siblings_begin()
-{
-  IRS_LIB_ASSERT(mp_node != mp_node->p_tree->root().mp_node);
-  mp_node = mp_node->p_parent->p_children_begin;
-}
-
-template <class T>
-void tree_iterator_t<T>::go_siblings_end()
-{
-  IRS_LIB_ASSERT(mp_node != mp_node->p_tree->root().mp_node);
-  mp_node = mp_node->p_parent->p_children_end;
-}
-
-template <class T>
-tree_iterator_t<T>::node_pointer
-tree_iterator_t<T>::get_next_node(node_pointer ap_cur_node,
-  const bool a_children_allowed)
-{
-  node_pointer p_next_node = ap_cur_node;
-  if (ap_cur_node != ap_cur_node->p_tree->root().mp_node) {
-    if (a_children_allowed &&
-      (ap_cur_node->p_children_begin != ap_cur_node->p_children_end)) {
-      p_next_node = ap_cur_node->p_children_begin;
-    } else if (ap_cur_node->p_next != ap_cur_node->p_parent->p_children_end) {
-      p_next_node = ap_cur_node->p_next;
-    } else {
-      const bool children_allowed = false;
-      p_next_node = get_next_node(ap_cur_node->p_parent, children_allowed);
-    }
-  }
-  return p_next_node;
-}
-#endif // !NEW_TREE_ITERATOR
 
 template <class T>
 class tree_t
@@ -1186,10 +1162,12 @@ class tree_t
 public:
   typedef irs_size_t size_type;
   typedef T value_type;
-  typedef tree_node_t<T> node_type;
+  //typedef tree_node_t<T> node_type;
   typedef tree_node_t<T>* node_pointer;
   typedef tree_iterator_t<T> iterator;
   typedef const_tree_iterator_t<T> const_iterator;
+  typedef tree_child_iterator_t<T> child_iterator;
+  typedef const_tree_child_iterator_t<T> const_child_iterator;
   tree_t();
   ~tree_t();
   //! \brief Удаление всех узлов.
@@ -1215,19 +1193,27 @@ public:
   void push_back_child(iterator a_parent, const value_type& a_value);
   //! \brief Удаление узла из конца списка дочерних узлов узла a_sibling.
   void pop_back_child(iterator a_parent);
-  
+  //! \brief Возвращает итератор корневого элемента.
   iterator root();
+  //! \brief Возвращает константный итератор корневого элемента.
   const_iterator root() const;
+  //! \brief Возвращает итератор первого элемента.
   iterator begin();
+  //! \brief Возвращает константный итератор первого элемента.
   const_iterator begin() const;
+  //! \brief Возвращает итератор узла, следующего за последним элементом.
   iterator end();
+  //! \brief Возвращает константный итератор узла,
+  //!   следующего за последним элементом.
   const_iterator end() const;
+  //! \brief Возвращает колечество узлов.
   size_type size() const;
+  //! \brief Возвращает true, если в дереве нет узлов.
   bool empty() const;
 private:
   enum { single_root_node = 1 };
   typedef tree_node_t<T> node_type;
-  typedef tree_node_t<T>* child_node_iterator;
+  //typedef tree_node_t<T>* child_node_iterator;
   node_pointer create_node(const value_type& a_value = value_type()); 
   void connect_node_before(node_pointer ap_pos, node_pointer ap_node);
   void delete_node(node_pointer ap_node);
@@ -1245,7 +1231,8 @@ tree_t<T>::tree_t():
 }
 
 template <class T>
-tree_t<T>::node_pointer tree_t<T>::create_node(const value_type& a_value)
+typename tree_t<T>::node_pointer
+tree_t<T>::create_node(const value_type& a_value)
 {
   node_pointer p_new_node = new node_type(a_value, this, IRS_NULL, IRS_NULL,
     IRS_NULL, IRS_NULL, IRS_NULL);
@@ -1445,7 +1432,7 @@ typename tree_t<T>::const_iterator tree_t<T>::end() const
 }
 
 template <class T>
-tree_t<T>::size_type tree_t<T>::size() const
+typename tree_t<T>::size_type tree_t<T>::size() const
 {
   return m_size;
 }
@@ -1472,9 +1459,28 @@ inline void test_tree()
   tree.pop_front(tree.begin());
   IRS_LIB_ASSERT(tree.size() == 3);
   tree_t<double>::iterator it = tree.begin();
+  tree_t<double>::child_iterator child_it1(it);
+  tree_t<double>::child_iterator child_it2(child_it1);
+  child_it2 = child_it1;
+  child_it2 = it;
+  tree_t<double>::const_child_iterator const_child_it1(it);
+  tree_t<double>::const_child_iterator const_child_it2(child_it1);
+  tree_t<double>::const_child_iterator const_child_it3(const_child_it1);
+  const_child_it3.go_next_sibling();
+  const_child_it3.go_prev_sibling();
+  const_child_it3.go_end();
+  const_child_it3.go_begin();
+  const_child_it3.go_next();
+  const_child_it3.go_prev();
+  const_child_it3++;
+  ++const_child_it3;
+  const_child_it3--;
+  --const_child_it3;
+  
   it = tree.begin();
   *it = 10;
   double d = *it;
+  d = 0;
   it++;
   ++it;
   --it;

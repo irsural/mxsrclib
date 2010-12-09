@@ -639,6 +639,9 @@ void irs::agilent_3458a_t::tick()
           case irs::hardflow::fixed_flow_t::status_error: {
             m_mode = ma_mode_macro;
           } break;
+          default : {
+            // ќжидаем выполнени€
+          }
         }
       } else {
         m_fixed_flow.read_abort();
