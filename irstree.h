@@ -635,21 +635,39 @@ public:
   bool operator==(const basic_tree_iterator_t& a_basic_tree_iterator) const;
   bool operator!=(const basic_tree_iterator_t& a_basic_tree_iterator) const;
   reference operator*();
+  //! \brief Перейти к предыдущему элементу дерева.
   basic_tree_iterator_t& operator--();
+  //! \brief Перейти к предыдущему элементу дерева.
   basic_tree_iterator_t operator--(int);
+  //! \brief Перейти к следующему элементу дерева.
   basic_tree_iterator_t& operator++();
+  //! \brief Перейти к следующему элементу дерева.
   basic_tree_iterator_t operator++(int);
+  //! \brief Перейти к корневому элементу дерева. Тоже что и go_end.
   void go_root();
+  //! \brief Перейти в первому элементу дерева.
   void go_begin();
+  //! \brief Перейти к следующему за последним элементу дерева.
+  //!   Тоже что и go_begin.
   void go_end();
+  //! \brief Перейти к следующему элементу дерева.
   void go_next();
+  //! \brief Перейти к предыдущему элементу дерева.
   void go_prev();
+  //! \brief Перейти к родительскому элементу.
   void go_parent();
+  //! \brief Перейти к первому дочернему элементу.
   void go_children_begin();
+  //! \brief Перейти к следующему за последним дочернему элементу.
   void go_children_end();
+  //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   void go_prev_sibling();
+  //! \brief Перейти к следующему элементу, который имеет того же родителя.
   void go_next_sibling();
+  //! \brief Перейти к первому элементу, который имеет того же родителя.
   void go_siblings_begin();
+  //! \brief Перейти к элементу, следующему за последним,
+  //!   имеющего того же родителя.
   void go_siblings_end();
 protected:
   node_pointer get_next_node(node_pointer ap_cur_node,
@@ -950,13 +968,22 @@ protected:
 public:
   basic_tree_child_iterator_t(const node_pointer ap_node_pointer = IRS_NULL);
   basic_tree_iterator_t<IteratorTag> tree_iterator();
+  //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t& operator--();
+  //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t operator--(int);
+  //! \brief Перейти к следующему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t& operator++();
+  //! \brief Перейти к следующему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t operator++(int);
+  //! \brief Перейти к первому элементу, который имеет того же родителя.
   void go_begin();
+  //! \brief Перейти к элементу, следующему за последним,
+  //!   имеющего того же родителя.
   void go_end();
+  //! \brief Перейти к следующему элементу, который имеет того же родителя.
   void go_next();
+  //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   void go_prev();
   using basic_tree_iterator::swap;
   using basic_tree_iterator::go_prev_sibling;
