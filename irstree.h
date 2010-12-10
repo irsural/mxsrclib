@@ -50,6 +50,7 @@ struct tree_node_t
   typedef tree_node_t* parent_pointer;
   typedef tree_node_t* node_pointer;
   typedef list<tree_node_t*> children_type;
+  typedef irs_size_t size_type;
   tree_node_t(const value_type& a_value,
     tree_pointer ap_tree,
     parent_pointer ap_parent,
@@ -64,6 +65,7 @@ struct tree_node_t
   node_pointer p_next;
   node_pointer p_children_begin;
   node_pointer p_children_end;
+  size_type child_count;
 };
 
 template <class T>
@@ -75,14 +77,15 @@ tree_node_t<T>::tree_node_t(
   node_pointer ap_next,
   node_pointer ap_children_begin,
   node_pointer ap_children_end
-):      
+):
   value(a_value),
   p_tree(ap_tree),
   p_parent(ap_parent),
   p_prev(ap_prev),
   p_next(ap_next),
   p_children_begin(ap_children_begin),
-  p_children_end(ap_children_end)
+  p_children_end(ap_children_end),
+  child_count(0)
 {
 }
 
@@ -134,7 +137,13 @@ template <class T>
 class const_tree_child_iterator_t;
 
 template <class IteratorTag>
-class basic_tree_iterator_t
+class basic_tree_iterator_t:
+  public iterator<
+    typename IteratorTag::iterator_category,
+    typename IteratorTag::value_type,
+    typename IteratorTag::difference_type,
+    typename IteratorTag::pointer,
+    typename IteratorTag::reference>
 {
 public:
   typedef typename IteratorTag::difference_type difference_type;
@@ -145,6 +154,7 @@ public:
 public:
   typedef typename IteratorTag::tree_pointer tree_pointer;
   typedef typename IteratorTag::node_pointer node_pointer;
+  typedef irs_size_t size_type;
 public:
   basic_tree_iterator_t(node_pointer ap_node  = IRS_NULL);
   basic_tree_iterator_t(const basic_tree_iterator_t& a_basic_tree_iterator);
@@ -188,6 +198,9 @@ public:
   //! \brief Перейти к элементу, следующему за последним,
   //!   имеющего того же родителя.
   void go_siblings_end();
+  basic_tree_iterator_t children_begin();
+  basic_tree_iterator_t children_end();
+  size_type child_count() const;
 protected:
   node_pointer get_next_node(node_pointer ap_cur_node,
     const bool a_children_allowed = true);
@@ -372,6 +385,25 @@ void basic_tree_iterator_t<T>::go_siblings_end()
 }
 
 template <class T>
+basic_tree_iterator_t<T> basic_tree_iterator_t<T>::children_begin()
+{
+  return basic_tree_iterator_t<T>(mp_node->p_children_begin);
+}
+
+template <class T>
+basic_tree_iterator_t<T> basic_tree_iterator_t<T>::children_end()
+{
+  return basic_tree_iterator_t<T>(mp_node->p_children_end);
+}
+
+template <class T>
+typename basic_tree_iterator_t<T>::size_type
+basic_tree_iterator_t<T>::child_count() const
+{
+  return mp_node->child_count;
+}
+
+template <class T>
 typename basic_tree_iterator_t<T>::node_pointer
 basic_tree_iterator_t<T>::get_next_node(node_pointer ap_cur_node,
   const bool a_children_allowed)
@@ -398,6 +430,7 @@ private:
   typedef basic_tree_iterator_t<tree_iterator_tags<T*> > base_iterator;
 public:
   typedef typename base_iterator::node_pointer node_pointer;
+  typedef typename base_iterator::iterator_category iterator_category;
   tree_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
   tree_iterator_t(const tree_iterator_t& a_tree_iterator);
   const tree_iterator_t& operator=(const tree_iterator_t& a_tree_iterator);
@@ -487,8 +520,12 @@ private:
 protected:
   typedef typename IteratorTag::node_pointer node_pointer;
 public:
+  typedef typename IteratorTag::reference reference;
   basic_tree_child_iterator_t(const node_pointer ap_node_pointer = IRS_NULL);
   basic_tree_iterator_t<IteratorTag> tree_iterator();
+  bool operator==(const basic_tree_child_iterator_t& a_iterator) const;
+  bool operator!=(const basic_tree_child_iterator_t& a_iterator) const;
+  reference operator*();
   //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t& operator--();
   //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
@@ -518,6 +555,27 @@ basic_tree_iterator_t<IteratorTag>
 basic_tree_child_iterator_t<IteratorTag>::tree_iterator()
 {
   return basic_tree_iterator_t<IteratorTag>(mp_node);
+}
+
+template <class IteratorTag>
+bool basic_tree_child_iterator_t<IteratorTag>::operator==(
+  const basic_tree_child_iterator_t& a_iterator) const
+{
+  return basic_tree_iterator::operator==(a_iterator);
+}
+
+template <class IteratorTag>
+bool basic_tree_child_iterator_t<IteratorTag>::operator!=(
+  const basic_tree_child_iterator_t& a_iterator) const
+{
+  return basic_tree_iterator::operator!=(a_iterator);
+}
+
+template <class IteratorTag>
+typename basic_tree_child_iterator_t<IteratorTag>::reference
+basic_tree_child_iterator_t<IteratorTag>::operator*()
+{
+  return basic_tree_iterator::operator*();
 }
 
 template <class IteratorTag>
@@ -559,16 +617,20 @@ class tree_child_iterator_t:
   public basic_tree_child_iterator_t<tree_iterator_tags<T*> >
 {
 private:
-  typedef basic_tree_child_iterator_t<tree_iterator_tags<T*> > base_iterator;
+  //typedef basic_tree_child_iterator_t<tree_iterator_tags<T*> > base_iterator;
+  typedef basic_tree_iterator_t<tree_iterator_tags<T*> > base_iterator;
+  typedef basic_tree_child_iterator_t<tree_iterator_tags<T*> >
+    base_child_iterator;
 public:
   typedef typename base_iterator::node_pointer node_pointer;
   tree_child_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
-  tree_child_iterator_t(const tree_child_iterator_t& a_tree_child_iterator);
-  tree_child_iterator_t(const tree_iterator_t<T>& a_tree_iterator);
+  //tree_child_iterator_t(const tree_child_iterator_t& a_tree_child_iterator);
+  //tree_child_iterator_t(const tree_iterator_t<T>& a_tree_iterator);
+  tree_child_iterator_t(const base_iterator& a_base_iterator);
   tree_child_iterator_t& operator=(
     const tree_child_iterator_t& a_tree_child_iterator);
   tree_child_iterator_t& operator=(const tree_iterator_t<T>& a_tree_iterator);
-  using base_iterator::swap;
+  using base_child_iterator::swap;
 };
 
 template <class T>
@@ -579,7 +641,7 @@ tree_child_iterator_t<T>::tree_child_iterator_t(
 {
 }
 
-template <class T>
+/*template <class T>
 tree_child_iterator_t<T>::tree_child_iterator_t(
   const tree_child_iterator_t& a_tree_child_iterator
 ):
@@ -592,6 +654,14 @@ tree_child_iterator_t<T>::tree_child_iterator_t(
   const tree_iterator_t<T>& a_tree_iterator
 ):
   base_iterator(a_tree_iterator.mp_node)
+{
+}*/
+
+template <class T>
+tree_child_iterator_t<T>::tree_child_iterator_t(
+  const base_iterator& a_base_iterator
+):
+  base_child_iterator(a_base_iterator.mp_node)
 {
 }
 
@@ -618,24 +688,32 @@ class const_tree_child_iterator_t:
   public basic_tree_child_iterator_t<tree_iterator_tags<const T*> >
 {
 private:
+  typedef basic_tree_iterator_t<tree_iterator_tags<T*> > base_iterator;
+  typedef basic_tree_iterator_t<tree_iterator_tags<const T*> >
+    const_base_iterator;
   typedef basic_tree_child_iterator_t<tree_iterator_tags<const T*> >
-    base_iterator;
+    base_child_iterator;
 public:
-  typedef typename base_iterator::node_pointer node_pointer;
+  typedef typename base_child_iterator::node_pointer node_pointer;
   const_tree_child_iterator_t(node_pointer ap_node_pointer = IRS_NULL);
   const_tree_child_iterator_t(
     const const_tree_child_iterator_t<T>& a_const_tree_child_iterator);
   const_tree_child_iterator_t(
     const tree_child_iterator_t<T>& a_tree_child_iterator);
+  const_tree_child_iterator_t(const base_iterator& a_base_iterator);
+  const_tree_child_iterator_t(const const_base_iterator& a_const_base_iterator);
+  const_tree_child_iterator_t& operator=(
+    const tree_child_iterator_t<T>& a_tree_child_iterator);
   const_tree_child_iterator_t& operator=(
     const const_tree_child_iterator_t& a_const_tree_child_iterator);
+  using base_child_iterator::swap;
 };
 
 template <class T>
 const_tree_child_iterator_t<T>::const_tree_child_iterator_t(
   node_pointer ap_node_pointer
 ):
-  base_iterator(ap_node_pointer)
+  base_child_iterator(ap_node_pointer)
 {
 }
 
@@ -643,7 +721,7 @@ template <class T>
 const_tree_child_iterator_t<T>::const_tree_child_iterator_t(
   const const_tree_child_iterator_t<T>& a_const_tree_child_iterator
 ):
-  base_iterator(a_const_tree_child_iterator.mp_node)
+  base_child_iterator(a_const_tree_child_iterator.mp_node)
 {
 }
 
@@ -652,8 +730,35 @@ const_tree_child_iterator_t<T>::
 const_tree_child_iterator_t(
   const tree_child_iterator_t<T>& a_tree_child_iterator
 ):
-  base_iterator(a_tree_child_iterator.mp_node)
+  base_child_iterator(a_tree_child_iterator.mp_node)
 {
+}
+
+template <class T>
+const_tree_child_iterator_t<T>::
+const_tree_child_iterator_t(const base_iterator& a_base_iterator
+):
+  base_child_iterator(a_base_iterator.mp_node)
+{
+}
+
+template <class T>
+const_tree_child_iterator_t<T>::
+const_tree_child_iterator_t(const const_base_iterator& a_const_base_iterator
+):
+  base_child_iterator(a_const_base_iterator.mp_node)
+{
+}
+
+template <class T>
+const_tree_child_iterator_t<T>& const_tree_child_iterator_t<T>::operator=(
+  const tree_child_iterator_t<T>& a_tree_child_iterator)
+{
+  return operator=(const_tree_child_iterator_t<T>(a_tree_child_iterator));
+  /*const_tree_child_iterator_t const_tree_child_iterator(
+    a_tree_child_iterator);
+  swap(const_tree_child_iterator);
+  return *this;*/
 }
 
 template <class T>
@@ -772,6 +877,7 @@ void tree_t<T>::connect_node_before(node_pointer ap_pos, node_pointer ap_node)
   if (ap_pos->p_parent->p_children_begin == ap_pos) {
     ap_pos->p_parent->p_children_begin = ap_node;
   }
+  ap_node->p_parent->child_count++;
 }
 
 template <class T>
@@ -792,6 +898,7 @@ void tree_t<T>::disconnect_node(node_pointer ap_node)
   }
   p_prev_node->p_next = p_next_node;
   p_next_node->p_prev = p_prev_node;
+  ap_node->p_parent->child_count--;
 }
 
 template <class T>
@@ -970,6 +1077,21 @@ inline void test_tree()
   tree.pop_front_sibling(tree.begin());
   IRS_LIB_ASSERT(tree.size() == 3);
   tree_t<double>::iterator it = tree.begin();
+  max_element(tree.begin(), tree.end());
+  tree_t<double>::child_iterator child_begin(it.children_begin());
+  tree_t<double>::child_iterator child_end = it.children_end();
+  tree_t<double>::child_iterator max_value_it = max_element(child_begin,
+    child_end);
+  tree_t<double>::const_child_iterator child_begin2(child_begin);
+  tree_t<double>::const_child_iterator child_end2(it.children_end());
+  child_begin2 = child_begin;
+  //child_end2 = it.children_end();
+  tree_t<double>::const_child_iterator max_value_it2 = max_element(child_begin2,
+    child_end2);
+
+  list<double> l;
+  max_element(l.begin(), l.end());
+
   tree_t<double>::child_iterator child_it1(it);
   tree_t<double>::child_iterator child_it2(child_it1);
   child_it2 = child_it1;
@@ -987,7 +1109,7 @@ inline void test_tree()
   ++const_child_it3;
   const_child_it3--;
   --const_child_it3;
-  
+
   it = tree.begin();
   *it = 10;
   double d = *it;
