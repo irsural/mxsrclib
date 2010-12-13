@@ -470,7 +470,6 @@ const tree_iterator_t<T>& tree_iterator_t<T>::operator=(
 //! \brief  ласс константного сквозного итератора дерева.
 template <class T>
 class const_tree_iterator_t:
-  //public tree_iterator_t<T>
   public basic_tree_iterator_t<tree_iterator_tags<const T*> >
 {
 private:
