@@ -1,14 +1,9 @@
-//  Component Tree
-//  Data: 15.09.2009
-//
-//  Copyright (c) 2009
-//  IRS Company
-//
-//  Copyright (c) 2009
-//  Maksim Lyashchov
-//
-//  This material is provided "as is", with absolutely no warranty expressed
-//  or implied. Any use is at your own risk.
+//! \file
+//! \ingroup container_group
+//! \brief Контейнер дерево
+
+//! Дата: 13.12.2010\n
+//! Дата создания: 15.09.2009
 
 #ifndef irstreeH
 #define irstreeH
@@ -37,7 +32,10 @@
 
 namespace irs {
 
-#ifdef NEW_TREE_ENABLED
+//! \addtogroup container_group
+//! @{
+
+#ifndef __WATCOMC__
 
 template <class T>
 class tree_t;
@@ -136,6 +134,7 @@ class tree_child_iterator_t;
 template <class T>
 class const_tree_child_iterator_t;
 
+//! \brief Базовый класс сквозного итератора дерева.
 template <class IteratorTag>
 class basic_tree_iterator_t:
   public iterator<
@@ -159,10 +158,14 @@ public:
   basic_tree_iterator_t(node_pointer ap_node  = IRS_NULL);
   basic_tree_iterator_t(const basic_tree_iterator_t& a_basic_tree_iterator);
   void swap(basic_tree_iterator_t& a_basic_tree_iterator);
+  //! \brief Оператор присвоения.
   const basic_tree_iterator_t& operator=(
     const basic_tree_iterator_t& a_basic_tree_iterator);
+  //! \brief Вовращает true, если итераторы равны, и false, если не равны.
   bool operator==(const basic_tree_iterator_t& a_basic_tree_iterator) const;
+  //! \brief Возвращает true, если итераторы не равны, и false, если равны.
   bool operator!=(const basic_tree_iterator_t& a_basic_tree_iterator) const;
+  //! \brief Возвращает значение.
   reference operator*();
   //! \brief Перейти к предыдущему элементу дерева.
   basic_tree_iterator_t& operator--();
@@ -172,13 +175,13 @@ public:
   basic_tree_iterator_t& operator++();
   //! \brief Перейти к следующему элементу дерева.
   basic_tree_iterator_t operator++(int);
-  //! \brief Перейти к корневому элементу дерева. Тоже что и go_end.
+  //! \brief Перейти к корневому элементу дерева. Тоже что и go_tree_end.
   void go_root();
   //! \brief Перейти в первому элементу дерева.
-  void go_begin();
+  void go_tree_begin();
   //! \brief Перейти к следующему за последним элементу дерева.
   //!   Тоже что и go_root.
-  void go_end();
+  void go_tree_end();
   //! \brief Перейти к следующему элементу дерева.
   void go_next();
   //! \brief Перейти к предыдущему элементу дерева.
@@ -198,8 +201,11 @@ public:
   //! \brief Перейти к элементу, следующему за последним,
   //!   имеющего того же родителя.
   void go_siblings_end();
+  //! \brief Возвращает итератор на первый дочерний элемент.
   basic_tree_iterator_t children_begin();
+  //! \brief Возвращает итератор на элемент, следующий за последним дочерним.
   basic_tree_iterator_t children_end();
+  //! \brief Возвращает количество дочерних узлов.
   size_type child_count() const;
 protected:
   node_pointer get_next_node(node_pointer ap_cur_node,
@@ -305,14 +311,14 @@ void basic_tree_iterator_t<T>::go_root()
 }
 
 template <class T>
-void basic_tree_iterator_t<T>::go_begin()
+void basic_tree_iterator_t<T>::go_tree_begin()
 {
   tree_iterator_t<value_type> tree_it = mp_node->p_tree->end();
   *this = *reinterpret_cast<basic_tree_iterator_t*>(&tree_it);
 }
 
 template <class T>
-void basic_tree_iterator_t<T>::go_end()
+void basic_tree_iterator_t<T>::go_tree_end()
 {
   tree_iterator_t<value_type> tree_it = mp_node->p_tree->end();
   *this = *reinterpret_cast<basic_tree_iterator_t*>(&tree_it);
@@ -423,6 +429,7 @@ basic_tree_iterator_t<T>::get_next_node(node_pointer ap_cur_node,
   return p_next_node;
 }
 
+//! \brief Класс неконстантного сквозного итератора дерева.
 template <class T>
 class tree_iterator_t: public basic_tree_iterator_t<tree_iterator_tags<T*> >
 {
@@ -460,6 +467,7 @@ const tree_iterator_t<T>& tree_iterator_t<T>::operator=(
   return *this;
 }
 
+//! \brief Класс константного сквозного итератора дерева.
 template <class T>
 class const_tree_iterator_t:
   //public tree_iterator_t<T>
@@ -512,8 +520,9 @@ const_tree_iterator_t<T>& const_tree_iterator_t<T>::operator=(
   return *this;
 }
 
+//! \brief Базовый класс итератора дочерних элементов.
 template <class IteratorTag>
-class basic_tree_child_iterator_t: protected basic_tree_iterator_t<IteratorTag>
+class basic_tree_child_iterator_t: public basic_tree_iterator_t<IteratorTag>
 {
 private:
   typedef basic_tree_iterator_t<IteratorTag> basic_tree_iterator;
@@ -523,9 +532,9 @@ public:
   typedef typename IteratorTag::reference reference;
   basic_tree_child_iterator_t(const node_pointer ap_node_pointer = IRS_NULL);
   basic_tree_iterator_t<IteratorTag> tree_iterator();
-  bool operator==(const basic_tree_child_iterator_t& a_iterator) const;
+  /*bool operator==(const basic_tree_child_iterator_t& a_iterator) const;
   bool operator!=(const basic_tree_child_iterator_t& a_iterator) const;
-  reference operator*();
+  reference operator*();*/
   //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t& operator--();
   //! \brief Перейти к предыдущему элементу, который имеет того же родителя.
@@ -534,11 +543,16 @@ public:
   basic_tree_child_iterator_t& operator++();
   //! \brief Перейти к следующему элементу, который имеет того же родителя.
   basic_tree_child_iterator_t operator++(int);
-protected:
   using basic_tree_iterator::swap;
   using basic_tree_iterator::go_prev_sibling;
   using basic_tree_iterator::go_next_sibling;
+protected:
+
 private:
+  void go_next()
+  { }
+  void go_prev()
+  { }
   using basic_tree_iterator::mp_node;
 };
 
@@ -557,7 +571,7 @@ basic_tree_child_iterator_t<IteratorTag>::tree_iterator()
   return basic_tree_iterator_t<IteratorTag>(mp_node);
 }
 
-template <class IteratorTag>
+/*template <class IteratorTag>
 bool basic_tree_child_iterator_t<IteratorTag>::operator==(
   const basic_tree_child_iterator_t& a_iterator) const
 {
@@ -576,7 +590,7 @@ typename basic_tree_child_iterator_t<IteratorTag>::reference
 basic_tree_child_iterator_t<IteratorTag>::operator*()
 {
   return basic_tree_iterator::operator*();
-}
+}*/
 
 template <class IteratorTag>
 basic_tree_child_iterator_t<IteratorTag>&
@@ -612,6 +626,7 @@ basic_tree_child_iterator_t<IteratorTag>::operator++(int)
   return basic_tree_child_iterator;
 }
 
+//! \brief Итератор дочерних элементов.
 template <class T>
 class tree_child_iterator_t:
   public basic_tree_child_iterator_t<tree_iterator_tags<T*> >
@@ -683,6 +698,7 @@ tree_child_iterator_t<T>& tree_child_iterator_t<T>::operator=(
   return *this;
 }
 
+//! \brief Константный итератор дочерних элементов.
 template <class T>
 class const_tree_child_iterator_t:
   public basic_tree_child_iterator_t<tree_iterator_tags<const T*> >
@@ -771,17 +787,20 @@ const_tree_child_iterator_t<T>& const_tree_child_iterator_t<T>::operator=(
   return *this;
 }
 
+//! \brief Контейнер дерево.
 template <class T>
 class tree_t
 {
 public:
   typedef irs_size_t size_type;
   typedef T value_type;
-  //typedef tree_node_t<T> node_type;
-  typedef tree_node_t<T>* node_pointer;
+  //! \brief Тип сквозного итератора.
   typedef tree_iterator_t<T> iterator;
+  //! \brief Тип константного сквозного итератора.
   typedef const_tree_iterator_t<T> const_iterator;
+  //! \brief Тип итератора дочерних элементов.
   typedef tree_child_iterator_t<T> child_iterator;
+  //! \brief Тип константного итератора дочерних элементов.
   typedef const_tree_child_iterator_t<T> const_child_iterator;
   tree_t();
   ~tree_t();
@@ -826,10 +845,10 @@ public:
   //! \brief Возвращает true, если в дереве нет узлов.
   bool empty() const;
 private:
-  enum { single_root_node = 1 };
+  typedef tree_node_t<T>* node_pointer;
   typedef tree_node_t<T> node_type;
-  //typedef tree_node_t<T>* child_node_iterator;
-  node_pointer create_node(const value_type& a_value = value_type()); 
+  enum { single_root_node = 1 };
+  node_pointer create_node(const value_type& a_value = value_type());
   void connect_node_before(node_pointer ap_pos, node_pointer ap_node);
   void delete_node(node_pointer ap_node);
   void disconnect_node(node_pointer ap_node);
@@ -1109,6 +1128,8 @@ inline void test_tree()
   ++const_child_it3;
   const_child_it3--;
   --const_child_it3;
+  const_child_it3.go_next_sibling();
+  const_child_it3.go_prev_sibling();
 
   it = tree.begin();
   *it = 10;
@@ -1121,7 +1142,10 @@ inline void test_tree()
   tree.clear();
   IRS_LIB_ASSERT(tree.size() == 0);
 }
-#endif // NEW_TREE_ENABLED
+
+#endif // !__WATCOMC__
+
+//! @}
 
 }; // namespace irs
 
