@@ -75,8 +75,8 @@ private:
   inline void clock_gating_control(p_arm_port_t ap_port)
   {
     irs_u8 port_number = port_base_to_port_number(ap_port);
-    //HWREG(SYSTEM_CONTROL_BASE + RCGC2) |= (1 << port_number);
     RCGC2 |= (1 << port_number);
+    for (irs_u32 i = 10; i; i--);
   }
 };
 

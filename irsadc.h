@@ -63,7 +63,7 @@ public:
 struct th_lm95071_data_t
 {
   irs::bit_data_t new_data_bit;
-  irs::conn_data_t<irs_u16> temperature_code;
+  irs::conn_data_t<irs_i16> temperature_code;
   
   th_lm95071_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     new_data_bit(),

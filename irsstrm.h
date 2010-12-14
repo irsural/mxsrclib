@@ -455,6 +455,10 @@ public:
   inline void trans (char data);
   inline void trans_simple (char data);
 private:
+  enum {
+    PORTA1_UART0Tx = 0x10
+  };
+  
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
   const irs_u32 m_baud_rate;
@@ -486,6 +490,7 @@ inline com_buf::com_buf(
   for (irs_u8 i = 10; i; i--);
   
   UART0CTL_bit.UARTEN = 0;  //  Отключение UART0
+  UART0CTL_bit.HSE = 0;     //  ClkDiv = 16
   UART0IBRD = BRDI;
   UART0FBRD = BRDF;
   UART0LCRH_bit.SPS = 0;    //  Проверка чётности выключена
@@ -507,6 +512,9 @@ inline com_buf::com_buf(
   GPIOADIR_bit.no1 = 1;     //  Нога TX выход
   GPIOAAFSEL_bit.no1 = 1;   //  Альтернативная функция включена
   //
+  #ifdef __LM3SxBxx__
+  (*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= PORTA1_UART0Tx;
+  #endif // __LM3SxBxx__
 
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
@@ -528,7 +536,12 @@ inline void com_buf::trans (char data)
 }
 inline void com_buf::trans_simple (char data)
 {
+  #ifdef __LM3Sx9xx__
   UART0DR = data;
+  #endif // __LM3Sx9xx__
+  #ifdef __LM3SxBxx__
+  UART0DR_bit.DATA = data;
+  #endif // __LM3SxBxx__
   while (UART0FR_bit.TXFF);
 }
 inline int com_buf::overflow(int c)

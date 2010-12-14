@@ -1018,7 +1018,13 @@ typedef struct {
 /* UART Control (UARTCTL) */
 typedef struct {
   __REG32  UARTEN         : 1;
+#ifdef __LM3SxBxx__ 
+  __REG32                 : 4;
+  __REG32  HSE            : 1;
+  __REG32                 : 1;
+#else // __LM3SxBxx__ 
   __REG32                 : 6;
+#endif // __LM3SxBxx__
   __REG32  LBE            : 1;
   __REG32  TXE            : 1;
   __REG32  RXE            : 1;

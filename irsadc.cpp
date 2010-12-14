@@ -2,7 +2,8 @@
 //! \ingroup drivers_group
 //! \brief Аналоговый ввод-вывод
 //!
-//! Дата: 11.09.2009
+//! Дата: 03.12.2010
+//! Дата создания: 11.09.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__
@@ -10,6 +11,7 @@
 #endif // __BORLANDC__
 
 #include <irsadc.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -19,7 +21,7 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   counter_t a_read_delay):
   m_status(TH_FREE),
   mp_spi(ap_spi),
-  m_conv_koef(0.031025f), //0.031075f
+  m_conv_koef(0.0078125f), //0.031025f //0.031075f
   m_read_counter(0),
   m_read_delay(a_read_delay),
   m_connect(false),
@@ -46,27 +48,23 @@ irs_uarc irs::th_lm95071_t::size()
 
 irs_bool irs::th_lm95071_t::connected()
 {
-  if (mp_spi && mp_cs_pin && m_connect) return true;
-  else return false;
+  return (mp_spi && mp_cs_pin && m_connect);
 }
 
 void irs::th_lm95071_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  if (!a_index && (a_size == m_size))
-  {
+  if (!a_index && (a_size == m_size)) {
     memcpy((void*)ap_buf, (void*)mp_buf, m_size);
     mp_buf[0] = 0;
-    return;
-  }
-  else
-  {
+  } else {
     if (a_index >= m_size) return;
     irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
+    if (size + a_index > m_size) {
+      size = irs_u8(m_size - a_index);
+    }
     memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
     mp_buf[0] = 0;
-    return;
   }
 }
 
@@ -75,7 +73,9 @@ void irs::th_lm95071_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (a_index >= m_size) return;
   irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
+  if (size + a_index > m_size) {
+    size = irs_u8(m_size - a_index);
+  }
   memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
   mp_buf[0] = 0;
 }
@@ -109,10 +109,9 @@ void irs::th_lm95071_t::tick()
   mp_spi->tick();
   switch (m_status)
   {
-  case TH_FREE:
+    case TH_FREE:
     {
-      if (test_to_cnt(m_read_counter))
-      {
+      if (test_to_cnt(m_read_counter)) {
         if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
         {
           set_to_cnt(m_read_counter, m_read_delay);
@@ -124,47 +123,42 @@ void irs::th_lm95071_t::tick()
           mp_spi->read(mp_spi_buf, m_spi_size);
           m_status = TH_READ;
         }
-      }
-      break;
+      } break;
     }
-  case TH_READ:
+    case TH_READ:
     {
-      if (mp_spi->get_status() == irs::spi_t::FREE)
-      {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
         irs_u16 th_value = 0;
         IRS_LOBYTE(th_value) = mp_spi_buf[1];
         IRS_HIBYTE(th_value) = mp_spi_buf[0];
         mp_buf[0] = 1;
         mp_buf[1] = mp_spi_buf[1];
         mp_buf[2] = mp_spi_buf[0];
-        *((irs_u16*)&mp_buf[1]) >>= 2;
-        if (th_value != 0x800F)
-        {
+        irs_i16 old_value = 0;
+        IRS_LOBYTE(old_value) = mp_buf[1];
+        IRS_HIBYTE(old_value) = mp_buf[2];
+        reinterpret_cast<irs_i16&>(mp_buf[1]) = old_value;
+        if (th_value != 0x800F) {
           m_connect = true;
           mp_cs_pin->set();
           mp_spi->unlock();
           m_status = TH_FREE;
-        }
-        else
-        {
+        } else { // Shutdown mode
           mp_spi_buf[0] = 0;
           mp_spi_buf[1] = 0;
           m_status = TH_RESET;
           mp_spi->write(mp_spi_buf, m_spi_size);
           mp_cs_pin->clear();
         }
-      }
-      break;
+      } break;
     }
-  case TH_RESET:
+    case TH_RESET:
     {
-      if (mp_spi->get_status() == irs::spi_t::FREE)
-      {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
         mp_spi->unlock();
         m_status = TH_FREE;
-      }
-      break;
+      } break;
     }
   }
 }

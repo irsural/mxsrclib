@@ -38,13 +38,9 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
     mp_tx_buf = new irs_u8[DA_size + SA_size + L_size + m_buf_size];
   }
 
+  RCGC2_bit.PORTF = 1;
   RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
   RCGC2_bit.EMAC0 = 1;
-  #ifdef __LM3Sx9xx__
-  RCGC2_bit.PORTF = 1;
-  #elif defined __LM3SxBxx__
-  RCGC2 |= (1 << 5);
-  #endif // __LM3SxBxx__
   for (irs_u8 i = 10; i; i--);
   //  Делитель частоты интерфейса MII
   const irs_u32 MII_freq = 2500000; //  max MII freq, Hz
