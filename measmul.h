@@ -2391,8 +2391,7 @@ private:
     get_voltage_mode,
     get_current_mode,
     get_resistance2x_mode,
-    get_resistance4x_mode,
-    stop_mode
+    get_resistance4x_mode
   };
   struct eth_mul_data_t {
     // Установки:
@@ -2412,6 +2411,7 @@ private:
     conn_data_t<irs_u16> integrate_time_units; // 0 - Seconds; 1 - PLCs
     conn_data_t<irs_u16> filter_type;
     conn_data_t<irs_u16> filter_order;
+    conn_data_t<irs_u16> meas_status;
         
     // Считываемые значения:
     conn_data_t<double> meas_value;
@@ -2443,6 +2443,7 @@ private:
       index = integrate_time_units.connect(ap_data, index);
       index = filter_type.connect(ap_data, index);
       index = filter_order.connect(ap_data, index);
+      index = meas_status.connect(ap_data, index);
             
       index = meas_value.connect(ap_data, index);
       index = meas_value_not_filtered.connect(ap_data, index);

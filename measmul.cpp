@@ -3688,7 +3688,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_mul_mode_type(a_mul_mode_type),
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 0, 37, 24, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
+    0, 0, 38, 24, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
   m_eth_mul_data(),
   m_status(meas_status_success),
   mp_value(IRS_NULL),
@@ -3699,9 +3699,10 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_pause(irs::make_cnt_ms(500))*/
 {
   m_eth_mul_data.connect(&m_modbus_client, 0);
-
-  m_eth_mul_data.meas_mode = high_speed;
+  m_eth_mul_data.meas_status = meas_status_success;
   
+  #ifdef NOP
+  m_eth_mul_data.meas_mode = high_speed;
   if (m_mul_mode_type == mul_mode_type_active) {
     if (a_filter != zero_struct_t<filter_settings_t>::get()) {
       m_eth_mul_data.filter_type = m_filter.family;
@@ -3722,6 +3723,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
     }
   }
   //работает не правильно т.к в начале нет коннекта и все значения 0
+  #endif // NOP
 }
 
 irs::ni_pxi_4071_t::~ni_pxi_4071_t()
@@ -3875,20 +3877,26 @@ void irs::ni_pxi_4071_t::set_negative()
 
 void irs::ni_pxi_4071_t::get_value(double* ap_value)
 {
-  mp_value = ap_value;
-  m_status = meas_status_busy;
-  m_mode = get_value_mode;
-  //m_pause.start();
+  if (m_eth_mul_data.meas_status == meas_status_success) {
+    mp_value = ap_value;
+    m_status = meas_status_busy;
+    m_eth_mul_data.meas_status = meas_status_busy;
+    m_mode = get_value_mode;
+    //m_pause.start();
+  }
 }
 
 void irs::ni_pxi_4071_t::get_voltage(double* ap_voltage)
 {
-  if (m_eth_mul_data.meas_type != tm_volt_dc) {
-    m_eth_mul_data.meas_type = tm_volt_dc;
+  if (m_eth_mul_data.meas_status == meas_status_success) {
+    /*if (m_eth_mul_data.meas_type != tm_volt_dc) {
+      m_eth_mul_data.meas_type = tm_volt_dc;
+    }*/
+    mp_value = ap_voltage;
+    m_status = meas_status_busy;
+    m_eth_mul_data.meas_status = meas_status_busy;
+    m_mode = get_voltage_mode;
   }
-  mp_value = ap_voltage;
-  m_status = meas_status_busy;
-  m_mode = get_voltage_mode;
 }
 
 void irs::ni_pxi_4071_t::get_current(double* ap_current)
@@ -3897,7 +3905,8 @@ void irs::ni_pxi_4071_t::get_current(double* ap_current)
     m_eth_mul_data.meas_type = tm_current_dc;
   }
   mp_value = ap_current;
-  m_status = meas_status_busy;
+  //m_status = meas_status_busy;
+  m_eth_mul_data.meas_status = meas_status_busy;
   m_mode = get_current_mode;
 }
 
@@ -3907,7 +3916,8 @@ void irs::ni_pxi_4071_t::get_resistance2x(double* ap_resistance)
     m_eth_mul_data.meas_type = tm_resistance_2x;
   }
   mp_value = ap_resistance;
-  m_status = meas_status_busy;
+  //m_status = meas_status_busy;
+  m_eth_mul_data.meas_status = meas_status_busy;
   m_mode = get_resistance2x_mode;
 }
 
@@ -3917,7 +3927,8 @@ void irs::ni_pxi_4071_t::get_resistance4x(double* ap_resistance)
     m_eth_mul_data.meas_type = tm_resistance_4x;
   }
   mp_value = ap_resistance;
-  m_status = meas_status_busy;
+  //m_status = meas_status_busy;
+  m_eth_mul_data.meas_status = meas_status_busy;
   m_mode = get_resistance4x_mode;
 }
 
@@ -3949,6 +3960,11 @@ void irs::ni_pxi_4071_t::auto_calibration()
 meas_status_t irs::ni_pxi_4071_t::status()
 {
   return m_status;
+  /*if (m_eth_mul_data.meas_status) {
+    return meas_status_busy;
+  } else {
+    return meas_status_success;
+  }*/
 }
 
 void irs::ni_pxi_4071_t::abort()
@@ -3983,16 +3999,20 @@ void irs::ni_pxi_4071_t::tick()
     case get_value_mode:
     {
       //if (m_pause.check()) {
+      if (m_eth_mul_data.meas_status == meas_status_success) {
         *mp_value = m_eth_mul_data.meas_value;
-        m_mode = stop_mode;
+        m_mode = start_mode;
         m_status = meas_status_success;
+        //m_eth_mul_data.meas_status = meas_status_success;
         //m_pause.stop();
-      //}
+      }
     } break;
     case get_voltage_mode:
     {
-      if (m_eth_mul_data.meas_type == tm_volt_dc) {
+      if (m_eth_mul_data.meas_status == meas_status_busy) {
+      //if (m_eth_mul_data.meas_type == tm_volt_dc) {
         m_mode = get_value_mode;
+      //}
       }
     } break;
     case get_current_mode:
@@ -4013,13 +4033,6 @@ void irs::ni_pxi_4071_t::tick()
         m_mode = get_value_mode;
       }
     } break;
-    case stop_mode:
-    {
-    
-    } break;
-    default:
-    {
-    };
   }
   switch(m_eth_mul_data.meas_mode)
   {
