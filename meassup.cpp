@@ -479,10 +479,20 @@ void u309m_current_supply_t::tick()
     case mode_supply_output_off: {
       switch (m_supply_number) {
         case m_supply_200V: {
-          m_eth_data.header_data.supply_number = m_supply_null;
+          if (!m_supply_off) {
+            //m_eth_data.header_data.ground_rele_bit = 1;
+          } else {
+            m_eth_data.header_data.supply_number = m_supply_null;
+            m_supply_off = false;
+          }
         } break;
         case m_supply_20V: {
-          m_eth_data.header_data.supply_number = m_supply_null;
+          if (!m_supply_off) {
+            //m_eth_data.header_data.ground_rele_bit = 1;
+          } else {
+            m_eth_data.header_data.supply_number = m_supply_null;
+            m_supply_off = false;
+          }
         } break;
         case m_supply_1A: {
           if (!m_supply_off) {
