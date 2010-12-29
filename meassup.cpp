@@ -211,7 +211,7 @@ u309m_current_supply_t::u309m_current_supply_t(irs::hardflow_t *ap_hardflow):
   m_modbus_client(ap_hardflow,
     irs::mxdata_ext_t::mode_refresh_auto, discr_inputs_size_byte,
     coils_size_byte, hold_regs_size, input_regs_size, irs::make_cnt_ms(200),
-    3, irs::make_cnt_s(3), 240),
+    3, irs::make_cnt_s(2), 240),
   m_voltage(0),
   m_current(0),
   m_parameter(0),
@@ -284,7 +284,7 @@ void u309m_current_supply_t::tick()
 
   switch (m_mode) {
 
-     case mode_free: {
+    case mode_free: {
 
     } break;
 
@@ -452,7 +452,7 @@ void u309m_current_supply_t::tick()
           case m_supply_1A: {
             m_argument = m_parameter;
             m_eth_data.supply_1A.sense_regA = m_argument;
-            m_eth_data.supply_1A.sense_regB = 44600;//65000;
+            m_eth_data.supply_1A.sense_regB = 65000; //44600;
           } break;
           case m_supply_17A: {
             m_argument = m_parameter;
@@ -483,7 +483,7 @@ void u309m_current_supply_t::tick()
             //m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
-            m_supply_off = false;
+            //m_supply_off = false;
           }
         } break;
         case m_supply_20V: {
@@ -491,7 +491,7 @@ void u309m_current_supply_t::tick()
             //m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
-            m_supply_off = false;
+            //m_supply_off = false;
           }
         } break;
         case m_supply_1A: {
@@ -499,7 +499,7 @@ void u309m_current_supply_t::tick()
             m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
-            m_supply_off = false;
+            //m_supply_off = false;
           }
         } break;
         case m_supply_17A: {
@@ -507,11 +507,8 @@ void u309m_current_supply_t::tick()
             m_eth_data.header_data.ground_rele_bit = 1;
           } else {
             m_eth_data.header_data.supply_number = m_supply_null;
-            m_supply_off = false;
+            //m_supply_off = false;
           }
-          /*m_argument = 0;
-          m_eth_data.supply_17A.sense_regA = m_argument;
-          m_eth_data.supply_17A.sense_regB = m_argument;*/
         } break;
         default: {
 
@@ -525,9 +522,16 @@ void u309m_current_supply_t::tick()
       if (m_modbus_client.status() == irs::mxdata_ext_t::status_completed &&
         m_timer.check())
       {
-        m_status =  meas_status_busy;
-        m_mode = mode_ground_rele_on;
-        m_timer.start();
+        m_timer.stop();
+        if (m_supply_off) {
+          m_mode = mode_ground_rele_on;
+          m_supply_off = false;
+          m_status =  meas_status_busy;
+          m_timer.start();
+        } else {
+          m_mode = mode_free;
+          m_status = meas_status_success;
+        }
       } else if (m_modbus_client.status() == irs::mxdata_ext_t::status_error) {
         m_status = meas_status_error;
       }
