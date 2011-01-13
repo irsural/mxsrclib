@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с источниками тока
 //!
-//! Дата: 05.08.2010\n
+//! Дата: 12.01.2011\n
 //! Ранняя дата: 15.01.2008
 
 #ifndef meassupH
@@ -211,6 +211,7 @@ private:
     irs::bit_data_t bit_command_7;
     irs::conn_data_t<irs_u8> command_bits;
     irs::conn_data_t<irs_i32> counter;
+    irs::conn_data_t<irs_u8> res_code_volt_reg;
 
     header_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
       irs_uarc* ap_size = IRS_NULL)
@@ -254,6 +255,7 @@ private:
       bit_command_7.connect(ap_data, index, 7);
       index = command_bits.connect(ap_data, index);
       index = counter.connect(ap_data, index);
+      index = res_code_volt_reg.connect(ap_data, index);
 
       return index;
     }
@@ -390,7 +392,7 @@ private:
 
   enum {
     discr_inputs_size_byte = 0,  //bit = discr_inputs_size_byte*8
-    coils_size_byte = 4,         //bit = coils_size_byte*8
+    coils_size_byte = 5,         //bit = coils_size_byte*8
     hold_regs_size = 154,        //16-bit word
     input_regs_size = 0          //16-bit word
   };

@@ -350,10 +350,14 @@ void u309m_current_supply_t::tick()
     case mode_supply_on: {
       bool is_supply_200V = (21 < m_voltage) && (m_voltage < 210) &&
         (m_current < 0.01);
-      bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
+      /*bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
         (0.01 <= m_current) && (m_current < 0.25);
       bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 1.5) &&
-        (0.25 <= m_current) && (m_current < 1.1);
+        (0.25 <= m_current) && (m_current < 1.1);*/
+      bool is_supply_20V = (1.9 < m_voltage) && (m_voltage <= 21) &&
+        (0.01 <= m_current) && (m_current < 0.05);
+      bool is_supply_1A = (0.4 < m_voltage) && (m_voltage <= 2.5) &&
+        (0.01 <= m_current) && (m_current < 1.1);
       bool is_supply_17A = (0.7 < m_voltage) && (m_voltage <= 2.5) &&
         (1.1 <= m_current) && (m_current < 17.5);
 
