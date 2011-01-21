@@ -2232,7 +2232,7 @@ public:
   //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double* value) { *value = rand(); }
   //! \brief Чтение напряжения
-  virtual void get_voltage(double* /*voltage*/) { }
+  virtual void get_voltage(double* voltage) { * voltage = rand(); }
   //! \brief Чтения силы тока
   virtual void get_current(double* /*current*/) {}
   //! \brief Чтение сопротивления
