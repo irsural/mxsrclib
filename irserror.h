@@ -25,6 +25,9 @@
 #ifdef __ICCAVR__
 #include <irsavrutil.h>
 #endif //__ICCAVR__
+#ifdef __ICCARM__
+#include <irsarmutil.h>
+#endif // __ICCARM__
 #include <irsconfig.h>
 #include <irsdefs.h>
 #include <irsint.h>
@@ -484,7 +487,7 @@ public:
 
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
-#ifdef __ICCAVR__
+#if defined (__ICCAVR__) || defined(__ICCARM__)
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
@@ -503,7 +506,12 @@ private:
   }
 public:
   mc_error_handler_t(
+    #ifdef __ICCAVR__
     irs_avr_port_t a_error_blink_port,
+    #endif // __ICCAVR__
+    #ifdef __ICCARM__
+    arm_port_t& a_error_blink_port,
+    #endif // __ICCARM__
     irs_u8 a_error_blink_bit,
     ostream* ap_out = IRS_NULL,
     error_trans_base_t* ap_error_trans = error_trans()
