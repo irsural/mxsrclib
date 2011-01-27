@@ -485,7 +485,7 @@ public:
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
 #ifdef __ICCAVR__
-class avr_error_handler_t: public mxfact_event_t
+class mc_error_handler_t: public mxfact_event_t
 {
 private:
   ostream* mp_out;
@@ -519,6 +519,7 @@ public:
     mp_out = ap_out;
   }
 };
+typedef mc_error_handler_t avr_error_handler_t;
 #endif //__ICCAVR__
 
 // Обработчик ошибок для вывода ошибок в виде исключения
