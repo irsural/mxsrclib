@@ -2,7 +2,7 @@
 //! \ingroup error_processing_group
 //! \brief Обработка ошибок
 //!
-//! Дата: 08.07.2010\n
+//! Дата: 27.01.2011\n
 //! Ранняя дата: 16.09.2009
 
 #ifndef IRSERRORH
@@ -484,7 +484,7 @@ public:
 
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
-#ifdef __ICCAVR__
+#ifdef (__ICCAVR__ || __ICCAVR__)
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
@@ -502,7 +502,7 @@ private:
     for (;;) m_error_blink();
   }
 public:
-  avr_error_handler_t(
+  mc_error_handler_t(
     irs_avr_port_t a_error_blink_port,
     irs_u8 a_error_blink_bit,
     ostream* ap_out = IRS_NULL,
