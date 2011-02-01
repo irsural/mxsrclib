@@ -36,6 +36,8 @@ irs::ini_file_t::ini_file_t():
   mv_irs_strings(),
   mv_ansi_strings(),
   m_edits(),
+  m_spin_edits(),
+  m_cspin_edits(),
   m_check_boxs(),
   m_page_controls(),
   m_group_boxs(),
@@ -242,6 +244,16 @@ void irs::ini_file_t::add(const String& a_name, TEdit *a_control)
   edit_t edit(m_section, name, a_control);
   if (find(m_edits.begin(), m_edits.end(), edit) == m_edits.end()) {
     m_edits.push_back(edit);
+  }
+}
+void irs::ini_file_t::add(const String& a_name, TSpinEdit *a_control)
+{
+  string_t name = a_name.c_str();
+  spin_edit_t spin_edit(m_section, name, a_control);
+  if (find(m_spin_edits.begin(), m_spin_edits.end(), spin_edit) ==
+    m_spin_edits.end())
+  {
+    m_spin_edits.push_back(spin_edit);
   }
 }
 void irs::ini_file_t::add(const String& a_name, TCSpinEdit *a_control)
@@ -456,6 +468,14 @@ void irs::ini_file_t::load()
         (*edit_it).section.c_str(),
         (*edit_it).name.c_str(),
         (*edit_it).control->Text
+      );
+    }
+    for (vector<spin_edit_t>::iterator spin_edit_it = m_spin_edits.begin();
+      spin_edit_it != m_spin_edits.end(); spin_edit_it++) {
+      (*spin_edit_it).control->Text = IniFile->ReadString(
+        (*spin_edit_it).section.c_str(),
+        (*spin_edit_it).name.c_str(),
+        (*spin_edit_it).control->Text
       );
     }
     for (vector<cspin_edit_t>::iterator cspin_edit_it = m_cspin_edits.begin();
@@ -675,6 +695,12 @@ void irs::ini_file_t::save() const
     IniFile->WriteString((*edit_it).section.c_str(),
       (*edit_it).name.c_str(), (*edit_it).control->Text);
   }
+  for (vector<spin_edit_t>::const_iterator spin_edit_it =
+    m_spin_edits.begin();
+    spin_edit_it != m_spin_edits.end(); spin_edit_it++) {
+    IniFile->WriteString((*spin_edit_it).section.c_str(),
+      (*spin_edit_it).name.c_str(), (*spin_edit_it).control->Text);
+  }
   for (vector<cspin_edit_t>::const_iterator cspin_edit_it =
     m_cspin_edits.begin();
     cspin_edit_it != m_cspin_edits.end(); cspin_edit_it++) {
@@ -805,6 +831,7 @@ void irs::ini_file_t::clear_control()
   mv_irs_strings.clear();
   mv_ansi_strings.clear();
   m_edits.clear();
+  m_spin_edits.clear();
   m_cspin_edits.clear();
   m_check_boxs.clear();
   m_radio_buttons.clear();

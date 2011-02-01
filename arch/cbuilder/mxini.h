@@ -14,6 +14,7 @@
 #include <stdctrls.hpp>
 #include <comctrls.hpp>
 #include <cspin.h>
+#include <Spin.hpp>
 #include <grids.hpp>
 #include <ValEdit.hpp>
 #include <vcl/dstring.h>
@@ -54,6 +55,7 @@ public:
   void add(const String& a_name, string_t* a_control);
   void add(const String& a_name, AnsiString* a_control);
   void add(const String& a_name, TEdit *a_control);
+  void add(const String& a_name, TSpinEdit *a_control);
   void add(const String& a_name, TCSpinEdit *a_control);
   void add(const String& a_name, TCheckBox *a_control);
   void add(const String& a_name, TRadioButton *a_control);
@@ -110,6 +112,7 @@ private:
   };
 
   typedef generalized_control_t<TEdit> edit_t;
+  typedef generalized_control_t<TSpinEdit> spin_edit_t;
   typedef generalized_control_t<TCSpinEdit> cspin_edit_t;
   typedef generalized_control_t<TCheckBox> check_box_t;
   typedef generalized_control_t<TRadioButton> radio_button_t;
@@ -179,6 +182,7 @@ private:
   vector<irs_string_t> mv_irs_strings;
   vector<ansi_string_t> mv_ansi_strings;
   vector<edit_t> m_edits;
+  vector<spin_edit_t> m_spin_edits;
   vector<cspin_edit_t> m_cspin_edits;
   vector<check_box_t> m_check_boxs;
   vector<radio_button_t> m_radio_buttons;
