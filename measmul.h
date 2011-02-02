@@ -2243,21 +2243,21 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
   class string_msgs_t:public irs::string
   {
     // Ошибочные комбинации подстрок
-    vector<irs::string> mv_bad_str;
+    vector<irs::irs_string_t> mv_bad_str;
     // Возвращает сообщение(если оно сформировано)
   public:
     string_msgs_t():
       mv_bad_str()
     {
-      mv_bad_str.push_back(irst("LOC\n"));
-      mv_bad_str.push_back(irst("DEG"));
-      mv_bad_str.push_back(irst("Hz"));
-      mv_bad_str.push_back(irst("s"));
+      mv_bad_str.push_back("LOC\n");
+      mv_bad_str.push_back("DEG");
+      mv_bad_str.push_back("Hz");
+      mv_bad_str.push_back("s");
     }
-    msg_status_t get_message(irs::string& a_msg_str)
+    msg_status_t get_message(irs::irs_string_t& a_msg_str)
     {
       msg_status_t msg_stat = MSG_BUSY;
-      const size_type line_fit_pos = find(irst('\n'));
+      const size_type line_fit_pos = find('\n');
       if(line_fit_pos != irs::string::npos){
         // Удаление мусора из строк
         irs_u32 size_bad_str = mv_bad_str.size();
@@ -2268,7 +2268,7 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
             erase(bad_str_pos, bad_str.size());
           }
         }
-        const size_type new_line_fit_pos = find(irst('\n'));
+        const size_type new_line_fit_pos = find('\n');
         if(new_line_fit_pos != irs::string::npos){
           msg_stat = MSG_SUCCESS;
           const size_type msg_size = new_line_fit_pos;
@@ -2294,7 +2294,7 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
 
   enum meas_type_t{DC_MEAS, AC_MEAS} m_meas_type;
 
-  deque<irs::string> md_buf_cmds;
+  deque<irs::irs_string_t> md_buf_cmds;
 
   buf_data_t m_buf_cmd;
   string_msgs_t m_string_msgs;

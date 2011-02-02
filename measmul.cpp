@@ -3210,7 +3210,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_res_meas_type(RES_MEAS_2x),
   m_mul_mode_type(a_mul_mode_type),
   m_init_commands(),
-  m_range_voltage_dc("VOLTage:DC:RANGe"),
+  m_range_voltage_dc("SENSe1:VOLTage:DC:RANGe"),
   m_range_voltage_dc_index(0),
   m_nplc_voltage_dc_index(0),
   m_get_value_commands(0),
@@ -3263,7 +3263,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
 
   // Команды при инициализации
   // Очистка регистров
-  m_init_commands.push_back("*CLS");
+  m_init_commands.push_back("*RST");
   // Програмный запуск
   m_init_commands.push_back("TRIGger:SOURce IMMediate");
 
@@ -3281,7 +3281,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_voltage_dc_commands.push_back(m_range_voltage_dc + ":AUTO ON");
   m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
   // Время интегрирования в количествах циклов сети питания
-  m_get_voltage_dc_commands.push_back("VOLT:DC:NPLCycles 10");
+  m_get_voltage_dc_commands.push_back("SENSe1:VOLT:DC:NPLCycles 10");
   // запускаем измерение
   m_get_voltage_dc_commands.push_back("READ?");
 
@@ -3557,7 +3557,7 @@ void irs::agilent_34420a_t::tick()
       }
     } break;
     case ma_mode_commands: {
-      m_cur_mul_command = (*mp_mul_commands)[m_mul_commands_index];
+      m_cur_mul_command = (*mp_mul_commands)[m_mul_commands_index] + "\n";
       irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
       irs_u32 len = strlen((char *)command);
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
@@ -4016,7 +4016,7 @@ void irs::akip_ch3_85_3r_t::abort()
   }
   size = mv_multimetr_p_commands_setting.size();
   for(irs_u32 i = 0; i < size; i++){
-    irs::string command = *(mv_multimetr_p_commands_setting[i]);
+    irs::irs_string_t command = *(mv_multimetr_p_commands_setting[i]);
     md_buf_cmds.push_back(command);
   }
 }
@@ -4060,9 +4060,9 @@ void irs::akip_ch3_85_3r_t::tick()
 
       irs_u32 size_rd = mp_hardflow->read(ch, buf_rd, size_buf_rd);
       buf_rd[size_rd] = irst('\0');
-      m_string_msgs += irs::string((char*)buf_rd);
+      m_string_msgs += irs::irs_string_t((char*)buf_rd);
       if(m_meas_stat == meas_status_busy){
-        irs::string message;
+        irs::irs_string_t message;
         msg_status_t msg_stat = m_string_msgs.get_message(message);
         if(msg_stat == MSG_SUCCESS){
           double value = 0.;
@@ -4096,7 +4096,7 @@ void irs::akip_ch3_85_3r_t::set_aperture(double a_aperture)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
     m_send_command_stat = CS_BUSY;
-    irs::string aperture_str = "";
+    irs::irs_string_t aperture_str = "";
     if(a_aperture <= 10e-6)
       aperture_str = "10US";
     else if(a_aperture <= 100e-6)
@@ -4127,7 +4127,7 @@ void irs::akip_ch3_85_3r_t::set_input_impedance(double a_impedance)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
     m_send_command_stat = CS_BUSY;
-    irs::string impedance_str = "";
+    irs::irs_string_t impedance_str = "";
     if(a_impedance <= 50)
       impedance_str = "50";
     else
@@ -4146,7 +4146,7 @@ void irs::akip_ch3_85_3r_t::set_start_level(double a_level)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
     m_send_command_stat = CS_BUSY;
-    irs::string level_str = a_level;
+    irs::irs_string_t level_str = a_level;
     ms_set_level_channel_1_command = ":EVENt1:LEVel "+level_str+"\n";
     ms_set_level_channel_2_command = ":EVENt2:LEVel "+level_str+"\n";
     md_buf_cmds.push_back(ms_set_level_channel_1_command);
@@ -4172,7 +4172,7 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
     m_send_command_stat = CS_BUSY;
-    irs::string bandwidth_str = "";
+    irs::irs_string_t bandwidth_str = "";
     if(a_bandwidth <= 100)
       bandwidth_str = "1";
     else
