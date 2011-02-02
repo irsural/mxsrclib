@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Драйвер SPI для ARM
 //!
-//! Дата: 30.11.2010
+//! Дата: 18.01.2011
 //! Дата создания: 30.11.2010
 
 #ifndef armspiH
@@ -25,13 +25,22 @@ namespace arm {
 class arm_spi_t: public spi_t
 {
 public:
+  enum ssi_type_t {
+    SSI0,
+    SSI1
+  };
   enum spi_type_t {
     SPI = 0x0,
     TISS = 0x1, // Texas Instruments Synchronous Serial
     MICROWIRE = 0x2
   };
   
-  arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc, spi_type_t a_spi_type);
+  arm_spi_t(
+    irs_u8 a_buffer_size,
+    irs_u32 a_f_osc,
+    spi_type_t a_spi_type = SPI,
+    ssi_type_t a_ssi_type = SSI0
+  );
   virtual ~arm_spi_t();
   virtual void abort();
   virtual void read(irs_u8 *ap_buf,irs_uarc a_size);
@@ -52,10 +61,11 @@ private:
     SPI_WRITE
   };
   enum {
-    PORTA_SSI0Clk = 0x100,
-    PORTA_SSI0Fss = 0x1000,
-    PORTA_SSI0Rx = 0x10000,
-    PORTA_SSI0Tx = 0x100000
+    SSI0Clk = 0x1,
+    SSI0Rx = 0x1,
+    SSI0Tx = 0x1,
+    SSI1Clk = 0xB,
+    SSI1Rx = 0xB
   };
   
   cur_status_t m_status;
@@ -72,6 +82,7 @@ private:
   bool m_lock;
   irs_u32 m_f_osc;
   spi_type_t m_spi_type;
+  ssi_type_t m_ssi_type;
   
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();

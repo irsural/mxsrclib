@@ -41,8 +41,6 @@
 
 
 #ifdef __LM3SxBxx__
-//#define SYSTEM_CONTROL_BASE 0x400FE000
-//#define RCGC2 0x108
 
 #define PORTA_BASE 0x40004000
 #define PORTB_BASE 0x40005000
@@ -70,6 +68,21 @@
 #define GPIO_LOCK 0x520
 #define GPIO_UNLOCK_VALUE 0x4C4F434B
 #define GPIO_PCTL 0x52C
+#define GPIO_AMSEL 0x528
+#define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
+#define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
+
+typedef struct {
+  __REG32  PMC0           : 4;
+  __REG32  PMC1           : 4;
+  __REG32  PMC2           : 4;
+  __REG32  PMC3           : 4;
+  __REG32  PMC4           : 4;
+  __REG32  PMC5           : 4;
+  __REG32  PMC6           : 4;
+  __REG32  PMC7           : 4;
+} __gpio_pctl_bits;
+
 #endif // __LM3SxBxx__
 
 /* Device Identification 0 (DID0) */
@@ -384,6 +397,24 @@ typedef struct {
 } __rcgc0_bits;*/
 
 typedef struct {
+#ifdef __LM3SxBxx__
+  __REG32                 : 3;
+  __REG32  WDT0           : 1;
+  __REG32                 : 4;
+  __REG32  MAXADC0SPD     : 2;
+  __REG32  MAXADC1SPD     : 2;
+  __REG32                 : 4;  
+  __REG32  ADC0           : 1;  
+  __REG32  ADC1           : 1;  
+  __REG32                 : 2;
+  __REG32  PWM            : 1;
+  __REG32                 : 3;
+  __REG32  CAN0           : 1;
+  __REG32  CAN1           : 1;
+  __REG32                 : 2;
+  __REG32  WDT1           : 1;
+  __REG32                 : 3;
+#else // __LM3SxBxx__
   __REG32                 : 3;
   __REG32  WDT            : 1;
   __REG32                 : 2;
@@ -397,6 +428,7 @@ typedef struct {
   __REG32                 : 3;
   __REG32  CAN0           : 1;
   __REG32                 : 7;
+#endif // __LM3SxBxx__
 } __rcgc0_bits;
 
 /* Run-Mode Clock Gating Control 1 (RCGC1)
@@ -414,8 +446,14 @@ typedef struct {
   __REG32  QEI1           : 1;
   __REG32                 : 2;
   __REG32  I2C0           : 1;
+#ifdef __LM3SxBxx__
+  __REG32                 : 1;
+  __REG32  I2C1           : 1;
+  __REG32                 : 1;
+#else // __LM3SxBxx__
   __REG32  I2C1           : 1;
   __REG32                 : 2;
+#endif // __LM3SxBxx__ 
   __REG32  TIMER0         : 1;
   __REG32  TIMER1         : 1;
   __REG32  TIMER2         : 1;
@@ -424,7 +462,15 @@ typedef struct {
   __REG32  COMP0          : 1;
   __REG32  COMP1          : 1;
   __REG32  COMP2          : 1;
+#ifdef __LM3SxBxx__
+  __REG32                 : 1;
+  __REG32  I2S0           : 1;
+  __REG32                 : 1;
+  __REG32  EPI0           : 1;
+  __REG32                 : 1;
+#else // __LM3SxBxx__
   __REG32                 : 5;
+#endif // __LM3SxBxx__
 } __rcgc1_bits;
 
 /* Run-Mode Clock Gating Control 2 (RCGC2)
@@ -550,7 +596,15 @@ typedef struct {
   __REG32  TAMR           : 2;
   __REG32  TACMR          : 1;
   __REG32  TAAMS          : 1;
+#ifdef __LM3SxBxx__
+  __REG32  TACDIR         : 1;
+  __REG32  TAMIE          : 1;
+  __REG32  TAWOT          : 1;
+  __REG32  TASNAPS        : 1;
+  __REG32                 :24;
+#else // __LM3SxBxx__
   __REG32                 :28;
+#endif // __LM3SxBxx__
 } __gptmtamr_bits;
 
 /* GPTM TimerB Mode (GPTMTBMR) */
@@ -558,7 +612,15 @@ typedef struct {
   __REG32  TBMR           : 2;
   __REG32  TBCMR          : 1;
   __REG32  TBAMS          : 1;
+#ifdef __LM3SxBxx__
+  __REG32  TBCDIR         : 1;
+  __REG32  TBMIE          : 1;
+  __REG32  TBWOT          : 1;
+  __REG32  TBSNAPS        : 1;
+  __REG32                 :24;
+#else // __LM3SxBxx__
   __REG32                 :28;
+#endif // __LM3SxBxx__
 } __gptmtbmr_bits;
 
 /* GPTM Control (GPTMCTL) */
@@ -581,6 +643,19 @@ typedef struct {
 
 /* GPTM Interrupt Mask (GPTMIMR) */
 typedef struct {
+#ifdef __LM3SxBxx__
+  __REG32  TATOIM         : 1;
+  __REG32  CAMIM          : 1;
+  __REG32  CAEIM          : 1;
+  __REG32  RTCIM          : 1;
+  __REG32  TAMIM          : 1;
+  __REG32                 : 3;
+  __REG32  TBTOIM         : 1;
+  __REG32  CBMIM          : 1;
+  __REG32  CBEIM          : 1;
+  __REG32  TBMIM          : 1;
+  __REG32                 :20;
+#else // __LM3SxBxx__
   __REG32  TATOIM         : 1;
   __REG32  C1MIM          : 1;
   __REG32  C1EIM          : 1;
@@ -590,10 +665,24 @@ typedef struct {
   __REG32  C2MIM          : 1;
   __REG32  C2EIM          : 1;
   __REG32                 :21;
+#endif // __LM3SxBxx__
 } __gptmimr_bits;
 
 /* GPTM Raw Interrupt Status (GPTMRIS) */
 typedef struct {
+#ifdef __LM3SxBxx__
+  __REG32  TATORIS        : 1;
+  __REG32  CAMRIS         : 1;
+  __REG32  CAERIS         : 1;
+  __REG32  RTCRIS         : 1;
+  __REG32  TAMRIS         : 1;
+  __REG32                 : 3;
+  __REG32  TBTORIS        : 1;
+  __REG32  CBMRIS         : 1;
+  __REG32  CBERIS         : 1;
+  __REG32  TBMRIS         : 1;
+  __REG32                 :20;
+#else // __LM3SxBxx__
   __REG32  TATORIS        : 1;
   __REG32  C1MRIS         : 1;
   __REG32  C1ERIS         : 1;
@@ -603,6 +692,7 @@ typedef struct {
   __REG32  C2MRIS         : 1;
   __REG32  C2ERIS         : 1;
   __REG32                 :21;
+#endif // __LM3SxBxx__
 } __gptmris_bits;
 
 /* GPTM Masked Interrupt Status (GPTMMIS) */
@@ -620,6 +710,19 @@ typedef struct {
 
 /* GPTM Interrupt Clear (GPTMICR) */
 typedef struct {
+#ifdef __LM3SxBxx__
+  __REG32  TATOCINT       : 1;
+  __REG32  CAMCINT        : 1;
+  __REG32  CAECINT        : 1;
+  __REG32  RTCCINT        : 1;
+  __REG32  TAMCINT        : 1;
+  __REG32                 : 3;
+  __REG32  TBTOCINT       : 1;
+  __REG32  CBMCINT        : 1;
+  __REG32  CBECINT        : 1;
+  __REG32  TBMCINT        : 1;
+  __REG32                 :20;
+#else // __LM3SxBxx__
   __REG32  TATOCINT       : 1;
   __REG32  C1MCINT        : 1;
   __REG32  C1ECINT        : 1;
@@ -629,6 +732,7 @@ typedef struct {
   __REG32  C2MCINT        : 1;
   __REG32  C2ECINT        : 1;
   __REG32                 :21;
+#endif // __LM3SxBxx__
 } __gptmicr_bits;
 
 /* GPTM TimerA Interval Load (GPTMTAILR) */
@@ -649,6 +753,13 @@ typedef struct {
   __REG32  TARH           :16;
 } __gptmtar_bits;
 
+#ifdef __LM3SxBxx__
+typedef struct {
+  __REG32  TBV            :32;
+} __gptmtbv;
+
+__IO_REG32_BIT(GPTM2TBV,           0x40032054,__READ_WRITE ,__gptmtbv);
+#endif // __LM3SxBxx__
 /* Watchdog Control (WDTCTL) */
 typedef struct {
   __REG32  INTEN          : 1;
@@ -2493,7 +2604,11 @@ typedef struct {
   __REG32                 : 1;
   __REG32  PENDSVACT      : 1;
   __REG32  SYSTICKACT     : 1;
+#ifdef __LM3SxBxx_
+  __REG32  USGFAULTPENDED : 1;
+#else // __LM3SxBxx_
   __REG32                 : 1;
+#endif // __LM3SxBxx_
   __REG32  MEMFAULTPENDED : 1;
   __REG32  BUSFAULTPENDED : 1;
   __REG32  SVCALLPENDED   : 1;
@@ -2937,6 +3052,9 @@ __IO_REG32_BIT(GPIOAPUR,          0x40004510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOAPDR,          0x40004514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOASLR,          0x40004518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOADEN,          0x4000451C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOAPCTL,         0x4000452C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOAPERIPHID4,    0x40004FD0,__READ);
 __IO_REG8(     GPIOAPERIPHID5,    0x40004FD4,__READ);
 __IO_REG8(     GPIOAPERIPHID6,    0x40004FD8,__READ);
@@ -2974,6 +3092,10 @@ __IO_REG32_BIT(GPIOBPUR,          0x40005510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBPDR,          0x40005514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBSLR,          0x40005518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBDEN,          0x4000551C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOBAMSEL,        0x40005528,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOBPCTL,         0x4000552C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOBPERIPHID4,    0x40005FD0,__READ);
 __IO_REG8(     GPIOBPERIPHID5,    0x40005FD4,__READ);
 __IO_REG8(     GPIOBPERIPHID6,    0x40005FD8,__READ);
@@ -3011,6 +3133,9 @@ __IO_REG32_BIT(GPIOCPUR,          0x40006510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOCPDR,          0x40006514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOCSLR,          0x40006518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOCDEN,          0x4000651C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOCPCTL,         0x4000652C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOCPERIPHID4,    0x40006FD0,__READ);
 __IO_REG8(     GPIOCPERIPHID5,    0x40006FD4,__READ);
 __IO_REG8(     GPIOCPERIPHID6,    0x40006FD8,__READ);
@@ -3048,6 +3173,10 @@ __IO_REG32_BIT(GPIODPUR,          0x40007510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIODPDR,          0x40007514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIODSLR,          0x40007518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIODDEN,          0x4000751C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIODAMSEL,        0x40007528,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIODPCTL,         0x4000752C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIODPERIPHID4,    0x40007FD0,__READ);
 __IO_REG8(     GPIODPERIPHID5,    0x40007FD4,__READ);
 __IO_REG8(     GPIODPERIPHID6,    0x40007FD8,__READ);
@@ -3085,6 +3214,9 @@ __IO_REG32_BIT(GPIOEPUR,          0x40024510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOEPDR,          0x40024514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOESLR,          0x40024518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOEDEN,          0x4002451C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOEPCTL,         0x4002452C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOEPERIPHID4,    0x40024FD0,__READ);
 __IO_REG8(     GPIOEPERIPHID5,    0x40024FD4,__READ);
 __IO_REG8(     GPIOEPERIPHID6,    0x40024FD8,__READ);
@@ -3122,6 +3254,9 @@ __IO_REG32_BIT(GPIOFPUR,          0x40025510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOFPDR,          0x40025514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOFSLR,          0x40025518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOFDEN,          0x4002551C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOFPCTL,         0x4002552C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOFPERIPHID4,    0x40025FD0,__READ);
 __IO_REG8(     GPIOFPERIPHID5,    0x40025FD4,__READ);
 __IO_REG8(     GPIOFPERIPHID6,    0x40025FD8,__READ);
@@ -3159,6 +3294,9 @@ __IO_REG32_BIT(GPIOGPUR,          0x40026510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOGPDR,          0x40026514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOGSLR,          0x40026518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOGDEN,          0x4002651C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOGPCTL,         0x4002652C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOGPERIPHID4,    0x40026FD0,__READ);
 __IO_REG8(     GPIOGPERIPHID5,    0x40026FD4,__READ);
 __IO_REG8(     GPIOGPERIPHID6,    0x40026FD8,__READ);
@@ -3196,6 +3334,9 @@ __IO_REG32_BIT(GPIOHPUR,          0x40027510,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOHPDR,          0x40027514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOHSLR,          0x40027518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOHDEN,          0x4002751C,__READ_WRITE ,__gpio_bits);
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOHPCTL,         0x4002752C,__READ_WRITE ,__gpio_pctl_bits);
+#endif // __LM3SxBxx__
 __IO_REG8(     GPIOHPERIPHID4,    0x40027FD0,__READ);
 __IO_REG8(     GPIOHPERIPHID5,    0x40027FD4,__READ);
 __IO_REG8(     GPIOHPERIPHID6,    0x40027FD8,__READ);
@@ -3208,6 +3349,46 @@ __IO_REG8(     GPIOHPCELLID0,     0x40027FF0,__READ);
 __IO_REG8(     GPIOHPCELLID1,     0x40027FF4,__READ);
 __IO_REG8(     GPIOHPCELLID2,     0x40027FF8,__READ);
 __IO_REG8(     GPIOHPCELLID3,     0x40027FFC,__READ);
+
+/***************************************************************************
+ **
+ ** GPIOJ
+ **
+ ***************************************************************************/
+#ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOJDATAMASK,     0x4003D000,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDATA,         0x4003D3FC,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDIR,          0x4003D400,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJIS,           0x4003D404,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJIBE,          0x4003D408,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJIEV,          0x4003D40C,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJIM,           0x4003D410,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJRIS,          0x4003D414,__READ				,__gpio_bits);
+__IO_REG32_BIT(GPIOJMIS,          0x4003D418,__READ				,__gpio_bits);
+__IO_REG32_BIT(GPIOJICR,          0x4003D41C,__WRITE 			,__gpio_bits);
+__IO_REG32_BIT(GPIOJAFSEL,        0x4003D420,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDR2R,         0x4003D500,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDR4R,         0x4003D504,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDR8R,         0x4003D508,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJODR,          0x4003D50C,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJPUR,          0x4003D510,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJPDR,          0x4003D514,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJSLR,          0x4003D518,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJDEN,          0x4003D51C,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOJPCTL,         0x4003D52C,__READ_WRITE ,__gpio_pctl_bits);
+__IO_REG8(     GPIOJPERIPHID4,    0x4003DFD0,__READ);
+__IO_REG8(     GPIOJPERIPHID5,    0x4003DFD4,__READ);
+__IO_REG8(     GPIOJPERIPHID6,    0x4003DFD8,__READ);
+__IO_REG8(     GPIOJPERIPHID7,    0x4003DFDC,__READ);
+__IO_REG8(     GPIOJPERIPHID0,    0x4003DFE0,__READ);
+__IO_REG8(     GPIOJPERIPHID1,    0x4003DFE4,__READ);
+__IO_REG8(     GPIOJPERIPHID2,    0x4003DFE8,__READ);
+__IO_REG8(     GPIOJPERIPHID3,    0x4003DFEC,__READ);
+__IO_REG8(     GPIOJPCELLID0,     0x4003DFF0,__READ);
+__IO_REG8(     GPIOJPCELLID1,     0x4003DFF4,__READ);
+__IO_REG8(     GPIOJPCELLID2,     0x4003DFF8,__READ);
+__IO_REG8(     GPIOJPCELLID3,     0x4003DFFC,__READ);
+#endif // __LM3SxBxx__
 
 /***************************************************************************
  **
@@ -3305,6 +3486,70 @@ __IO_REG8(     GPTM3TBPMR,        0x40033044,__READ_WRITE);
 __IO_REG32_BIT(GPTM3TAR,          0x40033048,__READ       ,__gptmtar_bits);
 __IO_REG16(    GPTM3TBR,          0x4003304C,__READ);
 
+#ifdef __LM3SxBxx__
+/***************************************************************************
+ **
+ ** ADC0
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC0ACTSS,          0x40038000,__READ_WRITE ,__adcactss_bits);
+__IO_REG32_BIT(ADC0RIS,            0x40038004,__READ       ,__adcris_bits);
+__IO_REG32_BIT(ADC0IM,             0x40038008,__READ_WRITE ,__adcim_bits);
+__IO_REG32_BIT(ADC0ISC,            0x4003800C,__READ_WRITE ,__adcisc_bits);
+__IO_REG32_BIT(ADC0OSTAT,          0x40038010,__READ_WRITE ,__adcostat_bits);
+__IO_REG32_BIT(ADC0EMUX,           0x40038014,__READ_WRITE ,__adcemux_bits);
+__IO_REG32_BIT(ADC0USTAT,          0x40038018,__READ_WRITE ,__adcustat_bits);
+__IO_REG32_BIT(ADC0SSPRI,          0x40038020,__READ_WRITE ,__adcsspri_bits);
+__IO_REG32_BIT(ADC0PSSI,           0x40038028,__WRITE      ,__adcpssi_bits);
+__IO_REG32_BIT(ADC0SAC,            0x40038030,__READ_WRITE ,__adcsac_bits);
+__IO_REG32_BIT(ADC0SSMUX0,         0x40038040,__READ_WRITE ,__adcssmux0_bits);
+__IO_REG32_BIT(ADC0SSCTL0,         0x40038044,__READ_WRITE ,__adcssctl0_bits);
+__IO_REG32_BIT(ADC0SSFIFO0,        0x40038048,__READ       ,__adcssfifo0_bits);
+__IO_REG32_BIT(ADC0SSFSTAT0,       0x4003804C,__READ       ,__adcssfstat0_bits);
+__IO_REG32_BIT(ADC0SSMUX1,         0x40038060,__READ_WRITE ,__adcssmux1_bits);
+__IO_REG32_BIT(ADC0SSCTL1,         0x40038064,__READ_WRITE ,__adcssctl1_bits);
+__IO_REG32_BIT(ADC0SSFIFO1,        0x40038068,__READ       ,__adcssfifo1_bits);
+__IO_REG32_BIT(ADC0SSFSTAT1,       0x4003806C,__READ       ,__adcssfstat1_bits);
+__IO_REG32_BIT(ADC0SSMUX2,         0x40038080,__READ_WRITE ,__adcssmux2_bits);
+__IO_REG32_BIT(ADC0SSCTL2,         0x40038084,__READ_WRITE ,__adcssctl2_bits);
+__IO_REG32_BIT(ADC0SSFIFO2,        0x40038088,__READ       ,__adcssfifo2_bits);
+__IO_REG32_BIT(ADC0SSFSTAT2,       0x4003808C,__READ       ,__adcssfstat2_bits);
+__IO_REG32_BIT(ADC0SSMUX3,         0x400380A0,__READ_WRITE ,__adcssmux3_bits);
+__IO_REG32_BIT(ADC0SSCTL3,         0x400380A4,__READ_WRITE ,__adcssctl3_bits);
+__IO_REG32_BIT(ADC0SSFIFO3,        0x400380A8,__READ       ,__adcssfifo3_bits);
+__IO_REG32_BIT(ADC0SSFSTAT3,       0x400380AC,__READ       ,__adcssfstat3_bits);
+/***************************************************************************
+ **
+ ** ADC1
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC1ACTSS,          0x40039000,__READ_WRITE ,__adcactss_bits);
+__IO_REG32_BIT(ADC1RIS,            0x40039004,__READ       ,__adcris_bits);
+__IO_REG32_BIT(ADC1IM,             0x40039008,__READ_WRITE ,__adcim_bits);
+__IO_REG32_BIT(ADC1ISC,            0x4003900C,__READ_WRITE ,__adcisc_bits);
+__IO_REG32_BIT(ADC1OSTAT,          0x40039010,__READ_WRITE ,__adcostat_bits);
+__IO_REG32_BIT(ADC1EMUX,           0x40039014,__READ_WRITE ,__adcemux_bits);
+__IO_REG32_BIT(ADC1USTAT,          0x40039018,__READ_WRITE ,__adcustat_bits);
+__IO_REG32_BIT(ADC1SSPRI,          0x40039020,__READ_WRITE ,__adcsspri_bits);
+__IO_REG32_BIT(ADC1PSSI,           0x40039028,__WRITE      ,__adcpssi_bits);
+__IO_REG32_BIT(ADC1SAC,            0x40039030,__READ_WRITE ,__adcsac_bits);
+__IO_REG32_BIT(ADC1SSMUX0,         0x40039040,__READ_WRITE ,__adcssmux0_bits);
+__IO_REG32_BIT(ADC1SSCTL0,         0x40039044,__READ_WRITE ,__adcssctl0_bits);
+__IO_REG32_BIT(ADC1SSFIFO0,        0x40039048,__READ       ,__adcssfifo0_bits);
+__IO_REG32_BIT(ADC1SSFSTAT0,       0x4003904C,__READ       ,__adcssfstat0_bits);
+__IO_REG32_BIT(ADC1SSMUX1,         0x40039060,__READ_WRITE ,__adcssmux1_bits);
+__IO_REG32_BIT(ADC1SSCTL1,         0x40039064,__READ_WRITE ,__adcssctl1_bits);
+__IO_REG32_BIT(ADC1SSFIFO1,        0x40039068,__READ       ,__adcssfifo1_bits);
+__IO_REG32_BIT(ADC1SSFSTAT1,       0x4003906C,__READ       ,__adcssfstat1_bits);
+__IO_REG32_BIT(ADC1SSMUX2,         0x40039080,__READ_WRITE ,__adcssmux2_bits);
+__IO_REG32_BIT(ADC1SSCTL2,         0x40039084,__READ_WRITE ,__adcssctl2_bits);
+__IO_REG32_BIT(ADC1SSFIFO2,        0x40039088,__READ       ,__adcssfifo2_bits);
+__IO_REG32_BIT(ADC1SSFSTAT2,       0x4003908C,__READ       ,__adcssfstat2_bits);
+__IO_REG32_BIT(ADC1SSMUX3,         0x400390A0,__READ_WRITE ,__adcssmux3_bits);
+__IO_REG32_BIT(ADC1SSCTL3,         0x400390A4,__READ_WRITE ,__adcssctl3_bits);
+__IO_REG32_BIT(ADC1SSFIFO3,        0x400390A8,__READ       ,__adcssfifo3_bits);
+__IO_REG32_BIT(ADC1SSFSTAT3,       0x400390AC,__READ       ,__adcssfstat3_bits);
+#else // __LM3SxBxx__
 /***************************************************************************
  **
  ** ADC
@@ -3336,7 +3581,7 @@ __IO_REG32_BIT(ADCSSMUX3,         0x400380A0,__READ_WRITE ,__adcssmux3_bits);
 __IO_REG32_BIT(ADCSSCTL3,         0x400380A4,__READ_WRITE ,__adcssctl3_bits);
 __IO_REG32_BIT(ADCSSFIFO3,        0x400380A8,__READ       ,__adcssfifo3_bits);
 __IO_REG32_BIT(ADCSSFSTAT3,       0x400380AC,__READ       ,__adcssfstat3_bits);
-
+#endif // __LM3SxBxx__
 /***************************************************************************
  **
  ** WDT

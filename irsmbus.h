@@ -507,7 +507,7 @@ private:
   mx_time_int_t                         m_send_measure_time;
   //! \brief Флаг, выставляемый при первом полном прочтении массива серверафлаг,
   //!   выставляемый при первом полном прочтении массива сервера.
-  irs_bool                              m_first_read;
+  bool                              m_first_read;
   //! \brief Измерительный таймер.
   measure_time_t                        m_measure_time;
   //! \brief Время, затрачиваемое на операции чтения/записи.
@@ -517,7 +517,7 @@ private:
   //! \brief Режим работы клиента (ручной или автоматический).
   mode_refresh_t                        m_refresh_mode;
   //! \brief Флаг, разрешающий старт работы клиента  в ручном режиме.
-  irs_bool                              m_start;
+  bool                              m_start;
   //! \brief Количество данных для записи, находящихся  в одном
   //!   непрерывном блоке.
   irs_u16                               m_write_quantity;
@@ -559,6 +559,7 @@ private:
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
   void view_mode();
   size_t get_packet_number();
+  void reconnect();
 };
 
 //! @}

@@ -446,7 +446,7 @@ public:
   // ¬ LM3S8971 UART один, com_index не используетс€ и оставлен на будущее
   inline com_buf(
     int a_com_index = 1,
-    int a_outbuf_size = 16, 
+    int a_outbuf_size = 16,
     const irs_u32 a_baud_rate = 9600
   );
   //inline virtual ~com_buf();

@@ -46,7 +46,7 @@ irs::avr::adc_t::adc_t(
   ADCSRA_ADPS2 = 1;  //  Clock division factor = 64
   ADCSRA_ADPS1 = 1;
   ADCSRA_ADPS0 = 0;
-  ADCSRB_ADTS2 = 0;  // Autotriggering source
+  ADCSRB_ADTS2 = 0;  //  Autotriggering source
   ADCSRB_ADTS1 = 0;
   ADCSRB_ADTS0 = 0;
   
@@ -106,9 +106,9 @@ void irs::avr::adc_t::deinit_channels()
 void irs::avr::adc_t::next_channel()
 {
   irs_u8 channel = m_cur_channel;
-  for(int ch_idx = 0; ch_idx < 8; ch_idx++) {
+  for (int ch_idx = 0; ch_idx < m_channel_max_number; ch_idx++) {
     channel++;
-    if (channel > 7) {
+    if (channel >= m_channel_max_number) {
       channel = 0;
     }
     if (channel_exists(channel)) {
@@ -120,7 +120,7 @@ void irs::avr::adc_t::next_channel()
 
 float irs::avr::adc_t::get_data(irs_u8 a_channel)
 {
-  if(a_channel > 7) {
+  if (a_channel >= m_channel_max_number) {
     return 0;
   } else {
     return static_cast<float>(mp_data[a_channel]);
@@ -134,7 +134,7 @@ float irs::avr::adc_t::get_data()
 
 void irs::avr::adc_t::tick()
 {
-  if(m_selected_channels) {
+  if (m_selected_channels) {
     switch(m_status)
     {
       case init_ADC_channel:
@@ -152,7 +152,7 @@ void irs::avr::adc_t::tick()
       } break;
       case data_from_channel:
       {
-        if ((ADCSRA_ADSC == 0)) {
+        if (!ADCSRA_ADSC) {
           if (m_sample_timer.check()) {
             IRS_LOBYTE(mp_data[m_cur_channel]) = ADCL;
             IRS_HIBYTE(mp_data[m_cur_channel]) = ADCH;
