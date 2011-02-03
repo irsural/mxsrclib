@@ -3226,7 +3226,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_set_params_commands(),
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
-  m_create_error(false),
+  m_create_error(true),
   m_mode(ma_mode_start),
   m_macro_mode(macro_mode_stop),
   m_status(meas_status_success),
@@ -3388,7 +3388,7 @@ void irs::agilent_34420a_t::set_negative()
 {}
 // Чтение значения при текущем типа измерения
 void irs::agilent_34420a_t::get_value(double *ap_value)
-{
+{    
   if (m_create_error) return;
   mp_value = ap_value;
   m_command = mac_get_value;
@@ -3664,7 +3664,7 @@ void irs::agilent_34420a_t::set_start_level(double /*level*/)
 }
 void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
   double a_range)
-{
+{              
   m_set_params_commands.clear();
   irs::string range_str;
   irs::num_to_str_classic(a_range, &range_str);
@@ -3691,8 +3691,12 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
       // Остальные типы в данном мультиметре не используются
     }
   }
-  m_command = mac_set_params;
-  m_status = meas_status_busy;
+  if ((a_type_meas == tm_volt_dc) ||
+    (a_type_meas == tm_resistance_2x) ||
+    (a_type_meas == tm_resistance_4x)) {
+    m_command = mac_set_params;
+    m_status = meas_status_busy;
+  }
 }
 void irs::agilent_34420a_t::set_range_auto()
 {
