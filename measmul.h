@@ -1986,6 +1986,7 @@ inline void irs::v7_78_1_t::set_ac()
   m_meas_type = AC_MEAS;
 }
 
+//! \ingroup drivers_group
 //! \brief Класс для работы с мультиметром agilent 34420a
 class agilent_34420a_t: public mxmultimeter_t
 {
@@ -2035,7 +2036,7 @@ class agilent_34420a_t: public mxmultimeter_t
   };
 
   enum {
-    read_timeout_s = 100
+    read_timeout_s = 15
   };
 
   enum {

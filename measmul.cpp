@@ -3237,7 +3237,6 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_cur_mul_command(),
   mp_mul_commands(IRS_NULL),
   m_mul_commands_index(0),
-  //mp_value(IRS_NULL),
   m_get_parametr_needed(irs_false),
   m_oper_time(0),
   m_oper_to(0),
@@ -3256,7 +3255,6 @@ irs::agilent_34420a_t::agilent_34420a_t(
     read_timeout_s + fixed_flow_read_timeout_delta_s));
 
   init_to_cnt();
-  //mxifa_init();
 
   m_oper_time = TIME_TO_CNT(1, 1);
   m_acal_time = TIME_TO_CNT(20*60, 1);
@@ -3268,6 +3266,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_init_commands.push_back("TRIGger:SOURce IMMediate");
 
   // Команды чтения значения измеряемой величины, при произвольных настройках
+  //m_get_value_commands.push_back("DCL");
   m_get_value_commands.push_back("TRIGger:SOURce IMMediate");
   m_get_value_commands.push_back("READ?");
 
@@ -3457,7 +3456,8 @@ meas_status_t irs::agilent_34420a_t::status()
 void irs::agilent_34420a_t::abort()
 {
   if (m_create_error) return;
-  m_abort_request = irs_true;
+  m_abort_request = true;
+  m_status = meas_status_busy;
 }
 // Элементарное действие
 void irs::agilent_34420a_t::tick()
@@ -3593,25 +3593,20 @@ void irs::agilent_34420a_t::tick()
       m_mode = ma_mode_get_value_wait;
     } break;
     case ma_mode_get_value_wait: {
-      if (!m_abort_request) {
-        switch (m_fixed_flow.read_status()) {
-          case irs::hardflow::fixed_flow_t::status_success: {
-            char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
-            if (!irs::cstr_to_number_classic(p_number_in_cstr, *mp_value)) {
-              *mp_value = 0;
-            }
-            m_mode = ma_mode_macro;
-          } break;
-          case irs::hardflow::fixed_flow_t::status_error: {
-            m_mode = ma_mode_macro;
-          } break;
-          default : {
-            // Ожидаем выполнения
+      switch (m_fixed_flow.read_status()) {
+        case irs::hardflow::fixed_flow_t::status_success: {
+          char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+          if (!irs::cstr_to_number_classic(p_number_in_cstr, *mp_value)) {
+            *mp_value = 0;
           }
+          m_mode = ma_mode_macro;
+        } break;
+        case irs::hardflow::fixed_flow_t::status_error: {
+          m_mode = ma_mode_macro;
+        } break;
+        default : {
+          // Ожидаем выполнения
         }
-      } else {
-        m_fixed_flow.read_abort();
-        m_mode = ma_mode_macro;
       }
     } break;
     default : {
