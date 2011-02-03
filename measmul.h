@@ -2,7 +2,9 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 09.12.2010
+//! Дата: 03.02.2011\n
+//! Ранняя дата: 10.09.2009
+
 
 #ifndef measmulH
 #define measmulH
@@ -332,6 +334,9 @@ class agilent_3458a_t: public mxmultimeter_t
   init_mode_t m_init_mode;
   // Индекс команды инициализации
   index_t m_ic_index;
+  // Установлен, если требуется очистка буфера hardflow перед чтением
+  // значения из мультиметра
+  bool m_is_clear_buffer_needed;
 
   // Запрещение конструктора по умолчанию
   agilent_3458a_t();

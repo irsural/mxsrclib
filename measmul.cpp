@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 24.11.2010\n
+//! Дата: 03.02.2011\n
 //! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -198,7 +198,8 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_acal_to(0),
   m_init_timer(irs::make_cnt_s(1)),
   m_init_mode(im_start),
-  m_ic_index(0)
+  m_ic_index(0),
+  m_is_clear_buffer_needed(false)
 {
   IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
     "указатель в качестве hardflow_t*");  
@@ -624,17 +625,25 @@ void irs::agilent_3458a_t::tick()
     case ma_mode_get_value: {
       m_fixed_flow.read(mp_hardflow->channel_next(),
         m_read_buf, sample_size);
-      m_mode = ma_mode_get_value_wait;
+      m_mode = ma_mode_get_value_wait;//m_is_clear_buffer_needed
     } break;
     case ma_mode_get_value_wait: {
       if (!m_abort_request) {
         switch (m_fixed_flow.read_status()) {
           case irs::hardflow::fixed_flow_t::status_success: {
-            char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
-            if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
-              *m_value = 0;
+            if (!m_is_clear_buffer_needed) {
+              char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+              if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
+                *m_value = 0;
+              }
+              m_mode = ma_mode_macro;
+            } else {
+              // Если требовалась очистка буфера, то считаем что
+              // это чтение и есть очистка буфера. Идем на второй круг
+              // и считываем уже действительное значение
+              m_is_clear_buffer_needed = false;
+              m_mode = ma_mode_get_value;
             }
-            m_mode = ma_mode_macro;
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             m_mode = ma_mode_macro;
@@ -645,6 +654,9 @@ void irs::agilent_3458a_t::tick()
         }
       } else {
         m_fixed_flow.read_abort();
+        // Считаем что если чтение прервано, то в буфере hardflow
+        // останется предыдущее число и необходимо очистить буфер
+        m_is_clear_buffer_needed = true;
         m_mode = ma_mode_macro;
       }
     } break;
