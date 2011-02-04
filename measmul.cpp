@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 03.02.2011\n
+//! Дата: 04.02.2011\n
 //! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -625,6 +625,8 @@ void irs::agilent_3458a_t::tick()
     case ma_mode_get_value: {
       m_fixed_flow.read(mp_hardflow->channel_next(),
         m_read_buf, sample_size);
+      //mlog() << "---> " << __LINE__ << endl;
+      *m_value = 0;
       m_mode = ma_mode_get_value_wait;
     } break;
     case ma_mode_get_value_wait: {
@@ -635,19 +637,23 @@ void irs::agilent_3458a_t::tick()
               char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
               if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
                 *m_value = 0;
+                //mlog() << "---> " << __LINE__ << endl;
               }
               //mlog() << *m_value << endl;
+              //mlog() << "---> " << __LINE__ << endl;
               m_mode = ma_mode_macro;
             } else {
               // Если требовалась очистка буфера, то считаем что
               // это чтение и есть очистка буфера. Идем на второй круг
               // и считываем уже действительное значение
               m_is_clear_buffer_needed = false;
+              //mlog() << "---> " << __LINE__ << endl;
               m_mode = ma_mode_get_value;
             }
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             m_mode = ma_mode_macro;
+            //mlog() << "---> " << __LINE__ << endl;
           } break;
           default : {
             // Ожидаем выполнения

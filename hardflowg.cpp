@@ -3,7 +3,7 @@
 //! \ingroup network_in_out_group
 //! \brief Коммуникационные потоки
 //!
-//! Дата: 13.08.2010\n
+//! Дата: 04.02.2011\n
 //! Дата создания: 8.09.2009
 
 #include <irspch.h>
@@ -1895,6 +1895,10 @@ void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident,
     mp_read_buf = ap_buf;
     m_read_size_need = a_size;
     m_read_size_rest = a_size;
+    m_read_timeout.stop();
+  } else {
+    IRS_LIB_ERROR(ec_standard, "irs::hardflow::fixed_flow_t::read - "
+      "Попытка чтения пока предыдущая операция чтения не завершена");
   }
 }
 
@@ -1926,6 +1930,10 @@ void irs::hardflow::fixed_flow_t::write(size_type a_channel_ident,
     mp_write_buf = ap_buf;
     m_write_size_need = a_size;
     m_write_size_rest = a_size;
+    m_write_timeout.stop();
+  } else {
+    IRS_LIB_ERROR(ec_standard, "irs::hardflow::fixed_flow_t::write - "
+      "Попытка записи пока предыдущая операция записи не завершена");
   }
 }
 
