@@ -3712,7 +3712,7 @@ void irs::agilent_34420a_t::set_nplc(double nplc)
     nplc = 1;
   } else if (nplc <= 10) {
     nplc = 10;
-  } else if (nplc <= 10) {
+  } else if (nplc <= 100) {
     nplc = 100;
   } else {
     nplc = 200;
