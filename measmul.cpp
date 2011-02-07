@@ -3746,8 +3746,8 @@ irs::akip_ch3_85_3r_t::akip_ch3_85_3r_t(
   mp_result(NULL),
   mp_last_commands(NULL),
   mv_init_commands(),
-  mv_reset_multimetr_commands(),
-  mv_multimetr_p_commands_setting(),
+  mv_reset_multimeter_commands(),
+  mv_multimeter_p_commands_setting(),
   mv_get_value_commands(),
   mv_get_phase_average_commands(),
   mv_get_phase_commands(),
@@ -3768,9 +3768,9 @@ irs::akip_ch3_85_3r_t::akip_ch3_85_3r_t(
 
   // Команды при перезагрузке мультиметра
   if (m_mul_mode_type == mul_mode_type_active) {
-    mv_reset_multimetr_commands.push_back("*RST\n");
+    mv_reset_multimeter_commands.push_back("*RST\n");
   }
-  mv_reset_multimetr_commands.push_back(":FORMat ASCii\n");
+  mv_reset_multimeter_commands.push_back(":FORMat ASCii\n");
 
   // Команды при чтении значения измеряемой величины,
   // при произвольном типе измерения
@@ -3822,23 +3822,23 @@ irs::akip_ch3_85_3r_t::akip_ch3_85_3r_t(
   ms_set_level_channel_2_command = ":EVENt2:LEVel 0\n";
 
   // Указатели на команды настроек мультиметра
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_interval_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_in_impedance_channel_1_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_in_impedance_channel_2_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_type_slope_channel_1_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_type_slope_channel_2_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_filter_channel_1_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_filter_channel_2_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_level_channel_1_command);
-  mv_multimetr_p_commands_setting.push_back(
+  mv_multimeter_p_commands_setting.push_back(
     &ms_set_level_channel_2_command);
 
   connect(ap_hardflow);
@@ -4028,13 +4028,13 @@ void irs::akip_ch3_85_3r_t::abort()
   m_meas_stat = meas_status_success;
   m_string_msgs.clear();
   irs_u32 size = 0;
-  size = mv_reset_multimetr_commands.size();
+  size = mv_reset_multimeter_commands.size();
   for(irs_u32 i = 0; i < size; i++){
-    md_buf_cmds.push_back(mv_reset_multimetr_commands[i]);
+    md_buf_cmds.push_back(mv_reset_multimeter_commands[i]);
   }
-  size = mv_multimetr_p_commands_setting.size();
+  size = mv_multimeter_p_commands_setting.size();
   for(irs_u32 i = 0; i < size; i++){
-    irs::irs_string_t command = *(mv_multimetr_p_commands_setting[i]);
+    irs::irs_string_t command = *(mv_multimeter_p_commands_setting[i]);
     md_buf_cmds.push_back(command);
   }
 }

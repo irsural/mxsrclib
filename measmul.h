@@ -2322,10 +2322,10 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
   vector<irs::string> mv_init_commands;
 
   //! \brief Команды при перезакгрузке мультиметра
-  vector<irs::string> mv_reset_multimetr_commands;
+  vector<irs::string> mv_reset_multimeter_commands;
 
   //! \brief Указатели на команды настроек мультиметра
-  vector<irs::string*> mv_multimetr_p_commands_setting;
+  vector<irs::string*> mv_multimeter_p_commands_setting;
 
   //! \brief Команды при чтении значения измеряемой величины,
   //!  при произвольном типе измерения
