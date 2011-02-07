@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 03.02.2011\n
+//! Дата: 07.02.2011\n
 //! Ранняя дата: 10.09.2009
 
 
@@ -2062,41 +2062,42 @@ class agilent_34420a_t: public mxmultimeter_t
 
   //! \brief Команды при инициализации
   vector<irs::string> m_init_commands;
+  //! \brief Команды чтения значения при произвольных настройках
+  vector<irs::string> m_get_value_commands;
   //! \brief Команда включения/выключения аналогового фильтра
   irs::string m_analog_filter;
+  irs::string m_configure_voltage_dc;
+  index_t m_configure_voltage_dc_index;
+  //! \brief Команда установки диапазона для напряжения
+  irs::string m_range_voltage_dc;
   //! \brief Часть команды включения/выключения аналогового фильтра,
   //!   отображающая статус
   irs::string m_analog_filter_status;
   //! \brief Индекс команды включения/выключения аналогового фильтра для
   //!   напряжения
   index_t m_analog_filter_voltage_dc_index;
-  //! \brief Команда установки диапазона для напряжения
-  irs::string m_range_voltage_dc;
-  index_t m_range_voltage_dc_index;
   //! \brief Индекс команды установки времени интегрирования для
   //!  постоянного напряжения
   index_t m_nplc_voltage_dc_index;
-  //! \brief Команды чтения значения при произвольных настройках
-  vector<irs::string> m_get_value_commands;
   //! \brief Команды при чтении напряжения
   vector<irs::string> m_get_voltage_dc_commands;
 
-
+  irs::string m_configure_resistance_2x;
+  index_t m_configure_resistance_2x_index;
   irs::string m_range_resistance_2x;
-  irs::string m_range_resistance_4x;
-  index_t m_range_resistance_2x_index;
-  index_t m_range_resistance_4x_index;
   //! \brief Индекс команды установки времени интегрирования для сопротивления
   index_t m_nplc_resistance_2x_index;
-  index_t m_nplc_resistance_4x_index;
   //! \brief Команды при чтении сопротивления
   vector<irs::string> m_get_resistance_2x_commands;
+
+  irs::string m_configure_resistance_4x;
+  index_t m_configure_resistance_4x_index;
+  irs::string m_range_resistance_4x;
+  //! \brief Индекс команды установки времени интегрирования для сопротивления
+  index_t m_nplc_resistance_4x_index;
   vector<irs::string> m_get_resistance_4x_commands;
   //! \brief Команды для установки параметров
   vector<irs::string> m_set_params_commands;
-
-  //! \brief Дескриптор канала mxifa
-  //void *f_handle;
   // Интерфейс передачи
   irs::hardflow_t* mp_hardflow;
   irs::hardflow::fixed_flow_t m_fixed_flow;

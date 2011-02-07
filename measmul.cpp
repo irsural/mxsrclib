@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Классы для работы с мультиметрами
 //!
-//! Дата: 04.02.2011\n
+//! Дата: 07.02.2011\n
 //! Ранняя дата: 10.09.2009
 
 //#define OFF_EXTCOM // Отключение расширенных команд
@@ -3229,21 +3229,24 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_res_meas_type(RES_MEAS_2x),
   m_mul_mode_type(a_mul_mode_type),
   m_init_commands(),
+  m_get_value_commands(0),
   m_analog_filter("INPut:FILTer:STATe "),
-  m_analog_filter_voltage_dc_index(0),
+  m_configure_voltage_dc("CONFigure:VOLTage:DC "),
+  m_configure_voltage_dc_index(0),
   m_range_voltage_dc("SENSe1:VOLTage:DC:RANGe"),
   m_analog_filter_status("OFF"),
-  m_range_voltage_dc_index(0),
+  m_analog_filter_voltage_dc_index(0),
   m_nplc_voltage_dc_index(0),
-  m_get_value_commands(0),
   m_get_voltage_dc_commands(),
+  m_configure_resistance_2x("CONFigure:RESistance "),
+  m_configure_resistance_2x_index(0),
   m_range_resistance_2x("RESistance:RANGe"),
-  m_range_resistance_4x("FRESistance:RANGe"),
-  m_range_resistance_2x_index(0),
-  m_range_resistance_4x_index(0),
   m_nplc_resistance_2x_index(0),
-  m_nplc_resistance_4x_index(0),
   m_get_resistance_2x_commands(),
+  m_configure_resistance_4x("CONFigure:FRESistance "),
+  m_configure_resistance_4x_index(0),
+  m_range_resistance_4x("FRESistance:RANGe"),
+  m_nplc_resistance_4x_index(0),
   m_get_resistance_4x_commands(),
   m_set_params_commands(),
   mp_hardflow(ap_hardflow),
@@ -3284,9 +3287,6 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Команды при инициализации
   // Очистка регистров
   m_init_commands.push_back("*RST");
-  // Включение компенсации нуля при измерении сопротивления
-  //m_init_commands.push_back("RESistance:OCOMpensated ON");
-  //m_init_commands.push_back("FRESistance:OCOMpensated ON");
   // Выбор аналогового типа входного фильтра
   m_init_commands.push_back("INPut:FILTer:TYPE ANAlog");
   // Програмный запуск
@@ -3299,15 +3299,13 @@ irs::agilent_34420a_t::agilent_34420a_t(
 
   // Команды при чтении напряжения
   // Настраиваемся на измерение напряжения
-  m_get_voltage_dc_commands.push_back("CONFigure:VOLTage:DC");
+  m_configure_voltage_dc_index = m_get_voltage_dc_commands.size();
+  m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO");
   m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
   // Включение/выключение аналогового фильтра
   m_analog_filter_voltage_dc_index = m_get_voltage_dc_commands.size();
   m_get_voltage_dc_commands.push_back(m_analog_filter +
     m_analog_filter_status);
-  // Автовыбор пределов
-  m_range_voltage_dc_index = m_get_voltage_dc_commands.size();
-  m_get_voltage_dc_commands.push_back(m_range_voltage_dc + ":AUTO ON");
   m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
   // Время интегрирования в количествах циклов сети питания
   m_get_voltage_dc_commands.push_back("SENSe1:VOLT:DC:NPLCycles 10");
@@ -3315,13 +3313,11 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_voltage_dc_commands.push_back("READ?");
 
   // Команды при чтении сопротивления по 2-х проводной линии
-  m_get_resistance_2x_commands.push_back("CONFigure:RESistance");
+  m_configure_resistance_2x_index = m_get_resistance_2x_commands.size();
+  m_get_resistance_2x_commands.push_back(m_configure_resistance_2x + "AUTO");
   m_get_resistance_2x_commands.push_back("TRIGger:SOURce IMMediate");
-  // Включение компенсации нуля
+  // Включение компенсации наведенной ЭДС
   m_get_resistance_2x_commands.push_back("RESistance:OCOMpensated ON");
-  // Автовыбор пределов
-  m_range_resistance_2x_index = m_get_resistance_2x_commands.size();
-  m_get_resistance_2x_commands.push_back(m_range_resistance_2x + ":AUTO ON");
   m_nplc_resistance_2x_index = m_get_resistance_2x_commands.size();
   // Время интегрирования в количествах циклов сети питания
   m_get_resistance_2x_commands.push_back("RESistance:NPLCycles 10");
@@ -3329,13 +3325,11 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_resistance_2x_commands.push_back("READ?");
 
   // Команды при чтении сопротивления по 4-х проводной линии
-  m_get_resistance_4x_commands.push_back("CONFigure:FRESistance");
+  m_configure_resistance_4x_index = m_get_resistance_4x_commands.size();
+  m_get_resistance_4x_commands.push_back(m_configure_resistance_4x + "AUTO");
   m_get_resistance_4x_commands.push_back("TRIGger:SOURce IMMediate");
-  // Включение компенсации нуля
+  // Включение компенсации наведенной ЭДС
   m_get_resistance_4x_commands.push_back("FRESistance:OCOMpensated ON");
-  // Автовыбор пределов
-  m_range_resistance_4x_index = m_get_resistance_4x_commands.size();
-  m_get_resistance_4x_commands.push_back(m_range_resistance_4x + ":AUTO ON");
   m_nplc_resistance_4x_index = m_get_resistance_4x_commands.size();
   // Время интегрирования в количествах циклов сети питания
   m_get_resistance_4x_commands.push_back("FRESistance:NPLCycles 10");
@@ -3505,7 +3499,7 @@ void irs::agilent_34420a_t::get_time_interval_average(double * /*ap_time_interva
 {
 }
 // Чтения силы тока
-void irs::agilent_34420a_t::get_current(double *current)
+void irs::agilent_34420a_t::get_current(double * /*current*/)
 {
 }
 // Чтение сопротивления по двухпроводной схеме
@@ -3527,7 +3521,7 @@ void irs::agilent_34420a_t::get_resistance4x(double *resistance)
   m_status = meas_status_busy;
 }
 // Чтение частоты
-void irs::agilent_34420a_t::get_frequency(double *frequency)
+void irs::agilent_34420a_t::get_frequency(double * /*frequency*/)
 {
 }
 // Запуск автокалибровки мультиметра
@@ -3731,11 +3725,11 @@ void irs::agilent_34420a_t::set_nplc(double nplc)
     nplc_resistance_4x_str;
 }
 // Установка времени интегрирования в c
-void irs::agilent_34420a_t::set_aperture(double aperture)
+void irs::agilent_34420a_t::set_aperture(double /*aperture*/)
 {
 }
 // Установка полосы фильтра
-void irs::agilent_34420a_t::set_bandwidth(double bandwidth)
+void irs::agilent_34420a_t::set_bandwidth(double /*bandwidth*/)
 {
 }
 void irs::agilent_34420a_t::set_input_impedance(double /*impedance*/)
@@ -3746,28 +3740,25 @@ void irs::agilent_34420a_t::set_start_level(double /*level*/)
 }
 void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
   double a_range)
-{              
+{
   m_set_params_commands.clear();
   irs::string range_str;
   irs::num_to_str_classic(a_range, &range_str);
   switch(a_type_meas) {
     case tm_volt_dc: {
-      m_get_voltage_dc_commands[m_range_voltage_dc_index] =
-        m_range_voltage_dc+ " " + range_str;
-      m_set_params_commands.push_back(
-        m_get_voltage_dc_commands[m_range_voltage_dc_index]);
+      m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
+        m_configure_voltage_dc + range_str;
+      m_set_params_commands.push_back(m_range_voltage_dc + " " + range_str);
     } break;
     case tm_resistance_2x: {
-      m_get_resistance_2x_commands[m_range_resistance_2x_index] =
-        m_range_resistance_2x+ " " + range_str;
-      m_set_params_commands.push_back(
-        m_get_resistance_2x_commands[m_range_resistance_2x_index]);
+      m_get_resistance_2x_commands[m_configure_resistance_2x_index] =
+        m_configure_resistance_2x + range_str;
+      m_set_params_commands.push_back(m_range_resistance_2x + " " + range_str);
     } break;
     case tm_resistance_4x: {
-      m_get_resistance_4x_commands[m_range_resistance_4x_index] =
-        m_range_resistance_4x+ " " + range_str;
-      m_set_params_commands.push_back(
-        m_get_resistance_4x_commands[m_range_resistance_4x_index]);
+      m_get_resistance_4x_commands[m_configure_resistance_4x_index] =
+        m_configure_resistance_4x + range_str;
+      m_set_params_commands.push_back(m_range_resistance_4x + " " + range_str);
     } break;
     default : {
       // Остальные типы в данном мультиметре не используются
@@ -3782,12 +3773,13 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
 }
 void irs::agilent_34420a_t::set_range_auto()
 {
-  m_get_voltage_dc_commands[m_range_voltage_dc_index] =
-    m_range_voltage_dc + ":AUTO ON";
-  m_get_resistance_2x_commands[m_range_resistance_2x_index] =
-    m_range_resistance_2x + ":AUTO ON";
-  m_get_resistance_4x_commands[m_range_resistance_4x_index] =
-    m_range_resistance_4x + ":AUTO ON";
+  m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
+    m_configure_voltage_dc + "AUTO";
+  m_get_resistance_2x_commands[m_configure_resistance_2x_index] =
+    m_configure_resistance_2x + "AUTO";
+  m_get_resistance_4x_commands[m_configure_resistance_4x_index] =
+    m_configure_resistance_4x + "AUTO";
+
 }
  // Установка временного интервала измерения
 void irs::agilent_34420a_t::set_time_interval_meas(
