@@ -3285,7 +3285,8 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Очистка регистров
   m_init_commands.push_back("*RST");
   // Включение компенсации нуля при измерении сопротивления
-  m_init_commands.push_back("OCOMpensated ON");
+  //m_init_commands.push_back("RESistance:OCOMpensated ON");
+  //m_init_commands.push_back("FRESistance:OCOMpensated ON");
   // Выбор аналогового типа входного фильтра
   m_init_commands.push_back("INPut:FILTer:TYPE ANAlog");
   // Програмный запуск
@@ -3316,6 +3317,8 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Команды при чтении сопротивления по 2-х проводной линии
   m_get_resistance_2x_commands.push_back("CONFigure:RESistance");
   m_get_resistance_2x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Включение компенсации нуля
+  m_get_resistance_2x_commands.push_back("RESistance:OCOMpensated ON");
   // Автовыбор пределов
   m_range_resistance_2x_index = m_get_resistance_2x_commands.size();
   m_get_resistance_2x_commands.push_back(m_range_resistance_2x + ":AUTO ON");
@@ -3328,6 +3331,8 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Команды при чтении сопротивления по 4-х проводной линии
   m_get_resistance_4x_commands.push_back("CONFigure:FRESistance");
   m_get_resistance_4x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Включение компенсации нуля
+  m_get_resistance_4x_commands.push_back("FRESistance:OCOMpensated ON");
   // Автовыбор пределов
   m_range_resistance_4x_index = m_get_resistance_4x_commands.size();
   m_get_resistance_4x_commands.push_back(m_range_resistance_4x + ":AUTO ON");

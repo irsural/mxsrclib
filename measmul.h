@@ -2043,7 +2043,7 @@ class agilent_34420a_t: public mxmultimeter_t
   };
 
   enum {
-    read_timeout_s = 15
+    read_timeout_s = 20
   };
 
   enum {
