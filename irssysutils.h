@@ -254,7 +254,7 @@ void number_to_string(const T& a_num, string* ap_str)
     (type_to_index<T>() == signed_char_idx) ||
     (type_to_index<T>() == unsigned_char_idx))
   {
-    int val_int = a_num;
+    int val_int = static_cast<int>(a_num);
     ostr << val_int << irst('\0');
   } else {
     ostr << a_num << irst('\0');
