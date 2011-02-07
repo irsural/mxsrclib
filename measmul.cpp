@@ -1577,7 +1577,7 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
 void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
   const irs::raw_data_t<irs_u8> &a_value)
 {
-  switch (a_param) {   
+  switch (a_param) {
     case mul_param_sampling_time_s: {
       if (sizeof(double) == a_value.size()) {
         m_new_sampling_time = sampling_time_normalize(
@@ -3229,7 +3229,10 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_res_meas_type(RES_MEAS_2x),
   m_mul_mode_type(a_mul_mode_type),
   m_init_commands(),
+  m_analog_filter("INPut:FILTer:STATe "),
+  m_analog_filter_voltage_dc_index(0),
   m_range_voltage_dc("SENSe1:VOLTage:DC:RANGe"),
+  m_analog_filter_status("OFF"),
   m_range_voltage_dc_index(0),
   m_nplc_voltage_dc_index(0),
   m_get_value_commands(0),
@@ -3281,6 +3284,10 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Команды при инициализации
   // Очистка регистров
   m_init_commands.push_back("*RST");
+  // Включение компенсации нуля при измерении сопротивления
+  m_init_commands.push_back("OCOMpensated ON");
+  // Выбор аналогового типа входного фильтра
+  m_init_commands.push_back("INPut:FILTer:TYPE ANAlog");
   // Програмный запуск
   m_init_commands.push_back("TRIGger:SOURce IMMediate");
 
@@ -3293,7 +3300,10 @@ irs::agilent_34420a_t::agilent_34420a_t(
   // Настраиваемся на измерение напряжения
   m_get_voltage_dc_commands.push_back("CONFigure:VOLTage:DC");
   m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
-
+  // Включение/выключение аналогового фильтра
+  m_analog_filter_voltage_dc_index = m_get_voltage_dc_commands.size();
+  m_get_voltage_dc_commands.push_back(m_analog_filter +
+    m_analog_filter_status);
   // Автовыбор пределов
   m_range_voltage_dc_index = m_get_voltage_dc_commands.size();
   m_get_voltage_dc_commands.push_back(m_range_voltage_dc + ":AUTO ON");
@@ -3335,6 +3345,59 @@ irs::agilent_34420a_t::agilent_34420a_t(
 irs::agilent_34420a_t::~agilent_34420a_t()
 {
   deinit_to_cnt();
+}
+
+void irs::agilent_34420a_t::get_param(const multimeter_param_t a_param,
+  irs::raw_data_t<irs_u8> *ap_value) const
+{
+  IRS_LIB_ASSERT(ap_value);
+  switch (a_param) {
+    case mul_param_analog_filter_enabled: {
+      bool analog_filter_voltage_status = true;
+      if (m_analog_filter_status == "OFF") {
+        analog_filter_voltage_status = false;
+      }
+      const irs_u8* p_src_first =
+        reinterpret_cast<const irs_u8*>(&analog_filter_voltage_status);
+      const irs_u8* p_src_last = p_src_first + sizeof(bool);
+      ap_value->insert(ap_value->data(), p_src_first, p_src_last);
+    } break;
+    default : {
+      // Игнорируем
+    }
+  }
+}
+
+void irs::agilent_34420a_t::set_param(const multimeter_param_t a_param,
+  const irs::raw_data_t<irs_u8> &a_value)
+{
+  switch (a_param) {
+    case mul_param_analog_filter_enabled: {
+      if (sizeof(bool) == a_value.size()) {
+        const bool analog_filter_voltage_status =
+          *reinterpret_cast<const bool*>(a_value.data());
+        m_analog_filter_status = "ON";
+        if (!analog_filter_voltage_status) {
+          m_analog_filter_status = "OFF";
+        }
+        // Включение/выключение аналогового фильтра
+        m_get_voltage_dc_commands[m_analog_filter_voltage_dc_index] =
+          m_analog_filter + m_analog_filter_status;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_analog_filter_enabled");
+      }
+    } break;
+    default : {
+      // Игнорируем
+    }
+  }
+}
+
+bool irs::agilent_34420a_t::is_param_exists(
+  const multimeter_param_t a_param) const
+{
+  return (a_param == mul_param_analog_filter_enabled);
 }
 
 // Отправка команд инициализации в мультиметр

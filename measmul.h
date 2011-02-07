@@ -78,6 +78,8 @@ enum multimeter_param_t {
   mul_param_variation_relative,
   // Время дискретизации (double)
   mul_param_sampling_time_s,
+  // Включение аналогового фильтра (bool)
+  mul_param_analog_filter_enabled,
   // Настройки фильтра (struct filter_settings_t файл irsdsp.h)
   mul_param_filter_settings,
   // Формат отсчетов (enum mul_sample_format_t файл measmul.h)
@@ -2060,6 +2062,15 @@ class agilent_34420a_t: public mxmultimeter_t
 
   //! \brief Команды при инициализации
   vector<irs::string> m_init_commands;
+  //! \brief Команда включения/выключения аналогового фильтра
+  irs::string m_analog_filter;
+  //! \brief Часть команды включения/выключения аналогового фильтра,
+  //!   отображающая статус
+  irs::string m_analog_filter_status;
+  //! \brief Индекс команды включения/выключения аналогового фильтра для
+  //!   напряжения
+  index_t m_analog_filter_voltage_dc_index;
+  //! \brief Команда установки диапазона для напряжения
   irs::string m_range_voltage_dc;
   index_t m_range_voltage_dc_index;
   //! \brief Индекс команды установки времени интегрирования для
@@ -2146,6 +2157,11 @@ public:
     multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active);
   //! \brief Деструктор
   ~agilent_34420a_t();
+  virtual void get_param(const multimeter_param_t a_param,
+    irs::raw_data_t<irs_u8> *ap_value) const;
+  virtual void set_param(const multimeter_param_t a_param,
+    const irs::raw_data_t<irs_u8> &a_value);
+  virtual bool is_param_exists(const multimeter_param_t a_param) const;
   //! \brief Установить режим измерения постоянного напряжения
   virtual inline void set_dc();
   //! \brief Установить режим измерения переменного напряжения
