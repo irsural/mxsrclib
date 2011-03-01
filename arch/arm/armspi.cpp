@@ -28,6 +28,7 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
   m_status(SPI_FREE),
   mp_buf(a_buffer_size),
   mp_target_buf(0),
+  mp_read_buf(),
   m_buf_size(a_buffer_size),
   m_cur_byte(0),
   m_packet_size(0),
@@ -509,5 +510,20 @@ void irs::arm::arm_spi_t::tick()
         }
       }
     }
+  }
+}
+
+void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf, 
+  const irs_u8 *ap_write_buf, irs_uarc a_size)
+{
+  if (mp_buf.size()) {
+    m_packet_size = irs_u8(a_size);
+    if (m_packet_size > m_buf_size) {
+      m_packet_size = m_buf_size;
+    }
+    mp_read_buf = ap_read_buf;
+    mp_target_buf = ap_write_buf;
+    m_cur_byte = 0;
+    m_status = SPI_READ;
   }
 }
