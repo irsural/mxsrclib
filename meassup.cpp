@@ -364,6 +364,7 @@ void u309m_current_supply_t::tick()
       if (is_supply_200V) {
         m_supply_number = m_supply_200V;
         m_parameter = m_voltage;
+        //m_eth_data.header_data.SR_supply_200V_rele_bit = 1;//добавлено для теста
       } else if (is_supply_20V) {
         m_supply_number = m_supply_20V;
         m_parameter = m_voltage;
@@ -577,6 +578,8 @@ void u309m_current_supply_t::tick()
 
       m_eth_data.supply_17A.sense_regA = m_argument;
       m_eth_data.supply_17A.sense_regB = m_argument;
+
+      //m_eth_data.header_data.SR_supply_200V_rele_bit = 0;//добавлено для теста
 
       m_mode = mode_off_value_off_wait;
       m_status = meas_status_busy;

@@ -4273,17 +4273,15 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_mul_mode_type(a_mul_mode_type),
   mp_hardflow(ap_hardflow),
   m_modbus_client(mp_hardflow, irs::mxdata_ext_t::mode_refresh_auto,
-    0, 0, 38, 24, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
-  m_eth_mul_data(),
+    0, 0, 46, 16, a_update_time, 3, irs::make_cnt_s(2), 260, 1),
+  m_eth_mul_data(&m_modbus_client, 0),
   m_status(meas_status_success),
   mp_value(IRS_NULL),
   m_abort_request(false),
   m_mode(start_mode),
   m_filter(a_filter),
-  m_window_size(0)/*,
-  m_pause(irs::make_cnt_ms(500))*/
+  m_window_size(0)
 {
-  m_eth_mul_data.connect(&m_modbus_client, 0);
   m_eth_mul_data.meas_status = meas_status_success;
   
   #ifdef NOP
@@ -4579,17 +4577,14 @@ void irs::ni_pxi_4071_t::tick()
   {
     case start_mode:
     {
-      
+    
     } break;
     case get_value_mode:
     {
-      //if (m_pause.check()) {
       if (m_eth_mul_data.meas_status == meas_status_success) {
         *mp_value = m_eth_mul_data.meas_value;
         m_mode = start_mode;
         m_status = meas_status_success;
-        //m_eth_mul_data.meas_status = meas_status_success;
-        //m_pause.stop();
       }
     } break;
     case get_voltage_mode:

@@ -2655,11 +2655,12 @@ private:
     conn_data_t<irs_u16> integrate_time_units; // 0 - Seconds; 1 - PLCs
     conn_data_t<irs_u16> filter_type;
     conn_data_t<irs_u16> filter_order;
-    conn_data_t<irs_u16> meas_status;
-        
     // Считываемые значения:
     conn_data_t<double> meas_value;
     conn_data_t<double> meas_value_not_filtered;
+    // Статус мультиметра:
+    conn_data_t<irs_u16> meas_status;
+        
     //bit_data_t out_of_range;
   
     eth_mul_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
@@ -2687,11 +2688,10 @@ private:
       index = integrate_time_units.connect(ap_data, index);
       index = filter_type.connect(ap_data, index);
       index = filter_order.connect(ap_data, index);
-      index = meas_status.connect(ap_data, index);
-            
       index = meas_value.connect(ap_data, index);
       index = meas_value_not_filtered.connect(ap_data, index);
-      
+      index = meas_status.connect(ap_data, index);
+
       return index;
     }
   };
@@ -2706,7 +2706,6 @@ private:
   mode_t m_mode;
   filter_settings_t m_filter;
   size_type m_window_size;
-  //timer_t m_pause;
 };
 
 //! @}
