@@ -2,7 +2,7 @@
 //! \ingroup in_out_group
 //! \brief Потоки ввода/вывода ИРС
 //!
-//! Дата: 08.10.2010\n
+//! Дата: 01.03.2011\n
 //! Ранняя дата: 14.09.2009
 
 #ifndef IRSSTRMH
@@ -147,13 +147,16 @@ namespace avr {
 class com_buf: public streambuf
 {
 public:
+  enum debug_t { debug_no, debug_yes };
+  
   inline com_buf(const com_buf& a_buf);
   // В AVR com_index == 1 для регистров с индексом 0
   //       com_index == 2 для регистров с индексом 1
   inline com_buf(
     int a_com_index = 1,
     int a_outbuf_size = 10, 
-    const irs_u32 a_baud_rate = 9600
+    const irs_u32 a_baud_rate = 9600,
+    debug_t a_debug = debug_no
   );
   //inline virtual ~com_buf();
   inline virtual int overflow(int c = EOF);
@@ -164,11 +167,13 @@ private:
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
   const irs_u32 m_baud_rate;
+  const debug_t m_debug;
 };
 inline com_buf::com_buf(const com_buf& a_buf):
   m_outbuf_size(a_buf.m_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  m_baud_rate(a_buf.m_baud_rate)
+  m_baud_rate(a_buf.m_baud_rate),
+  m_debug(a_buf.m_debug)
 {
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
@@ -176,11 +181,13 @@ inline com_buf::com_buf(const com_buf& a_buf):
 inline com_buf::com_buf(
   int a_com_index,
   int a_outbuf_size,
-  const irs_u32 a_baud_rate
+  const irs_u32 a_baud_rate,
+  debug_t a_debug
 ):
   m_outbuf_size(a_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  m_baud_rate(a_baud_rate)
+  m_baud_rate(a_baud_rate),
+  m_debug(a_debug)
 {
   const irs_u32 FOSC = 16000000;//Частота процессора
   irs_u16 ubrr = FOSC/16/m_baud_rate - 1;
@@ -267,7 +274,9 @@ inline void com_buf::trans (char data)
 }
 inline void com_buf::trans_simple (char data)
 {
-  while (!UCSR0A_UDRE0);
+  if (m_debug == debug_no) {
+    while (!UCSR0A_UDRE0);
+  }
   UCSR0A_UDRE0 = 1;
   UDR0 = data;
 }
@@ -277,7 +286,7 @@ inline int com_buf::overflow(int c)
   if (len_s > 0) {
     *pptr() = 0;
     char* pend = pptr();
-    for(char *message = pbase(); message<pend; message++ ) {
+    for (char *message = pbase(); message<pend; message++ ) {
       trans(*message);
     }
   }
