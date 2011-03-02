@@ -510,20 +510,77 @@ void irs::arm::arm_spi_t::tick()
         }
       }
     }
+    case SPI_RW_WRITE:
+    {
+      if (transfer_complete()) {
+        switch (m_ssi_type) {
+          case SSI0:
+          {
+            if (SSI0SR_bit.TNF) {
+              if (m_cur_byte >= (m_packet_size - 1)) {
+                memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
+                memsetex(mp_buf.data(), mp_buf.size());
+                m_status = SPI_FREE;
+              } else {
+                write_data_register(mp_buf[m_cur_byte]);
+                m_status = SPI_RW_READ;
+              }
+            }
+          } break;
+          case SSI1:
+          {
+            if (SSI1SR_bit.TNF) {
+              if (m_cur_byte >= (m_packet_size - 1)) {
+                memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
+                memsetex(mp_buf.data(), mp_buf.size());
+                m_status = SPI_FREE;
+              } else {
+                write_data_register(mp_buf[m_cur_byte]);
+                m_status = SPI_RW_READ;
+              }
+            }
+          } break;
+        }
+      }
+    } break;
+    case SPI_RW_READ:
+    {
+      if (transfer_complete()) {
+        switch (m_ssi_type) {
+          case SSI0:
+          {
+            if(SSI0SR_bit.RNE) {
+                mp_rw_buf[m_cur_byte] = read_data_register();
+                m_cur_byte++;
+                m_status = SPI_RW_WRITE;
+            }
+          } break;
+          case SSI1:
+          {
+            if(SSI1SR_bit.RNE) {
+                mp_rw_buf[m_cur_byte] = read_data_register();
+                m_cur_byte++;
+                m_status = SPI_RW_WRITE;
+            }
+          } break;
+        }
+      }
+    }
   }
 }
 
 void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf, 
   const irs_u8 *ap_write_buf, irs_uarc a_size)
 {
-  if (mp_buf.size()) {
+  if (mp_buf.size() && mp_rw_buf.size()) {
     m_packet_size = irs_u8(a_size);
     if (m_packet_size > m_buf_size) {
       m_packet_size = m_buf_size;
     }
-    mp_read_buf = ap_read_buf;
-    mp_target_buf = ap_write_buf;
+    mp_target_buf = ap_read_buf;
+    memcpyex(mp_buf.data(), ap_write_buf, m_packet_size);    
+  
     m_cur_byte = 0;
-    m_status = SPI_READ;
+    m_status = SPI_RW_WRITE;
   }
 }

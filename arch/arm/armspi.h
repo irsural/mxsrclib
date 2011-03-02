@@ -72,6 +72,7 @@ private:
   
   cur_status_t m_status;
   raw_data_t<irs_u8> mp_buf;
+  raw_data_t<irs_u8> mp_rw_buf;
   irs_u8* mp_target_buf;
   irs_u8* mp_read_buf;
   irs_u8 m_buf_size;
