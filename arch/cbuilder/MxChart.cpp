@@ -2,7 +2,7 @@
 //! \ingroup graphical_user_interface_group
 //! \brief Построение графиков в C++ Builder
 //!
-//! Дата: 03.09.2010\n
+//! Дата: 02.03.2011\n
 //! Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
 #include <irspch.h>
@@ -3265,8 +3265,8 @@ irs::chart::builder_chart_window_t::unsort_data_t::
 unsort_data_t():
   mp_data(IRS_NULL),
   m_unsort_data(),
-  unsort_data_it(),
-  bad_point()
+  mp_unsort_data_it(),
+  m_bad_point()
 {
 }
 void irs::chart::builder_chart_window_t::unsort_data_t::
@@ -3278,7 +3278,7 @@ connect(const data_t &a_data)
     it != a_data.end(); it++) {
     m_unsort_data[it->second.index] = it->first;
   }
-  unsort_data_it = m_unsort_data.begin();
+  mp_unsort_data_it = m_unsort_data.begin();
 }
 bool irs::chart::builder_chart_window_t::unsort_data_t::
 empty()
@@ -3289,17 +3289,17 @@ empty()
 void irs::chart::builder_chart_window_t::unsort_data_t::
 start()
 {
-  unsort_data_it = m_unsort_data.begin();
+  mp_unsort_data_it = m_unsort_data.begin();
 }
 void irs::chart::builder_chart_window_t::unsort_data_t::
 next()
 {
-  if (unsort_data_it == m_unsort_data.end()) {
-    unsort_data_it = m_unsort_data.begin();
+  if (mp_unsort_data_it == m_unsort_data.end()) {
+    mp_unsort_data_it = m_unsort_data.begin();
   } else {
-    unsort_data_it++;
-    if (unsort_data_it == m_unsort_data.end()) {
-      unsort_data_it = m_unsort_data.begin();
+    mp_unsort_data_it++;
+    if (mp_unsort_data_it == m_unsort_data.end()) {
+      mp_unsort_data_it = m_unsort_data.begin();
     }
   }
 }
@@ -3307,18 +3307,18 @@ irs::chart::builder_chart_window_t::string_type
 irs::chart::builder_chart_window_t::unsort_data_t::
 name()
 {
-  if (unsort_data_it == m_unsort_data.end()) {
+  if (mp_unsort_data_it == m_unsort_data.end()) {
     return "";
   }
-  return unsort_data_it->second;
+  return mp_unsort_data_it->second;
 }
 const irs::chart::builder_chart_window_t::chart_point_t&
 irs::chart::builder_chart_window_t::unsort_data_t::
 vec()
 {
-  if (mp_data == IRS_NULL) return bad_point;
-  if (unsort_data_it == m_unsort_data.end()) return bad_point;
-  data_t::const_iterator data_it = mp_data->find(unsort_data_it->second);
+  if (mp_data == IRS_NULL) return m_bad_point;
+  if (mp_unsort_data_it == m_unsort_data.end()) return m_bad_point;
+  data_t::const_iterator data_it = mp_data->find(mp_unsort_data_it->second);
   return data_it->second;
 }
 irs::chart::builder_chart_window_t::unsort_data_t::size_type
@@ -3331,8 +3331,8 @@ size()
 void irs::chart::builder_chart_window_t::unsort_data_t::
 set(size_type a_index)
 {
-  unsort_data_it = m_unsort_data.begin();
-  advance(unsort_data_it, a_index);
+  mp_unsort_data_it = m_unsort_data.begin();
+  advance(mp_unsort_data_it, a_index);
 }
 
 // Форма с графиком
@@ -3442,15 +3442,14 @@ void __fastcall irs::chart::builder_chart_window_t::TChartForm::
 {
   try {
 
-    if (!m_pause) {
-      if (!m_is_lock) {
-        connect_data(m_data);
+    if (m_pause) {
+      if (m_invalidate) {
+        mp_chart->BaseItem = chart_from_combo_item(m_base_item);
+        mp_chart->Paint();
       }
     } else {
-      if (m_invalidate) {
-        m_invalidate = irs_false;
-        mp_chart->BaseItem = m_base_item;
-        mp_chart->Paint();
+      if (!m_is_lock) {
+        connect_data(m_data);
       }
     }
 
@@ -3471,6 +3470,8 @@ void __fastcall irs::chart::builder_chart_window_t::TChartForm::
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
   PauseBtnClick(TObject *Sender)
 {
+  m_is_chart_list_changed = true;
+  m_invalidate = true;
   if (m_pause) {
     m_pause = irs_false;
     mp_pause_btn->Caption = mp_pause_on_text;
@@ -3480,6 +3481,7 @@ void __fastcall irs::chart::builder_chart_window_t::TChartForm::
     m_pause_data = m_data;
     connect_data(m_pause_data);
   }
+  TimerEvent(this);
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
   FixBtnClick(TObject *Sender)
@@ -3498,7 +3500,7 @@ void __fastcall irs::chart::builder_chart_window_t::TChartForm::
   m_event.clear();
 }
 void __fastcall irs::chart::builder_chart_window_t::TChartForm::
-ChartPaint(TObject *Sender)
+  ChartPaint(TObject *Sender)
 {
   mp_chart->Paint();
 }
@@ -3521,6 +3523,31 @@ void __fastcall irs::chart::builder_chart_window_t::TChartForm::
   m_invalidate = irs_true;
   TimerEvent(this);
 }
+int irs::chart::builder_chart_window_t::TChartForm::
+  chart_from_combo_item(int a_combo_item)
+{
+  const int bad_real_base_item = -1;
+  int real_base_item = bad_real_base_item;
+  int real_index = 0;
+  for (unsort_data_t::size_type i = 0; i < m_unsort_data.size(); i++) {
+    const chart_func_t *func = m_unsort_data.vec().func.get();
+    if (func->size()) {
+      if ((int)i == a_combo_item) {
+        real_base_item = real_index;
+        break;
+      }
+      real_index++;
+    }
+    m_unsort_data.next();
+  }
+  int chart_item = 0;
+  if (real_base_item != bad_real_base_item) {
+    chart_item = real_base_item;
+  } else {
+    //int chart_item = 0;
+  }
+  return chart_item;
+}
 void irs::chart::builder_chart_window_t::TChartForm::
   connect_data(const data_t &a_data)
 {
@@ -3532,13 +3559,9 @@ void irs::chart::builder_chart_window_t::TChartForm::
   }
   if (m_invalidate) {
     m_invalidate = irs_false;
-    int base_item_save = mp_chart->BaseItem;
     mp_chart->Clear();
     m_colors.start();
     m_unsort_data.start();
-    const int bad_real_base_item = -1;
-    int real_base_item = bad_real_base_item;
-    int real_index = 0;
     for (unsort_data_t::size_type i = 0; i < m_unsort_data.size(); i++) {
       const chart_func_t *time_func = m_unsort_data.vec().time.get();
       const chart_func_t *func = m_unsort_data.vec().func.get();
@@ -3547,18 +3570,10 @@ void irs::chart::builder_chart_window_t::TChartForm::
         mp_chart->Add(&func->fn, func->size(), color);
         mp_chart->Last->DataX = &time_func->fn;
         if (!m_group_all) mp_chart->NewGroupY();
-        if ((int)i == m_base_item) {
-          real_base_item = real_index;
-        }
-        real_index++;
       }
       m_unsort_data.next();
     }
-    if (real_base_item != bad_real_base_item) {
-      mp_chart->BaseItem = real_base_item;
-    } else {
-      mp_chart->BaseItem = base_item_save;
-    }
+    mp_chart->BaseItem = chart_from_combo_item(m_base_item);
     mp_chart->Paint();
   }
 }

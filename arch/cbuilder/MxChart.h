@@ -2,7 +2,7 @@
 //! \ingroup graphical_user_interface_group
 //! \brief Построение графиков в C++ Builder
 //!
-//! Дата: 14.04.2010\n
+//! Дата: 02.03.2011\n
 //! Дата создания: 8.09.2008
 //---------------------------------------------------------------------------
 #ifndef MxChartH
@@ -558,8 +558,8 @@ private:
   private:
     const data_t* mp_data;
     map<int, string_type> m_unsort_data;
-    map<int, string_type>::iterator unsort_data_it;
-    chart_point_t bad_point;
+    map<int, string_type>::iterator mp_unsort_data_it;
+    chart_point_t m_bad_point;
   };
   // Форма с графиком
   class TChartForm: public TForm
@@ -623,6 +623,7 @@ private:
     void connect_data(const data_t &a_data);
     void update_chart_combo();
     void set_base_item(int a_base_item);
+    int chart_from_combo_item(int a_combo_item);
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
   }; //class TChartForm
 
