@@ -2,7 +2,7 @@
 //! \ingroup system_utils_group
 //! \brief Утилиты для отладки программы
 //!
-//! Дата: 18.10.2010\n
+//! Дата: 09.03.2011\n
 //! Дата создания: 09.04.2010
 
 // Номер файла
@@ -149,7 +149,7 @@ public:
   typedef memory_checker_range_param_ext_t range_param_type;
   typedef memory_checker_param_t param_type;
 
-  avr_memory_checker_t();
+  avr_memory_checker_t(interrupt_flag_type a_interrupt_flag = interrupt_on);
   virtual value_type range_param_begin(ident_type a_ident) const;
   virtual void range_param_begin(ident_type a_ident,
     value_type a_value);
@@ -296,7 +296,9 @@ IRS_ICCAVR_FLASH char const IRS_ICCAVR_FLASH* const
   m_heap_ident_name,
   m_return_stack_ident_name
 };
-irs::avr_memory_checker_t::avr_memory_checker_t():
+irs::avr_memory_checker_t::avr_memory_checker_t(
+  interrupt_flag_type a_interrupt_flag
+):
   m_range_param_list(mcrpi_avr_size),
   m_param_list(mcpi_avr_size),
   m_heap_array_size(heap_array_size_def),
@@ -313,8 +315,10 @@ irs::avr_memory_checker_t::avr_memory_checker_t():
   m_range_param_list[mcrpi_avr_heap] = range_param_type(
     memory_checker_range_param_t(), first_delta, second_delta);
 
-  m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
-    simple_param_get, interrupt_set);
+  if (a_interrupt_flag == interrupt_on) {
+    m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
+      simple_param_get, interrupt_set);
+  }
   m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
     simple_param_get, out_time_set);
 
@@ -641,7 +645,8 @@ void irs::avr_memory_checker_t::check()
 irs::memory_checker_t* irs::memory_checker()
 {
   #ifdef __ICCAVR__
-  static avr_memory_checker_t memory_checker_obj;
+  static avr_memory_checker_t memory_checker_obj(
+    memory_checker_t::interrupt_off);
   #else //__ICCAVR__
   static default_memory_checker_t memory_checker_obj;
   #endif //__ICCAVR__
@@ -674,23 +679,32 @@ irs::memory_checker_t* irs::memory_checker_init(
   return irs::memory_checker();
 }
 
+#ifdef __ICCAVR__
 irs::memory_checker_t* irs::memory_checker_avr_init(
   memory_checker_t::value_type a_call_stack_begin,
   memory_checker_t::value_type a_heap_begin,
   memory_checker_t::value_type a_return_stack_begin,
   memory_checker_t::value_type a_return_stack_end,
-  memory_checker_t::value_type a_heap_array_size
+  memory_checker_t::value_type a_heap_array_size,
+  memory_checker_t::interrupt_flag_type a_interrupt_flag
 )
 {
-  return memory_checker_init(a_call_stack_begin, a_heap_begin, a_heap_begin,
+  memory_checker_t* p_memory_checker =
+    memory_checker_init(a_call_stack_begin, a_heap_begin, a_heap_begin,
     a_return_stack_begin, a_return_stack_begin, a_return_stack_end,
     a_heap_array_size);
+  if (a_interrupt_flag == memory_checker_t::interrupt_on) {
+    p_memory_checker->
+      param(irs::mcpi_avr_interrupt, irs::mcp_avr_interrupt_timer0);
+  }
+  return p_memory_checker;
 }
 
 irs::memory_checker_t* irs::memory_checker_avr_init(
   memory_checker_t::value_type a_call_stack_size,
   memory_checker_t::value_type a_heap_size,
-  memory_checker_t::value_type a_return_stack_size
+  memory_checker_t::value_type a_return_stack_size,
+  memory_checker_t::interrupt_flag_type a_interrupt_flag
 )
 {
   #ifdef __ATmega128__
@@ -703,13 +717,11 @@ irs::memory_checker_t* irs::memory_checker_avr_init(
 
   memory_checker_t::value_type heap_begin = call_stack_begin +
     a_call_stack_size;
-  return memory_checker_init(call_stack_begin, heap_begin, heap_begin,
-    heap_begin + a_heap_size, heap_begin + a_heap_size, heap_begin +
-    a_heap_size + a_return_stack_size*multiplier,
-    memory_checker_t::heap_array_size_def);
+  return memory_checker_avr_init(call_stack_begin, heap_begin,
+    heap_begin + a_heap_size, heap_begin + a_heap_size +
+    a_return_stack_size*multiplier, a_interrupt_flag);
 }
 
-#ifdef __ICCAVR__
 size_t irs::avr::heap_pointer(size_t a_heap_array_size)
 {
   auto_arr<irs_u8> p_heap_check_var(

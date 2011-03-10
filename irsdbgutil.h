@@ -2,7 +2,7 @@
 //! \ingroup system_utils_group
 //! \brief Утилиты для отладки программы
 //!
-//! Дата: 18.10.2010
+//! Дата: 09.03.2011\n
 //! Дата создания: 09.04.2010
 
 #ifndef IRSDBGUTILH
@@ -48,6 +48,7 @@ class memory_checker_t
 public:
   typedef int ident_type;
   typedef irs_size_t value_type;
+  enum interrupt_flag_type { interrupt_off, interrupt_on };
 
   enum {
     heap_array_size_def = 10
@@ -84,21 +85,26 @@ memory_checker_t* memory_checker_init(
   memory_checker_t::value_type a_heap_array_size =
     memory_checker_t::heap_array_size_def
 );
+
+#ifdef __ICCAVR__
 memory_checker_t* memory_checker_avr_init(
   memory_checker_t::value_type a_call_stack_begin,
   memory_checker_t::value_type a_heap_begin,
   memory_checker_t::value_type a_return_stack_begin,
   memory_checker_t::value_type a_return_stack_end,
   memory_checker_t::value_type a_heap_array_size =
-    memory_checker_t::heap_array_size_def
+    memory_checker_t::heap_array_size_def,
+  memory_checker_t::interrupt_flag_type a_interrupt_flag =
+    memory_checker_t::interrupt_on
 );
 memory_checker_t* memory_checker_avr_init(
   memory_checker_t::value_type a_call_stack_size,
   memory_checker_t::value_type a_heap_size,
-  memory_checker_t::value_type a_return_stack_size
+  memory_checker_t::value_type a_return_stack_size,
+  memory_checker_t::interrupt_flag_type a_interrupt_flag =
+    memory_checker_t::interrupt_on
 );
 
-#ifdef __ICCAVR__
 namespace avr {
 
 enum {
