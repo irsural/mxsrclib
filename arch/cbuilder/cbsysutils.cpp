@@ -56,6 +56,24 @@ bool irs::cbuilder::file_version_t::operator<(
   return less;
 }
 
+bool irs::cbuilder::file_version_t::operator<=(
+  const file_version_t& a_file_version) const
+{
+  return operator<(a_file_version) || operator==(a_file_version);
+}
+
+bool irs::cbuilder::file_version_t::operator>(
+  const file_version_t& a_file_version) const
+{
+  return !operator<=(a_file_version);
+}
+
+bool irs::cbuilder::file_version_t::operator>=(
+  const file_version_t& a_file_version) const
+{
+  return operator>(a_file_version) || operator==(a_file_version);
+}
+
 bool irs::cbuilder::file_version_t::operator==(
   const file_version_t& a_file_version) const
 {

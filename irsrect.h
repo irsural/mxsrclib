@@ -2,7 +2,7 @@
 //! \ingroup single_type_group
 //! \brief Rect
 //!
-//! Дата: 14.04.2010\n
+//! Дата: 11.03.2011\n
 //! Дата создания: 15.04.2010
 
 #ifndef IRSRECTH
@@ -72,8 +72,10 @@ struct rect_t {
   {}
   inline size_type width() const;
   inline size_type height() const;
+  //! \brief Перемещает диапазон в точку с координатами (a_left, a_top).
   inline void move_to(const size_type a_left, const size_type a_top);
-  inline void move_to(const point_t& a_left_top);
+  //! \brief Перемещает дипазон в точку a_left_top.
+  inline void move_to(const point_t& a_left_top);  
   inline void move_left(const size_type a_left);
   inline void move_top(const size_type a_top);
   inline void move_right(const size_type a_right);
@@ -81,12 +83,16 @@ struct rect_t {
   inline void offset(const size_type a_x_diff, const size_type a_y_diff);
   inline void union_with(const rect_t& a_rect);
   inline rect_t get_united(const rect_t& a_rect) const;
+  //! \brief Возвращает true, если точка с координатами (a_left, a_top)
+  //!   входит в диапазон.
   inline bool contains(const size_type a_left, const size_type a_top) const;
+  //! \brief Возвращает true, если точка a_point входит в диапазон.
   inline bool contains(const point_t& a_point) const;
+  //! \brief Возвращает true, если диапазон a_rect является поддиапазоном.
   inline bool contains(const rect_t& a_rect) const;
   //intersect
   //get_intersect
-  inline bool intersects_with(const rect_t& a_rect) const;
+  inline bool intersects_with(const rect_t& a_rect) const;    
 };
 
 // rect_intersect & | &= |= == != += -=
@@ -190,11 +196,15 @@ inline bool rect_t::contains(const rect_t& a_rect) const
 
 inline bool rect_t::intersects_with(const rect_t& a_rect) const
 {
-  return contains(a_rect.left, a_rect.top) ||
-    contains(a_rect.right, a_rect.top) ||
-    contains(a_rect.right, a_rect.bottom) ||
-    contains(a_rect.left, a_rect.bottom);
-}
+  return
+    (
+      ((a_rect.left <= left) && (left <= a_rect.right)) ||
+      ((left <= a_rect.left) && (a_rect.left <= right))
+    ) && (
+      ((a_rect.top <= top) && (top <= a_rect.bottom)) ||
+      ((top <= a_rect.top) && (a_rect.top <= bottom))
+    );
+}  
 
 //! @}
 

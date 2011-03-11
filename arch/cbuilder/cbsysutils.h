@@ -82,6 +82,9 @@ struct file_version_t
     size_type a_build
   );
   bool operator<(const file_version_t& a_file_version) const;
+  bool operator<=(const file_version_t& a_file_version) const;
+  bool operator>(const file_version_t& a_file_version) const;
+  bool operator>=(const file_version_t& a_file_version) const;
   bool operator==(const file_version_t& a_file_version) const;
   bool operator!=(const file_version_t& a_file_version) const;
 };

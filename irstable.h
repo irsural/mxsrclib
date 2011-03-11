@@ -70,7 +70,13 @@ private:
   size_type m_row_count;
 public:
   table_t();
-  table_t(size_type a_new_col_count, size_type a_new_row_count);
+  table_t(
+    size_type a_new_col_count,
+    size_type a_new_row_count,
+    const cell_type_t& a_cell = cell_type_t());
+  table_t(const table_t& a_table);
+  inline void swap(table_t* ap_table);
+  inline table_t& operator=(table_t& a_table);
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
   inline cell_type_t& read_cell(
@@ -123,7 +129,8 @@ public:
   template<class it_row_type_t>
   void row_insert(
     size_type a_col_index, size_type a_count, it_row_type_t a_first_elem);
-  inline void resize(size_type a_new_col_count, size_type a_new_row_count);
+  inline void resize(size_type a_new_col_count, size_type a_new_row_count,
+    const cell_type_t& a_cell = cell_type_t());
   inline void clear();
 };
 
@@ -137,12 +144,44 @@ table_t<cell_type_t, column_type_t, container_t>::table_t():
 
 template<class cell_type_t, class column_type_t, class container_t>
 table_t<cell_type_t, column_type_t, container_t>::
-table_t(size_type a_new_col_count, size_type a_new_row_count):
+table_t(
+  size_type a_new_col_count,
+  size_type a_new_row_count,
+  const cell_type_t& a_cell
+):
   m_container(),
   m_col_count(0),
   m_row_count(0)
 {
-  resize(a_new_col_count, a_new_row_count);
+  resize(a_new_col_count, a_new_row_count, a_cell);
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+table_t<cell_type_t, column_type_t, container_t>::table_t(
+  const table_t<cell_type_t, column_type_t, container_t>& a_table
+):
+  m_container(a_table.m_container),
+  m_col_count(a_table.m_col_count),
+  m_row_count(a_table.m_row_count)
+{
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+inline void table_t<cell_type_t, column_type_t, container_t>::swap(
+  table_t* ap_table)
+{
+  ::swap(m_container, ap_table->m_container);
+  ::swap(m_col_count, ap_table->m_col_count);
+  ::swap(m_row_count, ap_table->m_row_count);
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+inline table_t<cell_type_t, column_type_t, container_t>&
+table_t<cell_type_t, column_type_t, container_t>::operator=(table_t& a_table)
+{
+  table_t table(a_table);
+  swap(&table);
+  return *this;
 }
 
 template<class cell_type_t, class column_type_t, class container_t>
@@ -514,7 +553,8 @@ void table_t<cell_type_t, column_type_t, container_t>::
 
 template<class cell_type_t, class column_type_t, class container_t>
 inline void table_t<cell_type_t, column_type_t, container_t>::
-resize(size_type a_new_col_count, size_type a_new_row_count)
+resize(size_type a_new_col_count, size_type a_new_row_count,
+  const cell_type_t& a_cell)
 {
   m_container.resize(a_new_col_count);
   if (a_new_row_count == m_row_count) {
@@ -522,14 +562,14 @@ resize(size_type a_new_col_count, size_type a_new_row_count)
       it_container_t it_col = m_container.begin();
       advance(it_col, m_col_count);
       for (size_type col = m_col_count; col < a_new_col_count; col++) {
-        it_col->resize(m_row_count);
+        it_col->resize(m_row_count, a_cell);
         it_col++;
       }
     }
   } else {
     it_container_t it_col = m_container.begin();
     for (size_type col = 0; col < a_new_col_count; col++) {
-      it_col->resize(a_new_row_count);
+      it_col->resize(a_new_row_count, a_cell);
       it_col++;
     }
   }
@@ -544,6 +584,13 @@ inline void table_t<cell_type_t, column_type_t, container_t>::
   m_container.clear();
   m_col_count = 0;
   m_row_count = 0;
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+void swap(table_t<cell_type_t, column_type_t, container_t>& a_first_table,
+  table_t<cell_type_t, column_type_t, container_t>& a_second_table)
+{
+  a_first_table.swap(&a_second_table);
 }
 
 #if (false /*defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010)*/)
@@ -566,7 +613,7 @@ typedef table_t<
 #endif // !(defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010))
 
 template <class cell_type_t>
-class composite_table_t : public table_size_t
+class table_united_cells_t : public table_size_t
 {
 public:
   typedef table_size_t::size_type size_type;
@@ -585,9 +632,20 @@ public:
   {
     cell_type_t value;
     cell_param_t param;
+    cell_t(cell_type_t a_value = cell_type_t(),
+      cell_param_t a_param = cell_param_t())
+    {
+    }
   };
-  composite_table_t();
-  composite_table_t(const size_type a_col_count, const size_type a_row_count);
+  table_united_cells_t();
+  table_united_cells_t(
+    const size_type a_col_count,
+    const size_type a_row_count,
+    const cell_type_t& a_cell = cell_type_t());
+  table_united_cells_t(const table_united_cells_t& a_table_united_cells);
+  void swap(table_united_cells_t* ap_table_united_cells);
+  table_united_cells_t& operator=(
+    const table_united_cells_t& a_table_united_cells);
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
   inline void write_cell(
@@ -599,6 +657,14 @@ public:
   virtual inline void set_col_count(const size_type a_col_count);
   virtual inline void set_row_count(const size_type a_row_count);
   inline void resize(size_type a_new_col_count, size_type a_new_row_count);
+  inline void insert_cols(const size_type a_pos,
+    const size_type a_insert_col_count);
+  inline void insert_rows(const size_type a_pos,
+    const size_type a_insert_row_count);
+  inline void erase_cols(const size_type a_pos,
+    const size_type a_erase_col_count);
+  inline void erase_rows(const size_type a_pos,
+    const size_type a_erase_row_count);
   inline void union_on(const diapason_type& a_diapason);
   inline void union_off(const diapason_type& a_diapason);
   inline bool is_diapason_for_union_valid(
@@ -615,23 +681,49 @@ private:
 };
 
 template <class cell_type_t>
-composite_table_t<cell_type_t>::composite_table_t():
+table_united_cells_t<cell_type_t>::table_united_cells_t():
   m_table()
 {
 }
 
 template <class cell_type_t>
-composite_table_t<cell_type_t>::composite_table_t(
+table_united_cells_t<cell_type_t>::table_united_cells_t(
   const size_type a_col_count,
-  const size_type a_row_count
+  const size_type a_row_count,
+  const cell_type_t& a_cell
 ):
-  m_table(a_col_count, a_row_count)
+  m_table(a_col_count, a_row_count, cell_t(a_cell))
 {
 }
 
 template <class cell_type_t>
+table_united_cells_t<cell_type_t>::table_united_cells_t(
+  const table_united_cells_t& a_table_united_cells
+):
+  m_table(a_table_united_cells.m_table)
+{
+}
+
+template <class cell_type_t>
+void table_united_cells_t<cell_type_t>::swap(
+  table_united_cells_t* ap_table_united_cells)
+{
+  ::swap(m_table, ap_table_united_cells->m_table);
+}
+
+template <class cell_type_t>
+table_united_cells_t<cell_type_t>&
+table_united_cells_t<cell_type_t>::operator=(
+  const table_united_cells_t& a_table_united_cells)
+{
+  table_united_cells_t table_united_cells(a_table_united_cells);
+  swap(&table_united_cells);
+  return *this;
+}
+
+template <class cell_type_t>
 inline const cell_type_t&
-composite_table_t<cell_type_t>::read_cell(const size_type a_col_index,
+table_united_cells_t<cell_type_t>::read_cell(const size_type a_col_index,
   const size_type a_row_index) const
 {
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);
@@ -647,7 +739,7 @@ composite_table_t<cell_type_t>::read_cell(const size_type a_col_index,
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::
+inline void table_united_cells_t<cell_type_t>::
 write_cell(
   const size_type a_col_index,
   const size_type a_row_index,
@@ -667,21 +759,21 @@ write_cell(
 }
 
 template <class cell_type_t>
-typename composite_table_t<cell_type_t>::size_type
-composite_table_t<cell_type_t>::get_col_count() const
+typename table_united_cells_t<cell_type_t>::size_type
+table_united_cells_t<cell_type_t>::get_col_count() const
 {
   return m_table.get_col_count();
 }
 
 template <class cell_type_t>
-typename composite_table_t<cell_type_t>::size_type
-composite_table_t<cell_type_t>::get_row_count() const
+typename table_united_cells_t<cell_type_t>::size_type
+table_united_cells_t<cell_type_t>::get_row_count() const
 {
   return m_table.get_row_count();
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::
+inline void table_united_cells_t<cell_type_t>::
 set_col_count(const size_type a_col_count)
 {
   const size_type col_count = get_col_count();
@@ -709,7 +801,7 @@ set_col_count(const size_type a_col_count)
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::set_row_count(
+inline void table_united_cells_t<cell_type_t>::set_row_count(
   const size_type a_row_count)
 {
   const size_type col_count = get_col_count();
@@ -737,15 +829,168 @@ inline void composite_table_t<cell_type_t>::set_row_count(
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::resize(
+inline void table_united_cells_t<cell_type_t>::resize(
   size_type a_new_col_count, size_type a_new_row_count)
 {
-  set_row_count(a_new_col_count);
-  set_col_count(a_new_row_count);
+  set_col_count(a_new_col_count);
+  set_row_count(a_new_row_count);
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::union_on(
+inline void table_united_cells_t<cell_type_t>::insert_cols(
+  const size_type a_pos,
+  const size_type a_insert_col_count)
+{
+  IRS_LIB_ASSERT(a_pos <= get_col_count());
+  if (a_insert_col_count > 0) {
+    const size_type col_count = get_col_count();
+    const size_type row_count = get_row_count();
+    // ≈сли в удал€емых столбцах содержатс€ €чейки, объединенные в
+    //  диапазоны, то разбиваем эти диапазоны.
+    if ((0 < a_pos) && (a_pos < col_count)) {
+      const size_type col_i = a_pos - 1;
+      for (size_type row_i = 0; row_i < row_count; row_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          if (cell.param.diapason.right >= a_pos) {
+            union_off(cell.param.diapason);
+          }
+        }
+      }
+    }
+    const size_type new_col_count = col_count + a_insert_col_count;
+    m_table.set_col_count(new_col_count);
+    // —мещаем €чейки
+    if ((col_count > 0) && (a_pos < col_count)) {
+      size_type col_i = col_count;
+      do {
+        col_i--;
+        for (size_type row_i = 0; row_i < row_count; row_i++) {
+          cell_t& cell = m_table.read_cell(col_i, row_i);
+          if (!cell.param.autonomous) {
+            cell.param.diapason.offset(+a_insert_col_count, 0);
+          }
+          m_table.write_cell(col_i + a_insert_col_count, row_i, cell);
+        }
+      } while (col_i > a_pos);
+    }
+  }
+}
+
+template <class cell_type_t>
+inline void table_united_cells_t<cell_type_t>::insert_rows(
+  const size_type a_pos,
+  const size_type a_insert_row_count)
+{
+  IRS_LIB_ASSERT(a_pos <= get_row_count());
+  if (a_insert_row_count > 0) {
+    const size_type col_count = get_col_count();
+    const size_type row_count = get_row_count();
+    // ≈сли в удал€емых столбцах содержатс€ €чейки, объединенные в
+    //  диапазоны, то разбиваем эти диапазоны.
+    if ((0 < a_pos) && (a_pos < row_count)) {
+      const size_type row_i = a_pos - 1;
+      for (size_type col_i = 0; col_i < col_count; col_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          if (cell.param.diapason.bottom >= a_pos) {
+            union_off(cell.param.diapason);
+          }
+        }
+      }
+    }
+    const size_type new_row_count = row_count + a_insert_row_count;
+    m_table.set_row_count(new_row_count);
+    // —мещаем €чейки
+    if ((row_count > 0) && (a_pos < row_count)) {
+      for (size_type col_i = 0; col_i < col_count; col_i++) {
+        size_type row_i = row_count;
+        do {
+          row_i--;
+          cell_t& cell = m_table.read_cell(col_i, row_i);
+          if (!cell.param.autonomous) {
+            cell.param.diapason.offset(0, +a_insert_row_count);
+          }
+          m_table.write_cell(col_i, row_i + a_insert_row_count, cell);
+        } while (row_i > a_pos);
+      }
+    }
+  }
+}
+
+
+template <class cell_type_t>
+inline void table_united_cells_t<cell_type_t>::erase_cols(
+  const size_type a_pos,
+  const size_type a_erase_col_count)
+{
+  IRS_LIB_ASSERT(a_pos + a_erase_col_count <= get_col_count());
+  if (a_erase_col_count > 0) {
+    const size_type col_count = get_col_count();
+    const size_type row_count = get_row_count();
+    // ≈сли в удал€емых столбцах содержатс€ €чейки, объединенные в
+    //  диапазоны, то разбиваем эти диапазоны.
+    for (size_type col_i = a_pos; col_i < a_pos + a_erase_col_count;
+      col_i++) {
+      for (size_type row_i = 0; row_i < row_count; row_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          union_off(cell.param.diapason);
+        }
+      }
+    }
+    // —мещаем €чейки
+    for (size_type col_i = a_pos + a_erase_col_count; col_i < col_count;
+      col_i++) {
+      for (size_type row_i = 0; row_i < row_count; row_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          cell.param.diapason.offset(-a_erase_col_count, 0);
+        }
+        m_table.write_cell(col_i - a_erase_col_count, row_i, cell);
+      }
+    }
+    m_table.set_col_count(col_count - a_erase_col_count);
+  }
+}
+
+template <class cell_type_t>
+inline void table_united_cells_t<cell_type_t>::erase_rows(
+  const size_type a_pos,
+  const size_type a_erase_row_count)
+{
+  IRS_LIB_ASSERT(a_pos + a_erase_row_count <= get_row_count());
+  if (a_erase_row_count > 0) {
+    const size_type col_count = get_col_count();
+    const size_type row_count = get_row_count();
+    // ≈сли в удал€емых столбцах содержатс€ €чейки, объединенные в
+    //  диапазоны, то разбиваем эти диапазоны.
+    for (size_type col_i = 0; col_i < col_count; col_i++) {
+      for (size_type row_i = a_pos; row_i < a_pos + a_erase_row_count;
+        row_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          union_off(cell.param.diapason);
+        }
+      }
+    }
+    // —мещаем €чейки
+    for (size_type col_i = 0; col_i < col_count; col_i++) {
+      for (size_type row_i = a_pos + a_erase_row_count; row_i < row_count;
+        row_i++) {
+        cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          cell.param.diapason.offset(0, -a_erase_row_count);
+        }
+        m_table.write_cell(col_i, row_i - a_erase_row_count, cell);
+      }
+    }
+    m_table.set_row_count(row_count - a_erase_row_count);
+  }
+}
+
+template <class cell_type_t>
+inline void table_united_cells_t<cell_type_t>::union_on(
   const diapason_type& a_diapason)
 {
   if (is_diapason_for_union_valid(a_diapason)) {
@@ -766,7 +1011,7 @@ inline void composite_table_t<cell_type_t>::union_on(
 }
 
 template <class cell_type_t>
-inline void composite_table_t<cell_type_t>::union_off(
+inline void table_united_cells_t<cell_type_t>::union_off(
   const diapason_type& a_diapason)
 {
   cell_param_t param_for_autonomous;
@@ -799,7 +1044,7 @@ inline void composite_table_t<cell_type_t>::union_off(
 }
 
 template <class cell_type_t>
-inline bool composite_table_t<cell_type_t>::is_diapason_for_union_valid(
+inline bool table_united_cells_t<cell_type_t>::is_diapason_for_union_valid(
   const diapason_type& a_diapason) const
 {
   bool diapason_success = true;
@@ -829,7 +1074,7 @@ inline bool composite_table_t<cell_type_t>::is_diapason_for_union_valid(
 }
 
 template <class cell_type_t>
-inline bool composite_table_t<cell_type_t>::is_cell_united(
+inline bool table_united_cells_t<cell_type_t>::is_cell_united(
   const size_type a_col_index,
   const size_type a_row_index) const
 {
@@ -838,8 +1083,8 @@ inline bool composite_table_t<cell_type_t>::is_cell_united(
 }
 
 template <class cell_type_t>
-inline typename composite_table_t<cell_type_t>::diapason_type
-composite_table_t<cell_type_t>::get_cell_diapason(
+inline typename table_united_cells_t<cell_type_t>::diapason_type
+table_united_cells_t<cell_type_t>::get_cell_diapason(
   const size_type a_col_index,
   const size_type a_row_index) const
 {
@@ -854,17 +1099,11 @@ composite_table_t<cell_type_t>::get_cell_diapason(
 }
 
 template <class cell_type_t>
-inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
+inline bool table_united_cells_t<cell_type_t>::first_subdiapason_second(
   const diapason_type& a_first_diapason,
   const diapason_type& a_second_diapason) const
 {
   bool statement_true = false;
-  //const size_type first_right = a_first_diapason.left + a_first_diapason.width;
-  //const size_type second_right = a_second_diapason.left +
-    //a_second_diapason.width;
-  //const size_type first_bottom = a_first_diapason.top + a_first_diapason.height;
-  //const size_type second_bottom = a_second_diapason.top +
-    //a_second_diapason.height;
   if ((a_first_diapason.left >= a_second_diapason.left) &&
     (a_first_diapason.right <= a_second_diapason.right) &&
     (a_first_diapason.top >= a_second_diapason.top) &&
@@ -876,6 +1115,15 @@ inline bool composite_table_t<cell_type_t>::first_subdiapason_second(
   }
   return statement_true;
 }
+
+template <class cell_type_t>
+void swap(table_united_cells_t<cell_type_t>& a_first_table,
+  table_united_cells_t<cell_type_t>& a_second_table)
+{
+  a_first_table.swap(&a_second_table);
+}
+
+
 
 /*class table_string_t:public
   table_t<
