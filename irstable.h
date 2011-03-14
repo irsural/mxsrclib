@@ -862,6 +862,7 @@ inline void table_united_cells_t<cell_type_t>::insert_cols(
     m_table.set_col_count(new_col_count);
     // Смещаем ячейки
     if ((col_count > 0) && (a_pos < col_count)) {
+      const size_type last_new_col = a_pos + a_insert_col_count - 1;
       size_type col_i = col_count;
       do {
         col_i--;
@@ -871,6 +872,10 @@ inline void table_united_cells_t<cell_type_t>::insert_cols(
             cell.param.diapason.offset(+a_insert_col_count, 0);
           }
           m_table.write_cell(col_i + a_insert_col_count, row_i, cell);
+          // Очищаем ячейку
+          if (col_i <= last_new_col) {
+            m_table.write_cell(col_i, row_i, cell_t());
+          }
         }
       } while (col_i > a_pos);
     }
@@ -903,6 +908,7 @@ inline void table_united_cells_t<cell_type_t>::insert_rows(
     m_table.set_row_count(new_row_count);
     // Смещаем ячейки
     if ((row_count > 0) && (a_pos < row_count)) {
+      const size_type last_new_row = a_pos + a_insert_row_count - 1;
       for (size_type col_i = 0; col_i < col_count; col_i++) {
         size_type row_i = row_count;
         do {
@@ -912,6 +918,10 @@ inline void table_united_cells_t<cell_type_t>::insert_rows(
             cell.param.diapason.offset(0, +a_insert_row_count);
           }
           m_table.write_cell(col_i, row_i + a_insert_row_count, cell);
+          // Очищаем ячейку
+          if (row_i <= last_new_row) {
+            m_table.write_cell(col_i, row_i, cell_t());
+          }
         } while (row_i > a_pos);
       }
     }

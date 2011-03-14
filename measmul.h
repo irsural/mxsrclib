@@ -2631,6 +2631,7 @@ private:
   };
   enum mode_t {
     start_mode,
+    meas_value_mode,
     get_value_mode,
     get_voltage_mode,
     get_current_mode,

@@ -4283,7 +4283,7 @@ irs::ni_pxi_4071_t::ni_pxi_4071_t(
   m_window_size(0)
 {
   m_eth_mul_data.meas_status = meas_status_success;
-  
+
   #ifdef NOP
   m_eth_mul_data.meas_mode = high_speed;
   if (m_mul_mode_type == mul_mode_type_active) {
@@ -4558,72 +4558,80 @@ void irs::ni_pxi_4071_t::abort()
 void irs::ni_pxi_4071_t::tick()
 {
   m_modbus_client.tick();
-  if (m_modbus_client.connected() &&
-    (m_mul_mode_type == mul_mode_type_passive)) {
-    m_filter.family =
-      static_cast<filter_family_t>(
-      static_cast<irs_u8>(m_eth_mul_data.filter_type));
-    m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
-    if (m_eth_mul_data.sampling_freq == 0) {
-      m_filter.sampling_time_s = 0;
-    } else {
-      m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+  if (m_modbus_client.connected()) {
+    /*if (m_modbus_client.connected() &&
+      (m_mul_mode_type == mul_mode_type_passive)) {
+      m_filter.family =
+        static_cast<filter_family_t>(
+        static_cast<irs_u8>(m_eth_mul_data.filter_type));
+      m_filter.order = static_cast<irs_u8>(m_eth_mul_data.filter_order);
+      if (m_eth_mul_data.sampling_freq == 0) {
+        m_filter.sampling_time_s = 0;
+      } else {
+        m_filter.sampling_time_s = 1/m_eth_mul_data.sampling_freq;
+      }
+      m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
+      m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
+      m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
+    }*/
+    switch(m_mode)
+    {
+      case start_mode:
+      {
+
+      } break;
+      case meas_value_mode:
+      {
+        if (m_eth_mul_data.meas_status == meas_status_success) {
+          *mp_value = m_eth_mul_data.meas_value;
+          m_mode = start_mode;
+          m_status = meas_status_success;
+        }
+      } break;
+      case get_value_mode:
+      {
+        if (m_eth_mul_data.meas_status == meas_status_busy) {
+          m_mode = meas_value_mode;
+        }
+      } break;
+      case get_voltage_mode:
+      {
+        if (m_eth_mul_data.meas_status == meas_status_busy) {
+        //if (m_eth_mul_data.meas_type == tm_volt_dc) {
+          m_mode = meas_value_mode;
+        //}
+        }
+      } break;
+      case get_current_mode:
+      {
+        if (m_eth_mul_data.meas_type == tm_current_dc) {
+          m_mode = meas_value_mode;
+        }
+      } break;
+      case get_resistance2x_mode:
+      {
+        if (m_eth_mul_data.meas_type == tm_resistance_2x) {
+          m_mode = meas_value_mode;
+        }
+      } break;
+      case get_resistance4x_mode:
+      {
+        if (m_eth_mul_data.meas_type == tm_resistance_4x) {
+          m_mode = meas_value_mode;
+        }
+      } break;
     }
-    m_filter.low_cutoff_freq_hz = m_eth_mul_data.low_cutoff_freq;
-    m_filter.passband_ripple_db = m_eth_mul_data.passband_ripple;
-    m_filter.stopband_ripple_db = m_eth_mul_data.stopband_ripple;
-  }
-  switch(m_mode)
-  {
-    case start_mode:
+    switch(m_eth_mul_data.meas_mode)
     {
-    
-    } break;
-    case get_value_mode:
-    {
-      if (m_eth_mul_data.meas_status == meas_status_success) {
-        *mp_value = m_eth_mul_data.meas_value;
-        m_mode = start_mode;
-        m_status = meas_status_success;
-      }
-    } break;
-    case get_voltage_mode:
-    {
-      if (m_eth_mul_data.meas_status == meas_status_busy) {
-      //if (m_eth_mul_data.meas_type == tm_volt_dc) {
-        m_mode = get_value_mode;
-      //}
-      }
-    } break;
-    case get_current_mode:
-    {
-      if (m_eth_mul_data.meas_type == tm_current_dc) {
-        m_mode = get_value_mode;
-      }
-    } break;
-    case get_resistance2x_mode:
-    {
-      if (m_eth_mul_data.meas_type == tm_resistance_2x) {
-        m_mode = get_value_mode;
-      }
-    } break;
-    case get_resistance4x_mode:
-    {
-      if (m_eth_mul_data.meas_type == tm_resistance_4x) {
-        m_mode = get_value_mode;
-      }
-    } break;
-  }
-  switch(m_eth_mul_data.meas_mode)
-  {
-    case digitizer:
-    {
-      // range, meas_type, (nplc/aperture), resolution
-    } break;
-    case high_speed:
-    {
-      // range, meas_type, sample/sec, filter options
-    } break;
+      case digitizer:
+      {
+        // range, meas_type, (nplc/aperture), resolution
+      } break;
+      case high_speed:
+      {
+        // range, meas_type, sample/sec, filter options
+      } break;
+    }
   }
 }
 
