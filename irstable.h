@@ -401,7 +401,7 @@ col_swap(size_type a_col1_index, size_type a_col2_index)
   it_container_t it_col2 = m_container.begin();
   advance(it_col1, a_col1_index);
   advance(it_col2, a_col2_index);
-  swap(*it_col1, *it_col2);
+  ::swap(*it_col1, *it_col2);
 }
 
 template<class cell_type_t, class column_type_t, class container_t>
@@ -633,7 +633,10 @@ public:
     cell_type_t value;
     cell_param_t param;
     cell_t(cell_type_t a_value = cell_type_t(),
-      cell_param_t a_param = cell_param_t())
+      cell_param_t a_param = cell_param_t()
+    ):
+      value(a_value),
+      param(a_param)
     {
     }
   };

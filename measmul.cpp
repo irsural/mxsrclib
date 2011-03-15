@@ -3575,7 +3575,7 @@ void irs::agilent_34420a_t::tick()
         case mac_free: {
         } break;
         default : {
-          IRS_LIB_ASSERT("Недопустимое значение");
+          IRS_LIB_ASSERT_MSG("Недопустимое значение");
         }
       }
     } break;
@@ -3633,7 +3633,7 @@ void irs::agilent_34420a_t::tick()
           m_mode = ma_mode_start;
         } break;
         default : {
-          IRS_LIB_ASSERT("Недопустимое значение");
+          IRS_LIB_ASSERT_MSG("Недопустимое значение");
         }
       }
     } break;
@@ -3691,7 +3691,7 @@ void irs::agilent_34420a_t::tick()
       }
     } break;
     default : {
-      IRS_LIB_ASSERT("Недопустимое значение");
+      IRS_LIB_ASSERT_MSG("Недопустимое значение");
     }
   }
 }
