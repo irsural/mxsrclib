@@ -53,28 +53,31 @@ public:
   virtual bool set_polarity(polarity_t a_polarity);
   virtual bool set_phase(phase_t a_phase);
   virtual bool set_order(order_t /*a_order*/);
+  virtual bool set_data_size(irs_u16 a_data_size);
   virtual void tick();
-  void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf, 
+  virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf, 
     irs_uarc a_size);
 private:
   enum cur_status_t {
     SPI_FREE,
     SPI_READ,
-    SPI_WRITE
+    SPI_WRITE,
+    SPI_RW_READ,
+    SPI_RW_WRITE
   };
   enum {
     SSI0Clk = 0x1,
     SSI0Rx = 0x1,
     SSI0Tx = 0x1,
     SSI1Clk = 0xB,
-    SSI1Rx = 0xB
+    SSI1Rx = 0xB,
+    SSI1Tx = 0xB
   };
   
   cur_status_t m_status;
   raw_data_t<irs_u8> mp_buf;
   raw_data_t<irs_u8> mp_rw_buf;
   irs_u8* mp_target_buf;
-  irs_u8* mp_read_buf;
   irs_u8 m_buf_size;
   irs_u8 m_cur_byte;
   irs_u8 m_packet_size;
@@ -91,6 +94,7 @@ private:
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();
   bool transfer_complete();
+  void init_default();
 };
 
 //! @}

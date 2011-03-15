@@ -30,12 +30,9 @@ class th_lm95071_t : public mxdata_t
     TH_READ,
     TH_RESET
   };
-  
-  enum {
-    m_size = 3, //  +1 - status on zero position
-    m_spi_size = 2
-  };
-  
+
+  static const irs_uarc m_spi_size = 2;
+  static const irs_uarc m_size = 3;
   status_t m_status;
   spi_t *mp_spi;
   const float m_conv_koef;
@@ -44,6 +41,7 @@ class th_lm95071_t : public mxdata_t
   counter_t m_read_counter;
   counter_t m_read_delay;
   bool m_connect;
+  irs::timer_t m_wait_timer;
   //  CS
   gpio_pin_t *mp_cs_pin;
 public:
@@ -824,6 +822,138 @@ struct dac_ltc2622_data_t
     a_start_index++;
     a_start_index = voltage_code_A.connect(ap_data, a_start_index);
     a_start_index = voltage_code_B.connect(ap_data, a_start_index);
+  }
+};
+
+//--------------------------  AD102S021  ---------------------------------------
+
+class adc_adc102s021_t : public mxdata_t
+{
+  private:
+  enum status_t
+  {
+    ADC_FREE,
+    ADC_READ,
+    ADC_READ_WAIT
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  static const irs_uarc m_size = 2;
+  static const irs_uarc m_target_size = 4;
+  static const irs_u8 ADD1 = 4; //ADD1
+  static const irs_u8 ADD0 = 3; //ADD1
+  static const irs_u8 Z5 = 7; //Zero
+  static const irs_u8 Z4 = 6; //Zero
+  static const irs_u8 Z3 = 5; //Z3
+  static const irs_u8 Z2 = 4; //Z2
+  static const irs_u8 Z1 = 3; //Z1
+  static const irs_u8 Z0 = 2; //Z0
+  irs::timer_t m_timer;
+  irs_u8 mp_target_buf[m_target_size];
+  irs_u8 mp_write_buf[m_size];
+  irs_u8 mp_read_buf[m_size];
+  bool m_connect;
+  bool m_in_first_enable;
+  bool m_round;
+  //  CS
+  gpio_pin_t *mp_cs_pin;
+  public:
+  adc_adc102s021_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, counter_t a_read_delay);
+  ~adc_adc102s021_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+};
+
+struct adc_adc102s021_data_t
+{
+  irs::conn_data_t<irs_u16> voltage_code1;
+  irs::conn_data_t<irs_u16> voltage_code2;
+
+  
+  adc_adc102s021_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    voltage_code1(),
+    voltage_code2()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+  
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = voltage_code1.connect(ap_data, index);
+    index = voltage_code2.connect(ap_data, index);
+  }
+};
+
+//--------------------------  AD5293  ------------------------------------------
+
+class dac_ad5293_t : public mxdata_t
+{
+  enum status_t
+  {
+    DAC_FREE,
+    DAC_START,
+    DAC_DATA,
+    DAC_DATA_WAIT,
+    DAC_SDO,
+    DAC_SDO_WAIT,
+    DAC_NOP,
+    DAC_WRITE
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  static const irs_uarc m_size = 2;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buf[m_size];
+  irs::timer_t m_wait_timer;
+  static const irs_u8 Z5 = 7; //C3
+  static const irs_u8 Z4 = 6; //C3
+  static const irs_u8 C3 = 5; //C3
+  static const irs_u8 C2 = 4; //C2  
+  static const irs_u8 C1 = 3; //C1
+  static const irs_u8 C0 = 2; //C0
+  static const irs_u8 Control2 = 2; //Calibration enable
+  static const irs_u8 Control1 = 1; //RDAC register write protect.
+  static const irs_u8 HI = 0;//High impedance
+  /*static const irs_u8 ZERO0_bit = 6; //не используемый бит
+  static const irs_u8 ZERO1_bit = 7; //не используемый бит*/
+  bool m_need_write;
+  bool m_need_first_write;
+  //  CS
+  gpio_pin_t *mp_cs_pin;
+public:
+  dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin);
+  ~dac_ad5293_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+};
+
+struct dac_ad5293_data_t
+{
+  irs::conn_data_t<irs_u16> resistance_code;
+  
+  dac_ad5293_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    resistance_code()
+  {
+    connect(ap_data, a_start_index);    
+  }  
+    
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = resistance_code.connect(ap_data, index);
   }
 };
 

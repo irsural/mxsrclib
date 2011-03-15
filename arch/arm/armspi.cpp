@@ -27,8 +27,8 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
 ):
   m_status(SPI_FREE),
   mp_buf(a_buffer_size),
+  mp_rw_buf(a_buffer_size),
   mp_target_buf(0),
-  mp_read_buf(),
   m_buf_size(a_buffer_size),
   m_cur_byte(0),
   m_packet_size(0),
@@ -66,17 +66,10 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
       GPIOAPCTL_bit.PMC4 = SSI0Rx;
       GPIOAPCTL_bit.PMC5 = SSI0Tx;
         
-      SSI0CR1_bit.SSE = 0;
-      
       SSI0CR1 = 0x0;
       SSI0CPSR = 0x2;
-      SSI0CR0_bit.SCR = (m_f_osc/(SSI0CPSR*m_bitrate)) - 1;
-      SSI0CR0_bit.SPH = m_phase;
-      SSI0CR0_bit.SPO = m_polarity;
-      SSI0CR0_bit.FRF = m_spi_type;
-      SSI0CR0_bit.DSS = 0x7; // 8-bit data
-      
-      SSI0CR1_bit.SSE = 1;
+       
+      init_default();
     } break;
     case SSI1:
     {
@@ -90,21 +83,18 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
       GPIOHDEN_bit.no6 = 1;
       GPIOHDIR_bit.no6 = 0;
       GPIOHAFSEL_bit.no6 = 1;
+      GPIOHDEN_bit.no7 = 1;
+      GPIOHDIR_bit.no7 = 1;
+      GPIOHAFSEL_bit.no7 = 1;
       
       GPIOHPCTL_bit.PMC4 = SSI1Clk;
       GPIOHPCTL_bit.PMC6 = SSI1Rx;
-
-      SSI1CR1_bit.SSE = 0;
+      GPIOHPCTL_bit.PMC7 = SSI1Tx;
       
       SSI1CR1 = 0x0;
       SSI1CPSR = 0x2;
-      SSI1CR0_bit.SCR = (m_f_osc/(SSI1CPSR*m_bitrate)) - 1;
-      SSI1CR0_bit.SPH = m_phase;
-      SSI1CR0_bit.SPO = m_polarity;
-      SSI1CR0_bit.FRF = m_spi_type;
-      SSI1CR0_bit.DSS = 0x7; // 8-bit data
       
-      SSI1CR1_bit.SSE = 1;
+      init_default();
     } break;
   }
 }
@@ -275,6 +265,53 @@ bool irs::arm::arm_spi_t::set_order(order_t /*a_order*/)
   return true;
 }
 
+bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
+{
+  if ((a_data_size > 16) || (a_data_size < 4)) {
+    return false;
+  }
+  if (m_status == SPI_FREE) {
+    switch (m_ssi_type)
+    {
+      case SSI0:
+      {
+        switch (m_spi_type)
+        {
+          case SPI:
+          {
+            SSI0CR0_bit.DSS = a_data_size - 1;
+          } break;
+          case TISS:
+          {
+          } break;
+          case MICROWIRE:
+          {
+          } break;
+        }
+      } break;
+      case SSI1:
+      {
+        switch (m_spi_type)
+        {
+          case SPI:
+          {
+            SSI1CR0_bit.DSS = a_data_size - 1;
+          } break;
+          case TISS:
+          {
+          } break;
+          case MICROWIRE:
+          {
+          } break;
+        }
+      } break;
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void irs::arm::arm_spi_t::write(const irs_u8* ap_buf,irs_uarc a_size)
 {
   if (mp_buf.size()) {
@@ -287,8 +324,7 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf,irs_uarc a_size)
             m_packet_size = m_buf_size;
           }
           memcpyex(mp_buf.data(), ap_buf, m_packet_size);
-          write_data_register(mp_buf[0]);
-          m_cur_byte = 1;
+          m_cur_byte = 0;
           m_status = SPI_WRITE;
         }
       } break;
@@ -300,8 +336,7 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf,irs_uarc a_size)
             m_packet_size = m_buf_size;
           }
           memcpyex(mp_buf.data(), ap_buf, m_packet_size);
-          write_data_register(mp_buf[0]);
-          m_cur_byte = 1;
+          m_cur_byte = 0;
           m_status = SPI_WRITE;
         }
       } break;
@@ -332,6 +367,7 @@ void irs::arm::arm_spi_t::lock()
 void irs::arm::arm_spi_t::unlock()
 {
   m_lock = false;
+  init_default();
 }
 
 bool irs::arm::arm_spi_t::get_lock()
@@ -509,7 +545,7 @@ void irs::arm::arm_spi_t::tick()
           } break;
         }
       }
-    }
+    } break;
     case SPI_RW_WRITE:
     {
       if (transfer_complete()) {
@@ -517,7 +553,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if (SSI0SR_bit.TNF) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
+              if (m_cur_byte > (m_packet_size - 1)) {
                 memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
@@ -530,7 +566,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI1:
           {
             if (SSI1SR_bit.TNF) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
+              if (m_cur_byte > (m_packet_size - 1)) {
                 memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
@@ -565,7 +601,7 @@ void irs::arm::arm_spi_t::tick()
           } break;
         }
       }
-    }
+    } break;
   }
 }
 
@@ -584,3 +620,34 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
     m_status = SPI_RW_WRITE;
   }
 }
+
+void irs::arm::arm_spi_t::init_default()
+{
+  switch (m_ssi_type) {
+    case SSI0:
+    {
+      SSI0CR1_bit.SSE = 0;
+
+      SSI0CR0_bit.SCR = (m_f_osc/(SSI0CPSR*m_bitrate)) - 1;
+      SSI0CR0_bit.SPH = m_phase;
+      SSI0CR0_bit.SPO = m_polarity;
+      SSI0CR0_bit.FRF = m_spi_type;
+      SSI0CR0_bit.DSS = 0x7; // 8-bit data
+      
+      SSI0CR1_bit.SSE = 1;
+    } break;
+    case SSI1:
+    {
+      SSI1CR1_bit.SSE = 0;
+
+      SSI1CR0_bit.SCR = (m_f_osc/(SSI1CPSR*m_bitrate)) - 1;
+      SSI1CR0_bit.SPH = m_phase;
+      SSI1CR0_bit.SPO = m_polarity;
+      SSI1CR0_bit.FRF = m_spi_type;
+      SSI1CR0_bit.DSS = 0x7; // 8-bit data
+      
+      SSI1CR1_bit.SSE = 1;
+    } break;
+  }
+}
+

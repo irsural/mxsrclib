@@ -25,16 +25,28 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_read_counter(0),
   m_read_delay(a_read_delay),
   m_connect(false),
+  m_wait_timer(irs::make_cnt_us(5)),
   mp_cs_pin(ap_cs_pin)
 {
-  memset((void*)mp_buf, 0, m_size);
-  memset((void*)mp_spi_buf, 0, m_spi_size);
-  mp_cs_pin->clear();
-  mp_spi->write(mp_spi_buf, m_spi_size);
-  for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
-  mp_spi->write(mp_spi_buf, m_spi_size);
-  for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
-  mp_cs_pin->set();
+  if (mp_spi && mp_cs_pin) {
+    memset((void*)mp_buf, 0, m_size);
+    memset((void*)mp_spi_buf, 0, m_spi_size);
+    mp_spi->set_order(irs::spi_t::MSB);
+    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+    mp_cs_pin->clear();
+    mp_spi->write(mp_spi_buf, m_spi_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE; )
+      mp_spi->tick();
+    mp_spi->write(mp_spi_buf, m_spi_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE; )
+      mp_spi->tick();
+   
+    /*m_wait_timer.start();
+    while(!m_wait_timer.check());*/
+    mp_cs_pin->set();
+    set_to_cnt(m_read_counter, m_read_delay);
+  }
 }
 
 irs::th_lm95071_t::~th_lm95071_t()
@@ -1391,3 +1403,359 @@ void irs::dac_ltc2622_t::tick()
   }
 }
 
+//--------------------------  AD102S021 ----------------------------------------
+
+irs::adc_adc102s021_t::adc_adc102s021_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
+  counter_t a_read_delay):
+  m_status(ADC_FREE),
+  mp_spi(ap_spi),
+  m_timer(a_read_delay),
+  m_connect(false),
+  m_in_first_enable(true),
+  m_round(false),
+  mp_cs_pin(ap_cs_pin)
+{
+  memset((void*)mp_target_buf, 0, m_target_size);
+  memset((void*)mp_read_buf, 0, m_size);
+  memset((void*)mp_write_buf, 0, m_size);
+  mp_write_buf[0] = (0<<ADD1)|(1<<ADD0);
+  mp_cs_pin->set();
+  m_timer.start();
+}
+
+irs::adc_adc102s021_t::~adc_adc102s021_t()
+{
+  return;
+}
+
+irs_uarc irs::adc_adc102s021_t::size()
+{
+  return m_target_size;
+}
+
+irs_bool irs::adc_adc102s021_t::connected()
+{
+  if (mp_spi && mp_cs_pin && m_connect) return true;
+  else return false;
+}
+
+void irs::adc_adc102s021_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_target_size) return;
+  irs_u8 size = (irs_u8)a_size;
+  if (size + a_index > m_target_size) size = irs_u8(m_target_size - a_index);
+  memcpy((void*)ap_buf, (void*)(mp_target_buf + a_index), size);
+}
+
+void irs::adc_adc102s021_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_target_size) return;
+  irs_u8 size = (irs_u8)a_size;
+  if (size + a_index > m_target_size) size = irs_u8(m_target_size - a_index);
+  memcpy((void*)(mp_write_buf + a_index), (void*)ap_buf, size);
+}
+
+irs_bool irs::adc_adc102s021_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_target_size) return false;
+  if (a_bit_index > 7) return false;
+  bool bit = (mp_write_buf[a_index] >> a_bit_index) & irs_u8(1);
+  return bit;
+}
+void irs::adc_adc102s021_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_target_size) return;
+  if (a_bit_index > 7) return;
+  mp_write_buf[a_index] |= irs_u8(1 << a_bit_index);
+}
+
+void irs::adc_adc102s021_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_target_size) return;
+  if (a_bit_index > 7) return;
+  mp_write_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+}
+
+void irs::adc_adc102s021_t::tick()
+{
+  mp_spi->tick();
+  switch (m_status)
+  {
+    case ADC_FREE:
+    {
+      if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
+      {
+        if (m_timer.check()) { 
+          m_timer.stop();
+          mp_spi->set_order(irs::spi_t::MSB);
+          mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+          mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+          mp_spi->lock();
+          mp_cs_pin->clear();
+          memset((void*)mp_read_buf, 0, m_size);
+          m_status = ADC_READ;
+        }
+      } 
+    } break;
+    case ADC_READ:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_spi->read_write(mp_read_buf, mp_write_buf, m_size);
+        m_status = ADC_READ_WAIT;
+      }
+    }break;
+    case ADC_READ_WAIT:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        m_connect = true;
+        if (m_in_first_enable) {
+          mp_target_buf[0] = mp_read_buf[1];
+          mp_target_buf[1] = mp_read_buf[0];
+          IRS_FIRSTWORD(mp_target_buf[0]) >>= 2;
+          mp_target_buf[1] &= 
+            irs_u8(((1<<Z5)|(1<<Z4)|(1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
+          mp_write_buf[0] = (0<<ADD1)|(0<<ADD0);
+          m_in_first_enable = false;
+        } else {
+          mp_target_buf[2] = mp_read_buf[1];
+          mp_target_buf[3] = mp_read_buf[0];
+          IRS_FIRSTWORD(mp_target_buf[2]) >>= 2;
+          mp_target_buf[3] &= 
+            irs_u8(((1<<Z5)|(1<<Z4)|(1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
+          mp_write_buf[0] = (0<<ADD1)|(1<<ADD0);
+          m_in_first_enable = true;
+        }
+        m_timer.start();
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_status = ADC_FREE;
+      }
+    } break;
+  }
+}
+
+//--------------------------  AD5293  ------------------------------------------
+
+irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
+  m_status(DAC_FREE),
+  mp_spi(ap_spi),
+  m_wait_timer(irs::make_cnt_us(1)),
+  m_need_write(false),
+  m_need_first_write(true),
+  mp_cs_pin(ap_cs_pin)
+{
+  if (mp_spi && mp_cs_pin)
+  {
+    mp_cs_pin->set();
+    
+    memset((void*)mp_buf, 0, m_size);
+    memset((void*)mp_write_buf, 0, m_size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
+      mp_spi->tick();
+    
+    mp_spi->set_order(irs::spi_t::MSB);
+    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+    
+    m_wait_timer.start();
+    while(!m_wait_timer.check());
+    memset((void*)mp_write_buf, 0, m_size);
+    
+    mp_write_buf[0] = (0<<C3)|(1<<C2)|(0<<C1)|(0<<C0);
+    mp_cs_pin->clear();
+    mp_spi->write(mp_write_buf, m_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE;)
+      mp_spi->tick();
+    mp_cs_pin->set();
+    mp_buf[1] = (1 << 1);
+        
+    m_wait_timer.start();
+    while(!m_wait_timer.check());
+    memset((void*)mp_write_buf, 0, m_size);
+    mp_write_buf[0] = (1<<Z5);
+    mp_write_buf[1] = (1<<HI);
+    mp_cs_pin->clear();
+    mp_spi->write(mp_write_buf, m_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE;)
+      mp_spi->tick();
+    mp_cs_pin->set();
+    
+    m_wait_timer.start();
+    while(!m_wait_timer.check());
+    memset((void*)mp_write_buf, 0, m_size);
+    mp_cs_pin->clear();
+    mp_spi->write(mp_write_buf, m_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE;)
+      mp_spi->tick();
+    mp_cs_pin->set();
+    m_wait_timer.start();
+  }
+}
+
+irs::dac_ad5293_t::~dac_ad5293_t()
+{
+  return;
+}
+
+irs_uarc irs::dac_ad5293_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::dac_ad5293_t::connected()
+{
+  if (mp_spi && mp_cs_pin) return true;
+  else return false;
+}
+
+void irs::dac_ad5293_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+    if (a_index >= m_size) return;
+    irs_u8 size = (irs_u8)a_size;
+    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
+    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    return;
+}
+
+void irs::dac_ad5293_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_size) return;
+  irs_u8 size = (irs_u8)a_size;
+  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
+  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  m_need_write = true;
+}
+
+irs_bool irs::dac_ad5293_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return false;
+  if (a_bit_index > 7) return false;
+  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+}
+
+void irs::dac_ad5293_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  m_need_write = true;
+}
+
+void irs::dac_ad5293_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  m_need_write = true;
+}
+
+void irs::dac_ad5293_t::tick()
+{
+  mp_spi->tick();
+  switch (m_status)
+  {
+    case DAC_FREE:
+    {
+      if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE))
+      {
+        if ((!mp_spi->get_lock()) && (m_wait_timer.check()))
+        {
+          mp_spi->set_order(irs::spi_t::MSB);
+          mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+          mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+          memset((void*)mp_write_buf, 0, m_size);
+          
+          mp_spi->lock();
+          
+          mp_write_buf[0] = (0<<C3)|(1<<C2)|(1<<C1)|(0<<C0);
+          mp_write_buf[1] = (1<<Control2)|(1<<Control1);
+          mp_cs_pin->clear();
+          mp_spi->write(mp_write_buf, m_size);
+ 
+          m_status = DAC_START;
+          m_need_write = false;
+        }
+      }
+    } break;
+    case DAC_START:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_cs_pin->set();
+        m_wait_timer.start();
+        m_status = DAC_DATA;
+      }
+    } break;
+    case DAC_DATA:
+    {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
+      {
+        memset((void*)mp_write_buf, 0, m_size);
+        mp_write_buf[0] = mp_buf[1];
+        mp_write_buf[1] = mp_buf[0];
+        mp_write_buf[0] &= 
+          irs_u8(((1<<Z5)|(1<<Z4)|(1<<C3)|(1<<C2)|(1<<C1))^0xFF);
+        mp_write_buf[0] |= irs_u8(1<<C0);
+        mp_cs_pin->clear();
+        mp_spi->write(mp_write_buf, m_size);
+        m_status = DAC_DATA_WAIT;
+      }
+    } break;
+    case DAC_DATA_WAIT:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_cs_pin->set();
+        m_wait_timer.start();
+        m_status = DAC_SDO;
+      }
+    } break;
+    case DAC_SDO:
+    {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
+      {
+        memset((void*)mp_write_buf, 0, m_size);
+        mp_write_buf[0] = (1<<Z5);
+        mp_write_buf[1] = (1<<HI);
+        mp_cs_pin->clear();
+        mp_spi->write(mp_write_buf, m_size);
+        m_status = DAC_SDO_WAIT;
+      }
+    } break;
+    case DAC_SDO_WAIT:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_cs_pin->set();
+        m_wait_timer.start();
+        m_status = DAC_NOP;
+      }
+    } break;
+    case DAC_NOP:
+    {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
+      {
+        memset((void*)mp_write_buf, 0, m_size);
+        mp_cs_pin->clear();
+        mp_spi->write(mp_write_buf, m_size);
+        m_status = DAC_WRITE;
+      }
+    } break;
+    case DAC_WRITE:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_wait_timer.start();
+        m_status = DAC_FREE;
+      }
+    } break;
+  }
+}

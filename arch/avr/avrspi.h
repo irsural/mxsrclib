@@ -75,7 +75,11 @@ public:
   virtual bool set_polarity(polarity_t a_polarity);
   virtual bool set_phase(phase_t a_phase);
   virtual bool set_order(order_t a_order);
+  virtual bool set_data_size(irs_u16 /*a_data_size*/) {return true;}
   virtual void tick();
+  virtual void read_write(irs_u8 /**ap_read_buf*/, 
+    const irs_u8 /**ap_write_buf*/, irs_uarc /*a_size*/) {}
+  void init_default();
 };
 
 //! @}
