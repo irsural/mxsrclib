@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Аналоговый ввод-вывод
 //!
-//! Дата: 03.12.2010
+//! Дата: 16.03.2011
 //! Дата создания: 11.09.2009
 
 #include <irspch.h>
@@ -41,7 +41,6 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_spi->write(mp_spi_buf, m_spi_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; )
       mp_spi->tick();
-   
     /*m_wait_timer.start();
     while(!m_wait_timer.check());*/
     mp_cs_pin->set();

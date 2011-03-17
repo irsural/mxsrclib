@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Драйвер SPI для ARM
 //!
-//! Дата: 18.01.2011
+//! Дата: 16.03.2011
 //! Дата создания: 30.11.2010
 
 #ifndef armspiH

@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Абстрактный базовый класс для SPI
 //!
-//! Дата: 29.02.2008
+//! Дата: 16.03.2011
 
 #ifndef irsspiH
 #define irsspiH

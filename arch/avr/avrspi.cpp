@@ -546,4 +546,54 @@ bool irs::avr::avr_spi_t::get_lock()
   return m_lock;
 }
 
+void irs::avr::avr_spi_t::init_default()
+{
+  switch (m_spi_type)
+  {
+  case USART0:
+    {
+      //  инициализация железа USART0
+      UCSR0C_UDORD0 = 0;    //  MSB first
+      UBRR0 = 0;            //  Baudrate = Fosc / 2
+
+      UCSR0C &= 0x20^0xFF;  //  leading edge sample,через UCSR0C_UCPHA0=0 нельзя
+      UCSR0C_UCPOL0 = 1;    //  clock falling edge first
+
+      UCSR0B_TXEN0 = 1;     //  reciever enable
+      UCSR0B_RXEN0 = 1;     //  transmite enable
+
+      UBRR0 = (m_f_osc/(2*100000)) - 1;//baudrate = Fosc / 2(UBRR1+1) = 100 kHz
+      break;
+    }
+  case USART1:
+    {
+      //  инициализация железа USART1
+      UCSR1C_UDORD1 = 0;    //  MSB first
+      UBRR1 = 0;            //  Baudrate = Fosc / 2
+      
+      /*UCSR1C_UMSEL11 = 1;   //  master SPI
+      UCSR1C_UMSEL10 = 1;   //  master SPI
+      UCSR1C &= 0x02^0xFF;  //  leading edge sample,через UCSR1C_UCPHA1=0 нельзя
+      UCSR1C_UCPOL1 = 1;    //  clock falling edge first*/
+      UCSR1C = (1 << UMSEL10) | (1 << UMSEL11) | (1 << UCPOL1) | (1 << UCPHA1);
+      
+      UCSR1B_TXEN1 = 1;     //  reciever enable
+      UCSR1B_RXEN1 = 1;     //  transmite enable
+
+      UBRR1 = (m_f_osc/(2*100000)) - 1;//baudrate = Fosc / 2(UBRR1+1) = 100 kHz
+      break;
+    }
+  case SPI:
+    {
+      //  SPI hardware initialization
+      SPCR_SPIE = 0;    //SPI interrupt disable
+      SPCR_DORD = 0;    //SPI MSB first
+      SPCR_CPOL = 1;    //SPI clock falling edge first
+      SPCR_CPHA = 0;    //SPI clock phase: data sample = falling edge
+      SPCR_SPR1 = 1;    //SPI clock rate = Fosc/128 = 125 kHz for Fosc = 16 MHz
+      SPCR_SPR0 = 1;    //-|-
+      break;
+    }
+  }
+}
 #endif //__ATmega128__

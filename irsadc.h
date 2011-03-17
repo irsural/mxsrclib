@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Аналоговый ввод-вывод
 //!
-//! Дата: 14.04.2010
+//! Дата: 16.03.2011
 
 #ifndef irsadcH
 #define irsadcH

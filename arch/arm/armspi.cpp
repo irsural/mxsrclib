@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Драйвер SPI для ARM
 //!
-//! Дата: 18.01.2011
+//! Дата: 16.03.2011
 //! Дата создания: 30.11.2010
 
 #include <irsdefs.h>
@@ -315,32 +315,13 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
 void irs::arm::arm_spi_t::write(const irs_u8* ap_buf,irs_uarc a_size)
 {
   if (mp_buf.size()) {
-    switch (m_ssi_type) {
-      case SSI0:
-      {
-        if (SSI0SR_bit.TNF) {
-          m_packet_size = irs_u8(a_size);
-          if (m_packet_size > m_buf_size) {
-            m_packet_size = m_buf_size;
-          }
-          memcpyex(mp_buf.data(), ap_buf, m_packet_size);
-          m_cur_byte = 0;
-          m_status = SPI_WRITE;
-        }
-      } break;
-      case SSI1:
-      {
-        if (SSI1SR_bit.TNF) {
-          m_packet_size = irs_u8(a_size);
-          if (m_packet_size > m_buf_size) {
-            m_packet_size = m_buf_size;
-          }
-          memcpyex(mp_buf.data(), ap_buf, m_packet_size);
-          m_cur_byte = 0;
-          m_status = SPI_WRITE;
-        }
-      } break;
+    m_packet_size = irs_u8(a_size);
+    if (m_packet_size > m_buf_size) {
+      m_packet_size = m_buf_size;
     }
+    memcpyex(mp_buf.data(), ap_buf, m_packet_size);
+    m_cur_byte = 0;
+    m_status = SPI_WRITE;
   }
 }
 
@@ -500,12 +481,35 @@ void irs::arm::arm_spi_t::tick()
     case SPI_WRITE:
     {
       if (transfer_complete()) {
-        if (m_cur_byte >= m_packet_size) {
-          memsetex(mp_buf.data(), mp_buf.size());
-          m_status = SPI_FREE;
-        } else {
-          write_data_register(mp_buf[m_cur_byte]);
-          m_cur_byte++;
+        switch (m_ssi_type) {
+          case SSI0:
+          {
+            if (SSI0SR_bit.TNF) {
+              if (m_cur_byte >= m_packet_size) {
+                read_data_register();
+                memsetex(mp_buf.data(), mp_buf.size());
+                m_status = SPI_FREE;
+              } else {
+                read_data_register();
+                write_data_register(mp_buf[m_cur_byte]);
+                m_cur_byte++;
+              }
+            }
+          } break;
+          case SSI1:
+          {
+            if (SSI1SR_bit.TNF) {
+              if (m_cur_byte >= m_packet_size) {
+                read_data_register();
+                memsetex(mp_buf.data(), mp_buf.size());
+                m_status = SPI_FREE;
+              } else {
+                read_data_register();
+                write_data_register(mp_buf[m_cur_byte]);
+                m_cur_byte++;
+              }
+            }
+          } break;
         }
       }
     } break;
