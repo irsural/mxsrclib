@@ -65,8 +65,8 @@ public:
   avr_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc, spi_type_t a_spi_type);
   virtual ~avr_spi_t();
   virtual void abort();
-  virtual void read(irs_u8 *ap_buf,irs_uarc a_size);
-  virtual void write(const irs_u8 *ap_buf,irs_uarc a_size);
+  virtual void read(irs_u8* ap_buf,irs_uarc a_size);
+  virtual void write(const irs_u8* ap_buf,irs_uarc a_size);
   virtual status_t get_status();
   virtual void lock();
   virtual void unlock();
@@ -77,8 +77,8 @@ public:
   virtual bool set_order(order_t a_order);
   virtual bool set_data_size(irs_u16 /*a_data_size*/) {return true;}
   virtual void tick();
-  virtual void read_write(irs_u8 /**ap_read_buf*/, 
-    const irs_u8 /**ap_write_buf*/, irs_uarc /*a_size*/) {}
+  virtual void read_write(irs_u8* /*ap_read_buf*/, 
+    const irs_u8* /*ap_write_buf*/, irs_uarc /*a_size*/) {}
   void init_default();
 };
 
