@@ -70,6 +70,8 @@ struct rect_t {
     right(a_rect.right),
     bottom(a_rect.bottom)
   {}
+  inline bool operator==(const rect_t& a_rect) const;
+  inline bool operator!=(const rect_t& a_rect) const;
   inline size_type width() const;
   inline size_type height() const;
   //! \brief Перемещает диапазон в точку с координатами (a_left, a_top).
@@ -101,6 +103,19 @@ inline rect_t rect_union(const rect_t& a_first_rect,
   const rect_t& a_second_rect)
 {
   return a_first_rect.get_united(a_second_rect);
+}
+
+inline bool rect_t::operator==(const rect_t& a_rect) const
+{
+  return (left == a_rect.left) &&
+    (top == a_rect.top) &&
+    (right == a_rect.right) &&
+    (bottom == a_rect.bottom);
+}
+
+inline bool rect_t::operator!=(const rect_t& a_rect) const
+{
+  return !operator==(a_rect);
 }
 
 inline rect_t::size_type rect_t::width() const
