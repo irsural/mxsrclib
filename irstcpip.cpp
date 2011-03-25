@@ -102,7 +102,7 @@ void irs::hton32(irs_u8* ap_network_out, irs_u32 a_host_in)
 irs::arp_cash_t::arp_cash_t(irs_size_t a_size):
   m_cash(a_size),
   m_pos(0),
-  m_reset_timer(60, 1)
+  m_reset_timer(irs::make_cnt_s(600))
 {
 }
 
@@ -163,6 +163,141 @@ void irs::arp_cash_t::resize(irs_size_t a_size)
   }
 }
 
+void irs::arp_cash_t::tick()
+{
+}
+
+//----------------- NEW ARP -----------------------
+
+irs::arp_t::arp_t(
+  simple_ethernet_t* ap_ethernet,
+  const mxip_t& a_local_ip,
+  irs_size_t a_size
+):
+  m_cash(a_size),
+  m_pos(0),
+  mp_ethernet(ap_ethernet),
+  m_new_recv_packet(true),
+  m_buf_num(mp_ethernet->get_buf_num()),
+  mp_recv_buf(mp_ethernet->get_recv_buf()),
+  mp_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
+    mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
+  m_local_ip(a_local_ip),
+  m_mac(mp_ethernet->get_local_mac())
+{
+}
+
+bool irs::arp_t::ip_to_mac(const mxip_t& a_ip, mxmac_t& a_mac)
+{
+  for (cash_item_const_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
+    if (it->valid) {
+      if (it->ip == a_ip) {
+        a_mac = it->mac;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Добавление ip и mac в ARP-таблицу
+void irs::arp_t::add(const mxip_t& a_ip, const mxmac_t& a_mac)
+{
+  bool ip_finded = false;
+  for (cash_item_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
+    if (it->valid) {
+      if (it->ip == a_ip) {
+        it->mac = a_mac;
+        it->ttl.start();
+        ip_finded = true;
+      }
+    }
+  }
+  if (!ip_finded) {
+    m_cash[m_pos].ip = a_ip;
+    m_cash[m_pos].mac = a_mac;
+    m_cash[m_pos].ttl.start();
+    m_cash[m_pos].reset_timer.start();
+    m_cash[m_pos].valid = true;
+    ++m_pos;
+    if (m_pos >= m_cash.size()) {
+      m_pos = 0;
+    }
+  }
+}
+
+void irs::arp_t::add_static(const mxip_t& a_ip, const mxmac_t& a_mac)
+{
+  bool ip_finded = false;
+  for (cash_item_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
+    if (it->valid) {
+      if (it->ip == a_ip) {
+        it->mac = a_mac;
+        it->ttl.stop();
+        it->reset_timer.stop();
+        it->mode = static_note;
+        ip_finded = true;
+      }
+    }
+  }
+  if (!ip_finded) {
+    m_cash[m_pos].ip = a_ip;
+    m_cash[m_pos].mac = a_mac;
+    //m_cash[m_pos].ttl.stop();
+    //m_cash[m_pos].reset_timer.stop();
+    m_cash[m_pos].mode = static_note;
+    m_cash[m_pos].valid = true;
+    ++m_pos;
+    if (m_pos >= m_cash.size()) {
+      m_pos = 0;
+    }
+  }
+}
+
+irs_size_t irs::arp_t::size() const
+{
+  return (irs_size_t)m_cash.size();
+}
+
+void irs::arp_t::resize(irs_size_t a_size)
+{
+  if (a_size < 1) {
+    a_size = 1;
+  }
+  m_cash.resize(a_size);
+  if (m_pos >= m_cash.size()) {
+    m_pos = 0;
+  }
+}
+
+void irs::arp_t::tick()
+{
+  mp_ethernet->tick();
+  for (cash_item_it_t it = m_cash.begin(); it != m_cash.end(); ++it) {
+    if (it->mode == dinamic_note) {
+      if(it->ttl.check() || it->reset_timer.check()) {
+        it->valid = false;
+      }
+    }
+  }
+  
+  /*if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet) {
+    m_new_recv_packet = false;
+    if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ARP)) &&
+      (mp_recv_buf[ether_type_1] == IRS_CONST_LOBYTE(ARP)))
+    {
+      mxip_t ip = IRS_TCPIP_IP(mp_recv_buf + arp_target_ip);
+      if(ip == m_local_ip) {
+        
+      }
+    } else {
+      m_new_recv_packet = true;
+    }
+  }*/
+}
+
+//---------------------- END NEW ARP ---------------------
+
 irs::simple_tcpip_t::simple_tcpip_t(
   simple_ethernet_t* ap_ethernet,
   const mxip_t& a_local_ip,
@@ -196,7 +331,8 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
     mp_ethernet->is_recv_buf_filled()),
   m_connection_wait_arp_timer(make_cnt_s(1)),
-  m_arp_cash(a_arp_cash_size),
+  //m_arp_cash(a_arp_cash_size),
+  m_arp_cash(ap_ethernet, a_local_ip, a_arp_cash_size),
   m_dest_mac(IRS_TCPIP_MAC(mp_send_buf)),
   m_cur_dest_ip(mxip_t::zero_ip()),
   m_cur_dest_port(0),
@@ -812,6 +948,7 @@ void irs::simple_tcpip_t::send_arp()
   m_send_arp = false;
   m_new_recv_packet = true;
   IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправлен arp-пакет") << endl);
+  irs::mlog() << irsm("отправлен arp-пакет") << endl;
 }
 
 void irs::simple_tcpip_t::icmp_packet()
@@ -1976,6 +2113,7 @@ irs_size_t irs::simple_tcpip_t::send_data_size_max()
 void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
+  m_arp_cash.tick();
   
   if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet)
   {
