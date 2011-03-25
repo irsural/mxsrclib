@@ -172,7 +172,7 @@ void irs::udp::arp_cash_t::add(const ip_t& a_ip, const mac_t& a_mac)
     m_cash[m_pos].mac = a_mac;
     m_cash[m_pos].valid = true;
     ++m_pos;
-    if (m_pos > m_cash.size()) m_pos = 0;
+    if (m_pos >= m_cash.size()) m_pos = 0;
   }
 }
 inline irs_uarc irs::udp::arp_cash_t::size() const
@@ -183,7 +183,7 @@ void irs::udp::arp_cash_t::resize(irs_uarc a_size)
 {
   if (a_size < 1) a_size = 1;
   m_cash.resize(a_size);
-  if (m_pos > m_cash.size()) m_pos = 0;
+  if (m_pos >= m_cash.size()) m_pos = 0;
 }
   
 namespace {
