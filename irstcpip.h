@@ -94,6 +94,7 @@ public:
   void add(const mxip_t& a_ip, const mxmac_t& a_mac);
   inline irs_size_t size() const;
   void resize(irs_size_t a_size);
+  void tick();
 private:
   struct cash_item_t {
     mxip_t ip;
@@ -118,6 +119,80 @@ private:
   irs_size_t m_pos;
   irs::loop_timer_t m_reset_timer;
 };
+
+class arp_t
+{
+public:
+  typedef simple_ethernet_t::buffer_num_t buffer_num_t;
+  
+  enum {
+    arp_table_size = 3
+  };
+  enum mode_t {
+    static_note,
+    dinamic_note
+  };
+
+  arp_t(
+    simple_ethernet_t* ap_ethernet,
+    const mxip_t& a_local_ip,
+    irs_size_t a_size = arp_table_size);
+  bool ip_to_mac(const mxip_t& a_ip, mxmac_t& a_mac);
+  void add(const mxip_t& a_ip, const mxmac_t& a_mac);
+  void add_static(const mxip_t& a_ip, const mxmac_t& a_mac);
+  irs_size_t size() const;
+  void resize(irs_size_t a_size);
+  void tick();
+private:
+  enum {
+    ARP = 0x0806,
+    ether_type_0 = 0xc,
+    ether_type_1 = 0xd,
+    arp_operation_code_0 = 0x14,
+    arp_operation_code_1 = 0x15,
+    arp_sender_mac = 0x16,
+    arp_sender_ip = 0x1c,
+    arp_target_mac = 0x20,
+    arp_target_ip = 0x26
+  };
+  struct cash_item_t {
+    mxip_t ip;
+    mxmac_t mac;
+    irs::timer_t ttl;
+    irs::timer_t reset_timer;
+    mode_t mode;
+    bool valid;
+    
+    cash_item_t(
+      mxip_t a_ip = mxip_t::zero_ip(),
+      mxmac_t a_mac = mxmac_t::zero_mac(),
+      irs::timer_t a_ttl = irs::make_cnt_s(120),
+      irs::timer_t a_reset_timer = irs::make_cnt_s(600),
+      mode_t a_mode = dinamic_note,
+      bool a_valid = false
+    ):
+      ip(a_ip),
+      mac(a_mac),
+      ttl(a_ttl),
+      reset_timer(a_reset_timer),
+      mode(a_mode),
+      valid(a_valid)
+    {
+    }
+  };
+  typedef vector<cash_item_t>::iterator cash_item_it_t;
+  typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
+  
+  vector<cash_item_t> m_cash;
+  irs_size_t m_pos;
+  simple_ethernet_t* mp_ethernet;
+  bool m_new_recv_packet;
+  buffer_num_t m_buf_num;
+  irs_u8* mp_recv_buf;
+  irs_u8* mp_send_buf;
+  mxip_t m_local_ip;
+  mxmac_t m_mac;
+}; // class arp_t
 
 //! \brief Стек протоколов TCP/IP
 //! \author Sergeev Sergey
@@ -382,7 +457,8 @@ private:
   irs_u8* mp_user_send_buf;
   bool m_send_buf_filled;
   timer_t m_connection_wait_arp_timer;
-  arp_cash_t m_arp_cash;
+  //arp_cash_t m_arp_cash;
+  arp_t m_arp_cash;
   mxmac_t& m_dest_mac;
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
@@ -408,6 +484,7 @@ private:
   irs_u32 m_tcp_init_seq;
   timer_t m_disconnect_timer;
   loop_timer_t m_base_timer;
+  loop_timer_t m_recv_timout;
   
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
