@@ -161,6 +161,7 @@ public:
       }
       #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
       if (!f_Gpib32Lib) {
+        IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
         //ShowMessage("Библиотека GPIB-32.DLL не найдена");
         return;
       }
@@ -189,17 +190,20 @@ public:
     return;
 
     def_dll_err:
+    IRS_LIB_ERROR(irs::ec_standard, "Ошибка при подключении функций GPIB-32.DLL");
     //ShowMessage("Ошибка при подключении функций GPIB-32.DLL");
     return;
   }
   // Деинициализация
   void deinit()
   {
-    f_count_init--;
-    if (!f_count_init) {
-      if (f_Gpib32Lib) FreeLibrary(f_Gpib32Lib);
-      f_Gpib32Lib = IRS_NULL;
-      f_init_fail = irs_true;
+    if (!f_init_fail) {
+      f_count_init--;
+      if (!f_count_init) {
+        if (f_Gpib32Lib) FreeLibrary(f_Gpib32Lib);
+        f_Gpib32Lib = IRS_NULL;
+        f_init_fail = irs_true;
+      }
     }
   }
   irs_i32 get_ibsta()
