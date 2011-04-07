@@ -2144,7 +2144,7 @@ irs::hardflow::simple_udp_flow_t::size_type
       if (m_cur_channel == m_channel) {
         m_cur_channel -= m_channel_max_count;
       } else if ((m_cur_channel < m_channel) &&
-        (m_cur_channel >= (m_channel - m_channel_max_count) ))
+        (m_cur_channel >= (m_channel - m_channel_max_count)))
       {
         m_cur_channel++;
       }

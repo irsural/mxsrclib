@@ -66,9 +66,10 @@
 #define GPIO_DIR 0x400
 #define GPIO_DEN 0x51C
 #define GPIO_LOCK 0x520
-#define GPIO_UNLOCK_VALUE 0x4C4F434B
-#define GPIO_PCTL 0x52C
+#define GPIO_CR 0x524
 #define GPIO_AMSEL 0x528
+#define GPIO_PCTL 0x52C
+#define GPIO_UNLOCK_VALUE 0x4C4F434B
 #define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
 #define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
 
@@ -3093,6 +3094,7 @@ __IO_REG32_BIT(GPIOBPDR,          0x40005514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBSLR,          0x40005518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBDEN,          0x4000551C,__READ_WRITE ,__gpio_bits);
 #ifdef __LM3SxBxx__
+__IO_REG32_BIT(GPIOBCR,           0x40005524,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBAMSEL,        0x40005528,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOBPCTL,         0x4000552C,__READ_WRITE ,__gpio_pctl_bits);
 #endif // __LM3SxBxx__

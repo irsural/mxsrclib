@@ -312,7 +312,7 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
   }
 }
 
-void irs::arm::arm_spi_t::write(const irs_u8* ap_buf,irs_uarc a_size)
+void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
 {
   if (mp_buf.size()) {
     m_packet_size = irs_u8(a_size);

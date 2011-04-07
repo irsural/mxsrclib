@@ -25,12 +25,12 @@ public:
   {
     irs::arm::interrupt_array()->int_event_gen(irs::arm::hard_fault_int)->
       add(this);
-    irs::arm::interrupt_array()->int_event_gen(irs::arm::mem_manage_int)->
+    /*irs::arm::interrupt_array()->int_event_gen(irs::arm::mem_manage_int)->
       add(this);
     irs::arm::interrupt_array()->int_event_gen(irs::arm::bus_fault_int)->
       add(this);
     irs::arm::interrupt_array()->int_event_gen(irs::arm::usage_fault_int)->
-      add(this);
+      add(this);*/
   }
   irs::blink_t m_hard_fault_blink;
   irs_u32 m_MMFAR;
