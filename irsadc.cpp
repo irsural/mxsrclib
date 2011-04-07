@@ -1542,7 +1542,7 @@ void irs::adc_adc102s021_t::tick()
 irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
   m_status(DAC_FREE),
   mp_spi(ap_spi),
-  m_wait_timer(irs::make_cnt_us(1)),
+  m_wait_timer(irs::make_cnt_us(2)),
   m_need_write(false),
   m_need_first_write(true),
   mp_cs_pin(ap_cs_pin)
@@ -1571,7 +1571,8 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
       mp_spi->tick();
     mp_cs_pin->set();
     mp_buf[1] = (1 << 1);
-        
+    
+    m_wait_timer.set(irs::make_cnt_ms(2));
     m_wait_timer.start();
     while(!m_wait_timer.check());
     memset((void*)mp_write_buf, 0, m_size);
@@ -1583,6 +1584,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
       mp_spi->tick();
     mp_cs_pin->set();
     
+    m_wait_timer.set(irs::make_cnt_us(2));
     m_wait_timer.start();
     while(!m_wait_timer.check());
     memset((void*)mp_write_buf, 0, m_size);
