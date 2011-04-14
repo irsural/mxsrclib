@@ -872,13 +872,13 @@ class adc_adc102s021_t : public mxdata_t
 
 struct adc_adc102s021_data_t
 {
-  irs::conn_data_t<irs_u16> voltage_code1;
-  irs::conn_data_t<irs_u16> voltage_code2;
+  irs::conn_data_t<irs_u16> voltage_code_A;
+  irs::conn_data_t<irs_u16> voltage_code_B;
 
   
   adc_adc102s021_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
-    voltage_code1(),
-    voltage_code2()
+    voltage_code_A(),
+    voltage_code_B()
   {
     connect(ap_data, a_start_index);    
   }  
@@ -886,8 +886,8 @@ struct adc_adc102s021_data_t
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
-    index = voltage_code1.connect(ap_data, index);
-    index = voltage_code2.connect(ap_data, index);
+    index = voltage_code_A.connect(ap_data, index);
+    index = voltage_code_B.connect(ap_data, index);
   }
 };
 
@@ -924,7 +924,6 @@ class dac_ad5293_t : public mxdata_t
   /*static const irs_u8 ZERO0_bit = 6; //не используемый бит
   static const irs_u8 ZERO1_bit = 7; //не используемый бит*/
   bool m_need_write;
-  bool m_need_first_write;
   //  CS
   gpio_pin_t *mp_cs_pin;
 public:
@@ -938,7 +937,7 @@ public:
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
-};
+}; // dac_ad5293_t
 
 struct dac_ad5293_data_t
 {
@@ -956,6 +955,94 @@ struct dac_ad5293_data_t
     index = resistance_code.connect(ap_data, index);
   }
 };
+
+//--------------------------  AT25128A_256A ------------------------------------
+class eeprom_at25128a_t : public mxdata_t
+{
+public:
+  eeprom_at25128a_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_u32 a_ee_size);
+  ~eeprom_at25128a_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  enum spi_status_t {
+    EE_SEARCH_DATA_OPERATION,
+    EE_SPI_READ_WRITE_BEGIN,
+    EE_SPI_READ_END,
+    EE_SPI_WREN,
+    EE_SPI_WRITE_CONTINUE,
+    EE_SPI_WRITE_END,
+    EE_SPI_GET_WRITE_STATUS_BEGIN,
+    EE_SPI_GET_WRITE_STATUS_END,
+    EE_WRITE_CRC32,
+    EE_SPI_RESET
+  };
+  enum ee_write_status_t {
+    complete,
+    busy
+  };
+  enum {
+    m_start_index = 0x0,
+    
+    m_spi_size = 4,
+    m_spi_read_command_size = 3,
+    m_spi_write_command_size = 4,
+    m_read_status_command_size = 2,
+    m_wren_command_size = 1,
+    
+    m_crc_size = sizeof(irs_u32),
+    
+    PAGE_SIZE = 64,
+    
+    // INSTRUCTION CODES
+    WREN = 0x06,
+    WRDI = 0x04,
+    RDSR = 0x05,
+    WRSR = 0x01,
+    READ = 0x03,
+    WRITE = 0x02,
+    
+    // STATUS REGISTER BIT
+    RDY = 0,
+    WEN = 1,
+    BP0 = 2,
+    BP1 = 3,
+    WPEN = 7
+  };
+  spi_status_t m_spi_status;
+  ee_write_status_t m_ee_write_status;
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  irs_u32 m_ee_size;
+  bool m_need_write;
+  bool m_need_read;
+  bool m_crc_error;
+  irs_u32 m_read_size;
+  irs_u32 m_read_index;
+  irs_u32 m_write_size;
+  irs_u32 m_write_index;
+  bool m_crc_need_recalc;
+  vector<bool> m_need_writes;
+  size_t m_start_block;
+  size_t m_search_index;
+  bool m_crc_read;
+  irs_u8* mp_buf;
+  irs_u8* mp_read_buf;
+  irs_u8* mp_write_buf;
+  irs_u8* mp_send_buf;
+  
+  bool error();
+  irs_u32 calc_old_crc();
+  irs_u32 calc_new_crc();
+  irs_u32 read_crc_eeprom();
+  
+}; // eeprom_at25128a_t
 
 //! @}
 
