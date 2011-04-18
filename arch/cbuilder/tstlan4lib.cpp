@@ -2,7 +2,7 @@
 //! \ingroup user_interface_group
 //! \brief Тест сети 4 - библиотека
 //!
-//! Дата: 15.09.2010\n
+//! Дата: 17.04.2011\n
 //! Дата создания: 17.09.2009
 
 #include <irspch.h>
@@ -57,9 +57,11 @@ irs::tstlan4_t::tstlan4_t(
   if (m_form_type == ft_internal) {
     mp_form_auto.reset(new TForm(IRS_NULL, 1));
     mp_form = mp_form_auto.get();
-    mp_form->Width = 600;
+    mp_form->Left = 10;
+    mp_form->Top = 50;
+    mp_form->Width = 500;
     mp_form->Height = 800;
-    mp_form->Position = poDesktopCenter;
+    mp_form->Position = poDesigned;
     mp_form->Caption = "Тест сети 4";
     init(mp_form_auto.get());
   }
@@ -132,6 +134,14 @@ void irs::tstlan4_t::resize_chart(const irs_u32 a_size)
 {
   mp_controls->resize_chart(a_size);
 }
+void irs::tstlan4_t::options_event_connect(event_t* ap_event)
+{
+  mp_controls->options_event_connect(ap_event);
+}
+void irs::tstlan4_t::options_event_clear()
+{
+  mp_controls->options_event_clear();
+}
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
@@ -148,6 +158,7 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_load_btn(new TButton(mp_form)),
   mp_start_btn(new TButton(mp_form)),
   mp_chart_btn(new TButton(mp_form)),
+  mp_options_btn(new TButton(mp_form)),
   mp_log_memo(new TMemo(mp_form)),
   mp_splitter(new TSplitter(mp_form)),
   mp_grid_popup_insert_item(new TMenuItem(mp_form)),
@@ -194,7 +205,8 @@ irs::tstlan4_t::controls_t::controls_t(
   m_ini_section_prefix(a_ini_section_prefix),
   m_start(false),
   m_first(true),
-  m_is_created_csv(false)
+  m_is_created_csv(false),
+  mp_event(IRS_NULL)
 {
   m_buf.connect(mp_log_memo);
   m_ini_file.set_ini_name(a_ini_name.c_str());
@@ -230,6 +242,12 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_load_btn->Parent = mp_top_panel;
   mp_load_btn->OnClick = CsvLoadBtnClick;
 
+  mp_options_btn->Left = mp_load_btn->Left + mp_load_btn->Width + btn_gap;
+  mp_options_btn->Top = mp_top_panel->Height/2 - mp_options_btn->Height/2;
+  mp_options_btn->Caption = "Настройки";
+  mp_options_btn->Parent = mp_top_panel;
+  mp_options_btn->OnClick = OptionsBtnClick;
+
   mp_log_memo->Align = alTop;
   mp_log_memo->Height = 100;
   mp_log_memo->Parent = mp_form;
@@ -243,6 +261,8 @@ irs::tstlan4_t::controls_t::controls_t(
 
   mp_grid_popup_insert_item->Caption = "Добавить строку";
   mp_grid_popup_insert_item->OnClick = GridInsertClick;
+  //mp_grid_popup_insert_item->ShortCut =
+    //ShortCut(VK_INSERT, TShiftState() << ssCtrl);
   mp_grid_popup_delete_item->Caption = "Удалить строку";
   mp_grid_popup_delete_item->OnClick = GridDeleteClick;
   mp_grid_popup->Items->Add(mp_grid_popup_insert_item);
@@ -723,13 +743,15 @@ void __fastcall irs::tstlan4_t::controls_t::VarsGridKeyDown(
 
   // Вставака/удаление строк
   if (!m_is_grid_edit) {
-    switch (Key) {
-      case VK_INSERT: {
-        GridInsertClick(this);
-      } break;
-      case VK_DELETE: {
-        GridDeleteClick(this);
-      } break;
+    if (Shift.Contains(ssCtrl)) {
+      switch (Key) {
+        case VK_INSERT: {
+          GridInsertClick(this);
+        } break;
+        case VK_DELETE: {
+          GridDeleteClick(this);
+        } break;
+      }
     }
   }
 }
@@ -800,6 +822,12 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     m_csv_open_file.close();
   }
 }
+void __fastcall irs::tstlan4_t::controls_t::OptionsBtnClick(TObject *Sender)
+{
+  if (mp_event) {
+    mp_event->exec();
+  }
+}
 void __fastcall irs::tstlan4_t::controls_t::GridInsertClick(TObject *Sender)
 {
   m_refresh_grid = true;
@@ -850,5 +878,13 @@ void __fastcall irs::tstlan4_t::controls_t::FormShow(TObject *Sender)
 TMemo* irs::tstlan4_t::controls_t::log()
 {
   return mp_log_memo;
+}
+void irs::tstlan4_t::controls_t::options_event_connect(event_t* ap_event)
+{
+  mp_event = ap_event;
+}
+void irs::tstlan4_t::controls_t::options_event_clear()
+{
+  mp_event = IRS_NULL;
 }
 

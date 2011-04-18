@@ -963,6 +963,11 @@ irs::mxdata_to_mxnet_t::~mxdata_to_mxnet_t()
   deinit_to_cnt();
 }
 
+void irs::mxdata_to_mxnet_t::connect(mxnetc *ap_mxnet)
+{
+  mp_mxnet = ap_mxnet;
+}
+
 double irs::mxdata_to_mxnet_t::measured_interval()
 {
   if (!m_measured_interval_bad_alloc) {
@@ -1224,5 +1229,23 @@ void irs::mxdata_to_mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
     mp_buf[index] &= irs_u8((1 << bit_index)^0xFF);
     m_write_vector[index] = true;
   }
+}
+
+// Преобразователь mxnetc в mxdata_t со встроенным mxnetc
+irs::mxnetc_data_t::mxnetc_data_t(mxifa_ch_t a_channel,
+  const counter_t &a_connect_interval, const counter_t &a_update_interval
+):
+  mxdata_to_mxnet_t(IRS_NULL, a_connect_interval, a_update_interval),
+  m_mxnetc(a_channel)
+{
+  this->connect(&m_mxnetc);
+}
+void irs::mxnetc_data_t::ip(mxip_t a_ip)
+{
+  m_mxnetc.set_dest_ip(a_ip);
+}
+void irs::mxnetc_data_t::port(irs_u16 a_port)
+{
+  m_mxnetc.set_dest_port(a_port);
 }
 

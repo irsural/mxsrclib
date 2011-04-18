@@ -2,7 +2,7 @@
 //! \ingroup file_in_out_group
 //! \brief Работа с ini-файлами
 //!
-//! Дата: 09.08.2010\n
+//! Дата: 17.04.2011\n
 //! Ранняя дата: 27.08.2009
 
 #include <irspch.h>
@@ -45,6 +45,7 @@ irs::ini_file_t::ini_file_t():
   m_radio_groups(),
   m_string_grids(),
   m_value_list_editors(),
+  m_forms(),
   m_ini_name(),
   m_section(irst("Options"))
 {
@@ -345,6 +346,15 @@ void irs::ini_file_t::add(const String& a_name, TValueListEditor* a_control)
     m_value_list_editors.push_back(value_list_editor);
   }
 }
+void irs::ini_file_t::add(const String& a_name, TForm* a_control)
+{
+  string_t name = a_name.c_str();
+  form_t form(m_section, name, a_control);
+  if (find(m_forms.begin(), m_forms.end(), form) == m_forms.end())
+  {
+    m_forms.push_back(form);
+  }
+}
 void irs::ini_file_t::load()
 {
   if (FileExists(m_ini_name.c_str())) {
@@ -580,7 +590,7 @@ void irs::ini_file_t::load()
         value_list_editor_it->section.c_str(),
         (value_list_editor_it->name + irst("key_col_width")).c_str(),
         value_list_editor_it->control->ColWidths[0]
-      );      
+      );
       int row_cnt = IniFile->ReadInteger(
         value_list_editor_it->section.c_str(),
         (value_list_editor_it->name + irst("count")).c_str(),
@@ -606,7 +616,19 @@ void irs::ini_file_t::load()
         //value_list_editor_it->control->InsertRow(key, value, true);
       }
     }
-  }                        
+    for (vector<form_t>::iterator form_it = m_forms.begin();
+      form_it != m_forms.end(); form_it++)
+    {
+      form_it->control->Top = IniFile->ReadInteger(form_it->section.c_str(),
+        (form_it->name + irst("Top")).c_str(), form_it->control->Top);
+      form_it->control->Left = IniFile->ReadInteger(form_it->section.c_str(),
+        (form_it->name + irst("Left")).c_str(), form_it->control->Left);
+      form_it->control->Height = IniFile->ReadInteger(form_it->section.c_str(),
+        (form_it->name + irst("Height")).c_str(), form_it->control->Height);
+      form_it->control->Width = IniFile->ReadInteger(form_it->section.c_str(),
+        (form_it->name + irst("Width")).c_str(), form_it->control->Width);
+    }
+  }
 }
 
 void irs::ini_file_t::save() const
@@ -802,6 +824,18 @@ void irs::ini_file_t::save() const
       );
     }
   }
+    for (vector<form_t>::const_iterator form_it = m_forms.begin();
+      form_it != m_forms.end(); form_it++)
+    {
+      IniFile->WriteInteger(form_it->section.c_str(),
+        (form_it->name + irst("Top")).c_str(), form_it->control->Top);
+      IniFile->WriteInteger(form_it->section.c_str(),
+        (form_it->name + irst("Left")).c_str(), form_it->control->Left);
+      IniFile->WriteInteger(form_it->section.c_str(),
+        (form_it->name + irst("Height")).c_str(), form_it->control->Height);
+      IniFile->WriteInteger(form_it->section.c_str(),
+        (form_it->name + irst("Width")).c_str(), form_it->control->Width);
+    }
 }
 void irs::ini_file_t::save_grid_row(TStringGrid *a_control,
   int a_row_index) const
@@ -841,6 +875,7 @@ void irs::ini_file_t::clear_control()
   m_radio_groups.clear();
   m_string_grids.clear();
   m_value_list_editors.clear();
+  m_forms.clear();
 }
 TTabSheet *irs::ini_file_t::FindTabSheet(TPageControl *a_control,
   const String &a_name)

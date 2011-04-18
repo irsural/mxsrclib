@@ -268,6 +268,8 @@ class mxdata_to_mxnet_t : public mxdata_t
   auto_ptr<mx_time_int_t> mp_measured_interval_alg;
   bool m_measured_interval_bad_alloc;
   bool m_first_connect;
+protected:
+  void connect(mxnetc *ap_mxnet);
 public:
   mxdata_to_mxnet_t(mxnetc *ap_mxnet,
     const counter_t &a_connect_interval = irs_mxdata_to_mxnet_def_interval,
@@ -282,6 +284,21 @@ public:
   void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   double measured_interval();
   void tick();
+};
+
+// Преобразователь mxnetc в mxdata_t со встроенным mxnetc
+class mxnetc_data_t: public mxdata_to_mxnet_t
+{
+public:
+  mxnetc_data_t(
+    mxifa_ch_t a_channel,
+    const counter_t &a_connect_interval = irs_mxdata_to_mxnet_def_interval,
+    const counter_t &a_update_interval = irs_mxdata_to_mxnet_def_interval
+  );
+  void ip(mxip_t a_ip);
+  void port(irs_u16 a_port);
+private:
+  mxnetc m_mxnetc;
 };
 
 //! @}

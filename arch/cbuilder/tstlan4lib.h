@@ -67,6 +67,8 @@ public:
   virtual void save_conf();
   virtual void update_time(const irs_i32 a_update_time);
   virtual void resize_chart(const irs_u32 a_size);
+  virtual void options_event_connect(event_t* ap_event);
+  virtual void options_event_clear();
 private:
   class controls_t: public TObject
   {
@@ -86,6 +88,8 @@ private:
     void resize_chart(const irs_u32 a_size);
     // Консоль внутри tstlan4
     TMemo* log();
+    void options_event_connect(event_t* ap_event);
+    void options_event_clear();
     void tick();
   private:
     struct netconn_t {
@@ -281,6 +285,7 @@ private:
     TButton* mp_load_btn;
     TButton* mp_start_btn;
     TButton* mp_chart_btn;
+    TButton* mp_options_btn;
     TMemo* mp_log_memo;
     TSplitter* mp_splitter;
     TMenuItem* mp_grid_popup_insert_item;
@@ -329,7 +334,7 @@ private:
     bool m_start;
     bool m_first;
     bool m_is_created_csv;
-
+    event_t* mp_event;
 
     template <class T>
     void out_number(ostream_t& a_stream, const T& a_value);
@@ -367,6 +372,7 @@ private:
     void __fastcall ChartBtnClick(TObject *Sender);
     void __fastcall CsvSaveBtnClick(TObject *Sender);
     void __fastcall CsvLoadBtnClick(TObject *Sender);
+    void __fastcall OptionsBtnClick(TObject *Sender);
     void __fastcall GridInsertClick(TObject *Sender);
     void __fastcall GridDeleteClick(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);

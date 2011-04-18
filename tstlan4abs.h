@@ -32,6 +32,8 @@ public:
   virtual void save_conf() = 0;
   virtual void update_time(const irs_i32 a_update_time) = 0;
   virtual void resize_chart(const irs_u32 a_size) = 0;
+  virtual void options_event_connect(event_t* ap_event) = 0;
+  virtual void options_event_clear() = 0;
 };
 
 //! @}
