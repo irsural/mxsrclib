@@ -780,6 +780,12 @@ typedef struct {
   __REG32                 :31;
 } __wdtmis_bits;
 
+typedef struct {
+  __REG32                 : 7;
+  __REG32  STALL          : 1;
+  __REG32                 : 24;
+} __wdttest_bits;
+
 /* Analog-to-Digital Converter Active Sample Sequencer (ADCACTSS) */
 typedef struct {
   __REG32  ASEN0          : 1;
@@ -3551,6 +3557,58 @@ __IO_REG32_BIT(ADC1SSMUX3,         0x400390A0,__READ_WRITE ,__adcssmux3_bits);
 __IO_REG32_BIT(ADC1SSCTL3,         0x400390A4,__READ_WRITE ,__adcssctl3_bits);
 __IO_REG32_BIT(ADC1SSFIFO3,        0x400390A8,__READ       ,__adcssfifo3_bits);
 __IO_REG32_BIT(ADC1SSFSTAT3,       0x400390AC,__READ       ,__adcssfstat3_bits);
+
+/***************************************************************************
+ **
+ ** WDT0
+ **
+ ***************************************************************************/
+__IO_REG32(    WDT0LOAD,           0x40000000,__READ_WRITE);
+__IO_REG32(    WDT0VALUE,          0x40000004,__READ);
+__IO_REG32_BIT(WDT0CTL,            0x40000008,__READ_WRITE ,__wdtctl_bits);
+__IO_REG32(    WDT0ICR,            0x4000000C,__WRITE);
+__IO_REG32_BIT(WDT0RIS,            0x40000010,__READ       ,__wdtris_bits);
+__IO_REG32_BIT(WDT0MIS,            0x40000014,__READ       ,__wdtmis_bits);
+__IO_REG32_BIT(WDT0TEST,           0x40000418,__READ_WRITE ,__wdttest_bits);
+__IO_REG32(    WDT0LOCK,           0x40000C00,__READ_WRITE);
+__IO_REG8(     WDT0PERIPHID4,      0x40000FD0,__READ);
+__IO_REG8(     WDT0PERIPHID5,      0x40000FD4,__READ);
+__IO_REG8(     WDT0PERIPHID6,      0x40000FD8,__READ);
+__IO_REG8(     WDT0PERIPHID7,      0x40000FDC,__READ);
+__IO_REG8(     WDT0PERIPHID0,      0x40000FE0,__READ);
+__IO_REG8(     WDT0PERIPHID1,      0x40000FE4,__READ);
+__IO_REG8(     WDT0PERIPHID2,      0x40000FE8,__READ);
+__IO_REG8(     WDT0PERIPHID3,      0x40000FEC,__READ);
+__IO_REG8(     WDT0PCELLID0,       0x40000FF0,__READ);
+__IO_REG8(     WDT0PCELLID1,       0x40000FF4,__READ);
+__IO_REG8(     WDT0PCELLID2,       0x40000FF8,__READ);
+__IO_REG8(     WDT0PCELLID3,       0x40000FFC,__READ);
+
+/***************************************************************************
+ **
+ ** WDT1
+ **
+ ***************************************************************************/
+__IO_REG32(    WDT1LOAD,           0x40001000,__READ_WRITE);
+__IO_REG32(    WDT1VALUE,          0x40001004,__READ);
+__IO_REG32_BIT(WDT1CTL,            0x40001008,__READ_WRITE ,__wdtctl_bits);
+__IO_REG32(    WDT1ICR,            0x4000100C,__WRITE);
+__IO_REG32_BIT(WDT1RIS,            0x40001010,__READ       ,__wdtris_bits);
+__IO_REG32_BIT(WDT1MIS,            0x40001014,__READ       ,__wdtmis_bits);
+__IO_REG32_BIT(WDT1TEST,           0x40001418,__READ_WRITE ,__wdttest_bits);
+__IO_REG32(    WDT1LOCK,           0x40001C00,__READ_WRITE);
+__IO_REG8(     WDT1PERIPHID4,      0x40001FD0,__READ);
+__IO_REG8(     WDT1PERIPHID5,      0x40001FD4,__READ);
+__IO_REG8(     WDT1PERIPHID6,      0x40001FD8,__READ);
+__IO_REG8(     WDT1PERIPHID7,      0x40001FDC,__READ);
+__IO_REG8(     WDT1PERIPHID0,      0x40001FE0,__READ);
+__IO_REG8(     WDT1PERIPHID1,      0x40001FE4,__READ);
+__IO_REG8(     WDT1PERIPHID2,      0x40001FE8,__READ);
+__IO_REG8(     WDT1PERIPHID3,      0x40001FEC,__READ);
+__IO_REG8(     WDT1PCELLID0,       0x40001FF0,__READ);
+__IO_REG8(     WDT1PCELLID1,       0x40001FF4,__READ);
+__IO_REG8(     WDT1PCELLID2,       0x40001FF8,__READ);
+__IO_REG8(     WDT1PCELLID3,       0x40001FFC,__READ);
 #else // __LM3SxBxx__
 /***************************************************************************
  **
@@ -3583,7 +3641,7 @@ __IO_REG32_BIT(ADCSSMUX3,         0x400380A0,__READ_WRITE ,__adcssmux3_bits);
 __IO_REG32_BIT(ADCSSCTL3,         0x400380A4,__READ_WRITE ,__adcssctl3_bits);
 __IO_REG32_BIT(ADCSSFIFO3,        0x400380A8,__READ       ,__adcssfifo3_bits);
 __IO_REG32_BIT(ADCSSFSTAT3,       0x400380AC,__READ       ,__adcssfstat3_bits);
-#endif // __LM3SxBxx__
+
 /***************************************************************************
  **
  ** WDT
@@ -3608,6 +3666,7 @@ __IO_REG8(     WDTPCELLID0,       0x40000FF0,__READ);
 __IO_REG8(     WDTPCELLID1,       0x40000FF4,__READ);
 __IO_REG8(     WDTPCELLID2,       0x40000FF8,__READ);
 __IO_REG8(     WDTPCELLID3,       0x40000FFC,__READ);
+#endif // __LM3SxBxx__
 
 /***************************************************************************
  **
