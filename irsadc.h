@@ -12,6 +12,7 @@
 #include <irsspi.h>
 #include <irsstd.h>
 #include <irsgpio.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -970,20 +971,30 @@ public:
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
+  bool error();
 private:
-  enum spi_status_t {
-    EE_SEARCH_DATA_OPERATION,
-    EE_SPI_READ_WRITE_BEGIN,
-    EE_SPI_READ_END,
-    EE_SPI_WREN,
-    EE_SPI_WRITE_CONTINUE,
-    EE_SPI_WRITE_END,
-    EE_SPI_GET_WRITE_STATUS_BEGIN,
-    EE_SPI_GET_WRITE_STATUS_END,
-    EE_WRITE_CRC32,
-    EE_SPI_RESET
+  enum mode_t {
+    get_status,
+    general
   };
-  enum ee_write_status_t {
+  enum check_status_mode_t {
+    send_command,
+    get_response
+  };
+  enum spi_status_t {
+    ee_search_data_operation,
+    ee_spi_read_write_begin,
+    ee_spi_read_end,
+    ee_spi_wren,
+    ee_spi_write_continue,
+    ee_spi_write_end,
+    /*ee_spi_get_write_status_begin,
+    ee_spi_get_write_status_end,*/
+    ee_write_crc32,
+    ee_write_crc32_end,
+    ee_spi_reset
+  };
+  enum ee_status_t {
     complete,
     busy
   };
@@ -997,47 +1008,50 @@ private:
     m_wren_command_size = 1,
     
     m_crc_size = sizeof(irs_u32),
+    m_crc_addr = 0,
     
-    PAGE_SIZE = 64,
+    m_PAGE_SIZE = 64,
     
     // INSTRUCTION CODES
-    WREN = 0x06,
-    WRDI = 0x04,
-    RDSR = 0x05,
-    WRSR = 0x01,
-    READ = 0x03,
-    WRITE = 0x02,
+    m_WREN = 0x06,
+    m_WRDI = 0x04,
+    m_RDSR = 0x05,
+    m_WRSR = 0x01,
+    m_READ = 0x03,
+    m_WRITE = 0x02,
     
     // STATUS REGISTER BIT
-    RDY = 0,
-    WEN = 1,
-    BP0 = 2,
-    BP1 = 3,
-    WPEN = 7
+    m_RDY = 0,
+    m_WEN = 1,
+    m_BP0 = 2,
+    m_BP1 = 3,
+    m_WPEN = 7
   };
   spi_status_t m_spi_status;
-  ee_write_status_t m_ee_write_status;
+  ee_status_t m_ee_status;
   spi_t* mp_spi;
   gpio_pin_t* mp_cs_pin;
-  irs_u32 m_ee_size;
+  size_t m_ee_size;
   bool m_need_write;
   bool m_need_read;
   bool m_crc_error;
-  irs_u32 m_read_size;
-  irs_u32 m_read_index;
-  irs_u32 m_write_size;
-  irs_u32 m_write_index;
+  size_t m_read_size;
+  irs_u16 m_read_index;
+  size_t m_write_size;
+  irs_u16 m_write_index;
   bool m_crc_need_recalc;
   vector<bool> m_need_writes;
   size_t m_start_block;
   size_t m_search_index;
   bool m_crc_read;
-  irs_u8* mp_buf;
-  irs_u8* mp_read_buf;
-  irs_u8* mp_write_buf;
-  irs_u8* mp_send_buf;
+  irs::raw_data_t<irs_u8> mp_buf;
+  irs::raw_data_t<irs_u8> mp_read_buf;
+  irs::raw_data_t<irs_u8> mp_write_buf;
+  irs::raw_data_t<irs_u8> mp_send_buf;
+  mode_t m_mode;
+  check_status_mode_t m_check_eeprom_status_mode;
+  size_t m_read_index_cur;
   
-  bool error();
   irs_u32 calc_old_crc();
   irs_u32 calc_new_crc();
   irs_u32 read_crc_eeprom();

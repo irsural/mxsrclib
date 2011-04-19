@@ -1769,8 +1769,8 @@ irs::eeprom_at25128a_t::eeprom_at25128a_t(
   gpio_pin_t* ap_cs_pin,
   irs_u32 a_ee_size
 ):
-  m_spi_status(EE_SEARCH_DATA_OPERATION),
-  m_ee_write_status(complete),
+  m_spi_status(ee_search_data_operation),
+  m_ee_status(complete),
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
   m_ee_size(a_ee_size),
@@ -1785,20 +1785,20 @@ irs::eeprom_at25128a_t::eeprom_at25128a_t(
   m_need_writes(m_ee_size),
   m_start_block(0),
   m_search_index(0),
-  m_crc_read(false)
+  m_crc_read(false),
+  mp_buf(m_ee_size + m_crc_size),
+  mp_read_buf(m_ee_size),
+  mp_write_buf(m_ee_size),
+  mp_send_buf(m_ee_size),
+  m_mode(general),
+  m_check_eeprom_status_mode(send_command),
+  m_read_index_cur(0)
 {
   if (mp_spi && mp_cs_pin)
   {
-    memset((void*)mp_buf, 0, m_ee_size + m_crc_size);
-    memset((void*)mp_read_buf, 0, m_ee_size);
-    memset((void*)mp_write_buf, 0, m_ee_size);
-    memset((void*)mp_send_buf, 0, m_ee_size);
+    mp_cs_pin->set();
     for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
       mp_spi->tick();
-    
-    mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-    mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
     
     irs_u32 crc_new = calc_new_crc();
     irs_u32 crc_cur = read_crc_eeprom();
@@ -1838,14 +1838,14 @@ void irs::eeprom_at25128a_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   if (size + a_index > m_ee_size) {
     size = irs_u8(m_ee_size - a_index);
   }
-  memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+  memcpy((void*)ap_buf, (void*)(mp_buf.data() + a_index), size);
   m_need_read = true;
   m_read_size = size;
   if (m_crc_read) {
     m_crc_read = false;
-    m_read_index = a_index;
+    m_read_index = static_cast<irs_u16>(a_index);
   } else {
-    m_read_index = m_crc_size + a_index;
+    m_read_index = static_cast<irs_u16>(m_crc_size + a_index);
   }
 }
 
@@ -1857,7 +1857,7 @@ void irs::eeprom_at25128a_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   if (size + a_index > m_ee_size) {
     size = irs_u8(m_ee_size - a_index);
   }
-  memcpy((void*)(mp_write_buf + a_index), (void*)ap_buf, size);
+  memcpy((void*)(mp_write_buf.data() + a_index), (void*)ap_buf, size);
   fill_n(m_need_writes.begin() + a_index, size, 1);
 }
 
@@ -1867,7 +1867,7 @@ irs_bool irs::eeprom_at25128a_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_bit_index > 7) return false;
   m_need_read = true;
   m_read_size = 1;
-  m_read_index = m_crc_size + a_index;
+  m_read_index = static_cast<irs_u16>(m_crc_size + a_index);
   return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
 }
 
@@ -1891,154 +1891,252 @@ void irs::eeprom_at25128a_t::tick()
 {
   mp_spi->tick();
   
-  switch (m_spi_status)
+  switch(m_mode)
   {
-    case EE_SEARCH_DATA_OPERATION:
+    case get_status:
     {
-      bool catch_block = false;
-      for(; (m_search_index < m_ee_size) ;) {
-        if ((m_need_writes[m_search_index]) && !catch_block) {
-          m_start_block = m_search_index;
-          catch_block = true;
-          m_need_write = true;
-        }
-        if (catch_block && !m_need_writes[m_search_index]) {
-          m_write_size = m_search_index - m_start_block;
-          if (m_write_size > PAGE_SIZE) {
-            m_write_size = PAGE_SIZE;
-            m_search_index = m_start_block + PAGE_SIZE;
+      switch(m_check_eeprom_status_mode)
+      {
+        case send_command:
+        {
+          if (!mp_spi->get_lock()&&mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_spi->lock();
+            mp_spi->set_order(irs::spi_t::MSB);
+            mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+            mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+            mp_cs_pin->clear();
+            mp_send_buf[0] = m_RDSR;
+            mp_spi->read_write(mp_read_buf.data(), mp_send_buf.data(),
+              m_read_status_command_size);
+            m_check_eeprom_status_mode = get_response;
           }
-          break;
-        }
-        m_search_index++;
-        if (catch_block && (m_search_index == m_ee_size)) {
-          m_search_index = 0;
-          m_write_size = m_search_index - m_start_block;
-          if (m_write_size > PAGE_SIZE) {
-            m_write_size = PAGE_SIZE;
+        } break;
+        case get_response:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_cs_pin->set();
+            mp_spi->unlock();
+            if (!(mp_read_buf[1] & (1 << m_RDY))) {
+              m_ee_status = complete;
+            } else {
+              m_ee_status = busy;
+            }
+            m_check_eeprom_status_mode = send_command;
+            m_mode = general;
+          } 
+        } break;
+      }
+    } break;
+    case general:
+    {
+      switch (m_spi_status)
+      {
+        case ee_search_data_operation:
+        {
+          bool catch_block = false;
+          for(; (m_search_index < m_ee_size) ;) {
+            if ((m_need_writes[m_search_index]) && !catch_block) {
+              m_start_block = m_search_index;
+              catch_block = true;
+              m_need_write = true;
+            }
+            if (catch_block && !m_need_writes[m_search_index]) {
+              m_write_size = m_search_index - m_start_block;
+              if (m_write_size > m_PAGE_SIZE) {
+                m_write_size = m_PAGE_SIZE;
+                m_search_index = m_start_block + m_PAGE_SIZE;
+              }
+              break;
+            }
+            m_search_index++;
+            if (catch_block && (m_search_index == m_ee_size)) {
+              m_search_index = 0;
+              m_write_size = m_search_index - m_start_block;
+              if (m_write_size > m_PAGE_SIZE) {
+                m_write_size = m_PAGE_SIZE;
+              }
+              break;
+            }
+            if (!catch_block && (m_search_index == m_ee_size)) {
+              m_search_index = 0;
+              break;
+            }
           }
-          break;
-        }
-        if (!catch_block && (m_search_index == m_ee_size)) {
-          m_search_index = 0;
-          break;
-        }
-      }
-      if (m_need_write || m_need_read) {
-        m_spi_status = EE_SPI_READ_WRITE_BEGIN;
-      }
-    } break;
-    case EE_SPI_READ_WRITE_BEGIN:
-    {
-      if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE)) {
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-        mp_spi->lock();
-        mp_cs_pin->clear();
-        mp_send_buf[0] = WREN;
-        mp_spi->write(mp_send_buf, m_wren_command_size);
-        m_ee_write_status = busy;
-        m_need_write = false;
-        m_crc_need_recalc = true;
-        m_spi_status = EE_SPI_WREN;
-      } else if (m_need_read && (mp_spi->get_status() == irs::spi_t::FREE)) {
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-        mp_spi->lock();
-        mp_cs_pin->clear();
-        mp_send_buf[0] = READ;
-        *(irs_u16*)mp_send_buf[1] = m_read_index;
-        mp_spi->write(mp_send_buf, m_spi_read_command_size + m_read_size);
-        m_need_read = false;
-        m_spi_status = EE_SPI_READ_END;
-      } else {
-        m_spi_status = EE_SEARCH_DATA_OPERATION;
-      }
-    } break;
-    case EE_SPI_READ_END:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_spi->read(mp_read_buf, m_spi_read_command_size + m_read_size);
-        memcpyex(mp_buf + m_read_index, mp_read_buf + m_spi_read_command_size,
-          m_read_size);
-        mp_cs_pin->set();
-        mp_spi->unlock();
-        m_spi_status = EE_SEARCH_DATA_OPERATION;
-      }
-    } break;
-    case EE_SPI_WREN:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->set();
-        m_spi_status = EE_SPI_WRITE_CONTINUE;
-      }
-    } break;
-    case EE_SPI_WRITE_CONTINUE:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->clear();
-        mp_send_buf[0] = WRITE;
-        *(irs_u16*)mp_send_buf[1] = m_start_block + m_crc_size;
-        *(irs_u16*)mp_send_buf[3] = mp_write_buf[m_start_block];
-        mp_spi->write(mp_send_buf, m_spi_write_command_size + m_write_size);
-        m_spi_status = EE_SPI_WRITE_END;
-      }
-    } break;
-    case EE_SPI_WRITE_END:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->set();
-        m_spi_status = EE_SPI_GET_WRITE_STATUS_BEGIN;
-      }
-    } break;
-    case EE_SPI_GET_WRITE_STATUS_BEGIN:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->clear();
-        *(irs_u16*)mp_send_buf = RDSR;
-        mp_spi->write(mp_send_buf, m_read_status_command_size);
-        m_spi_status = EE_SPI_GET_WRITE_STATUS_END;
-      }
-    } break;
-    case EE_SPI_GET_WRITE_STATUS_END:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_spi->read(mp_read_buf, m_read_status_command_size);
-        if (!(mp_read_buf[1] & (1 << RDY))) {
-          m_ee_write_status = complete;
-          if (m_crc_need_recalc) {
-            fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
-            m_spi_status = EE_WRITE_CRC32;
-          } else {
-            m_spi_status = EE_SPI_RESET;
+          if (m_need_write || m_need_read) {
+            m_spi_status = ee_spi_read_write_begin;
+            m_mode = get_status;
           }
-        } else {
-          m_ee_write_status = busy;
-          m_spi_status = EE_SPI_GET_WRITE_STATUS_BEGIN;
-        }
-        mp_cs_pin->set();
-      }
-    } break;
-    case EE_WRITE_CRC32:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->clear();
-        *(irs_u16*)mp_send_buf[3] = calc_new_crc();
-        mp_send_buf[0] = WRITE;
-        *(irs_u16*)mp_send_buf[1] = 0; // располагаем CRC по адресу 0x0
-        mp_spi->write(mp_send_buf, m_spi_write_command_size + m_crc_size);
-        m_ee_write_status = busy;
-        m_crc_need_recalc = false;
-        m_spi_status = EE_SPI_GET_WRITE_STATUS_BEGIN;
-      }
-    } break;
-    case EE_SPI_RESET:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_spi->unlock();
-        m_spi_status = EE_SEARCH_DATA_OPERATION;
+        } break;
+        case ee_spi_read_write_begin:
+        {
+          if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
+            if (m_ee_status == complete) {
+              if (m_need_write) {
+                mp_spi->set_order(irs::spi_t::MSB);
+                mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+                mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+                mp_spi->lock();
+                mp_cs_pin->clear();
+                mp_send_buf[0] = m_WREN;
+                mp_spi->write(mp_send_buf.data(), m_wren_command_size);
+                m_ee_status = busy;
+                m_need_write = false;
+                m_crc_need_recalc = true;
+                m_spi_status = ee_spi_wren;
+              } else if (m_need_read) {
+                mp_spi->set_order(irs::spi_t::MSB);
+                mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+                mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+                mp_spi->lock();
+                mp_cs_pin->clear();
+                mp_send_buf[0] = m_READ;
+                reinterpret_cast<irs_u16&>(mp_send_buf[1]) =
+                  static_cast<irs_u16>(m_read_index);
+                mp_spi->read_write(mp_read_buf.data(), mp_send_buf.data(),
+                  m_spi_read_command_size);
+                m_read_index_cur = 0;
+                m_need_read = false;
+                m_spi_status = ee_spi_read_end;
+              } else {
+                m_spi_status = ee_search_data_operation;
+              }
+            } else {
+              m_mode = get_status;
+            }
+          }
+        } break;
+        case ee_spi_read_end:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            if ((m_read_index_cur < m_read_size) &&
+              ((m_read_size - m_read_index) >= m_spi_size))
+            {
+              mp_spi->read(mp_read_buf.data() + m_read_index_cur, m_spi_size);
+              m_read_index_cur += m_spi_size;
+            } else if ((m_read_index_cur < m_read_size) &&
+              ((m_read_size - m_read_index) < m_spi_size))
+            {
+              mp_spi->read(mp_read_buf.data() + m_read_index_cur,
+                m_read_size - m_read_index_cur);
+              m_read_index_cur = m_read_size;
+            } else {
+              m_read_index_cur = 0;
+              mp_cs_pin->set();
+              mp_spi->unlock();
+              memcpyex(mp_buf.data() + m_read_index,
+                mp_read_buf.data() /*+ m_spi_read_command_size*/, m_read_size);
+              m_spi_status = ee_search_data_operation;
+            }
+          }
+        } break;
+        case ee_spi_wren:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_cs_pin->set();
+            m_spi_status = ee_spi_write_continue;
+          }
+        } break;
+        case ee_spi_write_continue:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            //if (m_ee_status == complete) {
+              mp_cs_pin->clear();
+              mp_send_buf[0] = m_WRITE;
+              reinterpret_cast<irs_u16&>(mp_send_buf[1]) =
+                static_cast<irs_u16>(m_start_block + m_crc_size);
+              reinterpret_cast<irs_u16&>(mp_send_buf[3]) =
+                mp_write_buf[m_start_block];
+              mp_spi->write(mp_send_buf.data(),
+                m_spi_write_command_size + m_write_size);
+              m_spi_status = ee_spi_write_end;
+            /*} else {
+              m_mode = get_status;
+            }*/
+          }
+        } break;
+        case ee_spi_write_end:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_cs_pin->set();
+            mp_spi->unlock();
+            m_mode = get_status;
+            if (m_crc_need_recalc) {
+              fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
+              m_spi_status = ee_write_crc32;
+            } else {
+              m_spi_status = ee_spi_reset;
+            }
+          }
+        } break;
+        /*case EE_SPI_GET_WRITE_STATUS_BEGIN:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_cs_pin->clear();
+            *(irs_u16*)mp_send_buf.data() = RDSR;
+            mp_spi->write(mp_send_buf.data(), m_read_status_command_size);
+            m_spi_status = EE_SPI_GET_WRITE_STATUS_END;
+          }
+        } break;
+        case EE_SPI_GET_WRITE_STATUS_END:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_spi->read(mp_read_buf.data(), m_read_status_command_size);
+            if (!(mp_read_buf[1] & (1 << RDY))) {
+              m_ee_status = complete;
+              if (m_crc_need_recalc) {
+                fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
+                m_spi_status = EE_WRITE_CRC32;
+              } else {
+                m_spi_status = EE_SPI_RESET;
+              }
+            } else {
+              m_ee_status = busy;
+              m_spi_status = EE_SPI_GET_WRITE_STATUS_BEGIN;
+            }
+            mp_cs_pin->set();
+          }
+        } break;*/
+        case ee_write_crc32:
+        {
+          if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
+            if (m_ee_status == complete) {
+              mp_spi->lock();
+              mp_spi->set_order(irs::spi_t::MSB);
+              mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+              mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+              mp_cs_pin->clear();
+              mp_send_buf[0] = m_WRITE;
+              reinterpret_cast<irs_u16&>(mp_send_buf[1]) = m_crc_addr;
+              reinterpret_cast<irs_u32&>(mp_send_buf[3]) = calc_new_crc();
+              mp_spi->write(mp_send_buf.data(),
+                m_spi_write_command_size + m_crc_size);
+              m_ee_status = busy;
+              m_crc_need_recalc = false;
+              m_spi_status = ee_write_crc32_end;
+            } else {
+              m_mode = get_status;
+            }
+          }
+        } break;
+        case ee_write_crc32_end:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            mp_cs_pin->set();
+            mp_spi->unlock();
+            m_spi_status = ee_spi_reset;
+            m_mode = get_status;
+          }
+        } break;
+        case ee_spi_reset:
+        {
+          if (mp_spi->get_status() == irs::spi_t::FREE) {
+            if (m_ee_status == complete) {
+              m_spi_status = ee_search_data_operation;
+            } else {
+              m_mode = get_status;
+            }
+          }
+        } break;
       }
     } break;
   }
@@ -2054,7 +2152,7 @@ irs_u32 irs::eeprom_at25128a_t::calc_old_crc()
   raw_data_t<irs_u8> ee_mass(m_ee_size);
   read(ee_mass.data(), 0, m_ee_size);
   tick();
-  for (; (m_spi_status != EE_SEARCH_DATA_OPERATION);) { tick(); }
+  for (; (m_spi_status != ee_search_data_operation);) { tick(); }
   return crc32(reinterpret_cast<irs_u32*>(ee_mass.data()), 0, m_ee_size/4);
 }
 
@@ -2063,7 +2161,7 @@ irs_u32 irs::eeprom_at25128a_t::calc_new_crc()
   raw_data_t<irs_u8> ee_mass(m_ee_size);
   read(ee_mass.data(), 0, m_ee_size);
   tick();
-  for (; (m_spi_status != EE_SEARCH_DATA_OPERATION);) { tick(); }
+  for (; (m_spi_status != ee_search_data_operation);) { tick(); }
   return crc32_table(ee_mass.data(), m_ee_size);
 }
 
@@ -2071,8 +2169,8 @@ irs_u32 irs::eeprom_at25128a_t::read_crc_eeprom()
 {
   irs_u32 crc_32 = 0;
   m_crc_read = true;
-  read((irs_u8*)&crc_32, 0, m_crc_size);
+  read(reinterpret_cast<irs_u8*>(&crc_32), 0, m_crc_size);
   tick();
-  for (; (m_spi_status != EE_SEARCH_DATA_OPERATION); ) { tick(); }
+  for (; (m_spi_status != ee_search_data_operation); ) { tick(); }
   return crc_32;
 }
