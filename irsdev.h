@@ -107,10 +107,10 @@ private:
   #endif  //  PWM_ZERO_PULSE
 };
 
-class wdt_t
+class watchdog_timer_t
 {
 public:
-  wdt_t(size_t a_period_s = 300):
+  watchdog_timer_t(size_t a_period_s = 300):
     m_period_s(a_period_s)
   {
     RCGC0_bit.WDT0 = 1;
@@ -131,7 +131,7 @@ public:
   }
 private:
   size_t m_period_s;
-}; // wdt_t
+}; // watchdog_timer_t
 
 //! @}
 
