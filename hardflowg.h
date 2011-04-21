@@ -471,12 +471,18 @@ public:
   //! \param[in] a_max_downtime_sec - максимальное время бездействия каналов в
   //!   секундах.
   //!
-  //! Пример конфигурации сервера: irs::hardflow_t::udp_flow_t udp_flow("",
-  //!   "5005", "", "", irs::hardflow_t::udplc_mode_queue, 1000, 0xFFFF, false,
-  //!   24*60*60, true, 10);\n
-  //! Пример конфигурации клиента: irs::hardflow_t::udp_flow_t udp_flow("", "",
-  //!   "127.0.0.1", "5005", irs::hardflow_t::udplc_mode_limited, 1, 0xFFFF,
+  //! Пример конфигурации сервера:
+  //! \code
+  //!   irs::hardflow::udp_flow_t udp_flow("", "5005", "", "",
+  //!     irs::hardflow::udplc_mode_queue, 1000, 0xFFFF,
+  //!     false, 24*60*60, true, 10);
+  //! \endcode
+  //! Пример конфигурации клиента:
+  //! \code
+  //! irs::hardflow::udp_flow_t udp_flow("", "", "127.0.0.1", "5005",
+  //!   irs::hardflow::udplc_mode_limited, 1, 0xFFFF,
   //!   false, 24*60*60, false, 10);
+  //! \endcode
   udp_flow_t(
     const string_type& a_local_host_name = empty_cstr(),
     const string_type& a_local_host_port = empty_cstr(),
