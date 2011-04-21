@@ -464,12 +464,19 @@ public:
   //! \param[in] a_channel_buf_max_size - максимальный размер буфера каждого
   //!   канала.
   //! \param[in] a_limit_lifetime_enabled - включает ограничение по времени
-  //!   жизни каналов. **********
+  //!   жизни каналов. 
   //! \param[in] a_max_lifetime_sec - врем€ жизни каналов в секундах.
   //! \param[in] a_limit_downtime_enabled - включает ограничение по времени
   //!   бездействи€ каналов. ѕри превышении заданного порога, канал удал€етс€.
   //! \param[in] a_max_downtime_sec - максимальное врем€ бездействи€ каналов в
   //!   секундах.
+  //!
+  //! ѕример конфигурации сервера: irs::hardflow_t::udp_flow_t udp_flow("",
+  //!   "5005", "", "", irs::hardflow_t::udplc_mode_queue, 1000, 0xFFFF, false,
+  //!   24*60*60, true, 10);\n
+  //! ѕример конфигурации клиента: irs::hardflow_t::udp_flow_t udp_flow("", "",
+  //!   "127.0.0.1", "5005", irs::hardflow_t::udplc_mode_limited, 1, 0xFFFF,
+  //!   false, 24*60*60, false, 10);
   udp_flow_t(
     const string_type& a_local_host_name = empty_cstr(),
     const string_type& a_local_host_port = empty_cstr(),
