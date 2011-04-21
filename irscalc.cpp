@@ -225,13 +225,18 @@ bool irs::calc::number_to_string_t::exec(
   variant_t* ap_returned_value) const
 {
   bool fsuccess = false;
-  if (ap_parameters->size() == 1) {
+  if (ap_parameters->size() == 2) {
     variant_t value_variant;
     if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
       if (irs::variant::is_number_type(value_variant.type())) {
         if (value_variant.convert_to(irs::variant::var_type_string)) {
-          *ap_returned_value = value_variant.as_type<string_type>();
-          fsuccess = true;
+          if (ap_calc_variables->value_write(
+            value_variant, &(*ap_parameters)[1])) {
+            *ap_returned_value = true;
+            fsuccess = true;
+          } else {
+            *ap_returned_value = false;
+          }  
         } else {
           // Преобразование окончилось неудачей
         }
