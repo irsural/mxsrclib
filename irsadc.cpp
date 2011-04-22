@@ -1764,17 +1764,18 @@ void irs::dac_ad5293_t::tick()
 }
 
 //--------------------------  AT25128A_256A ------------------------------------
-#ifndef NOP
 irs::eeprom_at25128a_t::eeprom_at25128a_t(
   spi_t* ap_spi,
   gpio_pin_t* ap_cs_pin,
+  irs_u32 a_ee_start_index,
   irs_u32 a_ee_size
 ):
-  m_spi_status(op_search_data_operation),
-  m_ee_status(complete),
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
   m_ee_size(a_ee_size),
+  m_ee_start_index(a_ee_start_index),
+  m_op_status(op_search_data_operation),
+  m_ee_status(complete),
   m_need_write(false),
   m_crc_error(false),
   m_write_size(0),
@@ -1912,7 +1913,7 @@ void irs::eeprom_at25128a_t::tick()
     } break;
     case mode_general:
     {
-      switch (m_spi_status)
+      switch (m_op_status)
       {
         case op_search_data_operation:
         {
@@ -1925,19 +1926,27 @@ void irs::eeprom_at25128a_t::tick()
             }
             if (catch_block && !m_need_writes[m_search_index]) {
               m_write_size = m_search_index - m_start_block;
-              if (m_write_size > m_PAGE_SIZE) {
-                m_write_size = m_PAGE_SIZE;
-                m_search_index = m_start_block + m_PAGE_SIZE;
+              size_t start_block =
+                (m_ee_start_index + m_crc_size + m_start_block)%m_PAGE_SIZE;
+              if ((start_block + m_write_size) > m_PAGE_SIZE)
+              {
+                m_write_size = m_PAGE_SIZE - start_block;
+                m_search_index = m_start_block + m_write_size;
               }
               break;
             }
             m_search_index++;
             if (catch_block && (m_search_index == m_ee_size)) {
               m_write_size = m_search_index - m_start_block;
-              if (m_write_size > m_PAGE_SIZE) {
-                m_write_size = m_PAGE_SIZE;
+              size_t start_block =
+                (m_ee_start_index + m_crc_size + m_start_block)%m_PAGE_SIZE;
+              if ((start_block + m_write_size) > m_PAGE_SIZE)
+              {
+                m_write_size = m_PAGE_SIZE - start_block;
+                m_search_index = m_start_block + m_write_size;
+              } else {
+                m_search_index = 0;
               }
-              m_search_index = 0;
               break;
             }
             if (!catch_block && (m_search_index == m_ee_size)) {
@@ -1946,7 +1955,7 @@ void irs::eeprom_at25128a_t::tick()
             }
           }
           if (m_need_write) {
-            m_spi_status = op_spi_write_begin;
+            m_op_status = op_spi_write_begin;
             m_mode = mode_get_status;
           }
         } break;
@@ -1965,9 +1974,9 @@ void irs::eeprom_at25128a_t::tick()
                 mp_send_buf[2] = 0;
                 mp_spi->write(mp_send_buf, m_spi_size);
                 m_need_write = false;
-                m_spi_status = op_spi_wren;
+                m_op_status = op_spi_wren;
               } else {
-                m_spi_status = op_search_data_operation;
+                m_op_status = op_search_data_operation;
               }
             } else {
               m_mode = mode_get_status;
@@ -1979,10 +1988,10 @@ void irs::eeprom_at25128a_t::tick()
           if (mp_spi->get_status() == irs::spi_t::FREE) {
             mp_cs_pin->set();
             if (!m_crc_need_calc) {
-              m_spi_status = op_spi_write_continue;
+              m_op_status = op_spi_write_continue;
             } else {
               m_crc_need_calc = false;
-              m_spi_status = op_write_crc32_begin;
+              m_op_status = op_write_crc32_begin;
             }
           }
         } break;
@@ -1991,13 +2000,13 @@ void irs::eeprom_at25128a_t::tick()
           if (mp_spi->get_status() == irs::spi_t::FREE) {
             mp_cs_pin->clear();
             mp_send_buf[0] = m_WRITE;
-            mp_send_buf[1] = IRS_CONST_HIBYTE(
-              static_cast<irs_u16>(m_start_block + m_crc_size));
-            mp_send_buf[2] = IRS_CONST_LOBYTE(
-              static_cast<irs_u16>(m_start_block + m_crc_size));
+            mp_send_buf[1] = IRS_CONST_HIBYTE(static_cast<irs_u16>(
+              m_ee_start_index + m_start_block + m_crc_size));
+            mp_send_buf[2] = IRS_CONST_LOBYTE(static_cast<irs_u16>(
+              m_ee_start_index + m_start_block + m_crc_size));
             mp_spi->write(mp_send_buf, m_spi_size);
             m_write_index_cur = 0;
-            m_spi_status = op_spi_write_end;
+            m_op_status = op_spi_write_end;
           }
         } break;
         case op_spi_write_end:
@@ -2020,7 +2029,7 @@ void irs::eeprom_at25128a_t::tick()
               fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
               m_need_write = true;
               m_crc_need_calc = true;
-              m_spi_status = op_spi_write_begin;
+              m_op_status = op_spi_write_begin;
             }
           }
         } break;
@@ -2029,11 +2038,11 @@ void irs::eeprom_at25128a_t::tick()
           if (mp_spi->get_status() == irs::spi_t::FREE) {
             mp_cs_pin->clear();
             mp_send_buf[0] = m_WRITE;
-            mp_send_buf[1] = IRS_CONST_HIBYTE(m_crc_addr);
-            mp_send_buf[2] = IRS_CONST_LOBYTE(m_crc_addr);
+            mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index);
+            mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index);
             mp_spi->write(mp_send_buf, m_spi_size);
             m_crc_write_begin = true;
-            m_spi_status = op_write_crc32_continue;
+            m_op_status = op_write_crc32_continue;
           }
         } break;
         case op_write_crc32_continue:
@@ -2050,7 +2059,7 @@ void irs::eeprom_at25128a_t::tick()
                 reinterpret_cast<irs_u8*>(&crc) + m_spi_size,
                 m_crc_size - m_spi_size);
               mp_spi->write(mp_send_buf, m_crc_size - m_spi_size);
-              m_spi_status = op_write_crc32_end;
+              m_op_status = op_write_crc32_end;
             }
           }
         } break;
@@ -2059,7 +2068,7 @@ void irs::eeprom_at25128a_t::tick()
           if (mp_spi->get_status() == irs::spi_t::FREE) {
             mp_cs_pin->set();
             mp_spi->unlock();
-            m_spi_status = op_spi_reset;
+            m_op_status = op_spi_reset;
             m_mode = mode_get_status;
           }
         } break;
@@ -2067,7 +2076,7 @@ void irs::eeprom_at25128a_t::tick()
         {
           if (mp_spi->get_status() == irs::spi_t::FREE) {
             if (m_ee_status == complete) {
-              m_spi_status = op_search_data_operation;
+              m_op_status = op_search_data_operation;
             } else {
               m_mode = mode_get_status;
             }
@@ -2104,26 +2113,76 @@ irs_u32 irs::eeprom_at25128a_t::read_crc_eeprom()
   mp_spi->lock();
   mp_cs_pin->clear();
   mp_send_buf[0] = m_READ;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(m_crc_addr);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(m_crc_addr);
+  mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index);
+  mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index);
   mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
   for (; (mp_spi->get_status() != irs::spi_t::FREE); )
     mp_spi->tick();
   irs_u32 crc = 0;
-  mp_spi->read(reinterpret_cast<irs_u8*>(&crc), m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_spi->read(reinterpret_cast<irs_u8*>(&crc) + m_spi_size,
-    m_crc_size - m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_cs_pin->set();
-  mp_spi->unlock();
-  
-  m_ee_status = busy;
-  while(get_status() == busy) {}
-  
+  if ((m_ee_start_index%m_PAGE_SIZE + m_crc_size) < m_PAGE_SIZE) {
+    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), m_spi_size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    mp_spi->read(reinterpret_cast<irs_u8*>(&crc) + m_spi_size,
+      m_crc_size - m_spi_size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    mp_cs_pin->set();
+    mp_spi->unlock();
+    
+    m_ee_status = busy;
+    while(get_status() == busy) {}
+  } else {
+    size_t size = m_PAGE_SIZE - (m_ee_start_index%m_PAGE_SIZE);
+    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    mp_cs_pin->set();
+    mp_spi->unlock();
+    m_ee_status = busy;
+    while(get_status() == busy) {}
+    
+    mp_spi->set_order(irs::spi_t::MSB);
+    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+    mp_spi->lock();
+    mp_cs_pin->clear();
+    mp_send_buf[0] = m_READ;
+    mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index + size);
+    mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index + size);
+    mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    size = m_crc_size - size;
+    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    mp_cs_pin->set();
+    mp_spi->unlock();
+    m_ee_status = busy;
+    while(get_status() == busy) {}
+  }
   return crc;
+}
+
+size_t irs::eeprom_at25128a_t::read_part(size_t a_index, size_t a_size)
+{
+  size_t data_index = a_index;
+  while (a_index != (data_index + a_size)) {
+    if ((a_size - (a_index - data_index)) >= m_spi_size) {
+      mp_spi->read(mp_target_buf.data() +
+        (a_index - (m_ee_start_index + m_crc_size)), m_spi_size);
+      a_index += m_spi_size;
+    } else {
+      mp_spi->read(mp_target_buf.data() +
+        (a_index - (m_ee_start_index + m_crc_size)),
+        a_size - (a_index - data_index));
+      a_index = data_index + a_size;
+    }
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+  }
+  return a_index;
 }
 
 void irs::eeprom_at25128a_t::read_on_start()
@@ -2133,61 +2192,68 @@ void irs::eeprom_at25128a_t::read_on_start()
   mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
   mp_spi->lock();
   mp_cs_pin->clear();
+  size_t data_index = m_ee_start_index + m_crc_size;
+  size_t first_part_size = 0;
+  size_t middle_part_cnt = 0;
+  size_t last_part_size = 0;
+  if ((data_index%m_PAGE_SIZE + m_ee_size) > m_PAGE_SIZE) {
+    first_part_size = m_PAGE_SIZE - data_index%m_PAGE_SIZE;
+    last_part_size = (data_index%m_PAGE_SIZE + m_ee_size)%m_PAGE_SIZE;
+    if (last_part_size) {
+      middle_part_cnt = (data_index%m_PAGE_SIZE + m_ee_size -
+        first_part_size - last_part_size)/m_PAGE_SIZE;
+    } else {
+      middle_part_cnt =
+        (data_index%m_PAGE_SIZE + m_ee_size - first_part_size)/m_PAGE_SIZE;
+    }
+  } else {
+    first_part_size = m_ee_size;
+  }
+  // Чтение first_part
   mp_send_buf[0] = m_READ;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(m_crc_size);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(m_crc_size);
+  mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
+  mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
   mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
   for (; (mp_spi->get_status() != irs::spi_t::FREE); )
     mp_spi->tick();
-  irs_u32 read_index_cur = m_crc_size;
-  while ((read_index_cur - m_crc_size) < m_ee_size) {
-    if ((m_ee_size - (read_index_cur - m_crc_size)) >= m_spi_size) {
-      mp_spi->read(mp_target_buf.data() + (read_index_cur - m_crc_size),
-        m_spi_size);
-      read_index_cur += m_spi_size;
-    } else {
-      mp_spi->read(mp_target_buf.data() + (read_index_cur - m_crc_size),
-        m_ee_size - (read_index_cur - m_crc_size));
-      read_index_cur = m_ee_size + m_crc_size;
-    }
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-  }
+  size_t read_index_cur = data_index;
+  read_index_cur = read_part(read_index_cur, first_part_size);
   m_ee_status = busy;
   while(get_status() == busy) {}
-}
-
-void irs::eeprom_at25128a_t::test_write()
-{
+  // Чтение middle_part
+  for (size_t middle_part_idx = 0; middle_part_idx < middle_part_cnt;
+    middle_part_idx++)
+  {
+    mp_spi->set_order(irs::spi_t::MSB);
+    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+    mp_spi->lock();
+    mp_cs_pin->clear();
+    data_index = read_index_cur;
+    mp_send_buf[0] = m_READ;
+    mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
+    mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
+    mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
+    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
+      mp_spi->tick();
+    read_index_cur = read_part(read_index_cur, m_PAGE_SIZE);
+    m_ee_status = busy;
+    while(get_status() == busy) {}
+  }
+  // Чтение last_part
   mp_spi->set_order(irs::spi_t::MSB);
   mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
   mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
   mp_spi->lock();
   mp_cs_pin->clear();
-  mp_send_buf[0] = m_WREN;
-  mp_send_buf[1] = 0;
-  mp_send_buf[2] = 0;
-  mp_spi->write(mp_send_buf, m_spi_size);
+  data_index = read_index_cur;
+  mp_send_buf[0] = m_READ;
+  mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
+  mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
+  mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
   for (; (mp_spi->get_status() != irs::spi_t::FREE); )
     mp_spi->tick();
-  mp_cs_pin->set();
-  for (irs_u8 i = 10; i; i--);
-  mp_cs_pin->clear();
-  mp_send_buf[0] = m_WRITE;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(m_crc_addr);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(m_crc_addr);
-  mp_spi->write(mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_send_buf[0] = 1;
-  mp_send_buf[1] = 2;
-  mp_send_buf[2] = 3;
-  mp_spi->write(mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_cs_pin->set();
-  mp_spi->unlock();
-  
+  read_index_cur = read_part(read_index_cur, last_part_size);
   m_ee_status = busy;
   while(get_status() == busy) {}
 }
@@ -2214,4 +2280,3 @@ irs::eeprom_at25128a_t::ee_status_t irs::eeprom_at25128a_t::get_status()
   }
   return m_ee_status;
 }
-#endif // NOP

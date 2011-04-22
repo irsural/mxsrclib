@@ -958,11 +958,11 @@ struct dac_ad5293_data_t
 };
 
 //--------------------------  AT25128A_256A ------------------------------------
-#ifndef NOP
 class eeprom_at25128a_t : public mxdata_t
 {
 public:
-  eeprom_at25128a_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_u32 a_ee_size);
+  eeprom_at25128a_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, 
+    irs_u32 a_ee_start_index, irs_u32 a_ee_size);
   ~eeprom_at25128a_t();
   virtual irs_uarc size();
   virtual irs_bool connected();
@@ -1003,7 +1003,6 @@ private:
     m_spi_size = 3,
     
     m_crc_size = sizeof(irs_u32),
-    m_crc_addr = 0,
     
     m_PAGE_SIZE = 64,
     
@@ -1022,11 +1021,12 @@ private:
     m_BP1 = 3,
     m_WPEN = 7
   };
-  operation_status_t m_spi_status;
-  ee_status_t m_ee_status;
   spi_t* mp_spi;
   gpio_pin_t* mp_cs_pin;
+  size_t m_ee_start_index;
   size_t m_ee_size;
+  operation_status_t m_op_status;
+  ee_status_t m_ee_status;
   bool m_need_write;
   bool m_crc_error;
   size_t m_write_size;
@@ -1045,11 +1045,31 @@ private:
   irs_u32 calc_old_crc();
   irs_u32 calc_new_crc();
   irs_u32 read_crc_eeprom();
+  size_t read_part(size_t a_index, size_t a_size);
   void read_on_start();
-  void test_write();
   ee_status_t get_status();
   
 }; // eeprom_at25128a_t
+
+#ifdef NOP
+class eeprom_at25128a_protected_t: public mxdata_t
+{
+public:
+  eeprom_at25128a_protected_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    irs_u32 a_ee_size);
+  ~eeprom_at25128a_protected_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+  bool error();
+private:
+  
+}; // eeprom_at25128a_protected_t
 #endif // NOP
 
 //! @}
