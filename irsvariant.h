@@ -142,15 +142,27 @@ public:
   typedef irs_ilong_long long_long_type;
   typedef irs_ulong_long unsigned_long_long_type;
   #endif // IRSDEFS_LONG_LONG
-  variant_t();
 
-  template<class T>
-  variant_t(const T& a_value):
-    m_value(),
-    m_type(var_type_unknown)
-  {
-    operator=(a_value);
-  }
+  variant_t();
+  variant_t(const variant_t& a_variant);
+  variant_t(const bool a_value);
+  variant_t(const char a_value);
+  variant_t(const signed char a_value);
+  variant_t(const unsigned char a_value);
+  variant_t(const short a_value);
+  variant_t(const unsigned short a_value);
+  variant_t(const int a_value);
+  variant_t(const unsigned int a_value);
+  variant_t(const long a_value);
+  variant_t(const unsigned long a_value);
+  variant_t(const float a_value);
+  variant_t(const double a_value);
+  variant_t(const long double a_value);
+  #ifdef IRSDEFS_LONG_LONG
+  variant_t(const long_long_type a_value);
+  variant_t(const unsigned_long_long_type a_value);
+  #endif // IRSDEFS_LONG_LONG
+  variant_t(const string_type& a_value);
 
   template<class T>
   variant_t(const T& a_value, const var_type_t a_var_type):
@@ -160,32 +172,14 @@ public:
     assign_no_cast(a_value);
   }
 
-  variant_t(const variant_t& a_variant);
-
   ~variant_t();
   inline var_type_t type() const;
   void type(const var_type_t a_variant_type);
+  void swap(variant_t& a_variant);
+
+  template <class T>
+  variant_t& operator=(const T& a_value);
   variant_t& operator=(const variant_t& a_variant);
-  //variant_t& operator=(void* ap_value);
-  //variant_t& operator=(const void* ap_value);
-  variant_t& operator=(const bool a_value);
-  variant_t& operator=(const char a_value);
-  variant_t& operator=(const signed char a_value);
-  variant_t& operator=(const unsigned char a_value);
-  variant_t& operator=(const short a_value);
-  variant_t& operator=(const unsigned short a_value);
-  variant_t& operator=(const int a_value);
-  variant_t& operator=(const unsigned int a_value);
-  variant_t& operator=(const long a_value);
-  variant_t& operator=(const unsigned long a_value);
-  variant_t& operator=(const float a_value);
-  variant_t& operator=(const double a_value);
-  variant_t& operator=(const long double a_value);
-  #ifdef IRSDEFS_LONG_LONG
-  variant_t& operator=(const long_long_type a_value);
-  variant_t& operator=(const unsigned_long_long_type a_value);
-  #endif // IRSDEFS_LONG_LONG   
-  variant_t& operator=(const string_type& a_value);
 
   bool as_bool() const;
   char as_char() const;
@@ -243,9 +237,6 @@ public:
   variant_t& operator--();
   variant_t operator--(int);
 
-  /*template<class T>
-  operator T()const;
-  */
   template <class T>
   variant_t& assign(const T& a_value);
   template <class T>
@@ -308,6 +299,14 @@ private:
   void prefix_operation(const operation_type_t a_unary_operation_type);
   bool is_type_number(var_type_t a_var_type);
 };
+
+template <class T>
+variant_t& variant_t::operator=(const T& a_value)
+{
+  variant_t variant(a_value);
+  swap(variant);
+  return *this;
+}
 
 inline var_type_t variant_t::type() const
 {
@@ -850,6 +849,11 @@ inline void variant_t::prefix_operation<bool>(
   IRS_LIB_ASSERT_MSG("Недопустимая операция");
 }
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
+inline void swap(variant_t& a_first, variant_t& a_second)
+{
+  a_first.swap(a_second);
+}
 
 bool operator==(const variant_t& a_first_variant,
   const variant_t& a_second_variant);
@@ -1895,6 +1899,7 @@ inline bool operator>=(const variant_t::string_type& a_value,
 {
   return operator>=(a_variant, variant_t(a_value));
 }
+
 
 
 /*template <class T>
