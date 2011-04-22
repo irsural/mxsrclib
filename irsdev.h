@@ -10,7 +10,6 @@
 
 #include <irsdefs.h>
 
-#include <irsdev.h>
 #include <irscpu.h>
 #include <timer.h>
 
