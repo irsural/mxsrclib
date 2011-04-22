@@ -958,6 +958,7 @@ struct dac_ad5293_data_t
 };
 
 //--------------------------  AT25128A_256A ------------------------------------
+#ifndef NOP
 class eeprom_at25128a_t : public mxdata_t
 {
 public:
@@ -974,25 +975,23 @@ public:
   bool error();
 private:
   enum mode_t {
-    get_status,
-    general
+    mode_get_status,
+    mode_general
   };
   enum check_status_mode_t {
-    send_command,
-    get_response
+    check_status_send_command,
+    check_status_get_response
   };
-  enum spi_status_t {
-    ee_search_data_operation,
-    ee_spi_read_write_begin,
-    ee_spi_read_end,
-    ee_spi_wren,
-    ee_spi_write_continue,
-    ee_spi_write_end,
-    /*ee_spi_get_write_status_begin,
-    ee_spi_get_write_status_end,*/
-    ee_write_crc32,
-    ee_write_crc32_end,
-    ee_spi_reset
+  enum operation_status_t {
+    op_search_data_operation,
+    op_spi_write_begin,
+    op_spi_wren,
+    op_spi_write_continue,
+    op_spi_write_end,
+    op_write_crc32_begin,
+    op_write_crc32_continue,
+    op_write_crc32_end,
+    op_spi_reset
   };
   enum ee_status_t {
     complete,
@@ -1001,11 +1000,7 @@ private:
   enum {
     m_start_index = 0x0,
     
-    m_spi_size = 4,
-    m_spi_read_command_size = 3,
-    m_spi_write_command_size = 4,
-    m_read_status_command_size = 2,
-    m_wren_command_size = 1,
+    m_spi_size = 3,
     
     m_crc_size = sizeof(irs_u32),
     m_crc_addr = 0,
@@ -1027,36 +1022,35 @@ private:
     m_BP1 = 3,
     m_WPEN = 7
   };
-  spi_status_t m_spi_status;
+  operation_status_t m_spi_status;
   ee_status_t m_ee_status;
   spi_t* mp_spi;
   gpio_pin_t* mp_cs_pin;
   size_t m_ee_size;
   bool m_need_write;
-  bool m_need_read;
   bool m_crc_error;
-  size_t m_read_size;
-  irs_u16 m_read_index;
   size_t m_write_size;
-  irs_u16 m_write_index;
-  bool m_crc_need_recalc;
+  bool m_crc_write_begin;
   vector<bool> m_need_writes;
   size_t m_start_block;
   size_t m_search_index;
-  bool m_crc_read;
-  irs::raw_data_t<irs_u8> mp_buf;
-  irs::raw_data_t<irs_u8> mp_read_buf;
-  irs::raw_data_t<irs_u8> mp_write_buf;
-  irs::raw_data_t<irs_u8> mp_send_buf;
+  irs::raw_data_t<irs_u8> mp_target_buf;
+  irs_u8 mp_read_buf[m_spi_size];
+  irs_u8 mp_send_buf[m_spi_size];
   mode_t m_mode;
   check_status_mode_t m_check_eeprom_status_mode;
-  size_t m_read_index_cur;
+  size_t m_write_index_cur;
+  bool m_crc_need_calc;
   
   irs_u32 calc_old_crc();
   irs_u32 calc_new_crc();
   irs_u32 read_crc_eeprom();
+  void read_on_start();
+  void test_write();
+  ee_status_t get_status();
   
 }; // eeprom_at25128a_t
+#endif // NOP
 
 //! @}
 

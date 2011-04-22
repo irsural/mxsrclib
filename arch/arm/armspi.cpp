@@ -590,17 +590,17 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if(SSI0SR_bit.RNE) {
-                mp_rw_buf[m_cur_byte] = read_data_register();
-                m_cur_byte++;
-                m_status = SPI_RW_WRITE;
+              mp_rw_buf[m_cur_byte] = read_data_register();
+              m_cur_byte++;
+              m_status = SPI_RW_WRITE;
             }
           } break;
           case SSI1:
           {
             if(SSI1SR_bit.RNE) {
-                mp_rw_buf[m_cur_byte] = read_data_register();
-                m_cur_byte++;
-                m_status = SPI_RW_WRITE;
+              mp_rw_buf[m_cur_byte] = read_data_register();
+              m_cur_byte++;
+              m_status = SPI_RW_WRITE;
             }
           } break;
         }
