@@ -2,7 +2,7 @@
 //! \ingroup network_in_out_group
 //! \brief Протокол MxNetC (Max Network Client)
 //!
-//! Дата: 29.04.2010\n
+//! Дата: 20.04.2011\n
 //! Ранняя дата: 12.02.2009
 
 // Номер файла
@@ -18,6 +18,8 @@
 
 #include <mxnetc.h>
 #include <string.h>
+#include <mxdata.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -29,6 +31,8 @@
 #define broadcast_t TIME_TO_CNT(2, 1)
 //#define broadcast_sw_t TIME_TO_CNT(10000, 1)
 
+namespace {
+
 // Перераспределение памяти с сохранением данных
 void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size);
 // Проверка контрольной суммы
@@ -37,6 +41,8 @@ irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
 // Расчет контрольной суммы
 irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
   mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type);
+
+}// namespace
 
 irs_u8 bcst_start = 0;
 
@@ -77,7 +83,18 @@ mxnetc::mxnetc(mxifa_ch_t channel):
 {
   init_to_cnt();
   mxifa_init();
-  f_handle_channel = mxifa_open(channel, irs_false);
+  if (mxifa_get_channel_type_ex(channel) == mxifa_ei_win32_tcp_ip) {
+    mxifa_win32_tcp_ip_cfg config =
+      irs::zero_struct_t<mxifa_win32_tcp_ip_cfg>::get();
+    config.dest_ip = irs::make_mxip(192, 168, 0, 1);
+    config.dest_port = 5005;
+    config.local_port = 0;
+    void* p_config_void = reinterpret_cast<void*>(&config);
+    f_handle_channel = mxifa_open_ex(channel, p_config_void, irs_false);
+  } else {
+    f_handle_channel = mxifa_open(channel, irs_false);
+  }
+
   if (!f_handle_channel) {
     f_create_error = irs_true;
     return;
@@ -243,7 +260,7 @@ void mxnetc::tick()
 
   switch (f_mode) {
     case mxnc_mode_free: {
-      f_mode = mxnc_mode_broadcast;
+      f_mode = mxnc_mode_packet;
     } break;
     case mxnc_mode_packet: {
       mxn_cnt_t index = 0;
@@ -643,33 +660,6 @@ void mxnetc::abort()
   }
 }
 
-// Проверка контрольной суммы
-irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
-    mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
-{
-  mxn_sz_t request_packet_size =
-    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
-  if (request_packet_size <= packet_size) {
-    return packet->var[var_count] == checksum_calc(packet, var_count,
-      packet_size, checksum_type);
-  } else {
-    return irs_false;
-  }
-}
-
-// Расчет контрольной суммы
-irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
-  mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
-{
-  mxn_sz_t request_packet_size =
-    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
-  if (request_packet_size > packet_size) {
-    return 0;
-  }
-
-  return irs::checksum_calc(checksum_type, packet, var_count);
-}
-
 // Чтение последней ошибки
 mxnc_error_t mxnetc::get_last_error()
 {
@@ -732,25 +722,6 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
   }
 }
 
-// Перераспределение памяти с сохранением данных
-void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
-{
-  if (old_size == new_size) return pointer;
-
-  void *new_pointer = IRS_NULL;
-  if (new_size) {
-    new_pointer = IRS_LIB_NEW_ASSERT(void *[new_size], MXNETCCPP_IDX);
-    if (!new_pointer) return new_pointer;
-  }
-  if (pointer) {
-    if (old_size && new_size) {
-      memcpy(new_pointer, pointer, irs_min(old_size, new_size));
-    }
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
-  }
-  return new_pointer;
-}
-
 // Установка таймаута операций, с
 void mxnetc::set_timeout(calccnt_t t_num, calccnt_t t_denom)
 {
@@ -806,6 +777,53 @@ irs_bool mxnetc::get_broadcast_mode()
   return f_broadcast_mode;
 }
 
+namespace {
+
+// Перераспределение памяти с сохранением данных
+void *renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
+{
+  if (old_size == new_size) return pointer;
+
+  void *new_pointer = IRS_NULL;
+  if (new_size) {
+    new_pointer = IRS_LIB_NEW_ASSERT(void *[new_size], MXNETCCPP_IDX);
+    if (!new_pointer) return new_pointer;
+  }
+  if (pointer) {
+    if (old_size && new_size) {
+      memcpy(new_pointer, pointer, irs_min(old_size, new_size));
+    }
+    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
+  }
+  return new_pointer;
+}
+// Проверка контрольной суммы
+irs_bool checksum_valid(mxn_packet_t *packet, mxn_cnt_t var_count,
+    mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
+{
+  mxn_sz_t request_packet_size =
+    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+  if (request_packet_size <= packet_size) {
+    return packet->var[var_count] == checksum_calc(packet, var_count,
+      packet_size, checksum_type);
+  } else {
+    return irs_false;
+  }
+}
+// Расчет контрольной суммы
+irs_i32 checksum_calc(mxn_packet_t *packet, mxn_cnt_t var_count,
+  mxn_sz_t packet_size, irs::mxn_checksum_t checksum_type)
+{
+  mxn_sz_t request_packet_size =
+    (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+  if (request_packet_size > packet_size) {
+    return 0;
+  }
+
+  return irs::checksum_calc(checksum_type, packet, var_count);
+}
+
+} //namespace
 
 mx_broadcast_proc_t::mx_broadcast_proc_t(void *a_handle_channel,
   irs::mxn_checksum_t a_checksum_type):
@@ -922,7 +940,6 @@ mxn_cnt_t mx_broadcast_proc_t::get_count()
 {
   return f_broadcast_count;
 }
-
 
 // Преобразование mxnetc в mxdata_t
 irs::mxdata_to_mxnet_t::mxdata_to_mxnet_t(mxnetc *ap_mxnet,
@@ -1247,5 +1264,499 @@ void irs::mxnetc_data_t::ip(mxip_t a_ip)
 void irs::mxnetc_data_t::port(irs_u16 a_port)
 {
   m_mxnetc.set_dest_port(a_port);
+}
+
+// Клиент протокола mxnet, работающий через hardflow_t
+irs::mxnet_client_command_t::mxnet_client_command_t(hardflow_t& a_hardflow):
+  m_hardflow(a_hardflow),
+  m_fixed_flow(&m_hardflow),
+  m_beg_pack_proc(m_fixed_flow),
+  m_channel_ident(0),
+  m_packet_data(),
+  mp_packet(IRS_NULL),
+  m_receive_size(0),
+  m_send_size(0),
+  m_mode(mxnc_mode_free),
+  m_mode_return(mxnc_mode_free),
+  m_command(MXN_COM_NONE),
+  m_status(mxnc_status_success),
+  mp_version(IRS_NULL),
+  m_create_error(false),
+  m_last_error(mxnc_err_none),
+  mp_user_size(IRS_NULL),
+  m_user_index(0),
+  m_user_count(0),
+  mp_user_vars(IRS_NULL),
+  m_checksum_type(irs::mxncs_reduced_direct_sum)
+{
+}
+irs::mxnet_client_command_t::~mxnet_client_command_t()
+{
+}
+// Чтение версии протокола mxnet
+void irs::mxnet_client_command_t::get_version(irs_u16 *version)
+{
+  if (deny_proc()) return;
+  if (!version) {
+    m_last_error = mxnc_err_invalid_param;
+    m_status = mxnc_status_error;
+    return;
+  }
+
+  mp_version = version;
+  m_command = MXN_GET_VERSION;
+  m_status = mxnc_status_busy;
+}
+// Чтение размера массива (количество переменных)
+void irs::mxnet_client_command_t::get_size(mxn_cnt_t *size)
+{
+  if (deny_proc()) return;
+  if (!size) {
+    m_last_error = mxnc_err_invalid_param;
+    m_status = mxnc_status_error;
+    return;
+  }
+
+  mp_user_size = size;
+  m_command = MXN_READ_COUNT;
+  m_status = mxnc_status_busy;
+}
+// Чтение переменных
+void irs::mxnet_client_command_t::read(mxn_cnt_t index, mxn_cnt_t count,
+  irs_i32 *vars)
+{
+  if (deny_proc()) return;
+  bool index_over_max = (count > MXN_CNT_MAX - index);
+  bool vars_invalid = !vars;
+  bool count_zero = !count;
+  if (index_over_max || vars_invalid || count_zero) {
+    m_last_error = mxnc_err_invalid_param;
+    m_status = mxnc_status_error;
+    return;
+  }
+
+  m_user_index = index;
+  m_user_count = count;
+  mp_user_vars = vars;
+  m_command = MXN_READ;
+  m_status = mxnc_status_busy;
+}
+// Запись переменных
+void irs::mxnet_client_command_t::write(mxn_cnt_t index, mxn_cnt_t count,
+  irs_i32 *vars)
+{
+  if (deny_proc()) return;
+  bool index_over_max = (count > MXN_CNT_MAX - index);
+  bool vars_invalid = !vars;
+  bool count_zero = !count;
+  if (index_over_max || vars_invalid || count_zero) {
+    m_last_error = mxnc_err_invalid_param;
+    m_status = mxnc_status_error;
+    return;
+  }
+
+  m_user_index = index;
+  m_user_count = count;
+  mp_user_vars = vars;
+  m_command = MXN_WRITE;
+  m_status = mxnc_status_busy;
+}
+// Статус текущей операции
+irs::mxnet_client_command_t::status_t irs::mxnet_client_command_t::status()
+{
+  if (m_create_error) {
+    m_last_error = mxnc_err_create;
+    return mxnc_status_error;
+  } else {
+    return m_status;
+  }
+}
+// Элементарное действие
+void irs::mxnet_client_command_t::tick()
+{
+  m_hardflow.tick();
+  m_fixed_flow.tick();
+  m_beg_pack_proc.tick();
+
+  switch (m_mode) {
+    case mxnc_mode_free: {
+      if (m_command != MXN_COM_NONE) {
+        m_mode = mxnc_mode_packet;
+      }
+    } break;
+    case mxnc_mode_packet: {
+      mxn_cnt_t index = 0;
+      mxn_cnt_t count = 0;
+      bool is_fill_needed = true;
+      switch (m_command) {
+        case MXN_GET_VERSION: {
+          index = 0;
+          count = 0;
+        } break;
+        case MXN_READ_COUNT: {
+          index = 0;
+          count = 0;
+        } break;
+        case MXN_READ: {
+          index = m_user_index;
+          count = m_user_count;
+        } break;
+        case MXN_WRITE: {
+          index = m_user_index;
+          count = m_user_count;
+        } break;
+        default: {
+          is_fill_needed = false;
+          m_mode = mxnc_mode_free;
+        } break;
+      }
+      if (is_fill_needed) {
+        packet_fill(m_command, index, count, mp_user_vars, count);
+        m_mode = mxnc_mode_write;
+      }
+    } break;
+    case mxnc_mode_write: {
+      #ifdef INSERT_LEFT_BYTES
+      static irs_u8 *buf = 0;
+      IRS_LIB_ARRAY_DELETE_ASSERT(buf);
+
+      const mxn_sz_t added_size = 77;
+      mxn_sz_t new_size = m_send_size + added_size;
+      buf = IRS_LIB_NEW_ASSERT(irs_u8[new_size], MXNETCCPP_IDX);
+
+      const irs_u8 fill_byte = 0x9A;
+      memcpy(buf + added_size, m_packet_data.data(), m_send_size);
+      for (mxn_sz_t i = 0; i < added_size; i++) buf[i] = fill_byte;
+
+      m_channel_ident = m_hardflow.channel_next();
+      m_fixed_flow.write(m_channel_ident, buf, new_size);
+      //mxifa_write_begin(m_handle_channel, IRS_NULL, (irs_u8 *)buf,
+        //new_size);
+      #else //INSERT_LEFT_BYTE
+      m_fixed_flow.write(m_channel_ident, m_packet_data.data(), m_send_size);
+      //mxifa_write_begin(m_handle_channel, IRS_NULL, m_packet_data.data(),
+        //m_send_size);
+      #endif //INSERT_LEFT_BYTE
+      m_mode = mxnc_mode_write_wait;
+    } break;
+    case mxnc_mode_write_wait: {
+      //if (mxifa_write_end(m_handle_channel, false)) {
+      ff_status_type status = m_fixed_flow.write_status();
+      if (status == hardflow::fixed_flow_t::status_success) {
+        m_mode = mxnc_mode_read;
+      } else if (status == hardflow::fixed_flow_t::status_error) {
+        reset_parametrs();
+        m_last_error = mxnc_err_timeout;
+        m_status = mxnc_status_error;
+        m_mode = mxnc_mode_free;
+      }
+    } break;
+    case mxnc_mode_read: {
+      m_beg_pack_proc.start(m_packet_data.data(), m_channel_ident);
+      m_mode = mxnc_mode_begin_packet;
+    } break;
+    case mxnc_mode_begin_packet: {
+      switch (m_beg_pack_proc.status())
+      {
+        case mx_beg_pack_proc_fix_flow_t::beg_pack_ready: {
+          if (mp_packet->code_comm == m_command) {
+            irs_u8 *buf = m_packet_data.data() + mxn_header_size;
+            mxn_sz_t size = m_receive_size - mxn_header_size;
+            m_fixed_flow.read(m_channel_ident, buf, size);
+            //mxifa_read_begin(m_handle_channel, IRS_NULL, buf, size);
+            m_mode = mxnc_mode_chunk_read_wait;
+          } else {
+            m_mode = mxnc_mode_packet;
+          }
+        } break;
+        case mx_beg_pack_proc_fix_flow_t::beg_pack_error: {
+          m_last_error = mxnc_err_timeout;
+          m_status = mxnc_status_error;
+          reset_parametrs();
+          m_mode = mxnc_mode_free;
+        } break;
+        default: {
+        } break;
+      }
+    } break;
+    case mxnc_mode_chunk_read_wait: {
+      ff_status_type status = m_fixed_flow.read_status();
+      //if (mxifa_read_end(m_handle_channel, false)) {
+      if (status == hardflow::fixed_flow_t::status_success) {
+        m_mode = mxnc_mode_checksum;
+      } else if (status == hardflow::fixed_flow_t::status_error) {
+        m_last_error = mxnc_err_timeout;
+        m_status = mxnc_status_error;
+        reset_parametrs();
+        m_mode = mxnc_mode_free;
+      }
+    } break;
+    case mxnc_mode_checksum: {
+      mxn_cnt_t var_count = 0;
+      switch (mp_packet->code_comm) {
+        case MXN_READ: {
+          var_count = mp_packet->var_count;
+        } break;
+        default: {
+          var_count = 0;
+        } break;
+      }
+      mxn_sz_t cur_packet_size =
+        (MXN_SIZE_OF_HEADER + var_count + 1)*sizeof(irs_i32);
+      bool packet_size_ok = (cur_packet_size == m_receive_size);
+      bool checksum_ok = checksum_valid(mp_packet, var_count,
+        m_receive_size, m_checksum_type);
+      if (packet_size_ok && checksum_ok) {
+        m_mode = mxnc_mode_proc;
+      } else {
+        m_mode = mxnc_mode_packet;
+      }
+    } break;
+    case mxnc_mode_proc: {
+      switch (m_command) {
+        case MXN_GET_VERSION: {
+          if (mp_version) {
+            *mp_version = IRS_LOWORD(mp_packet->var_ind_first);
+            m_status = mxnc_status_success;
+          } else {
+            m_last_error = mxnc_err_invalid_param;
+            m_status = mxnc_status_error;
+          }
+        } break;
+        case MXN_READ_COUNT: {
+          if (mp_user_size) {
+            *mp_user_size = mp_packet->var_count;
+            m_status = mxnc_status_success;
+          } else {
+            m_last_error = mxnc_err_invalid_param;
+            m_status = mxnc_status_error;
+          }
+        } break;
+        case MXN_READ: {
+          bool user_vars_valid = (mp_user_vars != IRS_NULL);
+          bool index_valid = (m_user_index == mp_packet->var_ind_first);
+          bool count_valid = (m_user_count == mp_packet->var_count);
+          if (user_vars_valid && index_valid && count_valid) {
+            m_status = mxnc_status_success;
+            memcpy((void *)mp_user_vars, (void *)mp_packet->var,
+              m_user_count*sizeof(irs_i32));
+            #ifdef NOP
+            ShowMessage(
+              Format(
+                "pointer = %8X\n"
+                "index = %d\n"
+                "count = %d\n"
+                "vars[1] = %8X",
+                ARRAYOFCONST((
+                  (int)mp_user_vars,
+                  (int)m_user_index,
+                  (int)m_user_count,
+                  (int)mp_user_vars[1]
+                ))
+              )
+            );
+            #endif //NOP
+          } else if (!user_vars_valid) {
+            m_last_error = mxnc_err_invalid_param;
+            m_status = mxnc_status_error;
+          } else {
+            m_last_error = mxnc_err_bad_server;
+            m_status = mxnc_status_error;
+          }
+        } break;
+        case MXN_WRITE: {
+          bool index_valid = (0 == mp_packet->var_ind_first);
+          bool par_invalid = (1 == mp_packet->var_ind_first);
+          bool count_valid = (0 == mp_packet->var_count);
+          if (index_valid && count_valid) {
+            m_status = mxnc_status_success;
+          } else if (par_invalid) {
+            m_last_error = mxnc_err_remote_invalid_param;
+            m_status = mxnc_status_error;
+          } else {
+            m_last_error = mxnc_err_bad_server;
+            m_status = mxnc_status_error;
+          }
+        } break;
+        reset_parametrs();
+        m_mode = mxnc_mode_free;
+      }
+    } break;
+  }
+}
+// Прерывание операции
+void irs::mxnet_client_command_t::abort()
+{
+  if (m_command != MXN_COM_NONE) {
+    m_fixed_flow.read_abort();
+    m_last_error = mxnc_err_abort;
+    reset_parametrs();
+    m_status = mxnc_status_error;
+    m_mode = mxnc_mode_free;
+  }
+}
+// Чтение последней ошибки
+irs::mxnet_client_command_t::error_t
+  irs::mxnet_client_command_t::get_last_error()
+{
+  return m_last_error;
+}
+// Разрешение обработки
+bool irs::mxnet_client_command_t::deny_proc()
+{
+  if (m_create_error) {
+    m_last_error = mxnc_err_invalid_param;
+    m_status = mxnc_status_error;
+    return true;
+  }
+  if (m_command != MXN_COM_NONE) {
+    m_last_error = mxnc_err_busy;
+    m_status = mxnc_status_error;
+    return true;
+  }
+  return false;
+}
+// Заполнение пакета
+void irs::mxnet_client_command_t::packet_fill(mxn_cnt_t a_code_comm,
+  mxn_cnt_t a_packet_var_first, mxn_cnt_t a_packet_var_count,
+  irs_i32 *ap_vars, mxn_cnt_t a_var_count)
+{
+  size_t packet_size = (MXN_SIZE_OF_HEADER + a_var_count + 1)*sizeof(irs_i32);
+  if (a_code_comm == MXN_WRITE) {
+    m_receive_size = (MXN_SIZE_OF_HEADER + 1)*sizeof(irs_i32);
+  } else {
+    m_receive_size = packet_size;
+  }
+  if (a_code_comm == MXN_READ) {
+    m_send_size = (MXN_SIZE_OF_HEADER + 1)*sizeof(irs_i32);
+  } else {
+    m_send_size = packet_size;
+  }
+
+  m_packet_data.resize(packet_size);
+  mp_packet = reinterpret_cast<mxn_packet_t*>(m_packet_data.data());
+
+  mp_packet->ident_beg_pack_first = MXN_CONST_IDENT_BEG_PACK_FIRST;
+  mp_packet->ident_beg_pack_second = MXN_CONST_IDENT_BEG_PACK_SECOND;
+  mp_packet->code_comm = a_code_comm;
+  mp_packet->var_ind_first = a_packet_var_first;
+  mp_packet->var_count = a_packet_var_count;
+  if (a_code_comm == MXN_WRITE) {
+    memcpyex(mp_packet->var, ap_vars, a_var_count);
+    mp_packet->var[a_var_count] = checksum_calc(mp_packet, a_var_count,
+      m_send_size, m_checksum_type);
+  } else {
+    mp_packet->var[0] = checksum_calc(mp_packet, 0, m_send_size,
+      m_checksum_type);
+  }
+}
+// Установка таймаута операций, с
+void irs::mxnet_client_command_t::disconnect_time(counter_t a_time)
+{
+  m_fixed_flow.read_timeout(a_time);
+  m_fixed_flow.write_timeout(a_time);
+}
+// Установка ip-адреса удаленного устройства
+void irs::mxnet_client_command_t::ip(mxip_t a_ip)
+{
+  char ip_cstr[IP_STR_LEN];
+  mxip_to_cstr(ip_cstr, a_ip);
+  m_hardflow.set_param(irst("remote_adress"), ip_cstr);
+}
+// Установка порта удаленного устройства
+void irs::mxnet_client_command_t::port(irs_u16 a_port)
+{
+  hardflow_t::string_type port_str = a_port;
+  m_hardflow.set_param(irst("remote_port"), port_str);
+}
+// Задание типа контрольной суммы
+void irs::mxnet_client_command_t::checksum_type(
+  irs::mxn_checksum_t a_checksum_type)
+{
+  m_checksum_type = a_checksum_type;
+}
+// Сброс основных параметров алгоритма в исходное состояние
+void irs::mxnet_client_command_t::reset_parametrs()
+{
+  mp_version = IRS_NULL;
+  mp_user_size = IRS_NULL;
+  m_user_index = 0;
+  m_user_count = 0;
+  mp_user_vars = IRS_NULL;
+  m_command = MXN_COM_NONE;
+}
+
+// Клиент протокола mxnet, реализующий интерфейс mxdata_t,
+// работающий через hardflow_t
+irs::mxnet_client_t::mxnet_client_t(hardflow_t& a_hardflow):
+  m_mode(mode_free),
+  m_size(0),
+  m_data_vars(),
+  m_data_bytes(&m_data_vars),
+  m_write_queue(),
+  m_mxnet_client_command(a_hardflow)
+{
+}
+irs_uarc irs::mxnet_client_t::size()
+{
+  return m_size;
+}
+irs_bool irs::mxnet_client_t::connected()
+{
+  return m_is_connected;
+}
+void irs::mxnet_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  m_data_bytes.copy_to(ap_buf, a_index, a_size);
+}
+void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  m_data_bytes.copy_from(ap_buf, a_index, a_size);
+  fill_write_flags(a_index, a_size, true);
+}
+irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  IRS_LIB_ERROR_IF(a_bit_index >= global_limits_t::bits_in_byte,
+    ec_standard, "");
+  #ifdef IRS_LIB_CHECK
+  if (a_bit_index >= global_limits_t::bits_in_byte) {
+    return irs_false;
+  }
+  #endif //IRS_LIB_CHECK
+  return to_irs_bool((m_data_bytes[a_index] >> a_bit_index)&1);
+}
+void irs::mxnet_client_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  IRS_LIB_ERROR_IF(a_bit_index >= global_limits_t::bits_in_byte,
+    ec_standard, "");
+  #ifdef IRS_LIB_CHECK
+  if (a_bit_index >= global_limits_t::bits_in_byte) {
+    return;
+  }
+  #endif //IRS_LIB_CHECK
+  m_data_bytes[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+}
+void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  IRS_LIB_ERROR_IF(a_bit_index >= global_limits_t::bits_in_byte,
+    ec_standard, "");
+  #ifdef IRS_LIB_CHECK
+  if (a_bit_index >= global_limits_t::bits_in_byte) {
+    return;
+  }
+  #endif //IRS_LIB_CHECK
+}
+void irs::mxnet_client_t::tick()
+{
+}
+void irs::mxnet_client_t::fill_write_flags(irs_uarc a_index, irs_uarc a_size,
+  bool a_value)
+{
+  for (size_t byte_idx = a_index; byte_idx < a_index + a_size; byte_idx++) {
+    size_t var_idx = static_cast<size_t>(byte_idx/m_size_var_byte);
+    //m_write_flags[var_idx] = a_value;
+  }
 }
 

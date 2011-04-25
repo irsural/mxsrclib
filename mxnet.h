@@ -124,7 +124,7 @@ namespace irs {
 //! @{
 
 // Преобразование из внешнего массива irs_u8 в mxdata_t
-class mxdata_to_u8_t : public mxdata_t
+class mxdata_to_u8_t: public mxdata_t
 {
   irs_bool m_is_connected;
   irs_u8 *mp_u8_data;
@@ -143,7 +143,7 @@ public:
 };
 
 //  Реализация сервера mxnet в виде класса
-class mxnet_t : public mxdata_t
+class mxnet_t: public mxdata_t
 {
 public:
   typedef irs_i32 var_type;

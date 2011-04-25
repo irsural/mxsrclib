@@ -85,7 +85,6 @@ private:
   hardflow::fixed_flow_t& m_fixed_flow;
   irs_u8* mp_buf;
   irs_u8* mp_buf_end;
-  bool m_abort_request;
   channel_t m_channel;
 };
 

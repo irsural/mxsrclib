@@ -624,7 +624,8 @@ irs::mxnet_t::mxnet_t(hardflow_t &a_hardflow, irs_size_t a_var_cnt):
     var_type[m_raw_data.size() + MXN_SIZE_OF_HEADER + 1],
     MXNETCPP_IDX
   );
-  memset(static_cast<void*>(mp_packet), 0, m_raw_data.size() + MXN_SIZE_OF_HEADER + 1);
+  memset(static_cast<void*>(mp_packet), 0, m_raw_data.size() +
+    MXN_SIZE_OF_HEADER + 1);
 }
 
 irs::mxnet_t::~mxnet_t()
@@ -695,6 +696,7 @@ void irs::mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
 
 void irs::mxnet_t::tick()
 {
+  m_hardflow.tick();
   m_fixed_flow.tick();
   m_beg_pack_proc.tick();
 

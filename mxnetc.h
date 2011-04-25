@@ -2,7 +2,7 @@
 //! \ingroup network_in_out_group
 //! \brief Протокол MxNetC (Max Network Client)
 //!
-//! Дата: 28.04.2010\n
+//! Дата: 21.04.2011\n
 //! Ранняя дата: 12.02.2009
 
 #ifndef mxnetcH
@@ -71,8 +71,7 @@ typedef enum _mxnc_error_t {
 
 class mx_broadcast_proc_t;
 
-
-// Класс для
+// Клиент протокола mxnet
 class mxnetc
 {
   // Буфер для приема/отправки пакета
@@ -239,7 +238,7 @@ namespace irs {
 
 #define irs_mxdata_to_mxnet_def_interval ((counter_t)-1)
 
-// Преобразование mxnetc в mxdata_t
+//! \brief Преобразование mxnetc в mxdata_t
 class mxdata_to_mxnet_t : public mxdata_t
 {
   static const mxn_sz_t m_size_var_byte = sizeof(irs_i32);
@@ -286,7 +285,7 @@ public:
   void tick();
 };
 
-// Преобразователь mxnetc в mxdata_t со встроенным mxnetc
+//! \brief Преобразователь mxnetc в mxdata_t со встроенным mxnetc
 class mxnetc_data_t: public mxdata_to_mxnet_t
 {
 public:
@@ -299,6 +298,176 @@ public:
   void port(irs_u16 a_port);
 private:
   mxnetc m_mxnetc;
+};
+
+//! \brief Клиент протокола mxnet, работающий через hardflow_t
+class mxnet_client_command_t
+{
+public:
+  enum status_t {
+    mxnc_status_success = 0,
+    mxnc_status_busy = 1,
+    mxnc_status_error = 2
+  };
+  enum error_t {
+    mxnc_err_none = 0,
+    mxnc_err_invalid_param = 1,
+    mxnc_err_nomem = 2,
+    mxnc_err_create = 3,
+    mxnc_err_abort = 4,
+    mxnc_err_busy = 5,
+    mxnc_err_bad_server = 6,
+    mxnc_err_remote_invalid_param = 7,
+    mxnc_err_timeout = 8
+  };
+
+  //! \brief Конструктор
+  mxnet_client_command_t(hardflow_t& a_hardflow);
+  //! \brief Деструктор
+  ~mxnet_client_command_t();
+  //! \brief Чтение версии протокола mxnet
+  void get_version(irs_u16 *version);
+  //! \brief Чтение размера массива (количество переменных)
+  void get_size(mxn_cnt_t *size);
+  //! \brief Чтение переменных
+  void read(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars);
+  //! \brief Запись переменных
+  void write(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars);
+  //! \brief Статус текущей операции
+  status_t status();
+  //! \brief Элементарное действие
+  void tick();
+  //! \brief Прерывание операции
+  void abort();
+  //! \brief Чтение последней ошибки
+  error_t get_last_error();
+  //! \brief Установка таймаута операций, с
+  void disconnect_time(counter_t a_time);
+  //! \brief Установка ip-адреса удаленного устройства
+  void ip(mxip_t a_ip);
+  //! \brief Установка порта удаленного устройства
+  void port(irs_u16 port);
+  //! \brief Задание типа контрольной суммы
+  void checksum_type(irs::mxn_checksum_t a_checksum_type);
+
+private:
+  typedef mx_beg_pack_proc_fix_flow_t beg_pack_type;
+  typedef hardflow::fixed_flow_t::status_t ff_status_type;
+
+  enum mode_t {
+    mxnc_mode_free,
+    mxnc_mode_packet,
+    mxnc_mode_write,
+    mxnc_mode_write_wait,
+    mxnc_mode_read,
+    mxnc_mode_begin_packet,
+    mxnc_mode_chunk_read_wait,
+    mxnc_mode_checksum,
+    mxnc_mode_proc,
+    mxnc_mode_reset,
+  };
+
+  //! \brief Коммуникационный канал
+  hardflow_t& m_hardflow;
+  //! \brief Адаптер коммуникационного канала
+  hardflow::fixed_flow_t m_fixed_flow;
+  //! \brief Поиск начала пакета
+  beg_pack_type m_beg_pack_proc;
+  //! \brief Текущий идентификатор канала
+  hardflow_t::size_type m_channel_ident;
+  //! \brief Буфер для приема/отправки пакета
+  irs::raw_data_t<irs_u8> m_packet_data;
+  //! \brief Структура пакета
+  mxn_packet_t* mp_packet;
+  //! \brief Размер принимаемого пакета, байт
+  mxn_sz_t m_receive_size;
+  //! \brief Размер отправляемого пакета, байт
+  mxn_sz_t m_send_size;
+  //! \brief Текущий режим
+  mode_t m_mode;
+  //! \brief Режим после возврата из подрежима
+  mode_t m_mode_return;
+  //! \brief Текущая команда
+  mxn_cnt_t m_command;
+  //! \brief Текущий статус операции
+  status_t m_status;
+  //! \brief Указатель на переменную для версии
+  irs_u16* mp_version;
+  //! \brief Ошибка создания класса
+  bool m_create_error;
+  //! \brief Последняя ошибка
+  error_t m_last_error;
+  //! \brief Указатель на ползователскую переменную количества переменных
+  mxn_cnt_t* mp_user_size;
+  //! \brief Первая переменная для чтения/записи
+  mxn_cnt_t m_user_index;
+  //! \brief Количество переменных для чтения/записи
+  mxn_cnt_t m_user_count;
+  //! \brief Указатель на пользовательские переменные
+  irs_i32* mp_user_vars;
+  //! \brief Текущий тип контрольной суммы
+  irs::mxn_checksum_t m_checksum_type;
+
+  //! \brief Запрещаем конструктор по умолчанию
+  mxnet_client_command_t();
+  //! \brief Запрещение обработки
+  bool deny_proc();
+  //! \brief Заполнение пакета
+  void packet_fill(mxn_cnt_t a_code_comm, mxn_cnt_t a_packet_var_first,
+    mxn_cnt_t a_packet_var_count, irs_i32 *ap_vars, mxn_cnt_t a_var_count);
+  //! \brief Сброс основных параметров алгоритма в исходное состояние
+  void reset_parametrs();
+};
+
+
+//! \brief Структура для очереди байтовых операций mxnet_client_t
+struct mxnet_client_queue_item_t
+{
+  irs_uarc index;
+  raw_data_t<irs_u8> data;
+
+  mxnet_client_queue_item_t():
+    index(0),
+    data()
+  {
+  }
+};
+
+//! \brief Клиент протокола mxnet, реализующий интерфейс mxdata_t,
+//! работающий через hardflow_t
+class mxnet_client_t: public mxdata_t
+{
+public:
+  mxnet_client_t(hardflow_t& a_hardflow);
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  typedef mxnet_client_queue_item_t queue_item_type;
+
+  enum mode_t {
+    mode_free
+  };
+
+  enum {
+    m_size_var_byte = sizeof(irs_i32),
+  };
+
+  mode_t m_mode;
+  irs_uarc m_size;
+  bool m_is_connected;
+  irs::raw_data_t<irs_u32> m_data_vars;
+  raw_data_view_t<irs_u8, irs_u32> m_data_bytes;
+  deque<queue_item_type> m_write_queue;
+  mxnet_client_command_t m_mxnet_client_command;
+
+  void fill_write_flags(irs_uarc a_index, irs_uarc a_size, bool a_value);
 };
 
 //! @}

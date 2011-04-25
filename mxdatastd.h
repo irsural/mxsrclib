@@ -116,6 +116,12 @@ public:
   irs_uarc connect(irs::mxdata_t *a_data, irs_uarc a_index);
   irs::mxdata_t *data() const;
   irs_uarc index() const;
+  conn_data_t& operator++();
+  T operator++(int);
+  conn_data_t& operator--();
+  T operator--(int);
+  conn_data_t& operator+=(const T& a_value);
+  conn_data_t& operator-=(const T& a_value);
 
   const T &operator=(const T &a_elem);
   const conn_data_t& operator=(const conn_data_t& a_conn_data);
@@ -212,6 +218,70 @@ template <class T, int size, bool check>
 irs_uarc conn_data_t<T, size, check>::index() const
 {
   return m_index;
+}
+template <class T, int size, bool check>
+conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator++()
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  elem++;
+  m_data->write(p_elem_u8, m_index, size);
+  return *this;
+}
+template <class T, int size, bool check>
+T conn_data_t<T, size, check>::operator++(int)
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  T elem_before = elem;
+  elem++;
+  m_data->write(p_elem_u8, m_index, size);
+  return elem_before;
+}
+template <class T, int size, bool check>
+conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator--()
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  elem--;
+  m_data->write(p_elem_u8, m_index, size);
+  return *this;
+}
+template <class T, int size, bool check>
+T conn_data_t<T, size, check>::operator--(int)
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  T elem_before = elem;
+  elem--;
+  m_data->write(p_elem_u8, m_index, size);
+  return elem_before;
+}
+template <class T, int size, bool check>
+conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator+=(
+  const T& a_value)
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  elem += a_value;
+  m_data->write(p_elem_u8, m_index, size);
+  return *this;
+}
+template <class T, int size, bool check>
+conn_data_t<T, size, check>& conn_data_t<T, size, check>::operator-=(
+  const T& a_value)
+{
+  T elem = T();
+  irs_u8* p_elem_u8 = reinterpret_cast<irs_u8*>(&elem);
+  m_data->read(p_elem_u8, m_index, size);
+  elem -= a_value;
+  m_data->write(p_elem_u8, m_index, size);
+  return *this;
 }
 
 // Наложение массива на mxdata_t

@@ -3,7 +3,7 @@
 //! \brief Абстакция интерфейса для каналов обмена (интерфейсов)
 //!   для Borland C++ Builder
 //!
-//! Дата: 12.05.2010\n
+//! Дата: 20.04.2011\n
 //! Ранняя дата: 18.03.2009
 
 #define MXIFA_NEW
@@ -1430,7 +1430,7 @@ static void mxifa_set_config_in(void *pchdata, void *config)
       win32_tcp_ip->dest_ip = cfg->dest_ip;
       win32_tcp_ip->dest_port = cfg->dest_port;
       win32_tcp_ip->local_port = cfg->local_port;
-      win32_tcp_ip->udp_socket->set_local_port(cfg->local_port);
+      //win32_tcp_ip->udp_socket->set_local_port(cfg->local_port);
     } break;
     case mxifa_ei_win32_ni_usb_gpib: {
       mxifa_win32_ni_usb_gpib_t *win32_ni_usb_gpib =

@@ -2,7 +2,7 @@
 //! \ingroup configuration_group
 //! \brief Глобальные объявления типов
 //!
-//! Дата: 12.07.2010\n
+//! Дата: 24.04.2011\n
 //! Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -252,17 +252,17 @@ inline endian_t detect_cpu_endian()
 
 // Макросы выделения из переменных их частей для констант
 #define IRS_CONST_HIDWORD(_NUM_)\
-  (static_cast<irs_u32>((_NUM_ >> 32)&0xFFFFFFFF))
+  (static_cast<irs_u32>(((_NUM_) >> 32)&0xFFFFFFFF))
 #define IRS_CONST_LODWORD(_NUM_)\
-  (static_cast<irs_u32>(_NUM_&0xFFFFFFFF))
+  (static_cast<irs_u32>((_NUM_)&0xFFFFFFFF))
 #define IRS_CONST_HIWORD(_NUM_)\
-  (static_cast<irs_u16>((_NUM_ >> 16)&0xFFFF))
+  (static_cast<irs_u16>(((_NUM_) >> 16)&0xFFFF))
 #define IRS_CONST_LOWORD(_NUM_)\
-  (static_cast<irs_u16>(_NUM_&0xFFFF))
+  (static_cast<irs_u16>((_NUM_)&0xFFFF))
 #define IRS_CONST_HIBYTE(_NUM_)\
-  (static_cast<irs_u8>((_NUM_ >> 8)&0xFF))
+  (static_cast<irs_u8>(((_NUM_) >> 8)&0xFF))
 #define IRS_CONST_LOBYTE(_NUM_)\
-  (static_cast<irs_u8>(_NUM_&0xFF))
+  (static_cast<irs_u8>((_NUM_)&0xFF))
 
 // Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))

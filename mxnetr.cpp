@@ -214,7 +214,6 @@ irs::mx_beg_pack_proc_fix_flow_t::mx_beg_pack_proc_fix_flow_t(
   m_fixed_flow(a_fixed_flow),
   mp_buf(IRS_NULL),
   mp_buf_end(IRS_NULL),
-  m_abort_request(false),
   m_channel(invalid_channel)
 {
 }
@@ -230,13 +229,14 @@ void irs::mx_beg_pack_proc_fix_flow_t::start(
   mp_buf_end = mp_buf + MXN_SIZE_OF_BEG_PACK;
   m_status = start_process;
   m_out_status = beg_pack_busy;
-  m_abort_request = false;
   m_channel = a_channel;
 }
 
 void irs::mx_beg_pack_proc_fix_flow_t::abort()
 {
-  m_abort_request = true;
+  m_fixed_flow.read_abort();
+  m_status = stop;
+  m_out_status = beg_pack_stop;
 }
 
 irs::mx_beg_pack_proc_fix_flow_t::beg_pack_status_type 
@@ -269,11 +269,6 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
       } else if (flow_status == hardflow::fixed_flow_t::status_error) {
         m_status = stop;
         m_out_status = beg_pack_error;
-      }
-      if (m_abort_request) {
-        m_fixed_flow.read_abort();
-        m_status = stop;
-        m_out_status = beg_pack_stop;
       }
       break;
     }
@@ -310,11 +305,6 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
         m_status = stop;
         m_out_status = beg_pack_error;
       }
-      if (m_abort_request) {
-        m_fixed_flow.read_abort();
-        m_status = stop;
-        m_out_status = beg_pack_stop;
-      }
       break;
     }
     case read_chunk: 
@@ -326,17 +316,11 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
       } else if (flow_status == hardflow::fixed_flow_t::status_error) {
         m_status = start_process;
         m_out_status = beg_pack_error;
-      } 
-      if (m_abort_request) {
-        m_fixed_flow.read_abort();
-        m_status = stop;
-        m_out_status = beg_pack_stop;
       }
       break;
     }
     case stop: 
     {
-      m_abort_request = false;
       break;
     }
   }

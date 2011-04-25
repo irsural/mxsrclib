@@ -2,7 +2,7 @@
 //! \ingroup type_processing_group
 //! \brief Характеристики чисел
 //!
-//! Дата: 09.09.2010\n
+//! Дата: 24.04.2011\n
 //! Ранняя дата: 17.09.2009
 
 #ifndef IRSLIMITSH
@@ -32,9 +32,32 @@ namespace irs {
 struct global_limits_t
 {
   enum {
-    bits_in_byte = 8
+    bits_in_byte = 8,
+    high_bit_in_byte = 7
   };
 };
+
+//! \brief Преобразование любого типа в bool
+template <class T>
+bool to_bool(T a_value)
+{
+  if (a_value) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+//! \brief Преобразование любого типа в irs_bool
+template <class T>
+irs_bool to_irs_bool(T a_value)
+{
+  if (a_value) {
+    return irs_true;
+  } else {
+    return irs_false;
+  }
+}
 
 // Преобразование из bool в C-строку
 inline const char* bool_to_cstr(bool a_value)

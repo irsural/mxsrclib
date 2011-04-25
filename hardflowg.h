@@ -3,7 +3,7 @@
 //! \ingroup network_in_out_group
 //! \brief Коммуникационные потоки
 //!
-//! Дата: 18.06.2010\n
+//! Дата: 19.04.2011\n
 //! Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -218,7 +218,6 @@ public:
   typedef int errcode_type;
 private:
 public:
-  error_sock_t();
   errcode_type get_last_error();
 };
 
@@ -394,12 +393,15 @@ public:
   typedef socklen_t socklen_type;
   typedef in_addr_t in_addr_type;
   #endif // IRS_WINDOWS IRS_LINUX
-private:
 
+  enum {
+    def_channel_max_count = 1000,
+    def_channel_buf_max_size = 0xFFFF
+  };
+
+private:
   //enum { m_socket_error = socket_error };
   //enum { m_invalid_socket = invalid_socket };
-
-  error_sock_t m_error_sock;
   struct state_info_t
   {
     bool lib_socket_loaded;
@@ -422,18 +424,7 @@ private:
         bind_sock_and_ladr_success;
       return start_success;
     }
-  } m_state_info;
-  #if defined(IRS_WIN32)
-  WSADATA m_wsd;
-  #endif // IRS_WIN32
-  socket_type m_sock;
-  string_type m_local_host_name;
-  string_type m_local_host_port;
-  timeval m_func_select_timeout;
-  fd_set m_s_kit;
-  size_type m_send_msg_max_size;
-  udp_channel_list_t m_channel_list;
-  irs::raw_data_t<irs_u8> m_read_buf;
+  };
   enum parameter_t{
     param_invalid,
     param_adress,
@@ -446,7 +437,20 @@ private:
     param_channel_max_count
   };
 
-  static const char_type* empty_cstr();
+  error_sock_t m_error_sock;
+  state_info_t m_state_info;
+  #if defined(IRS_WIN32)
+  WSADATA m_wsd;
+  #endif // IRS_WIN32
+  socket_type m_sock;
+  string_type m_local_host_name;
+  string_type m_local_host_port;
+  timeval m_func_select_timeout;
+  fd_set m_s_kit;
+  size_type m_send_msg_max_size;
+  udp_channel_list_t m_channel_list;
+  irs::raw_data_t<irs_u8> m_read_buf;
+
 public:
   //! \param[in] a_local_host_name - локальный адрес. Пример: "127.0.0.1".
   //!   Обычно можно передавать пустую строку, тогда он будет установлен
@@ -489,12 +493,12 @@ public:
     const string_type& a_remote_host_name = empty_cstr(),
     const string_type& a_remote_host_port = empty_cstr(),
     const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
-    const size_type a_channel_max_count = 1000,
-    const size_type a_channel_buf_max_size = 0xFFFF,
+    const size_type a_channel_max_count = def_channel_max_count,
+    const size_type a_channel_buf_max_size = def_channel_buf_max_size,
     const bool a_limit_lifetime_enabled = false,
-    const double a_max_lifetime_sec = 24*60*60,
+    const double a_max_lifetime_sec = def_max_lifetime_sec(),
     const bool a_limit_downtime_enabled = false,
-    const double a_max_downtime_sec = 60*60
+    const double a_max_downtime_sec = def_max_downtime_sec()
   );
   virtual ~udp_flow_t();
 private:
@@ -522,6 +526,10 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
+
+  static const char_type* empty_cstr();
+  static double def_max_lifetime_sec();
+  static double def_max_downtime_sec();
 };
 
 //! \brief Сервер для передачи данных по TCP протоколу
@@ -871,6 +879,22 @@ private:
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
 };
+
+enum {
+  make_udp_flow_port_none = 0
+};
+// Создание серевера udp_flow_t
+handle_t<hardflow_t> make_udp_flow_server(
+  const irs_u16 a_local_port,
+  const double a_max_downtime_sec = 10.,
+  const udp_flow_t::size_type a_channel_max_count =
+    udp_flow_t::def_channel_max_count
+);
+// Создание клиента udp_flow_t
+handle_t<hardflow_t> make_udp_flow_client(
+  const udp_flow_t::string_type& a_remote_address = udp_flow_t::empty_cstr(),
+  const irs_u16 a_remote_port = make_udp_flow_port_none
+);
 
 //! @}
 
