@@ -1714,7 +1714,7 @@ void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   m_data_bytes.copy_from(ap_buf, a_index, a_size);
-  fill_write_flags(a_index, a_size, true);
+  //fill_write_flags(a_index, a_size, true);
 }
 irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1751,12 +1751,19 @@ void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 void irs::mxnet_client_t::tick()
 {
 }
-void irs::mxnet_client_t::fill_write_flags(irs_uarc a_index, irs_uarc a_size,
-  bool a_value)
+void irs::mxnet_client_t::queue_push(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
 {
-  for (size_t byte_idx = a_index; byte_idx < a_index + a_size; byte_idx++) {
-    size_t var_idx = static_cast<size_t>(byte_idx/m_size_var_byte);
-    //m_write_flags[var_idx] = a_value;
-  }
+  mxn_cnt_t var_front_idx = a_index/m_size_var_byte;
+  mxn_cnt_t var_back_idx = (a_index + a_size)/m_size_var_byte;
+  mxn_cnt_t var_size = var_back_idx - var_front_idx + 1;
+  m_write_queue.push_back(queue_item_type());
+  raw_data_t<irs_i32>& data = m_write_queue.back().data;
+  data.resize(var_size);
+  data[0] = m_data_vars[var_front_idx];
+  data[var_size - 1] = m_data_vars[var_back_idx];
+  raw_data_view_t<irs_u8, irs_i32> data_u8(&data);
+  size_t byte_shift_idx = a_index%m_size_var_byte;
+  data_u8.copy_from(ap_buf, byte_shift_idx, a_size);
 }
 

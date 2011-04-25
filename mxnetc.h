@@ -424,7 +424,7 @@ private:
 struct mxnet_client_queue_item_t
 {
   irs_uarc index;
-  raw_data_t<irs_u8> data;
+  raw_data_t<irs_i32> data;
 
   mxnet_client_queue_item_t():
     index(0),
@@ -462,12 +462,12 @@ private:
   mode_t m_mode;
   irs_uarc m_size;
   bool m_is_connected;
-  irs::raw_data_t<irs_u32> m_data_vars;
-  raw_data_view_t<irs_u8, irs_u32> m_data_bytes;
+  irs::raw_data_t<irs_i32> m_data_vars;
+  raw_data_view_t<irs_u8, irs_i32> m_data_bytes;
   deque<queue_item_type> m_write_queue;
   mxnet_client_command_t m_mxnet_client_command;
 
-  void fill_write_flags(irs_uarc a_index, irs_uarc a_size, bool a_value);
+  void queue_push(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
 };
 
 //! @}
