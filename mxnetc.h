@@ -364,7 +364,7 @@ private:
     mxnc_mode_chunk_read_wait,
     mxnc_mode_checksum,
     mxnc_mode_proc,
-    mxnc_mode_reset,
+    mxnc_mode_reset
   };
 
   //! \brief Коммуникационный канал
@@ -456,7 +456,7 @@ private:
   };
 
   enum {
-    m_size_var_byte = sizeof(irs_i32),
+    m_size_var_byte = sizeof(irs_i32)
   };
 
   mode_t m_mode;

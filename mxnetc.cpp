@@ -1578,9 +1578,9 @@ void irs::mxnet_client_command_t::tick()
             m_status = mxnc_status_error;
           }
         } break;
-        reset_parametrs();
-        m_mode = mxnc_mode_free;
       }
+      reset_parametrs();
+      m_mode = mxnc_mode_free;
     } break;
   }
 }

@@ -1204,8 +1204,6 @@ void irs::hardflow::udp_flow_t::tick()
   m_channel_list.tick();
 }
 
-#if defined(IRS_WIN32) || defined(IRS_LINUX)
-
 irs::hardflow::tcp_server_t::tcp_server_t(
   irs_u16 local_port
 ):
@@ -1825,8 +1823,54 @@ void irs::hardflow::tcp_client_t::tick()
   }
 }
 
-#endif // defined(IRS_WIN32) || defined(IRS_LINUX)
-
+// Создание серевера udp_flow_t
+irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_server(
+  const irs_u16 a_local_port,
+  const double a_max_downtime_sec,
+  const udp_flow_t::size_type a_channel_max_count
+)
+{
+  udp_flow_t::string_type local_host_name = udp_flow_t::empty_cstr();
+  udp_flow_t::string_type local_host_port = a_local_port;
+  udp_flow_t::string_type remote_host_name = udp_flow_t::empty_cstr();
+  udp_flow_t::string_type remote_host_port = udp_flow_t::empty_cstr();
+  udp_limit_connections_mode_t mode = udplc_mode_queue;
+  udp_flow_t::size_type channel_max_count = a_channel_max_count;
+  udp_flow_t::size_type channel_buf_max_size =
+    udp_flow_t::def_channel_buf_max_size;
+  bool limit_lifetime_enabled = false;
+  double max_lifetime_sec = udp_flow_t::def_max_lifetime_sec();
+  bool limit_downtime_enabled = true;
+  double max_downtime_sec = a_max_downtime_sec;
+  return new udp_flow_t(local_host_name, local_host_port, remote_host_name,
+    remote_host_port, mode, channel_max_count, channel_buf_max_size,
+    limit_lifetime_enabled, max_lifetime_sec, limit_downtime_enabled,
+    max_downtime_sec);
+}
+// Создание клиента udp_flow_t
+irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_client(
+  const udp_flow_t::string_type& a_remote_address,
+  const irs_u16 a_remote_port
+)
+{
+  udp_flow_t::string_type local_host_name = udp_flow_t::empty_cstr();
+  udp_flow_t::string_type local_host_port = udp_flow_t::empty_cstr();
+  udp_flow_t::string_type remote_host_name = udp_flow_t::empty_cstr();
+  udp_flow_t::string_type remote_host_port = udp_flow_t::empty_cstr();
+  udp_limit_connections_mode_t mode = udplc_mode_limited;
+  udp_flow_t::size_type channel_max_count =
+    udp_flow_t::def_channel_max_count;
+  udp_flow_t::size_type channel_buf_max_size =
+    udp_flow_t::def_channel_buf_max_size;
+  bool limit_lifetime_enabled = false;
+  double max_lifetime_sec = udp_flow_t::def_max_lifetime_sec();
+  bool limit_downtime_enabled = false;
+  double max_downtime_sec = udp_flow_t::def_max_downtime_sec();
+  return new udp_flow_t(local_host_name, local_host_port, remote_host_name,
+    remote_host_port, mode, channel_max_count, channel_buf_max_size,
+    limit_lifetime_enabled, max_lifetime_sec, limit_downtime_enabled,
+    max_downtime_sec);
+}
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 irs::hardflow::fixed_flow_t::fixed_flow_t(
@@ -2510,55 +2554,3 @@ void irs::hardflow::simple_tcp_flow_t::tick()
 {
   mp_simple_tcp->tick();
 }
-
-#ifndef NOP
-// Создание серевера udp_flow_t
-irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_server(
-  const irs_u16 a_local_port,
-  const double a_max_downtime_sec,
-  const udp_flow_t::size_type a_channel_max_count
-)
-{
-  udp_flow_t::string_type local_host_name = udp_flow_t::empty_cstr();
-  udp_flow_t::string_type local_host_port = a_local_port;
-  udp_flow_t::string_type remote_host_name = udp_flow_t::empty_cstr();
-  udp_flow_t::string_type remote_host_port = udp_flow_t::empty_cstr();
-  udp_limit_connections_mode_t mode = udplc_mode_queue;
-  udp_flow_t::size_type channel_max_count = a_channel_max_count;
-  udp_flow_t::size_type channel_buf_max_size =
-    udp_flow_t::def_channel_buf_max_size;
-  bool limit_lifetime_enabled = false;
-  double max_lifetime_sec = udp_flow_t::def_max_lifetime_sec();
-  bool limit_downtime_enabled = true;
-  double max_downtime_sec = a_max_downtime_sec;
-  return new udp_flow_t(local_host_name, local_host_port, remote_host_name,
-    remote_host_port, mode, channel_max_count, channel_buf_max_size,
-    limit_lifetime_enabled, max_lifetime_sec, limit_downtime_enabled,
-    max_downtime_sec);
-}
-// Создание клиента udp_flow_t
-irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_client(
-  const udp_flow_t::string_type& a_remote_address,
-  const irs_u16 a_remote_port
-)
-{
-  udp_flow_t::string_type local_host_name = udp_flow_t::empty_cstr();
-  udp_flow_t::string_type local_host_port = udp_flow_t::empty_cstr();
-  udp_flow_t::string_type remote_host_name = udp_flow_t::empty_cstr();
-  udp_flow_t::string_type remote_host_port = udp_flow_t::empty_cstr();
-  udp_limit_connections_mode_t mode = udplc_mode_limited;
-  udp_flow_t::size_type channel_max_count =
-    udp_flow_t::def_channel_max_count;
-  udp_flow_t::size_type channel_buf_max_size =
-    udp_flow_t::def_channel_buf_max_size;
-  bool limit_lifetime_enabled = false;
-  double max_lifetime_sec = udp_flow_t::def_max_lifetime_sec();
-  bool limit_downtime_enabled = false;
-  double max_downtime_sec = udp_flow_t::def_max_downtime_sec();
-  return new udp_flow_t(local_host_name, local_host_port, remote_host_name,
-    remote_host_port, mode, channel_max_count, channel_buf_max_size,
-    limit_lifetime_enabled, max_lifetime_sec, limit_downtime_enabled,
-    max_downtime_sec);
-}
-#endif //NOP
-

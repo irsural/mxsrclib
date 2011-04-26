@@ -48,6 +48,28 @@ public:
   virtual void abort() = 0;
 };
 
+class comm_data_t
+{
+public:
+  typedef size_t size_type;
+  enum status_t {
+    status_completed,
+    status_wait,
+    status_error
+  };
+  enum eeprom_type_t {
+    at25128a,
+    at25256a
+  };
+  virtual ~comm_data_t() {};
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size) = 0;
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size) = 0;
+  virtual status_t status() = 0;
+  virtual size_type size() = 0;
+  virtual void tick() = 0;
+};
+
 // “ип дл€ параметра - изменение при первом соединении
 enum change_data_first_connect_t {
   change_on_first_connect,
@@ -894,19 +916,19 @@ inline typename raw_data_view_t<T, VT>::size_type
 template <class T, class VT>
 inline bool raw_data_view_t<T, VT>::empty() const
 {
-  return m_size == 0;
+  return mp_viewed_data->empty();
 }
 template <class T, class VT>
 void raw_data_view_t<T, VT>::reserve(size_type a_capacity)
 {
   mp_viewed_data->reserve(a_capacity*sizeof(value_type)/
-    sizeof(viewed_value_type))
+    sizeof(viewed_value_type));
 }
 template <class T, class VT>
 void raw_data_view_t<T, VT>::resize(size_type a_size)
 {
   mp_viewed_data->reserve(a_size*sizeof(value_type)/
-    sizeof(viewed_value_type))
+    sizeof(viewed_value_type));
 }
 template <class T, class VT>
 void raw_data_view_t<T, VT>::copy_to(raw_data_view_t& a_raw_data,
