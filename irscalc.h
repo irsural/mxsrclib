@@ -2,7 +2,7 @@
 //! \ingroup math_group
 //! \brief Калькулятор
 //!
-//! Дата: 16.05.2010\n
+//! Дата: 26.04.2011\n
 //! Дата создания: 01.02.2009
 
 #ifndef irscalcH
@@ -2129,13 +2129,15 @@ inline bool calculator_t::eval_exp_logical(mutable_ref_t* ap_value)
               // Произошла ошибка
             }
             if (fsuccess) {
-              ap_value->type(mutable_ref_t::type_value);
+              //ap_value->type(mutable_ref_t::type_value);
               if (delim == d_and) {
-                ap_value->value(first_value_variant.as_bool() &&
-                  second_value_variant.as_bool());
+                //ap_value->value(first_value_variant.as_bool() &&
+                  //second_value_variant.as_bool());
+                first_value_variant = first_value_variant.as_bool() &&
+                  second_value_variant.as_bool();
               } else {
-                ap_value->value(first_value_variant.as_bool() ||
-                  second_value_variant.as_bool());
+                first_value_variant = first_value_variant.as_bool() ||
+                  second_value_variant.as_bool();
               }
               fsuccess = m_detector_token.get_token(&token);
             } else {
