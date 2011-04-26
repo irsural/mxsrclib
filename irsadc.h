@@ -11,7 +11,6 @@
 
 #include <irsspi.h>
 #include <irsstd.h>
-#include <irsgpio.h>
 #include <mxdata.h>
 
 #include <irsfinal.h>
@@ -956,121 +955,6 @@ struct dac_ad5293_data_t
     index = resistance_code.connect(ap_data, index);
   }
 };
-
-//--------------------------  AT25128A_256A ------------------------------------
-class eeprom_at25128a_t : public mxdata_t
-{
-public:
-  eeprom_at25128a_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, 
-    irs_u32 a_ee_start_index, irs_u32 a_ee_size);
-  ~eeprom_at25128a_t();
-  virtual irs_uarc size();
-  virtual irs_bool connected();
-  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void tick();
-  bool error();
-private:
-  enum mode_t {
-    mode_get_status,
-    mode_general
-  };
-  enum check_status_mode_t {
-    check_status_send_command,
-    check_status_get_response
-  };
-  enum operation_status_t {
-    op_search_data_operation,
-    op_spi_write_begin,
-    op_spi_wren,
-    op_spi_write_continue,
-    op_spi_write_end,
-    op_write_crc32_begin,
-    op_write_crc32_continue,
-    op_write_crc32_end,
-    op_spi_reset
-  };
-  enum ee_status_t {
-    complete,
-    busy
-  };
-  enum {
-    m_start_index = 0x0,
-    
-    m_spi_size = 3,
-    
-    m_crc_size = sizeof(irs_u32),
-    
-    m_PAGE_SIZE = 64,
-    
-    // INSTRUCTION CODES
-    m_WREN = 0x06,
-    m_WRDI = 0x04,
-    m_RDSR = 0x05,
-    m_WRSR = 0x01,
-    m_READ = 0x03,
-    m_WRITE = 0x02,
-    
-    // STATUS REGISTER BIT
-    m_RDY = 0,
-    m_WEN = 1,
-    m_BP0 = 2,
-    m_BP1 = 3,
-    m_WPEN = 7
-  };
-  spi_t* mp_spi;
-  gpio_pin_t* mp_cs_pin;
-  size_t m_ee_start_index;
-  size_t m_ee_size;
-  operation_status_t m_op_status;
-  ee_status_t m_ee_status;
-  bool m_need_write;
-  bool m_crc_error;
-  size_t m_write_size;
-  bool m_crc_write_begin;
-  vector<bool> m_need_writes;
-  size_t m_start_block;
-  size_t m_search_index;
-  irs::raw_data_t<irs_u8> mp_target_buf;
-  irs_u8 mp_read_buf[m_spi_size];
-  irs_u8 mp_send_buf[m_spi_size];
-  mode_t m_mode;
-  check_status_mode_t m_check_eeprom_status_mode;
-  size_t m_write_index_cur;
-  bool m_crc_need_calc;
-  
-  irs_u32 calc_old_crc();
-  irs_u32 calc_new_crc();
-  irs_u32 read_crc_eeprom();
-  size_t read_part(size_t a_index, size_t a_size);
-  void read_on_start();
-  ee_status_t get_status();
-  
-}; // eeprom_at25128a_t
-
-#ifdef NOP
-class eeprom_at25128a_protected_t: public mxdata_t
-{
-public:
-  eeprom_at25128a_protected_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
-    irs_u32 a_ee_size);
-  ~eeprom_at25128a_protected_t();
-  virtual irs_uarc size();
-  virtual irs_bool connected();
-  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void tick();
-  bool error();
-private:
-  
-}; // eeprom_at25128a_protected_t
-#endif // NOP
 
 //! @}
 
