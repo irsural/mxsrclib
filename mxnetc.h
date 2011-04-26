@@ -438,7 +438,8 @@ struct mxnet_client_queue_item_t
 class mxnet_client_t: public mxdata_t
 {
 public:
-  mxnet_client_t(hardflow_t& a_hardflow);
+  mxnet_client_t(hardflow_t& a_hardflow, counter_t a_update_time,
+    counter_t a_disconnect_time);
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -452,7 +453,8 @@ private:
   typedef mxnet_client_queue_item_t queue_item_type;
 
   enum mode_t {
-    mode_free
+    mode_start,
+    mode_get_size
   };
 
   enum {
@@ -462,12 +464,13 @@ private:
   mode_t m_mode;
   irs_uarc m_size;
   bool m_is_connected;
+  loop_timer_t m_update_timer;
   irs::raw_data_t<irs_i32> m_data_vars;
   raw_data_view_t<irs_u8, irs_i32> m_data_bytes;
   deque<queue_item_type> m_write_queue;
   mxnet_client_command_t m_mxnet_client_command;
 
-  void queue_push(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  void queue_push(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
 };
 
 //! @}

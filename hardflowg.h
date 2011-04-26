@@ -672,14 +672,19 @@ private:
   void stop_client();
 };
 
-// Создание серевера udp_flow_t
+enum {
+  //! \brief Константа означает, что для локального порта
+  //! берется любой свободный
+  make_udp_flow_port_none = 0
+};
+//! \brief Создание серевера udp_flow_t
 handle_t<hardflow_t> make_udp_flow_server(
   const irs_u16 a_local_port,
   const double a_max_downtime_sec = 10.,
   const udp_flow_t::size_type a_channel_max_count =
     udp_flow_t::def_channel_max_count
 );
-// Создание клиента udp_flow_t
+//! \brief Создание клиента udp_flow_t
 handle_t<hardflow_t> make_udp_flow_client(
   const udp_flow_t::string_type& a_remote_address = udp_flow_t::empty_cstr(),
   const irs_u16 a_remote_port = make_udp_flow_port_none
@@ -890,10 +895,6 @@ private:
   irs_u8* mp_send_buf;
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;
-};
-
-enum {
-  make_udp_flow_port_none = 0
 };
 //! @}
 
