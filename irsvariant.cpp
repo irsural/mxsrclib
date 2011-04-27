@@ -1322,7 +1322,10 @@ bool irs::variant::variant_t::convert_to(const var_type_t a_var_type)
           // Ошибка при конвертировании
         }
       }
-    } else if (m_type == var_type_unknown) {
+    } else if ((m_type == var_type_unknown) ||
+      (m_type == var_type_void_ptr) ||
+      (m_type == var_type_const_void_ptr) ||
+      (m_type == var_type_array)) {
       // Этот тип преобразовать невозможно
     } else {
       IRS_LIB_ASSERT_MSG("Неучтенный тип");
