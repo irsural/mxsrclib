@@ -12,6 +12,7 @@
 #include <irsspi.h>
 #include <irsstd.h>
 #include <mxdata.h>
+#include <irsgpio.h>
 
 #include <irsfinal.h>
 
