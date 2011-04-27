@@ -1497,12 +1497,9 @@ void irs::modbus_server_t::tick()
           break;
           case write_single_coil:
           {
-            mlog() << irsm("write_single_coil") << endl;
             response_single_write_t &response_write_coil = 
               reinterpret_cast<response_single_write_t&>(*(mp_buf.data() + 
               size_of_MBAP));
-            mlog() << " coil_address = " <<
-              int(response_write_coil.address) << endl;
             irs_u8 coil_byte = 
               static_cast<irs_u8>(response_write_coil.address/8);
             irs_u8 mask = 
@@ -1518,24 +1515,15 @@ void irs::modbus_server_t::tick()
           case write_multiple_coils:
           { 
             if (num_of_elem != 0) {
-              mlog() << irsm("write_multiple_coils") << endl;
               request_multiple_write_byte_t &write_multi_coils =
                 reinterpret_cast<request_multiple_write_byte_t&>(
                 *(mp_buf.data() + size_of_MBAP));
-              mlog() << " starting_address = " <<
-                int(write_multi_coils.starting_address) << endl;
-              mlog() << " quantity = " <<
-                int(write_multi_coils.quantity) << endl;
               IRS_LIB_ASSERT(static_cast<size_t>(
                 (write_multi_coils.starting_address +
                 write_multi_coils.quantity)) <= m_coils_byte.size()*8);
-              mlog() << "m_coils_byte[1] = " << int(m_coils_byte[1]) << endl;
-              mlog() << "write_multi_coils.value = " <<
-                int(write_multi_coils.value[0]) << endl;
               bit_copy(write_multi_coils.value, m_coils_byte.data(), 0,
                 size_t(write_multi_coils.starting_address), 
                 size_t(write_multi_coils.quantity));
-              mlog() << "m_coils_byte[1] = " << int(m_coils_byte[1]) << endl;
               header.length = irs_u16(1 + 1 + size_of_read_header);
             } else {
               error_response(ILLEGAL_DATA_ADDRESS);
