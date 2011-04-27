@@ -497,13 +497,13 @@ irs_bool irs::modbus_server_t::connected()
 
 void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
-  //mlog() << irsm("\n recieved packet") << endl;
-  //MBAP_header_t &header = 
-    //reinterpret_cast<MBAP_header_t&>(*ap_buf);
+  mlog() << irsm("\n recieved packet") << endl;
+  MBAP_header_t &header = 
+    reinterpret_cast<MBAP_header_t&>(*ap_buf);
   request_exception_t &req_header = 
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
     
-  /*mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
+  mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
   mlog() << irsm(" transaction_id_hi .... ") <<
@@ -520,12 +520,12 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     int(header.unit_identifier) << endl;
     
   mlog() << irsm(" function_code ........ ") <<
-    int(req_header.function_code);*/
+    int(req_header.function_code);
   switch(req_header.function_code)
   {
     case read_discrete_inputs:
     {
-      /*request_t &req_header_inner = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -535,11 +535,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_coils:
     {
-      /*request_t &req_header_inner = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -549,11 +549,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_hold_registers:
     {
-      /*request_t &req_header_inner = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -563,11 +563,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case read_input_registers:
     {
-      /*request_t &req_header_inner = 
+      request_t &req_header_inner = 
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -577,7 +577,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
       mlog() << irsm(" quantity_lo .......... ") <<
         int(IRS_LOBYTE(req_header_inner.quantity)) << endl;
       mlog() << irsm(" quantity_hi .......... ") <<
-        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;*/
+        int(IRS_HIBYTE(req_header_inner.quantity)) << endl;
     } break;
     case write_single_coil:
     {
@@ -1354,7 +1354,6 @@ void irs::modbus_server_t::tick()
         }
         IRS_LIB_IRSMBUS_DBG_MONITOR(
           modbus_pack_request_monitor(mp_buf.data()););
-        modbus_pack_request_monitor(mp_buf.data());
         MBAP_header_t &header = 
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
         request_t &req_header = 
