@@ -16,8 +16,6 @@
 
 #include <irsfinal.h>
 
-#define HWREG(x) (*((volatile irs_u32*)(x)))
-
 namespace irs
 {
 namespace arm

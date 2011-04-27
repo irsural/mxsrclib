@@ -73,6 +73,8 @@
 #define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
 #define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
 
+#define HWREG(x) (*((volatile irs_u32*)(x)))
+
 typedef struct {
   __REG32  PMC0           : 4;
   __REG32  PMC1           : 4;

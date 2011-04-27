@@ -12,18 +12,22 @@
 
 #include <irsfinal.h>
 
-#ifdef NOP
-
+/**
 SSIISR_bit.BSY // идет прием либо передача или буфер записи не пуст
 SSIISR_bit.RFF // буфер на чтение заполнен
 SSIISR_bit.RNE // появились данные для чтения
 SSIISR_bit.TNF // буфер на передачу не заполнен
 SSIISR_bit.TFE // буфер на передачу пуст
+*/
 
-#endif // NOP
-
-irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
-  spi_type_t a_spi_type, ssi_type_t a_ssi_type
+irs::arm::arm_spi_t::arm_spi_t(
+  irs_u8 a_buffer_size,
+  irs_u32 a_f_osc,
+  spi_type_t a_spi_type,
+  ssi_type_t a_ssi_type,
+  arm_port_t &a_clk_port,
+  arm_port_t &a_rx_port,
+  arm_port_t &a_tx_port
 ):
   m_status(SPI_FREE),
   mp_buf(a_buffer_size),
@@ -60,8 +64,6 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
       GPIOAAFSEL_bit.no4 = 1;
       GPIOAAFSEL_bit.no5 = 1;
       
-      //(*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= 
-        //(PORTA_SSI0Clk|PORTA_SSI0Rx|PORTA_SSI0Tx);
       GPIOAPCTL_bit.PMC2 = SSI0Clk;
       GPIOAPCTL_bit.PMC4 = SSI0Rx;
       GPIOAPCTL_bit.PMC5 = SSI0Tx;
@@ -74,23 +76,111 @@ irs::arm::arm_spi_t::arm_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
     case SSI1:
     {
       RCGC1_bit.SSI1 = 1;
-      RCGC2_bit.PORTH = 1;
-      for (irs_u8 i = 10; i; i--);
-      
-      GPIOHDEN_bit.no4 = 1;
-      GPIOHDIR_bit.no4 = 1;
-      GPIOHAFSEL_bit.no4 = 1;
-      GPIOHDEN_bit.no6 = 1;
-      GPIOHDIR_bit.no6 = 0;
-      GPIOHAFSEL_bit.no6 = 1;
-      GPIOHDEN_bit.no7 = 1;
-      GPIOHDIR_bit.no7 = 1;
-      GPIOHAFSEL_bit.no7 = 1;
-      
-      GPIOHPCTL_bit.PMC4 = SSI1Clk;
-      GPIOHPCTL_bit.PMC6 = SSI1Rx;
-      GPIOHPCTL_bit.PMC7 = SSI1Tx;
-      
+      switch(reinterpret_cast<irs_u32>(&a_clk_port))
+      {
+        case PORTE_BASE:
+        {
+          RCGC2_bit.PORTE = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOEDEN_bit.no0 = 1;
+          GPIOEDIR_bit.no0 = 1;
+          GPIOEAFSEL_bit.no0 = 1;
+          GPIOEPCTL_bit.PMC0 = SSI1Clk_E;
+        } break;
+        case PORTF_BASE:
+        {
+          RCGC2_bit.PORTF = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOFDEN_bit.no2 = 1;
+          GPIOFDIR_bit.no2 = 1;
+          GPIOFAFSEL_bit.no2 = 1;
+          GPIOFPCTL_bit.PMC2 = SSI1Clk_F;
+        } break;
+        case PORTH_BASE:
+        {
+          RCGC2_bit.PORTH = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOHDEN_bit.no4 = 1;
+          GPIOHDIR_bit.no4 = 1;
+          GPIOHAFSEL_bit.no4 = 1;
+          GPIOHPCTL_bit.PMC4 = SSI1Clk_H;
+        } break;
+        default:
+        {
+          IRS_LIB_ERROR(ec_standard,
+            "Неверно указан порт при инициализации SPI1");
+        } break;
+      }
+      switch(reinterpret_cast<irs_u32>(&a_rx_port))
+      {
+        case PORTE_BASE:
+        {
+          RCGC2_bit.PORTE = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOEDEN_bit.no2 = 1;
+          GPIOEDIR_bit.no2 = 0;
+          GPIOEAFSEL_bit.no2 = 1;
+          GPIOEPCTL_bit.PMC2 = SSI1Rx_E;
+        } break;
+        case PORTF_BASE:
+        {
+          RCGC2_bit.PORTF = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOFDEN_bit.no4 = 1;
+          GPIOFDIR_bit.no4 = 0;
+          GPIOFAFSEL_bit.no4 = 1;
+          GPIOFPCTL_bit.PMC4 = SSI1Rx_F;
+        } break;
+        case PORTH_BASE:
+        {
+          RCGC2_bit.PORTH = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOHDEN_bit.no6 = 1;
+          GPIOHDIR_bit.no6 = 0;
+          GPIOHAFSEL_bit.no6 = 1;
+          GPIOHPCTL_bit.PMC6 = SSI1Rx_H;
+        } break;
+        default:
+        {
+          IRS_LIB_ERROR(ec_standard,
+            "Неверно указан порт при инициализации SPI1");
+        } break;
+      }
+      switch(reinterpret_cast<irs_u32>(&a_tx_port))
+      {
+        case PORTE_BASE:
+        {
+          RCGC2_bit.PORTE = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOEDEN_bit.no3 = 1;
+          GPIOEDIR_bit.no3 = 1;
+          GPIOEAFSEL_bit.no3 = 1;
+          GPIOEPCTL_bit.PMC3 = SSI1Tx_E;
+        } break;
+        case PORTF_BASE:
+        {
+          RCGC2_bit.PORTF = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOFDEN_bit.no5 = 1;
+          GPIOFDIR_bit.no5 = 1;
+          GPIOFAFSEL_bit.no5 = 1;
+          GPIOFPCTL_bit.PMC5 = SSI1Tx_F;
+        } break;
+        case PORTH_BASE:
+        {
+          RCGC2_bit.PORTH = 1;
+          for (irs_u8 i = 10; i; i--);
+          GPIOHDEN_bit.no7 = 1;
+          GPIOHDIR_bit.no7 = 1;
+          GPIOHAFSEL_bit.no7 = 1;
+          GPIOHPCTL_bit.PMC7 = SSI1Tx_H;
+        } break;
+        default:
+        {
+          IRS_LIB_ERROR(ec_standard,
+            "Неверно указан порт при инициализации SPI1");
+        } break;
+      }
       SSI1CR1 = 0x0;
       SSI1CPSR = 0x2;
       
@@ -262,7 +352,7 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
 
 bool irs::arm::arm_spi_t::set_order(order_t /*a_order*/)
 {
-  return true;
+  return true; // MSB
 }
 
 bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)

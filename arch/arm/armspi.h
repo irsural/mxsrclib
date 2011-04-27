@@ -39,7 +39,10 @@ public:
     irs_u8 a_buffer_size,
     irs_u32 a_f_osc,
     spi_type_t a_spi_type = SPI,
-    ssi_type_t a_ssi_type = SSI0
+    ssi_type_t a_ssi_type = SSI0,
+    arm_port_t &a_clk_port = GPIO_PORTH,
+    arm_port_t &a_rx_port = GPIO_PORTH,
+    arm_port_t &a_tx_port = GPIO_PORTH
   );
   virtual ~arm_spi_t();
   virtual void abort();
@@ -69,9 +72,15 @@ private:
     SSI0Clk = 0x1,
     SSI0Rx = 0x1,
     SSI0Tx = 0x1,
-    SSI1Clk = 0xB,
-    SSI1Rx = 0xB,
-    SSI1Tx = 0xB
+    SSI1Clk_E = 0x2,
+    SSI1Rx_E = 0x2,
+    SSI1Tx_E = 0x2,
+    SSI1Clk_F = 0x9,
+    SSI1Rx_F = 0x9,
+    SSI1Tx_F = 0x9,
+    SSI1Clk_H = 0xB,
+    SSI1Rx_H = 0xB,
+    SSI1Tx_H = 0xB
   };
   
   cur_status_t m_status;
