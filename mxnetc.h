@@ -322,7 +322,7 @@ public:
   };
 
   //! \brief Конструктор
-  mxnet_client_command_t(hardflow_t& a_hardflow);
+  mxnet_client_command_t(hardflow_t& a_hardflow, counter_t a_disconnect_time);
   //! \brief Деструктор
   ~mxnet_client_command_t();
   //! \brief Чтение версии протокола mxnet
@@ -454,7 +454,11 @@ private:
 
   enum mode_t {
     mode_start,
-    mode_get_size
+    mode_get_size,
+    mode_read,
+    mode_read_wait,
+    mode_write,
+    mode_write_wait
   };
 
   enum {

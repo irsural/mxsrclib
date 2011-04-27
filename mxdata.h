@@ -402,14 +402,6 @@ public:
   void reserve(size_type a_capacity);
   void resize(size_type a_size);
   void insert(pointer ap_pos, const_pointer ap_first, const_pointer ap_last);
-  void copy_to(raw_data_t& a_raw_data, size_type a_from_index,
-    size_type a_to_index, size_type a_size) const;
-  void copy_from(const raw_data_t& a_raw_data, size_type a_from_index,
-    size_type a_to_index, size_type a_size);
-  void copy_to(pointer ap_data, size_type a_from_index,
-    size_type a_size) const;
-  void copy_from(const_pointer ap_data, size_type a_to_index,
-    size_type a_size);
   pointer insert(pointer ap_pos, const_reference a_value);
   pointer erase(pointer ap_first, pointer ap_last);
   pointer erase(pointer ap_pos);
@@ -606,82 +598,6 @@ void raw_data_t<T>::resize(size_type a_size)
   m_size = new_size;
 }
 template <class T>
-void raw_data_t<T>::copy_to(raw_data_t& a_raw_data, size_type a_from_index,
-  size_type a_to_index, size_type a_size) const
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size()) ||
-    (a_to_index >= a_raw_data.size()) ||
-    ((a_to_index + a_size) >= a_raw_data.size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_t<T>::copy_to");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(a_raw_data.data() + a_to_index, data() + a_from_index, a_size);
-}
-template <class T>
-void raw_data_t<T>::copy_from(const raw_data_t& a_raw_data,
-  size_type a_from_index, size_type a_to_index, size_type a_size)
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size()) ||
-    (a_to_index >= a_raw_data.size()) ||
-    ((a_to_index + a_size) >= a_raw_data.size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_t<T>::copy_from");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(data() + a_to_index, a_raw_data.data() + a_from_index, a_size);
-}
-template <class T>
-void raw_data_t<T>::copy_to(pointer ap_data, size_type a_from_index,
-  size_type a_size) const
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_t<T>::copy_to");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(ap_data, data() + a_from_index, a_size);
-}
-template <class T>
-void raw_data_t<T>::copy_from(const_pointer ap_data, size_type a_to_index,
-  size_type a_size)
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_to_index >= size()) ||
-    ((a_to_index + a_size) >= size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_t<T>::copy_from");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(data() + a_to_index, ap_data, a_size);
-}
-template <class T>
 void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   const_pointer ap_last)
 {
@@ -809,14 +725,6 @@ public:
   inline bool empty() const;
   void reserve(size_type a_capacity);
   void resize(size_type a_size);
-  void copy_to(raw_data_view_t& a_raw_data, size_type a_from_index,
-    size_type a_to_index, size_type a_size) const;
-  void copy_from(const raw_data_view_t& a_raw_data, size_type a_from_index,
-    size_type a_to_index, size_type a_size);
-  void copy_to(pointer ap_data, size_type a_from_index,
-    size_type a_size) const;
-  void copy_from(const_pointer ap_data, size_type a_to_index,
-    size_type a_size);
   inline void clear();
   inline void swap(raw_data_view_t* ap_raw_data_view);
 private:
@@ -949,84 +857,8 @@ void raw_data_view_t<T, VT>::reserve(size_type a_capacity)
 template <class T, class VT>
 void raw_data_view_t<T, VT>::resize(size_type a_size)
 {
-  mp_viewed_data->reserve(a_size*sizeof(value_type)/
+  mp_viewed_data->resize(a_size*sizeof(value_type)/
     sizeof(viewed_value_type));
-}
-template <class T, class VT>
-void raw_data_view_t<T, VT>::copy_to(raw_data_view_t& a_raw_data,
-  size_type a_from_index, size_type a_to_index, size_type a_size) const
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size()) ||
-    (a_to_index >= a_raw_data.size()) ||
-    ((a_to_index + a_size) >= a_raw_data.size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_view_t<T, VT>::copy_to");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(a_raw_data.data() + a_to_index, data() + a_from_index, a_size);
-}
-template <class T, class VT>
-void raw_data_view_t<T, VT>::copy_from(const raw_data_view_t& a_raw_data,
-  size_type a_from_index, size_type a_to_index, size_type a_size)
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size()) ||
-    (a_to_index >= a_raw_data.size()) ||
-    ((a_to_index + a_size) >= a_raw_data.size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_view_t<T, VT>::copy_from");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(data() + a_to_index, a_raw_data.data() + a_from_index, a_size);
-}
-template <class T, class VT>
-void raw_data_view_t<T, VT>::copy_to(pointer ap_data, size_type a_from_index,
-  size_type a_size) const
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_from_index >= size()) ||
-    ((a_from_index + a_size) >= size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_view_t<T, VT>::copy_to");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(ap_data, data() + a_from_index, a_size);
-}
-template <class T, class VT>
-void raw_data_view_t<T, VT>::copy_from(const_pointer ap_data,
-  size_type a_to_index, size_type a_size)
-{
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_to_index >= size()) ||
-    ((a_to_index + a_size) >= size());
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "Выход за диапазон в функции raw_data_view_t<T, VT>::copy_from");
-  #ifdef IRS_LIB_CHECK
-  if (is_out_of_range) {
-    return;
-  }
-  #endif //IRS_LIB_CHECK
-
-  memcpyex(data() + a_to_index, ap_data, a_size);
 }
 template <class T, class VT>
 inline void raw_data_view_t<T, VT>::clear()
@@ -1045,10 +877,9 @@ inline void swap(irs::raw_data_view_t<T, VT>& a_raw_data_view_first,
   a_raw_data_view_first.swap(&a_raw_data_view_second);
 }
 
-#ifdef NOP
 //! \brief Класс контейнер для стандартного C-массива
 template <class T>
-class carray_view_t
+class c_array_view_t
 {
 public:
   typedef T value_type;
@@ -1058,24 +889,67 @@ public:
   typedef T& reference;
   typedef const T& const_reference;
 
-  typedef VT viewed_value_type;
-  typedef raw_data_t<viewed_value_type> viewed_type;
-
-  carray_view_t(pointer ap_carray, size_type a_size);
-  pointer data();
-  const_pointer data() const;
+  inline c_array_view_t(pointer ap_carray, size_type a_size);
+  inline pointer data();
+  inline const_pointer data() const;
+  inline size_type size() const;
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
 private:
-  T* mp_carray;
+  pointer mp_data;
+  #ifdef IRS_LIB_CHECK
+  value_type m_bad_index_value;
+  #endif //IRS_LIB_CHECK
   size_type m_size;
 };
-carray_view_t::carray_view_t(pointer ap_carray, size_type a_size)
-pointer data()
-const_pointer data() const
-inline reference operator[](size_type a_index)
-inline const_reference operator[](size_type a_index) const
-#endif //NOP
+template <class T>
+inline c_array_view_t<T>::c_array_view_t(pointer ap_data, size_type a_size):
+  mp_data(ap_data),
+  #ifdef IRS_LIB_CHECK
+  m_bad_index_value(value_type()),
+  #endif //IRS_LIB_CHECK
+  m_size(a_size)
+{
+}
+template <class T>
+inline c_array_view_t<T>::pointer c_array_view_t<T>::data()
+{
+  return mp_data;
+}
+template <class T>
+inline c_array_view_t<T>::const_pointer c_array_view_t<T>::data() const
+{
+  return mp_data;
+}
+template <class T>
+inline c_array_view_t<T>::size_type c_array_view_t<T>::size() const
+{
+  return m_size;
+}
+template <class T>
+inline c_array_view_t<T>::reference c_array_view_t<T>::operator[](
+  size_type a_index)
+{
+  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  #ifdef IRS_LIB_CHECK
+  if (a_index >= size()) {
+    return m_bad_index_value;
+  }
+  #endif //IRS_LIB_CHECK
+  return mp_data[a_index];
+}
+template <class T>
+inline c_array_view_t<T>::const_reference c_array_view_t<T>::operator[](
+  size_type a_index) const
+{
+  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  #ifdef IRS_LIB_CHECK
+  if (a_index >= size()) {
+    return m_bad_index_value;
+  }
+  #endif //IRS_LIB_CHECK
+  return mp_data[a_index];
+}
 
 //! \brief Копирование с проверкой
 template <class src_type, class dest_type>

@@ -1267,7 +1267,9 @@ void irs::mxnetc_data_t::port(irs_u16 a_port)
 }
 
 // Клиент протокола mxnet, работающий через hardflow_t
-irs::mxnet_client_command_t::mxnet_client_command_t(hardflow_t& a_hardflow):
+irs::mxnet_client_command_t::mxnet_client_command_t(
+  hardflow_t& a_hardflow, counter_t a_disconnect_time
+):
   m_hardflow(a_hardflow),
   m_fixed_flow(&m_hardflow),
   m_beg_pack_proc(m_fixed_flow),
@@ -1289,6 +1291,8 @@ irs::mxnet_client_command_t::mxnet_client_command_t(hardflow_t& a_hardflow):
   mp_user_vars(IRS_NULL),
   m_checksum_type(irs::mxncs_reduced_direct_sum)
 {
+  m_fixed_flow.read_timeout(a_disconnect_time);
+  m_fixed_flow.write_timeout(a_disconnect_time);
 }
 irs::mxnet_client_command_t::~mxnet_client_command_t()
 {
@@ -1689,16 +1693,16 @@ void irs::mxnet_client_command_t::reset_parametrs()
 // Клиент протокола mxnet, реализующий интерфейс mxdata_t,
 // работающий через hardflow_t
 irs::mxnet_client_t::mxnet_client_t(hardflow_t& a_hardflow,
-  counter_t /*a_update_time*/, counter_t /*a_disconnect_time*/
+  counter_t a_update_time, counter_t a_disconnect_time
 ):
   m_mode(mode_start),
   m_size(0),
   m_is_connected(false),
-  m_update_timer(),
+  m_update_timer(a_update_time),
   m_data_vars(),
   m_data_bytes(&m_data_vars),
   m_write_queue(),
-  m_mxnet_client_command(a_hardflow)
+  m_mxnet_client_command(a_hardflow, a_disconnect_time)
 {
 }
 irs_uarc irs::mxnet_client_t::size()
@@ -1712,7 +1716,9 @@ irs_bool irs::mxnet_client_t::connected()
 void irs::mxnet_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  m_data_bytes.copy_to(ap_buf, a_index, a_size);
+  size_t size = static_cast<size_t>(a_size);
+  c_array_view_t<irs_u8> buf_view(ap_buf, size);
+  mem_copy(m_data_bytes, a_index, buf_view, 0u, size);
 }
 void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
@@ -1758,12 +1764,29 @@ void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 }
 void irs::mxnet_client_t::tick()
 {
+  m_mxnet_client_command.tick();
+
+  switch (m_mode) {
+    case mode_start: {
+    } break;
+    case mode_get_size: {
+    } break;
+    case mode_read: {
+    } break;
+    case mode_read_wait: {
+    } break;
+    case mode_write: {
+    } break;
+    case mode_write_wait: {
+    } break;
+  }
 }
 void irs::mxnet_client_t::queue_push(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   mxn_cnt_t var_front_idx = a_index/m_size_var_byte;
   mxn_cnt_t var_back_idx = (a_index + a_size)/m_size_var_byte;
+  IRS_LIB_ASSERT(var_back_idx >= var_front_idx);
   mxn_cnt_t var_size = var_back_idx - var_front_idx + 1;
   m_write_queue.push_back(queue_item_type());
   m_write_queue.back().index = var_front_idx;
@@ -1772,7 +1795,10 @@ void irs::mxnet_client_t::queue_push(const irs_u8 *ap_buf, irs_uarc a_index,
   data[0] = m_data_vars[var_front_idx];
   data[var_size - 1] = m_data_vars[var_back_idx];
   raw_data_view_t<irs_u8, irs_i32> data_u8(&data);
+
   size_t byte_shift_idx = a_index%m_size_var_byte;
-  data_u8.copy_from(ap_buf, byte_shift_idx, a_size);
+  size_t size = static_cast<size_t>(a_size);
+  c_array_view_t<const irs_u8> buf_view(ap_buf, size);
+  mem_copy(buf_view, 0u, data_u8, byte_shift_idx, size);
 }
 
