@@ -148,13 +148,13 @@ class com_buf: public streambuf
 {
 public:
   enum debug_t { debug_no, debug_yes };
-  
+
   inline com_buf(const com_buf& a_buf);
   // В AVR com_index == 1 для регистров с индексом 0
   //       com_index == 2 для регистров с индексом 1
   inline com_buf(
     int a_com_index = 1,
-    int a_outbuf_size = 10, 
+    int a_outbuf_size = 10,
     const irs_u32 a_baud_rate = 9600,
     debug_t a_debug = debug_no
   );
@@ -194,7 +194,7 @@ inline com_buf::com_buf(
 
   if (a_com_index == 1) {
     PRR0_PRUSART0 = 0; //Включение питания USART0
-    
+
     UBRR0H = IRS_HIBYTE(ubrr);
     UBRR0L = IRS_LOBYTE(ubrr);
     UCSR0B_RXEN0 = 0;//Разрешение приема
@@ -224,7 +224,7 @@ inline com_buf::com_buf(
     UCSR0A_U2X0 = 0;//удвоение скорости обмена
   } else {
     PRR1_PRUSART1 = 0; //Включение питания USART1
-    
+
     UBRR1H = IRS_HIBYTE(ubrr);
     UBRR1L = IRS_LOBYTE(ubrr);
     UCSR1B_RXEN1 = 0;//Разрешение приема
@@ -256,7 +256,7 @@ inline com_buf::com_buf(
 
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
-  
+
   // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
   __delay_cycles(4000);
 }
@@ -467,7 +467,7 @@ private:
   enum {
     PORTA1_UART0Tx = 0x10
   };
-  
+
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
   const irs_u32 m_baud_rate;
@@ -493,13 +493,12 @@ inline com_buf::com_buf(
   float BRD = FOSC / 16.f / float(m_baud_rate);
   irs_u16 BRDI = irs_u16(BRD);  //  Целая часть делителя
   irs_u16 BRDF = irs_u16((BRD - float(BRDI))*64.f + 0.5f); //  Дробная часть
-  
+
   RCGC1_bit.UART0 = 1;      //  Подача тактовой частоты на модуль UART0
   RCGC2_bit.PORTA = 1;      //  Подача тактовой частоты на PORTA (нога TX)
   for (irs_u8 i = 10; i; i--);
-  
+
   UART0CTL_bit.UARTEN = 0;  //  Отключение UART0
-  UART0CTL_bit.HSE = 0;     //  ClkDiv = 16
   UART0IBRD = BRDI;
   UART0FBRD = BRDF;
   UART0LCRH_bit.SPS = 0;    //  Проверка чётности выключена
@@ -512,11 +511,18 @@ inline com_buf::com_buf(
   UART0CTL_bit.RXE = 0;     //  Приём выключен
   UART0CTL_bit.TXE = 1;     //  Передача включена
   UART0CTL_bit.LBE = 0;     //  Loop-back выключен
-  //UART0CTL_bit.no2 = 0;     //  Экономный режим ИК-трансивера выключен
-  //UART0CTL_bit.no1 = 0;     //  И сам трансивер тоже
+#ifdef __LM3SxBxx__
+  UART0CTL_bit.LIN = 0;     //  LIN mode off
+  UART0CTL_bit.HSE = 0;     //  ClkDiv = 16
+  UART0CTL_bit.EOT = 0;     //  The TXRIS bit is set when the transmit FIFO
+                            //  condition specified in UARTIFLS is met.
+  UART0CTL_bit.SMART = 0;   //  The UART operates in Smart Card mode off
+#endif  //  __LM3SxBxx__
+  UART0CTL_bit.SIRLP = 0;   //  Экономный режим ИК-трансивера выключен
+  UART0CTL_bit.SIREN = 0;   //  И сам трансивер тоже
   UART0IM = 0;              //  Прерывания выключены
   UART0CTL_bit.UARTEN = 1;  //  UART0 включен
-  
+
   GPIOADEN_bit.no1 = 1;     //  Нога TX включена
   GPIOADIR_bit.no1 = 1;     //  Нога TX выход
   GPIOAAFSEL_bit.no1 = 1;   //  Альтернативная функция включена
@@ -527,7 +533,7 @@ inline com_buf::com_buf(
 
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
-  
+
   // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
   //__delay_cycles(4000);
 }

@@ -39,8 +39,7 @@
   #pragma system_include
 #endif
 
-
-#ifdef __LM3SxBxx__
+#define HWREG(x) (*((volatile irs_u32*)(x)))
 
 #define PORTA_BASE 0x40004000
 #define PORTB_BASE 0x40005000
@@ -50,7 +49,6 @@
 #define PORTF_BASE 0x40025000
 #define PORTG_BASE 0x40026000
 #define PORTH_BASE 0x40027000
-#define PORTJ_BASE 0x4003D000
 
 #define GPIO_PORTA (*((volatile irs_u32 *) PORTA_BASE))
 #define GPIO_PORTB (*((volatile irs_u32 *) PORTB_BASE))
@@ -60,20 +58,24 @@
 #define GPIO_PORTF (*((volatile irs_u32 *) PORTF_BASE))
 #define GPIO_PORTG (*((volatile irs_u32 *) PORTG_BASE))
 #define GPIO_PORTH (*((volatile irs_u32 *) PORTH_BASE))
-#define GPIO_PORTJ (*((volatile irs_u32 *) PORTJ_BASE))
 
 #define GPIO_DATA 0
 #define GPIO_DIR 0x400
 #define GPIO_DEN 0x51C
 #define GPIO_LOCK 0x520
 #define GPIO_CR 0x524
+
+#ifdef __LM3SxBxx__
+
+#define PORTJ_BASE 0x4003D000
+
+#define GPIO_PORTJ (*((volatile irs_u32 *) PORTJ_BASE))
+
 #define GPIO_AMSEL 0x528
 #define GPIO_PCTL 0x52C
 #define GPIO_UNLOCK_VALUE 0x4C4F434B
 #define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
 #define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
-
-#define HWREG(x) (*((volatile irs_u32*)(x)))
 
 typedef struct {
   __REG32  PMC0           : 4;
@@ -406,9 +408,9 @@ typedef struct {
   __REG32                 : 4;
   __REG32  MAXADC0SPD     : 2;
   __REG32  MAXADC1SPD     : 2;
-  __REG32                 : 4;  
-  __REG32  ADC0           : 1;  
-  __REG32  ADC1           : 1;  
+  __REG32                 : 4;
+  __REG32  ADC0           : 1;
+  __REG32  ADC1           : 1;
   __REG32                 : 2;
   __REG32  PWM            : 1;
   __REG32                 : 3;
@@ -456,7 +458,7 @@ typedef struct {
 #else // __LM3SxBxx__
   __REG32  I2C1           : 1;
   __REG32                 : 2;
-#endif // __LM3SxBxx__ 
+#endif // __LM3SxBxx__
   __REG32  TIMER0         : 1;
   __REG32  TIMER1         : 1;
   __REG32  TIMER2         : 1;
@@ -1138,11 +1140,14 @@ typedef struct {
 /* UART Control (UARTCTL) */
 typedef struct {
   __REG32  UARTEN         : 1;
-#ifdef __LM3SxBxx__ 
-  __REG32                 : 4;
+  __REG32  SIREN          : 1;
+  __REG32  SIRLP          : 1;
+#ifdef __LM3SxBxx__
+  __REG32  SMART          : 1;
+  __REG32  EOT            : 1;
   __REG32  HSE            : 1;
-  __REG32                 : 1;
-#else // __LM3SxBxx__ 
+  __REG32  LIN            : 1;
+#else // __LM3SxBxx__
   __REG32                 : 6;
 #endif // __LM3SxBxx__
   __REG32  LBE            : 1;
@@ -3655,6 +3660,7 @@ __IO_REG32_BIT(WDTCTL,            0x40000008,__READ_WRITE ,__wdtctl_bits);
 __IO_REG32(    WDTICR,            0x4000000C,__WRITE);
 __IO_REG32_BIT(WDTRIS,            0x40000010,__READ       ,__wdtris_bits);
 __IO_REG32_BIT(WDTMIS,            0x40000014,__READ       ,__wdtmis_bits);
+__IO_REG32_BIT(WDTTEST,           0x40000418,__READ_WRITE ,__wdttest_bits);
 __IO_REG32(    WDTLOCK,           0x40000C00,__READ_WRITE);
 __IO_REG8(     WDTPERIPHID4,      0x40000FD0,__READ);
 __IO_REG8(     WDTPERIPHID5,      0x40000FD4,__READ);

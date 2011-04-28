@@ -109,10 +109,12 @@ void irs_arm_ssi0_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::ssi0_int);
 }
+#ifdef __LM3SxBxx__
 void irs_arm_i2c0_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::i2c0_int);
 }
+#endif // __LM3SxBxx__
 void irs_arm_pwm_fault_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::pwm_fault_int);

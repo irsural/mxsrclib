@@ -87,14 +87,14 @@ inline ostream& operator<<(ostream& a_strm,
 #ifdef NOP
 // Реализация котороая в будущем может понадобится
 // !!! Просьба не удалять
-inline ostream& operator<<(ostream& a_strm, 
+inline ostream& operator<<(ostream& a_strm,
   char const IRS_ICCAVR_FLASH* ap_strg)
 {
   enum {
     buf_size = 100
   };
   static char buf[buf_size + 1] = { 0 };
-    
+
   #ifdef IRS_LIB_DEBUG
   if (buf[buf_size] != 0) {
     static char const IRS_ICCAVR_FLASH p_msg_no_zero_terminator[] =
@@ -104,7 +104,7 @@ inline ostream& operator<<(ostream& a_strm,
     for (;;);
   }
   #endif //IRS_LIB_DEBUG
-  
+
   const size_t strg_size = strlen_G(ap_strg);
   const size_t part_cnt = strg_size/buf_size;
   char const IRS_ICCAVR_FLASH* strg_end = ap_strg + strg_size;
@@ -119,7 +119,7 @@ inline ostream& operator<<(ostream& a_strm,
     buf[strg_end - ap_strg] = 0;
     a_strm << buf;
   }
-  
+
   return a_strm;
 }
 #endif //NOP
@@ -273,7 +273,7 @@ inline ostream& operator<<(ostream& a_strm,
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 #define IRS_SEND_LAST_ERROR()\
   irs::send_last_message_err(__FILE__,__LINE__)
-  
+
 #define IRS_SEND_ERROR(error_code)\
   irs::send_message_err(error_code,__FILE__,__LINE__)
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
@@ -369,7 +369,7 @@ public:
   #else //IRS_LIB_FLASH_ASSERT
   typedef const char* cstr_type;
   #endif //IRS_LIB_FLASH_ASSERT
-  
+
   virtual ~error_trans_base_t() {}
   // Передать ошибку (тип ap_spec_data определяется a_error_code)
   virtual void throw_error(
@@ -413,14 +413,14 @@ class error_out_t
 public:
   typedef error_out_t this_type;
   typedef event_function_t<this_type> out_func_obj_type;
-  
+
   enum {
     m_out_func_list_def_size = ec_user
   };
-  
+
   error_out_t(error_trans_base_t* ap_error_trans,
     irs_size_t a_out_func_list_size = m_out_func_list_def_size);
-  void out_general_info(ostream &a_out, 
+  void out_general_info(ostream &a_out,
     error_trans_base_t::cstr_type ap_error_type);
   void out_info(ostream &a_out);
   void insert_out_func(error_code_t a_error_code,
@@ -444,7 +444,7 @@ private:
   static event_t* out_func_obj_extract_ptr(
     out_func_obj_type& a_out_func_obj);
   #endif //IRS_ERROR_OUT_STATIC_EVENT
-  
+
   void out_standart_error();
   void out_assert_error();
   void out_fatal_error();
@@ -460,11 +460,11 @@ class ostream_error_handler_t: public mxfact_event_t
 private:
   ostream* mp_out;
   error_out_t m_error_out;
-  
+
   void exec()
   {
     mxfact_event_t::exec();
-    
+
     if (mp_out) {
       m_error_out.out_info(*mp_out);
     }
@@ -494,11 +494,11 @@ private:
   ostream* mp_out;
   error_out_t m_error_out;
   blink_t m_error_blink;
-  
+
   void exec()
   {
     mxfact_event_t::exec();
-    
+
     if (mp_out) {
       m_error_out.out_info(*mp_out);
     }
@@ -537,11 +537,11 @@ class exception_error_handler_t: public mxfact_event_t
 private:
   error_out_t m_error_out;
   bool m_is_first_throw;
-  
+
   void exec()
   {
     mxfact_event_t::exec();
-    
+
     if (m_is_first_throw) {
       m_is_first_throw = false;
       ostringstream out_stream;

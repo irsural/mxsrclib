@@ -22,6 +22,9 @@ namespace irs {
 
 class blink_t
 {
+private:
+  arm::io_pin_t m_pin_led;
+  loop_timer_t m_blink_timer;
 public:
   blink_t(arm_port_t& a_port, irs_u8 a_bit, counter_t a_blink_time = 0):
     m_pin_led(a_port, a_bit, gpio_pin_t::dir_out)
@@ -55,9 +58,6 @@ public:
       flip();
     }
   }
-private:
-  arm::io_pin_t m_pin_led;
-  loop_timer_t m_blink_timer;
 };
 
 //! @}

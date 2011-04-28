@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Устройства
 //!
-//! Дата: 08.07.2010
+//! Дата: 28.04.2011
 //! Ранняя дата: 08.07.2010
 
 #ifndef irsdevH
@@ -112,21 +112,41 @@ public:
   watchdog_timer_t(size_t a_period_s = 300):
     m_period_s(a_period_s)
   {
+    #ifdef __LM3SxBxx__
     RCGC0_bit.WDT0 = 1;
     for (irs_u8 i = 10; i; i--);
-    
+
     WDT0LOCK = 0x1ACCE551;
     WDT0LOAD = static_cast<irs_u32>(m_period_s*irs::cpu_traits_t::frequency());
     WDT0CTL_bit.RESEN = 1;
     WDT0CTL_bit.INTEN = 1;
     WDT0TEST_bit.STALL = 1; // вероятно не работает с J-Link;
     WDT0LOCK = 0x0;
+    #endif  //  __LM3SxBxx__
+    #ifdef __LM3Sx9xx__
+    RCGC0_bit.WDT = 1;
+    for (irs_u8 i = 10; i; i--);
+
+    WDTLOCK = 0x1ACCE551;
+    WDTLOAD = static_cast<irs_u32>(m_period_s*irs::cpu_traits_t::frequency());
+    WDTCTL_bit.RESEN = 1;
+    WDTCTL_bit.INTEN = 1;
+    WDTTEST_bit.STALL = 1; // вероятно не работает с J-Link;
+    WDTLOCK = 0x0;
+    #endif  //  __LM3SxBxx__
   }
   void restart()
   {
+    #ifdef __LM3SxBxx__
     WDT0LOCK = 0x1ACCE551;
     WDT0ICR = 0x11111111;
     WDT0LOCK = 0x0;
+    #endif  //  __LM3SxBxx__
+    #ifdef __LM3Sx9xx__
+    WDTLOCK = 0x1ACCE551;
+    WDTICR = 0x11111111;
+    WDTLOCK = 0x0;
+    #endif  //  __LM3Sx9xx__
   }
 private:
   size_t m_period_s;

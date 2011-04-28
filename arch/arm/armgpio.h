@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Порты ввода-вывода для ARM
 //!
-//! Дата: 22.11.2010
+//! Дата: 28.04.2011
 //! Дата создания: 10.11.2010
 
 #ifndef armgpioH
@@ -13,6 +13,7 @@
 #include <irsstd.h>
 #include <irsgpio.h>
 #include <armioregs.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
@@ -30,12 +31,12 @@ public:
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
-private:  
+private:
   const p_arm_port_t mp_port;
   const irs_u16 m_data_mask;
   const irs_u8 m_port_mask;
-  
-  
+
+
   inline irs_u8 port_base_to_port_number(p_arm_port_t ap_port)
   {
     irs_u8 port_number = 0;
@@ -64,9 +65,15 @@ private:
       case PORTH_BASE: {
         port_number = 7;
       } break;
+#ifdef __LM3SxBxx__
       case PORTJ_BASE: {
         port_number = 8;
       } break;
+#endif  // __LM3SxBxx
+      default: {
+        //IRS_LIB_ASSERT_MSG("Port does not exist!");
+        //IRS_LIB_ASSERT(1);
+      }
     }
     return port_number;
   }
