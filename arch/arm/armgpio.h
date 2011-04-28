@@ -13,9 +13,12 @@
 #include <irsstd.h>
 #include <irsgpio.h>
 #include <armioregs.h>
-#include <irserror.h>
 
 #include <irsfinal.h>
+
+//*****************************************************************************
+//************  Ахтунг! Ахтунг! irserror сюда включать нельзя!  ***************
+//*****************************************************************************
 
 namespace irs
 {
@@ -65,18 +68,14 @@ private:
       case PORTH_BASE: {
         port_number = 7;
       } break;
-#ifdef __LM3SxBxx__
+      #ifdef __LM3SxBxx__
       case PORTJ_BASE: {
         port_number = 8;
       } break;
-#endif  // __LM3SxBxx
-      default: {
-        //IRS_LIB_ASSERT_MSG("Port does not exist!");
-        //IRS_LIB_ASSERT(1);
-      }
+      #endif  // __LM3SxBxx
     }
     return port_number;
-  }
+  };
   inline void clock_gating_control(p_arm_port_t ap_port)
   {
     irs_u8 port_number = port_base_to_port_number(ap_port);
