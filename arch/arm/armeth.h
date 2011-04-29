@@ -42,6 +42,7 @@ public:
   virtual irs_size_t send_buf_max_size();
   virtual buffer_num_t get_buf_num();
   virtual mxmac_t get_local_mac();
+  virtual void set_mac(mxmac_t& a_mac);
   virtual void tick();
 private:
   enum

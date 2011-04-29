@@ -77,6 +77,8 @@ public:
   virtual buffer_num_t get_buf_num() = 0;
   //! \brief  Собственный MAC-адрес
   virtual mxmac_t get_local_mac() = 0;
+  //! \brief  Установка нового МАС-адреса
+  virtual void set_mac(mxmac_t& a_mac) = 0;
   virtual void tick() = 0;
 };
 
@@ -321,6 +323,8 @@ public:
   irs_size_t recv_data_size();
   irs_size_t send_data_size_max();
   void tick();
+  void set_ip(mxip_t& a_ip);
+  void set_mac(mxmac_t& a_mac);
 
 public:  
   enum send_mode_t{
@@ -457,8 +461,8 @@ private:
   irs_u8* mp_user_send_buf;
   bool m_send_buf_filled;
   timer_t m_connection_wait_arp_timer;
-  //arp_cash_t m_arp_cash;
-  arp_t m_arp_cash;
+  arp_cash_t m_arp_cash;
+  //arp_t m_arp_cash;
   mxmac_t& m_dest_mac;
   mxip_t m_cur_dest_ip;
   irs_u16 m_cur_dest_port;

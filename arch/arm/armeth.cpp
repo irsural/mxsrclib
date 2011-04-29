@@ -189,6 +189,13 @@ mxmac_t irs::arm::arm_ethernet_t::get_local_mac()
   return mac;
 }
 
+void irs::arm::arm_ethernet_t::set_mac(mxmac_t& a_mac)
+{
+  MACIA0 = *(irs_u32*)a_mac.val;
+  MACIA1_bit.MACOCT5 = a_mac.val[4];
+  MACIA1_bit.MACOCT6 = a_mac.val[5];
+}
+
 void irs::arm::arm_ethernet_t::tick()
 {
   if (m_send_packet_action && (MACTR_bit.NEWTX == 0)) {

@@ -331,8 +331,8 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
     mp_ethernet->is_recv_buf_filled()),
   m_connection_wait_arp_timer(make_cnt_s(1)),
-  //m_arp_cash(a_arp_cash_size),
-  m_arp_cash(ap_ethernet, a_local_ip, a_arp_cash_size),
+  m_arp_cash(a_arp_cash_size),
+  //m_arp_cash(ap_ethernet, a_local_ip, a_arp_cash_size),
   m_dest_mac(IRS_TCPIP_MAC(mp_send_buf)),
   m_cur_dest_ip(mxip_t::zero_ip()),
   m_cur_dest_port(0),
@@ -2177,3 +2177,13 @@ void irs::simple_tcpip_t::tick()
   }
 }
 
+void irs::simple_tcpip_t::set_ip(mxip_t& a_ip)
+{
+  m_local_ip = a_ip;
+}
+
+void irs::simple_tcpip_t::set_mac(mxmac_t& a_mac)
+{
+  mp_ethernet->set_mac(a_mac);
+  m_mac = a_mac;
+}

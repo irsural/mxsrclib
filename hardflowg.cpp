@@ -2416,9 +2416,19 @@ irs::hardflow::simple_udp_flow_t::string_type
   return string_type();
 }
 
-void irs::hardflow::simple_udp_flow_t::set_param(const string_type &/*a_name*/,
-  const string_type& /*a_value*/)
+void irs::hardflow::simple_udp_flow_t::set_param(const string_type &a_name,
+  const string_type& a_value)
 {
+  if (a_name == irst("IP")) {
+    if(a_value != irst("")) {
+      mxip_t new_ip = mxip_t::zero_ip();
+      cstr_to_mxip(new_ip, a_value.c_str());
+      mp_simple_udp->set_ip(new_ip);
+      mxmac_t new_mac = mxmac_t::zero_mac();
+      cstr_to_mxmac(new_mac, a_value.c_str());
+      mp_simple_udp->set_mac(new_mac);
+    }
+  }
 }
 
 void irs::hardflow::simple_udp_flow_t::tick()

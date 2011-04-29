@@ -499,6 +499,13 @@ mxmac_t irs::rtl8019as_t::get_local_mac()
   return m_mac;
 }
 
+void irs::rtl8019as_t::set_mac(mxmac_t& a_mac)
+{
+  // не проверено
+  m_mac = a_mac;
+  init_rtl();
+}
+
 void irs::rtl8019as_t::tick()
 {
   if (m_recv_timeout.check()) {
