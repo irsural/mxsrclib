@@ -1278,13 +1278,13 @@ irs::mxnet_client_command_t::mxnet_client_command_t(
   mp_packet(IRS_NULL),
   m_receive_size(0),
   m_send_size(0),
-  m_mode(mxnc_mode_free),
-  m_mode_return(mxnc_mode_free),
+  m_mode(mode_free),
+  m_mode_return(mode_free),
   m_command(MXN_COM_NONE),
-  m_status(mxnc_status_success),
+  m_status(status_success),
   mp_version(IRS_NULL),
   m_create_error(false),
-  m_last_error(mxnc_err_none),
+  m_last_error(error_none),
   mp_user_size(IRS_NULL),
   m_user_index(0),
   m_user_count(0),
@@ -1298,79 +1298,79 @@ irs::mxnet_client_command_t::~mxnet_client_command_t()
 {
 }
 // Чтение версии протокола mxnet
-void irs::mxnet_client_command_t::get_version(irs_u16 *version)
+void irs::mxnet_client_command_t::version(irs_u16 *ap_version)
 {
   if (deny_proc()) return;
-  if (!version) {
-    m_last_error = mxnc_err_invalid_param;
-    m_status = mxnc_status_error;
+  if (!ap_version) {
+    m_last_error = error_invalid_param;
+    m_status = status_error;
     return;
   }
 
-  mp_version = version;
+  mp_version = ap_version;
   m_command = MXN_GET_VERSION;
-  m_status = mxnc_status_busy;
+  m_status = status_busy;
 }
 // Чтение размера массива (количество переменных)
-void irs::mxnet_client_command_t::get_size(mxn_cnt_t *size)
+void irs::mxnet_client_command_t::size(mxn_cnt_t *ap_size)
 {
   if (deny_proc()) return;
-  if (!size) {
-    m_last_error = mxnc_err_invalid_param;
-    m_status = mxnc_status_error;
+  if (!ap_size) {
+    m_last_error = error_invalid_param;
+    m_status = status_error;
     return;
   }
 
-  mp_user_size = size;
+  mp_user_size = ap_size;
   m_command = MXN_READ_COUNT;
-  m_status = mxnc_status_busy;
+  m_status = status_busy;
 }
 // Чтение переменных
-void irs::mxnet_client_command_t::read(mxn_cnt_t index, mxn_cnt_t count,
-  irs_i32 *vars)
+void irs::mxnet_client_command_t::read(mxn_cnt_t a_index, mxn_cnt_t a_count,
+  irs_i32 *ap_vars)
 {
   if (deny_proc()) return;
-  bool index_over_max = (count > MXN_CNT_MAX - index);
-  bool vars_invalid = !vars;
-  bool count_zero = !count;
+  bool index_over_max = (a_count > MXN_CNT_MAX - a_index);
+  bool vars_invalid = !ap_vars;
+  bool count_zero = !a_count;
   if (index_over_max || vars_invalid || count_zero) {
-    m_last_error = mxnc_err_invalid_param;
-    m_status = mxnc_status_error;
+    m_last_error = error_invalid_param;
+    m_status = status_error;
     return;
   }
 
-  m_user_index = index;
-  m_user_count = count;
-  mp_user_vars = vars;
+  m_user_index = a_index;
+  m_user_count = a_count;
+  mp_user_vars = ap_vars;
   m_command = MXN_READ;
-  m_status = mxnc_status_busy;
+  m_status = status_busy;
 }
 // Запись переменных
-void irs::mxnet_client_command_t::write(mxn_cnt_t index, mxn_cnt_t count,
-  irs_i32 *vars)
+void irs::mxnet_client_command_t::write(mxn_cnt_t a_index, mxn_cnt_t a_count,
+  irs_i32 *ap_vars)
 {
   if (deny_proc()) return;
-  bool index_over_max = (count > MXN_CNT_MAX - index);
-  bool vars_invalid = !vars;
-  bool count_zero = !count;
+  bool index_over_max = (a_count > MXN_CNT_MAX - a_index);
+  bool vars_invalid = !ap_vars;
+  bool count_zero = !a_count;
   if (index_over_max || vars_invalid || count_zero) {
-    m_last_error = mxnc_err_invalid_param;
-    m_status = mxnc_status_error;
+    m_last_error = error_invalid_param;
+    m_status = status_error;
     return;
   }
 
-  m_user_index = index;
-  m_user_count = count;
-  mp_user_vars = vars;
+  m_user_index = a_index;
+  m_user_count = a_count;
+  mp_user_vars = ap_vars;
   m_command = MXN_WRITE;
-  m_status = mxnc_status_busy;
+  m_status = status_busy;
 }
 // Статус текущей операции
 irs::mxnet_client_command_t::status_t irs::mxnet_client_command_t::status()
 {
   if (m_create_error) {
-    m_last_error = mxnc_err_create;
-    return mxnc_status_error;
+    m_last_error = error_create;
+    return status_error;
   } else {
     return m_status;
   }
@@ -1383,12 +1383,12 @@ void irs::mxnet_client_command_t::tick()
   m_beg_pack_proc.tick();
 
   switch (m_mode) {
-    case mxnc_mode_free: {
+    case mode_free: {
       if (m_command != MXN_COM_NONE) {
-        m_mode = mxnc_mode_packet;
+        m_mode = mode_packet;
       }
     } break;
-    case mxnc_mode_packet: {
+    case mode_packet: {
       mxn_cnt_t index = 0;
       mxn_cnt_t count = 0;
       bool is_fill_needed = true;
@@ -1411,15 +1411,15 @@ void irs::mxnet_client_command_t::tick()
         } break;
         default: {
           is_fill_needed = false;
-          m_mode = mxnc_mode_free;
+          m_mode = mode_free;
         } break;
       }
       if (is_fill_needed) {
         packet_fill(m_command, index, count, mp_user_vars, count);
-        m_mode = mxnc_mode_write;
+        m_mode = mode_write;
       }
     } break;
-    case mxnc_mode_write: {
+    case mode_write: {
       #ifdef INSERT_LEFT_BYTES
       static irs_u8 *buf = 0;
       IRS_LIB_ARRAY_DELETE_ASSERT(buf);
@@ -1441,25 +1441,25 @@ void irs::mxnet_client_command_t::tick()
       //mxifa_write_begin(m_handle_channel, IRS_NULL, m_packet_data.data(),
         //m_send_size);
       #endif //INSERT_LEFT_BYTE
-      m_mode = mxnc_mode_write_wait;
+      m_mode = mode_write_wait;
     } break;
-    case mxnc_mode_write_wait: {
+    case mode_write_wait: {
       //if (mxifa_write_end(m_handle_channel, false)) {
       ff_status_type status = m_fixed_flow.write_status();
       if (status == hardflow::fixed_flow_t::status_success) {
-        m_mode = mxnc_mode_read;
+        m_mode = mode_read;
       } else if (status == hardflow::fixed_flow_t::status_error) {
         reset_parametrs();
-        m_last_error = mxnc_err_timeout;
-        m_status = mxnc_status_error;
-        m_mode = mxnc_mode_free;
+        m_last_error = error_timeout;
+        m_status = status_error;
+        m_mode = mode_free;
       }
     } break;
-    case mxnc_mode_read: {
+    case mode_read: {
       m_beg_pack_proc.start(m_packet_data.data(), m_channel_ident);
-      m_mode = mxnc_mode_begin_packet;
+      m_mode = mode_begin_packet;
     } break;
-    case mxnc_mode_begin_packet: {
+    case mode_begin_packet: {
       switch (m_beg_pack_proc.status())
       {
         case mx_beg_pack_proc_fix_flow_t::beg_pack_ready: {
@@ -1468,34 +1468,34 @@ void irs::mxnet_client_command_t::tick()
             mxn_sz_t size = m_receive_size - mxn_header_size;
             m_fixed_flow.read(m_channel_ident, buf, size);
             //mxifa_read_begin(m_handle_channel, IRS_NULL, buf, size);
-            m_mode = mxnc_mode_chunk_read_wait;
+            m_mode = mode_chunk_read_wait;
           } else {
-            m_mode = mxnc_mode_packet;
+            m_mode = mode_packet;
           }
         } break;
         case mx_beg_pack_proc_fix_flow_t::beg_pack_error: {
-          m_last_error = mxnc_err_timeout;
-          m_status = mxnc_status_error;
+          m_last_error = error_timeout;
+          m_status = status_error;
           reset_parametrs();
-          m_mode = mxnc_mode_free;
+          m_mode = mode_free;
         } break;
         default: {
         } break;
       }
     } break;
-    case mxnc_mode_chunk_read_wait: {
+    case mode_chunk_read_wait: {
       ff_status_type status = m_fixed_flow.read_status();
       //if (mxifa_read_end(m_handle_channel, false)) {
       if (status == hardflow::fixed_flow_t::status_success) {
-        m_mode = mxnc_mode_checksum;
+        m_mode = mode_checksum;
       } else if (status == hardflow::fixed_flow_t::status_error) {
-        m_last_error = mxnc_err_timeout;
-        m_status = mxnc_status_error;
+        m_last_error = error_timeout;
+        m_status = status_error;
         reset_parametrs();
-        m_mode = mxnc_mode_free;
+        m_mode = mode_free;
       }
     } break;
-    case mxnc_mode_checksum: {
+    case mode_checksum: {
       mxn_cnt_t var_count = 0;
       switch (mp_packet->code_comm) {
         case MXN_READ: {
@@ -1511,29 +1511,29 @@ void irs::mxnet_client_command_t::tick()
       bool checksum_ok = mxn_checksum_valid(mp_packet, var_count,
         m_receive_size, m_checksum_type);
       if (packet_size_ok && checksum_ok) {
-        m_mode = mxnc_mode_proc;
+        m_mode = mode_proc;
       } else {
-        m_mode = mxnc_mode_packet;
+        m_mode = mode_packet;
       }
     } break;
-    case mxnc_mode_proc: {
+    case mode_proc: {
       switch (m_command) {
         case MXN_GET_VERSION: {
           if (mp_version) {
             *mp_version = IRS_LOWORD(mp_packet->var_ind_first);
-            m_status = mxnc_status_success;
+            m_status = status_success;
           } else {
-            m_last_error = mxnc_err_invalid_param;
-            m_status = mxnc_status_error;
+            m_last_error = error_invalid_param;
+            m_status = status_error;
           }
         } break;
         case MXN_READ_COUNT: {
           if (mp_user_size) {
             *mp_user_size = mp_packet->var_count;
-            m_status = mxnc_status_success;
+            m_status = status_success;
           } else {
-            m_last_error = mxnc_err_invalid_param;
-            m_status = mxnc_status_error;
+            m_last_error = error_invalid_param;
+            m_status = status_error;
           }
         } break;
         case MXN_READ: {
@@ -1541,7 +1541,7 @@ void irs::mxnet_client_command_t::tick()
           bool index_valid = (m_user_index == mp_packet->var_ind_first);
           bool count_valid = (m_user_count == mp_packet->var_count);
           if (user_vars_valid && index_valid && count_valid) {
-            m_status = mxnc_status_success;
+            m_status = status_success;
             memcpy((void *)mp_user_vars, (void *)mp_packet->var,
               m_user_count*sizeof(irs_i32));
             #ifdef NOP
@@ -1561,11 +1561,11 @@ void irs::mxnet_client_command_t::tick()
             );
             #endif //NOP
           } else if (!user_vars_valid) {
-            m_last_error = mxnc_err_invalid_param;
-            m_status = mxnc_status_error;
+            m_last_error = error_invalid_param;
+            m_status = status_error;
           } else {
-            m_last_error = mxnc_err_bad_server;
-            m_status = mxnc_status_error;
+            m_last_error = error_bad_server;
+            m_status = status_error;
           }
         } break;
         case MXN_WRITE: {
@@ -1573,18 +1573,18 @@ void irs::mxnet_client_command_t::tick()
           bool par_invalid = (1 == mp_packet->var_ind_first);
           bool count_valid = (0 == mp_packet->var_count);
           if (index_valid && count_valid) {
-            m_status = mxnc_status_success;
+            m_status = status_success;
           } else if (par_invalid) {
-            m_last_error = mxnc_err_remote_invalid_param;
-            m_status = mxnc_status_error;
+            m_last_error = error_remote_invalid_param;
+            m_status = status_error;
           } else {
-            m_last_error = mxnc_err_bad_server;
-            m_status = mxnc_status_error;
+            m_last_error = error_bad_server;
+            m_status = status_error;
           }
         } break;
       }
       reset_parametrs();
-      m_mode = mxnc_mode_free;
+      m_mode = mode_free;
     } break;
   }
 }
@@ -1593,10 +1593,10 @@ void irs::mxnet_client_command_t::abort()
 {
   if (m_command != MXN_COM_NONE) {
     m_fixed_flow.read_abort();
-    m_last_error = mxnc_err_abort;
+    m_last_error = error_abort;
     reset_parametrs();
-    m_status = mxnc_status_error;
-    m_mode = mxnc_mode_free;
+    m_status = status_error;
+    m_mode = mode_free;
   }
 }
 // Чтение последней ошибки
@@ -1609,13 +1609,13 @@ irs::mxnet_client_command_t::error_t
 bool irs::mxnet_client_command_t::deny_proc()
 {
   if (m_create_error) {
-    m_last_error = mxnc_err_invalid_param;
-    m_status = mxnc_status_error;
+    m_last_error = error_invalid_param;
+    m_status = status_error;
     return true;
   }
   if (m_command != MXN_COM_NONE) {
-    m_last_error = mxnc_err_busy;
-    m_status = mxnc_status_error;
+    m_last_error = error_busy;
+    m_status = status_error;
     return true;
   }
   return false;
@@ -1699,11 +1699,19 @@ irs::mxnet_client_t::mxnet_client_t(hardflow_t& a_hardflow,
   m_size(0),
   m_is_connected(false),
   m_update_timer(a_update_time),
-  m_data_vars(),
-  m_data_bytes(&m_data_vars),
-  m_write_queue(),
+  m_read_vars(),
+  m_read_bytes(&m_read_vars),
+  m_write_vars(),
+  m_write_bytes(&m_write_vars),
+  m_size_var(0),
+  m_index_var(0),
+  m_write_flags(),
   m_mxnet_client_command(a_hardflow, a_disconnect_time)
 {
+}
+irs::mxnet_client_command_t* irs::mxnet_client_t::command_interface()
+{
+  return &m_mxnet_client_command;
 }
 irs_uarc irs::mxnet_client_t::size()
 {
@@ -1718,12 +1726,15 @@ void irs::mxnet_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 {
   size_t size = static_cast<size_t>(a_size);
   c_array_view_t<irs_u8> buf_view(ap_buf, size);
-  mem_copy(m_data_bytes, a_index, buf_view, 0u, size);
+  mem_copy(m_read_bytes, a_index, buf_view, 0u, size);
 }
 void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  queue_push(ap_buf, a_index, a_size);
+  size_t size = static_cast<size_t>(a_size);
+  c_array_view_t<const irs_u8> buf_view(ap_buf, size);
+  mem_copy(buf_view, 0u, m_write_bytes, a_index, size);
+  mark_for_write(a_index, a_size);
 }
 irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1734,7 +1745,7 @@ irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
     return irs_false;
   }
   #endif //IRS_LIB_CHECK
-  return to_irs_bool((m_data_bytes[a_index] >> a_bit_index)&1);
+  return to_irs_bool((m_read_bytes[a_index] >> a_bit_index)&1);
 }
 void irs::mxnet_client_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1745,9 +1756,10 @@ void irs::mxnet_client_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  irs_u8 writed_byte = m_data_bytes[a_index];
+  irs_u8 writed_byte = m_read_bytes[a_index];
   writed_byte |= static_cast<irs_u8>(1 << a_bit_index);
-  queue_push(&writed_byte, a_index, 1);
+  m_write_bytes[a_index] = writed_byte;
+  mark_for_write(a_index, 1);
 }
 void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1758,9 +1770,10 @@ void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  irs_u8 writed_byte = m_data_bytes[a_index];
+  irs_u8 writed_byte = m_read_bytes[a_index];
   writed_byte &= static_cast<irs_u8>(~(1 << a_bit_index));
-  queue_push(&writed_byte, a_index, 1);
+  m_write_bytes[a_index] = writed_byte;
+  mark_for_write(a_index, 1);
 }
 void irs::mxnet_client_t::tick()
 {
@@ -1768,37 +1781,128 @@ void irs::mxnet_client_t::tick()
 
   switch (m_mode) {
     case mode_start: {
+      m_mxnet_client_command.size(&m_size_var);
+      m_mode = mode_get_size;
     } break;
     case mode_get_size: {
+      switch (m_mxnet_client_command.status()) {
+        case mxnet_client_command_t::status_success: {
+          resize_vars(m_size_var);
+          m_mode = mode_read;
+        } break;
+        case mxnet_client_command_t::status_error: {
+          m_mode = mode_start;
+        } break;
+        case mxnet_client_command_t::status_busy: {
+          // Ничего не далаем пока операция обрабатывается
+        } break;
+      }
     } break;
     case mode_read: {
+      if (m_update_timer.check()) {
+        m_mxnet_client_command.read(0, m_read_vars.size(),
+          m_read_vars.data());
+        m_mode = mode_read_wait;
+      }
     } break;
     case mode_read_wait: {
+      switch (m_mxnet_client_command.status()) {
+        case mxnet_client_command_t::status_success: {
+          m_is_connected = true;
+          m_index_var = 0;
+          m_mode = mode_write;
+        } break;
+        case mxnet_client_command_t::status_error: {
+          m_is_connected = false;
+          m_mode = mode_start;
+        } break;
+        case mxnet_client_command_t::status_busy: {
+          // Ничего не далаем пока операция обрабатывается
+        } break;
+      }
     } break;
     case mode_write: {
+      mxn_cnt_t index = 0;
+      mxn_cnt_t count = 0;
+      if (find_range(&index, &count)) {
+        IRS_LIB_ASSERT(!check_index(m_write_vars, index, count));
+        #ifdef IRS_LIB_CHECK
+        if (check_index(m_write_vars, index, count)) {
+        #endif //IRS_LIB_CHECK
+          m_mxnet_client_command.write(index, count,
+            m_read_vars.data() + index);
+        #ifdef IRS_LIB_CHECK
+        }
+        #endif //IRS_LIB_CHECK
+        m_mode = mode_write_wait;
+      } else {
+        m_mode = mode_read;
+      }
     } break;
     case mode_write_wait: {
+      switch (m_mxnet_client_command.status()) {
+        case mxnet_client_command_t::status_success: {
+          m_mode = mode_write;
+        } break;
+        case mxnet_client_command_t::status_error: {
+          m_is_connected = false;
+          m_mode = mode_start;
+        } break;
+        case mxnet_client_command_t::status_busy: {
+          // Ничего не далаем пока операция обрабатывается
+        } break;
+      }
     } break;
   }
 }
-void irs::mxnet_client_t::queue_push(const irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
+void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
+  bool a_value)
 {
-  mxn_cnt_t var_front_idx = a_index/m_size_var_byte;
-  mxn_cnt_t var_back_idx = (a_index + a_size)/m_size_var_byte;
-  IRS_LIB_ASSERT(var_back_idx >= var_front_idx);
-  mxn_cnt_t var_size = var_back_idx - var_front_idx + 1;
-  m_write_queue.push_back(queue_item_type());
-  m_write_queue.back().index = var_front_idx;
-  raw_data_t<irs_i32>& data = m_write_queue.back().data;
-  data.resize(var_size);
-  data[0] = m_data_vars[var_front_idx];
-  data[var_size - 1] = m_data_vars[var_back_idx];
-  raw_data_view_t<irs_u8, irs_i32> data_u8(&data);
-
-  size_t byte_shift_idx = a_index%m_size_var_byte;
+  mxn_cnt_t var_first_idx = a_index/m_size_var_byte;
+  mxn_cnt_t var_last_idx = (a_index + a_size)/m_size_var_byte + 1;
+  vector<bool>::iterator begin = m_write_flags.begin() + var_first_idx;
+  vector<bool>::iterator end = m_write_flags.end() + var_last_idx;
+  IRS_LIB_ERROR_IF(!check_iterator(m_write_flags, begin, end), ec_standard,
+    "Итераторы вне контейнера или begin > end.\n"
+    "Возможно неверны параметры на входе команды mxnet_client_t::write");
+  #ifdef IRS_LIB_CHECK
+  if (!check_iterator(m_write_flags, begin, end)) {
+    return;
+  }
+  #endif //IRS_LIB_CHECK
+  fill(begin, end, a_value);
+}
+void irs::mxnet_client_t::mark_for_write(irs_uarc a_index, irs_uarc a_size)
+{
+  fill_for_write(a_index, a_size, true);
+}
+void irs::mxnet_client_t::unmark_for_write(irs_uarc a_index, irs_uarc a_size)
+{
+  fill_for_write(a_index, a_size, false);
+}
+void irs::mxnet_client_t::resize_vars(mxn_cnt_t a_size)
+{
   size_t size = static_cast<size_t>(a_size);
-  c_array_view_t<const irs_u8> buf_view(ap_buf, size);
-  mem_copy(buf_view, 0u, data_u8, byte_shift_idx, size);
+  m_read_vars.resize(size);
+  m_write_vars.resize(size);
+  m_write_flags.resize(size);
+}
+bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
+{
+  IRS_LIB_ASSERT(ap_index != IRS_NULL);
+  IRS_LIB_ASSERT(ap_count != IRS_NULL);
+  bool is_finded = false;
+  vector<bool>::iterator begin =
+    find(m_write_flags.begin() + m_index_var, m_write_flags.end(), true);
+  if (begin != m_write_flags.end()) {
+    vector<bool>::iterator end = find(begin, m_write_flags.end(), false);
+    *ap_index = begin - m_write_flags.begin();
+    *ap_count = end - begin;
+    m_index_var = end - m_write_flags.begin();
+    unmark_for_write(*ap_index, *ap_count);
+  } else {
+    m_index_var = m_write_flags.size();
+  }
+  return is_finded;
 }
 

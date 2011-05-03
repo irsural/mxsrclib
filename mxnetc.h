@@ -305,49 +305,50 @@ class mxnet_client_command_t
 {
 public:
   enum status_t {
-    mxnc_status_success = 0,
-    mxnc_status_busy = 1,
-    mxnc_status_error = 2
+    status_success = 0,
+    status_busy = 1,
+    status_error = 2
   };
   enum error_t {
-    mxnc_err_none = 0,
-    mxnc_err_invalid_param = 1,
-    mxnc_err_nomem = 2,
-    mxnc_err_create = 3,
-    mxnc_err_abort = 4,
-    mxnc_err_busy = 5,
-    mxnc_err_bad_server = 6,
-    mxnc_err_remote_invalid_param = 7,
-    mxnc_err_timeout = 8
+    error_none = 0,
+    error_invalid_param = 1,
+    error_nomem = 2,
+    error_create = 3,
+    error_abort = 4,
+    error_busy = 5,
+    error_bad_server = 6,
+    error_remote_invalid_param = 7,
+    error_timeout = 8
   };
 
   //! \brief Конструктор
   mxnet_client_command_t(hardflow_t& a_hardflow, counter_t a_disconnect_time);
   //! \brief Деструктор
   ~mxnet_client_command_t();
-  //! \brief Чтение версии протокола mxnet
-  void get_version(irs_u16 *version);
-  //! \brief Чтение размера массива (количество переменных)
-  void get_size(mxn_cnt_t *size);
-  //! \brief Чтение переменных
-  void read(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars);
-  //! \brief Запись переменных
-  void write(mxn_cnt_t index, mxn_cnt_t count, irs_i32 *vars);
+  //! \brief Чтение версии протокола mxnet. Надо ждать статуса
+  void version(irs_u16 *ap_version);
+  //! \brief Чтение размера массива (количество переменных).
+  //! Надо ждать статуса
+  void size(mxn_cnt_t *ap_size);
+  //! \brief Чтение переменных. Надо ждать статуса
+  void read(mxn_cnt_t a_index, mxn_cnt_t a_count, irs_i32 *ap_vars);
+  //! \brief Запись переменных. Надо ждать статуса
+  void write(mxn_cnt_t a_index, mxn_cnt_t a_count, irs_i32 *ap_vars);
   //! \brief Статус текущей операции
   status_t status();
   //! \brief Элементарное действие
   void tick();
-  //! \brief Прерывание операции
+  //! \brief Прерывание операции. Мгновенная операция
   void abort();
-  //! \brief Чтение последней ошибки
+  //! \brief Чтение последней ошибки. Мгновенная операция
   error_t get_last_error();
-  //! \brief Установка таймаута операций, с
+  //! \brief Установка таймаута операций, с. Мгновенная операция
   void disconnect_time(counter_t a_time);
-  //! \brief Установка ip-адреса удаленного устройства
+  //! \brief Установка ip-адреса удаленного устройства. Мгновенная операция
   void ip(mxip_t a_ip);
-  //! \brief Установка порта удаленного устройства
-  void port(irs_u16 port);
-  //! \brief Задание типа контрольной суммы
+  //! \brief Установка порта удаленного устройства. Мгновенная операция
+  void port(irs_u16 a_port);
+  //! \brief Задание типа контрольной суммы. Мгновенная операция
   void checksum_type(irs::mxn_checksum_t a_checksum_type);
 
 private:
@@ -355,16 +356,16 @@ private:
   typedef hardflow::fixed_flow_t::status_t ff_status_type;
 
   enum mode_t {
-    mxnc_mode_free,
-    mxnc_mode_packet,
-    mxnc_mode_write,
-    mxnc_mode_write_wait,
-    mxnc_mode_read,
-    mxnc_mode_begin_packet,
-    mxnc_mode_chunk_read_wait,
-    mxnc_mode_checksum,
-    mxnc_mode_proc,
-    mxnc_mode_reset
+    mode_free,
+    mode_packet,
+    mode_write,
+    mode_write_wait,
+    mode_read,
+    mode_begin_packet,
+    mode_chunk_read_wait,
+    mode_checksum,
+    mode_proc,
+    mode_reset
   };
 
   //! \brief Коммуникационный канал
@@ -419,27 +420,16 @@ private:
   void reset_parametrs();
 };
 
-
-//! \brief Структура для очереди байтовых операций mxnet_client_t
-struct mxnet_client_queue_item_t
-{
-  irs_uarc index;
-  raw_data_t<irs_i32> data;
-
-  mxnet_client_queue_item_t():
-    index(0),
-    data()
-  {
-  }
-};
-
 //! \brief Клиент протокола mxnet, реализующий интерфейс mxdata_t,
 //! работающий через hardflow_t
 class mxnet_client_t: public mxdata_t
 {
 public:
-  mxnet_client_t(hardflow_t& a_hardflow, counter_t a_update_time,
-    counter_t a_disconnect_time);
+  mxnet_client_t(hardflow_t& a_hardflow,
+    counter_t a_update_time = make_cnt_ms(200),
+    counter_t a_disconnect_time = make_cnt_s(2));
+  mxnet_client_command_t* command_interface();
+
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -450,8 +440,6 @@ public:
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void tick();
 private:
-  typedef mxnet_client_queue_item_t queue_item_type;
-
   enum mode_t {
     mode_start,
     mode_get_size,
@@ -469,12 +457,20 @@ private:
   irs_uarc m_size;
   bool m_is_connected;
   loop_timer_t m_update_timer;
-  irs::raw_data_t<irs_i32> m_data_vars;
-  raw_data_view_t<irs_u8, irs_i32> m_data_bytes;
-  deque<queue_item_type> m_write_queue;
+  irs::raw_data_t<irs_i32> m_read_vars;
+  raw_data_view_t<irs_u8, irs_i32> m_read_bytes;
+  irs::raw_data_t<irs_i32> m_write_vars;
+  raw_data_view_t<irs_u8, irs_i32> m_write_bytes;
+  mxn_cnt_t m_size_var;
+  mxn_cnt_t m_index_var;
+  vector<bool> m_write_flags;
   mxnet_client_command_t m_mxnet_client_command;
 
-  void queue_push(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  void fill_for_write(irs_uarc a_index, irs_uarc a_size, bool a_value);
+  void mark_for_write(irs_uarc a_index, irs_uarc a_size);
+  void unmark_for_write(irs_uarc a_index, irs_uarc a_size);
+  void resize_vars(mxn_cnt_t a_size);
+  bool find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count);
 };
 
 //! @}

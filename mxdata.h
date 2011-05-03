@@ -70,6 +70,79 @@ public:
   virtual void tick() = 0;
 };
 
+//! \brief ѕроверка итератора с произвольным доступом на попадание внутрь
+//! контейнера, равенство end() €вл€етс€ допустимым
+//!
+//! ¬озвращает true, если итератор внутри контейнера
+//! –аботает также на указател€х и контейнерах типа raw_data_t
+template <class C, class I>
+bool check_iterator(C& a_container, I a_iterator)
+{
+  return (a_container.begin() <= a_iterator) &&
+    (a_iterator <= a_container.end());
+}
+
+//! \brief ѕроверка итератора с произвольным доступом на попадание внутрь
+//! контейнера, равенство end() не допускаетс€
+//!
+//! ¬озвращает true, если итератор внутри контейнера
+//! –аботает также на указател€х и контейнерах типа raw_data_t
+template <class C, class I>
+bool check_iterator_strict(C& a_container, I a_iterator)
+{
+  return (a_container.begin() <= a_iterator) &&
+    (a_iterator < a_container.end());
+}
+
+//! \brief ѕроверка двух итератора с произвольным доступом на попадание внутрь
+//! контейнера
+//!
+//! ¬озвращает true, если оба итератора внутри контейнера и begin <= end
+//! –авенство итератора end() €вл€етс€ допустимым
+//! –аботает также на указател€х и контейнерах типа raw_data_t
+template <class C, class I>
+bool check_iterator(C& a_container, I a_iterator_begin, I a_iterator_end)
+{
+  return (a_iterator_begin <= a_iterator_end) &&
+    check_iterator(a_container, a_iterator_begin) &&
+    check_iterator(a_container, a_iterator_end);
+}
+
+//! \brief ѕроверка двух итератора с произвольным доступом на попадание внутрь
+//! контейнера
+//!
+//! ¬озвращает true, если оба итератора внутри контейнера и begin <= end
+//! ƒопускаетс€ равенство end() только параметра a_iterator_end
+//! –аботает также на указател€х и контейнерах типа raw_data_t
+template <class C, class I>
+bool check_iterator_strict(C& a_container, I a_iterator_begin, I a_iterator_end)
+{
+  return (a_iterator_begin <= a_iterator_end) &&
+    check_iterator_strict(a_container, a_iterator_begin) &&
+    check_iterator(a_container, a_iterator_end);
+}
+
+//! \brief ѕроверка индекса в контейнере с произвольным доступом на попадание
+//! внутрь контейнера
+//!
+//! ¬озвращает true, если индекс внутри контейнера
+template <class C, class S>
+bool check_index(C& a_container, S a_index)
+{
+  return check_iterator_strict(a_container, a_container.begin() + a_index);
+}
+
+//! \brief ѕроверка диапазона в контейнере с произвольным доступом на попадание
+//! внутрь контейнера
+//!
+//! ¬озвращает true, если индекс внутри контейнера
+template <class C, class S>
+bool check_index(C& a_container, S a_index, S a_size)
+{
+  return check_iterator_strict(a_container, a_container.begin() + a_index,
+    a_container.begin() + a_index + a_size);
+}
+
 // “ип дл€ параметра - изменение при первом соединении
 enum change_data_first_connect_t {
   change_on_first_connect,
@@ -467,9 +540,9 @@ template <class T>
 inline typename raw_data_t<T>::reference
   raw_data_t<T>::operator[](size_type a_index)
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -479,9 +552,9 @@ template <class T>
 inline typename raw_data_t<T>::const_reference
   raw_data_t<T>::operator[](size_type a_index) const
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -755,9 +828,9 @@ template <class T, class VT>
 inline typename raw_data_view_t<T, VT>::reference
   raw_data_view_t<T, VT>::operator[](size_type a_index)
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -768,9 +841,9 @@ template <class T, class VT>
 inline typename raw_data_view_t<T, VT>::const_reference
   raw_data_view_t<T, VT>::operator[](size_type a_index) const
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -893,6 +966,10 @@ public:
   inline pointer data();
   inline const_pointer data() const;
   inline size_type size() const;
+  inline pointer begin();
+  inline const_pointer begin() const;
+  inline pointer end();
+  inline const_pointer end() const;
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
 private:
@@ -927,12 +1004,34 @@ inline c_array_view_t<T>::size_type c_array_view_t<T>::size() const
   return m_size;
 }
 template <class T>
+inline typename c_array_view_t<T>::pointer c_array_view_t<T>::begin()
+{
+  return data();
+}
+template <class T>
+inline typename c_array_view_t<T>::const_pointer
+  c_array_view_t<T>::begin() const
+{
+  return data();
+}
+template <class T>
+inline typename c_array_view_t<T>::pointer c_array_view_t<T>::end()
+{
+  return begin() + size();
+}
+template <class T>
+inline typename c_array_view_t<T>::const_pointer
+  c_array_view_t<T>::end() const
+{
+  return begin() + size();
+}
+template <class T>
 inline c_array_view_t<T>::reference c_array_view_t<T>::operator[](
   size_type a_index)
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -942,9 +1041,9 @@ template <class T>
 inline c_array_view_t<T>::const_reference c_array_view_t<T>::operator[](
   size_type a_index) const
 {
-  IRS_LIB_ERROR_IF(a_index >= size(), ec_standard, "");
+  IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
-  if (a_index >= size()) {
+  if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
   #endif //IRS_LIB_CHECK
@@ -953,14 +1052,12 @@ inline c_array_view_t<T>::const_reference c_array_view_t<T>::operator[](
 
 //! \brief  опирование с проверкой
 template <class src_type, class dest_type>
-void mem_copy(const src_type& a_src_data, size_t a_src_index,
+inline void mem_copy(const src_type& a_src_data, size_t a_src_index,
   dest_type& a_dest_data, size_t a_dest_index, size_t a_size)
 {
   #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
-  bool is_out_of_range = (a_src_index >= a_src_data.size()) ||
-    ((a_src_index + a_size) >= a_src_data.size()) ||
-    (a_dest_index >= a_dest_data.size()) ||
-    ((a_dest_index + a_size) >= a_dest_data.size());
+  bool is_out_of_range = !check_index(a_src_data, a_src_index, a_size) ||
+    !check_index(a_dest_data, a_dest_index, a_size);
   #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
   IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
     "¬ыход за диапазон в функции mem_copy");

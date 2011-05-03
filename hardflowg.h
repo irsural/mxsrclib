@@ -3,7 +3,7 @@
 //! \ingroup network_in_out_group
 //! \brief Коммуникационные потоки
 //!
-//! Дата: 19.04.2011\n
+//! Дата: 02.05.2011\n
 //! Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -532,8 +532,26 @@ public:
   static double def_max_downtime_sec();
 };
 
+enum {
+  //! \brief Константа означает, что для локального порта
+  //! берется любой свободный
+  make_udp_flow_port_none = 0
+};
+//! \brief Создание серевера udp_flow_t
+handle_t<hardflow_t> make_udp_flow_server(
+  const irs_u16 a_local_port,
+  const double a_max_downtime_sec = 10.,
+  const udp_flow_t::size_type a_channel_max_count =
+    udp_flow_t::def_channel_max_count
+);
+//! \brief Создание клиента udp_flow_t
+handle_t<hardflow_t> make_udp_flow_client(
+  const udp_flow_t::string_type& a_remote_address = udp_flow_t::empty_cstr(),
+  const irs_u16 a_remote_port = make_udp_flow_port_none
+);
+
 //! \brief Сервер для передачи данных по TCP протоколу
-//! \authors 
+//! \authors
 //! - Sergeev Sergey
 //!     Реализация под Linux
 //! - Lyashchov Maksim
@@ -671,24 +689,6 @@ private:
   //! \brief Запуск работы сервера
   void stop_client();
 };
-
-enum {
-  //! \brief Константа означает, что для локального порта
-  //! берется любой свободный
-  make_udp_flow_port_none = 0
-};
-//! \brief Создание серевера udp_flow_t
-handle_t<hardflow_t> make_udp_flow_server(
-  const irs_u16 a_local_port,
-  const double a_max_downtime_sec = 10.,
-  const udp_flow_t::size_type a_channel_max_count =
-    udp_flow_t::def_channel_max_count
-);
-//! \brief Создание клиента udp_flow_t
-handle_t<hardflow_t> make_udp_flow_client(
-  const udp_flow_t::string_type& a_remote_address = udp_flow_t::empty_cstr(),
-  const irs_u16 a_remote_port = make_udp_flow_port_none
-);
 #endif //defined(IRS_WIN32) || defined(IRS_LINUX)
 
 //! \brief Прием/передача фиксированных объемов данных с
