@@ -211,7 +211,7 @@ private:
   vector<string_type>* mp_row_user;
   vector<string_type> m_row_user_buf;
   table_string_t* mp_table_user;
-  irs_string_t m_cell_buf;
+  string_type m_cell_buf;
   size_type m_table_uses_col_count;
   size_type m_table_uses_row_count;
   size_type m_table_uses_cell_count;

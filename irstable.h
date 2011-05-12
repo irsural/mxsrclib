@@ -77,6 +77,8 @@ public:
   table_t(const table_t& a_table);
   inline void swap(table_t* ap_table);
   inline table_t& operator=(table_t& a_table);
+  inline bool operator== (const table_t& a_table) const;
+  inline bool operator!= (const table_t& a_table) const;
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
   inline cell_type_t& read_cell(
@@ -89,6 +91,7 @@ public:
   virtual size_type get_row_count() const;
   virtual inline void set_col_count(const size_type a_col_count);
   virtual inline void set_row_count(const size_type a_row_count);
+  inline bool empty() const;
   template<class it_col_type_t>
   void col_push_front(it_col_type_t a_first_elem);
   template<class it_col_type_t>
@@ -185,6 +188,34 @@ table_t<cell_type_t, column_type_t, container_t>::operator=(table_t& a_table)
 }
 
 template<class cell_type_t, class column_type_t, class container_t>
+inline bool table_t<cell_type_t, column_type_t, container_t>::operator==(
+  const table_t& a_table) const
+{
+  bool table_equal = true;
+  if ((m_col_count == a_table.get_col_count()) &&
+    (m_row_count == a_table.get_row_count())) {
+    for (size_type col_i = 0; col_i < m_col_count; col_i++) {
+      for (size_type row_i = 0; row_i < m_row_count; row_i++) {
+        if (read_cell(col_i, row_i) != a_table.read_cell(col_i, row_i)) {
+          table_equal = false;
+          break;
+        }
+      }
+    }
+  } else {
+    table_equal = false;
+  }
+  return table_equal;
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+inline bool table_t<cell_type_t, column_type_t, container_t>::operator!=(
+  const table_t& a_table) const
+{
+  return !operator==(a_table);
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
 inline const cell_type_t& table_t<cell_type_t, column_type_t, container_t>::
 read_cell(const size_type a_col_index, const size_type a_row_index) const
 {
@@ -260,6 +291,13 @@ inline void table_t<cell_type_t, column_type_t, container_t>::
   set_row_count(size_type a_row_count)
 {
   resize(m_col_count, a_row_count);
+}
+
+template<class cell_type_t, class column_type_t, class container_t>
+inline bool table_t<cell_type_t, column_type_t, container_t>::
+  empty() const
+{
+  return (m_col_count == 0) && (m_row_count == 0);
 }
 
 template<class cell_type_t, class column_type_t, class container_t>
@@ -1735,4 +1773,5 @@ struct test3_t
 } // namespace irs
 
 #endif //tablegH
+
 
