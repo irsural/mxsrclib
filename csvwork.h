@@ -330,7 +330,7 @@ inline void csv_file_synchro_t::open(const string_type& a_filename)
 {
   //bool fsuccess = true;
   m_filename = a_filename;
-  m_file.open(m_filename.c_str());
+  m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()));
   m_status_file = stat_file_open;
 }
 

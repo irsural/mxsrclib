@@ -2,7 +2,7 @@
 //! \ingroup network_in_out_group
 //! \brief Протокол MxNet (Max Network)
 
-//! Дата: 29.04.2010\n
+//! Дата: 04.05.2010\n
 //! Ранняя дата: 18.06.2008
 
 // Номер файла
@@ -746,9 +746,9 @@ void irs::mxnet_t::tick()
         {
           m_fixed_flow.read_abort();
           m_status = mxn_read_head;
-          irs::mlog() << irsm(">>>> mxnet ") <<
+          IRS_LIB_DBG_MSG(irsm(">>>> mxnet ") <<
             irsm(">> mxn_wait_read_head_and_analysis ") <<
-            irsm(">> BEG_PACK_ERROR") << endl;
+            irsm(">> BEG_PACK_ERROR") << endl);
           break;
         }
         default : break;
@@ -786,9 +786,8 @@ void irs::mxnet_t::tick()
         {
           m_fixed_flow.read_abort();
           m_status = mxn_read_head;
-          irs::mlog() <<
-            irsm(">>>> mxnet >> mxn_checksum >> fixed_flow_t::status_error")
-            << endl;
+          IRS_LIB_DBG_MSG(irsm(">>>> mxnet >> mxn_checksum >> "
+            "fixed_flow_t::status_error") << endl);
           break;
         }
         default : break;

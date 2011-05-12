@@ -151,7 +151,6 @@ irs_bool csv_file::set_var(const string_type& var_name,
 // Добавить название столбца csv-файла, при ошибке возвращает irs_false
 irs_bool csv_file::add_col(const string_type& col_name, e_val_type val_type)
 {
-  //m_vars[col_name] = elem_t(val_type, var_val_t());
   assign_elem(m_vars, col_name, elem_t(val_type, var_val_t()));
   return irs_true;
 }
@@ -160,40 +159,26 @@ irs_bool csv_file::add_col(const string_type& col_name, e_val_type val_type)
 irs_bool csv_file::open(const string_type& file_name)
 {
   if (m_csv_file.is_open()) return irs_true;
-  //if (mp_ini_file) return irs_true;
 
-  //m_lines_writed_count = 0;
   m_is_first_line = true;
 
-  //mp_ini_file = fopen(file_name, "wt");
-  m_csv_file.open(file_name.c_str());
-  if (!m_csv_file) goto _error;
-
-  return irs_true;
-
-  _error:
-  return irs_false;
+  m_csv_file.open(IRS_SIMPLE_FROM_TYPE_STR(file_name.c_str()));
+  irs_bool is_success = irs_false;
+  if (m_csv_file) {
+    is_success = irs_true;
+  }
+  return is_success;
 }
 //---------------------------------------------------------------------------
 // Закрыть файл
 irs_bool csv_file::close()
 {
-  #ifndef NOP
   if (m_csv_file.is_open()) {
     m_csv_file.close();
     if (!m_csv_file) {
       return irs_false;
     }
   }
-  #else //NOP
-  if (mp_ini_file) {
-    if (!fclose(mp_ini_file)) {
-      mp_ini_file = NULL;
-    } else {
-      return irs_false;
-    }
-  }
-  #endif //NOP
   return irs_true;
 }
 //---------------------------------------------------------------------------
@@ -232,6 +217,7 @@ irs_bool csv_file::write_line()
           m_csv_file << it->second.val.uf_str_type << irst('\n');
         }  break;
         default: {
+          IRS_LIB_ASSERT_MSG("Неверный тип в функции csv_file::write_line");
           //int invalid_type = 0;
           //assert(invalid_type);
         } break;
@@ -271,6 +257,7 @@ irs_bool csv_file::write_line()
         m_csv_file << it->second.val.uf_str_type;
       } break;
       default: {
+        IRS_LIB_ASSERT_MSG("Неверный тип в функции csv_file::write_line");
         //int invalid_type = 0;
         //assert(invalid_type);
       } break;
@@ -369,7 +356,7 @@ void irs::csvwork::csv_file_t::tick()
           case cmd_get_row:
           case cmd_calc_col_count:
           case cmd_calc_row_count: {
-            m_file.open(m_filename.c_str(), ios::in);
+            m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()), ios::in);
             if (m_file) {
               m_file.seekg(0, ios::end);
               m_file_size = m_file.tellg();
@@ -384,7 +371,8 @@ void irs::csvwork::csv_file_t::tick()
           case cmd_row_push_back: {
             bool success = true;
             // Создаем файл если не существует
-            m_file.open(m_filename.c_str(), ios::out | ios::app | ios::binary);
+            m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+              ios::out | ios::app | ios::binary);
             success = m_file ? success : false;
             if (success) {
               m_file.seekp(0, ios::end);
@@ -405,7 +393,8 @@ void irs::csvwork::csv_file_t::tick()
             m_file.close();
             // Открываем файл для чтения/записи
             if (success) {
-              m_file.open(m_filename.c_str(), ios::in | ios::out | ios::binary);
+              m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+                ios::in | ios::out | ios::binary);
               success = m_file ? success : false;
             } else {
               // Произошла ошибка
@@ -464,7 +453,8 @@ void irs::csvwork::csv_file_t::tick()
             }
           } break;
           case cmd_save : {
-            m_file.open(m_filename.c_str(), ios::in | ios::out | ios::trunc);
+            m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+              ios::in | ios::out | ios::trunc);
             if (m_file) {
               m_processing_status = ps_run_instruction;
             } else {
@@ -473,7 +463,8 @@ void irs::csvwork::csv_file_t::tick()
           } break;
           case cmd_load: {
             mp_table_user->clear();
-            m_file.open(m_filename.c_str(), ios::in);
+            m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+              ios::in);
             if (m_file) {
               m_file.seekg(0, ios::end);
               m_file_size = m_file.tellg();
@@ -980,7 +971,8 @@ bool irs::csvwork::csv_file_t::clear()
   bool fsuccess = true;
   IRS_LIB_ASSERT(m_command == cmd_none_command);
   if (m_command == cmd_none_command) {
-    m_file.open(m_filename.c_str(), ios::in|ios::out|ios::trunc);
+    m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+      ios::in|ios::out|ios::trunc);
     if(!m_file) {
       fsuccess = false;
     } else {
@@ -1080,7 +1072,8 @@ bool irs::csvwork::csv_file_synchro_t::save(
     // Переоткрываем файл, чтобы уничтожить содержимое файла
     m_file.close();
     m_file.clear();
-    m_file.open(m_filename.c_str(), ios::in|ios::out|ios::trunc);
+    m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+      ios::in|ios::out|ios::trunc);
     if (!m_file.good()) {
       fsuccess = false;
     }

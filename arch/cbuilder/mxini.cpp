@@ -61,9 +61,9 @@ irs::ini_file_t::~ini_file_t()
 }
 void irs::ini_file_t::set_ini_name(const String& a_ini_name)
 {
-  const char *str_begin = static_cast<AnsiString>(a_ini_name).c_str();
-  const char *str_end = str_begin + a_ini_name.Length();
-  if (find(str_begin, str_end, '\\') != str_end) {
+  const char_t *str_begin = a_ini_name.c_str();
+  const char_t *str_end = str_begin + a_ini_name.Length();
+  if (find(str_begin, str_end, irst('\\')) != str_end) {
     m_ini_name = a_ini_name.c_str();
   } else {
     String ExePath = ExtractFilePath(Application->ExeName);

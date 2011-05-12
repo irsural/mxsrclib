@@ -1437,6 +1437,7 @@ void irs::mxnet_client_command_t::tick()
       //mxifa_write_begin(m_handle_channel, IRS_NULL, (irs_u8 *)buf,
         //new_size);
       #else //INSERT_LEFT_BYTE
+      m_channel_ident = m_hardflow.channel_next();
       m_fixed_flow.write(m_channel_ident, m_packet_data.data(), m_send_size);
       //mxifa_write_begin(m_handle_channel, IRS_NULL, m_packet_data.data(),
         //m_send_size);
@@ -1825,12 +1826,12 @@ void irs::mxnet_client_t::tick()
       mxn_cnt_t index = 0;
       mxn_cnt_t count = 0;
       if (find_range(&index, &count)) {
-        IRS_LIB_ASSERT(!check_index(m_write_vars, index, count));
+        IRS_LIB_ASSERT(check_index(m_write_vars, index, count));
         #ifdef IRS_LIB_CHECK
         if (check_index(m_write_vars, index, count)) {
         #endif //IRS_LIB_CHECK
           m_mxnet_client_command.write(index, count,
-            m_read_vars.data() + index);
+            m_write_vars.data() + index);
         #ifdef IRS_LIB_CHECK
         }
         #endif //IRS_LIB_CHECK
@@ -1859,9 +1860,9 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
   bool a_value)
 {
   mxn_cnt_t var_first_idx = a_index/m_size_var_byte;
-  mxn_cnt_t var_last_idx = (a_index + a_size)/m_size_var_byte + 1;
+  mxn_cnt_t var_last_idx = (a_index + a_size)/m_size_var_byte;
   vector<bool>::iterator begin = m_write_flags.begin() + var_first_idx;
-  vector<bool>::iterator end = m_write_flags.end() + var_last_idx;
+  vector<bool>::iterator end = m_write_flags.begin() + var_last_idx;
   IRS_LIB_ERROR_IF(!check_iterator(m_write_flags, begin, end), ec_standard,
     "Итераторы вне контейнера или begin > end.\n"
     "Возможно неверны параметры на входе команды mxnet_client_t::write");
@@ -1886,6 +1887,7 @@ void irs::mxnet_client_t::resize_vars(mxn_cnt_t a_size)
   m_read_vars.resize(size);
   m_write_vars.resize(size);
   m_write_flags.resize(size);
+  m_size = m_read_bytes.size();
 }
 bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
 {
@@ -1900,6 +1902,7 @@ bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
     *ap_count = end - begin;
     m_index_var = end - m_write_flags.begin();
     unmark_for_write(*ap_index, *ap_count);
+    is_finded = true;
   } else {
     m_index_var = m_write_flags.size();
   }

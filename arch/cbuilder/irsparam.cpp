@@ -87,8 +87,7 @@ irs::param_box_t::param_box_t(
 
 void irs::param_box_t::save_form_params()
 {
-  TIniFile *IniFile;
-  IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  TIniFile* IniFile = new TIniFile(m_ini_file.ini_name().c_str());
   int key_col_width = mp_value_list_editor->ColWidths[0];
   IniFile->WriteInteger(
     m_ini_section.c_str(),
@@ -111,8 +110,7 @@ void irs::param_box_t::save_form_params()
 
 void irs::param_box_t::load_form_params()
 {
-  TIniFile *IniFile;
-  IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  TIniFile* IniFile = new TIniFile(m_ini_file.ini_name().c_str());
   mp_value_list_editor->ColWidths[0] = IniFile->ReadInteger(
     m_ini_section.c_str(),
     (m_prefix_name + irst("key_col_width")).c_str(),

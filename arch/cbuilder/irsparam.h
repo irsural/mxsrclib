@@ -56,7 +56,7 @@ private:
 public:
   param_box_t(
     const string_type& a_param_box_name = def_param_box_name(),
-    const string_type& a_ini_section_prefix = def_ini_section(),
+    const string_type& a_ini_section = def_ini_section(),
     const string_type& a_prefix_name = empty_string(),
     const string_type& a_ini_name = empty_string()
   );
