@@ -367,7 +367,7 @@ void u309m_current_supply_t::tick()
         //m_eth_data.header_data.SR_supply_200V_rele_bit = 1;//добавлено для теста
       } else if (is_supply_20V) {
         m_supply_number = m_supply_20V;
-        m_parameter = m_voltage*5;
+        m_parameter = m_voltage;
       } else if (is_supply_1A) {
         m_supply_number = m_supply_1A;
         m_parameter = m_current;

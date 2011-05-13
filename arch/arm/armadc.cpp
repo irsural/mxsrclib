@@ -138,6 +138,7 @@ irs::arm::adc_t::adc_t(
   
   // SS enable
   ADC0ACTSS_bit.ASEN0 = 1;
+  ADC0ACTSS_bit.ASEN1 = 1;
   ADC0ISC_bit.IN0 = 1;
   
   m_adc_timer.start();
@@ -193,7 +194,7 @@ void irs::arm::adc_t::tick()
         for (irs_u8 cnt = m_SSI0_channel_max_number;
           cnt < m_channel_max_number; cnt++)
         {
-          mp_data[cnt] = ADC0SSFIFO0;
+          mp_data[cnt] = ADC0SSFIFO1;
         }
         if (!ADC0SSFSTAT1_bit.EMPTY) {
           volatile irs_u32 fifo_data = ADC0SSFIFO1;
