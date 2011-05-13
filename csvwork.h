@@ -47,8 +47,6 @@ class csv_file
 public:
   typedef irs::char_t char_type;
   typedef irs::string_t string_type;
-  //typedef map_elem_t::reverse_iterator map_elem_revit_t;
-  //typedef reverse_iterator<map_elem_it_t> map_elem_revit_t;
 
   // Конструкторы и деструкторы
   csv_file();
@@ -112,11 +110,9 @@ private:
     }
   };
 
-  //csv_int m_lines_writed_count;
   bool m_is_first_line;
   list_type m_pars;
   list_type m_vars;
-  //FILE* mp_ini_file;
   irs::ofstream_t m_csv_file;
 
   // Методы
