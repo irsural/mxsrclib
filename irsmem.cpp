@@ -820,10 +820,13 @@ irs::eeprom_spi_t::eeprom_spi_t(
   m_mode(mode_search_write_data)
 {
   mp_eeprom_command->read(mp_target_buf.data(), 0, m_size);
-  for(; ((mp_eeprom_command->status() != eeprom_command_t::status_completed)||
-    (mp_eeprom_command->status() == eeprom_command_t::status_error)); )
+  for(; ((mp_eeprom_command->status() != eeprom_command_t::status_completed)&&
+    (mp_eeprom_command->status() != eeprom_command_t::status_error)); )
   {
     mp_eeprom_command->tick();
+  }
+  if (mp_eeprom_command->status() == eeprom_command_t::status_error) {
+    m_error = true;
   }
 }
 

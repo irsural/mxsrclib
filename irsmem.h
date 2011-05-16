@@ -152,6 +152,7 @@ private:
         {
           mp_spi->tick();
         }
+        while(get_status() == busy) {}
       }
     }
     ~eeprom_cluster_t() {}

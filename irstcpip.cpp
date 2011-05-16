@@ -948,7 +948,6 @@ void irs::simple_tcpip_t::send_arp()
   m_send_arp = false;
   m_new_recv_packet = true;
   IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("отправлен arp-пакет") << endl);
-  irs::mlog() << irsm("отправлен arp-пакет") << endl;
 }
 
 void irs::simple_tcpip_t::icmp_packet()
