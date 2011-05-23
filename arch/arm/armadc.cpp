@@ -31,8 +31,8 @@ irs::arm::adc_t::adc_t(
     
   GPIODDEN_bit.no1 = 0;
   GPIODAMSEL_bit.no1 = 1;
-  GPIODDEN_bit.no2 = 0;
-  GPIODAMSEL_bit.no2 = 1;
+  //GPIODDEN_bit.no2 = 0;   //  Ahtung!!!
+  //GPIODAMSEL_bit.no2 = 1;
   GPIODDEN_bit.no3 = 0;
   GPIODAMSEL_bit.no3 = 1;
   GPIODDEN_bit.no4 = 0;
