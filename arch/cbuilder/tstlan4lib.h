@@ -2,7 +2,7 @@
 //! \ingroup graphical_user_interface_group
 //! \brief Тест сети 4 - библиотека
 //!
-//! Дата: 06.08.2010\n
+//! Дата: 22.05.2011\n
 //! Дата создания: 17.09.2009
 
 #ifndef tstlan4libH
@@ -31,8 +31,8 @@ namespace irs {
 class tstlan4_t: public tstlan4_base_t
 {
 public:
-  typedef string_t string_type;
-  typedef char_t char_type;
+  typedef tstlan4_base_t::string_type string_type;
+  typedef tstlan4_base_t::char_type char_type;
 private:
   static const char_type* def_ini_name();
   static const char_type* def_ini_section_prefix();
@@ -45,7 +45,7 @@ public:
 
   tstlan4_t(const tstlan4_t& a_tstlan4);
   tstlan4_t(
-    form_type_t a_form_type = ft_internal,
+    form_type_t a_form_type,
     const string_type& a_ini_name = def_ini_name(),
     const string_type& a_ini_section_prefix = def_ini_section_prefix(),
     counter_t a_update_time_cnt = irs::make_cnt_ms(200),
@@ -64,17 +64,21 @@ public:
   virtual rect_t position() const;
   virtual void set_position(const rect_t &a_position);
   virtual void connect(mxdata_t *ap_data);
-  virtual void save_conf();
   virtual void update_time(const irs_i32 a_update_time);
   virtual void resize_chart(const irs_u32 a_size);
   virtual void options_event_connect(event_t* ap_event);
   virtual void options_event_clear();
+  virtual void save_conf();
+  virtual void load_conf();
+  virtual void clear_conf();
+  virtual void conf_section(const string_type& a_name);
 private:
   class controls_t: public TObject
   {
   public:
     //controls_t(const controls_t& a_controls, TForm *ap_form);
     controls_t(
+      form_type_t a_form_type,
       TForm *ap_form,
       const string_type& a_ini_name,
       const string_type& a_ini_section_prefix,
@@ -83,13 +87,16 @@ private:
     );
     virtual __fastcall ~controls_t();
     void connect(mxdata_t *ap_data);
-    void save_conf();
     void update_time(const irs_i32 a_update_time);
     void resize_chart(const irs_u32 a_size);
     // Консоль внутри tstlan4
     TMemo* log();
     void options_event_connect(event_t* ap_event);
     void options_event_clear();
+    void save_conf();
+    void load_conf();
+    void clear_conf();
+    void conf_section(const string_type& a_name);
     void tick();
   private:
     struct netconn_t {
@@ -293,9 +300,10 @@ private:
     TPopupMenu* mp_grid_popup;
     TStringGrid* mp_vars_grid;
 
-    const char *mp_read_on_text;
-    const char *mp_read_off_text;
+    const char_type* mp_read_on_text;
+    const char_type* mp_read_off_text;
 
+    form_type_t m_form_type;
     loop_timer_t m_read_loop_timer;
     irs::memobuf m_buf;
     ostream m_out;
@@ -330,7 +338,7 @@ private:
     map<string_type, bool> m_chart_names;
     map<string_type, bool> m_csv_names;
     measure_time_t m_timer;
-    const string_type m_ini_section_prefix;
+    string_type m_ini_section_prefix;
     bool m_start;
     bool m_first;
     bool m_is_created_csv;

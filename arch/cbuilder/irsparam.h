@@ -2,7 +2,7 @@
 //! \ingroup graphical_user_interface_group
 //! \brief Таблица параметров
 //!
-//! Дата: 03.08.2010\n
+//! Дата: 21.05.2011\n
 //! Дата создания: 29.07.2010
 
 #ifndef irsparamh
@@ -19,6 +19,7 @@
 #include <irsparamabs.h>
 #include <mxini.h>
 #include <mxdata.h>
+#include <irscpp.h>
 
 #include <irsfinal.h>
 
@@ -33,7 +34,7 @@ class param_box_t: public param_box_base_t
 {
 public:
   typedef param_box_base_t::string_type string_type;
-  typedef String builder_string_type;
+  //typedef String builder_string_type;
   typedef char_t char_type;
   enum {
     form_min_height = 120,
@@ -63,23 +64,25 @@ public:
   virtual ~param_box_t();
   virtual bool show();
   virtual void hide();
-  virtual void add_edit(const builder_string_type& a_param_name,
-    const builder_string_type& a_param_value);
-  virtual bool add_combo_by_item(const builder_string_type& a_param_name,
-    const builder_string_type& a_param_value);
-  virtual void add_combo(const builder_string_type& a_param_name,
+  virtual void add_edit(const string_type& a_param_name,
+    const string_type& a_param_value);
+  virtual bool add_combo_by_item(const string_type& a_param_name,
+    const string_type& a_param_value);
+  virtual void add_combo(const string_type& a_param_name,
     vector<string_type>* ap_param_values_list);
-  virtual void add_bool(const builder_string_type& a_param_name,
+  virtual void add_bool(const string_type& a_param_name,
     bool a_param_value);
   virtual bool get_param(const string_type& a_param_name,
-    builder_string_type* ap_param_value);
+    string_type* ap_param_value) const;
+  virtual string_type get_param(const string_type& a_param_name) const;
+  virtual string_type get_param_def(const string_type& a_param_name) const;
   virtual bool set_param(const string_type& a_param_name,
     const string_type& a_param_value);
   virtual void set_ini_name(const string_type& a_ini_name);
-  virtual string_type ini_name();
-  virtual void save();
+  virtual string_type ini_name() const;
+  virtual void save() const;
   virtual void load();
-  virtual void delete_edit(const builder_string_type& a_param_name);
+  virtual void delete_edit(const string_type& a_param_name);
 private:
   const string_type m_ini_section;
   const string_type m_prefix_name;
@@ -90,7 +93,8 @@ private:
   TButton* mp_cansel_btn;
   TValueListEditor* mp_value_list_editor;
   irs_u8 m_cur_param_row;
-  
+  map<string_type, string_type> m_param_def_list;
+
   void save_form_params();
   void load_form_params();
   void __fastcall ok_btn_click(TObject *Sender);

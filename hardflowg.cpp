@@ -3,7 +3,7 @@
 //! \ingroup network_in_out_group
 //! \brief Коммуникационные потоки
 //!
-//! Дата: 02.05.2011\n
+//! Дата: 21.05.2011\n
 //! Дата создания: 8.09.2009
 
 #include <irspch.h>
@@ -1206,7 +1206,7 @@ void irs::hardflow::udp_flow_t::tick()
 
 // Создание серевера udp_flow_t
 irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_server(
-  const irs_u16 a_local_port,
+  const udp_flow_t::string_type& a_local_port,
   const double a_max_downtime_sec,
   const udp_flow_t::size_type a_channel_max_count
 )
@@ -1231,7 +1231,7 @@ irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_server(
 // Создание клиента udp_flow_t
 irs::handle_t<irs::hardflow_t> irs::hardflow::make_udp_flow_client(
   const udp_flow_t::string_type& a_remote_address,
-  const irs_u16 a_remote_port
+  const udp_flow_t::string_type& a_remote_port
 )
 {
   udp_flow_t::string_type local_host_name = udp_flow_t::empty_cstr();

@@ -2,7 +2,7 @@
 //! \ingroup user_interface_group
 //! \brief Тест сети 4 - библиотека
 //!
-//! Дата: 17.04.2011\n
+//! Дата: 22.05.2011\n
 //! Дата создания: 17.09.2009
 
 #include <irspch.h>
@@ -62,7 +62,7 @@ irs::tstlan4_t::tstlan4_t(
     mp_form->Width = 500;
     mp_form->Height = 800;
     mp_form->Position = poDesigned;
-    mp_form->Caption = "Тест сети 4";
+    mp_form->Caption = irst("Тест сети 4");
     init(mp_form_auto.get());
   }
 }
@@ -77,8 +77,8 @@ void irs::tstlan4_t::init(TForm *ap_form)
     stay_on_top = irs::chart::builder_chart_window_t::stay_on_top_off;
   }
   mp_form = ap_form;
-  mp_controls.reset(new controls_t(mp_form, m_ini_name, m_ini_section_prefix,
-    stay_on_top, m_update_time_cnt));
+  mp_controls.reset(new controls_t(m_form_type, mp_form, m_ini_name,
+    m_ini_section_prefix, stay_on_top, m_update_time_cnt));
   if (m_global_log_connect == global_log_connect) {
     m_log_buf.connect(mp_controls->log());
     irs::mlog().rdbuf(&m_log_buf);
@@ -121,10 +121,6 @@ void irs::tstlan4_t::connect(mxdata_t *ap_data)
 {
   mp_controls->connect(ap_data);
 }
-void irs::tstlan4_t::save_conf()
-{
-  mp_controls->save_conf();
-}
 void irs::tstlan4_t::update_time(const irs_i32 a_update_time)
 {
   mp_controls->update_time(a_update_time);
@@ -142,16 +138,34 @@ void irs::tstlan4_t::options_event_clear()
 {
   mp_controls->options_event_clear();
 }
+void irs::tstlan4_t::save_conf()
+{
+  mp_controls->save_conf();
+}
+void irs::tstlan4_t::load_conf()
+{
+  mp_controls->load_conf();
+}
+void irs::tstlan4_t::clear_conf()
+{
+  mp_controls->clear_conf();
+}
+void irs::tstlan4_t::conf_section(const string_type& a_name)
+{
+  mp_controls->conf_section(a_name);
+}
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
 irs::tstlan4_t::controls_t::controls_t(
+  form_type_t a_form_type,
   TForm *ap_form,
   const string_type& a_ini_name,
   const string_type& a_ini_section_prefix,
   irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
   counter_t a_update_time_cnt
 ):
+  m_form_type(a_form_type),
   mp_form(ap_form),
   mp_top_panel(new TPanel(mp_form)),
   mp_open_dialog(new TOpenDialog(mp_form)),
@@ -166,8 +180,8 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_grid_popup(new TPopupMenu(mp_form)),
   mp_vars_grid(new TStringGrid(mp_form)),
 
-  mp_read_on_text("Пуск"),
-  mp_read_off_text("Стоп"),
+  mp_read_on_text(irst("Пуск")),
+  mp_read_off_text(irst("Стоп")),
 
   m_read_loop_timer(a_update_time_cnt),
   m_buf(),
@@ -209,11 +223,15 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_event(IRS_NULL)
 {
   m_buf.connect(mp_log_memo);
-  m_ini_file.set_ini_name(a_ini_name.c_str());
-  m_ini_file.set_section(String(m_ini_section_prefix.c_str()) + "Vars");
-  m_ini_file.add("", mp_vars_grid, "Name_", m_name_col);
-  m_ini_file.add("", mp_vars_grid, "Type_", m_type_col);
-  m_ini_file.add("", mp_vars_grid, "Graph_", m_chart_col);
+
+  if (m_form_type == ft_internal) {
+    m_ini_file.set_ini_name(a_ini_name.c_str());
+    m_ini_file.set_section(String(m_ini_section_prefix.c_str()) +
+      irst("Vars"));
+    m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
+    m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
+    m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
+  }
 
   const int btn_gap = 10;
 
@@ -232,19 +250,19 @@ irs::tstlan4_t::controls_t::controls_t(
 
   mp_chart_btn->Left = mp_start_btn->Left + mp_start_btn->Width + btn_gap;
   mp_chart_btn->Top = mp_top_panel->Height/2 - mp_chart_btn->Height/2;
-  mp_chart_btn->Caption = "График";
+  mp_chart_btn->Caption = irst("График");
   mp_chart_btn->Parent = mp_top_panel;
   mp_chart_btn->OnClick = ChartBtnClick;
 
   mp_load_btn->Left = mp_chart_btn->Left + mp_chart_btn->Width + btn_gap;
   mp_load_btn->Top = mp_top_panel->Height/2 - mp_load_btn->Height/2;
-  mp_load_btn->Caption = "Загрузить";
+  mp_load_btn->Caption = irst("Загрузить");
   mp_load_btn->Parent = mp_top_panel;
   mp_load_btn->OnClick = CsvLoadBtnClick;
 
   mp_options_btn->Left = mp_load_btn->Left + mp_load_btn->Width + btn_gap;
   mp_options_btn->Top = mp_top_panel->Height/2 - mp_options_btn->Height/2;
-  mp_options_btn->Caption = "Настройки";
+  mp_options_btn->Caption = irst("Настройки");
   mp_options_btn->Parent = mp_top_panel;
   mp_options_btn->OnClick = OptionsBtnClick;
 
@@ -259,11 +277,11 @@ irs::tstlan4_t::controls_t::controls_t(
   //mp_splitter->Height = 10;
   mp_splitter->Parent = mp_form;
 
-  mp_grid_popup_insert_item->Caption = "Добавить строку";
+  mp_grid_popup_insert_item->Caption = irst("Добавить строку");
   mp_grid_popup_insert_item->OnClick = GridInsertClick;
   //mp_grid_popup_insert_item->ShortCut =
     //ShortCut(VK_INSERT, TShiftState() << ssCtrl);
-  mp_grid_popup_delete_item->Caption = "Удалить строку";
+  mp_grid_popup_delete_item->Caption = irst("Удалить строку");
   mp_grid_popup_delete_item->OnClick = GridDeleteClick;
   mp_grid_popup->Items->Add(mp_grid_popup_insert_item);
   mp_grid_popup->Items->Add(mp_grid_popup_delete_item);
@@ -277,21 +295,23 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_vars_grid->Options = mp_vars_grid->Options << goColSizing;
   mp_vars_grid->OnGetEditText = VarsGridGetEditText;
   mp_vars_grid->OnKeyDown = VarsGridKeyDown;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_index_col] = "№";
+  mp_vars_grid->Rows[m_header_row]->Strings[m_index_col] = irst("№");
   mp_vars_grid->ColWidths[m_index_col] = m_index_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_name_col] = "Имя";
+  mp_vars_grid->Rows[m_header_row]->Strings[m_name_col] = irst("Имя");
   mp_vars_grid->ColWidths[m_name_col] = m_name_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_type_col] = "Тип";
+  mp_vars_grid->Rows[m_header_row]->Strings[m_type_col] = irst("Тип");
   mp_vars_grid->ColWidths[m_type_col] = m_type_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_value_col] = "Значение";
+  mp_vars_grid->Rows[m_header_row]->Strings[m_value_col] = irst("Значение");
   mp_vars_grid->ColWidths[m_value_col] = m_value_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_chart_col] = "Граф.";
+  mp_vars_grid->Rows[m_header_row]->Strings[m_chart_col] = irst("Граф.");
   mp_vars_grid->ColWidths[m_chart_col] = m_chart_col_width;
   mp_vars_grid->PopupMenu = mp_grid_popup;
   mp_vars_grid->Parent = mp_form;
 
-  m_ini_file.load();
-  fill_grid_index_col();
+  if (m_form_type == ft_internal) {
+    m_ini_file.load();
+    fill_grid_index_col();
+  }
 
   //m_out << irs::stime << "start\n";
   string_type ExePath = ExtractFilePath(Application->ExeName).c_str();
@@ -307,10 +327,6 @@ void irs::tstlan4_t::controls_t::connect(mxdata_t *ap_data)
 {
   mp_data = ap_data;
   m_refresh_grid = true;
-}
-void irs::tstlan4_t::controls_t::save_conf()
-{
-  //m_ini_file.save();
 }
 void irs::tstlan4_t::controls_t::update_time(const irs_i32 a_update_time)
 {
@@ -383,7 +399,7 @@ void irs::tstlan4_t::controls_t::tick()
         //mp_chart->clear_param();
         for (int row = m_header_size; row < row_count; row++) {
           string_type chart_name = name_list->Strings[row].c_str();
-          if (chart_list->Strings[row] == "1") {
+          if (chart_list->Strings[row] == irst("1")) {
             if (!m_chart_names[chart_name]) {
               m_chart_names[chart_name] = true;
               mp_chart->add_param(chart_name);
@@ -400,7 +416,7 @@ void irs::tstlan4_t::controls_t::tick()
       }
       m_chart_time = m_time.get() + m_shift_time - m_minus_shift_time;
       for (int row = m_header_size; row < row_count; row++) {
-        if (chart_list->Strings[row] == "1") {
+        if (chart_list->Strings[row] == irst("1")) {
           int var_index = row - m_header_size;
           string_type chart_name = name_list->Strings[row].c_str();
           mp_chart->add(chart_name, m_chart_time, var_to_double(var_index));
@@ -566,7 +582,7 @@ void irs::tstlan4_t::controls_t::bstr_to_var(int a_var_index,
   netconn_t::item_t item = m_netconn.items[a_var_index];
   switch (item.type) {
     case netconn_t::item_t::type_bit: {
-      if (a_bstr_val == "1") {
+      if (a_bstr_val == irst("1")) {
         m_netconn.bit_vec[item.index] = 1;
       } else {
         m_netconn.bit_vec[item.index] = 0;
@@ -843,7 +859,7 @@ void __fastcall irs::tstlan4_t::controls_t::GridInsertClick(TObject *Sender)
     }
   }
   for (int col = 0; col < col_count ; col++) {
-    mp_vars_grid->Rows[row_cur]->Strings[col] = "";
+    mp_vars_grid->Rows[row_cur]->Strings[col] = irst("");
   }
   m_ini_file.save();
 }
@@ -886,5 +902,34 @@ void irs::tstlan4_t::controls_t::options_event_connect(event_t* ap_event)
 void irs::tstlan4_t::controls_t::options_event_clear()
 {
   mp_event = IRS_NULL;
+}
+void irs::tstlan4_t::controls_t::save_conf()
+{
+  //m_ini_file.save();
+}
+void irs::tstlan4_t::controls_t::load_conf()
+{
+  m_ini_file.load();
+  fill_grid_index_col();
+}
+void irs::tstlan4_t::controls_t::clear_conf()
+{
+  mp_vars_grid->RowCount = m_grid_size;
+  int m_first_row = 1;
+  mp_vars_grid->Rows[m_first_row]->Strings[m_index_col] = irst("");
+  mp_vars_grid->Rows[m_first_row]->Strings[m_name_col] = irst("");
+  mp_vars_grid->Rows[m_first_row]->Strings[m_type_col] = irst("");
+  mp_vars_grid->Rows[m_first_row]->Strings[m_value_col] = irst("");
+  mp_vars_grid->Rows[m_first_row]->Strings[m_chart_col] = irst("");
+  m_ini_file.save();
+}
+void irs::tstlan4_t::controls_t::conf_section(const string_type& a_name)
+{
+  m_ini_section_prefix = a_name;
+  m_ini_file.clear_control();
+  m_ini_file.set_section(String(m_ini_section_prefix.c_str()));
+  m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
+  m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
+  m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
 }
 

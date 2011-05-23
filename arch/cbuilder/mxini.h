@@ -38,7 +38,7 @@ public:
   ini_file_t();
   ~ini_file_t();
   void set_ini_name(const String& a_ini_name);
-  String ini_name();
+  String ini_name() const;
   void set_section(const String& a_name);
   void add(const String& a_name, bool* a_control);
   void add(const String& a_name, irs_u8* a_control);

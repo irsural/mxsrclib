@@ -1,9 +1,9 @@
 //! \file
 //! \ingroup graphical_user_interface_group
 //! \brief Тест сети 4 - абстрактный базовый класс
-
-//! Дата: 14.04.2010\n
-// Дата создания: 14.05.2008
+//!
+//! Дата: 22.05.2011\n
+//! Дата создания: 14.05.2008
 
 #ifndef tstlan4absH
 #define tstlan4absH
@@ -22,6 +22,9 @@ namespace irs {
 class tstlan4_base_t
 {
 public:
+  typedef string_t string_type;
+  typedef char_t char_type;
+
   virtual ~tstlan4_base_t() {}
   virtual void tick() = 0;
   virtual void show() = 0;
@@ -29,11 +32,14 @@ public:
   virtual rect_t position() const = 0;
   virtual void set_position(const rect_t &a_position) = 0;
   virtual void connect(mxdata_t *ap_data) = 0;
-  virtual void save_conf() = 0;
   virtual void update_time(const irs_i32 a_update_time) = 0;
   virtual void resize_chart(const irs_u32 a_size) = 0;
   virtual void options_event_connect(event_t* ap_event) = 0;
   virtual void options_event_clear() = 0;
+  virtual void save_conf() = 0;
+  virtual void load_conf() = 0;
+  virtual void clear_conf() = 0;
+  virtual void conf_section(const string_type& a_name) = 0;
 };
 
 //! @}

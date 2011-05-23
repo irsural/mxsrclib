@@ -3,7 +3,7 @@
 //! \ingroup network_in_out_group
 //! \brief Коммуникационные потоки
 //!
-//! Дата: 02.05.2011\n
+//! Дата: 21.05.2011\n
 //! Дата создания: 27.08.2009
 
 #ifndef hardflowgH
@@ -539,7 +539,7 @@ enum {
 };
 //! \brief Создание серевера udp_flow_t
 handle_t<hardflow_t> make_udp_flow_server(
-  const irs_u16 a_local_port,
+  const udp_flow_t::string_type& a_local_port,
   const double a_max_downtime_sec = 10.,
   const udp_flow_t::size_type a_channel_max_count =
     udp_flow_t::def_channel_max_count
@@ -547,7 +547,7 @@ handle_t<hardflow_t> make_udp_flow_server(
 //! \brief Создание клиента udp_flow_t
 handle_t<hardflow_t> make_udp_flow_client(
   const udp_flow_t::string_type& a_remote_address = udp_flow_t::empty_cstr(),
-  const irs_u16 a_remote_port = make_udp_flow_port_none
+  const udp_flow_t::string_type& a_remote_port = udp_flow_t::empty_cstr()
 );
 
 //! \brief Сервер для передачи данных по TCP протоколу

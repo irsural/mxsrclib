@@ -71,7 +71,7 @@ void irs::ini_file_t::set_ini_name(const String& a_ini_name)
     m_ini_name = exe_path + string_t(a_ini_name.c_str());
   }
 }
-String irs::ini_file_t::ini_name()
+String irs::ini_file_t::ini_name() const
 {
   return m_ini_name.c_str();
 }

@@ -1,6 +1,6 @@
 //! \file
 //! \ingroup graphical_user_interface_group
-//! Дата: 03.08.2010
+//! Дата: 21.05.2011\n
 //! Дата создания: 29.07.2010
 
 #ifndef irsparamabsh
@@ -25,25 +25,49 @@ public:
   virtual ~param_box_base_t() {}
   virtual bool show() = 0;
   virtual void hide() = 0;
-  virtual void add_edit(const String& a_param_name,
-    const String& a_param_value) = 0;
-  virtual bool add_combo_by_item(const String& a_param_name,
-    const String& a_param_value) = 0;
-  virtual void add_combo(const String& a_param_name,
+  virtual void add_edit(const string_type& a_param_name,
+    const string_type& a_param_value) = 0;
+  //! \brief Добавление выпадающего списка к параметру, созданному add_edit,
+  //! поэлементно
+  virtual bool add_combo_by_item(const string_type& a_param_name,
+    const string_type& a_param_value) = 0;
+  //! \brief Добавление выпадающего списка к параметру, созданному add_edit
+  virtual void add_combo(const string_type& a_param_name,
     vector<string_type>* ap_param_values_list) = 0;
-  virtual void add_bool(const String& a_param_name,
+  virtual void add_bool(const string_type& a_param_name,
     bool a_param_value) = 0;
   virtual bool get_param(const string_type& a_param_name,
-    String* ap_param_value) = 0;
+    string_type* ap_param_value) const = 0;
+  virtual string_type get_param(const string_type& a_param_name) const = 0;
+  virtual string_type get_param_def(const string_type& a_param_name) const = 0;
   virtual bool set_param(const string_type& a_param_name,
     const string_type& a_param_value) = 0;
   virtual void set_ini_name(const string_type& a_ini_name) = 0;
-  virtual string_type ini_name() = 0;
-  virtual void save() = 0;
+  virtual string_type ini_name() const = 0;
+  virtual void save() const = 0;
   virtual void load() = 0;
-  virtual void delete_edit(const String& a_param_name) = 0;
+  virtual void delete_edit(const string_type& a_param_name) = 0;
   
 }; // param_box_base_t
+
+//! \brief Чтение числа из param_box_base_t
+//!
+//! Возвращает параметр, если он может быть преобразован в число
+//! Иначе возвращает параметр по умолчанию, если он может быть
+//!   преобразован в число
+//! Иначе возвращает 0 (то есть T() - что по сути 0)
+template <class T>
+T param_box_read_number(const param_box_base_t& a_param_box,
+  const char_t* a_param_name)
+{
+  string_t number_str = a_param_box.get_param(a_param_name);
+  T number = T();
+  if (!number_str.to_number(number)) {
+    number_str = a_param_box.get_param_def(a_param_name);
+    number_str.to_number(number);
+  }
+  return number;
+}
 
 //! @}
 
