@@ -106,7 +106,7 @@ typedef isodr_data_t isodr_data_double_t;
 
 // ПИД-регулятор
 template <class T>
-T pid_reg(basic_pid_data_t<T> *pd, T e)
+T pid_reg(basic_pid_data_t<T> *pd, T error_in)
 {
   T dif_int = pd->prev_e;
   T res = 0;
@@ -122,7 +122,7 @@ T pid_reg(basic_pid_data_t<T> *pd, T e)
     pd->int_val = bound(pd->int_val, imin, imax);
   }
   T Ires = pd->k*pd->ki*pd->int_val;
-  T PDres = pd->k*(e + pd->kd*(e - pd->prev_e));
+  T PDres = pd->k*(error_in + pd->kd*(error_in - pd->prev_e));
   res = Ires + PDres;
   if (res > pd->max + d_pid) {
     if (PDres > pd->max || (pd->k == 0.) || (pd->ki == 0.)) {
@@ -147,7 +147,7 @@ T pid_reg(basic_pid_data_t<T> *pd, T e)
   }
   res = bound(res, pd->min, pd->max);
   pd->pp_e = pd->prev_e;
-  pd->prev_e = e;
+  pd->prev_e = error_in;
   pd->prev_out = res;
   return res;
 }
@@ -188,8 +188,8 @@ void pid_reg_sync(basic_pid_data_t<T> *pd)
     T PDres = pd->k*(pd->prev_e + pd->kd*(pd->prev_e - pd->pp_e));
     T d_pid = pd->k_d_pid*(pd->max - pd->min);
     if ((PDres > -d_pid) && (PDres < pd->max)) {
-      pd->int_val = (pd->prev_out - pd->k*(pd->prev_e +
-        pd->kd*(pd->prev_e - pd->pp_e)))
+      pd->int_val = (pd->prev_out - pd->k*(pd->prev_e/* +
+        pd->kd*(pd->prev_e - pd->pp_e)*/))
         /(pd->k*pd->ki);
     } else {
       pd->int_val = 0.;

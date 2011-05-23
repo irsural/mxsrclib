@@ -11,6 +11,8 @@
 
 #include <irsfinal.h>
 
+#define FLASH_END_ADDR 0x40000
+
 namespace irs {
 
 namespace arm {

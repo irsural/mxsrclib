@@ -13,11 +13,57 @@
 #include <math.h>
 
 #include <irsdsp.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
 #ifndef NEW
 // ПИД-регулятор
+double irs::pid_reg(pid_data_t *pd, double error_in)
+{
+  double dif_int = pd->prev_e;
+  double res = 0;
+  if (pd->block_int == 1) if (pd->prev_e > 0) dif_int = 0;
+  if (pd->block_int == -1) if (pd->prev_e < 0) dif_int = 0;
+  if (pd->block_int_ext == 1) if (pd->prev_e > 0) dif_int = 0;
+  if (pd->block_int_ext == -1) if (pd->prev_e < 0) dif_int = 0;
+  pd->int_val += dif_int;
+  double d_pid = pd->k_d_pid*(pd->max - pd->min);
+  if ((pd->k != 0.) && (pd->ki != 0.)) {
+    double imin = (pd->min - d_pid)/pd->k/pd->ki;
+    double imax = (pd->max + d_pid)/pd->k/pd->ki;
+    pd->int_val = bound(pd->int_val, imin, imax);
+  }
+  double Ires = pd->k*pd->ki*pd->int_val;
+  double Pres = pd->k*error_in;
+  double Dres = pd->k*pd->kd*(error_in - pd->prev_e);
+  double PIres = Pres + Ires;
+  //double PDres = Pres + Dres;
+  //res = Ires + PDres;
+  res = PIres + Dres;
+  if (PIres > pd->max + d_pid) {
+    if (Pres > pd->max || (pd->k == 0.) || (pd->ki == 0.)) {
+      pd->int_val = 0.;
+      res = Pres;
+    } else {
+      pd->int_val = (pd->max - Pres)/pd->k/pd->ki;
+      res = pd->max;
+    }
+  }
+  if (PIres > pd->max) {
+    pd->block_int = 1;
+  } else if (PIres < pd->min) {
+    pd->block_int = -1;
+  } else {
+    pd->block_int = 0;
+  }
+  res = bound(res, pd->min, pd->max);
+  pd->pp_e = pd->prev_e;
+  pd->prev_e = error_in;
+  pd->prev_out = res;
+  return res;
+}
+/*
 double irs::pid_reg(pid_data_t *pd, double e)
 {
   double dif_int = pd->prev_e;
@@ -63,6 +109,7 @@ double irs::pid_reg(pid_data_t *pd, double e)
   pd->prev_out = res;
   return res;
 }
+*/
 // Синхронизация ПИД-регулятора на текущее значение регулируемого параметра
 // при выключенном регуляторе
 // pd - Параметры ПИД-регулятора,
