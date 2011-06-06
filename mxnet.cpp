@@ -834,9 +834,8 @@ void irs::mxnet_t::tick()
         {
           m_fixed_flow.write_abort();
           m_status = mxn_read_head;
-          irs::mlog() <<
-            irsm(">>>> mxnet >> mxn_write_wait >> fixed_flow_t::status_error")
-            << endl;
+          //irs::mlog() << irsm(">>>> mxnet >> mxn_write_wait >> "
+            //"fixed_flow_t::status_error") << endl;
           break;
         }
         default : break;

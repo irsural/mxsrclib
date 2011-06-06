@@ -35,6 +35,8 @@ namespace irs {
 class ini_file_t
 {
 public:
+  enum vle_load_t { vle_load_value, vle_load_full };
+
   ini_file_t();
   ~ini_file_t();
   void set_ini_name(const String& a_ini_name);
@@ -66,7 +68,8 @@ public:
   void add(const String& a_name, TStringGrid *a_control);
   void add(const String& a_name, TStringGrid *a_control,
     const String& a_column_name, int a_column_index);
-  void add(const String& a_name, TValueListEditor* a_control);
+  void add(const String& a_name, TValueListEditor* a_control,
+    vle_load_t a_vle_load = vle_load_value);
   void add(const String& a_name, TForm* a_control);
   void load();
   void save() const;
@@ -80,7 +83,7 @@ private:
     string_t section;
     string_t name;
 
-    bool operator==(const control_t &a_control)
+    bool operator==(const control_t &a_control) const
     {
       return (section == a_control.section) && (name == a_control.name);
     }
@@ -94,13 +97,13 @@ private:
   struct generalized_control_t: control_t {
     T* control;
 
-    bool operator==(const generalized_control_t& a_edit)
+    bool operator==(const generalized_control_t& a_edit) const
     {
-      control_t& this_base = static_cast<control_t&>(*this);
+      const control_t& this_base = static_cast<const control_t&>(*this);
       const control_t& edit_base = static_cast<const control_t&>(a_edit);
       return (control == a_edit.control) && (this_base == edit_base);
     }
-    bool operator!=(const generalized_control_t& a_edit)
+    bool operator!=(const generalized_control_t& a_edit) const
     {
       return !(*this == a_edit);
     }
@@ -121,7 +124,7 @@ private:
   typedef generalized_control_t<TGroupBox> group_box_t;
   typedef generalized_control_t<TComboBox> combo_box_t;
   typedef generalized_control_t<TRadioGroup> radio_group_t;
-  typedef generalized_control_t<TValueListEditor> value_list_editor_t;
+  //typedef generalized_control_t<TValueListEditor> value_list_editor_t;
   typedef generalized_control_t<TForm> form_t;
 
   typedef generalized_control_t<AnsiString> ansi_string_t;
@@ -165,6 +168,28 @@ private:
     {
       all_columns = false;
       columns.push_back(column_t(a_index, a_name));
+    }
+  };
+  typedef generalized_control_t<TValueListEditor> vle_general_type;
+  struct value_list_editor_t {
+
+    vle_load_t vle_load;
+    vle_general_type general;
+
+    value_list_editor_t(vle_load_t a_vle_load,
+      const vle_general_type& a_general
+    ):
+      vle_load(a_vle_load),
+      general(a_general)
+    {
+    }
+    bool operator==(const value_list_editor_t& a_edit) const
+    {
+      return (vle_load == a_edit.vle_load) && (general == a_edit.general);
+    }
+    bool operator!=(const value_list_editor_t& a_edit) const
+    {
+      return !(*this == a_edit);
     }
   };
   enum load_save_t { ls_load, ls_save };

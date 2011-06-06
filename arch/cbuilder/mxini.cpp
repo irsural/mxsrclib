@@ -336,10 +336,12 @@ void irs::ini_file_t::add(const String& a_name, TStringGrid *a_control,
   string_t column_name = a_column_name.c_str();
   m_string_grids[a_control].add(a_column_index, column_name);
 }
-void irs::ini_file_t::add(const String& a_name, TValueListEditor* a_control)
+void irs::ini_file_t::add(const String& a_name, TValueListEditor* a_control,
+  vle_load_t a_vle_load)
 {
   string_t name = a_name.c_str();
-  value_list_editor_t value_list_editor(m_section, name, a_control);
+  vle_general_type vle_general(m_section, name, a_control);
+  value_list_editor_t value_list_editor(a_vle_load, vle_general);
   if (find(m_value_list_editors.begin(), m_value_list_editors.end(),
     value_list_editor) == m_value_list_editors.end())
   { 
@@ -586,34 +588,42 @@ void irs::ini_file_t::load()
       value_list_editor_it != m_value_list_editors.end();
       value_list_editor_it++)
     {
-      value_list_editor_it->control->ColWidths[0] = IniFile->ReadInteger(
-        value_list_editor_it->section.c_str(),
-        (value_list_editor_it->name + irst("key_col_width")).c_str(),
-        value_list_editor_it->control->ColWidths[0]
+      value_list_editor_it->general.control->ColWidths[0] =
+        IniFile->ReadInteger(
+        value_list_editor_it->general.section.c_str(),
+        (value_list_editor_it->general.name + irst("key_col_width")).c_str(),
+        value_list_editor_it->general.control->ColWidths[0]
       );
       int row_cnt = IniFile->ReadInteger(
-        value_list_editor_it->section.c_str(),
-        (value_list_editor_it->name + irst("count")).c_str(),
-        value_list_editor_it->control->RowCount
+        value_list_editor_it->general.section.c_str(),
+        (value_list_editor_it->general.name + irst("count")).c_str(),
+        value_list_editor_it->general.control->RowCount
       );
-      //value_list_editor_it->control->Strings->Clear();
+      if (value_list_editor_it->vle_load == vle_load_full) {
+        value_list_editor_it->general.control->Strings->Clear();
+      }
       for (int row_idx = 1; row_idx < row_cnt; row_idx++) {
         String key = IniFile->ReadString(
-          value_list_editor_it->section.c_str(),
-          (value_list_editor_it->name + irst("key") +
+          value_list_editor_it->general.section.c_str(),
+          (value_list_editor_it->general.name + irst("key") +
           irsstr_from_number_classic(char_t(), row_idx)).c_str(),
           irst("")
         );
+        if (value_list_editor_it->vle_load == vle_load_full) {
+          value_list_editor_it->general.control->InsertRow(key, "", true);
+        }
         int row_from_key_index = 0;
-        if (value_list_editor_it->control->FindRow(key, row_from_key_index)) {
-          value_list_editor_it->control->Values[key] = IniFile->ReadString(
-            value_list_editor_it->section.c_str(),
-            (value_list_editor_it->name + irst("value") +
+        if (value_list_editor_it->general.control->
+          FindRow(key, row_from_key_index))
+        {
+          value_list_editor_it->general.control->Values[key] =
+          IniFile->ReadString(
+            value_list_editor_it->general.section.c_str(),
+            (value_list_editor_it->general.name + irst("value") +
             irsstr_from_number_classic(char_t(), row_idx)).c_str(),
-            value_list_editor_it->control->Values[key]
+            value_list_editor_it->general.control->Values[key]
           );
         }
-        //value_list_editor_it->control->InsertRow(key, value, true);
       }
     }
     for (vector<form_t>::iterator form_it = m_forms.begin();
@@ -796,31 +806,31 @@ void irs::ini_file_t::save() const
     value_list_editor_it != m_value_list_editors.end();
     value_list_editor_it++)
   {
-    int key_col_width = value_list_editor_it->control->ColWidths[0];
+    int key_col_width = value_list_editor_it->general.control->ColWidths[0];
     IniFile->WriteInteger(
-      value_list_editor_it->section.c_str(),
-      (value_list_editor_it->name + irst("key_col_width")).c_str(),
+      value_list_editor_it->general.section.c_str(),
+      (value_list_editor_it->general.name + irst("key_col_width")).c_str(),
       key_col_width
     );
-    int row_cnt = value_list_editor_it->control->RowCount;
+    int row_cnt = value_list_editor_it->general.control->RowCount;
     IniFile->WriteInteger(
-      value_list_editor_it->section.c_str(),
-      (value_list_editor_it->name + irst("count")).c_str(),
+      value_list_editor_it->general.section.c_str(),
+      (value_list_editor_it->general.name + irst("count")).c_str(),
       row_cnt
     );
     for (int row_idx = 1; row_idx < row_cnt; row_idx++) {
       IniFile->WriteString(
-        value_list_editor_it->section.c_str(),
-        (value_list_editor_it->name + irst("key") +
+        value_list_editor_it->general.section.c_str(),
+        (value_list_editor_it->general.name + irst("key") +
         irsstr_from_number_classic(char_t(), row_idx)).c_str(),
-        value_list_editor_it->control->Keys[row_idx]
+        value_list_editor_it->general.control->Keys[row_idx]
       );
-      String key = value_list_editor_it->control->Keys[row_idx];
+      String key = value_list_editor_it->general.control->Keys[row_idx];
       IniFile->WriteString(
-        value_list_editor_it->section.c_str(),
-        (value_list_editor_it->name + irst("value") +
+        value_list_editor_it->general.section.c_str(),
+        (value_list_editor_it->general.name + irst("value") +
         irsstr_from_number_classic(char_t(), row_idx)).c_str(),
-        value_list_editor_it->control->Values[key]
+        value_list_editor_it->general.control->Values[key]
       );
     }
   }
@@ -989,23 +999,25 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
 {
   map<TStringGrid*, string_grid_t>::const_iterator it_sg =
     m_string_grids.find(a_control);
-  //string_grid_t& sg = m_string_grids[a_control];
-  String section_bstr = it_sg->second.section.c_str();
-  String name_bstr = it_sg->second.name.c_str();
-  String name_row_count = name_bstr + "_row_count";
-  String name_col_count = name_bstr + "_col_count";
-  switch (a_load_save) {
-    case ls_load: {
-      a_control->RowCount = ap_ini_file->ReadInteger(section_bstr,
-        name_row_count, a_control->RowCount);
-      a_control->ColCount = ap_ini_file->ReadInteger(section_bstr,
-        name_col_count, a_control->ColCount);
-    } break;
-    case ls_save: {
-      ap_ini_file->WriteInteger(section_bstr, name_row_count,
-        a_control->RowCount);
-      ap_ini_file->WriteInteger(section_bstr, name_col_count,
-        a_control->ColCount);
+  if (it_sg != m_string_grids.end()) {
+    //string_grid_t& sg = m_string_grids[a_control];
+    String section_bstr = it_sg->second.section.c_str();
+    String name_bstr = it_sg->second.name.c_str();
+    String name_row_count = name_bstr + "_row_count";
+    String name_col_count = name_bstr + "_col_count";
+    switch (a_load_save) {
+      case ls_load: {
+        a_control->RowCount = ap_ini_file->ReadInteger(section_bstr,
+          name_row_count, a_control->RowCount);
+        a_control->ColCount = ap_ini_file->ReadInteger(section_bstr,
+          name_col_count, a_control->ColCount);
+      } break;
+      case ls_save: {
+        ap_ini_file->WriteInteger(section_bstr, name_row_count,
+          a_control->RowCount);
+        ap_ini_file->WriteInteger(section_bstr, name_col_count,
+          a_control->ColCount);
+      }
     }
   }
 }
