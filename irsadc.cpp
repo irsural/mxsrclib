@@ -1540,61 +1540,34 @@ void irs::adc_adc102s021_t::tick()
 //--------------------------  AD5293  ------------------------------------------
 
 irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
-  m_status(DAC_FREE),
+  m_status(FREE),
   mp_spi(ap_spi),
   m_wait_timer(irs::make_cnt_us(2)),
   m_need_write(false),
-  mp_cs_pin(ap_cs_pin)
+  mp_cs_pin(ap_cs_pin),
+  m_write_status(WS_READY)
 {
   if (mp_spi && mp_cs_pin)
-  {
+  { 
     mp_cs_pin->set();
     
     memset((void*)mp_buf, 0, m_size);
     memset((void*)mp_write_buf, 0, m_size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
-      mp_spi->tick();
+
+    while (!spi_ready()) mp_spi->tick();
     
     mp_spi->set_order(irs::spi_t::MSB);
     mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
     mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
     
-    m_wait_timer.start();
-    while(!m_wait_timer.check());
-    memset((void*)mp_write_buf, 0, m_size);
-    
-    mp_write_buf[0] = (0<<C3)|(1<<C2)|(0<<C1)|(0<<C0);
-    mp_cs_pin->clear();
-    mp_spi->write(mp_write_buf, m_size);
-    for (; mp_spi->get_status() != irs::spi_t::FREE;)
-      mp_spi->tick();
-    mp_cs_pin->set();
-    irs_u16 res_code = 512;
-    *((irs_u16*)mp_buf) = res_code;
-    //mp_buf[1] = (1 << 1);
-    
-    m_wait_timer.set(irs::make_cnt_ms(2));
-    m_wait_timer.start();
-    while(!m_wait_timer.check());
-    memset((void*)mp_write_buf, 0, m_size);
-    mp_write_buf[0] = (1<<Z5);
-    mp_write_buf[1] = (1<<HI);
-    mp_cs_pin->clear();
-    mp_spi->write(mp_write_buf, m_size);
-    for (; mp_spi->get_status() != irs::spi_t::FREE;)
-      mp_spi->tick();
-    mp_cs_pin->set();
-    
-    m_wait_timer.set(irs::make_cnt_us(2));
-    m_wait_timer.start();
-    while(!m_wait_timer.check());
-    memset((void*)mp_write_buf, 0, m_size);
-    mp_cs_pin->clear();
-    mp_spi->write(mp_write_buf, m_size);
-    for (; mp_spi->get_status() != irs::spi_t::FREE;)
-      mp_spi->tick();
-    mp_cs_pin->set();
-    m_wait_timer.start();
+    while (!write_ready()) write_tick();
+    write_to_dac(RESET);
+    while (!write_ready()) write_tick();
+    irs::pause(irs::make_cnt_ms(2));
+    write_to_dac(HIZ);
+    while (!write_ready()) write_tick();
+    write_to_dac(ZERO);
+    while (!write_ready()) write_tick();
   }
 }
 
@@ -1659,105 +1632,156 @@ void irs::dac_ad5293_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 
 void irs::dac_ad5293_t::tick()
 {
-  mp_spi->tick();
+  write_tick();
+  
   switch (m_status)
   {
-    case DAC_FREE:
+    case FREE:
     {
-      if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE))
+      if (m_need_write && write_ready() && spi_ready())
       {
-        if ((!mp_spi->get_lock()) && (m_wait_timer.check()))
-        {
-          mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-          mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-          memset((void*)mp_write_buf, 0, m_size);
-          
-          mp_spi->lock();
-          
-          mp_write_buf[0] = (0<<C3)|(1<<C2)|(1<<C1)|(0<<C0);
-          mp_write_buf[1] = (1<<Control2)|(1<<Control1);
-          mp_cs_pin->clear();
-          mp_spi->write(mp_write_buf, m_size);
- 
-          m_status = DAC_START;
-          m_need_write = false;
-        }
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->lock();
+        
+        m_need_write = false;
+        m_status = UNLOCK;
+        write_to_dac(UNLOCK);
       }
-    } break;
-    case DAC_START:
+      break;
+    }
+    case UNLOCK:
     {
-      if (mp_spi->get_status() == irs::spi_t::FREE)
+      if (write_ready())
       {
-        mp_cs_pin->set();
-        m_wait_timer.start();
-        m_status = DAC_DATA;
+        m_status = RESISTANCE;
+        write_to_dac(RESISTANCE);
       }
-    } break;
-    case DAC_DATA:
+      break;
+    }
+    case RESISTANCE:
     {
-      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
+      if (write_ready())
       {
-        memset((void*)mp_write_buf, 0, m_size);
+        m_status = HIZ;
+        write_to_dac(HIZ);
+      }
+      break;
+    }
+    case HIZ:
+    {
+      if (write_ready())
+      {
+        m_status = ZERO;
+        write_to_dac(ZERO);
+      }
+      break;
+    }
+    case ZERO:
+    {
+      if (write_ready())
+      {
+        mp_spi->unlock();
+        m_status = FREE;
+      }
+      break;
+    }
+  }
+}
+
+bool irs::dac_ad5293_t::write_to_dac(status_t a_command)
+{
+  if (write_ready())
+  {
+    switch (a_command)
+    {
+      case RESET:
+      {
+        mp_write_buf[0] = (0<<C3)|(1<<C2)|(0<<C1)|(0<<C0);
+        mp_write_buf[1] = 0;
+        break;
+      }
+      case UNLOCK:
+      {
+        mp_write_buf[0] = (0<<C3)|(1<<C2)|(1<<C1)|(0<<C0);
+        mp_write_buf[1] = (1<<Control2)|(1<<Control1);
+        break;
+      }
+      case RESISTANCE:
+      {
         mp_write_buf[0] = mp_buf[1];
         mp_write_buf[1] = mp_buf[0];
         mp_write_buf[0] &= 
           irs_u8(((1<<Z5)|(1<<Z4)|(1<<C3)|(1<<C2)|(1<<C1))^0xFF);
         mp_write_buf[0] |= irs_u8(1<<C0);
-        mp_cs_pin->clear();
-        mp_spi->write(mp_write_buf, m_size);
-        m_status = DAC_DATA_WAIT;
+        break;
       }
-    } break;
-    case DAC_DATA_WAIT:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE)
+      case HIZ:
       {
-        mp_cs_pin->set();
-        m_wait_timer.start();
-        m_status = DAC_SDO;
-      }
-    } break;
-    case DAC_SDO:
-    {
-      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
-      {
-        memset((void*)mp_write_buf, 0, m_size);
         mp_write_buf[0] = (1<<Z5);
         mp_write_buf[1] = (1<<HI);
-        mp_cs_pin->clear();
-        mp_spi->write(mp_write_buf, m_size);
-        m_status = DAC_SDO_WAIT;
+        break;
       }
-    } break;
-    case DAC_SDO_WAIT:
+      case ZERO:
+      {
+        mp_write_buf[0] = 0;
+        mp_write_buf[1] = 0;
+        break;
+      }
+    }
+    mp_cs_pin->clear();
+    m_wait_timer.start();
+    m_write_status = WS_DOWN_CS;
+    return true;
+  }
+  return false;
+}
+
+void irs::dac_ad5293_t::write_tick()
+{
+  mp_spi->tick();
+  switch (m_write_status)
+  {
+    case WS_READY:
+    {
+      break;
+    }
+    case WS_DOWN_CS:
+    {
+      if (m_wait_timer.check())
+      {
+        mp_spi->write(mp_write_buf, m_size);
+        m_write_status = WS_WRITE;
+      }
+      break;
+    }
+    case WS_WRITE:
     {
       if (mp_spi->get_status() == irs::spi_t::FREE)
       {
-        mp_cs_pin->set();
         m_wait_timer.start();
-        m_status = DAC_NOP;
+        m_write_status = WS_UP_CS;
       }
-    } break;
-    case DAC_NOP:
+      break;
+    }
+    case WS_UP_CS:
     {
-      if ((mp_spi->get_status() == irs::spi_t::FREE) && (m_wait_timer.check()))
-      {
-        memset((void*)mp_write_buf, 0, m_size);
-        mp_cs_pin->clear();
-        mp_spi->write(mp_write_buf, m_size);
-        m_status = DAC_WRITE;
-      }
-    } break;
-    case DAC_WRITE:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE)
+      if (m_wait_timer.check())
       {
         mp_cs_pin->set();
-        mp_spi->unlock();
         m_wait_timer.start();
-        m_status = DAC_FREE;
+        m_write_status = WS_PAUSE;
       }
-    } break;
+      break;
+    }
+    case WS_PAUSE:
+    {
+      if (m_wait_timer.check())
+      {
+        m_write_status = WS_READY;
+      }
+      break;
+    }
   }
 }

@@ -898,6 +898,7 @@ class dac_ad5293_t : public mxdata_t
 {
   enum status_t
   {
+    DAC_RESET,
     DAC_FREE,
     DAC_START,
     DAC_DATA,
@@ -905,7 +906,22 @@ class dac_ad5293_t : public mxdata_t
     DAC_SDO,
     DAC_SDO_WAIT,
     DAC_NOP,
-    DAC_WRITE
+    DAC_WRITE,
+    //
+    FREE,
+    RESET,
+    UNLOCK,
+    RESISTANCE,
+    HIZ,
+    ZERO
+  };
+  enum write_status_t
+  {
+    WS_READY,
+    WS_DOWN_CS,
+    WS_WRITE,
+    WS_UP_CS,
+    WS_PAUSE
   };
   status_t m_status;
   spi_t *mp_spi;
@@ -927,6 +943,14 @@ class dac_ad5293_t : public mxdata_t
   bool m_need_write;
   //  CS
   gpio_pin_t *mp_cs_pin;
+  write_status_t m_write_status;
+  bool write_to_dac(status_t a_command);
+  inline bool write_ready() { return (m_write_status == WS_READY); };
+  inline bool spi_ready() 
+  { 
+    return (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE); 
+  };
+  void write_tick();
 public:
   dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin);
   ~dac_ad5293_t();

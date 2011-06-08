@@ -19,7 +19,8 @@ class hard_fault_event_t: public mxfact_event_t
 {
 public:
   hard_fault_event_t(arm_port_t &a_port, irs_u8 a_bit):
-    m_hard_fault_blink(a_port, a_bit, irs::make_cnt_ms(100)),
+    //m_hard_fault_blink(a_port, a_bit, irs::make_cnt_ms(100)),
+    m_pin_led(a_port, a_bit, irs::gpio_pin_t::dir_out),
     m_MMFAR(IRS_NULL),
     m_BFAR(IRS_NULL)
   {
@@ -32,7 +33,8 @@ public:
     irs::arm::interrupt_array()->int_event_gen(irs::arm::usage_fault_int)->
       add(this);*/
   }
-  irs::blink_t m_hard_fault_blink;
+  //irs::blink_t m_hard_fault_blink;
+  irs::arm::io_pin_t m_pin_led;
   irs_u32 m_MMFAR;
   irs_u32 m_BFAR;
   
@@ -92,11 +94,12 @@ public:
 
   virtual void exec()
   {
+    m_pin_led.set();
     hard_fault_handler_c(hard_fault_handler_asm());
     mxfact_event_t::exec();
     while(true)
     {
-      m_hard_fault_blink();
+      //m_hard_fault_blink();
     }
   }
 };
