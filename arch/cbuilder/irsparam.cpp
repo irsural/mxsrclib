@@ -37,7 +37,7 @@ irs::param_box_t::param_box_t(
   mp_form->Constraints->MinWidth = 280;
   mp_form->Constraints->MinHeight = 400;
   mp_form->BorderStyle = bsSizeable;
-  mp_form->Position = poDesktopCenter;
+  mp_form->Position = poOwnerFormCenter;
   mp_form->Caption = a_param_box_name.c_str();
   mp_form->OnClose = on_close_event;
 
@@ -191,10 +191,11 @@ void irs::param_box_t::hide()
 void irs::param_box_t::add_edit(const string_type& a_param_name,
   const string_type& a_param_value)
 {
+  String Key = a_param_name.c_str();
+  String Value = a_param_value.c_str();
   int row_index = 0;
-  if (!mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    mp_value_list_editor->InsertRow(a_param_name.c_str(),
-      a_param_value.c_str(), true);
+  if (!mp_value_list_editor->FindRow(Key, row_index)) {
+    mp_value_list_editor->InsertRow(Key, Value, true);
     m_param_def_list[a_param_name] = a_param_value;
   }
 }
@@ -203,15 +204,15 @@ bool irs::param_box_t::add_combo_by_item(
   const string_type& a_param_name,
   const string_type& a_param_value)
 {
+  String Key = a_param_name.c_str();
+  String Value = a_param_value.c_str();
   int row_index = 0;
-  if (mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    mp_value_list_editor->ItemProps[a_param_name.c_str()]->
-      EditStyle = esPickList;
-    if (mp_value_list_editor->ItemProps[a_param_name.c_str()]->
-      PickList->IndexOf(a_param_value.c_str()) == -1)
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
+    mp_value_list_editor->ItemProps[Key]->EditStyle = esPickList;
+    if (mp_value_list_editor->ItemProps[Key]->
+      PickList->IndexOf(Value) == -1)
     {
-      mp_value_list_editor->ItemProps[a_param_name.c_str()]->
-        PickList->Add(a_param_value.c_str());
+      mp_value_list_editor->ItemProps[Key]->PickList->Add(Value);
       return true;
     }
   }
@@ -221,17 +222,18 @@ bool irs::param_box_t::add_combo_by_item(
 void irs::param_box_t::add_combo(const string_type& a_param_name,
   vector<string_type>* ap_param_values_list)
 {
+  String Key = a_param_name.c_str();
   int row_index = 0;
-  if (mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    mp_value_list_editor->ItemProps[a_param_name.c_str()]->
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
+    mp_value_list_editor->ItemProps[Key]->
       EditStyle = esPickList;
     for(size_t list_index = 0; list_index < ap_param_values_list->size();
       list_index++)
     {
-      if (mp_value_list_editor->ItemProps[a_param_name.c_str()]->PickList->
+      if (mp_value_list_editor->ItemProps[Key]->PickList->
         IndexOf(((*ap_param_values_list)[list_index]).c_str()) == -1)
       {
-        mp_value_list_editor->ItemProps[a_param_name.c_str()]->
+        mp_value_list_editor->ItemProps[Key]->
           PickList->Add(((*ap_param_values_list)[list_index]).c_str());
       }
     }
@@ -241,19 +243,20 @@ void irs::param_box_t::add_combo(const string_type& a_param_name,
 void irs::param_box_t::add_bool(const string_type& a_param_name,
   bool a_param_value)
 {
+  String Key = a_param_name.c_str();
   int row_index = 0;
-  if (!mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    mp_value_list_editor->InsertRow(a_param_name.c_str(), irst(""), true);
-    mp_value_list_editor->ItemProps[a_param_name.c_str()]->
+  if (!mp_value_list_editor->FindRow(Key, row_index)) {
+    mp_value_list_editor->InsertRow(Key, irst(""), true);
+    mp_value_list_editor->ItemProps[Key]->
       EditStyle = esPickList;
-    mp_value_list_editor->ItemProps[a_param_name.c_str()]->
+    mp_value_list_editor->ItemProps[Key]->
         PickList->Add(irst("false"));
-    mp_value_list_editor->ItemProps[a_param_name.c_str()]->
+    mp_value_list_editor->ItemProps[Key]->
         PickList->Add(irst("true"));
     if (a_param_value) {
-      mp_value_list_editor->Values[a_param_name.c_str()] = irst("true");
+      mp_value_list_editor->Values[Key] = irst("true");
     } else {
-      mp_value_list_editor->Values[a_param_name.c_str()] = irst("false");
+      mp_value_list_editor->Values[Key] = irst("false");
     }
     m_param_def_list[a_param_name] = a_param_value;
   }
@@ -262,10 +265,11 @@ void irs::param_box_t::add_bool(const string_type& a_param_name,
 bool irs::param_box_t::get_param(const string_type& a_param_name,
   string_type* ap_param_value) const
 {
+  String Key = a_param_name.c_str();
   int row_index = 0;
-  if (mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    *ap_param_value = mp_value_list_editor->
-      Values[a_param_name.c_str()].c_str();
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
+    String Value = mp_value_list_editor->Values[Key];
+    *ap_param_value = Value.c_str();
     return true;
   } else {
     return false;
@@ -295,9 +299,11 @@ irs::param_box_t::string_type irs::param_box_t::get_param_def(
 bool irs::param_box_t::set_param(const string_type& a_param_name,
   const string_type& a_param_value)
 {
+  String Key = a_param_name.c_str();
+  String Value = a_param_value.c_str();
   int row_index = 0;
-  if (mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
-    mp_value_list_editor->Values[a_param_name.c_str()] = a_param_value.c_str();
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
+    mp_value_list_editor->Values[Key] = Value;
     return true;
   } else {
     return false;
@@ -314,11 +320,11 @@ void irs::param_box_t::load()
   m_ini_file.load();
 }
 
-
 void irs::param_box_t::delete_edit(const string_type& a_param_name)
 {
+  String Key = a_param_name.c_str();
   int row_index = 0;
-  if (mp_value_list_editor->FindRow(a_param_name.c_str(), row_index)) {
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
     mp_value_list_editor->DeleteRow(row_index);
   }
 }

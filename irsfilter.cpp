@@ -74,10 +74,10 @@ struct q_data_t
 };
 
 double* irs::get_q()
-{  
-  handle_t<q_data_t> q_data(new q_data_t());
+{
+  static handle_t<q_data_t> q_data(new q_data_t());
   return q_data->data;
-}    
+}
 
 double irs::get_c1()
 {
