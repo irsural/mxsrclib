@@ -76,6 +76,9 @@
 #define GPIO_AMSEL 0x528
 #define GPIO_PCTL 0x52C
 #define GPIO_UNLOCK_VALUE 0x4C4F434B
+
+#define ADC0_BASE 0x40038000
+#define ADC1_BASE 0x40039000
 #define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
 #define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
 

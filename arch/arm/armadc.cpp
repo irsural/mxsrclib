@@ -208,3 +208,27 @@ void irs::arm::adc_t::tick()
     } break;
   }
 }
+
+irs::arm::adc_full_t::adc_full_t(
+  irs::arm::adc_full_t::select_channel_type a_selected_channels, 
+  irs::arm::adc_full_t::adc_ref_t a_adc_ref,
+  irs::arm::adc_full_t::adc_module_t a_adc_module,
+  counter_t a_adc_interval):
+{
+}
+
+irs::arm::adc_full_t::~adc_full_t()
+{
+}
+
+void irs::arm::adc_full_t::set_adc_ref_voltage(float a_ref_voltage)
+{
+}
+
+void reselect_channels(select_channel_type a_selected_channels)
+{
+}
+
+float get_temperature();
+float get_data(irs_u8 a_channel);
+void tick();

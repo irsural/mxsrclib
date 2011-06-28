@@ -65,6 +65,50 @@ private:
   irs::timer_t m_adc_timer;
 };
 
+#ifdef __LM3SxBxx__
+
+class adc_full_t
+{
+public: 
+  typedef irs_u16 adc_data_t;
+  typedef irs_u16 select_channel_type;
+  enum adc_module_t
+  {
+    ADC0 = ADC0_BASE,
+    ADC1 = ADC1_BASE
+  };
+  enum adc_ref_t
+  {
+    INT_REF = 0,
+    EXT_REF = 1
+  };
+  
+  adc_full_t(select_channel_type a_selected_channels, 
+    adc_ref_t a_adc_ref = INT_REF,
+    adc_module_t a_adc_module = ADC0,
+    counter_t a_adc_interval = make_cnt_ms(100));
+  ~adc_full_t();
+  void set_adc_ref_voltage(float a_ref_voltage);
+  void reselect_channels(select_channel_type a_selected_channels);
+  float get_temperature();
+  float get_data(irs_u8 a_channel);
+  void tick();
+private:
+  enum status_t
+  {
+    WAIT,
+    SEQUENCE_START,
+    READ_RESULTS
+  };
+  status_t m_status;
+  loop_timer_t m_adc_timer;
+  vector<adc_data_t> m_result_vector;
+  irs_u32 m_adc_base_addr;
+  float m_ref_voltage;
+};
+
+#endif  //  __LM3SxBxx__
+  
 } // namespace arm
 
 } // namespace irs
