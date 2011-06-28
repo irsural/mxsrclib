@@ -17,9 +17,9 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir):
   HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_LOCK) = GPIO_UNLOCK_VALUE;
   HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_CR) |= m_port_mask;
   #endif // __LM3SxBxx__
-  //HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_AFSEL) &= ~m_port_mask;
-  //HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_ODR) &= ~m_port_mask;
   HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DEN) |= m_port_mask;
+  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_AFSEL) &= ~m_port_mask;
+  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_ODR) &= ~m_port_mask;
   if (a_dir == dir_in) {
     HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DIR) &= ~m_port_mask;
   } else if (a_dir == dir_out) {

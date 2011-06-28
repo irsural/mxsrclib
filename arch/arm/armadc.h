@@ -1,6 +1,9 @@
-// Класс для работы с АЦП
-// Дата: 14.01.2011
-// Ранняя дата: 13.01.2011
+//! \file
+//! \ingroup drivers_group
+//! \brief Класс для работы с АЦП для ARM
+//!
+//! Дата: 28.06.2011
+//! Дата создания: 13.01.2011
 
 #ifndef armadc
 #define armadc
@@ -8,8 +11,7 @@
 #include <irsdefs.h>
 
 #include <irsstd.h>
-#include <irsarchint.h>
-#include <mxdata.h>
+#include <irsadcabs.h>
 
 #include <irsfinal.h>
 
@@ -17,17 +19,18 @@ namespace irs {
 
 namespace arm {
 
+#ifdef NOP
 class adc_t
 {
-public: 
+public:
   typedef irs_u16 adc_data_t;
-  
+
   adc_t(counter_t a_adc_timer = irs::make_cnt_ms(100));
   ~adc_t();
   void tick();
   float get_data(irs_u8 a_channel);
   float get_temperature();
- 
+
 private:
   enum {
     AIN0  = 0x0,
@@ -46,7 +49,7 @@ private:
     AIN13 = 0xD,
     AIN14 = 0xE,
     AIN15 = 0xF,
-    
+
     INTERNAL_VREF = 0x0,
     EXTERNAL_REF = 0x1
   };
@@ -59,56 +62,91 @@ private:
     m_channel_max_number = 11,
     m_internal_temp_idx = 10
   };
-  
+
   status_t m_status;
   irs::raw_data_t<adc_data_t> mp_data;
   irs::timer_t m_adc_timer;
 };
 
+#endif  //  NOP
+
 #ifdef __LM3SxBxx__
 
-class adc_full_t
+//! \addtogroup string_processing_group
+//! @{
+
+class adc_stellaris_t: public adc_t
 {
-public: 
-  typedef irs_u16 adc_data_t;
-  typedef irs_u16 select_channel_type;
+public:
   enum adc_module_t
   {
-    ADC0 = ADC0_BASE,
-    ADC1 = ADC1_BASE
+    ADC0,
+    ADC1
   };
   enum adc_ref_t
   {
     INT_REF = 0,
     EXT_REF = 1
   };
-  
-  adc_full_t(select_channel_type a_selected_channels, 
+
+  adc_stellaris_t(select_channel_type a_selected_channels,
     adc_ref_t a_adc_ref = INT_REF,
     adc_module_t a_adc_module = ADC0,
     counter_t a_adc_interval = make_cnt_ms(100));
-  ~adc_full_t();
-  void set_adc_ref_voltage(float a_ref_voltage);
-  void reselect_channels(select_channel_type a_selected_channels);
+  ~adc_stellaris_t();
+  irs_u16 get_u16_minimum();
+  irs_u16 get_u16_maximum();
+  irs_u16 get_u16_data(irs_u8 a_channel);
+  irs_u32 get_u32_minimum();
+  irs_u32 get_u32_maximum();
+  irs_u32 get_u32_data(irs_u8 a_channel);
+  float get_float_minimum();
+  float get_float_maximum();
+  float get_float_data(irs_u8 a_channel);
   float get_temperature();
-  float get_data(irs_u8 a_channel);
   void tick();
 private:
   enum status_t
   {
     WAIT,
-    SEQUENCE_START,
-    READ_RESULTS
+    READ_SEQ_0,
+    READ_SEQ_1,
+    READ_SEQ_2,
+    READ_SEQ_3
+  };
+  enum sequence_t
+  {
+    SEQ0 = 0,
+    SEQ1 = 1,
+    SEQ2 = 2,
+    SEQ3 = 3
+  };
+  enum
+  {
+    m_max_adc_channels_cnt = 16,
+    m_sequence0_size = 8,
+    m_sequence1_size = 4,
+    m_sequence2_size = 4,
+    m_sequence3_size = 1,
+    m_portb_mask = 0x0C00,
+    m_portd_mask = 0xF0F0,
+    m_porte_mask = 0x030F
   };
   status_t m_status;
-  loop_timer_t m_adc_timer;
-  vector<adc_data_t> m_result_vector;
-  irs_u32 m_adc_base_addr;
-  float m_ref_voltage;
+  adc_module_t m_adc_module;
+  irs::loop_timer_t m_adc_timer;
+  vector<irs_u16> m_result_vector;
+  irs_u8 m_num_of_channels;
+
+  void set_mux_and_ctl_regs(irs_u32 a_mux, irs_u32 a_ctl, sequence_t a_seq);
+  bool check_sequence_ready(sequence_t a_seq);
+  void clear_fifo(sequence_t a_seq);
 };
 
+//! @}
+
 #endif  //  __LM3SxBxx__
-  
+
 } // namespace arm
 
 } // namespace irs

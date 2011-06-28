@@ -77,11 +77,6 @@
 #define GPIO_PCTL 0x52C
 #define GPIO_UNLOCK_VALUE 0x4C4F434B
 
-#define ADC0_BASE 0x40038000
-#define ADC1_BASE 0x40039000
-#define ADC0CTL (*((volatile irs_u32 *) 0x40038038))
-#define ADC1CTL (*((volatile irs_u32 *) 0x40039038))
-
 typedef struct {
   __REG32  PMC0           : 4;
   __REG32  PMC1           : 4;
@@ -819,7 +814,12 @@ typedef struct {
   __REG32  MASK1          : 1;
   __REG32  MASK2          : 1;
   __REG32  MASK3          : 1;
-  __REG32                 :28;
+  __REG32                 :12;
+  __REG32  DCONSS0        : 1;
+  __REG32  DCONSS1        : 1;
+  __REG32  DCONSS2        : 1;
+  __REG32  DCONSS3        : 1;
+  __REG32                 :12;
 } __adcim_bits;
 
 /* Analog-to-Digital Converter Interrupt Status and Clear (ADCISC) */
@@ -828,7 +828,12 @@ typedef struct {
   __REG32  IN1            : 1;
   __REG32  IN2            : 1;
   __REG32  IN3            : 1;
-  __REG32                 :28;
+  __REG32                 :12;
+  __REG32  DCINSS0        : 1;
+  __REG32  DCINSS1        : 1;
+  __REG32  DCINSS2        : 1;
+  __REG32  DCINSS3        : 1;
+  __REG32                 :12;
 } __adcisc_bits;
 
 /* Analog-to-Digital Converter Overflow Status (ADCOSTAT) */
@@ -870,6 +875,12 @@ typedef struct {
   __REG32                 :18;
 } __adcsspri_bits;
 
+/* ADC Sample Phase Control (ADCSPC) */
+typedef struct {
+  __REG32  PHASE          : 4;
+  __REG32                 :28;
+} __adcspc_bits;
+
 /* Analog-to-Digital Converter Processor Sample Sequence Initiate (ADCPSSI) */
 typedef struct {
   __REG32  SS0            : 1;
@@ -884,6 +895,25 @@ typedef struct {
   __REG32  AVG            : 3;
   __REG32                 :29;
 } __adcsac_bits;
+
+/* ADC Digital Comparator Interrupt Status and Clear (ADCDCISC) */
+typedef struct {
+  __REG32  DCINT0         : 1;
+  __REG32  DCINT1         : 1;
+  __REG32  DCINT2         : 1;
+  __REG32  DCINT3         : 1;
+  __REG32  DCINT4         : 1;
+  __REG32  DCINT5         : 1;
+  __REG32  DCINT6         : 1;
+  __REG32  DCINT7         : 1;
+  __REG32                 :24;
+} __adcdcisc_bits;
+
+/* ADC Control (ADCCTL) */
+typedef struct {
+  __REG32  VREF           : 1;
+  __REG32                 :31;
+} __adcctl_bits;
 
 /* Analog-to-Digital Converter Sample Sequence Input Mux Select 0 (ADCSSMUX0) */
 typedef struct {
@@ -1085,6 +1115,44 @@ typedef struct {
   __REG32  FULL           : 1;
   __REG32                 :19;
 } __adcssfstat3_bits;
+
+/* ADC Sample Sequence 0 Operation (ADCSSOP0) */
+typedef struct {
+  __REG32  S0DCOP         :1;
+  __REG32                 :3;
+  __REG32  S1DCOP         :1;
+  __REG32                 :3;
+  __REG32  S2DCOP         :1;
+  __REG32                 :3;
+  __REG32  S3DCOP         :1;
+  __REG32                 :3;
+  __REG32  S4DCOP         :1;
+  __REG32                 :3;
+  __REG32  S5DCOP         :1;
+  __REG32                 :3;
+  __REG32  S6DCOP         :1;
+  __REG32                 :3;
+  __REG32  S7DCOP         :1;
+  __REG32                 :3;
+} __adcssop0_bits;
+
+/* ADC Sample Sequence 1 and 2 Operation (ADCSSOP1, ADCSSOP2) */
+typedef struct {
+  __REG32  S0DCOP         :1;
+  __REG32                 :3;
+  __REG32  S1DCOP         :1;
+  __REG32                 :3;
+  __REG32  S2DCOP         :1;
+  __REG32                 :3;
+  __REG32  S3DCOP         :1;
+  __REG32                 :19;
+} __adcssop12_bits;
+
+/* ADC Sample Sequence 3 Operation (ADCSSOP3) */
+typedef struct {
+  __REG32  S0DCOP         :1;
+  __REG32                 :31;
+} __adcssop3_bits;
 
 /* UART Data (UARTDR) */
 typedef struct {
@@ -3522,8 +3590,11 @@ __IO_REG32_BIT(ADC0OSTAT,          0x40038010,__READ_WRITE ,__adcostat_bits);
 __IO_REG32_BIT(ADC0EMUX,           0x40038014,__READ_WRITE ,__adcemux_bits);
 __IO_REG32_BIT(ADC0USTAT,          0x40038018,__READ_WRITE ,__adcustat_bits);
 __IO_REG32_BIT(ADC0SSPRI,          0x40038020,__READ_WRITE ,__adcsspri_bits);
+__IO_REG32_BIT(ADC0SPC,            0x40038024,__READ_WRITE ,__adcspc_bits);
 __IO_REG32_BIT(ADC0PSSI,           0x40038028,__WRITE      ,__adcpssi_bits);
 __IO_REG32_BIT(ADC0SAC,            0x40038030,__READ_WRITE ,__adcsac_bits);
+__IO_REG32_BIT(ADC0DCISC,          0x40038034,__READ_WRITE ,__adcdcisc_bits);
+__IO_REG32_BIT(ADC0CTL,            0x40038038,__READ_WRITE ,__adcctl_bits);
 __IO_REG32_BIT(ADC0SSMUX0,         0x40038040,__READ_WRITE ,__adcssmux0_bits);
 __IO_REG32_BIT(ADC0SSCTL0,         0x40038044,__READ_WRITE ,__adcssctl0_bits);
 __IO_REG32_BIT(ADC0SSFIFO0,        0x40038048,__READ       ,__adcssfifo0_bits);
@@ -3540,6 +3611,11 @@ __IO_REG32_BIT(ADC0SSMUX3,         0x400380A0,__READ_WRITE ,__adcssmux3_bits);
 __IO_REG32_BIT(ADC0SSCTL3,         0x400380A4,__READ_WRITE ,__adcssctl3_bits);
 __IO_REG32_BIT(ADC0SSFIFO3,        0x400380A8,__READ       ,__adcssfifo3_bits);
 __IO_REG32_BIT(ADC0SSFSTAT3,       0x400380AC,__READ       ,__adcssfstat3_bits);
+__IO_REG32_BIT(ADC0SSOP0,          0x40038050,__READ_WRITE ,__adcssop0_bits);
+__IO_REG32_BIT(ADC0SSOP1,          0x40038070,__READ_WRITE ,__adcssop12_bits);
+__IO_REG32_BIT(ADC0SSOP2,          0x40038090,__READ_WRITE ,__adcssop12_bits);
+__IO_REG32_BIT(ADC0SSOP3,          0x400380B0,__READ_WRITE ,__adcssop3_bits);
+
 /***************************************************************************
  **
  ** ADC1
@@ -3553,8 +3629,11 @@ __IO_REG32_BIT(ADC1OSTAT,          0x40039010,__READ_WRITE ,__adcostat_bits);
 __IO_REG32_BIT(ADC1EMUX,           0x40039014,__READ_WRITE ,__adcemux_bits);
 __IO_REG32_BIT(ADC1USTAT,          0x40039018,__READ_WRITE ,__adcustat_bits);
 __IO_REG32_BIT(ADC1SSPRI,          0x40039020,__READ_WRITE ,__adcsspri_bits);
+__IO_REG32_BIT(ADC1SPC,            0x40039024,__READ_WRITE ,__adcspc_bits);
 __IO_REG32_BIT(ADC1PSSI,           0x40039028,__WRITE      ,__adcpssi_bits);
 __IO_REG32_BIT(ADC1SAC,            0x40039030,__READ_WRITE ,__adcsac_bits);
+__IO_REG32_BIT(ADC1DCISC,          0x40039034,__READ_WRITE ,__adcdcisc_bits);
+__IO_REG32_BIT(ADC1CTL,            0x40039038,__READ_WRITE ,__adcctl_bits);
 __IO_REG32_BIT(ADC1SSMUX0,         0x40039040,__READ_WRITE ,__adcssmux0_bits);
 __IO_REG32_BIT(ADC1SSCTL0,         0x40039044,__READ_WRITE ,__adcssctl0_bits);
 __IO_REG32_BIT(ADC1SSFIFO0,        0x40039048,__READ       ,__adcssfifo0_bits);
@@ -3571,6 +3650,10 @@ __IO_REG32_BIT(ADC1SSMUX3,         0x400390A0,__READ_WRITE ,__adcssmux3_bits);
 __IO_REG32_BIT(ADC1SSCTL3,         0x400390A4,__READ_WRITE ,__adcssctl3_bits);
 __IO_REG32_BIT(ADC1SSFIFO3,        0x400390A8,__READ       ,__adcssfifo3_bits);
 __IO_REG32_BIT(ADC1SSFSTAT3,       0x400390AC,__READ       ,__adcssfstat3_bits);
+__IO_REG32_BIT(ADC1SSOP0,          0x40039050,__READ_WRITE ,__adcssop0_bits);
+__IO_REG32_BIT(ADC1SSOP1,          0x40039070,__READ_WRITE ,__adcssop12_bits);
+__IO_REG32_BIT(ADC1SSOP2,          0x40039090,__READ_WRITE ,__adcssop12_bits);
+__IO_REG32_BIT(ADC1SSOP3,          0x400390B0,__READ_WRITE ,__adcssop3_bits);
 
 /***************************************************************************
  **
