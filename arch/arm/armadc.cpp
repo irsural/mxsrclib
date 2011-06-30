@@ -245,6 +245,88 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
   if (a_selected_channels & m_portd_mask) RCGC2_bit.PORTD = 1;
   if (a_selected_channels & m_porte_mask) RCGC2_bit.PORTE = 1;
   for (irs_u8 i = 10; i; i--);
+  
+  //  GPIO
+  if (a_selected_channels & (1 << PORT_PE7))
+  {
+    GPIOEDEN_bit.no7 = 0;
+    GPIOEAMSEL_bit.no7 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PE6))
+  {
+    GPIOEDEN_bit.no6 = 0;
+    GPIOEAMSEL_bit.no6 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PE5))
+  {
+    GPIOEDEN_bit.no5 = 0; 
+    GPIOEAMSEL_bit.no5 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PE4))
+  {
+    GPIOEDEN_bit.no4 = 0;
+    GPIOEAMSEL_bit.no4 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD7))
+  {
+    GPIODDEN_bit.no7 = 0;
+    GPIODAMSEL_bit.no7 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD6))
+  {
+    GPIODDEN_bit.no6 = 0;
+    GPIODAMSEL_bit.no6 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD5))
+  {
+    GPIODDEN_bit.no5 = 0;
+    GPIODAMSEL_bit.no5 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD4))
+  {
+    GPIODDEN_bit.no4 = 0;
+    GPIODAMSEL_bit.no4 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PE3))
+  {
+    GPIOEDEN_bit.no3 = 0;
+    GPIOEAMSEL_bit.no3 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PE2))
+  {
+    GPIOEDEN_bit.no2 = 0;
+    GPIOEAMSEL_bit.no2 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PB4))
+  {
+    GPIOBDEN_bit.no4 = 0;
+    GPIOBAMSEL_bit.no4 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PB5))
+  {
+    GPIOBDEN_bit.no5 = 0;
+    GPIOBAMSEL_bit.no5 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD3))
+  {
+    GPIODDEN_bit.no3 = 0;
+    GPIODAMSEL_bit.no3 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD2))
+  {
+    GPIODDEN_bit.no2 = 0;
+    GPIODAMSEL_bit.no2 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD1))
+  {
+    GPIODDEN_bit.no1 = 0;
+    GPIODAMSEL_bit.no1 = 1;
+  }
+  if (a_selected_channels & (1 << PORT_PD0))
+  {
+    GPIODDEN_bit.no0 = 0;
+    GPIODAMSEL_bit.no0 = 1;
+  }
 
   if (a_adc_ref == EXT_REF)
   {
@@ -302,7 +384,7 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
       //  ADC Sample Phase Control
       ADC0SPC = 0;
       //  ADC Sample Averaging Control
-      ADC0SAC = 0;
+      ADC0SAC = 0x6;  //  Averaging 64x
       //  ADC Digital Comparator Interrupt Status and Clear
       ADC0DCISC_bit.DCINT0 = 1;
       ADC0DCISC_bit.DCINT1 = 1;
@@ -397,7 +479,7 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
       //  ADC Sample Phase Control
       ADC1SPC = 0;
       //  ADC Sample Averaging Control
-      ADC1SAC = 0;
+      ADC1SAC = 0x6;  //  Averaging 64x
       //  ADC Digital Comparator Interrupt Status and Clear
       ADC1DCISC_bit.DCINT0 = 1;
       ADC1DCISC_bit.DCINT1 = 1;
@@ -460,7 +542,8 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
         if ((m_num_of_channels >= m_sequence0_size - 1) ||
           (i >= m_max_adc_channels_cnt - 1))
         {
-          ctl_reg |= (1 << (m_num_of_channels * 4 + 1)); //  End of Sequence
+          //  0x03 = End of Sequence | Sample Interrupt Enable
+          ctl_reg |= (0x03 << (m_num_of_channels * 4 + 1));
         }
         set_mux_and_ctl_regs(mux_reg, ctl_reg, SEQ0);
       }
@@ -471,7 +554,9 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
         if ((m_num_of_channels >= m_sequence0_size + m_sequence1_size - 1) ||
           (i >= m_max_adc_channels_cnt - 1))
         {
-          ctl_reg |= (1 << (m_num_of_channels * 4 + 1)); //  End of Sequence
+          //  0x03 = End of Sequence | Sample Interrupt Enable
+          irs_u8 shift = (m_num_of_channels - m_sequence0_size) * 4 + 1;
+          ctl_reg |= (0x03 << shift);
         }
         set_mux_and_ctl_regs(mux_reg, ctl_reg, SEQ1);
       }
@@ -485,7 +570,10 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
           m_sequence0_size + m_sequence1_size + m_sequence2_size - 1) ||
           (i >= m_max_adc_channels_cnt - 1))
         {
-          ctl_reg |= (1 << (m_num_of_channels * 4 + 1)); //  End of Sequence
+          //  0x03 = End of Sequence | Sample Interrupt Enable
+          irs_u8 shift = (m_num_of_channels - m_sequence0_size 
+            - m_sequence1_size) * 4 + 1;
+          ctl_reg |= (0x03 << shift);
         }
         set_mux_and_ctl_regs(mux_reg, ctl_reg, SEQ2);
       }
@@ -493,7 +581,8 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
       {
         //  m_num_of_channels = 16
         mux_reg = i;
-        ctl_reg = 1;
+        //  0x06 = End of Sequence | Sample Interrupt Enable
+        ctl_reg = 0x06;
         set_mux_and_ctl_regs(mux_reg, ctl_reg, SEQ3);
       }
       m_num_of_channels++;
@@ -548,6 +637,10 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
       break;
     }
   }
+  clear_fifo(SEQ0);
+  clear_fifo(SEQ1);
+  clear_fifo(SEQ2);
+  clear_fifo(SEQ3);
   //  Seq0 start
   switch (m_adc_module)
   {
@@ -630,8 +723,24 @@ bool irs::arm::adc_stellaris_t::check_sequence_ready(sequence_t a_seq)
 {
   switch (m_adc_module)
   {
-    case ADC0: return ADC0RIS & (1 << a_seq);
-    case ADC1: return ADC1RIS & (1 << a_seq);
+    case ADC0: 
+    {
+      if (ADC0RIS & (1 << a_seq))
+      {
+        ADC0ISC |= (1 << a_seq);
+        return true;
+      }
+      return false;
+    }
+    case ADC1: 
+    {
+      if (ADC1RIS & (1 << a_seq))
+      {
+        ADC1ISC |= (1 << a_seq);
+        return true;
+      }
+      return false;
+    }
   }
   return false;
 }
@@ -745,7 +854,6 @@ irs::arm::adc_stellaris_t::~adc_stellaris_t()
       ADC0ISC_bit.IN3 = 1;
       if (ADC0CTL_bit.VREF == EXT_REF)
       {
-        GPIOBDEN_bit.no6 = 1;
         GPIOBAMSEL_bit.no6 = 0;
       }
       RCGC0_bit.ADC0 = 0;
@@ -763,7 +871,6 @@ irs::arm::adc_stellaris_t::~adc_stellaris_t()
       ADC1ISC_bit.IN3 = 1;
       if (ADC1CTL_bit.VREF == EXT_REF)
       {
-        GPIOBDEN_bit.no6 = 1;
         GPIOBAMSEL_bit.no6 = 0;
       }
       RCGC0_bit.ADC1 = 0;
@@ -848,6 +955,7 @@ void irs::arm::adc_stellaris_t::tick()
           case ADC0: ADC0PSSI_bit.SS0 = 1; break;
           case ADC1: ADC1PSSI_bit.SS0 = 1; break;
         }
+        m_status = READ_SEQ_0;
       }
       break;
     }
@@ -877,6 +985,10 @@ void irs::arm::adc_stellaris_t::tick()
         }
         else m_status = WAIT;
       }
+      else
+      {
+        volatile irs_u32 x = ADC0CTL;
+      }
       break;
     }
     case READ_SEQ_1:
@@ -885,7 +997,7 @@ void irs::arm::adc_stellaris_t::tick()
       {
         for (irs_u8 i = 0; i < m_sequence1_size; i++)
         {
-          if (i >= m_num_of_channels) break;
+          if (i >= (m_num_of_channels - m_sequence0_size)) break;
           switch (m_adc_module)
           {
             case ADC0:
@@ -921,7 +1033,10 @@ void irs::arm::adc_stellaris_t::tick()
       {
         for (irs_u8 i = 0; i < m_sequence2_size; i++)
         {
-          if (i >= m_num_of_channels) break;
+          if (i >= (m_num_of_channels - m_sequence0_size - m_sequence1_size))
+          {
+            break;
+          }
           switch (m_adc_module)
           {
             case ADC0:

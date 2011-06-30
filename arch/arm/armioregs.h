@@ -3304,7 +3304,7 @@ __IO_REG32_BIT(GPIOEPDR,          0x40024514,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOESLR,          0x40024518,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOEDEN,          0x4002451C,__READ_WRITE ,__gpio_bits);
 #ifdef __LM3SxBxx__
-__IO_REG32_BIT(GPIOEAMSEL,        0x40005528,__READ_WRITE ,__gpio_bits);
+__IO_REG32_BIT(GPIOEAMSEL,        0x40024528,__READ_WRITE ,__gpio_bits);
 __IO_REG32_BIT(GPIOEPCTL,         0x4002452C,__READ_WRITE ,__gpio_pctl_bits);
 #endif // __LM3SxBxx__
 __IO_REG8(     GPIOEPERIPHID4,    0x40024FD0,__READ);

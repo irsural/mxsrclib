@@ -123,6 +123,25 @@ private:
   };
   enum
   {
+    PORT_PE7 = 0,
+    PORT_PE6 = 1,
+    PORT_PE5 = 2,
+    PORT_PE4 = 3,
+    PORT_PD7 = 4,
+    PORT_PD6 = 5,
+    PORT_PD5 = 6,
+    PORT_PD4 = 7,
+    PORT_PE3 = 8,
+    PORT_PE2 = 9,
+    PORT_PB4 = 10,
+    PORT_PB5 = 11,
+    PORT_PD3 = 12,
+    PORT_PD2 = 13,
+    PORT_PD1 = 14,
+    PORT_PD0 = 15
+  };
+  enum
+  {
     m_max_adc_channels_cnt = 16,
     m_sequence0_size = 8,
     m_sequence1_size = 4,
