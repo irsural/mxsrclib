@@ -2,7 +2,7 @@
 //! \ingroup math_group
 //! \brief Калькулятор
 //!
-//! Дата: 26.04.2011\n
+//! Дата: 28.07.2011\n
 //! Дата создания: 01.02.2009
 
 #ifndef irscalcH
@@ -678,9 +678,7 @@ public:
     m_token_data_list(),
     m_cur_token_data_it(m_token_data_list.end()),
     mp_prog(IRS_NULL),
-    m_prog_pos(0),
-    m_ch_valid_name(irst("_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz"))
+    m_prog_pos(0)
   { }
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   inline void imbue(const locale& a_locale);
@@ -705,18 +703,22 @@ private:
   const string_type* mp_prog;
   // Текущая позиция в тексте программы
   size_type m_prog_pos;
-  // Строка допустимых символов в имени идентификатора
-  const string_type m_ch_valid_name;
   // Проверка символа на принадлежность к символу числа
   inline bool is_char_digit(const char_type a_ch);
   // Проверка на символ экспоненты
   inline bool is_char_exponent(const char_type a_ch);
   // Проверка символа на принадлежность букве
   inline bool is_char_alpha(const char_type a_ch);
+  // Проверка символа на принадлежность букве или числу
+  inline bool is_char_alnum(const char_type a_ch);
   // Проверка на принадлежность к символу восьмеричного числа
   inline bool is_char_oct_digit(const char_type a_ch);
   // Проверка на принадлежность к символу шестнадцатиричного числа
   inline bool is_char_hex_digit(const char_type a_ch);
+  // Возвращает позицию первого симола, не допустимого для имени. Возвращает
+  // string_type::npos, если символ не найден
+  inline size_type find_first_of_ch_not_valid_name(const string_type& a_str,
+    const size_type a_pos);
   // Перевод строкового представления числа в тип числа
   template <class T>
   inline bool str_to_num(const string_type a_str, T* a_number);
@@ -732,16 +734,21 @@ inline bool detector_token_t::is_char_digit(const char_type a_ch)
 
 inline bool detector_token_t::is_char_exponent(const char_type a_ch)
 {
-  return (a_ch == irst('e')) || (a_ch == irst('E'));  
+  return (a_ch == irst('e')) || (a_ch == irst('E'));
 }
 
 inline bool detector_token_t::is_char_alpha(const char_type a_ch)
 {
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  return (isalnumt(a_ch, m_locale) || a_ch == irst('_'));
+  return isalphat(a_ch, m_locale);
   #else // !IRS_FULL_STDCPPLIB_SUPPORT
-  return (isalnumt(a_ch) || a_ch == irst('_'));
+  return isalphat(a_ch);
   #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+}
+
+inline bool detector_token_t::is_char_alnum(const char_type a_ch)
+{
+  return is_char_alpha(a_ch) || is_char_digit(a_ch);    
 }
 
 inline bool detector_token_t::is_char_oct_digit(const char_type a_ch)
@@ -761,6 +768,19 @@ inline bool detector_token_t::is_char_hex_digit(const char_type a_ch)
   #else // !IRS_FULL_STDCPPLIB_SUPPORT
   return isxdigitt(a_ch);
   #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+}
+
+inline detector_token_t::size_type
+detector_token_t::find_first_of_ch_not_valid_name(const string_type& a_str,
+  const size_type a_pos)
+{
+  for (size_type pos = a_pos; pos < a_str.size(); pos++) {
+    const char_type ch = a_str[pos];
+    if (!is_char_alnum(ch) && (ch != irst('_'))) {
+      return pos;
+    }
+  }
+  return string_type::npos;
 }
 
 template <class T>
@@ -1303,15 +1323,9 @@ inline bool detector_token_t::detect_token(const string_type* ap_prog,
 
   // Читаем идентификатор или ключевое слово
   if (!detected_token) {
-    bool is_alnum = false;
-    #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-    is_alnum = isalnumt(ch, locale::classic());
-    #else // IRS_FULL_STDCPPLIB_SUPPORT
-    is_alnum = isalnumt(ch);
-    #endif // !IRS_FULL_STDCPPLIB_SUPPORT
-    if (is_alnum || (ch == irst('_'))) {
+    if (is_char_alnum(ch) || (ch == irst('_'))) {
       const size_type pos_begin_name = pos;
-      pos = ap_prog->find_first_not_of(m_ch_valid_name, pos);
+      pos = find_first_of_ch_not_valid_name(*ap_prog, pos);
       if (pos == string_type::npos) {
         pos = ap_prog->size();
       } else {
