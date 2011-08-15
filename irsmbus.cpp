@@ -452,7 +452,11 @@ irs::modbus_server_t::modbus_server_t(
 {
   m_fixed_flow.read_timeout(a_disconnect_time);
   m_fixed_flow.write_timeout(a_disconnect_time);
+  #ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
+  #if IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
   mlog() << irsm("SERVER START!") << endl;
+  #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
+  #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE
 }
 
 irs::modbus_server_t::~modbus_server_t()
@@ -1346,10 +1350,14 @@ void irs::modbus_server_t::tick()
           } break;
           default:
           {
+            #ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
+            #if IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
             mlog() << irsm("ILLEGAL_PACKET") << endl;
             for(size_t idx = 0; idx < 20; idx++) {
               mlog() << "mp_buf[" << idx << "] = " << int(mp_buf[idx]) << endl;
             }
+            #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
+            #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE
           } break;
         }
         IRS_LIB_IRSMBUS_DBG_MONITOR(
@@ -1574,8 +1582,10 @@ void irs::modbus_server_t::tick()
         m_mode = send_response_mode;
         view_mode();
         m_size_byte_end = header.length - 1;
+      // 15.08.2011 Крашенинников М. В.
+      // Была проверка на status_success. Что, очевидно, неверно
       } else if (m_fixed_flow.read_status() == 
-        irs::hardflow::fixed_flow_t::status_success)
+        irs::hardflow::fixed_flow_t::status_error)
       {
         m_mode = read_header_mode;
         view_mode();
@@ -1754,7 +1764,11 @@ irs::modbus_client_t::modbus_client_t(
   m_fixed_flow.write_timeout(a_disconnect_time);
   init_to_cnt();
   m_measure_time.start();
+  #ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
+  #if IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
   mlog() << irsm("CLIENT START!") << endl;
+  #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE
+  #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE
 }
 
 irs::modbus_client_t::~modbus_client_t()
