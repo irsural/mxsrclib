@@ -2443,7 +2443,6 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set_bit"));
   IRS_LIB_ASSERT(a_bit_index < 8);
-
   m_hold_registers_size_byte = 0;
   m_hold_registers_start_byte = 0;
   m_coils_size_byte = 0;
@@ -2459,12 +2458,12 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     &m_input_registers_size_byte, &m_input_registers_start_byte);
 
   irs_u8 mask = mask_gen(8 - (a_bit_index + 1), 1);
-
+  
   if (a_bit_index < 8) {
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: coils"));
       m_coil_write_bit = 1;
-      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit +
+      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit + 
         a_bit_index;
       m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
       m_coils_byte_write[m_coil_bit_index/8] |= static_cast<irs_u8>(mask);
@@ -2510,12 +2509,10 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear_bit"));
   IRS_LIB_ASSERT(a_bit_index < 8);
-
   m_hold_registers_size_byte = 0;
   m_hold_registers_start_byte = 0;
   m_coils_size_byte = 0;
   m_coils_start_byte = 0;
-
   range(a_byte_index, 1, 0, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
   range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte,
@@ -2531,6 +2528,7 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: coils"));
       m_coil_write_bit = 0;
       m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit +
+        a_bit_index;
       m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
       if (m_refresh_mode == mode_refresh_auto) {
         if (!m_need_writes[m_coil_bit_index]) {
