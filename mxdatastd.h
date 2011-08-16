@@ -376,8 +376,9 @@ public:
   inline irs_uarc index() const;
   inline irs_uarc bit_index() const;
 
+  inline const bit_data_t& operator=(const bit_data_t& a_elem);
   inline bit_t operator=(bit_t a_elem);
-  inline operator bit_t();
+  inline operator bit_t() const;
 private:
   static const irs_uarc m_max_bit_count = 8;
 
@@ -407,6 +408,16 @@ inline irs_uarc bit_data_t::connect(mxdata_t *ap_data, irs_uarc a_index,
   //}
   return a_index;
 }
+inline const bit_data_t& bit_data_t::operator=
+  (const bit_data_t& a_elem)
+{
+  if (a_elem) {
+    mp_data->set_bit(m_index, m_bit_index);
+  } else {
+    mp_data->clear_bit(m_index, m_bit_index);
+  }
+  return a_elem;
+}
 inline bit_data_t::bit_t bit_data_t::operator=
   (bit_data_t::bit_t a_elem)
 {
@@ -417,7 +428,7 @@ inline bit_data_t::bit_t bit_data_t::operator=
   }
   return a_elem;
 }
-inline bit_data_t::operator bit_t()
+inline bit_data_t::operator bit_t() const
 {
   bit_t ret_bit = 0;
   if (mp_data->bit(m_index, m_bit_index)) ret_bit = 1;
