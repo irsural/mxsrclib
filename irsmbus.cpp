@@ -2441,6 +2441,7 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set_bit"));
   IRS_LIB_ASSERT(a_bit_index < 8);
+
   m_hold_registers_size_byte = 0;
   m_hold_registers_start_byte = 0;
   m_coils_size_byte = 0;
@@ -2456,20 +2457,13 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     &m_input_registers_size_byte, &m_input_registers_start_byte);
 
   irs_u8 mask = mask_gen(8 - (a_bit_index + 1), 1);
-  
+
   if (a_bit_index < 8) {
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: coils"));
       m_coil_write_bit = 1;
-      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit + 
+      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit +
         a_bit_index;
-      #ifdef NOP
-      m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
-      m_coils_byte_write[m_coil_bit_index/8] |= static_cast<irs_u8>(mask);
-      if (m_refresh_mode == mode_refresh_auto) {
-        m_need_writes[m_coil_bit_index] = 1;
-      }
-      #else // NOP
       m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
       m_coils_byte_write[m_coil_bit_index/8] |= static_cast<irs_u8>(mask);
       if (m_refresh_mode == mode_refresh_auto) {
@@ -2479,40 +2473,16 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
           m_need_writes_reserve[m_coil_bit_index] = 1;
         }
       }
-      #endif // NOP
     }
     if ((m_hold_registers_size_byte != 0)||(m_hold_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: hold regs"));
       m_hold_regs_reg_write[m_hold_registers_start_byte/2] =
         m_hold_regs_reg_read[m_hold_registers_start_byte/2];
-      #ifdef NOP
-      irs_u8 hr_byte_set_bit = 0;
-      if (m_hold_registers_start_byte%2 == 0) {
-        hr_byte_set_bit =
-          IRS_LOBYTE(m_hold_regs_reg_read[m_hold_registers_start_byte/2]);
-      } else {
-        hr_byte_set_bit =
-          IRS_HIBYTE(m_hold_regs_reg_read[m_hold_registers_start_byte/2]);
-      }
-      hr_byte_set_bit &= static_cast<irs_u8>(~mask);
-      hr_byte_set_bit |= static_cast<irs_u8>(mask);
-      if (m_hold_registers_start_byte%2 == 0) {
-        IRS_LOBYTE(m_hold_regs_reg_write[0]) = hr_byte_set_bit;
-      } else {
-        IRS_HIBYTE(m_hold_regs_reg_write[0]) = hr_byte_set_bit;
-      }
-      #else //NOP
       irs_u8* p_hold_regs_write_byte = reinterpret_cast<irs_u8*>(
         m_hold_regs_reg_write.data());
       p_hold_regs_write_byte[m_hold_registers_start_byte] |=
         static_cast<irs_u8>(1 << a_bit_index);
-      #endif //NOP
-      #ifdef NOP
-      if (m_refresh_mode == mode_refresh_auto) {
-        m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2] = 1;
-      }
-      #else // NOP
       if (m_refresh_mode == mode_refresh_auto) {
         if (!m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2]) {
           m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2] = 1;
@@ -2521,7 +2491,6 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
             m_hold_registers_start_byte/2] = 1;
         }
       }
-      #endif // NOP
     }
   }
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -2534,38 +2503,32 @@ void irs::modbus_client_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
   }
 }
 
-void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index, 
+void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
   irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear_bit"));
   IRS_LIB_ASSERT(a_bit_index < 8);
+
   m_hold_registers_size_byte = 0;
   m_hold_registers_start_byte = 0;
   m_coils_size_byte = 0;
   m_coils_start_byte = 0;
-  range(a_byte_index, 1, 0, m_discret_inputs_end_byte, 
+
+  range(a_byte_index, 1, 0, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
-  range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte, 
+  range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
-  range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte, 
+  range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte,
     &m_hold_registers_size_byte, &m_hold_registers_start_byte);
-  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte, 
+  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte,
     &m_input_registers_size_byte, &m_input_registers_start_byte);
-  
+
   irs_u8 mask = mask_gen(8 - (a_bit_index + 1), 1);
   if (a_bit_index < 8) {
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: coils"));
       m_coil_write_bit = 0;
-      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit + 
-        a_bit_index;
-      //irs_u8 mask = mask_gen(8 - (m_coil_bit_index%8 + 1), 1);
-      #ifdef NOP
-      m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
-      if (m_refresh_mode == mode_refresh_auto) {
-        m_need_writes[m_coil_bit_index] = true;
-      }
-      #else // NOP
+      m_coil_bit_index = a_byte_index*8 - m_discret_inputs_size_bit +
       m_coils_byte_write[m_coil_bit_index/8] &= static_cast<irs_u8>(~mask);
       if (m_refresh_mode == mode_refresh_auto) {
         if (!m_need_writes[m_coil_bit_index]) {
@@ -2574,39 +2537,16 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
           m_need_writes_reserve[m_coil_bit_index] = 1;
         }
       }
-      #endif // NOP
     }
     if ((m_hold_registers_size_byte != 0)||(m_hold_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: hold regs"));
-      m_hold_regs_reg_write[m_hold_registers_start_byte/2] = 
+      m_hold_regs_reg_write[m_hold_registers_start_byte/2] =
         m_hold_regs_reg_read[m_hold_registers_start_byte/2];
-      #ifdef NOP
-      irs_u8 hr_byte_clear_bit = 0;
-      if (m_hold_registers_start_byte%2 == 0) {
-        hr_byte_clear_bit =
-          IRS_LOBYTE(m_hold_regs_reg_read[m_hold_registers_start_byte/2]);
-      } else {
-        hr_byte_clear_bit =
-          IRS_HIBYTE(m_hold_regs_reg_read[m_hold_registers_start_byte/2]);
-      }
-      hr_byte_clear_bit &= static_cast<irs_u8>(~mask);
-      if (m_hold_registers_start_byte%2 == 0)
-        IRS_LOBYTE(m_hold_regs_reg_write[0]) = hr_byte_clear_bit;
-      else
-        IRS_HIBYTE(m_hold_regs_reg_write[0]) = hr_byte_clear_bit;
-      #else //NOP
       irs_u8* p_hold_regs_write_byte = reinterpret_cast<irs_u8*>(
         m_hold_regs_reg_write.data());
       p_hold_regs_write_byte[m_hold_registers_start_byte] &=
         static_cast<irs_u8>(~(1 << a_bit_index));
-      #endif //NOP
-      #ifdef NOP
-      if (m_refresh_mode == mode_refresh_auto) {
-        m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2] = 
-          true;
-      }
-      #else // NOP
       if (m_refresh_mode == mode_refresh_auto) {
         if (!m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2]) {
           m_need_writes[m_coils_size_bit + m_hold_registers_start_byte/2] = 1;
@@ -2615,7 +2555,6 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_byte_index,
             m_hold_registers_start_byte/2] = 1;
         }
       }
-      #endif // NOP
     }
   }
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
