@@ -1360,8 +1360,10 @@ void irs::modbus_server_t::tick()
             #endif //IRS_LIB_IRSMBUS_DEBUG_TYPE
           } break;
         }
+        //if (convert_pack_for_read.function_code == write_single_register) {
         IRS_LIB_IRSMBUS_DBG_MONITOR(
           modbus_pack_request_monitor(mp_buf.data()););
+        //}
         MBAP_header_t &header = 
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
         request_t &req_header = 
