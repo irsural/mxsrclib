@@ -337,16 +337,11 @@ private:
     size_of_MBAP = 7,
     size_of_read_header = 4,
     size_of_resp_header = 2,
-    //size_of_packet = 260,
     size_of_req_excep = 1,
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
     packet_size_max = 260,
     packet_size_min = 16
-    /*size_of_data_write_byte = 246,
-    size_of_data_read_byte = 250,
-    size_of_data_write_reg = size_of_data_write_byte/2,
-    size_of_data_read_reg = size_of_data_read_byte/2*/
   };
   enum condition_t {
     //! \brief Режим чтения полного массива данных для автоматического режима.
@@ -507,7 +502,7 @@ private:
   mx_time_int_t                         m_send_measure_time;
   //! \brief Флаг, выставляемый при первом полном прочтении массива серверафлаг,
   //!   выставляемый при первом полном прочтении массива сервера.
-  bool                              m_first_read;
+  bool                                  m_first_read;
   //! \brief Измерительный таймер.
   measure_time_t                        m_measure_time;
   //! \brief Время, затрачиваемое на операции чтения/записи.

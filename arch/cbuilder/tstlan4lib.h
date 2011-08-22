@@ -10,9 +10,7 @@
 
 #include <irsdefs.h>
 
-//#include <Forms.hpp>
 #include <tstlan4abs.h>
-//#include <irsstd.h>
 #include <timer.h>
 #include <mxini.h>
 #include <MxChart.h>
@@ -20,6 +18,7 @@
 #include <cbsysutils.h>
 #include <irstable.h>
 #include <mxdata.h>
+#include <irsparamabs.h>
 
 #include <irsfinal.h>
 
@@ -68,6 +67,7 @@ public:
   virtual void resize_chart(const irs_u32 a_size);
   virtual void options_event_connect(event_t* ap_event);
   virtual void options_event_clear();
+  virtual event_t* inner_options_event();
   virtual void save_conf();
   virtual void load_conf();
   virtual void clear_conf();
@@ -93,6 +93,7 @@ private:
     TMemo* log();
     void options_event_connect(event_t* ap_event);
     void options_event_clear();
+    virtual event_t* inner_options_event();
     void save_conf();
     void load_conf();
     void clear_conf();
@@ -269,6 +270,13 @@ private:
       }
     }; //netconn_t
 
+    struct param_box_tune_t {
+      param_box_base_t* mp_param_box;
+
+      param_box_tune_t(param_box_base_t* ap_param_box);
+    };
+
+
     static const int m_vars_count_start = 1;
     static const int m_header_size = 1;
     static const int m_grid_size = m_vars_count_start + m_header_size;
@@ -343,6 +351,9 @@ private:
     bool m_first;
     bool m_is_created_csv;
     event_t* mp_event;
+    event_t m_inner_options_event;
+    handle_t<param_box_base_t> mp_param_box;
+    param_box_tune_t m_param_box_tune;
 
     template <class T>
     void out_number(ostream_t& a_stream, const T& a_value);
@@ -385,6 +396,7 @@ private:
     void __fastcall GridDeleteClick(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);
     void __fastcall FormShow(TObject *Sender);
+    void inner_options_apply();
   }; //controls_t
 
   form_type_t m_form_type;

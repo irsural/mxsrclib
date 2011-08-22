@@ -1714,6 +1714,11 @@ irs::mxnet_client_command_t* irs::mxnet_client_t::command_interface()
 {
   return &m_mxnet_client_command;
 }
+void irs::mxnet_client_t::update_time(counter_t a_update_time)
+{
+  m_update_timer.set(a_update_time);
+  m_update_timer.start();
+}
 irs_uarc irs::mxnet_client_t::size()
 {
   return m_size;

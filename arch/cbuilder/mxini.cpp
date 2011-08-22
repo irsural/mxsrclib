@@ -573,14 +573,8 @@ void irs::ini_file_t::load()
     ) {
       load_save_grid_size(IniFile.get(), ls_load, sg_it->first);
       const int row_count = sg_it->first->RowCount;
-      if (sg_it->second.all_columns) {
-        for (int row = 1; row < row_count; row++) {
-          load_save_grid_row(IniFile.get(), ls_load, sg_it->first, row);
-        }
-      } else {
-        for (int row = 1; row < row_count; row++) {
-          load_save_grid_row(IniFile.get(), ls_load, sg_it->first, row);
-        }
+      for (int row = 1; row < row_count; row++) {
+        load_save_grid_row(IniFile.get(), ls_load, sg_it->first, row);
       }
     }
     for (vector<value_list_editor_t>::iterator
@@ -987,7 +981,7 @@ void irs::ini_file_t::load_save_grid_cell(TIniFile *ap_ini_file,
   switch (a_load_save) {
     case ls_load: {
       a_control->Cells[a_col_index][a_row_index] =
-        ap_ini_file->ReadString(section_bstr, name_bstr, value_bstr);
+        ap_ini_file->ReadString(section_bstr, name_bstr, irst(""));
     } break;
     case ls_save: {
       ap_ini_file->WriteString(section_bstr, name_bstr, value_bstr);
@@ -1000,7 +994,6 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
   map<TStringGrid*, string_grid_t>::const_iterator it_sg =
     m_string_grids.find(a_control);
   if (it_sg != m_string_grids.end()) {
-    //string_grid_t& sg = m_string_grids[a_control];
     String section_bstr = it_sg->second.section.c_str();
     String name_bstr = it_sg->second.name.c_str();
     String name_row_count = name_bstr + "_row_count";
@@ -1021,9 +1014,4 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
     }
   }
 }
-
-
-
-
-
 

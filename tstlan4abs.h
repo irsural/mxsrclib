@@ -36,6 +36,7 @@ public:
   virtual void resize_chart(const irs_u32 a_size) = 0;
   virtual void options_event_connect(event_t* ap_event) = 0;
   virtual void options_event_clear() = 0;
+  virtual event_t* inner_options_event() = 0;
   virtual void save_conf() = 0;
   virtual void load_conf() = 0;
   virtual void clear_conf() = 0;

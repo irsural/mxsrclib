@@ -15,6 +15,7 @@
 #include <MxBase.h>
 #include <irserror.h>
 #include <irslimits.h>
+#include <irsparam.h>
 
 #include <irsfinal.h>
 
@@ -138,6 +139,10 @@ void irs::tstlan4_t::options_event_clear()
 {
   mp_controls->options_event_clear();
 }
+irs::event_t* irs::tstlan4_t::inner_options_event()
+{
+  return mp_controls->inner_options_event();
+}
 void irs::tstlan4_t::save_conf()
 {
   mp_controls->save_conf();
@@ -157,6 +162,33 @@ void irs::tstlan4_t::conf_section(const string_type& a_name)
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
+irs::tstlan4_t::controls_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  mp_param_box->add_bool(irst("Отображать лог"), false);
+  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
+  mp_param_box->load();
+}
+void irs::tstlan4_t::controls_t::inner_options_apply()
+{
+  if (mp_param_box->get_param(irst("Отображать лог")) == irst("true")) {
+    // Отобразить лог
+    mp_splitter->Show();
+    mp_log_memo->Show();
+    mp_splitter->Top = mp_log_memo->Top + mp_log_memo->Height;
+  } else {
+    // Скрыть лог
+    mp_log_memo->Hide();
+    mp_splitter->Hide();
+  }
+  update_time(param_box_read_number<irs_i32>(*mp_param_box,
+    irst("Время обновления, мс")));
+  resize_chart(param_box_read_number<irs_u32>(*mp_param_box,
+    irst("Количество точек в графике")));
+}
 irs::tstlan4_t::controls_t::controls_t(
   form_type_t a_form_type,
   TForm *ap_form,
@@ -220,9 +252,14 @@ irs::tstlan4_t::controls_t::controls_t(
   m_start(false),
   m_first(true),
   m_is_created_csv(false),
-  mp_event(IRS_NULL)
+  mp_event(IRS_NULL),
+  m_inner_options_event(),
+  mp_param_box(new param_box_t(irst("Внутренние настройки tstlan4"),
+    irst("inner_options"))),
+  m_param_box_tune(mp_param_box.get())
 {
   m_buf.connect(mp_log_memo);
+  inner_options_apply();
 
   if (m_form_type == ft_internal) {
     m_ini_file.set_ini_name(a_ini_name.c_str());
@@ -330,7 +367,8 @@ void irs::tstlan4_t::controls_t::connect(mxdata_t *ap_data)
 }
 void irs::tstlan4_t::controls_t::update_time(const irs_i32 a_update_time)
 {
-  m_read_loop_timer = irs::make_cnt_ms(a_update_time);
+  m_read_loop_timer.set(irs::make_cnt_ms(a_update_time));
+  m_read_loop_timer.start();
   int def_time = 1000;
   if (a_update_time > def_time) {
     m_builder_chart.set_refresh_time(a_update_time);
@@ -344,6 +382,12 @@ void irs::tstlan4_t::controls_t::resize_chart(const irs_u32 a_size)
 }
 void irs::tstlan4_t::controls_t::tick()
 {
+  if (m_inner_options_event.check()) {
+    if (mp_param_box->show()) {
+      inner_options_apply();
+    }
+  }
+
   if (mp_data)
   if (mp_data->connected()) {
     if (m_refresh_grid) {
@@ -842,6 +886,8 @@ void __fastcall irs::tstlan4_t::controls_t::OptionsBtnClick(TObject *Sender)
 {
   if (mp_event) {
     mp_event->exec();
+  } else {
+    m_inner_options_event.exec();
   }
 }
 void __fastcall irs::tstlan4_t::controls_t::GridInsertClick(TObject *Sender)
@@ -902,6 +948,10 @@ void irs::tstlan4_t::controls_t::options_event_connect(event_t* ap_event)
 void irs::tstlan4_t::controls_t::options_event_clear()
 {
   mp_event = IRS_NULL;
+}
+irs::event_t* irs::tstlan4_t::controls_t::inner_options_event()
+{
+  return &m_inner_options_event;
 }
 void irs::tstlan4_t::controls_t::save_conf()
 {

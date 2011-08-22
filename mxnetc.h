@@ -429,6 +429,7 @@ public:
     counter_t a_update_time = make_cnt_ms(200),
     counter_t a_disconnect_time = make_cnt_s(2));
   mxnet_client_command_t* command_interface();
+  void update_time(counter_t a_update_time);
 
   virtual irs_uarc size();
   virtual irs_bool connected();

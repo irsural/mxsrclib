@@ -786,8 +786,8 @@ void irs::mxnet_t::tick()
         {
           m_fixed_flow.read_abort();
           m_status = mxn_read_head;
-          IRS_LIB_DBG_MSG(irsm(">>>> mxnet >> mxn_checksum >> "
-            "fixed_flow_t::status_error") << endl);
+          IRS_LIB_DBG_MSG(">>>> mxnet >> mxn_checksum >> "
+            "fixed_flow_t::status_error");
           break;
         }
         default : break;

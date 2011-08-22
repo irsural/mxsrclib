@@ -2987,6 +2987,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
 void irs::modbus_client_t::set_delay_time(double a_time)
 {
   m_loop_timer.set(make_cnt_s(a_time));
+  m_loop_timer.start();
 }
 
 void irs::modbus_client_t::view_mode()
