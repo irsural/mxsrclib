@@ -247,6 +247,8 @@ irs::mx_beg_pack_proc_fix_flow_t::status()
 
 void irs::mx_beg_pack_proc_fix_flow_t::tick()
 {
+  typedef hardflow::fixed_flow_t::status_t fixed_flow_status_t;
+
   switch (m_status) 
   {
     case wait:
@@ -262,60 +264,78 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
     }
     case read_begin: 
     {
-      bool flow_status = m_fixed_flow.read_status();
-      if (flow_status == hardflow::fixed_flow_t::status_success) {
-        m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
-        m_status = read_end;
-      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
-        m_status = stop;
-        m_out_status = beg_pack_error;
+      fixed_flow_status_t flow_status = m_fixed_flow.read_status();
+      switch (flow_status) {
+        case hardflow::fixed_flow_t::status_success: {
+          m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
+          m_status = read_end;
+        } break;
+        case hardflow::fixed_flow_t::status_error: {
+          m_status = stop;
+          m_out_status = beg_pack_error;
+        } break;
+        case hardflow::fixed_flow_t::status_wait: {
+          // Ничего не делаем, если ожидание
+        } break;
       }
       break;
     }
-    case read_end: 
+    case read_end:
     {
-      bool flow_status = m_fixed_flow.read_status();
-      if (flow_status == hardflow::fixed_flow_t::status_success) {
-        mxn_sz_t pos = 0;
-        if (find_begin_in_data(mp_buf, mxn_header_size, pos)) {
-          if (pos) {
-            void* src = (void*)(mp_buf + pos);
-            irs_size_t move_size = mxn_header_size - pos;
+      fixed_flow_status_t flow_status = m_fixed_flow.read_status();
+      switch (flow_status) {
+        case hardflow::fixed_flow_t::status_success: {
+          mxn_sz_t pos = 0;
+          if (find_begin_in_data(mp_buf, mxn_header_size, pos)) {
+            if (pos) {
+              void* src = (void*)(mp_buf + pos);
+              irs_size_t move_size = mxn_header_size - pos;
+              void* dest = (void*)mp_buf;
+              memmove(dest, src, move_size);
+
+              irs_u8* buf = mp_buf + move_size;
+              irs_size_t chunk_size = pos;
+              m_fixed_flow.read(m_channel, buf, chunk_size);
+
+              m_status = read_chunk;
+            } else {
+              m_status = stop;
+              m_out_status = beg_pack_ready;
+            }
+          } else {
+            void* src = (void*)(mp_buf + mxn_end_size);
+            irs_size_t move_size = MXN_SIZE_OF_BEG_PACK;
             void* dest = (void*)mp_buf;
             memmove(dest, src, move_size);
 
-            irs_u8* buf = mp_buf + move_size;
-            irs_size_t chunk_size = pos;
-            m_fixed_flow.read(m_channel, buf, chunk_size);
-
-            m_status = read_chunk;
-          } else {
-            m_status = stop;
-            m_out_status = beg_pack_ready;
+            m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
           }
-        } else {
-          void* src = (void*)(mp_buf + mxn_end_size);
-          irs_size_t move_size = MXN_SIZE_OF_BEG_PACK;
-          void* dest = (void*)mp_buf;
-          memmove(dest, src, move_size);
-
-          m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);
-        }
-      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
-        m_status = stop;
-        m_out_status = beg_pack_error;
+        } break;
+        case hardflow::fixed_flow_t::status_error: {
+          m_status = stop;
+          m_out_status = beg_pack_error;
+        } break;
+        case hardflow::fixed_flow_t::status_wait: {
+          // Ничего не делаем, если ожидание
+        } break;
       }
       break;
     }
-    case read_chunk: 
+    case read_chunk:
     {
-      bool flow_status = m_fixed_flow.read_status();
-      if (flow_status == hardflow::fixed_flow_t::status_success) {
-        m_status = stop;
-        m_out_status = beg_pack_ready;
-      } else if (flow_status == hardflow::fixed_flow_t::status_error) {
-        m_status = start_process;
-        m_out_status = beg_pack_error;
+      fixed_flow_status_t flow_status = m_fixed_flow.read_status();
+      switch (flow_status) {
+        case hardflow::fixed_flow_t::status_success: {
+          m_status = stop;
+          m_out_status = beg_pack_ready;
+        } break;
+        case hardflow::fixed_flow_t::status_error: {
+          m_status = start_process;
+          m_out_status = beg_pack_error;
+        } break;
+        case hardflow::fixed_flow_t::status_wait: {
+          // Ничего не делаем, если ожидание
+        } break;
       }
       break;
     }
