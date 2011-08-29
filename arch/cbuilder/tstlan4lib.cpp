@@ -159,6 +159,14 @@ void irs::tstlan4_t::conf_section(const string_type& a_name)
 {
   mp_controls->conf_section(a_name);
 }
+irs::tstlan4_t::string_type irs::tstlan4_t::ini_name()
+{
+  return mp_controls->ini_name();
+}
+void irs::tstlan4_t::ini_name(const string_type& a_ini_name)
+{
+  mp_controls->ini_name(a_ini_name);
+}
 
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
@@ -981,5 +989,13 @@ void irs::tstlan4_t::controls_t::conf_section(const string_type& a_name)
   m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
+}
+irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::ini_name()
+{
+  return m_ini_file.ini_name().c_str();
+}
+void irs::tstlan4_t::controls_t::ini_name(const string_type& a_ini_name)
+{
+  m_ini_file.set_ini_name(a_ini_name.c_str());
 }
 

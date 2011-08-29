@@ -72,6 +72,8 @@ public:
   virtual void load_conf();
   virtual void clear_conf();
   virtual void conf_section(const string_type& a_name);
+  virtual string_type ini_name();
+  virtual void ini_name(const string_type& a_ini_name);
 private:
   class controls_t: public TObject
   {
@@ -98,6 +100,8 @@ private:
     void load_conf();
     void clear_conf();
     void conf_section(const string_type& a_name);
+    string_type ini_name();
+    void ini_name(const string_type& a_ini_name);
     void tick();
   private:
     struct netconn_t {
