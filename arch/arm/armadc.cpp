@@ -211,6 +211,8 @@ void irs::arm::adc_t::tick()
 }
 #endif  //  NOP
 
+#ifdef __LM3SxBxx__
+
 irs::arm::adc_stellaris_t::adc_stellaris_t(
   select_channel_type a_selected_channels,
   adc_ref_t a_adc_ref,
@@ -245,7 +247,7 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
   if (a_selected_channels & m_portd_mask) RCGC2_bit.PORTD = 1;
   if (a_selected_channels & m_porte_mask) RCGC2_bit.PORTE = 1;
   for (irs_u8 i = 10; i; i--);
-  
+
   //  GPIO
   if (a_selected_channels & (1 << PORT_PE7))
   {
@@ -259,7 +261,7 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
   }
   if (a_selected_channels & (1 << PORT_PE5))
   {
-    GPIOEDEN_bit.no5 = 0; 
+    GPIOEDEN_bit.no5 = 0;
     GPIOEAMSEL_bit.no5 = 1;
   }
   if (a_selected_channels & (1 << PORT_PE4))
@@ -571,7 +573,7 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
           (i >= m_max_adc_channels_cnt - 1))
         {
           //  0x03 = End of Sequence | Sample Interrupt Enable
-          irs_u8 shift = (m_num_of_channels - m_sequence0_size 
+          irs_u8 shift = (m_num_of_channels - m_sequence0_size
             - m_sequence1_size) * 4 + 1;
           ctl_reg |= (0x03 << shift);
         }
@@ -723,7 +725,7 @@ bool irs::arm::adc_stellaris_t::check_sequence_ready(sequence_t a_seq)
 {
   switch (m_adc_module)
   {
-    case ADC0: 
+    case ADC0:
     {
       if (ADC0RIS & (1 << a_seq))
       {
@@ -732,7 +734,7 @@ bool irs::arm::adc_stellaris_t::check_sequence_ready(sequence_t a_seq)
       }
       return false;
     }
-    case ADC1: 
+    case ADC1:
     {
       if (ADC1RIS & (1 << a_seq))
       {
@@ -1093,3 +1095,5 @@ void irs::arm::adc_stellaris_t::tick()
     }
   }
 }
+
+#endif //__LM3SxBxx__
