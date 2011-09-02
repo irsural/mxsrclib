@@ -71,6 +71,7 @@ public:
   virtual void save_conf();
   virtual void load_conf();
   virtual void clear_conf();
+  virtual string_type conf_section();
   virtual void conf_section(const string_type& a_name);
   virtual string_type ini_name();
   virtual void ini_name(const string_type& a_ini_name);
@@ -99,6 +100,7 @@ private:
     void save_conf();
     void load_conf();
     void clear_conf();
+    string_type conf_section();
     void conf_section(const string_type& a_name);
     string_type ini_name();
     void ini_name(const string_type& a_ini_name);

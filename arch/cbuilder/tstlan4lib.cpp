@@ -155,6 +155,10 @@ void irs::tstlan4_t::clear_conf()
 {
   mp_controls->clear_conf();
 }
+irs::tstlan4_t::string_type irs::tstlan4_t::conf_section()
+{
+  return mp_controls->conf_section();
+}
 void irs::tstlan4_t::conf_section(const string_type& a_name)
 {
   mp_controls->conf_section(a_name);
@@ -963,7 +967,7 @@ irs::event_t* irs::tstlan4_t::controls_t::inner_options_event()
 }
 void irs::tstlan4_t::controls_t::save_conf()
 {
-  //m_ini_file.save();
+  m_ini_file.save();
 }
 void irs::tstlan4_t::controls_t::load_conf()
 {
@@ -980,6 +984,10 @@ void irs::tstlan4_t::controls_t::clear_conf()
   mp_vars_grid->Rows[m_first_row]->Strings[m_value_col] = irst("");
   mp_vars_grid->Rows[m_first_row]->Strings[m_chart_col] = irst("");
   m_ini_file.save();
+}
+irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::conf_section()
+{
+  return m_ini_section_prefix;
 }
 void irs::tstlan4_t::controls_t::conf_section(const string_type& a_name)
 {

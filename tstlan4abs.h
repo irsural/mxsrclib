@@ -40,6 +40,7 @@ public:
   virtual void save_conf() = 0;
   virtual void load_conf() = 0;
   virtual void clear_conf() = 0;
+  virtual string_type conf_section() = 0;
   virtual void conf_section(const string_type& a_name) = 0;
   virtual string_type ini_name() = 0;
   virtual void ini_name(const string_type& a_ini_name) = 0;

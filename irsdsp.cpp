@@ -19,6 +19,7 @@
 
 #ifndef NEW
 // ПИД-регулятор
+#define NEW_REG_02092011
 double irs::pid_reg(pid_data_t *pd, double error_in)
 {
   double dif_int = pd->prev_e;
@@ -41,18 +42,44 @@ double irs::pid_reg(pid_data_t *pd, double error_in)
   //double PDres = Pres + Dres;
   //res = Ires + PDres;
   res = PIres + Dres;
-  if (PIres > pd->max + d_pid) {
-    if (Pres > pd->max || (pd->k == 0.) || (pd->ki == 0.)) {
-      pd->int_val = 0.;
-      res = Pres;
-    } else {
-      pd->int_val = (pd->max - Pres)/pd->k/pd->ki;
-      res = pd->max;
+  #ifdef NEW_REG_02092011
+  if (pd->int_val >= 0) {
+  #endif //NEW_REG_02092011
+    if (PIres > pd->max + d_pid) {
+      if (Pres > pd->max || (pd->k == 0.) || (pd->ki == 0.)) {
+        pd->int_val = 0.;
+        res = Pres;
+      } else {
+        pd->int_val = (pd->max - Pres)/pd->k/pd->ki;
+        res = pd->max;
+      }
+    }
+  #ifdef NEW_REG_02092011
+  }
+  #endif //NEW_REG_02092011
+  #ifdef NEW_REG_02092011
+  if (pd->int_val <= 0) {
+    if (PIres < pd->min - d_pid) {
+      if (Pres < pd->min || (pd->k == 0.) || (pd->ki == 0.)) {
+        pd->int_val = 0.;
+        res = Pres;
+      } else {
+        pd->int_val = (pd->min - Pres)/pd->k/pd->ki;
+        res = pd->min;
+      }
     }
   }
-  if (PIres > pd->max) {
+  #endif //NEW_REG_02092011
+  #ifdef NEW_REG_02092011
+  if (PIres > pd->max + d_pid) {
+  #else //NEW_REG_02092011
+  if (PIres > pd->max - d_pid) {
+  #endif //NEW_REG_02092011
     pd->block_int = 1;
+  #ifdef NEW_REG_02092011
+  #else //NEW_REG_02092011
   } else if (PIres < pd->min) {
+  #endif //NEW_REG_02092011
     pd->block_int = -1;
   } else {
     pd->block_int = 0;
