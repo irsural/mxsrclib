@@ -18,6 +18,7 @@
 
 #include <irsstd.h>
 #include <irscpp.h>
+#include <irschartwin.h>
 
 #include <irsfinal.h>
 

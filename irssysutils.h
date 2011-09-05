@@ -595,6 +595,27 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
 }
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+// Округление до ближайшего целого
+template <class I, class O>
+void round(const I& a_input, O* ap_output)
+{
+  *ap_output = static_cast<O>(a_input + 0.5);
+}
+template <class I, class O>
+O round(const I& a_input, O)
+{
+  O output = O();
+  round(a_input, &output);
+  return output;
+}
+template <class I, class O>
+O round(const I& a_input)
+{
+  O output = O();
+  round(a_input, &output);
+  return output;
+}
+
 //! @}
 
 } //namespace irs

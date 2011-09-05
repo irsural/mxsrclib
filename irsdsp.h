@@ -14,6 +14,7 @@
 
 #include <irscpp.h>
 #include <irsstd.h>
+#include <irssysutils.h>
 
 #include <irsfinal.h>
 
@@ -1156,6 +1157,191 @@ inline bool operator!=(const filter_settings_t& a_fs_first,
 {
   return !(a_fs_first == a_fs_second);
 }
+
+template <class T>
+class delay_line_t
+{
+public:
+  typedef T value_type;
+  typedef size_t size_type;
+
+  delay_line_t(const value_type& a_delay_time,
+    const value_type& a_sampling_time, const value_type& a_fill_value);
+  value_type tick(const value_type& a_value);
+  void sampling_time(const value_type& a_time);
+  value_type sampling_time() const;
+  void delay_time(const value_type& a_time);
+  value_type delay_time() const;
+  void reset(const value_type& a_fill_value);
+  void resize(size_type a_size);
+  size_type size() const;
+private:
+  value_type m_delay_time;
+  value_type m_sampling_time;
+  value_type m_fill_value;
+  deque<value_type> m_sample_list;
+};
+template <class T>
+delay_line_t<T>::delay_line_t(const value_type& a_delay_time,
+  const value_type& a_sampling_time, const value_type& a_fill_value
+):
+  m_delay_time(a_delay_time),
+  m_sampling_time(a_sampling_time),
+  m_fill_value(a_fill_value),
+  m_sample_list(round(m_delay_time/m_sampling_time, size_t()))
+{
+}
+template <class T>
+delay_line_t<T>::value_type delay_line_t<T>::tick(const value_type& a_value)
+{
+  T sample = m_sample_list.front();
+  m_sample_list.pop_front();
+  m_sample_list.push_back(a_value);
+  return sample;
+}
+template <class T>
+void delay_line_t<T>::sampling_time(const value_type& a_time)
+{
+  m_sampling_time = a_time;
+  m_sample_list.resize(round(m_delay_time/m_sampling_time, size_t()),
+    m_fill_value);
+}
+template <class T>
+delay_line_t<T>::value_type delay_line_t<T>::sampling_time() const
+{
+  return m_sampling_time;
+}
+template <class T>
+void delay_line_t<T>::delay_time(const value_type& a_time)
+{
+  m_delay_time = a_time;
+  m_sample_list.resize(round(m_delay_time/m_sampling_time, size_t()),
+    m_fill_value);
+}
+template <class T>
+delay_line_t<T>::value_type delay_line_t<T>::delay_time() const
+{
+  return m_delay_time;
+}
+template <class T>
+void delay_line_t<T>::reset(const value_type& a_fill_value)
+{
+  fill(m_sample_list.begin(), m_sample_list.end(), a_fill_value);
+}
+template <class T>
+void delay_line_t<T>::resize(size_type a_size)
+{
+  m_sample_list.resize(a_size, m_fill_value);
+  m_delay_time = a_size*m_sampling_time;
+}
+template <class T>
+delay_line_t<T>::size_type delay_line_t<T>::size() const
+{
+  return m_sample_list.size();
+}
+
+//#define IRS_DELAY_LINE_TEST
+#ifdef IRS_DELAY_LINE_TEST
+template <class T>
+inline void delay_line_test_by_type()
+{
+  delay_line_t<T> delay_line(10, 1, 0);
+  mlog() << delay_line.tick(7) << endl;
+  delay_line.sampling_time(1.7);
+  mlog() << delay_line.sampling_time() << endl;
+  delay_line.delay_time(3.14);
+  mlog() << delay_line.delay_time() << endl;
+  delay_line.reset(0.75);
+  delay_line.resize(10);
+  mlog() << delay_line.size() << endl;
+}
+inline void delay_line_test()
+{
+  delay_line_test_by_type<float>();
+  delay_line_test_by_type<double>();
+  delay_line_test_by_type<long double>();
+}
+#endif //IRS_DELAY_LINE_TEST
+
+#ifndef NOP
+// Линейна функция f(x) = k*x + b
+template <class T>
+class linear_func_t
+{
+public:
+  typedef T value_t;
+
+  linear_func_t(const value_t& a_k, const value_t& a_b);
+  linear_func_t(const value_t& a_x1, const value_t& a_y1,
+    const value_t& a_x2, const value_t& a_y2);
+  value_t get(const value_t& a_value) const;
+  value_t get_inverse(const value_t& a_value) const;
+  value_t k() const;
+  void k(const value_t& a_value);
+  value_t b() const;
+  void b(const value_t& a_value);
+  void def_on_double_point(const value_t& a_x1, const value_t& a_y1,
+    const value_t& a_x2, const value_t& a_y2);
+private:
+  value_t m_k;
+  value_t m_b;
+};
+template <class T>
+linear_func_t<T>::linear_func_t(const value_t& a_k,
+  const value_t& a_b
+):
+  m_k(a_k),
+  m_b(a_b)
+{
+}
+template <class T>
+linear_func_t<T>::linear_func_t(const value_t& a_x1, const value_t& a_y1,
+  const value_t& a_x2, const value_t& a_y2
+):
+  m_k(0),
+  m_b(0)
+{
+  def_on_double_point(a_x1, a_y1, a_x2, a_y2);
+}
+template <class T>
+linear_func_t<T>::value_t linear_func_t<T>::get(const value_t& a_value) const
+{
+  return m_k*a_value + m_b;
+}
+template <class T>
+linear_func_t<T>::value_t linear_func_t<T>::get_inverse(
+  const value_t& a_value) const
+{
+  return (a_value - m_b)/m_k;
+}
+template <class T>
+linear_func_t<T>::value_t linear_func_t<T>::k() const
+{
+  return m_k;
+}
+template <class T>
+void linear_func_t<T>::k(const value_t& a_value)
+{
+  m_k = a_value;
+}
+template <class T>
+linear_func_t<T>::value_t linear_func_t<T>::b() const
+{
+  return m_b;
+}
+template <class T>
+void linear_func_t<T>::b(const value_t& a_value)
+{
+  m_b = a_value;
+}
+template <class T>
+void linear_func_t<T>::def_on_double_point(const value_t& a_x1,
+  const value_t& a_y1, const value_t& a_x2, const value_t& a_y2)
+{
+  m_k = (a_y2 - a_y1)/(a_x2 - a_x1);
+  m_b = a_y1 - m_k*a_x1;
+}
+#endif //NOP
 
 //! @}
 

@@ -1,3 +1,5 @@
+echo off
+
 set progname=prog
 
 if "%~1"=="" (set lib=..\old) else (set lib=%~1)

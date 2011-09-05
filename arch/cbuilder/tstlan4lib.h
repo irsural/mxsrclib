@@ -19,6 +19,7 @@
 #include <irstable.h>
 #include <mxdata.h>
 #include <irsparamabs.h>
+#include <irschartwin.h>
 
 #include <irsfinal.h>
 

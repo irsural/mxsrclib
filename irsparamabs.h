@@ -9,6 +9,7 @@
 #include <irsdefs.h>
 
 #include <irsstrdefs.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -67,6 +68,18 @@ T param_box_read_number(const param_box_base_t& a_param_box,
     number_str.to_number(number);
   }
   return number;
+}
+template <class T>
+inline T param_box_read_number(const param_box_base_t* ap_param_box,
+  const char_t* a_param_name)
+{
+  param_box_read_number<T>(*ap_param_box, a_param_name);
+}
+template <class T>
+inline T param_box_read_number(handle_t<const param_box_base_t> ap_param_box,
+  const char_t* a_param_name)
+{
+  param_box_read_number<T>(*ap_param_box.get(), a_param_name);
 }
 
 //! @}
