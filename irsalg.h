@@ -64,7 +64,7 @@ public:
 
 //! @}
 
-namespace irs {
+/*namespace irs {
 
   //! \ingroup signal_processing_group
   //! \brief Расчет СКО
@@ -179,7 +179,165 @@ data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
 template<class data_t, class calc_t>
 data_t irs::sko_calc_t<data_t, calc_t>::average()const {
   return m_sum / m_val_ring.get_size();
+}*/
+//------------------------------------------------------------------------------
+
+namespace irs {
+
+  //! \ingroup signal_processing_group
+  //! \brief Расчет СКО
+  // template <class data_t = double, class calc_t = double>
+  template<class data_t, class calc_t>
+  class sko_calc_t {
+    irs_u32 m_count;
+    deque<data_t> m_val_array;
+    calc_t m_average;
+    bool m_accepted_average;
+    calc_t sum()const;
+
+    sko_calc_t();
+
+  public:
+    sko_calc_t(irs_u32 a_count = 100);
+    ~sko_calc_t();
+    void clear();
+    void add(data_t a_val);
+    operator data_t()const;
+    data_t relative()const;
+    data_t average()const;
+    void resize(irs_u32 a_count);
+    void set_assembly_average(data_t a_average);
+    void clear_assembly_average();
+  };
+
+  // Версия sko_calc_t для sko_calc_t<double, double>
+  // Т. к. C++ Builder 4 криво работает с параметрами шаблона по умолчанию
+  class sko_calc_dbl_t : public sko_calc_t<double, double> {
+  public:
+    sko_calc_dbl_t(irs_u32 a_count) : sko_calc_t<double, double>(a_count) {
+    }
+  private:
+    sko_calc_dbl_t();
+  };
+
+} // namespace irs
+
+template<class data_t, class calc_t>
+irs::sko_calc_t<data_t, calc_t>::sko_calc_t(irs_u32 a_count):
+  m_count(a_count),
+  m_val_array(),
+  m_average(0),
+  m_accepted_average(false)
+{
 }
+
+template<class data_t, class calc_t>
+irs::sko_calc_t<data_t, calc_t>::~sko_calc_t() {
+  clear();
+}
+
+template<class data_t, class calc_t>
+calc_t irs::sko_calc_t<data_t, calc_t>::sum()const {
+  irs_u32 size = m_val_array.size();
+  calc_t sum = 0;
+  for (irs_u32 i = 0; i < size; i++) {
+    sum += m_val_array[i];
+  }
+  return sum;
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::resize(irs_u32 a_count) {
+  m_count = a_count;
+  if (m_val_array.size() > m_count) {
+    m_val_array.resize(m_count);
+  }
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::set_assembly_average(data_t a_average)
+{
+  m_average = static_cast<calc_t>(a_average);
+  m_accepted_average = true;
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::clear_assembly_average()
+{
+  m_accepted_average = false;
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::clear() {
+  m_val_array.resize(0);
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
+  irs_u32 size = m_val_array.size();
+  if (size < m_count) {
+    m_val_array.push_back(a_val);
+  }
+  else if (size == m_count) {
+    m_val_array.pop_front();
+    m_val_array.push_back(a_val);
+  }
+  else if (size > m_count) {
+    irs_u32 margin = size - m_count;
+    for (irs_u32 i = 0; i < margin; i++) {
+      m_val_array.pop_front();
+    }
+  }
+}
+
+template<class data_t, class calc_t>
+irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
+  irs_u32 size = m_val_array.size();
+  if (size) {
+    calc_t square_sum = 0.;
+    calc_t average = 0;
+    if (!m_accepted_average) {
+      average = sum() / size;
+    } else {
+      average = m_average;
+    }
+    for (irs_u32 i = 0; i < size; i++) {
+      calc_t val = static_cast<calc_t> (m_val_array[i]);
+      val -= average;
+      square_sum += val * val;
+    }
+    calc_t calced_sko = sqrt(square_sum / size);
+    return calced_sko;
+  }
+  return 0.;
+}
+
+template<class data_t, class calc_t>
+data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
+  irs_u32 size = m_val_array.size();
+  if (size) {
+    calc_t average = sum() / size;
+    calc_t sko = *this;
+    if (average != 0) {
+      calc_t sko_reltive = sko / average;
+      return sko_reltive;
+    } else {
+      return 0;
+    }
+  } else {
+    return 0;
+  }
+}
+
+template<class data_t, class calc_t>
+data_t irs::sko_calc_t<data_t, calc_t>::average()const {
+  irs_u32 size = m_val_array.size();
+  if (size == 0) {
+    size = 1;
+  }
+  return sum() / size;
+}
+
 
 namespace irs {
 
