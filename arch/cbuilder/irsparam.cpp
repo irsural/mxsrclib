@@ -81,7 +81,7 @@ irs::param_box_t::param_box_t(
   } else {
     m_ini_file.set_section(m_ini_section.c_str());
   }
-  m_ini_file.add(a_prefix_name.c_str(), mp_value_list_editor);
+  m_ini_file.add(m_prefix_name.c_str(), mp_value_list_editor);
   m_ini_file.load();
   load_form_params();
 }
@@ -176,6 +176,19 @@ void irs::param_box_t::set_ini_name(const string_type& a_ini_name)
 irs::param_box_t::string_type irs::param_box_t::ini_name() const
 {
   return m_ini_file.ini_name().c_str();
+}
+
+void irs::param_box_t::set_section(const string_type& a_section)
+{
+  m_ini_section = a_section;
+  m_ini_file.clear_control();
+  m_ini_file.set_section(m_ini_section.c_str());
+  m_ini_file.add(m_prefix_name.c_str(), mp_value_list_editor);
+}
+
+irs::param_box_t::string_type irs::param_box_t::section() const
+{
+  return m_ini_section;
 }
 
 bool irs::param_box_t::show()

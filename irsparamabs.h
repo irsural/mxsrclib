@@ -45,6 +45,8 @@ public:
     const string_type& a_param_value) = 0;
   virtual void set_ini_name(const string_type& a_ini_name) = 0;
   virtual string_type ini_name() const = 0;
+  virtual void set_section(const string_type& a_section) = 0;
+  virtual string_type section() const = 0;
   virtual void save() const = 0;
   virtual void load() = 0;
   virtual void delete_edit(const string_type& a_param_name) = 0;
@@ -61,10 +63,11 @@ template <class T>
 T param_box_read_number(const param_box_base_t& a_param_box,
   const char_t* a_param_name)
 {
-  string_t number_str = a_param_box.get_param(a_param_name);
+  string_t param_name = a_param_name;
+  string_t number_str = a_param_box.get_param(param_name);
   T number = T();
   if (!number_str.to_number(number)) {
-    number_str = a_param_box.get_param_def(a_param_name);
+    number_str = a_param_box.get_param_def(param_name);
     number_str.to_number(number);
   }
   return number;

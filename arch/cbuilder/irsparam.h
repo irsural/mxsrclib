@@ -80,11 +80,13 @@ public:
     const string_type& a_param_value);
   virtual void set_ini_name(const string_type& a_ini_name);
   virtual string_type ini_name() const;
+  virtual void set_section(const string_type& a_section);
+  virtual string_type section() const;
   virtual void save() const;
   virtual void load();
   virtual void delete_edit(const string_type& a_param_name);
 private:
-  const string_type m_ini_section;
+  string_type m_ini_section;
   const string_type m_prefix_name;
   irs::ini_file_t m_ini_file;
   handle_t<TForm> mp_form;

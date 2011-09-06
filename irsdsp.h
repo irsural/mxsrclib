@@ -1188,7 +1188,7 @@ delay_line_t<T>::delay_line_t(const value_type& a_delay_time,
   m_delay_time(a_delay_time),
   m_sampling_time(a_sampling_time),
   m_fill_value(a_fill_value),
-  m_sample_list(round(m_delay_time/m_sampling_time, size_t()))
+  m_sample_list(round(m_delay_time/m_sampling_time, size_t()), m_fill_value)
 {
 }
 template <class T>
