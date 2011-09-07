@@ -828,18 +828,18 @@ void irs::ini_file_t::save() const
       );
     }
   }
-    for (vector<form_t>::const_iterator form_it = m_forms.begin();
-      form_it != m_forms.end(); form_it++)
-    {
-      IniFile->WriteInteger(form_it->section.c_str(),
-        (form_it->name + irst("Top")).c_str(), form_it->control->Top);
-      IniFile->WriteInteger(form_it->section.c_str(),
-        (form_it->name + irst("Left")).c_str(), form_it->control->Left);
-      IniFile->WriteInteger(form_it->section.c_str(),
-        (form_it->name + irst("Height")).c_str(), form_it->control->Height);
-      IniFile->WriteInteger(form_it->section.c_str(),
-        (form_it->name + irst("Width")).c_str(), form_it->control->Width);
-    }
+  for (vector<form_t>::const_iterator form_it = m_forms.begin();
+    form_it != m_forms.end(); form_it++)
+  {
+    IniFile->WriteInteger(form_it->section.c_str(),
+      (form_it->name + irst("Top")).c_str(), form_it->control->Top);
+    IniFile->WriteInteger(form_it->section.c_str(),
+      (form_it->name + irst("Left")).c_str(), form_it->control->Left);
+    IniFile->WriteInteger(form_it->section.c_str(),
+      (form_it->name + irst("Height")).c_str(), form_it->control->Height);
+    IniFile->WriteInteger(form_it->section.c_str(),
+      (form_it->name + irst("Width")).c_str(), form_it->control->Width);
+  }
 }
 void irs::ini_file_t::save_grid_row(TStringGrid *a_control,
   int a_row_index) const

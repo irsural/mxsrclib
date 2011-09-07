@@ -461,7 +461,7 @@ void irs::tstlan4_t::controls_t::tick()
               mp_chart->add_param(chart_name);
             }
           } else {
-            #ifdef NOP
+            #ifndef NOP
             if (m_chart_names[chart_name]) {
               m_chart_names[chart_name] = false;
               mp_chart->delete_param(chart_name);
