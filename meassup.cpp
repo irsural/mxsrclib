@@ -467,7 +467,7 @@ void u309m_current_supply_t::tick()
           default: {
             m_argument = 0;
           } break;
-        }
+        };
         m_mode = mode_supply_on_value_wait;
         m_status = meas_status_busy;
       }
@@ -597,7 +597,7 @@ void u309m_current_supply_t::tick()
         m_status = meas_status_error;
       }
     } break;
-  }  
+  }
 }
 //------------------------------------------------------------------------------
 u309m_arm_current_supply_t::u309m_arm_current_supply_t

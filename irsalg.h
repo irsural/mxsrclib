@@ -206,8 +206,9 @@ namespace irs {
     data_t relative()const;
     data_t average()const;
     void resize(irs_u32 a_count);
-    void set_assembly_average(data_t a_average);
-    void clear_assembly_average();
+    void set_average(data_t a_average);
+    void clear_average();
+    irs_u32 size();
   };
 
   // Версия sko_calc_t для sko_calc_t<double, double>
@@ -255,14 +256,20 @@ void irs::sko_calc_t<data_t, calc_t>::resize(irs_u32 a_count) {
 }
 
 template<class data_t, class calc_t>
-void irs::sko_calc_t<data_t, calc_t>::set_assembly_average(data_t a_average)
+irs_u32 irs::sko_calc_t<data_t, calc_t>::size() {
+  irs_u32 size = m_val_array.size();
+  return size;
+}
+
+template<class data_t, class calc_t>
+void irs::sko_calc_t<data_t, calc_t>::set_average(data_t a_average)
 {
   m_average = static_cast<calc_t>(a_average);
   m_accepted_average = true;
 }
 
 template<class data_t, class calc_t>
-void irs::sko_calc_t<data_t, calc_t>::clear_assembly_average()
+void irs::sko_calc_t<data_t, calc_t>::clear_average()
 {
   m_accepted_average = false;
 }
@@ -288,7 +295,7 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
       m_val_array.pop_front();
     }
   }
-}
+}                                              
 
 template<class data_t, class calc_t>
 irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
