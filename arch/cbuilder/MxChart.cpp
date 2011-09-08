@@ -3405,9 +3405,10 @@ irs::chart::builder_chart_window_t::TChartForm::
   mp_pause_btn->Parent = this;
   //InsertControl(mp_pause_btn.get());
   mp_dbg_info->Left = mp_panel->Left + mp_panel->Width - 50;
-  mp_dbg_info->Top = mp_panel->Height/2 - mp_dbg_info->Height/2;
-  mp_dbg_info->Anchors >> akLeft;
-  mp_dbg_info->Anchors << akRight;
+  //mp_dbg_info->Top = mp_panel->Height/2 - mp_dbg_info->Height/2;
+  mp_dbg_info->Top = 0;
+  mp_dbg_info->Anchors = mp_dbg_info->Anchors >> akLeft;
+  mp_dbg_info->Anchors = mp_dbg_info->Anchors << akRight;
   mp_dbg_info->Parent = this;
   //InsertControl(mp_dbg_info.get());
   mp_fix_btn->Left = mp_pause_btn->Left + mp_pause_btn->Width + btn_gap;
@@ -3422,8 +3423,13 @@ irs::chart::builder_chart_window_t::TChartForm::
   mp_clear_btn->OnClick = ClearBtnClick;
   mp_clear_btn->Parent = this;
   //InsertControl(mp_clear_btn.get());
-  mp_base_chart_combo->Left = mp_clear_btn->Left + mp_clear_btn->Width + btn_gap;
-  mp_base_chart_combo->Top = mp_panel->Height/2 - mp_base_chart_combo->Height/2;
+  mp_base_chart_combo->Left = mp_clear_btn->Left + mp_clear_btn->Width +
+    btn_gap;
+  mp_base_chart_combo->Top = mp_panel->Height/2 -
+    mp_base_chart_combo->Height/2;
+  mp_base_chart_combo->Width = Width - mp_base_chart_combo->Left -
+    btn_gap;
+  mp_base_chart_combo->Anchors = mp_base_chart_combo->Anchors << akRight;
   mp_base_chart_combo->Style = Stdctrls::csDropDownList;
   mp_base_chart_combo->OnChange = BaseChartComboChange;
   mp_base_chart_combo->Parent = this;
