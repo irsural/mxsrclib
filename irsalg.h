@@ -2,7 +2,7 @@
 //! \ingroup signal_processing_group
 //! \brief Алгоритмы
 //!
-//! Дата: 29.09.2010\n
+//! Дата: 09.09.2011\n
 //! Ранняя дата: 2.09.2009
 
 #ifndef IRSALGH
@@ -63,125 +63,7 @@ public:
 };
 
 //! @}
-
-/*namespace irs {
-
-  //! \ingroup signal_processing_group
-  //! \brief Расчет СКО
-  // template <class data_t = double, class calc_t = double>
-  template<class data_t, class calc_t>
-  class sko_calc_t {
-    alg_ring m_val_ring;
-    calc_t m_sum;
-
-    sko_calc_t();
-
-  public:
-    sko_calc_t(irs_u32 a_count);
-    ~sko_calc_t();
-    void clear();
-    void add(data_t a_val);
-    operator data_t()const;
-    data_t relative()const;
-    data_t average()const;
-  };
-
-  // Версия sko_calc_t для sko_calc_t<double, double>
-  // Т. к. C++ Builder 4 криво работает с параметрами шаблона по умолчанию
-  class sko_calc_dbl_t : public sko_calc_t<double, double> {
-  public:
-    sko_calc_dbl_t(irs_u32 a_count) : sko_calc_t<double, double>(a_count) {
-    }
-
-  private:
-    sko_calc_dbl_t();
-  };
-
-} // namespace irs
-
-template<class data_t, class calc_t>
-irs::sko_calc_t<data_t, calc_t>::sko_calc_t(irs_u32 a_count) : m_val_ring
-    (a_count), m_sum(0.) {
-}
-
-template<class data_t, class calc_t>
-irs::sko_calc_t<data_t, calc_t>::~sko_calc_t() {
-  clear();
-}
-
-template<class data_t, class calc_t>
-void irs::sko_calc_t<data_t, calc_t>::clear() {
-  void *p_rem_val = m_val_ring.read_and_remove_first();
-  while (p_rem_val) {
-    data_t *dp_rem_val = (data_t*)p_rem_val;
-    IRS_LIB_DELETE_ASSERT(dp_rem_val);
-    p_rem_val = m_val_ring.read_and_remove_first();
-  }
-  m_sum = 0.;
-}
-
-template<class data_t, class calc_t>
-void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
-  m_sum += a_val;
-
-  void *p_val = (void*)IRS_LIB_NEW_ASSERT(data_t, IRSALGH_IDX);
-  *(data_t*)p_val = a_val;
-  void *p_rem_val = m_val_ring.add_last_and_get_removed(p_val);
-
-  if (p_rem_val) {
-    data_t *dp_rem_val = (data_t*)p_rem_val;
-    data_t rem_val = *dp_rem_val;
-    IRS_LIB_DELETE_ASSERT(dp_rem_val);
-
-    m_sum -= rem_val;
-  }
-}
-
-template<class data_t, class calc_t>
-irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
-  irs_u32 size = m_val_ring.get_size();
-  if (size) {
-    calc_t square_sum = 0.;
-    calc_t average = m_sum / size;
-    for (irs_u32 i = 0; i < size; i++) {
-      void *p_val = m_val_ring[i];
-      if (p_val) {
-        calc_t val = *(calc_t*)p_val;
-        val -= average;
-        square_sum += val * val;
-      }
-    }
-    calc_t calced_sko = sqrt(square_sum / size);
-    return calced_sko;
-    //return sqrt(square_sum / size);
-  }
-
-  return 0.;
-}
-
-template<class data_t, class calc_t>
-data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
-  irs_u32 size = m_val_ring.get_size();
-  if (size) {
-    calc_t average = m_sum / size;
-    calc_t sko = *this;
-    if (average != 0) {
-      calc_t sko_reltive = sko / average;
-      return sko_reltive;
-    } else {
-      return 0;
-    }
-  } else {
-    return 0;
-  }
-}
-
-template<class data_t, class calc_t>
-data_t irs::sko_calc_t<data_t, calc_t>::average()const {
-  return m_sum / m_val_ring.get_size();
-}*/
 //------------------------------------------------------------------------------
-
 namespace irs {
 
   //! \ingroup signal_processing_group
