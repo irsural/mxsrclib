@@ -1267,20 +1267,28 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_spi->write(mp_write_buf, m_write_buf_size);
   for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
   mp_cs_pin->set();
+  mlog() << "LTC2622 по адресу 0x" << this << " инициализирован" << endl;
 }
  
 void irs::dac_ltc2622_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  if (a_index == 0) return;
+  //if (a_index == 0) return;
   irs_u8 size = (irs_u8)a_size;
   if (size + a_index > m_size) size = irs_u8(m_size - a_index);
   memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
-  mp_buf[0] = 0;
+  mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
   mp_buf[0] &= ~(1 << m_ready_bit_regA);
   mp_buf[0] &= ~(1 << m_ready_bit_regB);
+  if (mp_buf[0] & (1 << m_log_enable_pos))
+  {
+    irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
+    irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
+    mlog() << "LTC2622 0x" << this << " index = " << a_index << ", size = " <<
+      a_size << " write A = " << dac_value_A << ", B = " << dac_value_B << endl;
+  }
 } 
 
 
@@ -1315,21 +1323,37 @@ irs_bool irs::dac_ltc2622_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 void irs::dac_ltc2622_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
-  if (a_index == 0) return;
+  //if (a_index == 0) return;
   if (a_bit_index > 7) return;
   mp_buf[a_index] |= irs_u8(1 << a_bit_index);
-  mp_buf[0] = 0;
+  mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
+  if (mp_buf[0] & (1 << m_log_enable_pos))
+  {
+    irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
+    irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
+    mlog() << "LTC2622 0x" << this << 
+      " set bit index = " << a_index << ", bit = " << a_bit_index <<
+      ", A = " << dac_value_A << ", B = " << dac_value_B << endl;
+  }
 }
 
 void irs::dac_ltc2622_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
-  if (a_index == 0) return;
+  //if (a_index == 0) return;
   if (a_bit_index > 7) return;
   mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
-  mp_buf[0] = 0;
+  mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
+  if (mp_buf[0] & (1 << m_log_enable_pos))
+  {
+    irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
+    irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
+    mlog() << "LTC2622 0x" << this << 
+      " clear bit index = " << a_index << ", bit = " << a_bit_index <<
+      ", A = " << dac_value_A << ", B = " << dac_value_B << endl;
+  }
 }
 
 

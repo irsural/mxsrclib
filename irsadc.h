@@ -743,7 +743,8 @@ class dac_ltc2622_t : public mxdata_t
     m_write_buf_size = 3,
     m_data_bytes_size = 2,
     m_ready_bit_regA = 0,
-    m_ready_bit_regB = 1
+    m_ready_bit_regB = 1,
+    m_log_enable_pos = 7
   };
   enum 
   {
@@ -804,12 +805,14 @@ struct dac_ltc2622_data_t
 {
   irs::bit_data_t ready_bit_A;
   irs::bit_data_t ready_bit_B;
+  irs::bit_data_t log_enable;
   irs::conn_data_t<irs_u16> voltage_code_A;
   irs::conn_data_t<irs_u16> voltage_code_B;
   
   dac_ltc2622_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit_A(),
     ready_bit_B(),
+    log_enable(),
     voltage_code_A(),
     voltage_code_B()
   {
@@ -820,6 +823,7 @@ struct dac_ltc2622_data_t
   {
     ready_bit_A.connect(ap_data, a_start_index, 0);
     ready_bit_B.connect(ap_data, a_start_index, 1);
+    log_enable.connect(ap_data, a_start_index, 7);
     a_start_index++;
     a_start_index = voltage_code_A.connect(ap_data, a_start_index);
     a_start_index = voltage_code_B.connect(ap_data, a_start_index);

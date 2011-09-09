@@ -318,6 +318,7 @@ typedef struct {
   __REG32                 :25;
 } __misc_bits;
 
+#ifdef __LM3Sx9xx__
 /* Reset Cause (RESC) */
 typedef struct {
   __REG32  EXT            : 1;
@@ -325,9 +326,24 @@ typedef struct {
   __REG32  BOR            : 1;
   __REG32  WDT            : 1;
   __REG32  SW             : 1;
-  __REG32  LDO            : 1;
-  __REG32                 :26;
+  __REG32                 :27;
 } __resc_bits;
+#endif  //  __LM3SxBxx__
+
+#ifdef __LM3SxBxx__
+/* Reset Cause (RESC) */
+typedef struct {
+  __REG32  EXT            : 1;
+  __REG32  POR            : 1;
+  __REG32  BOR            : 1;
+  __REG32  WDT0           : 1;
+  __REG32  SW             : 1;
+  __REG32  WDT1           : 1;
+  __REG32                 :10;
+  __REG32  MOSCFAIL       : 1;
+  __REG32                 :15;
+} __resc_bits;
+#endif  //  __LM3SxBxx__
 
 /* Run-Mode Clock Configuration (RCC) */
 typedef struct {

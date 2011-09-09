@@ -115,7 +115,15 @@ public:
     #ifdef __LM3SxBxx__
     RCGC0_bit.WDT0 = 1;
     for (irs_u8 i = 10; i; i--);
-
+    #endif  //  __LM3SxBxx__
+    #ifdef __LM3Sx9xx__
+    RCGC0_bit.WDT = 1;
+    for (irs_u8 i = 10; i; i--);
+    #endif  //  __LM3SxBxx__
+  }
+  void start()
+  {
+    #ifdef __LM3SxBxx__
     WDT0LOCK = 0x1ACCE551;
     WDT0LOAD = static_cast<irs_u32>(m_period_s*irs::cpu_traits_t::frequency());
     WDT0CTL_bit.RESEN = 1;
@@ -124,9 +132,6 @@ public:
     WDT0LOCK = 0x0;
     #endif  //  __LM3SxBxx__
     #ifdef __LM3Sx9xx__
-    RCGC0_bit.WDT = 1;
-    for (irs_u8 i = 10; i; i--);
-
     WDTLOCK = 0x1ACCE551;
     WDTLOAD = static_cast<irs_u32>(m_period_s*irs::cpu_traits_t::frequency());
     WDTCTL_bit.RESEN = 1;
@@ -146,6 +151,15 @@ public:
     WDTLOCK = 0x1ACCE551;
     WDTICR = 0x11111111;
     WDTLOCK = 0x0;
+    #endif  //  __LM3Sx9xx__
+  }
+  bool watchdog_reset_cause()
+  {
+    #ifdef __LM3SxBxx__
+    return RESC_bit.WDT0;
+    #endif  //  __LM3SxBxx__
+    #ifdef __LM3Sx9xx__
+    return RESC_bit.WDT;
     #endif  //  __LM3Sx9xx__
   }
 private:
