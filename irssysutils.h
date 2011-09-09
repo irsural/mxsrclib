@@ -615,6 +615,31 @@ O round(const I& a_input)
   round(a_input, &output);
   return output;
 }
+//stringns_t to_lower(const stringns_t& a_str,
+  //const locale& a_loc = irs::loc().get());
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+//! \brief Преобразует символы строки в нижний регистр
+template <class T>
+inline T to_lower(const T& a_str, const locale& a_loc = loc().get())
+{
+  T str = a_str;
+  for (sizens_t i = 0; i < str.size(); i++) {
+    str[i] = tolower(str[i], a_loc);
+  }
+  return str;
+}
+#else // !IRS_FULL_STDCPPLIB_SUPPORT
+//! \brief Преобразует символы строки в нижний регистр
+inline irs_string_t to_lower(const irs_string_t& a_str)
+{
+  irs_string_t str = a_str;
+  for (sizens_t i = 0; i < str.size(); i++) {
+    str[i] = tolower(str[i]);
+  }
+  return str;
+}
+#endif // !IRS_FULL_STDCPPLIB_SUPPORT
 
 //! @}
 

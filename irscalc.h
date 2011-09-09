@@ -235,38 +235,6 @@ private:
   func_r_double_a_double_t();
 };
 
-class pow_t: public function_t
-{
-public:
-  typedef variant::variant_t variant_t;
-  virtual bool exec(
-    calc_variables_t* ap_calc_variables,
-    vector<mutable_ref_t>* ap_parameters,
-    variant_t* ap_returned_value) const;
-};
-
-class number_to_string_t: public function_t
-{
-public:
-  typedef stringns_t string_type;
-  typedef variant::variant_t variant_t;
-  virtual bool exec(
-    calc_variables_t* ap_calc_variables,
-    vector<mutable_ref_t>* ap_parameters,
-    variant_t* ap_returned_value) const;
-};
-
-class string_to_number_t: public function_t
-{
-public:
-  typedef stringns_t string_type;
-  typedef variant::variant_t variant_t;
-  virtual bool exec(
-    calc_variables_t* ap_calc_variables,
-    vector<mutable_ref_t>* ap_parameters,
-    variant_t* ap_returned_value) const;
-};
-
 class list_identifier_t
 {
 public:
@@ -1581,7 +1549,7 @@ public:
     mode_io_value_write
   };
   //typedef mutable_ref_t mutable_ref_type;
-  inline calculator_t();
+  calculator_t();
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline void variable_add(const string_type& a_name, const value_type& a_value,
     const variability_t a_variability = v_is_variable);
@@ -1674,111 +1642,12 @@ private:
     mutable_ref_t* ap_mutable_ref_dest);
 };
 
-inline calculator_t::calculator_t():
-  m_list_identifier(),
-  m_detector_token(m_list_identifier),
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  m_locale(irs::loc().get()),
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT
-  mp_handle_extern_variable(IRS_NULL)
-{
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  m_detector_token.imbue(m_locale);
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT
-  func_r_double_a_double_t::func_r_double_a_double_ptr_type
-    func_r_dbl_a_dbl_ptr = IRS_NULL;
-  func_r_dbl_a_dbl_ptr = acos;
-  function_add(irst("acos"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = asin;
-  function_add(irst("asin"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = atan;
-  function_add(irst("atan"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = ceil;
-  function_add(irst("ceil"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = cos;
-  function_add(irst("cos"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = cosh;
-  function_add(irst("cosh"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = exp;
-  function_add(irst("exp"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = fabs;
-  function_add(irst("fabs"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = floor;
-  function_add(irst("floor"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = log;
-  function_add(irst("log"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = log10;
-  function_add(irst("log10"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = sin;
-  function_add(irst("sin"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = sinh;
-  function_add(irst("sinh"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = sqrt;
-  function_add(irst("sqrt"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = tan;
-  function_add(irst("tan"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  func_r_dbl_a_dbl_ptr = tanh;
-  function_add(irst("tanh"),
-    new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
-  function_add(irst("pow"), new pow_t());
-  function_add(irst("number_to_string"), new number_to_string_t());
-  function_add(irst("string_to_number"), new string_to_number_t());    
-
-  variable_add(irst("IRS_E"), IRS_E, v_is_constant);
-  variable_add(irst("IRS_LOG2E"), IRS_LOG2E, v_is_constant);
-  variable_add(irst("IRS_LOG10E"), IRS_LOG10E, v_is_constant);
-  variable_add(irst("IRS_LN2"), IRS_LN2, v_is_constant);
-  variable_add(irst("IRS_LN10"), IRS_LN10, v_is_constant);
-  variable_add(irst("IRS_PI"), IRS_PI, v_is_constant);
-  variable_add(irst("IRS_PI_2"), IRS_PI_2, v_is_constant);
-  variable_add(irst("IRS_PI_4"), IRS_PI_4, v_is_constant);
-  variable_add(irst("IRS_1_PI"), IRS_1_PI, v_is_constant);
-  variable_add(irst("IRS_2_PI"), IRS_2_PI, v_is_constant);
-  variable_add(irst("IRS_1_SQRTPI"), IRS_1_SQRTPI, v_is_constant);
-  variable_add(irst("IRS_2_SQRTPI"), IRS_2_SQRTPI, v_is_constant);
-  variable_add(irst("IRS_SQRT2"), IRS_SQRT2, v_is_constant);
-  variable_add(irst("IRS_SQRT_2"), IRS_SQRT_2, v_is_constant);
-  variable_add(irst("var10"), 0);
-
-  value_type arr;
-  arr.type(variant::var_type_array);
-  arr.resize(5);
-  for (int i = 0; i < 5; i++) {
-    arr[i].type(variant::var_type_array);
-    arr[i].resize(5);
-  }
-  int cnt = 0;
-  for (int x = 0; x < 5; x++) {
-    for (int y = 0; y < 5; y++) {
-      arr[x][y].type(variant::var_type_int);
-      arr[x][y] = cnt*100;
-      cnt++;
-    }
-  }
-  variable_add(irst("arr"), arr);
-}
-
 inline bool calculator_t::interp(value_type* ap_value)
 {
   mutable_ref_t value;
   // m_cur_lexeme_index = 0;
   bool fsuccess = eval_exp_assign(&value);
-  //bool fsuccess = eval_exp_logical(&value);   
+  //bool fsuccess = eval_exp_logical(&value);
   if (fsuccess) {
     token_t token;
     fsuccess = m_detector_token.get_token(&token);

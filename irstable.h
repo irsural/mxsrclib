@@ -1143,8 +1143,6 @@ table_united_cells_t<cell_type_t>::get_cell_diapason(
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);
   if (!cell.param.autonomous) {
     diapason = cell.param.diapason;
-  } else {
-    IRS_LIB_ASSERT_MSG("Ячейка не объединена");
   }
   return diapason;
 }

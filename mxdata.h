@@ -989,17 +989,17 @@ inline c_array_view_t<T>::c_array_view_t(pointer ap_data, size_type a_size):
 {
 }
 template <class T>
-inline c_array_view_t<T>::pointer c_array_view_t<T>::data()
+inline typename c_array_view_t<T>::pointer c_array_view_t<T>::data()
 {
   return mp_data;
 }
 template <class T>
-inline c_array_view_t<T>::const_pointer c_array_view_t<T>::data() const
+inline typename c_array_view_t<T>::const_pointer c_array_view_t<T>::data() const
 {
   return mp_data;
 }
 template <class T>
-inline c_array_view_t<T>::size_type c_array_view_t<T>::size() const
+inline typename c_array_view_t<T>::size_type c_array_view_t<T>::size() const
 {
   return m_size;
 }
@@ -1026,7 +1026,7 @@ inline typename c_array_view_t<T>::const_pointer
   return begin() + size();
 }
 template <class T>
-inline c_array_view_t<T>::reference c_array_view_t<T>::operator[](
+inline typename c_array_view_t<T>::reference c_array_view_t<T>::operator[](
   size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
@@ -1038,8 +1038,8 @@ inline c_array_view_t<T>::reference c_array_view_t<T>::operator[](
   return mp_data[a_index];
 }
 template <class T>
-inline c_array_view_t<T>::const_reference c_array_view_t<T>::operator[](
-  size_type a_index) const
+inline typename c_array_view_t<T>::const_reference
+c_array_view_t<T>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
   #ifdef IRS_LIB_CHECK
