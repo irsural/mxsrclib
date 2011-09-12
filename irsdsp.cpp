@@ -151,8 +151,9 @@ void irs::pid_reg_sync(pid_data_t *pd, double e, double rp)
     double Pres = pd->k*pd->prev_e;
     double d_pid = pd->k_d_pid*(pd->max - pd->min);
     if (fabs(Pres) < d_pid) {
-      pd->int_val = (rp - pd->k*(e/* + pd->kd*(e - pd->prev_e)*/))
-        /(pd->k*pd->ki);
+      //pd->int_val = (rp - pd->k*(e + pd->kd*(e - pd->prev_e)))
+        // /(pd->k*pd->ki);
+      pd->int_val = (rp - pd->k*e)/(pd->k*pd->ki);
     } else {
       pd->int_val = 0.;
     }
@@ -169,12 +170,18 @@ void irs::pid_reg_sync(pid_data_t *pd)
   if ((pd->k == 0.) || (pd->ki == 0.)) {
     pd->int_val = 0.;
   } else {
-    double PDres = pd->k*(pd->prev_e + pd->kd*(pd->prev_e - pd->pp_e));
+    //double PDres = pd->k*(pd->prev_e + pd->kd*(pd->prev_e - pd->pp_e));
+    double Pres = pd->k*pd->prev_e;
     double d_pid = pd->k_d_pid*(pd->max - pd->min);
-    if ((PDres > -d_pid) && (PDres < pd->max)) {
-      pd->int_val = (pd->prev_out - pd->k*(pd->prev_e +
-        pd->kd*(pd->prev_e - pd->pp_e)))
-        /(pd->k*pd->ki);
+    if (Pres < pd->max) {
+      if (Pres > -d_pid) {
+        //pd->int_val = (pd->prev_out - pd->k*(pd->prev_e +
+          //pd->kd*(pd->prev_e - pd->pp_e)))
+          // /(pd->k*pd->ki);
+        pd->int_val = (pd->prev_out - pd->k*pd->prev_e)/(pd->k*pd->ki);
+      } else {
+        // Не трогаем интегратор
+      }
     } else {
       pd->int_val = 0.;
     }

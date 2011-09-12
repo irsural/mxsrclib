@@ -250,6 +250,3 @@ double std_dev(const double* ap_data, const int a_data_size)
   return result;
 }
 
-
-
-
