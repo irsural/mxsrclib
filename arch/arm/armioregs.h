@@ -3067,6 +3067,7 @@ __IO_REG32_BIT(HFSR,              0xE000ED2C,__READ_WRITE ,__hfsr_bits);
 __IO_REG32_BIT(DFSR,              0xE000ED30,__READ_WRITE ,__dfsr_bits);
 __IO_REG32(    MMFAR,             0xE000ED34,__READ_WRITE);
 __IO_REG32(    BFAR,              0xE000ED38,__READ_WRITE);
+__IO_REG32(    AFSR,              0xE000ED3C,__READ_WRITE);
 __IO_REG32_BIT(STIR,              0xE000EF00,__WRITE      ,__stir_bits);
 
 /***************************************************************************

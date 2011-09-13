@@ -10,6 +10,7 @@
 #include <irsarchint.h>
 #include <irsarmutil.h>
 #include <irsstrm.h>
+#include <armioregs.h>
 
 #include <intrinsics.h>
 
@@ -79,6 +80,13 @@ public:
     irs::mlog() << irsm("LR = 0x") << stack.LR << endl;
     irs::mlog() << irsm("PC = 0x") << stack.PC << endl;
     irs::mlog() << irsm("PSR = 0x") << stack.PSR << endl;
+    irs::mlog() << irsm("MMFAR = 0x") << MMFAR << endl;
+    irs::mlog() << irsm("BFAR = 0x") << BFAR << endl;
+    irs::mlog() << irsm("CFSR = 0x") << CFSR << endl;
+    irs::mlog() << irsm("HFSR = 0x") << HFSR << endl;
+    irs::mlog() << irsm("DFSR = 0x") << DFSR << endl;
+    irs::mlog() << irsm("AFSR = 0x") << AFSR << endl;
+    #ifdef NOP
     irs::mlog() << irsm("BFAR = 0x") << 
       (*((volatile unsigned long *)(0xE000ED38))) << endl;
     irs::mlog() << irsm("CFSR = 0x") <<
@@ -89,6 +97,7 @@ public:
       (*((volatile unsigned long *)(0xE000ED30))) << endl;
     irs::mlog() << irsm("AFSR = 0x") <<
       (*((volatile unsigned long *)(0xE000ED3C))) << endl;
+    #endif //NOP
     return;
   }
 
