@@ -3390,6 +3390,8 @@ irs::chart::builder_chart_window_t::TChartForm::
 
   const irs_i32 btn_gap = 10;
 
+  BorderIcons = BorderIcons >> biMinimize;
+  //biSystemMenu >>
   mp_panel->Align = alTop;
   InsertControl(mp_panel);
   mp_chart_box->Align = alClient;
