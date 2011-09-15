@@ -182,6 +182,7 @@ irs::tstlan4_t::controls_t::param_box_tune_t::param_box_tune_t(
   mp_param_box->add_bool(irst("Отображать лог"), false);
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
+  mp_param_box->add_bool(irst("Сбросить время"), false);
   mp_param_box->load();
 }
 void irs::tstlan4_t::controls_t::inner_options_apply()
@@ -397,6 +398,14 @@ void irs::tstlan4_t::controls_t::tick()
   if (m_inner_options_event.check()) {
     if (mp_param_box->show()) {
       inner_options_apply();
+      if (mp_param_box->get_param(irst("Сбросить время")) == irst("true")) {
+        mp_param_box->set_param(irst("Сбросить время"), irst("false"));
+        mp_param_box->save();
+        m_time.start();
+        m_shift_time = 0;
+        m_minus_shift_time = 0;
+        mp_chart->clear();
+      }
     }
   }
 
@@ -484,9 +493,8 @@ void irs::tstlan4_t::controls_t::tick()
           if (m_csv_names[csv_names] && (m_is_created_csv)) {
             m_csv_file.set_var(irst("Time"),
               irsstr_from_number_russian(char_t(), m_timer.get()));
-            double value = var_to_double(var_index);
-            string_type value_str = FloatToStr(value).c_str();
-            m_csv_file.set_var(csv_names, value_str);
+            m_csv_file.set_var(csv_names,
+              irsstr_from_number_russian(char_t(), var_to_double(var_index)));
           }
         }
       }
