@@ -343,7 +343,8 @@ private:
     size_of_req_multi_write = 6,
     size_of_resp_multi_write = 6,
     packet_size_max = 260,
-    packet_size_min = 16
+    packet_size_min = 16,
+    bits_in_byte = global_limits_t::bits_in_byte
   };
   enum condition_t {
     //! \brief Режим чтения полного массива данных для автоматического режима.

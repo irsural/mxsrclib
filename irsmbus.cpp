@@ -2326,19 +2326,19 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   }
   if ((hold_registers_size_byte != 0) || (hold_registers_start_byte != 0))
   {
-    size_t ap_buf_start = discret_inputs_size_byte + coils_size_byte;
+    size_t buf_start = discret_inputs_size_byte + coils_size_byte;
     irs_u8* hold_regs_data =
       reinterpret_cast<irs_u8*>(m_hold_regs_reg_read.data());
-    memcpyex(ap_buf + ap_buf_start, hold_regs_data +
+    memcpyex(ap_buf + buf_start, hold_regs_data +
       hold_registers_start_byte, hold_registers_size_byte);
   }
   if ((input_registers_size_byte != 0) || (input_registers_start_byte != 0))
   {
-    size_t ap_buf_start = discret_inputs_size_byte + coils_size_byte +
+    size_t buf_start = discret_inputs_size_byte + coils_size_byte +
       hold_registers_size_byte;
     irs_u8* input_regs_data =
       reinterpret_cast<irs_u8*>(m_input_regs_reg_read.data());
-    memcpyex(ap_buf + ap_buf_start, input_regs_data +
+    memcpyex(ap_buf + buf_start, input_regs_data +
       input_registers_start_byte, input_registers_size_byte);
   }
   #else //NEW_18092011
@@ -2414,60 +2414,38 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   range(a_index, a_size, m_hold_registers_end_byte, m_input_registers_end_byte,
     &input_registers_size_byte, &input_registers_start_byte);
 
-  if ((coils_size_byte != 0)||(coils_start_byte != 0)) {
-    IRS_LIB_ASSERT((coils_start_byte + coils_size_byte) <=
-      m_coils_byte_write.size());
-    size_t ap_buf_start = discret_inputs_size_byte;
-    IRS_LIB_ASSERT((coils_start_byte + coils_size_byte) <=
-      m_coils_byte_write.size());
-    memcpyex(m_coils_byte_write.data() + coils_start_byte,
-      ap_buf + ap_buf_start, coils_size_byte);
+  if (coils_size_byte != 0) {
+    size_t buf_start = discret_inputs_size_byte;
+    c_array_view_t<const irs_u8> buf_view(ap_buf, a_size);
+    mem_copy(buf_view, buf_start, m_coils_byte_write, coils_start_byte,
+      coils_size_byte);
+
     if (m_refresh_mode == mode_refresh_auto) {
-      for(size_t i = coils_start_byte*global_limits_t::bits_in_byte;
-        i < ((coils_start_byte + coils_size_byte)*
-        global_limits_t::bits_in_byte); i++)
-      {
-        m_need_writes[i] = 1;
+      size_t begin_bit_idx = coils_start_byte*bits_in_byte;
+      size_t end_bit_idx = begin_bit_idx + coils_size_byte*bits_in_byte;
+      for (size_t i = begin_bit_idx; i < end_bit_idx; i++) {
+        m_need_writes[i] = true;
       }
     }
   }
-  if ((hold_registers_size_byte != 0) || (hold_registers_start_byte != 0))
+  if (hold_registers_size_byte != 0)
   {
-    size_t ap_buf_start = discret_inputs_size_byte + coils_size_byte;
-    irs_u8* hold_regs_data =
-      reinterpret_cast<irs_u8*>(m_hold_regs_reg_write.data());
-    IRS_LIB_ASSERT((hold_registers_start_byte +
-      hold_registers_size_byte) <= m_hold_regs_reg_write.size()*2);
-    memcpyex(hold_regs_data + hold_registers_start_byte,
-      ap_buf + ap_buf_start, hold_registers_size_byte);
-    if (hold_registers_size_byte%2) {
-      irs_u8* hold_regs_data_rest =
-        reinterpret_cast<irs_u8*>(m_hold_regs_reg_read.data());
-      if (hold_registers_start_byte%2) {
-        memcpyex(hold_regs_data + hold_registers_start_byte - 1,
-          hold_regs_data_rest + hold_registers_start_byte - 1, 1);
-      } else {
-        memcpyex(hold_regs_data + hold_registers_start_byte +
-          hold_registers_size_byte, hold_regs_data_rest +
-          hold_registers_start_byte + hold_registers_size_byte, 1);
-      }
-    }
+    size_t front_idx = hold_registers_start_byte/2;
+    size_t back_idx = front_idx + (hold_registers_size_byte - 1)/2;
+    m_hold_regs_reg_write[front_idx] = m_hold_regs_reg_read[front_idx];
+    m_hold_regs_reg_write[back_idx] = m_hold_regs_reg_read[back_idx];
+
+    size_t buf_start = discret_inputs_size_byte + coils_size_byte;
+    c_array_view_t<const irs_u8> buf_view(ap_buf, a_size);
+    raw_data_view_t<irs_u8, irs_u16> hold_regs_view(&m_hold_regs_reg_write);
+    mem_copy(buf_view, buf_start, hold_regs_view, hold_registers_start_byte,
+      hold_registers_size_byte);
+
     if (m_refresh_mode == mode_refresh_auto) {
-      size_t start_block = 0;
-      if (hold_registers_start_byte%2) {
-        start_block = m_coils_size_bit +
-          (hold_registers_start_byte - 1)/2;
-      } else {
-        start_block = m_coils_size_bit + hold_registers_start_byte/2;
-      }
-      size_t end_block = 0;
-      if (hold_registers_size_byte%2) {
-        end_block = start_block + (hold_registers_size_byte + 1)/2;
-      } else {
-        end_block = start_block + hold_registers_size_byte/2;
-      }
-      for(size_t i = start_block; i < end_block; i++) {
-        m_need_writes[i] = 1;
+      size_t front_reg_idx = m_coils_size_bit + front_idx;
+      size_t back_reg_idx = m_coils_size_bit + back_idx;
+      for (size_t i = front_reg_idx; i <= back_reg_idx; i++) {
+        m_need_writes[i] = true;
       }
     }
   }
