@@ -619,6 +619,17 @@ O round(const I& a_input)
   //const locale& a_loc = irs::loc().get());
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+//! \brief Преобразует символы строки в верхний регистр
+template <class T>
+inline T to_upper(const T& a_str, const locale& a_loc = loc().get())
+{
+  T str = a_str;
+  for (sizens_t i = 0; i < str.size(); i++) {
+    str[i] = toupper(str[i], a_loc);
+  }
+  return str;
+}
+
 //! \brief Преобразует символы строки в нижний регистр
 template <class T>
 inline T to_lower(const T& a_str, const locale& a_loc = loc().get())
@@ -630,6 +641,16 @@ inline T to_lower(const T& a_str, const locale& a_loc = loc().get())
   return str;
 }
 #else // !IRS_FULL_STDCPPLIB_SUPPORT
+//! \brief Преобразует символы строки в верхний регистр
+inline irs_string_t to_upper(const irs_string_t& a_str)
+{
+  irs_string_t str = a_str;
+  for (sizens_t i = 0; i < str.size(); i++) {
+    str[i] = toupper(str[i]);
+  }
+  return str;
+}
+
 //! \brief Преобразует символы строки в нижний регистр
 inline irs_string_t to_lower(const irs_string_t& a_str)
 {

@@ -478,6 +478,48 @@ bool remove_space_t::exec(
   return fsuccess;
 }
 
+class to_upper_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool to_upper_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() != 1) {
+    fsuccess = false;
+  }
+  variant_type arg_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0], &arg_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (arg_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    string_type str = arg_variant.as_string();
+    *ap_returned_value = irs::to_upper(str);
+  } else {
+    // Произошла ошибка
+  }
+  return fsuccess;
+}
+
 class to_lower_t: public irs::calc::function_t
 {
 public:
@@ -665,6 +707,7 @@ irs::calc::calculator_t::calculator_t():
   function_add(irst("string_to_number"), new string_to_number_t());
   function_add(irst("trim"), new trim_t());
   function_add(irst("remove_space"), new remove_space_t());
+  function_add(irst("to_upper"), new to_upper_t());
   function_add(irst("to_lower"), new to_lower_t());
   
   variable_add(irst("IRS_E"), IRS_E, v_is_constant);
