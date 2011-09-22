@@ -11,6 +11,8 @@
 
 #include <irsfinal.h>
 
+//#define NEW_21092011
+
 namespace irs
 {
 
@@ -47,10 +49,18 @@ public:
 private:
   enum
   {
+    // Размер поля адреса приемника
     DA_size = mac_length,
+    // Размер поля адреса источника
     SA_size = mac_length,
+    // Размер поля длины пакета
     L_size = 2,
-    FCS_size = 4
+    // Размер контрольной суммы
+    FCS_size = 4,
+    // Добавочный размер для выравнивания на 4 байта
+    align_size = 4,
+    // Минимальный размер пакета в FIFO
+    fifo_min_size = L_size + DA_size + SA_size
   };
   enum
   {
@@ -62,7 +72,9 @@ private:
   };
 
   buffer_num_t m_buf_num;
+  #ifndef NEW_21092011
   irs_size_t m_buf_size;
+  #endif //NEW_21092011
   irs_u8* mp_rx_buf;
   irs_u8* mp_tx_buf;
   bool m_rx_buf_handled;
@@ -73,6 +85,8 @@ private:
   const use_int_t m_use_interrupt;
   bool m_send_buf_locked;
   bool m_send_packet_action;
+  irs_size_t m_rx_buf_size;
+  irs_size_t m_tx_buf_size;
 
   void rx_interrupt();
 };
