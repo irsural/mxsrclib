@@ -9,8 +9,12 @@
 
 #include <irscpp.h>
 #include <irsconsolestd.h>
+#include <irsstrdefs.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
+
+#define IRSSTRM_NEW_MEMOBUF
 
 //! \addtogroup text_user_interface_group
 //! @{
@@ -505,6 +509,120 @@ inline void irs_iostream::stop_get()
 //! @}
 
 namespace irs {
+
+#ifdef __BORLANDC__
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
+// Буфер стандартных потоков для Memo
+template <class char_type>
+class basic_memobuf: public basic_streambuf<char_type>
+{
+public:
+  typedef typename basic_streambuf<char_type>::int_type int_type;
+  typedef typename basic_streambuf<char_type>::traits_type traits_type;
+
+  basic_memobuf(const basic_memobuf& a_buf);
+  basic_memobuf(TMemo *ap_memo = 0, size_t a_outbuf_size = 0);
+  void connect(TMemo *ap_memo);
+  virtual int_type overflow(int_type a_char = traits_type::eof());
+  virtual int sync();
+private:
+  enum { zero_term_size = 1 };
+
+  raw_data_t<char_type> m_outbuf;
+  TMemo *mp_memo;
+  const char_type m_end_of_line_char;
+  const char_type m_zero_term_char;
+};
+#ifndef NOP
+template <class char_type>
+basic_memobuf<char_type>::basic_memobuf(
+  const basic_memobuf<char_type>& a_buf
+):
+  m_outbuf(a_buf.m_outbuf),
+  mp_memo(a_buf.mp_memo),
+  m_end_of_line_char(a_buf.m_end_of_line_char),
+  m_zero_term_char(a_buf.m_zero_term_char)
+{
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+}
+#endif //NOP
+template <class char_type>
+basic_memobuf<char_type>::basic_memobuf(TMemo *ap_memo, size_t a_outbuf_size):
+  m_outbuf(a_outbuf_size + zero_term_size),
+  mp_memo(ap_memo),
+  m_end_of_line_char(irst('\n')),
+  m_zero_term_char(irst('\0'))
+{
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+}
+template <class char_type>
+void basic_memobuf<char_type>::connect(TMemo *ap_memo)
+{
+  mp_memo = ap_memo;
+}
+template <class char_type>
+basic_memobuf<char_type>::int_type
+  basic_memobuf<char_type>::overflow(int_type a_char)
+{
+  if (!mp_memo) return 0;
+
+  int msg_size = pptr() - pbase();
+  TStrings* Console = mp_memo->Lines;
+  if (msg_size > 0) {
+    *pptr() = m_zero_term_char;
+
+    char_type* message = pbase();
+    char_type* message_line = message;
+    for (int msg_char_idx = 0; msg_char_idx < msg_size; msg_char_idx++) {
+      if (message[msg_char_idx] == m_end_of_line_char) {
+        message[msg_char_idx] = m_zero_term_char;
+        if (Console->Count <= 0) {
+          Console->Add(irst(""));
+        }
+        String ConsoleLine = Console->Strings[Console->Count - 1];
+        ConsoleLine += String(message_line);
+        Console->Strings[Console->Count - 1] = ConsoleLine;
+        Console->Add(irst(""));
+        message_line = &message[msg_char_idx + 1];
+      }
+    }
+    if (message[msg_size - 1] != m_end_of_line_char) {
+      if (Console->Count <= 0) {
+        Console->Add(irst(""));
+      }
+      String ConsoleLine = Console->Strings[Console->Count - 1];
+      ConsoleLine += String(message_line);
+      Console->Strings[Console->Count - 1] = ConsoleLine;
+    }
+  }
+  if (a_char != traits_type::eof())
+  {
+    if (a_char != m_end_of_line_char) {
+      if (Console->Count <= 0) Console->Add(irst(""));
+      String ConsoleLine = Console->Strings[Console->Count - 1];
+      ConsoleLine += String(traits_type::to_char_type(a_char));
+      Console->Strings[Console->Count - 1] = ConsoleLine;
+    } else {
+      Console->Add(irst(""));
+    }
+  }
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+  return 0;
+}
+template <class char_type>
+int basic_memobuf<char_type>::sync()
+{
+  return overflow();
+}
+
+typedef basic_memobuf<char_t> memobuf_t;
+#ifdef IRSSTRM_NEW_MEMOBUF
+typedef basic_memobuf<char> memobuf;
+#endif //IRSSTRM_NEW_MEMOBUF
+
+#endif //defined(IRS_FULL_STDCPPLIB_SUPPORT)
+#endif //__BORLANDC__
 
 // Стандартная конфигурация консоли
 class conio_cfg_t: public mx_proc_t

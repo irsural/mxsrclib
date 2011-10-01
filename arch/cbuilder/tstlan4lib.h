@@ -45,7 +45,7 @@ public:
 
   tstlan4_t(const tstlan4_t& a_tstlan4);
   tstlan4_t(
-    form_type_t a_form_type,
+    form_type_t a_form_type = ft_internal,
     const string_type& a_ini_name = def_ini_name(),
     const string_type& a_ini_section_prefix = def_ini_section_prefix(),
     counter_t a_update_time_cnt = irs::make_cnt_ms(200),

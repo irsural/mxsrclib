@@ -1408,6 +1408,7 @@ irs::conio_cfg_t& irs::arch_conio_cfg::memo(TMemo *ap_memo,
   return conio_cfg_i;
 }
 
+#if !defined(IRSSTRM_NEW_MEMOBUF) || !defined(IRS_FULL_STDCPPLIB_SUPPORT)
 // Буфер стандартных потоков для Memo
 irs::memobuf::memobuf(const memobuf& a_buf):
   m_outbuf_size(a_buf.m_outbuf_size),
@@ -1479,6 +1480,8 @@ int irs::memobuf::sync()
 {
   return overflow();
 }
+#endif //!defined(IRSSTRM_NEW_MEMOBUF) || !defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
 #endif //__BORLANDC__
 
 #if defined(__WATCOMC__)

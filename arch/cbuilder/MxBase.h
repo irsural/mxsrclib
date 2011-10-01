@@ -11,10 +11,11 @@
 //---------------------------------------------------------------------------
 #include <irsdefs.h>
 
-//#include <vcl.h>
 #include <mmsystem.h>
 #include <winspool.h>
+#include <Dialogs.hpp>
 
+//#include <vcl.h>
 #include <irscpp.h>
 
 #include <irsfinal.h>

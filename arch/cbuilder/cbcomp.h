@@ -57,33 +57,33 @@ private:
 // Предикат Equal для класса change_obj_t
 // Сравнивает TEdit*
 struct change_obj_edit_pred_t {
-  static inline bool equal(TEdit& edit, irs::string& prev)
+  static inline bool equal(TEdit& edit, irs::string_t& prev)
   {
     return edit.Text == prev.c_str();
   }
-  static inline irs::string prev(TEdit& edit)
+  static inline irs::string_t prev(TEdit& edit)
   {
     return edit.Text.c_str();
   }
 };
 // Тип для проверки изменения TEdit
-typedef irs::change_obj_t<TEdit, irs::string, change_obj_edit_pred_t>
+typedef irs::change_obj_t<TEdit, irs::string_t, change_obj_edit_pred_t>
   change_edit_t;
 
 // Предикат Equal для класса change_obj_t
 // Сравнивает TComboBox*
 struct change_obj_combo_box_pred_t {
-  static inline bool equal(TComboBox& edit, irs::string& prev)
+  static inline bool equal(TComboBox& edit, irs::string_t& prev)
   {
     return edit.Text == prev.c_str();
   }
-  static inline irs::string prev(TComboBox& edit)
+  static inline irs::string_t prev(TComboBox& edit)
   {
     return edit.Text.c_str();
   }
 };
 // Тип для проверки изменения TEdit
-typedef irs::change_obj_t<TComboBox, irs::string, change_obj_combo_box_pred_t>
+typedef irs::change_obj_t<TComboBox, irs::string_t, change_obj_combo_box_pred_t>
   change_combo_box_t;
 
 // Предикат Equal для класса change_obj_t

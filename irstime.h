@@ -30,13 +30,15 @@ const millisecond_t ms_in_min = ms_in_sec*sec_in_min;
 const millisecond_t ms_in_hour = ms_in_min*min_in_hour;
 
 // Преобразование числа в мс в строку в формате: ЧЧ:ММ:СС.МСЕ
-irs::string ms_to_strtime(millisecond_t ms, bool show_ms = false);
+string_t ms_to_strtime(millisecond_t ms, bool show_ms = false);
 // Счетчика ИРС в строку в формате: ЧЧ:ММ:СС.МСЕ
-irs::string cnt_to_strtime(counter_t cnt, bool show_ms = false);
+string_t cnt_to_strtime(counter_t cnt, bool show_ms = false);
 
 millisecond_t system_time();
 // Запись в поток текущего времени
-IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
+IRS_STREAMSPECDECL ostream_t &stime(ostream_t &a_strm);
+// Запись в поток текущей даты и времени
+IRS_STREAMSPECDECL ostream_t &sdatetime(ostream_t &a_stream);
 //возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
 //расширение вводить с точкой
 string_t file_name_time(string_t a_extension = string_t());
