@@ -9,6 +9,7 @@
 #include <irscpu.h>
 #include <irsint.h>
 #include <irsarchint.h>
+#include <timer.h>
 
 #include <irsfinal.h>
 
@@ -18,7 +19,7 @@ T spec_div(T a_num, T a_denom)
   T div_result = a_num/a_denom;
   if (a_num%a_denom != 0) {
     div_result++;
-  } 
+  }
   return div_result;
 }
 
@@ -42,8 +43,13 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   m_use_interrupt(a_use_interrupt),
   m_send_buf_locked(false),
   m_send_packet_action(false),
+  #ifdef NEW_21092011
+  m_rx_buf_size(a_buf_size + FCS_size),
+  m_tx_buf_size(a_buf_size)
+  #else //NEW_21092011
   m_rx_buf_size(DA_size + SA_size + L_size + m_buf_size + FCS_size),
   m_tx_buf_size(DA_size + SA_size + L_size + m_buf_size)
+  #endif //NEW_21092011
 {
   #ifdef NEW_21092011
   mp_rx_buf = new irs_u8[m_rx_buf_size + align_size];
@@ -129,21 +135,32 @@ void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
 
   #ifdef NEW_21092011
   irs_u32 fifo_data = a_size - DA_size - SA_size;
+  IRS_HIWORD(fifo_data) = reinterpret_cast<irs_u16&>(mp_tx_buf[0]);
   #else //NEW_21092011
   volatile irs_u32 fifo_data = a_size - DA_size - SA_size - L_size;
-  #endif //NEW_21092011
   IRS_HIWORD(fifo_data) = *(irs_u16*)mp_tx_buf;
+  #endif //NEW_21092011
   MACDATA = fifo_data;
 
   const irs_size_t shift = sizeof(irs_u16);
-  irs_u32* p_shifted_buf = (irs_u32*)(mp_tx_buf + shift);
-  const irs_size_t whole_dwords_cnt = (a_size - shift) / sizeof(fifo_data);
+  irs_u32* p_shifted_buf = reinterpret_cast<irs_u32*>(mp_tx_buf + shift);
+  #ifdef NEW_21092011
+  const irs_size_t whole_dwords_cnt =
+    spec_div(a_size - shift, sizeof(fifo_data));
+  #else //NEW_21092011
+  const irs_size_t whole_dwords_cnt = (a_size - shift)/sizeof(fifo_data);
+  #endif //NEW_21092011
+  #ifdef NEW_21092011
+  for (irs_size_t current_dword = 0; current_dword < whole_dwords_cnt;
+    current_dword++)
+  {
+    MACDATA = p_shifted_buf[current_dword];
+  }
+  #else //NEW_21092011
   irs_size_t current_dword = 0;
   for (; current_dword < whole_dwords_cnt; current_dword++) {
     MACDATA = p_shifted_buf[current_dword];
   }
-  #ifdef NEW_21092011
-  #else //NEW_21092011
   irs_size_t current_byte = current_dword * sizeof(fifo_data) + shift;
   fifo_data = 0;
   for (irs_u8 i = 0; current_byte < a_size; current_byte++, i++) {
@@ -201,7 +218,7 @@ irs_size_t irs::arm::arm_ethernet_t::recv_buf_size()
 
 irs_size_t irs::arm::arm_ethernet_t::send_buf_max_size()
 {
-  return m_buf_size;
+  return m_tx_buf_size;
 }
 
 irs::simple_ethernet_t::buffer_num_t irs::arm::arm_ethernet_t::get_buf_num()
@@ -238,21 +255,30 @@ void irs::arm::arm_ethernet_t::tick()
         m_rx_int_flag = true;
       }
     }
+
     bool can_read_fifo = ((m_buf_num == single_buf) && (!m_send_buf_locked)) ||
       (m_buf_num == double_buf);
-
     if (m_rx_int_flag && can_read_fifo) {
       m_rx_int_flag = false;
       irs_u32 fifo_data = 0;
       fifo_data = MACDATA;
-      
+
       enum reset_fifo_t { rf_single_packet, rf_all_packet };
       reset_fifo_t reset_fifo = rf_single_packet;
       bool is_packet_valid = false;
+      #ifdef ARMETH_DBGMSG
+      enum { bug_marker = 0xDEADBEAF };
+      volatile irs_size_t bug_finder = bug_marker;
+      #endif //ARMETH_DBGMSG
       irs_size_t fifo_packet_size = IRS_LOWORD(fifo_data);
       if (fifo_packet_size > fifo_min_size) {
+        #ifdef NEW_21092011
+        m_rx_size = IRS_LOWORD(fifo_data);
+        if (m_rx_size <= m_rx_buf_size) {
+        #else //NEW_21092011
         m_rx_size = IRS_LOWORD(fifo_data) - L_size;
         if (m_rx_size <= m_buf_size) {
+        #endif //NEW_21092011
           is_packet_valid = true;
         } else {
           is_packet_valid = false;
@@ -266,11 +292,12 @@ void irs::arm::arm_ethernet_t::tick()
         m_rx_size = 0;
         is_packet_valid = false;
         reset_fifo = rf_all_packet;
+
+        #ifdef ARMETH_DBGMSG
+        mlog() << "Время: " << CNT_TO_DBLTIME(counter_get()) << endl;
         mlog() << "!!!!! ARM Ethernet Маленький пакет" << endl;
+        #endif //ARMETH_DBGMSG
       }
-      
-      enum { bug_marker = 0xDEADBEAF };
-      volatile irs_u32 bug_finder = bug_marker;
 
       if (is_packet_valid) {
         *(irs_u16*)mp_rx_buf = IRS_HIWORD(fifo_data);
@@ -282,34 +309,40 @@ void irs::arm::arm_ethernet_t::tick()
           = (m_rx_size - shift) / sizeof(fifo_data);
         irs_size_t current_dword = 0;
 
+        #ifdef ARMETH_DBGMSG
         irs_u8* p_rx_buf_end = mp_rx_buf + m_rx_buf_size;
-            
+        #endif //ARMETH_DBGMSG
+
         for (; current_dword < whole_dwords_cnt; current_dword++) {
-          
-          irs_u8* p_begin = reinterpret_cast<irs_u8*>(p_shifted_buf + 
+
+          #ifdef ARMETH_DBGMSG
+          irs_u8* p_begin = reinterpret_cast<irs_u8*>(p_shifted_buf +
             current_dword);
           irs_u8* p_end = p_begin + sizeof(*p_shifted_buf);
-          bool is_begin_bad = 
+          bool is_begin_bad =
             (p_begin < mp_rx_buf) || (p_rx_buf_end < p_begin);
-          bool is_end_bad = 
-            (p_end < mp_rx_buf) || (p_end < p_begin);
+          bool is_end_bad =
+            (p_end < mp_rx_buf) || (p_rx_buf_end < p_end);
           if (is_begin_bad || is_end_bad) {
             mlog() << boolalpha;
+            mlog() << "Время: " << CNT_TO_DBLTIME(counter_get()) << endl;
             mlog() << "Косяк p_shifted_buf[current_dword] = MACDATA;" << endl;
             mlog() << "is_begin_bad = " << is_begin_bad << endl;
             mlog() << "is_end_bad = " << is_begin_bad << endl;
+            continue;
           }
-            
+          #endif //ARMETH_DBGMSG
+
           p_shifted_buf[current_dword] = MACDATA;
         }
-        
+
         fifo_data = MACDATA;
         irs_u8* p_fifo_data = reinterpret_cast<irs_u8*>(&fifo_data);
-        const irs_size_t start_byte = 
+        const irs_size_t start_byte =
           current_dword * sizeof(fifo_data) + shift;
         for (
           irs_size_t current_byte = start_byte;
-          current_byte < m_rx_size; 
+          current_byte < m_rx_size;
           current_byte++
         ) {
           mp_rx_buf[current_byte] = *p_fifo_data;
@@ -331,11 +364,14 @@ void irs::arm::arm_ethernet_t::tick()
           } break;
         }
       }
-      
+
+      #ifdef ARMETH_DBGMSG
       if (bug_finder != bug_marker) {
+        mlog() << "Время: " << CNT_TO_DBLTIME(counter_get()) << endl;
         mlog() << "!!!!! ARM Ethernet Поймана запись мимо памяти" << endl;
       }
-      
+      #endif //ARMETH_DBGMSG
+
       if (m_use_interrupt == USE_INT) {
         MACIM_bit.RXINT = 1;
       }
