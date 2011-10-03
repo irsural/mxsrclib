@@ -1,5 +1,5 @@
 // Потоки ввода/вывода ИРС из irsstd
-// Дата: 13.04.2010\n
+// Дата: 03.10.2011\n
 // Дата создания: 27.09.2009
 
 #ifndef IRSSTRMSTDH
@@ -11,6 +11,10 @@
 #include <irsconsolestd.h>
 #include <irsstrdefs.h>
 #include <mxdata.h>
+
+#ifdef __BORLANDC__
+#include <StdCtrls.hpp>
+#endif // __BORLANDC__
 
 #include <irsfinal.h>
 

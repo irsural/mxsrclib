@@ -718,6 +718,7 @@ private:
   // Первый диапазон является поддиапазоном второго
   inline bool first_subdiapason_second(const diapason_type& a_first_diapason,
     const diapason_type& a_second_diapason) const;
+  inline bool is_diapason_single_cell(const diapason_type& a_diapason) const;
   irs::table_t<cell_t> m_table;
 };
 
@@ -824,9 +825,11 @@ set_col_count(const size_type a_col_count)
       for (size_type row_i = 0; row_i < row_count; row_i++) {
         cell_t& cell = m_table.read_cell(col_i, row_i);
         if (!cell.param.autonomous) {
-          if (cell.param.diapason.right >= a_col_count)
-          {
+          if (cell.param.diapason.right >= a_col_count) {
             cell.param.diapason.right = a_col_count - 1;
+            if (is_diapason_single_cell(cell.param.diapason)) {
+              union_off(cell.param.diapason);
+            }
           } else {
             // Корректировать границы диапазона не требуется
           }
@@ -855,6 +858,9 @@ inline void table_united_cells_t<cell_type_t>::set_row_count(
           if (cell.param.diapason.bottom >= a_row_count)
           {
             cell.param.diapason.bottom = a_row_count - 1;
+            if (is_diapason_single_cell(cell.param.diapason)) {
+              union_off(cell.param.diapason);
+            }
           } else {
             // Корректировать границы диапазона не требуется
           }
@@ -1163,6 +1169,15 @@ inline bool table_united_cells_t<cell_type_t>::first_subdiapason_second(
     statement_true = false;
   }
   return statement_true;
+}
+
+template <class cell_type_t>
+inline bool table_united_cells_t<cell_type_t>::is_diapason_single_cell(
+  const diapason_type& a_diapason) const
+{
+  IRS_LIB_ASSERT(a_diapason.left < a_diapason.right);
+  IRS_LIB_ASSERT(a_diapason.top < a_diapason.bottom);
+  return (a_diapason.width() <= 1) && (a_diapason.height() <= 1);
 }
 
 template <class cell_type_t>

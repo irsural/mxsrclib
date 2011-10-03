@@ -2,7 +2,7 @@
 //! \ingroup math_group
 //! \brief Калькулятор
 //!
-//! Дата: 28.07.2011\n
+//! Дата: 03.10.2011\n
 //! Дата создания: 01.02.2009
 
 #ifndef irscalcH
@@ -188,6 +188,16 @@ class calc_variables_t;
 class function_t
 {
 public:
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  function_t():
+    m_locale(irs::loc().get())
+  {
+  }
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
+  function_t()
+  {
+  }
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
   inline virtual ~function_t()
   {
   }
@@ -195,6 +205,20 @@ public:
     calc_variables_t* ap_calc_variables,
     vector<mutable_ref_t>* ap_parameters,
     variant::variant_t* ap_returned_value) const = 0;
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  inline void imbue(const locale& a_locale)
+  {
+    m_locale = a_locale;
+  }
+  inline const locale& get_locale() const
+  {
+    return m_locale;
+  }
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+private:
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  locale m_locale;
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
 };
 
 class func_r_int_a_int_t: public function_t
@@ -233,6 +257,68 @@ public:
 private:
   func_r_double_a_double_ptr_type mp_func;
   func_r_double_a_double_t();
+};
+
+class func_r_string_a_string_t: public function_t
+{
+public:
+  typedef variant::variant_t variant_type;
+  typedef variant_type::string_type string_type;
+  typedef string_type (*func_r_string_a_string_ptr_type)(string_type);
+  inline explicit func_r_string_a_string_t(
+    func_r_string_a_string_ptr_type ap_func
+  ):
+    mp_func(ap_func)
+  {
+  }
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_type* ap_returned_value) const;
+private:
+  func_r_string_a_string_ptr_type mp_func;
+  func_r_string_a_string_t();
+};
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+class func_r_str_a_str_loc_t: public function_t
+{
+public:
+  typedef variant::variant_t variant_type;
+  typedef variant_type::string_type string_type;
+  typedef string_type (*func_r_str_a_str_loc_ptr_type)(string_type, locale);
+  inline explicit func_r_str_a_str_loc_t(
+    func_r_str_a_str_loc_ptr_type ap_func
+  ):
+    mp_func(ap_func)
+  {
+  }
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_type* ap_returned_value) const;
+private:
+  func_r_str_a_str_loc_ptr_type mp_func;
+  func_r_str_a_str_loc_t();
+};
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+class func_r_dbl_a_dbl_dbl_t: public function_t
+{
+public:
+  typedef irs::variant::variant_t variant_type;
+  typedef double (*func_r_dbl_a_dbl_ptr_type)(double, double);
+  inline explicit func_r_dbl_a_dbl_dbl_t(func_r_dbl_a_dbl_ptr_type ap_func):
+    mp_func(ap_func)
+  {
+  }
+  virtual bool exec(
+    calc_variables_t* ap_calc_variables,
+    vector<mutable_ref_t>* ap_parameters,
+    variant_type* ap_returned_value) const;
+private:
+  func_r_dbl_a_dbl_ptr_type mp_func;
+  func_r_dbl_a_dbl_dbl_t();
 };
 
 class list_identifier_t
@@ -285,7 +371,7 @@ public:
   inline void function_clear();
   inline bool is_function_exists(const string_type& a_function_name);
   inline bool function_find(const string_type& a_function_name,
-    const function_t** ap_p_function) const;
+    function_t** ap_p_function);
 
   inline bool del_func(const string_type& a_name);
   inline void clear_func();
@@ -400,7 +486,7 @@ inline bool list_identifier_t::is_function_exists(
 }
 
 inline bool list_identifier_t::function_find(const string_type& a_function_name,
-  const function_t** ap_p_function) const
+  function_t** ap_p_function)
 {
   function_map_const_iterator it_function =
     m_function_map.find(a_function_name);

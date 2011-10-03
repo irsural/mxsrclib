@@ -2,7 +2,7 @@
 //! \ingroup math_group
 //! \brief Калькулятор
 //!
-//! Дата: 01.10.2008\n
+//! Дата: 03.10.2011\n
 //! Ранняя дата: 24.09.2009
 
 // В Watcom C++ есть только не-const версия функции map::find
@@ -167,6 +167,99 @@ bool irs::calc::func_r_double_a_double_t::exec(
     }
   } else {
     // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+
+// class func_r_string_a_string_t
+bool irs::calc::func_r_string_a_string_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = false;
+  if (ap_parameters->size() == 1) {
+    variant_type value_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
+      if (value_variant.convert_to(irs::variant::var_type_string)) {
+        *ap_returned_value = (*mp_func)(value_variant.as_string());
+        fsuccess = true;
+      } else {
+        // Недопустимый тип аргумента
+      }
+    } else {
+      // Прочитать аргумент не удалось
+    }
+  } else {
+    // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+// class func_r_str_a_str_loc_t
+bool irs::calc::func_r_str_a_str_loc_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = false;
+  if (ap_parameters->size() == 1) {
+    variant_type value_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &value_variant)) {
+      if (value_variant.convert_to(irs::variant::var_type_string)) {
+        *ap_returned_value = (*mp_func)(value_variant.as_string(),
+          get_locale());
+        fsuccess = true;
+      } else {
+        // Недопустимый тип аргумента
+      }
+    } else {
+      // Прочитать аргумент не удалось
+    }
+  } else {
+    // Недопустимое количество параметров
+  }
+  return fsuccess;
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+// class func_r_dbl_a_dbl_dbl_t
+bool irs::calc::func_r_dbl_a_dbl_dbl_t::exec(
+  calc_variables_t* ap_calc_variables,
+  vector<mutable_ref_t>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() == 2) {
+    variant_type first_arg_variant;
+    variant_type second_arg_variant;
+    if (ap_calc_variables->value_read((*ap_parameters)[0],
+      &first_arg_variant)) {
+      if (!first_arg_variant.convert_to(irs::variant::var_type_double)) {
+        // Недопустимый тип аргумента
+        fsuccess = false;
+      }
+    } else {
+      // Прочитать аргумент не удалось
+      fsuccess = false;
+    }
+    if (ap_calc_variables->value_read((*ap_parameters)[1],
+      &second_arg_variant)) {
+      if (!second_arg_variant.convert_to(irs::variant::var_type_double)) {
+        // Недопустимый тип аргумента
+        fsuccess = false;
+      }
+    } else {
+      fsuccess = false;
+    }
+    if (fsuccess) { 
+      *ap_returned_value = (*mp_func)(first_arg_variant.as_double(),
+        second_arg_variant.as_double());
+    }
+  } else {
+    // Недопустимое количество параметров
+    fsuccess = false;
   }
   return fsuccess;
 }
@@ -369,7 +462,21 @@ bool string_to_number_t::exec(
   return fsuccess;
 }
 
-irs::calc::stringns_t trim(const irs::calc::stringns_t& a_str)
+/*//! \brief Возвращает размер строки
+irs::calc::sizens_t get_str_size(irs::calc::stringns_t a_str)
+{
+  return a_str.size();
+}
+
+//! \brief Возвращает подстроку строки a_str
+irs::calc::size_type get_sub_str(irs::calc::stringns_t a_str,
+  irs::calc::size_type a_pos, irs::calc::size_type a_count)
+{
+  return a_str.substr(a_pos, a_count);
+}*/
+
+//! \brief Возвращает строку с удаленными пробельными символами слева и справа
+irs::calc::stringns_t trim(irs::calc::stringns_t a_str)
 {
   irs::calc::stringns_t str = a_str;
   const irs::calc::stringns_t white_space(irst(" \n\r\t"));
@@ -380,7 +487,309 @@ irs::calc::stringns_t trim(const irs::calc::stringns_t& a_str)
   return str;
 }
 
-class trim_t: public irs::calc::function_t
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+//! \brief Возвращает строку с удаленными пробельными символами
+irs::calc::stringns_t remove_space(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{ 
+  irs::calc::stringns_t str = a_str;
+  for (int i = a_str.size() - 1; i > -1; i--) {
+    if (irs::isspacet(str[i], a_loc)) {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+}
+
+//! \brief Возвращает строку с удаленными буквами
+irs::calc::stringns_t remove_alpha(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  for (int i = a_str.size() - 1; i > -1; i--) {
+    if (irs::isalphat(str[i], a_loc)) {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+}
+
+//! \brief Возвращает строку с удаленными цифрами
+irs::calc::stringns_t remove_digit(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  for (int i = a_str.size() - 1; i > -1; i--) {
+    if (irs::isdigitt(str[i], a_loc)) {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+} 
+
+//! \brief Возвращает строку с удаленными символами, не являющимися числами
+irs::calc::stringns_t remove_not_digit(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  for (int i = a_str.size() - 1; i > -1; i--) {
+    if (!irs::isdigitt(str[i], a_loc)) {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+}
+
+//! \brief Возвращает строку с удаленными символами, не являющимися буквами
+irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  for (int i = a_str.size() - 1; i > -1; i--) {
+    if (!irs::isalphat(str[i], a_loc)) {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+//! \brief Возвращает строку, все символы которой в нижнем регистре
+irs::calc::stringns_t to_lower(irs::calc::stringns_t a_str)
+{
+  return irs::to_lower(a_str);
+}
+
+//! \brief Возвращает строку, все символы которой в верхнем регистре
+irs::calc::stringns_t to_upper(irs::calc::stringns_t a_str)
+{
+  return irs::to_upper(a_str);
+}
+
+class str_size_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool str_size_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() != 1) {
+    fsuccess = false;
+  }
+  variant_type arg_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0], &arg_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (arg_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    string_type str = arg_variant.as_string();
+    *ap_returned_value = str.size();
+  } else {
+    // Произошла ошибка
+  }
+  return fsuccess;
+}
+
+class str_resize_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool str_resize_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() != 2) {
+    fsuccess = false;
+  }
+  variant_type first_arg_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0],
+      &first_arg_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (first_arg_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    }
+  }
+  variant_type number_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[1], &number_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (!irs::variant::is_number_type(number_variant.type())) {
+      fsuccess = false;
+    }
+  } 
+  if (fsuccess) {
+    string_type str = first_arg_variant.as_string();
+    str.resize(number_variant.as_unsigned_int());
+    variant_type result_variant = str;
+    if (!ap_calc_variables->value_write(result_variant, &(*ap_parameters)[0])) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    *ap_returned_value = true;
+  } else {
+    *ap_returned_value = false;
+  }
+  return fsuccess;
+}
+
+class str_symbol_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool str_symbol_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;  
+  if (ap_parameters->size() != 2) {
+    fsuccess = false;
+  } else {
+    // Количество аргументов имеет правильное значение
+  }
+  variant_type str_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0], &str_variant))
+    {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (str_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    }
+  }
+  variant_type pos_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[1], &pos_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (!irs::variant::is_number_type(pos_variant.type())) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    string_type str = str_variant.as_string();
+    *ap_returned_value = str.substr(pos_variant.as_unsigned_int(), 1);
+  }
+  return fsuccess;
+}
+
+class sub_str_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool sub_str_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;  
+  if (ap_parameters->size() != 3) {
+    fsuccess = false;
+  } else {
+    // Количество аргументов имеет правильное значение
+  }
+  variant_type str_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[0], &str_variant))
+    {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (str_variant.type() != irs::variant::var_type_string) {
+      fsuccess = false;
+    }
+  }
+  variant_type pos_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[1], &pos_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (!irs::variant::is_number_type(pos_variant.type())) {
+      fsuccess = false;
+    }
+  }
+  variant_type count_variant;
+  if (fsuccess) {
+    if (!ap_calc_variables->value_read((*ap_parameters)[2], &count_variant)) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (!irs::variant::is_number_type(count_variant.type())) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    string_type str = str_variant.as_string();
+    *ap_returned_value = str.substr(pos_variant.as_unsigned_int(),
+      count_variant.as_unsigned_int());
+  }
+  return fsuccess;
+}
+
+/*class trim_t: public irs::calc::function_t
 {
 public:
   typedef irs::calc::stringns_t string_type;
@@ -420,20 +829,6 @@ bool trim_t::exec(
     // Произошла ошибка
   }
   return fsuccess;
-}
-
-irs::calc::stringns_t remove_space(const irs::calc::stringns_t& a_str)
-{
-  irs::calc::stringns_t str = a_str;
-  const irs::calc::stringns_t white_space(irst(" \n\r\t"));
-  irs::calc::stringns_t::size_type pos = 0;
-  while (pos != irs::calc::stringns_t::npos) {
-    pos = str.find_first_of(white_space, pos);
-    if (pos != irs::calc::stringns_t::npos) {
-      str.erase(pos, 1);
-    }
-  }
-  return str;
 }
 
 class remove_space_t: public irs::calc::function_t
@@ -560,6 +955,16 @@ bool to_lower_t::exec(
     // Произошла ошибка
   }
   return fsuccess;
+}*/
+
+double min_d(double a, double b)
+{
+  return min(a, b);
+}
+
+double max_d(double a, double b)
+{
+  return max(a, b);
 }
 
 } // empty namespace
@@ -702,13 +1107,57 @@ irs::calc::calculator_t::calculator_t():
   func_r_dbl_a_dbl_ptr = tanh;
   function_add(irst("tanh"),
     new func_r_double_a_double_t(func_r_dbl_a_dbl_ptr));
+
+  func_r_string_a_string_t::func_r_string_a_string_ptr_type
+    func_r_string_a_string_ptr = IRS_NULL;
+  func_r_string_a_string_ptr = trim;
+  function_add(irst("trim"),
+    new func_r_string_a_string_t(func_r_string_a_string_ptr));
+  func_r_string_a_string_ptr = ::to_upper;
+  function_add(irst("to_upper"),
+    new func_r_string_a_string_t(func_r_string_a_string_ptr));
+  func_r_string_a_string_ptr = ::to_lower;
+  function_add(irst("to_lower"),
+    new func_r_string_a_string_t(func_r_string_a_string_ptr));
+
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT 
+  func_r_str_a_str_loc_t::func_r_str_a_str_loc_ptr_type
+    func_r_str_a_str_loc_ptr = IRS_NULL;
+  func_r_str_a_str_loc_ptr = remove_space;
+  function_add(irst("remove_space"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
+  func_r_str_a_str_loc_ptr = remove_alpha;
+  function_add(irst("remove_alpha"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
+  func_r_str_a_str_loc_ptr = remove_digit;
+  function_add(irst("remove_digit"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr)); 
+  func_r_str_a_str_loc_ptr = remove_not_digit;
+  function_add(irst("remove_not_digit"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr)); 
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+  func_r_dbl_a_dbl_dbl_t::func_r_dbl_a_dbl_ptr_type
+    func_r_dbl_a_dbl_dbl_ptr = IRS_NULL;
+  func_r_dbl_a_dbl_dbl_ptr = min_d;
+  function_add(irst("min"),
+    new func_r_dbl_a_dbl_dbl_t(func_r_dbl_a_dbl_dbl_ptr));
+  func_r_dbl_a_dbl_dbl_ptr = max_d;
+  function_add(irst("max"),
+    new func_r_dbl_a_dbl_dbl_t(func_r_dbl_a_dbl_dbl_ptr));
+
   function_add(irst("pow"), new pow_t());
   function_add(irst("number_to_string"), new number_to_string_t());
   function_add(irst("string_to_number"), new string_to_number_t());
-  function_add(irst("trim"), new trim_t());
-  function_add(irst("remove_space"), new remove_space_t());
-  function_add(irst("to_upper"), new to_upper_t());
-  function_add(irst("to_lower"), new to_lower_t());
+
+  function_add(irst("get_str_size"), new str_size_t());
+  function_add(irst("set_str_size"), new str_resize_t());
+  function_add(irst("get_str_symbol"), new str_symbol_t());
+  function_add(irst("get_sub_str"), new sub_str_t());
+  //function_add(irst("trim"), new trim_t());
+  //function_add(irst("remove_space"), new remove_space_t());
+  //function_add(irst("to_upper"), new to_upper_t());
+  //function_add(irst("to_lower"), new to_lower_t());
   
   variable_add(irst("IRS_E"), IRS_E, v_is_constant);
   variable_add(irst("IRS_LOG2E"), IRS_LOG2E, v_is_constant);
@@ -751,7 +1200,7 @@ bool irs::calc::calculator_t::atom(mutable_ref_t* ap_value)
   fsuccess = m_detector_token.get_token(&token);
   if (fsuccess) {
     if (token.token_type() == tt_identifier) {
-      const function_t* p_function = IRS_NULL;
+      function_t* p_function = IRS_NULL;
       if (m_list_identifier.function_find(token.get_identifier(), &p_function))
       { 
         fsuccess = m_detector_token.next_token();
@@ -764,6 +1213,9 @@ bool irs::calc::calculator_t::atom(mutable_ref_t* ap_value)
         variant_t result_value_variant;
         if (fsuccess) {
           calc_variables_t calc_variables(this);
+          #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+          p_function->imbue(m_locale);
+          #endif // IRS_FULL_STDCPPLIB_SUPPORT
           fsuccess = p_function->exec(&calc_variables, &arguments_func,
             &result_value_variant);
         } else {
