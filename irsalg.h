@@ -107,7 +107,7 @@ namespace irs {
 
 template<class data_t, class calc_t>
 irs::sko_calc_t<data_t, calc_t>::sko_calc_t(irs_u32 a_count):
-  m_count(a_count),
+  m_count((a_count >= 1)?a_count:1),
   m_val_array(),
   m_average(0),
   m_accepted_average(false)

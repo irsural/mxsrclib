@@ -17,7 +17,7 @@
 
 #include <irsfinal.h>
 
-//#define NEW_18092011
+#define NEW_18092011
 
 #ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
 # if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
