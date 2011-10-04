@@ -2,7 +2,7 @@
 //! \ingroup configuration_group
 //! \brief Глобальные объявления типов
 //!
-//! Дата: 24.04.2011\n
+//! Дата: 04.10.2011\n
 //! Ранняя дата: 16.09.2009
 
 #ifndef IRSDEFSH
@@ -400,6 +400,18 @@ enum irs_avr_port_t {
   irs_avr_portf = 5,
   irs_avr_portg = 6
 };
+
+#ifdef __ICCARM__
+// Указатель на порт ARM
+typedef volatile irs_u32 arm_port_t;
+typedef arm_port_t* p_arm_port_t;
+#endif // __ICCARM__
+
+#ifdef __ICCAVR__
+// Указатель на порт AVR
+typedef irs_u8 volatile __tiny avr_port_t;
+typedef avr_port_t* p_avr_port_t;
+#endif //__ICCAVR__
 
 // Класс для функций обработки
 class mx_proc_t {

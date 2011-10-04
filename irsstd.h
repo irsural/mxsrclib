@@ -174,15 +174,7 @@ T range(T val, T min_val, T max_val)
 
 } //namespace irs
 
-#ifdef __ICCARM__
-typedef volatile irs_u32 arm_port_t;
-typedef arm_port_t* p_arm_port_t;
-#endif // __ICCARM__
-
 #ifdef __ICCAVR__
-// ”казатель на порт AVR
-typedef irs_u8 volatile __tiny avr_port_t;
-typedef avr_port_t* p_avr_port_t;
 
 typedef struct _irs_avr_port_map_t {
   //irs_avr_port_t name,
