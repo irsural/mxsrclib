@@ -1467,7 +1467,9 @@ int irs::memobuf::overflow(int c)
     if (c != '\n') {
       if (Console->Count <= 0) Console->Add("");
       String ConsoleLine = Console->Strings[Console->Count - 1];
-      ConsoleLine += String((char)c);
+      char char_str[] = " ";
+      char_str[0] = static_cast<char>(c);
+      ConsoleLine += char_str;
       Console->Strings[Console->Count - 1] = ConsoleLine;
     } else {
       Console->Add("");

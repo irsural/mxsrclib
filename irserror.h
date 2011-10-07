@@ -246,7 +246,7 @@ inline ostream& operator<<(ostream& a_strm,
   }
 #define IRS_DBG_MSG(msg)\
   {\
-    irs::mlog() << irs::stime << msg << endl;\
+    irs::mlog() << irs::sdatetime << msg << endl;\
   }
 #define IRS_DBG_MSG_IF(assert_expr, msg)\
   {\
@@ -256,7 +256,7 @@ inline ostream& operator<<(ostream& a_strm,
   }
 #define IRS_DBG_MSG_SRC(msg)\
   {\
-    irs::mlog() << irs::stime << "Файл: " << __FILE__;\
+    irs::mlog() << irs::sdatetime << "Файл: " << __FILE__;\
     irs::mlog() << "; Строка: " << __LINE__;\
     irs::mlog() << "; Функция: " << __FUNC__ << "; ";\
     irs::mlog() << msg << endl;\
@@ -264,7 +264,7 @@ inline ostream& operator<<(ostream& a_strm,
 
 #define IRS_DBG_MSG_SRC_ENG(msg)\
 {\
-  irs::mlog() << irs::stime << "File: " << __FILE__;\
+  irs::mlog() << irs::sdatetime << "File: " << __FILE__;\
   irs::mlog() << "; Line: " << __LINE__;\
   irs::mlog() << "; Function: " << __FUNC__ << "; ";\
   irs::mlog() << msg << endl;\

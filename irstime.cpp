@@ -74,26 +74,31 @@ irs::millisecond_t irs::system_time()
 }
 
 // Запись в поток текущего времени
-IRS_STREAMSPECDECL irs::ostream_t &irs::stime(ostream_t &a_strm)
+IRS_STREAMSPECDECL irs::ostream_t &irs::stimet(ostream_t &a_strm)
 {
-  irs::string_t time_strg = irs::ms_to_strtime(irs::system_time());
-  a_strm << time_strg.c_str() << ' ';
-  return a_strm;
+  return basic_stime(a_strm);
+}
+IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_strm)
+{
+  return basic_stime(a_strm);
+}
+IRS_STREAMSPECDECL wostream &irs::wstime(wostream &a_strm)
+{
+  return basic_stime(a_strm);
 }
 
 // Запись в поток текущей даты и времени
-IRS_STREAMSPECDECL irs::ostream_t &irs::sdatetime(ostream_t &a_stream)
+IRS_STREAMSPECDECL irs::ostream_t &irs::sdatetimet(ostream_t &a_stream)
 {
-  time_t timer = time(NULL);
-  const tm* date = localtime(&timer);
-  a_stream << setfill(irst('0'));
-  a_stream << setw(2) << date->tm_mday << irst('.');
-  a_stream << setw(2) << (date->tm_mon + 1) << irst('.');
-  a_stream << setw(4) << (date->tm_year + 1900) << irst(' ');
-  a_stream << setw(2) << date->tm_hour << irst(':');
-  a_stream << setw(2) << date->tm_min << irst(':');
-  a_stream << setw(2) << date->tm_sec << irst(' ');
-  return a_stream;
+  return basic_sdatetime(a_stream);
+}
+IRS_STREAMSPECDECL ostream &irs::sdatetime(ostream &a_stream)
+{
+  return basic_sdatetime(a_stream);
+}
+IRS_STREAMSPECDECL wostream &irs::wsdatetime(wostream &a_stream)
+{
+  return basic_sdatetime(a_stream);
 }
 
 irs::string_t irs::file_name_time(string_t a_extension)

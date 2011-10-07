@@ -515,7 +515,6 @@ inline void irs_iostream::stop_get()
 namespace irs {
 
 #ifdef __BORLANDC__
-#if defined(IRS_FULL_STDCPPLIB_SUPPORT)
 
 // Буфер стандартных потоков для Memo
 template <class char_type>
@@ -538,7 +537,6 @@ private:
   const char_type m_end_of_line_char;
   const char_type m_zero_term_char;
 };
-#ifndef NOP
 template <class char_type>
 basic_memobuf<char_type>::basic_memobuf(
   const basic_memobuf<char_type>& a_buf
@@ -550,13 +548,12 @@ basic_memobuf<char_type>::basic_memobuf(
 {
   setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
 }
-#endif //NOP
 template <class char_type>
 basic_memobuf<char_type>::basic_memobuf(TMemo *ap_memo, size_t a_outbuf_size):
   m_outbuf(a_outbuf_size + zero_term_size),
   mp_memo(ap_memo),
-  m_end_of_line_char(irst('\n')),
-  m_zero_term_char(irst('\0'))
+  m_end_of_line_char(static_cast<char_type>('\n')),
+  m_zero_term_char(static_cast<char_type>('\0'))
 {
   setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
 }
@@ -582,18 +579,18 @@ basic_memobuf<char_type>::int_type
       if (message[msg_char_idx] == m_end_of_line_char) {
         message[msg_char_idx] = m_zero_term_char;
         if (Console->Count <= 0) {
-          Console->Add(irst(""));
+          Console->Add("");
         }
         String ConsoleLine = Console->Strings[Console->Count - 1];
         ConsoleLine += String(message_line);
         Console->Strings[Console->Count - 1] = ConsoleLine;
-        Console->Add(irst(""));
+        Console->Add("");
         message_line = &message[msg_char_idx + 1];
       }
     }
     if (message[msg_size - 1] != m_end_of_line_char) {
       if (Console->Count <= 0) {
-        Console->Add(irst(""));
+        Console->Add("");
       }
       String ConsoleLine = Console->Strings[Console->Count - 1];
       ConsoleLine += String(message_line);
@@ -603,12 +600,17 @@ basic_memobuf<char_type>::int_type
   if (a_char != traits_type::eof())
   {
     if (a_char != m_end_of_line_char) {
-      if (Console->Count <= 0) Console->Add(irst(""));
+      if (Console->Count <= 0) Console->Add("");
       String ConsoleLine = Console->Strings[Console->Count - 1];
-      ConsoleLine += String(traits_type::to_char_type(a_char));
+      enum { char_str_size = 2 };
+      char_type char_str[char_str_size];
+      enum { char_pos = 0, zero_char_pos = 1 };
+      char_str[char_pos] = traits_type::to_char_type(a_char);
+      char_str[zero_char_pos] = 0;
+      ConsoleLine += char_str;
       Console->Strings[Console->Count - 1] = ConsoleLine;
     } else {
-      Console->Add(irst(""));
+      Console->Add("");
     }
   }
   setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
@@ -625,7 +627,6 @@ typedef basic_memobuf<char_t> memobuf_t;
 typedef basic_memobuf<char> memobuf;
 #endif //IRSSTRM_NEW_MEMOBUF
 
-#endif //defined(IRS_FULL_STDCPPLIB_SUPPORT)
 #endif //__BORLANDC__
 
 // Стандартная конфигурация консоли

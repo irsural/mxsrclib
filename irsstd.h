@@ -397,7 +397,7 @@ namespace arch_conio_cfg {
     mxdisp_pos_t a_width);
 } //namespace arch_conio_cfg
 
-#if !defined(IRSSTRM_NEW_MEMOBUF) || !defined(IRS_FULL_STDCPPLIB_SUPPORT)
+#ifndef IRSSTRM_NEW_MEMOBUF
 // Буфер стандартных потоков для Memo
 class memobuf: public streambuf
 {
@@ -413,7 +413,7 @@ private:
   auto_arr<char> m_outbuf;
   TMemo *mp_memo;
 };
-#endif //!defined(IRSSTRM_NEW_MEMOBUF) || !defined(IRS_FULL_STDCPPLIB_SUPPORT)
+#endif //IRSSTRM_NEW_MEMOBUF
 
 } //namespace irs
 #endif //__BORLANDC__
