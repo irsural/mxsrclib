@@ -44,7 +44,8 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_lock(false),
   m_f_osc(a_f_osc),
   m_spi_type(a_spi_type),
-  m_ssi_type(a_ssi_type)
+  m_ssi_type(a_ssi_type),
+  is_first_byte(false)//!!!
 {
   switch (m_ssi_type) {
     case SSI0:
@@ -487,10 +488,18 @@ irs_u8 irs::arm::arm_spi_t::read_data_register()
   switch (m_ssi_type) {
     case SSI0:
     {
+      irs_u8 ssi_data_register = SSI0DR;
+      if (is_first_byte) {
+        is_first_byte = false;
+        if (ssi_data_register >= 0x1B) {
+          mlog() << "";
+        }
+      }
       switch (m_spi_type) {
         case SPI:
         {
-          return SSI0DR;
+          return ssi_data_register;
+          //return SSI0DR;
         };
         case TISS:
         {
@@ -616,7 +625,14 @@ void irs::arm::arm_spi_t::tick()
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
               } else {
+                is_first_byte = true;
+                
                 mp_buf[m_cur_byte] = read_data_register();
+                #ifndef NOP
+                if (mp_buf[m_cur_byte] >= 0x1B) {
+                  mlog() << "";
+                }
+                #endif //NOP
                 write_data_register(m_cur_byte + 1);
                 m_cur_byte++;
               }

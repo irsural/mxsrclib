@@ -12,6 +12,7 @@
 
 #include <irsadc.h>
 #include <irsstrm.h>
+#include <timer.h>
 
 #include <irsfinal.h>
 
@@ -139,16 +140,27 @@ void irs::th_lm95071_t::tick()
     case TH_READ:
     {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
-        irs_u16 th_value = 0;
-        IRS_LOBYTE(th_value) = mp_spi_buf[1];
-        IRS_HIBYTE(th_value) = mp_spi_buf[0];
         mp_buf[0] = 1;
         mp_buf[1] = mp_spi_buf[1];
         mp_buf[2] = mp_spi_buf[0];
-        irs_i16 old_value = 0;
-        IRS_LOBYTE(old_value) = mp_buf[1];
-        IRS_HIBYTE(old_value) = mp_buf[2];
-        reinterpret_cast<irs_i16&>(mp_buf[1]) = old_value;
+        irs_u16& th_value = reinterpret_cast<irs_u16&>(mp_buf[1]);
+          
+  #ifdef NOP
+  if ((size_t)this == 0x20006380) {
+  //if ((size_t)this == 0x20006478) {
+    static int bug_cnt = 0;
+    if (th_value > 5000) {
+      bug_cnt++;
+    }
+    static loop_timer_t timer(make_cnt_s(1));
+    if (timer.check()) {
+      mlog() << CNT_TO_DBLTIME(counter_get());
+      mlog() << " bug_cnt = " << bug_cnt << endl;
+      bug_cnt = 0;
+    }
+  }
+  #endif //NOP
+  
         if (th_value != 0x800F) {
           m_connect = true;
           mp_cs_pin->set();
@@ -1332,8 +1344,8 @@ void irs::dac_ltc2622_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   m_need_write = true;
   if (mp_buf[0] & (1 << m_log_enable_pos))
   {
-    irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
-    irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
+    //irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
+    //irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
     #ifdef NOP
     mlog() << "LTC2622 0x" << this <<
       " set bit index = " << a_index << ", bit = " << a_bit_index <<

@@ -99,6 +99,7 @@ private:
   irs_u32 m_f_osc;
   spi_type_t m_spi_type;
   ssi_type_t m_ssi_type;
+  bool is_first_byte;//!!!
   
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();
