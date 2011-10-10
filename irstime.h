@@ -10,6 +10,8 @@
 
 #include <irsdefs.h>
 
+#include <time.h>
+
 #include <irsstring.h>
 #include <irsstrdefs.h>
 //#include <irsstrconv.h>
@@ -36,22 +38,29 @@ string_t ms_to_strtime(millisecond_t ms, bool show_ms = false);
 string_t cnt_to_strtime(counter_t cnt, bool show_ms = false);
 
 millisecond_t system_time();
+
 // Запись в поток текущего времени
 IRS_STRING_TEMPLATE
 inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM&
-  basic_stime(IRS_STRING_OSTREAM &a_strm)
+  basic_stime(IRS_STRING_OSTREAM &a_stream)
 {
   time_t timer = time(NULL);
   const tm* date = localtime(&timer);
-  a_strm << setfill(static_cast<T>('0'));
-  a_strm << setw(2) << date->tm_hour << static_cast<T>(':');
-  a_strm << setw(2) << date->tm_min << static_cast<T>(':');
-  a_strm << setw(2) << date->tm_sec << static_cast<T>(' ');
-  return a_strm;
+  a_stream << setfill(static_cast<IRS_STRING_CHAR_TYPE>('0'));
+  a_stream << setw(2) << date->tm_hour;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
+  a_stream << setw(2) << date->tm_min;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
+  a_stream << setw(2) << date->tm_sec;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(' ');
+  return a_stream;
 }
-IRS_STREAMSPECDECL ostream_t &stimet(ostream_t &a_strm);
-IRS_STREAMSPECDECL ostream &stime(ostream &a_strm);
-IRS_STREAMSPECDECL wostream &wstime(wostream &a_strm);
+IRS_STREAMSPECDECL ostream_t &stimet(ostream_t &a_stream);
+IRS_STREAMSPECDECL ostream &stime(ostream &a_stream);
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+IRS_STREAMSPECDECL wostream &wstime(wostream &a_stream);
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+
 // Запись в поток текущей даты и времени
 IRS_STRING_TEMPLATE
 inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
@@ -59,18 +68,27 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
 {
   time_t timer = time(NULL);
   const tm* date = localtime(&timer);
-  a_stream << setfill(static_cast<T>('0'));
-  a_stream << setw(2) << date->tm_mday << static_cast<T>('.');
-  a_stream << setw(2) << (date->tm_mon + 1) << static_cast<T>('.');
-  a_stream << setw(4) << (date->tm_year + 1900) << static_cast<T>(' ');
-  a_stream << setw(2) << date->tm_hour << static_cast<T>(':');
-  a_stream << setw(2) << date->tm_min << static_cast<T>(':');
-  a_stream << setw(2) << date->tm_sec << static_cast<T>(' ');
+  a_stream << setfill(static_cast<IRS_STRING_CHAR_TYPE>('0'));
+  a_stream << setw(2) << date->tm_mday;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>('.');
+  a_stream << setw(2) << (date->tm_mon + 1);
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>('.');
+  a_stream << setw(4) << (date->tm_year + 1900);
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(' ');
+  a_stream << setw(2) << date->tm_hour;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
+  a_stream << setw(2) << date->tm_min;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
+  a_stream << setw(2) << date->tm_sec;
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(' ');
   return a_stream;
 }
 IRS_STREAMSPECDECL ostream_t &sdatetimet(ostream_t &a_stream);
 IRS_STREAMSPECDECL ostream &sdatetime(ostream &a_stream);
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 IRS_STREAMSPECDECL wostream &wsdatetime(wostream &a_stream);
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+
 //возвращает текущую дату в формате ГМЧ ЧМС и добавляет введенное расширение
 //расширение вводить с точкой
 string_t file_name_time(string_t a_extension = string_t());

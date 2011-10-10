@@ -74,18 +74,20 @@ irs::millisecond_t irs::system_time()
 }
 
 // Запись в поток текущего времени
-IRS_STREAMSPECDECL irs::ostream_t &irs::stimet(ostream_t &a_strm)
+IRS_STREAMSPECDECL irs::ostream_t &irs::stimet(ostream_t &a_stream)
 {
-  return basic_stime(a_strm);
+  return basic_stime(a_stream);
 }
-IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_strm)
+IRS_STREAMSPECDECL ostream &irs::stime(ostream &a_stream)
 {
-  return basic_stime(a_strm);
+  return basic_stime(a_stream);
 }
-IRS_STREAMSPECDECL wostream &irs::wstime(wostream &a_strm)
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+IRS_STREAMSPECDECL wostream &irs::wstime(wostream &a_stream)
 {
-  return basic_stime(a_strm);
+  return basic_stime(a_stream);
 }
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 // Запись в поток текущей даты и времени
 IRS_STREAMSPECDECL irs::ostream_t &irs::sdatetimet(ostream_t &a_stream)
@@ -96,10 +98,12 @@ IRS_STREAMSPECDECL ostream &irs::sdatetime(ostream &a_stream)
 {
   return basic_sdatetime(a_stream);
 }
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 IRS_STREAMSPECDECL wostream &irs::wsdatetime(wostream &a_stream)
 {
   return basic_sdatetime(a_stream);
 }
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 irs::string_t irs::file_name_time(string_t a_extension)
 {

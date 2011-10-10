@@ -53,25 +53,25 @@ irs::arm::arm_spi_t::arm_spi_t(
       RCGC1_bit.SSI0 = 1;
       RCGC2_bit.PORTA = 1;
       for (irs_u8 i = 10; i; i--);
-      
+
       GPIOADEN_bit.no2 = 1;
       GPIOADIR_bit.no2 = 1;
       GPIOADEN_bit.no4 = 1;
       GPIOADIR_bit.no4 = 0;
       GPIOADEN_bit.no5 = 1;
       GPIOADIR_bit.no5 = 1;
-      
+
       GPIOAAFSEL_bit.no2 = 1;
       GPIOAAFSEL_bit.no4 = 1;
       GPIOAAFSEL_bit.no5 = 1;
-      
+
       GPIOAPCTL_bit.PMC2 = SSI0Clk;
       GPIOAPCTL_bit.PMC4 = SSI0Rx;
       GPIOAPCTL_bit.PMC5 = SSI0Tx;
-        
+
       SSI0CR1 = 0x0;
       SSI0CPSR = 0x2;
-       
+
       init_default();
     } break;
     case SSI1:
@@ -184,7 +184,7 @@ irs::arm::arm_spi_t::arm_spi_t(
       }
       SSI1CR1 = 0x0;
       SSI1CPSR = 0x2;
-      
+
       init_default();
     } break;
   }
@@ -619,6 +619,9 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if(SSI0SR_bit.RNE) {
+
+              for (;m_cur_byte < m_packet_size;) {
+
               if (m_cur_byte >= (m_packet_size - 1)) {
                 mp_buf[m_cur_byte] = read_data_register();
                 memcpy((void*)mp_target_buf, mp_buf.data(), m_packet_size);
@@ -626,7 +629,7 @@ void irs::arm::arm_spi_t::tick()
                 m_status = SPI_FREE;
               } else {
                 is_first_byte = true;
-                
+
                 mp_buf[m_cur_byte] = read_data_register();
                 #ifndef NOP
                 if (mp_buf[m_cur_byte] >= 0x1B) {
@@ -636,6 +639,9 @@ void irs::arm::arm_spi_t::tick()
                 write_data_register(m_cur_byte + 1);
                 m_cur_byte++;
               }
+
+              }
+
             }
           } break;
           case SSI1:
@@ -715,7 +721,7 @@ void irs::arm::arm_spi_t::tick()
   }
 }
 
-void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf, 
+void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   const irs_u8 *ap_write_buf, irs_uarc a_size)
 {
   if (mp_buf.size() && mp_rw_buf.size()) {
@@ -724,8 +730,8 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
       m_packet_size = m_buf_size;
     }
     mp_target_buf = ap_read_buf;
-    memcpyex(mp_buf.data(), ap_write_buf, m_packet_size);    
-  
+    memcpyex(mp_buf.data(), ap_write_buf, m_packet_size);
+
     m_cur_byte = 0;
     m_status = SPI_RW_WRITE;
   }
@@ -743,7 +749,7 @@ void irs::arm::arm_spi_t::init_default()
       SSI0CR0_bit.SPO = m_polarity;
       SSI0CR0_bit.FRF = m_spi_type;
       SSI0CR0_bit.DSS = 0x7; // 8-bit data
-      
+
       SSI0CR1_bit.SSE = 1;
     } break;
     case SSI1:
@@ -755,7 +761,7 @@ void irs::arm::arm_spi_t::init_default()
       SSI1CR0_bit.SPO = m_polarity;
       SSI1CR0_bit.FRF = m_spi_type;
       SSI1CR0_bit.DSS = 0x7; // 8-bit data
-      
+
       SSI1CR1_bit.SSE = 1;
     } break;
   }
