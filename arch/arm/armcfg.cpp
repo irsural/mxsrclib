@@ -1,5 +1,10 @@
+#include <irspch.h>
+
 #include <armcfg.h>
 #include <armioregs.h>
+#include <irscpu.h>
+
+#include <irsfinal.h>
 
 void pll_on()
 {
@@ -15,6 +20,7 @@ void pll_on()
   RCC_bit.USESYS = 1;   //  Enable System Clock Divider
   while (!RIS_bit.PLLLRIS); //  Wait for PLL lock
   RCC_bit.BYPASS = 0;   //  Clocking from PLL source
+  irs::cpu_traits_t::frequency(50000000);
   #elif __LM3SxBxx__
   RCC2_bit.USERCC2 = 1; // Use RCC2 bit field
   RCC2_bit.DIV400 = 1;
@@ -28,5 +34,6 @@ void pll_on()
   RCC_bit.USESYS = 1;   //  Enable System Clock Divider
   while (!RIS_bit.PLLLRIS); //  Wait for PLL lock
   RCC2_bit.BYPASS2 = 0;   //  Clocking from PLL source
+  irs::cpu_traits_t::frequency(80000000);
   #endif // ARM_devices
 }

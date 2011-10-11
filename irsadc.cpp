@@ -144,23 +144,6 @@ void irs::th_lm95071_t::tick()
         mp_buf[1] = mp_spi_buf[1];
         mp_buf[2] = mp_spi_buf[0];
         irs_u16& th_value = reinterpret_cast<irs_u16&>(mp_buf[1]);
-          
-  #ifdef NOP
-  if ((size_t)this == 0x20006380) {
-  //if ((size_t)this == 0x20006478) {
-    static int bug_cnt = 0;
-    if (th_value > 5000) {
-      bug_cnt++;
-    }
-    static loop_timer_t timer(make_cnt_s(1));
-    if (timer.check()) {
-      mlog() << CNT_TO_DBLTIME(counter_get());
-      mlog() << " bug_cnt = " << bug_cnt << endl;
-      bug_cnt = 0;
-    }
-  }
-  #endif //NOP
-  
         if (th_value != 0x800F) {
           m_connect = true;
           mp_cs_pin->set();

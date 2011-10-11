@@ -36,13 +36,13 @@ public:
   };
   
   arm_spi_t(
+    irs_u32 a_bitrate,
     irs_u8 a_buffer_size,
-    irs_u32 a_f_osc,
     spi_type_t a_spi_type = SPI,
     ssi_type_t a_ssi_type = SSI0,
-    arm_port_t &a_clk_port = GPIO_PORTH,
-    arm_port_t &a_rx_port = GPIO_PORTH,
-    arm_port_t &a_tx_port = GPIO_PORTH
+    arm_port_t& a_clk_port = GPIO_PORTH,
+    arm_port_t& a_rx_port = GPIO_PORTH,
+    arm_port_t& a_tx_port = GPIO_PORTH
   );
   virtual ~arm_spi_t();
   virtual void abort();
@@ -55,6 +55,7 @@ public:
   virtual bool set_bitrate(irs_u32 a_bitrate);
   virtual bool set_polarity(polarity_t a_polarity);
   virtual bool set_phase(phase_t a_phase);
+  // Контроллер поддерживает только MSB
   virtual bool set_order(order_t /*a_order*/);
   virtual bool set_data_size(irs_u16 a_data_size);
   virtual void tick();
@@ -82,6 +83,13 @@ private:
     SSI1Rx_H = 0xB,
     SSI1Tx_H = 0xB
   };
+  struct reg_t {
+    volatile __ssicr0_bits* mp_SSICR0_bit;
+    volatile __ssicr1_bits* mp_SSICR1_bit;
+    volatile unsigned char* mp_SSICPSR;
+    
+    reg_t(ssi_type_t a_ssi_type);
+  };
   
   cur_status_t m_status;
   raw_data_t<irs_u8> mp_buf;
@@ -90,16 +98,16 @@ private:
   irs_u8 m_buf_size;
   irs_u8 m_cur_byte;
   irs_u8 m_packet_size;
-  irs_u32 m_bitrate;
-  polarity_t m_polarity;
-  phase_t m_phase;
-  order_t m_order;
+  const irs_u32 m_bitrate_def;
+  const polarity_t m_polarity_def;
+  const phase_t m_phase_def;
+  const order_t m_order_def;
+  const irs_u16 m_data_size_def;
   bool m_buf_empty;
   bool m_lock;
-  irs_u32 m_f_osc;
   spi_type_t m_spi_type;
   ssi_type_t m_ssi_type;
-  bool is_first_byte;//!!!
+  reg_t m_reg;
   
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();

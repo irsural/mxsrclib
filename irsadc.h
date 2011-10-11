@@ -34,6 +34,7 @@ class th_lm95071_t : public mxdata_t
 
   static const irs_uarc m_spi_size = 2;
   static const irs_uarc m_size = 3;
+  
   status_t m_status;
   spi_t *mp_spi;
   const float m_conv_koef;

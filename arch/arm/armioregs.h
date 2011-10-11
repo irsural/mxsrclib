@@ -1320,6 +1320,7 @@ typedef struct {
   __REG32  SSE            : 1;
   __REG32  MS             : 1;
   __REG32  SOD            : 1;
+  __REG32  EOT            : 1;
   __REG32                 :28;
 } __ssicr1_bits;
 
@@ -3919,7 +3920,7 @@ __IO_REG8(     SSI1CPSR,           0x40009010,__READ_WRITE);
 __IO_REG32_BIT(SSI1IM,             0x40009014,__READ_WRITE ,__ssiim_bits);
 __IO_REG32_BIT(SSI1RIS,            0x40009018,__READ       ,__ssiris_bits);
 __IO_REG32_BIT(SSI1MIS,            0x4000901C,__READ       ,__ssimis_bits);
-__IO_REG32_BIT(SSI1ICR,            0x40009020,__WRITE 		 ,__ssiicr_bits);
+__IO_REG32_BIT(SSI1ICR,            0x40009020,__WRITE      ,__ssiicr_bits);
 __IO_REG8(     SSI1PERIPHID4,      0x40009FD0,__READ);
 __IO_REG8(     SSI1PERIPHID5,      0x40009FD4,__READ);
 __IO_REG8(     SSI1PERIPHID6,      0x40009FD8,__READ);

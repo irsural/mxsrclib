@@ -9,6 +9,7 @@
 
 #include <armspi.h>
 #include <armioregs.h>
+#include <irscpu.h>
 
 #include <irsfinal.h>
 
@@ -21,8 +22,8 @@ SSIISR_bit.TFE // буфер на передачу пуст
 */
 
 irs::arm::arm_spi_t::arm_spi_t(
+  irs_u32 a_bitrate,
   irs_u8 a_buffer_size,
-  irs_u32 a_f_osc,
   spi_type_t a_spi_type,
   ssi_type_t a_ssi_type,
   arm_port_t &a_clk_port,
@@ -36,16 +37,16 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_buf_size(a_buffer_size),
   m_cur_byte(0),
   m_packet_size(0),
-  m_bitrate(1000000),
-  m_polarity(FALLING_EDGE),
-  m_phase(LEAD_EDGE),
-  m_order(MSB),
+  m_bitrate_def(a_bitrate),
+  m_polarity_def(FALLING_EDGE),
+  m_phase_def(LEAD_EDGE),
+  m_order_def(MSB),
+  m_data_size_def(8),
   m_buf_empty(true),
   m_lock(false),
-  m_f_osc(a_f_osc),
   m_spi_type(a_spi_type),
   m_ssi_type(a_ssi_type),
-  is_first_byte(false)//!!!
+  m_reg(m_ssi_type)
 {
   switch (m_ssi_type) {
     case SSI0:
@@ -68,11 +69,6 @@ irs::arm::arm_spi_t::arm_spi_t(
       GPIOAPCTL_bit.PMC2 = SSI0Clk;
       GPIOAPCTL_bit.PMC4 = SSI0Rx;
       GPIOAPCTL_bit.PMC5 = SSI0Tx;
-
-      SSI0CR1 = 0x0;
-      SSI0CPSR = 0x2;
-
-      init_default();
     } break;
     case SSI1:
     {
@@ -182,10 +178,39 @@ irs::arm::arm_spi_t::arm_spi_t(
             "Неверно указан порт при инициализации SPI1");
         } break;
       }
-      SSI1CR1 = 0x0;
-      SSI1CPSR = 0x2;
+    } break;
+  }
+  
+  init_default();
+  
+  // Эта строки обязательно должны стоять после init_default
+  m_reg.mp_SSICR1_bit->SSE = 0;
 
-      init_default();
+  m_reg.mp_SSICR1_bit->LBM = 0;
+  m_reg.mp_SSICR1_bit->MS  = 0;
+  m_reg.mp_SSICR1_bit->SOD = 0;
+  m_reg.mp_SSICR1_bit->EOT = 0;
+  
+  m_reg.mp_SSICR0_bit->FRF = m_spi_type;
+  
+  m_reg.mp_SSICR1_bit->SSE = 1;
+}
+
+irs::arm::arm_spi_t::reg_t::reg_t(ssi_type_t a_ssi_type):
+  mp_SSICR0_bit(IRS_NULL),
+  mp_SSICR1_bit(IRS_NULL),
+  mp_SSICPSR(IRS_NULL)
+{
+  switch (a_ssi_type) {
+    case SSI0: {
+      mp_SSICR0_bit = &SSI0CR0_bit;
+      mp_SSICR1_bit = &SSI0CR1_bit;
+      mp_SSICPSR = &SSI0CPSR;
+    } break;
+    case SSI1: {
+      mp_SSICR0_bit = &SSI1CR0_bit;
+      mp_SSICR1_bit = &SSI1CR1_bit;
+      mp_SSICPSR = &SSI1CPSR;
     } break;
   }
 }
@@ -215,49 +240,35 @@ irs::spi_t::status_t irs::arm::arm_spi_t::get_status()
 bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
 {
   if (m_status == SPI_FREE) {
-    if (a_bitrate >= 2000000) {
-      switch (m_ssi_type) {
-        case SSI0:
-        {
-          switch (m_spi_type)
-          {
-            case SPI:
-            {
-              SSI0CR1_bit.SSE = 0;
-              SSI0CR0_bit.SCR = (m_f_osc/(SSI0CPSR*a_bitrate)) - 1;
-              SSI0CR1_bit.SSE = 1;
-            } break;
-            case TISS:
-            {
-            } break;
-            case MICROWIRE:
-            {
-            } break;
+    switch (m_spi_type) {
+      case SPI: {
+        m_reg.mp_SSICR1_bit->SSE = 0;
+        
+        static const irs_u8 SSICPSR_max = 254;
+        const irs_u32 cpu_frequency = cpu_traits_t::frequency();
+        
+        irs_u32 SSICPSR_prior = 
+          2*(cpu_frequency/(2*a_bitrate*(1 + IRS_U8_MAX)) + 1);
+        if (SSICPSR_prior <= SSICPSR_max) {
+          (*m_reg.mp_SSICPSR) = SSICPSR_prior;
+          irs_u32 SCR_prior = (cpu_frequency/(a_bitrate*SSICPSR_prior));
+          if (SCR_prior > 0) {
+            SCR_prior--;
           }
-        } break;
-        case SSI1:
-        {
-          switch (m_spi_type)
-          {
-            case SPI:
-            {
-              SSI1CR1_bit.SSE = 0;
-              SSI1CR0_bit.SCR = (m_f_osc/(SSI1CPSR*a_bitrate)) - 1;
-              SSI1CR1_bit.SSE = 1;
-            } break;
-            case TISS:
-            {
-            } break;
-            case MICROWIRE:
-            {
-            } break;
-          }
-        } break;
-      }
-      return true;
-    } else {
-      return false;
+          m_reg.mp_SSICR0_bit->SCR = SCR_prior;
+        } else {
+          (*m_reg.mp_SSICPSR) = SSICPSR_max;
+          m_reg.mp_SSICR0_bit->SCR = IRS_U8_MAX;
+        }
+        
+        m_reg.mp_SSICR1_bit->SSE = 1;
+      } break;
+      case TISS: {
+      } break;
+      case MICROWIRE: {
+      } break;
     }
+    return true;
   } else {
     return false;
   }
@@ -488,18 +499,10 @@ irs_u8 irs::arm::arm_spi_t::read_data_register()
   switch (m_ssi_type) {
     case SSI0:
     {
-      irs_u8 ssi_data_register = SSI0DR;
-      if (is_first_byte) {
-        is_first_byte = false;
-        if (ssi_data_register >= 0x1B) {
-          mlog() << "";
-        }
-      }
       switch (m_spi_type) {
         case SPI:
         {
-          return ssi_data_register;
-          //return SSI0DR;
+          return SSI0DR;
         };
         case TISS:
         {
@@ -619,29 +622,16 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if(SSI0SR_bit.RNE) {
-
-              for (;m_cur_byte < m_packet_size;) {
-
               if (m_cur_byte >= (m_packet_size - 1)) {
                 mp_buf[m_cur_byte] = read_data_register();
                 memcpy((void*)mp_target_buf, mp_buf.data(), m_packet_size);
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
               } else {
-                is_first_byte = true;
-
                 mp_buf[m_cur_byte] = read_data_register();
-                #ifndef NOP
-                if (mp_buf[m_cur_byte] >= 0x1B) {
-                  mlog() << "";
-                }
-                #endif //NOP
                 write_data_register(m_cur_byte + 1);
                 m_cur_byte++;
               }
-
-              }
-
             }
           } break;
           case SSI1:
@@ -739,31 +729,14 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
 
 void irs::arm::arm_spi_t::init_default()
 {
-  switch (m_ssi_type) {
-    case SSI0:
-    {
-      SSI0CR1_bit.SSE = 0;
-
-      SSI0CR0_bit.SCR = (m_f_osc/(SSI0CPSR*m_bitrate)) - 1;
-      SSI0CR0_bit.SPH = m_phase;
-      SSI0CR0_bit.SPO = m_polarity;
-      SSI0CR0_bit.FRF = m_spi_type;
-      SSI0CR0_bit.DSS = 0x7; // 8-bit data
-
-      SSI0CR1_bit.SSE = 1;
-    } break;
-    case SSI1:
-    {
-      SSI1CR1_bit.SSE = 0;
-
-      SSI1CR0_bit.SCR = (m_f_osc/(SSI1CPSR*m_bitrate)) - 1;
-      SSI1CR0_bit.SPH = m_phase;
-      SSI1CR0_bit.SPO = m_polarity;
-      SSI1CR0_bit.FRF = m_spi_type;
-      SSI1CR0_bit.DSS = 0x7; // 8-bit data
-
-      SSI1CR1_bit.SSE = 1;
-    } break;
-  }
+  set_bitrate(m_bitrate_def);
+    
+  m_reg.mp_SSICR1_bit->SSE = 0;
+  
+  m_reg.mp_SSICR0_bit->SPH = m_phase_def;
+  m_reg.mp_SSICR0_bit->SPO = m_polarity_def;
+  m_reg.mp_SSICR0_bit->DSS = m_data_size_def - 1; // 8-bit data
+  
+  m_reg.mp_SSICR1_bit->SSE = 1;
 }
 
