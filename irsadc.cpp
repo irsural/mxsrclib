@@ -1325,16 +1325,16 @@ void irs::dac_ltc2622_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   mp_buf[a_index] |= irs_u8(1 << a_bit_index);
   mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
+  #ifdef NOP
   if (mp_buf[0] & (1 << m_log_enable_pos))
   {
     //irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
     //irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
-    #ifdef NOP
     mlog() << "LTC2622 0x" << this <<
       " set bit index = " << a_index << ", bit = " << a_bit_index <<
       ", A = " << dac_value_A << ", B = " << dac_value_B << endl;
-    #endif //NOP
   }
+  #endif //NOP
 }
 
 void irs::dac_ltc2622_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
