@@ -309,12 +309,15 @@ void irs::arm::arm_ethernet_t::tick()
           = (m_rx_size - shift) / sizeof(fifo_data);
         irs_size_t current_dword = 0;
 
+        #ifndef NOP
         #ifdef ARMETH_DBGMSG
         irs_u8* p_rx_buf_end = mp_rx_buf + m_rx_buf_size;
         #endif //ARMETH_DBGMSG
+        #endif //NOP
 
         for (; current_dword < whole_dwords_cnt; current_dword++) {
 
+          #ifndef NOP
           #ifdef ARMETH_DBGMSG
           irs_u8* p_begin = reinterpret_cast<irs_u8*>(p_shifted_buf +
             current_dword);
@@ -332,6 +335,7 @@ void irs::arm::arm_ethernet_t::tick()
             continue;
           }
           #endif //ARMETH_DBGMSG
+          #endif //NOP
 
           p_shifted_buf[current_dword] = MACDATA;
         }
