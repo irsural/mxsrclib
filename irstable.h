@@ -1071,32 +1071,39 @@ template <class cell_type_t>
 inline void table_united_cells_t<cell_type_t>::union_off(
   const diapason_type& a_diapason)
 {
-  cell_param_t param_for_autonomous;
-  param_for_autonomous.autonomous = true;
-  for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++)
-  {
-    for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom; row_i++)
-    {
-      const cell_t& cell = m_table.read_cell(col_i, row_i);
-      if (!cell.param.autonomous) {
-        diapason_type diapason = cell.param.diapason;
-        for (size_type diapason_col_i = diapason.left;
-          diapason_col_i <= diapason.right;
-          diapason_col_i++)
-        {
-          for (size_type diapason_row_i = diapason.top;
-            diapason_row_i <= diapason.bottom;
-            diapason_row_i++)
+  if ((a_diapason.right < m_table.get_col_count()) &&
+    (a_diapason.bottom < m_table.get_row_count()) &&
+    (a_diapason.left < a_diapason.right) &&
+    (a_diapason.top < a_diapason.bottom)) {
+    cell_param_t param_for_autonomous;
+    param_for_autonomous.autonomous = true;
+    for (size_type col_i = a_diapason.left; col_i <= a_diapason.right;
+      col_i++) {
+      for (size_type row_i = a_diapason.top; row_i <= a_diapason.bottom;
+        row_i++) {
+        const cell_t& cell = m_table.read_cell(col_i, row_i);
+        if (!cell.param.autonomous) {
+          diapason_type diapason = cell.param.diapason;
+          for (size_type diapason_col_i = diapason.left;
+            diapason_col_i <= diapason.right;
+            diapason_col_i++)
           {
-            cell_t& cell_from_subdiapason =
-              m_table.read_cell(diapason_col_i, diapason_row_i);
-            cell_from_subdiapason.param.autonomous = true;
+            for (size_type diapason_row_i = diapason.top;
+              diapason_row_i <= diapason.bottom;
+              diapason_row_i++)
+            {
+              cell_t& cell_from_subdiapason =
+                m_table.read_cell(diapason_col_i, diapason_row_i);
+              cell_from_subdiapason.param.autonomous = true;
+            }
           }
+        } else {
+          // ячейка уже автономна€
         }
-      } else {
-        // ячейка уже автономна€
       }
     }
+  } else {
+    IRS_LIB_ASSERT_MSG("”казан недопустимый диапазон");
   }
 }
 
@@ -1105,10 +1112,16 @@ inline bool table_united_cells_t<cell_type_t>::is_diapason_for_union_valid(
   const diapason_type& a_diapason) const
 {
   bool diapason_success = true;
-  if ((a_diapason.width() <= 1) && (a_diapason.height() <= 1)) {
+   if ((a_diapason.width() <= 1) && (a_diapason.height() <= 1)) {
     diapason_success = false;
   } else {
     // ƒиапазон охватывает более одной €чеки
+  }
+  if ((a_diapason.right >= m_table.get_col_count()) ||
+    (a_diapason.bottom >= m_table.get_row_count()) ||
+    (a_diapason.left > a_diapason.right) ||
+    (a_diapason.top > a_diapason.bottom)) {
+    diapason_success = false;
   }
   for (size_type col_i = a_diapason.left; col_i <= a_diapason.right; col_i++)
   {
@@ -1175,8 +1188,8 @@ template <class cell_type_t>
 inline bool table_united_cells_t<cell_type_t>::is_diapason_single_cell(
   const diapason_type& a_diapason) const
 {
-  IRS_LIB_ASSERT(a_diapason.left < a_diapason.right);
-  IRS_LIB_ASSERT(a_diapason.top < a_diapason.bottom);
+  IRS_LIB_ASSERT(a_diapason.left <= a_diapason.right);
+  IRS_LIB_ASSERT(a_diapason.top <= a_diapason.bottom);
   return (a_diapason.width() <= 1) && (a_diapason.height() <= 1);
 }
 

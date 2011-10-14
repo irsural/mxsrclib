@@ -300,14 +300,14 @@ irs::string irs::error_str(int a_error_code)
   irs::string message;
   #if defined(IRS_WIN32)
   LPVOID lpMsgBuf;
-  FormatMessage(
+  FormatMessageA(
     FORMAT_MESSAGE_ALLOCATE_BUFFER |
     FORMAT_MESSAGE_FROM_SYSTEM |
     FORMAT_MESSAGE_IGNORE_INSERTS,
     NULL,
     a_error_code,
     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    (LPTSTR) &lpMsgBuf,
+    (LPSTR) &lpMsgBuf,
     0,
     NULL);
   message = static_cast<char*>(lpMsgBuf);

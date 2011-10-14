@@ -94,7 +94,7 @@ bool irs::cbuilder::get_file_version(
   bool fsuccess = true;
   const int file_name_size = a_file_name.size();
   char_t* file_name = new char_t[file_name_size+1];
-  memcpy(file_name, a_file_name.c_str(), file_name_size+1);
+  irs::memcpyex(file_name, a_file_name.c_str(), file_name_size+1);
   LPVOID MS = IRS_NULL;
   LPVOID pBlock = IRS_NULL;
   UINT len;
@@ -102,6 +102,7 @@ bool irs::cbuilder::get_file_version(
   DWORD info_size = GetFileVersionInfoSize(file_name, NULL);
   if(info_size == 0) {
     fsuccess = false;
+    IRS_DBG_MSG(last_error_str());
   }
   if (fsuccess) {
     // буфер для информации о версии файла
