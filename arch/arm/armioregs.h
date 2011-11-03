@@ -67,11 +67,106 @@
 #define GPIO_LOCK 0x520
 #define GPIO_CR 0x524
 
+#define PIN_0 0
+#define PIN_1 1
+#define PIN_2 2
+#define PIN_3 3
+#define PIN_4 4
+#define PIN_5 5
+#define PIN_6 6
+#define PIN_7 7
+
+typedef enum {
+  PA0 = 0,
+  PA1 = 1,
+  PA2 = 2,
+  PA3 = 3,
+  PA4 = 4,
+  PA5 = 5,
+  PA6 = 6,
+  PA7 = 7,
+
+  PB0 = 8,
+  PB1 = 9,
+  PB2 = 10,
+  PB3 = 11,
+  PB4 = 12,
+  PB5 = 13,
+  PB6 = 14,
+  PB7 = 15,
+
+  PC0 = 16,
+  PC1 = 17,
+  PC2 = 18,
+  PC3 = 19,
+  PC4 = 20,
+  PC5 = 21,
+  PC6 = 22,
+  PC7 = 23,
+
+  PD0 = 24,
+  PD1 = 25,
+  PD2 = 26,
+  PD3 = 27,
+  PD4 = 28,
+  PD5 = 29,
+  PD6 = 30,
+  PD7 = 31,
+
+  PE0 = 32,
+  PE1 = 33,
+  PE2 = 34,
+  PE3 = 35,
+  PE4 = 36,
+  PE5 = 37,
+  PE6 = 38,
+  PE7 = 39,
+
+  PF0 = 40,
+  PF1 = 41,
+  PF2 = 42,
+  PF3 = 43,
+  PF4 = 44,
+  PF5 = 45,
+  PF6 = 46,
+  PF7 = 47,
+
+  PG0 = 48,
+  PG1 = 49,
+  PG2 = 50,
+  PG3 = 51,
+  PG4 = 52,
+  PG5 = 53,
+  PG6 = 54,
+  PG7 = 55,
+
+  PH0 = 56,
+  PH1 = 57,
+  PH2 = 58,
+  PH3 = 59,
+  PH4 = 60,
+  PH5 = 61,
+  PH6 = 62,
+  PH7 = 63
+  #ifdef __LM3SxBxx__
+  ,
+  PJ0 = 64,
+  PJ1 = 65,
+  PJ2 = 66,
+  PJ3 = 67,
+  PJ4 = 68,
+  PJ5 = 69,
+  PJ6 = 70,
+  PJ7 = 71
+  #endif  //  __LM3SxBxx__
+} gpio_channel_t;
+
 #ifdef __LM3SxBxx__
 
 #define PORTJ_BASE 0x4003D000
 
 #define GPIO_PORTJ (*((volatile irs_u32 *) PORTJ_BASE))
+
 
 #define GPIO_AMSEL 0x528
 #define GPIO_PCTL 0x52C
@@ -605,6 +700,53 @@ typedef struct {
   __REG32  no7            : 1;
   __REG32                 :24;
 } __gpio_bits;
+
+/*  General purpose timers  */
+
+#define GPTM0_BASE 0x40030000
+#define GPTM1_BASE 0x40031000
+#define GPTM2_BASE 0x40032000
+#define GPTM3_BASE 0x40033000
+
+#define GPTM_CFG        0x000
+#define GPTM_TAMR       0x004
+#define GPTM_TBMR       0x008
+#define GPTM_CTL        0x00C
+#define GPTM_IMR        0x018
+#define GPTM_RIS        0x01C
+#define GPTM_MIS        0x020
+#define GPTM_ICR        0x024
+#define GPTM_TAILR      0x028
+#define GPTM_TBILR      0x02C
+#define GPTM_TAMATCHR   0x030
+#define GPTM_TBMATCHR   0x034
+#define GPTM_TAPR       0x038
+#define GPTM_TBPR       0x03C
+#define GPTM_TAPMR      0x040
+#define GPTM_TBPMR      0x044
+#define GPTM_TAR        0x048
+#define GPTM_TBR        0x04C
+#define GPTM_TAV        0x050
+#define GPTM_TBV        0x054
+
+#define GPTM_32_BIT     0x0
+#define GPTM_32_BIT_RTC 0x1
+#define GPTM_16_BIT     0x4
+
+#define GPTM_ONE_SHOT       0x1
+#define GPTM_PERIODIC_MODE  0x2
+#define GPTM_CAPTURE_MODE   0x3
+
+typedef enum {
+  GPTM_CCP0 = 0,
+  GPTM_CCP1 = 1,
+  GPTM_CCP2 = 2,
+  GPTM_CCP3 = 3,
+  GPTM_CCP4 = 4,
+  GPTM_CCP5 = 5,
+  GPTM_CCP6 = 6,
+  GPTM_CCP7 = 7
+} gptm_channel_t;
 
 /* GPTM Configuration (GPTMCFG) */
 typedef struct {

@@ -31,9 +31,15 @@ class th_lm95071_t : public mxdata_t
     TH_READ,
     TH_RESET
   };
-
-  static const irs_uarc m_spi_size = 2;
-  static const irs_uarc m_size = 3;
+  enum
+  {
+    m_spi_size = 2,
+    m_size = 3,
+    m_stop_bit = 1,
+    m_new_data_bit = 0,
+    m_control_byte = 0
+  };
+  
   
   status_t m_status;
   spi_t *mp_spi;
@@ -63,10 +69,12 @@ public:
 struct th_lm95071_data_t
 {
   irs::bit_data_t new_data_bit;
+  irs::bit_data_t stop_bit;
   irs::conn_data_t<irs_i16> temperature_code;
   
   th_lm95071_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     new_data_bit(),
+    stop_bit(),
     temperature_code()
   {
     connect(ap_data, a_start_index);    
@@ -75,7 +83,8 @@ struct th_lm95071_data_t
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
-    index = new_data_bit.connect(ap_data, index, 0);
+    new_data_bit.connect(ap_data, index, 0);
+    stop_bit.connect(ap_data, index, 1);
     index++;
     index = temperature_code.connect(ap_data, index);
   }

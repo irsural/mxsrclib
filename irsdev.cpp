@@ -25,6 +25,12 @@
 
 #ifdef __ICCARM__
 
+//  ‘лаги зан€тости таймеров общего назначени€
+irs::arm::gptm_usage_t& gptm_usage() {
+  static irs::arm::gptm_usage_t gptm_usage_obj;
+  return gptm_usage_obj;
+}
+
 irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   counter_t a_dead_time):
 
@@ -301,5 +307,269 @@ void irs::arm::arm_three_phase_pwm_t::interrupt()
   //GPIOBDATA_bit.no6 = 0;
 }
 #endif  //  PWM_ZERO_PULSE
+
+irs::arm::gptm_generator_t::gptm_generator_t(gpio_channel_t a_gpio_channel,
+  cpu_traits_t::frequency_type a_frequency, float a_duty):
+  m_valid_input_data(false),
+  m_gptm_channel(GPTM_CCP0),
+  m_enable_bit(0),
+  mp_enable_reg(IRS_NULL),
+  mp_load_reg(IRS_NULL),
+  mp_match_reg(IRS_NULL),
+  m_gpio_base(IRS_NULL)
+{
+  #ifdef __LM3SxBxx__
+  irs_u8 gpio_pmc_value = 0;
+  switch (a_gpio_channel) {
+    case PA6: {
+      if (gptm_usage().channel_free(GPTM_CCP1)) {
+        m_gptm_channel = GPTM_CCP1;
+        gpio_pmc_value = 2;
+        m_valid_input_data = true;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "”казанный при инициализации GPTM пин зан€т");
+      }
+      break;
+    }
+    case PA7: {
+      if (gptm_usage().channel_free(GPTM_CCP3)) {
+        m_gptm_channel = GPTM_CCP3;
+        gpio_pmc_value = 7;
+        m_valid_input_data = true;
+      } else if (gptm_usage().channel_free(GPTM_CCP4)) {
+        m_gptm_channel = GPTM_CCP4;
+        gpio_pmc_value = 2;
+        m_valid_input_data = true;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "”казанный при инициализации GPTM пин зан€т");
+      }
+      break;
+    }
+    case PB0: {
+      if (gptm_usage().channel_free(GPTM_CCP0)) {
+        m_gptm_channel = GPTM_CCP0;
+        gpio_pmc_value = 1;
+        m_valid_input_data = true;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "”казанный при инициализации GPTM пин зан€т");
+      }
+      break;
+    }
+    case PE1: {
+      if (gptm_usage().channel_free(GPTM_CCP2)) {
+        m_gptm_channel = GPTM_CCP2;
+        gpio_pmc_value = 4;
+        m_valid_input_data = true;
+      } else if (gptm_usage().channel_free(GPTM_CCP6)) {
+        m_gptm_channel = GPTM_CCP6;
+        gpio_pmc_value = 5;
+        m_valid_input_data = true;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "”казанный при инициализации GPTM пин зан€т");
+      }
+      break;
+    }
+    case PF4: {
+      if (gptm_usage().channel_free(GPTM_CCP0)) {
+        m_gptm_channel = GPTM_CCP0;
+        gpio_pmc_value = 1;
+        m_valid_input_data = true;
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "”казанный при инициализации GPTM пин зан€т");
+      }
+      break;
+    }
+    //  ќстальные - дописать по мере надобности
+    default:
+    {
+      IRS_LIB_ERROR(ec_standard, "Ќеверно указан порт при инициализации GPTM");
+    }
+  }
+  #endif  //  __LM3SxBxx__
+  if (m_valid_input_data) {
+    init_gpio_port(a_gpio_channel, gpio_pmc_value);
+    init_gptm_channel(m_gptm_channel, a_frequency, a_duty);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "ќй! Ќе получилось инициализировать GPTM!");
+  }
+}
+
+irs::arm::gptm_generator_t::~gptm_generator_t()
+{
+}
+
+void irs::arm::gptm_generator_t::start()
+{
+  if (m_valid_input_data) {
+    *mp_enable_reg |= (1 << m_enable_bit);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+}
+
+void irs::arm::gptm_generator_t::stop()
+{
+  if (m_valid_input_data) {
+    *mp_enable_reg &= ~(1 << m_enable_bit);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+}
+
+void irs::arm::gptm_generator_t::set_duty(irs_uarc a_duty)
+{
+  if (m_valid_input_data) {
+    bool need_restart = *mp_enable_reg & (1 << m_enable_bit);
+    *mp_enable_reg &= ~(1 << m_enable_bit);
+    if (*mp_load_reg - 1 > a_duty) a_duty = *mp_load_reg - 1;
+    *mp_match_reg = a_duty;
+    if (need_restart) *mp_enable_reg |= (1 << m_enable_bit);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+}
+
+void irs::arm::gptm_generator_t::set_duty(float a_duty)
+{
+  if (m_valid_input_data) {
+    bool need_restart = *mp_enable_reg & (1 << m_enable_bit);
+    *mp_enable_reg &= ~(1 << m_enable_bit);
+    irs_u16 match_maximum = *mp_load_reg - 1;
+    //  *mp_load_reg != 0 никогда
+    irs_u16 match_value
+      = static_cast<irs_u16>(a_duty * static_cast<float>(match_maximum));
+    if (match_value > match_maximum) match_value = match_maximum;
+    *mp_match_reg = match_value;
+    if (need_restart) *mp_enable_reg |= (1 << m_enable_bit);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::gptm_generator_t::set_frequency(
+  cpu_traits_t::frequency_type a_frequency)
+{
+  if (m_valid_input_data) {
+    bool need_restart = *mp_enable_reg & (1 << m_enable_bit);
+    *mp_enable_reg &= ~(1 << m_enable_bit);
+    *mp_load_reg = calc_load_value(a_frequency);
+    if (need_restart) *mp_enable_reg |= (1 << m_enable_bit);
+    return cpu_traits_t::frequency() / (1 + *mp_load_reg);
+  } else {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+    return 0;
+  }
+}
+
+irs_uarc irs::arm::gptm_generator_t::get_max_duty()
+{
+  if (!m_valid_input_data) {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+  return *mp_load_reg;
+}
+
+irs::cpu_traits_t::frequency_type
+irs::arm::gptm_generator_t::get_max_frequency()
+{
+  if (!m_valid_input_data) {
+    IRS_LIB_ERROR(ec_standard, "GPTM не инициализирован");
+  }
+  return cpu_traits_t::frequency() / 2;
+}
+
+void irs::arm::gptm_generator_t::init_gptm_channel(
+  gptm_channel_t a_gptm_channel, cpu_traits_t::frequency_type a_frequency,
+  float a_duty)
+{
+  gptm_usage().set_channel_use(a_gptm_channel);
+  m_valid_input_data = true;
+
+  enum {
+    clock_register_shift = 16,
+    base_shift = 12,
+    enable_shift = 8,
+    ams_shift = 3,
+    mode_reg_shift = GPTM_TAMR,
+    load_reg_shift = GPTM_TAILR,
+    match_reg_shift = GPTM_TAMATCHR
+  };
+  irs_u8 gptm_num = a_gptm_channel >> 1;
+  irs_u8 gptm_odd = a_gptm_channel & 1;
+  arm_port_t gptm_base = GPTM0_BASE + (gptm_num << base_shift);
+
+  m_enable_bit = enable_shift * gptm_odd;
+  mp_enable_reg = reinterpret_cast<p_arm_port_t>(gptm_base + GPTM_CTL);
+  mp_load_reg = reinterpret_cast<p_arm_port_t>(gptm_base + load_reg_shift
+    + gptm_odd * sizeof(arm_port_t));
+  mp_match_reg = reinterpret_cast<p_arm_port_t>(gptm_base + match_reg_shift
+    + gptm_odd * sizeof(arm_port_t));
+
+  RCGC1 |= (1 << (clock_register_shift + gptm_num));
+  for (irs_u8 i = 10; i; i--);
+
+  *mp_enable_reg &= ~(1 << m_enable_bit);
+
+  *reinterpret_cast<p_arm_port_t>(gptm_base + GPTM_CFG) = GPTM_16_BIT;
+  *reinterpret_cast<p_arm_port_t>(gptm_base + mode_reg_shift * (1 + gptm_odd))
+    = GPTM_PERIODIC_MODE | (1 << ams_shift); //  в том числе очистка регистра
+  *mp_load_reg = calc_load_value(a_frequency);
+  *mp_match_reg
+    = static_cast<irs_u16>(a_duty * static_cast<float>(*mp_load_reg - 1));
+}
+
+void irs::arm::gptm_generator_t::init_gpio_port(gpio_channel_t a_gpio_channel,
+  irs_u8 gpio_pmc_value)
+{
+  enum {
+    num_of_gpio_bits = 8,
+    pmc_field_len = 4
+  };
+  irs_u8 gpio_port_number = a_gpio_channel / num_of_gpio_bits;
+  irs_u8 gpio_bit = a_gpio_channel % num_of_gpio_bits;
+  irs_u8 pmc_shift = gpio_bit * pmc_field_len;
+
+  switch (gpio_port_number) {
+    case 0: m_gpio_base = PORTA_BASE; break;
+    case 1: m_gpio_base = PORTB_BASE; break;
+    case 2: m_gpio_base = PORTC_BASE; break;
+    case 3: m_gpio_base = PORTD_BASE; break;
+    case 4: m_gpio_base = PORTE_BASE; break;
+    case 5: m_gpio_base = PORTF_BASE; break;
+    case 6: m_gpio_base = PORTG_BASE; break;
+    case 7: m_gpio_base = PORTH_BASE; break;
+    #ifdef __LM3SxBxx__
+    case 8: m_gpio_base = PORTJ_BASE; break;
+    #endif  //  __LM3SxBxx__
+    default: IRS_LIB_ERROR(ec_standard,
+      "Ќеверно указан порт при инициализации GPIO в инициализации GPTM");
+  }
+  irs_u32 den_reg = m_gpio_base + GPIO_DEN;
+  irs_u32 afsel_reg = m_gpio_base + GPIO_AFSEL;
+  irs_u32 pctl_reg = m_gpio_base + GPIO_PCTL;
+  //  ≈сли irs_u32 заменить на arm_port_t, по€вл€етс€ Warning[Pa082]:
+  //  undefined behavior: the order of volatile accesses is undefined in
+  //  this statement
+
+  RCGC2 |= (1 << gpio_port_number);
+  for (irs_u8 i = 10; i; i--);
+
+  *reinterpret_cast<p_arm_port_t>(den_reg) |= (1 << gpio_bit);
+  *reinterpret_cast<p_arm_port_t>(afsel_reg) |= (1 << gpio_bit);
+  *reinterpret_cast<p_arm_port_t>(pctl_reg) |= (gpio_pmc_value << pmc_shift);
+}
+
+irs_u16 irs::arm::gptm_generator_t::calc_load_value(
+  cpu_traits_t::frequency_type a_frequency)
+{
+  irs_u16 load_value = cpu_traits_t::frequency() / a_frequency;
+  if (load_value == 0) load_value = 1;
+  return load_value;
+}
 
 #endif  //  __ICCARM__

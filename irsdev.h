@@ -106,6 +106,57 @@ private:
   #endif  //  PWM_ZERO_PULSE
 };
 
+class gptm_usage_t {
+  irs_u8 m_channels;
+public:
+  inline gptm_usage_t() { m_channels = 0xFF; }
+  inline ~gptm_usage_t() { m_channels = 0xFF; }
+  inline bool channel_free(gptm_channel_t a_channel) {
+    return m_channels & (1 << a_channel);
+  }
+  inline void set_channel_free(gptm_channel_t a_channel) {
+    m_channels |= (1 << a_channel);
+  }
+  inline void set_channel_use(gptm_channel_t a_channel) {
+    m_channels &= ~(1 << a_channel);
+  }
+};
+
+//  Класс однофазного шим-генератора на основе таймера общего назначения
+//  a_timer_module - базовый адрес используемого таймера,
+//  a_port - базовый адрес порта выходного сигнала,
+//  a_bit - номер бита порта выходного сигнала,
+//  a_frequency - частота выходного сигнала,
+//  a_duty - коэффициент заполнения выходного сигнала
+
+class gptm_generator_t : public pwm_gen_t
+{
+public:
+  gptm_generator_t(gpio_channel_t a_gpio_channel,
+    cpu_traits_t::frequency_type a_frequency, float a_duty = 0.5f);
+  ~gptm_generator_t();
+  virtual void start();
+  virtual void stop();
+  virtual void set_duty(irs_uarc a_duty);
+  virtual void set_duty(float a_duty);
+  virtual cpu_traits_t::frequency_type set_frequency(
+    cpu_traits_t::frequency_type  a_frequency);
+  virtual irs_uarc get_max_duty();
+  virtual cpu_traits_t::frequency_type get_max_frequency();
+private:
+  bool m_valid_input_data;
+  gptm_channel_t m_gptm_channel;
+  irs_u8 m_enable_bit;
+  p_arm_port_t mp_enable_reg;
+  p_arm_port_t mp_load_reg;
+  p_arm_port_t mp_match_reg;
+  arm_port_t m_gpio_base;
+  void init_gptm_channel(gptm_channel_t a_gptm_channel,
+    cpu_traits_t::frequency_type a_frequency, float a_duty);
+  void init_gpio_port(gpio_channel_t a_gpio_channel, irs_u8 a_gpio_pmc_value);
+  irs_u16 calc_load_value(cpu_traits_t::frequency_type a_frequency);
+};
+
 class watchdog_timer_t
 {
 public:

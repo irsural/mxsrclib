@@ -68,7 +68,7 @@ void irs::th_lm95071_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (!a_index && (a_size == m_size)) {
     memcpy((void*)ap_buf, (void*)mp_buf, m_size);
-    mp_buf[0] = 0;
+    mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
   } else {
     if (a_index >= m_size) return;
     irs_u8 size = (irs_u8)a_size;
@@ -76,7 +76,7 @@ void irs::th_lm95071_t::read(irs_u8 *ap_buf, irs_uarc a_index,
       size = irs_u8(m_size - a_index);
     }
     memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
-    mp_buf[0] = 0;
+    mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
   }
 }
 
@@ -89,7 +89,6 @@ void irs::th_lm95071_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     size = irs_u8(m_size - a_index);
   }
   memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
-  mp_buf[0] = 0;
 }
 
 irs_bool irs::th_lm95071_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -97,7 +96,9 @@ irs_bool irs::th_lm95071_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
   bool bit = (mp_buf[a_index] >> a_bit_index) & irs_u8(1);
-  mp_buf[0] = 0;
+  if (a_index != m_control_byte) {
+    mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
+  }
   return bit;
 }
 void irs::th_lm95071_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -105,7 +106,6 @@ void irs::th_lm95071_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
   mp_buf[a_index] |= irs_u8(1 << a_bit_index);
-  mp_buf[0] = 0;
 }
 
 void irs::th_lm95071_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -113,7 +113,6 @@ void irs::th_lm95071_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
   mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
-  mp_buf[0] = 0;
 }
 
 void irs::th_lm95071_t::tick()
@@ -123,7 +122,8 @@ void irs::th_lm95071_t::tick()
   {
     case TH_FREE:
     {
-      if (test_to_cnt(m_read_counter)) {
+      if (test_to_cnt(m_read_counter) && 
+        !(mp_buf[m_control_byte] & (1 << m_stop_bit))) {
         if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
         {
           set_to_cnt(m_read_counter, m_read_delay);
