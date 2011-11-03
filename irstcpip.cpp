@@ -710,28 +710,28 @@ bool irs::simple_tcpip_t::cash(mxip_t a_dest_ip)
 irs_u16 irs::simple_tcpip_t::check_sum_ip(irs_u16 a_check_sum, irs_u8 a_dat,
   irs_size_t a_count)
 {
-	irs_u8 check_sum_hi = IRS_HIBYTE(a_check_sum);
-	irs_u8 check_sum_lo = IRS_LOBYTE(a_check_sum);
-
-	if (IRS_LOBYTE(a_count) & 0x01) {
-		//* We are processing LSB	
-		if ((check_sum_lo = static_cast<irs_u8>(check_sum_lo + a_dat)) < a_dat) {
-			if (++check_sum_hi == 0 ) {
-				check_sum_lo++;
+  irs_u8 check_sum_hi = IRS_HIBYTE(a_check_sum);
+  irs_u8 check_sum_lo = IRS_LOBYTE(a_check_sum);
+  
+  if (IRS_LOBYTE(a_count) & 0x01) {
+    //* We are processing LSB	
+    if ((check_sum_lo = static_cast<irs_u8>(check_sum_lo + a_dat)) < a_dat) {
+      if (++check_sum_hi == 0 ) {
+              check_sum_lo++;
       }
-		}
-	} else {
-		//* We are processing MSB	
-		if ((check_sum_hi = static_cast<irs_u8>(check_sum_hi + a_dat)) < a_dat)	{
-			if (++check_sum_lo == 0) {
-				check_sum_hi++;
+    }
+  } else {
+    //* We are processing MSB	
+    if ((check_sum_hi = static_cast<irs_u8>(check_sum_hi + a_dat)) < a_dat) {
+      if (++check_sum_lo == 0) {
+        check_sum_hi++;
       }
-		}
-	}
+    }
+  }
 
   IRS_HIBYTE(a_check_sum) = check_sum_hi;
-	IRS_LOBYTE(a_check_sum) = check_sum_lo;
-	return a_check_sum;
+  IRS_LOBYTE(a_check_sum) = check_sum_lo;
+  return a_check_sum;
 }
 
 irs_u16 irs::simple_tcpip_t::check_sum(irs_size_t a_count, irs_u8* a_addr)
@@ -744,7 +744,7 @@ irs_u16 irs::simple_tcpip_t::check_sum(irs_size_t a_count, irs_u8* a_addr)
       check_sum_ip(ip_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
-	ip_checksum = static_cast<irs_u16>(~ip_checksum);
+  ip_checksum = static_cast<irs_u16>(~ip_checksum);
 
   return ip_checksum;
 }

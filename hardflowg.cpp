@@ -2404,7 +2404,8 @@ void irs::hardflow::simple_udp_flow_t::set_param(const string_type &a_name,
       cstr_to_mxip(new_ip, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
       mp_simple_udp->set_ip(new_ip);
       mxmac_t new_mac = mxmac_t::zero_mac();
-      cstr_to_mxmac(new_mac, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
+      string_type mac_str = irst("0.0.") + a_value;
+      cstr_to_mxmac(new_mac, IRS_SIMPLE_FROM_TYPE_STR(mac_str.c_str()));
       mp_simple_udp->set_mac(new_mac);
     }
   }
