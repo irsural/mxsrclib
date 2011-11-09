@@ -176,8 +176,8 @@ public:
 template<class TYPE>
 matrix_t<TYPE>::matrix_t():
   mv_elem(),
-  m_col_count(0),
   m_row_count(0),
+  m_col_count(0),
   m_index_matrix(mv_elem, m_col_count)
 {
 }
@@ -185,8 +185,8 @@ matrix_t<TYPE>::matrix_t():
 template<class TYPE>
 matrix_t<TYPE>::matrix_t(const int a_col_count, const int a_row_count):
   mv_elem(a_col_count * a_row_count),
-  m_col_count(a_col_count),
   m_row_count(a_row_count),
+  m_col_count(a_col_count),
   m_index_matrix(mv_elem, m_col_count)
 {
 }
@@ -195,8 +195,8 @@ template<class TYPE>
 matrix_t<TYPE>::matrix_t(const int a_col_count, const int a_row_count,
   const TYPE& a_value):
   mv_elem(a_col_count * a_row_count, a_value),
-  m_col_count(a_col_count),
   m_row_count(a_row_count),
+  m_col_count(a_col_count),
   m_index_matrix(mv_elem, m_col_count)
 {
 }
@@ -204,8 +204,8 @@ matrix_t<TYPE>::matrix_t(const int a_col_count, const int a_row_count,
 template<class TYPE>
 matrix_t<TYPE>::matrix_t(const matrix_t<TYPE>& a_matrix):
   mv_elem(a_matrix.mv_elem),
-  m_col_count(a_matrix.m_col_count),
   m_row_count(a_matrix.m_row_count),
+  m_col_count(a_matrix.m_col_count),
   m_index_matrix(mv_elem, m_col_count)
 {
 }

@@ -326,14 +326,16 @@ private:
     K x0;
     K y0;
   };
-  irs::correct_map_t<IN_X, IN_Y, OUT_Z, K> m_map;
-  irs::correct_map_t<IN_X, IN_Y, OUT_Z, K> *mp_map;
-  irs_bool m_error;
+
   irs_uarc m_start_index;
   mxdata_t *mp_data;
+  irs::correct_map_t<IN_X, IN_Y, OUT_Z, K> m_map;
+  irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>* mp_map;
+  irs_bool m_error;
+  bool m_use_b;
+
   K triple_line(triple_line_data_t a_data);
   irs_bool test_map();
-  bool m_use_b;
 };
 
 //------------------------------------------------------------------------------
@@ -342,6 +344,7 @@ irs::correct_t<IN_X, IN_Y, OUT_Z, K>::correct_t(mxdata_t *ap_data,
   irs_uarc a_start_index, bool a_use_b):
   m_start_index(a_start_index),
   mp_data(ap_data),
+  m_map(),
   mp_map(&m_map),
   m_error(true),
   m_use_b(a_use_b)
