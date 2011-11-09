@@ -16,8 +16,8 @@ irs::eeprom_at25128a_t::eeprom_at25128a_t(
 ):
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
-  m_ee_size(a_ee_size),
   m_ee_start_index(a_ee_start_index),
+  m_ee_size(a_ee_size),
   m_op_status(op_search_data_operation),
   m_ee_status(complete),
   m_need_write(false),

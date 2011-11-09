@@ -39,7 +39,7 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   m_rx_buf_filled(false),
   m_rx_size(0),
   m_rx_int_flag(false),
-  m_rx_int_event(this, rx_interrupt),
+  m_rx_int_event(this, &arm_ethernet_t::rx_interrupt),
   m_use_interrupt(a_use_interrupt),
   m_send_buf_locked(false),
   m_send_packet_action(false),

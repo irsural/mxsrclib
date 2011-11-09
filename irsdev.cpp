@@ -38,7 +38,8 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   m_min_freq(cpu_traits_t::frequency() / (pwm_clk_div * (IRS_U16_MAX + 1))),
   m_freq(a_freq)
 #ifdef PWM_ZERO_PULSE
-  , m_int_event(this, interrupt)
+  , 
+  m_int_event(this, &arm_three_phase_pwm_t::interrupt)
 #endif  //  PWM_ZERO_PULSE
 {
   RCGC0_bit.PWM = 1;

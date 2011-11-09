@@ -936,12 +936,12 @@ public:
   T filt(T a_x);
 private:
   T m_n_period;
-  T m_freq_2;
   T m_fade;
+  T m_freq_2;
+  T m_denom;
   T m_a;
   T m_b;
   T m_c;
-  T m_denom;
   T m_x1;
   T m_x2;
   T m_y1;
