@@ -4335,13 +4335,13 @@ void irs::modbus_client_t::tick()
           m_hold_registers_size_reg + m_input_registers_size_reg);)
         {
           if ((m_need_read[m_search_index] == true) && 
-            (catch_block == false)) 
+            (catch_block == irs_false)) 
           {
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" block catched"));
             m_start_block = m_search_index;
             catch_block = true;
           }
-          if ((catch_block == true) && 
+          if ((catch_block == irs_true) && 
             (m_need_read[m_search_index] == false)) 
           {
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_data_mode"));
@@ -4383,7 +4383,7 @@ void irs::modbus_client_t::tick()
             break;
           }
           m_search_index++;
-          if ((catch_block == true) &&
+          if ((catch_block == irs_true) &&
             (m_search_index == (m_discret_inputs_size_bit + m_coils_size_bit + 
             m_hold_registers_size_reg + m_input_registers_size_reg)))
           { 
@@ -4423,7 +4423,7 @@ void irs::modbus_client_t::tick()
             }
             break;
           }
-          if ((catch_block == false) && 
+          if ((catch_block == irs_false) && 
             (m_search_index >= (m_discret_inputs_size_bit + m_coils_size_bit + 
             m_hold_registers_size_reg + m_input_registers_size_reg)))
           {
