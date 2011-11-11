@@ -17,6 +17,7 @@
 namespace irs {
 
 typedef size_t sizens_t;
+typedef ptrdiff_t ptrdiffns_t;
 
 //! \addtogroup single_type_group
 //! @{
@@ -48,6 +49,7 @@ inline bool point_t::operator!=(const point_t& a_point)
 
 struct rect_t {
   typedef sizens_t size_type;
+  typedef ptrdiffns_t difference_type;
   size_type left;
   size_type top;
   size_type right;
@@ -82,7 +84,8 @@ struct rect_t {
   inline void move_top(const size_type a_top);
   inline void move_right(const size_type a_right);
   inline void move_bottom(const size_type a_bottom);
-  inline void offset(const size_type a_x_diff, const size_type a_y_diff);
+  inline void offset(const difference_type a_x_diff,
+    const difference_type a_y_diff);
   inline void union_with(const rect_t& a_rect);
   inline rect_t get_united(const rect_t& a_rect) const;
   //! \brief ¬озвращает true, если точка с координатами (a_left, a_top)
@@ -168,7 +171,8 @@ inline void rect_t::move_bottom(const size_type a_bottom)
   bottom = a_bottom;
 }
 
-inline void rect_t::offset(const size_type a_x_diff, const size_type a_y_diff)
+inline void rect_t::offset(const difference_type a_x_diff,
+  const difference_type a_y_diff)
 {
   left += a_x_diff;
   right += a_x_diff;

@@ -276,67 +276,25 @@ public:
   typedef irs_size_t size_type;
   typedef char_t char_type;
   typedef string_t string_type;
-  typedef basic_fstream<char_type, char_traits<char_type> > fstream_type;
-  csv_file_synchro_t(const string_type& a_filename = irst(""));
+  typedef basic_fstream<char_type, char_traits<char_type> > ifstream_type;
+  typedef basic_fstream<char_type, char_traits<char_type> > ofstream_type;
+  csv_file_synchro_t(const string_type& a_file_name = irst(""));
   ~csv_file_synchro_t();
-  inline void set_delimiter_col(char_type a_delimiter_col);
-  inline void set_delimiter_row(char_type a_delimiter_row);
-  inline void set_delimiter_coll(char_type a_delimiter_cell);
-  inline void open(const string_type& a_filename);
-  void close();
+  void set_file_name(const string_type& a_file_name);
+  const string_type& get_file_name() const;
+  void set_delimiter_col(char_type a_delimiter_col);
+  void set_delimiter_row(char_type a_delimiter_row);
+  void set_delimiter_coll(char_type a_delimiter_cell);
   bool save(const table_string_t& a_table_string);
-  bool load(table_string_t& a_table_string);
+  bool load(table_string_t* ap_table_string);
 private:
   char_type m_delimiter_col;
   char_type m_delimiter_row;
   char_type m_delimiter_cell;
   string_type m_special_character;
-  string_type m_filename;
-  fstream_type m_file;
+  string_type m_file_name;
   enum status_file_t {stat_file_close, stat_file_open};
-  status_file_t m_status_file;
 };
-
-inline void csv_file_synchro_t::set_delimiter_col(char_type a_delimiter_col)
-{
-  IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_row);
-  IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_cell);
-  m_delimiter_col = a_delimiter_col;
-  m_special_character = static_cast<string_type>(m_delimiter_col) +
-    static_cast<string_type>(m_delimiter_cell);
-}
-
-inline void csv_file_synchro_t::set_delimiter_row(char_type a_delimiter_row)
-{
-  IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_col);
-  IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_cell);
-  m_delimiter_row = a_delimiter_row;
-}
-
-inline void csv_file_synchro_t::set_delimiter_coll(char_type a_delimiter_cell)
-{
-  IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_col);
-  IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_row);
-  m_delimiter_cell = a_delimiter_cell;
-  m_special_character = static_cast<string_type>(m_delimiter_col) +
-    static_cast<string_type>(m_delimiter_cell);
-}
-
-inline void csv_file_synchro_t::open(const string_type& a_filename)
-{
-  //bool fsuccess = true;
-  m_filename = a_filename;
-  m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()));
-  m_status_file = stat_file_open;
-}
-
-inline void csv_file_synchro_t::close()
-{
-  m_file.close();
-  m_status_file = stat_file_close;
-  m_filename = "";
-
-}
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 

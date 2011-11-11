@@ -861,8 +861,8 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
 {
   if (mp_open_dialog->Execute()) {
     string_type csv_file_name = mp_open_dialog->FileName.c_str();
-    m_csv_open_file.open(csv_file_name);
-    m_csv_open_file.load(m_table);
+    m_csv_open_file.set_file_name(csv_file_name);
+    m_csv_open_file.load(&m_table);
 
     size_t col_size = m_table.get_col_count();
     size_t row_size = m_table.get_row_count();
@@ -898,8 +898,7 @@ void __fastcall irs::tstlan4_t::controls_t::CsvLoadBtnClick(TObject *Sender)
     m_shift_time = m_shift_time +
       static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
     m_chart_time = m_chart_time +
-      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
-    m_csv_open_file.close();
+      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero; 
   }
 }
 void __fastcall irs::tstlan4_t::controls_t::OptionsBtnClick(TObject *Sender)

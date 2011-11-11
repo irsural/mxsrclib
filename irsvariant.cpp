@@ -284,6 +284,7 @@ void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
     case var_type_unsigned_long_long:
     #endif // IRSDEFS_LONG_LONG
     {
+      memsetex(&m_value, 1);
       m_type = a_variant_type;
     } break;
     case var_type_string: {

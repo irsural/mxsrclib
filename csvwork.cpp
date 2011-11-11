@@ -1039,25 +1039,59 @@ void irs::csvwork::csv_file_t::set_mode_success()
 //class csv_file_synchro_t
 
 irs::csvwork::csv_file_synchro_t::csv_file_synchro_t(
-  const string_type& a_filename):
+  const string_type& a_file_name):
   m_delimiter_col(irst(';')),
   m_delimiter_row(irst('\n')),
   m_delimiter_cell(irst('"')),
   m_special_character(),
-  m_filename(irst("")),
-  m_file(),
-  m_status_file(stat_file_close)
+  m_file_name(a_file_name)
 {
   m_special_character = static_cast<string_type>(m_delimiter_col) +
     static_cast<string_type>(m_delimiter_cell);
-  if (!a_filename.empty()) {
-    open(a_filename);
-  }
 }
 
 irs::csvwork::csv_file_synchro_t::~csv_file_synchro_t()
 {
-  m_file.close();
+}
+
+void irs::csvwork::csv_file_synchro_t::set_file_name(
+  const string_type& a_file_name)
+{
+  m_file_name = a_file_name;
+}
+
+const irs::csvwork::csv_file_synchro_t::string_type&
+irs::csvwork::csv_file_synchro_t::get_file_name() const
+{
+  return m_file_name;
+}
+
+void irs::csvwork::csv_file_synchro_t::set_delimiter_col(
+  char_type a_delimiter_col)
+{
+  IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_row);
+  IRS_LIB_ASSERT(a_delimiter_col != m_delimiter_cell);
+  m_delimiter_col = a_delimiter_col;
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+    static_cast<string_type>(m_delimiter_cell);
+}
+
+void irs::csvwork::csv_file_synchro_t::set_delimiter_row(
+  char_type a_delimiter_row)
+{
+  IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_col);
+  IRS_LIB_ASSERT(a_delimiter_row != m_delimiter_cell);
+  m_delimiter_row = a_delimiter_row;
+}
+
+void irs::csvwork::csv_file_synchro_t::set_delimiter_coll(
+  char_type a_delimiter_cell)
+{
+  IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_col);
+  IRS_LIB_ASSERT(a_delimiter_cell != m_delimiter_row);
+  m_delimiter_cell = a_delimiter_cell;
+  m_special_character = static_cast<string_type>(m_delimiter_col) +
+    static_cast<string_type>(m_delimiter_cell);
 }
 
 bool irs::csvwork::csv_file_synchro_t::save(
@@ -1065,19 +1099,15 @@ bool irs::csvwork::csv_file_synchro_t::save(
 {
   typedef table_string_t::size_type size_type;
   bool fsuccess = true;
-  IRS_LIB_ASSERT(m_status_file == stat_file_open);
-  if (m_status_file != stat_file_open) {
-    fsuccess = false;
-  }
-  if (fsuccess) {
-    // Переоткрываем файл, чтобы уничтожить содержимое файла
-    m_file.close();
-    m_file.clear();
-    m_file.open(IRS_SIMPLE_FROM_TYPE_STR(m_filename.c_str()),
+  ofstream_type ofile;
+  if (!m_file_name.empty()) {
+    ofile.open(IRS_SIMPLE_FROM_TYPE_STR(m_file_name.c_str()),
       ios::in|ios::out|ios::trunc);
-    if (!m_file.good()) {
+    if (!ofile.good()) {
       fsuccess = false;
     }
+  } else {
+    fsuccess = false;
   }
 
   if (fsuccess) {
@@ -1091,10 +1121,10 @@ bool irs::csvwork::csv_file_synchro_t::save(
         if (!cell_str.empty()) {
           if (!find_not_empty_cell_success) {
             string_type delimiter_col_array(col, m_delimiter_col);
-            m_file << delimiter_col_array;
+            ofile << delimiter_col_array;
             find_not_empty_cell_success = true;
           } else {
-            m_file << m_delimiter_col;
+            ofile << m_delimiter_col;
           }
           bool find_special_character_success = false;
           if (cell_str.find_first_of(m_special_character) !=
@@ -1112,32 +1142,36 @@ bool irs::csvwork::csv_file_synchro_t::save(
           if (find_special_character_success) {
             cell_modified_str = irst("\"") + cell_modified_str + irst("\"");
           }
-          m_file << cell_modified_str;
+          ofile << cell_modified_str;
           cell_modified_str.clear();
         } else if (find_not_empty_cell_success) {
-          m_file << m_delimiter_col;
+          ofile << m_delimiter_col;
         }
       }
-      m_file << m_delimiter_row;
+      ofile << m_delimiter_row;
     }
   }
-  if (fsuccess) {
-    m_file.clear();
-    m_file.seekg(0, ios::beg);
-    IRS_LIB_ASSERT_EX(m_file.good(), "Ну, это вообще не исправить :((");
-  }
+  ofile.close();
   return fsuccess;
 }
 
-bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
+bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
 {
   typedef table_string_t::size_type size_type;
-  IRS_LIB_ASSERT(m_status_file == stat_file_open);
+  IRS_LIB_ASSERT(ap_table_string);
+
   bool fsuccess = true;
-  a_table_string.clear();
-  if ((m_status_file != stat_file_open) || !m_file.good()) {
+  ap_table_string->clear();
+  ifstream_type ifile;
+  if (!m_file_name.empty()) {
+    ifile.open(IRS_SIMPLE_FROM_TYPE_STR(m_file_name.c_str()), ios::in);
+    if (!ifile.good()) {
+      fsuccess = false;
+    }
+  } else {
     fsuccess = false;
   }
+
   if (fsuccess) {
     string_type cell_str;
     const size_type rdbuf_size = 1024;
@@ -1155,9 +1189,16 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
     delimiter_t cur_delimiter = delimiter_col;
     mode = inspection_begin_ch_quote;
     size_type cur_elem = 0;
-    size_type byte_read_count = m_file.readsome(rdbuf, rdbuf_size);
-    while(byte_read_count > 0) {
-      while(cur_elem < byte_read_count) {
+    ifile.seekg(0, ios::end);
+    const size_type size = ifile.tellg();
+    size_type read_count = 0;
+    ifile.seekg(0, ios::beg);
+    size_type current_read_count = min(size - read_count, rdbuf_size);
+    //size_type current_read_count = ifile.readsome(rdbuf, rdbuf_size);
+    ifile.read(rdbuf, current_read_count);
+    while(current_read_count > 0) {
+      read_count += current_read_count;
+      while(cur_elem < current_read_count) {
         switch (mode) {
           case inspection_begin_ch_quote: {
             if (rdbuf[cur_elem] == m_delimiter_cell) {
@@ -1211,15 +1252,15 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
               }
             }
             if (processing_str_success) {
-              size_type col_count = a_table_string.get_col_count();
+              size_type col_count = ap_table_string->get_col_count();
               if (col_count <= coord_cur_cell.col) {
-                a_table_string.set_col_count(coord_cur_cell.col+1);
+                ap_table_string->set_col_count(coord_cur_cell.col+1);
               }
-              size_type row_count = a_table_string.get_row_count();
+              size_type row_count = ap_table_string->get_row_count();
               if (row_count <= coord_cur_cell.row) {
-                a_table_string.set_row_count(coord_cur_cell.row+1);
+                ap_table_string->set_row_count(coord_cur_cell.row+1);
               }
-              a_table_string.write_cell(
+              ap_table_string->write_cell(
                 coord_cur_cell.col, coord_cur_cell.row, cell_str);
               if (cur_delimiter == delimiter_col) {
                 coord_cur_cell.col++;
@@ -1229,9 +1270,9 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
               }
             } else {
               // Удаляем все
-              a_table_string.clear();
+              ap_table_string->clear();
             }
-            cell_str = "";
+            cell_str.clear();
             quote_count = 0;
             cur_elem++;
             mode = inspection_begin_ch_quote;
@@ -1239,14 +1280,12 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t& a_table_string)
         }
       }
       cur_elem = 0;
-      byte_read_count = m_file.readsome(rdbuf, rdbuf_size);
+      //current_read_count = ifile.readsome(rdbuf, rdbuf_size);
+      current_read_count = min(size - read_count, rdbuf_size);
+      ifile.read(rdbuf, current_read_count);
     }
   }
-  if (fsuccess) {
-    m_file.clear();
-    m_file.seekg(0, ios::beg);
-    IRS_LIB_ASSERT_EX(m_file.good(), "Жизнь - гавно :(((");
-  }
+  ifile.close();
   return fsuccess;
 }
 
