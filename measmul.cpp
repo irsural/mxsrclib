@@ -490,6 +490,7 @@ void irs::agilent_3458a_t::initialize_tick()
             } break;
             case irs::hardflow::fixed_flow_t::status_wait: {
               if (m_init_timer.check()) {
+                m_fixed_flow.write_abort();
                 m_init_mode = im_start;
               }
             } break;
