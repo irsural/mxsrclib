@@ -1073,8 +1073,8 @@ inline void table_united_cells_t<cell_type_t>::union_off(
 {
   if ((a_diapason.right < m_table.get_col_count()) &&
     (a_diapason.bottom < m_table.get_row_count()) &&
-    (a_diapason.left < a_diapason.right) &&
-    (a_diapason.top < a_diapason.bottom)) {
+    (a_diapason.left <= a_diapason.right) &&
+    (a_diapason.top <= a_diapason.bottom)) {
     cell_param_t param_for_autonomous;
     param_for_autonomous.autonomous = true;
     for (size_type col_i = a_diapason.left; col_i <= a_diapason.right;
