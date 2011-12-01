@@ -62,6 +62,7 @@
 #define GPIO_DATA 0
 #define GPIO_DIR 0x400
 #define GPIO_AFSEL 0x420
+#define GPIO_DR8R 0x508
 #define GPIO_ODR 0x50C
 #define GPIO_DEN 0x51C
 #define GPIO_LOCK 0x520

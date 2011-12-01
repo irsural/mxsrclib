@@ -10,6 +10,7 @@
 #include <armspi.h>
 #include <armioregs.h>
 #include <irscpu.h>
+#include <irsconfig.h>
 
 #include <irsfinal.h>
 
@@ -80,6 +81,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTE = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOEDEN_bit.no0 = 1;
+          GPIOEDR8R_bit.no0 = 1;
           GPIOEDIR_bit.no0 = 1;
           GPIOEAFSEL_bit.no0 = 1;
           GPIOEPCTL_bit.PMC0 = SSI1Clk_E;
@@ -89,6 +91,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTF = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOFDEN_bit.no2 = 1;
+          GPIOFDR8R_bit.no2 = 1;
           GPIOFDIR_bit.no2 = 1;
           GPIOFAFSEL_bit.no2 = 1;
           GPIOFPCTL_bit.PMC2 = SSI1Clk_F;
@@ -98,6 +101,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTH = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOHDEN_bit.no4 = 1;
+          GPIOHDR8R_bit.no4 = 1;
           GPIOHDIR_bit.no4 = 1;
           GPIOHAFSEL_bit.no4 = 1;
           GPIOHPCTL_bit.PMC4 = SSI1Clk_H;
@@ -150,6 +154,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTE = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOEDEN_bit.no3 = 1;
+          GPIOEDR8R_bit.no3 = 1;
           GPIOEDIR_bit.no3 = 1;
           GPIOEAFSEL_bit.no3 = 1;
           GPIOEPCTL_bit.PMC3 = SSI1Tx_E;
@@ -159,6 +164,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTF = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOFDEN_bit.no5 = 1;
+          GPIOFDR8R_bit.no5 = 1;
           GPIOFDIR_bit.no5 = 1;
           GPIOFAFSEL_bit.no5 = 1;
           GPIOFPCTL_bit.PMC5 = SSI1Tx_F;
@@ -168,6 +174,7 @@ irs::arm::arm_spi_t::arm_spi_t(
           RCGC2_bit.PORTH = 1;
           for (irs_u8 i = 10; i; i--);
           GPIOHDEN_bit.no7 = 1;
+          GPIOHDR8R_bit.no7 = 1;
           GPIOHDIR_bit.no7 = 1;
           GPIOHAFSEL_bit.no7 = 1;
           GPIOHPCTL_bit.PMC7 = SSI1Tx_H;
@@ -180,9 +187,9 @@ irs::arm::arm_spi_t::arm_spi_t(
       }
     } break;
   }
-  
+
   init_default();
-  
+
   // Эта строки обязательно должны стоять после init_default
   m_reg.mp_SSICR1_bit->SSE = 0;
 
@@ -190,9 +197,9 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_reg.mp_SSICR1_bit->MS  = 0;
   m_reg.mp_SSICR1_bit->SOD = 0;
   m_reg.mp_SSICR1_bit->EOT = 0;
-  
+
   m_reg.mp_SSICR0_bit->FRF = m_spi_type;
-  
+
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
 
@@ -243,11 +250,11 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
     switch (m_spi_type) {
       case SPI: {
         m_reg.mp_SSICR1_bit->SSE = 0;
-        
+
         static const irs_u8 SSICPSR_max = 254;
         const irs_u32 cpu_frequency = cpu_traits_t::frequency();
-        
-        irs_u32 SSICPSR_prior = 
+
+        irs_u32 SSICPSR_prior =
           2*(cpu_frequency/(2*a_bitrate*(1 + IRS_U8_MAX)) + 1);
         if (SSICPSR_prior <= SSICPSR_max) {
           (*m_reg.mp_SSICPSR) = SSICPSR_prior;
@@ -260,7 +267,7 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
           (*m_reg.mp_SSICPSR) = SSICPSR_max;
           m_reg.mp_SSICR0_bit->SCR = IRS_U8_MAX;
         }
-        
+
         m_reg.mp_SSICR1_bit->SSE = 1;
       } break;
       case TISS: {
@@ -730,13 +737,13 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
 void irs::arm::arm_spi_t::init_default()
 {
   set_bitrate(m_bitrate_def);
-    
+
   m_reg.mp_SSICR1_bit->SSE = 0;
-  
+
   m_reg.mp_SSICR0_bit->SPH = m_phase_def;
   m_reg.mp_SSICR0_bit->SPO = m_polarity_def;
   m_reg.mp_SSICR0_bit->DSS = m_data_size_def - 1; // 8-bit data
-  
+
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
 

@@ -38,7 +38,7 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   m_min_freq(cpu_traits_t::frequency() / (pwm_clk_div * (IRS_U16_MAX + 1))),
   m_freq(a_freq)
 #ifdef PWM_ZERO_PULSE
-  , 
+  ,
   m_int_event(this, &arm_three_phase_pwm_t::interrupt)
 #endif  //  PWM_ZERO_PULSE
 {
@@ -551,6 +551,7 @@ void irs::arm::gptm_generator_t::init_gpio_port(gpio_channel_t a_gpio_channel,
       "Ќеверно указан порт при инициализации GPIO в инициализации GPTM");
   }
   irs_u32 den_reg = m_gpio_base + GPIO_DEN;
+  irs_u32 dr8r_reg = m_gpio_base + GPIO_DR8R;
   irs_u32 afsel_reg = m_gpio_base + GPIO_AFSEL;
   irs_u32 pctl_reg = m_gpio_base + GPIO_PCTL;
   //  ≈сли irs_u32 заменить на arm_port_t, по€вл€етс€ Warning[Pa082]:
@@ -561,6 +562,7 @@ void irs::arm::gptm_generator_t::init_gpio_port(gpio_channel_t a_gpio_channel,
   for (irs_u8 i = 10; i; i--);
 
   *reinterpret_cast<p_arm_port_t>(den_reg) |= (1 << gpio_bit);
+  *reinterpret_cast<p_arm_port_t>(dr8r_reg) |= (1 << gpio_bit);
   *reinterpret_cast<p_arm_port_t>(afsel_reg) |= (1 << gpio_bit);
   *reinterpret_cast<p_arm_port_t>(pctl_reg) |= (gpio_pmc_value << pmc_shift);
 }
