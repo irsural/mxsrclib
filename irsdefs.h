@@ -24,11 +24,13 @@
 #endif // Определения платформы
 
 // Определение версии Builder
-#define IRS_CPP_BUILDER4    0x0540
-#define IRS_CPP_BUILDER6    0x0560
-#define IRS_CPP_BUILDER2006 0x0580
-#define IRS_CPP_BUILDER2007 0x0590
-#define IRS_CPP_BUILDER2010 0x0620
+#define IRS_CPP_BUILDER4            0x0540
+#define IRS_CPP_BUILDER6            0x0560
+#define IRS_CPP_BUILDER2006         0x0580
+#define IRS_CPP_BUILDER2007         0x0590
+#define IRS_CPP_BUILDER2010         0x0620
+#define IRS_CPP_BUILDERXE           0x0630
+#define IRS_CPP_BUILDERXE_UPDATE1   0x0631
 
 // Включение Unicode
 #ifdef __BORLANDC__
@@ -41,6 +43,11 @@
 #else //__BORLANDC__
   //#define IRS_UNICODE_GLOBAL
 #endif //__BORLANDC__
+
+// Для исправления ошибки в C++Builder XE Update 1
+# if (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+#define BOOST_TR1_USE_OLD_TUPLE
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
 #ifdef IRS_UNICODE_GLOBAL
 # if defined(__ICCAVR__)

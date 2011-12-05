@@ -17,7 +17,9 @@
 #include <Spin.hpp>
 #include <grids.hpp>
 #include <ValEdit.hpp>
+# if (defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE))
 #include <vcl/dstring.h>
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE))
 #include <SysUtils.hpp>
 
 #include <irscpp.h>

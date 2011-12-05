@@ -298,6 +298,12 @@ inline std_wstring_t str_conv<std_wstring_t>(const AnsiString& a_str_in)
 }
 
 template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const AnsiString& a_str_in)
+{
+  return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+}
+
+template<>
 inline WideString str_conv<WideString>(const AnsiString& a_str_in)
 {
   return WideString(a_str_in);

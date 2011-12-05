@@ -1,5 +1,5 @@
-// Р”Р°С‚Р°: 26.04.2011
-// Р”Р°С‚Р° СЃРѕР·РґР°РЅРёСЏ: 25.04.2011
+// Дата: 26.04.2011
+// Дата создания: 25.04.2011
 
 #ifndef irsmemh
 #define irsmemh
@@ -9,7 +9,6 @@
 #include <irsspi.h>
 #include <irsgpio.h>
 #include <mxdata.h>
-
 
 #include <irsfinal.h>
 

@@ -16,19 +16,16 @@
 
 namespace irs {
 
-typedef size_t sizens_t;
-typedef ptrdiff_t ptrdiffns_t;
-
 //! \addtogroup single_type_group
 //! @{
 
 struct point_t {
-  typedef sizens_t size_type;
+  typedef irs_size_t size_type;
   int left;
   int top;
   point_t(
-    sizens_t a_left = 0,
-    sizens_t a_top = 0
+    size_type a_left = 0,
+    size_type a_top = 0
   ):
     left(a_left),
     top(a_top)
@@ -48,8 +45,8 @@ inline bool point_t::operator!=(const point_t& a_point)
 }
 
 struct rect_t {
-  typedef sizens_t size_type;
-  typedef ptrdiffns_t difference_type;
+  typedef irs_size_t size_type;
+  typedef irs_ptrdiff_t difference_type;
   size_type left;
   size_type top;
   size_type right;

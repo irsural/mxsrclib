@@ -342,13 +342,18 @@ inline bool get_closed_file_size(const irs::string& a_file_name, int& a_size)
   return fsuccess;
 }
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
 // Класс для генерации, хранения и преобразования уникальных идентификаторов
 class id_t
 {
 public:
   typedef vector<irs_u8> identifier_type;
   typedef size_t size_type;
-  typedef irs::string string_type;
+  typedef irs::char_t char_type;
+  typedef irs::string_t string_type;
+  typedef irs::ostringstream_t ostringstream_type;
+  typedef irs::istringstream_t istringstream_type;
   id_t(): m_identifier()
   { }
 
@@ -411,15 +416,13 @@ public:
     size_type id_size = m_identifier.size();
     id_str.reserve(id_size);
     for (size_type id_elem_i = 0; id_elem_i < id_size; id_elem_i++) {
-      ostrstream ostr;
+      ostringstream_type ostr;
       size_type num = m_identifier[id_elem_i];
       const size_type width = 2;
-      char symbol_fill = '0';
+      char_type symbol_fill = irst('0');
       ostr << right << setw(width) << setfill(symbol_fill) <<
-        setbase(num_base) << num << ends;
+        setbase(num_base) << num;
       id_str += ostr.str();
-      // Для совместимости с различными компиляторами
-      ostr.rdbuf()->freeze(false);
     }
     return id_str;
   }
@@ -457,7 +460,7 @@ public:
       elem_str += a_id_str[id_str_index];
       if (elem_str.size() == need_elem_str_size) {
         int elem_num = 0;
-        istrstream istr(const_cast<char*>(elem_str.c_str()));
+        istringstream_type istr(elem_str.c_str());
         istr >> setbase(num_base) >> elem_num;
         if (istr) {
           id.push_back(static_cast<irs_u8>(elem_num));
@@ -536,7 +539,6 @@ private:
   enum { num_base = 16 };
 };
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 // В переданном имени файла изменяется расширение
 template<class T>
 void change_file_ext(

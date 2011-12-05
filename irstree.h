@@ -37,6 +37,8 @@ namespace irs {
 
 #ifndef __WATCOMC__
 
+#ifdef ENABLED_IRS_TREE
+
 template <class T>
 class tree_t;
 
@@ -1141,6 +1143,8 @@ inline void test_tree()
   tree.clear();
   IRS_LIB_ASSERT(tree.size() == 0);
 }
+
+#endif // ENABLED_IRS_TREE
 
 #endif // !__WATCOMC__
 

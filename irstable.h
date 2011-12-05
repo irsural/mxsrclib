@@ -655,6 +655,7 @@ class table_united_cells_t : public table_size_t
 {
 public:
   typedef table_size_t::size_type size_type;
+  typedef irs_ptrdiff_t ptrdiff_type;
   typedef irs::rect_t diapason_type;
   struct cell_param_t
   {
@@ -1002,7 +1003,8 @@ inline void table_united_cells_t<cell_type_t>::erase_cols(
       for (size_type row_i = 0; row_i < row_count; row_i++) {
         cell_t& cell = m_table.read_cell(col_i, row_i);
         if (!cell.param.autonomous) {
-          cell.param.diapason.offset(-a_erase_col_count, 0);
+          cell.param.diapason.offset(
+            -static_cast<ptrdiff_type>(a_erase_col_count), 0);
         }
         m_table.write_cell(col_i - a_erase_col_count, row_i, cell);
       }
@@ -1037,7 +1039,8 @@ inline void table_united_cells_t<cell_type_t>::erase_rows(
         row_i++) {
         cell_t& cell = m_table.read_cell(col_i, row_i);
         if (!cell.param.autonomous) {
-          cell.param.diapason.offset(0, -a_erase_row_count);
+          cell.param.diapason.offset(0,
+            -static_cast<ptrdiff_type>(a_erase_row_count));
         }
         m_table.write_cell(col_i, row_i - a_erase_row_count, cell);
       }
