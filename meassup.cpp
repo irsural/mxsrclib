@@ -1,4 +1,4 @@
-//! \file 1
+//! \file
 //! \ingroup drivers_group
 //! \brief Классы для работы с источниками тока
 //!
