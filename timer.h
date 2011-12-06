@@ -1,4 +1,4 @@
-//! \file1
+//! \file
 //! \ingroup time_processing_group
 //! \brief Работа с таймером
 
