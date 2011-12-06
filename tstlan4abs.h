@@ -1,4 +1,4 @@
-//! \file 1
+//! \file
 //! \ingroup graphical_user_interface_group
 //! \brief “ест сети 4 - абстрактный базовый класс
 //!
