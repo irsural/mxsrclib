@@ -131,7 +131,7 @@ calc_t irs::sko_calc_t<data_t, calc_t>::sum()const {
 
 template<class data_t, class calc_t>
 void irs::sko_calc_t<data_t, calc_t>::resize(irs_u32 a_count) {
-  m_count = a_count;
+  m_count = ((a_count >= 1)?a_count:1);
   if (m_val_array.size() > m_count) {
     m_val_array.resize(m_count);
   }
