@@ -438,31 +438,6 @@ private:
   size_t                                m_start_block;
   //! \brief Поиска флага в массиве флагов на чтение/запись.
   size_t                                m_search_index;
-  #ifndef NEW_18092011
-  //! \brief Размер в байтах discret_inputs, входящих в запрашиваемый диапазон
-  //!   при выполнении операций.
-  size_t                                m_discret_inputs_size_byte;
-  //! \brief Начало области массива discret_inputs, входящей в запрашиваемый
-  //!   диапазон.
-  size_t                                m_discret_inputs_start_byte;
-  //! \brief Размер в байтах coils, входящих в запрашиваемый диапазон при
-  //!   выполнении операций.
-  size_t                                m_coils_size_byte;
-  //! \brief Начало области массива coils, входящей в запрашиваемый диапазон.
-  size_t                                m_coils_start_byte;
-  //! \brief Размер в байтах holding_registers, входящих в запрашиваемый
-  //!   диапазон при выполнении операций.
-  size_t                                m_hold_registers_size_byte;
-  //! \brief Начало области массива holding_registers, входящей в
-  //!   запрашиваемый диапазон.
-  size_t                                m_hold_registers_start_byte;
-  //! \brief Размер в байтах input_register, входящих в запрашиваемый диапазон
-  //!   при выполнении операций.
-  size_t                                m_input_registers_size_byte;
-  //! \brief Начало области массива inputs_registers, входящей в
-  //!   запрашиваемый диапазон.
-  size_t                                m_input_registers_start_byte;
-  #endif //NEW_18092011
   //! \brief Массив для хранения флагов, помечающих данные для чтения.
   vector<bool>                          m_need_read;
   //! \brief Массив для хранения флагов, помечающих данные для записи.
@@ -499,12 +474,6 @@ private:
   hardflow::fixed_flow_t                m_fixed_flow;
   //! \brief Стартовый адрес для читаемой/записываемой области данных.
   size_t                                m_start_addr;
-  #ifndef NEW_18092011
-  //! \brief Значение записываемого бита для coils.
-  irs_u16                               m_coil_write_bit;
-  //! \brief Индекс записываемого бита для coils.
-  size_t                                m_coil_bit_index;
-  #endif //NEW_18092011
   //! \brief Измерительный таймер.
   mx_time_int_t                         m_send_measure_time;
   //! \brief Флаг, выставляемый при первом полном прочтении массива серверафлаг,
@@ -562,9 +531,7 @@ private:
   void view_mode();
   size_t get_packet_number();
   void reconnect();
-  #ifdef NEW_18092011
   void write_bit(irs_uarc a_index, irs_uarc a_bit_index, int a_bit);
-  #endif //NEW_18092011
 };
 
 //! @}
