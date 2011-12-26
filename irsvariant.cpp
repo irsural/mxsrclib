@@ -664,9 +664,13 @@ void irs::variant::binary_operation(
     #endif // IRSDEFS_LONG_LONG
   }
   if (operation_vars_type == var_type_unknown) {
-    if ((a_first_variant.m_type == var_type_string) &&
+    variant_t first_variant(a_first_variant);
+    variant_t second_variant(a_second_variant);
+    if (first_variant.convert_to(var_type_string) &&
+      second_variant.convert_to(var_type_string)) {
+    /*if ((a_first_variant.m_type == var_type_string) &&
       (a_second_variant.m_type == var_type_string))
-    {
+    {*/
       operation_vars_type = var_type_string;
     } else {
       // Тип операции опеределить не удалось
@@ -1574,22 +1578,22 @@ irs::variant::var_type_converter_t::var_type_converter_t():
   m_table_var_type_and_str.insert(
     make_pair(var_type_int, irst("var_type_int")));
   m_table_str_and_var_type.insert(
-    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+    make_pair(irst("var_type_int"), var_type_int));
 
   m_table_var_type_and_str.insert(
     make_pair(var_type_unsigned_int, irst("var_type_unsigned_int")));
   m_table_str_and_var_type.insert(
-    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+    make_pair(irst("var_type_unsigned_int"), var_type_unsigned_int));
 
   m_table_var_type_and_str.insert(
     make_pair(var_type_long, irst("var_type_long")));
   m_table_str_and_var_type.insert(
-    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+    make_pair(irst("var_type_long"), var_type_long));
 
   m_table_var_type_and_str.insert(
     make_pair(var_type_unsigned_long, irst("var_type_unsigned_long")));
   m_table_str_and_var_type.insert(
-    make_pair(irst("var_type_unsigned_char"), var_type_unsigned_char));
+    make_pair(irst("var_type_unsigned_long"), var_type_unsigned_long));
 
   m_table_var_type_and_str.insert(
     make_pair(var_type_float, irst("var_type_float")));

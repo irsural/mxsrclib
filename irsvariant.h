@@ -164,6 +164,7 @@ public:
   #endif // IRSDEFS_LONG_LONG
   variant_t(const string_type& a_value);
 
+  #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
   template<class T>
   variant_t(const T& a_value, const var_type_t a_var_type):
     m_value(),
@@ -171,7 +172,7 @@ public:
   {
     assign_no_cast(a_value);
   }
-
+  #endif // IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
   ~variant_t();
   inline var_type_t type() const;
   void type(const var_type_t a_variant_type);
@@ -239,8 +240,12 @@ public:
 
   template <class T>
   variant_t& assign(const T& a_value);
+  #ifdef IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
   template <class T>
   variant_t& assign_no_cast(const T& a_value);
+  #endif // IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+  template <class T>
+  bool try_assign_no_cast(const T& a_value);
   bool convert_to(const var_type_t a_var_type);
 
   inline size_type size() const;
@@ -587,6 +592,17 @@ inline variant_t& variant_t::assign_no_cast<const void*>(
   return *this;
 }
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
+
+template<class T>
+bool variant_t::try_assign_no_cast(const T& a_value)
+{
+  variant_t variant(a_value);
+  bool status = variant.convert_to(type());
+  if (status) {
+    assign(variant);
+  }
+  return status;
+}
 
 inline variant_t::size_type variant_t::size() const
 {

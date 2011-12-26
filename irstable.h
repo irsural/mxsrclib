@@ -1161,7 +1161,9 @@ table_united_cells_t<cell_type_t>::get_cell_diapason(
   const size_type a_col_index,
   const size_type a_row_index) const
 {
-  diapason_type diapason(a_col_index, a_row_index, 1, 1);
+  IRS_LIB_ASSERT(a_col_index < get_col_count());
+  IRS_LIB_ASSERT(a_row_index < get_row_count());
+  diapason_type diapason(a_col_index, a_row_index, a_col_index, a_row_index);
   const cell_t& cell = m_table.read_cell(a_col_index, a_row_index);
   if (!cell.param.autonomous) {
     diapason = cell.param.diapason;
