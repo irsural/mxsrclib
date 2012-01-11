@@ -543,9 +543,10 @@ void irs::simple_tcpip_t::view_sockets_list()
   );
 }
 
-void irs::simple_tcpip_t::view_tcp_packet(irs_u8* ap_buf)
+void irs::simple_tcpip_t::view_tcp_packet(irs_u8*
+  IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(ap_buf))
 {
-  ap_buf = ap_buf;
+  //ap_buf = ap_buf;
   IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(
     mlog() << irsm("__________________________________") << endl;
     mlog() << irsm("**********************************") << endl;

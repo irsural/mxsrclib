@@ -80,7 +80,7 @@ namespace irs {
     sko_calc_t();
 
   public:
-    sko_calc_t(irs_u32 a_count = 100);
+    sko_calc_t(irs_u32 a_count);
     ~sko_calc_t();
     void clear();
     void add(data_t a_val);
