@@ -372,6 +372,9 @@ __fastcall irs::tstlan4_t::controls_t::~controls_t()
 {
   m_csv_file.close();
   //m_ini_file.save();
+
+  mp_form->OnShow = IRS_NULL;
+  mp_form->OnHide = IRS_NULL;
 }
 void irs::tstlan4_t::controls_t::connect(mxdata_t *ap_data)
 {

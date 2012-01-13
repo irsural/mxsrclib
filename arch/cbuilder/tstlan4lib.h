@@ -28,6 +28,18 @@ namespace irs {
 //! \addtogroup graphical_user_interface_group
 //! @{
 
+struct destructor_test_t
+{
+  destructor_test_t()
+  {
+    irs::mlog() << "constructor" << endl;
+  }
+  ~destructor_test_t()
+  {
+    irs::mlog() << "destructor" << endl;
+  }
+};
+
 class tstlan4_t: public tstlan4_base_t
 {
 public:
@@ -408,6 +420,10 @@ private:
 
   form_type_t m_form_type;
   auto_ptr<TForm> mp_form_auto;
+
+  destructor_test_t m_destructor_test;
+
+  //***
   TForm *mp_form;
   auto_ptr<controls_t> mp_controls;
   const string_type m_ini_name;
