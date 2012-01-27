@@ -188,7 +188,7 @@ irs::arm::arm_spi_t::arm_spi_t(
     } break;
   }
 
-  init_default();
+  //init_default();
 
   // Эта строки обязательно должны стоять после init_default
   m_reg.mp_SSICR1_bit->SSE = 0;
@@ -200,7 +200,8 @@ irs::arm::arm_spi_t::arm_spi_t(
 
   m_reg.mp_SSICR0_bit->FRF = m_spi_type;
 
-  m_reg.mp_SSICR1_bit->SSE = 1;
+  init_default();
+  //m_reg.mp_SSICR1_bit->SSE = 1;
 }
 
 irs::arm::arm_spi_t::reg_t::reg_t(ssi_type_t a_ssi_type):
@@ -292,7 +293,10 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI0CR0_bit.SPO = a_polarity;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {
@@ -308,7 +312,10 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI1CR0_bit.SPO = a_polarity;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {
@@ -336,7 +343,10 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI0CR0_bit.SPH = a_phase;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {
@@ -352,7 +362,10 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI1CR0_bit.SPH = a_phase;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {
@@ -388,7 +401,10 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI0CR0_bit.DSS = a_data_size - 1;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {
@@ -404,7 +420,10 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
         {
           case SPI:
           {
+            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+            m_reg.mp_SSICR1_bit->SSE = 0;
             SSI1CR0_bit.DSS = a_data_size - 1;
+            m_reg.mp_SSICR1_bit->SSE = sse;
           } break;
           case TISS:
           {

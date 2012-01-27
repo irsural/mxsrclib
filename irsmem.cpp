@@ -1,4 +1,4 @@
-// Дата: 26.04.2011
+// Дата: 27.12.2011
 // Дата создания: 25.04.2011
 
 #include <irspch.h>
@@ -8,955 +8,509 @@
 
 #include <irsmem.h>
 #include <irsalg.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
-irs::eeprom_at25128a_t::eeprom_at25128a_t(
-  spi_t* ap_spi,
-  gpio_pin_t* ap_cs_pin,
-  irs_u32 a_ee_start_index,
-  irs_u32 a_ee_size
-):
-  mp_spi(ap_spi),
-  mp_cs_pin(ap_cs_pin),
-  m_ee_start_index(a_ee_start_index),
-  m_ee_size(a_ee_size),
-  m_op_status(op_search_data_operation),
-  m_ee_status(complete),
-  m_need_write(false),
-  m_crc_error(false),
-  m_write_size(0),
-  m_crc_write_begin(false),
-  m_need_writes(m_ee_size),
-  m_start_block(0),
-  m_search_index(0),
-  mp_target_buf(m_ee_size),
-  m_mode(mode_general),
-  m_check_eeprom_status_mode(check_status_send_command),
-  m_write_index_cur(0),
-  m_crc_need_calc(false)
-{
-  if (mp_spi && mp_cs_pin)
-  {
-    memsetex(mp_read_buf, m_spi_size);
-    memsetex(mp_send_buf, m_spi_size);
-    fill_n(m_need_writes.begin(), m_ee_size, 0);
-    mp_cs_pin->set();
-    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
-      mp_spi->tick();
-    read_on_start();
-    irs_u32 crc_new = calc_new_crc();
-    irs_u32 crc_cur = read_crc_eeprom();
-    if (crc_new != crc_cur) {
-      irs_u32 crc_old = calc_old_crc();
-      if (crc_old != crc_cur) {
-        m_crc_error = true;
-      }
-    }
-  }
-}
-
-irs::eeprom_at25128a_t::~eeprom_at25128a_t()
-{
-  return;
-}
-
-irs_uarc irs::eeprom_at25128a_t::size()
-{
-  return m_ee_size;
-}
-
-irs_bool irs::eeprom_at25128a_t::connected()
-{
-  return (mp_spi && mp_cs_pin);
-}
-
-void irs::eeprom_at25128a_t::read(irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  if (a_index >= m_ee_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_ee_size) {
-    size = irs_u8(m_ee_size - a_index);
-  }
-  memcpy((void*)ap_buf, (void*)(mp_target_buf.data() + a_index), size);
-}
-
-void irs::eeprom_at25128a_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  if (a_index >= m_ee_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_ee_size) {
-    size = irs_u8(m_ee_size - a_index);
-  }
-  memcpy((void*)(mp_target_buf.data() + a_index), (void*)ap_buf, size);
-  fill_n(m_need_writes.begin() + a_index, size, 1);
-}
-
-irs_bool irs::eeprom_at25128a_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_ee_size) return false;
-  if (a_bit_index > 7) return false;
-  return (mp_target_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
-}
-
-void irs::eeprom_at25128a_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_ee_size) return;
-  if (a_bit_index > 7) return;
-  mp_target_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
-  m_need_writes[a_index] = 1;
-}
-
-void irs::eeprom_at25128a_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_ee_size) return;
-  if (a_bit_index > 7) return;
-  mp_target_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
-  m_need_writes[a_index] = 1;
-}
-
-void irs::eeprom_at25128a_t::tick()
-{
-  mp_spi->tick();
-  
-  switch(m_mode)
-  {
-    case mode_get_status:
-    {
-      switch(m_check_eeprom_status_mode)
-      {
-        case check_status_send_command:
-        {
-          if (!mp_spi->get_lock()&&mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_spi->lock();
-            mp_spi->set_order(irs::spi_t::MSB);
-            mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-            mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-            mp_cs_pin->clear();
-            mp_send_buf[0] = m_RDSR;
-            mp_send_buf[1] = 0;
-            mp_send_buf[2] = 0;
-            mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-            m_check_eeprom_status_mode = check_status_get_response;
-          }
-        } break;
-        case check_status_get_response:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_cs_pin->set();
-            mp_spi->unlock();
-            if (!(mp_read_buf[1] & (1 << m_RDY))) {
-              m_ee_status = complete;
-            } else {
-              m_ee_status = busy;
-            }
-            m_check_eeprom_status_mode = check_status_send_command;
-            m_mode = mode_general;
-          }
-        } break;
-      }
-    } break;
-    case mode_general:
-    {
-      switch (m_op_status)
-      {
-        case op_search_data_operation:
-        {
-          bool catch_block = false;
-          for(; (m_search_index < m_ee_size) ;) {
-            if ((m_need_writes[m_search_index]) && !catch_block) {
-              m_start_block = m_search_index;
-              catch_block = true;
-              m_need_write = true;
-            }
-            if (catch_block && !m_need_writes[m_search_index]) {
-              m_write_size = m_search_index - m_start_block;
-              size_t start_block =
-                (m_ee_start_index + m_crc_size + m_start_block)%m_PAGE_SIZE;
-              if ((start_block + m_write_size) > m_PAGE_SIZE)
-              {
-                m_write_size = m_PAGE_SIZE - start_block;
-                m_search_index = m_start_block + m_write_size;
-              }
-              break;
-            }
-            m_search_index++;
-            if (catch_block && (m_search_index == m_ee_size)) {
-              m_write_size = m_search_index - m_start_block;
-              size_t start_block =
-                (m_ee_start_index + m_crc_size + m_start_block)%m_PAGE_SIZE;
-              if ((start_block + m_write_size) > m_PAGE_SIZE)
-              {
-                m_write_size = m_PAGE_SIZE - start_block;
-                m_search_index = m_start_block + m_write_size;
-              } else {
-                m_search_index = 0;
-              }
-              break;
-            }
-            if (!catch_block && (m_search_index == m_ee_size)) {
-              m_search_index = 0;
-              break;
-            }
-          }
-          if (m_need_write) {
-            m_op_status = op_spi_write_begin;
-            m_mode = mode_get_status;
-          }
-        } break;
-        case op_spi_write_begin:
-        {
-          if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
-            if (m_ee_status == complete) {
-              if (m_need_write) {
-                mp_spi->set_order(irs::spi_t::MSB);
-                mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-                mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-                mp_spi->lock();
-                mp_cs_pin->clear();
-                mp_send_buf[0] = m_WREN;
-                mp_send_buf[1] = 0;
-                mp_send_buf[2] = 0;
-                mp_spi->write(mp_send_buf, m_spi_size);
-                m_need_write = false;
-                m_op_status = op_spi_wren;
-              } else {
-                m_op_status = op_search_data_operation;
-              }
-            } else {
-              m_mode = mode_get_status;
-            }
-          }
-        } break;
-        case op_spi_wren:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_cs_pin->set();
-            if (!m_crc_need_calc) {
-              m_op_status = op_spi_write_continue;
-            } else {
-              m_crc_need_calc = false;
-              m_op_status = op_write_crc32_begin;
-            }
-          }
-        } break;
-        case op_spi_write_continue:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_cs_pin->clear();
-            mp_send_buf[0] = m_WRITE;
-            mp_send_buf[1] = IRS_CONST_HIBYTE(static_cast<irs_u16>(
-              m_ee_start_index + m_start_block + m_crc_size));
-            mp_send_buf[2] = IRS_CONST_LOBYTE(static_cast<irs_u16>(
-              m_ee_start_index + m_start_block + m_crc_size));
-            mp_spi->write(mp_send_buf, m_spi_size);
-            m_write_index_cur = 0;
-            m_op_status = op_spi_write_end;
-          }
-        } break;
-        case op_spi_write_end:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            if (m_write_index_cur < m_write_size) {
-              if ((m_write_size - m_write_index_cur) >= m_spi_size) {
-                mp_spi->write(mp_target_buf.data() + m_start_block +
-                  m_write_index_cur, m_spi_size);
-                m_write_index_cur += m_spi_size;
-              } else {
-                mp_spi->write(mp_target_buf.data() + m_start_block +
-                  m_write_index_cur, m_write_size - m_write_index_cur);
-                m_write_index_cur = m_write_size;
-              }
-            } else {
-              mp_cs_pin->set();
-              mp_spi->unlock();
-              m_mode = mode_get_status;
-              fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
-              m_need_write = true;
-              m_crc_need_calc = true;
-              m_op_status = op_spi_write_begin;
-            }
-          }
-        } break;
-        case op_write_crc32_begin:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_cs_pin->clear();
-            mp_send_buf[0] = m_WRITE;
-            mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index);
-            mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index);
-            mp_spi->write(mp_send_buf, m_spi_size);
-            m_crc_write_begin = true;
-            m_op_status = op_write_crc32_continue;
-          }
-        } break;
-        case op_write_crc32_continue:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            irs_u32 crc = calc_new_crc();
-            if (m_crc_write_begin) {
-              memcpyex(mp_send_buf, reinterpret_cast<irs_u8*>(&crc),
-                m_spi_size);
-              mp_spi->write(mp_send_buf, m_spi_size);
-              m_crc_write_begin = false;
-            } else {
-              memcpyex(mp_send_buf,
-                reinterpret_cast<irs_u8*>(&crc) + m_spi_size,
-                m_crc_size - m_spi_size);
-              mp_spi->write(mp_send_buf, m_crc_size - m_spi_size);
-              m_op_status = op_write_crc32_end;
-            }
-          }
-        } break;
-        case op_write_crc32_end:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            mp_cs_pin->set();
-            mp_spi->unlock();
-            m_op_status = op_spi_reset;
-            m_mode = mode_get_status;
-          }
-        } break;
-        case op_spi_reset:
-        {
-          if (mp_spi->get_status() == irs::spi_t::FREE) {
-            if (m_ee_status == complete) {
-              m_op_status = op_search_data_operation;
-            } else {
-              m_mode = mode_get_status;
-            }
-          }
-        } break;
-      }
-    } break;
-  }
-}
-
-bool irs::eeprom_at25128a_t::error()
-{
-  return m_crc_error;
-}
-
-irs_u32 irs::eeprom_at25128a_t::calc_old_crc()
-{
-  return crc32(reinterpret_cast<irs_u32*>(mp_target_buf.data()), 0,
-    m_ee_size/4);
-}
-
-irs_u32 irs::eeprom_at25128a_t::calc_new_crc()
-{
-  return crc32_table(mp_target_buf.data(), m_ee_size);
-}
-
-irs_u32 irs::eeprom_at25128a_t::read_crc_eeprom()
-{
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-  mp_spi->lock();
-  mp_cs_pin->clear();
-  mp_send_buf[0] = m_READ;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index);
-  mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  irs_u32 crc = 0;
-  if ((m_ee_start_index%m_PAGE_SIZE + m_crc_size) < m_PAGE_SIZE) {
-    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), m_spi_size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    mp_spi->read(reinterpret_cast<irs_u8*>(&crc) + m_spi_size,
-      m_crc_size - m_spi_size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    mp_cs_pin->set();
-    mp_spi->unlock();
-    
-    m_ee_status = busy;
-    while(get_status() == busy) {}
-  } else {
-    size_t size = m_PAGE_SIZE - (m_ee_start_index%m_PAGE_SIZE);
-    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    mp_cs_pin->set();
-    mp_spi->unlock();
-    m_ee_status = busy;
-    while(get_status() == busy) {}
-    
-    mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-    mp_spi->lock();
-    mp_cs_pin->clear();
-    mp_send_buf[0] = m_READ;
-    mp_send_buf[1] = IRS_CONST_HIBYTE(m_ee_start_index + size);
-    mp_send_buf[2] = IRS_CONST_LOBYTE(m_ee_start_index + size);
-    mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    size = m_crc_size - size;
-    mp_spi->read(reinterpret_cast<irs_u8*>(&crc), size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    mp_cs_pin->set();
-    mp_spi->unlock();
-    m_ee_status = busy;
-    while(get_status() == busy) {}
-  }
-  return crc;
-}
-
-size_t irs::eeprom_at25128a_t::read_part(size_t a_index, size_t a_size)
-{
-  size_t data_index = a_index;
-  while (a_index != (data_index + a_size)) {
-    if ((a_size - (a_index - data_index)) >= m_spi_size) {
-      mp_spi->read(mp_target_buf.data() +
-        (a_index - (m_ee_start_index + m_crc_size)), m_spi_size);
-      a_index += m_spi_size;
-    } else {
-      mp_spi->read(mp_target_buf.data() +
-        (a_index - (m_ee_start_index + m_crc_size)),
-        a_size - (a_index - data_index));
-      a_index = data_index + a_size;
-    }
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-  }
-  return a_index;
-}
-
-void irs::eeprom_at25128a_t::read_on_start()
-{
-  mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-  mp_spi->lock();
-  mp_cs_pin->clear();
-  size_t data_index = m_ee_start_index + m_crc_size;
-  size_t first_part_size = 0;
-  size_t middle_part_cnt = 0;
-  size_t last_part_size = 0;
-  if ((data_index%m_PAGE_SIZE + m_ee_size) > m_PAGE_SIZE) {
-    first_part_size = m_PAGE_SIZE - data_index%m_PAGE_SIZE;
-    last_part_size = (data_index%m_PAGE_SIZE + m_ee_size)%m_PAGE_SIZE;
-    middle_part_cnt = (data_index%m_PAGE_SIZE + m_ee_size -
-      first_part_size - last_part_size)/m_PAGE_SIZE;
-  } else {
-    first_part_size = m_ee_size;
-  }
-  // Чтение first_part
-  mp_send_buf[0] = m_READ;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
-  mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  size_t read_index_cur = data_index;
-  read_index_cur = read_part(read_index_cur, first_part_size);
-  m_ee_status = busy;
-  while(get_status() == busy) {}
-  // Чтение middle_part
-  for (size_t middle_part_idx = 0; middle_part_idx < middle_part_cnt;
-    middle_part_idx++)
-  {
-    mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-    mp_spi->lock();
-    mp_cs_pin->clear();
-    data_index = read_index_cur;
-    mp_send_buf[0] = m_READ;
-    mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
-    mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
-    mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-    for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-      mp_spi->tick();
-    read_index_cur = read_part(read_index_cur, m_PAGE_SIZE);
-    m_ee_status = busy;
-    while(get_status() == busy) {}
-  }
-  // Чтение last_part
-  mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-  mp_spi->lock();
-  mp_cs_pin->clear();
-  data_index = read_index_cur;
-  mp_send_buf[0] = m_READ;
-  mp_send_buf[1] = IRS_CONST_HIBYTE(data_index);
-  mp_send_buf[2] = IRS_CONST_LOBYTE(data_index);
-  mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  read_index_cur = read_part(read_index_cur, last_part_size);
-  mp_cs_pin->set();
-  mp_spi->unlock();
-  m_ee_status = busy;
-  while(get_status() == busy) {}
-}
-
-irs::eeprom_at25128a_t::ee_status_t irs::eeprom_at25128a_t::get_status()
-{
-  mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
-  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-  mp_spi->lock();
-  mp_cs_pin->clear();
-  mp_send_buf[0] = m_RDSR;
-  mp_send_buf[1] = 0;
-  mp_send_buf[2] = 0;
-  mp_spi->read_write(mp_read_buf, mp_send_buf, m_spi_size);
-  for (; (mp_spi->get_status() != irs::spi_t::FREE); )
-    mp_spi->tick();
-  mp_cs_pin->set();
-  mp_spi->unlock();
-  if (!(mp_read_buf[1] & (1 << m_RDY))) {
-    m_ee_status = complete;
-  } else {
-    m_ee_status = busy;
-  }
-  return m_ee_status;
-}
-
-irs::eeprom_command_t::eeprom_command_t(
-  spi_t* ap_spi,
-  gpio_pin_t* ap_cs_pin,
-  eeprom_type_t a_eeprom_type
-):
-  mp_spi(ap_spi),
-  mp_cs_pin(ap_cs_pin),
-  mp_cluster_data(ap_spi, ap_cs_pin, 0),
-  m_ee_size(0),
+irs::eeprom_at25_t::eeprom_at25_t(spi_t& a_spi, gpio_pin_t& a_cs_pin,
+  eeprom_type_t a_eeprom_type):
+  m_spi(a_spi),
+  m_cs_pin(a_cs_pin),
   m_page_size(0),
-  m_page_data_size(0),
-  m_status(status_completed),
-  mp_read_buf_cur(IRS_NULL),
-  mp_write_buf_cur(IRS_NULL),
-  m_page_index(0),
-  m_op_size(0),
-  m_op_index_cur(0),
-  m_need_read(false),
-  m_need_write(false),
-  m_op_mode(mode_read_write_begin),
-  mp_target_buf(0),
-  m_first_part_size(0),
-  m_middle_part_number(0),
-  m_last_part_size(0)
+  m_page_count(0),
+  m_status(st_check_ready_prepare),
+  m_target_status(st_write_protect_check),
+  mp_read_user_buf(IRS_NULL),
+  mp_write_user_buf(IRS_NULL),
+  m_num_of_iterations(0),
+  m_current_iteration(0),
+  m_modulo_size(0),
+  m_page_addr(0)
 {
-  switch(a_eeprom_type)
-  {
-    case at25128a:
-    {
-      m_page_size = 64;
-      m_ee_size = (16384 - (16384/m_page_size)*m_crc_size)/2;
-    } break;
-    case at25256a:
-    {
-      m_page_size = 64;
-      m_ee_size = (32768 - (32768/m_page_size)*m_crc_size)/2;
-    } break;
-    default:
-    {
-      IRS_FATAL_ERROR("Неверно указан тип eeprom");
-    };
+  m_cs_pin.set();
+  switch (a_eeprom_type) {
+    case at25010: m_page_size = 8;  m_page_count = 128; break;
+    case at25020: m_page_size = 8;  m_page_count = 256; break;
+    case at25040: m_page_size = 8;  m_page_count = 512; break;
+    case at25128: m_page_size = 64; m_page_count = 256; break;
+    case at25256: m_page_size = 64; m_page_count = 512; break;
+    default: m_page_size = 64; m_page_count = 256;  //  at25128
   }
-  m_page_data_size = m_page_size - m_crc_size;
-  mp_cluster_data.resize(m_page_size);
-  mp_target_buf.resize(m_page_size);
-  if (mp_spi && mp_cs_pin)
-  {
-    mp_cs_pin->set();
-    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
-      mp_spi->tick();
+  m_num_of_iterations = m_page_size / m_spi_size;
+  m_modulo_size = m_page_size % m_spi_size;
+  memsetex(mp_read_buf, m_spi_size);
+  memsetex(mp_write_buf, m_spi_size);
+}
+
+void irs::eeprom_at25_t::prepare_spi()
+{
+  m_spi.set_bitrate(500000);
+  m_spi.set_order(irs::spi_t::MSB);
+  m_spi.set_polarity(irs::spi_t::RISING_EDGE);
+  m_spi.set_phase(irs::spi_t::LEAD_EDGE);
+  m_spi.lock();
+  m_cs_pin.clear();
+}
+
+void irs::eeprom_at25_t::clear_spi()
+{
+  m_cs_pin.set();
+  m_spi.unlock();
+}
+
+void irs::eeprom_at25_t::read_status_register()
+{
+  prepare_spi();
+  memsetex(mp_write_buf, m_RDSR_size);
+  mp_write_buf[m_command_pos] = m_RDSR;
+  m_spi.read_write(mp_read_buf, mp_write_buf, m_RDSR_size);
+}
+
+void irs::eeprom_at25_t::write_protect_disable()
+{
+  prepare_spi();
+  mp_write_buf[m_command_pos] = m_WRSR;
+  mp_write_buf[m_WRSR_data_pos] = 0;
+  m_spi.write(mp_write_buf, m_WRSR_size);
+}
+
+void irs::eeprom_at25_t::write_enable()
+{
+  prepare_spi();
+  mp_write_buf[m_command_pos] = m_WREN;
+  m_spi.write(mp_write_buf, m_WREN_size);
+}
+bool irs::eeprom_at25_t::status_register_ready()
+{
+  return !(mp_read_buf[m_RDSR_answer_pos] & (1 << m_RDY));
+}
+
+bool irs::eeprom_at25_t::status_register_write_protect()
+{
+  irs_u8 wp_mask = (1 << m_BP0) | (1 << m_BP1) | (1 << m_WPEN);
+  return mp_read_buf[m_RDSR_answer_pos] & wp_mask;
+}
+
+void irs::eeprom_at25_t::transaction_initiate(const irs_u8 a_command)
+{
+  prepare_spi();
+  mp_write_buf[m_command_pos] = a_command;
+  mp_write_buf[m_addr_lo_pos] = IRS_LOBYTE(m_page_addr);
+  mp_write_buf[m_addr_hi_pos] = IRS_HIBYTE(m_page_addr);
+  m_spi.write(mp_write_buf, m_initiate_size);
+}
+
+irs::eeprom_at25_t::~eeprom_at25_t()
+{
+}
+
+void irs::eeprom_at25_t::read_page(irs_u8 *ap_buf, irs_uarc a_index)
+{
+  if (m_status == st_free && ap_buf != IRS_NULL && a_index < m_page_count) {
+    m_status = st_check_ready_prepare;
+    m_target_status = st_read_prepare;
+    mp_read_user_buf = ap_buf;
+    m_page_addr = a_index * m_page_size;
+    m_current_iteration = 0;
   }
 }
 
-irs::eeprom_command_t::~eeprom_command_t()
+void irs::eeprom_at25_t::write_page(const irs_u8 *ap_buf, irs_uarc a_index)
 {
-
-}
-
-void irs::eeprom_command_t::read(irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  if (m_status != status_wait) {
-    if ((a_index + a_size) > m_ee_size) return;
-    m_status = status_wait;
-    mp_read_buf_cur = ap_buf;
-    m_op_index_cur = a_index;
-    m_op_size = a_size;
-    m_need_read = true;
-  } else {
-    IRS_LIB_ERROR(ec_standard, "irs::eeprom_command_t::read - "
-      "Попытка чтения пока предыдущая операция чтения не завершена");
+  if (m_status == st_free && ap_buf != IRS_NULL && a_index < m_page_count) {
+    m_status = st_check_ready_prepare;
+    m_target_status = st_write_enable;
+    mp_write_user_buf = ap_buf;
+    m_page_addr = a_index * m_page_size;
+    m_current_iteration = 1;
   }
 }
 
-void irs::eeprom_command_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
+irs::page_mem_t::size_type irs::eeprom_at25_t::page_size() const
 {
-  if (m_status != status_wait) {
-    if ((a_index + a_size) > m_ee_size) return;
-    m_status = status_wait;
-    mp_write_buf_cur = ap_buf;
-    m_op_index_cur = a_index;
-    m_op_size = a_size;
-    m_need_write = true;
-  } else {
-    IRS_LIB_ERROR(ec_standard, "irs::eeprom_command_t::write - "
-      "Попытка записи пока предыдущая операция записи не завершена");
+  return m_page_size;
+}
+
+irs_uarc irs::eeprom_at25_t::page_count() const
+{
+  return m_page_count;
+}
+
+irs_status_t irs::eeprom_at25_t::status() const
+{
+  switch (m_status) {
+    case st_free: return irs_st_ready;
+    case st_error: return irs_st_error;
+    default: return irs_st_busy;
   }
 }
 
-irs::eeprom_command_t::status_t irs::eeprom_command_t::status()
+void irs::eeprom_at25_t::tick()
 {
-  return m_status;
-}
-
-irs::eeprom_command_t::size_type irs::eeprom_command_t::size()
-{
-  return m_ee_size;
-}
-
-void irs::eeprom_command_t::tick()
-{
-  mp_spi->tick();
-  
-  switch(m_op_mode)
-  {
-    case mode_read_write_begin:
-    {
-      if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
-        if (m_need_read || m_need_write) {
-          if ((m_op_index_cur%m_page_data_size + m_op_size + m_crc_size) >
-            m_page_size)
-          {
-            m_first_part_size = m_page_size - m_crc_size -
-              m_op_index_cur%m_page_data_size;
-            m_last_part_size = (m_op_size - m_first_part_size)%
-              m_page_data_size;
-            m_middle_part_number = (m_op_size - m_first_part_size -
-              m_last_part_size)/m_page_data_size;
-          } else {
-            m_first_part_size = m_op_size;
-          }
-          m_page_index = (m_op_index_cur/m_page_data_size)*m_page_size*2;
-          if (m_first_part_size) {
-            m_op_mode = mode_first_part_size;
-          } else if (m_middle_part_number) {
-            m_op_mode = mode_middle_part_size;
-          } else {
-            m_op_mode = mode_last_part_size;
-          }
-        }
+  m_spi.tick();
+  switch (m_status) {
+    //  Проверка готовности
+    case st_check_ready_prepare: {
+      if ((m_spi.get_status() == irs::spi_t::FREE) && !m_spi.get_lock()) {
+        read_status_register();
+        m_status = st_check_ready;
       }
-    } break;
-    case mode_first_part_size:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        if (m_need_write) {
-          write_part(m_first_part_size);
-        } else if (m_need_read) {
-          read_part(m_first_part_size);
-        }
-        if (m_middle_part_number) {
-          m_op_mode = mode_middle_part_size;
-        } else if (m_last_part_size) {
-          m_op_mode = mode_last_part_size;
+      break;
+    }
+    case st_check_ready: {
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        clear_spi();
+        if (status_register_ready()) {
+          m_status = m_target_status;
         } else {
-          m_op_mode = mode_spi_reset;
+          m_status = st_check_ready_prepare;
         }
       }
-    } break;
-    case mode_middle_part_size:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        if (m_need_write) {
-          if (m_middle_part_number) {
-            write_part(m_page_data_size);
-            m_middle_part_number--;
-          } else {
-            if (m_last_part_size) {
-              m_op_mode = mode_last_part_size;
-            } else {
-              m_op_mode = mode_spi_reset;
-            }
-          }
-        } else if (m_need_read) {
-          if (m_middle_part_number) {
-            read_part(m_page_data_size);
-            m_middle_part_number--;
-          } else {
-            if (m_last_part_size) {
-              m_op_mode = mode_last_part_size;
-            } else {
-              m_op_mode = mode_spi_reset;
-            }
-          }
-        }
-      }
-    } break;
-    case mode_last_part_size:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        if (m_need_write) {
-          write_part(m_last_part_size);
-        } else if (m_need_read) {
-          read_part(m_last_part_size);
-        }
-        m_op_mode = mode_spi_reset;
-      }
-    } break;
-    case mode_spi_reset:
-    {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        if (m_status != status_error) {
-          m_status = status_completed;
-        }
-        if (m_need_read) {
-          m_need_read = false;
-        } else if (m_need_write) {
-          m_need_write = false;
-        }
-        m_first_part_size = 0;
-        m_middle_part_number = 0;
-        m_last_part_size = 0;
-        m_op_mode = mode_read_write_begin;
-      }
-    } break;
-  }
-}
-
-void irs::eeprom_command_t::write_part(size_type a_size)
-{
-  mp_cluster_data.read(mp_target_buf.data(), m_page_index);
-  irs_u32 crc = 0;
-  memcpyex(reinterpret_cast<irs_u8*>(&crc), mp_target_buf.data(), m_crc_size);
-  if (crc == crc32_table(mp_target_buf.data() + m_crc_size,
-    m_page_data_size))
-  {
-    memcpyex(mp_target_buf.data() + m_crc_size + 
-      m_op_index_cur%m_page_data_size, mp_write_buf_cur,
-      a_size);
-    crc = crc32_table(mp_target_buf.data() + m_crc_size,
-      m_page_data_size);
-    memcpyex(mp_target_buf.data(), reinterpret_cast<irs_u8*>(&crc),
-      m_crc_size);
-    mp_cluster_data.write(mp_target_buf.data(), m_page_index);
-    mp_cluster_data.write(mp_target_buf.data(),
-      m_page_index + m_page_size);
-  } else {
-    mp_cluster_data.read(mp_target_buf.data(),
-      m_page_index + m_page_size);
-    memcpyex(reinterpret_cast<irs_u8*>(&crc), mp_target_buf.data(), m_crc_size);
-    if (crc == crc32_table(mp_target_buf.data() + m_crc_size,
-      m_page_data_size))
-    {
-      memcpyex(mp_target_buf.data() + m_crc_size +
-        m_op_index_cur%m_page_data_size, mp_write_buf_cur,
-        a_size);
-      crc = crc32_table(mp_target_buf.data() + m_crc_size,
-        m_page_data_size);
-      memcpyex(mp_target_buf.data(), reinterpret_cast<irs_u8*>(&crc),
-       m_crc_size);
-      mp_cluster_data.write(mp_target_buf.data(), m_page_index);
-      mp_cluster_data.write(mp_target_buf.data(),
-        m_page_index + m_page_data_size);
-    } else {
-      m_status = status_error;
+      break;
     }
-  }
-  mp_write_buf_cur += a_size;
-  m_op_index_cur += a_size;
-  m_page_index += m_page_size*2;
-}
-
-void irs::eeprom_command_t::read_part(size_type a_size)
-{
-  mp_cluster_data.read(mp_target_buf.data(), m_page_index);
-  irs_u32 crc = 0;
-  memcpyex(reinterpret_cast<irs_u8*>(&crc), mp_target_buf.data(), m_crc_size);
-  if (crc == crc32_table(mp_target_buf.data() + m_crc_size,
-    m_page_data_size))
-  {
-    memcpyex(mp_read_buf_cur, mp_target_buf.data() + m_crc_size + 
-      m_op_index_cur%m_page_data_size, a_size);
-  } else {
-    mp_cluster_data.read(mp_target_buf.data(), m_page_index + m_page_size);
-    memcpyex(reinterpret_cast<irs_u8*>(&crc), mp_target_buf.data(), m_crc_size);
-    if (crc == crc32_table(mp_target_buf.data() + m_crc_size,
-      m_page_data_size))
-    {
-      memcpyex(mp_read_buf_cur, mp_target_buf.data() + m_crc_size + 
-        m_op_index_cur%m_page_data_size, a_size);
-    } else {
-      m_status = status_error;
+    //  Проверка защиты от записи
+    case st_write_protect_check: {
+      if (status_register_write_protect()) {
+        m_status = st_write_protect_disable_wait;
+      } else {
+        m_status = st_free;
+      }
+      break;
     }
+    case st_write_protect_disable_wait: {
+      if ((m_spi.get_status() == irs::spi_t::FREE) && !m_spi.get_lock()) {
+        write_enable();
+        m_status = st_write_protect_disable;
+      }
+      break;
+    }
+    case st_write_protect_disable: {
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        clear_spi();
+        write_protect_disable();
+        m_status = st_write_protect_disable_finish;
+      }
+      break;
+    }
+    case st_write_protect_disable_finish: {
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        clear_spi();
+        m_status = st_free;
+      }
+      break;
+    }
+    //  Чтение
+    case st_read_prepare: {
+      //  Посылка команды на чтение и начального адреса
+      transaction_initiate(m_READ);
+      m_status = st_read_initiate;
+      break;
+    }
+    case st_read_initiate: {
+      //  Команда драйверу spi на считывание первых m_spi_size байт
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        if (m_num_of_iterations == 0) {
+          m_spi.read(mp_read_buf, m_modulo_size);
+          m_status = st_read_modulo;
+        } else {
+          m_spi.read(mp_read_buf, m_spi_size);
+          m_status = st_read;
+        }
+      }
+    }
+    case st_read: {
+      //  Чтение данных по m_spi_size байт
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        if (m_current_iteration < m_num_of_iterations) {
+          irs_uarc target_index = m_current_iteration * m_spi_size;
+          memcpy(mp_read_user_buf + target_index, mp_read_buf, m_spi_size);
+          m_current_iteration++;
+          m_spi.read(mp_read_buf, m_spi_size);
+        } else {
+          if (m_modulo_size == 0) {
+            m_status = st_complete;
+          } else {
+            m_status = st_read_modulo;
+            m_spi.read(mp_read_buf, m_modulo_size);
+          }
+        }
+      }
+      break;
+    }
+    case st_read_modulo: {
+      //  Чтение остатка (если необходимо)
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        irs_uarc target_index = m_current_iteration * m_spi_size;
+        memcpy(mp_read_user_buf + target_index, mp_read_buf, m_modulo_size);
+        m_status = st_complete;
+      }
+      break;
+    }
+    //  Запись
+    case st_write_enable: {
+      //  Посылка команды разрешения записи
+      write_enable();
+      m_status = st_write_prepare;
+      break;
+    }
+    case st_write_prepare: {
+      //  Посылка команды на запись и начального адреса
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        clear_spi();
+        for (irs_u8 i = 10; i; i--);
+        transaction_initiate(m_WRITE);
+        m_status = st_write_initiate;
+      }
+      break;
+    }
+    case st_write_initiate: {
+      //  Команда драйверу spi на запись первых m_spi_size байт
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        if (m_num_of_iterations == 0) {
+          memcpy(mp_write_buf, mp_write_user_buf, m_modulo_size);
+          m_spi.write(mp_write_buf, m_modulo_size);
+          m_status = st_write_modulo;
+        } else {
+          memcpy(mp_write_buf, mp_write_user_buf, m_spi_size);
+          m_spi.write(mp_write_buf, m_spi_size);
+          m_status = st_write;
+        }
+      }
+      break;
+    }
+    case st_write: {
+      //  Запись данных по m_spi_size байт
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        if (m_current_iteration < m_num_of_iterations) {
+          irs_uarc target_index = m_current_iteration * m_spi_size;
+          memcpy(mp_write_buf, mp_write_user_buf + target_index, m_spi_size);
+          m_current_iteration++;
+          m_spi.write(mp_write_buf, m_spi_size);
+        } else {
+          if (m_modulo_size == 0) {
+            m_status = st_complete;
+          } else {
+            irs_uarc target_index = m_current_iteration * m_spi_size;
+            memcpy(mp_write_buf, mp_write_user_buf + target_index,
+              m_modulo_size);
+            m_spi.write(mp_write_buf, m_modulo_size);
+            m_status = st_write_modulo;
+          }
+        }
+      }
+      break;
+    }
+    case st_write_modulo: {
+      //  Запись остатка (если необходимо)
+      if (m_spi.get_status() == irs::spi_t::FREE) {
+        m_status = st_complete;
+      }
+      break;
+    }
+    case st_complete: {
+      //  Завершение операции
+      clear_spi();
+      m_status = st_free;
+      break;
+    }
+    default: {}
   }
-  mp_read_buf_cur += a_size;
-  m_op_index_cur += a_size;
-  m_page_index += m_page_size*2;
 }
 
 //------------------------------------------------------------------------------
-
-irs::eeprom_spi_t::eeprom_spi_t(
-  eeprom_command_t* ap_eeprom_command,
-  size_type a_size
-):
-  mp_eeprom_command(ap_eeprom_command),
-  m_size((mp_eeprom_command->size() < a_size)?mp_eeprom_command->size():a_size),
-  mp_target_buf(m_size),
-  m_need_writes(m_size),
-  m_need_write(false),
-  m_write_size(0),
-  m_search_index(0),
-  m_start_block(0),
+//
+irs::mem_cluster_t::mem_cluster_t(page_mem_t& a_page_mem,
+  size_t a_cluster_size):
+  m_page_mem(a_page_mem),
+  m_status(st_free),
+  m_target_status(m_status),
+  m_pages_per_half_cluster(a_cluster_size / m_page_mem.page_size()),
+  m_cluster_size(m_page_mem.page_size() * m_pages_per_half_cluster),
+  m_data_size(m_cluster_size - m_crc_size),
+  m_clusters_count((m_page_mem.page_count() / m_cluster_size) / 2),
   m_error(false),
-  m_mode(mode_search_write_data)
+  m_page_index(0),
+  m_cluster_index(0),
+  m_cluster_data_index(0),
+  m_cluster_data(m_cluster_size * 2), //  2 полукластера
+  m_cluster_data_32(&m_cluster_data),
+  mp_read_buf(IRS_NULL)
 {
-  mp_eeprom_command->read(mp_target_buf.data(), 0, m_size);
-  for(; ((mp_eeprom_command->status() != eeprom_command_t::status_completed)&&
-    (mp_eeprom_command->status() != eeprom_command_t::status_error)); )
-  {
-    mp_eeprom_command->tick();
+}
+
+irs::mem_cluster_t::~mem_cluster_t()
+{
+}
+
+void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
+{
+  if (status() != irs_st_busy && a_cluster_index < m_clusters_count && ap_buf) {
+    mp_read_buf = ap_buf;
+    m_cluster_index = a_cluster_index;
+    m_status = st_read_begin;
   }
-  if (mp_eeprom_command->status() == eeprom_command_t::status_error) {
-    m_error = true;
+}
+
+void irs::mem_cluster_t::write_cluster(const irs_u8 *ap_buf,
+  irs_uarc a_cluster_index)
+{
+  if (m_status == st_free && a_cluster_index < m_clusters_count && ap_buf) {
+    m_cluster_index = a_cluster_index;
+    c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
+    mem_copy(user_buf, 0, m_cluster_data, 0, m_data_size);
+    m_status = st_write_begin;
   }
 }
 
-irs::eeprom_spi_t::~eeprom_spi_t()
-{
-}
-
-irs_uarc irs::eeprom_spi_t::size()
-{
-  return static_cast<irs_uarc>(m_size);
-}
-
-irs_bool irs::eeprom_spi_t::connected()
-{
-  return true;
-}
-
-void irs::eeprom_spi_t::read(irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size)
-{
-  if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) {
-    size = irs_u8(m_size - a_index);
-  }
-  memcpy((void*)ap_buf, (void*)(mp_target_buf.data() + a_index), size);
-}
-
-void irs::eeprom_spi_t::write(const irs_u8* ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) {
-    size = irs_u8(m_size - a_index);
-  }
-  memcpy((void*)(mp_target_buf.data() + a_index), (void*)ap_buf, size);
-  fill_n(m_need_writes.begin() + a_index, size, 1);
-}
-
-irs_bool irs::eeprom_spi_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_size) return false;
-  if (a_bit_index > 7) return false;
-  return (mp_target_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
-}
-
-void irs::eeprom_spi_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_size) return;
-  if (a_bit_index > 7) return;
-  mp_target_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
-  m_need_writes[a_index] = 1;
-}
-
-void irs::eeprom_spi_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  if (a_index >= m_size) return;
-  if (a_bit_index > 7) return;
-  mp_target_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
-  m_need_writes[a_index] = 1;
-}
-
-bool irs::eeprom_spi_t::error()
+bool irs::mem_cluster_t::error() const
 {
   return m_error;
 }
 
-void irs::eeprom_spi_t::tick()
+irs_status_t irs::mem_cluster_t::status() const
 {
-  mp_eeprom_command->tick();
-  
-  switch(m_mode)
-  {
-    case mode_search_write_data:
-    {
-      bool catch_block = false;
-      for(; (m_search_index < m_size) ;) {
-        if ((m_need_writes[m_search_index]) && !catch_block) {
-          m_start_block = m_search_index;
-          catch_block = true;
-          m_need_write = true;
-        }
-        if (catch_block && !m_need_writes[m_search_index]) {
-          m_write_size = m_search_index - m_start_block;
-          if (m_write_size > m_size)
-          {
-            m_write_size = m_size;
-            m_search_index = m_start_block + m_write_size;
-          }
-          break;
-        }
-        m_search_index++;
-        if (catch_block && (m_search_index == m_size)) {
-          m_write_size = m_search_index - m_start_block;
-          if (m_write_size > m_size)
-          {
-            m_write_size = m_size;
-            m_search_index = m_start_block + m_write_size;
-          } else {
-            m_search_index = 0;
-          }
-          break;
-        }
-        if (!catch_block && (m_search_index == m_size)) {
-          m_search_index = 0;
-          break;
-        }
-      }
-      if (m_need_write) {
-        m_mode = mode_write_data;
-      }
-    } break;
-    case mode_write_data:
-    {
-      if (mp_eeprom_command->status() == eeprom_command_t::status_completed)
-      {
-        mp_eeprom_command->write(mp_target_buf.data() + m_start_block,
-          m_start_block, m_write_size);
-        fill_n(m_need_writes.begin() + m_start_block, m_write_size, 0);
-        m_mode = mode_search_write_data;
-        m_need_write = false;
-      }
-      else if (mp_eeprom_command->status() == eeprom_command_t::status_error)
-      {
-        m_error = true;
-        m_mode = mode_search_write_data;
-      }
-    }
+  switch (m_status) {
+    case st_free: return irs_st_ready;
+    case st_error: return irs_st_error;
+    default: return irs_st_busy;
   }
+}
+
+void irs::mem_cluster_t::tick()
+{
+  m_page_mem.tick();
+  switch (m_status) {
+    case st_read_begin: {
+      m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
+      m_cluster_data_index = 0;
+      m_status = st_read_process;
+      break;
+    }
+    case st_read_process: {
+      if (m_page_mem.status() == irs_st_ready) {
+        if (m_cluster_data_index < 2 * m_cluster_size) {
+          m_page_mem.read_page(&m_cluster_data[m_cluster_data_index],
+            m_page_index);
+          m_page_index++;
+          m_cluster_data_index += m_page_mem.page_size();
+        } else {
+          m_status = st_read_check_crc;
+        }
+      }
+      break;
+    }
+    case st_read_check_crc: {
+      irs_u8* p_data_1_ptr = m_cluster_data.data();
+      irs_u8* p_data_2_ptr = m_cluster_data.data() + m_cluster_size;
+      irs_u32 crc_1 = crc32_table(p_data_1_ptr, m_data_size);
+      irs_u32 crc_2 = crc32_table(p_data_2_ptr, m_data_size);
+      irs_u32 ee_crc_1 = m_cluster_data_32[m_data_size / m_crc_size];
+      irs_u32 ee_crc_2
+        = m_cluster_data_32[(2 * m_cluster_size - 1) / m_crc_size];
+
+      c_array_view_t<irs_u8> user_buf(mp_read_buf, m_data_size);
+      if (crc_1 == ee_crc_1) {
+        mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
+        if (crc_2 == ee_crc_2) {
+          m_status = st_free;
+        } else {
+          //  1 -> 2
+          m_page_index = (2 * m_cluster_index + 1) * m_pages_per_half_cluster;
+          m_cluster_data_index = 0;
+          m_status = st_write_process;
+          m_target_status = st_free;
+        }
+      } else {
+        if (crc_2 == ee_crc_2) {
+          //  2 -> 1
+          mem_copy(m_cluster_data, m_cluster_size, user_buf, 0, m_data_size);
+          mem_copy(m_cluster_data, 0, m_cluster_data, m_cluster_size,
+            m_cluster_size);
+          m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
+          m_cluster_data_index = 0;
+          m_status = st_write_process;
+          m_target_status = st_free;
+        } else {
+          //  error
+          m_status = st_error;
+        }
+      }
+      break;
+    }
+    case st_write_begin: {
+      m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
+      m_cluster_data_index = 0;
+      irs_uarc crc = crc32_table(m_cluster_data.data(), m_data_size);
+      m_cluster_data_32[m_data_size / m_crc_size] = crc;
+      m_status = st_write_process;
+      m_target_status = st_write_begin_2_half;
+      break;
+    }
+    case st_write_process: {
+      if (m_page_mem.status() == irs_st_ready) {
+        if (m_cluster_data_index < m_cluster_size) {
+          m_page_mem.write_page(&m_cluster_data[m_cluster_data_index],
+            m_page_index);
+          m_page_index++;
+          m_cluster_data_index += m_page_mem.page_size();
+        } else {
+          m_status = m_target_status;
+        }
+      }
+      break;
+    }
+    case st_write_begin_2_half: {
+      m_page_index = (2 * m_cluster_index + 1) * m_pages_per_half_cluster;
+      m_cluster_data_index = 0;
+      m_status = st_write_process;
+      m_target_status = st_free;
+      break;
+    }
+    default: {}
+  }
+}
+
+//------------------------------------------------------------------------------
+
+irs::mem_data_t::mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size,
+  size_type /*a_start_index*/, size_type a_size):
+  m_cluster(a_page_mem, a_cluster_size),
+  //m_start_index(a_start_index),
+  m_status(st_free),
+  m_size(a_size)
+{
+}
+
+irs::mem_data_t::~mem_data_t()
+{
+}
+
+void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
+  irs_uarc /*a_size*/)
+{
+  if (status() != irs_st_busy && a_index < m_size && ap_buf) {
+  }
+}
+
+void irs::mem_data_t::write(const irs_u8* /*ap_buf*/, irs_uarc /*a_index*/,
+  irs_uarc /*a_size*/)
+{
+}
+
+irs_status_t irs::mem_data_t::status()
+{
+  switch (m_status) {
+    case st_free: return irs_st_ready;
+    case st_error: return irs_st_error;
+    default: return irs_st_busy;
+  }
+}
+
+irs::mem_data_t::size_type irs::mem_data_t::size()
+{
+  return m_size;
+}
+
+void irs::mem_data_t::tick()
+{
 }

@@ -594,8 +594,8 @@ irs::arm::adc_stellaris_t::adc_stellaris_t(
   {
     switch (m_adc_module)
     {
-      case ADC0: ADC0SSCTL0_bit.END0 = 1; break;
-      case ADC1: ADC1SSCTL0_bit.END0 = 1; break;
+      case ADC0: ADC0SSCTL0_bit.END0 = 1; ADC0SSCTL0_bit.IE0 = 1; break;
+      case ADC1: ADC1SSCTL0_bit.END0 = 1; ADC1SSCTL0_bit.IE0 = 1; break;
     }
   }
   m_result_vector.clear();

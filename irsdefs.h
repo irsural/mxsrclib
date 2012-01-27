@@ -438,6 +438,13 @@ const int npos = -1;
 
 }
 
+//  Статус всего
+enum irs_status_t {
+  irs_st_busy,
+  irs_st_ready,
+  irs_st_error
+};
+
 // Гасим ненужные предупреждения C++ Builder
 #ifdef __BCPLUSPLUS__
 // Condition is always true OR Condition is always false (Default ON)

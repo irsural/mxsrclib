@@ -48,25 +48,33 @@ public:
   virtual void abort() = 0;
 };
 
+//! \brief Класс упрощённого доступа к памяти
+
 class comm_data_t
 {
 public:
   typedef size_t size_type;
-  enum status_t {
-    status_completed,
-    status_wait,
-    status_error
-  };
-  enum eeprom_type_t {
-    at25128a,
-    at25256a
-  };
   virtual ~comm_data_t() {};
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size) = 0;
   virtual void write(const irs_u8 *ap_buf, irs_uarc a_index,
     irs_uarc a_size) = 0;
-  virtual status_t status() = 0;
+  virtual irs_status_t status() = 0;
   virtual size_type size() = 0;
+  virtual void tick() = 0;
+};
+
+//! \brief Класс доступа к памяти со страничной организацией
+
+class page_mem_t
+{
+public:
+  typedef size_t size_type;
+  virtual ~page_mem_t() {};
+  virtual void read_page(irs_u8 *ap_buf, irs_uarc a_index) = 0;
+  virtual void write_page(const irs_u8 *ap_buf, irs_uarc a_index) = 0;
+  virtual size_type page_size() const = 0;
+  virtual irs_uarc page_count() const = 0;
+  virtual irs_status_t status() const = 0;
   virtual void tick() = 0;
 };
 
