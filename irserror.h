@@ -518,7 +518,7 @@ public:
   ):
     mp_out(ap_out),
     m_error_out(ap_error_trans),
-    m_error_blink(a_error_blink_port, a_error_blink_bit, make_cnt_ms(25))
+    m_error_blink(a_error_blink_port, a_error_blink_bit, make_cnt_ms(50))
   {
     ap_error_trans->add_handler(this);
   }

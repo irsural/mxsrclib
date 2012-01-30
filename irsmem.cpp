@@ -327,7 +327,7 @@ irs::mem_cluster_t::mem_cluster_t(page_mem_t& a_page_mem,
   m_pages_per_half_cluster(a_cluster_size / m_page_mem.page_size()),
   m_cluster_size(m_page_mem.page_size() * m_pages_per_half_cluster),
   m_data_size(m_cluster_size - m_crc_size),
-  m_clusters_count((m_page_mem.page_count() / m_cluster_size) / 2),
+  m_clusters_count((m_page_mem.page_count() / m_pages_per_half_cluster) / 2),
   m_error(false),
   m_page_index(0),
   m_cluster_index(0),
@@ -344,7 +344,11 @@ irs::mem_cluster_t::~mem_cluster_t()
 
 void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 {
-  if (status() != irs_st_busy && a_cluster_index < m_clusters_count && ap_buf) {
+  IRS_LIB_ASSERT (!((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) 
+      && ap_buf))
+  if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) 
+      && ap_buf) 
+  {
     mp_read_buf = ap_buf;
     m_cluster_index = a_cluster_index;
     m_status = st_read_begin;
@@ -354,12 +358,16 @@ void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 void irs::mem_cluster_t::write_cluster(const irs_u8 *ap_buf,
   irs_uarc a_cluster_index)
 {
-  if (m_status == st_free && a_cluster_index < m_clusters_count && ap_buf) {
+  IRS_LIB_ASSERT (!((status() != irs_st_busy) && 
+    (a_cluster_index < m_clusters_count) && ap_buf));
+  if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) && ap_buf) 
+  {
     m_cluster_index = a_cluster_index;
     c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
     mem_copy(user_buf, 0, m_cluster_data, 0, m_data_size);
     m_status = st_write_begin;
   }
+  
 }
 
 bool irs::mem_cluster_t::error() const
