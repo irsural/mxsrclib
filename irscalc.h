@@ -1639,6 +1639,8 @@ public:
   inline bool calc(const string_type* ap_prog, value_type* ap_num);
   inline void variable_add(const string_type& a_name, const value_type& a_value,
     const variability_t a_variability = v_is_variable);
+  inline void constant_add(const string_type& a_name,
+    const value_type& a_value);
   inline void variable_replace(
     const string_type& a_name,
     const value_type& a_value,
@@ -2542,6 +2544,12 @@ inline void calculator_t::variable_add(
   const variability_t a_variability)
 {
   m_list_identifier.variable_add(a_name, a_value, a_variability);
+}
+
+inline void calculator_t::constant_add(const string_type& a_name,
+  const value_type& a_value)
+{
+  variable_add(a_name, a_value, v_is_constant);
 }
 
 inline void calculator_t::variable_replace(

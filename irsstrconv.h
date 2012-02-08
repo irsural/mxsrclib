@@ -177,13 +177,26 @@ inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 template<>
 inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
 {
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE) &&\
+    (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return std_wstring_t(str.c_str(), str.Length());
+  #else // Если не Builder XE
   return std_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+  #endif // Если не Builder XE
+
 }
 
 template<>
 inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
 {
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE) &&\
+    (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return irs_wstring_t(str.c_str(), str.Length());
+  #else // Если не Builder XE
   return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
+  #endif // Если не Builder XE
 }
 
 #if defined(__BORLANDC__)

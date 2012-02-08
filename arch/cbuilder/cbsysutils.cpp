@@ -48,7 +48,7 @@ bool irs::cbuilder::file_version_t::operator<(
         less = (release < a_file_version.release);
       }
     } else {
-      less = (major < a_file_version.major);
+      less = (minor < a_file_version.minor);
     }
   } else {
     less = (major < a_file_version.major);
