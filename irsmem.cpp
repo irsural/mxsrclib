@@ -342,10 +342,20 @@ irs::mem_cluster_t::~mem_cluster_t()
 {
 }
 
+irs_uarc irs::mem_cluster_t::cluster_count() const
+{
+  return m_clusters_count; 
+}
+
+size_t irs::mem_cluster_t::crc_size() const
+{
+  return m_crc_size; 
+}
+
 void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 {
-  IRS_LIB_ASSERT (!((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) 
-      && ap_buf))
+  IRS_LIB_ASSERT((status() != irs_st_busy) && 
+    (a_cluster_index < m_clusters_count) && ap_buf)
   if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) 
       && ap_buf) 
   {
@@ -358,9 +368,10 @@ void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 void irs::mem_cluster_t::write_cluster(const irs_u8 *ap_buf,
   irs_uarc a_cluster_index)
 {
-  IRS_LIB_ASSERT (!((status() != irs_st_busy) && 
-    (a_cluster_index < m_clusters_count) && ap_buf));
-  if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) && ap_buf) 
+  IRS_LIB_ASSERT((status() != irs_st_busy) && 
+    (a_cluster_index < m_clusters_count) && ap_buf);
+  if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count) 
+      && ap_buf) 
   {
     m_cluster_index = a_cluster_index;
     c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
@@ -480,29 +491,86 @@ void irs::mem_cluster_t::tick()
 
 //------------------------------------------------------------------------------
 
-irs::mem_data_t::mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size,
-  size_type /*a_start_index*/, size_type a_size):
+irs::mem_data_t::mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size):
   m_cluster(a_page_mem, a_cluster_size),
-  //m_start_index(a_start_index),
   m_status(st_free),
-  m_size(a_size)
+  m_cluster_size(a_cluster_size),
+  m_cluster_data_size(a_cluster_size - m_cluster.crc_size()),
+  m_data_buf(),
+  m_buf(),
+  m_start_index(0),
+  m_end_index(0),
+  m_data_size(0),
+  m_cluster_start_index(0),
+  m_cluster_next_index(0),
+  m_cluster_end_index(0),
+  m_cluster_curr_index(0),
+  m_index_data_buf(0),
+  m_end_cluste(false),
+  mp_read_buf(NULL)
 {
+  //IRS_LIB_ASSERT();
+  m_data_count = 
+    (a_page_mem.page_count()*static_cast<irs_uarc>(a_page_mem.page_size()))/2;
+  int crc_mem_size = m_cluster.cluster_count()*m_cluster.crc_size();
+  m_data_count = m_data_count - crc_mem_size;
+  m_buf.resize(m_cluster_data_size);
 }
 
 irs::mem_data_t::~mem_data_t()
 {
 }
 
-void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
-  irs_uarc /*a_size*/)
+irs_uarc irs::mem_data_t::data_count() const
 {
-  if (status() != irs_st_busy && a_index < m_size && ap_buf) {
+  return m_data_count;
+}
+
+void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  IRS_LIB_ASSERT((status() != irs_st_busy) && ap_buf && 
+    ((a_index + a_size) <= m_data_count));
+  if ((status() != irs_st_busy) && ap_buf && 
+    ((a_index + a_size) <= m_data_count))
+  {
+    m_start_index = a_index;
+    m_end_index = a_index + a_size - 1;
+    m_data_size = a_size;
+    mp_read_buf = ap_buf; 
+    //c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
+    //m_data_buf.resize(m_data_size);
+    //mem_copy(user_buf, 0, m_data_buf, 0, m_data_size);
+    m_status = st_read_begin;
+    m_cluster_start_index = (m_start_index)/m_cluster_data_size;
+    m_cluster_end_index = (m_end_index)/m_cluster_data_size;
+    m_cluster_curr_index = m_cluster_start_index;
+    m_index_data_buf = 0;
+    m_end_cluste = false; 
   }
 }
 
-void irs::mem_data_t::write(const irs_u8* /*ap_buf*/, irs_uarc /*a_index*/,
-  irs_uarc /*a_size*/)
+void irs::mem_data_t::write(const irs_u8* ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
 {
+  IRS_LIB_ASSERT((status() != irs_st_busy) && ap_buf && 
+    ((a_index + a_size) <= m_data_count));
+  if ((status() != irs_st_busy) && ap_buf && 
+    ((a_index + a_size) <= m_data_count))
+  {
+    m_start_index = a_index;
+    m_end_index = a_index + a_size - 1;
+    m_data_size = a_size;
+    c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
+    m_data_buf.resize(m_data_size);
+    mem_copy(user_buf, 0, m_data_buf, 0, m_data_size);
+    m_status = st_write_begin;
+    m_cluster_start_index = (m_start_index)/m_cluster_data_size;
+    m_cluster_end_index = (m_end_index)/m_cluster_data_size;
+    m_cluster_curr_index = m_cluster_start_index;
+    m_index_data_buf = 0;
+    m_end_cluste = false;
+  }
 }
 
 irs_status_t irs::mem_data_t::status()
@@ -521,4 +589,89 @@ irs::mem_data_t::size_type irs::mem_data_t::size()
 
 void irs::mem_data_t::tick()
 {
+  m_cluster.tick();
+  switch (m_status) {
+    case st_read_begin: {
+      if (m_cluster.status() == irs_st_ready) {  
+        if(m_cluster_curr_index > m_cluster_end_index) {
+          m_status = st_free;
+        } else if (m_cluster_curr_index == m_cluster_end_index) {
+          m_status = st_read_process;
+          m_end_cluste = true;
+          m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
+        } else if (m_cluster_curr_index < m_cluster_end_index) {
+          m_status = st_read_process;
+          m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
+        }
+      }
+    } break;
+    case st_read_process: {
+      if (m_cluster.status() == irs_st_ready) {  
+        int start_index = m_start_index%m_cluster_data_size;
+        int data_size = 0;
+        if(m_end_cluste) {
+          data_size = m_end_index + 1  - m_start_index;  
+        } else {
+          data_size = m_cluster_data_size - start_index;
+        }
+        c_array_view_t<irs_u8> user_buf(mp_read_buf, m_data_size);
+        mem_copy(m_buf, start_index, user_buf, m_index_data_buf, data_size);
+        m_index_data_buf = m_index_data_buf + data_size;
+        m_start_index = m_start_index + data_size;
+        m_cluster_curr_index++;
+        m_status = st_read_begin;
+      }    
+    } break;
+    case st_free: {
+
+    } break;
+    case st_write_begin: {
+      if (m_cluster.status() == irs_st_ready) {
+        //m_cluster_next_index = m_cluster_curr_index + 1;
+        if(m_cluster_curr_index > m_cluster_end_index) {
+          m_status = st_free;
+        } else if (m_cluster_curr_index == m_cluster_end_index) {
+          m_status = st_end_cluster_read;
+          m_end_cluste = true;
+          m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
+        } else if (m_cluster_curr_index < m_cluster_end_index) {
+          m_status = st_end_cluster_read;
+          m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
+        }
+        /*if((m_start_index+1)%m_cluster_data_size == 1) {
+        
+        }*/
+        /*m_read_buf.resize(m_cluster_data_size);
+        //c_array_view_t<const irs_u8> read_buf(buf, m_cluster_data_size);
+        m_cluster.read_cluster(m_read_buf.data(), cluster_start_index);*/
+      }
+    } break;
+    case st_end_cluster_read: {
+      if (m_cluster.status() == irs_st_ready) {  
+        int start_index = m_start_index%m_cluster_data_size;
+        int data_size = 0;
+        if(m_end_cluste) {
+          data_size = m_end_index + 1  - m_start_index;  
+        } else {
+          data_size = m_cluster_data_size - start_index;
+        }
+        mem_copy(m_data_buf, m_index_data_buf, m_buf, start_index, data_size);
+        m_index_data_buf = m_index_data_buf + data_size;
+        m_start_index = m_start_index + data_size;
+        m_status = st_write_process;
+      }
+    } break;
+    case st_write_process: {
+      if (m_cluster.status() == irs_st_ready) {   
+        m_cluster.write_cluster(m_buf.data(), m_cluster_curr_index);
+        m_cluster_curr_index++;
+        m_status = st_write_begin;
+      }
+    } break;
+    case st_error: {
+
+      
+    } break;
+    default: {}
+  }
 }

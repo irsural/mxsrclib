@@ -324,6 +324,7 @@ public:
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index, irs_bool a_bit);
   virtual void mark_to_send(irs_uarc a_index, irs_uarc a_size);
   virtual void mark_to_recieve(irs_uarc a_index, irs_uarc a_size);
   virtual void mark_to_send_bit(irs_uarc a_byte_index, irs_uarc a_bit_index);
@@ -531,7 +532,6 @@ private:
   void view_mode();
   size_t get_packet_number();
   void reconnect();
-  void write_bit(irs_uarc a_index, irs_uarc a_bit_index, int a_bit);
 };
 
 //! @}

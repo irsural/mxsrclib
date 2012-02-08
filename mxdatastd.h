@@ -33,8 +33,19 @@ public:
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index) = 0;
+  virtual inline void write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+    irs_bool a_bit);
   virtual void tick() = 0;
 };
+inline void mxdata_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+  irs_bool a_bit)
+{
+  if (a_bit) {
+    set_bit(a_index, a_bit_index);  
+  } else {
+    clear_bit(a_index, a_bit_index);  
+  }
+}
 
 // Локальные данные
 class local_data_t: public mxdata_t

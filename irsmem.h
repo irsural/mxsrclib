@@ -120,6 +120,8 @@ public:
   bool error() const;
   irs_status_t status() const;
   void tick();
+  irs_uarc cluster_count() const;
+  size_t crc_size() const;
 private:
   enum {
     m_crc_size = 4
@@ -159,14 +161,14 @@ class mem_data_t : public comm_data_t
 {
 public:
   typedef comm_data_t::size_type size_type;
-  mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size,
-    size_type a_start_index, size_type a_size);
+  mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size = 64);
   ~mem_data_t();
   void read(irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
   void write(const irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
   irs_status_t status();
   size_type size();
   void tick();
+  irs_uarc data_count() const;
 private:
   enum status_t {
     st_free,
@@ -174,12 +176,28 @@ private:
     st_read_begin,
     st_read_process,
     st_write_begin,
-    st_write_process
+    st_write_process,
+    st_one_cluster_read,
+    st_end_cluster_read
   };
   mem_cluster_t m_cluster;
   status_t m_status;
-  size_type m_cluster_data_size;
   size_type m_size;
+  const size_type m_cluster_size;
+  const size_type m_cluster_data_size;
+  irs_uarc m_data_count;
+  raw_data_t<irs_u8> m_data_buf;
+  raw_data_t<irs_u8> m_buf;
+  irs_uarc m_start_index;
+  irs_uarc m_end_index;
+  irs_uarc m_data_size;
+  int m_cluster_start_index;
+  int m_cluster_next_index;
+  int m_cluster_end_index;
+  int m_cluster_curr_index;
+  int m_index_data_buf;
+  bool m_end_cluste;
+  irs_u8* mp_read_buf;
 };
 
 } // namespace irs

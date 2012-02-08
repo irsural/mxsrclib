@@ -2473,7 +2473,7 @@ irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 }
 
 void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
-  int a_bit)
+  irs_bool a_bit)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear_bit"));
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
