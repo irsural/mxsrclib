@@ -491,7 +491,7 @@ irs::calc::stringns_t trim(irs::calc::stringns_t a_str)
 //! \brief Возвращает строку с удаленными пробельными символами
 irs::calc::stringns_t remove_space(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
-{ 
+{
   irs::calc::stringns_t str = a_str;
   for (int i = a_str.size() - 1; i > -1; i--) {
     if (irs::isspacet(str[i], a_loc)) {
@@ -554,16 +554,53 @@ irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
 }
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 //! \brief Возвращает строку, все символы которой в нижнем регистре
-irs::calc::stringns_t to_lower(irs::calc::stringns_t a_str)
+irs::calc::stringns_t to_lower(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
 {
-  return irs::to_lower(a_str);
+  return irs::to_lower(a_str, a_loc);
 }
 
 //! \brief Возвращает строку, все символы которой в верхнем регистре
-irs::calc::stringns_t to_upper(irs::calc::stringns_t a_str)
+irs::calc::stringns_t to_upper(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
 {
-  return irs::to_upper(a_str);
+  return irs::to_upper(a_str, a_loc);
+}
+
+irs::calc::stringns_t to_upper_first_symbol(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  if (!str.empty()) {
+    str[0] = toupper(str[0], a_loc);
+  }
+  return str;
+}
+
+irs::calc::stringns_t to_lower_first_symbol(irs::calc::stringns_t a_str,
+  locale a_loc = irs::loc().get())
+{
+  irs::calc::stringns_t str = a_str;
+  if (!str.empty()) {
+    str[0] = tolower(str[0], a_loc);
+  }
+  return str;
+}
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
+
+irs::calc::stringns_t addition_dot_if_not_exists(irs::calc::stringns_t a_str)
+{
+  irs::calc::stringns_t str = a_str;
+  if (!str.empty()) {
+    if (str[str.size() - 1] != irst('.')) {
+      str += irst(".");
+    }
+  } else {
+    str += irst(".");
+  }
+  return str;
 }
 
 class str_size_t: public irs::calc::function_t
@@ -1113,16 +1150,24 @@ irs::calc::calculator_t::calculator_t():
   func_r_string_a_string_ptr = trim;
   function_add(irst("trim"),
     new func_r_string_a_string_t(func_r_string_a_string_ptr));
-  func_r_string_a_string_ptr = ::to_upper;
+  /*func_r_string_a_string_ptr = ::to_upper;
   function_add(irst("to_upper"),
     new func_r_string_a_string_t(func_r_string_a_string_ptr));
   func_r_string_a_string_ptr = ::to_lower;
   function_add(irst("to_lower"),
+    new func_r_string_a_string_t(func_r_string_a_string_ptr));*/
+  func_r_string_a_string_ptr = addition_dot_if_not_exists;
+  function_add(irst("addition_dot_if_not_exists"),
     new func_r_string_a_string_t(func_r_string_a_string_ptr));
-
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT 
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   func_r_str_a_str_loc_t::func_r_str_a_str_loc_ptr_type
     func_r_str_a_str_loc_ptr = IRS_NULL;
+  func_r_str_a_str_loc_ptr = ::to_upper;
+  function_add(irst("to_upper"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
+  func_r_str_a_str_loc_ptr = ::to_lower;
+  function_add(irst("to_lower"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
   func_r_str_a_str_loc_ptr = remove_space;
   function_add(irst("remove_space"),
     new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
@@ -1131,10 +1176,16 @@ irs::calc::calculator_t::calculator_t():
     new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
   func_r_str_a_str_loc_ptr = remove_digit;
   function_add(irst("remove_digit"),
-    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr)); 
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
   func_r_str_a_str_loc_ptr = remove_not_digit;
   function_add(irst("remove_not_digit"),
-    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr)); 
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
+  func_r_str_a_str_loc_ptr = to_upper_first_symbol;
+  function_add(irst("to_upper_first_symbol"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
+  func_r_str_a_str_loc_ptr = to_lower_first_symbol;
+  function_add(irst("to_lower_first_symbol"),
+    new func_r_str_a_str_loc_t(func_r_str_a_str_loc_ptr));
   #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
   func_r_dbl_a_dbl_dbl_t::func_r_dbl_a_dbl_ptr_type
