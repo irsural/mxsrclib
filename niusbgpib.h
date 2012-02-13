@@ -160,37 +160,40 @@ public:
         IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
       }
       #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
-      if (!f_Gpib32Lib) {
-        IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
-        //ShowMessage("Библиотека GPIB-32.DLL не найдена");
+      if (f_Gpib32Lib) {
+        f_init_fail = irs_false;
+        DEF_DLL_VAR(f_Gpib32Lib, int, ibsta);
+        DEF_DLL_VAR(f_Gpib32Lib, int, iberr);
+        DEF_DLL_VAR(f_Gpib32Lib, long, ibcntl);
+        DEF_DLL_PROC(f_Gpib32Lib, ibdev);
+        DEF_DLL_PROC(f_Gpib32Lib, ibdma);
+        DEF_DLL_PROC(f_Gpib32Lib, ibfindA);
+        DEF_DLL_PROC(f_Gpib32Lib, ibclr);
+        DEF_DLL_PROC(f_Gpib32Lib, ibcmd);
+        DEF_DLL_PROC(f_Gpib32Lib, ibwrt);
+        DEF_DLL_PROC(f_Gpib32Lib, ibrd);
+        DEF_DLL_PROC(f_Gpib32Lib, ibrda);
+        DEF_DLL_PROC(f_Gpib32Lib, ibwrta);
+        DEF_DLL_PROC(f_Gpib32Lib, ibrsc);
+        DEF_DLL_PROC(f_Gpib32Lib, ibsic);
+        DEF_DLL_PROC(f_Gpib32Lib, ibstop);
+        DEF_DLL_PROC(f_Gpib32Lib, ibonl);
+        DEF_DLL_PROC(f_Gpib32Lib, ibtmo);
+        DEF_DLL_PROC(f_Gpib32Lib, ibwait);
+        DEF_DLL_PROC(f_Gpib32Lib, ibconfig);
+      } else {
+        f_init_fail = irs_true;
+        //IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
+        ShowMessage("Библиотеки GPIB-32.DLL и agtgpib32.dll не найдена");
         return;
       }
-      DEF_DLL_VAR(f_Gpib32Lib, int, ibsta);
-      DEF_DLL_VAR(f_Gpib32Lib, int, iberr);
-      DEF_DLL_VAR(f_Gpib32Lib, long, ibcntl);
-      DEF_DLL_PROC(f_Gpib32Lib, ibdev);
-      DEF_DLL_PROC(f_Gpib32Lib, ibdma);
-      DEF_DLL_PROC(f_Gpib32Lib, ibfindA);
-      DEF_DLL_PROC(f_Gpib32Lib, ibclr);
-      DEF_DLL_PROC(f_Gpib32Lib, ibcmd);
-      DEF_DLL_PROC(f_Gpib32Lib, ibwrt);
-      DEF_DLL_PROC(f_Gpib32Lib, ibrd);
-      DEF_DLL_PROC(f_Gpib32Lib, ibrda);
-      DEF_DLL_PROC(f_Gpib32Lib, ibwrta);
-      DEF_DLL_PROC(f_Gpib32Lib, ibrsc);
-      DEF_DLL_PROC(f_Gpib32Lib, ibsic);
-      DEF_DLL_PROC(f_Gpib32Lib, ibstop);
-      DEF_DLL_PROC(f_Gpib32Lib, ibonl);
-      DEF_DLL_PROC(f_Gpib32Lib, ibtmo);
-      DEF_DLL_PROC(f_Gpib32Lib, ibwait);
-      DEF_DLL_PROC(f_Gpib32Lib, ibconfig);
     }
     f_count_init++;
-    f_init_fail = irs_false;
     return;
 
     def_dll_err:
-    IRS_LIB_ERROR(irs::ec_standard, "Ошибка при подключении функций GPIB-32.DLL");
+    IRS_LIB_ERROR(irs::ec_standard,
+      "Ошибка при подключении функций GPIB-32.DLL");
     //ShowMessage("Ошибка при подключении функций GPIB-32.DLL");
     return;
   }
