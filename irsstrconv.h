@@ -110,6 +110,15 @@ inline T str_conv(const std_string_t& a_str_in)
   return str_conv_simple(T(), a_str_in);
 }
 
+#if defined(__BORLANDC__)
+template<>
+inline String str_conv<String>(const std_string_t& a_str_in)
+{
+  irs::irs_string_t str(a_str_in.c_str(), a_str_in.size());
+  return str_conv<String>(str);
+}
+#endif // defined(__BORLANDC__)
+
 //std_wstring_t
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
   const std_wstring_t& a_str_in)
