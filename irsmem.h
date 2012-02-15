@@ -113,7 +113,7 @@ private:
 class mem_cluster_t
 {
 public:
-  mem_cluster_t(page_mem_t& a_page_mem, size_t a_cluster_size = 64);
+  mem_cluster_t(page_mem_t* ap_page_mem, size_t a_cluster_size = 64);
   ~mem_cluster_t();
   void read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index);
   void write_cluster(const irs_u8 *ap_buf, irs_uarc a_cluster_index);
@@ -141,7 +141,7 @@ private:
     st_write_begin_2_half
   };
 
-  page_mem_t& m_page_mem;
+  page_mem_t* mp_page_mem;
   status_t m_status;
   status_t m_target_status;
   irs_uarc m_pages_per_half_cluster;
@@ -161,7 +161,7 @@ class mem_data_t : public comm_data_t
 {
 public:
   typedef comm_data_t::size_type size_type;
-  mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size = 64);
+  mem_data_t(page_mem_t* ap_page_mem, size_type a_cluster_size = 64);
   ~mem_data_t();
   void read(irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
   void write(const irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -177,8 +177,7 @@ private:
     st_read_process,
     st_write_begin,
     st_write_process,
-    st_one_cluster_read,
-    st_end_cluster_read
+    st_write_calculation
   };
   mem_cluster_t m_cluster;
   status_t m_status;
@@ -198,6 +197,30 @@ private:
   int m_index_data_buf;
   bool m_end_cluste;
   irs_u8* mp_read_buf;
+};
+
+class mxdata_comm_t: public mxdata_t
+{
+public:
+  mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
+    irs_uarc a_index, irs_uarc a_size);
+  virtual ~mxdata_comm_t(); 
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+    irs_bool a_bit);
+  virtual void tick();
+private:
+  irs::mem_data_t* mp_mem_data;
+  raw_data_t<irs_u8> m_data_buf;
+  irs_uarc m_mem_data_start_index;
+  vector<bool> m_bit_vector;
 };
 
 } // namespace irs

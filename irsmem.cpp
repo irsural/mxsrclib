@@ -319,15 +319,15 @@ void irs::eeprom_at25_t::tick()
 
 //------------------------------------------------------------------------------
 //
-irs::mem_cluster_t::mem_cluster_t(page_mem_t& a_page_mem,
+irs::mem_cluster_t::mem_cluster_t(page_mem_t* ap_page_mem,
   size_t a_cluster_size):
-  m_page_mem(a_page_mem),
+  mp_page_mem(ap_page_mem),
   m_status(st_free),
   m_target_status(m_status),
-  m_pages_per_half_cluster(a_cluster_size / m_page_mem.page_size()),
-  m_cluster_size(m_page_mem.page_size() * m_pages_per_half_cluster),
+  m_pages_per_half_cluster(a_cluster_size / mp_page_mem->page_size()),
+  m_cluster_size(mp_page_mem->page_size() * m_pages_per_half_cluster),
   m_data_size(m_cluster_size - m_crc_size),
-  m_clusters_count((m_page_mem.page_count() / m_pages_per_half_cluster) / 2),
+  m_clusters_count((mp_page_mem->page_count() / m_pages_per_half_cluster) / 2),
   m_error(false),
   m_page_index(0),
   m_cluster_index(0),
@@ -397,7 +397,7 @@ irs_status_t irs::mem_cluster_t::status() const
 
 void irs::mem_cluster_t::tick()
 {
-  m_page_mem.tick();
+  mp_page_mem->tick();
   switch (m_status) {
     case st_read_begin: {
       m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
@@ -406,12 +406,12 @@ void irs::mem_cluster_t::tick()
       break;
     }
     case st_read_process: {
-      if (m_page_mem.status() == irs_st_ready) {
+      if (mp_page_mem->status() == irs_st_ready) {
         if (m_cluster_data_index < 2 * m_cluster_size) {
-          m_page_mem.read_page(&m_cluster_data[m_cluster_data_index],
+          mp_page_mem->read_page(&m_cluster_data[m_cluster_data_index],
             m_page_index);
           m_page_index++;
-          m_cluster_data_index += m_page_mem.page_size();
+          m_cluster_data_index += mp_page_mem->page_size();
         } else {
           m_status = st_read_check_crc;
         }
@@ -466,12 +466,12 @@ void irs::mem_cluster_t::tick()
       break;
     }
     case st_write_process: {
-      if (m_page_mem.status() == irs_st_ready) {
+      if (mp_page_mem->status() == irs_st_ready) {
         if (m_cluster_data_index < m_cluster_size) {
-          m_page_mem.write_page(&m_cluster_data[m_cluster_data_index],
+          mp_page_mem->write_page(&m_cluster_data[m_cluster_data_index],
             m_page_index);
           m_page_index++;
-          m_cluster_data_index += m_page_mem.page_size();
+          m_cluster_data_index += mp_page_mem->page_size();
         } else {
           m_status = m_target_status;
         }
@@ -491,8 +491,8 @@ void irs::mem_cluster_t::tick()
 
 //------------------------------------------------------------------------------
 
-irs::mem_data_t::mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size):
-  m_cluster(a_page_mem, a_cluster_size),
+irs::mem_data_t::mem_data_t(page_mem_t* ap_page_mem, size_type a_cluster_size):
+  m_cluster(ap_page_mem, a_cluster_size),
   m_status(st_free),
   m_cluster_size(a_cluster_size),
   m_cluster_data_size(a_cluster_size - m_cluster.crc_size()),
@@ -509,9 +509,9 @@ irs::mem_data_t::mem_data_t(page_mem_t& a_page_mem, size_type a_cluster_size):
   m_end_cluste(false),
   mp_read_buf(NULL)
 {
-  //IRS_LIB_ASSERT();
   m_data_count = 
-    (a_page_mem.page_count()*static_cast<irs_uarc>(a_page_mem.page_size()))/2;
+    (ap_page_mem->page_count()*static_cast<irs_uarc>(ap_page_mem->page_size()))
+     /2;
   int crc_mem_size = m_cluster.cluster_count()*m_cluster.crc_size();
   m_data_count = m_data_count - crc_mem_size;
   m_buf.resize(m_cluster_data_size);
@@ -538,9 +538,6 @@ void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
     m_end_index = a_index + a_size - 1;
     m_data_size = a_size;
     mp_read_buf = ap_buf; 
-    //c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
-    //m_data_buf.resize(m_data_size);
-    //mem_copy(user_buf, 0, m_data_buf, 0, m_data_size);
     m_status = st_read_begin;
     m_cluster_start_index = (m_start_index)/m_cluster_data_size;
     m_cluster_end_index = (m_end_index)/m_cluster_data_size;
@@ -622,31 +619,21 @@ void irs::mem_data_t::tick()
         m_status = st_read_begin;
       }    
     } break;
-    case st_free: {
-
-    } break;
     case st_write_begin: {
       if (m_cluster.status() == irs_st_ready) {
-        //m_cluster_next_index = m_cluster_curr_index + 1;
         if(m_cluster_curr_index > m_cluster_end_index) {
           m_status = st_free;
         } else if (m_cluster_curr_index == m_cluster_end_index) {
-          m_status = st_end_cluster_read;
+          m_status = st_write_calculation;
           m_end_cluste = true;
           m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
         } else if (m_cluster_curr_index < m_cluster_end_index) {
-          m_status = st_end_cluster_read;
+          m_status = st_write_calculation;
           m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
         }
-        /*if((m_start_index+1)%m_cluster_data_size == 1) {
-        
-        }*/
-        /*m_read_buf.resize(m_cluster_data_size);
-        //c_array_view_t<const irs_u8> read_buf(buf, m_cluster_data_size);
-        m_cluster.read_cluster(m_read_buf.data(), cluster_start_index);*/
       }
     } break;
-    case st_end_cluster_read: {
+    case st_write_calculation: {
       if (m_cluster.status() == irs_st_ready) {  
         int start_index = m_start_index%m_cluster_data_size;
         int data_size = 0;
@@ -672,6 +659,77 @@ void irs::mem_data_t::tick()
 
       
     } break;
+     case st_free: {
+
+      
+    } break;
     default: {}
   }
+}
+
+irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
+  irs_uarc a_index, irs_uarc a_size):
+  mp_mem_data(ap_mem_data),
+  m_data_buf(a_size),
+  m_mem_data_start_index(a_index),
+  m_bit_vector(a_size)
+{
+  irs_uarc data_count = mp_mem_data->data_count();
+  irs_uarc end_data = m_mem_data_start_index + m_data_buf.size();  
+  IRS_LIB_ASSERT(end_data <= data_count);
+}
+
+irs::mxdata_comm_t::~mxdata_comm_t()
+{
+}
+
+irs_uarc irs::mxdata_comm_t::size()
+{
+  return m_data_buf.size();
+}
+
+irs_bool irs::mxdata_comm_t::connected()
+{
+  irs_bool result = false;
+  if (mp_mem_data != IRS_NULL) {
+    result = true;  
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+void irs::mxdata_comm_t::read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size)
+{
+}
+
+void irs::mxdata_comm_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size)
+{
+}
+
+irs_bool irs::mxdata_comm_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  return true;
+}
+
+void irs::mxdata_comm_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+
+}
+
+void irs::mxdata_comm_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+
+}
+
+void irs::mxdata_comm_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+    irs_bool a_bit)
+{
+
+}
+
+void irs::mxdata_comm_t::tick()
+{
+
 }

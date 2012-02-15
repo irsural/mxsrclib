@@ -507,6 +507,7 @@ bool irs::deque_data_test()
   }
   return test_success;
 }
+
 #endif // IRS_DEBUG
 
 
