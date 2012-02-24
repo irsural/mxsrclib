@@ -25,7 +25,7 @@ enum eeprom_type_t {
 class eeprom_at25_t: public page_mem_t
 {
 public:
-  eeprom_at25_t(spi_t& a_spi, gpio_pin_t& a_cs_pin,
+  eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     eeprom_type_t a_eeprom_type = at25128);
   ~eeprom_at25_t();
   void read_page(irs_u8 *ap_buf, irs_uarc a_index);
@@ -83,8 +83,8 @@ private:
     st_error
   };
 
-  spi_t& m_spi;
-  gpio_pin_t& m_cs_pin;
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
   size_type m_page_size;
   irs_uarc m_page_count;
   status_t m_status;
@@ -204,6 +204,7 @@ class mxdata_comm_t: public mxdata_t
 public:
   mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
     irs_uarc a_index, irs_uarc a_size);
+  mxdata_comm_t(irs_uarc a_index, irs_uarc a_size);
   virtual ~mxdata_comm_t(); 
   virtual irs_uarc size();
   virtual irs_bool connected();
@@ -216,11 +217,39 @@ public:
   virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
     irs_bool a_bit);
   virtual void tick();
+  bool error();
+  void connect(irs::mem_data_t* ap_mem_data);
+  irs::mem_data_t* mem_data();
 private:
   irs::mem_data_t* mp_mem_data;
   raw_data_t<irs_u8> m_data_buf;
   irs_uarc m_mem_data_start_index;
   vector<bool> m_bit_vector;
+  enum mode_t {
+    mode_free,
+    mode_error,
+    mode_write,
+    mode_write_wait,
+    mode_initialization,
+    mode_initialization_wait
+  };
+  mode_t m_mode;
+  int m_current_index;
+  int m_start_index;
+  int m_data_size;
+  bool m_is_error;
+  bool m_connected;
+};
+
+class eeprom_at25128_data_t : public mxdata_comm_t
+{
+public:
+  typedef comm_data_t::size_type size_type;
+  eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size, 
+    irs_uarc a_index = 0, size_type a_cluster_size = 64);
+private:
+  irs::eeprom_at25_t m_page_mem;
+  irs::mem_data_t m_mem_data;
 };
 
 } // namespace irs
