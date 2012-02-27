@@ -664,7 +664,7 @@ void irs::mem_data_t::tick()
 }
 
 irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
-  irs_uarc a_index, irs_uarc a_size):
+  irs_uarc a_index, irs_uarc a_size, bool a_init_now, int a_init_timeout):
   mp_mem_data(ap_mem_data),
   m_data_buf(a_size),
   m_mem_data_start_index(a_index),
@@ -676,13 +676,12 @@ irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data,
   m_is_error(false),
   m_connected(false)
 {
-  irs_uarc data_count = mp_mem_data->data_count();
-  irs_uarc end_data = m_mem_data_start_index + m_data_buf.size();  
-  IRS_LIB_ASSERT(end_data <= data_count);
   //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
+  
   m_mode = mode_initialization;
 }
-irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size):
+irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size, 
+  bool a_init_now, int a_init_timeout):
   mp_mem_data(IRS_NULL),
   m_data_buf(a_size),
   m_mem_data_start_index(a_index),
@@ -695,6 +694,7 @@ irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size):
   m_connected(false) 
 {
   //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
+  
   m_mode = mode_initialization;  
 } 
 
@@ -888,9 +888,9 @@ irs::mem_data_t* irs::mxdata_comm_t::mem_data()
 }
     
 irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi, 
-  gpio_pin_t* ap_cs_pin, irs_uarc a_size, 
-  irs_uarc a_index, size_type a_cluster_size):
-  mxdata_comm_t(a_index, a_size),
+  gpio_pin_t* ap_cs_pin, irs_uarc a_size, bool a_init_now,
+  irs_uarc a_index, size_type a_cluster_size, int a_init_timeout):
+  mxdata_comm_t(a_index, a_size, a_init_now),
   m_page_mem(ap_spi, ap_cs_pin, at25128),
   m_mem_data(&m_page_mem, a_cluster_size)
 {

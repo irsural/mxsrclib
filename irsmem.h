@@ -203,8 +203,10 @@ class mxdata_comm_t: public mxdata_t
 {
 public:
   mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
-    irs_uarc a_index, irs_uarc a_size);
-  mxdata_comm_t(irs_uarc a_index, irs_uarc a_size);
+    irs_uarc a_index, irs_uarc a_size, bool a_init_now = false,
+    int a_init_timeout = 1);
+  mxdata_comm_t(irs_uarc a_index, irs_uarc a_size, bool a_init_now = false,
+    int a_init_timeout = 1);
   virtual ~mxdata_comm_t(); 
   virtual irs_uarc size();
   virtual irs_bool connected();
@@ -246,7 +248,8 @@ class eeprom_at25128_data_t : public mxdata_comm_t
 public:
   typedef comm_data_t::size_type size_type;
   eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size, 
-    irs_uarc a_index = 0, size_type a_cluster_size = 64);
+    bool init_now = false,  irs_uarc a_index = 0, size_type a_cluster_size = 64,
+    int init_timeout = 1);
 private:
   irs::eeprom_at25_t m_page_mem;
   irs::mem_data_t m_mem_data;
