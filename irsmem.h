@@ -220,8 +220,9 @@ public:
     irs_bool a_bit);
   virtual void tick();
   bool error();
-  void connect(irs::mem_data_t* ap_mem_data);
   irs::mem_data_t* mem_data();
+protected:
+  void connect(irs::mem_data_t* ap_mem_data);
 private:
   irs::mem_data_t* mp_mem_data;
   raw_data_t<irs_u8> m_data_buf;
@@ -241,6 +242,8 @@ private:
   int m_data_size;
   bool m_is_error;
   bool m_connected;
+  irs::timer_t m_timer;
+  bool m_init_now;
 };
 
 class eeprom_at25128_data_t : public mxdata_comm_t

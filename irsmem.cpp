@@ -674,11 +674,22 @@ irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data,
   m_start_index(0),
   m_data_size(0),
   m_is_error(false),
-  m_connected(false)
+  m_connected(false),
+  m_timer(irs::make_cnt_s(a_init_timeout)),
+  m_init_now(a_init_now)
 {
   //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
-  
   m_mode = mode_initialization;
+  if (m_init_now) {
+    m_timer.start();
+    while (!m_connected) {
+      tick();
+      if (m_timer.check()) {
+        IRS_LIB_ERROR(ec_standard, "Истек таймаут инициализации eeprom!");
+        break;
+      }
+    }
+  } 
 }
 irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size, 
   bool a_init_now, int a_init_timeout):
@@ -691,11 +702,11 @@ irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size,
   m_start_index(0),
   m_data_size(0),
   m_is_error(false),
-  m_connected(false) 
+  m_connected(false),
+  m_timer(irs::make_cnt_s(a_init_timeout)),
+  m_init_now(a_init_now)
 {
   //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
-  
-  m_mode = mode_initialization;  
 } 
 
 irs::mxdata_comm_t::~mxdata_comm_t()
@@ -776,25 +787,7 @@ void irs::mxdata_comm_t::tick()
       }
       bool start = false;
       bool finish = false;
-      /*int size = (m_bit_vector.size() - m_current_index);
-      IRS_LIB_ERROR_IF(!check_index(m_bit_vector, m_current_index, size), 
-        ec_standard,
-        "Итераторы вне контейнера или begin > end.");
-      #ifdef IRS_LIB_CHECK
-      if (!check_index(m_bit_vector, m_current_index, size)) 
-      {
-        m_current_index = m_bit_vector.size();
-      }
-      #endif //IRS_LIB_CHECK*/
       for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
-        /*IRS_LIB_ERROR_IF(!check_index(m_bit_vector, m_current_index), 
-          ec_standard,
-          "Итераторы вне контейнера или begin > end."); 
-        #ifdef IRS_LIB_CHECK
-        if (!check_index(m_bit_vector, m_current_index)) {
-          break;
-        }
-        #endif //IRS_LIB_CHECK*/
         if (m_bit_vector[m_current_index] == 1) {
           m_start_index = m_current_index;
           start = true;
@@ -802,14 +795,6 @@ void irs::mxdata_comm_t::tick()
         }
       }
       for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
-        /*IRS_LIB_ERROR_IF(!check_index(m_bit_vector, m_current_index), 
-          ec_standard,
-          "Итераторы вне контейнера или begin > end.");        
-        #ifdef IRS_LIB_CHECK
-        if (!check_index(m_bit_vector, m_current_index)) {
-          break;
-        }
-        #endif //IRS_LIB_CHECK*/
         if (m_bit_vector[m_current_index] == 0) {
           m_data_size = m_current_index - m_start_index;
           finish = true;
@@ -880,6 +865,17 @@ bool irs::mxdata_comm_t::error()
 void irs::mxdata_comm_t::connect(irs::mem_data_t* ap_mem_data) 
 {
   mp_mem_data = ap_mem_data;
+  m_mode = mode_initialization;
+  if (m_init_now) {
+    m_timer.start();
+    while (!m_connected) {
+      tick();
+      if (m_timer.check()) {
+        IRS_LIB_ERROR(ec_standard, "Истек таймаут инициализации eeprom!");
+        break;
+      }
+    }
+  } 
 }
 
 irs::mem_data_t* irs::mxdata_comm_t::mem_data()
@@ -890,7 +886,7 @@ irs::mem_data_t* irs::mxdata_comm_t::mem_data()
 irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi, 
   gpio_pin_t* ap_cs_pin, irs_uarc a_size, bool a_init_now,
   irs_uarc a_index, size_type a_cluster_size, int a_init_timeout):
-  mxdata_comm_t(a_index, a_size, a_init_now),
+  mxdata_comm_t(a_index, a_size, a_init_now, a_init_timeout),
   m_page_mem(ap_spi, ap_cs_pin, at25128),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
