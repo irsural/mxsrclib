@@ -9,6 +9,7 @@
 #include <irsmem.h>
 #include <irsalg.h>
 #include <irserror.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -328,7 +329,7 @@ irs::mem_cluster_t::mem_cluster_t(page_mem_t* ap_page_mem,
   m_cluster_size(mp_page_mem->page_size() * m_pages_per_half_cluster),
   m_data_size(m_cluster_size - m_crc_size),
   m_clusters_count((mp_page_mem->page_count() / m_pages_per_half_cluster) / 2),
-  m_error(false),
+  m_error_status(false),
   m_page_index(0),
   m_cluster_index(0),
   m_cluster_data_index(0),
@@ -377,13 +378,15 @@ void irs::mem_cluster_t::write_cluster(const irs_u8 *ap_buf,
     c_array_view_t<const irs_u8> user_buf(ap_buf, m_data_size);
     mem_copy(user_buf, 0, m_cluster_data, 0, m_data_size);
     m_status = st_write_begin;
-  }
-  
+  } 
 }
 
-bool irs::mem_cluster_t::error() const
+bool irs::mem_cluster_t::error()
 {
-  return m_error;
+  bool result;
+  result = m_error_status;
+  m_error_status = false;
+  return result;
 }
 
 irs_status_t irs::mem_cluster_t::status() const
@@ -394,6 +397,17 @@ irs_status_t irs::mem_cluster_t::status() const
     default: return irs_st_busy;
   }
 }
+
+/*void out_raw_data(irs::raw_data_t<irs_u8>* ap_raw_data)
+{
+  for(size_t i = 0; i < ap_raw_data->size(); i++){
+    irs::out_hex(irs::mlog(), (*ap_raw_data)[i]);
+    irs::mlog() << ' ';
+    if (i % 16 == 15) {
+      irs::mlog() << endl;
+    }
+  }
+}*/
 
 void irs::mem_cluster_t::tick()
 {
@@ -408,7 +422,7 @@ void irs::mem_cluster_t::tick()
     case st_read_process: {
       if (mp_page_mem->status() == irs_st_ready) {
         if (m_cluster_data_index < 2 * m_cluster_size) {
-          mp_page_mem->read_page(&m_cluster_data[m_cluster_data_index],
+          mp_page_mem->read_page(m_cluster_data.data()+m_cluster_data_index,
             m_page_index);
           m_page_index++;
           m_cluster_data_index += mp_page_mem->page_size();
@@ -434,6 +448,14 @@ void irs::mem_cluster_t::tick()
           m_status = st_free;
         } else {
           //  1 -> 2
+          mem_copy(m_cluster_data, 0, m_cluster_data, m_cluster_size,
+            m_cluster_size);
+          for (int i = 0; i < m_cluster_size; i++) {
+            if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
+              int k = 0;
+              k++;
+            }
+          }
           m_page_index = (2 * m_cluster_index + 1) * m_pages_per_half_cluster;
           m_cluster_data_index = 0;
           m_status = st_write_process;
@@ -443,15 +465,24 @@ void irs::mem_cluster_t::tick()
         if (crc_2 == ee_crc_2) {
           //  2 -> 1
           mem_copy(m_cluster_data, m_cluster_size, user_buf, 0, m_data_size);
-          mem_copy(m_cluster_data, 0, m_cluster_data, m_cluster_size,
+          mem_copy(m_cluster_data, m_cluster_size, m_cluster_data, 0,
             m_cluster_size);
+          for (int i = 0; i < m_cluster_size; i++) {
+            if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
+              int k = 0;
+              k++;
+            }
+          }
           m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
           m_cluster_data_index = 0;
           m_status = st_write_process;
           m_target_status = st_free;
         } else {
           //  error
-          m_status = st_error;
+          memsetex(m_cluster_data.data(), m_cluster_data.size());
+          mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
+          m_status = st_write_begin;
+          m_error_status = true;
         }
       }
       break;
@@ -459,16 +490,16 @@ void irs::mem_cluster_t::tick()
     case st_write_begin: {
       m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
       m_cluster_data_index = 0;
-      irs_uarc crc = crc32_table(m_cluster_data.data(), m_data_size);
+      irs_u32 crc = crc32_table(m_cluster_data.data(), m_data_size);
       m_cluster_data_32[m_data_size / m_crc_size] = crc;
       m_status = st_write_process;
-      m_target_status = st_write_begin_2_half;
+      m_target_status = st_write_begin_2_half;                  
       break;
     }
     case st_write_process: {
       if (mp_page_mem->status() == irs_st_ready) {
         if (m_cluster_data_index < m_cluster_size) {
-          mp_page_mem->write_page(&m_cluster_data[m_cluster_data_index],
+          mp_page_mem->write_page(m_cluster_data.data()+m_cluster_data_index,
             m_page_index);
           m_page_index++;
           m_cluster_data_index += mp_page_mem->page_size();
@@ -519,6 +550,11 @@ irs::mem_data_t::mem_data_t(page_mem_t* ap_page_mem, size_type a_cluster_size):
 
 irs::mem_data_t::~mem_data_t()
 {
+}
+
+bool irs::mem_data_t::error()
+{
+  return m_cluster.error();
 }
 
 irs_uarc irs::mem_data_t::data_count() const
@@ -572,7 +608,11 @@ void irs::mem_data_t::write(const irs_u8* ap_buf, irs_uarc a_index,
 
 irs_status_t irs::mem_data_t::status()
 {
-  return m_cluster.status();
+  switch (m_status) {
+    case st_free: return irs_st_ready;
+    case st_error: return irs_st_error;
+    default: return irs_st_busy;
+  }
 }
 
 irs::mem_data_t::size_type irs::mem_data_t::size()
@@ -583,6 +623,7 @@ irs::mem_data_t::size_type irs::mem_data_t::size()
 void irs::mem_data_t::tick()
 {
   m_cluster.tick();
+
   switch (m_status) {
     case st_read_begin: {
       if (m_cluster.status() != irs_st_busy) {  
@@ -596,7 +637,7 @@ void irs::mem_data_t::tick()
           m_status = st_read_process;
           m_cluster.read_cluster(m_buf.data(), m_cluster_curr_index);
         }
-      }
+      } 
     } break;
     case st_read_process: {
       if (m_cluster.status() != irs_st_busy) {  
@@ -613,7 +654,7 @@ void irs::mem_data_t::tick()
         m_start_index = m_start_index + data_size;
         m_cluster_curr_index++;
         m_status = st_read_begin;
-      } 
+      }
     } break;
     case st_write_begin: {
       if (m_cluster.status() != irs_st_busy) {
@@ -673,41 +714,14 @@ irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data,
   m_current_index(0),
   m_start_index(0),
   m_data_size(0),
-  m_is_error(false),
   m_connected(false),
   m_timer(irs::make_cnt_s(a_init_timeout)),
   m_init_now(a_init_now)
 {
-  //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
-  m_mode = mode_initialization;
-  if (m_init_now) {
-    m_timer.start();
-    while (!m_connected) {
-      tick();
-      if (m_timer.check()) {
-        IRS_LIB_ERROR(ec_standard, "Истек таймаут инициализации eeprom!");
-        break;
-      }
-    }
-  } 
+  if (ap_mem_data) {
+    connect(ap_mem_data);
+  }
 }
-irs::mxdata_comm_t::mxdata_comm_t(irs_uarc a_index, irs_uarc a_size, 
-  bool a_init_now, int a_init_timeout):
-  mp_mem_data(IRS_NULL),
-  m_data_buf(a_size),
-  m_mem_data_start_index(a_index),
-  m_bit_vector(a_size),
-  m_mode(mode_free),
-  m_current_index(0),
-  m_start_index(0),
-  m_data_size(0),
-  m_is_error(false),
-  m_connected(false),
-  m_timer(irs::make_cnt_s(a_init_timeout)),
-  m_init_now(a_init_now)
-{
-  //memset((void*)(m_data_buf.data()), 0, m_data_buf.size());
-} 
 
 irs::mxdata_comm_t::~mxdata_comm_t()
 {
@@ -777,9 +791,7 @@ void irs::mxdata_comm_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
 void irs::mxdata_comm_t::tick()
 {
   mp_mem_data->tick();
-  if (mp_mem_data->status() == irs_st_error) {
-    m_is_error = true;
-  }  
+
   switch (m_mode) {
     case mode_free: {
       if (m_current_index >= m_bit_vector.size()) {
@@ -818,7 +830,7 @@ void irs::mxdata_comm_t::tick()
       }
     } break;
     case mode_initialization_wait: {
-      if (mp_mem_data->status() != irs_st_busy) {
+      if (mp_mem_data->status() == irs_st_ready) {
         m_mode = mode_free;
         m_connected = true;
       }
@@ -856,10 +868,7 @@ void irs::mxdata_comm_t::tick()
 
 bool irs::mxdata_comm_t::error() 
 {
-  bool result = false;
-  result = m_is_error;
-  m_is_error = false;
-  return result;
+  return mp_mem_data->error();
 }
 
 void irs::mxdata_comm_t::connect(irs::mem_data_t* ap_mem_data) 
@@ -886,7 +895,7 @@ irs::mem_data_t* irs::mxdata_comm_t::mem_data()
 irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi, 
   gpio_pin_t* ap_cs_pin, irs_uarc a_size, bool a_init_now,
   irs_uarc a_index, size_type a_cluster_size, int a_init_timeout):
-  mxdata_comm_t(a_index, a_size, a_init_now, a_init_timeout),
+  mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
   m_page_mem(ap_spi, ap_cs_pin, at25128),
   m_mem_data(&m_page_mem, a_cluster_size)
 {

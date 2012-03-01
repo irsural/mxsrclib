@@ -117,11 +117,11 @@ public:
   ~mem_cluster_t();
   void read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index);
   void write_cluster(const irs_u8 *ap_buf, irs_uarc a_cluster_index);
-  bool error() const;
   irs_status_t status() const;
   void tick();
   irs_uarc cluster_count() const;
   size_t crc_size() const;
+  bool error();
 private:
   enum {
     m_crc_size = 4
@@ -148,7 +148,7 @@ private:
   size_t m_cluster_size;
   size_t m_data_size;
   irs_uarc m_clusters_count;
-  bool m_error;
+  bool m_error_status;
   irs_uarc m_page_index;
   irs_uarc m_cluster_index;
   irs_uarc m_cluster_data_index;
@@ -169,6 +169,7 @@ public:
   size_type size();
   void tick();
   irs_uarc data_count() const;
+  bool error();
 private:
   enum status_t {
     st_free,
@@ -205,8 +206,6 @@ public:
   mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
     irs_uarc a_index, irs_uarc a_size, bool a_init_now = false,
     int a_init_timeout = 1);
-  mxdata_comm_t(irs_uarc a_index, irs_uarc a_size, bool a_init_now = false,
-    int a_init_timeout = 1);
   virtual ~mxdata_comm_t(); 
   virtual irs_uarc size();
   virtual irs_bool connected();
@@ -240,7 +239,6 @@ private:
   int m_current_index;
   int m_start_index;
   int m_data_size;
-  bool m_is_error;
   bool m_connected;
   irs::timer_t m_timer;
   bool m_init_now;
