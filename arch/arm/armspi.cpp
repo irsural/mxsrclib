@@ -24,7 +24,6 @@ SSIISR_bit.TFE // буфер на передачу пуст
 
 irs::arm::arm_spi_t::arm_spi_t(
   irs_u32 a_bitrate,
-  irs_u8 a_buffer_size,
   spi_type_t a_spi_type,
   ssi_type_t a_ssi_type,
   arm_port_t &a_clk_port,
@@ -32,10 +31,8 @@ irs::arm::arm_spi_t::arm_spi_t(
   arm_port_t &a_tx_port
 ):
   m_status(SPI_FREE),
-  mp_buf(a_buffer_size),
-  mp_rw_buf(a_buffer_size),
-  mp_target_buf(0),
-  m_buf_size(a_buffer_size),
+  mp_write_buf(IRS_NULL),
+  mp_read_buf(IRS_NULL),
   m_cur_byte(0),
   m_packet_size(0),
   m_bitrate_def(a_bitrate),
@@ -233,7 +230,7 @@ void irs::arm::arm_spi_t::abort()
   m_status = SPI_FREE;
   m_cur_byte = 0;
   m_packet_size = 0;
-  memsetex(mp_buf.data(), mp_buf.size());
+  //memsetex(mp_buf.data(), mp_buf.size());
 }
 
 irs::spi_t::status_t irs::arm::arm_spi_t::get_status()
@@ -442,7 +439,7 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
 
 void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
 {
-  if (mp_buf.size()) {
+  /*if (mp_buf.size()) {
     m_packet_size = irs_u8(a_size);
     if (m_packet_size > m_buf_size) {
       m_packet_size = m_buf_size;
@@ -450,17 +447,31 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
     memcpyex(mp_buf.data(), ap_buf, m_packet_size);
     m_cur_byte = 0;
     m_status = SPI_WRITE;
+  }*/
+  if (ap_buf) {
+    m_packet_size = a_size;
+    mp_write_buf = ap_buf;
+    m_cur_byte = 0;
+    m_status = SPI_WRITE;
   }
 }
 
 void irs::arm::arm_spi_t::read(irs_u8* ap_buf, irs_uarc a_size)
 {
-  if (mp_buf.size()) {
+  /*if (mp_buf.size()) {
     m_packet_size = irs_u8(a_size);
     if (m_packet_size > m_buf_size) {
       m_packet_size = m_buf_size;
     }
     mp_target_buf = ap_buf;
+    m_cur_byte = 0;
+    read_data_register();
+    write_data_register(0);
+    m_status = SPI_READ;
+  }*/
+  if (ap_buf) {
+    m_packet_size = a_size;
+    mp_read_buf = ap_buf;
     m_cur_byte = 0;
     read_data_register();
     write_data_register(0);
@@ -613,7 +624,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if (SSI0SR_bit.TNF) {
-              if (m_cur_byte >= m_packet_size) {
+              /*if (m_cur_byte >= m_packet_size) {
                 read_data_register();
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
@@ -621,19 +632,35 @@ void irs::arm::arm_spi_t::tick()
                 read_data_register();
                 write_data_register(mp_buf[m_cur_byte]);
                 m_cur_byte++;
+              }*/
+              if (m_cur_byte >= m_packet_size) {
+                read_data_register();
+                m_status = SPI_FREE;
+              } else {
+                read_data_register();
+                write_data_register(mp_write_buf[m_cur_byte]);
+                m_cur_byte++;
               }
             }
           } break;
           case SSI1:
           {
             if (SSI1SR_bit.TNF) {
-              if (m_cur_byte >= m_packet_size) {
+              /*if (m_cur_byte >= m_packet_size) {
                 read_data_register();
                 memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
               } else {
                 read_data_register();
                 write_data_register(mp_buf[m_cur_byte]);
+                m_cur_byte++;
+              }*/
+              if (m_cur_byte >= m_packet_size) {
+                read_data_register();
+                m_status = SPI_FREE;
+              } else {
+                read_data_register();
+                write_data_register(mp_write_buf[m_cur_byte]);
                 m_cur_byte++;
               }
             }
@@ -648,7 +675,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if(SSI0SR_bit.RNE) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
+              /*if (m_cur_byte >= (m_packet_size - 1)) {
                 mp_buf[m_cur_byte] = read_data_register();
                 memcpy((void*)mp_target_buf, mp_buf.data(), m_packet_size);
                 memsetex(mp_buf.data(), mp_buf.size());
@@ -657,13 +684,21 @@ void irs::arm::arm_spi_t::tick()
                 mp_buf[m_cur_byte] = read_data_register();
                 write_data_register(m_cur_byte + 1);
                 m_cur_byte++;
+              }*/
+              if (m_cur_byte >= (m_packet_size - 1)) {
+                mp_read_buf[m_cur_byte] = read_data_register();
+                m_status = SPI_FREE;
+              } else {
+                mp_read_buf[m_cur_byte] = read_data_register();
+                write_data_register(0);
+                m_cur_byte++;
               }
             }
           } break;
           case SSI1:
           {
             if(SSI1SR_bit.RNE) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
+              /*if (m_cur_byte >= (m_packet_size - 1)) {
                 mp_buf[m_cur_byte] = read_data_register();
                 memcpy((void*)mp_target_buf, mp_buf.data(), m_packet_size);
                 memsetex(mp_buf.data(), mp_buf.size());
@@ -671,6 +706,14 @@ void irs::arm::arm_spi_t::tick()
               } else {
                 mp_buf[m_cur_byte] = read_data_register();
                 write_data_register(m_cur_byte + 1);
+                m_cur_byte++;
+              }*/
+              if (m_cur_byte >= (m_packet_size - 1)) {
+                mp_read_buf[m_cur_byte] = read_data_register();
+                m_status = SPI_FREE;
+              } else {
+                mp_read_buf[m_cur_byte] = read_data_register();
+                write_data_register(0);
                 m_cur_byte++;
               }
             }
@@ -686,11 +729,9 @@ void irs::arm::arm_spi_t::tick()
           {
             if (SSI0SR_bit.TNF) {
               if (m_cur_byte > (m_packet_size - 1)) {
-                memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
-                memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
               } else {
-                write_data_register(mp_buf[m_cur_byte]);
+                write_data_register(mp_write_buf[m_cur_byte]);
                 m_status = SPI_RW_READ;
               }
             }
@@ -699,11 +740,9 @@ void irs::arm::arm_spi_t::tick()
           {
             if (SSI1SR_bit.TNF) {
               if (m_cur_byte > (m_packet_size - 1)) {
-                memcpyex(mp_target_buf, mp_rw_buf.data(), m_packet_size);
-                memsetex(mp_buf.data(), mp_buf.size());
                 m_status = SPI_FREE;
               } else {
-                write_data_register(mp_buf[m_cur_byte]);
+                write_data_register(mp_write_buf[m_cur_byte]);
                 m_status = SPI_RW_READ;
               }
             }
@@ -718,7 +757,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI0:
           {
             if(SSI0SR_bit.RNE) {
-              mp_rw_buf[m_cur_byte] = read_data_register();
+              mp_read_buf[m_cur_byte] = read_data_register();
               m_cur_byte++;
               m_status = SPI_RW_WRITE;
             }
@@ -726,7 +765,7 @@ void irs::arm::arm_spi_t::tick()
           case SSI1:
           {
             if(SSI1SR_bit.RNE) {
-              mp_rw_buf[m_cur_byte] = read_data_register();
+              mp_read_buf[m_cur_byte] = read_data_register();
               m_cur_byte++;
               m_status = SPI_RW_WRITE;
             }
@@ -740,7 +779,7 @@ void irs::arm::arm_spi_t::tick()
 void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   const irs_u8 *ap_write_buf, irs_uarc a_size)
 {
-  if (mp_buf.size() && mp_rw_buf.size()) {
+  /*if (mp_buf.size() && mp_rw_buf.size()) {
     m_packet_size = irs_u8(a_size);
     if (m_packet_size > m_buf_size) {
       m_packet_size = m_buf_size;
@@ -748,6 +787,13 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
     mp_target_buf = ap_read_buf;
     memcpyex(mp_buf.data(), ap_write_buf, m_packet_size);
 
+    m_cur_byte = 0;
+    m_status = SPI_RW_WRITE;
+  }*/
+  if (ap_read_buf && ap_write_buf) {
+    m_packet_size = a_size;
+    mp_read_buf = ap_read_buf;
+    mp_write_buf = ap_write_buf;
     m_cur_byte = 0;
     m_status = SPI_RW_WRITE;
   }

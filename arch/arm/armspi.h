@@ -37,7 +37,6 @@ public:
   
   arm_spi_t(
     irs_u32 a_bitrate,
-    irs_u8 a_buffer_size,
     spi_type_t a_spi_type = SPI,
     ssi_type_t a_ssi_type = SSI0,
     arm_port_t& a_clk_port = GPIO_PORTH,
@@ -92,12 +91,10 @@ private:
   };
   
   cur_status_t m_status;
-  raw_data_t<irs_u8> mp_buf;
-  raw_data_t<irs_u8> mp_rw_buf;
-  irs_u8* mp_target_buf;
-  irs_u8 m_buf_size;
+  const irs_u8* mp_write_buf;
+  irs_u8* mp_read_buf;
   irs_u8 m_cur_byte;
-  irs_u8 m_packet_size;
+  irs_uarc m_packet_size;
   const irs_u32 m_bitrate_def;
   const polarity_t m_polarity_def;
   const phase_t m_phase_def;
