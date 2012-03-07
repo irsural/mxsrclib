@@ -204,18 +204,36 @@ irs::arm::arm_spi_t::arm_spi_t(
 irs::arm::arm_spi_t::reg_t::reg_t(ssi_type_t a_ssi_type):
   mp_SSICR0_bit(IRS_NULL),
   mp_SSICR1_bit(IRS_NULL),
-  mp_SSICPSR(IRS_NULL)
+  mp_SSIDR(IRS_NULL),
+  mp_SSISR_bit(IRS_NULL),
+  mp_SSICPSR(IRS_NULL),
+  mp_SSIIM_bit(IRS_NULL),
+  mp_SSIRIS_bit(IRS_NULL),
+  mp_SSIMIS_bit(IRS_NULL),
+  mp_SSIICR_bit(IRS_NULL)
 {
   switch (a_ssi_type) {
     case SSI0: {
       mp_SSICR0_bit = &SSI0CR0_bit;
       mp_SSICR1_bit = &SSI0CR1_bit;
+      mp_SSIDR = &SSI0DR;
+      mp_SSISR_bit = &SSI0SR_bit;
       mp_SSICPSR = &SSI0CPSR;
+      mp_SSIIM_bit = &SSI0IM_bit;
+      mp_SSIRIS_bit = &SSI0RIS_bit;
+      mp_SSIMIS_bit = &SSI0MIS_bit;
+      mp_SSIICR_bit = &SSI0ICR_bit;
     } break;
     case SSI1: {
       mp_SSICR0_bit = &SSI1CR0_bit;
       mp_SSICR1_bit = &SSI1CR1_bit;
+      mp_SSIDR = &SSI1DR;
+      mp_SSISR_bit = &SSI1SR_bit;
       mp_SSICPSR = &SSI1CPSR;
+      mp_SSIIM_bit = &SSI1IM_bit;
+      mp_SSIRIS_bit = &SSI1RIS_bit;
+      mp_SSIMIS_bit = &SSI1MIS_bit;
+      mp_SSIICR_bit = &SSI1ICR_bit;
     } break;
   }
 }
@@ -281,45 +299,20 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
 bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
 {
   if (m_status == SPI_FREE) {
-    switch (m_ssi_type)
+    switch (m_spi_type)
     {
-      case SSI0:
+      case SPI:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI0CR0_bit.SPO = a_polarity;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
+        irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+        m_reg.mp_SSICR1_bit->SSE = 0;
+        m_reg.mp_SSICR0_bit->SPO = a_polarity;
+        m_reg.mp_SSICR1_bit->SSE = sse;
       } break;
-      case SSI1:
+      case TISS:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI1CR0_bit.SPO = a_polarity;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
+      } break;
+      case MICROWIRE:
+      {
       } break;
     }
     return true;
@@ -331,47 +324,22 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
 bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
 {
   if (m_status == SPI_FREE) {
-    switch (m_ssi_type)
+    switch (m_spi_type)
     {
-      case SSI0:
+      case SPI:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI0CR0_bit.SPH = a_phase;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
+        irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+        m_reg.mp_SSICR1_bit->SSE = 0;
+        m_reg.mp_SSICR0_bit->SPH = a_phase;
+        m_reg.mp_SSICR1_bit->SSE = sse;
       } break;
-      case SSI1:
+      case TISS:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI1CR0_bit.SPH = a_phase;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
       } break;
-    }
+      case MICROWIRE:
+      {
+      } break;
+    }    
     return true;
   } else {
     return false;
@@ -389,45 +357,20 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
     return false;
   }
   if (m_status == SPI_FREE) {
-    switch (m_ssi_type)
+    switch (m_spi_type)
     {
-      case SSI0:
+      case SPI:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI0CR0_bit.DSS = a_data_size - 1;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
+        irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
+        m_reg.mp_SSICR1_bit->SSE = 0;
+        m_reg.mp_SSICR0_bit->DSS = a_data_size - 1;
+        m_reg.mp_SSICR1_bit->SSE = sse;
       } break;
-      case SSI1:
+      case TISS:
       {
-        switch (m_spi_type)
-        {
-          case SPI:
-          {
-            irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
-            m_reg.mp_SSICR1_bit->SSE = 0;
-            SSI1CR0_bit.DSS = a_data_size - 1;
-            m_reg.mp_SSICR1_bit->SSE = sse;
-          } break;
-          case TISS:
-          {
-          } break;
-          case MICROWIRE:
-          {
-          } break;
-        }
+      } break;
+      case MICROWIRE:
+      {
       } break;
     }
     return true;
@@ -476,120 +419,61 @@ bool irs::arm::arm_spi_t::get_lock()
 
 void irs::arm::arm_spi_t::write_data_register(irs_u8 a_data)
 {
-  switch (m_ssi_type) {
-    case SSI0:
+  switch (m_spi_type) {
+    case SPI:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          SSI0DR = a_data;
-        } break;
-        case TISS:
-        {
-        } break;
-        case MICROWIRE:
-        {
-        } break;
-      }
+      (*m_reg.mp_SSIDR) = a_data;
     } break;
-    case SSI1:
+    case TISS:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          SSI1DR = a_data;
-        } break;
-        case TISS:
-        {
-        } break;
-        case MICROWIRE:
-        {
-        } break;
-      }
+    } break;
+    case MICROWIRE:
+    {
     } break;
   }
 }
 
 irs_u8 irs::arm::arm_spi_t::read_data_register()
 {
-  switch (m_ssi_type) {
-    case SSI0:
+
+  switch (m_spi_type) {
+    case SPI:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          return SSI0DR;
-        };
-        case TISS:
-        {
-          return 0;
-        };
-        case MICROWIRE:
-        {
-          return 0;
-        };
-      }
+      return (*m_reg.mp_SSIDR);
     } break;
-    case SSI1:
+    case TISS:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          return SSI1DR;
-        };
-        case TISS:
-        {
-          return 0;
-        };
-        case MICROWIRE:
-        {
-          return 0;
-        };
-      }
+      return 0;
+    } break;
+    case MICROWIRE:
+    {
+      return 0;
+    } break;
+    default: {
+      return 0;
     } break;
   }
-  return 0;
 }
 
 bool irs::arm::arm_spi_t::transfer_complete()
 {
-  switch (m_ssi_type) {
-    case SSI0:
+  switch (m_spi_type) {
+    case SPI:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          return !SSI0SR_bit.BSY;
-        }
-        case TISS:
-        {
-          return false;
-        }
-        case MICROWIRE:
-        {
-          return false;
-        }
-      }
+      return !(m_reg.mp_SSISR_bit->BSY);
     } break;
-    case SSI1:
+    case TISS:
     {
-      switch (m_spi_type) {
-        case SPI:
-        {
-          return !SSI1SR_bit.BSY;
-        }
-        case TISS:
-        {
-          return false;
-        }
-        case MICROWIRE:
-        {
-          return false;
-        }
-      }
+      return false;
+    } break;
+    case MICROWIRE:
+    {
+      return false;
+    } break;
+    default: {
+      return false;
     } break;
   }
-  return false;
 }
 
 void irs::arm::arm_spi_t::tick()
@@ -599,118 +483,53 @@ void irs::arm::arm_spi_t::tick()
     case SPI_WRITE:
     {
       if (transfer_complete()) {
-        switch (m_ssi_type) {
-          case SSI0:
-          {
-            if (SSI0SR_bit.TNF) {
-              if (m_cur_byte >= m_packet_size) {
-                read_data_register();
-                m_status = SPI_FREE;
-              } else {
-                read_data_register();
-                write_data_register(mp_write_buf[m_cur_byte]);
-                m_cur_byte++;
-              }
-            }
-          } break;
-          case SSI1:
-          {
-            if (SSI1SR_bit.TNF) {
-              if (m_cur_byte >= m_packet_size) {
-                read_data_register();
-                m_status = SPI_FREE;
-              } else {
-                read_data_register();
-                write_data_register(mp_write_buf[m_cur_byte]);
-                m_cur_byte++;
-              }
-            }
-          } break;
+        if (m_reg.mp_SSISR_bit->TNF) {
+          if (m_cur_byte >= m_packet_size) {
+            read_data_register();
+            m_status = SPI_FREE;
+          } else {
+            read_data_register();
+            write_data_register(mp_write_buf[m_cur_byte]);
+            m_cur_byte++;
+          }
         }
       }
     } break;
     case SPI_READ:
     {
       if (transfer_complete()) {
-        switch (m_ssi_type) {
-          case SSI0:
-          {
-            if(SSI0SR_bit.RNE) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
-                mp_read_buf[m_cur_byte] = read_data_register();
-                m_status = SPI_FREE;
-              } else {
-                mp_read_buf[m_cur_byte] = read_data_register();
-                write_data_register(0);
-                m_cur_byte++;
-              }
-            }
-          } break;
-          case SSI1:
-          {
-            if(SSI1SR_bit.RNE) {
-              if (m_cur_byte >= (m_packet_size - 1)) {
-                mp_read_buf[m_cur_byte] = read_data_register();
-                m_status = SPI_FREE;
-              } else {
-                mp_read_buf[m_cur_byte] = read_data_register();
-                write_data_register(0);
-                m_cur_byte++;
-              }
-            }
-          } break;
+        if(m_reg.mp_SSISR_bit->RNE) {
+          if (m_cur_byte >= (m_packet_size - 1)) {
+            mp_read_buf[m_cur_byte] = read_data_register();
+            m_status = SPI_FREE;
+          } else {
+            mp_read_buf[m_cur_byte] = read_data_register();
+            write_data_register(0);
+            m_cur_byte++;
+          }
         }
       }
     } break;
     case SPI_RW_WRITE:
     {
       if (transfer_complete()) {
-        switch (m_ssi_type) {
-          case SSI0:
-          {
-            if (SSI0SR_bit.TNF) {
-              if (m_cur_byte > (m_packet_size - 1)) {
-                m_status = SPI_FREE;
-              } else {
-                write_data_register(mp_write_buf[m_cur_byte]);
-                m_status = SPI_RW_READ;
-              }
-            }
-          } break;
-          case SSI1:
-          {
-            if (SSI1SR_bit.TNF) {
-              if (m_cur_byte > (m_packet_size - 1)) {
-                m_status = SPI_FREE;
-              } else {
-                write_data_register(mp_write_buf[m_cur_byte]);
-                m_status = SPI_RW_READ;
-              }
-            }
-          } break;
+        if (m_reg.mp_SSISR_bit->TNF) {
+          if (m_cur_byte > (m_packet_size - 1)) {
+            m_status = SPI_FREE;
+          } else {
+            write_data_register(mp_write_buf[m_cur_byte]);
+            m_status = SPI_RW_READ;
+          }
         }
       }
     } break;
     case SPI_RW_READ:
     {
       if (transfer_complete()) {
-        switch (m_ssi_type) {
-          case SSI0:
-          {
-            if(SSI0SR_bit.RNE) {
-              mp_read_buf[m_cur_byte] = read_data_register();
-              m_cur_byte++;
-              m_status = SPI_RW_WRITE;
-            }
-          } break;
-          case SSI1:
-          {
-            if(SSI1SR_bit.RNE) {
-              mp_read_buf[m_cur_byte] = read_data_register();
-              m_cur_byte++;
-              m_status = SPI_RW_WRITE;
-            }
-          } break;
+        if(m_reg.mp_SSISR_bit->RNE) {
+          mp_read_buf[m_cur_byte] = read_data_register();
+          m_cur_byte++;
+          m_status = SPI_RW_WRITE;
         }
       }
     } break;

@@ -443,6 +443,22 @@ void out_hex_0x(ostream *ap_strm, const T& a_value)
   out_hex(ap_strm, a_value);
 }
 
+template <class T>
+void out_data_hex(T* ap_container) 
+{
+  /*for (typename T::const_iterator it = ap_c->begin(); it != ap_c->end(); it++) {
+    *it
+  }*/
+  for(size_t i = 0; i < ap_container->size(); i++) {
+    irs::out_hex(irs::mlog(), (*ap_container)[i]);
+    irs::mlog() << ' ';
+    if (i % 16 == 15) {
+      irs::mlog() << endl;
+    }
+  }
+}
+
+
 #ifdef __ICCARM__
 
 namespace arm {

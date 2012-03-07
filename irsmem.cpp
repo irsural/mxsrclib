@@ -9,7 +9,6 @@
 #include <irsmem.h>
 #include <irsalg.h>
 #include <irserror.h>
-#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -397,17 +396,6 @@ irs_status_t irs::mem_cluster_t::status() const
     default: return irs_st_busy;
   }
 }
-
-/*void out_raw_data(irs::raw_data_t<irs_u8>* ap_raw_data)
-{
-  for(size_t i = 0; i < ap_raw_data->size(); i++){
-    irs::out_hex(irs::mlog(), (*ap_raw_data)[i]);
-    irs::mlog() << ' ';
-    if (i % 16 == 15) {
-      irs::mlog() << endl;
-    }
-  }
-}*/
 
 void irs::mem_cluster_t::tick()
 {

@@ -84,8 +84,14 @@ private:
   };
   struct reg_t {
     volatile __ssicr0_bits* mp_SSICR0_bit;
-    volatile __ssicr1_bits* mp_SSICR1_bit;
+    volatile __ssicr1_bits* mp_SSICR1_bit; 
+    volatile unsigned short* mp_SSIDR;
+    volatile __ssisr_bits* mp_SSISR_bit;
     volatile unsigned char* mp_SSICPSR;
+    volatile __ssiim_bits* mp_SSIIM_bit;
+    volatile __ssiris_bits* mp_SSIRIS_bit;
+    volatile __ssimis_bits* mp_SSIMIS_bit;
+    volatile __ssiicr_bits* mp_SSIICR_bit;
     
     reg_t(ssi_type_t a_ssi_type);
   };
