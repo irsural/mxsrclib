@@ -236,9 +236,9 @@ private:
     mode_initialization_wait
   };
   mode_t m_mode;
-  int m_current_index;
-  int m_start_index;
-  int m_data_size;
+  size_t m_current_index;
+  size_t m_start_index;
+  size_t m_data_size;
   bool m_connected;
   irs::timer_t m_timer;
   bool m_init_now;

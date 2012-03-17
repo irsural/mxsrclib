@@ -438,12 +438,14 @@ void irs::mem_cluster_t::tick()
           //  1 -> 2
           mem_copy(m_cluster_data, 0, m_cluster_data, m_cluster_size,
             m_cluster_size);
-          for (int i = 0; i < m_cluster_size; i++) {
+          #ifdef NOP
+          for (size_t i = 0; i < m_cluster_size; i++) {
             if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
               int k = 0;
               k++;
             }
           }
+          #endif //NOP
           m_page_index = (2 * m_cluster_index + 1) * m_pages_per_half_cluster;
           m_cluster_data_index = 0;
           m_status = st_write_process;
@@ -455,12 +457,14 @@ void irs::mem_cluster_t::tick()
           mem_copy(m_cluster_data, m_cluster_size, user_buf, 0, m_data_size);
           mem_copy(m_cluster_data, m_cluster_size, m_cluster_data, 0,
             m_cluster_size);
+          #ifdef NOP
           for (int i = 0; i < m_cluster_size; i++) {
             if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
               int k = 0;
               k++;
             }
           }
+          #endif //NOP
           m_page_index = 2 * m_cluster_index * m_pages_per_half_cluster;
           m_cluster_data_index = 0;
           m_status = st_write_process;
