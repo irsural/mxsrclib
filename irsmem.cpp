@@ -697,7 +697,7 @@ void irs::mem_data_t::tick()
 }
 
 irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
-  irs_uarc a_index, irs_uarc a_size, bool a_init_now, int a_init_timeout):
+  irs_uarc a_index, irs_uarc a_size, bool a_init_now, counter_t a_init_timeout):
   mp_mem_data(ap_mem_data),
   m_data_buf(a_size),
   m_mem_data_start_index(a_index),
@@ -707,7 +707,7 @@ irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data,
   m_start_index(0),
   m_data_size(0),
   m_connected(false),
-  m_timer(irs::make_cnt_s(a_init_timeout)),
+  m_timer(a_init_timeout),
   m_init_now(a_init_now)
 {
   if (ap_mem_data) {
@@ -886,7 +886,7 @@ irs::mem_data_t* irs::mxdata_comm_t::mem_data()
     
 irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi, 
   gpio_pin_t* ap_cs_pin, irs_uarc a_size, bool a_init_now,
-  irs_uarc a_index, size_type a_cluster_size, int a_init_timeout):
+  irs_uarc a_index, size_type a_cluster_size, counter_t a_init_timeout):
   mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
   m_page_mem(ap_spi, ap_cs_pin, at25128),
   m_mem_data(&m_page_mem, a_cluster_size)
