@@ -191,11 +191,11 @@ private:
   irs_uarc m_start_index;
   irs_uarc m_end_index;
   irs_uarc m_data_size;
-  int m_cluster_start_index;
-  int m_cluster_next_index;
-  int m_cluster_end_index;
-  int m_cluster_curr_index;
-  int m_index_data_buf;
+  size_t m_cluster_start_index;
+  size_t m_cluster_next_index;
+  size_t m_cluster_end_index;
+  size_t m_cluster_curr_index;
+  size_t m_index_data_buf;
   bool m_end_cluste;
   irs_u8* mp_read_buf;
 };
