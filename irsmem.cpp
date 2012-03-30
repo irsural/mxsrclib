@@ -471,6 +471,7 @@ void irs::mem_cluster_t::tick()
           m_target_status = st_free;
         } else {
           //  error
+          irs::mlog() << "Îøèáêà CRC" << endl;
           memsetex(m_cluster_data.data(), m_cluster_data.size());
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
