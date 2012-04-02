@@ -202,8 +202,10 @@ void irs::eeprom_at25_t::tick()
     //  Чтение
     case st_read_prepare: {
       //  Посылка команды на чтение и начального адреса
-      transaction_initiate(m_READ);
-      m_status = st_read_initiate;
+      if (mp_spi->get_status() == irs::spi_t::FREE && !mp_spi->get_lock()) {
+        transaction_initiate(m_READ);
+        m_status = st_read_initiate;
+      }
       break;
     }
     case st_read_initiate: {
@@ -249,8 +251,10 @@ void irs::eeprom_at25_t::tick()
     //  Запись
     case st_write_enable: {
       //  Посылка команды разрешения записи
-      write_enable();
-      m_status = st_write_prepare;
+      if (mp_spi->get_status() == irs::spi_t::FREE && !mp_spi->get_lock()) {
+        write_enable();
+        m_status = st_write_prepare;
+      }
       break;
     }
     case st_write_prepare: {
@@ -354,8 +358,8 @@ size_t irs::mem_cluster_t::crc_size() const
 
 void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 {
-  IRS_LIB_ASSERT((status() != irs_st_busy) &&
-    (a_cluster_index < m_clusters_count) && ap_buf)
+  IRS_LIB_ERROR_IF(!((status() != irs_st_busy) &&
+    (a_cluster_index < m_clusters_count) && ap_buf), ec_standard, "")
   if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count)
       && ap_buf)
   {
@@ -368,8 +372,8 @@ void irs::mem_cluster_t::read_cluster(irs_u8 *ap_buf, irs_uarc a_cluster_index)
 void irs::mem_cluster_t::write_cluster(const irs_u8 *ap_buf,
   irs_uarc a_cluster_index)
 {
-  IRS_LIB_ASSERT((status() != irs_st_busy) &&
-    (a_cluster_index < m_clusters_count) && ap_buf);
+  IRS_LIB_ERROR_IF(!((status() != irs_st_busy) &&
+    (a_cluster_index < m_clusters_count) && ap_buf), ec_standard, "");
   if ((status() != irs_st_busy) && (a_cluster_index < m_clusters_count)
       && ap_buf)
   {
@@ -472,7 +476,7 @@ void irs::mem_cluster_t::tick()
         } else {
           //  error
           irs::mlog() << CNT_TO_DBLTIME(counter_get());
-          irs::mlog() << "Ошибка CRC" << endl;
+          irs::mlog() << " Ошибка CRC" << endl;
           memsetex(m_cluster_data.data(), m_cluster_data.size());
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
@@ -559,8 +563,8 @@ irs_uarc irs::mem_data_t::data_count() const
 void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  IRS_LIB_ASSERT((status() != irs_st_busy) && ap_buf &&
-    ((a_index + a_size) <= m_data_count));
+  IRS_LIB_ERROR_IF(!((status() != irs_st_busy) && ap_buf &&
+    ((a_index + a_size) <= m_data_count)), ec_standard, "");
   if ((status() != irs_st_busy) && ap_buf &&
     ((a_index + a_size) <= m_data_count))
   {
@@ -580,8 +584,8 @@ void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
 void irs::mem_data_t::write(const irs_u8* ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-  IRS_LIB_ASSERT((status() != irs_st_busy) && ap_buf &&
-    ((a_index + a_size) <= m_data_count));
+  IRS_LIB_ERROR_IF(!((status() != irs_st_busy) && ap_buf &&
+    ((a_index + a_size) <= m_data_count)), ec_standard, "");
   if ((status() != irs_st_busy) && ap_buf &&
     ((a_index + a_size) <= m_data_count))
   {
@@ -817,7 +821,7 @@ void irs::mxdata_comm_t::tick()
       if (mp_mem_data->status() != irs_st_busy) {
         irs_uarc data_count = mp_mem_data->data_count();
         irs_uarc end_data = m_mem_data_start_index + m_data_buf.size();
-        IRS_LIB_ASSERT(end_data <= data_count);
+        IRS_LIB_ERROR_IF(!(end_data <= data_count), ec_standard, "");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());
         m_mode = mode_initialization_wait;
