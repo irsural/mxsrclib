@@ -36,15 +36,16 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
     mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
     mp_cs_pin->clear();
+    while(mp_spi->get_lock());
+    mp_spi->lock();
     mp_spi->write(mp_spi_buf, m_spi_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; )
       mp_spi->tick();
     mp_spi->write(mp_spi_buf, m_spi_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; )
       mp_spi->tick();
-    /*m_wait_timer.start();
-    while(!m_wait_timer.check());*/
     mp_cs_pin->set();
+    mp_spi->unlock();
     set_to_cnt(m_read_counter, m_read_delay);
   }
 }
@@ -122,7 +123,7 @@ void irs::th_lm95071_t::tick()
   {
     case TH_FREE:
     {
-      if (test_to_cnt(m_read_counter) && 
+      if (test_to_cnt(m_read_counter) &&
         !(mp_buf[m_control_byte] & (1 << m_stop_bit))) {
         if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
         {
@@ -1224,6 +1225,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
     mp_spi->tick();
   mp_cs_pin->clear();
+  mp_spi->lock();
 
   mp_spi->set_order(irs::spi_t::MSB);
   mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
@@ -1262,6 +1264,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_spi->write(mp_write_buf, m_write_buf_size);
   for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
   mp_cs_pin->set();
+  mp_spi->unlock();
   //mlog() << "LTC2622 по адресу 0x" << this << " инициализирован" << endl;
 }
 
@@ -1578,6 +1581,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
     memset((void*)mp_write_buf, 0, m_size);
 
     while (!spi_ready()) mp_spi->tick();
+    mp_spi->lock();
 
     mp_spi->set_order(irs::spi_t::MSB);
     mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
@@ -1591,6 +1595,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
     while (!write_ready()) write_tick();
     write_to_dac(ZERO);
     while (!write_ready()) write_tick();
+    mp_spi->unlock();
   }
 }
 

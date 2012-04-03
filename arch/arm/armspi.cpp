@@ -244,7 +244,7 @@ irs::arm::arm_spi_t::~arm_spi_t()
 
 void irs::arm::arm_spi_t::abort()
 {
-  mlog() << "SPI_ABORT" << endl;
+  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
   m_status = SPI_FREE;
   m_cur_byte = 0;
   m_packet_size = 0;
@@ -339,7 +339,7 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
       case MICROWIRE:
       {
       } break;
-    }    
+    }
     return true;
   } else {
     return false;
@@ -383,7 +383,7 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
 {
   if (ap_buf) {
     if (!m_lock) {
-      IRS_DBG_RAW_MSG("Вызов write на разблокированном spi");
+      IRS_DBG_RAW_MSG("Вызов write на разблокированном spi" << endl);
     }
     m_packet_size = a_size;
     mp_write_buf = ap_buf;
@@ -396,7 +396,7 @@ void irs::arm::arm_spi_t::read(irs_u8* ap_buf, irs_uarc a_size)
 {
   if (ap_buf) {
     if (!m_lock) {
-      IRS_DBG_RAW_MSG("Вызов read на разблокированном spi");
+      IRS_DBG_RAW_MSG("Вызов read на разблокированном spi" << endl);
     }
     m_packet_size = a_size;
     mp_read_buf = ap_buf;
@@ -418,7 +418,7 @@ void irs::arm::arm_spi_t::lock()
 void irs::arm::arm_spi_t::unlock()
 {
   if (!m_lock) {
-    IRS_DBG_RAW_MSG("Вызов unlock на уже разблокированном spi");
+    IRS_DBG_RAW_MSG("Вызов unlock на уже разблокированном spi" << endl);
   }
   m_lock = false;
   init_default();
@@ -553,7 +553,7 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
 {
   if (ap_read_buf && ap_write_buf) {
     if (!m_lock) {
-      IRS_DBG_RAW_MSG("Вызов read_write на разблокированном spi");
+      IRS_DBG_RAW_MSG("Вызов read_write на разблокированном spi" << endl);
     }
     m_packet_size = a_size;
     mp_read_buf = ap_read_buf;
