@@ -38,13 +38,13 @@ public:
   irs::arm::io_pin_t m_pin_led;
   irs_u32 m_MMFAR;
   irs_u32 m_BFAR;
-  
+
   #pragma diag_suppress=Pe940
   #pragma optimize=no_inline
   static irs_u32* hard_fault_handler_asm()
   {
     /*if (__get_CONTROL() & 2) {
-      asm ("MRS R0, PSP"); 
+      asm ("MRS R0, PSP");
     } else {
       asm ("MRS R0, MSP");
     }*/
@@ -56,7 +56,7 @@ public:
     );
   }
   #pragma diag_default=Pe940
-  
+
   void hard_fault_handler_c(irs_u32* ap_stack)
   {
     struct stack_frame_t {
@@ -70,7 +70,7 @@ public:
       irs_u32 PSR;
     };
     stack_frame_t &stack = reinterpret_cast<stack_frame_t&>(*ap_stack);
-  
+
     irs::mlog() << irsm("[Hard fault handler]") << endl;
     irs::mlog() << irsm("R0 = 0x") << hex << stack.R0 << endl;
     irs::mlog() << irsm("R1 = 0x") << stack.R1 << endl;
@@ -87,7 +87,7 @@ public:
     irs::mlog() << irsm("DFSR = 0x") << DFSR << endl;
     irs::mlog() << irsm("AFSR = 0x") << AFSR << endl;
     #ifdef NOP
-    irs::mlog() << irsm("BFAR = 0x") << 
+    irs::mlog() << irsm("BFAR = 0x") <<
       (*((volatile unsigned long *)(0xE000ED38))) << endl;
     irs::mlog() << irsm("CFSR = 0x") <<
       (*((volatile unsigned long *)(0xE000ED28))) << endl;
