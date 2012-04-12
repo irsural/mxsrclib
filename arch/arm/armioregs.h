@@ -2342,7 +2342,7 @@ typedef struct {
   __REG32  SETENA51       : 1;
   __REG32  SETENA52       : 1;
   __REG32  SETENA53       : 1;
-  __REG32  SETENA54       : 1;
+  __REG32  NVIC_PORTJ_INT : 1;
   __REG32  SETENA55       : 1;
   __REG32  SETENA56       : 1;
   __REG32  SETENA57       : 1;
