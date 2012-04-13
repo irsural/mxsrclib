@@ -95,6 +95,13 @@ string_t file_name_time(string_t a_extension = string_t());
 
 //! @}
 
+/*class cur_time_t
+{
+public:
+  cur_time_t();
+  ~cur_time_t();
+};*/
+
 } //namespace irs
 
 #endif //irstimeH

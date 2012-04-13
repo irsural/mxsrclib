@@ -392,8 +392,9 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
     m_status = SPI_WRITE;
     if (m_ssi_type == SSI1) {
       if ((mp_write_buf[1] & (1 << 1)) == 0) {
-        if ((m_on_prev) && ((mp_write_buf[1] & (1 << 2)) == 0)) {  
-          irs::mlog() << "בטע on סבנמרום" << endl;
+        if ((m_on_prev) && ((mp_write_buf[1] & (1 << 2)) == 0)) {
+          irs::mlog() << CNT_TO_DBLTIME(counter_get());
+          irs::mlog() << " בטע on סבנמרום" << endl;
         }
         if ((mp_write_buf[1] & (1 << 2))) {
           m_on_prev = true;
