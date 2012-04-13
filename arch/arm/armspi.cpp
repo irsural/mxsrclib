@@ -560,6 +560,11 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
     mp_write_buf = ap_write_buf;
     m_cur_byte = 0;
     m_status = SPI_RW_WRITE;
+    if (m_ssi_type == SSI1) {
+      if ((mp_write_buf[0] & (1 << 2)) != 0) {
+        irs::mlog() << "бит on" << endl;
+      }
+    }
   }
 }
 
