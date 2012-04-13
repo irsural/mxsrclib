@@ -111,6 +111,7 @@ private:
   spi_type_t m_spi_type;
   ssi_type_t m_ssi_type;
   reg_t m_reg;
+  bool m_on_prev;
   
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();

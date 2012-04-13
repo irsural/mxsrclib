@@ -44,7 +44,8 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_lock(false),
   m_spi_type(a_spi_type),
   m_ssi_type(a_ssi_type),
-  m_reg(m_ssi_type)
+  m_reg(m_ssi_type),
+  m_on_prev(false)
 {
   switch (m_ssi_type) {
     case SSI0:
@@ -390,8 +391,15 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
     m_cur_byte = 0;
     m_status = SPI_WRITE;
     if (m_ssi_type == SSI1) {
-      if ((mp_write_buf[1] & (1 << 2)) != 0) {
-        irs::mlog() << "בטע on" << endl;
+      if ((mp_write_buf[1] & (1 << 1)) == 0) {
+        if ((m_on_prev) && ((mp_write_buf[1] & (1 << 2)) == 0)) {  
+          irs::mlog() << "בטע on סבנמרום" << endl;
+        }
+        if ((mp_write_buf[1] & (1 << 2))) {
+          m_on_prev = true;
+        } else {
+          m_on_prev = false;
+        }
       }
     }
   }
@@ -565,11 +573,6 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
     mp_write_buf = ap_write_buf;
     m_cur_byte = 0;
     m_status = SPI_RW_WRITE;
-    if (m_ssi_type == SSI1) {
-      if ((mp_write_buf[1] & (1 << 2)) != 0) {
-        irs::mlog() << "בטע on" << endl;
-      }
-    }
   }
 }
 
