@@ -496,13 +496,13 @@ inline const char* convert_str_test_str_rus(char)
 }
 inline const wchar_t* convert_str_test_str_rus(wchar_t)
 {
-  #ifndef __AVR32__
+  #if !defined(__AVR32__) && !defined(__MINGW32__)
   return L"hello!?& Я";
-  #else //__AVR32__
+  #else //!defined(__AVR32__) || !defined(__MINGW32__)
   // На AVR32 недоступна опция преобразования кодировки перед компиляцией,
   // поэтому русские буквы в wchar_t строках вызывают ошибку компилятора
   return L"hello!?& ";
-  #endif //__AVR32__
+  #endif //!defined(__AVR32__) || !defined(__MINGW32__)
 }
 inline const char* convert_str_test_str_eng(char)
 {

@@ -183,8 +183,11 @@ public:
         DEF_DLL_PROC(f_Gpib32Lib, ibconfig);
       } else {
         f_init_fail = irs_true;
-        //IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
+        #ifdef __BORLANDC__
         ShowMessage("Библиотеки GPIB-32.DLL и agtgpib32.dll не найдена");
+        #else
+        IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
+        #endif //__BORLANDC__
         return;
       }
     }

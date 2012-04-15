@@ -1192,7 +1192,8 @@ delay_line_t<T>::delay_line_t(const value_type& a_delay_time,
 {
 }
 template <class T>
-delay_line_t<T>::value_type delay_line_t<T>::tick(const value_type& a_value)
+typename delay_line_t<T>::value_type delay_line_t<T>::
+  tick(const value_type& a_value)
 {
   T sample = m_sample_list.front();
   m_sample_list.pop_front();
@@ -1207,7 +1208,7 @@ void delay_line_t<T>::sampling_time(const value_type& a_time)
     m_fill_value);
 }
 template <class T>
-delay_line_t<T>::value_type delay_line_t<T>::sampling_time() const
+typename delay_line_t<T>::value_type delay_line_t<T>::sampling_time() const
 {
   return m_sampling_time;
 }
@@ -1219,7 +1220,7 @@ void delay_line_t<T>::delay_time(const value_type& a_time)
     m_fill_value);
 }
 template <class T>
-delay_line_t<T>::value_type delay_line_t<T>::delay_time() const
+typename delay_line_t<T>::value_type delay_line_t<T>::delay_time() const
 {
   return m_delay_time;
 }
@@ -1235,7 +1236,7 @@ void delay_line_t<T>::resize(size_type a_size)
   m_delay_time = a_size*m_sampling_time;
 }
 template <class T>
-delay_line_t<T>::size_type delay_line_t<T>::size() const
+typename delay_line_t<T>::size_type delay_line_t<T>::size() const
 {
   return m_sample_list.size();
 }
@@ -1304,18 +1305,19 @@ linear_func_t<T>::linear_func_t(const value_t& a_x1, const value_t& a_y1,
   def_on_double_point(a_x1, a_y1, a_x2, a_y2);
 }
 template <class T>
-linear_func_t<T>::value_t linear_func_t<T>::get(const value_t& a_value) const
+typename linear_func_t<T>::value_t linear_func_t<T>::
+  get(const value_t& a_value) const
 {
   return m_k*a_value + m_b;
 }
 template <class T>
-linear_func_t<T>::value_t linear_func_t<T>::get_inverse(
+typename linear_func_t<T>::value_t linear_func_t<T>::get_inverse(
   const value_t& a_value) const
 {
   return (a_value - m_b)/m_k;
 }
 template <class T>
-linear_func_t<T>::value_t linear_func_t<T>::k() const
+typename linear_func_t<T>::value_t linear_func_t<T>::k() const
 {
   return m_k;
 }
@@ -1325,7 +1327,7 @@ void linear_func_t<T>::k(const value_t& a_value)
   m_k = a_value;
 }
 template <class T>
-linear_func_t<T>::value_t linear_func_t<T>::b() const
+typename linear_func_t<T>::value_t linear_func_t<T>::b() const
 {
   return m_b;
 }

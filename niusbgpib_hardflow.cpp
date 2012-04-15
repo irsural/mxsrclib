@@ -507,7 +507,7 @@ irs::irs_string_t data_to_string_for_mlog(const irs::raw_data_t<irs_u8>& a_data)
     if (irs::isprintt(ch) && !irs::iscntrlt(ch)) {
       ostr << ch;
     } else {
-      const width_not_graph_char = 2;
+      const int width_not_graph_char = 2;
       ostr << "\\x" << setfill('0') << setw(width_not_graph_char) << hex <<
         uppercase << (int)a_data[i];
     }

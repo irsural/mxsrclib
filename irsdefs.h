@@ -35,19 +35,17 @@
 // Включение Unicode
 #ifdef __BORLANDC__
 // _DELPHI_STRING_UNICODE
-# if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+# if __BORLANDC__ >= IRS_CPP_BUILDER2010
 #   define IRS_UNICODE_GLOBAL
     // Для заголовочных файлов Windows
 #   define UNICODE
-# endif //(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
-#else //__BORLANDC__
+# endif
+#elif defined(__MINGW32__) && defined(UNICODE)
+// Сделано для Qt с MinGW
+#   define IRS_UNICODE_GLOBAL
+#else
   //#define IRS_UNICODE_GLOBAL
 #endif //__BORLANDC__
-
-// Для исправления ошибки в C++Builder XE Update 1
-# if (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
-#define BOOST_TR1_USE_OLD_TUPLE
-#endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
 #ifdef IRS_UNICODE_GLOBAL
 # if defined(__ICCAVR__)
@@ -56,6 +54,11 @@
 #   define IRS_UNICODE
 # endif //compilers
 #endif //IRS_UNICODE_GLOBAL
+
+// Для исправления ошибки в C++Builder XE Update 1
+# if (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+#define BOOST_TR1_USE_OLD_TUPLE
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
 #ifdef IRS_WIN32
 # include <winsock2.h>
