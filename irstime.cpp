@@ -163,8 +163,7 @@ irs::time_remain_t irs::cur_time_t::get_remain()
     m_cur_time_remain.remain = static_cast<counter_t>(time_s - local_time);
   } else {
     time(&local_time);
-    tm* tm_time = localtime(&local_time);
-    local_time = mktime(tm_time);
+    local_time -= static_cast<time_t>(_timezone);
     m_cur_time_remain.time = local_time;
     m_cur_time_remain.remain = 0;
   }
