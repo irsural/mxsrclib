@@ -95,12 +95,27 @@ string_t file_name_time(string_t a_extension = string_t());
 
 //! @}
 
-/*class cur_time_t
+struct time_remain_t {
+  time_t time;
+  counter_t remain;
+};
+
+class cur_time_t
 {
 public:
   cur_time_t();
   ~cur_time_t();
-};*/
+  void set(time_t a_time);
+  time_t get();
+  time_remain_t get_remain();
+private:
+  double m_cur_time;
+  time_remain_t m_cur_time_remain;
+  counter_t m_time_set;
+  bool m_set_time;
+};
+
+cur_time_t* cur_time();
 
 } //namespace irs
 

@@ -124,3 +124,56 @@ irs::string_t irs::file_name_time(string_t a_extension)
   return IRS_TYPE_FROM_SIMPLE_STR(file_name_time.c_str());
 }
 
+
+irs::cur_time_t::cur_time_t():
+  m_cur_time(0),
+  m_cur_time_remain(),
+  m_time_set(0),
+  m_set_time(false)
+{
+  memset(reinterpret_cast<void*>(&m_cur_time_remain), 0,
+    sizeof(m_cur_time_remain));
+}
+
+irs::cur_time_t::~cur_time_t()
+{
+}
+
+void irs::cur_time_t::set(time_t a_time)
+{
+  m_cur_time = a_time;
+  m_time_set = counter_get();
+  m_set_time = true;
+}
+
+time_t irs::cur_time_t::get()
+{
+  time_remain_t time_remain = get_remain();
+  return time_remain.time;
+}
+
+irs::time_remain_t irs::cur_time_t::get_remain()
+{
+  time_t local_time = 0;
+  if (m_set_time) {
+    double delta_time = CNT_TO_DBLTIME(counter_get() - m_time_set);
+    double time_s = m_cur_time + delta_time;
+    local_time = static_cast<time_t>(time_s);
+    m_cur_time_remain.time = local_time;
+    m_cur_time_remain.remain = static_cast<counter_t>(time_s - local_time);
+  } else {
+    time(&local_time);
+    tm* tm_time = localtime(&local_time);
+    local_time = mktime(tm_time);
+    m_cur_time_remain.time = local_time;
+    m_cur_time_remain.remain = 0;
+  }
+  return m_cur_time_remain;
+}
+
+irs::cur_time_t* irs::cur_time()
+{
+  static irs::cur_time_t cur_time_sys;
+  return &cur_time_sys;
+}
+
