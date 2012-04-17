@@ -163,9 +163,9 @@ irs::time_remain_t irs::cur_time_t::get_remain()
     m_cur_time_remain.remain = static_cast<counter_t>(time_s - local_time);
   } else {
     time(&local_time);
-    time_t t1 = mktime(gmtime(&local_time));
-    time_t t2 = mktime(localtime(&local_time));
-    local_time += static_cast<time_t>(t2 - t1);
+    time_t gm_time = mktime(gmtime(&local_time));
+    time_t loc_time = mktime(localtime(&local_time));
+    local_time += static_cast<time_t>(loc_time - gm_time);
     m_cur_time_remain.time = local_time;
     m_cur_time_remain.remain = 0;
   }
