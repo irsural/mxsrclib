@@ -259,13 +259,13 @@ public:
 
   IRS_STRING_TYPE& operator=(const IRS_STRING_BASE& strg)
   {
-    IRS_STRING_BASE& base = ( IRS_STRING_BASE&)(*this);
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
     base = strg;
     return *this;
   }
   IRS_STRING_TYPE& operator=(const IRS_STRING_CHAR_TYPE* cstr)
   {
-    IRS_STRING_BASE& base = (IRS_STRING_BASE&)(*this);
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
     base = cstr;
     return *this;
   }
@@ -280,7 +280,7 @@ public:
   }
   IRS_STRING_TYPE& operator=(const IRS_STRING_CHAR_TYPE& val)
   {
-    IRS_STRING_BASE& base = (IRS_STRING_BASE&)(*this);
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
     base = val;
     return *this;
   }
@@ -384,7 +384,7 @@ public:
     IRS_STRING_BASE(a_string),
     m_data(a_string.m_data)
   {
-    IRS_STRING_BASE& base = ( IRS_STRING_BASE&)(*this);
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
     base = a_string;
   }
   IRS_STRING_TYPE(size_type a_count, IRS_STRING_CHAR_TYPE a_char):
@@ -397,7 +397,7 @@ public:
   }
   IRS_STRING_TYPE(const IRS_STRING_BASE& strg)
   {
-    IRS_STRING_BASE& base = ( IRS_STRING_BASE&)(*this);
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
     base = strg;
   }
   IRS_STRING_TYPE(const IRS_STRING_CHAR_TYPE* cstr)

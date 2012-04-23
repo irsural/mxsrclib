@@ -575,7 +575,7 @@ void irs::hardflow::udp_channel_list_t::tick()
 }
 
 bool irs::hardflow::udp_channel_list_t::lifetime_exceeded(
-  const map_id_channel_iterator a_it_cur_channel)
+  const map_id_channel_iterator /*a_it_cur_channel*/)
 {
   bool lifetime_exceeded_status = false;
   if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
@@ -592,7 +592,7 @@ bool irs::hardflow::udp_channel_list_t::lifetime_exceeded(
 }
 
 bool irs::hardflow::udp_channel_list_t::downtime_exceeded(
-  const map_id_channel_iterator a_it_cur_channel)
+  const map_id_channel_iterator /*a_it_cur_channel*/)
 {
   bool downtime_exceeded_status = false;
   if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
@@ -1540,8 +1540,8 @@ void irs::hardflow::tcp_server_t::tick()
         if(new_sock >= 0) {
           new_channel();
           if (m_channel != invalid_channel) {
-            pair<map<size_type, int>::iterator, bool> insert_channel =
-              m_map_channel_sock.insert(make_pair(m_channel, new_sock));
+            //pair<map<size_type, int>::iterator, bool> insert_channel =
+            m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();
             IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -1597,16 +1597,15 @@ void irs::hardflow::tcp_server_t::stop_server()
 }
 
 irs::hardflow::tcp_server_t::string_type
-  irs::hardflow::tcp_server_t::param(const string_type &a_name)
+  irs::hardflow::tcp_server_t::param(const string_type &/*a_name*/)
 {
   string_type param;
   return param;
 }
 
-void irs::hardflow::tcp_server_t::set_param(const string_type &a_name,
-  const string_type &a_value)
+void irs::hardflow::tcp_server_t::set_param(const string_type &/*a_name*/,
+  const string_type &/*a_value*/)
 {
-
 }
 
 irs::hardflow::tcp_client_t::tcp_client_t(
@@ -1754,19 +1753,20 @@ irs::hardflow::tcp_client_t::size_type
   return channel;
 }
 
-bool irs::hardflow::tcp_client_t::is_channel_exists(size_type a_channel_ident)
+bool irs::hardflow::tcp_client_t::is_channel_exists(
+  size_type /*a_channel_ident*/)
 {
   return true;
 }
 
 
 irs::hardflow::tcp_client_t::size_type
-  irs::hardflow::tcp_client_t::read(size_type a_channel_ident,
+  irs::hardflow::tcp_client_t::read(size_type /*a_channel_ident*/,
   irs_u8 *ap_buf, size_type a_size)
 {
   size_type rd_data_size = 0;
   if (m_state_info.get_state_start()) {
-    a_channel_ident = m_channel;
+    //a_channel_ident = m_channel;
     FD_SET(m_client_sock, &m_read_fds);
     int sock_ready = select(m_client_sock + 1, &m_read_fds,
       NULL, NULL, &m_client_select_timeout);

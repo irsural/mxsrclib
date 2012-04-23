@@ -499,8 +499,7 @@ void ifft(vector<complex<T> > &freq_charact)
   fft(freq_charact);
 
   for (vsize_t i = 0; i < freq_charact.size(); i++) {
-    freq_charact[i] = conj(freq_charact[i])/
-      (double)freq_charact.size();
+    freq_charact[i] = conj(freq_charact[i])/freq_charact.size();
   }
 }
 
@@ -603,7 +602,7 @@ fft_process_t<T, N>::fft_process_t(mxdata_t &a_source_data):
   m_source_data(a_source_data),
   m_source_vector(N),
   m_source_array(),
-  mp_out_buf((T*)mp_buf),
+  mp_out_buf(reinterpret_cast<T*>(mp_buf)),
   m_real_N(0),
   m_real_size(0),
   m_cast_divider(1.),
@@ -655,7 +654,8 @@ void fft_process_t<T, N>
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
   if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
-  memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
 }
 
 template <class T, irs_uarc N>
@@ -665,7 +665,8 @@ void fft_process_t<T, N>
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
   if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<void*>(ap_buf), size);
 }
 
 template <class T, irs_uarc N>

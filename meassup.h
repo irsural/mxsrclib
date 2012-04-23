@@ -95,7 +95,7 @@ class mx_agilent_6675a_t: public mxsupply_t
   } command_t;
 
   // Команды при инициализации
-  static irs_u8 *f_init_commands[];
+  static const irs_u8* f_init_commands[];
   // Число команд инициализации
   static const irs_i32 f_ic_count;
 

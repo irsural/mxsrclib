@@ -236,7 +236,7 @@ namespace irs {
 //! \addtogroup network_in_out_group
 //! @{
 
-#define irs_mxdata_to_mxnet_def_interval ((counter_t)-1)
+#define irs_mxdata_to_mxnet_def_interval (static_cast<counter_t>(-1))
 
 //! \brief Преобразование mxnetc в mxdata_t
 class mxdata_to_mxnet_t : public mxdata_t
@@ -364,8 +364,7 @@ private:
     mode_begin_packet,
     mode_chunk_read_wait,
     mode_checksum,
-    mode_proc,
-    mode_reset
+    mode_proc
   };
 
   //! \brief Коммуникационный канал

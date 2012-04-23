@@ -13,6 +13,7 @@
 #include <irsadc.h>
 #include <irsstrm.h>
 #include <timer.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
@@ -30,8 +31,8 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_cs_pin(ap_cs_pin)
 {
   if (mp_spi && mp_cs_pin) {
-    memset((void*)mp_buf, 0, m_size);
-    memset((void*)mp_spi_buf, 0, m_spi_size);
+    memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
+    memset(reinterpret_cast<void*>(mp_spi_buf), 0, m_spi_size);
     mp_spi->set_order(irs::spi_t::MSB);
     mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
     mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
@@ -64,19 +65,21 @@ irs_bool irs::th_lm95071_t::connected()
   return (mp_spi && mp_cs_pin && m_connect);
 }
 
-void irs::th_lm95071_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+void irs::th_lm95071_t::read(irs_u8* ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (!a_index && (a_size == m_size)) {
-    memcpy((void*)ap_buf, (void*)mp_buf, m_size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf), m_size);
     mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
   } else {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
+    irs_u8 size = static_cast<irs_u8>(a_size);
     if (size + a_index > m_size) {
-      size = irs_u8(m_size - a_index);
+      size = static_cast<irs_u8>(m_size - a_index);
     }
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), size);
     mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
   }
 }
@@ -85,18 +88,19 @@ void irs::th_lm95071_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
+  irs_u8 size = static_cast<irs_u8>(a_size);
   if (size + a_index > m_size) {
-    size = irs_u8(m_size - a_index);
+    size = static_cast<irs_u8>(m_size - a_index);
   }
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
 }
 
 irs_bool irs::th_lm95071_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  bool bit = (mp_buf[a_index] >> a_bit_index) & irs_u8(1);
+  bool bit = (mp_buf[a_index] >> a_bit_index) & static_cast<irs_u8>(1);
   if (a_index != m_control_byte) {
     mp_buf[m_control_byte] &= ~(1 << m_new_data_bit);
   }
@@ -106,14 +110,14 @@ void irs::th_lm95071_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 
 void irs::th_lm95071_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
 }
 
 void irs::th_lm95071_t::tick()
@@ -186,12 +190,12 @@ irs::adc_ad7791_t::adc_ad7791_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_connect(false),
   mp_cs_pin(ap_cs_pin)
 {
-  memset((void*)mp_buf, 0, m_size);
-  memset((void*)mp_spi_buf, 0, m_spi_size);
+  memset(static_cast<void*>(mp_buf), 0, m_size);
+  memset(static_cast<void*>(mp_spi_buf), 0, m_spi_size);
   for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
     mp_spi->tick();
   irs_u8 mp_init_buffer[m_init_sequence_size];
-  memset((void*)mp_init_buffer, 0xFF, m_reset_sequence_size);
+  memset(static_cast<void*>(mp_init_buffer), 0xFF, m_reset_sequence_size);
   mp_init_buffer[4] = (1 << RS0)|(0 << CH0)|(0 << CH1);
   mp_init_buffer[5] = (0 << MD1)|(0 << MD0)|(1 << BO)|(1 << UB)|(1 << BUF);
   mp_init_buffer[6] = (1 << RS1);
@@ -222,9 +226,10 @@ void irs::adc_ad7791_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(static_cast<void*>(ap_buf), static_cast<void*>(mp_buf + a_index),
+    size);
   mp_buf[0] = 0;
   return;
 }
@@ -233,16 +238,17 @@ void irs::adc_ad7791_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(static_cast<void*>(mp_buf + a_index),
+    static_cast<const void*>(ap_buf), size);
 }
 
 irs_bool irs::adc_ad7791_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  bool bit = (mp_buf[a_index] >> a_bit_index) & irs_u8(1);
+  bool bit = (mp_buf[a_index] >> a_bit_index) & static_cast<irs_u8>(1);
   mp_buf[0] = 0;
   return bit;
 }
@@ -250,14 +256,14 @@ void irs::adc_ad7791_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 
 void irs::adc_ad7791_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
 }
 
 void irs::adc_ad7791_t::tick()
@@ -298,7 +304,7 @@ void irs::adc_ad7791_t::tick()
       if (mp_spi->get_status() == irs::spi_t::FREE)
       {
         m_connect = true;
-        memset((void*)mp_buf, 0, m_size);
+        memset(static_cast<void*>(mp_buf), 0, m_size);
         mp_buf[0] = 1;
         mp_buf[1] = mp_spi_buf[2];
         mp_buf[2] = mp_spi_buf[1];
@@ -325,8 +331,8 @@ irs::adc_ad7686_t::adc_ad7686_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_connect(false),
   mp_cs_pin(ap_cs_pin)
 {
-  memset((void*)mp_buf, 0, m_size);
-  memset((void*)mp_spi_buf, 0, m_spi_size);
+  memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
+  memset(reinterpret_cast<void*>(mp_spi_buf), 0, m_spi_size);
   mp_cs_pin->set();
 }
 
@@ -350,9 +356,10 @@ void irs::adc_ad7686_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
   mp_buf[0] = 0;
   return;
 }
@@ -361,16 +368,17 @@ void irs::adc_ad7686_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
 }
 
 irs_bool irs::adc_ad7686_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  bool bit = (mp_buf[a_index] >> a_bit_index) & irs_u8(1);
+  bool bit = (mp_buf[a_index] >> a_bit_index) & static_cast<irs_u8>(1);
   mp_buf[0] = 0;
   return bit;
 }
@@ -378,14 +386,14 @@ void irs::adc_ad7686_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 
 void irs::adc_ad7686_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
 }
 
 void irs::adc_ad7686_t::tick()
@@ -477,9 +485,10 @@ void irs::dac_ad8400_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), size);
     return;
 }
 
@@ -488,9 +497,10 @@ void irs::dac_ad8400_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (a_index >= m_size) return;
   if (a_index == 0) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
   mp_buf[0] = 0;
   m_need_write = true;
 }
@@ -499,7 +509,7 @@ irs_bool irs::dac_ad8400_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dac_ad8400_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -507,7 +517,7 @@ void irs::dac_ad8400_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   mp_buf[0] = 0;
   m_need_write = true;
 }
@@ -517,7 +527,7 @@ void irs::dac_ad8400_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   mp_buf[0] = 0;
   m_need_write = true;
 }
@@ -613,9 +623,9 @@ void irs::dac_ad7376_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(ap_buf), reinterpret_cast<void*>(mp_buf + a_index), size);
     return;
 }
 
@@ -625,9 +635,10 @@ void irs::dac_ad7376_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   if (a_index >= m_size) return;
   if (((mp_buf[0]>>m_rs_bit_position)&1) == 0) m_need_reset = true;
   if (((mp_buf[0]>>m_shdn_bit_position)&1) == 0) mp_shdn_pin->clear();
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
   mp_buf[0] &= (1 << m_ready_bit_position)^0xFF;
   m_need_write = true;
 }
@@ -636,7 +647,7 @@ irs_bool irs::dac_ad7376_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dac_ad7376_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -651,7 +662,7 @@ void irs::dac_ad7376_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
       mp_shdn_pin->clear();
     }
   }
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   mp_buf[0] &= (1 << m_ready_bit_position)^0xFF;
   m_need_write = true;
 }
@@ -661,7 +672,7 @@ void irs::dac_ad7376_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   mp_buf[0] &= (1 << m_ready_bit_position)^0xFF;
   m_need_write = true;
 }
@@ -720,10 +731,10 @@ irs::dac_max551_t::dac_max551_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   if (mp_cs_pin)
   {
     mp_cs_pin->set();
-    *(irs_u16*)&mp_buf[1] = m_init_value;
+    reinterpret_cast<irs_u16&>(mp_buf[1]) = m_init_value;
     for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
       mp_spi->tick();
-    mp_spi->write((irs_u8*)&m_init_value, m_packet_size);
+    mp_spi->write(reinterpret_cast<irs_u8*>(&m_init_value), m_packet_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
     mp_cs_pin->clear();
     mp_cs_pin->set();
@@ -751,15 +762,17 @@ void irs::dac_max551_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (!a_index && (a_size == m_size))
   {
-    memcpy((void*)ap_buf, (void*)mp_buf, m_size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf), m_size);
     return;
   }
   else
   {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), size);
     return;
   }
 }
@@ -769,7 +782,8 @@ void irs::dac_max551_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (!a_index && (a_size == m_size))
   {
-    memcpy((void*)mp_buf, (void*)ap_buf, m_size);
+    memcpy(reinterpret_cast<void*>(mp_buf),
+      reinterpret_cast<const void*>(ap_buf), m_size);
     mp_buf[0] = 0;
     m_need_write = true;
     return;
@@ -777,9 +791,10 @@ void irs::dac_max551_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   else
   {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+      reinterpret_cast<const void*>(ap_buf), size);
     mp_buf[0] = 0;
     m_need_write = true;
   }
@@ -789,14 +804,14 @@ irs_bool irs::dac_max551_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dac_max551_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   mp_buf[0] = 0;
   m_need_write = true;
 }
@@ -805,7 +820,7 @@ void irs::dac_max551_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   mp_buf[0] = 0;
   m_need_write = true;
 }
@@ -872,7 +887,7 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   //
   init_to_cnt();
   m_refresh_time = MS_TO_CNT(20);
-  memset((void*)mp_buf, 0, m_size);
+  memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
   //  внутренние размеры регистров DDS
   mp_reg_size[ADDR_PH1] = SZ_DDS_PH1;
   mp_reg_size[ADDR_PH2] = SZ_DDS_PH2;
@@ -918,14 +933,14 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_update_pin->set_dir(gpio_pin_t::dir_in);
   if (mp_spi && mp_cs_pin)
   {
-    irs_u32 DDS_CR = ((irs_u32)0<<SKE)|
-                     ((irs_u32)0<<QPD)|
-                     ((irs_u32)1<<PLLBYPS)|
-                     ((irs_u32)0 << INTUD)|
-                     ((irs_u32)0 << CPD)|
-                     ((irs_u32)0 << PLLMUL0)|
-                     ((irs_u32)0 << PLLMUL2);
-    irs_u32 *mp_buf_cr = (irs_u32*)&mp_buf[POS_CR];
+    irs_u32 DDS_CR = (static_cast<irs_u32>(0) << SKE)|
+                     (static_cast<irs_u32>(0) << QPD)|
+                     (static_cast<irs_u32>(1) << PLLBYPS)|
+                     (static_cast<irs_u32>(0) << INTUD)|
+                     (static_cast<irs_u32>(0) << CPD)|
+                     (static_cast<irs_u32>(0) << PLLMUL0)|
+                     (static_cast<irs_u32>(0) << PLLMUL2);
+    irs_u32 *mp_buf_cr = reinterpret_cast<irs_u32*>(&mp_buf[POS_CR]);
     *mp_buf_cr = DDS_CR;
     //  Формирование пакета, записываемого в дедеес
     //  Control register
@@ -980,9 +995,10 @@ void irs::dds_ad9854_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
   return;
 }
 
@@ -1012,9 +1028,10 @@ void irs::dds_ad9854_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     }
   }
   //----  Ахтунг!!!  -------  Непроверенный код  -------  Ахтунг!!!  -----------
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
   fill_n(m_write_vector.begin() + a_index, size, true);
   m_all_write = false;
   mp_buf[POS_STATUS] = 0;
@@ -1024,7 +1041,7 @@ irs_bool irs::dds_ad9854_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dds_ad9854_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -1037,7 +1054,7 @@ void irs::dds_ad9854_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   m_write_vector[a_index] = true;
   m_all_write = false;
   mp_buf[POS_STATUS] = 0;
@@ -1048,7 +1065,7 @@ void irs::dds_ad9854_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   m_write_vector[a_index] = true;
   m_all_write = false;
   mp_buf[POS_STATUS] = 0;
@@ -1273,9 +1290,10 @@ void irs::dac_ltc2622_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   if (a_index >= m_size) return;
   //if (a_index == 0) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
   mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
   mp_buf[0] &= ~(1 << m_ready_bit_regA);
@@ -1307,9 +1325,10 @@ void irs::dac_ltc2622_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), size);
     return;
 }
 
@@ -1317,7 +1336,7 @@ irs_bool irs::dac_ltc2622_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dac_ltc2622_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -1325,7 +1344,7 @@ void irs::dac_ltc2622_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   //if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
   #ifdef NOP
@@ -1345,17 +1364,22 @@ void irs::dac_ltc2622_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= m_size) return;
   //if (a_index == 0) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   mp_buf[0] &= (1 << m_log_enable_pos);
   m_need_write = true;
+
+  #ifdef NOP
   if (mp_buf[0] & (1 << m_log_enable_pos))
   {
-    irs_u16 dac_value_A = *(irs_u16*)(&mp_buf[m_data_regA_position]);
-    irs_u16 dac_value_B = *(irs_u16*)(&mp_buf[m_data_regB_position]);
+    irs_u16 dac_value_A =
+      reinterpret_cast<irs_u16&>(mp_buf[m_data_regA_position]);
+    irs_u16 dac_value_B =
+      reinterpret_cast<irs_u16&>(mp_buf[m_data_regB_position]);
     mlog() << "LTC2622 0x" << this <<
       " clear bit index = " << a_index << ", bit = " << a_bit_index <<
       ", A = " << dac_value_A << ", B = " << dac_value_B << endl;
   }
+  #endif //NOP
 }
 
 
@@ -1440,9 +1464,9 @@ irs::adc_adc102s021_t::adc_adc102s021_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_round(false),
   mp_cs_pin(ap_cs_pin)
 {
-  memset((void*)mp_target_buf, 0, m_target_size);
-  memset((void*)mp_read_buf, 0, m_size);
-  memset((void*)mp_write_buf, 0, m_size);
+  memset(reinterpret_cast<void*>(mp_target_buf), 0, m_target_size);
+  memset(reinterpret_cast<void*>(mp_read_buf), 0, m_size);
+  memset(reinterpret_cast<void*>(mp_write_buf), 0, m_size);
   mp_write_buf[0] = (0<<ADD1)|(1<<ADD0);
   mp_cs_pin->set();
   m_timer.start();
@@ -1468,39 +1492,43 @@ void irs::adc_adc102s021_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_target_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_target_size) size = irs_u8(m_target_size - a_index);
-  memcpy((void*)ap_buf, (void*)(mp_target_buf + a_index), size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_target_size) size =
+    static_cast<irs_u8>(m_target_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_target_buf + a_index), size);
 }
 
 void irs::adc_adc102s021_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_target_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_target_size) size = irs_u8(m_target_size - a_index);
-  memcpy((void*)(mp_write_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_target_size) size =
+    static_cast<irs_u8>(m_target_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_write_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
 }
 
 irs_bool irs::adc_adc102s021_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_target_size) return false;
   if (a_bit_index > 7) return false;
-  bool bit = (mp_write_buf[a_index] >> a_bit_index) & irs_u8(1);
+  bool bit = (mp_write_buf[a_index] >> a_bit_index) & static_cast<irs_u8>(1);
   return bit;
 }
 void irs::adc_adc102s021_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_target_size) return;
   if (a_bit_index > 7) return;
-  mp_write_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_write_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 
 void irs::adc_adc102s021_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_target_size) return;
   if (a_bit_index > 7) return;
-  mp_write_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_write_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
 }
 
 void irs::adc_adc102s021_t::tick()
@@ -1519,7 +1547,7 @@ void irs::adc_adc102s021_t::tick()
           mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
           mp_cs_pin->clear();
-          memset((void*)mp_read_buf, 0, m_size);
+          memset(reinterpret_cast<void*>(mp_read_buf), 0, m_size);
           m_status = ADC_READ;
         }
       }
@@ -1541,16 +1569,16 @@ void irs::adc_adc102s021_t::tick()
           mp_target_buf[0] = mp_read_buf[1];
           mp_target_buf[1] = mp_read_buf[0];
           IRS_FIRSTWORD(mp_target_buf[0]) >>= 2;
-          mp_target_buf[1] &=
-            irs_u8(((1<<Z5)|(1<<Z4)|(1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
+          mp_target_buf[1] &= static_cast<irs_u8>(((1<<Z5)|(1<<Z4)|
+            (1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
           mp_write_buf[0] = (0<<ADD1)|(0<<ADD0);
           m_in_first_enable = false;
         } else {
           mp_target_buf[2] = mp_read_buf[1];
           mp_target_buf[3] = mp_read_buf[0];
           IRS_FIRSTWORD(mp_target_buf[2]) >>= 2;
-          mp_target_buf[3] &=
-            irs_u8(((1<<Z5)|(1<<Z4)|(1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
+          mp_target_buf[3] &= static_cast<irs_u8>(((1<<Z5)|(1<<Z4)|
+            (1<<Z3)|(1<<Z2)|(1<<Z1)|(1<<Z0))^0xFF);
           mp_write_buf[0] = (0<<ADD1)|(1<<ADD0);
           m_in_first_enable = true;
         }
@@ -1577,8 +1605,8 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
   {
     mp_cs_pin->set();
 
-    memset((void*)mp_buf, 0, m_size);
-    memset((void*)mp_write_buf, 0, m_size);
+    memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
+    memset(reinterpret_cast<void*>(mp_write_buf), 0, m_size);
 
     while (!spi_ready()) mp_spi->tick();
     mp_spi->lock();
@@ -1619,9 +1647,10 @@ void irs::dac_ad5293_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
     if (a_index >= m_size) return;
-    irs_u8 size = (irs_u8)a_size;
-    if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-    memcpy((void*)ap_buf, (void*)(mp_buf + a_index), size);
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), size);
     return;
 }
 
@@ -1629,9 +1658,10 @@ void irs::dac_ad5293_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   if (a_index >= m_size) return;
-  irs_u8 size = (irs_u8)a_size;
-  if (size + a_index > m_size) size = irs_u8(m_size - a_index);
-  memcpy((void*)(mp_buf + a_index), (void*)ap_buf, size);
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
   m_need_write = true;
 }
 
@@ -1639,14 +1669,14 @@ irs_bool irs::dac_ad5293_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return false;
   if (a_bit_index > 7) return false;
-  return (mp_buf[a_index] & irs_u8(1 << a_bit_index));
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
 }
 
 void irs::dac_ad5293_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] |= irs_u8(1 << a_bit_index);
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
   m_need_write = true;
 }
 
@@ -1654,7 +1684,7 @@ void irs::dac_ad5293_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   if (a_index >= m_size) return;
   if (a_bit_index > 7) return;
-  mp_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
   m_need_write = true;
 }
 
@@ -1715,6 +1745,11 @@ void irs::dac_ad5293_t::tick()
       }
       break;
     }
+    case RESET:
+    {
+      IRS_LIB_ERROR(ec_standard, "m_status == RESET недопустимо в "
+        "irs::dac_ad5293_t::tick");
+    }
   }
 }
 
@@ -1741,8 +1776,8 @@ bool irs::dac_ad5293_t::write_to_dac(status_t a_command)
         mp_write_buf[0] = mp_buf[1];
         mp_write_buf[1] = mp_buf[0];
         mp_write_buf[0] &=
-          irs_u8(((1<<Z5)|(1<<Z4)|(1<<C3)|(1<<C2)|(1<<C1))^0xFF);
-        mp_write_buf[0] |= irs_u8(1<<C0);
+          static_cast<irs_u8>(((1<<Z5)|(1<<Z4)|(1<<C3)|(1<<C2)|(1<<C1))^0xFF);
+        mp_write_buf[0] |= static_cast<irs_u8>(1<<C0);
         break;
       }
       case HIZ:
@@ -1756,6 +1791,11 @@ bool irs::dac_ad5293_t::write_to_dac(status_t a_command)
         mp_write_buf[0] = 0;
         mp_write_buf[1] = 0;
         break;
+      }
+      case FREE:
+      {
+        IRS_LIB_ERROR(ec_standard, "a_command == FREE недопустимо в "
+          "irs::dac_ad5293_t::write_to_dac");
       }
     }
     mp_cs_pin->clear();

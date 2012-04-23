@@ -64,7 +64,7 @@ public:
     const double a_session_write_timeout_s = 1
   );
   virtual ~ni_usb_gpib_flow_t();
-  virtual string_type param(const string_type &a_name);
+  virtual string_type param(const string_type&);
   virtual void set_param(const string_type &a_name,
     const string_type &a_value);
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -118,7 +118,7 @@ public:
     const double write_timeout_s = 100e-3
   );
   virtual ~ni_usb_gpib_flow_syn_t();
-  virtual string_type param(const string_type &a_name);
+  virtual string_type param(const string_type &);
   virtual void set_param(const string_type &a_name,
     const string_type &a_value);
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,

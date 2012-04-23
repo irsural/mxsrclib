@@ -19,6 +19,7 @@
 #include <mxnetd.h>
 //#include <irsavrutil.h>
 #include <irserror.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -70,10 +71,10 @@ void mxn_init(mxn_data_t &data, mxifa_ch_t channel, irs_i32 *vars,
   mxifa_init();
   data.count = count;
   data.vars_ext = vars;
-  data.packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
+  data.packet = reinterpret_cast<mxn_packet_t*>(IRS_LIB_NEW_ASSERT(
     irs_i32[data.count + MXN_SIZE_OF_HEADER + 1],
     MXNETCPP_IDX
-  );
+  ));
   memset(static_cast<void*>(data.packet), 0, data.count +
     MXN_SIZE_OF_HEADER + 1);
   data.read_only = IRS_LIB_NEW_ASSERT(irs_bool[data.count], MXNETCPP_IDX);
@@ -111,7 +112,7 @@ void mxn_deinit(mxn_data_t &data)
   IRS_LIB_DELETE_ASSERT(data.beg_pack_proc);
   mxifa_close(data.data_ch);
   IRS_LIB_ARRAY_DELETE_ASSERT(data.read_only);
-  IRS_LIB_ARRAY_DELETE_ASSERT((irs_i32*&)data.packet);
+  IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<irs_i32*&>(data.packet));
   mxifa_deinit();
   deinit_to_cnt();
 }
@@ -266,7 +267,8 @@ static void mxn_tick_start(mxn_data_t &data)
 static void mxn_read_head(mxn_data_t &data)
 {
   mxifa_tick();
-  (*data.beg_pack_proc)((irs_u8 *)data.packet, &data.dest_info);
+  (*data.beg_pack_proc)(reinterpret_cast<irs_u8*>(data.packet),
+    &data.dest_info);
   data.mxn_tick = mxn_wait_read_head_and_analysis;
 }
 // ќжидание чтени€ заголовка и его анализ
@@ -309,7 +311,8 @@ static void mxn_wait_read_head_and_analysis(mxn_data_t &data)
 static void mxn_read_data(mxn_data_t &data)
 {
   mxifa_tick();
-  mxifa_read_begin(data.data_ch, &data.dest_info, ((irs_u8 *)data.packet) +
+  mxifa_read_begin(data.data_ch, &data.dest_info,
+    reinterpret_cast<irs_u8*>(data.packet) +
     mxn_header_size, sizeof(irs_i32)*(data.var_cnt_packet + 1));
   data.mxn_tick = mxn_checksum;
 }
@@ -380,8 +383,8 @@ static void mxn_write(mxn_data_t &data)
     data.broadcast_send = irs_false;
     p_dest_info = IRS_NULL;
   }
-  mxifa_write_begin(data.data_ch, p_dest_info, (irs_u8 *)data.packet,
-    data.count_send);
+  mxifa_write_begin(data.data_ch, p_dest_info,
+    reinterpret_cast<irs_u8*>(data.packet), data.count_send);
   data.mxn_tick = mxn_write_wait;
 }
 // ќжидание записи
@@ -406,8 +409,8 @@ static void mxn_read_proc(mxn_data_t &data)
 static void mxn_read_packet(mxn_data_t &data)
 {
   mxifa_tick();
-  memcpy((void *)data.packet->var,
-         (void *)(data.vars_ext + data.packet->var_ind_first),
+  memcpy(reinterpret_cast<void*>(data.packet->var),
+         reinterpret_cast<void*>(data.vars_ext + data.packet->var_ind_first),
          sizeof(irs_i32)*data.packet->var_count);
   mxn_calc_checksum(data.packet->var[data.packet->var_count], data.packet,
     data.packet->var_count, data.checksum_type);
@@ -466,7 +469,7 @@ static void mxn_set_broadcast_proc(mxn_data_t &data)
   switch (data.packet->var_ind_first) {
     case irs_true:
     case irs_false: {
-      data.is_broadcast_new = (irs_bool)data.packet->var_ind_first;
+      data.is_broadcast_new = irs::to_irs_bool(data.packet->var_ind_first);
       data.mxn_tick = mxn_set_broadcast_packet;
     } break;
     default: {
@@ -491,7 +494,8 @@ static void mxn_write_broadcast_packet(mxn_data_t &data)
   data.packet->code_comm = MXN_WRITE_BROADCAST;
   data.packet->var_ind_first = 0;
   data.packet->var_count = data.count;
-  memcpy((void *)data.packet->var, (void *)data.vars_ext,
+  memcpy(reinterpret_cast<void*>(data.packet->var),
+    reinterpret_cast<void*>(data.vars_ext),
     sizeof(irs_i32)*data.count);
   mxn_calc_checksum(data.packet->var[data.count], data.packet, data.count,
     data.checksum_type);
@@ -545,7 +549,8 @@ void irs::mxdata_to_u8_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     if (real_index > m_u8_size - 1) real_index = m_u8_size - 1;
     if (real_size > m_u8_size - real_index)
       real_size = m_u8_size - real_index;
-    memcpy((void*)ap_buf, (void*)(mp_u8_data + real_index), real_size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_u8_data + real_index), real_size);
   }
 }
 
@@ -559,7 +564,8 @@ void irs::mxdata_to_u8_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     if (real_index > m_u8_size - 1) real_index = m_u8_size - 1;
     if (real_size > m_u8_size - real_index)
       real_size = m_u8_size - real_index;
-    memcpy((void*)(mp_u8_data + real_index), (void*)ap_buf, real_size);
+    memcpy(reinterpret_cast<void*>(mp_u8_data + real_index),
+      reinterpret_cast<const void*>(ap_buf), real_size);
   }
 }
 
@@ -620,17 +626,17 @@ irs::mxnet_t::mxnet_t(hardflow_t &a_hardflow, irs_size_t a_var_cnt):
   m_write_error(false),
   m_checksum_type(mxncs_reduced_direct_sum)
 {
-  mp_packet = (mxn_packet_t*)IRS_LIB_NEW_ASSERT(
+  mp_packet = reinterpret_cast<mxn_packet_t*>(IRS_LIB_NEW_ASSERT(
     var_type[m_raw_data.size() + MXN_SIZE_OF_HEADER + 1],
     MXNETCPP_IDX
-  );
+  ));
   memset(static_cast<void*>(mp_packet), 0, m_raw_data.size() +
     MXN_SIZE_OF_HEADER + 1);
 }
 
 irs::mxnet_t::~mxnet_t()
 {
-  IRS_LIB_ARRAY_DELETE_ASSERT((var_type*&)mp_packet);
+  IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<var_type*&>(mp_packet));
 }
 
 irs_uarc irs::mxnet_t::size()
@@ -650,7 +656,7 @@ void irs::mxnet_t::read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size)
   max_size -= a_index;
   irs_uarc copy_size = a_size;
   if (copy_size > max_size) copy_size = max_size;
-  irs_u8* buf = (irs_u8*)m_raw_data.data() + a_index;
+  irs_u8* buf = reinterpret_cast<irs_u8*>(m_raw_data.data()) + a_index;
   memcpy(ap_buf, buf, copy_size);
 }
 
@@ -662,7 +668,7 @@ void irs::mxnet_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   max_size -= a_index;
   irs_uarc copy_size = a_size;
   if (copy_size > max_size) copy_size = max_size;
-  irs_u8* buf = (irs_u8*)m_raw_data.data() + a_index;
+  irs_u8* buf = reinterpret_cast<irs_u8*>(m_raw_data.data()) + a_index;
   memcpy(buf, ap_buf, copy_size);
 }
 
@@ -672,7 +678,8 @@ irs_bool irs::mxnet_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= max_size) return irs_false;
   irs_uarc bit_index = a_bit_index;
   if (bit_index > 7) bit_index = 7;
-  return (*((irs_u8*)(m_raw_data.data()) + a_index) & irs_u8(1 << bit_index));
+  return (*(reinterpret_cast<irs_u8*>(m_raw_data.data()) + a_index) &
+    static_cast<irs_u8>(1 << bit_index));
 }
 
 void irs::mxnet_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -681,7 +688,8 @@ void irs::mxnet_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   if (a_index >= max_size) return;
   irs_uarc bit_index = a_bit_index;
   if (bit_index > 7) bit_index = 7;
-  *((irs_u8*)(m_raw_data.data()) + a_index) |= irs_u8(1 << bit_index);
+  *(reinterpret_cast<irs_u8*>(m_raw_data.data()) + a_index) |=
+    irs_u8(1 << bit_index);
 }
 
 void irs::mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
@@ -690,7 +698,7 @@ void irs::mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
   if (a_index >= max_size) return;
   irs_uarc bit_index = a_bit_index;
   if (bit_index > 7) bit_index = 7;
-  *((irs_u8*)(m_raw_data.data()) + a_index)
+  *(reinterpret_cast<irs_u8*>(m_raw_data.data()) + a_index)
     &= irs_u8(0xFF^irs_u8(1 << bit_index));
 }
 
@@ -712,7 +720,8 @@ void irs::mxnet_t::tick()
       m_current_channel = m_hardflow.channel_next();
       if (m_current_channel != invalid_channel)
       {
-        m_beg_pack_proc.start((irs_u8*)mp_packet, m_current_channel);
+        m_beg_pack_proc.start(reinterpret_cast<irs_u8*>(mp_packet),
+          m_current_channel);
         m_status = mxn_wait_read_head_and_analysis;
       }
       break;
@@ -757,7 +766,7 @@ void irs::mxnet_t::tick()
     }
     case mxn_read_data:
     {
-      irs_u8* p_begin = ((irs_u8*)mp_packet) + mxn_header_size;
+      irs_u8* p_begin = reinterpret_cast<irs_u8*>(mp_packet) + mxn_header_size;
       irs_size_t size = sizeof(var_type)*(m_var_cnt_packet + 1);
       m_fixed_flow.read(m_current_channel, p_begin, size);
       m_status = mxn_checksum;
@@ -817,7 +826,8 @@ void irs::mxnet_t::tick()
     }
     case mxn_write:
     {
-      m_fixed_flow.write(m_current_channel, (irs_u8*)mp_packet, m_cnt_send);
+      m_fixed_flow.write(m_current_channel,
+        reinterpret_cast<irs_u8*>(mp_packet), m_cnt_send);
       m_status = mxn_write_wait;
       break;
     }
@@ -857,8 +867,8 @@ void irs::mxnet_t::tick()
     }
     case mxn_read_packet:
     {
-      memcpy((void*)mp_packet->var,
-        (void*)(m_raw_data.data() + mp_packet->var_ind_first),
+      memcpy(reinterpret_cast<void*>(mp_packet->var),
+        reinterpret_cast<void*>(m_raw_data.data() + mp_packet->var_ind_first),
         sizeof(var_type) * mp_packet->var_count);
       mxn_calc_checksum(mp_packet->var[mp_packet->var_count], mp_packet,
         mp_packet->var_count, m_checksum_type);

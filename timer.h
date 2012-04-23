@@ -17,9 +17,9 @@
 // _TIME_NUM_ к знаменателю _TIME_DENOM_ в масштаб счетчика
 #define TIME_TO_CNT(_TIME_NUM_, _TIME_DENOM_)\
 	( \
-    counter_t(\
-      ((calccnt_t)(_TIME_NUM_)) * COUNTER_PER_INTERVAL /\
-      ( ((calccnt_t)(_TIME_DENOM_)) * SECONDS_PER_INTERVAL )\
+    static_cast<counter_t>(\
+      ( (static_cast<calccnt_t>(_TIME_NUM_)) * COUNTER_PER_INTERVAL) / \
+      ( (static_cast<calccnt_t>(_TIME_DENOM_)) * SECONDS_PER_INTERVAL )\
     )\
   )
 // Преобразование из миллисекунд в количество тактов счетчика
@@ -37,14 +37,18 @@
   }
 // Преобразование счетчика в вещественное время, с
 #define CNT_TO_DBLTIME(_CNT_)\
-  ( ((double)(SECONDS_PER_INTERVAL)) * ((double)(_CNT_)) / \
-    ((double)(COUNTER_PER_INTERVAL)) )
+  ( \
+    static_cast<double>(SECONDS_PER_INTERVAL) * \
+    static_cast<double>(_CNT_) / \
+    static_cast<double>(COUNTER_PER_INTERVAL) \
+  )
 // Преобразование вещественного времени в счетчик, с
 #define DBLTIME_TO_CNT(_DBL_TIME_)\
-  ( (counter_t)\
+  ( static_cast<counter_t>\
     ( \
-      ((double)(COUNTER_PER_INTERVAL))*((double)(_DBL_TIME_)) / \
-      ((double)(SECONDS_PER_INTERVAL)) \
+      static_cast<double>(COUNTER_PER_INTERVAL)* \
+      static_cast<double>(_DBL_TIME_) / \
+      static_cast<double>(SECONDS_PER_INTERVAL) \
     ) \
   )
 

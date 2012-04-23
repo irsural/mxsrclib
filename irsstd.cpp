@@ -39,38 +39,40 @@ mxconsole_t::~mxconsole_t()
 // ¬ывод отладочной информации по типу puts
 void mxconsole_t::puts(const char *a_msg)
 {
-  const irs_u8 *msg = (const irs_u8 *)a_msg;
+  const irs_u8 *msg = reinterpret_cast<const irs_u8 *>(a_msg);
   if (!f_condrv) return;
   if (!msg) return;
-  irs_i32 len = strlen((char *)msg);
+  irs_i32 len = strlen(reinterpret_cast<const char*>(msg));
   irs_u8 *msg_crlf = new irs_u8[len + 2];
   if (!msg_crlf) return;
-  ::strcpy((char *)msg_crlf, (char *)msg);
+  ::strcpy(reinterpret_cast<char*>(msg_crlf),
+    reinterpret_cast<const char*>(msg));
   msg_crlf[len] = '\n';
   msg_crlf[len + 1] = 0;
-  f_condrv->out((char *)msg_crlf);
+  f_condrv->out(reinterpret_cast<const char*>(msg_crlf));
   delete []msg_crlf;
 }
 // ¬ывод отладочной информации по типу printf
 void mxconsole_t::printf(const char *a_format, ...)
 {
-  const irs_u8 *format = (const irs_u8 *)a_format;
+  const irs_u8 *format = reinterpret_cast<const irs_u8 *>(a_format);
   if (!f_condrv) return;
   if (!format) return;
   irs_u8 *msgbuf;
   irs_i32 len;
   va_list arglist;
   va_start(arglist, a_format);
-  len = vsnprintf(NULL, 0, (char *)format, arglist);
+  len = vsnprintf(NULL, 0, reinterpret_cast<const char*>(format), arglist);
   len++;
   va_end(arglist);
   msgbuf = new irs_u8[len];
   if (!msgbuf) return;
   va_start(arglist, a_format);
-  vsnprintf((char *)msgbuf, len, (char *)format, arglist);
+  vsnprintf(reinterpret_cast<char*>(msgbuf), len,
+    reinterpret_cast<const char*>(format), arglist);
   msgbuf[len - 1] = 0;
   va_end(arglist);
-  f_condrv->out((char *)msgbuf);
+  f_condrv->out(reinterpret_cast<const char*>(msgbuf));
   delete []msgbuf;
 }
 
@@ -160,8 +162,8 @@ void *irs_renew(void *pointer, size_t old_size, size_t new_size)
 
   void *new_pointer = IRS_NULL;
   if (new_size) {
-    new_pointer =
-      (void*)IRS_LIB_NEW_ASSERT(irs_u8 *[new_size], IRSSTDCPP_IDX);
+    new_pointer = reinterpret_cast<void*>(IRS_LIB_NEW_ASSERT(
+      irs_u8 *[new_size], IRSSTDCPP_IDX));
     if (!new_pointer) return new_pointer;
   }
   if (pointer) {
@@ -589,7 +591,7 @@ __flash irs_u8 lcd_table[] =
   0x20, // 'Э':157
   0x20, // 'Ю':158
   0x20, // 'Я':159
-  0x20, // '†':160
+  0x20, // ' ':160
   0x20, // '°':161
   0x20, // 'Ґ':162
   0x4A, // '£':163

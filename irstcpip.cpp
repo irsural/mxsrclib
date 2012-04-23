@@ -17,18 +17,18 @@
 
 #include <irsfinal.h>
 
-#define IRS_TCPIP_MAC(data) (*(mxmac_t*)(data))
-#define IRS_TCPIP_IP(data) (*(mxip_t*)(data))
+#define IRS_TCPIP_MAC(data) (*reinterpret_cast<mxmac_t*>(data))
+#define IRS_TCPIP_IP(data) (*reinterpret_cast<mxip_t*>(data))
 
 // Переобразование данных в mxmac_t
-#define IRS_UDP_MAC(data) (*(mxmac_t*)(&(data)))
+#define IRS_UDP_MAC(data) (reinterpret_cast<mxmac_t&>(data))
 template <class T>
 inline mxmac_t& mac_from_data(T& data);
 template <class T>
 inline mxmac_t& mac_from_data(T* data);
 
 // Преобразование данных в mxip_t
-#define IRS_UDP_IP(data) (*(mxip_t*)(&(data)))
+#define IRS_UDP_IP(data) (reinterpret_cast<mxip_t&>(data))
 template <class T>
 inline mxip_t& ip_from_data(T& data);
 template <class T>
@@ -61,41 +61,45 @@ inline mxip_t& ip_from_data(T* data)
 irs_u16 irs::ntoh16(irs_u8* ap_network_in)
 {
   irs_u16 host_out = 0;
-  IRS_HIBYTE(host_out) = IRS_FIRSTBYTE((*(irs_u16*)(ap_network_in)));
-  IRS_LOBYTE(host_out) = IRS_SECONDBYTE((*(irs_u16*)(ap_network_in)));
+  IRS_HIBYTE(host_out) = IRS_FIRSTBYTE((
+    *reinterpret_cast<irs_u16*>(ap_network_in)));
+  IRS_LOBYTE(host_out) = IRS_SECONDBYTE((
+    *reinterpret_cast<irs_u16*>(ap_network_in)));
   return host_out;
 }
 
 void irs::hton16(irs_u8* ap_network_out, irs_u16 a_host_in)
 {
-  IRS_FIRSTBYTE((*(irs_u16*)(ap_network_out))) = IRS_HIBYTE(a_host_in);
-  IRS_SECONDBYTE((*(irs_u16*)(ap_network_out))) = IRS_LOBYTE(a_host_in);
+  IRS_FIRSTBYTE((*reinterpret_cast<irs_u16*>(ap_network_out))) =
+    IRS_HIBYTE(a_host_in);
+  IRS_SECONDBYTE((*reinterpret_cast<irs_u16*>(ap_network_out))) =
+    IRS_LOBYTE(a_host_in);
 }
 
 irs_u32 irs::ntoh32(irs_u8* ap_network_in)
 {
   irs_u32 host_out = 0;
-  IRS_HIBYTE(IRS_HIWORD(host_out)) =
-    IRS_FIRSTBYTE(IRS_FIRSTWORD((*(irs_u32*)(ap_network_in))));
-  IRS_LOBYTE(IRS_HIWORD(host_out)) =
-    IRS_SECONDBYTE(IRS_FIRSTWORD((*(irs_u32*)(ap_network_in))));
-  IRS_HIBYTE(IRS_LOWORD(host_out)) =
-    IRS_FIRSTBYTE(IRS_SECONDWORD((*(irs_u32*)(ap_network_in))));
-  IRS_LOBYTE(IRS_LOWORD(host_out)) =
-    IRS_SECONDBYTE(IRS_SECONDWORD((*(irs_u32*)(ap_network_in))));
+  IRS_HIBYTE(IRS_HIWORD(host_out)) = IRS_FIRSTBYTE(IRS_FIRSTWORD((
+    *reinterpret_cast<irs_u32*>(ap_network_in))));
+  IRS_LOBYTE(IRS_HIWORD(host_out)) = IRS_SECONDBYTE(IRS_FIRSTWORD((
+    *reinterpret_cast<irs_u32*>(ap_network_in))));
+  IRS_HIBYTE(IRS_LOWORD(host_out)) = IRS_FIRSTBYTE(IRS_SECONDWORD((
+    *reinterpret_cast<irs_u32*>(ap_network_in))));
+  IRS_LOBYTE(IRS_LOWORD(host_out)) = IRS_SECONDBYTE(IRS_SECONDWORD((
+    *reinterpret_cast<irs_u32*>(ap_network_in))));
   return host_out;
 }
 
 void irs::hton32(irs_u8* ap_network_out, irs_u32 a_host_in)
 {
-  IRS_FIRSTBYTE(IRS_FIRSTWORD((*(irs_u32*)(ap_network_out)))) =
-    IRS_HIBYTE(IRS_HIWORD(a_host_in));
-  IRS_SECONDBYTE(IRS_FIRSTWORD((*(irs_u32*)(ap_network_out)))) =
-    IRS_LOBYTE(IRS_HIWORD(a_host_in));
-  IRS_FIRSTBYTE(IRS_SECONDWORD((*(irs_u32*)(ap_network_out)))) =
-    IRS_HIBYTE(IRS_LOWORD(a_host_in));
-  IRS_SECONDBYTE(IRS_SECONDWORD((*(irs_u32*)(ap_network_out)))) =
-    IRS_LOBYTE(IRS_LOWORD(a_host_in));
+  IRS_FIRSTBYTE(IRS_FIRSTWORD((*reinterpret_cast<irs_u32*>(
+    ap_network_out)))) = IRS_HIBYTE(IRS_HIWORD(a_host_in));
+  IRS_SECONDBYTE(IRS_FIRSTWORD((*reinterpret_cast<irs_u32*>(
+    ap_network_out)))) = IRS_LOBYTE(IRS_HIWORD(a_host_in));
+  IRS_FIRSTBYTE(IRS_SECONDWORD((*reinterpret_cast<irs_u32*>(
+    ap_network_out)))) = IRS_HIBYTE(IRS_LOWORD(a_host_in));
+  IRS_SECONDBYTE(IRS_SECONDWORD((*reinterpret_cast<irs_u32*>(
+    ap_network_out)))) = IRS_LOBYTE(IRS_LOWORD(a_host_in));
 }
 
 // ARP-кэш
@@ -149,7 +153,7 @@ void irs::arp_cash_t::add(const mxip_t& a_ip, const mxmac_t& a_mac)
 
 inline irs_size_t irs::arp_cash_t::size() const
 {
-  return (irs_size_t)m_cash.size();
+  return static_cast<irs_size_t>(m_cash.size());
 }
 
 void irs::arp_cash_t::resize(irs_size_t a_size)
@@ -256,7 +260,7 @@ void irs::arp_t::add_static(const mxip_t& a_ip, const mxmac_t& a_mac)
 
 irs_size_t irs::arp_t::size() const
 {
-  return (irs_size_t)m_cash.size();
+  return static_cast<irs_size_t>(m_cash.size());
 }
 
 void irs::arp_t::resize(irs_size_t a_size)

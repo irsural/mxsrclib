@@ -25,9 +25,9 @@
 // Класс для работы с источником постоянного тока Agilent 6675A
 
 // Команды при инициализации
-irs_u8 *mx_agilent_6675a_t::f_init_commands[] = {
-  (irs_u8 *)"PRESET NORM\r\n",
-  //(irs_u8 *)"OFORMAT ASCII\r\n",
+const irs_u8* mx_agilent_6675a_t::f_init_commands[] = {
+  reinterpret_cast<const irs_u8*>("PRESET NORM\r\n")
+  //reinterpret_cast<irs_u8*>("OFORMAT ASCII\r\n"),
 };
 // Число команд инициализации
 const irs_i32 mx_agilent_6675a_t::f_ic_count =
@@ -113,7 +113,8 @@ irs_bool mx_agilent_6675a_t::dc_supported()
 void mx_agilent_6675a_t::set_current(double current)
 {
   if (f_create_error) return;
-  ostrstream strm((char *)f_gpib_command, supag_gpib_com_buf_size - 1);
+  ostrstream strm(reinterpret_cast<char*>(f_gpib_command),
+    supag_gpib_com_buf_size - 1);
   strm << "CURR " << current << '\0';
   //f_gpib_command[strm.pcount()] = 0;
   f_status = meas_status_busy;
@@ -122,7 +123,8 @@ void mx_agilent_6675a_t::set_current(double current)
 void mx_agilent_6675a_t::set_voltage(double voltage)
 {
   if (f_create_error) return;
-  ostrstream strm((char *)f_gpib_command, supag_gpib_com_buf_size - 1);
+  ostrstream strm(reinterpret_cast<char*>(f_gpib_command),
+    supag_gpib_com_buf_size - 1);
   strm << "VOLT " << voltage << '\0';
   //f_gpib_command[strm.pcount()] = 0;
   f_status = meas_status_busy;
@@ -132,7 +134,7 @@ void mx_agilent_6675a_t::on()
 {
   if (f_create_error) return;
   //f_command = com_output_on;
-  ::strcpy((char *)f_gpib_command, "OUTPUT ON");
+  ::strcpy(reinterpret_cast<char*>(f_gpib_command), "OUTPUT ON");
   f_status = meas_status_busy;
 }
 // Выключение источника
@@ -140,14 +142,14 @@ void mx_agilent_6675a_t::output_off()
 {
   if (f_create_error) return;
   //f_command = com_output_off;
-  ::strcpy((char *)f_gpib_command, "OUTPUT OFF");
+  ::strcpy(reinterpret_cast<char*>(f_gpib_command), "OUTPUT OFF");
   f_status = meas_status_busy;
 }
 void mx_agilent_6675a_t::off()
 {
   if (f_create_error) return;
   //f_command = com_output_off;
-  ::strcpy((char *)f_gpib_command, "OUTPUT OFF");
+  ::strcpy(reinterpret_cast<char*>(f_gpib_command), "OUTPUT OFF");
   f_status = meas_status_busy;
 }
 // Чтение статуса текущей операции
@@ -177,7 +179,7 @@ void mx_agilent_6675a_t::tick()
       }
     } break;
     case mode_commands: {
-      irs_u32 len = strlen((char *)f_gpib_command);
+      irs_u32 len = strlen(reinterpret_cast<char*>(f_gpib_command));
       mxifa_write_begin(f_handle, IRS_NULL, f_gpib_command, len);
       f_mode = mode_commands_wait;
     } break;

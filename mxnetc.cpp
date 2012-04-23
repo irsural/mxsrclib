@@ -24,7 +24,7 @@
 #include <irsfinal.h>
 
 // Нет команды
-#define MXN_COM_NONE          ((mxn_cnt_t)-1)
+#define MXN_COM_NONE          (static_cast<mxn_cnt_t>(-1))
 // Таймаут сетевых операций
 #define net_t TIME_TO_CNT(1, 2)
 //#define net_t TIME_TO_CNT(3600, 1)
@@ -99,7 +99,7 @@ mxnetc::mxnetc(mxifa_ch_t channel):
     f_create_error = irs_true;
     return;
   }
-  memset((void *)&f_header, 0, sizeof(f_header));
+  memset(reinterpret_cast<void*>(&f_header), 0, sizeof(f_header));
   f_beg_pack_proc = IRS_LIB_NEW_ASSERT(
     irs::mx_beg_pack_proc_t(f_handle_channel),
     MXNETCCPP_IDX);
@@ -123,7 +123,7 @@ mxnetc::~mxnetc()
   mxifa_deinit();
   deinit_to_cnt();
   if (f_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_packet);
+    IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<irs_u8*&>(f_packet));
   }
 }
 
@@ -307,8 +307,8 @@ void mxnetc::tick()
         irs_bool fill_success = packet_fill(f_command, index, count,
           f_user_vars, count);
         if (fill_success) {
-          //mxifa_write_begin(f_handle_channel, IRS_NULL, (irs_u8 *)f_packet,
-            //f_send_size);
+          //mxifa_write_begin(f_handle_channel, IRS_NULL,
+            //reinterpret_cast<irs_u8*>(f_packet), f_send_size);
           f_mode = mxnc_mode_write;
         } else {
           f_mode = mxnc_mode_reset;
@@ -330,10 +330,11 @@ void mxnetc::tick()
       memcpy(buf + added_size, f_packet, f_send_size);
       for (mxn_sz_t i = 0; i < added_size; i++) buf[i] = fill_byte;
 
-      mxifa_write_begin(f_handle_channel, IRS_NULL, (irs_u8 *)buf,
-        new_size);
+      mxifa_write_begin(f_handle_channel, IRS_NULL,
+        reinterpret_cast<irs_u8*>(buf), new_size);
       #else //INSERT_LEFT_BYTE
-      mxifa_write_begin(f_handle_channel, IRS_NULL, (irs_u8 *)f_packet,
+      mxifa_write_begin(f_handle_channel, IRS_NULL,
+        reinterpret_cast<irs_u8*>(f_packet),
         f_send_size);
       #endif //INSERT_LEFT_BYTE
       if (f_oper_t) {
@@ -359,7 +360,7 @@ void mxnetc::tick()
       }
     } break;
     case mxnc_mode_read: {
-      (*f_beg_pack_proc)((irs_u8 *)f_packet);
+      (*f_beg_pack_proc)(reinterpret_cast<irs_u8*>(f_packet));
       set_to_cnt(f_net_to, net_t);
       if (f_oper_t) {
         set_to_cnt(f_oper_to, f_oper_t);
@@ -369,7 +370,8 @@ void mxnetc::tick()
     case mxnc_mode_begin_packet: {
       if (!f_beg_pack_proc->tick()) {
         if (f_packet->code_comm == f_command) {
-          irs_u8 *buf = ((irs_u8 *)f_packet) + mxn_header_size;
+          irs_u8 *buf = (reinterpret_cast<irs_u8*>(f_packet)) +
+            mxn_header_size;
           mxn_sz_t size = f_receive_size - mxn_header_size;
           mxifa_read_begin(f_handle_channel, IRS_NULL, buf, size);
           if (f_oper_t) {
@@ -377,7 +379,8 @@ void mxnetc::tick()
           }
           f_mode = mxnc_mode_chunk_read_wait;
         } else if (f_packet->code_comm == MXN_WRITE_BROADCAST) {
-          (*f_broadcast_proc)((irs_u8 *)f_packet, f_checksum_type);
+          (*f_broadcast_proc)(reinterpret_cast<irs_u8*>(f_packet),
+            f_checksum_type);
           f_mode = mxnc_mode_bcast_in_com;
         } else {
           f_mode = mxnc_mode_packet;
@@ -509,7 +512,8 @@ void mxnetc::tick()
           if (user_vars_valid && index_valid && count_valid) {
             f_mode = mxnc_mode_reset;
             f_local_status = mxnc_status_success;
-            memcpy((void *)f_user_vars, (void *)f_packet->var,
+            memcpy(reinterpret_cast<void*>(f_user_vars),
+              reinterpret_cast<void*>(f_packet->var),
               f_user_count*sizeof(irs_i32));
             #ifdef NOP
             ShowMessage(
@@ -555,8 +559,8 @@ void mxnetc::tick()
           }
         } break;
         case MXN_SET_BROADCAST: {
-          irs_bool index_valid =
-            (f_user_broadcast == (irs_bool)f_packet->var_ind_first);
+          irs_bool index_valid = (f_user_broadcast ==
+            irs::to_bool(f_packet->var_ind_first));
           irs_bool count_valid = (0 == f_packet->var_count);
           if (index_valid && count_valid) {
             f_mode = mxnc_mode_reset;
@@ -589,7 +593,7 @@ void mxnetc::tick()
 
 
     case mxnc_mode_broadcast: {
-      (*f_beg_pack_proc)((irs_u8 *)&f_header);
+      (*f_beg_pack_proc)(reinterpret_cast<irs_u8*>(&f_header));
       //set_to_cnt(f_net_to, net_t);
       f_mode = mxnc_mode_broadcast_wait;
     } break;
@@ -600,7 +604,8 @@ void mxnetc::tick()
       } else {
         if (!f_beg_pack_proc->tick()) {
           if (f_header.code_comm == MXN_WRITE_BROADCAST) {
-            (*f_broadcast_proc)((irs_u8 *)&f_header, f_checksum_type);
+            (*f_broadcast_proc)(reinterpret_cast<irs_u8*>(&f_header),
+              f_checksum_type);
             f_mode = mxnc_mode_broadcast_proc_wait;
           } else {
             f_mode = mxnc_mode_broadcast;
@@ -698,10 +703,10 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
     f_send_size = f_packet_size;
   }
   if (f_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_packet);
+    IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<irs_u8*&>(f_packet));
   }
-  f_packet = (mxn_packet_t *)IRS_LIB_NEW_ASSERT(
-    irs_u8[f_packet_size], MXNETCCPP_IDX);
+  f_packet = reinterpret_cast<mxn_packet_t*>(IRS_LIB_NEW_ASSERT(
+    irs_u8[f_packet_size], MXNETCCPP_IDX));
   if (f_packet) {
     f_packet->ident_beg_pack_first = MXN_CONST_IDENT_BEG_PACK_FIRST;
     f_packet->ident_beg_pack_second = MXN_CONST_IDENT_BEG_PACK_SECOND;
@@ -709,7 +714,8 @@ irs_bool mxnetc::packet_fill(mxn_cnt_t code_comm, mxn_cnt_t packet_var_first,
     f_packet->var_ind_first = packet_var_first;
     f_packet->var_count = packet_var_count;
     if (code_comm == MXN_WRITE) {
-      memcpy((void *)f_packet->var, (void *)vars, var_count*sizeof(irs_i32));
+      memcpy(reinterpret_cast<void*>(f_packet->var),
+        reinterpret_cast<void*>(vars), var_count*sizeof(irs_i32));
       f_packet->var[var_count] = mxn_checksum_calc(f_packet, var_count,
         f_send_size, f_checksum_type);
     } else {
@@ -737,9 +743,9 @@ void mxnetc::set_dest_ip(mxip_t ip)
 {
   if (mxifa_get_channel_type(f_handle_channel) == mxifa_ei_win32_tcp_ip) {
     mxifa_win32_tcp_ip_cfg cfg;
-    mxifa_get_config(f_handle_channel, (void *)&cfg);
+    mxifa_get_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
     cfg.dest_ip = ip;
-    mxifa_set_config(f_handle_channel, (void *)&cfg);
+    mxifa_set_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
   }
 }
 
@@ -748,9 +754,9 @@ void mxnetc::set_dest_port(irs_u16 port)
 {
   if (mxifa_get_channel_type(f_handle_channel) == mxifa_ei_win32_tcp_ip) {
     mxifa_win32_tcp_ip_cfg cfg;
-    mxifa_get_config(f_handle_channel, (void *)&cfg);
+    mxifa_get_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
     cfg.dest_port = port;
-    mxifa_set_config(f_handle_channel, (void *)&cfg);
+    mxifa_set_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
   }
 }
 
@@ -759,9 +765,9 @@ void mxnetc::set_local_port(irs_u16 port)
 {
   if (mxifa_get_channel_type(f_handle_channel) == mxifa_ei_win32_tcp_ip) {
     mxifa_win32_tcp_ip_cfg cfg;
-    mxifa_get_config(f_handle_channel, (void *)&cfg);
+    mxifa_get_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
     cfg.local_port = port;
-    mxifa_set_config(f_handle_channel, (void *)&cfg);
+    mxifa_set_config(f_handle_channel, reinterpret_cast<void*>(&cfg));
   }
 }
 
@@ -793,7 +799,7 @@ void *mxn_renew(void *pointer, mxn_sz_t old_size, mxn_sz_t new_size)
     if (old_size && new_size) {
       memcpy(new_pointer, pointer, irs_min(old_size, new_size));
     }
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)pointer);
+    IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<irs_u8*&>(pointer));
   }
   return new_pointer;
 }
@@ -847,7 +853,8 @@ mx_broadcast_proc_t::~mx_broadcast_proc_t()
     mxifa_read_end(f_handle_channel, irs_true);
   }
   if (f_broadcast_packet) {
-    IRS_LIB_ARRAY_DELETE_ASSERT((irs_u8*&)f_broadcast_packet);
+    IRS_LIB_ARRAY_DELETE_ASSERT(reinterpret_cast<irs_u8*&>(
+      f_broadcast_packet));
   }
   if (f_broadcast_vars) {
     IRS_LIB_ARRAY_DELETE_ASSERT(f_broadcast_vars);
@@ -867,16 +874,18 @@ irs_bool mx_broadcast_proc_t::tick()
 {
   switch (f_mode) {
     case mode_start: {
-      mxn_packet_t *header = (mxn_packet_t *)f_buf;
+      mxn_packet_t *header = reinterpret_cast<mxn_packet_t*>(f_buf);
       f_broadcast_count = header->var_count;
       mxn_sz_t old_size = f_broadcast_packet_size;
       f_broadcast_packet_size =
         (MXN_SIZE_OF_HEADER + f_broadcast_count + 1)*sizeof(irs_i32);
-      f_broadcast_packet = (mxn_packet_t *)mxn_renew (f_broadcast_packet,
-        old_size, f_broadcast_packet_size);
-      memcpy((void *)f_broadcast_packet, (void *)f_buf, mxn_header_size);
+      f_broadcast_packet = reinterpret_cast<mxn_packet_t*>(
+        mxn_renew(f_broadcast_packet, old_size, f_broadcast_packet_size));
+      memcpy(reinterpret_cast<void*>(f_broadcast_packet),
+        reinterpret_cast<void*>(f_buf), mxn_header_size);
 
-      irs_u8 *buf = ((irs_u8 *)f_broadcast_packet) + mxn_header_size;
+      irs_u8 *buf = reinterpret_cast<irs_u8*>(f_broadcast_packet) +
+        mxn_header_size;
       mxifa_sz_t size = f_broadcast_packet_size - mxn_header_size;
       mxifa_read_begin(f_handle_channel, IRS_NULL, buf, size);
 
@@ -893,7 +902,8 @@ irs_bool mx_broadcast_proc_t::tick()
           f_broadcast_vars = IRS_LIB_NEW_ASSERT(irs_i32[f_broadcast_count],
             MXNETCCPP_IDX);
           if (f_broadcast_vars) {
-            memcpy((void *)f_broadcast_vars, (void *)f_broadcast_packet->var,
+            memcpy(reinterpret_cast<void*>(f_broadcast_vars),
+              reinterpret_cast<void*>(f_broadcast_packet->var),
               f_broadcast_count*sizeof(irs_i32));
             f_success = irs_true;
           } else {
@@ -930,8 +940,8 @@ irs_bool mx_broadcast_proc_t::success()
 void mx_broadcast_proc_t::get_vars(irs_i32 *user_var, mxn_cnt_t index,
   mxn_cnt_t count)
 {
-  void *dest = (void *)user_var;
-  void *src = (void *)(f_broadcast_vars + index);
+  void *dest = reinterpret_cast<void*>(user_var);
+  void *src = reinterpret_cast<void*>(f_broadcast_vars + index);
   size_t size = count*sizeof(irs_i32);
   memcpy(dest, src, size);
 }
@@ -1031,7 +1041,7 @@ void irs::mxdata_to_mxnet_t::tick()
                 {
                   mp_mxnet->write(m_current_index/m_size_var_byte,
                     (m_finish_index - m_current_index)/m_size_var_byte,
-                    (irs_i32*)&mp_buf[m_current_index]);
+                    reinterpret_cast<irs_i32*>(&mp_buf[m_current_index]));
                   set_to_cnt(m_connect_counter, m_connect_interval);
                   for (irs_uarc i = m_current_index; i <= m_finish_index; i++)
                     m_write_vector[i] = false;
@@ -1047,7 +1057,8 @@ void irs::mxdata_to_mxnet_t::tick()
             (m_status != WRITE))
           {
             m_status = READ;
-            mp_mxnet->read(0, m_mxnet_size, (irs_i32*)mp_read_buf);
+            mp_mxnet->read(0, m_mxnet_size,
+              reinterpret_cast<irs_i32*>(mp_read_buf));
             set_to_cnt(m_connect_counter, m_connect_interval);
             m_current_index = 0;
           }
@@ -1079,7 +1090,8 @@ void irs::mxdata_to_mxnet_t::tick()
             if (mp_buf && mp_read_buf)
             {
               m_status = READ;
-              mp_mxnet->read(0, m_mxnet_size, (irs_i32*)mp_read_buf);
+              mp_mxnet->read(0, m_mxnet_size,
+                reinterpret_cast<irs_i32*>(mp_read_buf));
               set_to_cnt(m_connect_counter, m_connect_interval);
               m_write_vector.resize(m_mxnet_size_byte, false);
               for (irs_uarc i = 0; i < m_mxnet_size_byte; i++)
@@ -1089,7 +1101,8 @@ void irs::mxdata_to_mxnet_t::tick()
             }
           } else {
             m_status = READ;
-            mp_mxnet->read(0, m_mxnet_size, (irs_i32*)mp_read_buf);
+            mp_mxnet->read(0, m_mxnet_size,
+              reinterpret_cast<irs_i32*>(mp_read_buf));
             set_to_cnt(m_connect_counter, m_connect_interval);
           }
         }
@@ -1172,12 +1185,13 @@ void irs::mxdata_to_mxnet_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     irs_uarc real_size = a_size;
     irs_uarc real_index = a_index;
     #ifdef MXDATA_TO_MXNET_CHECKED
-    memset((void*)ap_buf, 0, real_size);
+    memset(reinterpret_cast<void*>(ap_buf), 0, real_size);
     if (real_index > m_mxnet_size_byte - 1) return;
     if (real_size > m_mxnet_size_byte - real_index)
       real_size = m_mxnet_size_byte - real_index;
     #endif //MXDATA_TO_MXNET_CHECKED
-    memcpy((void*)ap_buf, (void*)(mp_buf + real_index), real_size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + real_index), real_size);
   }
 }
 
@@ -1194,7 +1208,8 @@ void irs::mxdata_to_mxnet_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     if (real_size > m_mxnet_size_byte - real_index)
       real_size = m_mxnet_size_byte - real_index;
     #endif //MXDATA_TO_MXNET_CHECKED
-    memcpy((void*)(mp_buf + real_index), (void*)ap_buf, real_size);
+    memcpy(reinterpret_cast<void*>(mp_buf + real_index),
+      reinterpret_cast<const void*>(ap_buf), real_size);
     for (irs_uarc i = real_index; i < real_index + real_size; i++)
       m_write_vector[i] = true;
   }
@@ -1434,8 +1449,8 @@ void irs::mxnet_client_command_t::tick()
 
       m_channel_ident = m_hardflow.channel_next();
       m_fixed_flow.write(m_channel_ident, buf, new_size);
-      //mxifa_write_begin(m_handle_channel, IRS_NULL, (irs_u8 *)buf,
-        //new_size);
+      //mxifa_write_begin(m_handle_channel, IRS_NULL,
+        //reinterpret_cast<irs_u8*>(buf), new_size);
       #else //INSERT_LEFT_BYTE
       m_channel_ident = m_hardflow.channel_next();
       m_fixed_flow.write(m_channel_ident, m_packet_data.data(), m_send_size);
@@ -1543,7 +1558,8 @@ void irs::mxnet_client_command_t::tick()
           bool count_valid = (m_user_count == mp_packet->var_count);
           if (user_vars_valid && index_valid && count_valid) {
             m_status = status_success;
-            memcpy((void *)mp_user_vars, (void *)mp_packet->var,
+            memcpy(reinterpret_cast<void*>(mp_user_vars),
+              reinterpret_cast<void*>(mp_packet->var),
               m_user_count*sizeof(irs_i32));
             #ifdef NOP
             ShowMessage(

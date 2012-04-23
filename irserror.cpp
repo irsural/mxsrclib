@@ -307,7 +307,7 @@ irs::string irs::error_str(int a_error_code)
     NULL,
     a_error_code,
     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    (LPSTR) &lpMsgBuf,
+    reinterpret_cast<LPSTR>(&lpMsgBuf),
     0,
     NULL);
   message = static_cast<char*>(lpMsgBuf);
@@ -333,12 +333,12 @@ void irs::send_format_msg(
       NULL,
       a_error_code,
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      (LPTSTR) &lpMsgBuf,
+      reinterpret_cast<LPTSTR>(&lpMsgBuf),
       0, NULL);
   irs::string message = static_cast<irs::string>(a_error_code)+
     ": "+static_cast<char*>(lpMsgBuf);
-  irs::error_trans()->throw_error(
-    ec_standard, ap_file, a_line, (void*)(message.c_str()));
+  irs::error_trans()->throw_error(ec_standard, ap_file, a_line,
+    reinterpret_cast<const void*>(message.c_str()));
   LocalFree(lpMsgBuf);
   #elif defined(IRS_LINUX)
   char* errmsg = strerror(a_error_code);

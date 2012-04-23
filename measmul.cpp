@@ -111,7 +111,7 @@ irs::string_t type_meas_to_str(const type_meas_t a_type_meas)
         "значения переменной перечисляемого типа");
       IRS_SPEC_CSTR_DECLARE(file_cstr, __FILE__);
       error_trans->throw_error(irs::ec_standard, file_cstr, __LINE__,
-        (void*)msg_cstr);
+        reinterpret_cast<const void*>(msg_cstr));
       #endif //IRS_LIB_DEBUG
     } break;
   }
@@ -594,8 +594,9 @@ void irs::agilent_3458a_t::tick()
     } break;
     case ma_mode_commands: {
       m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
-      irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command = reinterpret_cast<const irs_u8*>(
+        m_cur_mul_command.c_str());
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
       m_fixed_flow.write_timeout(m_oper_time);
       m_mode = ma_mode_commands_wait;
@@ -608,7 +609,9 @@ void irs::agilent_3458a_t::tick()
         switch (m_fixed_flow.write_status()) {
           case irs::hardflow::fixed_flow_t::status_success: {
             m_mul_commands_index++;
-            if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
+            if (m_mul_commands_index >=
+              static_cast<index_t>(m_mul_commands->size()))
+            {
               m_mode = ma_mode_macro;
             } else {
               m_mode = ma_mode_commands;
@@ -670,8 +673,8 @@ void irs::agilent_3458a_t::tick()
     } break;
 
     case ma_mode_auto_calibration: {
-      irs_u8 *command = (irs_u8 *)"ACAL ALL";
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
       m_fixed_flow.write_timeout(m_acal_time);
       m_mode = ma_mode_auto_calibration_wait;
@@ -1200,8 +1203,9 @@ void mx_agilent_3458a_t::tick()
     } break;
     case ma_mode_commands: {
       m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
-      irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command =
+        reinterpret_cast<const irs_u8*>(m_cur_mul_command.c_str());
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       mxifa_write_begin(m_handle, IRS_NULL, command, len);
       m_mode = ma_mode_commands_wait;
       set_to_cnt(m_oper_to, m_oper_time);
@@ -1209,7 +1213,9 @@ void mx_agilent_3458a_t::tick()
     case ma_mode_commands_wait: {
       if (mxifa_write_end(m_handle, false)) {
         m_mul_commands_index++;
-        if (m_mul_commands_index >= (index_t)m_mul_commands->size()) {
+        if (m_mul_commands_index >=
+          static_cast<index_t>(m_mul_commands->size()))
+        {
           m_mode = ma_mode_macro;
         } else {
           m_mode = ma_mode_commands;
@@ -1226,14 +1232,15 @@ void mx_agilent_3458a_t::tick()
       if (m_abort_request) {
         m_mode = ma_mode_macro;
       } else {
-        irs_u8 *buf = m_read_buf + m_read_pos;
+        irs_u8* buf = m_read_buf + m_read_pos;
         mxifa_sz_t size = (ma_read_buf_size - 1) - m_read_pos;
         if ((size > 0) && (size < ma_read_buf_size)) {
           mxifa_sz_t read_count =
             mxifa_fast_read(m_handle, IRS_NULL, buf, size);
           buf[read_count] = 0;
           char end_chars[3] = {0x0D, 0x0A, 0x00};
-          char *end_number = strstr((char *)m_read_buf, end_chars);
+          char *end_number = strstr(reinterpret_cast<const char*>(m_read_buf),
+            end_chars);
           if (end_number) {
             *end_number = 0;
             char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
@@ -1244,16 +1251,18 @@ void mx_agilent_3458a_t::tick()
             }
             #ifdef NOP
             char *end_ptr = IRS_NULL;
-            double val = strtod((char *)m_read_buf, &end_ptr);
+            double val = strtod(reinterpret_cast<const char*>(m_read_buf), &end_ptr);
             if (end_ptr == end_number) {
               *m_value = val;
               m_mode = ma_mode_macro;
             }
             #endif //NOP
-            irs_u8 *read_bytes_end_ptr = buf + read_count;
-            irs_u8 *next_str_ptr = (irs_u8 *)end_number + 2;
+            const irs_u8* read_bytes_end_ptr = buf + read_count;
+            const irs_u8* next_str_ptr =
+              reinterpret_cast<const irs_u8*>(end_number + 2);
             mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
-            memmove((void *)m_read_buf, (void *)next_str_ptr, rest_bytes);
+            memmove(reinterpret_cast<void*>(m_read_buf),
+              reinterpret_cast<const void*>(next_str_ptr), rest_bytes);
             m_read_pos = rest_bytes;
           } else {
             m_read_pos += read_count;
@@ -1266,8 +1275,8 @@ void mx_agilent_3458a_t::tick()
     } break;
 
     case ma_mode_auto_calibration: {
-      irs_u8 *command = (irs_u8 *)"ACAL ALL";
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       mxifa_write_begin(m_handle, IRS_NULL, command, len);
       set_to_cnt(m_acal_to, m_acal_time);
       m_mode = ma_mode_auto_calibration_wait;
@@ -2002,7 +2011,7 @@ void irs::agilent_3458a_digitizer_t::set_start_level(double /*level*/)
 {
 }
 // Установка диапазона измерений
-void irs::agilent_3458a_digitizer_t::set_range(type_meas_t a_type_meas,
+void irs::agilent_3458a_digitizer_t::set_range(type_meas_t /*a_type_meas*/,
   double a_range)
 {
   if (m_status != meas_status_busy) {
@@ -2787,7 +2796,9 @@ irs::v7_78_1_t::v7_78_1_t(mxifa_ch_t channel,
           if (mxifa_write_end(f_handle, irs_false)) {
             write_wait = irs_false;
             ic_index++;
-            if (ic_index >= (index_t)f_init_commands.size()) break;
+            if (ic_index >= static_cast<irs_u8>(f_init_commands.size())) {
+              break;
+            }
           } else if (test_to_cnt(f_oper_to)) {
             mxifa_write_end(f_handle, irs_true);
             write_wait = irs_false;
@@ -2796,8 +2807,9 @@ irs::v7_78_1_t::v7_78_1_t(mxifa_ch_t channel,
             goto _error;
           }
         } else {
-          irs_u8 *icommand = (irs_u8 *)(f_init_commands[ic_index].c_str());
-          irs_u32 len = strlen((char *)icommand);
+          const irs_u8* icommand = reinterpret_cast<const irs_u8*>(
+            f_init_commands[ic_index].c_str());
+          irs_u32 len = strlen(reinterpret_cast<const char*>(icommand));
           mxifa_write_begin(f_handle, IRS_NULL, icommand, len);
           set_to_cnt(f_oper_to, f_oper_time);
           write_wait = irs_true;
@@ -3041,8 +3053,9 @@ void irs::v7_78_1_t::tick()
     } break;
     case ma_mode_commands: {
       f_cur_mul_command = (*f_mul_commands)[f_mul_commands_index];
-      irs_u8 *command = (irs_u8 *)f_cur_mul_command.c_str();
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command = reinterpret_cast<const irs_u8*>(
+        f_cur_mul_command.c_str());
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       mxifa_write_begin(f_handle, IRS_NULL, command, len);
       f_mode = ma_mode_commands_wait;
       set_to_cnt(f_oper_to, f_oper_time);
@@ -3050,7 +3063,9 @@ void irs::v7_78_1_t::tick()
     case ma_mode_commands_wait: {
       if (mxifa_write_end(f_handle, irs_false)) {
         f_mul_commands_index++;
-        if (f_mul_commands_index >= (index_t)f_mul_commands->size()) {
+        if (f_mul_commands_index >=
+          static_cast<index_t>(f_mul_commands->size()))
+        {
           f_mode = ma_mode_macro;
         } else {
           f_mode = ma_mode_commands;
@@ -3084,7 +3099,8 @@ void irs::v7_78_1_t::tick()
           buf[read_count] = 0;
           char end_chars[] = {0x0A, 0x00};
           size_t end_chars_size = strlen(end_chars);
-          char *end_number = strstr((char *)f_read_buf, end_chars);
+          char *end_number = strstr(reinterpret_cast<const char*>(f_read_buf),
+            end_chars);
           if (end_number) {
             *end_number = 0;
             char* p_number_in_cstr = reinterpret_cast<char*>(f_read_buf);
@@ -3095,16 +3111,19 @@ void irs::v7_78_1_t::tick()
             }
             #ifdef NOP
             char *end_ptr = IRS_NULL;
-            double val = strtod((char *)f_read_buf, &end_ptr);
+            double val = strtod(reinterpret_cast<const char*>(f_read_buf),
+              &end_ptr);
             if (end_ptr == end_number) {
               *f_value = val;
               f_mode = ma_mode_macro;
             }
             #endif // NOP
-            irs_u8 *read_bytes_end_ptr = buf + read_count;
-            irs_u8 *next_str_ptr = (irs_u8 *)end_number + end_chars_size;
+            const irs_u8* read_bytes_end_ptr = buf + read_count;
+            const irs_u8* next_str_ptr =
+              reinterpret_cast<const irs_u8*>(end_number + end_chars_size);
             mxifa_sz_t rest_bytes = read_bytes_end_ptr - next_str_ptr;
-            memmove((void *)f_read_buf, (void *)next_str_ptr, rest_bytes);
+            memmove(reinterpret_cast<void*>(f_read_buf),
+              reinterpret_cast<const void*>(next_str_ptr), rest_bytes);
             f_read_pos = rest_bytes;
           } else {
             f_read_pos += read_count;
@@ -3117,8 +3136,8 @@ void irs::v7_78_1_t::tick()
     } break;
 
     case ma_mode_auto_calibration: {
-      irs_u8 *command = (irs_u8 *)"ACAL ALL";
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       mxifa_write_begin(f_handle, IRS_NULL, command, len);
       set_to_cnt(f_acal_to, f_acal_time);
       f_mode = ma_mode_auto_calibration_wait;
@@ -3640,8 +3659,9 @@ void irs::agilent_34420a_t::tick()
     } break;
     case ma_mode_commands: {
       m_cur_mul_command = (*mp_mul_commands)[m_mul_commands_index] + "\n";
-      irs_u8 *command = (irs_u8 *)m_cur_mul_command.c_str();
-      irs_u32 len = strlen((char *)command);
+      const irs_u8* command =
+        reinterpret_cast<const irs_u8*>(m_cur_mul_command.c_str());
+      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
       m_fixed_flow.write_timeout(m_oper_time);
       m_mode = ma_mode_commands_wait;
@@ -3654,7 +3674,9 @@ void irs::agilent_34420a_t::tick()
         switch (m_fixed_flow.write_status()) {
           case irs::hardflow::fixed_flow_t::status_success: {
             m_mul_commands_index++;
-            if (m_mul_commands_index >= (index_t)mp_mul_commands->size()) {
+            if (m_mul_commands_index >=
+              static_cast<index_t>(mp_mul_commands->size()))
+            {
               m_mode = ma_mode_macro;
             } else {
               m_mode = ma_mode_commands;
@@ -4139,7 +4161,7 @@ void irs::akip_ch3_85_3r_t::tick()
 
       irs_u32 size_rd = mp_hardflow->read(ch, buf_rd, size_buf_rd);
       buf_rd[size_rd] = irst('\0');
-      m_string_msgs += irs::irs_string_t((char*)buf_rd);
+      m_string_msgs += irs::irs_string_t(reinterpret_cast<char*>(buf_rd));
       if(m_meas_stat == meas_status_busy){
         irs::irs_string_t message;
         msg_status_t msg_stat = m_string_msgs.get_message(message);

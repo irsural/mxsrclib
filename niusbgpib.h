@@ -35,12 +35,14 @@ private:
   // Макросы для подключения функций и переменных gpib-32.dll
   #define DEF_DLL_PROC(_LIB_, _PROC_)\
   {\
-    f_##_PROC_ = (_PROC_##_t)GetProcAddress(_LIB_, #_PROC_);\
+    f_##_PROC_ = reinterpret_cast<_PROC_##_t>(\
+    GetProcAddress(_LIB_, #_PROC_));\
     if (!f_##_PROC_) goto def_dll_err;\
   }
   #define DEF_DLL_VAR(_LIB_, _TYPE_, _VAR_)\
   {\
-    f_p##_VAR_ = (_TYPE_ *)GetProcAddress(_LIB_, "user_" #_VAR_);\
+    f_p##_VAR_ = reinterpret_cast<_TYPE_*>(\
+    GetProcAddress(_LIB_, "user_" #_VAR_));\
     if (!f_p##_VAR_) goto def_dll_err;\
   }
 

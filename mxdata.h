@@ -512,7 +512,8 @@ raw_data_t<T>::raw_data_t(size_type a_size):
   m_bad_index_value(value_type()),
   #endif //IRS_LIB_CHECK
   m_size(a_size),
-  m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
+  m_capacity((m_size > m_capacity_min)?m_size:
+    static_cast<size_t>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memsetex(mp_data, m_size);
@@ -632,7 +633,8 @@ inline bool raw_data_t<T>::empty() const
 template <class T>
 void raw_data_t<T>::reserve(size_type a_capacity)
 {
-  size_type capacity_norm = max(a_capacity, (size_type)m_capacity_min);
+  size_type capacity_norm = max(a_capacity,
+    static_cast<size_type>(m_capacity_min));
   size_type capacity_new = max(capacity_norm, m_size);
   reserve_raw(capacity_new);
 }
@@ -1130,7 +1132,8 @@ private:
 template <class T>
 irs::deque_data_t<T>::deque_data_t(size_type a_size):
   m_ring_size(a_size),
-  m_capacity((m_ring_size > m_capacity_min) ? m_ring_size : m_capacity_min),
+  m_capacity((m_ring_size > m_capacity_min) ? m_ring_size :
+    static_cast<size_t>(m_capacity_min)),
   mp_buf(new value_type[m_capacity]),
   m_ring_begin_pos(0)
 {
@@ -1216,7 +1219,8 @@ inline bool irs::deque_data_t<T>::empty() const
 template <class T>
 void irs::deque_data_t<T>::reserve(size_type a_capacity)
 {
-  size_type capacity_norm = max(a_capacity, (size_type)m_capacity_min);
+  size_type capacity_norm = max(a_capacity,
+    static_cast<size_type>(m_capacity_min));
   size_type capacity_new = max(capacity_norm, m_ring_size);
   reserve_buf(capacity_new);
 }

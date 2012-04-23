@@ -341,7 +341,7 @@ inline void irs_strm_buf::processing_key_event()  //обработка событий клавиатуры
 inline void irs_strm_buf::outputbuf(irs_i32 a_ich)      //вывод в экранный буфер
 {
   char ChTime[2];
-  ChTime[0]=(char)a_ich;
+  ChTime[0] = static_cast<char>(a_ich);
   ChTime[1] = '\0';
   if(m_left_activecursor_buf >= m_width_display || ChTime[0] == '\n')
   { //если текущая строка последняя, делаем скроллинг

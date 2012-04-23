@@ -912,6 +912,7 @@ class dac_ad5293_t : public mxdata_t
 {
   enum status_t
   {
+    #ifdef NOP
     DAC_RESET,
     DAC_FREE,
     DAC_START,
@@ -921,6 +922,7 @@ class dac_ad5293_t : public mxdata_t
     DAC_SDO_WAIT,
     DAC_NOP,
     DAC_WRITE,
+    #endif //NOP
     //
     FREE,
     RESET,
@@ -958,6 +960,7 @@ class dac_ad5293_t : public mxdata_t
   //  CS
   gpio_pin_t *mp_cs_pin;
   write_status_t m_write_status;
+
   bool write_to_dac(status_t a_command);
   inline bool write_ready() { return (m_write_status == WS_READY); };
   inline bool spi_ready() 

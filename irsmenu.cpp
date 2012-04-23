@@ -51,8 +51,6 @@ irs_menu_base_t::irs_menu_base_t():
 {
   f_cursor[0] = f_cursor_symbol;
   f_cursor[1] = 0;
-  //memset((void *)f_message_array, 0, sizeof(f_message_array));
-  //memset((void *)f_message_len_array, 0, sizeof(f_message_len_array));
 
   init_to_cnt();
   //show();
@@ -182,11 +180,11 @@ irs_bool irs_menu_t::add(irs_menu_base_t *item)
   if (f_creep) item->set_creep(f_creep);
   if (mp_disp_drv) item->set_disp_drv(mp_disp_drv);
   item->set_cursor_symbol(f_cursor_symbol);
-  f_menu_array = (irs_menu_base_t **)irs_renew(
-    (void *)f_menu_array,
+  f_menu_array = reinterpret_cast<irs_menu_base_t**>(irs_renew(
+    reinterpret_cast<void*>(f_menu_array),
     f_items_count*sizeof(irs_menu_base_t*),
     (f_items_count + 1)*sizeof(irs_menu_base_t*)
-  );
+  ));
   f_menu_array[f_items_count] = item;
   item->set_master_menu(this);
   f_items_count++;
@@ -779,7 +777,8 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
     if ((a_length > 0) && ((len + len2) > a_length))
     {
       len2 = a_length - len;
-      memcpy((void*)&a_parametr_string[len], f_value_string, len2);
+      memcpy(reinterpret_cast<void*>(&a_parametr_string[len]),
+        f_value_string, len2);
       size_type real_len = len + len2;
       a_parametr_string[real_len] = '\0';
       return real_len;
@@ -799,7 +798,8 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
       if ((a_length > 0) && ((len + len2 + len3) > a_length))
       {
         len3 = a_length - len - len2;
-        memcpy((void*)&a_parametr_string[len+len2], f_suffix, len3);
+        memcpy(reinterpret_cast<void*>(&a_parametr_string[len+len2]),
+          f_suffix, len3);
         size_type real_len = len + len2 + len3;
         a_parametr_string[real_len] = '\0';
         return real_len;
@@ -1274,9 +1274,10 @@ void irs_tablo_t::set_disp_drv(mxdisplay_drv_service_t *ap_disp_drv)
   irs_menu_base_t::set_disp_drv(ap_disp_drv);
   if (mp_disp_drv) {
     mp_lcd_string = new char[mp_disp_drv->get_width() + 1];
-    memset((void *)mp_lcd_string, 0, mp_disp_drv->get_width() + 1);
+    memset(reinterpret_cast<void*>(mp_lcd_string), 0,
+      mp_disp_drv->get_width() + 1);
     f_parametr_array = new irs_menu_base_t*[mp_disp_drv->get_height() - 1];
-    memset((void *)f_parametr_array, 0,
+    memset(reinterpret_cast<void*>(f_parametr_array), 0,
       sizeof(irs_menu_base_t*)*irs_u8(mp_disp_drv->get_height() - 1));
   }
 }
@@ -1428,7 +1429,8 @@ void irs_advanced_tablo_t::set_disp_drv(mxdisplay_drv_service_t *ap_disp_drv)
   irs_menu_base_t::set_disp_drv(ap_disp_drv);
   if (mp_disp_drv) {
     mp_lcd_string = new char[mp_disp_drv->get_width() + 1];
-    memset((void *)mp_lcd_string, 0, mp_disp_drv->get_width() + 1);
+    memset(reinterpret_cast<void*>(mp_lcd_string), 0,
+      mp_disp_drv->get_width() + 1);
   }
 }
 
@@ -1686,7 +1688,7 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_dynamic_string(
       len2 = a_length - len - 1;
       char *x = new char[len2];
       afloat_to_str(x, f_start_value, len2, f_accur);
-      memcpy((void*)&a_buffer[len + 1], x, len2);
+      memcpy(reinterpret_cast<void*>(&a_buffer[len + 1]), x, len2);
       IRS_ARDELETE(x);
       size_type real_len = len + 1 + len2;
       a_buffer[real_len] = '\0';
@@ -1694,26 +1696,29 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_dynamic_string(
     }
     char *x = new char[len2];
     afloat_to_str(x, f_start_value, len2, f_accur);
-    memcpy((void*)&a_buffer[len + 1], x, len2);
+    memcpy(reinterpret_cast<void*>(&a_buffer[len + 1]), x, len2);
     IRS_ARDELETE(x);
     a_buffer[len + 1 + len2] = ' ';
     size_type len3 = strlen(f_suffix);
     if ((a_length > 0) && (len + 1 + len2 + 1 + len3 > a_length))
     {
       len3 = a_length - len - 1 - len2 - 1;
-      memcpy((void*)&a_buffer[len + 1 + len2 + 1], f_suffix, len3);
+      memcpy(reinterpret_cast<void*>(&a_buffer[len + 1 + len2 + 1]),
+        f_suffix, len3);
       size_type real_len = len + 1 + len2 + 1 + len3;
       a_buffer[real_len] = '\0';
       return real_len;
     }
-    memcpy((void*)&a_buffer[len + 1 + len2 + 1], f_suffix, len3);
+    memcpy(reinterpret_cast<void*>(&a_buffer[len + 1 + len2 + 1]),
+      f_suffix, len3);
     if (f_extra_parametr != IRS_NULL)
     {
       size_type len4 = a_length - len - 1 - len2 - 1 - len3;
       char const* zpt = ", ";
       if (len4 > strlen(zpt))
       {
-        memcpy((void*)&a_buffer[len + 1 + len2 + 1 + len3], zpt, strlen(zpt));
+        memcpy(reinterpret_cast<void*>(&a_buffer[len + 1 + len2 + 1 + len3]),
+          zpt, strlen(zpt));
         len4 -= strlen(zpt);
         len4 = f_extra_parametr->get_parametr_string(
           &a_buffer[len + 1 + len2 + 1 + len3 + strlen(zpt)], len4);
@@ -1849,13 +1854,15 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_parametr_string(
     if ((a_length > 0) && (start_index + len2 > a_length))
     {
       len2 = a_length - start_index;
-      memcpy((void*)&a_parametr_string[start_index], f_value_string, len2);
+      memcpy(reinterpret_cast<void*>(&a_parametr_string[start_index]),
+        f_value_string, len2);
       size_type real_len = start_index + len2;
 
       a_parametr_string[real_len] = '\0';
       return real_len;
     }
-    memcpy((void*)&a_parametr_string[start_index], f_value_string, len2);
+    memcpy(reinterpret_cast<void*>(&a_parametr_string[start_index]),
+      f_value_string, len2);
 
     size_type real_len = start_index + len2;
 
@@ -1864,7 +1871,8 @@ irs_menu_base_t::size_type irs_menu_trimmer_item_t::get_parametr_string(
       char const* prc = " %";
       if (real_len + strlen(prc) < a_length)
       {
-        memcpy((void*)&a_parametr_string[real_len], f_value_string, strlen(prc));
+        memcpy(reinterpret_cast<void*>(&a_parametr_string[real_len]),
+          f_value_string, strlen(prc));
         real_len += strlen(prc);
         a_parametr_string[real_len] = '\0';
         return real_len;
@@ -2243,7 +2251,7 @@ irs_menu_base_t::size_type irs_menu_ip_item_t::get_parametr_string(
   if (a_parametr_string)
   {
     char ip_string[16];
-    mxip_to_cstr(ip_string, *(mxip_t *)&f_parametr);
+    mxip_to_cstr(ip_string, reinterpret_cast<mxip_t&>(f_parametr));
     size_type real_len = strlen(ip_string);
     if ((a_length > 0) && (real_len > a_length)) real_len = a_length;
     memcpy(a_parametr_string, ip_string, real_len);
@@ -2266,7 +2274,7 @@ irs_menu_base_t::size_type irs_menu_ip_item_t::get_dynamic_string(
       strcat(x, get_header());
       strcat(x, " ");
       size_t astr_len = strlen(x);
-      mxip_to_cstr(x + astr_len, *(mxip_t *)&f_parametr);
+      mxip_to_cstr(x + astr_len, reinterpret_cast<mxip_t&>(f_parametr));
     }
     else
     {
@@ -2321,7 +2329,8 @@ void irs_menu_ip_item_t::draw(irs_menu_base_t **a_cur_menu)
           {
             mp_disp_drv->clear();
             mp_disp_drv->outtextpos(0,0,f_header);
-            mxip_to_cstr(f_value_string, *(mxip_t *)&f_parametr);
+            mxip_to_cstr(f_value_string,
+              reinterpret_cast<mxip_t&>(f_parametr));
             mp_disp_drv->outtextpos(0, 1, f_value_string);
             f_want_redraw = irs_false;
           }
@@ -2365,8 +2374,10 @@ void irs_menu_ip_item_t::draw(irs_menu_base_t **a_cur_menu)
         f_value_string[f_cur_symbol] = '\0';
         if (f_cur_symbol > 0)
         {
-          if (!cstr_to_mxip(*(mxip_t *)&f_parametr, f_value_string)) {
-            *(mxip_t *)&f_parametr = zero_ip;
+          if (!cstr_to_mxip(reinterpret_cast<mxip_t&>(f_parametr),
+            f_value_string))
+          {
+            reinterpret_cast<mxip_t&>(f_parametr) = zero_ip;
           }
           if (f_ip_trans) f_ip_trans(f_parametr);
           if (mp_event) mp_event->exec();
@@ -2733,15 +2744,16 @@ irs_menu_base_t::size_type irs_menu_string_item_t::get_parametr_string(
 {
   if (ap_parametr_string)
   if (mp_string) {
-    size_t parstr_len = (size_t)mp_disp_drv->get_width();
-    memcpy((void *)ap_parametr_string, (void *)mp_string, parstr_len);
+    size_t parstr_len = static_cast<size_t>(mp_disp_drv->get_width());
+    memcpy(reinterpret_cast<void*>(ap_parametr_string),
+      reinterpret_cast<const void*>(mp_string), parstr_len);
     ap_parametr_string[parstr_len] = 0;
     return (parstr_len);
   }
   return 0;
 }
-irs_menu_base_t::size_type irs_menu_string_item_t::get_dynamic_string(char *ap_buffer,
-  irs_menu_base_t::size_type /*a_length*/)
+irs_menu_base_t::size_type irs_menu_string_item_t::get_dynamic_string(
+  char *ap_buffer, irs_menu_base_t::size_type /*a_length*/)
 {
   ap_buffer = ap_buffer;
   return 0;

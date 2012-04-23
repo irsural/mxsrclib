@@ -69,15 +69,17 @@ inline bool operator !=(mxip_t a_ip1, mxip_t a_ip2)
 inline void mxip_to_cstr(char* a_ip_in_str, mxip_t a_ip)
 {
   ostrstream strm(a_ip_in_str, IP_STR_LEN);
-  strm << (int)a_ip.val[0] << "." << (int)a_ip.val[1] << ".";
-  strm << (int)a_ip.val[2] << "." << (int)a_ip.val[3] << '\0';
+  strm << static_cast<int>(a_ip.val[0]) << '.';
+  strm << static_cast<int>(a_ip.val[1]) << '.';
+  strm << static_cast<int>(a_ip.val[2]) << '.';
+  strm << static_cast<int>(a_ip.val[3]) << '\0';
   a_ip_in_str[IP_STR_LEN - 1] = 0;
 }
 
 inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
 {
-  irs_u8* str_ip = (irs_u8*)a_str_ip;
-  irs_i32 len = strlen((char*)str_ip);
+  const irs_u8* str_ip = reinterpret_cast<const irs_u8*>(a_str_ip);
+  irs_i32 len = strlen(reinterpret_cast<const char*>(str_ip));
   const irs_u8 find_begin_num = 0;
   const irs_u8 find_point = 1;
   const irs_u8 find_end_num = 2;
@@ -113,7 +115,7 @@ inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
           irs_u8 num_in_str[4];
           memcpy(num_in_str, str_ip + begin_num, size_num);
           num_in_str[size_num] = 0;
-          int num_int = atoi((char*)num_in_str);
+          int num_int = atoi(reinterpret_cast<char*>(num_in_str));
           irs_i16 num = IRS_LOWORD(num_int);
           if (num > IP_NUM_MAX) return false;
           a_ip.val[cnt_num] = IRS_LOBYTE(num);
@@ -146,7 +148,7 @@ inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
     irs_u8 num_in_str[4];
     memcpy(num_in_str, str_ip + begin_num, size_num);
     num_in_str[size_num] = 0;
-    int num_int = atoi((char*)num_in_str);
+    int num_int = atoi(reinterpret_cast<char*>(num_in_str));
     irs_i16 num = IRS_LOWORD(num_int);
     if (num > IP_NUM_MAX) return false;
     a_ip.val[cnt_num] = IRS_LOBYTE(num);
@@ -208,8 +210,8 @@ inline void mxmac_to_cstr(char* a_mac_in_str, mxmac_t a_mac)
 
 inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
 {
-  irs_u8* str_mac = (irs_u8*)a_str_mac;
-  irs_i32 len = strlen((char*)str_mac);
+  const irs_u8* str_mac = reinterpret_cast<const irs_u8*>(a_str_mac);
+  irs_i32 len = strlen(reinterpret_cast<const char*>(str_mac));
   const irs_u8 find_begin_num = 0;
   const irs_u8 find_point = 1;
   const irs_u8 find_end_num = 2;
@@ -245,7 +247,7 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
           irs_u8 num_in_str[4];
           memcpy(num_in_str, str_mac + begin_num, size_num);
           num_in_str[size_num] = 0;
-          int num_int = atoi((char*)num_in_str);
+          int num_int = atoi(reinterpret_cast<char*>(num_in_str));
           irs_i16 num = IRS_LOWORD(num_int);
           if (num > IP_NUM_MAX) return false;
           a_mac.val[cnt_num] = IRS_LOBYTE(num);
@@ -278,7 +280,7 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
     irs_u8 num_in_str[4];
     memcpy(num_in_str, str_mac + begin_num, size_num);
     num_in_str[size_num] = 0;
-    int num_int = atoi((char*)num_in_str);
+    int num_int = atoi(reinterpret_cast<char*>(num_in_str));
     irs_i16 num = IRS_LOWORD(num_int);
     if (num > IP_NUM_MAX) return false;
     a_mac.val[cnt_num] = IRS_LOBYTE(num);

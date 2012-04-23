@@ -33,9 +33,9 @@
 #define MXN_BROADCAST_INTERVAL (TIME_TO_CNT(1, 1))
 
 // Код начала пакета - первая часть
-#define MXN_CONST_IDENT_BEG_PACK_FIRST  ((irs_i32)0xFF43439A)
+#define MXN_CONST_IDENT_BEG_PACK_FIRST  (static_cast<irs_i32>(0xFF43439A))
 // Код начала пакета - вторя часть
-#define MXN_CONST_IDENT_BEG_PACK_SECOND ((irs_i32)0xE81F3AAD)
+#define MXN_CONST_IDENT_BEG_PACK_SECOND (static_cast<irs_i32>(0xE81F3AAD))
 
 #define MXN_UDP_IP_ETHERNET_HEADER_SIZE 70
 

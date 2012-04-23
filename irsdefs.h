@@ -75,9 +75,6 @@
 #include <inavr.h>
 #endif // __ICCAVR__
 
-//#include <lirsdefs.h>
-
-
 // Деректива throw
 #ifdef __ICCAVR__
 #define IRS_THROW(_THROW_LIST_)
@@ -98,8 +95,8 @@
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
 // Полная поддержка библиотеки C++
-#if (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) ||\
-  (defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__CYGWIN__)) ||\
+#if (defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__CYGWIN__)) || \
+  (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) || \
   (defined(_MSC_VER) && (_MSC_VER >= 1400))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
@@ -196,12 +193,12 @@ typedef double irs_float64;
 
 // Используется в функции detect_cpu_endian, поэтому стоит выше
 // макросов IRS_HIBYTE, ...
-#define IRS_FIRSTDWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_)))))
-#define IRS_SECONDDWORD(_NUM_) (*(((irs_u32 *)(&(_NUM_))) + 1))
-#define IRS_FIRSTWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_)))))
-#define IRS_SECONDWORD(_NUM_) (*(((irs_u16 *)(&(_NUM_))) + 1))
-#define IRS_FIRSTBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_)))))
-#define IRS_SECONDBYTE(_NUM_) (*(((irs_u8 *)(&(_NUM_))) + 1))
+#define IRS_FIRSTDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_)))))
+#define IRS_SECONDDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1))
+#define IRS_FIRSTWORD(_NUM_) (*((reinterpret_cast<irs_u16*>(&(_NUM_)))))
+#define IRS_SECONDWORD(_NUM_) (*((reinterpret_cast<irs_u16*>(&(_NUM_))) + 1))
+#define IRS_FIRSTBYTE(_NUM_) (*((reinterpret_cast<irs_u8*>(&(_NUM_)))))
+#define IRS_SECONDBYTE(_NUM_) (*((reinterpret_cast<irs_u8*>(&(_NUM_))) + 1))
 
 //! @}
 
@@ -218,7 +215,7 @@ enum endian_t {
 
 inline endian_t detect_cpu_endian()
 {
-  const irs_u16 endian_test_var = static_cast<irs_u16>(1); /* 0x0001 */
+  irs_u16 endian_test_var = static_cast<irs_u16>(1); /* 0x0001 */
   endian_t cpu_endian =
     static_cast<endian_t>(IRS_FIRSTBYTE(endian_test_var) == 0);
   return cpu_endian;
@@ -248,17 +245,23 @@ inline endian_t detect_cpu_endian()
 // Макросы выделения из переменных их частей
 // BYTE - байты, WORD - 2 байта, DWORD - 4 байта
 #define IRS_HIDWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u32 *)(&(_NUM_))) + 1):*(((irs_u32 *)(&(_NUM_)))))
+  *((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1):\
+  *((reinterpret_cast<irs_u32*>(&(_NUM_)))))
 #define IRS_LODWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u32 *)(&(_NUM_)))):*(((irs_u32 *)(&(_NUM_))) + 1))
+  *((reinterpret_cast<irs_u32*>(&(_NUM_)))):\
+  *((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1))
 #define IRS_HIWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u16 *)(&(_NUM_))) + 1):*(((irs_u16 *)(&(_NUM_)))))
+  *((reinterpret_cast<irs_u16*>(&(_NUM_))) + 1):\
+  *((reinterpret_cast<irs_u16*>(&(_NUM_)))))
 #define IRS_LOWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u16 *)(&(_NUM_)))):*(((irs_u16 *)(&(_NUM_))) + 1))
+  *((reinterpret_cast<irs_u16*>(&(_NUM_)))):\
+  *((reinterpret_cast<irs_u16*>(&(_NUM_))) + 1))
 #define IRS_HIBYTE(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u8 *)(&(_NUM_))) + 1):*(((irs_u8 *)(&(_NUM_)))))
+  *((reinterpret_cast<irs_u8*>(&(_NUM_))) + 1):\
+  *((reinterpret_cast<irs_u8*>(&(_NUM_)))))
 #define IRS_LOBYTE(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
-  *(((irs_u8 *)(&(_NUM_)))):*(((irs_u8 *)(&(_NUM_))) + 1))
+  *((reinterpret_cast<irs_u8*>(&(_NUM_)))):\
+  *((reinterpret_cast<irs_u8*>(&(_NUM_))) + 1))
 
 // Макросы выделения из переменных их частей для констант
 #define IRS_CONST_HIDWORD(_NUM_)\

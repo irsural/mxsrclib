@@ -349,8 +349,8 @@ public:
   size_type cur_channel() const; 
   void tick();
 private:    
-  bool lifetime_exceeded(const map_id_channel_iterator a_it_cur_channel);
-  bool downtime_exceeded(const map_id_channel_iterator a_it_cur_channel);
+  bool lifetime_exceeded(const map_id_channel_iterator);
+  bool downtime_exceeded(const map_id_channel_iterator);
   void next_free_channel_id();
   udp_limit_connections_mode_t m_mode;
   size_type m_max_size;

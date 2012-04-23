@@ -24,7 +24,8 @@ const irs_i32 beg_pack_array32[] = {
   MXN_CONST_IDENT_BEG_PACK_FIRST,
   MXN_CONST_IDENT_BEG_PACK_SECOND
 };
-const irs_u8 *const beg_pack_array = (irs_u8 *)(void *)beg_pack_array32;
+const irs_u8 *const beg_pack_array =
+  reinterpret_cast<const irs_u8*>(beg_pack_array32);
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -76,9 +77,9 @@ irs_bool irs::mx_beg_pack_proc_t::tick()
         mxn_sz_t pos = 0;
         if (find_begin_in_data(m_buf, mxn_header_size, pos)) {
           if (pos) {
-            void *src = (void *)(m_buf + pos);
+            void *src = reinterpret_cast<void*>(m_buf + pos);
             size_t move_size = mxn_header_size - pos;
-            void *dest = (void *)m_buf;
+            void *dest = reinterpret_cast<void*>(m_buf);
             memmove(dest, src, move_size);
 
             irs_u8 *buf = m_buf + move_size;
@@ -91,9 +92,9 @@ irs_bool irs::mx_beg_pack_proc_t::tick()
             m_mode = mode_stop;
           }
         } else {
-          void *src = (void *)(m_buf + mxn_end_size);
+          void *src = reinterpret_cast<void*>(m_buf + mxn_end_size);
           size_t move_size = MXN_SIZE_OF_BEG_PACK;
-          void *dest = (void *)m_buf;
+          void *dest = reinterpret_cast<void*>(m_buf);
           memmove(dest, src, move_size);
 
           mxifa_read_begin(m_handle_channel, m_dest, m_buf_end, mxn_end_size);
@@ -132,7 +133,7 @@ irs_bool find_begin_in_data(irs_u8 *buf, mxn_sz_t size, mxn_sz_t &pos)
   mxn_sz_t buf_ind = 0;
   mxn_sz_t buf_ind_next = 0;
   mxn_sz_t bpa_ind = 0;
-  pos = (mxn_sz_t)-1;
+  pos = static_cast<mxn_sz_t>(-1);
   while (buf_ind < size) {
     if (buf[buf_ind] == beg_pack_array[bpa_ind]) {
       if (first_byte_compare) {
@@ -288,9 +289,9 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
           mxn_sz_t pos = 0;
           if (find_begin_in_data(mp_buf, mxn_header_size, pos)) {
             if (pos) {
-              void* src = (void*)(mp_buf + pos);
+              void* src = reinterpret_cast<void*>(mp_buf + pos);
               irs_size_t move_size = mxn_header_size - pos;
-              void* dest = (void*)mp_buf;
+              void* dest = reinterpret_cast<void*>(mp_buf);
               memmove(dest, src, move_size);
 
               irs_u8* buf = mp_buf + move_size;
@@ -303,9 +304,9 @@ void irs::mx_beg_pack_proc_fix_flow_t::tick()
               m_out_status = beg_pack_ready;
             }
           } else {
-            void* src = (void*)(mp_buf + mxn_end_size);
+            void* src = reinterpret_cast<void*>(mp_buf + mxn_end_size);
             irs_size_t move_size = MXN_SIZE_OF_BEG_PACK;
-            void* dest = (void*)mp_buf;
+            void* dest = reinterpret_cast<void*>(mp_buf);
             memmove(dest, src, move_size);
 
             m_fixed_flow.read(m_channel, mp_buf_end, mxn_end_size);

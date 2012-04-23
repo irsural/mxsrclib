@@ -86,13 +86,14 @@ void irs::funnel_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   if (m_is_buf_created) {
     irs_uarc real_size = a_size;
     irs_uarc real_index = a_index;
-    memset((void*)ap_buf, 0, real_size);
+    memset(reinterpret_cast<void*>(ap_buf), 0, real_size);
     if (real_index > m_area_size - 1)
       return;
     if (real_size > m_area_size - real_index) {
       real_size = m_area_size - real_index;
     }
-    memcpy((void*)ap_buf, (void*)(mp_buf + real_index), real_size);
+    memcpy(reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<const void*>(mp_buf + real_index), real_size);
   }
 }
 
@@ -109,7 +110,8 @@ void irs::funnel_client_t::write(
     if (real_size > m_area_size - real_index) {
       real_size = m_area_size - real_index;
     }
-    memcpy((void*)(mp_buf + real_index), (void*)ap_buf, real_size);
+    memcpy(reinterpret_cast<void*>(mp_buf + real_index),
+      reinterpret_cast<const void*>(ap_buf), real_size);
     fill_n(m_write_vector.begin() + a_index, real_size, true);
     m_need_write_byte += real_size;
     m_on_read_complete = false;
@@ -181,7 +183,8 @@ void irs::funnel_client_t::reset_stat_read_complete()
 }
 irs_i32 irs::funnel_client_t::get_read_size()
 {
-  irs_i32 need_read_byte = irs_i32(m_area_size) - m_count_read_byte;
+  irs_i32 need_read_byte = static_cast<irs_i32>(m_area_size) -
+    m_count_read_byte;
   return need_read_byte;
 }
 
@@ -194,7 +197,7 @@ void irs::funnel_client_t::tick()
     {
       if ((m_size_index > 0) && (mp_data->connected()))
       {
-        if (m_size != (irs_uarc)m_size_index) {
+        if (m_size != static_cast<irs_uarc>(m_size_index)) {
           m_size = m_size_index;
           if (m_fannel_client_mode == fcm_full_size) {
             m_area_size = m_size;
@@ -213,7 +216,7 @@ void irs::funnel_client_t::tick()
             if (m_fannel_client_mode == fcm_full_size) {
               m_write_index = -1; //  чтение нулевого элемента
             } else {
-              m_write_index = -irs_i32(m_area_index+1);
+              m_write_index = -static_cast<irs_i32>(m_area_index + 1);
             }
             m_protect_timer.start();
             m_write_value = 0;
@@ -264,7 +267,8 @@ void irs::funnel_client_t::tick()
             {
               m_current_index = 4 * irs_uarc(write_start_index / 4);
               m_write_index = m_current_index + m_area_index + 1;
-              m_write_value = *(irs_i32*)&mp_buf[m_current_index];
+              m_write_value =
+                reinterpret_cast<irs_i32&>(mp_buf[m_current_index]);
               for (irs_uarc i = 0; i < 4; i++)
                 m_write_vector[m_current_index + i] = true;
               m_on_read_complete = false;
@@ -273,8 +277,10 @@ void irs::funnel_client_t::tick()
             else
             {
               m_current_index = 0;  // m_area_index
-              m_write_index = -irs_i32(m_current_index+m_area_index+1);
-              m_write_index = -irs_i32(m_current_index+m_area_index+1);
+              m_write_index = -static_cast<irs_i32>(
+                m_current_index+m_area_index + 1);
+              m_write_index = -static_cast<irs_i32>(
+                m_current_index+m_area_index + 1);
               m_protect_timer.start();
               m_write_value = 0;
               m_status = READ;
@@ -293,7 +299,8 @@ void irs::funnel_client_t::tick()
             m_current_index = 4 * irs_uarc(m_current_index/4);
             m_write_index = m_current_index + m_area_index + 1;
             m_protect_timer.start();
-            m_write_value = *(irs_i32*)&mp_buf[m_current_index];
+            m_write_value = reinterpret_cast<irs_i32&>(
+              mp_buf[m_current_index]);
             for (irs_uarc i = 0; i < 4; i++)
               m_write_vector[m_current_index + i] = true;
             want_free = irs_false;
@@ -307,10 +314,10 @@ void irs::funnel_client_t::tick()
         }
       } break;
       case WRITE_WAIT: {
-        bool read_index_success =
-          (m_read_index == irs_i32(m_current_index + m_area_index + 1));
-        bool read_value_success =
-          (m_read_value == *(irs_i32*)&mp_buf[m_current_index]);
+        bool read_index_success = (m_read_index ==
+          static_cast<irs_i32>(m_current_index +m_area_index + 1));
+        bool read_value_success = (m_read_value ==
+          reinterpret_cast<irs_i32&>(mp_buf[m_current_index]));
         if (read_index_success && read_value_success) {
           for (irs_uarc i = 0; i < 4; i++)
             m_write_vector[m_current_index + i] = false;
@@ -318,18 +325,20 @@ void irs::funnel_client_t::tick()
           m_need_write_byte -= 4;
           m_status = WRITE;
         } else if (m_protect_timer.check()) {
-          m_write_index = -irs_i32(m_current_index + m_area_index + 1);
+          m_write_index = -static_cast<irs_i32>(m_current_index +
+            m_area_index + 1);
           m_protect_timer.start();
           m_status = WRITE_PROTECT;
         }
       } break;
       case WRITE_PROTECT: {
-        bool read_success =
-          m_read_index == -irs_i32(m_current_index + m_area_index + 1);
+        bool read_success = (m_read_index ==
+          -static_cast<irs_i32>(m_current_index + m_area_index + 1));
         bool protect_timer_signaled = m_protect_timer.check();
         if (read_success || protect_timer_signaled) {
-          m_write_index = irs_i32(m_current_index + m_area_index + 1);
-          m_write_value = *(irs_i32*)&mp_buf[m_current_index];
+          m_write_index = static_cast<irs_i32>(m_current_index +
+            m_area_index + 1);
+          m_write_value = reinterpret_cast<irs_i32&>(mp_buf[m_current_index]);
           m_protect_timer.start();
           m_status = WRITE_WAIT;
         }
@@ -341,7 +350,8 @@ void irs::funnel_client_t::tick()
           m_is_connected = false;
           m_status = FREE;
         }
-        else if (m_read_index == irs_i32(m_current_index+m_area_index+1))
+        else if (m_read_index ==
+          static_cast<irs_i32>(m_current_index+m_area_index + 1))
         {
           if (m_current_index <= (m_area_size - 4))      // ограничение сверху
           {
@@ -350,17 +360,20 @@ void irs::funnel_client_t::tick()
               m_count_read_byte = 0;
               //m_read_start_index = m_current_index;
             }
-            if (m_count_read_byte >= irs_i32(m_area_size))
+            if (m_count_read_byte >= static_cast<irs_i32>(m_area_size))
               m_on_read_complete = true;
             irs_u8 value[4];
-            *(irs_i32*)value = m_read_value;
-            for (irs_u8 i = 0; i < 4; i++)
-              if (m_write_vector[m_current_index + i] == false)
+            *reinterpret_cast<irs_i32*>(value) = m_read_value;
+            for (irs_u8 i = 0; i < 4; i++) {
+              if (m_write_vector[m_current_index + i] == false) {
                 mp_buf[m_current_index+ i] = value[i];
+              }
+            }
             m_current_index += 4;
             m_count_read_byte += 4;
             if (m_current_index < m_area_size) {    // ограничение сверху
-              m_write_index = -irs_i32(m_current_index + m_area_index + 1);
+              m_write_index = -static_cast<irs_i32>(m_current_index +
+                m_area_index + 1);
               m_protect_timer.start();
             } else {
               m_status = FREE;
@@ -378,7 +391,8 @@ void irs::funnel_client_t::tick()
           if (m_current_index > m_area_size) {
             m_current_index = m_area_size - 4;
           }
-          m_write_index = -irs_i32(m_current_index + m_area_index + 1);
+          m_write_index = -static_cast<irs_i32>(m_current_index +
+            m_area_index + 1);
           m_protect_timer.start();
         }
         break;
@@ -413,7 +427,7 @@ irs::funnel_server_t::funnel_server_t(mxdata_t *ap_data, irs_uarc a_data_shift,
     index = m_read_index.connect(mp_trans_data, index);
     index = m_read_value.connect(mp_trans_data, index);
 
-    m_size_index = irs_i32(m_size);
+    m_size_index = static_cast<irs_i32>(m_size);
     m_is_connected = irs_true;
   }
 }
@@ -448,17 +462,18 @@ void irs::funnel_server_t::tick()
       index = m_read_value.connect(mp_trans_data, index);
     }
 
-    m_size_index = irs_i32(m_size);
+    m_size_index = static_cast<irs_i32>(m_size);
     m_is_connected = irs_true;
 
     if (m_read_index < 0)  //  READ from server
     {
-      if (irs_i32(m_current_index) != (-1 * irs_i32(m_read_index - 1)))
+      if (static_cast<irs_i32>(m_current_index) !=
+        -static_cast<irs_i32>(m_read_index - 1))
       {
         m_current_index = -1 * m_read_index - 1;
         irs_u8 value[4];
         mp_data->read(value, m_data_shift + m_current_index, 4);
-        m_current_value = *((irs_i32*)value);
+        m_current_value = *reinterpret_cast<irs_i32*>(value);
         m_write_value = m_current_value;
         m_write_index = m_current_index + 1;
         m_prev_operation_read = irs_true;
@@ -472,7 +487,7 @@ void irs::funnel_server_t::tick()
       {
         m_current_index = m_read_index-1;
         m_current_value = m_read_value;
-        mp_data->write((irs_u8*)&m_current_value,
+        mp_data->write(reinterpret_cast<irs_u8*>(&m_current_value),
           m_data_shift + m_current_index, 4);
         m_write_value = m_current_value;
         m_write_index = m_current_index + 1;

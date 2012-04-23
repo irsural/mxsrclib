@@ -74,7 +74,7 @@ irs::hardflow::ni_usb_gpib_flow_t::~ni_usb_gpib_flow_t()
 }
 
 irs::hardflow::ni_usb_gpib_flow_t::string_type
-irs::hardflow::ni_usb_gpib_flow_t::param(const string_type &a_name)
+irs::hardflow::ni_usb_gpib_flow_t::param(const string_type& /*a_name*/)
 {
   return irst("");
 }
@@ -332,7 +332,7 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::~ni_usb_gpib_flow_syn_t()
 }
 
 irs::hardflow::ni_usb_gpib_flow_syn_t::string_type
-irs::hardflow::ni_usb_gpib_flow_syn_t::param(const string_type &a_name)
+irs::hardflow::ni_usb_gpib_flow_syn_t::param(const string_type& /*a_name*/)
 {
   return irst("");
 }
@@ -521,7 +521,7 @@ irs::irs_string_t data_to_string_for_mlog(const irs::raw_data_t<irs_u8>& a_data)
     } else {
       const int width_not_graph_char = 2;
       ostr << "\\x" << setfill('0') << setw(width_not_graph_char) << hex <<
-        uppercase << (int)a_data[i];
+        uppercase << static_cast<int>(a_data[i]);
     }
   }
   ostr << '\0';

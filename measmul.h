@@ -2244,7 +2244,7 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
     {memset(m_arr,0,sizeof(m_arr));}
     void push(const irs_u8* const ap_data, const irs_u32 a_size)
     {
-      m_count_inf_elem = min(a_size, (irs_u32)m_size_buf);
+      m_count_inf_elem = min(a_size, static_cast<irs_u32>(m_size_buf));
       memcpy(m_arr, ap_data, m_count_inf_elem);
       m_pos_inf_elem = 0;
     }
