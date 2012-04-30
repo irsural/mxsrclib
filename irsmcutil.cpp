@@ -12,6 +12,8 @@
 
 #include <irsfinal.h>
 
+#ifdef _ICCAVR__
+
 irs::blink_t::blink_t(irs_avr_port_t a_port, irs_u8 a_bit, 
   counter_t a_blink_time
 ):
@@ -19,3 +21,5 @@ irs::blink_t::blink_t(irs_avr_port_t a_port, irs_u8 a_bit,
   m_blink_timer(a_blink_time)
 {
 }
+
+#endif //_ICCAVR__
