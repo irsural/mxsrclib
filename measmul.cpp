@@ -1239,7 +1239,7 @@ void mx_agilent_3458a_t::tick()
             mxifa_fast_read(m_handle, IRS_NULL, buf, size);
           buf[read_count] = 0;
           char end_chars[3] = {0x0D, 0x0A, 0x00};
-          char *end_number = strstr(reinterpret_cast<const char*>(m_read_buf),
+          char *end_number = strstr(reinterpret_cast<char*>(m_read_buf),
             end_chars);
           if (end_number) {
             *end_number = 0;
@@ -3099,7 +3099,7 @@ void irs::v7_78_1_t::tick()
           buf[read_count] = 0;
           char end_chars[] = {0x0A, 0x00};
           size_t end_chars_size = strlen(end_chars);
-          char *end_number = strstr(reinterpret_cast<const char*>(f_read_buf),
+          char *end_number = strstr(reinterpret_cast<char*>(f_read_buf),
             end_chars);
           if (end_number) {
             *end_number = 0;

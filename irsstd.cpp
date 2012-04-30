@@ -280,16 +280,22 @@ __flash irskey_t irskbd_table_gtch_rev_1[] =
   irskey_up         // 16
 };
 
-const irs_avr_port_map_t avr_port_map[] = {
-  {&PORTA, &PINA, &DDRA},
-  {&PORTB, &PINB, &DDRB},
-  {&PORTC, &PINC, &DDRC},
-  {&PORTD, &PIND, &DDRD},
-  {&PORTE, &PINE, &DDRE},
-  {&PORTF, &PINF, &DDRF},
-  {&PORTG, &PING, &DDRG}
-};
 //#define avr_port_map_size IRS_ARRAYOFSIZE(avr_port_map);
+const irs_avr_port_map_t* irs::get_avr_port_map()
+{
+  static const irs_avr_port_map_t avr_port_map_i[] = {
+    {&PORTA, &PINA, &DDRA},
+    {&PORTB, &PINB, &DDRB},
+    {&PORTC, &PINC, &DDRC},
+    {&PORTD, &PIND, &DDRD},
+    {&PORTE, &PINE, &DDRE},
+    {&PORTF, &PINF, &DDRF},
+    {&PORTG, &PING, &DDRG}
+  };
+  
+  return avr_port_map_i;
+}
+
 
 //__flash irs_u8 lcd_table[] =
 

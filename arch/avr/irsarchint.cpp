@@ -113,8 +113,14 @@ IRS_INT_EVENT_GEN_DEFINE_FUNC(timer1_compa_int);
 IRS_INT_EVENT_GEN_DEFINE_FUNC(timer1_compb_int);
 #pragma vector=TIMER1_COMPC_vect
 IRS_INT_EVENT_GEN_DEFINE_FUNC(timer1_compc_int);
+// Сделано для звукового ГШ (колнки) Сигнал-1
+// define-константа IRS_BOOMBOX определена в настройках проекта
+// signal (Boombox)
+// См. Options->C/C++ Compiler->Preprocessor->Defined Symbols
+#ifndef IRS_BOOMBOX
 #pragma vector=TIMER1_OVF_vect
 IRS_INT_EVENT_GEN_DEFINE_FUNC(timer1_ovf_int);
+#endif //IRS_BOOMBOX
 #pragma vector=TIMER0_OVF_vect
 IRS_INT_EVENT_GEN_DEFINE_FUNC(timer0_ovf_int);
 #pragma vector=SPI_STC_vect

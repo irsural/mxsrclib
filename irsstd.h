@@ -176,14 +176,21 @@ T range(T val, T min_val, T max_val)
 
 #ifdef __ICCAVR__
 
-typedef struct _irs_avr_port_map_t {
+struct irs_avr_port_map_t {
   //irs_avr_port_t name,
   p_avr_port_t set;
   p_avr_port_t get;
   p_avr_port_t dir;
-} irs_avr_port_map_t;
+};
 
-extern const irs_avr_port_map_t avr_port_map[];
+//extern const irs_avr_port_map_t avr_port_map[];
+
+namespace irs {
+
+#define avr_port_map (irs::get_avr_port_map())
+const irs_avr_port_map_t* get_avr_port_map();
+
+} //namespace irs
 
 // Класс драйвера клавиатуры AVR
 class mxkey_drv_avr_t: public mxkey_drv_t

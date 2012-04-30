@@ -137,8 +137,8 @@ void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
   irs_u32 fifo_data = a_size - DA_size - SA_size;
   IRS_HIWORD(fifo_data) = reinterpret_cast<irs_u16&>(mp_tx_buf[0]);
   #else //NEW_21092011
-  volatile irs_u32 fifo_data = a_size - DA_size - SA_size - L_size;
-  IRS_HIWORD(fifo_data) = *(irs_u16*)mp_tx_buf;
+  irs_u32 fifo_data = a_size - DA_size - SA_size - L_size;
+  IRS_HIWORD(fifo_data) = reinterpret_cast<irs_u16&>(*mp_tx_buf);
   #endif //NEW_21092011
   MACDATA = fifo_data;
 

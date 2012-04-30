@@ -1,20 +1,26 @@
-// Конфигурация процессора
-// Дата: 22.11.2010
-// Дата создания: 17.05.2010
+//! \file
+//! \ingroup system_utils_group
+//! \brief Конфигурация процессора
+//!
+//! Дата: 30.04.2012\n
+//! Дата создания: 17.05.2010
 
 #ifndef armcfgH
 #define armcfgH
 
 #include <irsdefs.h>
 
+#include <irsgpio.h>
 #include <irsarchint.h>
-#include <irsarmutil.h>
 #include <irsstrm.h>
 #include <armioregs.h>
 
 #include <intrinsics.h>
 
 #include <irsfinal.h>
+
+//! \addtogroup drivers_group
+//! @{
 
 class hard_fault_event_t: public mxfact_event_t
 {
@@ -114,5 +120,7 @@ public:
 };
 
 void pll_on();
+
+//! @}
 
 #endif  //  armcfgH

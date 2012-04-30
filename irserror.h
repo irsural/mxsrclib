@@ -283,7 +283,6 @@ inline ostream& operator<<(ostream& a_strm,
   irs::send_wsa_last_message_err(__FILE__,__LINE__)
 #endif // IRS_WIN32
 
-
 #ifdef IRS_LIB_DEBUG
 
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
@@ -487,7 +486,7 @@ public:
 
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
-#if defined (__ICCAVR__) || defined(__ICCARM__)
+#ifdef IRS_MICROCONTROLLER
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
@@ -528,7 +527,7 @@ public:
   }
 };
 typedef mc_error_handler_t avr_error_handler_t;
-#endif //__ICCAVR__
+#endif //IRS_MICROCONTROLLER
 
 // Обработчик ошибок для вывода ошибок в виде исключения
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT

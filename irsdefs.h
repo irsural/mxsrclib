@@ -23,6 +23,10 @@
 #define IRS_LINUX // Платформа Linux
 #endif // Определения платформы
 
+#if defined(__ICCAVR__) || defined(__ICCARM__)
+#define IRS_MICROCONTROLLER
+#endif //defined(__ICCAVR__) || defined(__ICCARM__)
+
 // Определение версии Builder
 #define IRS_CPP_BUILDER4            0x0540
 #define IRS_CPP_BUILDER6            0x0560
@@ -418,12 +422,18 @@ enum irs_avr_port_t {
 // Указатель на порт ARM
 typedef volatile irs_u32 arm_port_t;
 typedef arm_port_t* p_arm_port_t;
+typedef volatile irs_u32 mc_port_t;
+typedef arm_port_t* p_mc_port_t;
+#define mc arm
 #endif // __ICCARM__
 
 #ifdef __ICCAVR__
 // Указатель на порт AVR
 typedef irs_u8 volatile __tiny avr_port_t;
 typedef avr_port_t* p_avr_port_t;
+typedef irs_u8 volatile __tiny mc_port_t;
+typedef avr_port_t* p_mc_port_t;
+#define mc avr
 #endif //__ICCAVR__
 
 // Класс для функций обработки

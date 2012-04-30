@@ -819,9 +819,8 @@ void irs::mxdata_comm_t::tick()
     } break;
     case mode_initialization: {
       if (mp_mem_data->status() != irs_st_busy) {
-        irs_uarc data_count = mp_mem_data->data_count();
-        irs_uarc end_data = m_mem_data_start_index + m_data_buf.size();
-        IRS_LIB_ERROR_IF(!(end_data <= data_count), ec_standard, "");
+        IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <= 
+          mp_mem_data->data_count()), ec_standard, "");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());
         m_mode = mode_initialization_wait;
