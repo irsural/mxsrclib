@@ -560,7 +560,7 @@ void mxnetc::tick()
         } break;
         case MXN_SET_BROADCAST: {
           irs_bool index_valid = (f_user_broadcast ==
-            irs::to_bool(f_packet->var_ind_first));
+            irs::to_irs_bool(f_packet->var_ind_first));
           irs_bool count_valid = (0 == f_packet->var_count);
           if (index_valid && count_valid) {
             f_mode = mxnc_mode_reset;
