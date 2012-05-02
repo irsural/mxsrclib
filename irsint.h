@@ -90,14 +90,14 @@ class event_connect_t: public mxfact_event_t
 {
 public:
   typedef void (T::*member_type)();
-  
+
   event_connect_t(T* ap_object, member_type ap_member);
-  
+
   virtual void exec();
 private:
   T* mp_object;
   member_type mp_member;
-  
+
   event_connect_t();
 };
 template <class T>
@@ -142,6 +142,7 @@ class generator_events_t
 {
 public:
   typedef vector<event_t*> event_container_type;
+
   generator_events_t();
   void exec();
   void push_back(event_t* ap_event);
@@ -210,9 +211,9 @@ void event_function_t<owner_type>::exec()
 template <class owner_type>
 inline event_t* make_event(
   owner_type* ap_owner,
-  void (owner_type::*ap_function)()  
+  void (owner_type::*ap_function)()
 )
-{ 
+{
   return new event_function_t<owner_type>(ap_owner, ap_function);
 }
 
@@ -247,9 +248,9 @@ public:
   typedef base_type::size_type size_type;
   typedef irs_u8 gen_index_type;
 
-  interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type 
+  interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type
     a_reserve_interrupt_count);
-  
+
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
   virtual void exec_event(size_type a_index);
 private:
@@ -260,7 +261,7 @@ private:
   vector<gen_index_type> m_int_event_gen_indexes;
   vector<irs_int_event_gen_t> m_int_event_gens;
   gen_index_type m_int_event_index;
-  
+
   interrupt_array_t(const interrupt_array_t&);
 };
 

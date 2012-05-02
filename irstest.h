@@ -12,7 +12,8 @@
 #include <irserror.h>
 #include <irsstring.h>
 #include <irsstrconv.h>
-//#include <irslimits.h>
+#include <irslimits.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -175,7 +176,7 @@ public:
     m_outstr_data.resize(a_instr_size);
 
     const in_char_type* p_instr_next = ap_instr;
-    data_type::pointer p_outstr_next = m_outstr_data.data();
+    typename data_type::pointer p_outstr_next = m_outstr_data.data();
 
     mbstate_t state;
     codecvt_base::result convert_result =
@@ -432,7 +433,7 @@ inline void float_conv_part(const T* a_string,
 inline void float_conv(ostream& a_stream)
 {
   a_stream << endl << endl;
-  
+
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   loc().set(locale::classic());
   a_stream.imbue(loc().get());
@@ -479,6 +480,55 @@ inline void float_conv(ostream& a_stream)
 }
 
 } //namespace string_test
+
+namespace float_test {
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
+namespace for_infinity {
+
+template <class T>
+const char* raw_out(const T& a_value)
+{
+  ostringstream stream;
+  const irs_u8* p_value_u8 = reinterpret_cast<const irs_u8*>(&a_value);
+  for (size_t i = 0; i < sizeof(T); ++i) {
+    size_t back_byte_idx = sizeof(T) - 1;
+    irs::out_hex(&stream, p_value_u8[back_byte_idx - i]);
+  }
+  static irs::irs_string_t out_str;
+  out_str =  stream.str();
+  return out_str.c_str();
+}
+
+void raw_float_test_out(ostream* ap_stream)
+{
+  ostream& stream = *ap_stream;
+  irs::display_parametrs_of_built_in_types(stream);
+
+  typedef long double float_for_irsinf_t;
+  float_for_irsinf_t irs_inf = irs::inf<float_for_irsinf_t>();
+  stream << "infinity = " << irs_inf << endl;
+  stream << "infinity hex = " << raw_out(irs_inf) << endl;
+  stream << "infinity hex = " << raw_out(-irs_inf) << endl;
+
+  typedef long double float_for_inf_t;
+  float_for_inf_t std_inf = std::numeric_limits<float_for_inf_t>::infinity();
+  stream << "std infinity = " << std_inf << endl;
+  stream << "std infinity hex = " << raw_out(std_inf) << endl;
+  stream << "std infinity hex = " << raw_out(-std_inf) << endl;
+  float_for_inf_t val1 = static_cast<float_for_inf_t>(1.L/(1 << 2));
+  float_for_inf_t val2 = static_cast<float_for_inf_t>(1.L/(1 << 3));
+  stream << "val1 = " << raw_out(val1) << endl;
+  stream << "val2 = " << raw_out(val2) << endl;
+  stream << endl;
+}
+
+} //namespace for_infinity
+
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
+
+} //namespace float_test
 
 } //namespace irs
 

@@ -150,7 +150,13 @@ inline const char* type_to_string(T)
 enum {
   float_size = 4,
   double_size = 8,
+  #ifdef __MINGW32__
+  // Под MinGW по Win32 размер long double 12 байт, но 2 байта не используется
+  // и этот тип может интерпретироватся как 10-ти байтный
+  long_double_size = 12
+  #else //__MINGW32__
   long_double_size = 10
+  #endif //__MINGW32__
 };
 enum {
   int8_size = 1,
@@ -1034,10 +1040,10 @@ struct unknown_type {
 template <size_t size_of_type>
 struct float_limits_by_size_base
 {
-  enum { size = float_size };
+  enum { size = size_of_type };
 
-  typedef int exponent_type;
-  typedef int fraction_type;
+  typedef irs_u8 exponent_type;
+  typedef irs_u8 fraction_type;
 
   struct unknown_value_type: unknown_type<size>
   {
@@ -1056,6 +1062,10 @@ struct float_limits_by_size_base
   static fraction_type fraction_mask()
   {
     return 0;
+  }
+  static bool is_intel_spec()
+  {
+    return false;
   }
 };
 template <>
@@ -1118,7 +1128,7 @@ struct float_limits_by_size_base<double_size>
 template <>
 struct float_limits_by_size_base<long_double_size>
 {
-  enum { size = double_size };
+  enum { size = long_double_size };
 
   typedef irs_u16 exponent_type;
   typedef irs_u64 fraction_type;
@@ -1144,6 +1154,35 @@ struct float_limits_by_size_base<long_double_size>
     IRS_LODWORD(frac) = 0xFFFFFFFF;
     return frac;
   }
+  static bool is_intel_spec()
+  {
+    return true;
+  }
+};
+
+struct float_limits_intel_spec_t
+{
+  typedef float_limits_by_size_base<long_double_size>::
+    fraction_type fraction_type;
+
+  enum {
+    spec_fraction_shift = 62
+  };
+
+  static fraction_type spec_fraction_mask()
+  {
+    fraction_type frac = 0;
+    IRS_HIDWORD(frac) = 0xC0000000;
+    IRS_LODWORD(frac) = 0x00000000;
+    return frac;
+  }
+  static fraction_type other_fraction_mask()
+  {
+    fraction_type frac = 0;
+    IRS_HIDWORD(frac) = 0x3FFFFFFF;
+    IRS_LODWORD(frac) = 0xFFFFFFFF;
+    return frac;
+  }
 };
 
 template <size_t size_of_type>
@@ -1156,6 +1195,8 @@ struct float_limits_by_size:
 
   typedef typename base_type::exponent_type exponent_type;
   typedef typename base_type::fraction_type fraction_type;
+
+  typedef float_limits_intel_spec_t intel_spec_type;
 
   enum {
     sign_idx = 3,
@@ -1176,42 +1217,66 @@ struct float_limits_by_size:
   {
     return base_type::fraction_mask();
   }
+  static bool is_intel_spec()
+  {
+    return base_type::is_intel_spec();
+  }
 
   static sign_type sign_mask()
   {
     return 0x80;
   }
 
-  static const sign_type& sign(const irs_u8* ap_val)
+  static sign_type& sign(irs_u8* ap_val)
   {
-    return reinterpret_cast<const sign_type&>(ap_val[sign_idx]);
+    return reinterpret_cast<sign_type&>(ap_val[sign_idx]);
+  }
+  static exponent_type& exponent(irs_u8* ap_val)
+  {
+    return reinterpret_cast<exponent_type&>(ap_val[exponent_idx]);
   }
   static const exponent_type& exponent(const irs_u8* ap_val)
   {
     return reinterpret_cast<const exponent_type&>(ap_val[exponent_idx]);
   }
-  static const fraction_type& fraction(const irs_u8* ap_val)
+  static fraction_type& fraction(irs_u8* ap_val)
   {
-    return reinterpret_cast<const fraction_type&>(ap_val[fraction_idx]);
+    return reinterpret_cast<fraction_type&>(ap_val[fraction_idx]);
   }
+
   static bool is_inf_or_nan(const irs_u8* ap_val)
   {
     bool is_inf_or_nan_res = false;
     const exponent_type mask = exponent_mask();
     const exponent_type exp = exponent(ap_val);
-    if ((exp&mask) == mask)
-    {
-      is_inf_or_nan_res = true;
-    }
+    is_inf_or_nan_res = ((exp&mask) == mask);
     return is_inf_or_nan_res;
   }
   static bool is_nan(const irs_u8* ap_val)
   {
     bool is_nan_res = false;
     if (is_inf_or_nan(ap_val)) {
-      const fraction_type mask = fraction_mask();
-      if ((fraction(ap_val)&mask) != 0) {
-        is_nan_res = true;
+      if (is_intel_spec()) {
+        // В процессорах Intel используется 10-байтный вещественный тип
+        // В языке C++ это long double
+        // Под Borland C++, Visual C++, Watcom C++ он 10 байт
+        // Под MinGW он 12 байт, но используются только младшие 10
+        // Старшие 2 байта игнорируются
+        // Обработка бесконечности и NAN в числах intel устроена по другому
+        // Здесь в NAN собрано все, кроме бесконечности. Включая то, что
+        // считается у Intel некорректным
+        const fraction_type spec_mask = intel_spec_type::spec_fraction_mask();
+        const fraction_type spec_bits = fraction(ap_val)&spec_mask;
+        const fraction_type other_mask = intel_spec_type::other_fraction_mask();
+        const fraction_type other_bits = ((fraction(ap_val)&other_mask) >>
+          intel_spec_type::spec_fraction_shift);
+        bool is_infinity = ((other_bits == 2) && (spec_bits == 0));
+        is_nan_res = !is_infinity;
+      } else {
+        const fraction_type mask = fraction_mask();
+        if ((fraction(ap_val)&mask) != 0) {
+          is_nan_res = true;
+        }
       }
     }
     return is_nan_res;
@@ -1246,15 +1311,15 @@ struct float_limits_by_type: float_limits_by_size<sizeof(T)>
   typedef typename base_type::exponent_type exponent_type;
   typedef typename base_type::fraction_type fraction_type;
 
-  static const sign_type& sign(const irs_u8* ap_val)
+  static sign_type& sign(irs_u8* ap_val)
   {
     return base_type::sign(ap_val);
   }
-  static const exponent_type& exponent(const irs_u8* ap_val)
+  static exponent_type& exponent(irs_u8* ap_val)
   {
     return base_type::exponent(ap_val);
   }
-  static const fraction_type& fraction(const irs_u8* ap_val)
+  static fraction_type& fraction(irs_u8* ap_val)
   {
     return base_type::fraction(ap_val);
   }
@@ -1271,17 +1336,17 @@ struct float_limits_by_type: float_limits_by_size<sizeof(T)>
     return base_type::is_inf(ap_val);
   }
 
-  static const sign_type& sign(const value_type& a_val)
+  static sign_type& sign(value_type& a_val)
   {
-    return base_type::sign(reinterpret_cast<const irs_u8*>(&a_val));
+    return base_type::sign(reinterpret_cast<irs_u8*>(&a_val));
   }
-  static const exponent_type& exponent(const value_type& a_val)
+  static exponent_type& exponent(value_type& a_val)
   {
-    return base_type::exponent(reinterpret_cast<const irs_u8*>(&a_val));
+    return base_type::exponent(reinterpret_cast<irs_u8*>(&a_val));
   }
-  static const fraction_type& fraction(const value_type& a_val)
+  static fraction_type& fraction(value_type& a_val)
   {
-    return base_type::fraction(reinterpret_cast<const irs_u8*>(&a_val));
+    return base_type::fraction(reinterpret_cast<irs_u8*>(&a_val));
   }
   static bool is_inf_or_nan(const value_type& a_val)
   {
@@ -1352,15 +1417,15 @@ struct numeric_limits: numeric_limits_base
 
   static const sign_type& sign(const irs_u8* ap_val)
   {
-    return reinterpret_cast<const sign_type&>(*ap_val);
+    return reinterpret_cast<sign_type&>(*ap_val);
   }
   static const exponent_type& exponent(const irs_u8* ap_val)
   {
-    return reinterpret_cast<const exponent_type&>(*ap_val);
+    return reinterpret_cast<exponent_type&>(*ap_val);
   }
   static const fraction_type& fraction(const irs_u8* ap_val)
   {
-    return reinterpret_cast<const fraction_type&>(*ap_val);
+    return reinterpret_cast<fraction_type&>(*ap_val);
   }
   static bool is_inf_or_nan(const irs_u8* /*ap_val*/)
   {
@@ -1375,17 +1440,17 @@ struct numeric_limits: numeric_limits_base
     return false;
   }
 
-  static const sign_type& sign(const value_type& a_val)
+  static sign_type& sign(const value_type& a_val)
   {
-    return reinterpret_cast<const sign_type&>(a_val);
+    return reinterpret_cast<sign_type&>(a_val);
   }
-  static const exponent_type& exponent(const value_type& a_val)
+  static exponent_type& exponent(const value_type& a_val)
   {
-    return reinterpret_cast<const sign_type&>(a_val);
+    return reinterpret_cast<sign_type&>(a_val);
   }
-  static const fraction_type& fraction(const value_type& a_val)
+  static fraction_type& fraction(const value_type& a_val)
   {
-    return reinterpret_cast<const sign_type&>(a_val);
+    return reinterpret_cast<sign_type&>(a_val);
   }
   static bool is_inf_or_nan(const value_type& /*a_val*/)
   {
@@ -1510,9 +1575,36 @@ bool is_inf(const T& a_val)
   return numeric_limits<T>::is_inf(a_val);
 }
 
+template <class T>
+T inf()
+{
+  //irs_u8 num_in_byte_array[sizeof(T)] = {0};
+  //memset(reinterpret_cast<void*>(num_in_byte_array), 0,
+    //sizeof(num_in_byte_array));
+  //typedef typename numeric_limits<T>::exponent_type exponent_t;
+  T inf_ret = T();
+  numeric_limits<T>::exponent(inf_ret) =
+    numeric_limits<T>::exponent_mask();
+  #ifdef NOP
+  exponent_t& exponent = reinterpret_cast<exponent_t& >(
+    num_in_byte_array[numeric_limits<T>::exponent_idx]);
+  exponent = numeric_limits<T>::exponent_mask();
+  #endif //NOP
+  if (numeric_limits<T>::is_intel_spec()) {
+    typedef typename numeric_limits<T>::fraction_type fraction_t;
+    const int spec_fraction_shift = static_cast<int>(
+      numeric_limits<T>::intel_spec_type::spec_fraction_shift);
+
+    numeric_limits<T>::fraction(inf_ret) =
+      (static_cast<fraction_t>(2) << spec_fraction_shift);
+  } else {
+    // Для не-Intel типов ничего с мантиссой не делаем
+  }
+  return inf_ret;
+}
+
 //! @}
 
 } //namespace irs
 
 #endif //IRSLIMITSH
-

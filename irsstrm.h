@@ -444,13 +444,17 @@ void out_hex_0x(ostream *ap_strm, const T& a_value)
 }
 
 template <class T>
-void out_data_hex(T* ap_container) 
+void out_data_hex(T* ap_container)
 {
-  /*for (typename T::const_iterator it = ap_c->begin(); it != ap_c->end(); it++) {
+  #ifdef NOP
+  for (typename T::const_iterator it = ap_c->begin(); it != ap_c->end();
+    it++)
+  {
     *it
-  }*/
+  }
+  #endif //NOP
   for(size_t i = 0; i < ap_container->size(); i++) {
-    irs::out_hex(irs::mlog(), (*ap_container)[i]);
+    irs::out_hex(&irs::mlog(), (*ap_container)[i]);
     irs::mlog() << ' ';
     if (i % 16 == 15) {
       irs::mlog() << endl;
@@ -527,13 +531,13 @@ inline com_buf::com_buf(
   UART0CTL_bit.RXE = 0;     //  Приём выключен
   UART0CTL_bit.TXE = 1;     //  Передача включена
   UART0CTL_bit.LBE = 0;     //  Loop-back выключен
-#ifdef __LM3SxBxx__
+  #ifdef __LM3SxBxx__
   UART0CTL_bit.LIN = 0;     //  LIN mode off
   UART0CTL_bit.HSE = 0;     //  ClkDiv = 16
   UART0CTL_bit.EOT = 0;     //  The TXRIS bit is set when the transmit FIFO
                             //  condition specified in UARTIFLS is met.
   UART0CTL_bit.SMART = 0;   //  The UART operates in Smart Card mode off
-#endif  //  __LM3SxBxx__
+  #endif  //  __LM3SxBxx__
   UART0CTL_bit.SIRLP = 0;   //  Экономный режим ИК-трансивера выключен
   UART0CTL_bit.SIREN = 0;   //  И сам трансивер тоже
   UART0IM = 0;              //  Прерывания выключены
@@ -614,7 +618,7 @@ inline com_ostream::com_ostream(int a_com_index, int a_outbuf_size):
 
 } //namespace arm
 
-#endif //__ICCAVR__
+#endif //__ICCARM__
 
 } //namespace irs
 
