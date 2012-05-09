@@ -14,35 +14,28 @@
 
 #include <mmsystem.h>
 #include <winspool.h>
-#include <Dialogs.hpp>
+//#include <Dialogs.hpp>
 
 //#include <vcl.h>
 #include <irscpp.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
 //! \ingroup graphical_user_interface_group
 #define SAFEOPER(__operator__) try { __operator__; } catch (...) {}
 //---------------------------------------------------------------------------
-extern void __fastcall Point(TCanvas *Canvas, TPoint P);
+//extern void __fastcall Point(TCanvas *Canvas, TPoint P);
 //---------------------------------------------------------------------------
 
-namespace irs {
-
-//! \ingroup graphical_user_interface_group
-//! \brief Копирование свойств формы
-void mxcopy(TForm *dest, TForm *src);
-
-} //namespace irs
-
-namespace Mxbase
+namespace irs
 {
 
 //! \addtogroup graphical_user_interface_group
 //! @{
 
 //---------------------------------------------------------------------------
-extern String AppName;
+//extern String AppName;
 //---------------------------------------------------------------------------
 enum TDataType {dtUndef, dtFunction, dtMethod, dtChar, dtShort, dtInt, dtLong,
   dtInt64, dtUChar, dtUShort, dtUInt, dtULong, dtUInt64, dtFloat, dtDouble,
@@ -51,10 +44,44 @@ enum TCompConv {ccReal, ccImag, ccAbs, ccArg};
 typedef complex<double> cmp;
 typedef complex<float> fcmp;
 typedef complex<long double> lcmp;
-typedef double (__closure *TClassDblFunc)(double x);
+//typedef double (__closure *TClassDblFunc)(double x);
 typedef double (*TDblFunc)(double x);
 typedef cmp (*TCmpDblFunc)(double x);
 typedef cmp (*TCmpFunc)(cmp x);
+
+//! \brief Подключение функции члена класса вида T fn(T x)
+//! \brief Интерфейс
+template <class T>
+class value_fn_value_t
+{
+public:
+  typedef T value_type;
+
+  virtual ~value_fn_value_t() {}
+  virtual value_type fn(value_type x) = 0;
+private:
+};
+//! \brief Подключение функции члена класса вида T fn(T x)
+//! \brief Реализация
+template <class class_type, class value_type,
+  class base_type = value_fn_value_t<value_type> >
+class value_method_value_t: public base_type
+{
+public:
+  typedef value_type (class_type::*member_type)(value_type);
+
+  value_method_value_t(class_type* ap_object = IRS_NULL,
+    member_type ap_member = IRS_NULL);
+  virtual value_type fn(value_type x)
+  {
+    return (mp_object->*mp_member)(x);
+  }
+private:
+  class_type* mp_object;
+  member_type mp_member;
+};
+
+#ifdef NOP
 typedef struct tagDblRect { double Left, Top, Right, Bottom; } TDblRect;
 bool operator == (TDblRect R1, TDblRect R2)
 {
@@ -83,12 +110,13 @@ TDblBounds __fastcall DblBounds(double Begin, double End)
 }
 class TPrinterDC;
 typedef unsigned char uchar;
+
 struct TLine { TPoint Begin, End; };
-TLine __fastcall Line(TPoint Begin, TPoint End)
+TLine Line(TPoint Begin, TPoint End)
 {
   TLine L; L.Begin = Begin; L.End = End; return L;
 }
-TLine __fastcall Line(int x1, int y1, int x2, int y2)
+TLine Line(int x1, int y1, int x2, int y2)
 {
   return Line(Point(x1, y1), Point(x2, y2));
 }
@@ -288,85 +316,90 @@ String __fastcall Printf(const String& format, T1 arg1, T2 arg2, T3 arg3,
     arg19)));
 }
 //---------------------------------------------------------------------------
+#endif //NOP
 class TPointer
 {
+  typedef value_fn_value_t<double>* method_type;
+
   union
   {
-    signed char *Char;
-    signed short *Short;
-    signed int *Int;
-    signed long *Long;
-    unsigned char *UChar;
-    unsigned short *UShort;
-    unsigned int *UInt;
-    unsigned long *ULong;
-    signed __int64 *Int64;
-    unsigned __int64 *UInt64;
-    TClassDblFunc Method;
+    signed char* Char;
+    signed short* Short;
+    signed int* Int;
+    signed long* Long;
+    unsigned char* UChar;
+    unsigned short* UShort;
+    unsigned int* UInt;
+    unsigned long* ULong;
+    signed __int64* Int64;
+    unsigned __int64* UInt64;
+    method_type Method;
     TDblFunc Function;
-    cmp *Complex;
-    float *Float;
-    double *Double;
-    long double *LongDouble;
+    cmp* Complex;
+    float* Float;
+    double* Double;
+    long double* LongDouble;
   };
   TDataType FType;
   TCompConv FCompConv;
 public:
-  __property TDataType Type = {read=FType};
-  __property TCompConv CompConv = {read=FCompConv, write=FCompConv};
-  __fastcall TPointer::TPointer()
-  { FType = dtUndef; FCompConv = ccReal; Method = NULL; }
-  TPointer &__fastcall operator = (const TPointer &P)
-  { Method = P.Method; FType = P.FType; return *this; }
-  __fastcall TPointer::TPointer(signed char *Value)
-  { Char = Value; FType = dtChar; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(signed short *Value)
-  { Short = Value; FType = dtShort; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(signed int *Value)
-  { Int = Value; FType = dtInt; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(signed long *Value)
-  { Long = Value; FType = dtLong; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(unsigned char *Value)
-  { UChar = Value; FType = dtUChar; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(unsigned short *Value)
-  { UShort = Value; FType = dtUShort; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(unsigned int *Value)
-  { UInt = Value; FType = dtUInt; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(unsigned long *Value)
-  { ULong = Value; FType = dtULong; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(signed __int64 *Value)
-  { Int64 = Value; FType = dtInt64; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(unsigned __int64 *Value)
-  { UInt64 = Value; FType = dtUInt64; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(TClassDblFunc Value)
-  { Method = Value; FType = dtMethod; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(TDblFunc Value)
-  { Function = Value; FType = dtFunction; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(cmp *Value)
-  { Complex = Value; FType = dtComplex; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(float *Value)
-  { Float = Value; FType = dtFloat; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(double *Value)
-  { Double = Value; FType = dtDouble; FCompConv = ccReal; }
-  __fastcall TPointer::TPointer(long double* Value)
-  { LongDouble = Value; FType = dtLongDouble; FCompConv = ccReal; }
-  __fastcall operator signed char*() const { return Char; }
-  __fastcall operator signed short*() const { return Short; }
-  __fastcall operator signed int*() const { return Int; }
-  __fastcall operator signed long*() const { return Long; }
-  __fastcall operator unsigned char*() const { return UChar; }
-  __fastcall operator unsigned short*() const { return UShort; }
-  __fastcall operator unsigned int*() const { return UInt; }
-  __fastcall operator unsigned long*() const { return ULong; }
-  __fastcall operator signed __int64*() const { return Int64; }
-  __fastcall operator unsigned __int64*() const { return UInt64; }
-  __fastcall operator cmp*() const { return Complex; }
-  __fastcall operator TDblFunc() const { return Function; }
-  __fastcall operator TClassDblFunc() const { return Method; }
-  __fastcall operator float*() const { return Float; }
-  __fastcall operator double*() const { return Double; }
-  __fastcall operator long double*() const { return LongDouble; }
-  long double __fastcall operator[](int i) const
+  TDataType type() { return FType; }
+  TCompConv comp_conv() { return FCompConv; }
+  void comp_conv(TCompConv a_comp_conv) { FCompConv = a_comp_conv; }
+
+  TPointer(): Method(NULL), FType(dtUndef), FCompConv(ccReal) {}
+  TPointer(signed char* Value):
+    Char(Value), FType(dtChar), FCompConv(ccReal) {}
+  TPointer(signed short* Value):
+    Short(Value), FType(dtShort), FCompConv(ccReal) {}
+  TPointer(signed int* Value):
+    Int(Value), FType(dtInt), FCompConv(ccReal) {}
+  TPointer(signed long* Value):
+    Long(Value), FType(dtLong), FCompConv(ccReal) {}
+  TPointer(unsigned char* Value):
+    UChar(Value), FType(dtUChar), FCompConv(ccReal) {}
+  TPointer(unsigned short* Value):
+    UShort(Value), FType(dtUShort), FCompConv(ccReal) {}
+  TPointer(unsigned int* Value):
+    UInt(Value), FType(dtUInt), FCompConv(ccReal) {}
+  TPointer(unsigned long* Value):
+    ULong(Value), FType(dtULong), FCompConv(ccReal) {}
+  TPointer(signed __int64* Value):
+    Int64(Value), FType(dtInt64), FCompConv(ccReal) {}
+  TPointer(unsigned __int64* Value):
+    UInt64(Value), FType(dtUInt64), FCompConv(ccReal) {}
+  TPointer(method_type Value):
+    Method(Value), FType(dtMethod), FCompConv(ccReal) {}
+  TPointer(TDblFunc Value):
+    Function(Value), FType(dtFunction), FCompConv(ccReal) {}
+  TPointer(cmp* Value):
+    Complex(Value), FType(dtComplex), FCompConv(ccReal) {}
+  TPointer(float* Value):
+    Float(Value), FType(dtFloat), FCompConv(ccReal) {}
+  TPointer(double* Value):
+    Double(Value), FType(dtDouble), FCompConv(ccReal) {}
+  TPointer(long double* Value):
+    LongDouble(Value), FType(dtLongDouble), FCompConv(ccReal) {}
+
+  operator signed char*() const { return Char; }
+  operator signed short*() const { return Short; }
+  operator signed int*() const { return Int; }
+  operator signed long*() const { return Long; }
+  operator unsigned char*() const { return UChar; }
+  operator unsigned short*() const { return UShort; }
+  operator unsigned int*() const { return UInt; }
+  operator unsigned long*() const { return ULong; }
+  operator signed __int64*() const { return Int64; }
+  operator unsigned __int64*() const { return UInt64; }
+  operator cmp*() const { return Complex; }
+  operator TDblFunc() const { return Function; }
+  operator method_type() const { return Method; }
+  operator float*() const { return Float; }
+  operator double*() const { return Double; }
+  operator long double*() const { return LongDouble; }
+  operator bool() { return to_bool(Int); }
+
+  long double operator[](int i) const
   {
     switch (FType)
     {
@@ -393,12 +426,13 @@ public:
           default:  return real(Complex[i]);
         }
       case dtFunction: return Function(i);
-      case dtMethod: return Method(i);
-      default: return NULL;
+      case dtMethod: return Method->fn(i);
+      default: return 0;
     }
   }
 };
 
+#ifdef NOP
 class TPrinterDC
 {
   HDC PDC;
@@ -409,12 +443,13 @@ public:
   TPrinterDC();
   ~TPrinterDC();
 };
+#endif //NOP
 
 //! @}
 
 } // namespace Mxbase
 
-using namespace Mxbase;
+//using namespace Mxbase;
 
 #endif //NOP
 

@@ -1,6 +1,6 @@
 //! \file
 //! \ingroup graphical_user_interface_group
-//! \brief Построение графиков в C++ Builder
+//! \brief Построение графиков
 //!
 //! Дата: 30.04.2012\n
 //! Дата создания: 30.04.2012
@@ -11,8 +11,6 @@
 #include <irsdefs.h>
 
 #include <mxextbase.h>
-#include <limits> // Отсутствует в IAR
-
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irschartwin.h>
@@ -20,10 +18,12 @@
 #include <irsfinal.h>
 
 #ifdef NOP
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-#define CHARTRANGE(Chart) BeginChartRange(Chart, 0), EndChartRange(Chart, 0)
-#define CHARTRANGEL(Chart) BeginChartRange(Chart, -1), EndChartRange(Chart, -1)
-#define CHARTRANGEI(Chart, Index) BeginChartRange(Chart, Index),\
+#define MXCHARTRANGE(Chart) BeginChartRange(Chart, 0), EndChartRange(Chart, 0)
+#define MXCHARTRANGEL(Chart) BeginChartRange(Chart, -1),\
+  EndChartRange(Chart, -1)
+#define MXCHARTRANGEI(Chart, Index) BeginChartRange(Chart, Index),\
   EndChartRange(Chart, Index)
 
 namespace irs {
@@ -31,14 +31,56 @@ namespace irs {
 //! \addtogroup graphical_user_interface_group
 //! @{
 
+template <class T>
+struct mx_chart_line_t {
+  typedef T value_type;
+  typedef mx_point_t<value_type> point_type;
+
+  point_type begin;
+  point_type end;
+
+  mx_chart_line_t(
+    point_type a_begin = point_type(),
+    point_type a_end = point_type()
+  ):
+    begin(a_begin),
+    end(a_end)
+  {
+  }
+  mx_chart_line_t(
+    value_type a_x1,
+    value_type a_y1,
+    value_type a_x2,
+    value_type a_y2
+  ):
+    begin(point_type(a_x1, a_y1)),
+    end(point_type(a_x2, a_y2))
+  {
+  }
+};
+
+struct mx_ext_chart_types
+{
+  typedef long double float_type;
+  typedef int int_type;
+  typedef size_t size_type;
+  typedef mx_point_t<float_type> point_float_type;
+  typedef mx_rect_t<float_type> rect_float_type;
+  typedef mx_point_t<int_type> point_int_type;
+  typedef mx_rect_t<int_type> rect_int_type;
+  typedef mx_bounds_t<float_type> bounds_float_type;
+  typedef mx_chart_line_t<int_type> line_type;
+};
 
 class mx_ext_chart_t;
 class mx_ext_chart_select_t;
 class mx_ext_chart_item_t;
 
-int BeginChartRange(mx_ext_chart_t *Chart, int Index);
-int EndChartRange(mx_ext_chart_t *Chart, int Index);
-
+mx_ext_chart_types::size_type BeginChartRange(mx_ext_chart_t *Chart,
+  mx_ext_chart_types::size_type Index);
+mx_ext_chart_types::size_type EndChartRange(mx_ext_chart_t *Chart,
+  mx_ext_chart_types::size_type Index);
+mx_ext_chart_types::size_type mx_ext_chart_last();
 
 enum TChartChangeType {cctArea, cctBounds, cctBoundsRect, cctCanvas, cctHide,
   cctAutoScale, cctGroup, cctShift, cctScale, cctStep, cctCompConv,
@@ -49,86 +91,186 @@ enum TChartErrorType {cetConvX, cetConvY, cetCalcX, cetCalcY};
 typedef void (__closure *TChartChange)(TObject *Sender,
   TChartChangeType ChartChangeType);
 typedef void (__closure *TChartError)(TObject *Sender, Exception &e,
-  TDblPoint P, double t, TChartErrorType ChartErrorType);
+  point_float_type P, double t, TChartErrorType ChartErrorType);
 #endif //NOP
 
-class mx_ext_chart_item_t: public TComponent
+class mx_ext_chart_item_t: public mx_ext_chart_types
 {
+public:
+  enum idx_t { x_idx = 0, y_idx = 1};
+
+  // Конструкторы и деструкторы
+  mx_ext_chart_item_t();
+  virtual ~mx_ext_chart_item_t();
+  // Свойства
+  //__property size_type GroupX = {index=0, read=FGroup[0], write=SetGroup};
+  //__property size_type GroupY = {index=1, read=FGroup[1], write=SetGroup};
+  //__property float_type ShiftX = {index=0, read=FShiftX, write=FShiftX};
+  //__property float_type ShiftY = {index=1, read=FShiftY, write=FShiftY};
+  //__property float_type ScaleX = {index=0, read=FScaleX, write=FScaleX};
+  //__property float_type ScaleY = {index=1, read=FScaleY, write=FScaleY};
+  //__property bool Hide = {read=FHide, write=SetHide};
+  //__property TPointer DataX = {index=0, read=FData[0], write=SetData};
+  //__property TPointer DataY = {index=1, read=FData[1], write=SetData};
+  //__property TCompConv CompConvX = {index=0, read=GetCompConv,
+    //write=SetCompConv};
+  //__property TCompConv CompConvY = {index=1, read=GetCompConv,
+    //write=SetCompConv};
+  #ifdef NOP
+  __property bool AutoScaleX = {index=0, read=FAutoScale[0],
+    write=SetAutoScale};
+  __property bool AutoScaleY = {index=1, read=FAutoScale[1],
+    write=SetAutoScale};
+  __property float_type Step = {read=FStep, write=SetStep};
+  #endif //NOP
+  // Методы
+  size_type group_x() const;
+  void group_x(size_type a_group_x);
+  size_type group_y() const;
+  void group_y(size_type a_group_y);
+  float_type shift_x() const;
+  void shift_x(const float_type& a_shift_x);
+  float_type shift_y() const;
+  void shift_y(const float_type& a_shift_y);
+  float_type scale_x() const;
+  void scale_x(const float_type& a_scale_x);
+  float_type scale_y() const;
+  void scale_y(const float_type& a_scale_y);
+  bool hide() const;
+  void hide(bool a_hide);
+  TPointer data_x() const;
+  void data_x(TPointer ap_data_x);
+  TPointer data_y() const;
+  void data_y(TPointer ap_data_y);
+  TCompConv comp_conv_x() const;
+  void comp_conv_x(TCompConv a_comp_conv);
+  TCompConv comp_conv_y() const;
+  void comp_conv_y(TCompConv a_comp_conv);
+  bool auto_scale_x() const;
+  void auto_scale_x(bool a_auto_scale_x);
+  bool auto_scale_y() const;
+  void auto_scale_y(bool a_auto_scale_y);
+  float_type step() const;
+  void step(const float_type& a_step);
+  #ifdef NOP
+  __property bounds_float_type Bounds = {read=FBounds, write=SetBounds};
+  __property rect_float_type Area = {read=GetArea, write=SetArea};
+  __property size_type CountMarkerX = {index=0, read=IndexMarkerX};
+  __property size_type CountMarkerY = {index=1, read=IndexMarkerY};
+
+  __property float_type MarkerX[size_type Index] = {read=GetMarkerX,
+    write=SetMarkerX};
+  __property float_type MarkerY[size_type Index] = {read=GetMarkerY,
+    write=SetMarkerY};
+  __property float_type FirstMarkerX = {index=0, read=GetMarkerX,
+    write=SetMarkerX};
+  __property float_type FirstMarkerY = {index=1, read=GetMarkerY,
+    write=SetMarkerY};
+  __property float_type LastMarkerX = {index=-1, read=GetMarkerX,
+    write=SetMarkerX};
+  __property float_type LastMarkerY = {index=-1, read=GetMarkerY,
+    write=SetMarkerY};
+  __property TPen *Pen = {read=FPen, write=SetPen};
+  __property TPen *MarkerPen = {read=FMarkerPen, write=SetMarkerPen};
+  #endif //NOP
+  bounds_float_type bounds() const;
+  void bounds(const bounds_float_type& a_bounds);
+  rect_float_type area() const;
+  void area(const rect_float_type& AArea);
+  size_type count_marker_x() const;
+  size_type count_marker_y() const;
+
+  void AddMarkerX(float_type Value);
+  void AddMarkerY(float_type Value);
+  void ClearMarkerX();
+  void ClearMarkerY();
+  void DeleteMarkerX(size_type Index);
+  void DeleteMarkerY(size_type Index);
+  void DeleteMarkerX();
+  void DeleteMarkerY();
+  void DeleteMarkerX(size_type Begin, size_type End);
+  void DeleteMarkerY(size_type Begin, size_type End);
+  void Invalidate();
+private:
   friend class mx_ext_chart_t;
+
   // Поля
   bool FHide;
   bool NeedCalculate;
   bool NeedAutoScale;
   bool FError;
-  int IndexMarkerX, IndexMarkerY;
-  double *FMarkerX, *FMarkerY;
-  TDblRect ClipArea;
-  vector<TLine> Lines;
+  size_type IndexMarkerX, IndexMarkerY;
+  float_type *FMarkerX, *FMarkerY;
+  rect_float_type ClipArea;
+  vector<line_type> Lines;
   TCanvas *FCanvas;
   TClassDblFunc FFunc[2];
   TPointer FData[2];
-  TDblRect FArea;
-  TDblBounds FBounds;
-  TRect FBoundsRect, FPrevBoundsRect;
-  double FStep;
+  rect_float_type FArea;
+  bounds_float_type FBounds;
+  rect_int_type FBoundsRect, FPrevBoundsRect;
+  float_type FStep;
   bool FAutoScale[2];
   TChartChange FOnChange;
   TChartError FOnError;
-  int FGroup[2];
-  double FShiftX, FShiftY;
-  double FScaleX, FScaleY;
+  size_type FGroup[2];
+  float_type FShiftX, FShiftY;
+  float_type FScaleX, FScaleY;
   TPen *FPen;
   TPen *FMarkerPen;
+
   // Свойства
-  generator_events_t ;
-  __property int Left = {read=GetLeft, write=SetLeft};
-  __property int Top = {read=GetTop, write=SetTop};
-  __property int Width = {read=GetWidth, write=SetWidth};
-  __property int Height = {read=GetHeight, write=SetHeight};
+  //generator_events_t ;
+  __property int_type Left = {read=GetLeft, write=SetLeft};
+  __property int_type Top = {read=GetTop, write=SetTop};
+  __property int_type Width = {read=GetWidth, write=SetWidth};
+  __property int_type Height = {read=GetHeight, write=SetHeight};
   __property TCanvas *Canvas = {read=FCanvas, write=SetCanvas};
-  __property TRect BoundsRect = {read=GetBoundsRect, write=SetBoundsRect};
+  __property rect_int_type BoundsRect = {read=GetBoundsRect, write=SetBoundsRect};
   // События
   __property TChartChange OnChange = {read=FOnChange, write=FOnChange};
   __property TChartError OnError = {read=FOnError, write=FOnError};
+
   // Методы
-  bool IntoArea(TDblPoint P) const;
-  bool OutArea(TDblPoint P1, TDblPoint P2) const;
-  bool ClipLine(TDblPoint &P1, TDblPoint &P2) const;
-  double DefFunc(double x) const;
-  double Func(int i, double x) const;
-  double FuncX(double x);
-  double FuncY(double x);
-  TPoint ConvCoor(TDblPoint P);
-  TDblPoint XYFunc(double t) const;
+  void group(idx_t Index, size_type a_group_x);
+  void data(idx_t Index, TPointer Value);
+
+  bool IntoArea(point_float_type P) const;
+  bool OutArea(point_float_type P1, point_float_type P2) const;
+  bool ClipLine(point_float_type &P1, point_float_type &P2) const;
+  float_type DefFunc(float_type x) const;
+  float_type Func(idx_t i, float_type x) const;
+  float_type FuncX(float_type x);
+  float_type FuncY(float_type x);
+  point_int_type ConvCoor(point_float_type P);
+  point_float_type XYFunc(float_type t) const;
   void FloorAxis();
-  TRect GetBoundsRect() const;
-  TDblRect GetArea();
-  int GetLeft() const;
-  int GetTop() const;
-  int GetWidth() const;
-  int GetHeight() const;
-  double GetMarkerX(int Index) const;
-  double GetMarkerY(int Index) const;
-  TCompConv GetCompConv(int Index) const;
-  void PaintMarkerX(int i);
-  void PaintMarkerY(int i);
-  void SetArea(TDblRect Area);
-  void SetAutoScale(int Index, bool Value);
-  void SetBounds(TDblBounds Bounds);
-  void SetBoundsRect(TRect Value);
-  void SetCompConv(int Index, TCompConv Value);
-  void SetData(int Index, TPointer Value);
-  void SetStep(double Step);
-  void SetLeft(int Value);
-  void SetTop(int Value);
-  void SetWidth(int Value);
-  void SetHeight(int Value);
-  void SetMarkerX(int Index, double Value);
-  void SetMarkerY(int Index, double Value);
+  rect_int_type GetBoundsRect() const;
+  //rect_float_type GetArea();
+  int_type GetLeft() const;
+  int_type GetTop() const;
+  int_type GetWidth() const;
+  int_type GetHeight() const;
+  float_type GetMarkerX(size_type Index) const;
+  float_type GetMarkerY(size_type Index) const;
+  TCompConv GetCompConv(idx_t Index) const;
+  void PaintMarkerX(size_type i);
+  void PaintMarkerY(size_type i);
+  //void SetArea(rect_float_type Area);
+  void SetAutoScale(idx_t Index, bool Value);
+  //void SetBounds(bounds_float_type Bounds);
+  void SetBoundsRect(rect_int_type Value);
+  void SetCompConv(idx_t Index, TCompConv Value);
+  void SetStep(float_type Step);
+  void SetLeft(int_type Value);
+  void SetTop(int_type Value);
+  void SetWidth(int_type Value);
+  void SetHeight(int_type Value);
+  void SetMarkerX(size_type Index, float_type Value);
+  void SetMarkerY(size_type Index, float_type Value);
   void SetCanvas(TCanvas *Value);
-  void SetHide(bool Value);
-  void SetShift(int Index, double Value);
-  void SetScale(int Index, double Value);
+  void SetShift(size_type Index, float_type Value);
+  void SetScale(size_type Index, float_type Value);
   void SetPen(TPen *Value);
   void SetMarkerPen(TPen *Value);
   bool ValidRect() const;
@@ -138,191 +280,47 @@ class mx_ext_chart_item_t: public TComponent
   void DoPaint();
   void DoBlackPrint();
   void DoColorPrint();
-  void SetGroup(int Index, int AGroup);
-public:
-  // Свойства
-  __property int GroupX = {index=0, read=FGroup[0], write=SetGroup};
-  __property int GroupY = {index=1, read=FGroup[1], write=SetGroup};
-  __property double ShiftX = {index=0, read=FShiftX, write=FShiftX};
-  __property double ShiftY = {index=1, read=FShiftY, write=FShiftY};
-  __property double ScaleX = {index=0, read=FScaleX, write=FScaleX};
-  __property double ScaleY = {index=1, read=FScaleY, write=FScaleY};
-  __property bool Hide = {read=FHide, write=SetHide};
-  __property TPointer DataX = {index=0, read=FData[0], write=SetData};
-  __property TPointer DataY = {index=1, read=FData[1], write=SetData};
-  __property TCompConv CompConvX = {index=0, read=GetCompConv, write=SetCompConv};
-  __property TCompConv CompConvY = {index=1, read=GetCompConv, write=SetCompConv};
-  __property bool AutoScaleX = {index=0, read=FAutoScale[0], write=SetAutoScale};
-  __property bool AutoScaleY = {index=1, read=FAutoScale[1], write=SetAutoScale};
-  __property double Step = {read=FStep, write=SetStep};
-  __property TDblBounds Bounds = {read=FBounds, write=SetBounds};
-  __property TDblRect Area = {read=GetArea, write=SetArea};
-  __property int CountMarkerX = {index=0, read=IndexMarkerX};
-  __property int CountMarkerY = {index=1, read=IndexMarkerY};
-  __property double MarkerX[int Index] = {read=GetMarkerX, write=SetMarkerX};
-  __property double MarkerY[int Index] = {read=GetMarkerY, write=SetMarkerY};
-  __property double FirstMarkerX = {index=0, read=GetMarkerX, write=SetMarkerX};
-  __property double FirstMarkerY = {index=1, read=GetMarkerY, write=SetMarkerY};
-  __property double LastMarkerX = {index=-1, read=GetMarkerX, write=SetMarkerX};
-  __property double LastMarkerY = {index=-1, read=GetMarkerY, write=SetMarkerY};
-  __property TPen *Pen = {read=FPen, write=SetPen};
-  __property TPen *MarkerPen = {read=FMarkerPen, write=SetMarkerPen};
-  // Конструкторы и деструкторы
-  mx_ext_chart_item_t(TComponent *AOwner);
-  virtual ~mx_ext_chart_item_t();
-  // Методы
-  void AddMarkerX(double Value);
-  void AddMarkerY(double Value);
-  void ClearMarkerX();
-  void ClearMarkerY();
-  void DeleteMarkerX(int Index);
-  void DeleteMarkerY(int Index);
-  void DeleteMarkerX();
-  void DeleteMarkerY();
-  void DeleteMarkerX(int Begin, int End);
-  void DeleteMarkerY(int Begin, int End);
-  void Invalidate();
 };
 
-class mx_ext_chart_t: public TComponent
+class mx_ext_chart_t: public mx_ext_chart_types
 {
-  friend class mx_ext_chart_item_t;
-  // Поля
-  bool NeedAutoScale;
-  bool NeedCalculate;
-  bool NeedRepaint;
-  TNotifyEvent FOnPaint;
-  TNotifyEvent FOnPrint;
-  TChartChange FOnChange;
-  TChartError FOnError;
-  Graphics::TBitmap *FBitmap;
-  TColor FMarkerColor;
-  int IndexMarkerX, IndexMarkerY;
-  double *FMarkerX, *FMarkerY;
-  bool FShowGrid;
-  bool FShowAuxGrid;
-  bool FShowBounds;
-  int FCount;
-  mx_ext_chart_item_t **FItems;
-  TCanvas *FCanvas;
-  TCanvas *FPaintCanvas;
-  TCanvas *FPrintCanvas;
-  TCanvas *FCurCanvas;
-  TPen *FMarkerPen;
-  TPen *FAuxGridPen;
-  TRect FBoundsRect;
-  TRect FGridRect;
-  TRect FPrintRect;
-  TRect FCurRect;
-  bool FAutoScaleX, FAutoScaleY;
-  TDblRect FArea;
-  double FMinWidthGrid, FMinHeightGrid;
-  double FMinWidthAuxGrid, FMinHeightAuxGrid;
-  bool PaintMode;
-  double SW, SH;
-  bool ApplyTextX, ApplyTextY;
-  TNotifyEvent PenChanged;
-  TNotifyEvent BrushChanged;
-  TNotifyEvent FontChanged;
-  int FBaseItem;
-  int CurGroupX, CurGroupY;
-  // Методы
-  void PaintGrid();
-  void PaintGrid(bool BlackAuxGrid);
-  void CalcGrid();
-  void PaintBounds() const;
-  TDblRect GetArea();
-  TRect GetGridRect();
-  int GetLeft() const;
-  int GetTop() const;
-  int GetWidth() const;
-  int GetHeight() const;
-  double GetMarkerX(int Index) const;
-  double GetMarkerY(int Index) const;
-  mx_ext_chart_item_t *GetItem(int Index) const;
-  void SetChildRect();
-  void SetArea(TDblRect Area);
-  void SetPrintRect(TRect Value);
-  void SetLeft(int Value);
-  void SetTop(int Value);
-  void SetWidth(int Value);
-  void SetHeight(int Value);
-  void SetBoundsRect(TRect Value);
-  void SetShowBounds(bool Value);
-  void SetShowGrid(bool Value);
-  void SetShowAuxGrid(bool Value);
-  void SetAutoScaleX(bool Value);
-  void SetAutoScaleY(bool Value);
-  void SetPaintCanvas(TCanvas *Value);
-  void SetMarkerX(int Index, double Value);
-  void SetMarkerY(int Index, double Value);
-  void SetCurCanvas(TCanvas *Value);
-  void SetMarkerPen(TPen *Value);
-  void SetAuxGridPen(TPen *Value);
-  void SetMinWidthGrid(double Value);
-  void SetMinHeightGrid(double Value);
-  void SetMinWidthAuxGrid(double Value);
-  void SetMinHeightAuxGrid(double Value);
-  void DoAutoScale();
-  void DoCalculate();
-  void DoRepaint(int Tag);
-  TPoint ConvCoor(TDblPoint P) const;
-  int ConvCoorX(double b, double e, double x) const;
-  int ConvCoorY(double b, double e, double y) const;
-  void PaintMarkerX(int i);
-  void PaintMarkerY(int i);
-  void ChildChange(TObject *Sender,
-    TChartChangeType ChartChangeType);
-  void ChildError(TObject *Sender, Exception &e, TDblPoint P,
-    double t, TChartErrorType ChartErrorType) const;
-  void Constructor();
-  double StepCalc(double Begin, double End, int Size,
-    int MinSize, bool IsWidth, bool AccountText);
-  void GraphObjChanged(TObject *Sender);
-  String SFF(double x, double Step) const;
-  bool ValidRect() const;
-  void PaintChildMarkerX(mx_ext_chart_item_t *Sender, int i) const;
-  void PaintChildMarkerY(mx_ext_chart_item_t *Sender, int i) const;
-  void SetBaseItem(int AChart);
-  // Свойства
-  __property TCanvas *CurCanvas = {read=FCurCanvas, write=SetCurCanvas};
 public:
   // Поля
   mx_ext_chart_select_t *Select;
   // Свойства
-  __property int BaseItem = {read=FBaseItem, write=SetBaseItem};
+  __property size_type BaseItem = {read=FBaseItem, write=SetBaseItem};
   __property bool ShowBounds = {read=FShowBounds, write=SetShowBounds};
   __property bool ShowGrid = {read=FShowGrid, write=SetShowGrid};
   __property bool ShowAuxGrid = {read=FShowAuxGrid, write=SetShowAuxGrid};
-  __property TDblRect Area = {read=GetArea, write=SetArea};
+  __property rect_float_type Area = {read=GetArea, write=SetArea};
   __property bool AutoScaleX = {read=FAutoScaleX, write=SetAutoScaleX};
   __property bool AutoScaleY = {read=FAutoScaleY, write=SetAutoScaleY};
   __property TCanvas *Canvas = {read=FCanvas};
   __property TCanvas *PaintCanvas = {read=FPaintCanvas, write=SetPaintCanvas};
   __property TCanvas *PrintCanvas = {read=FPrintCanvas, write=FPrintCanvas};
-  __property int CountMarkerX = {index=0, read=IndexMarkerX};
-  __property int CountMarkerY = {index=1, read=IndexMarkerY};
-  __property double MarkerX[int Index] = {read=GetMarkerX, write=SetMarkerX};
-  __property double MarkerY[int Index] = {read=GetMarkerY, write=SetMarkerY};
-  __property double FirstMarkerX = {index=0, read=GetMarkerX, write=SetMarkerX};
-  __property double FirstMarkerY = {index=1, read=GetMarkerY, write=SetMarkerY};
-  __property double LastMarkerX = {index=-1, read=GetMarkerX, write=SetMarkerX};
-  __property double LastMarkerY = {index=-1, read=GetMarkerY, write=SetMarkerY};
-  __property int Count = {read=FCount};
-  __property mx_ext_chart_item_t *Items[int Index] = {read=GetItem};
-  __property int Left = {read=GetLeft, write=SetLeft};
-  __property int Top = {read=GetTop, write=SetTop};
-  __property int Width = {read=GetWidth, write=SetWidth};
-  __property int Height = {read=GetHeight, write=SetHeight};
-  __property TRect BoundsRect = {read=FBoundsRect, write=SetBoundsRect};
-  __property TRect PrintRect = {read=FPrintRect, write=SetPrintRect};
-  __property TRect GridRect = {read=GetGridRect};
+  __property size_type CountMarkerX = {index=0, read=IndexMarkerX};
+  __property size_type CountMarkerY = {index=1, read=IndexMarkerY};
+  __property float_type MarkerX[size_type Index] = {read=GetMarkerX, write=SetMarkerX};
+  __property float_type MarkerY[size_type Index] = {read=GetMarkerY, write=SetMarkerY};
+  __property float_type FirstMarkerX = {index=0, read=GetMarkerX, write=SetMarkerX};
+  __property float_type FirstMarkerY = {index=1, read=GetMarkerY, write=SetMarkerY};
+  __property float_type LastMarkerX = {index=-1, read=GetMarkerX, write=SetMarkerX};
+  __property float_type LastMarkerY = {index=-1, read=GetMarkerY, write=SetMarkerY};
+  __property size_type Count = {read=FCount};
+  __property mx_ext_chart_item_t *Items[size_type Index] = {read=GetItem};
+  __property int_type Left = {read=GetLeft, write=SetLeft};
+  __property int_type Top = {read=GetTop, write=SetTop};
+  __property int_type Width = {read=GetWidth, write=SetWidth};
+  __property int_type Height = {read=GetHeight, write=SetHeight};
+  __property rect_int_type BoundsRect = {read=FBoundsRect, write=SetBoundsRect};
+  __property rect_int_type PrintRect = {read=FPrintRect, write=SetPrintRect};
+  __property rect_int_type GridRect = {read=GetGridRect};
   __property TPen *MarkerPen = {read=FMarkerPen, write=SetMarkerPen};
   __property TPen *AuxGridPen = {read=FAuxGridPen, write=SetAuxGridPen};
-  __property double MinWidthGrid = {read=FMinWidthGrid, write=SetMinWidthGrid};
-  __property double MinHeightGrid = {read=FMinHeightGrid, write=SetMinHeightGrid};
-  __property double MinWidthAuxGrid = {read=FMinWidthAuxGrid, write=SetMinWidthAuxGrid};
-  __property double MinHeightAuxGrid = {read=FMinHeightAuxGrid, write=SetMinHeightAuxGrid};
+  __property float_type MinWidthGrid = {read=FMinWidthGrid, write=SetMinWidthGrid};
+  __property float_type MinHeightGrid = {read=FMinHeightGrid, write=SetMinHeightGrid};
+  __property float_type MinWidthAuxGrid = {read=FMinWidthAuxGrid, write=SetMinWidthAuxGrid};
+  __property float_type MinHeightAuxGrid = {read=FMinHeightAuxGrid, write=SetMinHeightAuxGrid};
   __property mx_ext_chart_item_t *First = {index=0, read=GetItem};
   __property mx_ext_chart_item_t *Last = {index=-1, read=GetItem};
   // События
@@ -336,13 +334,13 @@ public:
   virtual ~mx_ext_chart_t();
   // Методы
   void Add();
-  void Add(TPointer Data, int Count);
-  void Add(TPointer Data, int Count, TColor AColor);
-  void Delete(int Index);
+  void Add(TPointer Data, size_type Count);
+  void Add(TPointer Data, size_type Count, TColor AColor);
+  void Delete(size_type Index);
   void Clear();
-  void Insert(int Index);
-  void Insert(int Index, TPointer Data, int Count);
-  void Insert(int Index, TPointer Data, int Count, TColor AColor);
+  void Insert(size_type Index);
+  void Insert(size_type Index, TPointer Data, size_type Count);
+  void Insert(size_type Index, TPointer Data, size_type Count, TColor AColor);
   void NewGroupX();
   void NewGroupY();
   void Paint();
@@ -350,27 +348,150 @@ public:
   void ColorPrint();
   void SaveToMetafile(String FileName);
   void PreCalc();
-  void AddMarkerX(double Value);
-  void AddMarkerY(double Value);
+  void AddMarkerX(float_type Value);
+  void AddMarkerY(float_type Value);
   void ClearMarkerX();
   void ClearMarkerY();
-  void DeleteMarkerX(int Index);
-  void DeleteMarkerY(int Index);
+  void DeleteMarkerX(size_type Index);
+  void DeleteMarkerY(size_type Index);
   void DeleteMarkerX();
   void DeleteMarkerY();
-  void DeleteMarkerX(int Begin, int End);
-  void DeleteMarkerY(int Begin, int End);
+  void DeleteMarkerX(size_type Begin, size_type End);
+  void DeleteMarkerY(size_type Begin, size_type End);
   void Invalidate();
+
+private:
+  friend class mx_ext_chart_item_t;
+  // Поля
+  bool NeedAutoScale;
+  bool NeedCalculate;
+  bool NeedRepaint;
+  TNotifyEvent FOnPaint;
+  TNotifyEvent FOnPrint;
+  TChartChange FOnChange;
+  TChartError FOnError;
+  Graphics::TBitmap *FBitmap;
+  TColor FMarkerColor;
+  size_type IndexMarkerX, IndexMarkerY;
+  float_type *FMarkerX, *FMarkerY;
+  bool FShowGrid;
+  bool FShowAuxGrid;
+  bool FShowBounds;
+  size_type FCount;
+  mx_ext_chart_item_t **FItems;
+  TCanvas *FCanvas;
+  TCanvas *FPaintCanvas;
+  TCanvas *FPrintCanvas;
+  TCanvas *FCurCanvas;
+  TPen *FMarkerPen;
+  TPen *FAuxGridPen;
+  rect_int_type FBoundsRect;
+  rect_int_type FGridRect;
+  rect_int_type FPrintRect;
+  rect_int_type FCurRect;
+  bool FAutoScaleX, FAutoScaleY;
+  rect_float_type FArea;
+  float_type FMinWidthGrid, FMinHeightGrid;
+  float_type FMinWidthAuxGrid, FMinHeightAuxGrid;
+  bool PaintMode;
+  float_type SW, SH;
+  bool ApplyTextX, ApplyTextY;
+  TNotifyEvent PenChanged;
+  TNotifyEvent BrushChanged;
+  TNotifyEvent FontChanged;
+  size_type FBaseItem;
+  size_type CurGroupX, CurGroupY;
+  // Методы
+  void PaintGrid();
+  void PaintGrid(bool BlackAuxGrid);
+  void CalcGrid();
+  void PaintBounds() const;
+  rect_float_type GetArea();
+  rect_int_type GetGridRect();
+  int_type GetLeft() const;
+  int_type GetTop() const;
+  int_type GetWidth() const;
+  int_type GetHeight() const;
+  float_type GetMarkerX(size_type Index) const;
+  float_type GetMarkerY(size_type Index) const;
+  mx_ext_chart_item_t *GetItem(size_type Index) const;
+  void SetChildRect();
+  void SetArea(rect_float_type Area);
+  void SetPrintRect(rect_int_type Value);
+  void SetLeft(int_type Value);
+  void SetTop(int_type Value);
+  void SetWidth(int_type Value);
+  void SetHeight(int_type Value);
+  void SetBoundsRect(rect_int_type Value);
+  void SetShowBounds(bool Value);
+  void SetShowGrid(bool Value);
+  void SetShowAuxGrid(bool Value);
+  void SetAutoScaleX(bool Value);
+  void SetAutoScaleY(bool Value);
+  void SetPaintCanvas(TCanvas *Value);
+  void SetMarkerX(size_type Index, float_type Value);
+  void SetMarkerY(size_type Index, float_type Value);
+  void SetCurCanvas(TCanvas *Value);
+  void SetMarkerPen(TPen *Value);
+  void SetAuxGridPen(TPen *Value);
+  void SetMinWidthGrid(float_type Value);
+  void SetMinHeightGrid(float_type Value);
+  void SetMinWidthAuxGrid(float_type Value);
+  void SetMinHeightAuxGrid(float_type Value);
+  void DoAutoScale();
+  void DoCalculate();
+  void DoRepaint(int Tag);
+  point_int_type ConvCoor(point_float_type P) const;
+  int_type ConvCoorX(float_type b, float_type e, float_type x) const;
+  int_type ConvCoorY(float_type b, float_type e, float_type y) const;
+  void PaintMarkerX(size_type i);
+  void PaintMarkerY(size_type i);
+  void ChildChange(TObject *Sender,
+    TChartChangeType ChartChangeType);
+  void ChildError(TObject *Sender, Exception &e, point_float_type P,
+    float_type t, TChartErrorType ChartErrorType) const;
+  void Constructor();
+  float_type StepCalc(float_type Begin, float_type End, size_type Size,
+    size_type MinSize, bool IsWidth, bool AccountText);
+  void GraphObjChanged(TObject *Sender);
+  String SFF(float_type x, float_type Step) const;
+  bool ValidRect() const;
+  void PaintChildMarkerX(mx_ext_chart_item_t *Sender, size_type i) const;
+  void PaintChildMarkerY(mx_ext_chart_item_t *Sender, size_type i) const;
+  void SetBaseItem(size_type AChart);
+  // Свойства
+  __property TCanvas *CurCanvas = {read=FCurCanvas, write=SetCurCanvas};
 };
 
-class mx_ext_chart_select_t: public TObject
+class mx_ext_chart_select_t: public mx_ext_chart_types
 {
+public:
+  __property mx_ext_chart_t *Chart = {read=FChart, write=FChart};
+  __property TControl *Control = {read=FControl, write=SetControl};
+  __property TNotifyEvent OnError = {read=FOnError, write=FOnError};
+  __property float_type ZoomFactor = {read=FZoomFactor, write=SetZoomFactor};
+  __property bool PositioningMode = {read=FPositioningMode, write=SetPositioningMode};
+  __property bool DragChartMode = {read=FDragChartMode, write=SetDragChartMode};
+  void All();
+  void Shift(float_type X, float_type Y = 0);
+  void Positioning(float_type X, float_type Y = 0);
+  void ZoomIn(float_type FX = -1, float_type FY = 1);
+  void ZoomOut();
+  void Connect();
+  void Disconnect();
+  void ItemChange(int Oper, size_type Index);
+  mx_ext_chart_select_t(): TObject() {}
+  mx_ext_chart_select_t(mx_ext_chart_t *AChart);
+  mx_ext_chart_select_t(mx_ext_chart_t *AChart, TControl *AControl);
+  ~mx_ext_chart_select_t();
+
+private:
   typedef pair<bool, bool> pairbool;
   typedef map<TComponent *, pairbool> mapscale;
   typedef pair<TCompConv, TCompConv> pairconv;
   typedef map<TComponent *, pairconv> mapconv;
   typedef mapconv::iterator mapconvit;
-  typedef map<int *, TDblRect> maparea;
+  typedef map<int *, rect_float_type> maparea;
 
   mx_ext_chart_t *FChart;
   TControl *FControl;
@@ -380,15 +501,15 @@ class mx_ext_chart_select_t: public TObject
   bool LockEvent;
   bool ValidAutoScales;
   bool ValidAreas;
-  vector<TDblRect> Areas;
-  vector<int> BaseItems;
+  vector<rect_float_type> Areas;
+  vector<size_type> BaseItems;
   vector<mapconv> CompConvs;
-  //TDblRect CurArea;
-  int Xn, Yn;
-  double PX, PY;
-  TRect SelRect;
+  //rect_float_type CurArea;
+  int_type Xn, Yn;
+  float_type PX, PY;
+  rect_int_type SelRect;
   bool SelectMode, FirstSelect;
-  double FZoomFactor;
+  float_type FZoomFactor;
   bool FPositioningMode;
   bool FDragChartMode;
 
@@ -405,39 +526,20 @@ class mx_ext_chart_select_t: public TObject
   void SaveAutoScales();
   void RestoreCompConvs();
   void SaveCompConvs();
-  void SelectClip(TRect &ARect) const;
-  void SelectRect(TRect Rect) const;
+  void SelectClip(rect_int_type &ARect) const;
+  void SelectRect(rect_int_type Rect) const;
   void SetControl(TControl *AControl);
-  void SetZoomFactor(double Value);
+  void SetZoomFactor(float_type Value);
   void SetPositioningMode(bool Value);
   void SetDragChartMode(bool Value);
   void SaveAreas();
   void RestoreAreas();
-public:
-  __property mx_ext_chart_t *Chart = {read=FChart, write=FChart};
-  __property TControl *Control = {read=FControl, write=SetControl};
-  __property TNotifyEvent OnError = {read=FOnError, write=FOnError};
-  __property double ZoomFactor = {read=FZoomFactor, write=SetZoomFactor};
-  __property bool PositioningMode = {read=FPositioningMode, write=SetPositioningMode};
-  __property bool DragChartMode = {read=FDragChartMode, write=SetDragChartMode};
-  void All();
-  void Shift(double X, double Y = 0);
-  void Positioning(double X, double Y = 0);
-  void ZoomIn(double FX = -1, double FY = 1);
-  void ZoomOut();
-  void Connect();
-  void Disconnect();
-  void ItemChange(int Oper, int Index);
-  mx_ext_chart_select_t(): TObject() {}
-  mx_ext_chart_select_t(mx_ext_chart_t *AChart);
-  mx_ext_chart_select_t(mx_ext_chart_t *AChart, TControl *AControl);
-  ~mx_ext_chart_select_t();
 };
 
 //! @}
 
 
-
+#ifdef NOP
 namespace chart {
 
 //! \addtogroup graphical_user_interface_group
@@ -630,9 +732,11 @@ private:
 //! @}
 
 } //namespace chart
+#endif //NOP
 
 } //namespace irs
 
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP
 
 #endif //MXEXTCHARTH

@@ -17,7 +17,6 @@
 #include <irsfinal.h>
 
 #ifdef NOP
-
 //---------------------------------------------------------------------------
 void __fastcall Point(TCanvas *Canvas, TPoint P)
 {

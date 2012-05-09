@@ -2,7 +2,7 @@
 //! \ingroup single_type_group
 //! \brief Rect
 //!
-//! Дата: 11.03.2011\n
+//! Дата: 06.05.2011\n
 //! Дата создания: 15.04.2010
 
 #ifndef IRSRECTH
@@ -11,6 +11,7 @@
 #include <irsdefs.h>
 
 #include <irscpp.h>
+#include <irslimits.h>
 
 #include <irsfinal.h>
 
@@ -21,8 +22,10 @@ namespace irs {
 
 struct point_t {
   typedef irs_size_t size_type;
-  int left;
-  int top;
+
+  size_type left;
+  size_type top;
+
   point_t(
     size_type a_left = 0,
     size_type a_top = 0
@@ -47,6 +50,7 @@ inline bool point_t::operator!=(const point_t& a_point)
 struct rect_t {
   typedef irs_size_t size_type;
   typedef irs_ptrdiff_t difference_type;
+
   size_type left;
   size_type top;
   size_type right;
@@ -76,7 +80,7 @@ struct rect_t {
   //! \brief Перемещает диапазон в точку с координатами (a_left, a_top).
   inline void move_to(const size_type a_left, const size_type a_top);
   //! \brief Перемещает дипазон в точку a_left_top.
-  inline void move_to(const point_t& a_left_top);  
+  inline void move_to(const point_t& a_left_top);
   inline void move_left(const size_type a_left);
   inline void move_top(const size_type a_top);
   inline void move_right(const size_type a_right);
@@ -94,7 +98,7 @@ struct rect_t {
   inline bool contains(const rect_t& a_rect) const;
   //intersect
   //get_intersect
-  inline bool intersects_with(const rect_t& a_rect) const;    
+  inline bool intersects_with(const rect_t& a_rect) const;
 };
 
 // rect_intersect & | &= |= == != += -=
@@ -220,7 +224,149 @@ inline bool rect_t::intersects_with(const rect_t& a_rect) const
       ((a_rect.top <= top) && (top <= a_rect.bottom)) ||
       ((top <= a_rect.top) && (a_rect.top <= bottom))
     );
-}  
+}
+
+
+
+template <class T>
+struct mx_point_t {
+  typedef T value_type;
+
+  value_type left;
+  value_type top;
+
+  mx_point_t(
+    value_type a_left = value_type(),
+    value_type a_top = value_type()
+  ):
+    left(a_left),
+    top(a_top)
+  {
+  }
+};
+
+template <class T>
+bool operator==(const mx_point_t<T>& a_first,
+  const mx_point_t<T>& a_second)
+{
+  return (a_first.left == a_second.left) && (a_first.top == a_second.top);
+}
+
+template <class T>
+bool operator!=(const mx_point_t<T>& a_first,
+  const mx_point_t<T>& a_second)
+{
+  return !(a_first == a_second);
+}
+
+template <class T>
+struct mx_rect_t {
+  typedef T value_type;
+
+  value_type left;
+  value_type top;
+  value_type right;
+  value_type bottom;
+
+  mx_rect_t(
+    value_type a_left = value_type(),
+    value_type a_top = value_type(),
+    value_type a_right = value_type(),
+    value_type a_bottom = value_type()
+  ):
+    left(a_left),
+    top(a_top),
+    right(a_right),
+    bottom(a_bottom)
+  {
+  }
+
+  value_type width() const;
+  value_type height() const;
+};
+
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_width(
+  const mx_rect_t<T>& a_rect, integral_type_tag)
+{
+  return a_rect.right - a_rect.left + 1;
+}
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_width(
+  const mx_rect_t<T>& a_rect, floating_point_type_tag)
+{
+  return a_rect.right - a_rect.left;
+}
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_height(
+  const mx_rect_t<T>& a_rect, integral_type_tag)
+{
+  return a_rect.bottom - a_rect.top + 1;
+}
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_height(
+  const mx_rect_t<T>& a_rect, floating_point_type_tag)
+{
+  // top - bottom сделано намерено. Считаем, что направления увеличения
+  // по оси Y как в графиках вверх, а не как в формах и окнах вниз
+  return a_rect.top - a_rect.bottom;
+}
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_t<T>::width() const
+{
+  return mx_rect_width(*this, type_detect_t<T>::tag_type);
+}
+template <class T>
+typename mx_rect_t<T>::value_type mx_rect_t<T>::height() const
+{
+  return mx_rect_height(*this, type_detect_t<T>::tag_type);
+}
+
+template <class T>
+bool operator==(const mx_rect_t<T>& a_first,
+  const mx_rect_t<T>& a_second)
+{
+  return (a_first.left == a_second.left) && (a_first.top == a_second.top) &&
+    (a_first.right == a_second.right) && (a_first.bottom == a_second.bottom);
+}
+
+template <class T>
+bool operator!=(const mx_rect_t<T>& a_first,
+  const mx_rect_t<T>& a_second)
+{
+  return !(a_first == a_second);
+}
+
+template <class T>
+struct mx_bounds_t {
+  typedef T value_type;
+
+  value_type begin;
+  value_type end;
+
+  mx_bounds_t(
+    value_type a_begin = value_type(),
+    value_type a_end = value_type()
+  ):
+    begin(a_begin),
+    end(a_end)
+  {
+  }
+};
+
+template <class T>
+bool operator==(const mx_bounds_t<T>& a_first,
+  const mx_bounds_t<T>& a_second)
+{
+  return (a_first.begin == a_second.begin) && (a_first.end == a_second.end);
+}
+
+template <class T>
+bool operator!=(const mx_bounds_t<T>& a_first,
+  const mx_bounds_t<T>& a_second)
+{
+  return !(a_first == a_second);
+}
 
 //! @}
 

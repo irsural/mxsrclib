@@ -171,6 +171,7 @@ enum signed_t {
 enum std_type_idx_t {
   invalid_idx,
   unknown_idx,
+  void_idx,
   bool_idx,
   char_idx,
   wchar_idx,
@@ -206,6 +207,13 @@ enum fix_type_idx_t {
   float32_fix_idx,
   float64_fix_idx
 };
+
+struct unknown_type_tag {};
+struct void_type_tag {};
+struct char_type_tag {};
+struct bool_type_tag {};
+struct integral_type_tag {};
+struct floating_point_type_tag {};
 
 // Преобразование тип в индекс
 inline std_type_idx_t type_to_index_helper(bool)
@@ -287,13 +295,31 @@ std_type_idx_t type_to_index(T)
 template <class T>
 struct type_detect_t
 {
+  typedef unknown_type_tag tag_type;
   enum {
     index = unknown_idx
   };
 };
 template <>
+struct type_detect_t<void>
+{
+  typedef void_type_tag tag_type;
+  enum {
+    index = void_idx
+  };
+};
+template <>
+struct type_detect_t<bool>
+{
+  typedef bool_type_tag tag_type;
+  enum {
+    index = bool_idx
+  };
+};
+template <>
 struct type_detect_t<char>
 {
+  typedef char_type_tag tag_type;
   enum {
     index = char_idx
   };
@@ -301,6 +327,7 @@ struct type_detect_t<char>
 template <>
 struct type_detect_t<wchar_t>
 {
+  typedef char_type_tag tag_type;
   enum {
     index = wchar_idx
   };
@@ -308,6 +335,7 @@ struct type_detect_t<wchar_t>
 template <>
 struct type_detect_t<signed char>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = signed_char_idx
   };
@@ -315,6 +343,7 @@ struct type_detect_t<signed char>
 template <>
 struct type_detect_t<unsigned char>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = unsigned_char_idx
   };
@@ -322,6 +351,7 @@ struct type_detect_t<unsigned char>
 template <>
 struct type_detect_t<signed short>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = signed_short_idx
   };
@@ -329,6 +359,7 @@ struct type_detect_t<signed short>
 template <>
 struct type_detect_t<unsigned short>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = unsigned_short_idx
   };
@@ -336,6 +367,7 @@ struct type_detect_t<unsigned short>
 template <>
 struct type_detect_t<signed int>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = signed_int_idx
   };
@@ -343,6 +375,7 @@ struct type_detect_t<signed int>
 template <>
 struct type_detect_t<unsigned int>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = unsigned_int_idx
   };
@@ -350,6 +383,7 @@ struct type_detect_t<unsigned int>
 template <>
 struct type_detect_t<signed long>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = signed_long_idx
   };
@@ -357,6 +391,7 @@ struct type_detect_t<signed long>
 template <>
 struct type_detect_t<unsigned long>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = unsigned_long_idx
   };
@@ -365,6 +400,7 @@ struct type_detect_t<unsigned long>
 template <>
 struct type_detect_t<irs_ilong_long>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = signed_long_long_idx
   };
@@ -372,14 +408,16 @@ struct type_detect_t<irs_ilong_long>
 template <>
 struct type_detect_t<irs_ulong_long>
 {
+  typedef integral_type_tag tag_type;
   enum {
     index = unsigned_long_long_idx
   };
 };
-#endif //IRSDEFS_I64
+#endif //IRSDEFS_LONG_LONG
 template <>
 struct type_detect_t<float>
 {
+  typedef floating_point_type_tag tag_type;
   enum {
     index = float_idx
   };
@@ -387,6 +425,7 @@ struct type_detect_t<float>
 template <>
 struct type_detect_t<double>
 {
+  typedef floating_point_type_tag tag_type;
   enum {
     index = double_idx
   };
@@ -394,10 +433,13 @@ struct type_detect_t<double>
 template <>
 struct type_detect_t<long double>
 {
+  typedef floating_point_type_tag tag_type;
   enum {
     index = long_double_idx
   };
 };
+
+
 
 template<class T>
 struct is_void_type

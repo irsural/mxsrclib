@@ -1,6 +1,6 @@
 //! \file
 //! \ingroup graphical_user_interface_group
-//! \brief Построение графиков в C++ Builder
+//! \brief Построение графиков
 //!
 //! Дата: 02.03.2011\n
 //! Дата создания: 8.09.2008
@@ -17,6 +17,7 @@
 #include <irsfinal.h>
 
 #ifdef NOP
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 namespace irs {
 
@@ -27,46 +28,85 @@ const double DblError = 1e-9;
 //***************************************************************************
 // Глобальные функции
 
-int BeginChartRange(mx_ext_chart_t *Chart, int Index)
+mx_ext_chart_types::size_type BeginChartRange(mx_ext_chart_t *Chart,
+  mx_ext_chart_types::size_type Index)
 {
-  TDblRect A = Chart->Area;
-  mx_ext_chart_item_t *Item;
-  if (Index == -1) Item = Chart->Last; else Item = Chart->Items[Index];
-  TDblBounds B = Item->Bounds;
-  double a = Item->ScaleX, b = Item->ShiftX;
-  double L;
-  if ((int *)Item->DataX)
-  {
-    for (int i = static_cast<int>(B.Begin); i <= static_cast<int>(B.End); i++)
-      if ((Item->DataX[i] - b)/a > A.Left) { L = i; break; }
-      else if (FltEqual((Item->DataX[i] - b)/a, A.Left)) { L = i; break; }
+  rect_float_type A = Chart->Area;
+  mx_ext_chart_item_t *Item = IRS_NULL;
+  if (Index == mx_ext_chart_last()) {
+    Item = Chart->Last;
+  } else {
+    Item = Chart->Items[Index];
   }
-  else
+  bounds_float_type B = Item->Bounds;
+  double a = Item->ScaleX;
+  double b = Item->ShiftX;
+  double L = 0;
+  typedef mx_ext_chart_types::size_type fn_size_t;
+  if (Item->DataX)
+  {
+    fn_size_t pixel_begin = static_cast<fn_size_t>(B.Begin);
+    fn_size_t pixel_end = static_cast<fn_size_t>(B.End);
+    for (fn_size_t i = pixel_begin; i <= pixel_end; i++) {
+      if ((Item->DataX[i] - b)/a > A.Left) {
+        L = i;
+        break;
+      } else if (FltEqual((Item->DataX[i] - b)/a, A.Left)) {
+        L = i;
+        break;
+      }
+    }
+  } else {
     L = (A.Left - b)/a;
-  if (L < B.Begin) L = B.Begin;
-  return static_cast<int>(ceil(L));
-}
-
-int EndChartRange(mx_ext_chart_t *Chart, int Index)
-{
-  TDblRect A = Chart->Area;
-  mx_ext_chart_item_t *Item;
-  if (Index == -1) Item = Chart->Last; else Item = Chart->Items[Index];
-  TDblBounds B = Item->Bounds;
-  double a = Item->ScaleX, b = Item->ShiftX;
-  double L;
-  if ((int *)Item->DataX)
-  {
-    for (int i = static_cast<int>(B.End); i >= static_cast<int>(B.Begin); i--)
-      if ((Item->DataX[i] - b)/a < A.Right) { L = i; break; }
-      else if (FltEqual((Item->DataX[i] - b)/a, A.Right)) { L = i; break; }
   }
-  else
-    L = (A.Right - b)/a;
-  if (L > B.End) L = B.End;
-  return static_cast<int>(floor(L));
+  if (L < B.Begin) {
+    L = B.Begin;
+  }
+  return static_cast<fn_size_t>(ceil(L));
 }
 
+mx_ext_chart_types::size_type EndChartRange(mx_ext_chart_t *Chart,
+  mx_ext_chart_types::size_type Index)
+{
+  rect_float_type A = Chart->Area;
+  mx_ext_chart_item_t *Item = IRS_NULL;
+  if (Index == mx_ext_chart_last()) {
+    Item = Chart->Last;
+  } else {
+    Item = Chart->Items[Index];
+  }
+  bounds_float_type B = Item->Bounds;
+  double a = Item->ScaleX;
+  double b = Item->ShiftX;
+  double L = 0;
+  typedef mx_ext_chart_types::size_type fn_size_t;
+  if (Item->DataX)
+  {
+    fn_size_t pixel_begin = static_cast<fn_size_t>(B.Begin);
+    fn_size_t pixel_end = static_cast<fn_size_t>(B.End);
+    for (fn_size_t i = pixel_begin; i <= pixel_end; i++) {
+      if ((Item->DataX[i] - b)/a < A.Right) {
+        L = i;
+        break;
+      } else if (FltEqual((Item->DataX[i] - b)/a, A.Right)) {
+        L = i;
+        break;
+      }
+    }
+  } else {
+    L = (A.Right - b)/a;
+  }
+  if (L > B.End) {
+    L = B.End;
+  }
+  return static_cast<fn_size_t>(floor(L));
+}
+mx_ext_chart_types::size_type mx_ext_chart_last()
+{
+  return static_cast<mx_ext_chart_types::size_type>(-1);
+}
+
+#ifdef NOP
 double RoundTo2(double x, int Dig2 = 5)
 {
   union { double y; __int64 i64; };
@@ -95,14 +135,14 @@ bool AnyKeyPress()
   for(register int i = 0; i < 256; i++) if (KeyPress(i)) return true;
   return false;
 }
-
+#endif //NOP
 
 //***************************************************************************
 // mx_ext_chart_item_t - Компонент на mx_ext_chart_t
 
 
 // Конструктор компонета
-mx_ext_chart_item_t::mx_ext_chart_item_t(TComponent *AOwner)
+mx_ext_chart_item_t::mx_ext_chart_item_t()
   :TComponent(AOwner),
   FHide(true),
   NeedCalculate(true),
@@ -125,7 +165,7 @@ mx_ext_chart_item_t::mx_ext_chart_item_t(TComponent *AOwner)
   //bool FAutoScale[2];
   FOnChange(NULL),
   FOnError(NULL),
-  //int FGroup[2];
+  //size_type FGroup[2];
   FShiftX(0.),
   FShiftY(0.),
   FScaleX(1.),
@@ -133,10 +173,10 @@ mx_ext_chart_item_t::mx_ext_chart_item_t(TComponent *AOwner)
   FPen(new TPen()),
   FMarkerPen(new TPen())
 {
-  for (int i = 0; i < 2; i++) {
+  for (size_type i = 0; i < 2; i++) {
     FFunc[i] = DefFunc;
     FAutoScale[i] = true;
-    FData[i] = (int *)IRS_NULL;
+    FData[i] = IRS_NULL;
     FGroup[i] = 0;
   }
 }
@@ -150,14 +190,14 @@ mx_ext_chart_item_t::~mx_ext_chart_item_t()
   FMarkerPen = NULL;
 }
 
-TPoint mx_ext_chart_item_t::ConvCoor(TDblPoint P)
+point_int_type mx_ext_chart_item_t::ConvCoor(point_float_type P)
 {
-  double k = 0; int x = 0, y = 0;
+  double k = 0; int_type x = 0, y = 0;
   try
   {
     if (FArea.Right != FArea.Left)
       k = (P.x - FArea.Left)/(FArea.Right - FArea.Left);
-    x = static_cast<int>(BoundsRect.Left + (Width - 1)*k);
+    x = static_cast<int_type>(BoundsRect.Left + (Width - 1)*k);
   }
   catch (Exception &e)
   { FError = true; if (FOnError) FOnError(this, e, P, 0, cetConvX); }
@@ -165,7 +205,7 @@ TPoint mx_ext_chart_item_t::ConvCoor(TDblPoint P)
   {
     if (FArea.Top != FArea.Bottom)
       k = (P.y - FArea.Bottom)/(FArea.Top - FArea.Bottom);
-    y = static_cast<int>(BoundsRect.Bottom - (Height - 1)*k - 1);
+    y = static_cast<int_type>(BoundsRect.Bottom - (Height - 1)*k - 1);
   }
   catch (Exception &e)
   { FError = true; if (FOnError) FOnError(this, e, P, 0, cetConvY); }
@@ -177,18 +217,19 @@ void mx_ext_chart_item_t::Invalidate()
   NeedCalculate = NeedAutoScale = true;
 }
 
-TDblPoint mx_ext_chart_item_t::XYFunc(double t) const
+point_float_type mx_ext_chart_item_t::XYFunc(double t) const
 {
   return DblPoint(FFunc[0](t), FFunc[1](t));
 }
 
-bool mx_ext_chart_item_t::IntoArea(TDblPoint P) const
+bool mx_ext_chart_item_t::IntoArea(point_float_type P) const
 {
   return (P.x >= ClipArea.Left) && (P.x <= ClipArea.Right) &&
     (P.y >= ClipArea.Bottom) && (P.y <= ClipArea.Top);
 }
 
-bool mx_ext_chart_item_t::OutArea(TDblPoint P1, TDblPoint P2) const
+bool mx_ext_chart_item_t::OutArea(point_float_type P1,
+  point_float_type P2) const
 {
   return (P1.x < ClipArea.Left) && (P2.x < ClipArea.Left) ||
          (P1.x > ClipArea.Right) && (P2.x > ClipArea.Right) ||
@@ -196,12 +237,12 @@ bool mx_ext_chart_item_t::OutArea(TDblPoint P1, TDblPoint P2) const
          (P1.y > ClipArea.Top && P2.y > ClipArea.Top);
 }
 
-bool mx_ext_chart_item_t::ClipLine(TDblPoint &P1, TDblPoint &P2) const
+bool mx_ext_chart_item_t::ClipLine(point_float_type &P1, point_float_type &P2) const
 {
   if (OutArea(P1, P2)) return false;
   bool P1Into = IntoArea(P1), P2Into = IntoArea(P2);
   if (P1Into && P2Into) return true;
-  vector<TDblPoint> P;
+  vector<point_float_type> P;
   if (P1Into) P.push_back(P1); if (P2Into) P.push_back(P2);
   double x1 = ClipArea.Left, x2 = ClipArea.Right;
   double y1 = ClipArea.Bottom, y2 = ClipArea.Top;
@@ -249,15 +290,15 @@ bool mx_ext_chart_item_t::ClipLine(TDblPoint &P1, TDblPoint &P2) const
 
 void mx_ext_chart_item_t::DoCalculate()
 {
-  TPoint P = TPoint(), OldP = TPoint();
-  TDblPoint DP = TDblPoint(), OldDP = TDblPoint();
+  point_int_type P = point_int_type(), OldP = point_int_type();
+  point_float_type DP = point_float_type(), OldDP = point_float_type();
   double Begin = 0., End = 0.;
   double AW = FArea.Right - FArea.Left; double AH = FArea.Top - FArea.Bottom;
-  int B = 0, E = 0, L = 0;
+  int_type B = 0, E = 0, L = 0;
   ClipArea = DblRect(FArea.Left - 0.1*AW, FArea.Top + 0.1*AH,
     FArea.Right + 0.1*AW, FArea.Bottom - 0.1*AH);
   Lines.clear();
-  if (!(int *)DataX)
+  if (!DataX)
   {
     Begin = max(FStep*floor(FArea.Left/FStep), Bounds.Begin);
     End = min(FStep*ceil(FArea.Right/FStep), Bounds.End);
@@ -265,7 +306,7 @@ void mx_ext_chart_item_t::DoCalculate()
     E = ConvCoor(DblPoint(End, 0)).x;
     L = E - B + 1;
   }
-  else if (!(int *)DataY)
+  else if (!DataY)
   {
     Begin = max(FStep*floor(FArea.Bottom/FStep), Bounds.Begin);
     End = min(FStep*ceil(FArea.Top/FStep), Bounds.End);
@@ -278,13 +319,13 @@ void mx_ext_chart_item_t::DoCalculate()
     Begin = Bounds.Begin; End = Bounds.End;
   }
   if (Begin > End) return;
-  if (!(int *)DataX && (End - Begin)/Step > 2*L)
+  if (!DataX && (End - Begin)/Step > 2*L)
   {
     double dA = (End - Begin)/L;
     double t = Begin, y = 0.;
-    for(int i = 0; i < L; i++)
+    for(size_type i = 0; i < L; i++)
     {
-      TPoint P1, P2;
+      point_int_type P1, P2;
       double t2 = Begin + (i + 1)*dA - Step/4;
       FError = false;
       double Max = FFunc[1](t), Min = Max; t += Step;
@@ -321,13 +362,13 @@ void mx_ext_chart_item_t::DoCalculate()
       }
     }
   }
-  else if (!(int *)DataY && (End - Begin)/Step > 2*L)
+  else if (!DataY && (End - Begin)/Step > 2*L)
   {
     double dA = (End - Begin)/L;
     double t = Begin, x = 0.;
-    for(int i = 0; i < L; i++)
+    for(size_type i = 0; i < L; i++)
     {
-      TPoint P1, P2;
+      point_int_type P1, P2;
       double t2 = Begin + (i + 1)*dA - Step/4;
       FError = false;
       double Max = FFunc[0](t), Min = Max;
@@ -373,7 +414,7 @@ void mx_ext_chart_item_t::DoCalculate()
     {
       FError = false;
       DP = XYFunc(t);
-      TDblPoint OldDP1 = OldDP, DP1 = DP;
+      point_float_type OldDP1 = OldDP, DP1 = DP;
       if (!ClipLine(OldDP1, DP1)) { OldDP = DP; continue; }
       P = ConvCoor(DP1); OldP = ConvCoor(OldDP1);
       if (FError) return;
@@ -417,8 +458,12 @@ void mx_ext_chart_item_t::Paint(int Tag)
   else
     for (unsigned i = 0; i < Lines.size(); i++) LineP(Dev, Lines[i]);
   // Отображение маркеров
-  for(int i=0; i<IndexMarkerX; i++) PaintMarkerX(i);
-  for(int i=0; i<IndexMarkerY; i++) PaintMarkerY(i);
+  for(size_type i = 0; i < IndexMarkerX; i++) {
+    PaintMarkerX(i);
+  }
+  for(size_type i = 0; i < IndexMarkerY; i++) {
+    PaintMarkerY(i);
+  }
   Dev->Pen = OldPen;
   delete OldPen;
   OldPen = NULL;
@@ -448,7 +493,7 @@ void mx_ext_chart_item_t::SetCanvas(TCanvas *Value)
   }
 }
 
-void mx_ext_chart_item_t::PaintMarkerX(int i)
+void mx_ext_chart_item_t::PaintMarkerX(size_type i)
 {
   if (!ValidRect()) return;
   mx_ext_chart_t *OwnerChart = (mx_ext_chart_t *)Owner;
@@ -461,17 +506,17 @@ void mx_ext_chart_item_t::PaintMarkerX(int i)
   double XCoor = (FMarkerX[i] - FShiftX)/FScaleX;
   if (XCoor < FArea.Left && XCoor > FArea.Right)
     return;
-  TPoint P1 = ConvCoor(DblPoint(XCoor, FArea.Top));
+  point_int_type P1 = ConvCoor(DblPoint(XCoor, FArea.Top));
   if (GroupX == OwnerChart->Items[OwnerChart->BaseItem]->GroupX)
   { OwnerChart->PaintChildMarkerX(this, P1.x); return; }
-  TPoint P2 = ConvCoor(DblPoint(XCoor, FArea.Bottom));
+  point_int_type P2 = ConvCoor(DblPoint(XCoor, FArea.Bottom));
   DashLine(Dev, P1, P2, 5, 5);
   Dev->Pen = OldPen;
   delete OldPen;
   OldPen = NULL;
 }
 
-void mx_ext_chart_item_t::PaintMarkerY(int i)
+void mx_ext_chart_item_t::PaintMarkerY(size_type i)
 {
   if (!ValidRect()) return;
   mx_ext_chart_t *OwnerChart = (mx_ext_chart_t *)Owner;
@@ -484,10 +529,10 @@ void mx_ext_chart_item_t::PaintMarkerY(int i)
   double YCoor = (FMarkerY[i] - FShiftY)/FScaleY;
   if (YCoor < FArea.Bottom && YCoor > FArea.Top)
     return;
-  TPoint P1 = ConvCoor(DblPoint(FArea.Left, YCoor));
+  point_int_type P1 = ConvCoor(DblPoint(FArea.Left, YCoor));
   if (GroupY == OwnerChart->Items[OwnerChart->BaseItem]->GroupY)
   { OwnerChart->PaintChildMarkerY(this, P1.y); return; }
-  TPoint P2 = ConvCoor(DblPoint(FArea.Right, YCoor));
+  point_int_type P2 = ConvCoor(DblPoint(FArea.Right, YCoor));
   DashLine(Dev, P1, P2, 5, 5);
   Dev->Pen = OldPen;
   delete OldPen;
@@ -495,9 +540,9 @@ void mx_ext_chart_item_t::PaintMarkerY(int i)
 }
 
 // Представление массивов в виде функций
-double mx_ext_chart_item_t::Func(int i, double x) const
+double mx_ext_chart_item_t::Func(idx_t i, double x) const
 {
-  return static_cast<double>(FData[i][static_cast<int>(x + 0.5)]);
+  return static_cast<double>(FData[i][static_cast<size_type>(x + 0.5)]);
 }
 
 // Вспомогательная функция по X
@@ -527,24 +572,6 @@ double mx_ext_chart_item_t::FuncY(double x)
 }
 
 // Установка данных (массивов или функций) для построения
-void mx_ext_chart_item_t::SetData(int Index, TPointer Value)
-{
-  FData[Index] = Value;
-  if ((double*)Value)
-  {
-    FHide = false;
-    if ((Value.Type == dtFunction) || (Value.Type == dtMethod))
-      FFunc[Index] = Value.operator TClassDblFunc();
-    else
-      if (Index == 0) FFunc[0] = FuncX; else FFunc[1] = FuncY;
-  }
-  else
-    FFunc[Index] = DefFunc;
-  NeedCalculate = NeedAutoScale = true;
-  FloorAxis();
-  if (FOnChange) FOnChange(this, cctData);
-}
-
 // Выравнивание под массив
 void mx_ext_chart_item_t::FloorAxis()
 {
@@ -561,7 +588,7 @@ void mx_ext_chart_item_t::DoAutoScale()
 {
   bool ChangeArea = false;
   double t, Max = 0, Min = 0;
-  for(int i = 0; i < 2; i++)
+  for(size_type i = 0; i < 2; i++)
   if (FAutoScale[i])
   {
     FError = false;
@@ -585,13 +612,13 @@ void mx_ext_chart_item_t::DoAutoScale()
   if (ChangeArea) if (FOnChange) FOnChange(this, cctArea);
 }
 
-TCompConv mx_ext_chart_item_t::GetCompConv(int Index) const
+TCompConv mx_ext_chart_item_t::GetCompConv(idx_t Index) const
 {
   return FData[Index].CompConv;
 }
 
 // Установка типа конверсии из cmp в double
-void mx_ext_chart_item_t::SetCompConv(int Index, TCompConv Value)
+void mx_ext_chart_item_t::SetCompConv(idx_t Index, TCompConv Value)
 {
   if ((Value >= ccReal) && (Value <= ccArg))
   if (FData[Index].CompConv != Value)
@@ -601,36 +628,181 @@ void mx_ext_chart_item_t::SetCompConv(int Index, TCompConv Value)
     if (FOnChange) FOnChange(this, cctCompConv);
     //** Для mx_ext_chart_select_t **
     mx_ext_chart_t *Chart = (mx_ext_chart_t *)Owner;
-    int i = 0; for (; i < Chart->FCount && Chart->FItems[i] != this; i++)
-    if (Chart->Select) Chart->Select->ItemChange(3 + Index, i);
+    for (size_type i = 0; i < Chart->FCount && Chart->FItems[i] != this; i++) {
+      if (Chart->Select) {
+        Chart->Select->ItemChange(3 + Index, i);
+      }
+    }
     //************************
   }
 }
 
-void mx_ext_chart_item_t::SetGroup(int Index, int AGroup)
+void mx_ext_chart_item_t::group(idx_t Index, size_type a_group_x)
 {
-  FGroup[Index] = AGroup;
+  FGroup[Index] = a_group_x;
   if (FOnChange) FOnChange(this, cctGroup);
 }
-
-// Функция по умолчанию.
-double mx_ext_chart_item_t::DefFunc(double x) const
+size_type mx_ext_chart_item_t::group_x() const
 {
-  return x;
+  return FGroup[x_idx];
 }
-
-void mx_ext_chart_item_t::SetPen(TPen *Value)
+void mx_ext_chart_item_t::group_x(size_type a_group_x)
 {
-  FPen->Assign(Value);
+  group(x_idx, a_group_x);
 }
-
-void mx_ext_chart_item_t::SetMarkerPen(TPen *Value)
+size_type mx_ext_chart_item_t::group_y() const
 {
-  FMarkerPen->Assign(Value);
+  return FGroup[y_idx];
 }
-
+void mx_ext_chart_item_t::group_y(size_type a_group_y)
+{
+  group(y_idx, a_group_y);
+}
+float_type mx_ext_chart_item_t::shift_x() const
+{
+  return FShiftX;
+}
+void mx_ext_chart_item_t::shift_x(const float_type& a_shift_x)
+{
+  FShiftX = a_shift_x;
+}
+float_type mx_ext_chart_item_t::shift_y() const
+{
+  return FShiftY;
+}
+void mx_ext_chart_item_t::shift_y(const float_type& a_shift_y)
+{
+  FShiftY = a_shift_y;
+}
+float_type mx_ext_chart_item_t::scale_x() const
+{
+  return FScaleX;
+}
+void mx_ext_chart_item_t::scale_x(const float_type& a_scale_x)
+{
+  FScaleX = a_scale_x;
+}
+float_type mx_ext_chart_item_t::scale_y() const
+{
+  return FScaleY;
+}
+void mx_ext_chart_item_t::scale_y(const float_type& a_scale_y)
+{
+  FScaleY = a_scale_y;
+}
+bool mx_ext_chart_item_t::hide() const
+{
+  return FHide;
+}
+void mx_ext_chart_item_t::hide(bool a_hide)
+{
+  if (FData[x_idx] || FData[y_idx]) {
+    FHide = a_hide;
+  } else {
+    FHide = true;
+  }
+  if (FOnChange) {
+    FOnChange(this, cctHide);
+  }
+}
+void mx_ext_chart_item_t::data(idx_t Index, TPointer Value)
+{
+  FData[Index] = Value;
+  if ((double*)Value)
+  {
+    FHide = false;
+    if ((Value.Type == dtFunction) || (Value.Type == dtMethod))
+      FFunc[Index] = Value.operator TClassDblFunc();
+    else
+      if (Index == 0) FFunc[0] = FuncX; else FFunc[1] = FuncY;
+  }
+  else
+    FFunc[Index] = DefFunc;
+  NeedCalculate = NeedAutoScale = true;
+  FloorAxis();
+  if (FOnChange) FOnChange(this, cctData);
+}
+TPointer mx_ext_chart_item_t::data_x() const
+{
+  return FData[x_idx];
+}
+void mx_ext_chart_item_t::data_x(TPointer ap_data_x)
+{
+  data(x_idx, ap_data_x);
+}
+TPointer mx_ext_chart_item_t::data_y() const
+{
+  return FData[y_idx];
+}
+void mx_ext_chart_item_t::data_y(TPointer ap_data_y)
+{
+  data(y_idx, ap_data_y);
+}
+TCompConv mx_ext_chart_item_t::comp_conv_x() const
+{
+  return GetCompConv(x_idx);
+}
+void mx_ext_chart_item_t::comp_conv_x(TCompConv a_comp_conv)
+{
+  SetCompConv(x_idx, a_comp_conv);
+}
+TCompConv mx_ext_chart_item_t::comp_conv_y() const
+{
+  return GetCompConv(y_idx);
+}
+void mx_ext_chart_item_t::comp_conv_y(TCompConv a_comp_conv)
+{
+  SetCompConv(y_idx, a_comp_conv);
+}
+bool mx_ext_chart_item_t::auto_scale_x() const
+{
+  return FAutoScale[x_idx];
+}
+void mx_ext_chart_item_t::auto_scale_x(bool a_auto_scale_x)
+{
+  SetAutoScale(x_idx, a_auto_scale_x);
+}
+bool mx_ext_chart_item_t::auto_scale_y() const
+{
+  return FAutoScale[y_idx];
+}
+void mx_ext_chart_item_t::auto_scale_y(bool a_auto_scale_y)
+{
+  SetAutoScale(y_idx, a_auto_scale_y);
+}
+float_type mx_ext_chart_item_t::step() const
+{
+  return FStep;
+}
+void mx_ext_chart_item_t::step(const float_type& a_step)
+{
+  SetStep(a_step);
+}
+bounds_float_type mx_ext_chart_item_t::bounds() const
+{
+  return FBounds;
+}
+// Установка пределов построения
+void mx_ext_chart_item_t::bounds(const bounds_float_type& a_bounds)
+{
+  if ((a_bounds.begin < a_bounds.end) && (FBounds != a_bounds))
+  {
+    FBounds = a_bounds; FloorAxis();
+    NeedCalculate = NeedAutoScale = true;
+    if (FOnChange) FOnChange(this, cctBounds);
+  }
+}
+rect_float_type mx_ext_chart_item_t::area() const
+{
+  if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
+  rect_float_type VArea = FArea;
+  double ScX = FScaleX, ScY = FScaleY;
+  double ShX = FShiftX, ShY = FShiftY;
+  return DblRect(VArea.Left*ScX + ShX, VArea.Top*ScY + ShY,
+    VArea.Right*ScX + ShX, VArea.Bottom*ScY + ShY);
+}
 // Установка области построения
-void mx_ext_chart_item_t::SetArea(TDblRect AArea)
+void mx_ext_chart_item_t::area(const rect_float_type& AArea)
 {
   bool AreaChange = false;
   double ScX = FScaleX, ScY = FScaleY;
@@ -655,14 +827,32 @@ void mx_ext_chart_item_t::SetArea(TDblRect AArea)
   }
   if (AreaChange) if (FOnChange) FOnChange(this, cctArea);
 }
-
-void mx_ext_chart_item_t::SetHide(bool Value)
+size_type count_marker_x() const
 {
-  if ((int*)FData[0] || (int*)FData[1]) FHide = Value; else FHide = true;
-  if (FOnChange) FOnChange(this, cctHide);
+  return IndexMarkerX;
+}
+size_type count_marker_y() const
+{
+  return IndexMarkerY;
 }
 
-void mx_ext_chart_item_t::SetShift(int Index, double Value)
+// Функция по умолчанию.
+double mx_ext_chart_item_t::DefFunc(double x) const
+{
+  return x;
+}
+
+void mx_ext_chart_item_t::SetPen(TPen *Value)
+{
+  FPen->Assign(Value);
+}
+
+void mx_ext_chart_item_t::SetMarkerPen(TPen *Value)
+{
+  FMarkerPen->Assign(Value);
+}
+
+void mx_ext_chart_item_t::SetShift(size_type Index, double Value)
 {
   if (Index == 0) ShiftX = Value; else ShiftY = Value;
   if (FOnChange) FOnChange(this, cctShift);
@@ -672,17 +862,6 @@ void mx_ext_chart_item_t::SetScale(int Index, double Value)
 {
   if (Index == 0) ScaleX = Value; else ScaleY = Value;
   if (FOnChange) FOnChange(this, cctScale);
-}
-
-// Установка пределов построения
-void mx_ext_chart_item_t::SetBounds(TDblBounds Value)
-{
-  if ((Value.Begin < Value.End) && (FBounds != Value))
-  {
-    FBounds = Value; FloorAxis();
-    NeedCalculate = NeedAutoScale = true;
-    if (FOnChange) FOnChange(this, cctBounds);
-  }
 }
 
 // Установка шага
@@ -697,7 +876,7 @@ void mx_ext_chart_item_t::SetStep(double Step)
 }
 
 // Установка автомасштабирования
-void mx_ext_chart_item_t::SetAutoScale(int Index, bool Value)
+void mx_ext_chart_item_t::SetAutoScale(idx_t Index, bool Value)
 {
   if (FAutoScale[Index] != Value)
   {
@@ -708,7 +887,7 @@ void mx_ext_chart_item_t::SetAutoScale(int Index, bool Value)
   }
 }
 
-void mx_ext_chart_item_t::SetBoundsRect(TRect Value)
+void mx_ext_chart_item_t::SetBoundsRect(rect_int_type Value)
 {
   if ((Value.Right - Value.Left != FBoundsRect.Right - FBoundsRect.Left) ||
       (Value.Bottom - Value.Top != FBoundsRect.Bottom - FBoundsRect.Top))
@@ -718,66 +897,56 @@ void mx_ext_chart_item_t::SetBoundsRect(TRect Value)
   if (FOnChange) FOnChange(this, cctBoundsRect);
 }
 
-void mx_ext_chart_item_t::SetLeft(int Value)
+void mx_ext_chart_item_t::SetLeft(int_type Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Left = Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_item_t::SetTop(int Value)
+void mx_ext_chart_item_t::SetTop(int_type Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Top = Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_item_t::SetWidth(int Value)
+void mx_ext_chart_item_t::SetWidth(int_type Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Right = R.Left + Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_item_t::SetHeight(int Value)
+void mx_ext_chart_item_t::SetHeight(int_type Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Bottom = R.Top + Value;
   BoundsRect = R;
 }
 
-TRect mx_ext_chart_item_t::GetBoundsRect() const
+rect_int_type mx_ext_chart_item_t::GetBoundsRect() const
 {
   ((mx_ext_chart_t *)Owner)->PreCalc();
   return FBoundsRect;
 }
 
-TDblRect mx_ext_chart_item_t::GetArea()
-{
-  if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
-  TDblRect VArea = FArea;
-  double ScX = FScaleX, ScY = FScaleY;
-  double ShX = FShiftX, ShY = FShiftY;
-  return DblRect(VArea.Left*ScX + ShX, VArea.Top*ScY + ShY,
-    VArea.Right*ScX + ShX, VArea.Bottom*ScY + ShY);
-}
-
-int mx_ext_chart_item_t::GetLeft() const
+int_type mx_ext_chart_item_t::GetLeft() const
 {
   return FBoundsRect.Left;
 }
 
-int mx_ext_chart_item_t::GetTop() const
+int_type mx_ext_chart_item_t::GetTop() const
 {
   return FBoundsRect.Top;
 }
 
-int mx_ext_chart_item_t::GetWidth() const
+int_type mx_ext_chart_item_t::GetWidth() const
 {
   return FBoundsRect.Right - FBoundsRect.Left;
 }
 
-int mx_ext_chart_item_t::GetHeight() const
+int_type mx_ext_chart_item_t::GetHeight() const
 {
   return FBoundsRect.Bottom - FBoundsRect.Top;
 }
@@ -829,8 +998,8 @@ void mx_ext_chart_item_t::SetMarkerX(int Index, double Value)
   {
     double X1 = (FMarkerX[Index] - FShiftX)/FScaleX;
     double X2 = (Value - FShiftX)/FScaleX;
-    int OldPos = ConvCoor(DblPoint(X1, FArea.Top)).x;
-    int NewPos = ConvCoor(DblPoint(X2, FArea.Top)).x;
+    int_type OldPos = ConvCoor(DblPoint(X1, FArea.Top)).x;
+    int_type NewPos = ConvCoor(DblPoint(X2, FArea.Top)).x;
     if (NewPos != OldPos)
     { PaintMarkerX(Index); FMarkerX[Index] = Value; PaintMarkerX(Index); }
     else
@@ -846,8 +1015,8 @@ void mx_ext_chart_item_t::SetMarkerY(int Index, double Value)
   {
     double Y1 = (FMarkerY[Index] - FShiftY)/FScaleY;
     double Y2 = (Value - FShiftY)/FScaleY;
-    int OldPos = ConvCoor(DblPoint(FArea.Left, Y1)).y;
-    int NewPos = ConvCoor(DblPoint(FArea.Left, Y2)).y;
+    int_type OldPos = ConvCoor(DblPoint(FArea.Left, Y1)).y;
+    int_type NewPos = ConvCoor(DblPoint(FArea.Left, Y2)).y;
     if (NewPos != OldPos)
     { PaintMarkerY(Index); FMarkerY[Index] = Value; PaintMarkerY(Index); }
     else
@@ -1112,7 +1281,7 @@ void mx_ext_chart_t::SaveToMetafile(String FileName)
   if (!ValidRect()) return;
   PaintMode = true;
   TMetafile *emf = new TMetafile();
-  int W = 32000, H = 16000;
+  int_type W = 32000, H = 16000;
   emf->Width = W; emf->Height = H;
   TMetafileCanvas *emfCanvas = new TMetafileCanvas(emf, 0);
   CurCanvas = emfCanvas;
@@ -1244,8 +1413,10 @@ void mx_ext_chart_t::SetAutoScaleY(bool Value)
 String mx_ext_chart_t::SFF(double x, double Step) const
 {
   if (fabs(x) < DblError) return "0";
-  int ex = ( (x == 0)?0:static_cast<int>(floor(log10(fabs(x)))) );
-  int es = ( (Step == 0)?0:static_cast<int>(floor(log10(fabs(Step)))) );
+  int_type ex = ( (x == 0)?0:static_cast<int_type>(
+    floor(log10(fabs(x)))) );
+  int_type es = ( (Step == 0)?0:static_cast<int_type>(
+    floor(log10(fabs(Step)))) );
   String NumIntoStr;
   if (ex >= 0 && es >= 0 && es < 15)
   {
@@ -1258,18 +1429,18 @@ String mx_ext_chart_t::SFF(double x, double Step) const
   return NumIntoStr;
 }
 
-double mx_ext_chart_t::StepCalc(double Begin, double End, int Size,
-  int MinSize, bool IsWidth, bool AccountText)
+double mx_ext_chart_t::StepCalc(double Begin, double End, int_type Size,
+  int_type MinSize, bool IsWidth, bool AccountText)
 {
-  int Steps[] = {5, 2, 1};
+  int_type Steps[] = {5, 2, 1};
   int StepCount = sizeof(Steps)/sizeof(*Steps);
   bool Break = false;
   int STW, i0, j0, iST, jST;
-  int TH = FCurCanvas->TextHeight("0");
-  int S = TH/4;
+  int_type TH = FCurCanvas->TextHeight("0");
+  int_type S = TH/4;
   double MinSW;
   double AS = End - Begin;
-  int e = (AS == 0)?0:static_cast<int>(floor(log10(fabs(AS))));
+  int_type e = (AS == 0)?0:static_cast<int_type>(floor(log10(fabs(AS))));
   i0 = e - 1; j0 = 0;
   for (int j = 0; j < StepCount; j++)
   {
@@ -1287,14 +1458,14 @@ double mx_ext_chart_t::StepCalc(double Begin, double End, int Size,
       {
         if (IsWidth)
         {
-          int TW1 = 0, TW2 = 0;
+          int_type TW1 = 0, TW2 = 0;
           STW = 0;
           double X0 = CurSS*ceil(Begin/CurSS);
           if (X0 <= End)
           {
             TW1 = CurCanvas->TextWidth(SFF(X0, CurSS))/2;
             if (TW1 > (X0 - FArea.Left)/AS*double(Size - 1))
-              TW1 = static_cast<int>(2*TW1 - (X0 - FArea.Left)/
+              TW1 = static_cast<int_type>(2*TW1 - (X0 - FArea.Left)/
                 AS*double(Size - 1));
           }
           else return Inf;
@@ -1305,8 +1476,9 @@ double mx_ext_chart_t::StepCalc(double Begin, double End, int Size,
             TW2 = (CurCanvas->TextWidth(SFF(i, CurSS)) + 1)/2;
             if (i + CurSS > End)
               if (TW2 > (End - i)/AS*double(Size - 1))
-                TW2 = static_cast<int>(2*TW2 - (End - i)/AS*double(Size - 1));
-            int CurW = TW1 + TW2 + S;
+                TW2 = static_cast<int_type>(2*TW2 - (End - i)/AS*
+                  double(Size - 1));
+            int_type CurW = TW1 + TW2 + S;
             STW = max(CurW, STW);
             TW1 = TW2;
           }
@@ -1315,18 +1487,19 @@ double mx_ext_chart_t::StepCalc(double Begin, double End, int Size,
         }
         else
         {
-          int TH1 = TH/2, TH2 = (TH + 1)/2;
+          int_type TH1 = TH/2, TH2 = (TH + 1)/2;
           double Y1 = CurSS*ceil(Begin/CurSS);
           if (Y1 <= End)
           {
             if (TH1 > (Y1 - Begin)/AS*double(Size - 1))
-              TH1 = static_cast<int>(TH - (Y1 - Begin)/AS*double(Size - 1));
+              TH1 = static_cast<int_type>(TH - (Y1 - Begin)/AS*
+                double(Size - 1));
             double Y2 = CurSS*floor(End/CurSS);
             if (fabs(Y2) < CurSS/2) Y2 = 0;
             if (Y2 > Y1)
             {
               if (TH2 > (End - Y2)/AS*double(Size - 1))
-                TH2 = static_cast<int>(TH - (End - Y2)/AS*double(Size - 1));
+                TH2 = static_cast<int_type>(TH - (End - Y2)/AS*double(Size - 1));
               STW = TH1 + TH2 + S;
             }
             else if (TH < Size) STW = TH; else return Inf;
@@ -1354,27 +1527,27 @@ void mx_ext_chart_t::CalcGrid()
   ApplyTextX = true; ApplyTextY = true;
   int PixelsX = GetDeviceCaps(FCurCanvas->Handle, LOGPIXELSX);
   int PixelsY = GetDeviceCaps(FCurCanvas->Handle, LOGPIXELSY);
-  double PMinW = FMinWidthGrid*PixelsX/2.54;
-  double PMinH = FMinHeightGrid*PixelsY/2.54;
-  int W = FCurRect.Right - FCurRect.Left;
-  int H = FCurRect.Bottom - FCurRect.Top;
-  int TH = CurCanvas->TextHeight("0");
-  int S = TH/4;
-  int GH = H - TH - 2 - 2*S;
+  int_type PMinW = static_cast<int_type>(FMinWidthGrid*PixelsX/2.54);
+  int_type PMinH = static_cast<int_type>(FMinHeightGrid*PixelsY/2.54);
+  int_type W = FCurRect.Right - FCurRect.Left;
+  int_type H = FCurRect.Bottom - FCurRect.Top;
+  int_type TH = CurCanvas->TextHeight("0");
+  int_type S = TH/4;
+  int_type GH = H - TH - 2 - 2*S;
   if (GH < 1) { ApplyTextX = false; GH = H - 2; }
 
   // Вычисление SH - шага сетки по вертикали
-  SH = StepCalc(FArea.Bottom, FArea.Top, GH, (int)PMinH, false, true);
+  SH = StepCalc(FArea.Bottom, FArea.Top, GH, PMinH, false, true);
   if (SH == Inf) ApplyTextY = false;
-  int TWM = 0;
-  int GW = W - 2;
+  int_type TWM = 0;
+  int_type GW = W - 2;
   if (ApplyTextY)
   {
     double Y0 = SH*ceil(FArea.Bottom/SH);
     if (Y0 < FArea.Top) TWM = CurCanvas->TextWidth(SFF(Y0, SH));
     for (double i = Y0 + SH; i < FArea.Top; i += SH)
     {
-      int CurW = CurCanvas->TextWidth(SFF(i, SH));
+      int_type CurW = CurCanvas->TextWidth(SFF(i, SH));
       TWM = max(TWM, CurW);
     }
     GW = W - TWM - 2 - 2*S;
@@ -1384,11 +1557,11 @@ void mx_ext_chart_t::CalcGrid()
   // Вычисление SW - шага сетки по горизонтали
   if (ApplyTextX)
   {
-    SW = StepCalc(FArea.Left, FArea.Right, GW, (int)PMinW, true, true);
+    SW = StepCalc(FArea.Left, FArea.Right, GW, PMinW, true, true);
     if (SW == Inf)
     {
       GH = H - 2; ApplyTextX = false; ApplyTextY = true;
-      SH = StepCalc(FArea.Bottom, FArea.Top, GH, (int)PMinH, false, true);
+      SH = StepCalc(FArea.Bottom, FArea.Top, GH, PMinH, false, true);
       if (SH == Inf) ApplyTextY = false;
       TWM = 0;
       GW = W - 2;
@@ -1398,7 +1571,7 @@ void mx_ext_chart_t::CalcGrid()
         if (Y0 < FArea.Top) TWM = CurCanvas->TextWidth(SFF(Y0, SH));
         for (double i = Y0 + SH; i < FArea.Top; i += SH)
         {
-          int CurW = CurCanvas->TextWidth(SFF(i, SH));
+          int_type CurW = CurCanvas->TextWidth(SFF(i, SH));
           TWM = max(TWM, CurW);
         }
         GW = W - TWM - 2 - 2*S;
@@ -1419,10 +1592,10 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
   if (!ApplyTextX && !ApplyTextY) return;
   int PixelsX = GetDeviceCaps(FCurCanvas->Handle, LOGPIXELSX);
   int PixelsY = GetDeviceCaps(FCurCanvas->Handle, LOGPIXELSY);
-  double PMinWA = FMinWidthAuxGrid*PixelsX/2.54;
-  double PMinHA = FMinHeightAuxGrid*PixelsY/2.54;
-  int TH = CurCanvas->TextHeight("0");
-  int S = TH/4;
+  int_type PMinWA = static_cast<int_type>(FMinWidthAuxGrid*PixelsX/2.54);
+  int_type PMinHA = static_cast<int_type>(FMinHeightAuxGrid*PixelsY/2.54);
+  int_type TH = CurCanvas->TextHeight("0");
+  int_type S = TH/4;
   double AW = FArea.Right - FArea.Left;
   double AH = FArea.Top - FArea.Bottom;
   double SWA = 0., SHA = 0.;
@@ -1438,11 +1611,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
     double Y0 = SH*ceil(FArea.Bottom/SH);
     for (double i = Y0; i < FArea.Top; i += SH)
     {
-      int TPY = static_cast<int>(FGridRect.Bottom -
+      int_type TPY = static_cast<int_type>(FGridRect.Bottom -
         (i - FArea.Bottom)/AH*double(GH - 1) - TH/2 - 1);
       if (TPY < FGridRect.Top) TPY = FGridRect.Top;
       if (TPY + TH > FGridRect.Bottom) TPY = FGridRect.Bottom - TH;
-      int TPX = FGridRect.Left - CurCanvas->TextWidth(SFF(i, SH)) - 1 - S;
+      int_type TPX = FGridRect.Left - CurCanvas->TextWidth(SFF(i, SH)) - 1 - S;
       CurCanvas->TextOut(TPX, TPY, SFF(i, SH));
     }
   }
@@ -1451,11 +1624,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
   if (ApplyTextX)
   {
     double X0 = SW*ceil(FArea.Left/SW);
-    int TPY = FGridRect.Bottom + 1 + S;
+    int_type TPY = FGridRect.Bottom + 1 + S;
     for (double i = X0; i < FArea.Right; i += SW)
     {
-      int TW = CurCanvas->TextWidth(SFF(i, SW));
-      int TPX = static_cast<int>((i - FArea.Left)/AW*double(GW - 1) +
+      int_type TW = CurCanvas->TextWidth(SFF(i, SW));
+      int_type TPX = static_cast<int_type>((i - FArea.Left)/AW*double(GW - 1) +
         FGridRect.Left - TW/2);
       if (TPX + TW > FGridRect.Right - 1) TPX = FGridRect.Right - TW - 1;
       if (TPX < FGridRect.Left) TPX = FGridRect.Left;
@@ -1467,13 +1640,13 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
   {
     // Вычисление SHA - шага вспомогательной сетки по вертикали
     if (ApplyTextY)
-      SHA = StepCalc(0, SH, static_cast<int>(SH/AH*double(GH - 1)),
-        static_cast<int>(PMinHA), false, false);
+      SHA = StepCalc(0, SH, static_cast<int_type>(SH/AH*double(GH - 1)),
+        PMinHA, false, false);
 
     // Вычисление SWA - шага вспомогательной сетки по горизонтали
     if (ApplyTextX)
-      SWA = StepCalc(0, SW, static_cast<int>(SW/AW*double(GW - 1)),
-        static_cast<int>(PMinWA), true, false);
+      SWA = StepCalc(0, SW, static_cast<int_type>(SW/AW*double(GW - 1)),
+        PMinWA, true, false);
 
     FCurCanvas->Pen = FAuxGridPen;
     FCurCanvas->Pen->Mode = pmCopy;
@@ -1485,9 +1658,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
       for (double i = Y0; i < FArea.Top; i += SHA)
       {
         if (i - SH*floor(i/SH) < SHA/2) continue;
-        TPoint P1 = ConvCoor(DblPoint(FArea.Left, i));
-        TPoint P2 = ConvCoor(DblPoint(FArea.Right, i));
-        if ((P1.y == FGridRect.Top) || (P1.y == FGridRect.Bottom - 1)) continue;
+        point_int_type P1 = ConvCoor(DblPoint(FArea.Left, i));
+        point_int_type P2 = ConvCoor(DblPoint(FArea.Right, i));
+        if ((P1.y == FGridRect.Top) || (P1.y == FGridRect.Bottom - 1)) {
+          continue;
+        }
         if (BlackAuxGrid) DashLine(CurCanvas, P1, P2, 1, 4);
         else Line(CurCanvas, P1, P2);
       }
@@ -1500,9 +1675,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
       for (double i = X0; i < FArea.Right; i += SWA)
       {
         if (i - SW*floor(i/SW) < SWA/2) continue;
-        TPoint P1 = ConvCoor(DblPoint(i, FArea.Top));
-        TPoint P2 = ConvCoor(DblPoint(i, FArea.Bottom));
-        if ((P1.x == FGridRect.Left) || (P1.x == FGridRect.Right - 1)) continue;
+        point_int_type P1 = ConvCoor(DblPoint(i, FArea.Top));
+        point_int_type P2 = ConvCoor(DblPoint(i, FArea.Bottom));
+        if ((P1.x == FGridRect.Left) || (P1.x == FGridRect.Right - 1)) {
+          continue;
+        }
         if (BlackAuxGrid) DashLine(CurCanvas, P1, P2, 1, 4);
         else Line(CurCanvas, P1, P2);
       }
@@ -1517,9 +1694,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
     double Y0 = SH*ceil(FArea.Bottom/SH);
     for (double i = Y0; i < FArea.Top; i += SH)
     {
-      TPoint P1 = ConvCoor(DblPoint(FArea.Left, i));
-      TPoint P2 = ConvCoor(DblPoint(FArea.Right, i));
-      if ((P1.y == FGridRect.Top) || (P1.y == FGridRect.Bottom - 1)) continue;
+      point_int_type P1 = ConvCoor(DblPoint(FArea.Left, i));
+      point_int_type P2 = ConvCoor(DblPoint(FArea.Right, i));
+      if ((P1.y == FGridRect.Top) || (P1.y == FGridRect.Bottom - 1)) {
+        continue;
+      }
       Line(CurCanvas, P1, P2);
     }
   }
@@ -1530,9 +1709,11 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
     double X0 = SW*ceil(FArea.Left/SW);
     for (double i = X0; i < FArea.Right; i += SW)
     {
-      TPoint P1 = ConvCoor(DblPoint(i, FArea.Top));
-      TPoint P2 = ConvCoor(DblPoint(i, FArea.Bottom));
-      if ((P1.x == FGridRect.Left) || (P1.x == FGridRect.Right - 1)) continue;
+      point_int_type P1 = ConvCoor(DblPoint(i, FArea.Top));
+      point_int_type P2 = ConvCoor(DblPoint(i, FArea.Bottom));
+      if ((P1.x == FGridRect.Left) || (P1.x == FGridRect.Right - 1)) {
+        continue;
+      }
       Line(CurCanvas, P1, P2);
     }
   }
@@ -1546,9 +1727,9 @@ void mx_ext_chart_t::PaintGrid()
 void mx_ext_chart_t::PaintBounds() const
 {
   if (!FShowBounds) return;
-  int TH = FCurCanvas->TextHeight("0");
-  int S = TH/4;
-  int PX, PY;
+  int_type TH = FCurCanvas->TextHeight("0");
+  int_type S = TH/4;
+  int_type PX, PY;
   PX = FGridRect.Left + S;
   PY = FGridRect.Bottom - TH - S;
   CurCanvas->TextOut(PX, PY, FArea.Left);
@@ -1687,11 +1868,12 @@ void mx_ext_chart_t::DoRepaint(int Tag)
   DeleteClipRect(FCurCanvas);
 }
 
-TPoint mx_ext_chart_t::ConvCoor(TDblPoint P) const
+point_int_type mx_ext_chart_t::ConvCoor(point_float_type P) const
 {
-  double k = 0.; int x = 0, y = 0;
-  int Width = FGridRect.Right - FGridRect.Left;
-  int Height = FGridRect.Bottom - FGridRect.Top;
+  double k = 0.;
+  int_type x = 0, y = 0;
+  int_type Width = FGridRect.Right - FGridRect.Left;
+  int_type Height = FGridRect.Bottom - FGridRect.Top;
   double wx = FArea.Right - FArea.Left;
   if (0. == wx) wx = 1e-12;
   try {
@@ -1699,7 +1881,7 @@ TPoint mx_ext_chart_t::ConvCoor(TDblPoint P) const
   } catch (...) {
     k = 0.;
   }
-  x = static_cast<int>(FGridRect.Left + (Width - 1)*k);
+  x = static_cast<int_type>(FGridRect.Left + (Width - 1)*k);
   double wy = FArea.Top - FArea.Bottom;
   if (0. == wy) wy = 1e-12;
   try {
@@ -1707,13 +1889,13 @@ TPoint mx_ext_chart_t::ConvCoor(TDblPoint P) const
   } catch (...) {
     k = 0.;
   }
-  y = static_cast<int>(FGridRect.Bottom - (Height - 1)*k - 1);
+  y = static_cast<int_type>(FGridRect.Bottom - (Height - 1)*k - 1);
   return Point(x, y);
 }
 
-int mx_ext_chart_t::ConvCoorX(double b, double e, double x) const
+int_type mx_ext_chart_t::ConvCoorX(double b, double e, double x) const
 {
-  int Width = FGridRect.Right - FGridRect.Left;
+  int_type Width = FGridRect.Right - FGridRect.Left;
   double w = e - b;
   if (0. == w) w = 1e-12;
   double k;
@@ -1722,12 +1904,12 @@ int mx_ext_chart_t::ConvCoorX(double b, double e, double x) const
   } catch(...) {
     k = 0.;
   }
-  return static_cast<int>(FGridRect.Left + (Width - 1)*k);
+  return static_cast<int_type>(FGridRect.Left + (Width - 1)*k);
 }
 
-int mx_ext_chart_t::ConvCoorY(double b, double e, double y) const
+int_type mx_ext_chart_t::ConvCoorY(double b, double e, double y) const
 {
-  int Height = FGridRect.Bottom - FGridRect.Top;
+  int_type Height = FGridRect.Bottom - FGridRect.Top;
   double w = e - b;
   if (0. == w) w = 1e-12;
   double k;
@@ -1736,7 +1918,7 @@ int mx_ext_chart_t::ConvCoorY(double b, double e, double y) const
   } catch(...) {
     k = 0.;
   }
-  return static_cast<int>(FGridRect.Bottom - (Height - 1)*k - 1);
+  return static_cast<int_type>(FGridRect.Bottom - (Height - 1)*k - 1);
 }
 
 void mx_ext_chart_t::SetChildRect()
@@ -1759,15 +1941,16 @@ void mx_ext_chart_t::SetChildRect()
   vec = GroupsX[FItems[BaseItem]->GroupX];
   for (size_t i = 0; i < vec.size(); i++)
   {
-    TDblRect A = FItems[vec[i]]->Area;
+    rect_float_type A = FItems[vec[i]]->Area;
     A.Left = Area.Left; A.Right = Area.Right;
     FItems[vec[i]]->Area = A;
   }
   for (size_t i = 0; i < vec.size(); i++)
   {
-    TRect R = FItems[vec[i]]->BoundsRect;
+    rect_int_type R = FItems[vec[i]]->BoundsRect;
     R.Left = ConvCoorX(Area.Left, Area.Right, FItems[vec[i]]->Area.Left);
-    R.Right = ConvCoorX(Area.Left, Area.Right, FItems[vec[i]]->Area.Right) + 1;
+    R.Right = ConvCoorX(Area.Left, Area.Right,
+      FItems[vec[i]]->Area.Right) + 1;
     FItems[vec[i]]->BoundsRect = R;
   }
 
@@ -1775,15 +1958,16 @@ void mx_ext_chart_t::SetChildRect()
   vec = GroupsY[FItems[BaseItem]->GroupY];
   for (size_t i = 0; i < vec.size(); i++)
   {
-    TDblRect A = FItems[vec[i]]->Area;
+    rect_float_type A = FItems[vec[i]]->Area;
     A.Bottom = Area.Bottom; A.Top = Area.Top;
     FItems[vec[i]]->Area = A;
   }
   for (size_t i = 0; i < vec.size(); i++)
   {
-    TRect R = FItems[vec[i]]->BoundsRect;
+    rect_int_type R = FItems[vec[i]]->BoundsRect;
     R.Top = ConvCoorY(Area.Bottom, Area.Top, FItems[vec[i]]->Area.Top);
-    R.Bottom = ConvCoorY(Area.Bottom, Area.Top, FItems[vec[i]]->Area.Bottom) + 1;
+    R.Bottom = ConvCoorY(Area.Bottom, Area.Top,
+      FItems[vec[i]]->Area.Bottom) + 1;
     FItems[vec[i]]->BoundsRect = R;
   }
 
@@ -1808,7 +1992,7 @@ void mx_ext_chart_t::SetChildRect()
     if (L == R) { L--; R++; }
     for (size_t j = 0; j < vec.size(); j++)
     {
-      TRect Rt = FItems[vec[j]]->BoundsRect;
+      rect_int_type Rt = FItems[vec[j]]->BoundsRect;
       Rt.Left = ConvCoorX(L, R, FItems[vec[j]]->Area.Left);
       Rt.Right = ConvCoorX(L, R, FItems[vec[j]]->Area.Right) + 1;
       FItems[vec[j]]->BoundsRect = Rt;
@@ -1836,7 +2020,7 @@ void mx_ext_chart_t::SetChildRect()
     if (B == T) { B--; T++; }
     for (size_t j = 0; j < vec.size(); j++)
     {
-      TRect R = FItems[vec[j]]->BoundsRect;
+      rect_int_type R = FItems[vec[j]]->BoundsRect;
       R.Top = ConvCoorY(B, T, FItems[vec[j]]->Area.Top);
       R.Bottom = ConvCoorY(B, T, FItems[vec[j]]->Area.Bottom) + 1;
       FItems[vec[j]]->BoundsRect = R;
@@ -1846,7 +2030,7 @@ void mx_ext_chart_t::SetChildRect()
   PaintMode = false;
 }
 
-void mx_ext_chart_t::SetBoundsRect(TRect Value)
+void mx_ext_chart_t::SetBoundsRect(rect_int_type Value)
 {
   if (Value.Left < Value.Right && Value.Top < Value.Bottom)
   {
@@ -1862,7 +2046,7 @@ void mx_ext_chart_t::SetBoundsRect(TRect Value)
   }
 }
 
-void mx_ext_chart_t::SetPrintRect(TRect Value)
+void mx_ext_chart_t::SetPrintRect(rect_int_type Value)
 {
   if (Value.Left < Value.Right && Value.Top < Value.Bottom)
   {
@@ -1881,7 +2065,7 @@ void mx_ext_chart_t::SetPaintCanvas(TCanvas *Value)
   }
 }
 
-void mx_ext_chart_t::SetArea(TDblRect AArea)
+void mx_ext_chart_t::SetArea(rect_float_type AArea)
 {
   if (AArea.Left > AArea.Right) swap(AArea.Left, AArea.Right);
   if (AArea.Bottom > AArea.Top) swap(AArea.Bottom, AArea.Top);
@@ -1959,60 +2143,60 @@ void mx_ext_chart_t::SetBaseItem(int AChart)
 
 void mx_ext_chart_t::SetLeft(int Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Left = Value;
   BoundsRect = R;
 }
 
 void mx_ext_chart_t::SetTop(int Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Top = Value;
   BoundsRect = R;
 }
 
 void mx_ext_chart_t::SetWidth(int Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Right = R.Left + Value;
   BoundsRect = R;
 }
 
 void mx_ext_chart_t::SetHeight(int Value)
 {
-  TRect R = BoundsRect;
+  rect_int_type R = BoundsRect;
   R.Bottom = R.Top + Value;
   BoundsRect = R;
 }
 
-TDblRect mx_ext_chart_t::GetArea()
+rect_float_type mx_ext_chart_t::GetArea()
 {
   PreCalc();
   return FArea;
 }
 
-TRect mx_ext_chart_t::GetGridRect()
+rect_int_type mx_ext_chart_t::GetGridRect()
 {
   PreCalc();
   return FGridRect;
 }
 
-int mx_ext_chart_t::GetLeft() const
+int_type mx_ext_chart_t::GetLeft() const
 {
   return FBoundsRect.Left;
 }
 
-int mx_ext_chart_t::GetTop() const
+int_type mx_ext_chart_t::GetTop() const
 {
   return FBoundsRect.Top;
 }
 
-int mx_ext_chart_t::GetWidth() const
+int_type mx_ext_chart_t::GetWidth() const
 {
   return FBoundsRect.Right - FBoundsRect.Left;
 }
 
-int mx_ext_chart_t::GetHeight() const
+int_type mx_ext_chart_t::GetHeight() const
 {
   return FBoundsRect.Bottom - FBoundsRect.Top;
 }
@@ -2063,8 +2247,8 @@ void mx_ext_chart_t::SetMarkerX(int Index, double Value)
   if (Index == -1) if (IndexMarkerX) Index = IndexMarkerX - 1;
   if ((Index >= 0) && (Index < IndexMarkerX))
   {
-    int OldPos = ConvCoor(DblPoint(FMarkerX[Index], FArea.Top)).x;
-    int NewPos = ConvCoor(DblPoint(Value, FArea.Top)).x;
+    int_type OldPos = ConvCoor(DblPoint(FMarkerX[Index], FArea.Top)).x;
+    int_type NewPos = ConvCoor(DblPoint(Value, FArea.Top)).x;
     if (NewPos != OldPos)
     { PaintMarkerX(Index); FMarkerX[Index] = Value; PaintMarkerX(Index); }
     else
@@ -2079,8 +2263,8 @@ void mx_ext_chart_t::SetMarkerY(int Index, double Value)
   if (Index == -1) if (IndexMarkerY) Index = IndexMarkerY - 1;
   if ((Index >= 0) && (Index < IndexMarkerY))
   {
-    int OldPos = ConvCoor(DblPoint(FArea.Left, FMarkerY[Index])).y;
-    int NewPos = ConvCoor(DblPoint(FArea.Left, Value)).y;
+    int_type OldPos = ConvCoor(DblPoint(FArea.Left, FMarkerY[Index])).y;
+    int_type NewPos = ConvCoor(DblPoint(FArea.Left, Value)).y;
     if (NewPos != OldPos)
     { PaintMarkerY(Index); FMarkerY[Index] = Value; PaintMarkerY(Index); }
     else
@@ -2092,7 +2276,7 @@ void mx_ext_chart_t::SetMarkerY(int Index, double Value)
 
 void mx_ext_chart_t::ClearMarkerX()
 {
-  for (int i=0; i<IndexMarkerX; i++) PaintMarkerX(i);
+  for (int i = 0; i < IndexMarkerX; i++) PaintMarkerX(i);
   //FMarkerX = (double *)realloc(FMarkerX, 0);
   if (FMarkerX != NULL) {
     free(FMarkerX);
@@ -2105,7 +2289,7 @@ void mx_ext_chart_t::ClearMarkerX()
 
 void mx_ext_chart_t::ClearMarkerY()
 {
-  for (int i=0; i<IndexMarkerY; i++) PaintMarkerY(i);
+  for (int i = 0; i < IndexMarkerY; i++) PaintMarkerY(i);
   //FMarkerY = (double *)realloc(FMarkerY, 0);
   if (FMarkerY != NULL) {
     free(FMarkerY);
@@ -2121,7 +2305,9 @@ void mx_ext_chart_t::DeleteMarkerX(int Index)
   if ((Index >= 0) && (Index < IndexMarkerX))
   {
     PaintMarkerX(Index);
-    for (int i=Index; i<IndexMarkerX-1; i++) FMarkerX[i] = FMarkerX[i + 1];
+    for (int i = Index; i < IndexMarkerX - 1; i++) {
+      FMarkerX[i] = FMarkerX[i + 1];
+    }
     IndexMarkerX--;
     if (IndexMarkerX != 0) {
       FMarkerX = (double *)realloc(FMarkerX, IndexMarkerX*sizeof(double));
@@ -2139,9 +2325,10 @@ void mx_ext_chart_t::DeleteMarkerY(int Index)
   if ((Index >= 0) && (Index < IndexMarkerY))
   {
     PaintMarkerY(Index);
-    for (int i=Index; i<IndexMarkerY-1; i++) FMarkerY[i] = FMarkerY[i + 1];
+    for (int i = Index; i < IndexMarkerY - 1; i++) {
+      FMarkerY[i] = FMarkerY[i + 1];
+    }
     IndexMarkerY--;
-    //FMarkerY = (double *)realloc(FMarkerY, IndexMarkerY*sizeof(double));
     if (IndexMarkerY != 0) {
       FMarkerY = (double *)realloc(FMarkerY, IndexMarkerY*sizeof(double));
     } else {
@@ -2240,8 +2427,8 @@ void mx_ext_chart_t::PaintMarkerX(int i)
   Dev->Pen = FMarkerPen;
   Dev->Pen->Style = psSolid;
   Dev->Pen->Mode = pmNotXor;
-  TPoint P1 = ConvCoor(DblPoint(FMarkerX[i], FArea.Top));
-  TPoint P2 = ConvCoor(DblPoint(FMarkerX[i], FArea.Bottom));
+  point_int_type P1 = ConvCoor(DblPoint(FMarkerX[i], FArea.Top));
+  point_int_type P2 = ConvCoor(DblPoint(FMarkerX[i], FArea.Bottom));
   DashLine(Dev, P1, P2, 5, 5);
 }
 
@@ -2254,30 +2441,32 @@ void mx_ext_chart_t::PaintMarkerY(int i)
   Dev->Pen = FMarkerPen;
   Dev->Pen->Style = psSolid;
   Dev->Pen->Mode = pmNotXor;
-  TPoint P1 = ConvCoor(DblPoint(FArea.Left, FMarkerY[i]));
-  TPoint P2 = ConvCoor(DblPoint(FArea.Right, FMarkerY[i]));
+  point_int_type P1 = ConvCoor(DblPoint(FArea.Left, FMarkerY[i]));
+  point_int_type P2 = ConvCoor(DblPoint(FArea.Right, FMarkerY[i]));
   DashLine(Dev, P1, P2, 5, 5);
 }
 
-void mx_ext_chart_t::PaintChildMarkerX(mx_ext_chart_item_t *Sender, int i) const
+void mx_ext_chart_t::PaintChildMarkerX(mx_ext_chart_item_t *Sender,
+  int_type i) const
 {
   TCanvas *Dev = CurCanvas;
   Dev->Pen = Sender->MarkerPen;
   Dev->Pen->Style = psSolid;
   Dev->Pen->Mode = pmNotXor;
-  TPoint P1 = Point(i, FGridRect.Top);
-  TPoint P2 = Point(i, FGridRect.Bottom - 1);
+  point_int_type P1 = Point(i, FGridRect.Top);
+  point_int_type P2 = Point(i, FGridRect.Bottom - 1);
   DashLine(Dev, P1, P2, 5, 5);
 }
 
-void mx_ext_chart_t::PaintChildMarkerY(mx_ext_chart_item_t *Sender, int i) const
+void mx_ext_chart_t::PaintChildMarkerY(mx_ext_chart_item_t *Sender,
+  int_type i) const
 {
   TCanvas *Dev = CurCanvas;
   Dev->Pen = Sender->MarkerPen;
   Dev->Pen->Style = psSolid;
   Dev->Pen->Mode = pmNotXor;
-  TPoint P1 = Point(FGridRect.Left, i);
-  TPoint P2 = Point(FGridRect.Right - 1, i);
+  point_int_type P1 = Point(FGridRect.Left, i);
+  point_int_type P2 = Point(FGridRect.Right - 1, i);
   DashLine(Dev, P1, P2, 5, 5);
 }
 
@@ -2291,9 +2480,9 @@ void mx_ext_chart_t::Delete(int Index)
   FItems[Index] = NULL;
   for (int i = Index; i < FCount - 1; i++) FItems[i] = FItems[i + 1];
   FCount--;
-  //FItems = (mx_ext_chart_item_t **)realloc(FItems, FCount*sizeof(mx_ext_chart_item_t*));
   if (FCount != 0) {
-    FItems = (mx_ext_chart_item_t **)realloc(FItems, FCount*sizeof(mx_ext_chart_item_t*));
+    FItems = reinterpret_cast<mx_ext_chart_item_t **>(
+      realloc(FItems, FCount*sizeof(mx_ext_chart_item_t*)));
   } else {
     free(FItems);
     FItems = NULL;
@@ -2307,7 +2496,6 @@ void mx_ext_chart_t::Clear()
 {
   for (int i = 0; i < FCount; i++) delete FItems[i];
   FCount = 0;
-  //FItems = (mx_ext_chart_item_t **)realloc(FItems, 0);
   if (FItems != NULL) {
     free(FItems);
     FItems = NULL;
@@ -2362,12 +2550,12 @@ void mx_ext_chart_t::Add(TPointer Data, int Count, TColor AColor)
 void mx_ext_chart_t::Insert(int Index)
 {
   if ((Index < 0) && (Index > FCount)) return;
-  //FItems = (mx_ext_chart_item_t **)realloc(FItems, (FCount + 1)*sizeof(mx_ext_chart_item_t));
   if (FItems != NULL) {
-    FItems =
-      (mx_ext_chart_item_t **)realloc(FItems, (FCount + 1)*sizeof(mx_ext_chart_item_t*));
+    FItems = reinterpret_cast<mx_ext_chart_item_t**>(
+      realloc(FItems, (FCount + 1)*sizeof(mx_ext_chart_item_t*)));
   } else {
-    FItems = (mx_ext_chart_item_t **)calloc(1, sizeof(mx_ext_chart_item_t*));
+    FItems = reinterpret_cast<mx_ext_chart_item_t**>(
+      calloc(1, sizeof(mx_ext_chart_item_t*)));
   }
   for (int i = FCount; i > Index; i--) FItems[i] = FItems[i - 1];
   FCount++;
@@ -2443,7 +2631,7 @@ void mx_ext_chart_t::ChildChange(TObject *Sender,
 }
 
 void mx_ext_chart_t::ChildError(TObject *Sender, Exception &e,
-  TDblPoint P, double t, TChartErrorType ChartErrorType) const
+  point_float_type P, double t, TChartErrorType ChartErrorType) const
 {
   if (FOnError) FOnError(Sender, e, P, t, ChartErrorType);
 }
@@ -2472,7 +2660,7 @@ mx_ext_chart_select_t::mx_ext_chart_select_t(mx_ext_chart_t *AChart)
   Areas(),
   BaseItems(),
   CompConvs(),
-  //TDblRect CurArea;
+  //rect_float_type CurArea;
   Xn(0),
   Yn(0),
   PX(0),
@@ -2499,7 +2687,7 @@ mx_ext_chart_select_t::mx_ext_chart_select_t(mx_ext_chart_t *AChart, TControl *A
   Areas(),
   BaseItems(),
   CompConvs(),
-  //TDblRect CurArea;
+  //rect_float_type CurArea;
   Xn(0),
   Yn(0),
   PX(0),
@@ -2549,20 +2737,29 @@ void mx_ext_chart_select_t::Disconnect()
   RestoreAutoScales();
 }
 
-void mx_ext_chart_select_t::SelectClip(TRect &ARect) const
+void mx_ext_chart_select_t::SelectClip(rect_int_type &ARect) const
 {
-  int nLeft = max(min(ARect.Left, ARect.Right), Chart->GridRect.Left);
-  int nRight = min(max(ARect.Left, ARect.Right), Chart->GridRect.Right);
-  int nTop = max(min(ARect.Top, ARect.Bottom), Chart->GridRect.Top);
-  int nBottom = min(max(ARect.Top, ARect.Bottom), Chart->GridRect.Bottom);
+  int_type nLeft = max(min(ARect.Left, ARect.Right),
+    Chart->GridRect.Left);
+  int_type nRight = min(max(ARect.Left, ARect.Right),
+    Chart->GridRect.Right);
+  int_type nTop = max(min(ARect.Top, ARect.Bottom),
+    Chart->GridRect.Top);
+  int_type nBottom = min(max(ARect.Top, ARect.Bottom),
+    Chart->GridRect.Bottom);
   ARect = Rect(nLeft, nTop, nRight, nBottom);
 }
 
-void mx_ext_chart_select_t::SelectRect(TRect Rect) const
+void mx_ext_chart_select_t::SelectRect(
+  mx_ext_chart_select_t::rect_int_type Rect) const
 {
-  TPoint Points[] = {Point(Rect.Left, Rect.Top), Point(Rect.Right - 1, Rect.Top),
-    Point(Rect.Right - 1, Rect.Bottom - 1), Point(Rect.Left, Rect.Bottom - 1),
-    Point(Rect.Left, Rect.Top)};
+  point_int_type Points[] = {
+    Point(Rect.Left, Rect.Top),
+    Point(Rect.Right - 1, Rect.Top),
+    Point(Rect.Right - 1, Rect.Bottom - 1),
+    Point(Rect.Left, Rect.Bottom - 1),
+    Point(Rect.Left, Rect.Top)
+  };
   Chart->PaintCanvas->Pen->Mode = pmXor;
   Chart->PaintCanvas->Pen->Style = psDot;
   Chart->PaintCanvas->Pen->Color = clBlack;
@@ -2619,7 +2816,7 @@ void mx_ext_chart_select_t::DoMouseMove(TObject *Sender, TShiftState Shift,
   if (FirstSelect && abs(Xn - X) < 5 && abs(Yn - Y) < 5) return;
   if (SelectMode)
   {
-    TRect VRect;
+    rect_int_type VRect;
     if (Shift.Contains(ssShift))
       VRect = Rect(Xn, Chart->GridRect.Top, X, Chart->GridRect.Bottom);
     else if (Shift.Contains(ssCtrl))
@@ -2651,7 +2848,7 @@ void mx_ext_chart_select_t::DoMouseUp(TObject *Sender, TMouseButton Button,
     double AW = Chart->Area.Right - AL, AH = Chart->Area.Top - AB;
     double GW = Chart->GridRect.Right - Chart->GridRect.Left;
     double GH = Chart->GridRect.Bottom - Chart->GridRect.Top;
-    TDblRect Area;
+    rect_float_type Area;
     Area.Left = AL + (SelRect.Left - Chart->GridRect.Left)*AW/GW;
     Area.Right = AL + (SelRect.Right - Chart->GridRect.Left)*AW/GW;
     Area.Bottom = AB + (Chart->GridRect.Bottom - SelRect.Bottom)*AH/GH;
@@ -2691,8 +2888,10 @@ void mx_ext_chart_select_t::All()
 void mx_ext_chart_select_t::SaveAreas()
 {
   ValidAreas = true;
-  for (int i = 0; i < Chart->Count; i++)
-    MAreas[(int *)Chart->Items[i]->DataY] = Chart->Items[i]->Area;
+  for (int i = 0; i < Chart->Count; i++) {
+    MAreas[static_cast<int*>(Chart->Items[i]->DataY)] =
+      Chart->Items[i]->Area;
+  }
 }
 
 void mx_ext_chart_select_t::RestoreAreas()
@@ -2750,7 +2949,7 @@ void mx_ext_chart_select_t::DoPaint()
 void mx_ext_chart_select_t::Positioning(double X, double Y)
 {
   if (!Areas.size()) return;
-  TDblRect VArea = Chart->Area;
+  rect_float_type VArea = Chart->Area;
   double CX = VArea.Left + (VArea.Right - VArea.Left)/2;
   double CY = VArea.Bottom + (VArea.Top - VArea.Bottom)/2;
   Shift(X - CX, Y - CY);
@@ -2760,7 +2959,7 @@ void mx_ext_chart_select_t::Shift(double X, double Y)
 {
   if (!Areas.size()) return;
   if (X == 0 && Y == 0) return;
-  TDblRect VArea = Chart->Area;
+  rect_float_type VArea = Chart->Area;
   if (VArea.Right + X > Areas.front().Right)
   {
     VArea.Left = Areas.front().Right - (VArea.Right - VArea.Left);
@@ -2819,7 +3018,7 @@ void mx_ext_chart_select_t::SaveCompConvs()
 void mx_ext_chart_select_t::ZoomIn(double FX, double FY)
 {
   if (FX < 0) FX = FZoomFactor; FY = fabs(FY);
-  TDblRect VArea;
+  rect_float_type VArea;
   VArea.Left = Chart->Area.Left + (1 - FX)*
     (Chart->Area.Right - Chart->Area.Left)/2;
   VArea.Right = Chart->Area.Left + (1 + FX)*
@@ -2860,14 +3059,11 @@ void mx_ext_chart_select_t::SetZoomFactor(double Value)
 void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
 {
   if (LockEvent) return;
-  vector<int>::iterator it;
-  mapscale::iterator itm;
-  mx_ext_chart_item_t *BaseItem;
   switch (Oper)
   {
-    case 0:
+    case 0: {
       AutoScales.erase(Chart->Items[Index]);
-      it = BaseItems.begin();
+      vector<int>::iterator it = BaseItems.begin();
       while (it != BaseItems.end())
       {
         it = find(it, BaseItems.end(), Index);
@@ -2884,9 +3080,9 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
         AutoScales.clear();
         //CurArea = DblRect(0, 0, 0, 0);
       }
-      break;
-    case 1:
-      itm = AutoScales.find(Chart);
+    } break;
+    case 1: {
+      mapscale::iterator itm = AutoScales.find(Chart);
       if (itm != AutoScales.end())
       {
         Chart->AutoScaleY = itm->second.first;
@@ -2895,17 +3091,22 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
       }
       AutoScales.clear(); //MAreas.clear();
       Areas.clear(); BaseItems.clear();
-      break;
-    case 2:
+    } break;
+    case 2: {
       AutoScales.insert(make_pair(Chart->Items[Index], make_pair(
         Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY)));
-      for(vector<int>::iterator i = BaseItems.begin(); i != BaseItems.end(); i++)
-        if (*i >= Index) (*i)++;
-      break;
+      for(vector<int>::iterator i = BaseItems.begin(); i != BaseItems.end();
+        i++)
+      {
+        if (*i >= Index) {
+          (*i)++;
+        }
+      }
+    } break;
     case 3:
-    case 4:
-      BaseItem = Chart->Items[Chart->BaseItem];
-      itm = AutoScales.find(BaseItem);
+    case 4: {
+      mx_ext_chart_item_t* BaseItem = Chart->Items[Chart->BaseItem];
+      mapscale::iterator itm = AutoScales.find(BaseItem);
       if (itm != AutoScales.end())
       {
         if (Oper == 3) BaseItem->AutoScaleY = itm->second.first;
@@ -2917,15 +3118,15 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
         if (Oper == 3) Chart->AutoScaleY = itm->second.first;
         if (Oper == 4) Chart->AutoScaleX = itm->second.second;
       }
-      break;
-    case 5:
-      itm = AutoScales.find(Chart);
+    } break;
+    case 5: {
+      mapscale::iterator itm = AutoScales.find(Chart);
       if (itm != AutoScales.end())
       {
         Chart->AutoScaleY = itm->second.first;
         Chart->AutoScaleX = itm->second.second;
       }
-      break;
+    } break;
   }
 }
 
@@ -2947,7 +3148,7 @@ void mx_ext_chart_select_t::SetDragChartMode(bool Value)
 
 
 
-
+#ifdef NOP
 // Генератор цветов
 irs::chart::color_gen_t::color_gen_t():
   m_colors(),
@@ -3641,5 +3842,7 @@ void irs::chart::builder_chart_window_t::TChartForm::
     m_base_chart_name = m_unsort_data.name();
   }
 }
+#endif //NOP
 
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP
