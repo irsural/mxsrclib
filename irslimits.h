@@ -1459,15 +1459,15 @@ struct numeric_limits: numeric_limits_base
 
   static const sign_type& sign(const irs_u8* ap_val)
   {
-    return reinterpret_cast<sign_type&>(*ap_val);
+    return reinterpret_cast<const sign_type&>(*ap_val);
   }
   static const exponent_type& exponent(const irs_u8* ap_val)
   {
-    return reinterpret_cast<exponent_type&>(*ap_val);
+    return reinterpret_cast<const exponent_type&>(*ap_val);
   }
   static const fraction_type& fraction(const irs_u8* ap_val)
   {
-    return reinterpret_cast<fraction_type&>(*ap_val);
+    return reinterpret_cast<const fraction_type&>(*ap_val);
   }
   static bool is_inf_or_nan(const irs_u8* /*ap_val*/)
   {
