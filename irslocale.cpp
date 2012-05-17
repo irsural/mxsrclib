@@ -15,9 +15,21 @@
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-irs::locale_manager_t::locale_manager_t():
-  #if defined(IRS_WIN32)
+  #ifdef NOP
+  //#if defined(IRS_WIN32)
+  #ifdef __MINGW32__
+  m_loc("UTF-8")
+  #else //__MINGW32__
   m_loc("Russian_Russia.1251")
+  #endif //__MINGW32__
+  #endif //NOP
+
+irs::locale_manager_t::locale_manager_t():
+  #if defined(IRS_WIN32) && !defined(__MINGW32__)
+
+  m_loc("Russian_Russia.1251")
+
+
   #else // Compilers
   m_loc("")
   #endif // Compilers
