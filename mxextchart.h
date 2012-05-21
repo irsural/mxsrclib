@@ -70,7 +70,14 @@ struct mx_ext_chart_types
   typedef mx_rect_t<int_type> rect_int_type;
   typedef mx_bounds_t<float_type> bounds_float_type;
   typedef mx_chart_line_t<int_type> line_type;
+  enum paint_style_t { ps_display_paint, ps_black_print, ps_color_print };
+  enum item_change_t { ic_delete = 0, ic_clear = 1, ic_insert = 2,
+    ic_comp_conv_x = 3, ic_comp_conv_y = 4, ic_set_base_item = 5 };
+
+  static size_type last_index_mark();
 };
+
+
 
 class mx_ext_chart_t;
 class mx_ext_chart_select_t;
@@ -179,6 +186,8 @@ public:
   void area(const rect_float_type& AArea);
   size_type count_marker_x() const;
   size_type count_marker_y() const;
+  float_type marker_x(size_type Index) const;
+  float_type marker_y(size_type Index) const;
 
   void AddMarkerX(float_type Value);
   void AddMarkerY(float_type Value);
@@ -251,8 +260,6 @@ private:
   int_type GetTop() const;
   int_type GetWidth() const;
   int_type GetHeight() const;
-  float_type GetMarkerX(size_type Index) const;
-  float_type GetMarkerY(size_type Index) const;
   TCompConv GetCompConv(idx_t Index) const;
   void PaintMarkerX(size_type i);
   void PaintMarkerY(size_type i);
@@ -274,7 +281,7 @@ private:
   void SetPen(TPen *Value);
   void SetMarkerPen(TPen *Value);
   bool ValidRect() const;
-  void Paint(int Tag);
+  void Paint(paint_style_t a_paint_style);
   void DoAutoScale();
   void DoCalculate();
   void DoPaint();
@@ -285,6 +292,7 @@ private:
 class mx_ext_chart_t: public mx_ext_chart_types
 {
 public:
+
   // Поля
   mx_ext_chart_select_t *Select;
   // Свойства
@@ -440,7 +448,7 @@ private:
   void SetMinHeightAuxGrid(float_type Value);
   void DoAutoScale();
   void DoCalculate();
-  void DoRepaint(int Tag);
+  void DoRepaint(paint_style_t a_paint_style);
   point_int_type ConvCoor(point_float_type P) const;
   int_type ConvCoorX(float_type b, float_type e, float_type x) const;
   int_type ConvCoorY(float_type b, float_type e, float_type y) const;
@@ -479,7 +487,7 @@ public:
   void ZoomOut();
   void Connect();
   void Disconnect();
-  void ItemChange(int Oper, size_type Index);
+  void ItemChange(item_change_t Oper, size_type Index);
   mx_ext_chart_select_t(): TObject() {}
   mx_ext_chart_select_t(mx_ext_chart_t *AChart);
   mx_ext_chart_select_t(mx_ext_chart_t *AChart, TControl *AControl);
@@ -487,11 +495,11 @@ public:
 
 private:
   typedef pair<bool, bool> pairbool;
-  typedef map<TComponent *, pairbool> mapscale;
+  typedef map<TComponent*, pairbool> mapscale;
   typedef pair<TCompConv, TCompConv> pairconv;
-  typedef map<TComponent *, pairconv> mapconv;
+  typedef map<TComponent*, pairconv> mapconv;
   typedef mapconv::iterator mapconvit;
-  typedef map<int *, rect_float_type> maparea;
+  typedef map<int*, rect_float_type> maparea;
 
   mx_ext_chart_t *FChart;
   TControl *FControl;

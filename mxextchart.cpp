@@ -21,9 +21,17 @@
 
 namespace irs {
 
-const double Inf = numeric_limits<double>::infinity();
-const int MinExp = numeric_limits<double>::min_exponent10;
-const double DblError = 1e-9;
+
+const double mx_ext_chart_inf =
+  numeric_limits<mx_ext_chart_types::float_type>::infinity();
+const int mx_ext_chart_min_exp =
+  numeric_limits<mx_ext_chart_types::float_type>::min_exponent10;
+const double mx_ext_chart_dbl_error = 1e-9;
+
+mx_ext_chart_types::size_type mx_ext_chart_types::last_index_mark()
+{
+  return static_cast<size_type>(-1);
+}
 
 //***************************************************************************
 // Глобальные функции
@@ -114,13 +122,13 @@ double RoundTo2(double x, int Dig2 = 5)
   return y;
 }
 
-double AddMant(double x, double am = DblError)
+double AddMant(double x, double am = mx_ext_chart_dbl_error)
 {
   int e; double m = frexp(x, &e) + am;
   return ldexp(m, e);
 }
 
-double SubMant(double x, double am = DblError)
+double SubMant(double x, double am = mx_ext_chart_dbl_error)
 {
   return AddMant(x, -am);
 }
@@ -432,18 +440,18 @@ void mx_ext_chart_item_t::DoCalculate()
   }
 }
 
-void mx_ext_chart_item_t::Paint(int Tag)
+void mx_ext_chart_item_t::Paint(paint_style_t a_paint_style)
 {
   if (!ValidRect()) return;
   TCanvas *Dev = FCanvas;
   TPen *OldPen = new TPen(); OldPen->Assign(Dev->Pen);
   // Настройка инструментов для рисования
   Dev->Pen = FPen;
-  switch (Tag)
+  switch (a_paint_style)
   {
-    case 1:
+    case ps_black_print:
       Dev->Pen->Color = clBlack;
-    case 2:
+    case ps_color_print:
       Dev->Pen->Style = psSolid;
       break;
   }
@@ -455,8 +463,11 @@ void mx_ext_chart_item_t::Paint(int Tag)
     LineP(Dev, Line(Lines[0].End.x - 3, Lines[0].End.y + 3,
       Lines[0].End.x + 3, Lines[0].End.y - 3));
   }
-  else
-    for (unsigned i = 0; i < Lines.size(); i++) LineP(Dev, Lines[i]);
+  else {
+    for (size_type i = 0; i < Lines.size(); i++) {
+      LineP(Dev, Lines[i]);
+    }
+  }
   // Отображение маркеров
   for(size_type i = 0; i < IndexMarkerX; i++) {
     PaintMarkerX(i);
@@ -630,7 +641,16 @@ void mx_ext_chart_item_t::SetCompConv(idx_t Index, TCompConv Value)
     mx_ext_chart_t *Chart = (mx_ext_chart_t *)Owner;
     for (size_type i = 0; i < Chart->FCount && Chart->FItems[i] != this; i++) {
       if (Chart->Select) {
-        Chart->Select->ItemChange(3 + Index, i);
+        item_change_t item_change = ic_comp_conv_x;
+        switch (Index) {
+          case x_idx: {
+            item_change = ic_comp_conv_x;
+          } break;
+          case y_idx: {
+            item_change = ic_comp_conv_y;
+          } break;
+        }
+        Chart->Select->ItemChange(item_change, i);
       }
     }
     //************************
@@ -835,6 +855,28 @@ size_type count_marker_y() const
 {
   return IndexMarkerY;
 }
+double mx_ext_chart_item_t::marker_x(size_type Index) const
+{
+  if (Index == last_index_mark()) {
+    if (IndexMarkerX) {
+      return FMarkerX[IndexMarkerX - 1];
+    }
+  }
+  if ((Index >= 0) && (Index < IndexMarkerX)) {
+    return FMarkerX[Index];
+  }
+  return 0;
+}
+double mx_ext_chart_item_t::marker_y(size_type Index) const
+{
+  if (Index == last_index_mark()) {
+    if (IndexMarkerY) return FMarkerY[IndexMarkerY - 1];
+  }
+  if ((Index >= 0) && (Index < IndexMarkerY)) {
+    return FMarkerY[Index];
+  }
+  return 0;
+}
 
 // Функция по умолчанию.
 double mx_ext_chart_item_t::DefFunc(double x) const
@@ -858,7 +900,7 @@ void mx_ext_chart_item_t::SetShift(size_type Index, double Value)
   if (FOnChange) FOnChange(this, cctShift);
 }
 
-void mx_ext_chart_item_t::SetScale(int Index, double Value)
+void mx_ext_chart_item_t::SetScale(size_type Index, double Value)
 {
   if (Index == 0) ScaleX = Value; else ScaleY = Value;
   if (FOnChange) FOnChange(this, cctScale);
@@ -977,21 +1019,7 @@ void mx_ext_chart_item_t::AddMarkerY(double Value)
   if (FOnChange) FOnChange(this, cctMarker);
 }
 
-double mx_ext_chart_item_t::GetMarkerX(int Index) const
-{
-  if (Index == -1) if (IndexMarkerX) return FMarkerX[IndexMarkerX - 1];
-  if ((Index >= 0) && (Index < IndexMarkerX)) return FMarkerX[Index];
-  return 0;
-}
-
-double mx_ext_chart_item_t::GetMarkerY(int Index) const
-{
-  if (Index == -1) if (IndexMarkerY) return FMarkerY[IndexMarkerY - 1];
-  if ((Index >= 0) && (Index < IndexMarkerY)) return FMarkerY[Index];
-  return 0;
-}
-
-void mx_ext_chart_item_t::SetMarkerX(int Index, double Value)
+void mx_ext_chart_item_t::SetMarkerX(size_type Index, double Value)
 {
   if (Index == -1) if (IndexMarkerX) Index = IndexMarkerX - 1;
   if ((Index >= 0) && (Index < IndexMarkerX))
@@ -1008,7 +1036,7 @@ void mx_ext_chart_item_t::SetMarkerX(int Index, double Value)
   }
 }
 
-void mx_ext_chart_item_t::SetMarkerY(int Index, double Value)
+void mx_ext_chart_item_t::SetMarkerY(size_type Index, double Value)
 {
   if (Index == -1) if (IndexMarkerY) Index = IndexMarkerY - 1;
   if ((Index >= 0) && (Index < IndexMarkerY))
@@ -1027,7 +1055,7 @@ void mx_ext_chart_item_t::SetMarkerY(int Index, double Value)
 
 void mx_ext_chart_item_t::ClearMarkerX()
 {
-  for (int i=0; i<IndexMarkerX; i++) PaintMarkerX(i);
+  for (size_type i=0; i<IndexMarkerX; i++) PaintMarkerX(i);
   //FMarkerX = (double *)realloc(FMarkerX, 0);
   if (FMarkerX != NULL) {
     free(FMarkerX);
@@ -1039,7 +1067,7 @@ void mx_ext_chart_item_t::ClearMarkerX()
 
 void mx_ext_chart_item_t::ClearMarkerY()
 {
-  for (int i=0; i<IndexMarkerY; i++) PaintMarkerY(i);
+  for (size_type i=0; i<IndexMarkerY; i++) PaintMarkerY(i);
   //FMarkerY = (double *)realloc(FMarkerY, 0);
   if (FMarkerY != NULL) {
     free(FMarkerY);
@@ -1049,12 +1077,14 @@ void mx_ext_chart_item_t::ClearMarkerY()
   if (FOnChange) FOnChange(this, cctMarker);
 }
 
-void mx_ext_chart_item_t::DeleteMarkerX(int Index)
+void mx_ext_chart_item_t::DeleteMarkerX(size_type Index)
 {
   if ((Index >= 0) && (Index < IndexMarkerX))
   {
     PaintMarkerX(Index);
-    for (int i=Index; i<IndexMarkerX-1; i++) FMarkerX[i] = FMarkerX[i + 1];
+    for (size_type i=Index; i<IndexMarkerX-1; i++) {
+      FMarkerX[i] = FMarkerX[i + 1];
+    }
     IndexMarkerX--;
     if (IndexMarkerX != 0) {
       FMarkerX = (double *)realloc(FMarkerX, IndexMarkerX*sizeof(double));
@@ -1066,12 +1096,14 @@ void mx_ext_chart_item_t::DeleteMarkerX(int Index)
   }
 }
 
-void mx_ext_chart_item_t::DeleteMarkerY(int Index)
+void mx_ext_chart_item_t::DeleteMarkerY(size_type Index)
 {
   if ((Index >= 0) && (Index < IndexMarkerY))
   {
     PaintMarkerY(Index);
-    for (int i=Index; i<IndexMarkerY-1; i++) FMarkerY[i] = FMarkerY[i + 1];
+    for (size_type i=Index; i<IndexMarkerY-1; i++) {
+      FMarkerY[i] = FMarkerY[i + 1];
+    }
     IndexMarkerY--;
     if (IndexMarkerY != 0) {
       FMarkerY = (double *)realloc(FMarkerY, IndexMarkerY*sizeof(double));
@@ -1117,13 +1149,13 @@ void mx_ext_chart_item_t::DeleteMarkerY()
   }
 }
 
-void mx_ext_chart_item_t::DeleteMarkerX(int Begin, int End)
+void mx_ext_chart_item_t::DeleteMarkerX(size_type Begin, size_type End)
 {
   if ((Begin >= 0) && (Begin < IndexMarkerX) &&
         (End >= 0) && (End < IndexMarkerX))
   {
-    for (int i=Begin; i<=End; i++) PaintMarkerX(i);
-    for (int i=Begin; i<IndexMarkerX-(End-Begin+1); i++)
+    for (size_type i=Begin; i<=End; i++) PaintMarkerX(i);
+    for (size_type i=Begin; i<IndexMarkerX-(End-Begin+1); i++)
       FMarkerX[i] = FMarkerX[i + 1];
     IndexMarkerX-=(End - Begin + 1);
     //FMarkerX = (double *)realloc(FMarkerX, IndexMarkerX*sizeof(double));
@@ -1137,13 +1169,13 @@ void mx_ext_chart_item_t::DeleteMarkerX(int Begin, int End)
   }
 }
 
-void mx_ext_chart_item_t::DeleteMarkerY(int Begin, int End)
+void mx_ext_chart_item_t::DeleteMarkerY(size_type Begin, size_type End)
 {
   if ((Begin >= 0) && (Begin < IndexMarkerY) &&
         (End >= 0) && (End < IndexMarkerY))
   {
-    for (int i=Begin; i<=End; i++) PaintMarkerY(i);
-    for (int i=Begin; i<IndexMarkerY-(End-Begin+1); i++)
+    for (size_type i=Begin; i<=End; i++) PaintMarkerY(i);
+    for (size_type i=Begin; i<IndexMarkerY-(End-Begin+1); i++)
       FMarkerY[i] = FMarkerY[i + 1];
     IndexMarkerY-=(End - Begin + 1);
     //FMarkerY = (double *)realloc(FMarkerY, IndexMarkerY*sizeof(double));
@@ -1242,7 +1274,7 @@ mx_ext_chart_t::mx_ext_chart_t(TComponent *AOwner, TCanvas *ACanvas)
 mx_ext_chart_t::~mx_ext_chart_t()
 {
   if (FItems != NULL) {
-    for (int i = 0; i < FCount; i++) delete FItems[i];
+    for (size_type i = 0; i < FCount; i++) delete FItems[i];
     free(FItems);
     FItems = NULL;
   }
@@ -1268,7 +1300,7 @@ void mx_ext_chart_t::Paint()
   Dev->Font = FCanvas->Font;
   if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
   if (NeedCalculate) { NeedCalculate = false; DoCalculate(); }
-  if (NeedRepaint) { NeedRepaint = false; DoRepaint(0); }
+  if (NeedRepaint) { NeedRepaint = false; DoRepaint(ps_display_paint); }
   FPaintCanvas->Draw(FBoundsRect.Left, FBoundsRect.Top, FBitmap);
   CurCanvas = FPaintCanvas;
   FCurRect = FBoundsRect;
@@ -1303,8 +1335,8 @@ void mx_ext_chart_t::SaveToMetafile(String FileName)
   Dev->FillRect(FCurRect);
   if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
   DoCalculate(); NeedCalculate = true;
-  DoRepaint(1); NeedRepaint = true;
-  //DoRepaint(0); NeedRepaint = true;
+  DoRepaint(ps_black_print); NeedRepaint = true;
+  //DoRepaint(ps_display_paint); NeedRepaint = true;
   CurCanvas = FPaintCanvas;
   Dev->Font = FCanvas->Font;
   FCurRect = FBoundsRect;
@@ -1343,7 +1375,7 @@ void mx_ext_chart_t::BlackPrint()
   Dev->FillRect(FCurRect);
   if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
   DoCalculate();
-  DoRepaint(1);
+  DoRepaint(ps_black_print);
   NeedRepaint = false;
   CurCanvas = FPaintCanvas;
   FCurRect = FBoundsRect;
@@ -1371,7 +1403,7 @@ void mx_ext_chart_t::ColorPrint()
   Dev->FillRect(FCurRect);
   if (NeedAutoScale) { NeedAutoScale = false; DoAutoScale(); }
   DoCalculate();
-  DoRepaint(2);
+  DoRepaint(ps_color_print);
   CurCanvas = FPaintCanvas;
   FCurRect = FBoundsRect;
   PaintMode = false;
@@ -1412,7 +1444,7 @@ void mx_ext_chart_t::SetAutoScaleY(bool Value)
 
 String mx_ext_chart_t::SFF(double x, double Step) const
 {
-  if (fabs(x) < DblError) return "0";
+  if (fabs(x) < mx_ext_chart_dbl_error) return "0";
   int_type ex = ( (x == 0)?0:static_cast<int_type>(
     floor(log10(fabs(x)))) );
   int_type es = ( (Step == 0)?0:static_cast<int_type>(
@@ -1421,8 +1453,8 @@ String mx_ext_chart_t::SFF(double x, double Step) const
   if (ex >= 0 && es >= 0 && es < 15)
   {
     NumIntoStr = Printf("%.*g", ex + 1, x);
-    int Len = NumIntoStr.Length();
-    for (int i = 0; i < es - 1; i++) NumIntoStr[Len - i] = '0';
+    size_type Len = NumIntoStr.Length();
+    for (size_type i = 0; i < es - 1; i++) NumIntoStr[Len - i] = '0';
   }
   else
     NumIntoStr = Printf("%.*g", ex - es + 1, x);
@@ -1432,33 +1464,42 @@ String mx_ext_chart_t::SFF(double x, double Step) const
 double mx_ext_chart_t::StepCalc(double Begin, double End, int_type Size,
   int_type MinSize, bool IsWidth, bool AccountText)
 {
-  int_type Steps[] = {5, 2, 1};
-  int StepCount = sizeof(Steps)/sizeof(*Steps);
-  bool Break = false;
-  int STW, i0, j0, iST, jST;
-  int_type TH = FCurCanvas->TextHeight("0");
-  int_type S = TH/4;
-  double MinSW;
   double AS = End - Begin;
   int_type e = (AS == 0)?0:static_cast<int_type>(floor(log10(fabs(AS))));
-  i0 = e - 1; j0 = 0;
-  for (int j = 0; j < StepCount; j++)
-  {
+  int_type i0 = e - 1;
+  int_type j0 = 0;
+  int_type Steps[] = {5, 2, 1};
+  int_type StepCount = static_cast<int_type>(sizeof(Steps)/sizeof(*Steps));
+  for (int_type j = 0; j < StepCount; j++) {
     double ASE = Steps[j]*pow(10., e);
-    if ((AS - ASE)/ASE > DblError) { i0 = e; j0 = j; break; }
+    if ((AS - ASE)/ASE > mx_ext_chart_dbl_error) { i0 = e; j0 = j; break; }
   }
-  jST = (j0 > 0)?((iST = i0), (j0 - 1)):((iST = i0 + 1), (StepCount - 1));
+  int_type iST = 0;
+  int_type jST = 0;
+  if (j0 > 0) {
+    iST = i0;
+    jST = j0 - 1;
+  } else {
+    iST = i0 + 1;
+    jST = StepCount - 1;
+  }
   double ST = Steps[jST]*pow(10., iST);
-  for (int i = i0; i > MinExp; i--)
+  int_type TH = FCurCanvas->TextHeight("0");
+  int_type S = TH/4;
+  for (int_type i = i0; i > mx_ext_chart_min_exp; i--)
   {
-    for (int j = (i == i0)?j0:0; j < StepCount; j++)
+    bool Break = false;
+    for (int_type j = ((i == i0)?j0:0); j < StepCount; j++)
     {
       double CurSS = Steps[j]*pow(10., i);
+      double MinSW = 0;
       if (AccountText)
       {
+        int_type STW = 0;
         if (IsWidth)
         {
-          int_type TW1 = 0, TW2 = 0;
+          size_type_type TW1 = 0;
+          int_type TW2 = 0;
           STW = 0;
           double X0 = CurSS*ceil(Begin/CurSS);
           if (X0 <= End)
@@ -1468,22 +1509,27 @@ double mx_ext_chart_t::StepCalc(double Begin, double End, int_type Size,
               TW1 = static_cast<int_type>(2*TW1 - (X0 - FArea.Left)/
                 AS*double(Size - 1));
           }
-          else return Inf;
+          else return mx_ext_chart_inf;
           bool SingleLine = true;
           for (double i = X0 + CurSS; i <= End; i += CurSS)
           {
             SingleLine = false;
             TW2 = (CurCanvas->TextWidth(SFF(i, CurSS)) + 1)/2;
-            if (i + CurSS > End)
-              if (TW2 > (End - i)/AS*double(Size - 1))
+            if (i + CurSS > End) {
+              if (TW2 > (End - i)/AS*double(Size - 1)) {
                 TW2 = static_cast<int_type>(2*TW2 - (End - i)/AS*
                   double(Size - 1));
+              }
+            }
             int_type CurW = TW1 + TW2 + S;
             STW = max(CurW, STW);
             TW1 = TW2;
           }
-          if (SingleLine) if (CurCanvas->TextWidth(SFF(X0, CurSS)) > Size)
-            return Inf;
+          if (SingleLine) {
+            if (CurCanvas->TextWidth(SFF(X0, CurSS)) > Size) {
+              return mx_ext_chart_inf;
+            }
+          }
         }
         else
         {
@@ -1491,32 +1537,46 @@ double mx_ext_chart_t::StepCalc(double Begin, double End, int_type Size,
           double Y1 = CurSS*ceil(Begin/CurSS);
           if (Y1 <= End)
           {
-            if (TH1 > (Y1 - Begin)/AS*double(Size - 1))
+            if (TH1 > (Y1 - Begin)/AS*double(Size - 1)) {
               TH1 = static_cast<int_type>(TH - (Y1 - Begin)/AS*
                 double(Size - 1));
+            }
             double Y2 = CurSS*floor(End/CurSS);
             if (fabs(Y2) < CurSS/2) Y2 = 0;
-            if (Y2 > Y1)
-            {
-              if (TH2 > (End - Y2)/AS*double(Size - 1))
-                TH2 = static_cast<int_type>(TH - (End - Y2)/AS*double(Size - 1));
+            if (Y2 > Y1) {
+              if (TH2 > (End - Y2)/AS*double(Size - 1)) {
+                TH2 = static_cast<int_type>(TH - (End - Y2)/
+                  AS*double(Size - 1));
+              }
               STW = TH1 + TH2 + S;
+            } else {
+              if (TH < Size) {
+                STW = TH;
+              } else {
+                return mx_ext_chart_inf;
+              }
             }
-            else if (TH < Size) STW = TH; else return Inf;
           }
-          else return Inf;
+          else return mx_ext_chart_inf;
         }
         MinSW = max(STW, MinSize)*AS/double(Size - 1);
       }
       else
       {
-        if (AS/CurSS/floor(AS/CurSS) - 1 > DblError) continue;
+        if (AS/CurSS/floor(AS/CurSS) - 1 > mx_ext_chart_dbl_error) continue;
         MinSW = MinSize*AS/double(Size - 1);
       }
       Break = false;
-      if (CurSS < MinSW) { Break = true; break; } else ST = CurSS;
+      if (CurSS < MinSW) {
+        Break = true;
+        break;
+      } else {
+        ST = CurSS;
+      }
     }
-    if (Break) break;
+    if (Break) {
+      break;
+    }
   }
   return ST;
 }
@@ -1538,7 +1598,7 @@ void mx_ext_chart_t::CalcGrid()
 
   // Вычисление SH - шага сетки по вертикали
   SH = StepCalc(FArea.Bottom, FArea.Top, GH, PMinH, false, true);
-  if (SH == Inf) ApplyTextY = false;
+  if (SH == mx_ext_chart_inf) ApplyTextY = false;
   int_type TWM = 0;
   int_type GW = W - 2;
   if (ApplyTextY)
@@ -1558,11 +1618,11 @@ void mx_ext_chart_t::CalcGrid()
   if (ApplyTextX)
   {
     SW = StepCalc(FArea.Left, FArea.Right, GW, PMinW, true, true);
-    if (SW == Inf)
+    if (SW == mx_ext_chart_inf)
     {
       GH = H - 2; ApplyTextX = false; ApplyTextY = true;
       SH = StepCalc(FArea.Bottom, FArea.Top, GH, PMinH, false, true);
-      if (SH == Inf) ApplyTextY = false;
+      if (SH == mx_ext_chart_inf) ApplyTextY = false;
       TWM = 0;
       GW = W - 2;
       if (ApplyTextY)
@@ -1628,8 +1688,8 @@ void mx_ext_chart_t::PaintGrid(bool BlackAuxGrid)
     for (double i = X0; i < FArea.Right; i += SW)
     {
       int_type TW = CurCanvas->TextWidth(SFF(i, SW));
-      int_type TPX = static_cast<int_type>((i - FArea.Left)/AW*double(GW - 1) +
-        FGridRect.Left - TW/2);
+      int_type TPX = static_cast<int_type>((i - FArea.Left)/
+        AW*double(GW - 1) + FGridRect.Left - TW/2);
       if (TPX + TW > FGridRect.Right - 1) TPX = FGridRect.Right - TW - 1;
       if (TPX < FGridRect.Left) TPX = FGridRect.Left;
       CurCanvas->TextOut(TPX, TPY, SFF(i, SW));
@@ -1754,7 +1814,7 @@ void mx_ext_chart_t::PreCalc()
 void mx_ext_chart_t::Invalidate()
 {
   NeedAutoScale = NeedCalculate = NeedRepaint = true;
-  for (int i = 0; i < FCount; i++) {
+  for (size_type i = 0; i < FCount; i++) {
     FItems[i]->NeedAutoScale = true;
     FItems[i]->NeedCalculate = true;
   }
@@ -1786,20 +1846,20 @@ void mx_ext_chart_t::SetShowAuxGrid(bool Value)
 
 void mx_ext_chart_t::DoAutoScale()
 {
-  for (int i = 0; i < FCount; i++)
+  for (size_type i = 0; i < FCount; i++)
     if (FItems[i]->NeedAutoScale && !FItems[i]->Hide)
     { FItems[i]->NeedAutoScale = false; FItems[i]->DoAutoScale(); }
   if (FAutoScaleX)
   {
     FArea.Left = FArea.Right = 0;
     if (FCount && FItems[FBaseItem]->Hide)
-    for (int i = 0; i < FCount; i++)
+    for (size_type i = 0; i < FCount; i++)
       if (!FItems[i]->Hide) { FBaseItem = i; break; }
     if (FCount && !FItems[FBaseItem]->Hide)
     {
       FArea.Left = FItems[FBaseItem]->Area.Left;
       FArea.Right = FItems[FBaseItem]->Area.Right;
-      for (int i = 0; i < FCount; i++)
+      for (size_type i = 0; i < FCount; i++)
         if (!FItems[i]->Hide && i != FBaseItem &&
           FItems[i]->FGroup[0] == FItems[FBaseItem]->FGroup[0])
         {
@@ -1814,13 +1874,13 @@ void mx_ext_chart_t::DoAutoScale()
   {
     FArea.Bottom = FArea.Top = 0;
     if (FCount && FItems[FBaseItem]->Hide)
-    for (int i = 0; i < FCount; i++)
+    for (size_type i = 0; i < FCount; i++)
       if (!FItems[i]->Hide) { FBaseItem = i; break; }
     if (FCount && !FItems[FBaseItem]->Hide)
     {
       FArea.Bottom = FItems[FBaseItem]->Area.Bottom;
       FArea.Top = FItems[FBaseItem]->Area.Top;
-      for (int i = 0; i < FCount; i++)
+      for (size_type i = 0; i < FCount; i++)
         if (!FItems[i]->Hide && i != FBaseItem &&
           FItems[i]->FGroup[1] == FItems[FBaseItem]->FGroup[1])
         {
@@ -1842,28 +1902,47 @@ void mx_ext_chart_t::DoCalculate()
   SetChildRect();
 }
 
-void mx_ext_chart_t::DoRepaint(int Tag)
+void mx_ext_chart_t::DoRepaint(paint_style_t a_paint_style)
 {
   FCurCanvas->FillRect(FCurRect);
-  if (Tag == 1) PaintGrid(true); else PaintGrid();
-  for (int i = 0; i < FCount; i++)
-    if (FItems[i]->NeedCalculate && !FItems[i]->Hide)
-    { FItems[i]->NeedCalculate = false; FItems[i]->DoCalculate(); }
-  SetClipRect(FCurCanvas, FGridRect);
-  switch (Tag)
-  {
-    case 0:
-      for (int i = 0; i < FCount; i++) if (!FItems[i]->Hide) FItems[i]->DoPaint();
-      break;
-    case 1:
-      for (int i = 0; i < FCount; i++) if (!FItems[i]->Hide) FItems[i]->DoBlackPrint();
-      break;
-    case 2:
-      for (int i = 0; i < FCount; i++) if (!FItems[i]->Hide) FItems[i]->DoColorPrint();
-      break;
+  if (a_paint_style == 1) PaintGrid(true); else PaintGrid();
+  for (size_type i = 0; i < FCount; i++) {
+    if (FItems[i]->NeedCalculate && !FItems[i]->Hide) {
+      FItems[i]->NeedCalculate = false;
+      FItems[i]->DoCalculate();
+    }
   }
-  for (int i = 0; i < IndexMarkerX; i++) PaintMarkerX(i);
-  for (int i = 0; i < IndexMarkerY; i++) PaintMarkerY(i);
+  SetClipRect(FCurCanvas, FGridRect);
+  switch (a_paint_style)
+  {
+    case ps_display_paint: {
+      for (size_type i = 0; i < FCount; i++) {
+        if (!FItems[i]->Hide) {
+          FItems[i]->DoPaint();
+        }
+      }
+    } break;
+    case ps_black_print: {
+      for (size_type i = 0; i < FCount; i++) {
+        if (!FItems[i]->Hide) {
+          FItems[i]->DoBlackPrint();
+        }
+      }
+    } break;
+    case ps_color_print: {
+      for (size_type i = 0; i < FCount; i++) {
+        if (!FItems[i]->Hide) {
+          FItems[i]->DoColorPrint();
+        }
+      }
+    } break;
+  }
+  for (size_type i = 0; i < IndexMarkerX; i++) {
+    PaintMarkerX(i);
+  }
+  for (size_type i = 0; i < IndexMarkerY; i++) {
+    PaintMarkerY(i);
+  }
   PaintBounds();
   DeleteClipRect(FCurCanvas);
 }
@@ -1924,12 +2003,12 @@ int_type mx_ext_chart_t::ConvCoorY(double b, double e, double y) const
 void mx_ext_chart_t::SetChildRect()
 {
   if (!FCount || FItems[BaseItem]->Hide) return;
-  typedef vector<int> veci;
-  typedef map<int, veci> mapg;
+  typedef vector<size_type> veci;
+  typedef map<size_type, veci> mapg;
   typedef mapg::iterator itr;
   mapg GroupsX, GroupsY;
-  vector<int> vec;
-  for (int i = 0; i < FCount; i++) if (!FItems[i]->Hide)
+  vector<size_type> vec;
+  for (size_type i = 0; i < FCount; i++) if (!FItems[i]->Hide)
   {
     GroupsX[FItems[i]->GroupX].push_back(i);
     GroupsY[FItems[i]->GroupY].push_back(i);
@@ -2089,7 +2168,7 @@ void mx_ext_chart_t::SetArea(rect_float_type AArea)
 void mx_ext_chart_t::SetCurCanvas(TCanvas *Value)
 {
   FCurCanvas = Value;
-  for (int i = 0; i < FCount; i++) FItems[i]->Canvas = Value;
+  for (size_type i = 0; i < FCount; i++) FItems[i]->Canvas = Value;
 }
 
 void mx_ext_chart_t::SetMarkerPen(TPen *Value)
@@ -2130,41 +2209,41 @@ void mx_ext_chart_t::SetMinHeightAuxGrid(double Value)
   if (FOnChange) FOnChange(this, cctSizeAuxGrid);
 }
 
-void mx_ext_chart_t::SetBaseItem(int AChart)
+void mx_ext_chart_t::SetBaseItem(size_type AChart)
 {
   if (AChart == FBaseItem) return;
   //PaintMode = true;
   FBaseItem = AChart;
   //PaintMode = false;
   NeedAutoScale = NeedCalculate = NeedRepaint = true;
-  if (Select) Select->ItemChange(5, FBaseItem);
+  if (Select) Select->ItemChange(ic_set_base_item, FBaseItem);
   if (FOnChange) FOnChange(this, cctBaseItem);
 }
 
-void mx_ext_chart_t::SetLeft(int Value)
+void mx_ext_chart_t::SetLeft(int_type Value)
 {
   rect_int_type R = BoundsRect;
   R.Left = Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_t::SetTop(int Value)
+void mx_ext_chart_t::SetTop(int_type Value)
 {
   rect_int_type R = BoundsRect;
   R.Top = Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_t::SetWidth(int Value)
+void mx_ext_chart_t::SetWidth(int_type Value)
 {
   rect_int_type R = BoundsRect;
   R.Right = R.Left + Value;
   BoundsRect = R;
 }
 
-void mx_ext_chart_t::SetHeight(int Value)
+void mx_ext_chart_t::SetHeight(int_type Value)
 {
-  rect_int_type R = BoundsRect;
+  rect_int_type_type R = BoundsRect;
   R.Bottom = R.Top + Value;
   BoundsRect = R;
 }
@@ -2228,21 +2307,21 @@ void mx_ext_chart_t::AddMarkerY(double Value)
   if (FOnChange) FOnChange(this, cctMarker);
 }
 
-double mx_ext_chart_t::GetMarkerX(int Index) const
+double mx_ext_chart_t::GetMarkerX(size_type Index) const
 {
   if (Index == -1) if (IndexMarkerX) return FMarkerX[IndexMarkerX - 1];
   if ((Index >= 0) && (Index < IndexMarkerX)) return FMarkerX[Index];
   return 0;
 }
 
-double mx_ext_chart_t::GetMarkerY(int Index) const
+double mx_ext_chart_t::GetMarkerY(size_type Index) const
 {
   if (Index == -1) if (IndexMarkerY) return FMarkerY[IndexMarkerY - 1];
   if ((Index >= 0) && (Index < IndexMarkerY)) return FMarkerY[Index];
   return 0;
 }
 
-void mx_ext_chart_t::SetMarkerX(int Index, double Value)
+void mx_ext_chart_t::SetMarkerX(size_type Index, double Value)
 {
   if (Index == -1) if (IndexMarkerX) Index = IndexMarkerX - 1;
   if ((Index >= 0) && (Index < IndexMarkerX))
@@ -2258,7 +2337,7 @@ void mx_ext_chart_t::SetMarkerX(int Index, double Value)
   }
 }
 
-void mx_ext_chart_t::SetMarkerY(int Index, double Value)
+void mx_ext_chart_t::SetMarkerY(size_type Index, double Value)
 {
   if (Index == -1) if (IndexMarkerY) Index = IndexMarkerY - 1;
   if ((Index >= 0) && (Index < IndexMarkerY))
@@ -2276,7 +2355,7 @@ void mx_ext_chart_t::SetMarkerY(int Index, double Value)
 
 void mx_ext_chart_t::ClearMarkerX()
 {
-  for (int i = 0; i < IndexMarkerX; i++) PaintMarkerX(i);
+  for (size_type i = 0; i < IndexMarkerX; i++) PaintMarkerX(i);
   //FMarkerX = (double *)realloc(FMarkerX, 0);
   if (FMarkerX != NULL) {
     free(FMarkerX);
@@ -2289,7 +2368,7 @@ void mx_ext_chart_t::ClearMarkerX()
 
 void mx_ext_chart_t::ClearMarkerY()
 {
-  for (int i = 0; i < IndexMarkerY; i++) PaintMarkerY(i);
+  for (size_type i = 0; i < IndexMarkerY; i++) PaintMarkerY(i);
   //FMarkerY = (double *)realloc(FMarkerY, 0);
   if (FMarkerY != NULL) {
     free(FMarkerY);
@@ -2300,12 +2379,12 @@ void mx_ext_chart_t::ClearMarkerY()
   if (FOnChange) FOnChange(this, cctMarker);
 }
 
-void mx_ext_chart_t::DeleteMarkerX(int Index)
+void mx_ext_chart_t::DeleteMarkerX(size_type Index)
 {
   if ((Index >= 0) && (Index < IndexMarkerX))
   {
     PaintMarkerX(Index);
-    for (int i = Index; i < IndexMarkerX - 1; i++) {
+    for (size_type i = Index; i < IndexMarkerX - 1; i++) {
       FMarkerX[i] = FMarkerX[i + 1];
     }
     IndexMarkerX--;
@@ -2320,12 +2399,12 @@ void mx_ext_chart_t::DeleteMarkerX(int Index)
   }
 }
 
-void mx_ext_chart_t::DeleteMarkerY(int Index)
+void mx_ext_chart_t::DeleteMarkerY(size_type Index)
 {
   if ((Index >= 0) && (Index < IndexMarkerY))
   {
     PaintMarkerY(Index);
-    for (int i = Index; i < IndexMarkerY - 1; i++) {
+    for (size_type i = Index; i < IndexMarkerY - 1; i++) {
       FMarkerY[i] = FMarkerY[i + 1];
     }
     IndexMarkerY--;
@@ -2376,13 +2455,13 @@ void mx_ext_chart_t::DeleteMarkerY()
   }
 }
 
-void mx_ext_chart_t::DeleteMarkerX(int Begin, int End)
+void mx_ext_chart_t::DeleteMarkerX(size_type Begin, size_type End)
 {
   if ((Begin >= 0) && (Begin < IndexMarkerX) &&
         (End >= 0) && (End < IndexMarkerX))
   {
-    for (int i=Begin; i<=End; i++) PaintMarkerX(i);
-    for (int i=Begin; i<IndexMarkerX-(End-Begin+1); i++)
+    for (size_type i=Begin; i<=End; i++) PaintMarkerX(i);
+    for (size_type i=Begin; i<IndexMarkerX-(End-Begin+1); i++)
       FMarkerX[i] = FMarkerX[i + 1];
     IndexMarkerX-=(End - Begin + 1);
     //FMarkerX = (double *)realloc(FMarkerX, IndexMarkerX*sizeof(double));
@@ -2397,13 +2476,13 @@ void mx_ext_chart_t::DeleteMarkerX(int Begin, int End)
   }
 }
 
-void mx_ext_chart_t::DeleteMarkerY(int Begin, int End)
+void mx_ext_chart_t::DeleteMarkerY(size_type Begin, size_type End)
 {
   if ((Begin >= 0) && (Begin < IndexMarkerY) &&
         (End >= 0) && (End < IndexMarkerY))
   {
-    for (int i=Begin; i<=End; i++) PaintMarkerY(i);
-    for (int i=Begin; i<IndexMarkerY-(End-Begin+1); i++)
+    for (size_type i=Begin; i<=End; i++) PaintMarkerY(i);
+    for (size_type i=Begin; i<IndexMarkerY-(End-Begin+1); i++)
       FMarkerY[i] = FMarkerY[i + 1];
     IndexMarkerY-=(End - Begin + 1);
     //FMarkerY = (double *)realloc(FMarkerY, IndexMarkerY*sizeof(double));
@@ -2418,7 +2497,7 @@ void mx_ext_chart_t::DeleteMarkerY(int Begin, int End)
   }
 }
 
-void mx_ext_chart_t::PaintMarkerX(int i)
+void mx_ext_chart_t::PaintMarkerX(size_type i)
 {
   if (MarkerX[i] < FArea.Left && MarkerX[i] > FArea.Right)
     return;
@@ -2432,7 +2511,7 @@ void mx_ext_chart_t::PaintMarkerX(int i)
   DashLine(Dev, P1, P2, 5, 5);
 }
 
-void mx_ext_chart_t::PaintMarkerY(int i)
+void mx_ext_chart_t::PaintMarkerY(size_type i)
 {
   if (MarkerY[i] < FArea.Bottom && MarkerY[i] > FArea.Top)
     return;
@@ -2470,15 +2549,15 @@ void mx_ext_chart_t::PaintChildMarkerY(mx_ext_chart_item_t *Sender,
   DashLine(Dev, P1, P2, 5, 5);
 }
 
-void mx_ext_chart_t::Delete(int Index)
+void mx_ext_chart_t::Delete(size_type Index)
 {
   if ((Index < 0) && (Index >= FCount)) return;
   //** Для mx_ext_chart_select_t **
-  if (Select) Select->ItemChange(0, Index);
+  if (Select) Select->ItemChange(ic_delete, Index);
   //************************
   delete FItems[Index];
   FItems[Index] = NULL;
-  for (int i = Index; i < FCount - 1; i++) FItems[i] = FItems[i + 1];
+  for (size_type i = Index; i < FCount - 1; i++) FItems[i] = FItems[i + 1];
   FCount--;
   if (FCount != 0) {
     FItems = reinterpret_cast<mx_ext_chart_item_t **>(
@@ -2494,7 +2573,7 @@ void mx_ext_chart_t::Delete(int Index)
 
 void mx_ext_chart_t::Clear()
 {
-  for (int i = 0; i < FCount; i++) delete FItems[i];
+  for (size_type i = 0; i < FCount; i++) delete FItems[i];
   FCount = 0;
   if (FItems != NULL) {
     free(FItems);
@@ -2504,7 +2583,7 @@ void mx_ext_chart_t::Clear()
   FBaseItem = CurGroupX = CurGroupY = 0;
   if (FOnChange) FOnChange(this, cctItems);
   //** Для mx_ext_chart_select_t **
-  if (Select) Select->ItemChange(1, 0);
+  if (Select) Select->ItemChange(ic_clear, 0);
   //************************
 }
 
@@ -2529,11 +2608,11 @@ void mx_ext_chart_t::Add()
   NeedAutoScale = NeedCalculate = NeedRepaint = true;
   if (FOnChange) FOnChange(this, cctItems);
   //** Для mx_ext_chart_select_t **
-  if (Select) Select->ItemChange(2, FCount - 1);
+  if (Select) Select->ItemChange(ic_insert, FCount - 1);
   //************************
 }
 
-void mx_ext_chart_t::Add(TPointer Data, int Count)
+void mx_ext_chart_t::Add(TPointer Data, size_type Count)
 {
   Add();
   Items[FCount - 1]->DataY = Data;
@@ -2541,13 +2620,13 @@ void mx_ext_chart_t::Add(TPointer Data, int Count)
   Items[FCount - 1]->Bounds.End = Count - 1;
 }
 
-void mx_ext_chart_t::Add(TPointer Data, int Count, TColor AColor)
+void mx_ext_chart_t::Add(TPointer Data, size_type Count, TColor AColor)
 {
   Add(Data, Count);
   Items[FCount - 1]->Pen->Color = AColor;
 }
 
-void mx_ext_chart_t::Insert(int Index)
+void mx_ext_chart_t::Insert(size_type Index)
 {
   if ((Index < 0) && (Index > FCount)) return;
   if (FItems != NULL) {
@@ -2557,7 +2636,7 @@ void mx_ext_chart_t::Insert(int Index)
     FItems = reinterpret_cast<mx_ext_chart_item_t**>(
       calloc(1, sizeof(mx_ext_chart_item_t*)));
   }
-  for (int i = FCount; i > Index; i--) FItems[i] = FItems[i - 1];
+  for (size_type i = FCount; i > Index; i--) FItems[i] = FItems[i - 1];
   FCount++;
   FItems[Index] = new mx_ext_chart_item_t(this);
   FItems[Index]->Canvas = CurCanvas;
@@ -2571,18 +2650,18 @@ void mx_ext_chart_t::Insert(int Index)
   if (Index <= BaseItem) BaseItem++;
   if (FOnChange) FOnChange(this, cctItems);
   //** Для mx_ext_chart_select_t **
-  if (Select) Select->ItemChange(2, Index);
+  if (Select) Select->ItemChange(ic_insert, Index);
   //************************
 }
 
-void mx_ext_chart_t::Insert(int Index, TPointer Data, int Count)
+void mx_ext_chart_t::Insert(size_type Index, TPointer Data, size_type Count)
 {
   Insert(Index);
   Items[Index]->DataY = Data;
   Items[Index]->Bounds.End = Count - 1;
 }
 
-void mx_ext_chart_t::Insert(int Index, TPointer Data, int Count,
+void mx_ext_chart_t::Insert(size_type Index, TPointer Data, size_type Count,
   TColor AColor)
 {
   Insert(Index, Data, Count);
@@ -2599,7 +2678,7 @@ void mx_ext_chart_t::NewGroupY()
   CurGroupY++;
 }
 
-mx_ext_chart_item_t *mx_ext_chart_t::GetItem(int Index) const
+mx_ext_chart_item_t *mx_ext_chart_t::GetItem(size_type Index) const
 {
   if (Index == -1) return FItems[FCount - 1];
   if (Index < 0) Index = 0; if (Index >= FCount) Index = FCount - 1;
@@ -2888,7 +2967,7 @@ void mx_ext_chart_select_t::All()
 void mx_ext_chart_select_t::SaveAreas()
 {
   ValidAreas = true;
-  for (int i = 0; i < Chart->Count; i++) {
+  for (size_type i = 0; i < Chart->Count; i++) {
     MAreas[static_cast<int*>(Chart->Items[i]->DataY)] =
       Chart->Items[i]->Area;
   }
@@ -2899,7 +2978,7 @@ void mx_ext_chart_select_t::RestoreAreas()
   if (!ValidAreas) return;
   ValidAreas = false;
   maparea::iterator it;
-  for (int i = 0; i < Chart->Count; i++)
+  for (size_type i = 0; i < Chart->Count; i++)
   {
     it = MAreas.find(Chart->Items[i]->DataY);
     if (it != MAreas.end()) Chart->Items[i]->Area = it->second;
@@ -2912,7 +2991,7 @@ void mx_ext_chart_select_t::SaveAutoScales()
   ValidAutoScales = true;
   AutoScales.insert(make_pair(Chart,
     make_pair(Chart->AutoScaleX, Chart->AutoScaleY)));
-  for (int i = 0; i < Chart->Count; i++)
+  for (size_type i = 0; i < Chart->Count; i++)
     AutoScales.insert(make_pair(Chart->Items[i],
       make_pair(Chart->Items[i]->AutoScaleX, Chart->Items[i]->AutoScaleY)));
 }
@@ -2922,7 +3001,7 @@ void mx_ext_chart_select_t::RestoreAutoScales()
   if (!ValidAutoScales) return;
   ValidAutoScales = false;
   mapscale::iterator it;
-  for (int i = 0; i < Chart->Count; i++)
+  for (size_type i = 0; i < Chart->Count; i++)
   {
     it = AutoScales.find(Chart->Items[i]);
     if (it != AutoScales.end())
@@ -2998,7 +3077,7 @@ void mx_ext_chart_select_t::Shift(double X, double Y)
 void mx_ext_chart_select_t::RestoreCompConvs()
 {
   mapconv Convs = CompConvs.back();
-  for (int i = 0; i < Chart->Count; i++)
+  for (size_type i = 0; i < Chart->Count; i++)
   {
     Chart->Items[i]->CompConvX = Convs[Chart->Items[i]].first;
     Chart->Items[i]->CompConvY = Convs[Chart->Items[i]].second;
@@ -3009,7 +3088,7 @@ void mx_ext_chart_select_t::RestoreCompConvs()
 void mx_ext_chart_select_t::SaveCompConvs()
 {
   mapconv Convs;
-  for (int i = 0; i < Chart->Count; i++)
+  for (size_type i = 0; i < Chart->Count; i++)
     Convs[Chart->Items[i]] =
       make_pair(Chart->Items[i]->CompConvX, Chart->Items[i]->CompConvY);
   CompConvs.push_back(Convs);
@@ -3056,14 +3135,14 @@ void mx_ext_chart_select_t::SetZoomFactor(double Value)
   if (Value < 1) FZoomFactor = Value; else FZoomFactor = 1/Value;
 }
 
-void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
+void mx_ext_chart_select_t::ItemChange(item_change_t Oper, size_type Index)
 {
   if (LockEvent) return;
   switch (Oper)
   {
-    case 0: {
+    case ic_delete: {
       AutoScales.erase(Chart->Items[Index]);
-      vector<int>::iterator it = BaseItems.begin();
+      vector<size_type>::iterator it = BaseItems.begin();
       while (it != BaseItems.end())
       {
         it = find(it, BaseItems.end(), Index);
@@ -3081,7 +3160,7 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
         //CurArea = DblRect(0, 0, 0, 0);
       }
     } break;
-    case 1: {
+    case ic_clear: {
       mapscale::iterator itm = AutoScales.find(Chart);
       if (itm != AutoScales.end())
       {
@@ -3092,10 +3171,10 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
       AutoScales.clear(); //MAreas.clear();
       Areas.clear(); BaseItems.clear();
     } break;
-    case 2: {
+    case ic_insert: {
       AutoScales.insert(make_pair(Chart->Items[Index], make_pair(
         Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY)));
-      for(vector<int>::iterator i = BaseItems.begin(); i != BaseItems.end();
+      for(vector<size_type>::iterator i = BaseItems.begin(); i != BaseItems.end();
         i++)
       {
         if (*i >= Index) {
@@ -3103,23 +3182,23 @@ void mx_ext_chart_select_t::ItemChange(int Oper, int Index)
         }
       }
     } break;
-    case 3:
-    case 4: {
+    case ic_comp_conv_x:
+    case ic_comp_conv_y: {
       mx_ext_chart_item_t* BaseItem = Chart->Items[Chart->BaseItem];
       mapscale::iterator itm = AutoScales.find(BaseItem);
       if (itm != AutoScales.end())
       {
-        if (Oper == 3) BaseItem->AutoScaleY = itm->second.first;
-        if (Oper == 4) BaseItem->AutoScaleX = itm->second.second;
+        if (Oper == ic_comp_conv_x) BaseItem->AutoScaleY = itm->second.first;
+        if (Oper == ic_comp_conv_y) BaseItem->AutoScaleX = itm->second.second;
       }
       itm = AutoScales.find(Chart);
       if (itm != AutoScales.end())
       {
-        if (Oper == 3) Chart->AutoScaleY = itm->second.first;
-        if (Oper == 4) Chart->AutoScaleX = itm->second.second;
+        if (Oper == ic_comp_conv_x) Chart->AutoScaleY = itm->second.first;
+        if (Oper == ic_comp_conv_y) Chart->AutoScaleX = itm->second.second;
       }
     } break;
-    case 5: {
+    case ic_set_base_item: {
       mapscale::iterator itm = AutoScales.find(Chart);
       if (itm != AutoScales.end())
       {
