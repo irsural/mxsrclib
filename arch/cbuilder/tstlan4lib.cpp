@@ -183,6 +183,7 @@ irs::tstlan4_t::controls_t::param_box_tune_t::param_box_tune_t(
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
   mp_param_box->add_bool(irst("Сбросить время"), false);
+  mp_param_box->add_bool(irst("Запись CSV включена"), false);
   mp_param_box->load();
 }
 void irs::tstlan4_t::controls_t::inner_options_apply()
@@ -201,6 +202,12 @@ void irs::tstlan4_t::controls_t::inner_options_apply()
     irst("Время обновления, мс")));
   resize_chart(param_box_read_number<irs_u32>(*mp_param_box,
     irst("Количество точек в графике")));
+  m_refresh_csv_state_event.exec();
+  if (mp_param_box->get_param(irst("Запись CSV включена")) == irst("true")) {
+    m_is_csv_on = true;
+  } else {
+    m_is_csv_on = false;
+  }
 }
 irs::tstlan4_t::controls_t::controls_t(
   form_type_t a_form_type,
@@ -263,16 +270,19 @@ irs::tstlan4_t::controls_t::controls_t(
   m_timer(),
   m_ini_section_prefix(a_ini_section_prefix),
   m_start(false),
-  m_first(true),
-  m_is_created_csv(false),
+  //m_first(true),
+  m_refresh_csv_state_event(),
+  m_is_csv_opened(false),
   mp_event(IRS_NULL),
   m_inner_options_event(),
   mp_param_box(new param_box_t(irst("Внутренние настройки tstlan4"),
     irst("inner_options"))),
-  m_param_box_tune(mp_param_box.get())
+  m_param_box_tune(mp_param_box.get()),
+  m_is_csv_on(false)
 {
   m_buf.connect(mp_log_memo);
   inner_options_apply();
+  //m_inner_options_event.exec();
 
   if (m_form_type == ft_internal) {
     m_ini_file.set_ini_name(a_ini_name.c_str());
@@ -370,7 +380,7 @@ irs::tstlan4_t::controls_t::controls_t(
 }
 __fastcall irs::tstlan4_t::controls_t::~controls_t()
 {
-  m_csv_file.close();
+  //m_csv_file.close();
   //m_ini_file.save();
 
   mp_form->OnShow = IRS_NULL;
@@ -431,6 +441,27 @@ void irs::tstlan4_t::controls_t::tick()
       m_first_connect = false;
       m_ini_file.load();
     }
+    if (m_refresh_csv_state_event.check()) {
+      //m_first = false;
+      //m_is_csv_opened m_refresh_table m_is_csv_on
+      bool csv_start = false;
+      if (m_is_csv_on) {
+        if (m_refresh_table) {
+          csv_start = true;
+        } else {
+          csv_start = false;
+        }
+      } else {
+        csv_start = false;
+      }
+      if (csv_start != m_is_csv_opened) {
+        if (m_is_csv_opened) {
+          close_csv();
+        } else {
+          open_csv();
+        }
+      }
+    }
     if (m_read_loop_timer.check() && m_refresh_table) {
       // Обработка столбца "Значение" при чтении
       int row_count = mp_vars_grid->RowCount;
@@ -488,20 +519,20 @@ void irs::tstlan4_t::controls_t::tick()
           int var_index = row - m_header_size;
           string_type chart_name = name_list->Strings[row].c_str();
           mp_chart->add(chart_name, m_chart_time, var_to_double(var_index));
-          if (m_first) {
-            creation_csv();
-            m_first = false;
-          }
-          string_type csv_names = name_list->Strings[row].c_str();
-          if (m_csv_names[csv_names] && (m_is_created_csv)) {
-            m_csv_file.set_var(irst("Time"),
-              irsstr_from_number_russian(char_t(), m_timer.get()));
-            m_csv_file.set_var(csv_names,
-              irsstr_from_number_russian(char_t(), var_to_double(var_index)));
+
+          if (m_is_csv_opened) {
+            string_type csv_name = name_list->Strings[row].c_str();
+            if (m_csv_names[csv_name] && (m_is_csv_opened)) {
+              m_csv_file.set_var(irst("Time"),
+                irsstr_from_number_russian(char_t(), m_timer.get()));
+              m_csv_file.set_var(csv_name,
+                irsstr_from_number_russian(char_t(),
+                var_to_double(var_index)));
+            }
           }
         }
       }
-      if(m_is_created_csv) {
+      if (m_is_csv_opened) {
         m_csv_file.write_line();
       }
     }
@@ -748,7 +779,7 @@ void irs::tstlan4_t::controls_t::save_grid_row(int a_row)
   m_ini_file.save_grid_row(mp_vars_grid, a_row);
   m_netconn.connect(mp_data, mp_vars_grid, m_type_col, m_index_col);
 }
-void irs::tstlan4_t::controls_t::creation_csv()
+void irs::tstlan4_t::controls_t::open_csv()
 {
   m_timer.start();
   string_type file_name = file_name_time(irst(".csv"));
@@ -757,10 +788,11 @@ void irs::tstlan4_t::controls_t::creation_csv()
 
   string_type path_file = cbuilder::file_path(path + file_name, irst(".csv"));
   if (m_csv_file.open(path_file)) {
-    m_is_created_csv = true;
+    m_is_csv_opened = true;
     TStrings* name_list = mp_vars_grid->Cols[m_name_col];
     TStrings* chart_list = mp_vars_grid->Cols[m_chart_col];
     int row_count = mp_vars_grid->RowCount;
+    m_csv_file.clear_pars();
     m_csv_file.add_col(irst("Time"), ec_str_type);
     for (int row = m_header_size; row < row_count; row++) {
       string_type csv_names = name_list->Strings[row].c_str();
@@ -774,6 +806,12 @@ void irs::tstlan4_t::controls_t::creation_csv()
     }
   } else {
     MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
+  }
+}
+void irs::tstlan4_t::controls_t::close_csv()
+{
+  if (m_csv_file.close()) {
+    m_is_csv_opened = false;
   }
 }
 void __fastcall irs::tstlan4_t::controls_t::VarsGridGetEditText(
@@ -844,18 +882,15 @@ void __fastcall irs::tstlan4_t::controls_t::ChartBtnClick(TObject *Sender)
 }
 void __fastcall irs::tstlan4_t::controls_t::CsvSaveBtnClick(TObject *Sender)
 {
+  m_refresh_csv_state_event.exec();
   if (!m_start) {
     m_start = true;
     m_refresh_table = false;
-    if (m_csv_file.close()) {
-      m_is_created_csv = false;
-    }
     mp_start_btn->Caption = mp_read_on_text;
     m_minus_shift_time = m_time.get();
   } else {
     m_start = false;
     m_refresh_table = true;
-    creation_csv();
     mp_start_btn->Caption = mp_read_off_text;
     m_minus_shift_time = m_time.get() - m_minus_shift_time;
   }

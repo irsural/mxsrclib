@@ -367,12 +367,14 @@ private:
     measure_time_t m_timer;
     string_type m_ini_section_prefix;
     bool m_start;
-    bool m_first;
-    bool m_is_created_csv;
+    //bool m_first;
+    event_t m_refresh_csv_state_event;
+    bool m_is_csv_opened;
     event_t* mp_event;
     event_t m_inner_options_event;
     handle_t<param_box_base_t> mp_param_box;
     param_box_tune_t m_param_box_tune;
+    bool m_is_csv_on;
 
     template <class T>
     void out_number(ostream_t& a_stream, const T& a_value);
@@ -402,7 +404,8 @@ private:
     void fill_grid_index_col();
     bool is_saveable_col(int a_col);
     void save_grid_row(int a_row);
-    void creation_csv();
+    void open_csv();
+    void close_csv();
     void __fastcall VarsGridGetEditText(
       TObject *Sender, int ACol, int ARow, String &Value);
     void __fastcall VarsGridKeyDown(
