@@ -59,6 +59,17 @@ struct mx_chart_line_t {
   }
 };
 
+class pen_t
+{
+public:
+  #if defined(QT)
+  typedef QPen native_pen_t;
+  #elif defined(__BORLANDC__)
+  typedef TPen native_pen_t;
+  #endif //defined(__BORLANDC__)
+private:
+};
+
 struct mx_ext_chart_types
 {
   typedef long double float_type;
@@ -188,6 +199,16 @@ public:
   size_type count_marker_y() const;
   float_type marker_x(size_type Index) const;
   float_type marker_y(size_type Index) const;
+  void marker_x(size_type Index, float_type Value);
+  void marker_y(size_type Index, float_type Value);
+  float_type first_marker_x();
+  float_type first_marker_y();
+  void first_marker_x(const float_type& a_position);
+  void first_marker_y(const float_type& a_position);
+  float_type last_marker_x();
+  float_type last_marker_y();
+  void last_marker_x(const float_type& a_position);
+  void last_marker_y(const float_type& a_position);
 
   void AddMarkerX(float_type Value);
   void AddMarkerY(float_type Value);
@@ -273,8 +294,6 @@ private:
   void SetTop(int_type Value);
   void SetWidth(int_type Value);
   void SetHeight(int_type Value);
-  void SetMarkerX(size_type Index, float_type Value);
-  void SetMarkerY(size_type Index, float_type Value);
   void SetCanvas(TCanvas *Value);
   void SetShift(size_type Index, float_type Value);
   void SetScale(size_type Index, float_type Value);

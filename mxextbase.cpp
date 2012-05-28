@@ -17,7 +17,7 @@
 #include <irsfinal.h>
 
 #ifdef NOP
-//---------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void __fastcall Point(TCanvas *Canvas, TPoint P)
 {
   Canvas->Pixels[P.x][P.y] = Canvas->Pen->Color;

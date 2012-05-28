@@ -877,6 +877,78 @@ double mx_ext_chart_item_t::marker_y(size_type Index) const
   }
   return 0;
 }
+void mx_ext_chart_item_t::marker_x(size_type Index, double Value)
+{
+  if (Index == last_index_mark()) {
+    if (IndexMarkerX) {
+      Index = IndexMarkerX - 1;
+    }
+  }
+  if ((Index >= 0) && (Index < IndexMarkerX))
+  {
+    double X1 = (FMarkerX[Index] - FShiftX)/FScaleX;
+    double X2 = (Value - FShiftX)/FScaleX;
+    int_type OldPos = ConvCoor(DblPoint(X1, FArea.Top)).x;
+    int_type NewPos = ConvCoor(DblPoint(X2, FArea.Top)).x;
+    if (NewPos != OldPos)
+    { PaintMarkerX(Index); FMarkerX[Index] = Value; PaintMarkerX(Index); }
+    else
+      FMarkerX[Index] = Value;
+    if (FOnChange) FOnChange(this, cctMarker);
+  }
+}
+void mx_ext_chart_item_t::marker_y(size_type Index, double Value)
+{
+  if (Index == last_index_mark()) {
+    if (IndexMarkerY) {
+      Index = IndexMarkerY - 1;
+    }
+  }
+  if ((Index >= 0) && (Index < IndexMarkerY))
+  {
+    double Y1 = (FMarkerY[Index] - FShiftY)/FScaleY;
+    double Y2 = (Value - FShiftY)/FScaleY;
+    int_type OldPos = ConvCoor(DblPoint(FArea.Left, Y1)).y;
+    int_type NewPos = ConvCoor(DblPoint(FArea.Left, Y2)).y;
+    if (NewPos != OldPos)
+    { PaintMarkerY(Index); FMarkerY[Index] = Value; PaintMarkerY(Index); }
+    else
+      FMarkerY[Index] = Value;
+    if (FOnChange) FOnChange(this, cctMarker);
+  }
+}
+float_type mx_ext_chart_item_t::first_marker_x()
+{
+  return marker_x(0);
+}
+float_type mx_ext_chart_item_t::first_marker_y()
+{
+  return marker_y(0);
+}
+void mx_ext_chart_item_t::first_marker_x(const float_type& a_position)
+{
+  marker_x(0, a_position);
+}
+void mx_ext_chart_item_t::first_marker_y(const float_type& a_position)
+{
+  marker_y(0, a_position);
+}
+float_type mx_ext_chart_item_t::last_marker_x()
+{
+  return marker_x(last_index_mark());
+}
+float_type mx_ext_chart_item_t::last_marker_y()
+{
+  return marker_y(last_index_mark());
+}
+void mx_ext_chart_item_t::last_marker_x(const float_type& a_position)
+{
+  marker_x(last_index_mark(), a_position);
+}
+void mx_ext_chart_item_t::last_marker_y(const float_type& a_position)
+{
+  marker_y(last_index_mark(), a_position);
+}
 
 // Функция по умолчанию.
 double mx_ext_chart_item_t::DefFunc(double x) const
@@ -1017,40 +1089,6 @@ void mx_ext_chart_item_t::AddMarkerY(double Value)
   IndexMarkerY++;
   PaintMarkerY(IndexMarkerY - 1);
   if (FOnChange) FOnChange(this, cctMarker);
-}
-
-void mx_ext_chart_item_t::SetMarkerX(size_type Index, double Value)
-{
-  if (Index == -1) if (IndexMarkerX) Index = IndexMarkerX - 1;
-  if ((Index >= 0) && (Index < IndexMarkerX))
-  {
-    double X1 = (FMarkerX[Index] - FShiftX)/FScaleX;
-    double X2 = (Value - FShiftX)/FScaleX;
-    int_type OldPos = ConvCoor(DblPoint(X1, FArea.Top)).x;
-    int_type NewPos = ConvCoor(DblPoint(X2, FArea.Top)).x;
-    if (NewPos != OldPos)
-    { PaintMarkerX(Index); FMarkerX[Index] = Value; PaintMarkerX(Index); }
-    else
-      FMarkerX[Index] = Value;
-    if (FOnChange) FOnChange(this, cctMarker);
-  }
-}
-
-void mx_ext_chart_item_t::SetMarkerY(size_type Index, double Value)
-{
-  if (Index == -1) if (IndexMarkerY) Index = IndexMarkerY - 1;
-  if ((Index >= 0) && (Index < IndexMarkerY))
-  {
-    double Y1 = (FMarkerY[Index] - FShiftY)/FScaleY;
-    double Y2 = (Value - FShiftY)/FScaleY;
-    int_type OldPos = ConvCoor(DblPoint(FArea.Left, Y1)).y;
-    int_type NewPos = ConvCoor(DblPoint(FArea.Left, Y2)).y;
-    if (NewPos != OldPos)
-    { PaintMarkerY(Index); FMarkerY[Index] = Value; PaintMarkerY(Index); }
-    else
-      FMarkerY[Index] = Value;
-    if (FOnChange) FOnChange(this, cctMarker);
-  }
 }
 
 void mx_ext_chart_item_t::ClearMarkerX()
