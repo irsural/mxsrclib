@@ -15,7 +15,6 @@
 #endif //__BORLANDC__
 
 #include <irscpp.h>
-#include <irsconfig.h>
 #include <irslocale.h>
 
 #include <irsfinal.h>
@@ -224,12 +223,32 @@ inline irs_string_t& string_assign(irs_string_t& strg, const T& val,
   irsstrloc_t a_locale_style);
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+class irsstr_locale_style_def_t {
+public:
+  irsstr_locale_style_def_t():
+    m_locale_style(irsstrloc_classic)
+  {
+  }
+  irsstrloc_t get()
+  {
+    return m_locale_style;
+  }
+  void set(irsstrloc_t a_locale_style)
+  {
+    m_locale_style = a_locale_style;
+  }
+private:
+  irsstrloc_t m_locale_style;
+};
+
+irsstr_locale_style_def_t& irsstr_locale_style_def();
+
 struct irsstrdata_t
 {
   irsstrloc_t locale_style;
 
   irsstrdata_t():
-    locale_style(irsstrloc_classic)
+    locale_style(irsstr_locale_style_def().get())
   {
   }
 };

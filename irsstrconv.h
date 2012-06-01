@@ -13,6 +13,9 @@
 #if defined(__BORLANDC__)
 #include <dstring.h>
 #endif // defined(__BORLANDC__)
+#ifdef QT_CORE_LIB
+#include <QString>
+#endif //QT_CORE_LIB
 
 #include <irsstrdefs.h>
 #include <string.h>
@@ -103,13 +106,36 @@ struct base_str_type<UnicodeString>
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
+//char*
+#ifdef QT_CORE_LIB
+inline QString str_conv(const char* a_str_in)
+{
+  return a_str_in;
+}
+#endif //QT_CORE_LIB
+
+//wchar_t*
+#ifdef QT_CORE_LIB
+inline QString str_conv(const wchar_t* a_str_in)
+{
+  return QString::fromWCharArray(a_str_in);
+}
+#endif //QT_CORE_LIB
+
+
 //std_string_t
 template<class T>
 inline T str_conv(const std_string_t& a_str_in)
 {
   return str_conv_simple(T(), a_str_in);
 }
-
+#ifdef QT_CORE_LIB
+template<>
+inline QString str_conv<QString>(const std_string_t& a_str_in)
+{
+  return QString::fromStdString(a_str_in);
+}
+#endif //QT_CORE_LIB
 #if defined(__BORLANDC__)
 template<>
 inline String str_conv<String>(const std_string_t& a_str_in)
@@ -146,6 +172,13 @@ inline T str_conv(const std_wstring_t& a_str_in)
 {
   return str_conv_simple(T(), a_str_in);
 }
+#ifdef QT_CORE_LIB
+template<>
+inline QString str_conv<QString>(const std_wstring_t& a_str_in)
+{
+  return QString::fromStdWString(a_str_in);
+}
+#endif //QT_CORE_LIB
 #if defined(__BORLANDC__)
 template<>
 inline AnsiString str_conv<AnsiString>(const std_wstring_t& a_str_in)

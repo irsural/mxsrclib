@@ -64,20 +64,21 @@
 #define BOOST_TR1_USE_OLD_TUPLE
 #endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
+
 #ifdef IRS_WIN32
 # include <winsock2.h>
 #endif // __WIN32__
-
 #ifdef __BORLANDC__
 #include <System.hpp>
 #endif //__BORLANDC__
+#ifdef __ICCAVR__
+#include <inavr.h>
+#endif // __ICCAVR__
 
 #include <limits.h>
 #include <stddef.h>
 
-#ifdef __ICCAVR__
-#include <inavr.h>
-#endif // __ICCAVR__
+#include <irsconfig.h>
 
 // Деректива throw
 #ifdef __ICCAVR__
