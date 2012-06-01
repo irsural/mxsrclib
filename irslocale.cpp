@@ -28,7 +28,7 @@ irs::locale_manager_t::locale_manager_t():
   m_loc = locale(m_loc, new irs_numpunct_t<char>);
   m_loc = locale(m_loc, new irs_numpunct_t<wchar_t>);
   locale::global(m_loc);
-  setlocale(LC_ALL, "");
+  setlocale(LC_ALL, m_locale_name_def);
 }
 
 irs::locale_manager_t& irs::loc()
