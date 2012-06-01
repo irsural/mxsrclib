@@ -15,28 +15,20 @@
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
-  #ifdef NOP
-  //#if defined(IRS_WIN32)
-  #ifdef __MINGW32__
-  m_loc("UTF-8")
-  #else //__MINGW32__
-  m_loc("Russian_Russia.1251")
-  #endif //__MINGW32__
-  #endif //NOP
+const char* irs::locale_manager_t::m_locale_name_def =
+  #if defined(IRS_WIN32) && !defined(__MINGW32__)
+  "Russian_Russia.1251";
+  #else // Compilers
+  "";
+  #endif // Compilers
 
 irs::locale_manager_t::locale_manager_t():
-  #if defined(IRS_WIN32) && !defined(__MINGW32__)
-
-  m_loc("Russian_Russia.1251")
-
-
-  #else // Compilers
-  m_loc("")
-  #endif // Compilers
+  m_loc(m_locale_name_def)
 {
   m_loc = locale(m_loc, new irs_numpunct_t<char>);
   m_loc = locale(m_loc, new irs_numpunct_t<wchar_t>);
   locale::global(m_loc);
+  setlocale(LC_ALL, "");
 }
 
 irs::locale_manager_t& irs::loc()

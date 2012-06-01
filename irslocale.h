@@ -24,6 +24,8 @@ public:
   inline locale& get();
   void set(const locale& a_loc);
 private:
+  static const char* m_locale_name_def;
+
   locale m_loc;
 };
 
@@ -40,20 +42,23 @@ inline void locale_manager_t::set(const locale& a_loc)
 
 locale_manager_t& loc();
 
-template<class T>
-class irs_numpunct_t: public numpunct<T>
+template <class tmpl_char_type>
+class irs_numpunct_t: public numpunct<tmpl_char_type>
 {
 public:
-  explicit irs_numpunct_t(size_t r = 0):
-    numpunct<T>(r)
+  typedef tmpl_char_type char_type;
+  typedef basic_string<char_type> string_type;
+
+  explicit irs_numpunct_t(size_t a_no_locale_delete = 0):
+    numpunct<char_type>(a_no_locale_delete)
   {
   }
 protected:
-  T do_decimal_point() const
+  char_type do_decimal_point() const
   {
     return ',';
   }
-  T do_thousands_sep() const
+  char_type do_thousands_sep() const
   {
     return ' ';
   }
