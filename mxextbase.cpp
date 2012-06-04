@@ -17,6 +17,8 @@
 #include <irsfinal.h>
 
 #ifdef NOP
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 //--------------------------------------------------------------------------
 void __fastcall Point(TCanvas *Canvas, TPoint P)
 {
@@ -464,4 +466,6 @@ TPrinterDC::~TPrinterDC()
 
 } // namespace Mxbase
 
+#endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP

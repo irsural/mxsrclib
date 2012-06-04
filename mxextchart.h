@@ -19,6 +19,7 @@
 
 #ifdef NOP
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 
 #define MXCHARTRANGE(Chart) BeginChartRange(Chart, 0), EndChartRange(Chart, 0)
 #define MXCHARTRANGEL(Chart) BeginChartRange(Chart, -1),\
@@ -59,14 +60,104 @@ struct mx_chart_line_t {
   }
 };
 
+union color_union_t {
+  struct {
+    irs_u8 blue;
+    irs_u8 green;
+    irs_u8 red;
+    irs_u8 alpha;
+  };
+  irs_u32 color;
+};
+
+struct native_gui_lib_stuff_t {
+  #if defined(QT_CORE_LIB)
+  typedef QPen native_pen_type;
+  typedef QBrush native_brush_type;
+  typedef QColor native_color_type;
+  #elif defined(__BORLANDC__)
+  typedef TPen native_pen_type;
+  typedef TBrush native_brush_type;
+  typedef TColor native_color_type;
+  #else //GUI Libs
+  typedef int native_pen_type
+  typedef int native_brush_type;
+  typedef int native_color_type;
+  #endif //GUI Libs
+
+  static color_union_t color_from_native(
+    const native_color_type* ap_native_color);
+  static void color_to_native(color_union_t a_color,
+    native_color_type* ap_native_color);
+};
+
+enum color_const_t {
+  cl_first,
+  cl_white = cl_first,
+  cl_black,
+  cl_red,
+  cl_dark_red, //darkRed
+  cl_green,
+  cl_dark_green, //darkGreen
+  cl_blue,
+  cl_dark_blue, //darkBlue
+  cl_cyan,
+  cl_dark_cyan, //darkCyan
+  cl_magenta,
+  cl_dark_magenta, //darkMagenta
+  cl_yellow,
+  cl_dark_yellow, //darkYellow
+  cl_gray,
+  cl_dark_gray, //darkGray
+  cl_light_gray, //lightGray
+  cl_transparent,
+  cl_cream, //$F0FBFF
+  cl_money_green, //clMoneyGreen 	 Mint Green 	 $C0DCC0
+  cl_sky_blue, //clSkyBlue 	 Sky Blue 	 $F0CAA6
+  cl_size
+
+  //clAqua = cyan
+  //clBlack =	black
+  //clBlue = blue 	 $FF0000
+  //clDkGray 	 cl_dark_gray 	 $808080
+  //clFuchsia 	 cl_magenta 	 $FF00FF
+  //clGray 	 cl_dark_gray 	 $808080
+  //clGreen 	 cl_dark_green 	 $008000
+  //clLime 	 cl_green 	 $00FF00
+  //clLtGray 	 cl_light_gray 	 $C0C0C0
+  //clMaroon 	 cl_dark_red 	 $000080
+  //clMedGray 	 cl_gray 	 $A4A0A0
+  //clNavy 	 cl_dark_blue $800000
+  //clOlive 	 cl_dark_green $800000
+  //clPurple 	 cl_dark_magenta 	 $800080
+  //clRed 	 cl_red 	 $0000FF
+  //clSilver 	 cl_light_gray 	 $C0C0C0
+  //clTeal 	 cl_dark_cyan 	 $808000
+  //clWhite 	 cl_white 	 $FFFFFF
+  //clYellow cl_yellow
+};
+
+void color_const_to_rgba(color_const_t a_color_const,
+  color_union_t* ap_color_union);
+
+class color_t
+{
+public:
+  typedef native_gui_lib_stuff_t::native_color_type native_color_type;
+
+  color_t(irs_u8 a_red = 255, irs_u8 a_green = 255, irs_u8 a_blue = 255,
+    irs_u8 a_alpha = 255);
+  color_t(color_const_t a_color_const);
+private:
+  color_union_t m_color_union;
+};
+
 class pen_t
 {
 public:
-  #if defined(QT)
-  typedef QPen native_pen_t;
-  #elif defined(__BORLANDC__)
-  typedef TPen native_pen_t;
-  #endif //defined(__BORLANDC__)
+  typedef native_gui_lib_stuff_t::native_pen_type native_pen_type;
+
+  pen_t();
 private:
 };
 
@@ -763,6 +854,7 @@ private:
 
 } //namespace irs
 
+#endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP
 

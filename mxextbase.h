@@ -9,6 +9,8 @@
 #define MXEXTBASEH
 
 #ifdef NOP
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 
 #include <irsdefs.h>
 
@@ -451,6 +453,8 @@ public:
 
 //using namespace Mxbase;
 
+#endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP
 
 #endif //MXEXTBASEH

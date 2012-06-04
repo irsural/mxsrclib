@@ -11,13 +11,14 @@
 #endif // __BORLANDC__
 
 #include <timer.h>
-
+#include <mxdata.h>
 #include <mxextchart.h>
 
 #include <irsfinal.h>
 
 #ifdef NOP
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 
 namespace irs {
 
@@ -144,6 +145,101 @@ bool AnyKeyPress()
   return false;
 }
 #endif //NOP
+
+#if defined(QT_CORE_LIB)
+static color_union_t color_from_native(
+  const native_color_type* ap_native_color)
+{
+  color_union_t color_ret = zero_struct_t<color_union_t>::get();
+  color_ret.red = static_cast<irs_u8>(ap_native_color->red());
+  color_ret.green = static_cast<irs_u8>(ap_native_color->green());
+  color_ret.blue = static_cast<irs_u8>(ap_native_color->blue());
+  color_ret.alpha = static_cast<irs_u8>(ap_native_color->alpha());
+  return color_ret;
+}
+static void color_to_native(color_union_t a_color,
+  native_color_type* ap_native_color)
+{
+  ap_native_color->setRgb(a_color.red, a_color.green, a_color.blue,
+    a_color.alpha);
+}
+#elif defined(__BORLANDC__)
+struct builder_color_union_t {
+  struct {
+    irs_u8 red;
+    irs_u8 green;
+    irs_u8 blue;
+    irs_u8 spec;
+  };
+  irs_u32 color;
+};
+static color_union_t color_from_native(
+  const native_color_type* ap_native_color)
+{
+  const builder_color_union_t& native_color =
+    reinterpret_cast<const builder_color_union_t&>(*ap_native_color);
+  color_union_t color_ret = zero_struct_t<color_union_t>::get();
+  color_ret.red = native_color.red;
+  color_ret.green = native_color.green;
+  color_ret.blue = native_color.blue;
+  color_ret.alpha = 255;
+  return color_ret;
+}
+static void color_to_native(color_union_t a_color,
+  native_color_type* ap_native_color)
+{
+  builder_color_union_t& native_color =
+    reinterpret_cast<builder_color_union_t&>(*ap_native_color);
+  native_color.red= color_ret.red;
+  native_color.green = color_ret.green;
+  native_color.blue = color_ret.blue;
+}
+#else //GUI Libs
+static color_union_t color_from_native(const native_color_type*)
+{
+}
+static void color_to_native(color_union_t, native_color_type*)
+{
+}
+#endif //GUI Libs
+
+namespace irs {
+
+struct color_const_to_rgba_collation_t {
+  vector<irs_u32> collation;
+  color_const_to_rgba_collation_t(): collation(cl_size) {
+    collation[cl_white]        = 0xFFFFFFFF;
+    collation[cl_black]        = 0xFF000000;
+    collation[cl_red]          = 0xFFff0000;
+    collation[cl_dark_red]     = 0xFF800000;
+    collation[cl_green]        = 0xFF00ff00;
+    collation[cl_dark_green]   = 0xFF008000;
+    collation[cl_blue]         = 0xFF0000ff;
+    collation[cl_dark_blue]    = 0xFF000080;
+    collation[cl_cyan]         = 0xFF00ffff;
+    collation[cl_dark_cyan]    = 0xFF008080;
+    collation[cl_magenta]      = 0xFFff00ff;
+    collation[cl_dark_magenta] = 0xFF800080;
+    collation[cl_yellow]       = 0xFFffff00;
+    collation[cl_dark_yellow]  = 0xFF808000;
+    collation[cl_gray]         = 0xFFa0a0a4;
+    collation[cl_dark_gray]    = 0xFF808080;
+    collation[cl_light_gray]   = 0xFFc0c0c0;
+    collation[cl_transparent]  = 0x00000000;
+    collation[cl_cream]        = 0xFFFFFBF0;
+    collation[cl_money_green]  = 0xFFC0DCC0;
+    collation[cl_sky_blue]     = 0xFFA6CAF0;
+  }
+};
+
+} //namespace irs
+
+void color_const_to_rgba(color_const_t a_color_const,
+  color_union_t* ap_color_union)
+{
+  static color_const_to_rgba_collation_t col;
+  ap_color_union->color = col.collation[a_color_const];
+}
 
 //***************************************************************************
 // mx_ext_chart_item_t - Компонент на mx_ext_chart_t
@@ -3961,5 +4057,6 @@ void irs::chart::builder_chart_window_t::TChartForm::
 }
 #endif //NOP
 
+#endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 #endif //NOP
