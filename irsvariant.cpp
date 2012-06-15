@@ -243,6 +243,9 @@ irs::variant::variant_t::~variant_t()
 
 void irs::variant::variant_t::type_change(const var_type_t a_variant_type)
 {
+  if (m_type == a_variant_type) {
+    return;
+  }
   if (m_type == var_type_string) {
     if (a_variant_type != var_type_string) {
       IRS_LIB_ASSERT(m_value.p_val_string_type != IRS_NULL);
