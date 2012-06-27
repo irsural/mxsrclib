@@ -664,6 +664,24 @@ inline irs_string_t to_lower(const irs_string_t& a_str)
 }
 #endif // !IRS_FULL_STDCPPLIB_SUPPORT
 
+IRS_STRING_TEMPLATE
+inline bool cstr_to_bool(
+  const IRS_STRING_CHAR_TYPE* a_string,
+  bool& a_value)
+{
+  bool result = false;
+  IRS_STRING_TYPE_SPEC string_value = a_string;
+  string_value = to_lower(string_value);
+  if ((string_value == "true") || (string_value == "истина")) {
+    a_value = true;
+    result = true;
+  } else if ((string_value == "false") || (string_value == "ложь")) {
+    a_value = false;
+    result = true;
+  }
+  return result;
+}
+
 //! @}
 
 } //namespace irs

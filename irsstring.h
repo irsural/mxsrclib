@@ -847,6 +847,7 @@ inline bool cstr_to_number_russian(
 {
   return cstr_to_number(a_string, a_value, irsstrloc_russian);
 }
+
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 IRS_STRING_NUMBER_TEMPLATE
 inline bool cstr_to_number_locale(
