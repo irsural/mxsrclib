@@ -32,16 +32,20 @@ private:
 
 } //namespace irs
 
-irs::init_implement_t::init_implement_t():
+irs::init_implement_t::init_implement_t()
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  mp_error_handler(new irs::exception_error_handler_t)
+  : mp_error_handler(new irs::exception_error_handler_t)
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 {
   #ifdef QT_CORE_LIB
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
   #endif //QT_CORE_LIB
+  
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   irs::loc();
+  #endif //IRS_FULL_STDCPPLIB_SUPPORT
+  
   irs::irsstr_locale_style_def().set(irs::irsstrloc_current);
 }
 void irs::init_implement_t::dummy()
