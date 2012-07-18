@@ -491,7 +491,7 @@ irs_u8 irs::arm::arm_spi_t::read_data_register()
 
 bool irs::arm::arm_spi_t::transfer_complete()
 {
-  switch (m_spi_type) {
+ switch (m_spi_type) {
     case SPI:
     {
       return !(m_reg.mp_SSISR_bit->BSY);
