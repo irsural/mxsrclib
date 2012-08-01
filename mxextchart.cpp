@@ -144,24 +144,31 @@ bool AnyKeyPress()
   for(register int i = 0; i < 256; i++) if (KeyPress(i)) return true;
   return false;
 }
-#endif //NOP
 
 #if defined(QT_CORE_LIB)
-static color_union_t color_from_native(
-  const native_color_type* ap_native_color)
+static color_union_t native_gui_lib_stuff_t::color_from_native(
+  const native_color_type& a_native_color)
 {
   color_union_t color_ret = zero_struct_t<color_union_t>::get();
-  color_ret.red = static_cast<irs_u8>(ap_native_color->red());
-  color_ret.green = static_cast<irs_u8>(ap_native_color->green());
-  color_ret.blue = static_cast<irs_u8>(ap_native_color->blue());
-  color_ret.alpha = static_cast<irs_u8>(ap_native_color->alpha());
+  color_ret.red = static_cast<irs_u8>(a_native_color.red());
+  color_ret.green = static_cast<irs_u8>(a_native_color.green());
+  color_ret.blue = static_cast<irs_u8>(a_native_color.blue());
+  color_ret.alpha = static_cast<irs_u8>(a_native_color.alpha());
   return color_ret;
 }
-static void color_to_native(color_union_t a_color,
+static void native_gui_lib_stuff_t::color_to_native(color_union_t a_color,
   native_color_type* ap_native_color)
 {
   ap_native_color->setRgb(a_color.red, a_color.green, a_color.blue,
     a_color.alpha);
+}
+static void pen_general_to_native(const pen_t& a_general_pen,
+  native_pen_type* ap_native_pen)
+{
+}
+static void pen_native_to_general(const native_pen_type& ap_native_pen,
+  pen_t* a_general_pen)
+{
 }
 #elif defined(__BORLANDC__)
 struct builder_color_union_t {
@@ -173,11 +180,11 @@ struct builder_color_union_t {
   };
   irs_u32 color;
 };
-static color_union_t color_from_native(
-  const native_color_type* ap_native_color)
+static color_union_t native_gui_lib_stuff_t::color_from_native(
+  const native_color_type* a_native_color)
 {
   const builder_color_union_t& native_color =
-    reinterpret_cast<const builder_color_union_t&>(*ap_native_color);
+    reinterpret_cast<const builder_color_union_t&>(a_native_color);
   color_union_t color_ret = zero_struct_t<color_union_t>::get();
   color_ret.red = native_color.red;
   color_ret.green = native_color.green;
@@ -185,7 +192,7 @@ static color_union_t color_from_native(
   color_ret.alpha = 255;
   return color_ret;
 }
-static void color_to_native(color_union_t a_color,
+static void native_gui_lib_stuff_t::color_to_native(color_union_t a_color,
   native_color_type* ap_native_color)
 {
   builder_color_union_t& native_color =
@@ -195,13 +202,17 @@ static void color_to_native(color_union_t a_color,
   native_color.blue = color_ret.blue;
 }
 #else //GUI Libs
-static color_union_t color_from_native(const native_color_type*)
+static color_union_t native_gui_lib_stuff_t::color_from_native(
+  const native_color_type*)
 {
 }
-static void color_to_native(color_union_t, native_color_type*)
+static void native_gui_lib_stuff_t::color_to_native(
+  color_union_t, native_color_type*)
 {
 }
 #endif //GUI Libs
+#endif //NOP
+
 
 namespace irs {
 
@@ -234,11 +245,134 @@ struct color_const_to_rgba_collation_t {
 
 } //namespace irs
 
-void color_const_to_rgba(color_const_t a_color_const,
-  color_union_t* ap_color_union)
+color_union_t color_union_from_color_const(color_const_t a_color_const)
 {
   static color_const_to_rgba_collation_t col;
-  ap_color_union->color = col.collation[a_color_const];
+  color_union_t color_union = zero_struct_t<color_union_t>::get();
+  color_union->color = col.collation[a_color_const];
+  return color_union;
+}
+color_union_t color_union_from_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255)
+{
+  color_union_t color_union = zero_struct_t<color_union_t>::get();
+  color_union.red = a_red;
+  color_union.green = a_green;
+  color_union.blue = a_blue;
+  color_union.alpha = a_alpha;
+  return color_union;
+}
+
+irs::color_t::color_t(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255
+):
+  m_color_union(color_union_from_rgba(a_red, a_green, a_blue, a_alpha))
+{
+}
+irs::color_t::color_t(color_const_t a_color_const):
+  m_color_union(color_union_from_color_const(a_color_const))
+{
+}
+#ifdef NOP
+irs::color_t::color_t(const native_color_type& a_native_color):
+  m_color_union(native_gui_lib_stuff_t::color_from_native(a_native_color)),
+  mp_native_color(new native_color_type(a_native_color))
+{
+}
+#endif NOP
+void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255)
+{
+  color_t color(a_red, a_green, a_blue, a_alpha);
+  swap(*this, color);
+}
+void irs::color_t::operator=(color_const_t a_color_const)
+{
+  color_t color(a_color_const);
+  swap(*this, color);
+}
+#ifdef NOP
+void irs::color_t::operator=(const native_color_type& a_native_color)
+{
+  color_t color(a_native_color);
+  swap(*this, color);
+}
+#endif //NOP
+void irs::color_t::swap(color_t& a_color)
+{
+  ::swap(m_color_union, a_color.m_color_union);
+}
+void swap(color_t& a_color_left, color_t& a_color_right)
+{
+  a_color_left.swap(a_color_right);
+}
+#ifdef NOP
+void irs::color_t::get_native_color(native_color_type* ap_native_color)
+{
+  ap_native_color = mp_native_color.get();
+}
+#endif //NOP
+irs_u8 irs::color_t::red() const
+{
+  return m_color_union.red;
+}
+irs_u8 irs::color_t::green() const
+{
+  return m_color_union.green;
+}
+irs_u8 irs::color_t::blue() const
+{
+  return m_color_union.blue;
+}
+irs_u8 irs::color_t::alpha() const
+{
+  return m_color_union.alpha;
+}
+void irs::color_t::red(irs_u8 a_red)
+{
+  m_color_union.red = a_red;
+}
+void irs::color_t::green(irs_u8 a_green)
+{
+  m_color_union.green = a_green;
+}
+void irs::color_t::blue(irs_u8 a_blue)
+{
+  m_color_union.blue = a_blue;
+}
+void irs::color_t::alpha(irs_u8 a_alpha)
+{
+  m_color_union.blue = a_alpha;
+}
+#ifdef NOP
+void irs::color_t::update_native()
+{
+  native_gui_lib_stuff_t::color_to_native(m_color_union,
+    mp_native_color.get());
+}
+#endif //NOP
+
+irs::pen_t::pen_t(const color_t& a_color, pen_style_t a_style):
+  m_color(a_color),
+  m_style(a_style),
+  mp_native_pen(IRS_NULL)
+{
+}
+irs::color_t irs::pen_t::color()
+{
+  return m_color;
+}
+void irs::pen_t::color(const color_t& a_color)
+{
+  m_color = a_color;
+}
+irs::pen_style_t irs::pen_t::style()
+{
+  return m_style;
+}
+void irs::pen_t::style(pen_style_t a_style)
+{
+  m_style = a_style;
 }
 
 //***************************************************************************
@@ -1045,21 +1179,23 @@ void mx_ext_chart_item_t::last_marker_y(const float_type& a_position)
 {
   marker_y(last_index_mark(), a_position);
 }
+pen_t mx_ext_chart_item_t::pen()
+{
+  return FPen;
+}
+void mx_ext_chart_item_t::pen(const pen_t& a_pen)
+{
+  FPen->Assign(Value);
+}
+void mx_ext_chart_item_t::SetMarkerPen(TPen *Value)
+{
+  FMarkerPen->Assign(Value);
+}
 
 // Функция по умолчанию.
 double mx_ext_chart_item_t::DefFunc(double x) const
 {
   return x;
-}
-
-void mx_ext_chart_item_t::SetPen(TPen *Value)
-{
-  FPen->Assign(Value);
-}
-
-void mx_ext_chart_item_t::SetMarkerPen(TPen *Value)
-{
-  FMarkerPen->Assign(Value);
 }
 
 void mx_ext_chart_item_t::SetShift(size_type Index, double Value)

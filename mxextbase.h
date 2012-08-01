@@ -9,13 +9,12 @@
 #define MXEXTBASEH
 
 #ifdef NOP
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
-
 #include <irsdefs.h>
 
+#ifdef IRS_WIN32
 #include <mmsystem.h>
 #include <winspool.h>
+#endif //IRS_WIN32
 //#include <Dialogs.hpp>
 
 //#include <vcl.h>
@@ -23,6 +22,9 @@
 #include <irslimits.h>
 
 #include <irsfinal.h>
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 
 //! \ingroup graphical_user_interface_group
 #define SAFEOPER(__operator__) try { __operator__; } catch (...) {}

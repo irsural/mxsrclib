@@ -10,10 +10,17 @@
 
 #include <irsdefs.h>
 
+#if defined(QT_CORE_LIB)
+#include <QPen>
+#elif defined(__BORLANDC__)
+#include <Graphics.hpp>
+#endif //GUI Libs
+
 #include <mxextbase.h>
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irschartwin.h>
+#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -70,6 +77,8 @@ union color_union_t {
   irs_u32 color;
 };
 
+#ifdef NOP
+class pen_t;
 struct native_gui_lib_stuff_t {
   #if defined(QT_CORE_LIB)
   typedef QPen native_pen_type;
@@ -86,79 +95,87 @@ struct native_gui_lib_stuff_t {
   #endif //GUI Libs
 
   static color_union_t color_from_native(
-    const native_color_type* ap_native_color);
+    const native_color_type& a_native_color);
   static void color_to_native(color_union_t a_color,
     native_color_type* ap_native_color);
+  static void pen_general_to_native(const pen_t& a_general_pen,
+    native_pen_type* ap_native_pen);
+  static void pen_native_to_general(const native_pen_type& ap_native_pen,
+    pen_t* a_general_pen);
 };
+#endif //NOP
 
 enum color_const_t {
   cl_first,
   cl_white = cl_first,
   cl_black,
   cl_red,
-  cl_dark_red, //darkRed
+  cl_dark_red,
   cl_green,
-  cl_dark_green, //darkGreen
+  cl_dark_green,
   cl_blue,
-  cl_dark_blue, //darkBlue
+  cl_dark_blue,
   cl_cyan,
-  cl_dark_cyan, //darkCyan
+  cl_dark_cyan,
   cl_magenta,
-  cl_dark_magenta, //darkMagenta
+  cl_dark_magenta,
   cl_yellow,
-  cl_dark_yellow, //darkYellow
+  cl_dark_yellow,
   cl_gray,
-  cl_dark_gray, //darkGray
-  cl_light_gray, //lightGray
+  cl_dark_gray,
+  cl_light_gray,
   cl_transparent,
-  cl_cream, //$F0FBFF
-  cl_money_green, //clMoneyGreen 	 Mint Green 	 $C0DCC0
-  cl_sky_blue, //clSkyBlue 	 Sky Blue 	 $F0CAA6
+  cl_cream,
+  cl_money_green,
+  cl_sky_blue,
   cl_size
-
-  //clAqua = cyan
-  //clBlack =	black
-  //clBlue = blue 	 $FF0000
-  //clDkGray 	 cl_dark_gray 	 $808080
-  //clFuchsia 	 cl_magenta 	 $FF00FF
-  //clGray 	 cl_dark_gray 	 $808080
-  //clGreen 	 cl_dark_green 	 $008000
-  //clLime 	 cl_green 	 $00FF00
-  //clLtGray 	 cl_light_gray 	 $C0C0C0
-  //clMaroon 	 cl_dark_red 	 $000080
-  //clMedGray 	 cl_gray 	 $A4A0A0
-  //clNavy 	 cl_dark_blue $800000
-  //clOlive 	 cl_dark_green $800000
-  //clPurple 	 cl_dark_magenta 	 $800080
-  //clRed 	 cl_red 	 $0000FF
-  //clSilver 	 cl_light_gray 	 $C0C0C0
-  //clTeal 	 cl_dark_cyan 	 $808000
-  //clWhite 	 cl_white 	 $FFFFFF
-  //clYellow cl_yellow
 };
 
-void color_const_to_rgba(color_const_t a_color_const,
-  color_union_t* ap_color_union);
+color_union_t color_union_from_color_const(color_const_t a_color_const);
+color_union_t color_union_from_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
 
 class color_t
 {
 public:
-  typedef native_gui_lib_stuff_t::native_color_type native_color_type;
-
   color_t(irs_u8 a_red = 255, irs_u8 a_green = 255, irs_u8 a_blue = 255,
     irs_u8 a_alpha = 255);
   color_t(color_const_t a_color_const);
+  color_t(const color_t& a_color);
+
+  void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+    irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
+  void operator=(color_const_t a_color_const);
+  void operator=(const color_t& a_color);
+
+  void swap(color_t& a_color);
+  irs_u8 red() const;
+  irs_u8 green() const;
+  irs_u8 blue() const;
+  irs_u8 alpha() const;
+  void red(irs_u8 a_red);
+  void green(irs_u8 a_green);
+  void blue(irs_u8 a_blue);
+  void alpha(irs_u8 a_alpha);
 private:
   color_union_t m_color_union;
 };
+void swap(color_t& a_color_left, color_t& a_color_right);
+
+enum pen_style_t { ps_solid, ps_dash, ps_dot, ps_dash_dot };
 
 class pen_t
 {
 public:
-  typedef native_gui_lib_stuff_t::native_pen_type native_pen_type;
+  pen_t(const color_t& a_color = color_t(), pen_style_t a_style = ps_solid);
 
-  pen_t();
+  color_t color();
+  void color(const color_t& a_color);
+  pen_style_t style();
+  void style(pen_style_t a_style);
 private:
+  color_t m_color;
+  pen_style_t m_style;
 };
 
 struct mx_ext_chart_types
@@ -300,6 +317,10 @@ public:
   float_type last_marker_y();
   void last_marker_x(const float_type& a_position);
   void last_marker_y(const float_type& a_position);
+  pen_t pen();
+  void pen(const pen_t& a_pen);
+  void SetPen(TPen *Value);
+  void SetMarkerPen(TPen *Value);
 
   void AddMarkerX(float_type Value);
   void AddMarkerY(float_type Value);
@@ -388,8 +409,6 @@ private:
   void SetCanvas(TCanvas *Value);
   void SetShift(size_type Index, float_type Value);
   void SetScale(size_type Index, float_type Value);
-  void SetPen(TPen *Value);
-  void SetMarkerPen(TPen *Value);
   bool ValidRect() const;
   void Paint(paint_style_t a_paint_style);
   void DoAutoScale();
