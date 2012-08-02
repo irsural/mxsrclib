@@ -22,7 +22,7 @@ namespace arm {
 
 //! \addtogroup drivers_group
 //! @{
-
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 class arm_spi_t: public spi_t
 {
 public:
@@ -35,7 +35,7 @@ public:
     TISS = 0x1, // Texas Instruments Synchronous Serial
     MICROWIRE = 0x2
   };
-  
+
   arm_spi_t(
     irs_u32 a_bitrate,
     spi_type_t a_spi_type = SPI,
@@ -59,7 +59,7 @@ public:
   virtual bool set_order(order_t /*a_order*/);
   virtual bool set_data_size(irs_u16 a_data_size);
   virtual void tick();
-  virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf, 
+  virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf,
     irs_uarc a_size);
 private:
   enum cur_status_t {
@@ -85,7 +85,7 @@ private:
   };
   struct reg_t {
     volatile __ssicr0_bits* mp_SSICR0_bit;
-    volatile __ssicr1_bits* mp_SSICR1_bit; 
+    volatile __ssicr1_bits* mp_SSICR1_bit;
     volatile unsigned short* mp_SSIDR;
     volatile __ssisr_bits* mp_SSISR_bit;
     volatile unsigned char* mp_SSICPSR;
@@ -93,10 +93,10 @@ private:
     volatile __ssiris_bits* mp_SSIRIS_bit;
     volatile __ssimis_bits* mp_SSIMIS_bit;
     volatile __ssiicr_bits* mp_SSIICR_bit;
-    
+
     reg_t(ssi_type_t a_ssi_type);
   };
-  
+
   cur_status_t m_status;
   const irs_u8* mp_write_buf;
   irs_u8* mp_read_buf;
@@ -113,12 +113,17 @@ private:
   ssi_type_t m_ssi_type;
   reg_t m_reg;
   bool m_on_prev;
-  
+
   void write_data_register(irs_u8 a_data);
   irs_u8 read_data_register();
   bool transfer_complete();
   void init_default();
 };
+
+#elif defined(__STM32F100RBT__)
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 //! @}
 

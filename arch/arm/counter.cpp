@@ -41,7 +41,7 @@ public:
 void counter_init()
 {
   init_cnt++;
-  if (init_cnt == 1) 
+  if (init_cnt == 1)
   {
     // Количество отсчетов в интервале
     COUNTER_PER_INTERVAL = irs::cpu_traits_t::frequency();
@@ -52,7 +52,7 @@ void counter_init()
     SYSTICKCSR_bit.CLKSOURCE = 1;
     SYSTICKCSR_bit.TICKINT = 1;
     SYSTICKCSR_bit.ENABLE = 1;
-    
+
     static timer_overflow_event_t timer_overflow_event;
     irs::arm::interrupt_array()->int_event_gen(irs::arm::sys_tick_int)->
       add(&timer_overflow_event);
@@ -69,7 +69,7 @@ counter_t counter_get()
 void counter_deinit()
 {
   init_cnt--;
-  if (init_cnt == 0) 
+  if (init_cnt == 0)
   {
     SYSTICKCSR_bit.CLKSOURCE = 0;
     SYSTICKCSR_bit.TICKINT = 0;

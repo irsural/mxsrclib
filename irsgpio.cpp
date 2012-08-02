@@ -152,24 +152,31 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 #ifdef __ICCARM__
 
 irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir):
-  mp_port(&a_port),
+  m_port(reinterpret_cast<irs_u32>(&a_port)),
+  m_bit(a_bit),
   m_data_mask(0x04 << a_bit),
-  m_port_mask(1 << a_bit)
+  m_port_mask(1 << m_bit)
 {
-  clock_gating_control(mp_port);
+  clock_gating_control(m_port);
   #ifdef __LM3SxBxx__
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_LOCK) = GPIO_UNLOCK_VALUE;
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_CR) |= m_port_mask;
+    HWREG(m_port + GPIO_LOCK) = GPIO_UNLOCK_VALUE;
+    HWREG(m_port + GPIO_CR) |= m_port_mask;
   #endif // __LM3SxBxx__
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DEN) |= m_port_mask;
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_AFSEL) &= ~m_port_mask;
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_ODR) &= ~m_port_mask;
-  if (a_dir == dir_in) {
-    HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DIR) &= ~m_port_mask;
-  } else if (a_dir == dir_out) {
-    HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DIR) |= m_port_mask;
-    HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DATA + m_data_mask) = 0;
-  }
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    HWREG(m_port + GPIO_DEN) |= m_port_mask;
+    HWREG(m_port + GPIO_AFSEL) &= ~m_port_mask;
+    HWREG(m_port + GPIO_ODR) &= ~m_port_mask;
+    if (a_dir == dir_in) {
+      HWREG(m_port + GPIO_DIR) &= ~m_port_mask;
+    } else if (a_dir == dir_out) {
+      HWREG(m_port + GPIO_DIR) |= m_port_mask;
+      HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
+    }
+  #elif defined(__STM32F100RBT__)
+    set_dir(a_dir);
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 irs::arm::io_pin_t::~io_pin_t()
@@ -179,25 +186,60 @@ irs::arm::io_pin_t::~io_pin_t()
 
 bool irs::arm::io_pin_t::pin()
 {
-  return HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DATA + m_data_mask);
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    return HWREG(m_port + GPIO_DATA + m_data_mask);
+  #elif defined(__STM32F100RBT__)
+    return (HWREG(m_port + IDR) & m_port_mask);
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::io_pin_t::set()
 {
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DATA + m_data_mask) = 0xFF;
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    HWREG(m_port + GPIO_DATA + m_data_mask) = 0xFF;
+  #elif defined(__STM32F100RBT__)
+    HWREG(m_port + ODR) |= m_port_mask;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::io_pin_t::clear()
 {
-  HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DATA + m_data_mask) = 0;
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
+  #elif defined(__STM32F100RBT__)
+    HWREG(m_port + ODR) &= ~m_port_mask;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
+
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
 {
-  if (a_dir == dir_in) {
-    HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DIR) &= ~m_port_mask;
-  } else if (a_dir == dir_out) {
-    HWREG(reinterpret_cast<irs_u32>(mp_port) + GPIO_DIR) |= m_port_mask;
-  }
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    if (a_dir == dir_in) {
+      HWREG(m_port + GPIO_DIR) &= ~m_port_mask;
+    } else if (a_dir == dir_out) {
+      HWREG(m_port + GPIO_DIR) |= m_port_mask;
+    }
+  #elif defined(__STM32F100RBT__)
+    irs_u32 cfg_reg_offset = CRL;
+    irs_u32 cfg_mask_offset = m_bit * GPIO_MASK_SIZE;
+    if (m_bit > 7) {
+      cfg_mask_offset = (m_bit - 8) * GPIO_MASK_SIZE;
+      cfg_reg_offset = CRH;
+    }
+    irs_u32 clr_mask = GPIO_FULL_MASK << cfg_mask_offset;
+    irs_u32 set_mask = GPIO_FLOAT_IN_MASK << cfg_mask_offset;
+    if (a_dir == dir_out) set_mask = GPIO_PUSHPULL_OUT_MASK << cfg_mask_offset;
+    HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
+    HWREG(m_port + cfg_reg_offset) |= set_mask;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 #endif //__ICCARM__

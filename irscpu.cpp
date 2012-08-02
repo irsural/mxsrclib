@@ -17,10 +17,14 @@
 #ifdef __ICCAVR__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;
 #elif __ICCARM__
-#ifdef __LM3Sx9xx__
+#if defined(__LM3Sx9xx__)
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 50000000;
-#elif __LM3SxBxx__
+#elif defined (__LM3SxBxx__)
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 80000000;
+#elif defined(__STM32F100RBT__)
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 8000000;
+#else
+  #error Тип контроллера не определён
 #endif // ARM_device
 #else //__ICCAVR
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;

@@ -65,7 +65,7 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
     mp_tx_buf = new irs_u8[m_tx_buf_size];
     #endif //NEW_21092011
   }
-
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   RCGC2_bit.PORTF = 1;
   RCGC2_bit.EPHY0 = 1;  //  В iolm3sxxxx.h биты указаны неверно
   RCGC2_bit.EMAC0 = 1;
@@ -113,6 +113,11 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
     MACIM_bit.RXINT = 0;
     SETENA1_bit.NVIC_ETH_INT = 0;
   }
+  #elif defined(__STM32F100RBT__)
+  volatile irs_u8 y = a_mac.val[0];
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 irs::arm::arm_ethernet_t::~arm_ethernet_t()
@@ -121,12 +126,17 @@ irs::arm::arm_ethernet_t::~arm_ethernet_t()
   if (m_buf_num == double_buf) {
     delete []mp_tx_buf;
   }
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   SETENA1_bit.NVIC_ETH_INT = 0;
   MACIM_bit.RXINT = 0;
   MACTCTL_bit.TXEN = 0;
   MACRCTL_bit.RXEN = 0;
   RCGC2_bit.EPHY0 = 0;
   RCGC2_bit.EMAC0 = 0;
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
@@ -140,7 +150,8 @@ void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
   irs_u32 fifo_data = a_size - DA_size - SA_size - L_size;
   IRS_HIWORD(fifo_data) = reinterpret_cast<irs_u16&>(*mp_tx_buf);
   #endif //NEW_21092011
-  MACDATA = fifo_data;
+  //MACDATA = fifo_data;
+  set_fifo(fifo_data);
 
   const irs_size_t shift = sizeof(irs_u16);
   irs_u32* p_shifted_buf = reinterpret_cast<irs_u32*>(mp_tx_buf + shift);
@@ -159,17 +170,20 @@ void irs::arm::arm_ethernet_t::send_packet(irs_size_t a_size)
   #else //NEW_21092011
   irs_size_t current_dword = 0;
   for (; current_dword < whole_dwords_cnt; current_dword++) {
-    MACDATA = p_shifted_buf[current_dword];
+    //MACDATA = p_shifted_buf[current_dword];
+    set_fifo(p_shifted_buf[current_dword]);
   }
   irs_size_t current_byte = current_dword * sizeof(fifo_data) + shift;
   fifo_data = 0;
   for (irs_u8 i = 0; current_byte < a_size; current_byte++, i++) {
     *((irs_u8*)&fifo_data + i) = mp_tx_buf[current_byte];
   }
-  MACDATA = fifo_data;
+  //MACDATA = fifo_data;
+  set_fifo(fifo_data);
   #endif //NEW_21092011
   m_send_packet_action = true;
-  MACTR_bit.NEWTX = 1;
+  //MACTR_bit.NEWTX = 1;
+  send_packet();
 }
 
 void irs::arm::arm_ethernet_t::set_recv_handled()
@@ -191,7 +205,8 @@ bool irs::arm::arm_ethernet_t::is_recv_buf_filled()
 bool irs::arm::arm_ethernet_t::is_send_buf_empty()
 {
   if (m_send_buf_locked) return false;
-  if (MACTR_bit.NEWTX == 0) {
+  //if (MACTR_bit.NEWTX == 0) {
+  if (tx_buf_empty()) {
     if (m_buf_num == double_buf) {
       return true;
     } else if (!m_rx_buf_filled && !m_send_buf_locked) {
@@ -226,6 +241,7 @@ irs::simple_ethernet_t::buffer_num_t irs::arm::arm_ethernet_t::get_buf_num()
   return m_buf_num;
 }
 
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 mxmac_t irs::arm::arm_ethernet_t::get_local_mac()
 {
   mxmac_t mac;
@@ -241,17 +257,33 @@ void irs::arm::arm_ethernet_t::set_mac(mxmac_t& a_mac)
   MACIA1_bit.MACOCT5 = a_mac.val[4];
   MACIA1_bit.MACOCT6 = a_mac.val[5];
 }
+#elif defined(__STM32F100RBT__)
+mxmac_t irs::arm::arm_ethernet_t::get_local_mac()
+{
+  mxmac_t mac;
+  *(irs_u32*)mac.val = 0;
+  mac.val[4] = 0;
+  mac.val[5] = 0;
+  return mac;
+}
+
+void irs::arm::arm_ethernet_t::set_mac(mxmac_t& /*a_mac*/)
+{
+}
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 void irs::arm::arm_ethernet_t::tick()
 {
-  if (m_send_packet_action && (MACTR_bit.NEWTX == 0)) {
+  if (m_send_packet_action && tx_buf_empty()) {
     m_send_packet_action = false;
     m_send_buf_locked = false;
   }
   if (m_rx_buf_handled) {
     if (m_use_interrupt == NO_USE_INT) {
       //m_rx_int_flag = (MACIS_bit.RXINT);
-      if (MACNP_bit.NPR > 0) {
+      if (packets_in_mac()) {
         m_rx_int_flag = true;
       }
     }
@@ -261,10 +293,10 @@ void irs::arm::arm_ethernet_t::tick()
     if (m_rx_int_flag && can_read_fifo) {
       m_rx_int_flag = false;
       irs_u32 fifo_data = 0;
-      fifo_data = MACDATA;
+      fifo_data = get_fifo();
 
       enum reset_fifo_t { rf_single_packet, rf_all_packet };
-      reset_fifo_t reset_fifo = rf_single_packet;
+      reset_fifo_t reset_fifo_action = rf_single_packet;
       bool is_packet_valid = false;
       #ifdef ARMETH_DBGMSG
       enum { bug_marker = 0xDEADBEAF };
@@ -283,15 +315,15 @@ void irs::arm::arm_ethernet_t::tick()
         } else {
           is_packet_valid = false;
           if (m_rx_size <= max_packet_size) {
-            reset_fifo = rf_single_packet;
+            reset_fifo_action = rf_single_packet;
           } else {
-            reset_fifo = rf_all_packet;
+            reset_fifo_action = rf_all_packet;
           }
         }
       } else {
         m_rx_size = 0;
         is_packet_valid = false;
-        reset_fifo = rf_all_packet;
+        reset_fifo_action = rf_all_packet;
 
         #ifdef ARMETH_DBGMSG
         mlog() << "Время: " << CNT_TO_DBLTIME(counter_get()) << endl;
@@ -337,10 +369,10 @@ void irs::arm::arm_ethernet_t::tick()
           #endif //ARMETH_DBGMSG
           #endif //NOP
 
-          p_shifted_buf[current_dword] = MACDATA;
+          p_shifted_buf[current_dword] = get_fifo();
         }
 
-        fifo_data = MACDATA;
+        fifo_data = get_fifo();
         irs_u8* p_fifo_data = reinterpret_cast<irs_u8*>(&fifo_data);
         const irs_size_t start_byte =
           current_dword * sizeof(fifo_data) + shift;
@@ -355,16 +387,16 @@ void irs::arm::arm_ethernet_t::tick()
         m_rx_buf_filled = true;
         m_rx_buf_handled = false;
       } else {
-        switch (reset_fifo) {
+        switch (reset_fifo_action) {
           case rf_single_packet: {
             const irs_size_t skip_dwords_cnt = spec_div(m_rx_size -
               (sizeof(fifo_data) - L_size), sizeof(fifo_data));
             for (irs_size_t i = 0; i < skip_dwords_cnt; i++) {
-              fifo_data = MACDATA;
+              fifo_data = get_fifo();
             }
           } break;
           case rf_all_packet: {
-            MACRCTL_bit.RSTFIFO = 1;
+            reset_fifo();
           } break;
         }
       }
@@ -377,15 +409,8 @@ void irs::arm::arm_ethernet_t::tick()
       #endif //ARMETH_DBGMSG
 
       if (m_use_interrupt == USE_INT) {
-        MACIM_bit.RXINT = 1;
+        clear_rx_interrupt();
       }
     }
   }
-}
-
-void irs::arm::arm_ethernet_t::rx_interrupt()
-{
-  MACIS_bit.RXINT = 1;
-  MACIM_bit.RXINT = 0;
-  m_rx_int_flag = true;
 }

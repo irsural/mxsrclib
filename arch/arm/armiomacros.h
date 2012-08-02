@@ -25,6 +25,10 @@
 #pragma language=save
 #pragma language=extended
 
+
+//  Запись по адресу
+#define HWREG(x) (*((volatile irs_u32*)(x)))
+
 /* SFR sizes */
 #define __REG8 unsigned char
 #define __REG16 unsigned short
@@ -193,10 +197,6 @@ typedef struct
 
 #define __IO_REG32_BIT(NAME, ADDRESS, ATTRIBUTE, BIT_STRUCT) \
                        NAME DEFINE ADDRESS
-
-//  Запись по адресу
-#define HWREG(x) (*((volatile irs_u32*)(x)))
-
 #endif /* __IAR_SYSTEMS_ASM__ */
 
 #endif  //  armiomacrosH

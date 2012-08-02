@@ -25,11 +25,17 @@
 
 #ifdef __ICCARM__
 
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 //  Флаги занятости таймеров общего назначения
 irs::arm::gptm_usage_t& gptm_usage() {
   static irs::arm::gptm_usage_t gptm_usage_obj;
   return gptm_usage_obj;
 }
+
+#elif defined(__STM32F100RBT__)
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   counter_t a_dead_time):
@@ -42,6 +48,7 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   m_int_event(this, &arm_three_phase_pwm_t::interrupt)
 #endif  //  PWM_ZERO_PULSE
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   RCGC0_bit.PWM = 1;
   RCGC2_bit.PORTF = 1;  //  Выходы PWM 0, 1
   RCGC2_bit.PORTD = 1;  //  Выходы PWM 2, 3
@@ -213,36 +220,63 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   PWMSYNC_bit.Sync1 = 1;
   for (irs_u16 i = 2*load_value / 3; i; i--);
   PWMSYNC_bit.Sync2 = 1;*/
+  #elif defined(__STM32F100RBT__)
+  volatile counter_t dead_time = a_dead_time;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMENABLE = pwm_all_disable;
   RCGC0_bit.PWM = 0;
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::start()
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMSYNC = pwm_all_sync;
   PWMENABLE = pwm_all_enable;
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::stop()
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMENABLE = pwm_all_disable;
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::set_duty(irs_uarc a_duty)
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWM0CMPA = a_duty;
   PWM1CMPA = a_duty;
   PWM2CMPA = a_duty;
   PWMCTL = pwm_all_sync;
+  #elif defined(__STM32F100RBT__)
+  volatile irs_uarc duty = a_duty;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::set_duty(irs_uarc a_duty,
   phase_t a_phase)
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   switch (a_phase)
   {
     case PHASE_A: PWM0CMPA = a_duty; break;
@@ -250,19 +284,38 @@ void irs::arm::arm_three_phase_pwm_t::set_duty(irs_uarc a_duty,
     case PHASE_C: PWM2CMPA = a_duty; break;
   }
   PWMCTL = pwm_all_sync;
+  #elif defined(__STM32F100RBT__)
+  volatile irs_uarc duty = a_duty;
+  volatile phase_t phase = a_phase;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::set_duty(float a_duty)
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   irs_uarc duty = irs_u16(a_duty * float(PWM0LOAD));
   set_duty(duty);
+  #elif defined(__STM32F100RBT__)
+  volatile float duty = a_duty;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 void irs::arm::arm_three_phase_pwm_t::set_duty(float a_duty,
   phase_t a_phase)
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   irs_uarc duty = irs_u16(a_duty * float(PWM0LOAD));
   set_duty(duty, a_phase);
+  #elif defined(__STM32F100RBT__)
+  volatile float duty = a_duty;
+  volatile phase_t phase = a_phase;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 irs::cpu_traits_t::frequency_type
@@ -271,10 +324,16 @@ irs::arm::arm_three_phase_pwm_t::set_frequency(
 {
   m_freq = bound(a_frequency, m_min_freq, m_max_freq);
   irs_u16 load_value = calc_load_reg_value(m_freq);
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWM0LOAD = load_value;
   PWM1LOAD = load_value;
   PWM2LOAD = load_value;
   PWMSYNC = pwm_all_sync;
+  #elif defined(__STM32F100RBT__)
+  volatile irs_u16 lv = load_value;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
   /*PWMSYNC_bit.Sync0 = 1;
   for (irs_u16 i = 2*load_value / 3; i; i--);
   PWMSYNC_bit.Sync1 = 1;
@@ -285,7 +344,13 @@ irs::arm::arm_three_phase_pwm_t::set_frequency(
 
 irs_uarc irs::arm::arm_three_phase_pwm_t::get_max_duty()
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   return PWM0LOAD;
+  #elif defined(__STM32F100RBT__)
+  return 0;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
 
 irs::cpu_traits_t::frequency_type
@@ -303,11 +368,18 @@ irs_u16 irs::arm::arm_three_phase_pwm_t::calc_load_reg_value(freq_t a_freq)
 #ifdef PWM_ZERO_PULSE
 void irs::arm::arm_three_phase_pwm_t::interrupt()
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   //GPIOBDATA_bit.no6 = 1;
   PWM0ISC_bit.IntCntLoad = 1;
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
   //GPIOBDATA_bit.no6 = 0;
 }
 #endif  //  PWM_ZERO_PULSE
+
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 
 irs::arm::gptm_generator_t::gptm_generator_t(gpio_channel_t a_gpio_channel,
   cpu_traits_t::frequency_type a_frequency, float a_duty):
@@ -574,5 +646,10 @@ irs_u16 irs::arm::gptm_generator_t::calc_load_value(
   if (load_value == 0) load_value = 1;
   return load_value;
 }
+
+#elif defined(__STM32F100RBT__)
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 #endif  //  __ICCARM__

@@ -15,7 +15,7 @@
 
 void pll_on()
 {
-  #ifdef __LM3Sx9xx__
+  #if defined(__LM3Sx9xx__)
   LDOPCTL_bit.VADJ = 0x1B;  //  V = 2.75 V
   RCC_bit.BYPASS = 1;   //  Clocking from OSC source
   RCC_bit.USESYS = 0;   //  Disable System Clock Divider
@@ -28,7 +28,7 @@ void pll_on()
   while (!RIS_bit.PLLLRIS); //  Wait for PLL lock
   RCC_bit.BYPASS = 0;   //  Clocking from PLL source
   irs::cpu_traits_t::frequency(50000000);
-  #elif __LM3SxBxx__
+  #elif defined(__LM3SxBxx__)
   RCC2_bit.USERCC2 = 1; // Use RCC2 bit field
   RCC2_bit.DIV400 = 1;
   RCC2_bit.SYSDIV2LSB = 0;
@@ -42,5 +42,8 @@ void pll_on()
   while (!RIS_bit.PLLLRIS); //  Wait for PLL lock
   RCC2_bit.BYPASS2 = 0;   //  Clocking from PLL source
   irs::cpu_traits_t::frequency(80000000);
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
   #endif // ARM_devices
 }

@@ -7,8 +7,22 @@
 
 #include <armiomacros.h>
 
-#ifdef __LM3Sx9xx__
+#if defined(__LM3SxBxx__) || \
+    defined(__LM3Sx9xx__)
   #include <armregs_lm3s.h>
+#elif defined(__STM32F100RBT__)
+  #include <armregs_stm32.h>
+#else
+  #error Тип контроллера не определён
 #endif  //  __LM3Sx9xx__
 
-#endif    /* __IOLM3SXXXX_H */
+#if defined(__LM3SxBxx__) || \
+    defined(__LM3Sx9xx__) || \
+    defined(__STM32F100RBT__)
+  #define CORTEX_M3_CORE
+  #include <armregs_cortex_m3.h>
+#else
+  #error Тип контроллера не определён
+#endif  //  __LM3Sx9xx__
+
+#endif  //  armioregsH

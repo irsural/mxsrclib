@@ -509,6 +509,7 @@ inline com_buf::com_buf(
   m_outbuf(new char[m_outbuf_size + 1]),
   m_baud_rate(a_baud_rate)
 {
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   const float FOSC = cpu_traits_t::frequency(); //  Частота процессора
   float BRD = FOSC / 16.f / float(m_baud_rate);
   irs_u16 BRDI = irs_u16(BRD);  //  Целая часть делителя
@@ -550,6 +551,10 @@ inline com_buf::com_buf(
   #ifdef __LM3SxBxx__
   (*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= PORTA1_UART0Tx;
   #endif // __LM3SxBxx__
+  #elif defined(__STM32F100RBT__)
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 
   memset(m_outbuf.get(), 0, m_outbuf_size);
   setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
@@ -571,14 +576,20 @@ inline void com_buf::trans (char data)
 }
 inline void com_buf::trans_simple (char data)
 {
-  #ifdef __LM3Sx9xx__
-  UART0DR = data;
-  #endif // __LM3Sx9xx__
-  #ifdef __LM3SxBxx__
-  UART0DR_bit.DATA = data;
-  #endif // __LM3SxBxx__
-  while (UART0FR_bit.TXFF);
+  #if defined(__LM3Sx9xx__)
+    UART0DR = data;
+    while (UART0FR_bit.TXFF);
+  #elif defined(__LM3SxBxx__)
+    UART0DR_bit.DATA = data;
+    while (UART0FR_bit.TXFF);
+  #elif defined(__STM32F100RBT__)
+    volatile char x = data;
+    //data = 0;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 }
+
 inline int com_buf::overflow(int c)
 {
   int len_s = pptr() - pbase();

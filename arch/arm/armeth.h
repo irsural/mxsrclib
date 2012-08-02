@@ -89,7 +89,32 @@ private:
   irs_size_t m_rx_buf_size;
   irs_size_t m_tx_buf_size;
 
-  void rx_interrupt();
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+  inline void rx_interrupt()
+  {
+    MACIS_bit.RXINT = 1;
+    MACIM_bit.RXINT = 0;
+    m_rx_int_flag = true;
+  }
+  inline void set_fifo(irs_u32 data) { MACDATA = data; }
+  inline irs_u32 get_fifo() { return MACDATA; }
+  inline void send_packet() { MACTR_bit.NEWTX = 1; }
+  inline bool tx_buf_empty() { return (MACTR_bit.NEWTX == 0); }
+  inline bool packets_in_mac() { return (MACNP_bit.NPR > 0); }
+  inline void reset_fifo() { MACRCTL_bit.RSTFIFO = 1; }
+  inline void clear_rx_interrupt() { MACIM_bit.RXINT = 1; }
+  #elif defined(__STM32F100RBT__)
+  inline void rx_interrupt() {}
+  inline void set_fifo(irs_u32 /*data*/) {}
+  inline irs_u32 get_fifo() { return 0; }
+  inline void send_packet() { }
+  inline bool tx_buf_empty() { return false; }
+  inline bool packets_in_mac() { return false; }
+  inline void reset_fifo() {}
+  inline void clear_rx_interrupt() {}
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
 };
 
 } //  arm

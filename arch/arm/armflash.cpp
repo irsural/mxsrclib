@@ -133,6 +133,7 @@ void irs::arm::flash_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   flash_write_block(p_data.data(), index);
 }
 
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 void irs::arm::flash_t::flash_erase(irs_u32 a_index)
 {
   IRS_LIB_ASSERT((a_index + m_flash_page_size) <= FLASH_END_ADDR);
@@ -145,6 +146,15 @@ void irs::arm::flash_t::flash_erase(irs_u32 a_index)
   }
 }
 
+#elif defined(__STM32F100RBT__)
+void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
+{
+}
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
+
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 void irs::arm::flash_t::flash_write_block(irs_u8* ap_buf,
   irs_u32 a_index)
 {
@@ -166,6 +176,14 @@ void irs::arm::flash_t::flash_write_block(irs_u8* ap_buf,
     // error
   }
 }
+#elif defined(__STM32F100RBT__)
+void irs::arm::flash_t::flash_write_block(irs_u8* /*ap_buf*/,
+  irs_u32 /*a_index*/)
+{
+}
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 void irs::arm::flash_t::flash_read_block(irs_u8* ap_buf, irs_u32 a_index)
 {

@@ -21,6 +21,8 @@ SSIISR_bit.TNF // буфер на передачу не заполнен
 SSIISR_bit.TFE // буфер на передачу пуст
 */
 
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+
 irs::arm::arm_spi_t::arm_spi_t(
   irs_u32 a_bitrate,
   spi_type_t a_spi_type,
@@ -598,3 +600,7 @@ void irs::arm::arm_spi_t::init_default()
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
 
+#elif defined(__STM32F100RBT__)
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type

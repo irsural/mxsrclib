@@ -274,52 +274,59 @@ public:
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
 private:
-  const p_arm_port_t mp_port;
+  //const p_arm_port_t mp_port;
+  const irs_u32 m_port;
+  const irs_u8 m_bit;
   const irs_u16 m_data_mask;
-  const irs_u8 m_port_mask;
+  const irs_u32 m_port_mask;
 
 
-  inline irs_u8 port_base_to_port_number(p_arm_port_t ap_port)
+  inline irs_u8 port_base_to_port_number(irs_u32 a_port)
   {
     irs_u8 port_number = 0;
-    switch(reinterpret_cast<irs_u32>(ap_port)) {
-      case PORTA_BASE: {
-        port_number = 0;
-      } break;
-      case PORTB_BASE: {
-        port_number = 1;
-      } break;
-      case PORTC_BASE: {
-        port_number = 2;
-      } break;
-      case PORTD_BASE: {
-        port_number = 3;
-      } break;
-      case PORTE_BASE: {
-        port_number = 4;
-      } break;
-      case PORTF_BASE: {
-        port_number = 5;
-      } break;
-      case PORTG_BASE: {
-        port_number = 6;
-      } break;
-      case PORTH_BASE: {
-        port_number = 7;
-      } break;
-      #ifdef __LM3SxBxx__
-      case PORTJ_BASE: {
-        port_number = 8;
-      } break;
-      #endif  // __LM3SxBxx
+    switch(a_port) {
+    #if defined(__LM3SxBxx__)
+      case PORTA_BASE: { port_number = 0; } break;
+      case PORTB_BASE: { port_number = 1; } break;
+      case PORTC_BASE: { port_number = 2; } break;
+      case PORTD_BASE: { port_number = 3; } break;
+      case PORTE_BASE: { port_number = 4; } break;
+      case PORTF_BASE: { port_number = 5; } break;
+      case PORTG_BASE: { port_number = 6; } break;
+      case PORTH_BASE: { port_number = 7; } break;
+      case PORTJ_BASE: { port_number = 8; } break;
+    #elif defined(__LM3Sx9xx__)
+      case PORTA_BASE: { port_number = 0; } break;
+      case PORTB_BASE: { port_number = 1; } break;
+      case PORTC_BASE: { port_number = 2; } break;
+      case PORTD_BASE: { port_number = 3; } break;
+      case PORTE_BASE: { port_number = 4; } break;
+      case PORTF_BASE: { port_number = 5; } break;
+      case PORTG_BASE: { port_number = 6; } break;
+      case PORTH_BASE: { port_number = 7; } break;
+    #elif defined(__STM32F100RBT__)
+      case PORTA_BASE: { port_number = 0; } break;
+      case PORTB_BASE: { port_number = 1; } break;
+      case PORTC_BASE: { port_number = 2; } break;
+      case PORTD_BASE: { port_number = 3; } break;
+      case PORTE_BASE: { port_number = 4; } break;
+    #else
+      #error Тип контроллера не определён
+    #endif  //  mcu type
     }
     return port_number;
   };
-  inline void clock_gating_control(p_arm_port_t ap_port)
+  inline void clock_gating_control(irs_u32 a_port)
   {
-    irs_u8 port_number = port_base_to_port_number(ap_port);
-    RCGC2 |= (1 << port_number);
-    for (irs_u32 i = 10; i; i--);
+    irs_u8 port_number = port_base_to_port_number(a_port);
+    #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+      RCGC2 |= (1 << port_number);
+      for (irs_u32 i = 10; i; i--);
+    #elif defined(__STM32F100RBT__)
+      RCC_APB2ENR |= (1 << (port_number + 2));
+    #else
+      #error Тип контроллера не определён
+    #endif  //  mcu type
   }
 };
 

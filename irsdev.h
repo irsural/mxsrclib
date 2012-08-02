@@ -106,6 +106,8 @@ private:
   #endif  //  PWM_ZERO_PULSE
 };
 
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+
 class gptm_usage_t {
   irs_u8 m_channels;
 public:
@@ -157,6 +159,11 @@ private:
   irs_u16 calc_load_value(cpu_traits_t::frequency_type a_frequency);
 };
 
+#elif defined(__STM32F100RBT__)
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
+
 class watchdog_timer_t
 {
 public:
@@ -206,12 +213,15 @@ public:
   }
   bool watchdog_reset_cause()
   {
-    #ifdef __LM3SxBxx__
+    #if defined(__LM3SxBxx__)
     return RESC_bit.WDT0;
-    #endif  //  __LM3SxBxx__
-    #ifdef __LM3Sx9xx__
+    #elif defined(__LM3Sx9xx__)
     return RESC_bit.WDT;
-    #endif  //  __LM3Sx9xx__
+    #elif defined(__STM32F100RBT__)
+    return false;
+    #else
+      #error Тип контроллера не определён
+    #endif  //  mcu type
   }
 private:
   size_t m_period_s;
