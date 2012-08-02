@@ -279,7 +279,7 @@ irs::color_t::color_t(const native_color_type& a_native_color):
   mp_native_color(new native_color_type(a_native_color))
 {
 }
-#endif NOP
+#endif //NOP
 void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
   irs_u8 a_blue = 255, irs_u8 a_alpha = 255)
 {
