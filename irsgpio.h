@@ -24,20 +24,17 @@ namespace irs {
 //! \addtogroup drivers_group
 //! @{
 
-enum port_dir_t
-{
-  dir_in,
-  dir_out
+struct io_t {
+  enum dir_t {
+    dir_in,
+    dir_out,
+    dir_open_drain
+  };
 };
 
-class gpio_pin_t
+class gpio_pin_t: public io_t
 {
 public:
-  enum dir_t
-  {
-    dir_in,
-    dir_out
-  };
   virtual ~gpio_pin_t() {}
   virtual bool pin() = 0;
   virtual void set() = 0;
@@ -57,6 +54,16 @@ public:
   inline operator bit_t();
 private:
   gpio_pin_t *m_pin;
+};
+
+class gpio_port_t: public io_t
+{
+public:
+  typedef irs_u32 data_t;
+  virtual ~gpio_port_t() {}
+  virtual data_t get() = 0;
+  virtual void set(data_t a_data) = 0;
+  virtual void set_dir(dir_t a_dir) = 0;
 };
 
 } //namespace irs
@@ -274,61 +281,75 @@ public:
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
 private:
-  //const p_arm_port_t mp_port;
   const irs_u32 m_port;
   const irs_u8 m_bit;
   const irs_u16 m_data_mask;
   const irs_u32 m_port_mask;
-
-
-  inline irs_u8 port_base_to_port_number(irs_u32 a_port)
-  {
-    irs_u8 port_number = 0;
-    switch(a_port) {
-    #if defined(__LM3SxBxx__)
-      case PORTA_BASE: { port_number = 0; } break;
-      case PORTB_BASE: { port_number = 1; } break;
-      case PORTC_BASE: { port_number = 2; } break;
-      case PORTD_BASE: { port_number = 3; } break;
-      case PORTE_BASE: { port_number = 4; } break;
-      case PORTF_BASE: { port_number = 5; } break;
-      case PORTG_BASE: { port_number = 6; } break;
-      case PORTH_BASE: { port_number = 7; } break;
-      case PORTJ_BASE: { port_number = 8; } break;
-    #elif defined(__LM3Sx9xx__)
-      case PORTA_BASE: { port_number = 0; } break;
-      case PORTB_BASE: { port_number = 1; } break;
-      case PORTC_BASE: { port_number = 2; } break;
-      case PORTD_BASE: { port_number = 3; } break;
-      case PORTE_BASE: { port_number = 4; } break;
-      case PORTF_BASE: { port_number = 5; } break;
-      case PORTG_BASE: { port_number = 6; } break;
-      case PORTH_BASE: { port_number = 7; } break;
-    #elif defined(__STM32F100RBT__)
-      case PORTA_BASE: { port_number = 0; } break;
-      case PORTB_BASE: { port_number = 1; } break;
-      case PORTC_BASE: { port_number = 2; } break;
-      case PORTD_BASE: { port_number = 3; } break;
-      case PORTE_BASE: { port_number = 4; } break;
-    #else
-      #error Тип контроллера не определён
-    #endif  //  mcu type
-    }
-    return port_number;
-  };
-  inline void clock_gating_control(irs_u32 a_port)
-  {
-    irs_u8 port_number = port_base_to_port_number(a_port);
-    #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
-      RCGC2 |= (1 << port_number);
-      for (irs_u32 i = 10; i; i--);
-    #elif defined(__STM32F100RBT__)
-      RCC_APB2ENR |= (1 << (port_number + 2));
-    #else
-      #error Тип контроллера не определён
-    #endif  //  mcu type
-  }
 };
+
+class io_port_t: public gpio_port_t
+{
+public:
+  io_port_t(arm_port_t &a_port, data_t a_mask, dir_t a_dir,
+    irs_u8 a_shift = 0);
+  ~io_port_t();
+  virtual data_t get();
+  virtual void set(data_t a_data);
+  virtual void set_dir(dir_t a_dir);
+private:
+  const irs_u32 m_port;
+  const data_t m_mask;
+  const irs_u8 m_shift;
+};
+
+inline irs_u8 port_base_to_port_number(irs_u32 a_port)
+{
+  irs_u8 port_number = 0;
+  switch(a_port) {
+  #if defined(__LM3SxBxx__)
+    case PORTA_BASE: { port_number = 0; } break;
+    case PORTB_BASE: { port_number = 1; } break;
+    case PORTC_BASE: { port_number = 2; } break;
+    case PORTD_BASE: { port_number = 3; } break;
+    case PORTE_BASE: { port_number = 4; } break;
+    case PORTF_BASE: { port_number = 5; } break;
+    case PORTG_BASE: { port_number = 6; } break;
+    case PORTH_BASE: { port_number = 7; } break;
+    case PORTJ_BASE: { port_number = 8; } break;
+  #elif defined(__LM3Sx9xx__)
+    case PORTA_BASE: { port_number = 0; } break;
+    case PORTB_BASE: { port_number = 1; } break;
+    case PORTC_BASE: { port_number = 2; } break;
+    case PORTD_BASE: { port_number = 3; } break;
+    case PORTE_BASE: { port_number = 4; } break;
+    case PORTF_BASE: { port_number = 5; } break;
+    case PORTG_BASE: { port_number = 6; } break;
+    case PORTH_BASE: { port_number = 7; } break;
+  #elif defined(__STM32F100RBT__)
+    case PORTA_BASE: { port_number = 0; } break;
+    case PORTB_BASE: { port_number = 1; } break;
+    case PORTC_BASE: { port_number = 2; } break;
+    case PORTD_BASE: { port_number = 3; } break;
+    case PORTE_BASE: { port_number = 4; } break;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+  }
+  return port_number;
+}
+
+inline void port_clock_on(irs_u32 a_port)
+{
+  irs_u8 port_number = port_base_to_port_number(a_port);
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    RCGC2 |= (1 << port_number);
+    for (irs_u32 i = 10; i; i--);
+  #elif defined(__STM32F100RBT__)
+    RCC_APB2ENR |= (1 << (port_number + 2));
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+}
 
 } // namespace arm
 } // namespace irs

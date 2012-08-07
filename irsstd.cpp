@@ -292,7 +292,7 @@ const irs_avr_port_map_t* irs::get_avr_port_map()
     {&PORTF, &PINF, &DDRF},
     {&PORTG, &PING, &DDRG}
   };
-  
+
   return avr_port_map_i;
 }
 
@@ -433,9 +433,247 @@ irskey_t mxkey_drv_avr_t::operator()()
   lcd_out(LCD_NULL);\
 }
 
+
+
+mxdisplay_drv_avr_t::mxdisplay_drv_avr_t(
+  irslcd_t a_type,
+  irs_avr_port_t a_data_port,
+  irs_avr_port_t a_control_port,
+  irs_u8 a_control_pin
+):
+  mp_set_data(avr_port_map[a_data_port].set),
+  mp_get_data(avr_port_map[a_data_port].get),
+  mp_dir_data(avr_port_map[a_data_port].dir),
+  mp_set_control(avr_port_map[a_control_port].set),
+  mp_get_control(avr_port_map[a_control_port].get),
+  mp_dir_control(avr_port_map[a_control_port].dir),
+  m_LCD_E(a_control_pin + 0),
+  m_LCD_RS(a_control_pin + 1),
+  LINE_COUNT(4),
+  LINE_LEN(20),
+  LCD_SIZE(LINE_LEN*LINE_COUNT),
+  lcd_status(LCD_BEGIN),
+  lcd_ram(IRS_NULL),
+  lcd_current_symbol(0),
+  lcd_current_symbol_address(0),
+  lcd_init_counter(0),
+  lcd_timer(0),
+  lcd_address_jump(irs_false)
+{
+  init_to_cnt();
+
+  if (a_type == irslcd_4x20) {
+    LINE_COUNT = 4;
+    LINE_LEN = 20;
+    LCD_SIZE = LINE_LEN*LINE_COUNT;
+  }
+
+  lcd_ram = new irs_u8[LCD_SIZE];
+  memset(lcd_ram, ' ', LCD_SIZE);
+
+  //IRS_PAUSE(TIME_TO_CNT(1, 1));
+
+  set_to_cnt(lcd_timer, MS_TO_CNT(200));
+  while (!test_to_cnt(lcd_timer));
+
+  //  Инициализация портов ввода/вывода
+#ifndef DBGREG
+  (*mp_dir_data) = 0xFF;  //  Шина данных LCD
+  (*mp_set_data) = 0x00;
+  (*mp_dir_control) |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
+  (*mp_set_control) &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
+#else //DBGREG
+  DDRA = 0xFF;  //  Шина данных LCD
+  PORTA = 0x00;
+  DDRE |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
+  PORTE &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
+#endif //DBGREG
+
+  for (irs_u8 i = 0; i < 3; i++)
+  {
+    //  Выдержка
+    lcd_delay_ms(LCD_INIT_DELAY_MS);
+    //  Команда
+    lcd_init_command(BUS_8BIT);
+    //  И так - 3 раза
+  }
+  lcd_delay_ms(LCD_INIT_DELAY_MS);
+  lcd_init_command(TWO_LINES);
+  lcd_delay_ms(LCD_INIT_DELAY_MS);
+  lcd_init_command(IMAGE_ON);
+  lcd_delay_ms(LCD_INIT_DELAY_MS);
+  lcd_init_command(ADR_INC);
+}
+mxdisplay_drv_avr_t::~mxdisplay_drv_avr_t()
+{
+  //  Гашение индикатора
+  lcd_delay_mcs(LCD_TICK_DELAY_US);
+  lcd_init_command(IMAGE_OFF);
+  //  Деинициализация портов ввода/вывода
+  //  Шина данных LCD
+  (*mp_dir_data) = 0x0;
+  (*mp_set_data) = 0x00;
+  //  Линии E и RS LCD
+  (*mp_dir_control) &= (((1 << m_LCD_RS)&(1 << m_LCD_E))^0xFF);
+  (*mp_set_control) &= (((1 << m_LCD_RS)&(1 << m_LCD_E))^0xFF);
+
+  delete []lcd_ram;
+
+  deinit_to_cnt();
+}
+mxdisp_pos_t mxdisplay_drv_avr_t::get_height()
+{
+  return LINE_COUNT;
+}
+mxdisp_pos_t mxdisplay_drv_avr_t::get_width()
+{
+  return LINE_LEN;
+}
+void mxdisplay_drv_avr_t::outtextpos(mxdisp_pos_t a_left, mxdisp_pos_t a_top,
+  const char *text)
+{
+  irs_u8 begin = (irs_u8)(a_top*LINE_LEN) + a_left;
+  irs_u8 delta = LCD_SIZE - begin;
+  for (irs_u8 i = 0; (i < strlen(text))&&(i < delta); i++) {
+    lcd_ram[begin + i] = lcd_table[(irs_u8)text[i]];
+  }
+}
+void mxdisplay_drv_avr_t::tick()
+{
+  switch (lcd_status)
+  {
+  case LCD_BEGIN:
+    {
+      set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+      lcd_status = LCD_RS;
+      break;
+    }
+  case LCD_RS:
+    {
+      if (test_to_cnt(lcd_timer))
+      {
+        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+        if (lcd_current_symbol > LCD_SIZE-1) lcd_current_symbol = 0;
+        if (lcd_address_jump == irs_false)
+        {
+          switch (lcd_current_symbol)
+          {
+          case LINE0:
+            {
+              lcd_current_symbol_address = LINE0_ADR;
+              lcd_status = LCD_ADDRESS_OUT;
+              lcd_address_jump = irs_true;
+              lcd_IR_enable();
+              break;
+            }
+          case /*(irs_u8)(LCD_SIZE/2)*/LINE1:
+            {
+              //  Переход на вторую строку. Адрес записывается в индикатор
+              // только при переходе на новую строку
+              lcd_current_symbol_address = LINE1_ADR;
+              lcd_status = LCD_ADDRESS_OUT;
+              lcd_address_jump = irs_true;
+              lcd_IR_enable();
+              break;
+            }
+          case LINE2:
+            {
+              //  Переход на третью строку. Адрес записывается в индикатор
+              // только при переходе на новую строку
+              lcd_current_symbol_address = LINE2_ADR;
+              lcd_status = LCD_ADDRESS_OUT;
+              lcd_address_jump = irs_true;
+              lcd_IR_enable();
+              break;
+            }
+          case LINE3:
+            {
+              //  Переход на четвертую строку. Адрес записывается в индикатор
+              // только при переходе на новую строку
+              lcd_current_symbol_address = LINE3_ADR;
+              lcd_status = LCD_ADDRESS_OUT;
+              lcd_address_jump = irs_true;
+              lcd_IR_enable();
+              break;
+            }
+          default:
+            {
+              lcd_status = LCD_DATA_OUT;
+              lcd_DR_enable();
+              break;
+            }
+          }
+        }
+        else
+        {
+          lcd_status = LCD_DATA_OUT;
+          lcd_DR_enable();
+          lcd_address_jump = irs_false;
+        }
+      }
+      break;
+    }
+  case LCD_DATA_OUT:
+    {
+      if (test_to_cnt(lcd_timer))
+      {
+        lcd_status = LCD_E_RISE;
+        lcd_out(lcd_ram[lcd_current_symbol]);
+        lcd_current_symbol++;
+        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+      }
+      break;
+    }
+  case LCD_ADDRESS_OUT:
+    {
+      if (test_to_cnt(lcd_timer))
+      {
+        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+        lcd_status = LCD_E_RISE;
+        lcd_out(lcd_current_symbol_address|0x80);
+      }
+      break;
+    }
+  case LCD_E_RISE:
+    {
+      if (test_to_cnt(lcd_timer))
+      {
+        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+        lcd_status = LCD_E_FALL;
+        lcd_enable();
+      }
+      break;
+    }
+  case LCD_E_FALL:
+    {
+      if (test_to_cnt(lcd_timer))
+      {
+        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_CYCLE_DELAY_US));
+        lcd_status = LCD_RS;
+        lcd_disable();
+      }
+      break;
+    }
+  case LCD_FREE:
+    {
+      lcd_disable();
+      lcd_out(0);
+      break;
+    }
+  }
+}
+#endif //__ICCAVR__
+
+#if defined(__ICCAVR__) || defined(__ICCARM__)
+
 //  Перекодировка символов Windows-1251 в коды контроллера Epson на базе
 // HD44780 с разными прибамбасами
+
+#if defined(__ICCAVR__)
 __flash irs_u8 lcd_table[] =
+#elif defined(__ICCARM__)
+const irs_u8 lcd_table[] =
+#endif
 {
   0x20, // '~':0
   0xFF, // '~':1 //Курсор квадратом
@@ -695,234 +933,153 @@ __flash irs_u8 lcd_table[] =
   0xC7  // 'я':255
 };
 
-mxdisplay_drv_avr_t::mxdisplay_drv_avr_t(
+mxdisplay_drv_gen_t::mxdisplay_drv_gen_t(
   irslcd_t a_type,
-  irs_avr_port_t a_data_port,
-  irs_avr_port_t a_control_port,
-  irs_u8 a_control_pin
+  irs::gpio_port_t& a_data_port,
+  irs::gpio_pin_t& a_rs_pin,
+  irs::gpio_pin_t& a_e_pin
 ):
-  mp_set_data(avr_port_map[a_data_port].set),
-  mp_get_data(avr_port_map[a_data_port].get),
-  mp_dir_data(avr_port_map[a_data_port].dir),
-  mp_set_control(avr_port_map[a_control_port].set),
-  mp_get_control(avr_port_map[a_control_port].get),
-  mp_dir_control(avr_port_map[a_control_port].dir),
-  m_LCD_E(a_control_pin + 0),
-  m_LCD_RS(a_control_pin + 1),
-  LINE_COUNT(4),
-  LINE_LEN(20),
-  LCD_SIZE(LINE_LEN*LINE_COUNT),
-  lcd_status(LCD_BEGIN),
-  lcd_ram(IRS_NULL),
-  lcd_current_symbol(0),
-  lcd_current_symbol_address(0),
-  lcd_init_counter(0),
-  lcd_timer(0),
-  lcd_address_jump(irs_false)
+  m_data_port(a_data_port),
+  m_rs_pin(a_rs_pin),
+  m_e_pin(a_e_pin),
+  m_line_cnt(0),
+  m_line_len(0),
+  m_lcd_size(m_line_cnt * m_line_len),
+  m_status(lcd_init_wait),
+  m_target_status(lcd_init),
+  m_ram_vector(m_lcd_size, ' '),
+  m_current_symbol(0),
+  m_current_symbol_address(0),
+  m_lcd_init_counter(0),
+  m_timer(irs::make_cnt_ms(m_start_interval)),
+  m_address_jump(false),
+  m_command(m_com_null)
 {
-  init_to_cnt();
-
   if (a_type == irslcd_4x20) {
-    LINE_COUNT = 4;
-    LINE_LEN = 20;
-    LCD_SIZE = LINE_LEN*LINE_COUNT;
+    m_line_cnt = 4;
+    m_line_len = 20;
+    m_lcd_size = m_line_cnt * m_line_len;
   }
-
-  lcd_ram = new irs_u8[LCD_SIZE];
-  memset(lcd_ram, ' ', LCD_SIZE);
-
-  //IRS_PAUSE(TIME_TO_CNT(1, 1));
-
-  set_to_cnt(lcd_timer, MS_TO_CNT(200));
-  while (!test_to_cnt(lcd_timer));
-
-  //  Инициализация портов ввода/вывода
-#ifndef DBGREG
-  (*mp_dir_data) = 0xFF;  //  Шина данных LCD
-  (*mp_set_data) = 0x00;
-  (*mp_dir_control) |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
-  (*mp_set_control) &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
-#else //DBGREG
-  DDRA = 0xFF;  //  Шина данных LCD
-  PORTA = 0x00;
-  DDRE |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
-  PORTE &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
-#endif //DBGREG
-
-  for (irs_u8 i = 0; i < 3; i++)
-  {
-    //  Выдержка
-    lcd_delay_ms(LCD_INIT_DELAY_MS);
-    //  Команда
-    lcd_init_command(BUS_8BIT);
-    //  И так - 3 раза
-  }
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(TWO_LINES);
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(IMAGE_ON);
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(ADR_INC);
+  m_ram_vector.resize(m_lcd_size, ' ');
+  m_data_port.set(0);
+  m_rs_pin.clear();
+  m_e_pin.clear();
+  m_timer.start();
 }
-mxdisplay_drv_avr_t::~mxdisplay_drv_avr_t()
+
+mxdisplay_drv_gen_t::~mxdisplay_drv_gen_t()
 {
-  //  Гашение индикатора
-  lcd_delay_mcs(LCD_TICK_DELAY_US);
-  lcd_init_command(IMAGE_OFF);
-  //  Деинициализация портов ввода/вывода
-  //  Шина данных LCD
-  (*mp_dir_data) = 0x0;
-  (*mp_set_data) = 0x00;
-  //  Линии E и RS LCD
-  (*mp_dir_control) &= (((1 << m_LCD_RS)&(1 << m_LCD_E))^0xFF);
-  (*mp_set_control) &= (((1 << m_LCD_RS)&(1 << m_LCD_E))^0xFF);
-
-  delete []lcd_ram;
-
-  deinit_to_cnt();
+  m_data_port.set(0);
+  m_rs_pin.clear();
+  m_e_pin.clear();
 }
-mxdisp_pos_t mxdisplay_drv_avr_t::get_height()
+mxdisp_pos_t mxdisplay_drv_gen_t::get_height()
 {
-  return LINE_COUNT;
+  return m_line_cnt;
 }
-mxdisp_pos_t mxdisplay_drv_avr_t::get_width()
+mxdisp_pos_t mxdisplay_drv_gen_t::get_width()
 {
-  return LINE_LEN;
+  return m_line_len;
 }
-void mxdisplay_drv_avr_t::outtextpos(mxdisp_pos_t a_left, mxdisp_pos_t a_top,
+void mxdisplay_drv_gen_t::outtextpos(mxdisp_pos_t a_left, mxdisp_pos_t a_top,
   const char *text)
 {
-  irs_u8 begin = (irs_u8)(a_top*LINE_LEN) + a_left;
-  irs_u8 delta = LCD_SIZE - begin;
-  for (irs_u8 i = 0; (i < strlen(text))&&(i < delta); i++) {
-    lcd_ram[begin + i] = lcd_table[(irs_u8)text[i]];
+  irs_u8 begin = (irs_u8)(a_top * m_line_len) + a_left;
+  irs_u8 end = m_lcd_size - begin;
+  irs_u8 len = strlen(text);
+  if (end > len) end = len;
+  for (irs_u8 i = 0; i < end; i++) {
+    m_ram_vector[begin + i] = lcd_table[(irs_u8)text[i]];
   }
 }
-void mxdisplay_drv_avr_t::tick()
+void mxdisplay_drv_gen_t::tick()
 {
-  switch (lcd_status)
-  {
-  case LCD_BEGIN:
-    {
-      set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
-      lcd_status = LCD_RS;
-      break;
+  switch (m_status) {
+    case lcd_init_wait: {
+      if (m_timer.check()) {
+        m_status = lcd_init;
+      }
+    } break;
+    case lcd_init: {
+      m_target_status = lcd_init;
+      switch (m_lcd_init_counter) {
+        case 0: m_command = m_com_function_set;   break;
+        case 1: m_command = m_com_disp_on;        break;
+        case 2: m_command = m_com_disp_clear;     break;
+        case 3: m_command = m_com_entry_mode_set; break;
+        default: {
+          m_target_status = lcd_begin;
+        }
+      }
+      m_lcd_init_counter++;
+      m_status = lcd_data_out;
+      m_timer.set(irs::make_cnt_mcs(m_trans_interval));
+    } break;
+    case lcd_data_out: {
+      if (m_timer.check()) {
+        m_timer.start();
+        m_data_port.set(m_command);
+        m_status = lcd_e_rise;
+      } break;
     }
-  case LCD_RS:
-    {
-      if (test_to_cnt(lcd_timer))
-      {
-        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
-        if (lcd_current_symbol > LCD_SIZE-1) lcd_current_symbol = 0;
-        if (lcd_address_jump == irs_false)
-        {
-          switch (lcd_current_symbol)
-          {
-          case LINE0:
-            {
-              lcd_current_symbol_address = LINE0_ADR;
-              lcd_status = LCD_ADDRESS_OUT;
-              lcd_address_jump = irs_true;
-              lcd_IR_enable();
-              break;
-            }
-          case /*(irs_u8)(LCD_SIZE/2)*/LINE1:
-            {
-              //  Переход на вторую строку. Адрес записывается в индикатор
-              // только при переходе на новую строку
-              lcd_current_symbol_address = LINE1_ADR;
-              lcd_status = LCD_ADDRESS_OUT;
-              lcd_address_jump = irs_true;
-              lcd_IR_enable();
-              break;
-            }
-          case LINE2:
-            {
-              //  Переход на третью строку. Адрес записывается в индикатор
-              // только при переходе на новую строку
-              lcd_current_symbol_address = LINE2_ADR;
-              lcd_status = LCD_ADDRESS_OUT;
-              lcd_address_jump = irs_true;
-              lcd_IR_enable();
-              break;
-            }
-          case LINE3:
-            {
-              //  Переход на четвертую строку. Адрес записывается в индикатор
-              // только при переходе на новую строку
-              lcd_current_symbol_address = LINE3_ADR;
-              lcd_status = LCD_ADDRESS_OUT;
-              lcd_address_jump = irs_true;
-              lcd_IR_enable();
-              break;
-            }
-          default:
-            {
-              lcd_status = LCD_DATA_OUT;
-              lcd_DR_enable();
-              break;
-            }
+    case lcd_e_rise: {
+      if (m_timer.check()) {
+        m_timer.start();
+        m_e_pin.set();
+        m_status = lcd_e_fall;
+      } break;
+    }
+    case lcd_e_fall: {
+      if (m_timer.check()) {
+        if (m_command == m_com_disp_clear) {
+          m_timer.set(irs::make_cnt_ms(m_clear_interval));
+        } else {
+          m_timer.set(irs::make_cnt_mcs(m_trans_interval));
+        }
+        m_timer.start();
+        m_e_pin.clear();
+        m_status = lcd_data_clear;
+      }
+    } break;
+    case lcd_data_clear: {
+      if (m_timer.check()) {
+        m_data_port.set(m_com_null);
+        m_status = m_target_status;
+      }
+    } break;
+    case lcd_begin: {
+      m_timer.start();
+      if (m_current_symbol > m_lcd_size - 1) m_current_symbol = 0;
+      if (!m_address_jump) {
+        m_address_jump = true;
+        switch (m_current_symbol) {
+          case m_line_0: m_command = 0x80|m_line_0_addr; break;
+          case m_line_1: m_command = 0x80|m_line_1_addr; break;
+          case m_line_2: m_command = 0x80|m_line_2_addr; break;
+          case m_line_3: m_command = 0x80|m_line_3_addr; break;
+          default: {
+            m_address_jump = false;
+            m_command = m_ram_vector[m_current_symbol];
+            m_current_symbol++;
           }
         }
-        else
-        {
-          lcd_status = LCD_DATA_OUT;
-          lcd_DR_enable();
-          lcd_address_jump = irs_false;
-        }
+      } else {
+        m_address_jump = false;
+        m_command = m_ram_vector[m_current_symbol];
+        m_current_symbol++;
       }
-      break;
-    }
-  case LCD_DATA_OUT:
-    {
-      if (test_to_cnt(lcd_timer))
-      {
-        lcd_status = LCD_E_RISE;
-        lcd_out(lcd_ram[lcd_current_symbol]);
-        lcd_current_symbol++;
-        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
+      if (m_address_jump) {
+        m_rs_pin.clear();
+      } else {
+        m_rs_pin.set();
       }
-      break;
-    }
-  case LCD_ADDRESS_OUT:
-    {
-      if (test_to_cnt(lcd_timer))
-      {
-        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
-        lcd_status = LCD_E_RISE;
-        lcd_out(lcd_current_symbol_address|0x80);
-      }
-      break;
-    }
-  case LCD_E_RISE:
-    {
-      if (test_to_cnt(lcd_timer))
-      {
-        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_TICK_DELAY_US));
-        lcd_status = LCD_E_FALL;
-        lcd_enable();
-      }
-      break;
-    }
-  case LCD_E_FALL:
-    {
-      if (test_to_cnt(lcd_timer))
-      {
-        set_to_cnt(lcd_timer, MCS_TO_CNT(LCD_CYCLE_DELAY_US));
-        lcd_status = LCD_RS;
-        lcd_disable();
-      }
-      break;
-    }
-  case LCD_FREE:
-    {
-      lcd_disable();
-      lcd_out(0);
-      break;
-    }
+      m_status = lcd_data_out;
+      m_target_status = lcd_begin;
+    } break;
   }
 }
-#endif //__ICCAVR__
+
+#endif  //  __ICCAVR__ || __ICCARM__
 
 #ifdef __BORLANDC__
 // Вспомогательный класс драйвера клавиатуры С++ Builder

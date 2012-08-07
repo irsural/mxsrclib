@@ -26,6 +26,8 @@
   #error Тип контроллера не определён
 #endif  //  MCU_FAMILY
 
+#define GPIO_WIDTH 8
+
 #define PORTA_BASE 0x40004000
 #define PORTB_BASE 0x40005000
 #define PORTC_BASE 0x40006000

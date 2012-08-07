@@ -157,7 +157,7 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir):
   m_data_mask(0x04 << a_bit),
   m_port_mask(1 << m_bit)
 {
-  clock_gating_control(m_port);
+  port_clock_on(m_port);
   #ifdef __LM3SxBxx__
     HWREG(m_port + GPIO_LOCK) = GPIO_UNLOCK_VALUE;
     HWREG(m_port + GPIO_CR) |= m_port_mask;
@@ -233,10 +233,89 @@ void irs::arm::io_pin_t::set_dir(dir_t a_dir)
       cfg_reg_offset = CRH;
     }
     irs_u32 clr_mask = GPIO_FULL_MASK << cfg_mask_offset;
-    irs_u32 set_mask = GPIO_FLOAT_IN_MASK << cfg_mask_offset;
-    if (a_dir == dir_out) set_mask = GPIO_PUSHPULL_OUT_MASK << cfg_mask_offset;
+    irs_u32 set_mask = 0;
+    switch (a_dir) {
+      case dir_in:          set_mask = GPIO_FLOAT_IN_MASK;        break;
+      case dir_out:         set_mask = GPIO_PUSHPULL_OUT_MASK;    break;
+      case dir_open_drain:  set_mask = GPIO_OPEN_DRAIN_OUT_MASK;  break;
+    }
+    set_mask <<= cfg_mask_offset;
     HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
     HWREG(m_port + cfg_reg_offset) |= set_mask;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+}
+
+irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
+  dir_t a_dir, irs_u8 a_shift):
+  m_port(reinterpret_cast<irs_u32>(&a_port)),
+  m_mask(a_mask << a_shift),
+  m_shift(a_shift)
+{
+  port_clock_on(m_port);
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    //
+  #elif defined(__STM32F100RBT__)
+    set_dir(a_dir);
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+}
+
+irs::arm::io_port_t::~io_port_t()
+{
+}
+
+irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
+{
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    return 0;
+  #elif defined(__STM32F100RBT__)
+    return (HWREG(m_port + IDR) & m_mask) >> m_shift;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+}
+
+void irs::arm::io_port_t::set(data_t a_data)
+{
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+  #elif defined(__STM32F100RBT__)
+    irs_u32 set_data = (a_data << m_shift) & m_mask;
+    irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
+    HWREG(m_port + BSRR) = set_data;
+    HWREG(m_port + BSRR) = clr_data << GPIO_WIDTH;
+  #else
+    #error Тип контроллера не определён
+  #endif  //  mcu type
+}
+
+void irs::arm::io_port_t::set_dir(dir_t a_dir)
+{
+  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    volatile port_dir_t = a_dir;
+  #elif defined(__STM32F100RBT__)
+    for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
+      if (m_mask & (1 << bit)) {
+        irs_u32 cfg_reg_offset = CRL;
+        irs_u32 cfg_mask_offset = bit * GPIO_MASK_SIZE;
+        if (bit > 7) {
+          cfg_mask_offset = (bit - 8) * GPIO_MASK_SIZE;
+          cfg_reg_offset = CRH;
+        }
+        irs_u32 clr_mask = GPIO_FULL_MASK << cfg_mask_offset;
+        irs_u32 set_mask = 0;
+        switch (a_dir) {
+          case dir_in:          set_mask = GPIO_FLOAT_IN_MASK;        break;
+          case dir_out:         set_mask = GPIO_PUSHPULL_OUT_MASK;    break;
+          case dir_open_drain:  set_mask = GPIO_OPEN_DRAIN_OUT_MASK;  break;
+        }
+        set_mask <<= cfg_mask_offset;
+        HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
+        HWREG(m_port + cfg_reg_offset) |= set_mask;
+      }
+    }
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type

@@ -37,6 +37,10 @@
 #include <irsstrmstd.h>
 #include <irschartwin.h>
 
+#if defined(__ICCAVR__) || defined(__ICCARM__)
+#include <irsgpio.h>
+#endif //__ICCAVR__ || __ICCARM__
+
 #include <irsfinal.h>
 
 //#include <vector>
@@ -287,6 +291,66 @@ public:
   virtual void tick();
 };
 #endif //__ICCAVR__
+
+#if defined(__ICCAVR__) || defined(__ICCARM__)
+class mxdisplay_drv_gen_t: public mxdisplay_drv_t
+{
+public:
+  mxdisplay_drv_gen_t(irslcd_t a_type, irs::gpio_port_t& a_data_port,
+    irs::gpio_pin_t& a_rs_pin, irs::gpio_pin_t& a_e_pin);
+  ~mxdisplay_drv_gen_t();
+  virtual mxdisp_pos_t get_height();
+  virtual mxdisp_pos_t get_width();
+  virtual void outtextpos(mxdisp_pos_t a_left, mxdisp_pos_t a_top,
+    const char *text);
+  virtual void tick();
+private:
+  enum {
+    m_start_interval = 100,
+    m_clear_interval = 10,
+    m_trans_interval = 1,
+    m_line_0 = 0,
+    m_line_1 = 20,
+    m_line_2 = 40,
+    m_line_3 = 60,
+    m_line_0_addr = 0x00,
+    m_line_1_addr = 0x40,
+    m_line_2_addr = 0x14,
+    m_line_3_addr = 0x54
+  };
+  enum {
+    m_com_null = 0x00,
+    m_com_function_set = 0x3A,
+    m_com_disp_on = 0x0C,
+    m_com_disp_clear = 0x01,
+    m_com_entry_mode_set = 0x06
+  };
+  enum lcd_status_t {
+    lcd_init_wait,
+    lcd_init,
+    lcd_e_rise,
+    lcd_data_out,
+    lcd_e_fall,
+    lcd_data_clear,
+    lcd_begin
+  };
+  irs::gpio_port_t& m_data_port;
+  irs::gpio_pin_t& m_rs_pin;
+  irs::gpio_pin_t& m_e_pin;
+  irs_u8 m_line_cnt;
+  irs_u8 m_line_len;
+  irs_u8 m_lcd_size;
+  lcd_status_t m_status;
+  lcd_status_t m_target_status;
+  vector<irs_u8> m_ram_vector;
+  irs_u8 m_current_symbol;
+  irs_u8 m_current_symbol_address;
+  irs_u8 m_lcd_init_counter;
+  irs::timer_t m_timer;
+  bool m_address_jump;
+  irs_u8 m_command;
+};
+#endif  //  avr and arm
 
 #ifdef __BORLANDC__
 // Класс драйвера консоли для объекта TStrings C++ Builder

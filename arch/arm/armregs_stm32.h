@@ -92,7 +92,46 @@ typedef struct {
   __REG32                 : 13;
 } __apb2enr_bits;
 
-__IO_REG32_BIT(RCC_APB2ENR,  RCC_BASE + APB2ENR, __READ_WRITE, __apb2enr_bits);
+typedef struct {
+  __REG32  HSION          : 1;
+  __REG32  HSIRDY         : 1;
+  __REG32                 : 1;
+  __REG32  HSITRIM        : 5;
+  __REG32  HSICAL         : 8;
+  __REG32  HSEON          : 1;
+  __REG32  HSERDY         : 1;
+  __REG32  HSEBYP         : 1;
+  __REG32  CSSON          : 1;
+  __REG32                 : 4;
+  __REG32  PLLON          : 1;
+  __REG32  PLLRDY         : 1;
+  __REG32                 : 6;
+} __cr_bits;
+
+typedef struct {
+  __REG32  SW             : 2;
+  __REG32  SWS            : 2;
+  __REG32  HPRE           : 4;
+  __REG32  PPRE1          : 3;
+  __REG32  PPRE2          : 3;
+  __REG32  ADCPRE         : 2;
+  __REG32  PLLSRC         : 1;
+  __REG32  PLLXTPRE       : 1;
+  __REG32  PLLMUL         : 4;
+  __REG32                 : 2;
+  __REG32  MCO            : 3;
+  __REG32                 : 5;
+} __cfgr_bits;
+
+typedef struct {
+  __REG32  PREDIV1        : 4;
+  __REG32                 : 28;
+} __cfgr2_bits;
+
+__IO_REG32_BIT(RCC_APB2ENR, RCC_BASE + APB2ENR,  __READ_WRITE, __apb2enr_bits);
+__IO_REG32_BIT(RCC_CR,      RCC_BASE + CR,       __READ_WRITE, __cr_bits);
+__IO_REG32_BIT(RCC_CFGR,    RCC_BASE + CFGR,     __READ_WRITE, __cfgr_bits);
+__IO_REG32_BIT(RCC_CFGR2,   RCC_BASE + CFGR2,    __READ_WRITE, __cfgr2_bits);
 
 #endif  //  STM32F100_FAMILY
 
@@ -114,10 +153,12 @@ __IO_REG32_BIT(RCC_APB2ENR,  RCC_BASE + APB2ENR, __READ_WRITE, __apb2enr_bits);
 #define BRR   0x14
 #define LCKR  0x18
 
-#define GPIO_PUSHPULL_OUT_MASK  2
-#define GPIO_FLOAT_IN_MASK      4
-#define GPIO_MASK_SIZE          4
-#define GPIO_FULL_MASK          0xF
+#define GPIO_WIDTH                16
+#define GPIO_PUSHPULL_OUT_MASK    2
+#define GPIO_OPEN_DRAIN_OUT_MASK  6
+#define GPIO_FLOAT_IN_MASK        4
+#define GPIO_MASK_SIZE            4
+#define GPIO_FULL_MASK            0xF
 
 typedef struct {
   __REG32  MODE0          : 2;
