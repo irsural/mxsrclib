@@ -462,47 +462,49 @@ mxdisplay_drv_avr_t::mxdisplay_drv_avr_t(
 {
   init_to_cnt();
 
-  if (a_type == irslcd_4x20) {
-    LINE_COUNT = 4;
-    LINE_LEN = 20;
-    LCD_SIZE = LINE_LEN*LINE_COUNT;
-  }
-
   lcd_ram = new irs_u8[LCD_SIZE];
   memset(lcd_ram, ' ', LCD_SIZE);
 
   //IRS_PAUSE(TIME_TO_CNT(1, 1));
 
-  set_to_cnt(lcd_timer, MS_TO_CNT(200));
-  while (!test_to_cnt(lcd_timer));
-
   //  Инициализация портов ввода/вывода
-#ifndef DBGREG
   (*mp_dir_data) = 0xFF;  //  Шина данных LCD
   (*mp_set_data) = 0x00;
   (*mp_dir_control) |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
   (*mp_set_control) &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
-#else //DBGREG
-  DDRA = 0xFF;  //  Шина данных LCD
-  PORTA = 0x00;
-  DDRE |= ((1 << m_LCD_RS)|(1 << m_LCD_E)); //  Линии E и RS LCD
-  PORTE &= (((1 << m_LCD_RS)|(1 << m_LCD_E))^0xFF);
-#endif //DBGREG
 
-  for (irs_u8 i = 0; i < 3; i++)
-  {
-    //  Выдержка
-    lcd_delay_ms(LCD_INIT_DELAY_MS);
-    //  Команда
-    lcd_init_command(BUS_8BIT);
-    //  И так - 3 раза
+  // Начальная пауза для стабилизации питания
+  irs::pause(irs::make_cnt_ms(200));
+
+  switch (a_type) {
+    // Инициализация OLED-индикатора
+    case irslcd_oled_4x20: {
+      lcd_init_command(OLED_FUNCTION_SET);
+      irs::pause(irs::make_cnt_ms(LCD_INIT_DELAY_MS));
+      lcd_init_command(OLED_DISPLAY_ON);
+      irs::pause(irs::make_cnt_ms(LCD_INIT_DELAY_MS));
+      lcd_init_command(OLED_DISPLAY_CLEAR);
+      irs::pause(irs::make_cnt_ms(LCD_INIT_DELAY_MS));
+      lcd_init_command(ADR_INC);
+    } break;
+    // Инициализация LCD-индикатора
+    default: {
+      for (irs_u8 i = 0; i < 3; i++)
+      {
+        //  Выдержка
+        lcd_delay_ms(LCD_INIT_DELAY_MS);
+        //  Команда
+        lcd_init_command(BUS_8BIT);
+        //  И так - 3 раза
+      }
+      lcd_delay_ms(LCD_INIT_DELAY_MS);
+      lcd_init_command(TWO_LINES);
+      lcd_delay_ms(LCD_INIT_DELAY_MS);
+      lcd_init_command(IMAGE_ON);
+      lcd_delay_ms(LCD_INIT_DELAY_MS);
+      lcd_init_command(ADR_INC);
+    }
   }
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(TWO_LINES);
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(IMAGE_ON);
-  lcd_delay_ms(LCD_INIT_DELAY_MS);
-  lcd_init_command(ADR_INC);
 }
 mxdisplay_drv_avr_t::~mxdisplay_drv_avr_t()
 {
