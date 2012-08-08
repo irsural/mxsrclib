@@ -2,7 +2,7 @@
 //! \ingroup math_group
 //! \brief Калибровка приборов
 //!
-//! Дата: 06.07.2010\n
+//! Дата: 04.04.2011\n
 //! Ранняя дата: 27.03.2009
 
 #ifndef correct_algH
@@ -280,7 +280,7 @@ struct correct_map_t
   array_data_t<IN_Y> mp_y_points;
   array_data_t<K> mp_k_array;
   array_data_t<K> mp_b_array;
-  void connect(mxdata_t *ap_data, irs_uarc a_start_index, bool a_use_b);
+  irs_uarc connect(mxdata_t *ap_data, irs_uarc a_start_index, bool a_use_b);
 };
 
 template <class IN_X, class IN_Y, class OUT_Z, class K>
@@ -290,7 +290,7 @@ irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>::correct_map_t():
 }
 
 template <class IN_X, class IN_Y, class OUT_Z, class K>
-void irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>::connect(mxdata_t *ap_data,
+irs_uarc irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>::connect(mxdata_t *ap_data,
   irs_uarc a_start_index, bool a_use_b)
 {
   irs_uarc index = a_start_index;
@@ -302,6 +302,7 @@ void irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>::connect(mxdata_t *ap_data,
   irs_uarc k_b_size = m_x_count * m_y_count;
   index = mp_k_array.connect(ap_data, index, k_b_size);
   if (a_use_b) index = mp_b_array.connect(ap_data, index, k_b_size);
+  return index;
 }
 
 

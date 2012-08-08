@@ -18,7 +18,8 @@ typedef size_t mxdisp_pos_t;
 // Тип индикатора
 enum irslcd_t {
   irslcd_unknown,
-  irslcd_4x20
+  irslcd_4x20,
+  irslcd_oled_4x20
 };
 
 // Тип подключения клавиатуры

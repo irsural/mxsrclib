@@ -2,7 +2,7 @@
 //! \ingroup text_user_interface_group
 //! \brief Текстовое меню
 //!
-//! Дата: 19.10.2010\n
+//! Дата: 04.04.2011n
 //! Ранняя дата: 15.09.2009
 
 #ifndef IRSMENUH
@@ -141,13 +141,13 @@ public:
   irs_bool can_edit();
   void* get_data_attached();
   void set_data_attached(void* ap_data);
-  
+
   virtual size_type get_parametr_string(
     char *a_parametr_string,
     size_type a_length = 0,
     irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
     irs_menu_param_update_t a_update = IMU_UPDATE) = 0;
-  virtual size_type get_dynamic_string(char *a_buffer, 
+  virtual size_type get_dynamic_string(char *a_buffer,
     size_type a_length = 0) = 0;
   virtual bool is_updated();
   virtual void draw(irs_menu_base_t **a_cur_menu) = 0;
@@ -182,6 +182,7 @@ class irs_advanced_menu_t: public irs_menu_base_t
     irs_menu_base_t* p_item;
     bool show;
   };
+
   vector<menu_item_t> m_menu_vector;
   size_type m_arrow_position;
   size_type m_current_item;
@@ -204,6 +205,10 @@ public:
   void hide_item(size_type a_item_number);
   void show_item(size_type a_item_number);
   bool item_is_hidden(size_type a_item_number);
+  bool find_item(irs_menu_base_t *ap_item, size_t* ap_finded_item_idx);
+  void hide_item(irs_menu_base_t *ap_item);
+  void show_item(irs_menu_base_t *ap_item);
+  bool item_is_hidden(irs_menu_base_t *ap_item);
 };
 
 class irs_tablo_t: public irs_menu_base_t
@@ -255,7 +260,7 @@ public:
     irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
     irs_menu_param_update_t a_update = IMU_UPDATE);
   void set_slave_menu(irs_menu_base_t *ap_slave_menu);
-  bool add(irs_menu_base_t *ap_parametr, size_type a_x, size_type a_y,
+  bool add(irs_menu_base_t* ap_parametr, size_type a_x, size_type a_y,
     irs_menu_param_show_mode_t a_show_mode);
   size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
   void creep_start();
@@ -265,6 +270,11 @@ public:
   void hide_item(size_type a_item_number);
   void show_item(size_type a_item_number);
   bool item_is_hidden(size_type a_item_number);
+  bool find_item(irs_menu_base_t *ap_parametr,
+    size_t* ap_finded_item_idx = IRS_NULL);
+  void hide_item(irs_menu_base_t *ap_parametr);
+  void show_item(irs_menu_base_t *ap_parametr);
+  bool item_is_hidden(irs_menu_base_t *ap_parametr);
 };
 
 class irs_menu_double_item_t: public irs_menu_base_t
@@ -361,7 +371,7 @@ irs_menu_simply_item_t<T>::~irs_menu_simply_item_t()
 }
 
 template <class T>
-void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix, 
+void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
   char *ap_suffix, size_type a_len, size_type a_accur)
 {
   mp_value_string = ap_value_string;
@@ -370,17 +380,17 @@ void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
   mp_prefix = ap_prefix;
   mp_suffix = ap_suffix;
   size_type space = 1;
-  size_type full_len 
+  size_type full_len
     = m_len + space + strlen(mp_prefix) + space + strlen(mp_suffix);
   delete []mp_copy_parametr_string;
   mp_copy_parametr_string = new char [full_len + 1];
   m_copy_parametr = *mp_parametr;
-  
+
   ostrstream strm(mp_value_string, m_len + 1);
   strm << fixed << setw(m_len) << setprecision(m_accur);
   strm << m_copy_parametr << '\0';
   mp_value_string[m_len] = '\0';
-  
+
   strcpy(mp_copy_parametr_string, mp_value_string);
   m_updated = true;
 }
@@ -390,7 +400,7 @@ void irs_menu_simply_item_t<T>::draw(irs_menu_base_t **a_cur_menu)
 {
   irskey_t a_key = irskey_none;
   if (f_key_event) a_key = f_key_event->check();
-  
+
   if (a_key == irskey_escape || a_key == irskey_enter)
   {
     if (f_master_menu != IRS_NULL)
@@ -401,22 +411,22 @@ void irs_menu_simply_item_t<T>::draw(irs_menu_base_t **a_cur_menu)
     {
       mp_disp_drv->clear();
       mp_disp_drv->outtextpos(0, 0, f_header);
-      
+
       ostrstream strm(mp_value_string, m_len + 1);
       strm << fixed << setw(m_len) << setprecision(m_accur);
       strm << m_copy_parametr << '\0';
       mp_value_string[m_len] = '\0';
-      
+
       mxdisp_pos_t space = 1;
       mxdisp_pos_t prf_x_pos = 0;
       mxdisp_pos_t val_x_pos = strlen(mp_prefix) + space;
       mxdisp_pos_t suf_x_pos = val_x_pos + strlen(mp_value_string) + space;
       mxdisp_pos_t y_pos = 1;
-      
+
       mp_disp_drv->outtextpos(prf_x_pos, y_pos, mp_prefix);
       mp_disp_drv->outtextpos(val_x_pos, y_pos, mp_value_string);
       mp_disp_drv->outtextpos(suf_x_pos, y_pos, mp_suffix);
-      
+
       if (f_creep != IRS_NULL)
       {
         f_creep->shift();
@@ -465,9 +475,9 @@ irs_menu_base_t::size_type irs_menu_simply_item_t<T>::get_parametr_string(
   {
     strcpy(mp_value_string, mp_copy_parametr_string);
   }
-  
+
   const char *space_str = " ";
-  
+
   switch (a_show_mode)
   {
     case IMM_WITHOUT_PREFIX:
@@ -493,9 +503,9 @@ irs_menu_base_t::size_type irs_menu_simply_item_t<T>::get_parametr_string(
       break;
     }
   }
-  
+
   size_type param_str_len = strlen(mp_value_string);
-  
+
   if (a_length < param_str_len)
   {
     memcpy(a_parametr_string, mp_value_string, a_length);
@@ -555,7 +565,7 @@ class irs_menu_ip_item_t: public irs_menu_base_t
   irs_u8 *f_parametr;
   ip_trans_t f_ip_trans;
 public:
-  irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string, 
+  irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string,
     irs_bool a_can_edit);
   void reset_str();
   virtual void draw(irs_menu_base_t **a_cur_menu);
@@ -604,7 +614,7 @@ public:
   irs_menu_trimmer_item_t(double *a_parametr, irs_bool a_save_after_exit);
   void set_str(char *a_value_string, char *a_prefix, char *a_start_prefix,
     char *a_trim_prefix, char *a_step_prefix, char *a_suffix, size_type a_len,
-    size_type a_accur, size_type a_trim_len, size_type a_trim_accur, 
+    size_type a_accur, size_type a_trim_len, size_type a_trim_accur,
     size_type a_step_len, size_type a_step_accur);
   void reset_str();
   void set_min_value(float a_min_value);
@@ -689,6 +699,11 @@ class irs_menu_2param_master_item_t: public irs_menu_base_t
   void show_point_info();
   void show_process_status();
 public:
+  enum value_number_t {
+    value_first,
+    value_second
+  };
+
   irs_menu_2param_master_item_t(
     param_t &a_param_1, param_t &a_param_2, param_t &a_out_param);
   ~irs_menu_2param_master_item_t();
@@ -720,6 +735,7 @@ public:
   bool check_process_stop();
   bool check_out_param_change();
   void reserve(size_t a_size);
+  void reset_cur_param_to(value_number_t a_value_number);
 };
 
 //------------------------------------------------------------------------------
@@ -753,7 +769,7 @@ class irs_menu_progress_bar_t: public irs_menu_base_t
   float m_value;
   void fill_bar();
 public:
-  irs_menu_progress_bar_t(size_type a_symbol, size_type a_length, 
+  irs_menu_progress_bar_t(size_type a_symbol, size_type a_length,
     float a_max_value);
   ~irs_menu_progress_bar_t();
   void set_length(size_type a_length);

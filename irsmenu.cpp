@@ -2,7 +2,7 @@
 //! \ingroup text_user_interface_group
 //! \brief Текстовое меню
 //!
-//! Дата: 11.10.2010\n
+//! Дата: 04.04.2011n
 //! Ранняя дата: 15.09.2009
 
 #include <irspch.h>
@@ -415,7 +415,7 @@ bool irs_advanced_menu_t::find_next_shown_item(size_type &a_item)
   else item++;
   for (; item < m_menu_vector.size(); item++)
   {
-    if (m_menu_vector[item].show) 
+    if (m_menu_vector[item].show)
     {
       a_item = item;
       return true;
@@ -436,13 +436,13 @@ bool irs_advanced_menu_t::find_prev_shown_item(size_type &a_item)
   else item--;
   for (; item > 0; item--)
   {
-    if (m_menu_vector[item].show) 
+    if (m_menu_vector[item].show)
     {
       a_item = item;
       return true;
     }
   }
-  if (item == 0 && m_menu_vector[item].show) 
+  if (item == 0 && m_menu_vector[item].show)
   {
     a_item = item;
     return true;
@@ -454,51 +454,51 @@ void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
 {
   irskey_t a_key = irskey_none;
   if (f_key_event) a_key = f_key_event->check();
-  
+
   if (f_want_redraw)
   {
     mp_disp_drv->clear();
     mp_disp_drv->outtextpos(0, 0, "^~");
     mp_disp_drv->outtextpos(3, 0, f_header);
-    
+
     if (m_menu_vector.size() > 0 && m_menu_vector[m_current_item].show)
     {
       const mxdisp_pos_t x_pos = 1;
       const mxdisp_pos_t cur_item_y_pos = m_arrow_position + 1;
       const mxdisp_pos_t top_line = 1;
       const mxdisp_pos_t bottom_line = mp_disp_drv->get_height() - 1;
-      
+
       size_type cur_item = m_current_item;
-      mp_disp_drv->outtextpos(x_pos, cur_item_y_pos, 
+      mp_disp_drv->outtextpos(x_pos, cur_item_y_pos,
         m_menu_vector[cur_item].p_item->get_header());
       if (cur_item_y_pos > top_line)
       {
-        for (mxdisp_pos_t y_pos = cur_item_y_pos - 1; 
+        for (mxdisp_pos_t y_pos = cur_item_y_pos - 1;
              y_pos >= top_line; y_pos--)
         {
           if (find_prev_shown_item(cur_item))
           {
-            mp_disp_drv->outtextpos(x_pos, y_pos, 
+            mp_disp_drv->outtextpos(x_pos, y_pos,
               m_menu_vector[cur_item].p_item->get_header());
           }
         }
       }
-      
+
       cur_item = m_current_item;
-      
+
       if (cur_item_y_pos < bottom_line)
       {
-        for (mxdisp_pos_t y_pos = cur_item_y_pos + 1; 
+        for (mxdisp_pos_t y_pos = cur_item_y_pos + 1;
              y_pos <= bottom_line; y_pos++)
         {
           if (find_next_shown_item(cur_item))
           {
-            mp_disp_drv->outtextpos(x_pos, y_pos, 
+            mp_disp_drv->outtextpos(x_pos, y_pos,
               m_menu_vector[cur_item].p_item->get_header());
           }
         }
       }
-      
+
       mp_disp_drv->outtextpos(0, cur_item_y_pos, ">");
     }
   }
@@ -546,7 +546,7 @@ void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
     }
     case irskey_enter:
     {
-      if (m_menu_vector.size() > 0) 
+      if (m_menu_vector.size() > 0)
       {
         m_menu_vector[m_current_item].p_item->set_master_menu(this);
         *a_cur_menu = m_menu_vector[m_current_item].p_item;
@@ -571,37 +571,37 @@ void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
     }
   }
 }
-  
+
 irs_menu_base_t::size_type irs_advanced_menu_t::get_current_item()
 {
   return m_current_item;
 }
-  
+
 irs_menu_base_t::size_type irs_advanced_menu_t::get_items_count()
 {
   return m_menu_vector.size();
 }
-  
+
 irs_menu_base_t::size_type irs_advanced_menu_t::add(irs_menu_base_t *ap_item,
   bool a_show)
 {
   menu_item_t item;
   item.p_item = ap_item;
   item.show = a_show;
-  
+
   if (f_key_event) item.p_item->set_key_event(f_key_event);
   if (f_creep) item.p_item->set_creep(f_creep);
   if (mp_disp_drv) item.p_item->set_disp_drv(mp_disp_drv);
   item.p_item->set_cursor_symbol(f_cursor_symbol);
   item.p_item->set_master_menu(this);
-  
+
   m_menu_vector.push_back(item);
-  
+
   m_current_item = 0;
   m_arrow_position = 0;
   if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
   f_want_redraw = true;
-  
+
   return m_menu_vector.size() - 1;
 }
 
@@ -614,7 +614,7 @@ irs_menu_base_t::size_type irs_advanced_menu_t::get_dynamic_string(
   }
   return 0;
 }
-  
+
 void irs_advanced_menu_t::hide_item(size_type a_item_number)
 {
   if (a_item_number > m_menu_vector.size() - 1) return;
@@ -624,7 +624,7 @@ void irs_advanced_menu_t::hide_item(size_type a_item_number)
   if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
   f_want_redraw = true;
 }
-  
+
 void irs_advanced_menu_t::show_item(size_type a_item_number)
 {
   if (a_item_number > m_menu_vector.size() - 1) return;
@@ -634,13 +634,51 @@ void irs_advanced_menu_t::show_item(size_type a_item_number)
   if (!m_menu_vector[0].show) find_next_shown_item(m_current_item);
   f_want_redraw = true;
 }
-  
+
 bool irs_advanced_menu_t::item_is_hidden(size_type a_item_number)
-{  
+{
   if (a_item_number > m_menu_vector.size() - 1) return false;
   return m_menu_vector[a_item_number].show;
 }
 
+bool irs_advanced_menu_t::find_item(irs_menu_base_t *ap_item,
+  size_t* ap_finded_item_idx)
+{
+  bool is_finded = false;
+  for (size_t idx = 0; idx < m_menu_vector.size(); idx++) {
+    if (m_menu_vector[idx].p_item == ap_item) {
+      is_finded = true;
+      if (ap_finded_item_idx != IRS_NULL) {
+        *ap_finded_item_idx = idx;
+      }
+      break;
+    }
+  }
+  return is_finded;
+}
+void irs_advanced_menu_t::hide_item(irs_menu_base_t *ap_item)
+{
+  size_t idx = 0;
+  if (find_item(ap_item, &idx)) {
+    hide_item(idx);
+  }
+}
+void irs_advanced_menu_t::show_item(irs_menu_base_t *ap_item)
+{
+  size_t idx = 0;
+  if (find_item(ap_item, &idx)) {
+    show_item(idx);
+  }
+}
+bool irs_advanced_menu_t::item_is_hidden(irs_menu_base_t *ap_item)
+{
+  bool is_hidden = true;
+  size_t idx = 0;
+  if (find_item(ap_item, &idx)) {
+    is_hidden = item_is_hidden(idx);
+  }
+  return is_hidden;
+}
 //--------------------------  MENU_DOUBLE_ITEM  --------------------------------
 
 irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
@@ -702,11 +740,11 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   f_accur = a_accur;
   f_prefix = a_prefix;
   f_suffix = a_suffix;
-  
+
   size_type space = 1;
-  size_type full_len 
+  size_type full_len
     = f_len + space + strlen(f_prefix) + space + strlen(f_suffix);
-  
+
   delete []f_copy_parametr_string;
   f_copy_parametr_string = new char [full_len + 1];
   f_copy_parametr = *f_parametr;
@@ -888,7 +926,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
         //mp_disp_drv->clear_line(EDIT_LINE);
         mp_disp_drv->outtextpos(0, 0, f_header);
         afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
-        
+
         const size_type space = 1;
         size_type prf_x_pos = 0;
         size_type val_x_pos = strlen(f_prefix) + space;
@@ -1630,6 +1668,44 @@ bool irs_advanced_tablo_t::item_is_hidden(size_type a_item_number)
   return false;
 }
 
+bool irs_advanced_tablo_t::find_item(irs_menu_base_t *ap_parametr,
+  size_t* ap_finded_item_idx)
+{
+  bool is_finded = false;
+  for (size_t idx = 0; idx < m_parametr_vector.size(); idx++) {
+    if (m_parametr_vector[idx].p_parametr == ap_parametr) {
+      is_finded = true;
+      if (ap_finded_item_idx != IRS_NULL) {
+        *ap_finded_item_idx = idx;
+      }
+      break;
+    }
+  }
+  return is_finded;
+}
+void irs_advanced_tablo_t::hide_item(irs_menu_base_t *ap_parametr)
+{
+  size_t idx = 0;
+  if (find_item(ap_parametr, &idx)) {
+    hide_item(idx);
+  }
+}
+void irs_advanced_tablo_t::show_item(irs_menu_base_t *ap_parametr)
+{
+  size_t idx = 0;
+  if (find_item(ap_parametr, &idx)) {
+    show_item(idx);
+  }
+}
+bool irs_advanced_tablo_t::item_is_hidden(irs_menu_base_t *ap_parametr)
+{
+  bool is_hidden = true;
+  size_t idx = 0;
+  if (find_item(ap_parametr, &idx)) {
+    is_hidden = item_is_hidden(idx);
+  }
+  return is_hidden;
+}
 //------------------------------------------------------------------------------
 
 
@@ -2210,7 +2286,7 @@ irs_menu_ip_item_t::irs_menu_ip_item_t(irs_u8 *a_parametr, char *a_value_string,
   f_extra_parametr(IRS_NULL),
   f_parametr(a_parametr),
   f_ip_trans(IRS_NULL)
-{   
+{
   f_master_menu = IRS_NULL;
   f_cur_symbol = 0;
   f_cursor[0] = ' ';
@@ -2497,7 +2573,7 @@ irs_menu_bool_item_t::irs_menu_bool_item_t(irs_bool *a_parametr,
 ):
   f_true_string(empty_str),
   f_false_string(empty_str),
-  f_parametr(a_parametr),   
+  f_parametr(a_parametr),
   f_temp_parametr(*a_parametr),
   f_bool_trans(IRS_NULL)
 {
@@ -3287,6 +3363,30 @@ void irs_menu_2param_master_item_t::draw(irs_menu_base_t **ap_cur_menu)
       // Остальные режимы меню игнорируем
     }
   }
+}
+
+void irs_menu_2param_master_item_t::
+  reset_cur_param_to(value_number_t a_value_number)
+{
+  f_want_redraw = true;
+  switch (a_value_number) {
+    case value_first: {
+      m_point_vector[m_current_point].out_value =
+        m_point_vector[m_current_point].value_1;
+    }
+    case value_second: {
+      m_point_vector[m_current_point].out_value =
+        m_point_vector[m_current_point].value_2;
+    }
+    default: {
+      m_point_vector[m_current_point].out_value =
+        m_point_vector[m_current_point].value_2;
+      IRS_LIB_ERROR(irs::ec_standard, "Умолчание в switch недопустимо в "
+        "функции irs_menu_2param_master_item_t::reset_cur_param_to");
+    }
+  }
+  m_need_out_param_change = true;
+  m_last_point = m_current_point;
 }
 
 bool irs_menu_2param_master_item_t::check_process_change_param()
