@@ -159,7 +159,8 @@ typedef struct
 #pragma language=restore
 
 //  Запись по адресу
-#define HWREG(x) (*((volatile irs_u32*)(x)))
+//#define HWREG(x) (*((volatile irs_u32*)(x)))
+#define HWREG(x) (reinterpret_cast<volatile irs_u32&>(x))
 
 #endif /* __IAR_SYSTEMS_ICC__ */
 
