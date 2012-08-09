@@ -279,6 +279,310 @@ __IO_REG32_BIT(PORTE_ODR,  PORTA_BASE + ODR,  __READ,       __hw_bits);
 __IO_REG32_BIT(PORTE_BSRR, PORTA_BASE + BSRR, __WRITE,      __bsrr_bits);
 __IO_REG32_BIT(PORTE_LCKR, PORTA_BASE + LCKR, __READ_WRITE, __lckr_bits);
 
+//  AFIO
+
+#define EVCR    0x00
+#define MAPR    0x04
+#define EXTICR1 0x08
+#define EXTICR2 0x0C
+#define EXTICR3 0x10
+#define EXTICR4 0x14
+#define MAPR2   0x1C
+
+typedef struct {
+  __REG32  SPI1_REMAP     : 1;
+  __REG32  I2C1_REMAP     : 1;
+  __REG32  USART1_REMAP   : 1;
+  __REG32  USART2_REMAP   : 1;
+  __REG32  USART3_REMAP   : 2;
+  __REG32  TIM1_REMAP     : 2;
+  __REG32  TIM2_REMAP     : 2;
+  __REG32  TIM3_REMAP     : 2;
+  __REG32  TIM4_REMAP     : 1;
+  __REG32                 : 2;
+  __REG32  TIM5CH4_IREMAP : 1;
+  __REG32                 : 7;
+  __REG32  SWJ_CFG        : 3;
+  __REG32                 : 5;
+} __mapr_bits;
+
+__IO_REG32_BIT(AFIO_MAPR, AFIO_BASE + MAPR, __READ_WRITE, __mapr_bits);
+
+//  TIMER 1
+
+#define TIM1CR1     0x00
+#define TIM1CR2     0x04
+#define TIM1SMCR    0x08
+#define TIM1DIER    0x0C
+#define TIM1SR      0x10
+#define TIM1EGR     0x14
+#define TIM1CCMR1   0x18
+#define TIM1CCMR2   0x1C
+#define TIM1CCER    0x20
+#define TIM1CNT     0x24
+#define TIM1PSC     0x28
+#define TIM1ARR     0x2C
+#define TIM1RCR     0x30
+#define TIM1CCR1    0x34
+#define TIM1CCR2    0x38
+#define TIM1CCR3    0x3C
+#define TIM1CCR4    0x40
+#define TIM1BDTR    0x44
+#define TIM1DCR     0x48
+#define TIM1DMAR    0x4C
+
+// Control register 1 (TIM1_CR1)
+typedef struct {
+  __REG32 CEN             : 1;
+  __REG32 UDIS            : 1;
+  __REG32 URS             : 1;
+  __REG32 OPM             : 1;
+  __REG32 DIR             : 1;
+  __REG32 CMS             : 2;
+  __REG32 ARPE            : 1;
+  __REG32 CKD             : 2;
+  __REG32                 :22;
+} __tim1_cr1_bits;
+
+// Control register 2 (TIM1_CR2)
+typedef struct {
+  __REG32 CCPC            : 1;
+  __REG32                 : 1;
+  __REG32 CCUS            : 1;
+  __REG32 CCDS            : 1;
+  __REG32 MMS             : 3;
+  __REG32 TI1S            : 1;
+  __REG32 OIS1            : 1;
+  __REG32 OIS1N           : 1;
+  __REG32 OIS2            : 1;
+  __REG32 OIS2N           : 1;
+  __REG32 OIS3            : 1;
+  __REG32 OIS3N           : 1;
+  __REG32 OIS4            : 1;
+  __REG32                 :17;
+} __tim1_cr2_bits;
+
+// Slave mode control register (TIM1_SMCR)
+typedef struct {
+  __REG32 SMS             : 3;
+  __REG32                 : 1;
+  __REG32 TS              : 3;
+  __REG32 MSM             : 1;
+  __REG32 ETF             : 4;
+  __REG32 ETPS            : 2;
+  __REG32 ECE             : 1;
+  __REG32 ETP             : 1;
+  __REG32                 :16;
+} __tim1_smcr_bits;
+
+// DMA/Interrupt enable register (TIM1_DIER)
+typedef struct {
+  __REG32 UIE             : 1;
+  __REG32 CC1IE           : 1;
+  __REG32 CC2IE           : 1;
+  __REG32 CC3IE           : 1;
+  __REG32 CC4IE           : 1;
+  __REG32 COMIE           : 1;
+  __REG32 TIE             : 1;
+  __REG32 BIE             : 1;
+  __REG32 UDE             : 1;
+  __REG32 CC1DE           : 1;
+  __REG32 CC2DE           : 1;
+  __REG32 CC3DE           : 1;
+  __REG32 CC4DE           : 1;
+  __REG32 COMDE           : 1;
+  __REG32 TDE             : 1;
+  __REG32                 :17;
+} __tim1_dier_bits;
+
+// Status register (TIM1_SR)
+typedef struct {
+  __REG32 UIF             : 1;
+  __REG32 CC1IF           : 1;
+  __REG32 CC2IF           : 1;
+  __REG32 CC3IF           : 1;
+  __REG32 CC4IF           : 1;
+  __REG32 COMIF           : 1;
+  __REG32 TIF             : 1;
+  __REG32 BIF             : 1;
+  __REG32                 : 1;
+  __REG32 CC1OF           : 1;
+  __REG32 CC2OF           : 1;
+  __REG32 CC3OF           : 1;
+  __REG32 CC4OF           : 1;
+  __REG32                 :19;
+} __tim1_sr_bits;
+
+// Event generation register (TIM1_EGR)
+typedef struct {
+  __REG32 UG              : 1;
+  __REG32 CC1G            : 1;
+  __REG32 CC2G            : 1;
+  __REG32 CC3G            : 1;
+  __REG32 CC4G            : 1;
+  __REG32 COMG            : 1;
+  __REG32 TG              : 1;
+  __REG32 BG              : 1;
+  __REG32                 :24;
+} __tim1_egr_bits;
+
+// Capture/compare mode register 1 (TIM1_CCMR1)
+typedef union {
+  // TIM1_CCMR1
+  struct {
+  __REG32 IC1S            : 2;
+  __REG32 IC1PSC          : 2;
+  __REG32 IC1F            : 4;
+  __REG32 IC2S            : 2;
+  __REG32 IC2PSC          : 2;
+  __REG32 IC2F            : 4;
+  __REG32                 :16;
+  };
+  // TIM1_OCMR1
+  struct {
+  __REG32 OC1S            : 2;
+  __REG32 OC1FE           : 1;
+  __REG32 OC1PE           : 1;
+  __REG32 OC1M            : 3;
+  __REG32 OC1CE           : 1;
+  __REG32 OC2S            : 2;
+  __REG32 OC2FE           : 1;
+  __REG32 OC2PE           : 1;
+  __REG32 OC2M            : 3;
+  __REG32 OC2CE           : 1;
+  __REG32                 :16;
+  };
+} __tim1_ccmr1_bits;
+
+// Capture/compare mode register 2 (TIM1_CCMR2)
+typedef union {
+  // TIM1_CCMR2
+  struct {
+  __REG32 IC3S            : 2;
+  __REG32 IC3PSC          : 2;
+  __REG32 IC3F            : 4;
+  __REG32 IC4S            : 2;
+  __REG32 IC4PSC          : 2;
+  __REG32 IC4F            : 4;
+  __REG32                 :16;
+  };
+  // TIM1_OCMR2
+  struct {
+  __REG32 OC3S            : 2;
+  __REG32 OC3FE           : 1;
+  __REG32 OC3PE           : 1;
+  __REG32 OC3M            : 3;
+  __REG32 OC3CE           : 1;
+  __REG32 OC4S            : 2;
+  __REG32 OC4FE           : 1;
+  __REG32 OC4PE           : 1;
+  __REG32 OC4M            : 3;
+  __REG32 OC4CE           : 1;
+  __REG32                 :16;
+  };
+} __tim1_ccmr2_bits;
+
+// Capture/compare enable register (TIM1_CCER)
+typedef struct {
+  __REG32 CC1E            : 1;
+  __REG32 CC1P            : 1;
+  __REG32 CC1NE           : 1;
+  __REG32 CC1NP           : 1;
+  __REG32 CC2E            : 1;
+  __REG32 CC2P            : 1;
+  __REG32 CC2NE           : 1;
+  __REG32 CC2NP           : 1;
+  __REG32 CC3E            : 1;
+  __REG32 CC3P            : 1;
+  __REG32 CC3NE           : 1;
+  __REG32 CC3NP           : 1;
+  __REG32 CC4E            : 1;
+  __REG32 CC4P            : 1;
+  __REG32                 :18;
+} __tim1_ccer_bits;
+
+// Counter (TIM1_CNT)
+typedef struct {
+  __REG32 CNT             :16;
+  __REG32                 :16;
+} __tim1_cnt_bits;
+
+// Prescaler (TIM1_PSC)
+typedef struct {
+  __REG32 PSC             :16;
+  __REG32                 :16;
+} __tim1_psc_bits;
+
+// Auto-reload register (TIM1_ARR)
+typedef struct {
+  __REG32 ARR             :16;
+  __REG32                 :16;
+} __tim1_arr_bits;
+
+// Repetition counter register (TIM1_RCR)
+typedef struct {
+  __REG32 REP             : 8;
+  __REG32                 :24;
+} __tim1_rcr_bits;
+
+// Capture/compare register (TIM1_CCR)
+typedef struct {
+  __REG32 CCR             :16;
+  __REG32                 :16;
+} __tim1_ccr_bits;
+
+// Break and dead-time register (TIM1_BDTR)
+typedef struct {
+  __REG32 DTG             : 8;
+  __REG32 LOCK            : 2;
+  __REG32 OSSI            : 1;
+  __REG32 OSSR            : 1;
+  __REG32 BKE             : 1;
+  __REG32 BKP             : 1;
+  __REG32 AOE             : 1;
+  __REG32 MOE             : 1;
+  __REG32                 :16;
+} __tim1_bdtr_bits;
+
+// DMA control register (TIM1_DCR)
+typedef struct {
+  __REG32 DBA             : 5;
+  __REG32                 : 3;
+  __REG32 DBL             : 5;
+  __REG32                 :19;
+} __tim1_dcr_bits;
+
+// DMA address for burst mode (TIM1_DMAR)
+typedef struct {
+  __REG32 DMAB            :16;
+  __REG32                 :16;
+} __tim1_dmar_bits;
+
+__IO_REG32_BIT(TIM1_CR1,  TIM1_BASE + TIM1CR1,  __READ_WRITE, __tim1_cr1_bits);
+__IO_REG32_BIT(TIM1_CR2,  TIM1_BASE + TIM1CR2,  __READ_WRITE, __tim1_cr2_bits);
+__IO_REG32_BIT(TIM1_SMCR, TIM1_BASE + TIM1SMCR, __READ_WRITE, __tim1_smcr_bits);
+__IO_REG32_BIT(TIM1_DIER, TIM1_BASE + TIM1DIER, __READ_WRITE, __tim1_dier_bits);
+__IO_REG32_BIT(TIM1_SR,   TIM1_BASE + TIM1SR,   __READ_WRITE, __tim1_sr_bits);
+__IO_REG32_BIT(TIM1_EGR,  TIM1_BASE + TIM1EGR,  __READ_WRITE, __tim1_egr_bits);
+__IO_REG32_BIT(TIM1_CCMR1,TIM1_BASE + TIM1CCMR1,__READ_WRITE,__tim1_ccmr1_bits);
+#define TIM1_OCMR1      TIM1_CCMR1
+#define TIM1_OCMR1_BIT  TIM1_CCMR1_BIT
+__IO_REG32_BIT(TIM1_CCMR2,TIM1_BASE + TIM1CCMR2,__READ_WRITE,__tim1_ccmr2_bits);
+#define TIM1_OCMR2      TIM1_CCMR2
+#define TIM1_OCMR2_BIT  TIM1_CCMR2_BIT
+__IO_REG32_BIT(TIM1_CCER, TIM1_BASE + TIM1CCER, __READ_WRITE, __tim1_ccer_bits);
+__IO_REG32_BIT(TIM1_CNT,  TIM1_BASE + TIM1CNT,  __READ_WRITE, __tim1_cnt_bits);
+__IO_REG32_BIT(TIM1_PSC,  TIM1_BASE + TIM1PSC,  __READ_WRITE, __tim1_psc_bits);
+__IO_REG32_BIT(TIM1_ARR,  TIM1_BASE + TIM1ARR,  __READ_WRITE, __tim1_arr_bits);
+__IO_REG32_BIT(TIM1_RCR,  TIM1_BASE + TIM1RCR,  __READ_WRITE, __tim1_rcr_bits);
+__IO_REG32_BIT(TIM1_CCR1, TIM1_BASE + TIM1CCR1, __READ_WRITE, __tim1_ccr_bits);
+__IO_REG32_BIT(TIM1_CCR2, TIM1_BASE + TIM1CCR2, __READ_WRITE, __tim1_ccr_bits);
+__IO_REG32_BIT(TIM1_CCR3, TIM1_BASE + TIM1CCR3, __READ_WRITE, __tim1_ccr_bits);
+__IO_REG32_BIT(TIM1_CCR4, TIM1_BASE + TIM1CCR4, __READ_WRITE, __tim1_ccr_bits);
+__IO_REG32_BIT(TIM1_BDTR, TIM1_BASE + TIM1BDTR, __READ_WRITE, __tim1_bdtr_bits);
+__IO_REG32_BIT(TIM1_DCR,  TIM1_BASE + TIM1DCR,  __READ_WRITE, __tim1_dcr_bits);
+__IO_REG32_BIT(TIM1_DMAR, TIM1_BASE + TIM1DMAR, __READ_WRITE, __tim1_dmar_bits);
+
 //  NVIC
 
 ////////////////////////////////////////////////////////////////////////////////
