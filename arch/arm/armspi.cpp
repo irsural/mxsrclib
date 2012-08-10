@@ -228,8 +228,8 @@ irs::arm::arm_spi_t::reg_t::reg_t(ssi_type_t a_ssi_type):
     } break;
     case SSI1: {
       mp_SSICR0_bit = &SSI1CR0_bit;
-      //mp_SSICR1_bit = &SSI1CR1_bit;
-      //mp_SSIDR = &SSI1DR;
+      mp_SSICR1_bit = &SSI1CR1_bit;
+      mp_SSIDR = &SSI1DR;
       mp_SSISR_bit = &SSI1SR_bit;
       mp_SSICPSR = &SSI1CPSR;
       mp_SSIIM_bit = &SSI1IM_bit;

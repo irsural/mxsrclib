@@ -255,7 +255,7 @@ irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
 {
   port_clock_on(m_port);
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
-    //
+    volatile dir_t dir = a_dir;//
   #elif defined(__STM32F100RBT__)
     set_dir(a_dir);
   #else
@@ -281,6 +281,7 @@ irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
 void irs::arm::io_port_t::set(data_t a_data)
 {
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
+    volatile data_t data = a_data;//
   #elif defined(__STM32F100RBT__)
     irs_u32 set_data = (a_data << m_shift) & m_mask;
     irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
@@ -294,7 +295,7 @@ void irs::arm::io_port_t::set(data_t a_data)
 void irs::arm::io_port_t::set_dir(dir_t a_dir)
 {
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
-    volatile port_dir_t = a_dir;
+    volatile dir_t dir = a_dir;
   #elif defined(__STM32F100RBT__)
     for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
       if (m_mask & (1 << bit)) {
