@@ -96,7 +96,6 @@ private:
 
     reg_t(ssi_type_t a_ssi_type);
   };
-
   cur_status_t m_status;
   const irs_u8* mp_write_buf;
   irs_u8* mp_read_buf;

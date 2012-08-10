@@ -424,8 +424,8 @@ template<class TYPE>
 inline matrix_t<TYPE> matrix_t<TYPE>::operator*(const TYPE& a_value) const
 {
   matrix_t<TYPE> matrix(m_col_count, m_row_count);
-  int length = mv_elem.size();
-  for(unsigned int i = 0; i < length; i++) {
+  size_t length = mv_elem.size();
+  for(size_t i = 0; i < length; i++) {
     matrix.mv_elem[i] = mv_elem[i]*a_value;
   }
   return matrix;

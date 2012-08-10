@@ -859,7 +859,8 @@ void irs::mxnet_t::tick()
       {
         m_status = mxn_read_head;
       }
-      if (mp_packet->var_ind_first + mp_packet->var_count > m_raw_data.size())
+      if (static_cast<size_t>(mp_packet->var_ind_first + 
+        mp_packet->var_count) > m_raw_data.size())
       {
         m_status = mxn_read_head;
       }
@@ -882,8 +883,8 @@ void irs::mxnet_t::tick()
     {
       bool over_max =
         (mp_packet->var_count > (MXN_CNT_MAX - mp_packet->var_ind_first));
-      bool over_range =
-        ((mp_packet->var_ind_first + mp_packet->var_count) > m_raw_data.size());
+      bool over_range = (static_cast<size_t>(mp_packet->var_ind_first + 
+        mp_packet->var_count) > m_raw_data.size());
       m_write_error = (over_max || over_range);
 
       if (!m_write_error)

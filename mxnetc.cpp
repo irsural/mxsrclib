@@ -1053,7 +1053,8 @@ void irs::mxdata_to_mxnet_t::tick()
               break;
             }
           }
-          if ((m_current_index >= m_mxnet_size_byte - 1) &&
+          if ((m_current_index >= 
+            static_cast<irs_uarc>(m_mxnet_size_byte - 1)) &&
             (m_status != WRITE))
           {
             m_status = READ;
