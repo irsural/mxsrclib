@@ -79,6 +79,7 @@
 #include <stddef.h>
 
 #include <irsconfig.h>
+#include <irsdefsarch.h>
 
 // Деректива throw
 #ifdef __ICCAVR__

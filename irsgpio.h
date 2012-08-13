@@ -32,6 +32,8 @@ struct io_t {
   };
 };
 
+//typedef io_t::dir_t port_dir_t;
+
 class gpio_pin_t: public io_t
 {
 public:
@@ -157,7 +159,7 @@ public:
 template
 <
   avr_port_t &PORT,
-  port_dir_t DIR,
+  io_t::dir_t DIR,
   irs_u8 BIT,
   bool PULL_UP = false
 >
@@ -177,78 +179,78 @@ public:
   inline static bool pin();
   inline static void set();
   inline static void clear();
-  inline static void set_dir(port_dir_t a_dir);
+  inline static void set_dir(io_t::dir_t a_dir);
   inline static avr_port_t& out(avr_port_t& a_port);
   inline static avr_port_t& dir(avr_port_t& a_port);
   inline static avr_port_t& in(avr_port_t& a_port);
 };
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 avr_pin_t<PORT, DIR, BIT, PULL_UP>::avr_pin_t()
 {
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 avr_pin_t<PORT, DIR, BIT, PULL_UP>::~avr_pin_t()
 {
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline void avr_pin_t<PORT, DIR, BIT, PULL_UP>::init()
 {
-  if (DIR == dir_in)
+  if (DIR == io_t::dir_in)
   {
     dir(PORT) &= ((1 << BIT)^0xFF);
     if (PULL_UP) PORT |= (1 << BIT);
   }
-  if (DIR == dir_out)
+  if (DIR == io_t::dir_out)
   {
     dir(PORT) |= (1 << BIT);
     PORT &= ((1 << BIT)^0xFF);
   }
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline bool avr_pin_t<PORT, DIR, BIT, PULL_UP>::pin()
 {
   return (in(PORT) >> BIT) & 0x01;
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline void avr_pin_t<PORT, DIR, BIT, PULL_UP>::set()
 {
   PORT  |= (1 << BIT);
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline void avr_pin_t<PORT, DIR, BIT, PULL_UP>::clear()
 {
   PORT  &= ((1 << BIT)^0xFF);
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline void avr_pin_t<PORT, DIR, BIT, PULL_UP>::
-  set_dir(port_dir_t a_dir)
+  set_dir(io_t::dir_t a_dir)
 {
-  if (a_dir == dir_out) dir(PORT)  |= (1 << BIT);
+  if (a_dir == io_t::dir_out) dir(PORT) |= (1 << BIT);
   else dir(PORT) &= ((1 << BIT)^0xFF);
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
   out(avr_port_t& a_port)
 {
   return *(&a_port + out_idx);
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
   dir(avr_port_t& a_port)
 {
   return *(&a_port + dir_idx);
 }
 
-template <avr_port_t &PORT, port_dir_t DIR, irs_u8 BIT, bool PULL_UP>
+template <avr_port_t &PORT, io_t::dir_t DIR, irs_u8 BIT, bool PULL_UP>
 inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
   in(avr_port_t& a_port)
 {

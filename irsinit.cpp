@@ -3,7 +3,7 @@
 //! \brief Начальная инициализация всех типов платформ (ОС + компилятор +
 //!   библиотека)
 //!
-//! Дата: 01.06.2012\n
+//! Дата: 13.08.2012\n
 //! Дата создания: 01.06.2012
 
 #include <irspch.h>
@@ -12,14 +12,21 @@
 #include <QTextCodec>
 #endif //QT_CORE_LIB
 
+#include <irsinit.h>
 #include <irsstring.h>
 #include <irslocale.h>
-
-#include "irsinit.h"
+#include <armcfg.h>
 
 #include <irsfinal.h>
 
 namespace irs {
+
+struct first_init_t
+{
+  first_init_t()
+  {
+  }
+};
 
 class init_implement_t: public init_t
 {
@@ -27,14 +34,16 @@ public:
   init_implement_t();
   virtual void dummy();
 private:
+  first_init_t m_first_init;
   handle_t<mxfact_event_t> mp_error_handler;
 };
 
 } //namespace irs
 
-irs::init_implement_t::init_implement_t()
+irs::init_implement_t::init_implement_t():
+  m_first_init()
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  : mp_error_handler(new irs::exception_error_handler_t)
+  mp_error_handler(new irs::exception_error_handler_t)
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 {
