@@ -462,7 +462,6 @@ void out_data_hex(T* ap_container)
   }
 }
 
-
 #ifdef __ICCARM__
 
 namespace arm {
@@ -471,18 +470,18 @@ namespace arm {
 class com_buf: public streambuf
 {
 public:
-  inline com_buf(const com_buf& a_buf);
+  com_buf(const com_buf& a_buf);
   // В LM3S8971 UART один, com_index не используется и оставлен на будущее
-  inline com_buf(
+  com_buf(
     int a_com_index = 1,
     int a_outbuf_size = 16,
-    const irs_u32 a_baud_rate = 9600
+    irs_u32 a_baud_rate = 9600
   );
   //inline virtual ~com_buf();
-  inline virtual int overflow(int c = EOF);
-  inline virtual int sync();
-  inline void trans (char data);
-  inline void trans_simple (char data);
+  virtual int overflow(int c = EOF);
+  virtual int sync();
+  void trans (char data);
+  void trans_simple (char data);
 private:
   enum {
     PORTA1_UART0Tx = 0x10
@@ -491,125 +490,10 @@ private:
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
   const irs_u32 m_baud_rate;
+  #ifdef IRS_STM32F2xx
+  volatile usart_regs_t* m_usart;
+  #endif // IRS_STM32F2xx
 };
-inline com_buf::com_buf(const com_buf& a_buf):
-  m_outbuf_size(a_buf.m_outbuf_size),
-  m_outbuf(new char[m_outbuf_size + 1]),
-  m_baud_rate(a_buf.m_baud_rate)
-{
-  memset(m_outbuf.get(), 0, m_outbuf_size);
-  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
-}
-inline com_buf::com_buf(
-  int /*a_com_index*/,
-  int a_outbuf_size,
-  const irs_u32 a_baud_rate
-):
-  m_outbuf_size(a_outbuf_size),
-  m_outbuf(new char[m_outbuf_size + 1]),
-  m_baud_rate(a_baud_rate)
-{
-  #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
-  const float FOSC = cpu_traits_t::frequency(); //  Частота процессора
-  float BRD = FOSC / 16.f / float(m_baud_rate);
-  irs_u16 BRDI = irs_u16(BRD);  //  Целая часть делителя
-  irs_u16 BRDF = irs_u16((BRD - float(BRDI))*64.f + 0.5f); //  Дробная часть
-
-  RCGC1_bit.UART0 = 1;      //  Подача тактовой частоты на модуль UART0
-  RCGC2_bit.PORTA = 1;      //  Подача тактовой частоты на PORTA (нога TX)
-  for (irs_u8 i = 10; i; i--);
-
-  UART0CTL_bit.UARTEN = 0;  //  Отключение UART0
-  UART0IBRD = BRDI;
-  UART0FBRD = BRDF;
-  UART0LCRH_bit.SPS = 0;    //  Проверка чётности выключена
-  UART0LCRH_bit.WLEN = 0x3; //  8 бит
-  UART0LCRH_bit.FEN = 1;    //  FIFO включен
-  UART0LCRH_bit.STP2 = 0;   //  2 стоп-бита выключено
-  UART0LCRH_bit.EPS = 0;    //  Проверка чётности выключена
-  UART0LCRH_bit.PEN = 0;    //  Проверка чётности выключена
-  UART0LCRH_bit.BRK = 0;    //  Лень писать что, но тоже выключено
-  UART0CTL_bit.RXE = 0;     //  Приём выключен
-  UART0CTL_bit.TXE = 1;     //  Передача включена
-  UART0CTL_bit.LBE = 0;     //  Loop-back выключен
-  #ifdef __LM3SxBxx__
-  UART0CTL_bit.LIN = 0;     //  LIN mode off
-  UART0CTL_bit.HSE = 0;     //  ClkDiv = 16
-  UART0CTL_bit.EOT = 0;     //  The TXRIS bit is set when the transmit FIFO
-                            //  condition specified in UARTIFLS is met.
-  UART0CTL_bit.SMART = 0;   //  The UART operates in Smart Card mode off
-  #endif  //  __LM3SxBxx__
-  UART0CTL_bit.SIRLP = 0;   //  Экономный режим ИК-трансивера выключен
-  UART0CTL_bit.SIREN = 0;   //  И сам трансивер тоже
-  UART0IM = 0;              //  Прерывания выключены
-  UART0CTL_bit.UARTEN = 1;  //  UART0 включен
-
-  GPIOADEN_bit.no1 = 1;     //  Нога TX включена
-  GPIOADIR_bit.no1 = 1;     //  Нога TX выход
-  GPIOAAFSEL_bit.no1 = 1;   //  Альтернативная функция включена
-  //
-  #ifdef __LM3SxBxx__
-  (*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= PORTA1_UART0Tx;
-  #endif // __LM3SxBxx__
-  #elif defined(__STM32F100RBT__)
-  #else
-    #error Тип контроллера не определён
-  #endif  //  mcu type
-
-  memset(m_outbuf.get(), 0, m_outbuf_size);
-  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
-
-  // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
-  //__delay_cycles(4000);
-}
-/*inline irs::com_buf::~com_buf()
-{
-}*/
-inline void com_buf::trans (char data)
-{
-  if (data == '\n'){
-    trans_simple('\r');
-    trans_simple('\n');
-  } else {
-    trans_simple(data);
-  }
-}
-inline void com_buf::trans_simple (char data)
-{
-  #if defined(__LM3Sx9xx__)
-    UART0DR = data;
-    while (UART0FR_bit.TXFF);
-  #elif defined(__LM3SxBxx__)
-    UART0DR_bit.DATA = data;
-    while (UART0FR_bit.TXFF);
-  #elif defined(__STM32F100RBT__)
-    volatile char x = data;
-    //data = 0;
-  #else
-    #error Тип контроллера не определён
-  #endif  //  mcu type
-}
-
-inline int com_buf::overflow(int c)
-{
-  int len_s = pptr() - pbase();
-  if (len_s > 0) {
-    *pptr() = 0;
-    char* pend = pptr();
-    for(char *message = pbase(); message<pend; message++ ) {
-      trans(*message);
-    }
-  }
-  if (c != EOF) {
-    trans(c);
-  }
-  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
-  return 0;
-}
-inline int com_buf::sync()
-{
-  return overflow();
-}
 
 // Поток COM-порта ARM
 class com_ostream: public ostream

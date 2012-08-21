@@ -69,4 +69,14 @@ char irs::gcc_linux::keyboard_t::key()
 
 #endif //IRS_LINUX
 
+// class mxkey_drv_mc_t
+mxkey_drv_mc_t::mxkey_drv_mc_t()
+{
+}
+
+irskey_t mxkey_drv_mc_t::operator()()
+{
+  return irskey_none;
+}
+
 //! @}

@@ -23,6 +23,12 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 50000000;
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 80000000;
 #elif defined(__STM32F100RBT__)
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 8000000;
+#elif defined(IRS_STM32F2xx)
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 120000000;
+irs::cpu_traits_t::frequency_type 
+  irs::cpu_traits_t::m_periphery_frequency_first = 30000000;
+irs::cpu_traits_t::frequency_type 
+  irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
 #else
   #error Тип контроллера не определён
 #endif // ARM_device
@@ -37,6 +43,33 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::frequency()
 {
   return m_frequency;
 }
+
+#ifdef IRS_STM32F2xx
+irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::periphery_frequency_first()
+{
+  return m_periphery_frequency_first;
+}
+
+void irs::cpu_traits_t::periphery_frequency_first(
+  frequency_type a_frequency)
+{
+  m_periphery_frequency_first = a_frequency;
+}
+
+irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::periphery_frequency_second()
+{
+  return m_periphery_frequency_second;
+}
+
+void irs::cpu_traits_t::periphery_frequency_second(
+  frequency_type a_frequency)
+{
+  m_periphery_frequency_second = a_frequency;
+}
+#endif // IRS_STM32F2xx
+
 irs::cpu_traits_t::endian_type irs::cpu_traits_t::endian()
 {
   static endian_t cpu_endian = detect_cpu_endian();

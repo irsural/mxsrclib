@@ -74,6 +74,11 @@ void SysTick_Handler()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::sys_tick_int);
 }
+
+#ifndef IRS_DISABLE_EVENT_INTERRUPT
+
+#ifdef IRS_LM3Sx
+
 //  Прерывания периферии
 void irs_arm_gpio_porta_func()
 {
@@ -327,12 +332,32 @@ void irs_arm_gpio_portj_func()
   irs::arm::interrupt_array()->exec_event(irs::arm::gpio_portj_int);
 }
 #endif // __LM3SxBxx__
+
+#elif defined(IRS_STM32F2xx)
+
+//  Прерывания периферии
+void irs_arm_tim3_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim3_int);
+}
+//  Прерывания периферии
+void irs_arm_tim8_up_tim13_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim8_up_tim13_int);
+  TIM8_SR_bit.UIF = 0;
+  TIM13_SR_bit.UIF = 0;
+  TIM13_SR_bit.CC1IF = 0;
+}
+#endif // defined(IRS_STM32F2xx)
+
 void irs_arm_default_int_func()
 {
   while (true);
 }
 
 typedef void( *intfunc )( void );
+
+#ifdef IRS_LM3Sx
 
 #pragma location = ".periph_intvec"
 __root const intfunc __int_vector_table[] =
@@ -444,3 +469,94 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func
   #endif // __LM3SxBxx__
 };
+
+#elif defined(IRS_STM32F2xx)
+
+#pragma location = ".periph_intvec"
+__root const intfunc __int_vector_table[] =
+{
+  irs_arm_default_int_func,  // 0
+  irs_arm_default_int_func,  // 1
+  irs_arm_default_int_func,  // 2
+  irs_arm_default_int_func,  // 3
+  irs_arm_default_int_func,  // 4
+  irs_arm_default_int_func,  // 5
+  irs_arm_default_int_func,  // 6
+  irs_arm_default_int_func,  // 7
+  irs_arm_default_int_func,  // 8
+  irs_arm_default_int_func,  // 9
+  irs_arm_default_int_func,  // 10
+  irs_arm_default_int_func,  // 11
+  irs_arm_default_int_func,  // 12
+  irs_arm_default_int_func,  // 13
+  irs_arm_default_int_func,  // 14
+  irs_arm_default_int_func,  // 15
+  irs_arm_default_int_func,  // 16
+  irs_arm_default_int_func,  // 17
+  irs_arm_default_int_func,  // 18
+  irs_arm_default_int_func,  // 19
+  irs_arm_default_int_func,  // 20
+  irs_arm_default_int_func,  // 21
+  irs_arm_default_int_func,  // 22
+  irs_arm_default_int_func,  // 23
+  irs_arm_default_int_func,  // 24
+  irs_arm_default_int_func,  // 25
+  irs_arm_default_int_func,  // 26
+  irs_arm_default_int_func,  // 27
+  irs_arm_default_int_func,  // 28
+  irs_arm_tim3_func,         // 29
+  irs_arm_default_int_func,  // 30
+  irs_arm_default_int_func,  // 31
+  irs_arm_default_int_func,  // 32
+  irs_arm_default_int_func,  // 33
+  irs_arm_default_int_func,  // 34
+  irs_arm_default_int_func,  // 35
+  irs_arm_default_int_func,  // 36
+  irs_arm_default_int_func,  // 37
+  irs_arm_default_int_func,  // 38
+  irs_arm_default_int_func,  // 39
+  irs_arm_default_int_func,  // 40
+  irs_arm_default_int_func,  // 41
+  irs_arm_default_int_func,  // 42
+  irs_arm_default_int_func,  // 43
+  irs_arm_tim8_up_tim13_func, // 44
+  irs_arm_default_int_func,  // 45
+  irs_arm_default_int_func,  // 46
+  irs_arm_default_int_func,  // 47
+  irs_arm_default_int_func,  // 48
+  irs_arm_default_int_func,  // 49
+  irs_arm_default_int_func,  // 50
+  irs_arm_default_int_func,  // 51
+  irs_arm_default_int_func,  // 52
+  irs_arm_default_int_func,  // 53
+  irs_arm_default_int_func,  // 54
+  irs_arm_default_int_func,  // 55
+  irs_arm_default_int_func,  // 56
+  irs_arm_default_int_func,  // 57
+  irs_arm_default_int_func,  // 58
+  irs_arm_default_int_func,  // 59
+  irs_arm_default_int_func,  // 60
+  irs_arm_default_int_func,  // 61
+  irs_arm_default_int_func,  // 62
+  irs_arm_default_int_func,  // 63
+  irs_arm_default_int_func,  // 64
+  irs_arm_default_int_func,  // 65
+  irs_arm_default_int_func,  // 66
+  irs_arm_default_int_func,  // 67
+  irs_arm_default_int_func,  // 68
+  irs_arm_default_int_func,  // 69
+  irs_arm_default_int_func,  // 70
+  irs_arm_default_int_func,  // 71
+  irs_arm_default_int_func,  // 72
+  irs_arm_default_int_func,  // 73
+  irs_arm_default_int_func,  // 74
+  irs_arm_default_int_func,  // 75
+  irs_arm_default_int_func,  // 76
+  irs_arm_default_int_func,  // 77
+  irs_arm_default_int_func,  // 78
+  irs_arm_default_int_func,  // 79
+  irs_arm_default_int_func   // 80
+};
+#endif // defined(IRS_STM32F2xx)
+
+#endif // !IRS_DISABLE_EVENT_INTERRUPT

@@ -11,6 +11,16 @@
 
 #include <irsfinal.h>
 
+// class gpio_pin_t:
+void irs::gpio_pin_t::set_state(io_pit_value_t a_value)
+{
+  if (a_value == io_pin_on) {
+    set();
+  } else if (a_value == io_pin_off) {
+    clear();
+  }
+}
+
 #ifdef __ICCAVR__
 
 //--------------------------  io_pin_t  -----------------------------
@@ -151,7 +161,9 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 
 #ifdef __ICCARM__
 
-irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir):
+irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
+  io_pit_value_t a_value                             
+):
   m_port(reinterpret_cast<irs_u32>(&a_port)),
   m_bit(a_bit),
   m_data_mask(0x04 << a_bit),
@@ -172,11 +184,14 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir):
       HWREG(m_port + GPIO_DIR) |= m_port_mask;
       HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
     }
-  #elif defined(__STM32F100RBT__)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
     set_dir(a_dir);
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
+  if (a_dir == dir_out) {
+    set_state(a_value);
+  }
 }
 
 irs::arm::io_pin_t::~io_pin_t()
@@ -190,6 +205,8 @@ bool irs::arm::io_pin_t::pin()
     return HWREG(m_port + GPIO_DATA + m_data_mask);
   #elif defined(__STM32F100RBT__)
     return (HWREG(m_port + IDR) & m_port_mask);
+  #elif defined(IRS_STM32F2xx)
+    return (HWREG(m_port + GPIO_IDR_S) & m_port_mask);
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -201,6 +218,8 @@ void irs::arm::io_pin_t::set()
     HWREG(m_port + GPIO_DATA + m_data_mask) = 0xFF;
   #elif defined(__STM32F100RBT__)
     HWREG(m_port + ODR) |= m_port_mask;
+  #elif defined(IRS_STM32F2xx)
+    HWREG(m_port + GPIO_ODR_S) |= m_port_mask;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -212,9 +231,63 @@ void irs::arm::io_pin_t::clear()
     HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
   #elif defined(__STM32F100RBT__)
     HWREG(m_port + ODR) &= ~m_port_mask;
+  #elif defined(IRS_STM32F2xx)
+    HWREG(m_port + GPIO_ODR_S) &= ~m_port_mask;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
+}
+
+void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit, 
+  const irs::io_t::dir_t a_dir)
+{
+  switch (a_dir) {
+    case irs::io_t::dir_in: {         
+      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_OTYPER_S) |= 
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+    } break;
+    case irs::io_t::dir_in_pull_up: {
+      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_OTYPER_S) |= 
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+    } break;
+    case irs::io_t::dir_in_pull_down: { 
+      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_OTYPER_S) |= 
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+    } break;
+    case irs::io_t::dir_out: {       
+      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_OTYPER_S) |= 
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+    } break;
+    case irs::io_t::dir_open_drain: {
+      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_OTYPER_S) |= 
+        GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;
+    } break;
+  }
 }
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
@@ -242,6 +315,8 @@ void irs::arm::io_pin_t::set_dir(dir_t a_dir)
     set_mask <<= cfg_mask_offset;
     HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
     HWREG(m_port + cfg_reg_offset) |= set_mask;
+  #elif defined(IRS_STM32F2xx)
+    set_pin_dir(m_port, m_bit, a_dir);
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -256,7 +331,7 @@ irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
   port_clock_on(m_port);
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
     volatile dir_t dir = a_dir;//
-  #elif defined(__STM32F100RBT__)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
     set_dir(a_dir);
   #else
     #error Тип контроллера не определён
@@ -273,6 +348,8 @@ irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
     return 0;
   #elif defined(__STM32F100RBT__)
     return (HWREG(m_port + IDR) & m_mask) >> m_shift;
+  #elif defined(IRS_STM32F2xx)
+    return (HWREG(m_port + GPIO_IDR_S) & m_mask) >> m_shift;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -287,6 +364,11 @@ void irs::arm::io_port_t::set(data_t a_data)
     irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
     HWREG(m_port + BSRR) = set_data;
     HWREG(m_port + BSRR) = clr_data << GPIO_WIDTH;
+  #elif defined(IRS_STM32F2xx)
+    irs_u32 set_data = (a_data << m_shift) & m_mask;
+    irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
+    HWREG(m_port + GPIO_BSRR_S) = set_data;
+    HWREG(m_port + GPIO_BSRR_S) = clr_data << GPIO_WIDTH;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -316,6 +398,10 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
         HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
         HWREG(m_port + cfg_reg_offset) |= set_mask;
       }
+    }
+  #elif defined(IRS_STM32F2xx)
+    for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
+      set_pin_dir(m_port, bit, a_dir);
     }
   #else
     #error Тип контроллера не определён

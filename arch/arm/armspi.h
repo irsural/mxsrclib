@@ -120,6 +120,7 @@ private:
 };
 
 #elif defined(__STM32F100RBT__)
+#elif defined(IRS_STM32F2xx)
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

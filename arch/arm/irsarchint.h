@@ -12,8 +12,10 @@
 #include <irsfinal.h>
 
 namespace irs {
-  
+
 namespace arm {
+
+
 
 // Номера прерываний
 enum {
@@ -27,7 +29,11 @@ enum {
   debug_monitor_int,
   pend_sv_int,
   sys_tick_int,
+
+  #ifndef IRS_DISABLE_EVENT_INTERRUPT
+
   //  Прерывания периферии
+  #ifdef IRS_LM3Sx
   gpio_porta_int,
   gpio_portb_int,
   gpio_portc_int,
@@ -104,12 +110,22 @@ enum {
   epi_int,
   gpio_portj_int,
   #endif // __LM3SxBxx__
-  //
+
+  #elif defined(IRS_STM32F2xx)
+
+  tim3_int,
+  tim8_up_tim13_int,
+
+  #endif //Микроконтроллеры
+
+  #endif // !IRS_DISABLE_EVENT_INTERRUPT
   interrupt_count
 };
 
 //  Возвращает массив прерываний
 interrupt_array_base_t* interrupt_array();
+
+
 
 } //namespace arm
 

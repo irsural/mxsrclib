@@ -121,6 +121,16 @@ public:
 
 void pll_on();
 
+namespace irs {
+ 
+void reset_peripheral(size_t a_address);
+
+void clock_enable(size_t a_address);
+void clock_disable(size_t a_address);
+void clock_enabled(size_t a_address, bool a_enabled);
+
+} // namespace irs
+
 //! @}
 
 #endif  //  armcfgH

@@ -115,6 +115,8 @@ irs::arm::arm_ethernet_t::arm_ethernet_t(
   }
   #elif defined(__STM32F100RBT__)
   volatile irs_u8 y = a_mac.val[0];
+  #elif defined(IRS_STM32F2xx)
+  volatile irs_u8 y = a_mac.val[0];
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -134,6 +136,7 @@ irs::arm::arm_ethernet_t::~arm_ethernet_t()
   RCGC2_bit.EPHY0 = 0;
   RCGC2_bit.EMAC0 = 0;
   #elif defined(__STM32F100RBT__)
+  #elif defined(IRS_STM32F2xx)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -270,6 +273,7 @@ mxmac_t irs::arm::arm_ethernet_t::get_local_mac()
 void irs::arm::arm_ethernet_t::set_mac(mxmac_t& /*a_mac*/)
 {
 }
+#elif defined(IRS_STM32F2xx)
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

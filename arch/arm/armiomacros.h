@@ -153,10 +153,35 @@ typedef struct
                            BIT_STRUCT NAME ## _bit;      \
                          } @ ADDRESS
 
+#define IRS_IO_REG8_BIT(NAME, ATTRIBUTE, BIT_STRUCT)\
+                       ATTRIBUTE union \
+                        {                                 \
+                          unsigned char NAME;             \
+                          BIT_STRUCT NAME ## _bit;      \
+                        }
+
+#define IRS_IO_REG16_BIT(NAME, ATTRIBUTE,BIT_STRUCT)\
+                        ATTRIBUTE union \
+                         {                                 \
+                           unsigned short NAME;            \
+                           BIT_STRUCT NAME ## _bit;      \
+                         }
+
+#define IRS_IO_REG32_BIT(NAME, ATTRIBUTE, BIT_STRUCT)\
+                        ATTRIBUTE union \
+                         {                                 \
+                           unsigned long NAME;             \
+                           BIT_STRUCT NAME ## _bit;      \
+                         }
+
 #pragma language=restore
 
 //  Запись по адресу
 #define HWREG(x) (*reinterpret_cast<volatile irs_u32*>(x))
+
+#define SET_BITS(reg, bits, value) {\
+  HWREG(reg) \
+}    
 
 #endif /* __IAR_SYSTEMS_ICC__ */
 

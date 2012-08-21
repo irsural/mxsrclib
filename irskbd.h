@@ -10,6 +10,8 @@
 
 #include <irsdefs.h>
 
+#include <irsstd.h>
+
 #ifdef IRS_LINUX 
 
 #include <sys/termios.h>
@@ -47,5 +49,13 @@ private:
 } //namespace irs
 
 #endif //IRS_LINUX
+
+// Класс драйвера клавиатуры микроконтроллера
+class mxkey_drv_mc_t: public mxkey_drv_t
+{  
+public:
+  mxkey_drv_mc_t();  
+  virtual irskey_t operator()();
+};
 
 #endif //IRSKBDH

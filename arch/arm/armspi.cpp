@@ -600,7 +600,7 @@ void irs::arm::arm_spi_t::init_default()
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
 
-#elif defined(__STM32F100RBT__)
+#elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

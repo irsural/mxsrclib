@@ -159,7 +159,7 @@ private:
   irs_u16 calc_load_value(cpu_traits_t::frequency_type a_frequency);
 };
 
-#elif defined(__STM32F100RBT__)
+#elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
@@ -218,6 +218,8 @@ public:
     #elif defined(__LM3Sx9xx__)
     return RESC_bit.WDT;
     #elif defined(__STM32F100RBT__)
+    return false;
+    #elif defined(IRS_STM32F2xx)
     return false;
     #else
       #error Тип контроллера не определён

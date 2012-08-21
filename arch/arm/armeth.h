@@ -103,7 +103,7 @@ private:
   inline bool packets_in_mac() { return (MACNP_bit.NPR > 0); }
   inline void reset_fifo() { MACRCTL_bit.RSTFIFO = 1; }
   inline void clear_rx_interrupt() { MACIM_bit.RXINT = 1; }
-  #elif defined(__STM32F100RBT__)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
   inline void rx_interrupt() {}
   inline void set_fifo(irs_u32 /*data*/) {}
   inline irs_u32 get_fifo() { return 0; }
