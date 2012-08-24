@@ -12,6 +12,7 @@
 
 #ifdef __ICCARM__
 #include <armioregs.h>
+#include <armcfg.h>
 #include <irsdsp.h>
 #include <irsdev.h>
 #endif //__ICCARM__
@@ -32,8 +33,12 @@ irs::arm::gptm_usage_t& gptm_usage() {
   return gptm_usage_obj;
 }
 
-#elif defined(__STM32F100RBT__)
-#elif defined(IRS_STM32F2xx)
+#elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+//  Флаги занятости таймеров общего назначения
+irs::arm::timers_usage_t& timers_usage() {
+  static irs::arm::timers_usage_t timers_usage_obj;
+  return timers_usage_obj;
+}
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
@@ -651,8 +656,217 @@ irs_u16 irs::arm::gptm_generator_t::calc_load_value(
 }
 
 #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+// class st_pwm_gen_t
+irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
+  size_t a_timer_adress,
+  cpu_traits_t::frequency_type a_frequency,
+  float a_duty
+):
+  m_gpio_channel(a_gpio_channel),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_adress)),
+  m_frequency(a_frequency),
+  m_duty(a_duty)
+{
+  const size_t port_adress = get_port_adress(a_gpio_channel);
+  const int pin_index = get_pin_index(a_gpio_channel);
+  clock_enable(port_adress);
+  const int bits_count = 2;
+  const irs_u32 bits_mask = ~(irs_u32(-1) << bits_count);
+  const irs_u32 reset_mask = ~(bits_mask << bits_count*pin_index);
+  HWREG(port_adress + GPIO_MODER_S) &= reset_mask;
+  HWREG(port_adress + GPIO_MODER_S) |=
+    GPIO_MODER_ALTERNATE_FUNCTION << bits_count*pin_index;
+  clock_enable(a_timer_adress);
+  //reset_peripheral(a_timer_adress);
+  // 0: Counter used as upcounter
+  mp_timer->TIM_CR1_bit.DIR = 0;
+  mp_timer->TIM_ARR = timer_frequency()/a_frequency;
+  initialize_timer_and_get_tim_ccr_register();
+  // 1: TIMx_ARR register is buffered
+  mp_timer->TIM_CR1_bit.ARPE = 1;
+  // 1: Re-initialize the counter and generates an update of the registers.
+  mp_timer->TIM_EGR_bit.UG = 1;
+  // 1: Counter enabled
+  mp_timer->TIM_CR1_bit.CEN = 1;
+}
+
+void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
+{
+  const size_t timer_adress = reinterpret_cast<size_t>(mp_timer);
+  const irs_u32 CCR_value = static_cast<irs_u32>(
+    m_duty*timer_frequency()/m_frequency);
+  // PWM mode 1 - In upcounting, channel 1 is active as long as
+  // TIMx_CNT<TIMx_CCR1 else inactive. In downcounting, channel 1 is inactive
+  // (OC1REF=‘0) as long as TIMx_CNT>TIMx_CCR1 else active (OC1REF=1).
+  const irs_u32 OCxM_value = 6;
+  // Output Compare preload enable
+  const irs_u32 OCxPE_value = 1;
+  // 0: OC1 active high
+  const irs_u32 CCxP_value = 0;
+  // 1: On - OCx signal is output on the corresponding output pin
+  const irs_u32 CCxE_value = 1;
+  irs_u32 timer_channel = 0;
+  switch (m_gpio_channel) {
+    case PB0: {
+      if (timer_adress == TIM3_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRL_bit.AFRL0 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+      }
+    } break;
+    case PB10: {
+      if (timer_adress == TIM2_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+      }
+    } break;
+    case PB11: {
+      if (timer_adress == TIM2_BASE) {
+        timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH11 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+      }
+    } break;
+    case PC7: {
+      if (timer_adress == TIM3_BASE) {
+        timer_channel = 2;
+        GPIOC_AFRL_bit.AFRL7 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+      }
+    } break;
+    case PE6: {
+      if (timer_adress == TIM9_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+      }
+
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и таймера");
+    }
+  }
+  switch (timer_channel) {
+    case 1: {
+      mp_tim_ccr = &mp_timer->TIM_CCR1;
+      mp_timer->TIM_CCR1 = CCR_value;
+      mp_timer->TIM_CCMR1_bit.OC1M = OCxM_value;
+      mp_timer->TIM_CCMR1_bit.OC1PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC1P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC1E = CCxE_value;
+    } break;
+    case 2: {
+      mp_tim_ccr = &mp_timer->TIM_CCR2;
+      mp_timer->TIM_CCR2 = CCR_value;
+      mp_timer->TIM_CCMR1_bit.OC2M = OCxM_value;
+      mp_timer->TIM_CCMR1_bit.OC2PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC2P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC2E = CCxE_value;
+    } break;
+    case 3: {
+      mp_tim_ccr = &mp_timer->TIM_CCR3;
+      mp_timer->TIM_CCR3 = CCR_value;
+      mp_timer->TIM_CCMR2_bit.OC3M = OCxM_value;
+      mp_timer->TIM_CCMR2_bit.OC3PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC3P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC3E = CCxE_value;
+    } break;
+    case 4: {
+      mp_tim_ccr = &mp_timer->TIM_CCR4;
+      mp_timer->TIM_CCR4 = CCR_value;
+      mp_timer->TIM_CCMR2_bit.OC4M = OCxM_value;
+      mp_timer->TIM_CCMR2_bit.OC4PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC4P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC4E = CCxE_value;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимый канал");
+    } break;
+  }
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::timer_frequency()
+{
+  const size_t timer_adress = reinterpret_cast<size_t>(mp_timer);
+  return cpu_traits_t::timer_frequency(timer_adress);
+}
+
+void irs::arm::st_pwm_gen_t::start()
+{
+  // 1: Counter enabled
+  mp_timer->TIM_CR1_bit.CEN = 1;
+}
+
+void irs::arm::st_pwm_gen_t::stop()
+{
+  // 0: Counter disabled
+  mp_timer->TIM_CR1_bit.CEN = 0;
+}
+
+void irs::arm::st_pwm_gen_t::set_duty(irs_uarc a_duty)
+{
+  *mp_tim_ccr = static_cast<irs_u32>(a_duty);
+}
+
+void irs::arm::st_pwm_gen_t::set_duty(float a_duty)
+{
+  m_duty = a_duty;
+  *mp_tim_ccr = static_cast<irs_u32>(a_duty*timer_frequency()/m_frequency);
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
+  cpu_traits_t::frequency_type a_frequency)
+{
+  m_frequency = a_frequency;
+  mp_timer->TIM_ARR = timer_frequency()/a_frequency;
+  return timer_frequency()/mp_timer->TIM_ARR;
+}
+
+irs_uarc irs::arm::st_pwm_gen_t::get_max_duty()
+{
+  return 1/get_max_frequency() - 1;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_max_frequency()
+{
+  return timer_frequency();
+}
+
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
+// class pwm_pin_t
+irs::pwm_pin_t::pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen):
+  mp_pwm_gen(ap_pwm_gen),
+  m_started(false)
+{
+}
+
+bool irs::pwm_pin_t::pin()
+{
+  return m_started;
+}
+
+void irs::pwm_pin_t::set()
+{
+  mp_pwm_gen->start();
+  m_started = true;
+}
+
+void irs::pwm_pin_t::clear()
+{
+  mp_pwm_gen->stop();
+  m_started = false;
+}
+
+void irs::pwm_pin_t::set_dir(dir_t /*a_dir*/)
+{
+}
 
 #endif  //  __ICCARM__

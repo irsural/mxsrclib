@@ -33,9 +33,10 @@ public:
   static frequency_type periphery_frequency_first();
   static void periphery_frequency_first(frequency_type a_frequency);
   static frequency_type periphery_frequency_second();
-  static void periphery_frequency_second(frequency_type a_frequency);
+  static void periphery_frequency_second(frequency_type a_frequency);  
   #endif // IRS_STM32F2xx
   static endian_t endian();
+  static frequency_type timer_frequency(size_t a_timer_base);
 private:
   static frequency_type m_frequency;
   #ifdef IRS_STM32F2xx

@@ -122,12 +122,21 @@ public:
 void pll_on();
 
 namespace irs {
- 
+
 void reset_peripheral(size_t a_address);
 
 void clock_enable(size_t a_address);
 void clock_disable(size_t a_address);
 void clock_enabled(size_t a_address, bool a_enabled);
+
+enum interrupt_type_t
+{
+  interrupt_single,
+  interrupt_update
+};
+
+void update_interrupt_enable(size_t a_address);
+void update_interrupt_enabled(size_t a_address, bool a_enabled);
 
 } // namespace irs
 

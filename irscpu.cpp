@@ -12,6 +12,10 @@
 
 #include <irscpu.h>
 
+#ifdef __ICCARM__
+#include <armregs_stm32f2xx.h>
+#endif // __ICCARM__
+
 #include <irsfinal.h>
 
 #ifdef __ICCAVR__
@@ -25,9 +29,9 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 80000000;
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 8000000;
 #elif defined(IRS_STM32F2xx)
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 120000000;
-irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_first = 30000000;
-irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
 #else
   #error Тип контроллера не определён
@@ -45,7 +49,7 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::frequency()
 }
 
 #ifdef IRS_STM32F2xx
-irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::periphery_frequency_first()
 {
   return m_periphery_frequency_first;
@@ -57,7 +61,7 @@ void irs::cpu_traits_t::periphery_frequency_first(
   m_periphery_frequency_first = a_frequency;
 }
 
-irs::cpu_traits_t::frequency_type 
+irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::periphery_frequency_second()
 {
   return m_periphery_frequency_second;
@@ -68,6 +72,21 @@ void irs::cpu_traits_t::periphery_frequency_second(
 {
   m_periphery_frequency_second = a_frequency;
 }
+
+irs::cpu_traits_t::frequency_type
+irs::cpu_traits_t::timer_frequency(size_t a_timer_base)
+{
+  if ((a_timer_base == TIM1_PWM1_BASE) ||
+    (a_timer_base == TIM8_PWM2_BASE) ||
+    (a_timer_base == TIM9_BASE) ||
+    (a_timer_base == TIM10_BASE) ||
+    (a_timer_base == TIM11_BASE)) {
+    return m_periphery_frequency_second*2;
+  } else {
+    return m_periphery_frequency_first*2;
+  }
+}
+
 #endif // IRS_STM32F2xx
 
 irs::cpu_traits_t::endian_type irs::cpu_traits_t::endian()

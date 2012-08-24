@@ -12,7 +12,7 @@
 #include <irsfinal.h>
 
 // class gpio_pin_t:
-void irs::gpio_pin_t::set_state(io_pit_value_t a_value)
+void irs::gpio_pin_t::set_state(io_pin_value_t a_value)
 {
   if (a_value == io_pin_on) {
     set();
@@ -162,7 +162,7 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 #ifdef __ICCARM__
 
 irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
-  io_pit_value_t a_value                             
+  io_pin_value_t a_value
 ):
   m_port(reinterpret_cast<irs_u32>(&a_port)),
   m_bit(a_bit),
@@ -238,53 +238,53 @@ void irs::arm::io_pin_t::clear()
   #endif  //  mcu type
 }
 
-void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit, 
+void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const irs::io_t::dir_t a_dir)
-{
+{  
   switch (a_dir) {
-    case irs::io_t::dir_in: {         
+    case irs::io_t::dir_in: {  
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |= 
+      HWREG(a_port + GPIO_OTYPER_S) |=
         GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
     } break;
     case irs::io_t::dir_in_pull_up: {
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;        
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |= 
+      HWREG(a_port + GPIO_OTYPER_S) |=
         GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
     } break;
-    case irs::io_t::dir_in_pull_down: { 
+    case irs::io_t::dir_in_pull_down: {
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;        
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |= 
+      HWREG(a_port + GPIO_OTYPER_S) |=
         GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
     } break;
-    case irs::io_t::dir_out: {       
+    case irs::io_t::dir_out: {
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
       HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |= 
+      HWREG(a_port + GPIO_OTYPER_S) |=
         GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
     } break;
     case irs::io_t::dir_open_drain: {
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;        
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;        
+      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
       HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |= 
+      HWREG(a_port + GPIO_OTYPER_S) |=
         GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;
     } break;
   }
@@ -401,7 +401,9 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
     }
   #elif defined(IRS_STM32F2xx)
     for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
-      set_pin_dir(m_port, bit, a_dir);
+      if (m_mask & (1 << bit)) {
+        set_pin_dir(m_port, bit, a_dir);
+      }
     }
   #else
     #error Тип контроллера не определён

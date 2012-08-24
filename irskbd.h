@@ -12,7 +12,7 @@
 
 #include <irsstd.h>
 
-#ifdef IRS_LINUX 
+#ifdef IRS_LINUX
 
 #include <sys/termios.h>
 
@@ -35,7 +35,7 @@ public:
   keyboard_t();
   ~keyboard_t();
   char key();
-  
+
 private:
   int m_terminal;
   struct termios m_old_terminal;
@@ -50,12 +50,32 @@ private:
 
 #endif //IRS_LINUX
 
+namespace irs {
+
 // Класс драйвера клавиатуры микроконтроллера
 class mxkey_drv_mc_t: public mxkey_drv_t
-{  
+{
 public:
-  mxkey_drv_mc_t();  
+  mxkey_drv_mc_t();
   virtual irskey_t operator()();
+  void add_key(irskey_t a_irskey);
+  void clear_keys();
+  void add_horizontal_pin(gpio_pin_t* ap_pin);
+  void add_vertical_pin(gpio_pin_t* ap_pin);
+  void add_horizontal_pins(vector<irs::handle_t<irs::gpio_pin_t> >* ap_pins);
+  void add_vertical_pins(vector<irs::handle_t<irs::gpio_pin_t> >* ap_pins);
+  void clear_pins();
+private:
+  vector<irskey_t> m_keys;
+  vector<gpio_pin_t*> m_horizontal_pins;
+  vector<gpio_pin_t*> m_vertical_pins;
+  loop_timer_t m_timer;
+  irskey_t m_current_key;
+  size_t m_vertical_pin_index;
 };
+
+void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
+
+} // namespace irs
 
 #endif //IRSKBDH

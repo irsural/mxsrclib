@@ -261,3 +261,62 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     }
   }
 }
+
+
+void irs::update_interrupt_enable(size_t a_address)
+{
+  update_interrupt_enabled(a_address, true);
+}
+
+void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
+{
+  const irs_u32 value = a_enabled ? 1 : 0;
+  switch (a_address) {
+    case TIM1_PWM1_BASE: {
+      SETENA0_bit.SETENA_TIM1_UP_TIM10 = value;
+    } break;
+    /*case TIM2_BASE: {
+
+    } break;*/
+    case TIM3_BASE: {
+      SETENA0_bit.SETENA_TIM3 = value;
+    } break;
+    case TIM4_BASE: {
+      SETENA0_bit.SETENA_TIM4 = value;
+    } break;
+    /*case TIM5_BASE: {
+
+    } break;
+    case TIM6_BASE: {
+
+    } break;
+    case TIM7_BASE: {
+
+    } break;*/
+    case TIM8_PWM2_BASE: {
+      SETENA1_bit.SETENA_TIM8_UP_TIM13 = value;
+    } break;
+    /*case TIM9_BASE: {
+
+    } break;
+    case TIM10_BASE: {
+
+    } break;
+    case TIM11_BASE:{
+
+    } break;
+    case TIM12_BASE: {
+
+    } break;
+    case TIM13_BASE: {
+      SETENA1_bit.SETENA_TIM8_UP_TIM13 = value;
+    } break;
+    case TIM14_BASE: {
+
+    } break;*/
+    default : {
+      IRS_ASSERT_MSG("Включение/отключение прерывания для указанного "
+        "устройства не определено");
+    }
+  }
+}

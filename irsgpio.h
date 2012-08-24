@@ -29,16 +29,16 @@ struct io_t {
     dir_in,
     dir_in_pull_up,
     dir_in_pull_down,
-    dir_out,    
+    dir_out,
     dir_open_drain
   };
 };
 
-enum io_pit_value_t
+enum io_pin_value_t
 {
   io_pin_no_change = -1,
   io_pin_off = 0,
-  io_pin_on = 1     
+  io_pin_on = 1
 };
 
 //typedef io_t::dir_t port_dir_t;
@@ -51,7 +51,7 @@ public:
   virtual void set() = 0;
   virtual void clear() = 0;
   virtual void set_dir(dir_t a_dir) = 0;
-  void set_state(io_pit_value_t a_value);
+  void set_state(io_pin_value_t a_value);
 };
 
 // Класс для подключения gpio_pin_t
@@ -286,14 +286,14 @@ namespace arm
 class io_pin_t: public gpio_pin_t
 {
 public:
-  io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir, 
-    io_pit_value_t a_value = io_pin_no_change);
+  io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
+    io_pin_value_t a_value = io_pin_no_change);
   ~io_pin_t();
-  virtual bool pin();  
+  virtual bool pin();
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
-private:  
+private:
   const irs_u32 m_port;
   const irs_u8 m_bit;
   const irs_u16 m_data_mask;
@@ -349,11 +349,11 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case PORTB_BASE: { port_number = 1; } break;
     case PORTC_BASE: { port_number = 2; } break;
     case PORTD_BASE: { port_number = 3; } break;
-    case PORTE_BASE: { port_number = 4; } break;  
-    case PORTF_BASE: { port_number = 5; } break;  
-    case PORTG_BASE: { port_number = 6; } break;  
-    case PORTH_BASE: { port_number = 7; } break; 
-    case PORTI_BASE: { port_number = 8; } break; 
+    case PORTE_BASE: { port_number = 4; } break;
+    case PORTF_BASE: { port_number = 5; } break;
+    case PORTG_BASE: { port_number = 6; } break;
+    case PORTH_BASE: { port_number = 7; } break;
+    case PORTI_BASE: { port_number = 8; } break;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type

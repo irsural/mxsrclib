@@ -160,6 +160,54 @@ private:
 };
 
 #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+
+class timers_usage_t {
+public:
+  inline timers_usage_t() { m_timers = 0xFFFFFFFF; }
+  inline ~timers_usage_t() { m_timers = 0xFFFFFFFF; }
+  inline bool is_timer_free(size_t a_timer_index) {
+    return m_timers & (1 << a_timer_index);
+  }
+  inline void set_timer_free(size_t a_timer_index) {
+    m_timers |= (1 << a_timer_index);
+  }
+  inline void set_timer_use(size_t a_timer_index) {
+    m_timers &= ~(1 << a_timer_index);
+  }
+private:
+  irs_u32 m_timers;
+};
+
+/*enum init_pwm_gen_mode_t
+{
+  init_pwm_gen_channel_only,
+  init_pwm_gen_full
+};*/
+
+class st_pwm_gen_t: public pwm_gen_t
+{
+public:
+  st_pwm_gen_t(gpio_channel_t a_gpio_channel, size_t a_timer_adress,
+    cpu_traits_t::frequency_type a_frequency, float a_duty = 0.5f);
+  virtual void start();
+  virtual void stop();
+  virtual void set_duty(irs_uarc a_duty);
+  virtual void set_duty(float a_duty);
+  virtual cpu_traits_t::frequency_type set_frequency(
+    cpu_traits_t::frequency_type  a_frequency);
+  virtual irs_uarc get_max_duty();
+  virtual cpu_traits_t::frequency_type get_max_frequency();
+private:
+  void initialize_timer_and_get_tim_ccr_register();
+  cpu_traits_t::frequency_type  timer_frequency();
+  vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
+  gpio_channel_t m_gpio_channel;
+  tim_regs_t* mp_timer;
+  cpu_traits_t::frequency_type m_frequency;
+  float m_duty;
+  irs_u32* mp_tim_ccr;
+};
+
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
@@ -234,6 +282,20 @@ private:
 } //  arm
 
 #endif  //  __ICCARM__
+
+class pwm_pin_t: public gpio_pin_t
+{
+public:
+  pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen);
+  virtual bool pin();
+  virtual void set();
+  virtual void clear();
+  virtual void set_dir(dir_t a_dir);
+  void set_state(io_pin_value_t a_value);
+private:
+  irs::handle_t<pwm_gen_t> mp_pwm_gen;
+  bool m_started;
+};
 
 } //  irs
 
