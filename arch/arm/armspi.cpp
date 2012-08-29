@@ -10,6 +10,8 @@
 #include <armspi.h>
 #include <irscpu.h>
 #include <irsconfig.h>
+#include <irsdsp.h>
+#include <armcfg.h>
 
 #include <irsfinal.h>
 
@@ -601,6 +603,307 @@ void irs::arm::arm_spi_t::init_default()
 }
 
 #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+irs::arm::arm_spi_t::arm_spi_t(
+  size_t a_spi_address,
+  irs_u32 a_bitrate,
+  gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi
+):
+  m_lock(false),
+  mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_spi_address)),
+  m_bitrate_default(a_bitrate),
+  m_process(process_wait_command),
+  mp_write_buf(IRS_NULL),
+  mp_read_buf(IRS_NULL),
+  m_packet_size(0),
+  m_read_buf_index(0),
+  m_data_item_byte_count(1)
+
+{
+  reset_peripheral(a_spi_address);
+  initialize_gpio_channels(a_sck, a_miso, a_mosi);
+  clock_enable(a_spi_address);
+
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  // 1: Master configuration
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+
+  set_default();
+  enable_spi();
+}
+
+void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi)
+{
+  set_moder_alternate_function(a_sck);
+  set_moder_alternate_function(a_miso);
+  set_moder_alternate_function(a_mosi);
+  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
+  switch (a_sck) {
+    case PC10: {
+      if (spi_address == SPI3_I2S3_BASE) {
+        GPIOC_AFRH_bit.AFRH10 = 6;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+    }
+  }
+  switch (a_miso) {
+    case PC11: {
+      if (spi_address == SPI3_I2S3_BASE) {
+        GPIOC_AFRH_bit.AFRH11 = 6;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+    }
+  }
+  switch (a_mosi) {
+    case PC12: {
+      if (spi_address == SPI3_I2S3_BASE) {
+        GPIOC_AFRH_bit.AFRH12 = 6;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+    }
+  }
+}
+
+void irs::arm::arm_spi_t::set_moder_alternate_function(gpio_channel_t a_channel)
+{
+  const size_t port_address = get_port_address(a_channel);
+  const irs_u32 pin_index = get_pin_index(a_channel);
+  clock_enable(port_address);
+  const irs_u32 bits_count = 2;
+  IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
+    bits_count, GPIO_MODER_ALTERNATE_FUNCTION);
+}
+
+irs::arm::arm_spi_t::~arm_spi_t()
+{
+  disable_spi();
+}
+
+void irs::arm::arm_spi_t::set_default()
+{
+  set_bitrate(m_bitrate_default);
+  set_polarity(FALLING_EDGE);
+  set_phase(FIRST_EDGE);
+  set_data_size(data_size_default);
+  set_order(MSB);
+}
+
+void irs::arm::arm_spi_t::enable_spi()
+{
+  // 1: Peripheral enabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 1;
+}
+
+void irs::arm::arm_spi_t::disable_spi()
+{
+  while (mp_spi_regs->SPI_SR_bit.RXNE != 0);
+  while (mp_spi_regs->SPI_SR_bit.TXE != 1);
+  while (mp_spi_regs->SPI_SR_bit.BSY != 0);
+  // 0: Peripheral disabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+}
+
+void irs::arm::arm_spi_t::abort()
+{
+  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  m_process = process_wait_command;
+}
+
+irs::spi_t::status_t irs::arm::arm_spi_t::get_status()
+{
+  if (m_process == process_wait_command) {
+    return FREE;
+  } else {
+    return BUSY;
+  }
+}
+
+bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  cpu_traits_t::frequency_type frequency = 0;
+  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
+  if (spi_address == SPI1_BASE) {
+    frequency = cpu_traits_t::periphery_frequency_second();
+  } else {
+    frequency = cpu_traits_t::periphery_frequency_first();
+  }
+  irs_u32 divider = frequency/a_bitrate;
+  int power = -1;
+  while (divider > 0) {
+    divider >>= 1;
+    power++;
+  }
+  const int min_power = 0;
+  const int max_power = 8;
+  power = bound(power, min_power, max_power);
+  mp_spi_regs->SPI_CR1_bit.BR = power;
+  return true;
+}
+
+bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  if (a_polarity == NEGATIVE_POLARITY) {
+    mp_spi_regs->SPI_CR1_bit.CPOL = 0;
+  } else if (a_polarity == POSITIVE_POLARITY) {
+    mp_spi_regs->SPI_CR1_bit.CPOL = 1;
+  }
+  return true;
+}
+
+bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  mp_spi_regs->SPI_CR1_bit.CPHA = a_phase;
+  return true;
+}
+
+bool irs::arm::arm_spi_t::set_order(order_t a_order)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  if (a_order == LSB) {
+    mp_spi_regs->SPI_CR1_bit.LSBFIRST = 1;
+  } else if (a_order == MSB) {
+    mp_spi_regs->SPI_CR1_bit.LSBFIRST = 0;
+  }
+  return true;
+}
+
+bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  if ((a_data_size != 8) && (a_data_size != 16)) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  disable_spi();
+  if (a_data_size == 8) {
+    mp_spi_regs->SPI_CR1_bit.DFF = 0;
+    m_data_item_byte_count = 1;
+  } else {
+    mp_spi_regs->SPI_CR1_bit.DFF = 1;
+    m_data_item_byte_count = 2;
+  }
+  enable_spi();
+  return true;
+}
+
+void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(IRS_NULL, ap_buf, a_size);
+}
+
+void irs::arm::arm_spi_t::read(irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(ap_buf, IRS_NULL, a_size);
+}
+
+void irs::arm::arm_spi_t::lock()
+{
+  m_lock = true;
+}
+
+void irs::arm::arm_spi_t::unlock()
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя разблокировать в процессе "
+      "передачи данных");
+  }
+  m_lock = false;
+}
+
+bool irs::arm::arm_spi_t::get_lock()
+{
+  return m_lock;
+}
+
+void irs::arm::arm_spi_t::tick()
+{
+  if (m_process == process_read_write) {
+    if ((m_write_buf_index <= (m_read_buf_index + 1)) &&
+      (m_write_buf_index < m_packet_size)) {
+      if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
+        if (mp_write_buf != IRS_NULL) {
+          mp_spi_regs->SPI_DR =
+            mp_write_buf[m_write_buf_index*m_data_item_byte_count];
+        } else {
+          mp_spi_regs->SPI_DR = 0;
+        }
+        m_write_buf_index++;
+      }
+    }
+    if (((m_read_buf_index + 2) == m_write_buf_index) ||
+        (m_write_buf_index == m_packet_size)) {
+      if (mp_spi_regs->SPI_SR_bit.RXNE == 1) {
+        if (mp_read_buf) {
+          mp_read_buf[m_read_buf_index*m_data_item_byte_count] =
+            mp_spi_regs->SPI_DR;
+        }
+        m_read_buf_index++;
+        if (m_read_buf_index >= m_packet_size) {
+          m_process = process_wait_command;
+        }
+      }
+    }
+  }
+}
+
+void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
+  const irs_u8 *ap_write_buf, irs_uarc a_size)
+{
+  if (!ap_read_buf && !ap_write_buf) {
+    IRS_LIB_ERROR(ec_standard, "ap_read_buf и ap_write_buf "
+      "не могут быть одновременно равны IRS_NULL");
+  }
+  if (m_data_item_byte_count == 2) {
+    if ((a_size % 2) != 0) {
+      IRS_LIB_ERROR(ec_standard, "Количество байт должно быть четным");
+    }
+  }
+  if (!m_lock) {
+    IRS_LIB_ERROR(ec_standard, "Вызов read_write на разблокированном spi");
+  }
+
+  m_packet_size = a_size/m_data_item_byte_count;
+  mp_read_buf = ap_read_buf;
+  mp_write_buf = ap_write_buf;
+  m_write_buf_index = 0;
+  m_read_buf_index = 0;
+  m_process = process_read_write;
+}
+
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

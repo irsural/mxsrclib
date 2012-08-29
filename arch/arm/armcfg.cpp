@@ -148,6 +148,18 @@ void irs::reset_peripheral(size_t a_address)
       RCC_APB1RSTR_bit.TIM14RST = 1;
       RCC_APB1RSTR_bit.TIM14RST = 0;
     } break;
+    case SPI1_BASE: {
+      RCC_APB2RSTR_bit.SPI1RST = 1;
+      RCC_APB2RSTR_bit.SPI1RST = 0;
+    } break;
+    case SPI2_I2S2_BASE: {
+      RCC_APB1RSTR_bit.SPI2RST = 1;
+      RCC_APB1RSTR_bit.SPI2RST = 0;
+    } break;
+    case SPI3_I2S3_BASE: {
+      RCC_APB1RSTR_bit.SPI3RST = 1;
+      RCC_APB1RSTR_bit.SPI3RST = 0;
+    } break;
     default : {
       IRS_ASSERT_MSG("Сброс для указанного устройства не определен");
     }
@@ -254,6 +266,15 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     } break;
     case TIM14_BASE: {
       RCC_APB1ENR_bit.TIM14EN = value;
+    } break;
+    case SPI1_BASE: {
+      RCC_APB2ENR_bit.SPI1EN = value;
+    } break;
+    case SPI2_I2S2_BASE: {
+      RCC_APB1ENR_bit.SPI2EN = value;
+    } break;
+    case SPI3_I2S3_BASE: {
+      RCC_APB1ENR_bit.SPI3EN = value;
     } break;
     default : {
       IRS_ASSERT_MSG("Включение/отключение для указанного "

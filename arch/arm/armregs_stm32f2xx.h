@@ -218,11 +218,11 @@ enum gpio_channel_t {
   PI15
 };
 
-inline size_t get_port_adress(gpio_channel_t a_gpio_channel)
+inline size_t get_port_address(gpio_channel_t a_gpio_channel)
 {
   const size_t port_pin_count = 16;
-  const size_t port_adress_delta = PORTB_BASE - PORTA_BASE;
-  return PORTA_BASE + port_adress_delta*(a_gpio_channel/port_pin_count);
+  const size_t port_address_delta = PORTB_BASE - PORTA_BASE;
+  return PORTA_BASE + port_address_delta*(a_gpio_channel/port_pin_count);
 }
 
 inline size_t get_pin_index(gpio_channel_t a_gpio_channel)
@@ -249,7 +249,7 @@ enum st_timer_name_t {
   stn_tim14
 };
 
-inline size_t get_timer_adress(st_timer_name_t a_st_timer_name)
+inline size_t get_timer_address(st_timer_name_t a_st_timer_name)
 {
   switch (a_st_timer_name) {
     case stn_tim1: return TIM1_PWM1_BASE;
@@ -2499,6 +2499,166 @@ typedef struct {
   __REG32  ACTIVE62       : 1;
   __REG32  ACTIVE63       : 1;
 } __active1_bits;
+
+// SPI
+
+#define SPI_CR1_S 0x00
+#define SPI_CR2_S 0x04
+#define SPI_SR_S 0x08
+#define SPI_DR_S 0x0C
+#define SPI_CRCPR_S 0x10
+#define SPI_RXCRCR_S 0x14
+#define SPI_TXCRCR_S 0x18
+#define SPI_I2SCFGR_S 0x1C
+#define SPI_I2SPR_S 0x20
+
+/* SPI control register 1 (SPI_CR1)*/
+typedef struct {
+  __REG32 CPHA            : 1;
+  __REG32 CPOL            : 1;
+  __REG32 MSTR            : 1;
+  __REG32 BR              : 3;
+  __REG32 SPE             : 1;
+  __REG32 LSBFIRST        : 1;
+  __REG32 SSI             : 1;
+  __REG32 SSM             : 1;
+  __REG32 RXONLY          : 1;
+  __REG32 DFF             : 1;
+  __REG32 CRCNEXT         : 1;
+  __REG32 CRCEN           : 1;
+  __REG32 BIDIOE          : 1;
+  __REG32 BIDIMODE        : 1;
+  __REG32                 :16;
+} __spi_cr1_bits;
+
+/* SPI control register 2 (SPI_CR2)*/
+typedef struct {
+  __REG32 RXDMAEN         : 1;
+  __REG32 TXDMAEN         : 1;
+  __REG32 SSOE            : 1;
+  __REG32                 : 1;
+  __REG32 FRF             : 1;
+  __REG32 ERRIE           : 1;
+  __REG32 RXNEIE          : 1;
+  __REG32 TXEIE           : 1;
+  __REG32                 :24;
+} __spi_cr2_bits;
+
+/* SPI status register (SPI_SR)*/
+typedef struct {
+  __REG32 RXNE            : 1;
+  __REG32 TXE             : 1;
+  __REG32 CHSIDE          : 1;
+  __REG32 UDR             : 1;
+  __REG32 CRCERR          : 1;
+  __REG32 MODF            : 1;
+  __REG32 OVR             : 1;
+  __REG32 BSY             : 1;
+  __REG32 TIFRFE          : 1;
+  __REG32                 :23;
+} __spi_sr_bits;
+
+/* SPI data register (SPI_DR) */
+typedef struct {
+  __REG32 DR              :16;
+  __REG32                 :16;
+} __spi_dr_bits;
+
+/* SPI CRC polynomial register (SPI_CRCPR) */
+typedef struct {
+  __REG32 CRCPOLY         :16;
+  __REG32                 :16;
+} __spi_crcpr_bits;
+
+/* SPI Rx CRC register (SPI_RXCRCR) */
+typedef struct {
+  __REG32 RxCRC           :16;
+  __REG32                 :16;
+} __spi_rxcrcr_bits;
+
+/* SPI Tx CRC register (SPI_TXCRCR) */
+typedef struct {
+  __REG32 TxCRC           :16;
+  __REG32                 :16;
+} __spi_txcrcr_bits;
+
+/* SPI_I2S configuration register (SPI_I2SCFGR) */
+typedef struct {
+  __REG32 CHLEN           : 1;
+  __REG32 DATLEN          : 2;
+  __REG32 CKPOL           : 1;
+  __REG32 I2SSTD          : 2;
+  __REG32                 : 1;
+  __REG32 PCMSYNC         : 1;
+  __REG32 I2SCFG          : 2;
+  __REG32 I2SE            : 1;
+  __REG32 I2SMOD          : 1;
+  __REG32                 :20;
+} __spi_i2scfgr_bits;
+
+/* SPI_I2S Prescaler register (SPI_I2SPR) */
+typedef struct {
+  __REG32 I2SDIV          : 8;
+  __REG32 ODD             : 1;
+  __REG32 MCKOE           : 1;
+  __REG32                 :22;
+} __spi_i2spr_bits;
+
+/***************************************************************************
+ **
+ ** SPI1
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(SPI1_CR1,          SPI1_BASE + SPI_CR1_S,__READ_WRITE ,__spi_cr1_bits);
+__IO_REG32_BIT(SPI1_CR2,          SPI1_BASE + SPI_CR2_S,__READ_WRITE ,__spi_cr2_bits);
+__IO_REG32_BIT(SPI1_SR,           SPI1_BASE + SPI_SR_S,__READ_WRITE ,__spi_sr_bits);
+__IO_REG32_BIT(SPI1_DR,           SPI1_BASE + SPI_DR_S,__READ_WRITE ,__spi_dr_bits);
+__IO_REG32_BIT(SPI1_CRCPR,        SPI1_BASE + SPI_CRCPR_S,__READ_WRITE ,__spi_crcpr_bits);
+__IO_REG32_BIT(SPI1_RXCRCR,       SPI1_BASE + SPI_RXCRCR_S,__READ       ,__spi_rxcrcr_bits);
+__IO_REG32_BIT(SPI1_TXCRCR,       SPI1_BASE + SPI_TXCRCR_S,__READ       ,__spi_txcrcr_bits);
+
+/***************************************************************************
+ **
+ ** SPI2
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(SPI2_CR1,          SPI2_I2S2_BASE + SPI_CR1_S,__READ_WRITE ,__spi_cr1_bits);
+__IO_REG32_BIT(SPI2_CR2,          SPI2_I2S2_BASE + SPI_CR2_S,__READ_WRITE ,__spi_cr2_bits);
+__IO_REG32_BIT(SPI2_SR,           SPI2_I2S2_BASE + SPI_SR_S,__READ_WRITE ,__spi_sr_bits);
+__IO_REG32_BIT(SPI2_DR,           SPI2_I2S2_BASE + SPI_DR_S,__READ_WRITE ,__spi_dr_bits);
+__IO_REG32_BIT(SPI2_CRCPR,        SPI2_I2S2_BASE + SPI_CRCPR_S,__READ_WRITE ,__spi_crcpr_bits);
+__IO_REG32_BIT(SPI2_RXCRCR,       SPI2_I2S2_BASE + SPI_RXCRCR_S,__READ       ,__spi_rxcrcr_bits);
+__IO_REG32_BIT(SPI2_TXCRCR,       SPI2_I2S2_BASE + SPI_TXCRCR_S,__READ       ,__spi_txcrcr_bits);
+__IO_REG32_BIT(SPI2_I2SCFGR,      SPI2_I2S2_BASE + SPI_I2SCFGR_S,__READ_WRITE ,__spi_i2scfgr_bits);
+__IO_REG32_BIT(SPI2_I2SPR,        SPI2_I2S2_BASE + SPI_I2SPR_S,__READ_WRITE ,__spi_i2spr_bits);
+
+/***************************************************************************
+ **
+ ** SPI3
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(SPI3_CR1,          SPI3_I2S3_BASE + SPI_CR1_S,__READ_WRITE ,__spi_cr1_bits);
+__IO_REG32_BIT(SPI3_CR2,          SPI3_I2S3_BASE + SPI_CR2_S,__READ_WRITE ,__spi_cr2_bits);
+__IO_REG32_BIT(SPI3_SR,           SPI3_I2S3_BASE + SPI_SR_S,__READ_WRITE ,__spi_sr_bits);
+__IO_REG32_BIT(SPI3_DR,           SPI3_I2S3_BASE + SPI_DR_S,__READ_WRITE ,__spi_dr_bits);
+__IO_REG32_BIT(SPI3_CRCPR,        SPI3_I2S3_BASE + SPI_CRCPR_S,__READ_WRITE ,__spi_crcpr_bits);
+__IO_REG32_BIT(SPI3_RXCRCR,       SPI3_I2S3_BASE + SPI_RXCRCR_S,__READ       ,__spi_rxcrcr_bits);
+__IO_REG32_BIT(SPI3_TXCRCR,       SPI3_I2S3_BASE + SPI_TXCRCR_S,__READ       ,__spi_txcrcr_bits);
+__IO_REG32_BIT(SPI3_I2SCFGR,      SPI3_I2S3_BASE + SPI_TXCRCR_S,__READ_WRITE ,__spi_i2scfgr_bits);
+__IO_REG32_BIT(SPI3_I2SPR,        SPI3_I2S3_BASE + SPI_I2SPR_S,__READ_WRITE ,__spi_i2spr_bits);
+
+struct spi_regs_t
+{
+  IRS_IO_REG32_BIT(SPI_CR1, __READ_WRITE ,__spi_cr1_bits);
+  IRS_IO_REG32_BIT(SPI_CR2, __READ_WRITE ,__spi_cr2_bits);
+  IRS_IO_REG32_BIT(SPI_SR, __READ_WRITE ,__spi_sr_bits);
+  IRS_IO_REG32_BIT(SPI_DR, __READ_WRITE ,__spi_dr_bits);
+  IRS_IO_REG32_BIT(SPI_CRCPR, __READ_WRITE ,__spi_crcpr_bits);
+  IRS_IO_REG32_BIT(SPI_RXCRCR, __READ       ,__spi_rxcrcr_bits);
+  IRS_IO_REG32_BIT(SPI_TXCRCR, __READ       ,__spi_txcrcr_bits);
+  IRS_IO_REG32_BIT(SPI_I2SCFGR, __READ_WRITE ,__spi_i2scfgr_bits);
+  IRS_IO_REG32_BIT(SPI_I2SPR, __READ_WRITE ,__spi_i2spr_bits);
+};
 
 // USART
 

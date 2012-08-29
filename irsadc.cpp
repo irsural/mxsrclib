@@ -34,7 +34,7 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
     memset(reinterpret_cast<void*>(mp_spi_buf), 0, m_spi_size);
     mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
     mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
     mp_cs_pin->clear();
     while(mp_spi->get_lock());
@@ -133,7 +133,7 @@ void irs::th_lm95071_t::tick()
         {
           set_to_cnt(m_read_counter, m_read_delay);
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
           mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
           mp_spi->lock();
           mp_cs_pin->clear();

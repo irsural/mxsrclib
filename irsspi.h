@@ -19,8 +19,18 @@ class spi_t
 {
 public:
   enum status_t   {FREE, BUSY};
-  enum polarity_t {RISING_EDGE, FALLING_EDGE};
-  enum phase_t    {LEAD_EDGE, TRAIL_EDGE};
+  enum polarity_t {
+    RISING_EDGE, 
+    FALLING_EDGE, 
+    POSITIVE_POLARITY = RISING_EDGE,
+    NEGATIVE_POLARITY = FALLING_EDGE
+  };
+  enum phase_t    {
+    LEAD_EDGE, 
+    TRAIL_EDGE, 
+    FIRST_EDGE = LEAD_EDGE,
+    SECOND_EDGE = TRAIL_EDGE
+  };
   enum order_t    {LSB, MSB};
 
   virtual ~spi_t() {}

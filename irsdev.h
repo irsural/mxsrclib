@@ -187,7 +187,7 @@ private:
 class st_pwm_gen_t: public pwm_gen_t
 {
 public:
-  st_pwm_gen_t(gpio_channel_t a_gpio_channel, size_t a_timer_adress,
+  st_pwm_gen_t(gpio_channel_t a_gpio_channel, size_t a_timer_address,
     cpu_traits_t::frequency_type a_frequency, float a_duty = 0.5f);
   virtual void start();
   virtual void stop();

@@ -121,6 +121,57 @@ private:
 
 #elif defined(__STM32F100RBT__)
 #elif defined(IRS_STM32F2xx)
+class arm_spi_t: public spi_t
+{
+public:
+  arm_spi_t(
+    size_t a_spi_address,
+    irs_u32 a_bitrate,
+    gpio_channel_t a_sck,
+    gpio_channel_t a_miso,
+    gpio_channel_t a_mosi
+  );
+  virtual ~arm_spi_t();
+  virtual void abort();
+  virtual void read(irs_u8 *ap_buf,irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf,irs_uarc a_size);
+  virtual status_t get_status();
+  virtual void lock();
+  virtual void unlock();
+  virtual bool get_lock();
+  virtual bool set_bitrate(irs_u32 a_bitrate);
+  virtual bool set_polarity(polarity_t a_polarity);
+  virtual bool set_phase(phase_t a_phase);
+  // Контроллер поддерживает только MSB
+  virtual bool set_order(order_t /*a_order*/);
+  virtual bool set_data_size(irs_u16 a_data_size);
+  virtual void tick();
+  virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf,
+    irs_uarc a_size);
+private:
+  void initialize_gpio_channels(gpio_channel_t a_sck,
+    gpio_channel_t a_miso,
+    gpio_channel_t a_mosi);
+  void set_moder_alternate_function(gpio_channel_t a_channel);
+  void set_default();
+  void enable_spi();
+  void disable_spi();
+  enum { data_size_default = 8 };
+  enum process_t {
+    process_wait_command,
+    process_read_write
+  };
+  bool m_lock;
+  spi_regs_t* mp_spi_regs;
+  irs_u32 m_bitrate_default;
+  process_t m_process;
+  const irs_u8* mp_write_buf;
+  irs_u8* mp_read_buf;
+  irs_uarc m_packet_size;
+  irs_uarc m_write_buf_index;
+  irs_uarc m_read_buf_index;
+  irs_u32 m_data_item_byte_count;
+};
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

@@ -179,9 +179,14 @@ typedef struct
 //  Запись по адресу
 #define HWREG(x) (*reinterpret_cast<volatile irs_u32*>(x))
 
-#define SET_BITS(reg, bits, value) {\
-  HWREG(reg) \
-}    
+#define IRS_SET_BITS(address, bits_shift, bits_count, bits_value)\
+{\
+  typedef irs_u32 reg_t;\
+  const reg_t bits_mask = ~(static_cast<reg_t>(-1) << bits_count);\
+  const reg_t reset_mask = ~(bits_mask << bits_shift);\
+  HWREG(address) &= reset_mask;\
+  HWREG(address) |= (bits_value << bits_shift);\
+}
 
 #endif /* __IAR_SYSTEMS_ICC__ */
 

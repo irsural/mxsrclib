@@ -658,26 +658,26 @@ irs_u16 irs::arm::gptm_generator_t::calc_load_value(
 #elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
 // class st_pwm_gen_t
 irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
-  size_t a_timer_adress,
+  size_t a_timer_address,
   cpu_traits_t::frequency_type a_frequency,
   float a_duty
 ):
   m_gpio_channel(a_gpio_channel),
-  mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_adress)),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_address)),
   m_frequency(a_frequency),
   m_duty(a_duty)
 {
-  const size_t port_adress = get_port_adress(a_gpio_channel);
+  const size_t port_address = get_port_address(a_gpio_channel);
   const int pin_index = get_pin_index(a_gpio_channel);
-  clock_enable(port_adress);
+  clock_enable(port_address);
   const int bits_count = 2;
   const irs_u32 bits_mask = ~(irs_u32(-1) << bits_count);
   const irs_u32 reset_mask = ~(bits_mask << bits_count*pin_index);
-  HWREG(port_adress + GPIO_MODER_S) &= reset_mask;
-  HWREG(port_adress + GPIO_MODER_S) |=
+  HWREG(port_address + GPIO_MODER_S) &= reset_mask;
+  HWREG(port_address + GPIO_MODER_S) |=
     GPIO_MODER_ALTERNATE_FUNCTION << bits_count*pin_index;
-  clock_enable(a_timer_adress);
-  //reset_peripheral(a_timer_adress);
+  clock_enable(a_timer_address);
+  //reset_peripheral(a_timer_address);
   // 0: Counter used as upcounter
   mp_timer->TIM_CR1_bit.DIR = 0;
   mp_timer->TIM_ARR = timer_frequency()/a_frequency;
@@ -692,7 +692,7 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
 
 void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
 {
-  const size_t timer_adress = reinterpret_cast<size_t>(mp_timer);
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   const irs_u32 CCR_value = static_cast<irs_u32>(
     m_duty*timer_frequency()/m_frequency);
   // PWM mode 1 - In upcounting, channel 1 is active as long as
@@ -708,7 +708,7 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
   irs_u32 timer_channel = 0;
   switch (m_gpio_channel) {
     case PB0: {
-      if (timer_adress == TIM3_BASE) {
+      if (timer_address == TIM3_BASE) {
         timer_channel = 3;
         GPIOB_AFRL_bit.AFRL0 = 2;
       } else {
@@ -716,7 +716,7 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
       }
     } break;
     case PB10: {
-      if (timer_adress == TIM2_BASE) {
+      if (timer_address == TIM2_BASE) {
         timer_channel = 3;
         GPIOB_AFRH_bit.AFRH10 = 1;
       } else {
@@ -724,7 +724,7 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
       }
     } break;
     case PB11: {
-      if (timer_adress == TIM2_BASE) {
+      if (timer_address == TIM2_BASE) {
         timer_channel = 4;
         GPIOB_AFRH_bit.AFRH11 = 1;
       } else {
@@ -732,7 +732,7 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
       }
     } break;
     case PC7: {
-      if (timer_adress == TIM3_BASE) {
+      if (timer_address == TIM3_BASE) {
         timer_channel = 2;
         GPIOC_AFRL_bit.AFRL7 = 2;
       } else {
@@ -740,7 +740,7 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
       }
     } break;
     case PE6: {
-      if (timer_adress == TIM9_BASE) {
+      if (timer_address == TIM9_BASE) {
         timer_channel = 2;
         GPIOE_AFRL_bit.AFRL6 = 3;
       } else {
@@ -793,8 +793,8 @@ void irs::arm::st_pwm_gen_t::initialize_timer_and_get_tim_ccr_register()
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::timer_frequency()
 {
-  const size_t timer_adress = reinterpret_cast<size_t>(mp_timer);
-  return cpu_traits_t::timer_frequency(timer_adress);
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  return cpu_traits_t::timer_frequency(timer_address);
 }
 
 void irs::arm::st_pwm_gen_t::start()
@@ -846,6 +846,7 @@ irs::pwm_pin_t::pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen):
   mp_pwm_gen(ap_pwm_gen),
   m_started(false)
 {
+  mp_pwm_gen->stop();
 }
 
 bool irs::pwm_pin_t::pin()

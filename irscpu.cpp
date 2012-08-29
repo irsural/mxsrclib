@@ -13,7 +13,7 @@
 #include <irscpu.h>
 
 #ifdef __ICCARM__
-#include <armregs_stm32f2xx.h>
+#include <armioregs.h>
 #endif // __ICCARM__
 
 #include <irsfinal.h>
