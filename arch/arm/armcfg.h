@@ -123,6 +123,7 @@ void pll_on();
 
 namespace irs {
 
+#ifdef IRS_STM32F2xx
 void reset_peripheral(size_t a_address);
 
 void clock_enable(size_t a_address);
@@ -137,7 +138,7 @@ enum interrupt_type_t
 
 void update_interrupt_enable(size_t a_address);
 void update_interrupt_enabled(size_t a_address, bool a_enabled);
-
+#endif // IRS_STM32F2xx
 } // namespace irs
 
 //! @}

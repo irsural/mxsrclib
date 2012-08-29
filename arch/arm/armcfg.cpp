@@ -89,6 +89,7 @@ void pll_on()
 #endif // ARM_devices
 }
 
+#ifdef IRS_STM32F2xx
 void irs::reset_peripheral(size_t a_address)
 {
   switch (a_address) {
@@ -341,3 +342,5 @@ void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
     }
   }
 }
+
+#endif // IRS_STM32F2xx
