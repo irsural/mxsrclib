@@ -46,7 +46,7 @@ void irs::eeprom_at25_t::prepare_spi()
 {
   mp_spi->set_bitrate(500000);
   mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
   mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
   mp_spi->lock();
   mp_cs_pin->clear();
@@ -819,7 +819,7 @@ void irs::mxdata_comm_t::tick()
     } break;
     case mode_initialization: {
       if (mp_mem_data->status() != irs_st_busy) {
-        IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <= 
+        IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <=
           mp_mem_data->data_count()), ec_standard, "");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());

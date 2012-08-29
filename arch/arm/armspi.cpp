@@ -39,7 +39,7 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_cur_byte(0),
   m_packet_size(0),
   m_bitrate_def(a_bitrate),
-  m_polarity_def(FALLING_EDGE),
+  m_polarity_def(POSITIVE_POLARITY),
   m_phase_def(LEAD_EDGE),
   m_order_def(MSB),
   m_data_size_def(8),
@@ -306,7 +306,11 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
       {
         irs_u8 sse = m_reg.mp_SSICR1_bit->SSE;
         m_reg.mp_SSICR1_bit->SSE = 0;
-        m_reg.mp_SSICR0_bit->SPO = a_polarity;
+        if (a_polarity == NEGATIVE_POLARITY) {
+          m_reg.mp_SSICR0_bit->SPO = 0;
+        } else if (a_polarity == POSITIVE_POLARITY) {
+          m_reg.mp_SSICR0_bit->SPO = 1;
+        }
         m_reg.mp_SSICR1_bit->SSE = sse;
       } break;
       case TISS:
@@ -695,7 +699,7 @@ irs::arm::arm_spi_t::~arm_spi_t()
 void irs::arm::arm_spi_t::set_default()
 {
   set_bitrate(m_bitrate_default);
-  set_polarity(FALLING_EDGE);
+  set_polarity(POSITIVE_POLARITY);
   set_phase(FIRST_EDGE);
   set_data_size(data_size_default);
   set_order(MSB);

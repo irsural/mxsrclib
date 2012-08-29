@@ -20,10 +20,12 @@ class spi_t
 public:
   enum status_t   {FREE, BUSY};
   enum polarity_t {
-    FALLING_EDGE,
+    #ifndef NOP
     RISING_EDGE,
-    NEGATIVE_POLARITY = FALLING_EDGE,
-    POSITIVE_POLARITY = RISING_EDGE
+    FALLING_EDGE,
+    #endif //NOP
+    NEGATIVE_POLARITY = RISING_EDGE,
+    POSITIVE_POLARITY = FALLING_EDGE
   };
   enum phase_t    {
     LEAD_EDGE,

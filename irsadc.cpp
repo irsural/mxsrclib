@@ -279,7 +279,7 @@ void irs::adc_ad7791_t::tick()
         {
           set_to_cnt(m_read_counter, m_read_delay);
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
           mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
           mp_cs_pin->clear();
@@ -408,7 +408,7 @@ void irs::adc_ad7686_t::tick()
       {
         set_to_cnt(m_read_counter, m_read_delay);
         mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
         mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
         mp_cs_pin->clear();
         mp_spi->lock();
@@ -838,7 +838,7 @@ void irs::dac_max551_t::tick()
         {
           mp_spi->lock();
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
           mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
           irs_u8 write_buffer[2];
           write_buffer[0] = mp_buf[2];
@@ -856,7 +856,7 @@ void irs::dac_max551_t::tick()
       {
         mp_cs_pin->clear();
         mp_cs_pin->set();
-        mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
         mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_spi->unlock();
         mp_buf[0] = 1;
@@ -1093,7 +1093,7 @@ void irs::dds_ad9854_t::tick()
             write_buffer[4] = mp_buf[POS_CR];
             fill_n(m_write_vector.begin() + POS_CR, SZ_CR, false);
             mp_spi->set_order(irs::spi_t::MSB);
-            mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+            mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
             mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
             mp_spi->lock();
             mp_cs_pin->clear();
@@ -1161,7 +1161,8 @@ void irs::dds_ad9854_t::tick()
                 mp_mxdata_reg_size[register_index], false);
               m_first_byte += mp_mxdata_reg_size[register_index];
               mp_spi->set_order(irs::spi_t::MSB);
-              mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+              mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+              //FALLING_EDGE);
               mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
               mp_spi->lock();
               mp_cs_pin->clear();
@@ -1245,7 +1246,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_spi->lock();
 
   mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
   mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 
   m_command = m_com_write_to_input_register_and_update|m_addr_DACA;
@@ -1395,7 +1396,7 @@ void irs::dac_ltc2622_t::tick()
         if (!mp_spi->get_lock()){
           mp_cs_pin->clear();
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
           mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
 
@@ -1543,7 +1544,7 @@ void irs::adc_adc102s021_t::tick()
         if (m_timer.check()) {
           m_timer.stop();
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::FALLING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
           mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
           mp_cs_pin->clear();
@@ -1612,7 +1613,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
     mp_spi->lock();
 
     mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+    mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
     mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 
     while (!write_ready()) write_tick();
@@ -1699,7 +1700,7 @@ void irs::dac_ad5293_t::tick()
       if (m_need_write && write_ready() && spi_ready())
       {
         mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::RISING_EDGE);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
         mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_spi->lock();
 
