@@ -489,10 +489,10 @@ private:
 
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
-  const irs_u32 m_baud_rate;
   #ifdef IRS_STM32F2xx
   volatile usart_regs_t* m_usart;
   #endif // IRS_STM32F2xx
+  const irs_u32 m_baud_rate;
 };
 
 // Поток COM-порта ARM

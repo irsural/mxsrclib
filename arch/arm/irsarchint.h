@@ -8,6 +8,7 @@
 #include <irsdefs.h>
 
 #include <irsint.h>
+#include <armioregs.h>
 
 #include <irsfinal.h>
 

@@ -238,11 +238,12 @@ void irs::arm::io_pin_t::clear()
   #endif  //  mcu type
 }
 
+#ifdef IRS_STM32F2xx
 void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const irs::io_t::dir_t a_dir)
-{  
+{
   switch (a_dir) {
-    case irs::io_t::dir_in: {  
+    case irs::io_t::dir_in: {
       HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
@@ -289,6 +290,7 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
     } break;
   }
 }
+#endif //IRS_STM32F2xx
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
 {

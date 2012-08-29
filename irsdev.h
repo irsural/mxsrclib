@@ -16,6 +16,8 @@
 #ifdef __ICCARM__
 #include <armioregs.h>
 #endif // __ICCARM__
+#include <irsgpio.h>
+#include <mxdata.h>
 
 #define PWM_ZERO_PULSE 1
 

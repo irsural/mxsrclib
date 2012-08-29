@@ -189,9 +189,6 @@ irs::arm::arm_spi_t::arm_spi_t(
     } break;
   }
 
-  //init_default();
-
-  // Эта строки обязательно должны стоять после init_default
   m_reg.mp_SSICR1_bit->SSE = 0;
 
   m_reg.mp_SSICR1_bit->LBM = 0;
@@ -904,6 +901,6 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   m_process = process_read_write;
 }
 
-#else
+#else // Микроконтроллеры
   #error Тип контроллера не определён
-#endif  //  mcu type
+#endif  // Микроконтроллеры

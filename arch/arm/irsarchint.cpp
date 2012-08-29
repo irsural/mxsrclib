@@ -6,7 +6,6 @@
 
 #include <irsarchint.h>
 #include <irsconfig.h>
-#include <armioregs.h>
 
 #include <irsfinal.h>
 
