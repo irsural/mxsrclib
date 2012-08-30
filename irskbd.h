@@ -52,6 +52,7 @@ private:
 
 namespace irs {
 
+#if defined(__ICCARM__) || defined(__ICCAVR__)
 // Класс драйвера клавиатуры микроконтроллера
 class mxkey_drv_mc_t: public mxkey_drv_t
 {
@@ -75,6 +76,7 @@ private:
 };
 
 void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
+#endif  //  __ICCARM__ || __ICCAVR__
 
 } // namespace irs
 

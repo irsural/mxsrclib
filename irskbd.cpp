@@ -70,6 +70,7 @@ char irs::gcc_linux::keyboard_t::key()
 
 #endif //IRS_LINUX
 
+#if defined(__ICCARM__) || defined(__ICCAVR__)
 // class mxkey_drv_mc_t
 irs::mxkey_drv_mc_t::mxkey_drv_mc_t():
   m_keys(),
@@ -170,5 +171,6 @@ void irs::set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc)
   ap_mxkey_drv_mc->add_key(irskey_backspace);
   ap_mxkey_drv_mc->add_key(irskey_enter);
 }
+#endif  //  __ICCARM__ || __ICCAVR__
 
 //! @}
