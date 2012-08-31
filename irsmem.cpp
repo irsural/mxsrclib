@@ -475,8 +475,7 @@ void irs::mem_cluster_t::tick()
           m_target_status = st_free;
         } else {
           //  error
-          irs::mlog() << CNT_TO_DBLTIME(counter_get());
-          irs::mlog() << " Îøèáêà CRC" << endl;
+          IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " Îøèáêà CRC");
           memsetex(m_cluster_data.data(), m_cluster_data.size());
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
@@ -708,6 +707,7 @@ irs::mxdata_comm_t::mxdata_comm_t(irs::mem_data_t* ap_mem_data,
   m_data_buf(a_size),
   m_mem_data_start_index(a_index),
   m_bit_vector(a_size),
+  m_data_changed(false),
   m_mode(mode_free),
   m_current_index(0),
   m_start_index(0),
@@ -751,6 +751,7 @@ void irs::mxdata_comm_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     mem_copy(write_buf, 0, m_data_buf, a_index, a_size);
     for (int i = a_index; (i - a_index) < a_size; i++) {
       m_bit_vector[i] = true;
+      m_data_changed = true;
     }
   }
 }
@@ -783,6 +784,7 @@ void irs::mxdata_comm_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
       m_data_buf[a_index] &= irs_u8((1 << a_bit_index)^0xFF);
     }
     m_bit_vector[a_index] = true;
+    m_data_changed = true;
   }
 }
 
@@ -792,29 +794,36 @@ void irs::mxdata_comm_t::tick()
 
   switch (m_mode) {
     case mode_free: {
-      if (m_current_index >= m_bit_vector.size()) {
-        m_current_index = 0;
-      }
-      bool start = false;
-      bool finish = false;
-      for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
-        if (m_bit_vector[m_current_index] == 1) {
-          m_start_index = m_current_index;
-          start = true;
-          break;
+      if (m_data_changed) {
+        if (m_current_index >= m_bit_vector.size()) {
+          m_current_index = 0;
         }
-      }
-      for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
-        if (m_bit_vector[m_current_index] == 0) {
+        const bool start_index_zero = (m_current_index == 0);
+        bool start = false;
+        bool finish = false;
+        for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
+          if (m_bit_vector[m_current_index] == 1) {
+            m_start_index = m_current_index;
+            start = true;
+            break;
+          }
+        }
+        if (start_index_zero && (m_current_index == m_bit_vector.size())) {
+          m_data_changed = false;
+        }
+
+        for ( ; m_current_index < m_bit_vector.size(); m_current_index++) {
+          if (m_bit_vector[m_current_index] == 0) {
+            m_data_size = m_current_index - m_start_index;
+            finish = true;
+            m_mode = mode_write;
+            break;
+          }
+        }
+        if ((!finish) && start) {
           m_data_size = m_current_index - m_start_index;
-          finish = true;
           m_mode = mode_write;
-          break;
         }
-      }
-      if ((!finish) && (start)) {
-        m_data_size = m_current_index - m_start_index;
-        m_mode = mode_write;
       }
     } break;
     case mode_initialization: {
@@ -891,7 +900,8 @@ irs::mem_data_t* irs::mxdata_comm_t::mem_data()
 
 irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi,
   gpio_pin_t* ap_cs_pin, irs_uarc a_size, bool a_init_now,
-  irs_uarc a_index, size_type a_cluster_size, counter_t a_init_timeout):
+  irs_uarc a_index, size_type a_cluster_size, counter_t a_init_timeout
+):
   mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
   m_page_mem(ap_spi, ap_cs_pin, at25128),
   m_mem_data(&m_page_mem, a_cluster_size)

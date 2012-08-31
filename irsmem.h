@@ -203,10 +203,10 @@ private:
 class mxdata_comm_t: public mxdata_t
 {
 public:
-  mxdata_comm_t(irs::mem_data_t* ap_mem_data, 
+  mxdata_comm_t(irs::mem_data_t* ap_mem_data,
     irs_uarc a_index, irs_uarc a_size, bool a_init_now = false,
     counter_t a_init_timeout = irs::make_cnt_s(1));
-  virtual ~mxdata_comm_t(); 
+  virtual ~mxdata_comm_t();
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -215,7 +215,7 @@ public:
   virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
   virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+  virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index,
     irs_bool a_bit);
   virtual void tick();
   bool error();
@@ -227,6 +227,7 @@ private:
   raw_data_t<irs_u8> m_data_buf;
   irs_uarc m_mem_data_start_index;
   vector<bool> m_bit_vector;
+  bool m_data_changed;
   enum mode_t {
     mode_free,
     mode_error,
@@ -248,7 +249,7 @@ class eeprom_at25128_data_t : public mxdata_comm_t
 {
 public:
   typedef comm_data_t::size_type size_type;
-  eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size, 
+  eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size,
     bool init_now = false,  irs_uarc a_index = 0, size_type a_cluster_size = 64,
     counter_t init_timeout = irs::make_cnt_s(1));
 private:

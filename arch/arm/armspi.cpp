@@ -852,38 +852,90 @@ bool irs::arm::arm_spi_t::get_lock()
 
 void irs::arm::arm_spi_t::tick()
 {
+  /*static const counter_t period = irs::make_cnt_s(1);
+  static irs::measure_time_t period_update_measure_time;
+  static int count = 0;
+  static counter_t tick_process_time;
+  if (period_update_measure_time.get_cnt() >= period) {
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Частота вызова tick c m_process == process_read_write " << count/period_update_measure_time.get() << endl);
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Время вызова tick c m_process == process_read_write " <<
+        CNT_TO_DBLTIME(tick_process_time)/period_update_measure_time.get() << endl);
+    count = 0;
+    tick_process_time = 0;
+    period_update_measure_time.start();
+  }
+
+  irs::measure_time_t process_measure_time;
+  process_measure_time.start();*/
+
+  int shift = 0;
   if (m_process == process_read_write) {
-    if ((m_write_buf_index <= (m_read_buf_index + 1)) &&
+    //count++;
+    if ((m_write_buf_index <= (m_read_buf_index + shift)) &&
       (m_write_buf_index < m_packet_size)) {
       if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
         if (mp_write_buf != IRS_NULL) {
           mp_spi_regs->SPI_DR =
             mp_write_buf[m_write_buf_index*m_data_item_byte_count];
+          //IRS_DBG_RAW_MSG("SPI_DR << " <<
+            //(int)mp_write_buf[m_write_buf_index*m_data_item_byte_count] << endl);
         } else {
           mp_spi_regs->SPI_DR = 0;
+          //IRS_DBG_RAW_MSG("SPI_DR << fake " << 0 << endl);
         }
         m_write_buf_index++;
       }
     }
-    if (((m_read_buf_index + 2) == m_write_buf_index) ||
+    if (((m_read_buf_index + shift + 1) == m_write_buf_index) ||
         (m_write_buf_index == m_packet_size)) {
       if (mp_spi_regs->SPI_SR_bit.RXNE == 1) {
         if (mp_read_buf) {
           mp_read_buf[m_read_buf_index*m_data_item_byte_count] =
             mp_spi_regs->SPI_DR;
+          //IRS_DBG_RAW_MSG("SPI_DR >> " <<
+            //(int)mp_read_buf[m_read_buf_index*m_data_item_byte_count] << endl);
+        } else {
+          volatile irs_u32 data = mp_spi_regs->SPI_DR;
+          //IRS_DBG_RAW_MSG("SPI_DR >> fake " << data << endl);
         }
         m_read_buf_index++;
         if (m_read_buf_index >= m_packet_size) {
           m_process = process_wait_command;
+          //disable_spi();
         }
       }
     }
   }
+  //tick_process_time =+ process_measure_time.get_cnt();
 }
 
 void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   const irs_u8 *ap_write_buf, irs_uarc a_size)
 {
+  /*static const counter_t period = irs::make_cnt_s(1);
+  static irs::measure_time_t measure_time;
+  static int count = 0;
+  count++;
+  if (measure_time.get_cnt() >= period) {
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Частота вызова  read_write " << count/measure_time.get() << endl);
+    count = 0;
+    measure_time.start();
+  }*/
+
+
+  /*if (ap_read_buf && ap_write_buf) {
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Размер данных на запись и чтение " << a_size << endl);
+  } else if (ap_read_buf) {
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Размер данных на чтение " << a_size << endl);
+  } else {
+    IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+      " Размер данных на запись " << a_size << endl);
+  }*/
   if (!ap_read_buf && !ap_write_buf) {
     IRS_LIB_ERROR(ec_standard, "ap_read_buf и ap_write_buf "
       "не могут быть одновременно равны IRS_NULL");
@@ -896,12 +948,12 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   if (!m_lock) {
     IRS_LIB_ERROR(ec_standard, "Вызов read_write на разблокированном spi");
   }
-
   m_packet_size = a_size/m_data_item_byte_count;
   mp_read_buf = ap_read_buf;
   mp_write_buf = ap_write_buf;
   m_write_buf_index = 0;
   m_read_buf_index = 0;
+  //enable_spi();
   m_process = process_read_write;
 }
 

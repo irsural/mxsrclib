@@ -92,7 +92,7 @@ irskey_t irs::mxkey_drv_mc_t::operator()()
         } else {
           m_current_key = irskey_none;
         }
-        IRS_DBG_MSG(irst("key = ") << (int)m_current_key);
+        //IRS_DBG_MSG(irst("key = ") << (int)m_current_key);
         return m_current_key;
       }
     }
