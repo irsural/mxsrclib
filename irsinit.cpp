@@ -15,7 +15,10 @@
 #include <irsinit.h>
 #include <irsstring.h>
 #include <irslocale.h>
+
+#ifndef IRS_FULL_STDCPPLIB_SUPPORT
 #include <armcfg.h>
+#endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #include <irsfinal.h>
 
@@ -43,7 +46,7 @@ private:
 irs::init_implement_t::init_implement_t():
   m_first_init()
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-  mp_error_handler(new irs::exception_error_handler_t)
+  , mp_error_handler(new irs::exception_error_handler_t)
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 {
