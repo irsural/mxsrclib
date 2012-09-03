@@ -1,7 +1,11 @@
 #ifndef armregs_stm32f2xxH
 #define armregs_stm32f2xxH
 
+#include <irsdefs.h>
+
 #include <armiomacros.h>
+
+#include <irsfinal.h>
 
 #ifdef IRS_STM32F2xx
 
@@ -64,7 +68,8 @@
 #define TIM2_BASE             0x40000000
 
 enum gpio_channel_t {
-  PA0,
+  PNONE = -1,
+  PA0 = 0,
   PA1,
   PA2,
   PA3,
@@ -217,19 +222,6 @@ enum gpio_channel_t {
   PI14,
   PI15
 };
-
-inline size_t get_port_address(gpio_channel_t a_gpio_channel)
-{
-  const size_t port_pin_count = 16;
-  const size_t port_address_delta = PORTB_BASE - PORTA_BASE;
-  return PORTA_BASE + port_address_delta*(a_gpio_channel/port_pin_count);
-}
-
-inline size_t get_pin_index(gpio_channel_t a_gpio_channel)
-{
-  const size_t port_pin_count = 16;
-  return a_gpio_channel%port_pin_count;
-}
 
 enum st_timer_name_t {
   stm_tim_none,

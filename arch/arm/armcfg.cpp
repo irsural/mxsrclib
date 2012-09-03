@@ -90,6 +90,25 @@ void pll_on()
 }
 
 #ifdef IRS_STM32F2xx
+size_t irs::get_port_address(gpio_channel_t a_gpio_channel)
+{
+  if (a_gpio_channel == PNONE) {
+    IRS_LIB_ERROR(irs::ec_standard, "Недопустимый канал");
+  }
+  const size_t port_pin_count = 16;
+  const size_t port_address_delta = PORTB_BASE - PORTA_BASE;
+  return PORTA_BASE + port_address_delta*(a_gpio_channel/port_pin_count);
+}
+
+size_t irs::get_pin_index(gpio_channel_t a_gpio_channel)
+{
+  if (a_gpio_channel == PNONE) {
+    IRS_LIB_ERROR(irs::ec_standard, "Недопустимый канал");
+  }
+  const size_t port_pin_count = 16;
+  return a_gpio_channel%port_pin_count;
+}
+
 void irs::reset_peripheral(size_t a_address)
 {
   switch (a_address) {
@@ -165,6 +184,16 @@ void irs::reset_peripheral(size_t a_address)
       IRS_ASSERT_MSG("Сброс для указанного устройства не определен");
     }
   }
+}
+
+void irs::clock_enable(gpio_channel_t a_channel)
+{
+  clock_enable(get_port_address(a_channel));
+}
+
+void irs::clock_disable(gpio_channel_t a_channel)
+{
+  clock_disable(get_port_address(a_channel));
 }
 
 void irs::clock_enable(size_t a_address)
@@ -284,6 +313,14 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
   }
 }
 
+void irs::alternate_function_enable(gpio_channel_t a_channel)
+{
+  const size_t port_address = get_port_address(a_channel);
+  const int pin_index = get_pin_index(a_channel);
+  const int bits_count = 2;
+  IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
+    bits_count, GPIO_MODER_ALTERNATE_FUNCTION);
+}
 
 void irs::update_interrupt_enable(size_t a_address)
 {

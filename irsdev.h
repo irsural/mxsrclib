@@ -186,6 +186,11 @@ private:
   init_pwm_gen_full
 };*/
 
+enum break_polarity_t {
+  break_polarity_active_low,
+  break_polarity_active_high
+};
+
 class st_pwm_gen_t: public pwm_gen_t
 {
 public:
@@ -199,15 +204,22 @@ public:
     cpu_traits_t::frequency_type  a_frequency);
   virtual irs_uarc get_max_duty();
   virtual cpu_traits_t::frequency_type get_max_frequency();
+  void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
+  void break_disable();
+  void complementary_channel_enable(gpio_channel_t a_gpio_channel);  
 private:
-  void initialize_timer_and_get_tim_ccr_register();
+  void initialize_timer_and_get_tim_ccr_register();  
   cpu_traits_t::frequency_type  timer_frequency();
   vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
   gpio_channel_t m_gpio_channel;
   tim_regs_t* mp_timer;
   cpu_traits_t::frequency_type m_frequency;
   float m_duty;
-  irs_u32* mp_tim_ccr;
+  irs_u32* mp_tim_ccr;  
+  gpio_channel_t m_complementary_gpio_channel;
+  gpio_channel_t m_break_gpio_channel;
+  //bool m_break_enabled;  
+  //break_polarity_t m_break_polarity;
 };
 
 #else

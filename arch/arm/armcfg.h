@@ -124,11 +124,18 @@ void pll_on();
 namespace irs {
 
 #ifdef IRS_STM32F2xx
+size_t get_port_address(gpio_channel_t a_gpio_channel);
+size_t get_pin_index(gpio_channel_t a_gpio_channel);
+
 void reset_peripheral(size_t a_address);
 
+void clock_enable(gpio_channel_t a_channel);
+void clock_disable(gpio_channel_t a_channel);
 void clock_enable(size_t a_address);
 void clock_disable(size_t a_address);
 void clock_enabled(size_t a_address, bool a_enabled);
+
+void alternate_function_enable(gpio_channel_t a_channel);
 
 enum interrupt_type_t
 {
