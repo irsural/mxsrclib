@@ -16,9 +16,9 @@
 #include <irsstring.h>
 #include <irslocale.h>
 
-#ifndef IRS_FULL_STDCPPLIB_SUPPORT
+#ifdef __ICCARM__
 #include <armcfg.h>
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#endif //__ICCARM__
 
 #include <irsfinal.h>
 
