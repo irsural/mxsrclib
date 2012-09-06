@@ -136,6 +136,7 @@ void clock_disable(size_t a_address);
 void clock_enabled(size_t a_address, bool a_enabled);
 
 void alternate_function_enable(gpio_channel_t a_channel);
+void analog_function_enable(gpio_channel_t a_channel);
 
 enum interrupt_type_t
 {

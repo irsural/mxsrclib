@@ -335,11 +335,39 @@ void irs_arm_gpio_portj_func()
 #elif defined(IRS_STM32F2xx)
 
 //  Прерывания периферии
+
+/*void irs_arm_tim1_brk_tim9_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim1_brk_tim9_int);
+  TIM1_SR_bit.BIF = 0;
+  TIM9_SR_bit.UIF = 0;
+  TIM9_SR_bit.CC1IF = 0;
+  TIM9_SR_bit.CC2IF = 0;
+}*/
+
+void irs_arm_tim1_up_tim10_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim1_up_tim10_int);
+  TIM1_SR_bit.UIF = 0;
+  TIM10_SR_bit.UIF = 0;
+  TIM10_SR_bit.CC1IF = 0;
+}
+
 void irs_arm_tim3_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim3_int);
 }
-//  Прерывания периферии
+
+void irs_arm_tim8_brk_tim12_func()
+{
+  //irs::arm::interrupt_array()->exec_event(irs::arm::tim8_brk_tim12_int);
+  //irs::mlog() << irsm("BIF = ") << mp_timer->TIM_SR_bit.BIF << endl;
+  TIM8_SR_bit.BIF = 0;
+  TIM12_SR_bit.UIF = 0;
+  TIM12_SR_bit.CC1IF = 0;
+  TIM12_SR_bit.CC2IF = 0;
+}
+
 void irs_arm_tim8_up_tim13_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim8_up_tim13_int);
@@ -499,7 +527,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 22
   irs_arm_default_int_func,  // 23
   irs_arm_default_int_func,  // 24
-  irs_arm_default_int_func,  // 25
+  irs_arm_tim1_up_tim10_func,// 25
   irs_arm_default_int_func,  // 26
   irs_arm_default_int_func,  // 27
   irs_arm_default_int_func,  // 28
@@ -517,8 +545,8 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 40
   irs_arm_default_int_func,  // 41
   irs_arm_default_int_func,  // 42
-  irs_arm_default_int_func,  // 43
-  irs_arm_tim8_up_tim13_func, // 44
+  irs_arm_tim8_brk_tim12_func,// 43
+  irs_arm_tim8_up_tim13_func,// 44
   irs_arm_default_int_func,  // 45
   irs_arm_default_int_func,  // 46
   irs_arm_default_int_func,  // 47

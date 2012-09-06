@@ -4,11 +4,12 @@
 
 #include <irsdefs.h>
 
+#include <mxdata.h>
+
 #include <armioregs.h>
+#include <armcfg.h>
 
 #include <armadc.h>
-
-#include <mxdata.h>
 
 #include <irsfinal.h>
 
@@ -897,4 +898,61 @@ void irs::arm::adc_stellaris_t::tick()
   }
 }
 
-#endif //__LM3SxBxx__
+#elif defined(IRS_STM32F2xx)
+#ifdef NOP
+// class st_adc_t
+irs::arm::st_adc_t::st_adc_t(size_t a_adc_address, counter_t a_adc_interval)
+{
+  clock_enable(PF9);
+  clock_enable(a_adc_address);
+}
+
+irs::arm::st_adc_t::~st_adc_t()
+{
+}
+
+irs_u16 irs::arm::st_adc_t::get_u16_minimum()
+{
+}
+
+irs_u16 irs::arm::st_adc_t::get_u16_maximum()
+{
+}
+
+irs_u16 irs::arm::st_adc_t::get_u16_data(irs_u8 a_channel)
+{
+}
+
+irs_u32 irs::arm::st_adc_t::get_u32_minimum()
+{
+}
+
+irs_u32 irs::arm::st_adc_t::get_u32_maximum()
+{
+}
+
+irs_u32 irs::arm::st_adc_t::get_u32_data(irs_u8 a_channel)
+{
+}
+
+float irs::arm::st_adc_t::get_float_minimum()
+{
+}
+
+float irs::arm::st_adc_t::get_float_maximum()
+{
+}
+
+float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
+{
+}
+
+float irs::arm::st_adc_t::get_temperature()
+{
+}
+
+void irs::arm::st_adc_t::tick()
+{
+}
+#endif // NOP
+#endif // IRS_STM32F2xx

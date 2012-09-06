@@ -180,6 +180,10 @@ void irs::reset_peripheral(size_t a_address)
       RCC_APB1RSTR_bit.SPI3RST = 1;
       RCC_APB1RSTR_bit.SPI3RST = 0;
     } break;
+    /*case ADC1_ADC2_ADC3_BASE: {
+      RCC_APB2RSTR.ADCRST = 1;
+      RCC_APB2RSTR.ADCRST = 0;
+    } break;*/
     default : {
       IRS_ASSERT_MSG("Сброс для указанного устройства не определен");
     }
@@ -306,6 +310,15 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     case SPI3_I2S3_BASE: {
       RCC_APB1ENR_bit.SPI3EN = value;
     } break;
+    case ADC1_BASE: {
+      RCC_APB2ENR_bit.ADC1EN = value;
+    } break;
+    case ADC2_BASE: {
+      RCC_APB2ENR_bit.ADC2EN = value;
+    } break;
+    case ADC3_BASE: {
+      RCC_APB2ENR_bit.ADC3EN = value;
+    } break;
     default : {
       IRS_ASSERT_MSG("Включение/отключение для указанного "
         "устройства не определено");
@@ -313,13 +326,33 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
   }
 }
 
+namespace {
+
+void gpio_set_bits(gpio_channel_t a_channel, int gpio_bits_group,
+  int gpio_bits_value)
+{
+  const size_t port_address = irs::get_port_address(a_channel);
+  const int pin_index = irs::get_pin_index(a_channel);
+  const int bits_count = 2;
+  IRS_SET_BITS(port_address + gpio_bits_group, bits_count*pin_index,
+    bits_count, gpio_bits_value);
+}
+
+} // empty namespace
+
 void irs::alternate_function_enable(gpio_channel_t a_channel)
 {
-  const size_t port_address = get_port_address(a_channel);
+  /*const size_t port_address = get_port_address(a_channel);
   const int pin_index = get_pin_index(a_channel);
   const int bits_count = 2;
   IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
-    bits_count, GPIO_MODER_ALTERNATE_FUNCTION);
+    bits_count, GPIO_MODER_ALTERNATE_FUNCTION);*/
+  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ALTERNATE_FUNCTION);
+}
+
+void irs::analog_function_enable(gpio_channel_t a_channel)
+{
+  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ANALOG_MODER);
 }
 
 void irs::update_interrupt_enable(size_t a_address)

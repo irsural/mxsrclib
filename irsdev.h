@@ -206,19 +206,29 @@ public:
   virtual cpu_traits_t::frequency_type get_max_frequency();
   void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
   void break_disable();
-  void complementary_channel_enable(gpio_channel_t a_gpio_channel);  
+  void complementary_channel_enable(gpio_channel_t a_gpio_channel);
 private:
-  void initialize_timer_and_get_tim_ccr_register();  
+
+  void get_timer_channel_and_select_alternate_function_for_main_channel();
+  void select_alternate_function_for_complementary_channel();
+  void select_alternate_function_for_break_channel();
+  void get_tim_ccr_register();
+  enum output_compare_mode_t {
+    ocm_force_inactive_level = 4,
+    ocm_pwm_mode_1 = 6
+  };
+  void set_mode_capture_compare_registers(output_compare_mode_t a_mode);
   cpu_traits_t::frequency_type  timer_frequency();
   vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
   gpio_channel_t m_gpio_channel;
   tim_regs_t* mp_timer;
   cpu_traits_t::frequency_type m_frequency;
   float m_duty;
-  irs_u32* mp_tim_ccr;  
+  irs_u32* mp_tim_ccr;
+  irs_u32 m_timer_channel;
   gpio_channel_t m_complementary_gpio_channel;
   gpio_channel_t m_break_gpio_channel;
-  //bool m_break_enabled;  
+  //bool m_break_enabled;
   //break_polarity_t m_break_polarity;
 };
 

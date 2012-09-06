@@ -37,6 +37,9 @@
 #define SPI1_BASE             0x40013000
 #define SDIO_BASE             0x40012C00
 #define ADC1_ADC2_ADC3_BASE   0x40012000
+#define ADC1_BASE             0x40012000
+#define ADC2_BASE             0x40012100
+#define ADC3_BASE             0x40012200
 #define USART6_BASE           0x40011400
 #define USART1_BASE           0x40011000
 #define TIM8_PWM2_BASE        0x40010400
@@ -2181,7 +2184,7 @@ typedef struct {
   __REG32  SETENA40       : 1;
   __REG32  SETENA41       : 1;
   __REG32  SETENA42       : 1;
-  __REG32  SETENA43       : 1;
+  __REG32  SETENA_TIM8_BRK_TIM12: 1;
   __REG32  SETENA_TIM8_UP_TIM13 : 1;
   __REG32  SETENA45       : 1;
   __REG32  SETENA46       : 1;
@@ -2861,6 +2864,336 @@ struct usart_regs_t
   IRS_IO_REG32_BIT(USART_GTPR, __READ_WRITE ,__usart_gtpr_bits);
 };
 
+/* ADC status register (ADC_SR) */
+typedef struct {
+  __REG32 AWD             : 1;
+  __REG32 EOC             : 1;
+  __REG32 JEOC            : 1;
+  __REG32 JSTRT           : 1;
+  __REG32 STRT            : 1;
+  __REG32 OVR             : 1;
+  __REG32                 :26;
+} __adc_sr_bits;
+
+/* ADC control register 1 (ADC_CR1) */
+typedef struct {
+  __REG32 AWDCH           : 5;
+  __REG32 EOCIE           : 1;
+  __REG32 AWDIE           : 1;
+  __REG32 JEOCIE          : 1;
+  __REG32 SCAN            : 1;
+  __REG32 AWDSGL          : 1;
+  __REG32 JAUTO           : 1;
+  __REG32 DISCEN          : 1;
+  __REG32 JDISCEN         : 1;
+  __REG32 DISCNUM         : 3;
+  __REG32                 : 6;
+  __REG32 JAWDEN          : 1;
+  __REG32 AWDEN           : 1;
+  __REG32 RES             : 2;
+  __REG32 OVRIE           : 1;
+  __REG32                 : 5;
+} __adc_cr1_bits;
+
+/* ADC control register 2 (ADC_CR2) */
+typedef struct {
+  __REG32 ADON            : 1;
+  __REG32 CONT            : 1;
+  __REG32                 : 6;
+  __REG32 DMA             : 1;
+  __REG32 DDS             : 1;
+  __REG32 EOCS            : 1;
+  __REG32 ALIGN           : 1;
+  __REG32                 : 4;
+  __REG32 JEXTSEL         : 4;
+  __REG32 JEXTEN          : 2;
+  __REG32 JSWSTART        : 1;
+  __REG32                 : 1;
+  __REG32 EXTSEL          : 4;
+  __REG32 EXTEN           : 2;
+  __REG32 SWSTART         : 1;
+  __REG32                 : 1;
+} __adc_cr2_bits;
+
+/* ADC sample time register 1 (ADC_SMPR1) */
+typedef struct {
+  __REG32 SMP10           : 3;
+  __REG32 SMP11           : 3;
+  __REG32 SMP12           : 3;
+  __REG32 SMP13           : 3;
+  __REG32 SMP14           : 3;
+  __REG32 SMP15           : 3;
+  __REG32 SMP16           : 3;
+  __REG32 SMP17           : 3;
+  __REG32 SMP18           : 3;
+  __REG32                 : 5;
+} __adc_smpr1_bits;
+
+/* ADC sample time register 2 (ADC_SMPR2) */
+typedef struct {
+  __REG32 SMP0            : 3;
+  __REG32 SMP1            : 3;
+  __REG32 SMP2            : 3;
+  __REG32 SMP3            : 3;
+  __REG32 SMP4            : 3;
+  __REG32 SMP5            : 3;
+  __REG32 SMP6            : 3;
+  __REG32 SMP7            : 3;
+  __REG32 SMP8            : 3;
+  __REG32 SMP9            : 3;
+  __REG32                 : 2;
+} __adc_smpr2_bits;
+
+/* ADC injected channel data offset register x (ADC_JOFRx)(x=1..4) */
+typedef struct {
+  __REG32 JOFFSET         :12;
+  __REG32                 :20;
+} __adc_jofr_bits;
+
+/* ADC watchdog high threshold register (ADC_HTR) */
+typedef struct {
+  __REG32 HT              :12;
+  __REG32                 :20;
+} __adc_htr_bits;
+
+/* ADC watchdog low threshold register (ADC_LTR) */
+typedef struct {
+  __REG32 LT              :12;
+  __REG32                 :20;
+} __adc_ltr_bits;
+
+/* ADC regular sequence register 1 (ADC_SQR1) */
+typedef struct {
+  __REG32 SQ13            : 5;
+  __REG32 SQ14            : 5;
+  __REG32 SQ15            : 5;
+  __REG32 SQ16            : 5;
+  __REG32 L               : 4;
+  __REG32                 : 8;
+} __adc_sqr1_bits;
+
+/* ADC regular sequence register 2 (ADC_SQR2) */
+typedef struct {
+  __REG32 SQ7             : 5;
+  __REG32 SQ8             : 5;
+  __REG32 SQ9             : 5;
+  __REG32 SQ10            : 5;
+  __REG32 SQ11            : 5;
+  __REG32 SQ12            : 5;
+  __REG32                 : 2;
+} __adc_sqr2_bits;
+
+/* ADC regular sequence register 3 (ADC_SQR3) */
+typedef struct {
+  __REG32 SQ1             : 5;
+  __REG32 SQ2             : 5;
+  __REG32 SQ3             : 5;
+  __REG32 SQ4             : 5;
+  __REG32 SQ5             : 5;
+  __REG32 SQ6             : 5;
+  __REG32                 : 2;
+} __adc_sqr3_bits;
+
+/* ADC injected sequence register (ADC_JSQR) */
+typedef struct {
+  __REG32 JSQ1            : 5;
+  __REG32 JSQ2            : 5;
+  __REG32 JSQ3            : 5;
+  __REG32 JSQ4            : 5;
+  __REG32 JL              : 2;
+  __REG32                 :10;
+} __adc_jsqr_bits;
+
+/* ADC injected data register x (ADC_JDRx) (x= 1..4) */
+typedef struct {
+  __REG32 JDATA           :16;
+  __REG32                 :16;
+} __adc_jdr_bits;
+
+/* ADC regular data register (ADC_DR) */
+typedef struct {
+  __REG32 DATA            :16;
+  __REG32 ADC2DATA        :16;
+} __adc_dr_bits;
+
+/* ADC Common status register (ADC_CSR) */
+typedef struct {
+  __REG32 AWD1            : 1;
+  __REG32 EOC1            : 1;
+  __REG32 JEOC1           : 1;
+  __REG32 JSTRT1          : 1;
+  __REG32 STRT1           : 1;
+  __REG32 OVR1            : 1;
+  __REG32                 : 2;
+  __REG32 AWD2            : 1;
+  __REG32 EOC2            : 1;
+  __REG32 JEOC2           : 1;
+  __REG32 JSTRT2          : 1;
+  __REG32 STRT2           : 1;
+  __REG32 OVR2            : 1;
+  __REG32                 : 2;
+  __REG32 AWD3            : 1;
+  __REG32 EOC3            : 1;
+  __REG32 JEOC3           : 1;
+  __REG32 JSTRT3          : 1;
+  __REG32 STRT3           : 1;
+  __REG32 OVR3            : 1;
+  __REG32                 :10;
+} __adc_csr_bits;
+
+/* ADC common control register (ADC_CCR) */
+typedef struct {
+  __REG32 MULTI           : 5;
+  __REG32                 : 3;
+  __REG32 DELAY           : 4;
+  __REG32                 : 1;
+  __REG32 DDS             : 1;
+  __REG32 DMA             : 2;
+  __REG32 ADCPRE          : 2;
+  __REG32                 : 4;
+  __REG32 VBATE           : 1;
+  __REG32 TSVREFE         : 1;
+  __REG32                 : 8;
+} __adc_ccr_bits;
+
+/* ADC common regular data register for dual and triple modes (ADC_CDR) */
+typedef struct {
+  __REG32 DATA1           :16;
+  __REG32 DATA2           :16;
+} __adc_cdr_bits;
+
+
+/***************************************************************************
+ **
+ ** ADC
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC_CSR,           0x40012300,__READ       ,__adc_csr_bits);
+__IO_REG32_BIT(ADC_CCR,           0x40012304,__READ_WRITE ,__adc_ccr_bits);
+__IO_REG32_BIT(ADC_CDR,           0x40012308,__READ       ,__adc_cdr_bits);
+
+#define ADC1_SR_S 0X00
+#define ADC1_CR1_S 0X04
+#define ADC1_CR2_S 0X08
+#define ADC1_SMPR1_S 0X0C
+#define ADC1_SMPR2_S 0X10
+#define ADC1_JOFR1_S 0X14
+#define ADC1_JOFR2_S 0X18
+#define ADC1_JOFR3_S 0X1C
+#define ADC1_JOFR4_S 0X20
+#define ADC1_HTR_S 0X24
+#define ADC1_LTR_S 0X28
+#define ADC1_SQR1_S 0X2C
+#define ADC1_SQR2_S 0X30
+#define ADC1_SQR3_S 0X34
+#define ADC1_JSQR_S 0X38
+#define ADC1_JDR1_S 0X3C
+#define ADC1_JDR2_S 0X40
+#define ADC1_JDR3_S 0X44
+#define ADC1_JDR4_S 0X48
+#define ADC1_DR_S 0X4C
+
+/***************************************************************************
+ **
+ ** ADC1
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC1_SR,           ADC1_BASE + ADC1_SR_S,__READ_WRITE ,__adc_sr_bits);
+__IO_REG32_BIT(ADC1_CR1,          ADC1_BASE + ADC1_CR1_S,__READ_WRITE ,__adc_cr1_bits);
+__IO_REG32_BIT(ADC1_CR2,          ADC1_BASE + ADC1_CR2_S,__READ_WRITE ,__adc_cr2_bits);
+__IO_REG32_BIT(ADC1_SMPR1,        ADC1_BASE + ADC1_SMPR1_S,__READ_WRITE ,__adc_smpr1_bits);
+__IO_REG32_BIT(ADC1_SMPR2,        ADC1_BASE + ADC1_SMPR2_S,__READ_WRITE ,__adc_smpr2_bits);
+__IO_REG32_BIT(ADC1_JOFR1,        ADC1_BASE + ADC1_JOFR1_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC1_JOFR2,        ADC1_BASE + ADC1_JOFR2_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC1_JOFR3,        ADC1_BASE + ADC1_JOFR3_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC1_JOFR4,        ADC1_BASE + ADC1_JOFR4_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC1_HTR,          ADC1_BASE + ADC1_HTR_S,__READ_WRITE ,__adc_htr_bits);
+__IO_REG32_BIT(ADC1_LTR,          ADC1_BASE + ADC1_LTR_S,__READ_WRITE ,__adc_ltr_bits);
+__IO_REG32_BIT(ADC1_SQR1,         ADC1_BASE + ADC1_SQR1_S,__READ_WRITE ,__adc_sqr1_bits);
+__IO_REG32_BIT(ADC1_SQR2,         ADC1_BASE + ADC1_SQR2_S,__READ_WRITE ,__adc_sqr2_bits);
+__IO_REG32_BIT(ADC1_SQR3,         ADC1_BASE + ADC1_SQR3_S,__READ_WRITE ,__adc_sqr3_bits);
+__IO_REG32_BIT(ADC1_JSQR,         ADC1_BASE + ADC1_JSQR_S,__READ_WRITE ,__adc_jsqr_bits);
+__IO_REG32_BIT(ADC1_JDR1,         ADC1_BASE + ADC1_JDR1_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC1_JDR2,         ADC1_BASE + ADC1_JDR2_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC1_JDR3,         ADC1_BASE + ADC1_JDR3_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC1_JDR4,         ADC1_BASE + ADC1_JDR4_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC1_DR,           ADC1_BASE + ADC1_DR_S,__READ       ,__adc_dr_bits);
+
+/***************************************************************************
+ **
+ ** ADC2
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC2_SR,           ADC2_BASE + ADC1_SR_S,__READ_WRITE ,__adc_sr_bits);
+__IO_REG32_BIT(ADC2_CR1,          ADC2_BASE + ADC1_CR1_S,__READ_WRITE ,__adc_cr1_bits);
+__IO_REG32_BIT(ADC2_CR2,          ADC2_BASE + ADC1_CR2_S,__READ_WRITE ,__adc_cr2_bits);
+__IO_REG32_BIT(ADC2_SMPR1,        ADC2_BASE + ADC1_SMPR1_S,__READ_WRITE ,__adc_smpr1_bits);
+__IO_REG32_BIT(ADC2_SMPR2,        ADC2_BASE + ADC1_SMPR2_S,__READ_WRITE ,__adc_smpr2_bits);
+__IO_REG32_BIT(ADC2_JOFR1,        ADC2_BASE + ADC1_JOFR1_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC2_JOFR2,        ADC2_BASE + ADC1_JOFR2_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC2_JOFR3,        ADC2_BASE + ADC1_JOFR3_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC2_JOFR4,        ADC2_BASE + ADC1_JOFR4_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC2_HTR,          ADC2_BASE + ADC1_HTR_S,__READ_WRITE ,__adc_htr_bits);
+__IO_REG32_BIT(ADC2_LTR,          ADC2_BASE + ADC1_LTR_S,__READ_WRITE ,__adc_ltr_bits);
+__IO_REG32_BIT(ADC2_SQR1,         ADC2_BASE + ADC1_SQR1_S,__READ_WRITE ,__adc_sqr1_bits);
+__IO_REG32_BIT(ADC2_SQR2,         ADC2_BASE + ADC1_SQR2_S,__READ_WRITE ,__adc_sqr2_bits);
+__IO_REG32_BIT(ADC2_SQR3,         ADC2_BASE + ADC1_SQR3_S,__READ_WRITE ,__adc_sqr3_bits);
+__IO_REG32_BIT(ADC2_JSQR,         ADC2_BASE + ADC1_JSQR_S,__READ_WRITE ,__adc_jsqr_bits);
+__IO_REG32_BIT(ADC2_JDR1,         ADC2_BASE + ADC1_JDR1_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC2_JDR2,         ADC2_BASE + ADC1_JDR2_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC2_JDR3,         ADC2_BASE + ADC1_JDR3_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC2_JDR4,         ADC2_BASE + ADC1_JDR4_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC2_DR,           ADC2_BASE + ADC1_DR_S,__READ       ,__adc_dr_bits);
+
+/***************************************************************************
+ **
+ ** ADC3
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ADC3_SR,           ADC3_BASE + ADC1_SR_S,__READ_WRITE ,__adc_sr_bits);
+__IO_REG32_BIT(ADC3_CR1,          ADC3_BASE + ADC1_CR1_S,__READ_WRITE ,__adc_cr1_bits);
+__IO_REG32_BIT(ADC3_CR2,          ADC3_BASE + ADC1_CR2_S,__READ_WRITE ,__adc_cr2_bits);
+__IO_REG32_BIT(ADC3_SMPR1,        ADC3_BASE + ADC1_SMPR1_S,__READ_WRITE ,__adc_smpr1_bits);
+__IO_REG32_BIT(ADC3_SMPR2,        ADC3_BASE + ADC1_SMPR2_S,__READ_WRITE ,__adc_smpr2_bits);
+__IO_REG32_BIT(ADC3_JOFR1,        ADC3_BASE + ADC1_JOFR1_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC3_JOFR2,        ADC3_BASE + ADC1_JOFR2_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC3_JOFR3,        ADC3_BASE + ADC1_JOFR3_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC3_JOFR4,        ADC3_BASE + ADC1_JOFR4_S,__READ_WRITE ,__adc_jofr_bits);
+__IO_REG32_BIT(ADC3_HTR,          ADC3_BASE + ADC1_HTR_S,__READ_WRITE ,__adc_htr_bits);
+__IO_REG32_BIT(ADC3_LTR,          ADC3_BASE + ADC1_LTR_S,__READ_WRITE ,__adc_ltr_bits);
+__IO_REG32_BIT(ADC3_SQR1,         ADC3_BASE + ADC1_SQR1_S,__READ_WRITE ,__adc_sqr1_bits);
+__IO_REG32_BIT(ADC3_SQR2,         ADC3_BASE + ADC1_SQR2_S,__READ_WRITE ,__adc_sqr2_bits);
+__IO_REG32_BIT(ADC3_SQR3,         ADC3_BASE + ADC1_JDR3_S,__READ_WRITE ,__adc_sqr3_bits);
+__IO_REG32_BIT(ADC3_JSQR,         ADC3_BASE + ADC1_JSQR_S,__READ_WRITE ,__adc_jsqr_bits);
+__IO_REG32_BIT(ADC3_JDR1,         ADC3_BASE + ADC1_JDR1_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC3_JDR2,         ADC3_BASE + ADC1_JDR2_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC3_JDR3,         ADC3_BASE + ADC1_JDR3_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC3_JDR4,         ADC3_BASE + ADC1_JDR4_S,__READ       ,__adc_jdr_bits);
+__IO_REG32_BIT(ADC3_DR,           ADC3_BASE + ADC1_DR_S,__READ       ,__adc_dr_bits);
+
+struct adc_regs_t
+{
+  IRS_IO_REG32_BIT(ADC3_SR, __READ_WRITE ,__adc_sr_bits);
+  IRS_IO_REG32_BIT(ADC3_CR1, __READ_WRITE ,__adc_cr1_bits);
+  IRS_IO_REG32_BIT(ADC3_CR2, __READ_WRITE ,__adc_cr2_bits);
+  IRS_IO_REG32_BIT(ADC3_SMPR1, __READ_WRITE ,__adc_smpr1_bits);
+  IRS_IO_REG32_BIT(ADC3_SMPR2, __READ_WRITE ,__adc_smpr2_bits);
+  IRS_IO_REG32_BIT(ADC3_JOFR1, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC3_JOFR2, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC3_JOFR3, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC3_JOFR4, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC3_HTR, __READ_WRITE ,__adc_htr_bits);
+  IRS_IO_REG32_BIT(ADC3_LTR, __READ_WRITE ,__adc_ltr_bits);
+  IRS_IO_REG32_BIT(ADC3_SQR1, __READ_WRITE ,__adc_sqr1_bits);
+  IRS_IO_REG32_BIT(ADC3_SQR2, __READ_WRITE ,__adc_sqr2_bits);
+  IRS_IO_REG32_BIT(ADC3_SQR3, __READ_WRITE ,__adc_sqr3_bits);
+  IRS_IO_REG32_BIT(ADC3_JSQR, __READ_WRITE ,__adc_jsqr_bits);
+  IRS_IO_REG32_BIT(ADC3_JDR1, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC3_JDR2, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC3_JDR3, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC3_JDR4, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC3_DR, __READ       ,__adc_dr_bits);
+};
 #endif  //  IRS_STM32F2xx
 
 #endif // armregs_stm32f2xxH

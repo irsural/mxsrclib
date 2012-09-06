@@ -113,8 +113,10 @@ enum {
   #endif // __LM3SxBxx__
 
   #elif defined(IRS_STM32F2xx)
-
+  //tim1_brk_tim9_int,
+  tim1_up_tim10_int,
   tim3_int,
+  tim8_brk_tim12_int,
   tim8_up_tim13_int,
 
   #endif //Микроконтроллеры
