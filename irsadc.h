@@ -512,7 +512,7 @@ struct dds_ad9854_data_t
   {
     irs_uarc index = a_start_index;
     ready_status_bit.connect(ap_data, index, 0);
-    ready_status_bit.connect(ap_data, index, 7);
+    reset_bit.connect(ap_data, index, 7);
     index++;
     index = phase_offset_code_1.connect(ap_data, index);
     index = phase_offset_code_2.connect(ap_data, index);
