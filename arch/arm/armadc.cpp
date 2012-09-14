@@ -899,12 +899,97 @@ void irs::arm::adc_stellaris_t::tick()
 }
 
 #elif defined(IRS_STM32F2xx)
-#ifdef NOP
+
 // class st_adc_t
-irs::arm::st_adc_t::st_adc_t(size_t a_adc_address, counter_t a_adc_interval)
+irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
+  select_channel_type a_selected_channels,
+  counter_t a_adc_interval
+):
+  mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
+  m_adc_timer(a_adc_interval),
+  m_regular_channels_values(),
+  m_active_channels(),
+  m_current_channel(),
+  m_temperature_channel_value()
 {
-  clock_enable(PF9);
   clock_enable(a_adc_address);
+  mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
+  mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
+  // 3: PCLK2 divided by 8
+  ADC_CCR_bit.ADCPRE = 3;
+
+  vector<pair<adc_channel_t, gpio_channel_t> > adc_gpio_pairs;
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA0_CH0, PA0));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA1_CH1, PA1));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA2_CH2, PA2));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA3_CH3, PA3));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA4_CH4, PA4));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF6_CH4, PF6));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA5_CH5, PA5));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF7_CH5, PF7));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA6_CH6, PA6));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF8_CH6, PF8));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA7_CH7, PA7));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF9_CH7, PF9));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PB0_CH8, PB0));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF10_CH8, PF10));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PB1_CH9, PB1));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF3_CH9, PF3));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC0_CH10, PC0));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC1_CH11, PC1));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC2_CH12, PC2));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC3_CH13, PC3));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PC4_CH14, PC4));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF4_CH14, PF4));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PC5_CH15, PC5));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF5_CH15, PF5));
+
+  for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
+    adc_channel_t adc_channel = adc_gpio_pairs[i].first;
+    const select_channel_type adc_mask = (ADC1 | ADC2 | ADC3) & adc_channel;
+    const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
+    if ((a_selected_channels & channel_mask) &&
+      (a_selected_channels & adc_mask)) {
+      clock_enable(adc_gpio_pairs[i].second);
+      analog_function_enable(adc_gpio_pairs[i].second);
+      m_active_channels.push_back(adc_channel_to_channel_index(adc_channel));
+      m_regular_channels_values.push_back(0);
+    }
+  }
+
+  if ((a_adc_address == ADC1_BASE) || !m_regular_channels_values.empty()) {
+    // Включаем АЦП
+    mp_adc->ADC_CR2_bit.ADON = 1;
+  }
+  // 0: Один канал
+  mp_adc->ADC_SQR1_bit.L = 0;
+  if (!m_active_channels.empty()) {
+    m_current_channel = 0;
+    mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
+    mp_adc->ADC_CR2_bit.SWSTART = 1;
+  }
+  if (a_adc_address == ADC1_BASE) {
+    ADC_CCR_bit.TSVREFE = 1;
+    // 0: Один встроенный канал
+    mp_adc->ADC_JSQR_bit.JL = 0;
+    // Конфигурируем на считывание показаний внутреннего термодатчика
+    mp_adc->ADC_JSQR_bit.JSQ4 = 16;
+    mp_adc->ADC_CR2_bit.JSWSTART = 1;
+  }
+}
+
+irs_u32 irs::arm::st_adc_t::adc_channel_to_channel_index(
+  adc_channel_t a_adc_channel)
+{
+  irs_u16 adc_channel = static_cast<irs_u16>(a_adc_channel);
+  for (size_t i = 0; i < reqular_channel_count; i++) {
+    if (adc_channel & 0x1) {
+      return i;
+    }
+    adc_channel >>= 1;
+  }
+  IRS_LIB_ERROR(ec_standard, "Канал не выбран");
+  return 0;
 }
 
 irs::arm::st_adc_t::~st_adc_t()
@@ -913,46 +998,96 @@ irs::arm::st_adc_t::~st_adc_t()
 
 irs_u16 irs::arm::st_adc_t::get_u16_minimum()
 {
+  return 0;
 }
 
 irs_u16 irs::arm::st_adc_t::get_u16_maximum()
 {
+  return static_cast<irs_u16>(adc_max_value) << (16 - adc_resolution);
 }
 
 irs_u16 irs::arm::st_adc_t::get_u16_data(irs_u8 a_channel)
 {
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_regular_channels_values[a_channel] << (16 - adc_resolution);
 }
 
 irs_u32 irs::arm::st_adc_t::get_u32_minimum()
 {
+  return 0;
 }
 
 irs_u32 irs::arm::st_adc_t::get_u32_maximum()
 {
+  return static_cast<irs_u32>(adc_max_value) << (32 - adc_resolution);
 }
 
 irs_u32 irs::arm::st_adc_t::get_u32_data(irs_u8 a_channel)
 {
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_regular_channels_values[a_channel] << (32 - adc_resolution);
 }
 
 float irs::arm::st_adc_t::get_float_minimum()
 {
+  return 0.f;
 }
 
 float irs::arm::st_adc_t::get_float_maximum()
 {
+  return 1.f;
 }
 
 float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 {
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return static_cast<float>(m_regular_channels_values[a_channel])/adc_max_value;
 }
 
 float irs::arm::st_adc_t::get_temperature()
 {
+  if (reinterpret_cast<size_t>(mp_adc) == ADC1_BASE) {
+    const float v25 = 0.76;
+    const float avg_Slope = 2.5;
+    const float v_ref = 3.3;
+    const float koef = v_ref/adc_max_value;
+    const float v_sence = m_temperature_channel_value*koef;
+    // Формула не работает!!!
+    return (v_sence - v25)/avg_Slope + 25;
+  } else {
+    return 0;
+  }
 }
 
 void irs::arm::st_adc_t::tick()
 {
+  if (m_adc_timer.check()) {
+    if (mp_adc->ADC_SR_bit.EOC == 1) {
+      m_regular_channels_values[m_current_channel] =
+        static_cast<irs_u16>(mp_adc->ADC_DR);
+      //IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
+        //" ADC_DR =  " << m_regular_channels_values[m_current_channel] << endl);
+      m_current_channel++;
+      if (m_current_channel >= m_active_channels.size()) {
+        m_current_channel = 0;
+      }
+      mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
+      mp_adc->ADC_CR2_bit.SWSTART = 1;
+    }
+    if (reinterpret_cast<size_t>(mp_adc) == ADC1_BASE) {
+      if (mp_adc->ADC_SR_bit.JEOC == 1) {
+        m_temperature_channel_value =
+          static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
+        mp_adc->ADC_CR2_bit.JSWSTART = 1;
+      }
+    }
+  }
 }
-#endif // NOP
+
 #endif // IRS_STM32F2xx

@@ -142,7 +142,6 @@ void get_coef_window_func_blackman(
   const irs_size_t a_order,
   coef_list_type* ap_coef_list);
 
-
 template <class coef_list_type>
 void get_coef_window_func_nutall(
   const irs_size_t a_order,
@@ -359,7 +358,7 @@ void iir_filter_t<T>::set_coefficients(
 
 template <class T>
 void iir_filter_t<T>::sync(T a_value)
-{ 
+{
   m_in_delay_line.assign(m_in_delay_line.size(), a_value);
   m_out_delay_line.assign(m_out_delay_line.size(), a_value);
 }
@@ -462,7 +461,7 @@ void fir_filter_t<value_t>::set(const value_type a_sample)
   m_sum = 0;
   if (!m_delay_line.empty()) {
     m_delay_line.pop_back();
-    m_delay_line.insert(m_delay_line.begin(), a_sample);   
+    m_delay_line.insert(m_delay_line.begin(), a_sample);
     calc_sum();
   } else {
     // Для фильтра нулевого порядка в качестве выходного сигнала возвращаем ноль
@@ -539,7 +538,7 @@ bool get_coef_iir_filter(
 {
   typedef typename coef_list_type::value_type value_type;
   typedef irs_size_t size_type;
-  
+
   bool fsuccess = true;
 
   const filter_family_t family = a_filter_settings.family;
@@ -717,7 +716,7 @@ bool get_coef_iir_filter(
       wr = -wr;
     }
     cbp = wr;
-    
+
     #if (IRS_LIB_FILTER_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
     value_type h = 0;
     if((bandform == fb_high_pass) || (bandform == fb_band_stop)) {
@@ -1201,7 +1200,7 @@ int spln(
         (*ap_zs_array)[lr + 1] = b;
       }
       if((a_bandform == fb_high_pass) || (a_bandform == fb_band_stop)) {
-        
+
         const size_t nt = *ap_np + *ap_nz;
         int ii = 0;
         for(size_t j = 0; j < nt; j++) {
@@ -1345,7 +1344,7 @@ int zplna(
           (*ap_z_array)[*ap_jt] = cnum;
           if(cnum.imag() != 0.0) {
             *ap_jt += 1;
-            (*ap_z_array)[*ap_jt] = complex<T>(cnum.real(), -cnum.imag()); 
+            (*ap_z_array)[*ap_jt] = complex<T>(cnum.real(), -cnum.imag());
           }
           if( (r.imag() != 0.0) || (cnum.imag() == 0) ) {
             // -b - sqrt( b^2 - 4ac)
@@ -1360,7 +1359,7 @@ int zplna(
             }
           }
         }
-      } // end switch 
+      } // end switch
     } while(--nc > 0);
 
     if(icnt == 0) {
@@ -1368,7 +1367,7 @@ int zplna(
       if(a_nz <= 0) {
         if((a_family == ff_butterworth) ||
           (a_family == ff_chebyshev_ripple_pass)) {
-          
+
           return(0);
         } else {
           break;
@@ -1376,7 +1375,7 @@ int zplna(
       }
     }
     nc = a_nz;
-  } // end for() loop 
+  } // end for() loop
   return 0;
 }
 
@@ -1402,7 +1401,7 @@ int zplnb(
       if((a_bandform == fb_low_pass) ||
         (a_bandform == fb_band_pass) ||
         (a_bandform == fb_band_stop)) {
-        
+
         IRS_LIB_FILTER_DBG_MSG("adding zero at Nyquist frequency");
         jt += 1;
         (*ap_z_array)[jt] = complex<T>(-1.0, 0.0); // zero at Nyquist frequency
@@ -1416,7 +1415,7 @@ int zplnb(
   } else { /* elliptic */
     while(2 * a_zord - 1 > jt) {
       jt += 1;
-      (*ap_z_array)[jt] = complex<T>(-1.0, 0.0); // zero at Nyquist frequency 
+      (*ap_z_array)[jt] = complex<T>(-1.0, 0.0); // zero at Nyquist frequency
       if((a_bandform == fb_band_pass) || (a_bandform == fb_band_stop) ) {
         jt += 1;
         (*ap_z_array)[jt] = complex<T>(1.0, 0.0); // zero at 0 Hz
@@ -1460,7 +1459,7 @@ int zplnb(
           " y[jh+1]=" <<
           *reinterpret_cast<const __int64*>(&(*ap_y_array)[jh+1]) <<
           dec);*/
-      } 
+      }
     }
     if(icnt == 0) {
       ap_aa_array->insert(ap_aa_array->begin(), ap_pp_array->begin(),
@@ -1648,11 +1647,11 @@ T response(
   const T a_amp,
   const size_t a_zord,
   const vector<complex<T> >& a_z_array)
-{       
+{
   complex<T> j(0.0, 1.0);
   T omega = 2.0*IRS_PI*a_f;
   T Tn = 1/a_fs;
-  complex<T> x = exp(j*omega*Tn);      
+  complex<T> x = exp(j*omega*Tn);
 
   complex<T> num = 1.0;
   complex<T> den = 1.0;
@@ -1660,12 +1659,12 @@ T response(
 	// w = (exp(j*omega*T) - z[order]) * (exp(j*omega*T) - z[order+1])... /
 	// (exp(j*omega*T) - z[0]) * (exp(j*omega*T) - z[2])...
 	for(size_t i = 0; i < a_zord; i++) {
-		w = x - a_z_array[i];      
+		w = x - a_z_array[i];
 		den *= w;
-    w = x - a_z_array[i + a_zord]; 
+    w = x - a_z_array[i + a_zord];
     num *= w;
 	}
-  w = num/den;  
+  w = num/den;
   return abs(w*a_amp);
 }
 
@@ -1732,7 +1731,7 @@ int ellpj(
   T b;
   T phi;
   T t;
-  T twon;    
+  T twon;
   T a[9], c[9];
   int i;
 
@@ -1891,7 +1890,7 @@ T ellik(const T a_phi, const T a_m)
     a = 1.0;
     T c = sqrt(a_m);
     int d = 1;
-    int mod = 0;  
+    int mod = 0;
     while(fabs(c/a) > MACHEP) {
       temp = b/a;
       phi = phi + atan(t*temp) + mod*IRS_PI;
@@ -1902,7 +1901,7 @@ T ellik(const T a_phi, const T a_m)
       a = ( a + b )/2.0;
       b = temp;
       d += d;
-    }       
+    }
     temp = (atan(t) + mod*IRS_PI)/(d*a);
   }
   if( sign < 0 ) {
@@ -1912,14 +1911,14 @@ T ellik(const T a_phi, const T a_m)
   return( temp );
 }
 
-template <class T>                
+template <class T>
 T polevl(const T a_x, const double* ap_coef, const int a_n)
 {
   T ans = *ap_coef++;
   int i = a_n;
   do {
     ans = ans * a_x  +  *ap_coef++;
-  } while( --i ); 
+  } while( --i );
   return(ans);
 }
 
@@ -1972,7 +1971,7 @@ inline bool get_coef_iir_filter_test()
     &denom_coef_list);
   if (success) {
     success &= num_coef_list.size() == denom_coef_list.size();
-    success &= num_coef_list.size() == (order + 1);   
+    success &= num_coef_list.size() == (order + 1);
   } else {
     // Прекращаем проверку
   }
@@ -2012,7 +2011,7 @@ inline bool get_coef_iir_filter_test()
   }
   if (success) {
     success &= num_coef_list.size() == denom_coef_list.size();
-    success &= num_coef_list.size() == (order + 1);   
+    success &= num_coef_list.size() == (order + 1);
   } else {
     // Прекращаем проверку
   }
@@ -2094,7 +2093,7 @@ inline bool get_coef_iir_filter_test()
   if (success) {
     success &= (equals_value ==
       compare_value(num_coef_list[0], 1.631435038562584e-01, epsilon));
-    success &= (equals_value ==                                        
+    success &= (equals_value ==
       compare_value(num_coef_list[1], -1.165736846345882e-04, epsilon));
     success &= (equals_value ==
       compare_value(num_coef_list[2], -3.260263410292863e-01, epsilon));

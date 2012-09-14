@@ -14,15 +14,29 @@
 #include <armioregs.h>
 #include <armcfg.h>
 #include <irsdsp.h>
-#include <irsdev.h>
 #endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE
 #include <irserror.h>
 #endif  //  PWM_ZERO_PULSE
 
+#include <irsdev.h>
+
 #include <irsfinal.h>
 
+// class pwm_gen_t
+
+irs::cpu_traits_t::frequency_type irs::pwm_gen_t::get_max_frequency()
+{
+  return get_timer_frequency()/2;
+}
+
+irs::cpu_traits_t::frequency_type irs::pwm_gen_t::get_timer_frequency()
+{
+  // Эта функция создана для обратной совместимости
+  IRS_LIB_ERROR(ec_standard, "Не реализована");
+  return 0;
+}
 
 #ifdef __ICCARM__
 
@@ -942,7 +956,7 @@ void irs::arm::st_pwm_gen_t::set_duty(irs_uarc a_duty)
 void irs::arm::st_pwm_gen_t::set_duty(float a_duty)
 {
   m_duty = a_duty;
-  *mp_tim_ccr = static_cast<irs_u32>(a_duty*timer_frequency()/m_frequency);
+  *mp_tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
 }
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
@@ -955,10 +969,15 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
 
 irs_uarc irs::arm::st_pwm_gen_t::get_max_duty()
 {
-  return 1/get_max_frequency() - 1;
+  return get_max_frequency()/m_frequency - 1;
 }
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_max_frequency()
+{
+  return get_timer_frequency()/2;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_timer_frequency()
 {
   return timer_frequency();
 }

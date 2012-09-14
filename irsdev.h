@@ -47,7 +47,8 @@ public:
   virtual cpu_traits_t::frequency_type set_frequency(
     cpu_traits_t::frequency_type  a_frequency) = 0; // Ãö
   virtual irs_uarc get_max_duty() = 0;
-  virtual cpu_traits_t::frequency_type get_max_frequency() = 0;
+  virtual cpu_traits_t::frequency_type get_max_frequency();
+  virtual cpu_traits_t::frequency_type get_timer_frequency();
 };
 
 #ifndef __WATCOMC__
@@ -204,6 +205,7 @@ public:
     cpu_traits_t::frequency_type  a_frequency);
   virtual irs_uarc get_max_duty();
   virtual cpu_traits_t::frequency_type get_max_frequency();
+  virtual cpu_traits_t::frequency_type get_timer_frequency();
   void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
   void break_disable();
   void complementary_channel_enable(gpio_channel_t a_gpio_channel);

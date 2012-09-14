@@ -3173,27 +3173,159 @@ __IO_REG32_BIT(ADC3_DR,           ADC3_BASE + ADC1_DR_S,__READ       ,__adc_dr_b
 
 struct adc_regs_t
 {
-  IRS_IO_REG32_BIT(ADC3_SR, __READ_WRITE ,__adc_sr_bits);
-  IRS_IO_REG32_BIT(ADC3_CR1, __READ_WRITE ,__adc_cr1_bits);
-  IRS_IO_REG32_BIT(ADC3_CR2, __READ_WRITE ,__adc_cr2_bits);
-  IRS_IO_REG32_BIT(ADC3_SMPR1, __READ_WRITE ,__adc_smpr1_bits);
-  IRS_IO_REG32_BIT(ADC3_SMPR2, __READ_WRITE ,__adc_smpr2_bits);
-  IRS_IO_REG32_BIT(ADC3_JOFR1, __READ_WRITE ,__adc_jofr_bits);
-  IRS_IO_REG32_BIT(ADC3_JOFR2, __READ_WRITE ,__adc_jofr_bits);
-  IRS_IO_REG32_BIT(ADC3_JOFR3, __READ_WRITE ,__adc_jofr_bits);
-  IRS_IO_REG32_BIT(ADC3_JOFR4, __READ_WRITE ,__adc_jofr_bits);
-  IRS_IO_REG32_BIT(ADC3_HTR, __READ_WRITE ,__adc_htr_bits);
-  IRS_IO_REG32_BIT(ADC3_LTR, __READ_WRITE ,__adc_ltr_bits);
-  IRS_IO_REG32_BIT(ADC3_SQR1, __READ_WRITE ,__adc_sqr1_bits);
-  IRS_IO_REG32_BIT(ADC3_SQR2, __READ_WRITE ,__adc_sqr2_bits);
-  IRS_IO_REG32_BIT(ADC3_SQR3, __READ_WRITE ,__adc_sqr3_bits);
-  IRS_IO_REG32_BIT(ADC3_JSQR, __READ_WRITE ,__adc_jsqr_bits);
-  IRS_IO_REG32_BIT(ADC3_JDR1, __READ       ,__adc_jdr_bits);
-  IRS_IO_REG32_BIT(ADC3_JDR2, __READ       ,__adc_jdr_bits);
-  IRS_IO_REG32_BIT(ADC3_JDR3, __READ       ,__adc_jdr_bits);
-  IRS_IO_REG32_BIT(ADC3_JDR4, __READ       ,__adc_jdr_bits);
-  IRS_IO_REG32_BIT(ADC3_DR, __READ       ,__adc_dr_bits);
+  IRS_IO_REG32_BIT(ADC_SR, __READ_WRITE ,__adc_sr_bits);
+  IRS_IO_REG32_BIT(ADC_CR1, __READ_WRITE ,__adc_cr1_bits);
+  IRS_IO_REG32_BIT(ADC_CR2, __READ_WRITE ,__adc_cr2_bits);
+  IRS_IO_REG32_BIT(ADC_SMPR1, __READ_WRITE ,__adc_smpr1_bits);
+  IRS_IO_REG32_BIT(ADC_SMPR2, __READ_WRITE ,__adc_smpr2_bits);
+  IRS_IO_REG32_BIT(ADC_JOFR1, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC_JOFR2, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC_JOFR3, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC_JOFR4, __READ_WRITE ,__adc_jofr_bits);
+  IRS_IO_REG32_BIT(ADC_HTR, __READ_WRITE ,__adc_htr_bits);
+  IRS_IO_REG32_BIT(ADC_LTR, __READ_WRITE ,__adc_ltr_bits);
+  IRS_IO_REG32_BIT(ADC_SQR1, __READ_WRITE ,__adc_sqr1_bits);
+  IRS_IO_REG32_BIT(ADC_SQR2, __READ_WRITE ,__adc_sqr2_bits);
+  IRS_IO_REG32_BIT(ADC_SQR3, __READ_WRITE ,__adc_sqr3_bits);
+  IRS_IO_REG32_BIT(ADC_JSQR, __READ_WRITE ,__adc_jsqr_bits);
+  IRS_IO_REG32_BIT(ADC_JDR1, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC_JDR2, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC_JDR3, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC_JDR4, __READ       ,__adc_jdr_bits);
+  IRS_IO_REG32_BIT(ADC_DR, __READ       ,__adc_dr_bits);
 };
+
+/* DAC control register (DAC_CR) */
+typedef struct {
+  __REG32 EN1             : 1;
+  __REG32 BOFF1           : 1;
+  __REG32 TEN1            : 1;
+  __REG32 TSEL1           : 3;
+  __REG32 WAVE1           : 2;
+  __REG32 MAMP1           : 4;
+  __REG32 DMAEN1          : 1;
+  __REG32 DMAUDRIE1       : 1;
+  __REG32                 : 2;
+  __REG32 EN2             : 1;
+  __REG32 BOFF2           : 1;
+  __REG32 TEN2            : 1;
+  __REG32 TSEL2           : 3;
+  __REG32 WAVE2           : 2;
+  __REG32 MAMP2           : 4;
+  __REG32 DMAEN2          : 1;
+  __REG32 DMAUDRIE2       : 1;
+  __REG32                 : 2;
+} __dac_cr_bits;
+
+/* DAC Software Trigger Register (DAC_SWTRIGR) */
+typedef struct {
+  __REG32 SWTRIG1         : 1;
+  __REG32 SWTRIG2         : 1;
+  __REG32                 :30;
+} __dac_swtrigr_bits;
+
+/* DAC channel1 12-bit Right-aligned Data Holding Register (DAC_DHR12R1) */
+typedef struct {
+  __REG32 DACC1DHR        :12;
+  __REG32                 :20;
+} __dac_dhr12r1_bits;
+
+/* DAC channel1 12-bit Left aligned Data Holding Register (DAC_DHR12L1) */
+typedef struct {
+  __REG32                 : 4;
+  __REG32 DACC1DHR        :12;
+  __REG32                 :16;
+} __dac_dhr12l1_bits;
+
+/* DAC channel1 8-bit Right aligned Data Holding Register (DAC_DHR8R1) */
+typedef struct {
+  __REG32 DACC1DHR        : 8;
+  __REG32                 :24;
+} __dac_dhr8r1_bits;
+
+/* DAC channel2 12-bit Right aligned Data Holding Register (DAC_DHR12R2) */
+typedef struct {
+  __REG32 DACC2DHR        :12;
+  __REG32                 :20;
+} __dac_dhr12r2_bits;
+
+/* DAC channel2 12-bit Left aligned Data Holding Register (DAC_DHR12L2) */
+typedef struct {
+  __REG32                 : 4;
+  __REG32 DACC2DHR        :12;
+  __REG32                 :16;
+} __dac_dhr12l2_bits;
+
+/* DAC channel2 8-bit Right-aligned Data Holding Register (DAC_DHR8R2) */
+typedef struct {
+  __REG32 DACC2DHR        : 8;
+  __REG32                 :24;
+} __dac_dhr8r2_bits;
+
+/* Dual DAC 12-bit Right-aligned Data Holding Register (DAC_DHR12RD) */
+typedef struct {
+  __REG32 DACC1DHR        :12;
+  __REG32                 : 4;
+  __REG32 DACC2DHR        :12;
+  __REG32                 : 4;
+} __dac_dhr12rd_bits;
+
+/* DUAL DAC 12-bit Left aligned Data Holding Register (DAC_DHR12LD) */
+typedef struct {
+  __REG32                 : 4;
+  __REG32 DACC1DHR        :12;
+  __REG32                 : 4;
+  __REG32 DACC2DHR        :12;
+} __dac_dhr12ld_bits;
+
+/* DUAL DAC 8-bit Right aligned Data Holding Register (DAC_DHR8RD) */
+typedef struct {
+  __REG32 DACC1DHR        : 8;
+  __REG32 DACC2DHR        : 8;
+  __REG32                 :16;
+} __dac_dhr8rd_bits;
+
+/* DAC channel1 Data Output Register (DAC_DOR1) */
+typedef struct {
+  __REG32 DACC1DOR        :12;
+  __REG32                 :20;
+} __dac_dor1_bits;
+
+/* DAC channel2 Data Output Register (DAC_DOR2) */
+typedef struct {
+  __REG32 DACC2DOR        :12;
+  __REG32                 :20;
+} __dac_dor2_bits;
+
+/* DAC status register (DAC_SR) */
+typedef struct {
+  __REG32                 :13;
+  __REG32 DMAUDR1         : 1;
+  __REG32                 :15;
+  __REG32 DMAUDR2         : 1;
+  __REG32                 : 2;
+} __dac_sr_bits;
+
+/***************************************************************************
+ **
+ ** DAC
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(DAC_CR,            0x40007400,__READ_WRITE ,__dac_cr_bits     );
+__IO_REG32_BIT(DAC_SWTRIGR,       0x40007404,__READ_WRITE ,__dac_swtrigr_bits);
+__IO_REG32_BIT(DAC_DHR12R1,       0x40007408,__READ_WRITE ,__dac_dhr12r1_bits);
+__IO_REG32_BIT(DAC_DHR12L1,       0x4000740C,__READ_WRITE ,__dac_dhr12l1_bits);
+__IO_REG32_BIT(DAC_DHR8R1,        0x40007410,__READ_WRITE ,__dac_dhr8r1_bits );
+__IO_REG32_BIT(DAC_DHR12R2,       0x40007414,__READ_WRITE ,__dac_dhr12r2_bits);
+__IO_REG32_BIT(DAC_DHR12L2,       0x40007418,__READ_WRITE ,__dac_dhr12l2_bits);
+__IO_REG32_BIT(DAC_DHR8R2,        0x4000741C,__READ_WRITE ,__dac_dhr8r2_bits );
+__IO_REG32_BIT(DAC_DHR12RD,       0x40007420,__READ_WRITE ,__dac_dhr12rd_bits);
+__IO_REG32_BIT(DAC_DHR12LD,       0x40007424,__READ_WRITE ,__dac_dhr12ld_bits);
+__IO_REG32_BIT(DAC_DHR8RD,        0x40007428,__READ_WRITE ,__dac_dhr8rd_bits );
+__IO_REG32_BIT(DAC_DOR1,          0x4000742C,__READ_WRITE ,__dac_dor1_bits   );
+__IO_REG32_BIT(DAC_DOR2,          0x40007430,__READ_WRITE ,__dac_dor2_bits   );
+__IO_REG32_BIT(DAC_SR,            0x40007434,__READ_WRITE ,__dac_sr_bits   );
+
 #endif  //  IRS_STM32F2xx
 
 #endif // armregs_stm32f2xxH

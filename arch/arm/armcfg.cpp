@@ -184,6 +184,10 @@ void irs::reset_peripheral(size_t a_address)
       RCC_APB2RSTR.ADCRST = 1;
       RCC_APB2RSTR.ADCRST = 0;
     } break;*/
+    case DAC1_DAC2_BASE: {
+      RCC_APB1RSTR_bit.DACRST = 1;
+      RCC_APB1RSTR_bit.DACRST = 0;
+    } break;
     default : {
       IRS_ASSERT_MSG("Сброс для указанного устройства не определен");
     }
@@ -318,6 +322,9 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     } break;
     case ADC3_BASE: {
       RCC_APB2ENR_bit.ADC3EN = value;
+    } break;
+    case DAC1_DAC2_BASE: {
+      RCC_APB1ENR_bit.DACEN = value;
     } break;
     default : {
       IRS_ASSERT_MSG("Включение/отключение для указанного "
