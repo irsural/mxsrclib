@@ -12,6 +12,7 @@
 
 #include <irsstd.h>
 #include <irsadcabs.h>
+#include <irsdacabs.h>
 
 #include <irsfinal.h>
 
@@ -179,9 +180,27 @@ private:
   vector<irs_u32> m_active_channels;
   size_t m_current_channel;
   irs_i16 m_temperature_channel_value;
-
 };
 
+//! \brief Драйвер ЦАП для контроллеров семейства STM32F2xx
+//! \author Lyashchov Maxim
+class st_dac_t: public dac_t
+{
+public:
+  typedef size_t size_type;
+  enum dac_channel_t {
+    DAC_PA4_CH0 = (1 << 0),
+    DAC_PA5_CH1 = (1 << 1)
+  };
+  st_dac_t(select_channel_type a_selected_channels);
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual void set_float_data(size_t a_channel, const float a_data);
+private:
+  void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
+  enum { dac_resolution = 12 };
+  enum { dac_max_value = 0xFFF };
+};
 #endif  //  IRS_STM32F2xx
 
 } // namespace arm

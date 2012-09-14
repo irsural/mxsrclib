@@ -1090,4 +1090,53 @@ void irs::arm::st_adc_t::tick()
   }
 }
 
+// class st_dac_t
+irs::arm::st_dac_t::st_dac_t(select_channel_type a_selected_channels)
+{
+  irs::clock_enable(DAC1_DAC2_BASE);
+  if (a_selected_channels & DAC_PA4_CH0) {
+    irs::clock_enable(PA4);
+    irs::analog_function_enable(PA4);
+    DAC_CR_bit.EN1 = 1;
+  }
+  if (a_selected_channels & DAC_PA5_CH1) {
+    irs::clock_enable(PA5);
+    irs::analog_function_enable(PA5);
+    DAC_CR_bit.EN2 = 1;
+  }
+}
+
+irs::arm::st_dac_t::size_type irs::arm::st_dac_t::get_resolution() const
+{
+  return dac_resolution;
+}
+
+void irs::arm::st_dac_t::set_u32_data(size_type a_channel, const irs_u32 a_data)
+{
+  set_u16_normalized_data(a_channel,
+    static_cast<irs_u16>(a_data >> (32 - dac_resolution)));
+}
+
+void irs::arm::st_dac_t::set_float_data(size_type a_channel, const float a_data)
+{
+  if (a_data > 1.f) {
+    IRS_LIB_ERROR(ec_standard, "Значение должно быть от 0 до 1");
+  }
+  set_u16_normalized_data(a_channel,
+    static_cast<irs_u16>(a_data*dac_max_value));
+}
+
+void irs::arm::st_dac_t::set_u16_normalized_data(size_t a_channel,
+  const irs_u16 a_data)
+{
+  if (a_channel > 1) {
+    IRS_LIB_ERROR(ec_standard, "Недопустимый канал");
+  }
+  IRS_LIB_ASSERT(a_data <= dac_max_value);
+  if (a_channel == 0) {
+    DAC_DHR12R1_bit.DACC1DHR = a_data;
+  } else {
+    DAC_DHR12R2_bit.DACC2DHR = a_data;
+  }
+}
 #endif // IRS_STM32F2xx

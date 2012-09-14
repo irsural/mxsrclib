@@ -15,7 +15,7 @@
 namespace irs
 {
 
-//! \addtogroup string_processing_group
+//! \addtogroup drivers_group
 //! @{
 
 class adc_t
