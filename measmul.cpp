@@ -2716,7 +2716,7 @@ irs::v7_78_1_t::v7_78_1_t(mxifa_ch_t channel,
   m_get_voltage_dc_commands.push_back("VOLTage:DC:RANGe:AUTO ON");
   m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
   // Время интегрирования в количествах циклов сети питания
-  m_get_voltage_dc_commands.push_back("VOLT:DC:NPLCycles 10");
+  m_get_voltage_dc_commands.push_back("VOLTage:DC:NPLCycles 10");
   // запускаем измерение
   m_get_voltage_dc_commands.push_back("READ?");
 
@@ -3252,8 +3252,11 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_value_commands(0),
   m_analog_filter("INPut:FILTer:STATe "),
   m_configure_voltage_dc("CONFigure:VOLTage:DC "),
+  //m_configure_voltage_dc("MEASure:VOLTage:DC?"),
   m_configure_voltage_dc_index(0),
-  m_range_voltage_dc("SENSe1:VOLTage:DC:RANGe"),
+  //m_range_voltage_dc("SENSe1:VOLTage:DC:RANGe"),
+  //m_range_voltage_dc("VOLTage:DC:RANGe"),
+  m_range_voltage_dc("VOLTage:RANGe "),
   m_analog_filter_status("OFF"),
   m_analog_filter_voltage_dc_index(0),
   m_nplc_voltage_dc_index(0),
@@ -3268,6 +3271,11 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_range_resistance_4x("FRESistance:RANGe"),
   m_nplc_resistance_4x_index(0),
   m_get_resistance_4x_commands(),
+  m_select_channel_dc_index(0),
+  m_select_channel("ROUTe:TERMinals FRONt"),
+  m_channel(),
+  m_current_channel(0),
+  m_select_channel_command(),
   m_set_params_commands(),
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
@@ -3317,10 +3325,18 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_value_commands.push_back("TRIGger:SOURce IMMediate");
   m_get_value_commands.push_back("READ?");
 
+  //  Текущий канал
+  m_channel.clear();
+  m_channel.push_back("SENSe1:");
+  m_channel.push_back("SENSe2:");
+
   // Команды при чтении напряжения
   // Настраиваемся на измерение напряжения
   m_configure_voltage_dc_index = m_get_voltage_dc_commands.size();
+  //m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO");
   m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO");
+  //m_get_voltage_dc_commands.push_back(m_channel[m_current_channel] +
+    //m_range_voltage_dc + "AUTO");
   m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
   // Включение/выключение аналогового фильтра
   m_analog_filter_voltage_dc_index = m_get_voltage_dc_commands.size();
@@ -3328,7 +3344,13 @@ irs::agilent_34420a_t::agilent_34420a_t(
     m_analog_filter_status);
   m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
   // Время интегрирования в количествах циклов сети питания
-  m_get_voltage_dc_commands.push_back("SENSe1:VOLT:DC:NPLCycles 10");
+  m_get_voltage_dc_commands.push_back(m_channel[m_current_channel] +
+    "VOLTage:NPLCycles 10");
+  //  Текущий канал
+  m_select_channel_dc_index = m_get_voltage_dc_commands.size();
+  irs::string channel_str;
+  irs::num_to_str_classic(m_current_channel + 1, &channel_str);
+  m_get_voltage_dc_commands.push_back(m_select_channel + channel_str);
   // запускаем измерение
   m_get_voltage_dc_commands.push_back("READ?");
 
@@ -3735,8 +3757,8 @@ void irs::agilent_34420a_t::set_nplc(double nplc)
     nplc = 200;
   }
   irs::string nplc_str = nplc;
-  irs::string nplc_volt_dc_str =
-    static_cast<irs::string>("VOLTage:DC:NPLCycles " +  nplc_str);
+  irs::string nplc_volt_dc_str = m_channel[m_current_channel] +
+    static_cast<irs::string>("VOLTage:NPLCycles " + nplc_str);
   irs::string nplc_resistance_2x_str =
     static_cast<irs::string>("RESistance:NPLCycles " + nplc_str);
   irs::string nplc_resistance_4x_str =
@@ -3770,8 +3792,9 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
   switch(a_type_meas) {
     case tm_volt_dc: {
       m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
-        m_configure_voltage_dc + range_str;
-      m_set_params_commands.push_back(m_range_voltage_dc + " " + range_str);
+        m_channel[m_current_channel] + m_configure_voltage_dc + range_str;
+      m_set_params_commands.push_back(m_channel[m_current_channel] +
+        m_range_voltage_dc + range_str);
     } break;
     case tm_resistance_2x: {
       m_get_resistance_2x_commands[m_configure_resistance_2x_index] =
@@ -3797,7 +3820,7 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
 void irs::agilent_34420a_t::set_range_auto()
 {
   m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
-    m_configure_voltage_dc + "AUTO";
+    m_channel[m_current_channel] + m_configure_voltage_dc + "AUTO";
   m_get_resistance_2x_commands[m_configure_resistance_2x_index] =
     m_configure_resistance_2x + "AUTO";
   m_get_resistance_4x_commands[m_configure_resistance_4x_index] =
@@ -3808,6 +3831,22 @@ void irs::agilent_34420a_t::set_range_auto()
 void irs::agilent_34420a_t::set_time_interval_meas(
   const double /*a_time_interval_meas*/)
 {
+}
+
+void irs::agilent_34420a_t::get_voltage_ratio(double *voltage_ratio)
+{
+  *voltage_ratio = 0;
+}
+
+void irs::agilent_34420a_t::select_channel(size_t channel)
+{
+  if (channel == 1 || channel == 2) {
+    m_current_channel = channel - 1;
+    irs::string channel_str;
+    irs::num_to_str_classic(channel, &channel_str);
+    m_get_voltage_dc_commands[m_select_channel_dc_index] =
+      m_select_channel + channel_str;
+  }
 }
 
 // Класс для работы с частотомером электронно-счетным акип чз-85/3R

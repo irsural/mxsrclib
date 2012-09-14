@@ -143,6 +143,10 @@ public:
   virtual void get_time_interval(double *time_interval) = 0;
   // Чтение усредненного временного интервала (статусная команда)
   virtual void get_time_interval_average(double *ap_time_interval) = 0;
+  // Чтение отношения напряжений на 1-м и 2-м каналах
+  virtual void get_voltage_ratio(double *voltage_ratio) { *voltage_ratio = 0.; }
+  // Выбор канала для последующих измерений
+  virtual void select_channel(size_t /*channel*/) { }
 
   // Запуск автокалибровки мультиметра (мгновенная команда)
   virtual void auto_calibration() = 0;
@@ -1977,7 +1981,7 @@ public:
   //! \brief Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
   //! \brief Установка автоматического выбора диапазона измерений
-virtual void set_range_auto();
+  virtual void set_range_auto();
 private:
   //! \brief Установка временного интервала измерения
   void set_time_interval_meas(const double a_time_interval_meas);
@@ -2096,6 +2100,12 @@ class agilent_34420a_t: public mxmultimeter_t
   //! \brief Индекс команды установки времени интегрирования для сопротивления
   index_t m_nplc_resistance_4x_index;
   vector<irs::string> m_get_resistance_4x_commands;
+  //! \brief Команда выбора канала
+  index_t m_select_channel_dc_index;
+  irs::string m_select_channel;
+  vector<irs::string> m_channel;
+  size_t m_current_channel;
+  vector<irs::string> m_select_channel_command;
   //! \brief Команды для установки параметров
   vector<irs::string> m_set_params_commands;
   // Интерфейс передачи
@@ -2191,6 +2201,10 @@ public:
   virtual void get_time_interval(double *time_interval);
   //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval);
+  //! \brief Чтение отношения напряжений на 1-м и 2-м каналах
+  virtual void get_voltage_ratio(double *voltage_ratio);
+  //! \brief Выбор канала для последующих измерений
+  virtual void select_channel(size_t channel);
 
   //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
