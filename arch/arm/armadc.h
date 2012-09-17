@@ -22,7 +22,7 @@ namespace arm {
 
 #ifdef __LM3SxBxx__
 
-//! \addtogroup string_processing_group
+//! \addtogroup drivers_group
 //! @{
 
 //! \brief Драйвер АЦП для контроллеров семейства LM3SxBxx
@@ -118,6 +118,9 @@ private:
 
 #elif defined(IRS_STM32F2xx)
 
+//! \addtogroup drivers_group
+//! @{
+
 //! \brief Драйвер АЦП для контроллеров семейства STM32F2xx
 //! \author Lyashchov Maxim
 class st_adc_t: public adc_t
@@ -194,13 +197,23 @@ public:
   };
   st_dac_t(select_channel_type a_selected_channels);
   virtual size_t get_resolution() const;
+  virtual irs_u32 get_u32_maximum() const;
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual float get_float_maximum() const;
   virtual void set_float_data(size_t a_channel, const float a_data);
 private:
   void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
   enum { dac_resolution = 12 };
   enum { dac_max_value = 0xFFF };
+  struct data_reg_t {
+    __REG32 data        :12;
+    __REG32             :20;
+  };
+  vector<volatile data_reg_t*> m_channels;
 };
+
+//! @}
+
 #endif  //  IRS_STM32F2xx
 
 } // namespace arm

@@ -347,7 +347,7 @@ void gpio_set_bits(gpio_channel_t a_channel, int gpio_bits_group,
 
 } // empty namespace
 
-void irs::alternate_function_enable(gpio_channel_t a_channel)
+void irs::gpio_moder_alternate_function_enable(gpio_channel_t a_channel)
 {
   /*const size_t port_address = get_port_address(a_channel);
   const int pin_index = get_pin_index(a_channel);
@@ -357,9 +357,14 @@ void irs::alternate_function_enable(gpio_channel_t a_channel)
   gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ALTERNATE_FUNCTION);
 }
 
-void irs::analog_function_enable(gpio_channel_t a_channel)
+void irs::gpio_moder_analog_enable(gpio_channel_t a_channel)
 {
-  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ANALOG_MODER);
+  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ANALOG);
+}
+
+void irs::gpio_moder_input_enable(gpio_channel_t a_channel)
+{
+  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_INPUT);
 }
 
 void irs::update_interrupt_enable(size_t a_address)

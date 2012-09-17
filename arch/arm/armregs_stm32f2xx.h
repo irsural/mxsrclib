@@ -764,7 +764,7 @@ __IO_REG32_BIT(RCC_PLLI2SCFGR,    RCC_BASE + RCC_PLLI2SCFGR_S,__READ_WRITE ,__rc
 #define GPIO_MODER_INPUT 0
 #define GPIO_MODER_OUTPUT 1
 #define GPIO_MODER_ALTERNATE_FUNCTION 2
-#define GPIO_MODER_ANALOG_MODER 3
+#define GPIO_MODER_ANALOG 3
 #define GPIO_OTYPER_OUTPUT_PUSH_PULL 0
 #define GPIO_OTYPER_OUTPUT_OPEN_DRAIN 1
 
@@ -2146,7 +2146,7 @@ typedef struct {
   __REG32  SETENA6        : 1;
   __REG32  SETENA7        : 1;
   __REG32  SETENA8        : 1;
-  __REG32  SETENA9        : 1;
+  __REG32  SETENA_EXTI3   : 1;
   __REG32  SETENA10       : 1;
   __REG32  SETENA11       : 1;
   __REG32  SETENA12       : 1;
@@ -3325,6 +3325,186 @@ __IO_REG32_BIT(DAC_DHR8RD,        0x40007428,__READ_WRITE ,__dac_dhr8rd_bits );
 __IO_REG32_BIT(DAC_DOR1,          0x4000742C,__READ_WRITE ,__dac_dor1_bits   );
 __IO_REG32_BIT(DAC_DOR2,          0x40007430,__READ_WRITE ,__dac_dor2_bits   );
 __IO_REG32_BIT(DAC_SR,            0x40007434,__READ_WRITE ,__dac_sr_bits   );
+
+/* Interrupt mask register (EXTI_IMR) */
+typedef struct {
+  __REG32  MR0            : 1;
+  __REG32  MR1            : 1;
+  __REG32  MR2            : 1;
+  __REG32  MR3            : 1;
+  __REG32  MR4            : 1;
+  __REG32  MR5            : 1;
+  __REG32  MR6            : 1;
+  __REG32  MR7            : 1;
+  __REG32  MR8            : 1;
+  __REG32  MR9            : 1;
+  __REG32  MR10           : 1;
+  __REG32  MR11           : 1;
+  __REG32  MR12           : 1;
+  __REG32  MR13           : 1;
+  __REG32  MR14           : 1;
+  __REG32  MR15           : 1;
+  __REG32  MR16           : 1;
+  __REG32  MR17           : 1;
+  __REG32  MR18           : 1;
+  __REG32  MR19           : 1;
+  __REG32  MR20           : 1;
+  __REG32  MR21           : 1;
+  __REG32  MR22           : 1;
+  __REG32                 : 9;
+} __exti_imr_bits;
+
+/* Event mask register (EXTI_EMR) */
+typedef struct {
+  __REG32  MR0            : 1;
+  __REG32  MR1            : 1;
+  __REG32  MR2            : 1;
+  __REG32  MR3            : 1;
+  __REG32  MR4            : 1;
+  __REG32  MR5            : 1;
+  __REG32  MR6            : 1;
+  __REG32  MR7            : 1;
+  __REG32  MR8            : 1;
+  __REG32  MR9            : 1;
+  __REG32  MR10           : 1;
+  __REG32  MR11           : 1;
+  __REG32  MR12           : 1;
+  __REG32  MR13           : 1;
+  __REG32  MR14           : 1;
+  __REG32  MR15           : 1;
+  __REG32  MR16           : 1;
+  __REG32  MR17           : 1;
+  __REG32  MR18           : 1;
+  __REG32  MR19           : 1;
+  __REG32  MR20           : 1;
+  __REG32  MR21           : 1;
+  __REG32  MR22           : 1;
+  __REG32                 : 9;
+} __exti_emr_bits;
+
+/* Rising Trigger selection register (EXTI_RTSR) */
+typedef struct {
+  __REG32  TR0            : 1;
+  __REG32  TR1            : 1;
+  __REG32  TR2            : 1;
+  __REG32  TR3            : 1;
+  __REG32  TR4            : 1;
+  __REG32  TR5            : 1;
+  __REG32  TR6            : 1;
+  __REG32  TR7            : 1;
+  __REG32  TR8            : 1;
+  __REG32  TR9            : 1;
+  __REG32  TR10           : 1;
+  __REG32  TR11           : 1;
+  __REG32  TR12           : 1;
+  __REG32  TR13           : 1;
+  __REG32  TR14           : 1;
+  __REG32  TR15           : 1;
+  __REG32  TR16           : 1;
+  __REG32  TR17           : 1;
+  __REG32  TR18           : 1;
+  __REG32  TR19           : 1;
+  __REG32  TR20           : 1;
+  __REG32  TR21           : 1;
+  __REG32  TR22           : 1;
+  __REG32                 : 9;
+} __exti_rtsr_bits;
+
+/* Falling Trigger selection register (EXTI_FTSR) */
+typedef struct {
+  __REG32  TR0            : 1;
+  __REG32  TR1            : 1;
+  __REG32  TR2            : 1;
+  __REG32  TR3            : 1;
+  __REG32  TR4            : 1;
+  __REG32  TR5            : 1;
+  __REG32  TR6            : 1;
+  __REG32  TR7            : 1;
+  __REG32  TR8            : 1;
+  __REG32  TR9            : 1;
+  __REG32  TR10           : 1;
+  __REG32  TR11           : 1;
+  __REG32  TR12           : 1;
+  __REG32  TR13           : 1;
+  __REG32  TR14           : 1;
+  __REG32  TR15           : 1;
+  __REG32  TR16           : 1;
+  __REG32  TR17           : 1;
+  __REG32  TR18           : 1;
+  __REG32  TR19           : 1;
+  __REG32  TR20           : 1;
+  __REG32  TR21           : 1;
+  __REG32  TR22           : 1;
+  __REG32                 : 9;
+} __exti_ftsr_bits;
+
+/* Software interrupt event register (EXTI_SWIER) */
+typedef struct {
+  __REG32  SWIER0         : 1;
+  __REG32  SWIER1         : 1;
+  __REG32  SWIER2         : 1;
+  __REG32  SWIER3         : 1;
+  __REG32  SWIER4         : 1;
+  __REG32  SWIER5         : 1;
+  __REG32  SWIER6         : 1;
+  __REG32  SWIER7         : 1;
+  __REG32  SWIER8         : 1;
+  __REG32  SWIER9         : 1;
+  __REG32  SWIER10        : 1;
+  __REG32  SWIER11        : 1;
+  __REG32  SWIER12        : 1;
+  __REG32  SWIER13        : 1;
+  __REG32  SWIER14        : 1;
+  __REG32  SWIER15        : 1;
+  __REG32  SWIER16        : 1;
+  __REG32  SWIER17        : 1;
+  __REG32  SWIER18        : 1;
+  __REG32  SWIER19        : 1;
+  __REG32  SWIER20        : 1;
+  __REG32  SWIER21        : 1;
+  __REG32  SWIER22        : 1;
+  __REG32                 : 9;
+} __exti_swier_bits;
+
+/* Pending register (EXTI_PR) */
+typedef struct {
+  __REG32  PR0            : 1;
+  __REG32  PR1            : 1;
+  __REG32  PR2            : 1;
+  __REG32  PR3            : 1;
+  __REG32  PR4            : 1;
+  __REG32  PR5            : 1;
+  __REG32  PR6            : 1;
+  __REG32  PR7            : 1;
+  __REG32  PR8            : 1;
+  __REG32  PR9            : 1;
+  __REG32  PR10           : 1;
+  __REG32  PR11           : 1;
+  __REG32  PR12           : 1;
+  __REG32  PR13           : 1;
+  __REG32  PR14           : 1;
+  __REG32  PR15           : 1;
+  __REG32  PR16           : 1;
+  __REG32  PR17           : 1;
+  __REG32  PR18           : 1;
+  __REG32  PR19           : 1;
+  __REG32  PR20           : 1;
+  __REG32  PR21           : 1;
+  __REG32  PR22           : 1;
+  __REG32                 : 9;
+} __exti_pr_bits;
+
+/***************************************************************************
+ **
+ ** EXTI
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(EXTI_IMR,          0x40013C00,__READ_WRITE ,__exti_imr_bits);
+__IO_REG32_BIT(EXTI_EMR,          0x40013C04,__READ_WRITE ,__exti_emr_bits);
+__IO_REG32_BIT(EXTI_RTSR,         0x40013C08,__READ_WRITE ,__exti_rtsr_bits);
+__IO_REG32_BIT(EXTI_FTSR,         0x40013C0C,__READ_WRITE ,__exti_ftsr_bits);
+__IO_REG32_BIT(EXTI_SWIER,        0x40013C10,__READ_WRITE ,__exti_swier_bits);
+__IO_REG32_BIT(EXTI_PR,           0x40013C14,__READ_WRITE ,__exti_pr_bits);
 
 #endif  //  IRS_STM32F2xx
 

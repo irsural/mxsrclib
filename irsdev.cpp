@@ -686,7 +686,7 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   m_break_gpio_channel(PNONE)
 {
   clock_enable(a_gpio_channel);
-  alternate_function_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
   clock_enable(a_timer_address);
   // 0: Counter used as upcounter
   mp_timer->TIM_CR1_bit.DIR = 0;
@@ -995,7 +995,7 @@ void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   m_break_gpio_channel = a_gpio_channel;
   select_alternate_function_for_break_channel();
   //initialize_timer_and_get_tim_ccr_register();
-  alternate_function_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
   clock_enable(a_gpio_channel);
   if (a_polarity == break_polarity_active_low) {
     mp_timer->TIM_BDTR_bit.BKP = 0;
@@ -1017,7 +1017,7 @@ void irs::arm::st_pwm_gen_t::complementary_channel_enable(
     IRS_LIB_ERROR(ec_standard, "Изменение параметра во время работы");
   }
   clock_enable(a_gpio_channel);
-  alternate_function_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
   m_complementary_gpio_channel = a_gpio_channel;
   select_alternate_function_for_complementary_channel();
   set_mode_capture_compare_registers(ocm_pwm_mode_1);

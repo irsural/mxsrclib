@@ -951,7 +951,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     if ((a_selected_channels & channel_mask) &&
       (a_selected_channels & adc_mask)) {
       clock_enable(adc_gpio_pairs[i].second);
-      analog_function_enable(adc_gpio_pairs[i].second);
+      gpio_moder_analog_enable(adc_gpio_pairs[i].second);
       m_active_channels.push_back(adc_channel_to_channel_index(adc_channel));
       m_regular_channels_values.push_back(0);
     }
@@ -1096,13 +1096,15 @@ irs::arm::st_dac_t::st_dac_t(select_channel_type a_selected_channels)
   irs::clock_enable(DAC1_DAC2_BASE);
   if (a_selected_channels & DAC_PA4_CH0) {
     irs::clock_enable(PA4);
-    irs::analog_function_enable(PA4);
+    irs::gpio_moder_analog_enable(PA4);
     DAC_CR_bit.EN1 = 1;
+    m_channels.push_back(reinterpret_cast<volatile data_reg_t*>(&DAC_DHR12R1));
   }
   if (a_selected_channels & DAC_PA5_CH1) {
     irs::clock_enable(PA5);
-    irs::analog_function_enable(PA5);
+    irs::gpio_moder_analog_enable(PA5);
     DAC_CR_bit.EN2 = 1;
+    m_channels.push_back(reinterpret_cast<volatile data_reg_t*>(&DAC_DHR12R2));
   }
 }
 
@@ -1111,10 +1113,20 @@ irs::arm::st_dac_t::size_type irs::arm::st_dac_t::get_resolution() const
   return dac_resolution;
 }
 
+irs_u32 irs::arm::st_dac_t::get_u32_maximum() const
+{
+  return static_cast<irs_u32>(dac_max_value) << (32 - dac_resolution);
+}
+
 void irs::arm::st_dac_t::set_u32_data(size_type a_channel, const irs_u32 a_data)
 {
   set_u16_normalized_data(a_channel,
     static_cast<irs_u16>(a_data >> (32 - dac_resolution)));
+}
+
+float irs::arm::st_dac_t::get_float_maximum() const
+{
+  return 1.f;
 }
 
 void irs::arm::st_dac_t::set_float_data(size_type a_channel, const float a_data)
@@ -1129,14 +1141,10 @@ void irs::arm::st_dac_t::set_float_data(size_type a_channel, const float a_data)
 void irs::arm::st_dac_t::set_u16_normalized_data(size_t a_channel,
   const irs_u16 a_data)
 {
-  if (a_channel > 1) {
+  if (a_channel >= m_channels.size()) {
     IRS_LIB_ERROR(ec_standard, "Недопустимый канал");
   }
   IRS_LIB_ASSERT(a_data <= dac_max_value);
-  if (a_channel == 0) {
-    DAC_DHR12R1_bit.DACC1DHR = a_data;
-  } else {
-    DAC_DHR12R2_bit.DACC2DHR = a_data;
-  }
+  (*m_channels[a_channel]).data = a_data;
 }
 #endif // IRS_STM32F2xx
