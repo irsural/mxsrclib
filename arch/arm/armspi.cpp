@@ -643,7 +643,68 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   set_moder_alternate_function(a_miso);
   set_moder_alternate_function(a_mosi);
   size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
-  switch (a_sck) {
+  if (spi_address == SPI2_I2S2_BASE) {
+    switch (a_sck) {
+      case PB13: {
+        GPIOB_AFRH_bit.AFRH13 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_miso) {
+      case PB14: {
+        GPIOB_AFRH_bit.AFRH14 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_mosi) {
+      case PB15: {
+        GPIOB_AFRH_bit.AFRH15 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+  } else if (spi_address == SPI3_I2S3_BASE) {
+    switch (a_sck) {
+      case PC10: {
+        GPIOC_AFRH_bit.AFRH10 = 6;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_miso) {
+      case PC11: {
+        GPIOC_AFRH_bit.AFRH11 = 6;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_mosi) {
+      case PC12: {
+        GPIOC_AFRH_bit.AFRH12 = 6;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+  } else {
+    IRS_LIB_ASSERT_MSG("Недопустимый адрес таймера");
+  }
+
+  /*switch (a_sck) {
+    case PB13: {
+      if (spi_address == SPI2_I2S2_BASE) {
+        GPIOC_AFRH_bit.AFRH13 = 5;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
     case PC10: {
       if (spi_address == SPI3_I2S3_BASE) {
         GPIOC_AFRH_bit.AFRH10 = 6;
@@ -656,6 +717,13 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     }
   }
   switch (a_miso) {
+    case PB14: {
+      if (spi_address == SPI2_I2S2_BASE) {
+        GPIOC_AFRH_bit.AFRH14 = 5;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
     case PC11: {
       if (spi_address == SPI3_I2S3_BASE) {
         GPIOC_AFRH_bit.AFRH11 = 6;
@@ -668,6 +736,13 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     }
   }
   switch (a_mosi) {
+    case PB15: {
+      if (spi_address == SPI2_I2S2_BASE) {
+        GPIOC_AFRH_bit.AFRH15 = 5;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    } break;
     case PC12: {
       if (spi_address == SPI3_I2S3_BASE) {
         GPIOC_AFRH_bit.AFRH12 = 6;
@@ -678,7 +753,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
     }
-  }
+  }*/
 }
 
 void irs::arm::arm_spi_t::set_moder_alternate_function(gpio_channel_t a_channel)

@@ -117,10 +117,10 @@ irs::arm::com_buf::com_buf(
     }
   }
   m_usart->USART_CR1_bit.UE = 1;
-  m_usart->USART_CR1_bit.M = 1; // 8 Data bits
+  m_usart->USART_CR1_bit.M = 0; // 8 Data bits
   m_usart->USART_CR1_bit.PCE = 0; // Parity control disabled
   m_usart->USART_CR1_bit.PS = 0; // Even parity
-  m_usart->USART_CR2_bit.STOP = 2; // 1 stop bit
+  m_usart->USART_CR2_bit.STOP = 0; // 1 stop bit
   m_usart->USART_CR1_bit.OVER8 = 0;
   volatile irs::cpu_traits_t::frequency_type periphery_frequency =
     irs::cpu_traits_t::periphery_frequency_first();

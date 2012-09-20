@@ -703,6 +703,7 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
     //mp_timer->TIM_BDTR_bit.MOE = 1;
     mp_timer->TIM_BDTR_bit.OSSI = 1;
   }
+  mp_timer->TIM_CR1_bit.CEN = 1;
 }
 
 void irs::arm::st_pwm_gen_t::
@@ -710,6 +711,14 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   switch (m_gpio_channel) {
+    case PA8: {
+      if (timer_address == TIM1_PWM1_BASE) {
+        m_timer_channel = 1;
+        GPIOA_AFRH_bit.AFRH8 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PB0: {
       if (timer_address == TIM3_BASE) {
         m_timer_channel = 3;
@@ -859,7 +868,7 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
   output_compare_mode_t a_mode)
 {
   const irs_u32 CCR_value = static_cast<irs_u32>(
-    m_duty*timer_frequency()/m_frequency);
+    m_duty*get_max_duty()/*timer_frequency()/m_frequency*/);
   const irs_u32 OCxM_value = a_mode;
   // Output Compare preload enable
   const irs_u32 OCxPE_value = 1;
@@ -932,14 +941,13 @@ void irs::arm::st_pwm_gen_t::start()
     mp_timer->TIM_BDTR_bit.MOE = 1;
   }
    // 1: Counter enabled
-  mp_timer->TIM_CR1_bit.CEN = 1;
-
+  //mp_timer->TIM_CR1_bit.CEN = 1;
 }
 
 void irs::arm::st_pwm_gen_t::stop()
 {
   // 0: Counter disabled
-  mp_timer->TIM_CR1_bit.CEN = 0;
+  //mp_timer->TIM_CR1_bit.CEN = 0;
   if ((reinterpret_cast<size_t>(mp_timer) == TIM1_PWM1_BASE) ||
     (reinterpret_cast<size_t>(mp_timer) == TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 0;
@@ -969,7 +977,7 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
 
 irs_uarc irs::arm::st_pwm_gen_t::get_max_duty()
 {
-  return get_max_frequency()/m_frequency - 1;
+  return timer_frequency()/m_frequency - 1;
 }
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_max_frequency()
@@ -985,9 +993,9 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_timer_frequency()
 void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   break_polarity_t a_polarity)
 {
-  if (mp_timer->TIM_CR1_bit.CEN == 1) {
+  /*if (mp_timer->TIM_CR1_bit.CEN == 1) {
     IRS_LIB_ERROR(ec_standard, "Изменение параметра во время работы");
-  }
+  }*/
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   if ((timer_address != TIM1_PWM1_BASE) && (timer_address != TIM8_PWM2_BASE)) {
     IRS_LIB_ERROR(ec_standard, "Недопустимый таймер");
@@ -1013,9 +1021,9 @@ void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
 void irs::arm::st_pwm_gen_t::complementary_channel_enable(
   gpio_channel_t a_gpio_channel)
 {
-  if (mp_timer->TIM_CR1_bit.CEN == 1) {
+  /*if (mp_timer->TIM_CR1_bit.CEN == 1) {
     IRS_LIB_ERROR(ec_standard, "Изменение параметра во время работы");
-  }
+  }*/
   clock_enable(a_gpio_channel);
   gpio_moder_alternate_function_enable(a_gpio_channel);
   m_complementary_gpio_channel = a_gpio_channel;

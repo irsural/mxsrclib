@@ -58,10 +58,10 @@ void pll_on()
   while (!RCC_CR_bit.HSERDY);
 
   // Ќа входе кварц 25 ћ√ц
-  RCC_PLLCFGR_bit.PLLM = 20; // делитель на входе PLL
-  RCC_PLLCFGR_bit.PLLN = 192; // множитель внутри PLL
+  RCC_PLLCFGR_bit.PLLM = 20; // ƒелитель на входе PLL
+  RCC_PLLCFGR_bit.PLLN = 192; // ћножитель внутри PLL
   RCC_PLLCFGR_bit.PLLP = 0; // 0 это деление на 2, делитель дл€ €дра 120 ћ√ц
-  RCC_PLLCFGR_bit.PLLQ = 5; // делитель дл€ USB 48 ћ√ц
+  RCC_PLLCFGR_bit.PLLQ = 5; // ƒелитель дл€ USB 48 ћ√ц
   // Main PLL(PLL) and audio PLL (PLLI2S) entry clock source.
   // HSE oscillator clock selected as PLL and PLLI2S clock entry
   RCC_PLLCFGR_bit.PLLSRC = 1;
@@ -77,6 +77,12 @@ void pll_on()
 
   FLASH_ACR_bit.LATENCY = 3;
   while (FLASH_ACR_bit.LATENCY != 3);
+  // 1: Data cache is enabled
+  FLASH_ACR_bit.DCEN = 1;
+  // 1: Instruction cache is enabled
+  FLASH_ACR_bit.ICEN = 1;
+  // 0: Prefetch is disabled
+  FLASH_ACR_bit.PRFTEN = 0;
   RCC_CFGR_bit.SW = 2;
   RCC_CFGR_bit.HPRE = 0;
   while (RCC_CFGR_bit.SWS != 2);
@@ -335,14 +341,14 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
 
 namespace {
 
-void gpio_set_bits(gpio_channel_t a_channel, int gpio_bits_group,
-  int gpio_bits_value)
+void gpio_set_bits(gpio_channel_t a_channel, int a_bits_count,
+  int a_gpio_bits_group, int a_gpio_bits_value)
 {
   const size_t port_address = irs::get_port_address(a_channel);
   const int pin_index = irs::get_pin_index(a_channel);
-  const int bits_count = 2;
-  IRS_SET_BITS(port_address + gpio_bits_group, bits_count*pin_index,
-    bits_count, gpio_bits_value);
+  //const int bits_count = 2;
+  IRS_SET_BITS(port_address + a_gpio_bits_group, a_bits_count*pin_index,
+    a_bits_count, a_gpio_bits_value);
 }
 
 } // empty namespace
@@ -354,17 +360,28 @@ void irs::gpio_moder_alternate_function_enable(gpio_channel_t a_channel)
   const int bits_count = 2;
   IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
     bits_count, GPIO_MODER_ALTERNATE_FUNCTION);*/
-  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ALTERNATE_FUNCTION);
+  const int bits_count = 2;
+  gpio_set_bits(a_channel, bits_count, GPIO_MODER_S,
+    GPIO_MODER_ALTERNATE_FUNCTION);
 }
 
 void irs::gpio_moder_analog_enable(gpio_channel_t a_channel)
 {
-  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_ANALOG);
+  const int bits_count = 2;
+  gpio_set_bits(a_channel, bits_count, GPIO_MODER_S, GPIO_MODER_ANALOG);
 }
 
 void irs::gpio_moder_input_enable(gpio_channel_t a_channel)
 {
-  gpio_set_bits(a_channel, GPIO_MODER_S, GPIO_MODER_INPUT);
+  const int bits_count = 2;
+  gpio_set_bits(a_channel, bits_count, GPIO_MODER_S, GPIO_MODER_INPUT);
+}
+
+void irs::gpio_otyper_output_open_drain_enable(gpio_channel_t a_channel)
+{
+  const int bits_count = 1;
+  gpio_set_bits(a_channel, bits_count, GPIO_MODER_S,
+    GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
 }
 
 void irs::update_interrupt_enable(size_t a_address)

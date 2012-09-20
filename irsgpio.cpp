@@ -242,51 +242,84 @@ void irs::arm::io_pin_t::clear()
 void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const irs::io_t::dir_t a_dir)
 {
+  const int gpio_pupdr_bit_count = 2;
+  const int gpio_moder_bit_count = 2;
+  const int gpio_otyper_bit_count = 1;
   switch (a_dir) {
     case irs::io_t::dir_in: {
-      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
-      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
-      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+      /*HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;*/
+      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+        gpio_moder_bit_count, GPIO_MODER_INPUT);
+      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_in_pull_up: {
-      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;
-      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
-      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+        gpio_pupdr_bit_count, GPIO_PUPDR_PULL_UP);
+      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+        gpio_moder_bit_count, GPIO_MODER_INPUT);
+      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_in_pull_down: {
-      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;
-      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
-      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+        gpio_pupdr_bit_count, GPIO_PUPDR_PULL_DOWN);
+      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+        gpio_moder_bit_count, GPIO_MODER_INPUT);
+      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_out: {
-      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
-      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
-      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+        gpio_moder_bit_count, GPIO_MODER_OUTPUT);
+      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;
+        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_open_drain: {
-      HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
-      HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
-      HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
+      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+        gpio_moder_bit_count, GPIO_MODER_OUTPUT);
+      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
+      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
+      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
+      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
       HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;
+        GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;*/
     } break;
   }
 }
