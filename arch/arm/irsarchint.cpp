@@ -348,6 +348,7 @@ void irs_arm_gpio_portj_func()
 void irs_arm_exti3_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti3_int);
+  EXTI_PR_bit.PR3 = 1;
 }
 
 void irs_arm_tim1_up_tim10_func()

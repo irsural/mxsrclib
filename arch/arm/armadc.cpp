@@ -1071,8 +1071,6 @@ void irs::arm::st_adc_t::tick()
     if (mp_adc->ADC_SR_bit.EOC == 1) {
       m_regular_channels_values[m_current_channel] =
         static_cast<irs_u16>(mp_adc->ADC_DR);
-      //IRS_DBG_RAW_MSG(CNT_TO_DBLTIME(counter_get()) <<
-        //" ADC_DR =  " << m_regular_channels_values[m_current_channel] << endl);
       m_current_channel++;
       if (m_current_channel >= m_active_channels.size()) {
         m_current_channel = 0;
