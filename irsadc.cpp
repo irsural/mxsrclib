@@ -881,7 +881,8 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_cs_pin(ap_cs_pin),
   mp_reset_pin(ap_reset_pin),
   mp_update_pin(ap_update_pin),
-  m_first_byte(1)
+  m_first_byte(1),
+  m_update_time()
 {
   mp_cs_pin->set();
   //
@@ -1177,15 +1178,16 @@ void irs::dds_ad9854_t::tick()
             }
           }
         }
-      }
-      break;
-    }
+      } 
+    } break;
   case DDS_WRITE:
     {
       if (mp_spi->get_status() == irs::spi_t::FREE)
       {
         mp_cs_pin->set();
-        counter_t cnt;
+        set_to_cnt(m_update_time, MS_TO_CNT(50));
+        m_status = DDS_UPDATE;
+        /*counter_t cnt;
         set_to_cnt(cnt, MS_TO_CNT(50));
         while (!test_to_cnt(cnt));
         mp_update_pin->set();
@@ -1198,10 +1200,29 @@ void irs::dds_ad9854_t::tick()
         mp_spi->unlock();
         m_status = DDS_FREE;
         if (find(m_write_vector.begin(), m_write_vector.end(), true)
-            == m_write_vector.end()) mp_buf[POS_STATUS] |= 0x01;
+            == m_write_vector.end()) mp_buf[POS_STATUS] |= 0x01;*/
       }
-      break;
-    }
+    } break;
+    case DDS_UPDATE:
+    {
+      if (test_to_cnt(m_update_time))
+      {
+        mp_update_pin->set();
+        set_to_cnt(m_update_time, MS_TO_CNT(1));
+        m_status = DDS_UPDATE_WAIT;
+      }
+    } break;
+    case DDS_UPDATE_WAIT:
+    {
+      if (test_to_cnt(m_update_time))
+      {
+        mp_update_pin->clear();
+        mp_spi->unlock();
+        m_status = DDS_FREE;
+        if (find(m_write_vector.begin(), m_write_vector.end(), true)
+          == m_write_vector.end()) mp_buf[POS_STATUS] |= 0x01;
+      }
+    } break;
   }
 }
 

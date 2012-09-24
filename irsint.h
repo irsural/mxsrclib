@@ -109,6 +109,7 @@ event_connect_t<T>::event_connect_t(T* ap_object, member_type ap_member):
 template <class T>
 void event_connect_t<T>::exec()
 {
+  mxfact_event_t::exec();
   (mp_object->*mp_member)();
 }
 

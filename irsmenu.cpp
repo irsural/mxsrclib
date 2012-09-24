@@ -2406,7 +2406,7 @@ void irs_menu_ip_item_t::draw(irs_menu_base_t **a_cur_menu)
             mp_disp_drv->clear();
             mp_disp_drv->outtextpos(0,0,f_header);
             mxip_to_cstr(f_value_string,
-              reinterpret_cast<mxip_t&>(f_parametr));
+              *reinterpret_cast<mxip_t*>(f_parametr));
             mp_disp_drv->outtextpos(0, 1, f_value_string);
             f_want_redraw = irs_false;
           }
@@ -2450,10 +2450,10 @@ void irs_menu_ip_item_t::draw(irs_menu_base_t **a_cur_menu)
         f_value_string[f_cur_symbol] = '\0';
         if (f_cur_symbol > 0)
         {
-          if (!cstr_to_mxip(reinterpret_cast<mxip_t&>(f_parametr),
+          if (!cstr_to_mxip(*reinterpret_cast<mxip_t*>(f_parametr),
             f_value_string))
           {
-            reinterpret_cast<mxip_t&>(f_parametr) = zero_ip;
+            *reinterpret_cast<mxip_t*>(f_parametr) = zero_ip;
           }
           if (f_ip_trans) f_ip_trans(f_parametr);
           if (mp_event) mp_event->exec();

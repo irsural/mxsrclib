@@ -691,7 +691,9 @@ class dds_ad9854_t : public mxdata_t
   enum status_t
   {
     DDS_FREE,
-    DDS_WRITE
+    DDS_WRITE,
+    DDS_UPDATE,
+    DDS_UPDATE_WAIT
   };
   status_t m_status;
   spi_t *mp_spi;
@@ -718,6 +720,7 @@ class dds_ad9854_t : public mxdata_t
   irs_u8 m_first_byte;
   //
   void reset();
+  counter_t m_update_time;
 public:
   dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, gpio_pin_t *ap_reset_pin,
     gpio_pin_t *ap_update_pin);
