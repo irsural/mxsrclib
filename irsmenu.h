@@ -47,7 +47,7 @@ public:
     irs_u8 time_denom);
   ~irs_menu_creep_t();
   void reset();
-  void shift();
+  bool shift();
   void clear_dynamic();
   void soft_clear_dynamic();
   void change_static(char *a_static);

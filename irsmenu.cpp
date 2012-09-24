@@ -1591,7 +1591,7 @@ void irs_advanced_tablo_t::draw(irs_menu_base_t **a_cur_menu)
                 update_current_item);
               mp_disp_drv->outtextpos(
                 m_parametr_vector[i].x, m_parametr_vector[i].y, mp_lcd_string);
-            }
+            }   
           }
           if (!one_updated) m_updated_item = 0;
 
@@ -3543,8 +3543,9 @@ char *irs_menu_creep_t::get_creep_buffer()
   return &f_buffer[f_static_len + f_message_len];
 }
 
-void irs_menu_creep_t::shift()
+bool irs_menu_creep_t::shift()
 {
+  bool result = false;
   if (test_to_cnt(f_creeptimer))
   {
     if ((f_line_len > 0) && (f_buffer_len > 0))
@@ -3568,7 +3569,11 @@ void irs_menu_creep_t::shift()
       f_position++;
     }
     else f_line[0] = '\0';
+    result = true;
+  } else {
+    result = false;
   }
+  return result;
 }
 
 irs_bool irs_menu_creep_t::eol()
