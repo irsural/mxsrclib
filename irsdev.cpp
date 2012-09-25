@@ -700,7 +700,6 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   mp_timer->TIM_EGR_bit.UG = 1;
   if ((a_timer_address == TIM1_PWM1_BASE) ||
     (a_timer_address == TIM8_PWM2_BASE)) {
-    //mp_timer->TIM_BDTR_bit.MOE = 1;
     mp_timer->TIM_BDTR_bit.OSSI = 1;
   }
   mp_timer->TIM_CR1_bit.CEN = 1;
@@ -940,18 +939,14 @@ void irs::arm::st_pwm_gen_t::start()
     (reinterpret_cast<size_t>(mp_timer) == TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 1;
   }
-   // 1: Counter enabled
-  //mp_timer->TIM_CR1_bit.CEN = 1;
 }
 
 void irs::arm::st_pwm_gen_t::stop()
 {
-  // 0: Counter disabled
-  //mp_timer->TIM_CR1_bit.CEN = 0;
   if ((reinterpret_cast<size_t>(mp_timer) == TIM1_PWM1_BASE) ||
     (reinterpret_cast<size_t>(mp_timer) == TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 0;
-    //while (mp_timer->TIM_BDTR_bit.MOE != 0);
+
   }
   set_mode_capture_compare_registers(ocm_force_inactive_level);
 }
@@ -993,16 +988,12 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_timer_frequency()
 void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   break_polarity_t a_polarity)
 {
-  /*if (mp_timer->TIM_CR1_bit.CEN == 1) {
-    IRS_LIB_ERROR(ec_standard, "Изменение параметра во время работы");
-  }*/
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   if ((timer_address != TIM1_PWM1_BASE) && (timer_address != TIM8_PWM2_BASE)) {
     IRS_LIB_ERROR(ec_standard, "Недопустимый таймер");
   }
   m_break_gpio_channel = a_gpio_channel;
   select_alternate_function_for_break_channel();
-  //initialize_timer_and_get_tim_ccr_register();
   gpio_moder_alternate_function_enable(a_gpio_channel);
   clock_enable(a_gpio_channel);
   if (a_polarity == break_polarity_active_low) {
@@ -1010,28 +1001,19 @@ void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   } else {
     mp_timer->TIM_BDTR_bit.BKP = 1;
   }
-  //mp_timer->TIM_BDTR_bit.AOE = 1;
   mp_timer->TIM_BDTR_bit.BKE = 1;
   mp_timer->TIM_SR_bit.BIF = 0;
-  irs::mlog() << irsm("BIF = ") << mp_timer->TIM_SR_bit.BIF << endl;
-  //mp_timer->TIM_DIER_bit.BIE = 1;
-  //SETENA1_bit.SETENA_TIM8_BRK_TIM12 = 1;
 }
 
 void irs::arm::st_pwm_gen_t::complementary_channel_enable(
   gpio_channel_t a_gpio_channel)
 {
-  /*if (mp_timer->TIM_CR1_bit.CEN == 1) {
-    IRS_LIB_ERROR(ec_standard, "Изменение параметра во время работы");
-  }*/
   clock_enable(a_gpio_channel);
   gpio_moder_alternate_function_enable(a_gpio_channel);
   m_complementary_gpio_channel = a_gpio_channel;
   select_alternate_function_for_complementary_channel();
   set_mode_capture_compare_registers(ocm_pwm_mode_1);
-  //initialize_timer_and_get_tim_ccr_register();
 }
-
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

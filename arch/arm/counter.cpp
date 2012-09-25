@@ -27,12 +27,25 @@ extern counter_t COUNTER_PER_INTERVAL = irs::cpu_traits_t::frequency();
 // Число секунд в интервале
 extern counter_t SECONDS_PER_INTERVAL = 1;
 
+namespace {
+
+bool timer_overflow_interrupt_enabled = true;
+
+} // empty namespace
+
 class timer_overflow_event_t: public mxfact_event_t
 {
 public:
   virtual void exec()
   {
     mxfact_event_t::exec();
+    if (!timer_overflow_interrupt_enabled) {
+      return;
+    }
+    // При чтении флага COUNTFLAG происходит его сброс
+    if (!SYSTICKCSR_bit.COUNTFLAG) {
+      return;
+    }
     high_dword += low_dword_cnt;
   }
 };
@@ -62,7 +75,15 @@ void counter_init()
 //  Чтение счётчика
 counter_t counter_get()
 {
-  return high_dword + (low_dword_top - SYSTICKCVR);
+  timer_overflow_interrupt_enabled = false;
+  counter_t SYSTICKCVR_buf = SYSTICKCVR;
+  if (SYSTICKCSR_bit.COUNTFLAG) {
+    SYSTICKCVR_buf = SYSTICKCVR;
+    high_dword += low_dword_cnt;
+  }
+  const counter_t result = high_dword + (low_dword_top - SYSTICKCVR_buf);
+  timer_overflow_interrupt_enabled = true;
+  return result;
 }
 
 //  Деинициализация счётчика
