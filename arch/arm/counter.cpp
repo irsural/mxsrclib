@@ -44,6 +44,8 @@ public:
     }
     // При чтении флага COUNTFLAG происходит его сброс
     if (!SYSTICKCSR_bit.COUNTFLAG) {
+      // SYSTICKCSR_bit.COUNTFLAG здесь никогда не должен быть равен 0, 
+      // но на всякий случай выполнается return, а не только чтение флага
       return;
     }
     high_dword += low_dword_cnt;
