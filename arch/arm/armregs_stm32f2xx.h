@@ -3506,6 +3506,67 @@ __IO_REG32_BIT(EXTI_FTSR,         0x40013C0C,__READ_WRITE ,__exti_ftsr_bits);
 __IO_REG32_BIT(EXTI_SWIER,        0x40013C10,__READ_WRITE ,__exti_swier_bits);
 __IO_REG32_BIT(EXTI_PR,           0x40013C14,__READ_WRITE ,__exti_pr_bits);
 
+/* SYSCFG memory remap register (SYSCFG_MEMRMP) */
+typedef struct {
+  __REG32  MEM_MODE       : 2;
+  __REG32                 :30;
+} __syscfg_memrmp_bits;
+
+/* SYSCFG peripheral mode configuration register (SYSCFG_PMC) */
+typedef struct {
+  __REG32                 :23;
+  __REG32  MII_RMII_SEL   : 1;
+  __REG32                 : 8;
+} __syscfg_pmc_bits;
+
+/* SYSCFG external interrupt configuration register 1 (SYSCFG_EXTICR1) */
+typedef struct {
+  __REG32  EXTI0          : 4;
+  __REG32  EXTI1          : 4;
+  __REG32  EXTI2          : 4;
+  __REG32  EXTI3          : 4;
+  __REG32                 :16;
+} __syscfg_exticr1_bits;
+
+/* SYSCFG external interrupt configuration register 2 (SYSCFG_EXTICR2) */
+typedef struct {
+  __REG32  EXTI4          : 4;
+  __REG32  EXTI5          : 4;
+  __REG32  EXTI6          : 4;
+  __REG32  EXTI7          : 4;
+  __REG32                 :16;
+} __syscfg_exticr2_bits;
+
+/* SYSCFG external interrupt configuration register 3 (SYSCFG_EXTICR3) */
+typedef struct {
+  __REG32  EXTI8          : 4;
+  __REG32  EXTI9          : 4;
+  __REG32  EXTI10         : 4;
+  __REG32  EXTI11         : 4;
+  __REG32                 :16;
+} __syscfg_exticr3_bits;
+
+/* SYSCFG external interrupt configuration register 4 (SYSCFG_EXTICR4) */
+typedef struct {
+  __REG32  EXTI4          : 4;
+  __REG32  EXTI5          : 4;
+  __REG32  EXTI6          : 4;
+  __REG32  EXTI7          : 4;
+  __REG32                 :16;
+} __syscfg_exticr4_bits;
+
+/***************************************************************************
+ **
+ ** SYSCFG
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(SYSCFG_MEMRMP,     0x40013800,__READ_WRITE ,__syscfg_memrmp_bits);
+__IO_REG32_BIT(SYSCFG_PMC,        0x40013804,__READ_WRITE ,__syscfg_pmc_bits);
+__IO_REG32_BIT(SYSCFG_EXTICR1,    0x40013808,__READ_WRITE ,__syscfg_exticr1_bits);
+__IO_REG32_BIT(SYSCFG_EXTICR2,    0x4001380C,__READ_WRITE ,__syscfg_exticr2_bits);
+__IO_REG32_BIT(SYSCFG_EXTICR3,    0x40013810,__READ_WRITE ,__syscfg_exticr3_bits);
+__IO_REG32_BIT(SYSCFG_EXTICR4,    0x40013814,__READ_WRITE ,__syscfg_exticr4_bits);
+
 #endif  //  IRS_STM32F2xx
 
 #endif // armregs_stm32f2xxH

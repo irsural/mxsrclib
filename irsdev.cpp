@@ -875,6 +875,7 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
   const irs_u32 CCxP_value = 0;
   // 1: On - OCx signal is output on the corresponding output pin
   const irs_u32 CCxE_value = 1;
+  // 0: OC1N active high.
   const irs_u32 CCxNP_value = 0;
   // 0: Off - OC1N is not active
   irs_u32 CCxNE_value = 0;
