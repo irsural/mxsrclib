@@ -380,7 +380,7 @@ void irs::gpio_moder_input_enable(gpio_channel_t a_channel)
 void irs::gpio_otyper_output_open_drain_enable(gpio_channel_t a_channel)
 {
   const int bits_count = 1;
-  gpio_set_bits(a_channel, bits_count, GPIO_MODER_S,
+  gpio_set_bits(a_channel, bits_count, GPIO_OTYPER_S,
     GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
 }
 
