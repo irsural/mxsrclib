@@ -3567,6 +3567,441 @@ __IO_REG32_BIT(SYSCFG_EXTICR2,    0x4001380C,__READ_WRITE ,__syscfg_exticr2_bits
 __IO_REG32_BIT(SYSCFG_EXTICR3,    0x40013810,__READ_WRITE ,__syscfg_exticr3_bits);
 __IO_REG32_BIT(SYSCFG_EXTICR4,    0x40013814,__READ_WRITE ,__syscfg_exticr4_bits);
 
+/* Ethernet MAC configuration register (ETH_MACCR) */
+typedef struct {
+  __REG32                 : 2;
+  __REG32  RE             : 1;
+  __REG32  TE             : 1;
+  __REG32  DC             : 1;
+  __REG32  BL             : 2;
+  __REG32  APCS           : 1;
+  __REG32                 : 1;
+  __REG32  RD             : 1;
+  __REG32  IPCO           : 1;
+  __REG32  DM             : 1;
+  __REG32  LM             : 1;
+  __REG32  ROD            : 1;
+  __REG32  FES            : 1;
+  __REG32                 : 1;
+  __REG32  CSD            : 1;
+  __REG32  IFG            : 3;
+  __REG32                 : 2;
+  __REG32  JD             : 1;
+  __REG32  WD             : 1;
+  __REG32                 : 1;
+  __REG32  CSTF           : 1;
+  __REG32                 : 6;
+} __eth_maccr_bits;
+
+/* Ethernet MAC frame filter register (ETH_MACFFR) */
+typedef struct {
+  __REG32  PM             : 1;
+  __REG32  HU             : 1;
+  __REG32  HM             : 1;
+  __REG32  DAIF           : 1;
+  __REG32  PAM            : 1;
+  __REG32  BFD            : 1;
+  __REG32  PCF            : 2;
+  __REG32  SAIF           : 1;
+  __REG32  SAF            : 1;
+  __REG32  HPF            : 1;
+  __REG32                 :20;
+  __REG32  RA             : 1;
+} __eth_macffr_bits;
+
+/* Ethernet MAC MII address register (ETH_MACMIIAR) */
+typedef struct {
+  __REG32  MB             : 1;
+  __REG32  MW             : 1;
+  __REG32  CR             : 3;
+  __REG32                 : 1;
+  __REG32  MR             : 5;
+  __REG32  PA             : 5;
+  __REG32                 :16;
+} __eth_macmiiar_bits;
+
+/* Ethernet MAC MII data register (ETH_MACMIIDR) */
+typedef struct {
+  __REG32  MD             :16;
+  __REG32                 :16;
+} __eth_macmiidr_bits;
+
+/* Ethernet MAC flow control register (ETH_MACFCR) */
+typedef struct {
+  __REG32  FCB_BPA        : 1;
+  __REG32  TFCE           : 1;
+  __REG32  RFCE           : 1;
+  __REG32  UPFD           : 1;
+  __REG32  PLT            : 2;
+  __REG32                 : 1;
+  __REG32  ZQPD           : 1;
+  __REG32                 : 8;
+  __REG32  PT             :16;
+} __eth_macfcr_bits;
+
+/* Ethernet MAC VLAN tag register (ETH_MACVLANTR) */
+typedef struct {
+  __REG32  VLANTI         :16;
+  __REG32  VLANTC         : 1;
+  __REG32                 :15;
+} __eth_macvlantr_bits;
+
+/* Ethernet MAC PMT control and status register (ETH_MACPMTCSR) */
+typedef struct {
+  __REG32  PD             : 1;
+  __REG32  MPE            : 1;
+  __REG32  WFE            : 1;
+  __REG32                 : 2;
+  __REG32  MPR            : 1;
+  __REG32  WFR            : 1;
+  __REG32                 : 2;
+  __REG32  GU             : 1;
+  __REG32                 :21;
+  __REG32  WFFRPR         : 1;
+} __eth_macpmtcsr_bits;
+
+/* Ethernet MAC debug register (ETH_MACDBGR) */
+typedef struct {
+  __REG32  MMRPEA         : 1;
+  __REG32  MSFRWCS        : 2;
+  __REG32                 : 1;
+  __REG32  RFWRA          : 1;
+  __REG32  RFRCS          : 2;
+  __REG32                 : 1;
+  __REG32  RFFL           : 2;
+  __REG32                 : 6;
+  __REG32  MMTEA          : 1;
+  __REG32  MTFCS          : 2;
+  __REG32  MTP            : 1;
+  __REG32  TFRS           : 2;
+  __REG32  TFWA           : 1;
+  __REG32                 : 1;
+  __REG32  TFNE           : 1;
+  __REG32  TFF            : 1;
+  __REG32                 : 6;
+} __eth_macdbgr_bits;
+
+/* Ethernet MAC interrupt status register (ETH_MACSR) */
+typedef struct {
+  __REG32                 : 3;
+  __REG32  PMTS           : 1;
+  __REG32  MMCS           : 1;
+  __REG32  MMCRS          : 1;
+  __REG32  MMCTS          : 1;
+  __REG32                 : 2;
+  __REG32  TSTS           : 1;
+  __REG32                 :22;
+} __eth_macsr_bits;
+
+/* Ethernet MAC interrupt mask register (ETH_MACIMR) */
+typedef struct {
+  __REG32                 : 3;
+  __REG32  PMTIM          : 1;
+  __REG32                 : 5;
+  __REG32  TSTIM          : 1;
+  __REG32                 :22;
+} __eth_macimr_bits;
+
+/* Ethernet MAC address 0 high register (ETH_MACA0HR) */
+typedef struct {
+  __REG32  MACA0H         :16;
+  __REG32                 :15;
+  __REG32  MO             : 1;
+} __eth_maca0hr_bits;
+
+/* Ethernet MAC address 1 high register (ETH_MACA1HR) */
+typedef struct {
+  __REG32  MACA1H         :16;
+  __REG32                 : 8;
+  __REG32  MBC            : 6;
+  __REG32  SA             : 1;
+  __REG32  AE             : 1;
+} __eth_maca1hr_bits;
+
+/* Ethernet MAC address 2 high register (ETH_MACA2HR) */
+typedef struct {
+  __REG32  MACA2H         :16;
+  __REG32                 : 8;
+  __REG32  MBC            : 6;
+  __REG32  SA             : 1;
+  __REG32  AE             : 1;
+} __eth_maca2hr_bits;
+
+/* Ethernet MAC address 3 high register (ETH_MACA3HR) */
+typedef struct {
+  __REG32  MACA3H         :16;
+  __REG32                 : 8;
+  __REG32  MBC            : 6;
+  __REG32  SA             : 1;
+  __REG32  AE             : 1;
+} __eth_maca3hr_bits;
+
+/* Ethernet MMC control register (ETH_MMCCR) */
+typedef struct {
+  __REG32  CR             : 1;
+  __REG32  CSR            : 1;
+  __REG32  ROR            : 1;
+  __REG32  MCF            : 1;
+  __REG32  MCP            : 1;
+  __REG32  MCFHP          : 1;
+  __REG32                 :26;
+} __eth_mmccr_bits;
+
+/* Ethernet MMC receive interrupt register (ETH_MMCRIR) */
+typedef struct {
+  __REG32                 : 5;
+  __REG32  RFCES          : 1;
+  __REG32  RFAES          : 1;
+  __REG32                 :10;
+  __REG32  RGUFS          : 1;
+  __REG32                 :14;
+} __eth_mmcrir_bits;
+
+/* Ethernet MMC transmit interrupt register (ETH_MMCTIR) */
+typedef struct {
+  __REG32                 :14;
+  __REG32  TGFSCS         : 1;
+  __REG32  TGFMSCS        : 1;
+  __REG32                 : 5;
+  __REG32  TGFS           : 1;
+  __REG32                 :10;
+} __eth_mmctir_bits;
+
+/* Ethernet MMC receive interrupt mask register (ETH_MMCRIMR) */
+typedef struct {
+  __REG32                 : 5;
+  __REG32  RFCEM          : 1;
+  __REG32  RFAEM          : 1;
+  __REG32                 :10;
+  __REG32  RGUFM          : 1;
+  __REG32                 :14;
+} __eth_mmcrimr_bits;
+
+/* Ethernet MMC transmit interrupt mask register (ETH_MMCTIMR) */
+typedef struct {
+  __REG32                 :14;
+  __REG32  TGFSCM         : 1;
+  __REG32  TGFMSCM        : 1;
+  __REG32                 : 5;
+  __REG32  TGFM           : 1;
+  __REG32                 :10;
+} __eth_mmctimr_bits;
+
+/* Ethernet PTP time stamp control register (ETH_PTPTSCR) */
+typedef struct {
+  __REG32  TSE            : 1;
+  __REG32  TSFCU          : 1;
+  __REG32  TSSTI          : 1;
+  __REG32  TSSTU          : 1;
+  __REG32  TSITE          : 1;
+  __REG32  TTSARU         : 1;
+  __REG32                 : 2;
+  __REG32  TSSARFE        : 1;
+  __REG32  TSSSR          : 1;
+  __REG32  TSPTPPSV2E     : 1;
+  __REG32  TSSPTPOEFE     : 1;
+  __REG32  TSSIPV6FE      : 1;
+  __REG32  TSSIPV4FE      : 1;
+  __REG32  TSSEME         : 1;
+  __REG32  TSSMRME        : 1;
+  __REG32  TSCNT          : 2;
+  __REG32  TSPFFMAE       : 1;
+  __REG32                 :13;
+} __eth_ptptscr_bits;
+
+/* Ethernet PTP subsecond increment register (ETH_PTPSSIR) */
+typedef struct {
+  __REG32  STSSI          : 8;
+  __REG32                 :24;
+} __eth_ptpssir_bits;
+
+/* Ethernet PTP time stamp low register (ETH_PTPTSLR) */
+typedef struct {
+  __REG32  STSS           :31;
+  __REG32  STPNS          : 1;
+} __eth_ptptslr_bits;
+
+/* Ethernet PTP time stamp low update register (ETH_PTPTSLUR) */
+typedef struct {
+  __REG32  TSUSS          :31;
+  __REG32  TSUPNS         : 1;
+} __eth_ptptslur_bits;
+
+/* Ethernet PTP time stamp status register (ETH_PTPTSSR) */
+/* Ethernet PTP PPS control register (ETH_PTPPPSCR) */
+typedef struct {
+  __REG32  TSSO           : 1;
+  __REG32  TSTTR          : 1;
+  __REG32                 :30;
+} __eth_ptptssr_bits;
+
+/* Ethernet DMA bus mode register (ETH_DMABMR) */
+typedef struct {
+  __REG32  SR             : 1;
+  __REG32  DA             : 1;
+  __REG32  DSL            : 5;
+  __REG32                 : 1;
+  __REG32  PBL            : 6;
+  __REG32  RTPR           : 2;
+  __REG32  FB             : 1;
+  __REG32  RDP            : 6;
+  __REG32  USP            : 1;
+  __REG32  FPM            : 1;
+  __REG32  AAB            : 1;
+  __REG32  MB             : 1;
+  __REG32                 : 5;
+} __eth_dmabmr_bits;
+
+/* Ethernet DMA status register (ETH_DMASR) */
+typedef struct {
+  __REG32  TS             : 1;
+  __REG32  TPSS           : 1;
+  __REG32  TBUS           : 1;
+  __REG32  TJTS           : 1;
+  __REG32  ROS            : 1;
+  __REG32  TUS            : 1;
+  __REG32  RS             : 1;
+  __REG32  RBUS           : 1;
+  __REG32  RPSS           : 1;
+  __REG32  RWTS           : 1;
+  __REG32  ETS            : 1;
+  __REG32                 : 2;
+  __REG32  FBES           : 1;
+  __REG32  ERS            : 1;
+  __REG32  AIS            : 1;
+  __REG32  NIS            : 1;
+  __REG32  RPS            : 3;
+  __REG32  TPS            : 3;
+  __REG32  EBS            : 3;
+  __REG32                 : 1;
+  __REG32  MMCS           : 1;
+  __REG32  PMTS           : 1;
+  __REG32  TSTS           : 1;
+  __REG32                 : 2;
+} __eth_dmasr_bits;
+
+/* Ethernet DMA operation mode register (ETH_DMAOMR) */
+typedef struct {
+  __REG32                 : 1;
+  __REG32  SR             : 1;
+  __REG32  OSF            : 1;
+  __REG32  RTC            : 2;
+  __REG32                 : 1;
+  __REG32  FUGF           : 1;
+  __REG32  FEF            : 1;
+  __REG32                 : 5;
+  __REG32  ST             : 1;
+  __REG32  TTC            : 3;
+  __REG32                 : 3;
+  __REG32  FTF            : 1;
+  __REG32  TSF            : 1;
+  __REG32                 : 2;
+  __REG32  DFRF           : 1;
+  __REG32  RSF            : 1;
+  __REG32  DTCEFD         : 1;
+  __REG32                 : 5;
+} __eth_dmaomr_bits;
+
+/* Ethernet DMA interrupt enable register (ETH_DMAIER) */
+typedef struct {
+  __REG32  TIE            : 1;
+  __REG32  TPSIE          : 1;
+  __REG32  TBUIE          : 1;
+  __REG32  TJTIE          : 1;
+  __REG32  ROIE           : 1;
+  __REG32  TUIE           : 1;
+  __REG32  RIE            : 1;
+  __REG32  RBUIE          : 1;
+  __REG32  RPSIE          : 1;
+  __REG32  RWTIE          : 1;
+  __REG32  ETIE           : 1;
+  __REG32                 : 2;
+  __REG32  FBEIE          : 1;
+  __REG32  ERIE           : 1;
+  __REG32  AISE           : 1;
+  __REG32  NISE           : 1;
+  __REG32                 :15;
+} __eth_dmaier_bits;
+
+/* Ethernet DMA missed frame and buffer overflow counter register */
+/* (ETH_DMAMFBOCR) */
+typedef struct {
+  __REG32  MFC            :16;
+  __REG32  OMFC           : 1;
+  __REG32  MFA            :11;
+  __REG32  OFOC           : 1;
+  __REG32                 : 3;
+} __eth_dmamfbocr_bits;
+
+/* Ethernet DMA receive status watchdog timer register (ETH_DMARSWTR) */
+typedef struct {
+  __REG32  RSWTC          : 8;
+  __REG32                 :24;
+} __eth_dmarswtr_bits;
+
+/***************************************************************************
+ **
+ ** Ethernet
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(ETH_MACCR,         0x40028000,__READ_WRITE ,__eth_maccr_bits);
+__IO_REG32_BIT(ETH_MACFFR,        0x40028004,__READ_WRITE ,__eth_macffr_bits);
+__IO_REG32(    ETH_MACHTHR,       0x40028008,__READ_WRITE );
+__IO_REG32(    ETH_MACHTLR,       0x4002800C,__READ_WRITE );
+__IO_REG32_BIT(ETH_MACMIIAR,      0x40028010,__READ_WRITE ,__eth_macmiiar_bits);
+__IO_REG32_BIT(ETH_MACMIIDR,      0x40028014,__READ_WRITE ,__eth_macmiidr_bits);
+__IO_REG32_BIT(ETH_MACFCR,        0x40028018,__READ_WRITE ,__eth_macfcr_bits);
+__IO_REG32_BIT(ETH_MACVLANTR,     0x4002801C,__READ_WRITE ,__eth_macvlantr_bits);
+__IO_REG32(    ETH_MACRWUFFR,     0x40028028,__READ_WRITE );
+__IO_REG32_BIT(ETH_MACPMTCSR,     0x4002802C,__READ_WRITE ,__eth_macpmtcsr_bits);
+__IO_REG32_BIT(ETH_MACDBGR,       0x40028034,__READ       ,__eth_macdbgr_bits);
+__IO_REG32_BIT(ETH_MACSR,         0x40028038,__READ       ,__eth_macsr_bits);
+__IO_REG32_BIT(ETH_MACIMR,        0x4002803C,__READ_WRITE ,__eth_macimr_bits);
+__IO_REG32_BIT(ETH_MACA0HR,       0x40028040,__READ_WRITE ,__eth_maca0hr_bits);
+__IO_REG32(    ETH_MACA0LR,       0x40028044,__READ_WRITE );
+__IO_REG32_BIT(ETH_MACA1HR,       0x40028048,__READ_WRITE ,__eth_maca1hr_bits);
+__IO_REG32(    ETH_MACA1LR,       0x4002804C,__READ_WRITE );
+__IO_REG32_BIT(ETH_MACA2HR,       0x40028050,__READ_WRITE ,__eth_maca2hr_bits);
+__IO_REG32(    ETH_MACA2LR,       0x40028054,__READ_WRITE );
+__IO_REG32_BIT(ETH_MACA3HR,       0x40028058,__READ_WRITE ,__eth_maca3hr_bits);
+__IO_REG32(    ETH_MACA3LR,       0x4002805C,__READ_WRITE );
+__IO_REG32_BIT(ETH_MMCCR,         0x40028100,__READ_WRITE ,__eth_mmccr_bits);
+__IO_REG32_BIT(ETH_MMCRIR,        0x40028104,__READ       ,__eth_mmcrir_bits);
+__IO_REG32_BIT(ETH_MMCTIR,        0x40028108,__READ       ,__eth_mmctir_bits);
+__IO_REG32_BIT(ETH_MMCRIMR,       0x4002810C,__READ_WRITE ,__eth_mmcrimr_bits);
+__IO_REG32_BIT(ETH_MMCTIMR,       0x40028110,__READ_WRITE ,__eth_mmctimr_bits);
+__IO_REG32(    ETH_MMCTGFSCCR,    0x4002814C,__READ       );
+__IO_REG32(    ETH_MMCTGFMSCCR,   0x40028150,__READ       );
+__IO_REG32(    ETH_MMCTGFCR,      0x40028168,__READ       );
+__IO_REG32(    ETH_MMCRFCECR,     0x40028194,__READ       );
+__IO_REG32(    ETH_MMCRFAECR,     0x40028198,__READ       );
+__IO_REG32(    ETH_MMCRGUFCR,     0x400281C4,__READ       );
+__IO_REG32_BIT(ETH_PTPTSCR,       0x40028700,__READ_WRITE ,__eth_ptptscr_bits);
+__IO_REG32_BIT(ETH_PTPSSIR,       0x40028704,__READ_WRITE ,__eth_ptpssir_bits);
+__IO_REG32(    ETH_PTPTSHR,       0x40028708,__READ       );
+__IO_REG32_BIT(ETH_PTPTSLR,       0x4002870C,__READ       ,__eth_ptptslr_bits);
+__IO_REG32(    ETH_PTPTSHUR,      0x40028710,__READ_WRITE );
+__IO_REG32_BIT(ETH_PTPTSLUR,      0x40028714,__READ_WRITE ,__eth_ptptslur_bits);
+__IO_REG32(    ETH_PTPTSAR,       0x40028718,__READ_WRITE );
+__IO_REG32(    ETH_PTPTTHR,       0x4002871C,__READ_WRITE );
+__IO_REG32(    ETH_PTPTTLR,       0x40028720,__READ_WRITE );
+__IO_REG32_BIT(ETH_PTPTSSR,       0x40028728,__READ       ,__eth_ptptssr_bits);
+__IO_REG32_BIT(ETH_PTPPPSCR,      0x4002872C,__READ       ,__eth_ptptssr_bits);
+__IO_REG32_BIT(ETH_DMABMR,        0x40029000,__READ_WRITE ,__eth_dmabmr_bits);
+__IO_REG32(    ETH_DMATPDR,       0x40029004,__READ_WRITE );
+__IO_REG32(    ETH_DMARPDR,       0x40029008,__READ_WRITE );
+__IO_REG32(    ETH_DMARDLAR,      0x4002900C,__READ_WRITE );
+__IO_REG32(    ETH_DMATDLAR,      0x40029010,__READ_WRITE );
+__IO_REG32_BIT(ETH_DMASR,         0x40029014,__READ_WRITE ,__eth_dmasr_bits);
+__IO_REG32_BIT(ETH_DMAOMR,        0x40029018,__READ_WRITE ,__eth_dmaomr_bits);
+__IO_REG32_BIT(ETH_DMAIER,        0x4002901C,__READ_WRITE ,__eth_dmaier_bits);
+__IO_REG32_BIT(ETH_DMAMFBOCR,     0x40029020,__READ_WRITE ,__eth_dmamfbocr_bits);
+__IO_REG32_BIT(ETH_DMARSWTR,      0x40029024,__READ_WRITE ,__eth_dmarswtr_bits);
+__IO_REG32(    ETH_DMACHTDR,      0x40029048,__READ       );
+__IO_REG32(    ETH_DMACHRDR,      0x4002904C,__READ       );
+__IO_REG32(    ETH_DMACHTBAR,     0x40029050,__READ       );
+__IO_REG32(    ETH_DMACHRBAR,     0x40029054,__READ       );
+
 #endif  //  IRS_STM32F2xx
 
 #endif // armregs_stm32f2xxH
