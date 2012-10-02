@@ -127,6 +127,9 @@ typedef struct
 #define __IO_REG32(NAME, ADDRESS, ATTRIBUTE)             \
                    volatile __no_init ATTRIBUTE unsigned long NAME @ ADDRESS
 
+#define IRS_IO_REG32(NAME, ATTRIBUTE)\
+                    ATTRIBUTE unsigned long NAME
+
 /***********************************************
  * Define NAME as an I/O reg
  * Access of 8/16/32 bit reg:  NAME
@@ -173,6 +176,7 @@ typedef struct
                            unsigned long NAME;             \
                            BIT_STRUCT NAME ## _bit;      \
                          }
+
 
 #pragma language=restore
 

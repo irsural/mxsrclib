@@ -3195,6 +3195,486 @@ struct adc_regs_t
   IRS_IO_REG32_BIT(ADC_DR, __READ       ,__adc_dr_bits);
 };
 
+/* DMA low interrupt status register (DMA_LISR) */
+typedef struct {
+  __REG32  FEIF0          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF0         : 1;
+  __REG32  TEIF0          : 1;
+  __REG32  HTIF0          : 1;
+  __REG32  TCIF0          : 1;
+  __REG32  FEIF1          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF1         : 1;
+  __REG32  TEIF1          : 1;
+  __REG32  HTIF1          : 1;
+  __REG32  TCIF1          : 1;
+  __REG32                 : 4;
+  __REG32  FEIF2          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF2         : 1;
+  __REG32  TEIF2          : 1;
+  __REG32  HTIF2          : 1;
+  __REG32  TCIF2          : 1;
+  __REG32  FEIF3          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF3         : 1;
+  __REG32  TEIF3          : 1;
+  __REG32  HTIF3          : 1;
+  __REG32  TCIF3          : 1;
+  __REG32                 : 4;
+} __dma_lisr_bits;
+
+/* DMA high interrupt status register (DMA_HISR) */
+typedef struct {
+  __REG32  FEIF0          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF0         : 1;
+  __REG32  TEIF0          : 1;
+  __REG32  HTIF0          : 1;
+  __REG32  TCIF0          : 1;
+  __REG32  FEIF1          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF1         : 1;
+  __REG32  TEIF1          : 1;
+  __REG32  HTIF1          : 1;
+  __REG32  TCIF1          : 1;
+  __REG32                 : 4;
+  __REG32  FEIF2          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF2         : 1;
+  __REG32  TEIF2          : 1;
+  __REG32  HTIF2          : 1;
+  __REG32  TCIF2          : 1;
+  __REG32  FEIF3          : 1;
+  __REG32                 : 1;
+  __REG32  DMEIF3         : 1;
+  __REG32  TEIF3          : 1;
+  __REG32  HTIF3          : 1;
+  __REG32  TCIF3          : 1;
+  __REG32                 : 4;
+} __dma_hisr_bits;
+
+/* DMA low interrupt flag clear register (DMA_LIFCR) */
+typedef struct {
+  __REG32  CFEIF0         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF0        : 1;
+  __REG32  CTEIF0         : 1;
+  __REG32  CHTIF0         : 1;
+  __REG32  CTCIF0         : 1;
+  __REG32  CFEIF1         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF1        : 1;
+  __REG32  CTEIF1         : 1;
+  __REG32  CHTIF1         : 1;
+  __REG32  CTCIF1         : 1;
+  __REG32                 : 4;
+  __REG32  CFEIF2         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF2        : 1;
+  __REG32  CTEIF2         : 1;
+  __REG32  CHTIF2         : 1;
+  __REG32  CTCIF2         : 1;
+  __REG32  CFEIF3         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF3        : 1;
+  __REG32  CTEIF3         : 1;
+  __REG32  CHTIF3         : 1;
+  __REG32  CTCIF3         : 1;
+  __REG32                 : 4;
+} __dma_lifcr_bits;
+
+/* DMA high interrupt flag clear register (DMA_HIFCR) */
+typedef struct {
+  __REG32  CFEIF0         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF0        : 1;
+  __REG32  CTEIF0         : 1;
+  __REG32  CHTIF0         : 1;
+  __REG32  CTCIF0         : 1;
+  __REG32  CFEIF1         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF1        : 1;
+  __REG32  CTEIF1         : 1;
+  __REG32  CHTIF1         : 1;
+  __REG32  CTCIF1         : 1;
+  __REG32                 : 4;
+  __REG32  CFEIF2         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF2        : 1;
+  __REG32  CTEIF2         : 1;
+  __REG32  CHTIF2         : 1;
+  __REG32  CTCIF2         : 1;
+  __REG32  CFEIF3         : 1;
+  __REG32                 : 1;
+  __REG32  CDMEIF3        : 1;
+  __REG32  CTEIF3         : 1;
+  __REG32  CHTIF3         : 1;
+  __REG32  CTCIF3         : 1;
+  __REG32                 : 4;
+} __dma_hifcr_bits;
+
+/* DMA stream x configuration register (DMA_SxCR) (x = 0..7) */
+typedef struct {
+  __REG32  EN             : 1;
+  __REG32  DMEIE          : 1;
+  __REG32  TEIE           : 1;
+  __REG32  HTIE           : 1;
+  __REG32  TCIE           : 1;
+  __REG32  PFCTRL         : 1;
+  __REG32  DIR            : 2;
+  __REG32  CIRC           : 1;
+  __REG32  PINC           : 1;
+  __REG32  MINC           : 1;
+  __REG32  PSIZE          : 2;
+  __REG32  MSIZE          : 2;
+  __REG32  PINCOS         : 1;
+  __REG32  PL             : 2;
+  __REG32  DBM            : 1;
+  __REG32  CT             : 1;
+  __REG32                 : 1;
+  __REG32  PBURST         : 2;
+  __REG32  MBURST         : 2;
+  __REG32  CHSEL          : 3;
+  __REG32                 : 4;
+} __dma_sxcr_bits;
+
+/* DMA stream x number of data register (DMA_SxNDTR) (x = 0..7) */
+typedef struct {
+  __REG32  NDT            :16;
+  __REG32                 :16;
+} __dma_sxndtr_bits;
+
+/* DMA stream x FIFO control register (DMA_SxFCR) (x = 0..7) */
+typedef struct {
+  __REG32  FTH            : 2;
+  __REG32  DMDIS          : 1;
+  __REG32  FS             : 3;
+  __REG32                 : 1;
+  __REG32  FEIE           : 1;
+  __REG32                 :24;
+} __dma_sxfcr_bits;
+
+
+/***************************************************************************
+ **
+ ** DMA
+ **
+ ***************************************************************************/
+#define DMA_LISR_S 0X00
+#define DMA_HISR_S 0X04
+#define DMA_LIFCR_S 0X08
+#define DMA_HIFCR_S 0X0C
+#define DMA_SxCR 0X10
+#define DMA_SxNDTR 0X14
+#define DMA_SxPAR 0X18
+#define DMA_SxM0AR 0X1C
+#define DMA_SxM1AR 0X20
+#define DMA_SxFCR 0X24
+#define DMA_stream_shift 0X18
+
+/***************************************************************************
+ **
+ ** DMA1
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(DMA1_LISR,         DMA1_BASE + DMA_LISR_S,__READ       ,
+  __dma_lisr_bits);
+__IO_REG32_BIT(DMA1_HISR,         DMA1_BASE + DMA_HISR_S,__READ       ,
+  __dma_hisr_bits);
+__IO_REG32_BIT(DMA1_LIFCR,        DMA1_BASE + DMA_LIFCR_S,__READ_WRITE ,
+  __dma_lifcr_bits);
+__IO_REG32_BIT(DMA1_HIFCR,        DMA1_BASE + DMA_HIFCR_S,__READ_WRITE ,
+  __dma_hifcr_bits);
+
+__IO_REG32_BIT(DMA1_S0CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S0NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S0PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S0M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S0M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S0FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S1CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S1NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S1PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S1M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S1M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S1FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S2CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S2NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S2PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S2M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S2M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S2FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S3CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S3NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S3PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S3M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S3M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S3FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S4CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S4NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S4PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S4M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S4M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S4FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S5CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S5NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S5PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S5M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S5M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S5FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S6CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S6NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S6PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S6M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S6M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S6FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA1_S7CR,         DMA1_BASE + DMA_SxCR +   DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA1_S7NDTR,       DMA1_BASE + DMA_SxNDTR + DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA1_S7PAR,        DMA1_BASE + DMA_SxPAR +  DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S7M0AR,       DMA1_BASE + DMA_SxM0AR + DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32(    DMA1_S7M1AR,       DMA1_BASE + DMA_SxM1AR + DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA1_S7FCR,        DMA1_BASE + DMA_SxFCR +  DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+/***************************************************************************
+ **
+ ** DMA2
+ **
+ ***************************************************************************/
+
+__IO_REG32_BIT(DMA2_LISR,         DMA2_BASE + DMA_LISR_S,__READ       , 
+  __dma_lisr_bits);
+__IO_REG32_BIT(DMA2_HISR,         DMA2_BASE + DMA_HISR_S,__READ       ,
+  __dma_hisr_bits);
+__IO_REG32_BIT(DMA2_LIFCR,        DMA2_BASE + DMA_LIFCR_S,__READ_WRITE ,
+  __dma_lifcr_bits);
+__IO_REG32_BIT(DMA2_HIFCR,        DMA2_BASE + DMA_HIFCR_S,__READ_WRITE ,
+  __dma_hifcr_bits);
+
+__IO_REG32_BIT(DMA2_S0CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S0NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S0PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S0M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S0M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*0,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S0FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*0,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S1CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S1NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S1PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S1M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S1M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*1,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S1FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*1,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S2CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S2NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S2PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S2M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S2M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*2,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S2FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*2,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S3CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S3NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S3PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S3M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S3M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*3,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S3FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*3,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S4CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S4NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S4PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S4M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S4M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*4,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S4FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*4,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S5CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S5NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S5PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S5M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S5M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*5,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S5FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*5,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S6CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S6NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S6PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S6M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S6M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*6,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S6FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*6,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+__IO_REG32_BIT(DMA2_S7CR,         DMA2_BASE + DMA_SxCR +   DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxcr_bits);
+__IO_REG32_BIT(DMA2_S7NDTR,       DMA2_BASE + DMA_SxNDTR + DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxndtr_bits);
+__IO_REG32(    DMA2_S7PAR,        DMA2_BASE + DMA_SxPAR +  DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S7M0AR,       DMA2_BASE + DMA_SxM0AR + DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32(    DMA2_S7M1AR,       DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*7,
+  __READ_WRITE );
+__IO_REG32_BIT(DMA2_S7FCR,        DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*7,
+  __READ_WRITE ,__dma_sxfcr_bits);
+
+struct dma_regs_t
+{
+  IRS_IO_REG32_BIT(DMA_LISR, __READ ,__dma_lisr_bits);
+  IRS_IO_REG32_BIT(DMA_HISR, __READ ,__dma_hisr_bits);
+  IRS_IO_REG32_BIT(DMA_LIFCR, __READ_WRITE ,__dma_lifcr_bits);
+  IRS_IO_REG32_BIT(DMA_HIFCR, __READ_WRITE ,__dma_hifcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S0CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S0NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S0PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S0M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S0M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S0FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S1CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S1NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S1PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S1M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S1M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S1FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S2CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S2NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S2PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S2M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S2M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S2FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S3CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S3NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S3PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S3M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S3M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S3FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S4CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S4NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S4PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S4M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S4M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S4FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S5CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S5NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S5PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S5M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S5M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S5FCR, __READ_WRITE, __dma_sxfcr_bits);
+
+  IRS_IO_REG32_BIT(DMA_S6CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S6NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S6PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S6M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S6M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S6FCR, __READ_WRITE, __dma_sxfcr_bits);
+  
+  IRS_IO_REG32_BIT(DMA_S7CR, __READ_WRITE, __dma_sxcr_bits);
+  IRS_IO_REG32_BIT(DMA_S7NDTR, __READ_WRITE, __dma_sxndtr_bits);
+  IRS_IO_REG32(DMA_S7PAR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S7M0AR, __READ_WRITE);
+  IRS_IO_REG32(DMA_S7M1AR, __READ_WRITE);
+  IRS_IO_REG32_BIT(DMA_S7FCR, __READ_WRITE, __dma_sxfcr_bits);
+};
+
 /* DAC control register (DAC_CR) */
 typedef struct {
   __REG32 EN1             : 1;

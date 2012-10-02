@@ -332,6 +332,12 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     case DAC1_DAC2_BASE: {
       RCC_APB1ENR_bit.DACEN = value;
     } break;
+    case DMA1_BASE: {
+      RCC_AHB1ENR_bit.DMA1EN = value;
+    } break;
+    case DMA2_BASE: {
+      RCC_AHB1ENR_bit.DMA2EN = value;
+    } break;
     default : {
       IRS_ASSERT_MSG("Включение/отключение для указанного "
         "устройства не определено");
