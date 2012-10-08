@@ -156,7 +156,8 @@ public:
     ADC12_PC4_CH14 = (1 << 14) | ADC1_MASK | ADC2_MASK,
     ADC3_PF4_CH14 = (1 << 14) | ADC3_MASK,
     ADC12_PC5_CH15 = (1 << 15) | ADC1_MASK | ADC2_MASK,
-    ADC3_PF5_CH15 = (1 << 15) | ADC3_MASK
+    ADC3_PF5_CH15 = (1 << 15) | ADC3_MASK,
+    ADC1_TEMPERATURE = (1 << 16) | ADC1_MASK
   };
   st_adc_t(size_t a_adc_address, select_channel_type a_selected_channels,
     counter_t a_adc_interval = make_cnt_ms(100));
@@ -182,6 +183,7 @@ private:
   vector<irs_u32> m_regular_channels_values;
   vector<irs_u32> m_active_channels;
   size_t m_current_channel;
+  bool m_temperature_sensor_enabled;
   irs_i16 m_temperature_channel_value;
 };
 

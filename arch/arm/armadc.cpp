@@ -910,6 +910,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   m_regular_channels_values(),
   m_active_channels(),
   m_current_channel(),
+  m_temperature_sensor_enabled(false),
   m_temperature_channel_value()
 {
   clock_enable(a_adc_address);
@@ -958,7 +959,14 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     }
   }
 
-  if ((a_adc_address == IRS_ADC1_BASE) || !m_regular_channels_values.empty()) {
+  const irs_u32 channel_mask = a_selected_channels & 0xFFFFFF;
+  if ((a_adc_address == IRS_ADC1_BASE) &&
+    (a_selected_channels & ADC1_MASK) &&
+    (channel_mask & ADC1_TEMPERATURE)) {
+    m_temperature_sensor_enabled = true;
+  }
+
+  if (m_temperature_sensor_enabled || !m_regular_channels_values.empty()) {
     // Включаем АЦП
     mp_adc->ADC_CR2_bit.ADON = 1;
   }
@@ -969,7 +977,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
     mp_adc->ADC_CR2_bit.SWSTART = 1;
   }
-  if (a_adc_address == IRS_ADC1_BASE) {
+  if (m_temperature_sensor_enabled) {
     ADC_CCR_bit.TSVREFE = 1;
     // 0: Один встроенный канал
     mp_adc->ADC_JSQR_bit.JL = 0;
@@ -1053,13 +1061,12 @@ float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 
 float irs::arm::st_adc_t::get_temperature()
 {
-  if (reinterpret_cast<size_t>(mp_adc) == IRS_ADC1_BASE) {
+  if (m_temperature_sensor_enabled) {
     const float v25 = 0.76;
-    const float avg_Slope = 2.5;
+    const float avg_Slope = 0.0025;
     const float v_ref = 3.3;
     const float koef = v_ref/adc_max_value;
     const float v_sence = m_temperature_channel_value*koef;
-    // Формула не работает!!!
     return (v_sence - v25)/avg_Slope + 25;
   } else {
     return 0;
@@ -1079,7 +1086,7 @@ void irs::arm::st_adc_t::tick()
       mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
       mp_adc->ADC_CR2_bit.SWSTART = 1;
     }
-    if (reinterpret_cast<size_t>(mp_adc) == IRS_ADC1_BASE) {
+    if (m_temperature_sensor_enabled) {
       if (mp_adc->ADC_SR_bit.JEOC == 1) {
         m_temperature_channel_value =
           static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
