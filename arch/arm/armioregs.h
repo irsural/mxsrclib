@@ -17,7 +17,7 @@
   #include <armregs_stm32f2xx.h>
 #else
   #error Тип контроллера не определён
-#endif  //  __LM3Sx9xx__
+#endif  // Микроконтроллеры
 
 #if defined(__LM3SxBxx__) || \
     defined(__LM3Sx9xx__) || \
@@ -27,6 +27,6 @@
   #include <armregs_cortex_m3.h>
 #else
   #error Тип контроллера не определён
-#endif  //  __LM3Sx9xx__
+#endif  //  Микроконтроллеры
 
 #endif  //  armioregsH

@@ -643,7 +643,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   set_moder_alternate_function(a_miso);
   set_moder_alternate_function(a_mosi);
   size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
-  if (spi_address == SPI2_I2S2_BASE) {
+  if (spi_address == IRS_SPI2_I2S2_BASE) {
     switch (a_sck) {
       case PB13: {
         GPIOB_AFRH_bit.AFRH13 = 5;
@@ -668,7 +668,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
       }
     }
-  } else if (spi_address == SPI3_I2S3_BASE) {
+  } else if (spi_address == IRS_SPI3_I2S3_BASE) {
     switch (a_sck) {
       case PC10: {
         GPIOC_AFRH_bit.AFRH10 = 6;
@@ -760,7 +760,7 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
   }
   cpu_traits_t::frequency_type frequency = 0;
   size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
-  if (spi_address == SPI1_BASE) {
+  if (spi_address == IRS_SPI1_BASE) {
     frequency = cpu_traits_t::periphery_frequency_second();
   } else {
     frequency = cpu_traits_t::periphery_frequency_first();

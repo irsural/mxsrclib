@@ -946,7 +946,8 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
 
   for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
-    const select_channel_type adc_mask = (ADC1 | ADC2 | ADC3) & adc_channel;
+    const select_channel_type adc_mask =
+      (ADC1_MASK | ADC2_MASK | ADC3_MASK) & adc_channel;
     const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
     if ((a_selected_channels & channel_mask) &&
       (a_selected_channels & adc_mask)) {
@@ -957,7 +958,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     }
   }
 
-  if ((a_adc_address == ADC1_BASE) || !m_regular_channels_values.empty()) {
+  if ((a_adc_address == IRS_ADC1_BASE) || !m_regular_channels_values.empty()) {
     // Включаем АЦП
     mp_adc->ADC_CR2_bit.ADON = 1;
   }
@@ -968,7 +969,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
     mp_adc->ADC_CR2_bit.SWSTART = 1;
   }
-  if (a_adc_address == ADC1_BASE) {
+  if (a_adc_address == IRS_ADC1_BASE) {
     ADC_CCR_bit.TSVREFE = 1;
     // 0: Один встроенный канал
     mp_adc->ADC_JSQR_bit.JL = 0;
@@ -1052,7 +1053,7 @@ float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 
 float irs::arm::st_adc_t::get_temperature()
 {
-  if (reinterpret_cast<size_t>(mp_adc) == ADC1_BASE) {
+  if (reinterpret_cast<size_t>(mp_adc) == IRS_ADC1_BASE) {
     const float v25 = 0.76;
     const float avg_Slope = 2.5;
     const float v_ref = 3.3;
@@ -1078,7 +1079,7 @@ void irs::arm::st_adc_t::tick()
       mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
       mp_adc->ADC_CR2_bit.SWSTART = 1;
     }
-    if (reinterpret_cast<size_t>(mp_adc) == ADC1_BASE) {
+    if (reinterpret_cast<size_t>(mp_adc) == IRS_ADC1_BASE) {
       if (mp_adc->ADC_SR_bit.JEOC == 1) {
         m_temperature_channel_value =
           static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
@@ -1091,7 +1092,7 @@ void irs::arm::st_adc_t::tick()
 // class st_dac_t
 irs::arm::st_dac_t::st_dac_t(select_channel_type a_selected_channels)
 {
-  irs::clock_enable(DAC1_DAC2_BASE);
+  irs::clock_enable(IRS_DAC1_DAC2_BASE);
   if (a_selected_channels & DAC_PA4_CH0) {
     irs::clock_enable(PA4);
     irs::gpio_moder_analog_enable(PA4);

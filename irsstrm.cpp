@@ -82,35 +82,35 @@ irs::arm::com_buf::com_buf(
   //typedef volatile usart_regs_t usart_regs_v_t;
   switch (a_com_index) {
     case 1: {
-      m_usart = reinterpret_cast<usart_regs_t*>(USART1_BASE);
-      irs::clock_enable(USART1_BASE);
-      irs::clock_enable(PORTA_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART1_BASE);
+      irs::clock_enable(IRS_USART1_BASE);
+      irs::clock_enable(IRS_PORTA_BASE);
     } break;
     case 2: {
-      m_usart = reinterpret_cast<usart_regs_t*>(USART2_BASE);
-      irs::clock_enable(USART2_BASE);
-      irs::clock_enable(PORTA_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART2_BASE);
+      irs::clock_enable(IRS_USART2_BASE);
+      irs::clock_enable(IRS_PORTA_BASE);
     } break;
     case 3: {
-      m_usart = reinterpret_cast<usart_regs_t*>(USART3_BASE);
-      irs::clock_enable(USART3_BASE);
-      irs::clock_enable(PORTB_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART3_BASE);
+      irs::clock_enable(IRS_USART3_BASE);
+      irs::clock_enable(IRS_PORTB_BASE);
     } break;
     case 4: {
-      m_usart = reinterpret_cast<usart_regs_t*>(UART4_BASE);
-      irs::clock_enable(UART4_BASE);
-      irs::clock_enable(PORTC_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART4_BASE);
+      irs::clock_enable(IRS_UART4_BASE);
+      irs::clock_enable(IRS_PORTC_BASE);
     } break;
     case 5: {
-      m_usart = reinterpret_cast<usart_regs_t*>(UART5_BASE);
-      irs::clock_enable(UART5_BASE);
-      irs::clock_enable(PORTC_BASE);
-      irs::clock_enable(PORTD_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART5_BASE);
+      irs::clock_enable(IRS_UART5_BASE);
+      irs::clock_enable(IRS_PORTC_BASE);
+      irs::clock_enable(IRS_PORTD_BASE);
     } break;
     case 6: {
-      m_usart = reinterpret_cast<usart_regs_t*>(USART6_BASE);
-      irs::clock_enable(USART6_BASE);
-      irs::clock_enable(PORTC_BASE);
+      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART6_BASE);
+      irs::clock_enable(IRS_USART6_BASE);
+      irs::clock_enable(IRS_PORTC_BASE);
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");

@@ -76,11 +76,11 @@ void irs::cpu_traits_t::periphery_frequency_second(
 irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::timer_frequency(size_t a_timer_base)
 {
-  if ((a_timer_base == TIM1_PWM1_BASE) ||
-    (a_timer_base == TIM8_PWM2_BASE) ||
-    (a_timer_base == TIM9_BASE) ||
-    (a_timer_base == TIM10_BASE) ||
-    (a_timer_base == TIM11_BASE)) {
+  if ((a_timer_base == IRS_TIM1_PWM1_BASE) ||
+    (a_timer_base == IRS_TIM8_PWM2_BASE) ||
+    (a_timer_base == IRS_TIM9_BASE) ||
+    (a_timer_base == IRS_TIM10_BASE) ||
+    (a_timer_base == IRS_TIM11_BASE)) {
     return m_periphery_frequency_second*2;
   } else {
     return m_periphery_frequency_first*2;

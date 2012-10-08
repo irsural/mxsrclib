@@ -68,11 +68,13 @@
 #ifdef IRS_WIN32
 # include <winsock2.h>
 #endif // __WIN32__
+
 #ifdef __BORLANDC__
-#include <System.hpp>
+# include <System.hpp>
 #endif //__BORLANDC__
+
 #ifdef __ICCAVR__
-#include <inavr.h>
+# include <inavr.h>
 #endif // __ICCAVR__
 
 #include <limits.h>
@@ -477,4 +479,3 @@ enum irs_status_t {
 //! @}
 
 #endif //IRSDEFSH
-

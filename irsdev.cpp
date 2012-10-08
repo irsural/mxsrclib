@@ -698,8 +698,8 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   mp_timer->TIM_CR1_bit.ARPE = 1;
   // 1: Re-initialize the counter and generates an update of the registers.
   mp_timer->TIM_EGR_bit.UG = 1;
-  if ((a_timer_address == TIM1_PWM1_BASE) ||
-    (a_timer_address == TIM8_PWM2_BASE)) {
+  if ((a_timer_address == IRS_TIM1_PWM1_BASE) ||
+    (a_timer_address == IRS_TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.OSSI = 1;
   }
   mp_timer->TIM_CR1_bit.CEN = 1;
@@ -711,7 +711,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   switch (m_gpio_channel) {
     case PA8: {
-      if (timer_address == TIM1_PWM1_BASE) {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
         m_timer_channel = 1;
         GPIOA_AFRH_bit.AFRH8 = 1;
       } else {
@@ -719,7 +719,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PB0: {
-      if (timer_address == TIM3_BASE) {
+      if (timer_address == IRS_TIM3_BASE) {
         m_timer_channel = 3;
         GPIOB_AFRL_bit.AFRL0 = 2;
       } else {
@@ -727,7 +727,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PB10: {
-      if (timer_address == TIM2_BASE) {
+      if (timer_address == IRS_TIM2_BASE) {
         m_timer_channel = 3;
         GPIOB_AFRH_bit.AFRH10 = 1;
       } else {
@@ -735,7 +735,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PB11: {
-      if (timer_address == TIM2_BASE) {
+      if (timer_address == IRS_TIM2_BASE) {
         m_timer_channel = 4;
         GPIOB_AFRH_bit.AFRH11 = 1;
       } else {
@@ -743,10 +743,10 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PC6: {
-      if (timer_address == TIM3_BASE) {
+      if (timer_address == IRS_TIM3_BASE) {
         m_timer_channel = 1;
         GPIOC_AFRL_bit.AFRL6 = 2;
-      } else if (timer_address == TIM8_PWM2_BASE) {
+      } else if (timer_address == IRS_TIM8_PWM2_BASE) {
         m_timer_channel = 1;
         GPIOC_AFRL_bit.AFRL6 = 3;
       } else {
@@ -754,7 +754,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PC7: {
-      if (timer_address == TIM3_BASE) {
+      if (timer_address == IRS_TIM3_BASE) {
         m_timer_channel = 2;
         GPIOC_AFRL_bit.AFRL7 = 2;
       } else {
@@ -762,7 +762,7 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
     } break;
     case PE6: {
-      if (timer_address == TIM9_BASE) {
+      if (timer_address == IRS_TIM9_BASE) {
         m_timer_channel = 2;
         GPIOE_AFRL_bit.AFRL6 = 3;
       } else {
@@ -782,7 +782,7 @@ select_alternate_function_for_complementary_channel()
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   if (m_complementary_gpio_channel != PNONE) {
-    if (timer_address == TIM1_PWM1_BASE) {
+    if (timer_address == IRS_TIM1_PWM1_BASE) {
       switch (m_complementary_gpio_channel) {
         case PA7: {
           if (m_timer_channel != 1) {
@@ -794,7 +794,7 @@ select_alternate_function_for_complementary_channel()
           IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
         }
       }
-    } else if (timer_address == TIM8_PWM2_BASE) {
+    } else if (timer_address == IRS_TIM8_PWM2_BASE) {
       switch (m_complementary_gpio_channel) {
         case PA5: {
           if (m_timer_channel != 1) {
@@ -817,7 +817,7 @@ void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   if (m_break_gpio_channel != PNONE) {
-    if (timer_address == TIM1_PWM1_BASE) {
+    if (timer_address == IRS_TIM1_PWM1_BASE) {
       switch (m_break_gpio_channel) {
         case PA6: {
           GPIOA_AFRL_bit.AFRL6 = 1;
@@ -826,7 +826,7 @@ void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
           IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
         }
       }
-    } else if (timer_address == TIM8_PWM2_BASE) {
+    } else if (timer_address == IRS_TIM8_PWM2_BASE) {
       switch (m_break_gpio_channel) {
         case PA6: {
           GPIOA_AFRL_bit.AFRL6 = 3;
@@ -936,16 +936,16 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::timer_frequency()
 void irs::arm::st_pwm_gen_t::start()
 {
   set_mode_capture_compare_registers(ocm_pwm_mode_1);
-  if ((reinterpret_cast<size_t>(mp_timer) == TIM1_PWM1_BASE) ||
-    (reinterpret_cast<size_t>(mp_timer) == TIM8_PWM2_BASE)) {
+  if ((reinterpret_cast<size_t>(mp_timer) == IRS_TIM1_PWM1_BASE) ||
+    (reinterpret_cast<size_t>(mp_timer) == IRS_TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 1;
   }
 }
 
 void irs::arm::st_pwm_gen_t::stop()
 {
-  if ((reinterpret_cast<size_t>(mp_timer) == TIM1_PWM1_BASE) ||
-    (reinterpret_cast<size_t>(mp_timer) == TIM8_PWM2_BASE)) {
+  if ((reinterpret_cast<size_t>(mp_timer) == IRS_TIM1_PWM1_BASE) ||
+    (reinterpret_cast<size_t>(mp_timer) == IRS_TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 0;
 
   }
@@ -990,7 +990,8 @@ void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   break_polarity_t a_polarity)
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
-  if ((timer_address != TIM1_PWM1_BASE) && (timer_address != TIM8_PWM2_BASE)) {
+  if ((timer_address != IRS_TIM1_PWM1_BASE) &&
+    (timer_address != IRS_TIM8_PWM2_BASE)) {
     IRS_LIB_ERROR(ec_standard, "Недопустимый таймер");
   }
   m_break_gpio_channel = a_gpio_channel;

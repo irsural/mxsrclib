@@ -127,36 +127,36 @@ class st_adc_t: public adc_t
 {
 private:
   enum {
-    ADC1 = 1 << 30,
-    ADC2 = 1 << 29,
-    ADC3 = 1 << 28
+    ADC1_MASK = 1 << 30,
+    ADC2_MASK = 1 << 29,
+    ADC3_MASK = 1 << 28
   };
 public:
   enum adc_channel_t {
-    ADC123_PA0_CH0 = (1 << 0) | ADC1 | ADC2 | ADC3,
-    ADC123_PA1_CH1 = (1 << 1) | ADC1 | ADC2 | ADC3,
-    ADC123_PA2_CH2 = (1 << 2) | ADC1 | ADC2 | ADC3,
-    ADC123_PA3_CH3 = (1 << 3) | ADC1 | ADC2 | ADC3,
-    ADC12_PA4_CH4 = (1 << 4) | ADC1 | ADC2,
-    ADC3_PF6_CH4 = (1 << 4) | ADC3,
-    ADC12_PA5_CH5 = (1 << 5) | ADC1 | ADC2,
-    ADC3_PF7_CH5 = (1 << 5) | ADC3,
-    ADC12_PA6_CH6 = (1 << 6) | ADC1 | ADC2,
-    ADC3_PF8_CH6 = (1 << 6) | ADC3,
-    ADC12_PA7_CH7 = (1 << 7) | ADC1 | ADC2,
-    ADC3_PF9_CH7 = (1 << 7) | ADC3,
-    ADC12_PB0_CH8 = (1 << 8) | ADC1 | ADC2,
-    ADC3_PF10_CH8 = (1 << 8) | ADC3,
-    ADC12_PB1_CH9 = (1 << 9) | ADC1 | ADC2,
-    ADC3_PF3_CH9 = (1 << 9) | ADC3,
-    ADC123_PC0_CH10 = (1 << 10) | ADC1 | ADC2 | ADC3,
-    ADC123_PC1_CH11 = (1 << 11) | ADC1 | ADC2 | ADC3,
-    ADC123_PC2_CH12 = (1 << 12) | ADC1 | ADC2 | ADC3,
-    ADC123_PC3_CH13 = (1 << 13) | ADC1 | ADC2 | ADC3,
-    ADC12_PC4_CH14 = (1 << 14) | ADC1 | ADC2,
-    ADC3_PF4_CH14 = (1 << 14) | ADC3,
-    ADC12_PC5_CH15 = (1 << 15) | ADC1 | ADC2,
-    ADC3_PF5_CH15 = (1 << 15) | ADC3
+    ADC123_PA0_CH0 = (1 << 0) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PA1_CH1 = (1 << 1) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PA2_CH2 = (1 << 2) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PA3_CH3 = (1 << 3) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC12_PA4_CH4 = (1 << 4) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF6_CH4 = (1 << 4) | ADC3_MASK,
+    ADC12_PA5_CH5 = (1 << 5) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF7_CH5 = (1 << 5) | ADC3_MASK,
+    ADC12_PA6_CH6 = (1 << 6) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF8_CH6 = (1 << 6) | ADC3_MASK,
+    ADC12_PA7_CH7 = (1 << 7) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF9_CH7 = (1 << 7) | ADC3_MASK,
+    ADC12_PB0_CH8 = (1 << 8) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF10_CH8 = (1 << 8) | ADC3_MASK,
+    ADC12_PB1_CH9 = (1 << 9) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF3_CH9 = (1 << 9) | ADC3_MASK,
+    ADC123_PC0_CH10 = (1 << 10) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PC1_CH11 = (1 << 11) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PC2_CH12 = (1 << 12) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC123_PC3_CH13 = (1 << 13) | ADC1_MASK | ADC2_MASK | ADC3_MASK,
+    ADC12_PC4_CH14 = (1 << 14) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF4_CH14 = (1 << 14) | ADC3_MASK,
+    ADC12_PC5_CH15 = (1 << 15) | ADC1_MASK | ADC2_MASK,
+    ADC3_PF5_CH15 = (1 << 15) | ADC3_MASK
   };
   st_adc_t(size_t a_adc_address, select_channel_type a_selected_channels,
     counter_t a_adc_interval = make_cnt_ms(100));

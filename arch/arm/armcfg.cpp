@@ -102,8 +102,8 @@ size_t irs::get_port_address(gpio_channel_t a_gpio_channel)
     IRS_LIB_ERROR(irs::ec_standard, "Недопустимый канал");
   }
   const size_t port_pin_count = 16;
-  const size_t port_address_delta = PORTB_BASE - PORTA_BASE;
-  return PORTA_BASE + port_address_delta*(a_gpio_channel/port_pin_count);
+  const size_t port_address_delta = IRS_PORTB_BASE - IRS_PORTA_BASE;
+  return IRS_PORTA_BASE + port_address_delta*(a_gpio_channel/port_pin_count);
 }
 
 size_t irs::get_pin_index(gpio_channel_t a_gpio_channel)
@@ -118,71 +118,71 @@ size_t irs::get_pin_index(gpio_channel_t a_gpio_channel)
 void irs::reset_peripheral(size_t a_address)
 {
   switch (a_address) {
-    case TIM1_PWM1_BASE: {
+    case IRS_TIM1_PWM1_BASE: {
       RCC_APB2RSTR_bit.TIM1RST = 1;
       RCC_APB2RSTR_bit.TIM1RST = 0;
     } break;
-    case TIM2_BASE: {
+    case IRS_TIM2_BASE: {
       RCC_APB1RSTR_bit.TIM2RST = 1;
       RCC_APB1RSTR_bit.TIM2RST = 0;
     } break;
-    case TIM3_BASE: {
+    case IRS_TIM3_BASE: {
       RCC_APB1RSTR_bit.TIM3RST = 1;
       RCC_APB1RSTR_bit.TIM3RST = 0;
     } break;
-    case TIM4_BASE: {
+    case IRS_TIM4_BASE: {
       RCC_APB1RSTR_bit.TIM4RST = 1;
       RCC_APB1RSTR_bit.TIM4RST = 0;
     } break;
-    case TIM5_BASE: {
+    case IRS_TIM5_BASE: {
       RCC_APB1RSTR_bit.TIM5RST = 1;
       RCC_APB1RSTR_bit.TIM5RST = 0;
     } break;
-    case TIM6_BASE: {
+    case IRS_TIM6_BASE: {
       RCC_APB1RSTR_bit.TIM6RST = 1;
       RCC_APB1RSTR_bit.TIM6RST = 0;
     } break;
-    case TIM7_BASE: {
+    case IRS_TIM7_BASE: {
       RCC_APB1RSTR_bit.TIM7RST = 1;
       RCC_APB1RSTR_bit.TIM7RST = 0;
     } break;
-    case TIM8_PWM2_BASE: {
+    case IRS_TIM8_PWM2_BASE: {
       RCC_APB2RSTR_bit.TIM8RST = 1;
       RCC_APB2RSTR_bit.TIM8RST = 0;
     } break;
-    case TIM9_BASE: {
+    case IRS_TIM9_BASE: {
       RCC_APB2RSTR_bit.TIM9RST = 1;
       RCC_APB2RSTR_bit.TIM9RST = 0;
     } break;
-    case TIM10_BASE: {
+    case IRS_TIM10_BASE: {
       RCC_APB2RSTR_bit.TIM10RST = 1;
       RCC_APB2RSTR_bit.TIM10RST = 0;
     } break;
-    case TIM11_BASE:{
+    case IRS_TIM11_BASE:{
       RCC_APB2RSTR_bit.TIM11RST = 1;
       RCC_APB2RSTR_bit.TIM11RST = 0;
     } break;
-    case TIM12_BASE: {
+    case IRS_TIM12_BASE: {
       RCC_APB1RSTR_bit.TIM12RST = 1;
       RCC_APB1RSTR_bit.TIM12RST = 0;
     } break;
-    case TIM13_BASE: {
+    case IRS_TIM13_BASE: {
       RCC_APB1RSTR_bit.TIM13RST = 1;
       RCC_APB1RSTR_bit.TIM13RST = 0;
     } break;
-    case TIM14_BASE: {
+    case IRS_TIM14_BASE: {
       RCC_APB1RSTR_bit.TIM14RST = 1;
       RCC_APB1RSTR_bit.TIM14RST = 0;
     } break;
-    case SPI1_BASE: {
+    case IRS_SPI1_BASE: {
       RCC_APB2RSTR_bit.SPI1RST = 1;
       RCC_APB2RSTR_bit.SPI1RST = 0;
     } break;
-    case SPI2_I2S2_BASE: {
+    case IRS_SPI2_I2S2_BASE: {
       RCC_APB1RSTR_bit.SPI2RST = 1;
       RCC_APB1RSTR_bit.SPI2RST = 0;
     } break;
-    case SPI3_I2S3_BASE: {
+    case IRS_SPI3_I2S3_BASE: {
       RCC_APB1RSTR_bit.SPI3RST = 1;
       RCC_APB1RSTR_bit.SPI3RST = 0;
     } break;
@@ -190,7 +190,7 @@ void irs::reset_peripheral(size_t a_address)
       RCC_APB2RSTR.ADCRST = 1;
       RCC_APB2RSTR.ADCRST = 0;
     } break;*/
-    case DAC1_DAC2_BASE: {
+    case IRS_DAC1_DAC2_BASE: {
       RCC_APB1RSTR_bit.DACRST = 1;
       RCC_APB1RSTR_bit.DACRST = 0;
     } break;
@@ -224,118 +224,118 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
 {
   const irs_u32 value = a_enabled ? 1 : 0;
   switch (a_address) {
-    case PORTA_BASE: {
+    case IRS_PORTA_BASE: {
       RCC_AHB1ENR_bit.GPIOAEN = value;
     } break;
-    case PORTB_BASE: {
+    case IRS_PORTB_BASE: {
       RCC_AHB1ENR_bit.GPIOBEN = value;
     } break;
-    case PORTC_BASE: {
+    case IRS_PORTC_BASE: {
       RCC_AHB1ENR_bit.GPIOCEN = value;
     } break;
-    case PORTD_BASE: {
+    case IRS_PORTD_BASE: {
       RCC_AHB1ENR_bit.GPIODEN = value;
     } break;
-    case PORTE_BASE: {
+    case IRS_PORTE_BASE: {
       RCC_AHB1ENR_bit.GPIOEEN = value;
     } break;
-    case PORTF_BASE: {
+    case IRS_PORTF_BASE: {
       RCC_AHB1ENR_bit.GPIOFEN = value;
     } break;
-    case PORTG_BASE: {
+    case IRS_PORTG_BASE: {
       RCC_AHB1ENR_bit.GPIOGEN = value;
     } break;
-    case PORTH_BASE: {
+    case IRS_PORTH_BASE: {
       RCC_AHB1ENR_bit.GPIOHEN = value;
     } break;
-    case PORTI_BASE: {
+    case IRS_PORTI_BASE: {
       RCC_AHB1ENR_bit.GPIOIEN = value;
     } break;
-    case USART1_BASE: {
+    case IRS_USART1_BASE: {
       RCC_APB2ENR_bit.USART1EN = value;
     } break;
-    case USART2_BASE: {
+    case IRS_USART2_BASE: {
       RCC_APB1ENR_bit.USART2EN = value;
     } break;
-    case USART3_BASE: {
+    case IRS_USART3_BASE: {
       RCC_APB1ENR_bit.USART3EN = value;
     } break;
-    case UART4_BASE: {
+    case IRS_UART4_BASE: {
       RCC_APB1ENR_bit.UART4EN = value;
     } break;
-    case UART5_BASE: {
+    case IRS_UART5_BASE: {
       RCC_APB1ENR_bit.UART5EN = value;
     } break;
-    case USART6_BASE: {
+    case IRS_USART6_BASE: {
       RCC_APB2ENR_bit.USART6EN = value;
     } break;
-    case TIM1_PWM1_BASE: {
+    case IRS_TIM1_PWM1_BASE: {
       RCC_APB2ENR_bit.TIM1EN = value;
     } break;
-    case TIM2_BASE: {
+    case IRS_TIM2_BASE: {
       RCC_APB1ENR_bit.TIM2EN = value;
     } break;
-    case TIM3_BASE: {
+    case IRS_TIM3_BASE: {
       RCC_APB1ENR_bit.TIM3EN = value;
     } break;
-    case TIM4_BASE: {
+    case IRS_TIM4_BASE: {
       RCC_APB1ENR_bit.TIM4EN = value;
     } break;
-    case TIM5_BASE: {
+    case IRS_TIM5_BASE: {
       RCC_APB1ENR_bit.TIM5EN = value;
     } break;
-    case TIM6_BASE: {
+    case IRS_TIM6_BASE: {
       RCC_APB1ENR_bit.TIM6EN = value;
     } break;
-    case TIM7_BASE: {
+    case IRS_TIM7_BASE: {
       RCC_APB1ENR_bit.TIM7EN = value;
     } break;
-    case TIM8_PWM2_BASE: {
+    case IRS_TIM8_PWM2_BASE: {
       RCC_APB2ENR_bit.TIM8EN = value;
     } break;
-    case TIM9_BASE: {
+    case IRS_TIM9_BASE: {
       RCC_APB2ENR_bit.TIM9EN = value;
     } break;
-    case TIM10_BASE: {
+    case IRS_TIM10_BASE: {
       RCC_APB2ENR_bit.TIM10EN = value;
     } break;
-    case TIM11_BASE:{
+    case IRS_TIM11_BASE:{
       RCC_APB2ENR_bit.TIM11EN = value;
     } break;
-    case TIM12_BASE: {
+    case IRS_TIM12_BASE: {
       RCC_APB1ENR_bit.TIM12EN = value;
     } break;
-    case TIM13_BASE: {
+    case IRS_TIM13_BASE: {
       RCC_APB1ENR_bit.TIM13EN = value;
     } break;
-    case TIM14_BASE: {
+    case IRS_TIM14_BASE: {
       RCC_APB1ENR_bit.TIM14EN = value;
     } break;
-    case SPI1_BASE: {
+    case IRS_SPI1_BASE: {
       RCC_APB2ENR_bit.SPI1EN = value;
     } break;
-    case SPI2_I2S2_BASE: {
+    case IRS_SPI2_I2S2_BASE: {
       RCC_APB1ENR_bit.SPI2EN = value;
     } break;
-    case SPI3_I2S3_BASE: {
+    case IRS_SPI3_I2S3_BASE: {
       RCC_APB1ENR_bit.SPI3EN = value;
     } break;
-    case ADC1_BASE: {
+    case IRS_ADC1_BASE: {
       RCC_APB2ENR_bit.ADC1EN = value;
     } break;
-    case ADC2_BASE: {
+    case IRS_ADC2_BASE: {
       RCC_APB2ENR_bit.ADC2EN = value;
     } break;
-    case ADC3_BASE: {
+    case IRS_ADC3_BASE: {
       RCC_APB2ENR_bit.ADC3EN = value;
     } break;
-    case DAC1_DAC2_BASE: {
+    case IRS_DAC1_DAC2_BASE: {
       RCC_APB1ENR_bit.DACEN = value;
     } break;
-    case DMA1_BASE: {
+    case IRS_DMA1_BASE: {
       RCC_AHB1ENR_bit.DMA1EN = value;
     } break;
-    case DMA2_BASE: {
+    case IRS_DMA2_BASE: {
       RCC_AHB1ENR_bit.DMA2EN = value;
     } break;
     default : {
@@ -399,16 +399,16 @@ void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
 {
   const irs_u32 value = a_enabled ? 1 : 0;
   switch (a_address) {
-    case TIM1_PWM1_BASE: {
+    case IRS_TIM1_PWM1_BASE: {
       SETENA0_bit.SETENA_TIM1_UP_TIM10 = value;
     } break;
     /*case TIM2_BASE: {
 
     } break;*/
-    case TIM3_BASE: {
+    case IRS_TIM3_BASE: {
       SETENA0_bit.SETENA_TIM3 = value;
     } break;
-    case TIM4_BASE: {
+    case IRS_TIM4_BASE: {
       SETENA0_bit.SETENA_TIM4 = value;
     } break;
     /*case TIM5_BASE: {
@@ -420,7 +420,7 @@ void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
     case TIM7_BASE: {
 
     } break;*/
-    case TIM8_PWM2_BASE: {
+    case IRS_TIM8_PWM2_BASE: {
       SETENA1_bit.SETENA_TIM8_UP_TIM13 = value;
     } break;
     /*case TIM9_BASE: {

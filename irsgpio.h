@@ -345,15 +345,15 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case PORTD_BASE: { port_number = 3; } break;
     case PORTE_BASE: { port_number = 4; } break;
   #elif defined(IRS_STM32F2xx)
-    case PORTA_BASE: { port_number = 0; } break;
-    case PORTB_BASE: { port_number = 1; } break;
-    case PORTC_BASE: { port_number = 2; } break;
-    case PORTD_BASE: { port_number = 3; } break;
-    case PORTE_BASE: { port_number = 4; } break;
-    case PORTF_BASE: { port_number = 5; } break;
-    case PORTG_BASE: { port_number = 6; } break;
-    case PORTH_BASE: { port_number = 7; } break;
-    case PORTI_BASE: { port_number = 8; } break;
+    case IRS_PORTA_BASE: { port_number = 0; } break;
+    case IRS_PORTB_BASE: { port_number = 1; } break;
+    case IRS_PORTC_BASE: { port_number = 2; } break;
+    case IRS_PORTD_BASE: { port_number = 3; } break;
+    case IRS_PORTE_BASE: { port_number = 4; } break;
+    case IRS_PORTF_BASE: { port_number = 5; } break;
+    case IRS_PORTG_BASE: { port_number = 6; } break;
+    case IRS_PORTH_BASE: { port_number = 7; } break;
+    case IRS_PORTI_BASE: { port_number = 8; } break;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
