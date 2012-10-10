@@ -187,6 +187,66 @@ private:
   irs_i16 m_temperature_channel_value;
 };
 
+class st_adc_dma_t: public adc_dma_t
+{
+private:
+  enum {
+    ADC1 = 1 << 30,
+    ADC2 = 1 << 29,
+    ADC3 = 1 << 28
+  };
+public:
+  enum adc_channel_t {
+    ADC123_PA0_CH0 = (1 << 0) | ADC1 | ADC2 | ADC3,
+    ADC123_PA1_CH1 = (1 << 1) | ADC1 | ADC2 | ADC3,
+    ADC123_PA2_CH2 = (1 << 2) | ADC1 | ADC2 | ADC3,
+    ADC123_PA3_CH3 = (1 << 3) | ADC1 | ADC2 | ADC3,
+    ADC12_PA4_CH4 = (1 << 4) | ADC1 | ADC2,
+    ADC3_PF6_CH4 = (1 << 4) | ADC3,
+    ADC12_PA5_CH5 = (1 << 5) | ADC1 | ADC2,
+    ADC3_PF7_CH5 = (1 << 5) | ADC3,
+    ADC12_PA6_CH6 = (1 << 6) | ADC1 | ADC2,
+    ADC3_PF8_CH6 = (1 << 6) | ADC3,
+    ADC12_PA7_CH7 = (1 << 7) | ADC1 | ADC2,
+    ADC3_PF9_CH7 = (1 << 7) | ADC3,
+    ADC12_PB0_CH8 = (1 << 8) | ADC1 | ADC2,
+    ADC3_PF10_CH8 = (1 << 8) | ADC3,
+    ADC12_PB1_CH9 = (1 << 9) | ADC1 | ADC2,
+    ADC3_PF3_CH9 = (1 << 9) | ADC3,
+    ADC123_PC0_CH10 = (1 << 10) | ADC1 | ADC2 | ADC3,
+    ADC123_PC1_CH11 = (1 << 11) | ADC1 | ADC2 | ADC3,
+    ADC123_PC2_CH12 = (1 << 12) | ADC1 | ADC2 | ADC3,
+    ADC123_PC3_CH13 = (1 << 13) | ADC1 | ADC2 | ADC3,
+    ADC12_PC4_CH14 = (1 << 14) | ADC1 | ADC2,
+    ADC3_PF4_CH14 = (1 << 14) | ADC3,
+    ADC12_PC5_CH15 = (1 << 15) | ADC1 | ADC2,
+    ADC3_PF5_CH15 = (1 << 15) | ADC3
+  };
+  st_adc_dma_t(size_t a_adc_address, select_channel_type a_selected_channels,
+    counter_t a_adc_interval = make_cnt_ms(100));
+  virtual ~st_adc_dma_t();
+  virtual void start();
+  virtual void stop();
+  virtual bool status();
+  virtual void tick();
+  void set_frequency();
+  void set_size();
+private:
+  irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
+  adc_regs_t* mp_adc;
+  irs::loop_timer_t m_adc_timer;
+  enum { reqular_channel_count = 16 };
+  enum { adc_resolution = 12 };
+  enum { adc_max_value = 0xFFF };
+  vector<irs_u32> m_regular_channels_values;
+  vector<irs_u32> m_active_channels;
+  size_t m_current_channel;
+  irs_i16 m_temperature_channel_value;
+  dma_regs_t* mp_dma;
+  tim_regs_t* mp_timer;
+  irs_u16 adc_bytes[32];
+};
+
 //! \brief Драйвер ЦАП для контроллеров семейства STM32F2xx
 //! \author Lyashchov Maxim
 class st_dac_t: public dac_t

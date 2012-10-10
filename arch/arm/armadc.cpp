@@ -1096,6 +1096,234 @@ void irs::arm::st_adc_t::tick()
   }
 }
 
+irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
+  select_channel_type a_selected_channels,
+  counter_t a_adc_interval
+):
+  mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
+  m_adc_timer(a_adc_interval),
+  m_regular_channels_values(),
+  m_active_channels(),
+  m_current_channel(),
+  m_temperature_channel_value(),
+  mp_dma(reinterpret_cast<dma_regs_t*>(IRS_DMA2_BASE)),
+  mp_timer(reinterpret_cast<tim_regs_t*>(IRS_TIM1_PWM1_BASE))
+{
+  SETENA0_bit.SETENA_TIM1_UP_TIM10 = 1;
+    
+  for (int i = 0; i < 32; i++) {
+    adc_bytes[i] = 0xFF;
+  }
+  irs::clock_enable(IRS_DMA2_BASE);
+  mp_dma->DMA_S0CR_bit.EN = 0;
+
+  mp_dma->DMA_S0PAR = (irs_u32)&(mp_adc->ADC_DR); //адрес регистра перефирии
+  mp_dma->DMA_S0M0AR = (irs_u32)adc_bytes; //адрес буфера в памяти
+  mp_dma->DMA_S0NDTR = 32; //количество данных для обмена
+  
+  mp_dma->DMA_S0CR_bit.CHSEL = 2;
+  
+  //mp_dma->DMA_S0CR_bit.PFCTRL = 1;
+  //выключить циклический режим
+  mp_dma->DMA_S0CR_bit.CIRC = 0; // смотреть как работает с PFCTRL 
+  
+  mp_dma->DMA_S0CR_bit.DIR = 0; //направление: чтение в памяти
+  //Настроить работу с переферийным устройством
+  mp_dma->DMA_S0CR_bit.PSIZE = 1; //размерность данных 16 бит
+  mp_dma->DMA_S0CR_bit.PINC = 0; //неиспользовать инкремент указателя
+  
+ //Настроить работу с памятью 
+  mp_dma->DMA_S0CR_bit.MSIZE = 1; //размерность данных 16 бит
+  mp_dma->DMA_S0CR_bit.MINC = 1; //использовать инкремент указателя
+  
+  mp_dma->DMA_S0CR_bit.PL = 2;
+  
+  mp_dma->DMA_LIFCR_bit.CTCIF2 = 1; //сбросить флаг окончания обмена
+  //mp_dma->DMA_S0CR_bit.TCIE = 1;
+  //mp_dma->DMA_S0FCR_bit.DMDIS = 1;
+  
+  //mp_dma->DMA_S0CR_bit.EN = 1; //старт
+  
+ 
+  //mp_adc->ADC_CR2_bit.SWSTART = 1; //если рабоа с таймером то это не надо
+  
+  //if(mp_dma->DMA_LISR_bit.TCIF0 == 1) // значит обмен окончен
+  
+  
+  
+  clock_enable(a_adc_address);
+  mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
+  mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
+  // 3: PCLK2 divided by 8
+  ADC_CCR_bit.ADCPRE = 3;
+  
+  vector<pair<adc_channel_t, gpio_channel_t> > adc_gpio_pairs;
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA0_CH0, PA0));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA1_CH1, PA1));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA2_CH2, PA2));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PA3_CH3, PA3));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA4_CH4, PA4));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF6_CH4, PF6));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA5_CH5, PA5));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF7_CH5, PF7));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA6_CH6, PA6));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF8_CH6, PF8));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PA7_CH7, PA7));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF9_CH7, PF9));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PB0_CH8, PB0));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF10_CH8, PF10));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PB1_CH9, PB1));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF3_CH9, PF3));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC0_CH10, PC0));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC1_CH11, PC1));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC2_CH12, PC2));
+  adc_gpio_pairs.push_back(make_pair(ADC123_PC3_CH13, PC3));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PC4_CH14, PC4));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF4_CH14, PF4));
+  adc_gpio_pairs.push_back(make_pair(ADC12_PC5_CH15, PC5));
+  adc_gpio_pairs.push_back(make_pair(ADC3_PF5_CH15, PF5));
+
+  for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
+    adc_channel_t adc_channel = adc_gpio_pairs[i].first;
+    const select_channel_type adc_mask = (ADC1 | ADC2 | ADC3) & adc_channel;
+    const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
+    if ((a_selected_channels & channel_mask) &&
+      (a_selected_channels & adc_mask)) {
+      clock_enable(adc_gpio_pairs[i].second);
+      gpio_moder_analog_enable(adc_gpio_pairs[i].second);
+      m_active_channels.push_back(adc_channel_to_channel_index(adc_channel));
+      m_regular_channels_values.push_back(0);
+    }
+  }
+   
+  // 0: Один канал
+  mp_adc->ADC_SQR1_bit.L = 0;
+  m_current_channel = 0;
+  mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
+  
+  //mp_adc->ADC_CR1_bit.SCAN = 1; //не нужно
+  //mp_adc->ADC_CR2_bit.CONT = 1; //если рабоа с таймером то это не надо
+  
+  //----для таймера
+  mp_adc->ADC_CR2_bit.EXTSEL = 2; //Timer 1 CC3 event
+  mp_adc->ADC_CR2_bit.EXTEN = 1; //Trigger detection on the rising edge
+  //--------------
+  
+  mp_adc->ADC_CR2_bit.DDS = 1; //нужно что бы перезпускать дма после окончания одного цикла
+  mp_adc->ADC_CR2_bit.DMA = 1;
+  //mp_adc->ADC_CR2_bit.ADON = 1;
+  
+  
+  //-----Timer---------------------------
+  clock_enable(IRS_TIM1_PWM1_BASE);
+  mp_timer->TIM_CR1_bit.CEN = 0;
+  //TIM_TimeBaseInit
+  mp_timer->TIM_CR1_bit.CMS = 0; //Center-aligned mode selection
+  mp_timer->TIM_CR1_bit.DIR = 0; //Counter used as upcounter
+
+  mp_timer->TIM_ARR = 600-1;
+  mp_timer->TIM_PSC = 1000000-1;
+  
+  mp_timer->TIM_RCR = 0;
+  //mp_timer->TIM_EGR_bit.UG = 1; //Update generation
+  
+  //TIM_SetCounter
+  mp_timer->TIM_CNT = 0;
+  //TIM_OC1Init номер канала 1
+  mp_timer->TIM_CCER_bit.CC3E = 0; //Capture/Compare 1 output enable
+  mp_timer->TIM_CCMR2_bit.OC3M = 0; //Output Compare 1 mode
+  mp_timer->TIM_CCMR2_bit.OC3S = 0; //Capture/Compare 1 selection
+  mp_timer->TIM_CCMR2_bit.OC3M = 7; //PWM2
+  mp_timer->TIM_CCER_bit.CC3P = 0; //Capture/Compare 1 output polarity
+  mp_timer->TIM_CCER_bit.CC3P = 1;
+  mp_timer->TIM_CCER_bit.CC3E = 1; //Capture/Compare 1 output enable
+  
+  mp_timer->TIM_CCER_bit.CC3NP = 0; //Capture/Compare 1 complementary output polarity
+  mp_timer->TIM_CCER_bit.CC3NE = 0; //Capture/Compare 1 complementary output enable
+  
+  mp_timer->TIM_CR2_bit.OIS3 = 0; // Output Idle state 1 (OC1 output)
+  mp_timer->TIM_CR2_bit.OIS3N = 0; //Output Idle state 1 (OC1N output)
+  mp_timer->TIM_CCR3 = 599; //Capture/Compare 1 value
+  
+  
+  mp_timer->TIM_CCMR2_bit.OC3PE = 0; //Output Compare 1 preload enable
+  mp_timer->TIM_CR1_bit.OPM = 0; //One pulse mode
+  
+  mp_timer->TIM_BDTR_bit.MOE = 1;
+  mp_timer->TIM_BDTR_bit.AOE = 1;
+  
+  //TIM_Cmd
+  mp_timer->TIM_CR1_bit.ARPE = 1;
+  //mp_timer->TIM_CR1_bit.CEN = 1;
+  //--------------------------------
+}
+
+irs_u32 irs::arm::st_adc_dma_t::adc_channel_to_channel_index(
+  adc_channel_t a_adc_channel)
+{
+  irs_u16 adc_channel = static_cast<irs_u16>(a_adc_channel);
+  for (size_t i = 0; i < reqular_channel_count; i++) {
+    if (adc_channel & 0x1) {
+      return i;
+    }
+    adc_channel >>= 1;
+  }
+  IRS_LIB_ERROR(ec_standard, "Канал не выбран");
+  return 0;
+}
+
+irs::arm::st_adc_dma_t::~st_adc_dma_t()
+{
+}
+
+void irs::arm::st_adc_dma_t::start()
+{
+  mp_timer->TIM_CR1_bit.CEN = 0;
+  mp_adc->ADC_CR2_bit.ADON = 0;
+  mp_dma->DMA_S0CR_bit.EN = 0;
+  mp_dma->DMA_LIFCR_bit.CTCIF0 = 1;
+  mp_dma->DMA_LIFCR_bit.CHTIF0 = 1;
+  mp_dma->DMA_S0NDTR = 32;
+  mp_dma->DMA_S0CR_bit.EN = 1;
+  mp_adc->ADC_CR2_bit.ADON = 1;
+  mp_timer->TIM_CR1_bit.CEN = 1;
+}
+
+void irs::arm::st_adc_dma_t::stop()
+{
+  mp_timer->TIM_CR1_bit.CEN = 0;
+  mp_adc->ADC_CR2_bit.ADON = 0;
+  mp_dma->DMA_S0CR_bit.EN = 0;
+}
+
+bool irs::arm::st_adc_dma_t::status()
+{
+  bool result = false;
+  if(mp_dma->DMA_LISR_bit.TCIF0 == 1) {
+    result = true;    
+  }
+  return result;
+}
+
+void irs::arm::st_adc_dma_t::tick()
+{
+  /*if(mp_dma->DMA_LISR_bit.TCIF0 == 1) {
+    //mp_dma->DMA_S0CR_bit.EN = 0;
+    irs_u16 test = static_cast<irs_u16>(mp_adc->ADC_DR);
+    irs::mlog() << test << " ";
+    irs::mlog() << adc_bytes[0] << " " << flush;
+    mp_timer->TIM_CR1_bit.CEN = 0;
+    mp_adc->ADC_CR2_bit.ADON = 0;
+    mp_dma->DMA_S0CR_bit.EN = 0;
+    mp_dma->DMA_LIFCR_bit.CTCIF0 = 1;
+    mp_dma->DMA_LIFCR_bit.CHTIF0 = 1;
+    mp_dma->DMA_S0NDTR = 32;
+    mp_dma->DMA_S0CR_bit.EN = 1;
+    mp_adc->ADC_CR2_bit.ADON = 1;
+    mp_timer->TIM_CR1_bit.CEN = 1;
+  }*/
+}
+
 // class st_dac_t
 irs::arm::st_dac_t::st_dac_t(select_channel_type a_selected_channels)
 {

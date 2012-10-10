@@ -37,6 +37,18 @@ public:
   virtual void tick() = 0;
 };
 
+class adc_dma_t
+{
+public:
+  typedef irs_u32 select_channel_type;
+  
+  virtual ~adc_dma_t() {};
+  virtual void start() = 0;
+  virtual void stop() = 0;
+  virtual bool status() = 0;
+  virtual void tick() = 0;
+};
+
 //! @}
 
 } // namespace irs

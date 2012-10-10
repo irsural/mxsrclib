@@ -355,6 +355,7 @@ void irs_arm_tim1_up_tim10_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim1_up_tim10_int);
   TIM1_SR_bit.UIF = 0;
+  TIM1_SR_bit.CC3IF = 0;
   TIM10_SR_bit.UIF = 0;
   TIM10_SR_bit.CC1IF = 0;
 }
