@@ -11,22 +11,291 @@
 #endif // __BORLANDC__
 
 #include <mxextbase.h>
-
 #include <irsstrdefs.h>
 
 #include <irsfinal.h>
 
-#ifdef NOP
+#ifndef MXEXT_OFF
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #if defined(QT_CORE_LIB) || defined(__BORLANDC__)
-//--------------------------------------------------------------------------
-void __fastcall Point(TCanvas *Canvas, TPoint P)
+
+
+namespace irs {
+
+struct color_const_to_rgba_collation_t {
+  vector<irs_u32> collation;
+  color_const_to_rgba_collation_t(): collation(cl_size) {
+    collation[cl_white]        = 0xFFFFFFFF;
+    collation[cl_black]        = 0xFF000000;
+    collation[cl_red]          = 0xFFff0000;
+    collation[cl_dark_red]     = 0xFF800000;
+    collation[cl_green]        = 0xFF00ff00;
+    collation[cl_dark_green]   = 0xFF008000;
+    collation[cl_blue]         = 0xFF0000ff;
+    collation[cl_dark_blue]    = 0xFF000080;
+    collation[cl_cyan]         = 0xFF00ffff;
+    collation[cl_dark_cyan]    = 0xFF008080;
+    collation[cl_magenta]      = 0xFFff00ff;
+    collation[cl_dark_magenta] = 0xFF800080;
+    collation[cl_yellow]       = 0xFFffff00;
+    collation[cl_dark_yellow]  = 0xFF808000;
+    collation[cl_gray]         = 0xFFa0a0a4;
+    collation[cl_dark_gray]    = 0xFF808080;
+    collation[cl_light_gray]   = 0xFFc0c0c0;
+    collation[cl_transparent]  = 0x00000000;
+    collation[cl_cream]        = 0xFFFFFBF0;
+    collation[cl_money_green]  = 0xFFC0DCC0;
+    collation[cl_sky_blue]     = 0xFFA6CAF0;
+  }
+};
+
+mx_ext_chart_types::size_type mx_ext_chart_last()
 {
-  Canvas->Pixels[P.x][P.y] = Canvas->Pen->Color;
+  return static_cast<mx_ext_chart_types::size_type>(-1);
 }
-//---------------------------------------------------------------------------
 
+} //namespace irs
 
+color_union_t color_union_from_color_const(color_const_t a_color_const)
+{
+  static color_const_to_rgba_collation_t col;
+  color_union_t color_union = zero_struct_t<color_union_t>::get();
+  color_union->color = col.collation[a_color_const];
+  return color_union;
+}
+color_union_t color_union_from_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255)
+{
+  color_union_t color_union = zero_struct_t<color_union_t>::get();
+  color_union.red = a_red;
+  color_union.green = a_green;
+  color_union.blue = a_blue;
+  color_union.alpha = a_alpha;
+  return color_union;
+}
+
+irs::color_t::color_t(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255
+):
+  m_color_union(color_union_from_rgba(a_red, a_green, a_blue, a_alpha))
+{
+}
+irs::color_t::color_t(color_const_t a_color_const):
+  m_color_union(color_union_from_color_const(a_color_const))
+{
+}
+#ifdef NOP
+irs::color_t::color_t(const native_color_type& a_native_color):
+  m_color_union(native_gui_lib_stuff_t::color_from_native(a_native_color)),
+  mp_native_color(new native_color_type(a_native_color))
+{
+}
+#endif //NOP
+void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255)
+{
+  color_t color(a_red, a_green, a_blue, a_alpha);
+  swap(*this, color);
+}
+void irs::color_t::operator=(color_const_t a_color_const)
+{
+  color_t color(a_color_const);
+  swap(*this, color);
+}
+#ifdef NOP
+void irs::color_t::operator=(const native_color_type& a_native_color)
+{
+  color_t color(a_native_color);
+  swap(*this, color);
+}
+#endif //NOP
+void irs::color_t::swap(color_t& a_color)
+{
+  ::swap(m_color_union, a_color.m_color_union);
+}
+void swap(color_t& a_color_left, color_t& a_color_right)
+{
+  a_color_left.swap(a_color_right);
+}
+#ifdef NOP
+void irs::color_t::get_native_color(native_color_type* ap_native_color)
+{
+  ap_native_color = mp_native_color.get();
+}
+#endif //NOP
+irs_u8 irs::color_t::red() const
+{
+  return m_color_union.red;
+}
+irs_u8 irs::color_t::green() const
+{
+  return m_color_union.green;
+}
+irs_u8 irs::color_t::blue() const
+{
+  return m_color_union.blue;
+}
+irs_u8 irs::color_t::alpha() const
+{
+  return m_color_union.alpha;
+}
+void irs::color_t::red(irs_u8 a_red)
+{
+  m_color_union.red = a_red;
+}
+void irs::color_t::green(irs_u8 a_green)
+{
+  m_color_union.green = a_green;
+}
+void irs::color_t::blue(irs_u8 a_blue)
+{
+  m_color_union.blue = a_blue;
+}
+void irs::color_t::alpha(irs_u8 a_alpha)
+{
+  m_color_union.blue = a_alpha;
+}
+#ifdef NOP
+void irs::color_t::update_native()
+{
+  native_gui_lib_stuff_t::color_to_native(m_color_union,
+    mp_native_color.get());
+}
+#endif //NOP
+
+irs::brush_t::brush_t(const color_t& a_color = color_t()):
+  m_color(a_color)
+{
+}
+irs::color_t irs::brush_t::color()
+{
+  return m_color;
+}
+void irs::brush_t::color(const color_t& a_color)
+{
+  m_color = a_color;
+}
+
+irs::pen_t::pen_t(const color_t& a_color, pen_style_t a_style):
+  m_color(a_color),
+  m_style(a_style),
+  mp_native_pen(IRS_NULL)
+{
+}
+irs::color_t irs::pen_t::color()
+{
+  return m_color;
+}
+void irs::pen_t::color(const color_t& a_color)
+{
+  m_color = a_color;
+}
+irs::pen_style_t irs::pen_t::style()
+{
+  return m_style;
+}
+void irs::pen_t::style(pen_style_t a_style)
+{
+  m_style = a_style;
+}
+
+#ifdef __BORLANDC__
+irs::cbuilder_canvas_t::cbuilder_canvas_t(TCanvas* ap_canvas):
+  mp_canvas(ap_canvas)
+{
+}
+//! \brief Чтение текущего пера
+irs::pen_t irs::cbuilder_canvas_t::pen()
+{
+  color_t color = color_from_native(mp_canvas->Pen->Color);
+  pen_style_t style = pen_style_from_native(mp_canvas->Pen->Style);
+  pen_t pen(color, style);
+  return pen;
+}
+//! \brief Установка текущего пера
+void irs::cbuilder_canvas_t::pen(const pen_t& a_pen)
+{
+  mp_canvas->Pen->Color = color_to_native(a_pen.color());
+  mp_canvas->Pen->Style = pen_style_to_native(a_pen.style());
+}
+//! \brief Чтение текущей кисти
+irs::brush_t irs::cbuilder_canvas_t::brush()
+{
+  color_t color = color_from_native(mp_canvas->Brush->Color);
+  brush_t brush(color);
+  return brush;
+}
+//! \brief Установка текущей кисти
+void irs::cbuilder_canvas_t::brush(const brush_t& a_brush)
+{
+  mp_canvas->Brush->Color = color_to_native(a_brush.color());
+  mp_canvas->Pen->Brush->Color = mp_canvas->Brush->Color;
+}
+//! \brief Рисует линию текущим пером (pen)
+void irs::cbuilder_canvas_t::line(const line_type& a_chart_line)
+{
+  mp_canvas->MoveTo(a_chart_line.begin.left, a_chart_line.begin.top);
+  mp_canvas->LineTo(L.End.x, L.End.y);
+  mp_canvas->Pixels[P.x][P.y] = Canvas->Pen->Color;
+}
+//! \brief Заполняет холст текущей кистью (brush)
+void irs::cbuilder_canvas_t::clear()
+{
+}
+struct builder_color_union_t {
+  struct {
+    irs_u8 red;
+    irs_u8 green;
+    irs_u8 blue;
+    irs_u8 spec;
+  };
+  irs_u32 color;
+};
+irs::color_t irs::cbuilder_canvas_t::color_from_native(TColor a_native_color)
+{
+  const builder_color_union_t& native_color =
+    reinterpret_cast<const builder_color_union_t&>(a_native_color);
+  color_t color_ret(native_color.red, native_color.green,
+    native_color.blue);
+  return color_ret;
+}
+TColor irs::cbuilder_canvas_t::color_to_native(color_t a_color)
+{
+  builder_color_union_t native_color =
+    irs::zero_struct_t<builder_color_union_t>::get();
+  native_color.red= a_color.red;
+  native_color.green = a_color.green;
+  native_color.blue = a_color.blue;
+  return reinterpret_cast<TColor&>(*ap_native_color);
+}
+irs::pen_style_t irs::cbuilder_canvas_t::pen_style_from_native(
+  TPenStyle a_native_style)
+{
+  pen_style_t style = ps_solid;
+  switch(a_native_style) {
+    case psSolid: style = ps_solid; break;
+    case psDash: style = ps_dash; break;
+    case psDot: style = ps_dot; break;
+    case psDashDot: style = ps_dash_dot; break;
+    default: style = ps_solid; break;
+  }
+  return style;
+}
+TPenStyle irs::cbuilder_canvas_t::pen_style_to_native(pen_style_t a_style)
+{
+  pen_style_t native_style = ps_solid;
+  switch(a_style) {
+    case ps_solid: native_style = psSolid; break;
+    case ps_dash: native_style = psDash; break;
+    case ps_dot: native_style = psDot; break;
+    case ps_dash_dot: native_style = psDashDot; break;
+    default: native_style = psSolid; break;
+  }
+  return native_style;
+}
+#endif //__BORLANDC__
+
+#ifdef NOP
 // Копирование свойств формы
 void irs::mxcopy(TForm *dest, TForm *src)
 {
@@ -38,8 +307,6 @@ void irs::mxcopy(TForm *dest, TForm *src)
   dest->Caption = src->Caption;
 }
 
-namespace Mxbase
-{
 
 //***************************************************************************
 // Глобальные переменные
@@ -49,6 +316,11 @@ String AppName = Application->Title;
 //***************************************************************************
 // Глобальные функции
 
+//--------------------------------------------------------------------------
+void __fastcall Point(TCanvas *Canvas, TPoint P)
+{
+  Canvas->Pixels[P.x][P.y] = Canvas->Pen->Color;
+}
 //---------------------------------------------------------------------------
 // Простая линия
 void __fastcall Line(TCanvas *Canvas, TPoint P1, TPoint P2)
@@ -464,8 +736,8 @@ TPrinterDC::~TPrinterDC()
 }
 //---------------------------------------------------------------------------
 
-} // namespace Mxbase
+#endif //NOP
 
 #endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
-#endif //NOP
+#endif //MXEXT_OFF

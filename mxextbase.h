@@ -1,6 +1,6 @@
 //! \file
 //! \ingroup graphical_user_interface_group
-//! \brief Полезные функции для C++ Builder
+//! \brief Классы и функции для mx_ext_chart_t
 //!
 //! Дата: 14.04.2010\n
 //! Дата создания: 8.09.2008
@@ -8,7 +8,9 @@
 #ifndef MXEXTBASEH
 #define MXEXTBASEH
 
-#ifdef NOP
+#define MXEXT_OFF
+
+#ifndef MXEXT_OFF
 #include <irsdefs.h>
 
 #ifdef IRS_WIN32
@@ -16,42 +18,29 @@
 #include <winspool.h>
 #endif //IRS_WIN32
 //#include <Dialogs.hpp>
+#ifdef __BORLANDC__
+#include <Graphics.hpp>
+#endif //__BORLANDC__
 
 //#include <vcl.h>
 #include <irscpp.h>
 #include <irslimits.h>
+#include <irsrect.h>
 
 #include <irsfinal.h>
-
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
-
-//! \ingroup graphical_user_interface_group
-#define SAFEOPER(__operator__) try { __operator__; } catch (...) {}
-//---------------------------------------------------------------------------
-//extern void __fastcall Point(TCanvas *Canvas, TPoint P);
-//---------------------------------------------------------------------------
-
-namespace irs
-{
 
 //! \addtogroup graphical_user_interface_group
 //! @{
 
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(QT_CORE_LIB) || defined(__BORLANDC__)
+
+#define SAFEOPER(__operator__) try { __operator__; } catch (...) {}
 //---------------------------------------------------------------------------
+//extern void __fastcall Point(TCanvas *Canvas, TPoint P);
 //extern String AppName;
 //---------------------------------------------------------------------------
-enum TDataType {dtUndef, dtFunction, dtMethod, dtChar, dtShort, dtInt, dtLong,
-  dtInt64, dtUChar, dtUShort, dtUInt, dtULong, dtUInt64, dtFloat, dtDouble,
-  dtLongDouble, dtComplex};
-enum TCompConv {ccReal, ccImag, ccAbs, ccArg};
-typedef complex<double> cmp;
-typedef complex<float> fcmp;
-typedef complex<long double> lcmp;
-//typedef double (__closure *TClassDblFunc)(double x);
-typedef double (*TDblFunc)(double x);
-typedef cmp (*TCmpDblFunc)(double x);
-typedef cmp (*TCmpFunc)(cmp x);
+namespace irs {
 
 //! \brief Подключение функции члена класса вида T fn(T x)
 //! \brief Интерфейс
@@ -84,6 +73,204 @@ private:
   class_type* mp_object;
   member_type mp_member;
 };
+
+template <class T>
+struct mx_chart_line_t {
+  typedef T value_type;
+  typedef mx_point_t<value_type> point_type;
+
+  point_type begin;
+  point_type end;
+
+  mx_chart_line_t(
+    point_type a_begin = point_type(),
+    point_type a_end = point_type()
+  ):
+    begin(a_begin),
+    end(a_end)
+  {
+  }
+  mx_chart_line_t(
+    value_type a_x1,
+    value_type a_y1,
+    value_type a_x2,
+    value_type a_y2
+  ):
+    begin(point_type(a_x1, a_y1)),
+    end(point_type(a_x2, a_y2))
+  {
+  }
+};
+
+struct mx_ext_chart_types
+{
+  typedef long double float_type;
+  typedef int int_type;
+  typedef size_t size_type;
+  typedef mx_point_t<float_type> point_float_type;
+  typedef mx_rect_t<float_type> rect_float_type;
+  typedef mx_point_t<int_type> point_int_type;
+  typedef mx_rect_t<int_type> rect_int_type;
+  typedef mx_bounds_t<float_type> bounds_float_type;
+  typedef mx_chart_line_t<int_type> line_type;
+  enum paint_style_t { ps_display_paint, ps_black_print, ps_color_print };
+  enum item_change_t { ic_delete = 0, ic_clear = 1, ic_insert = 2,
+    ic_comp_conv_x = 3, ic_comp_conv_y = 4, ic_set_base_item = 5 };
+
+  static size_type last_index_mark();
+};
+
+union color_union_t {
+  struct {
+    irs_u8 blue;
+    irs_u8 green;
+    irs_u8 red;
+    irs_u8 alpha;
+  };
+  irs_u32 color;
+};
+
+enum color_const_t {
+  cl_first,
+  cl_white = cl_first,
+  cl_black,
+  cl_red,
+  cl_dark_red,
+  cl_green,
+  cl_dark_green,
+  cl_blue,
+  cl_dark_blue,
+  cl_cyan,
+  cl_dark_cyan,
+  cl_magenta,
+  cl_dark_magenta,
+  cl_yellow,
+  cl_dark_yellow,
+  cl_gray,
+  cl_dark_gray,
+  cl_light_gray,
+  cl_transparent,
+  cl_cream,
+  cl_money_green,
+  cl_sky_blue,
+  cl_size
+};
+
+color_union_t color_union_from_color_const(color_const_t a_color_const);
+color_union_t color_union_from_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+  irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
+
+class color_t
+{
+public:
+  color_t(irs_u8 a_red = 255, irs_u8 a_green = 255, irs_u8 a_blue = 255,
+    irs_u8 a_alpha = 255);
+  color_t(color_const_t a_color_const);
+  color_t(const color_t& a_color);
+
+  void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
+    irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
+  void operator=(color_const_t a_color_const);
+  void operator=(const color_t& a_color);
+
+  void swap(color_t& a_color);
+  irs_u8 red() const;
+  irs_u8 green() const;
+  irs_u8 blue() const;
+  irs_u8 alpha() const;
+  void red(irs_u8 a_red);
+  void green(irs_u8 a_green);
+  void blue(irs_u8 a_blue);
+  void alpha(irs_u8 a_alpha);
+private:
+  color_union_t m_color_union;
+};
+void swap(color_t& a_color_left, color_t& a_color_right);
+
+enum pen_style_t { ps_solid, ps_dash, ps_dot, ps_dash_dot };
+
+// В brush_t есть только цвет (color_t)
+// В будущем, возможно, появятся другие параметры
+class brush_t
+{
+public:
+  brush_t(const color_t& a_color = color_t());
+
+  color_t color();
+  void color(const color_t& a_color);
+private:
+  color_t m_color;
+};
+
+class pen_t
+{
+public:
+  pen_t(const color_t& a_color = color_t(), pen_style_t a_style = ps_solid);
+
+  color_t color();
+  void color(const color_t& a_color);
+  pen_style_t style();
+  void style(pen_style_t a_style);
+private:
+  color_t m_color;
+  pen_style_t m_style;
+};
+
+//! \brief Холст (Canvas)
+//! \brief Интерфейс
+class canvas_t: public mx_ext_chart_types
+{
+public:
+  //typedef mx_ext_chart_types::rect_int_type rect_int_type;
+
+  //! \brief Чтение текущего пера
+  virtual pen_t pen() = 0;
+  //! \brief Установка текущего пера
+  virtual void pen(const pen_t& a_pen) = 0;
+  //! \brief Чтение текущей кисти
+  virtual brush_t brush() = 0;
+  //! \brief Установка текущей кисти
+  virtual void brush(const brush_t& a_brush) = 0;
+  //! \brief Рисует линию текущим пером (pen)
+  virtual void line(const line_type& a_chart_line) = 0;
+  //! \brief Заполняет прямоуголник текущей кистью (brush)
+  //virtual void fill_rect(const rect_int_type& a_rect) = 0;
+  //! \brief Заполняет прямоуголник текущей кистью (brush)
+  virtual void clear() = 0;
+};
+
+#ifdef __BORLANDC__
+//! \brief Холст (Canvas)
+//! \brief Реализация для C++ Builder
+class cbuilder_canvas_t: public canvas_t
+{
+public:
+  cbuilder_canvas_t(TCanvas* ap_canvas);
+
+  //! \brief Чтение текущего пера
+  virtual pen_t pen();
+  //! \brief Установка текущего пера
+  virtual void pen(const pen_t& a_pen);
+  //! \brief Чтение текущей кисти
+  virtual brush_t brush();
+  //! \brief Установка текущей кисти
+  virtual void brush(const brush_t& a_brush);
+  //! \brief Рисует линию текущим пером (pen)
+  virtual void line(const line_type& a_chart_line);
+  //! \brief Заполняет холст текущей кистью (brush)
+  virtual void clear();
+
+private:
+  TCanvas* mp_canvas;
+
+  static color_t color_from_native(TColor a_native_color);
+  static TColor color_to_native(color_t a_color);
+  static pen_style_t pen_style_from_native(TPenStyle a_native_style);
+  static TPenStyle pen_style_to_native(pen_style_t a_style);
+};
+#endif //__BORLANDC__
+
+} //namespace irs
 
 #ifdef NOP
 typedef struct tagDblRect { double Left, Top, Right, Bottom; } TDblRect;
@@ -321,9 +508,21 @@ String __fastcall Printf(const String& format, T1 arg1, T2 arg2, T3 arg3,
 }
 //---------------------------------------------------------------------------
 #endif //NOP
+enum TDataType {dtUndef, dtFunction, dtMethod, dtChar, dtShort, dtInt, dtLong,
+  dtInt64, dtUChar, dtUShort, dtUInt, dtULong, dtUInt64, dtFloat, dtDouble,
+  dtLongDouble, dtComplex};
+enum TCompConv {ccReal, ccImag, ccAbs, ccArg};
+typedef complex<double> cmp;
+typedef complex<float> fcmp;
+typedef complex<long double> lcmp;
+//typedef double (__closure *TClassDblFunc)(double x);
+typedef double (*TDblFunc)(double x);
+typedef cmp (*TCmpDblFunc)(double x);
+typedef cmp (*TCmpFunc)(cmp x);
+
 class TPointer
 {
-  typedef value_fn_value_t<double>* method_type;
+  typedef irs::value_fn_value_t<double>* method_type;
 
   union
   {
@@ -401,7 +600,7 @@ public:
   operator float*() const { return Float; }
   operator double*() const { return Double; }
   operator long double*() const { return LongDouble; }
-  operator bool() { return to_bool(Int); }
+  operator bool() { return irs::to_bool(Int); }
 
   long double operator[](int i) const
   {
@@ -449,14 +648,14 @@ public:
 };
 #endif //NOP
 
-//! @}
-
-} // namespace Mxbase
+//} // namespace Mxbase
 
 //using namespace Mxbase;
 
 #endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
-#endif //NOP
+#endif //MXEXT_OFF
+
+//! @}
 
 #endif //MXEXTBASEH

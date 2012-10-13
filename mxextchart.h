@@ -24,7 +24,7 @@
 
 #include <irsfinal.h>
 
-#ifdef NOP
+#ifndef MXEXT_OFF
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 #if defined(QT_CORE_LIB) || defined(__BORLANDC__)
 
@@ -38,44 +38,6 @@ namespace irs {
 
 //! \addtogroup graphical_user_interface_group
 //! @{
-
-template <class T>
-struct mx_chart_line_t {
-  typedef T value_type;
-  typedef mx_point_t<value_type> point_type;
-
-  point_type begin;
-  point_type end;
-
-  mx_chart_line_t(
-    point_type a_begin = point_type(),
-    point_type a_end = point_type()
-  ):
-    begin(a_begin),
-    end(a_end)
-  {
-  }
-  mx_chart_line_t(
-    value_type a_x1,
-    value_type a_y1,
-    value_type a_x2,
-    value_type a_y2
-  ):
-    begin(point_type(a_x1, a_y1)),
-    end(point_type(a_x2, a_y2))
-  {
-  }
-};
-
-union color_union_t {
-  struct {
-    irs_u8 blue;
-    irs_u8 green;
-    irs_u8 red;
-    irs_u8 alpha;
-  };
-  irs_u32 color;
-};
 
 #ifdef NOP
 class pen_t;
@@ -104,99 +66,6 @@ struct native_gui_lib_stuff_t {
     pen_t* a_general_pen);
 };
 #endif //NOP
-
-enum color_const_t {
-  cl_first,
-  cl_white = cl_first,
-  cl_black,
-  cl_red,
-  cl_dark_red,
-  cl_green,
-  cl_dark_green,
-  cl_blue,
-  cl_dark_blue,
-  cl_cyan,
-  cl_dark_cyan,
-  cl_magenta,
-  cl_dark_magenta,
-  cl_yellow,
-  cl_dark_yellow,
-  cl_gray,
-  cl_dark_gray,
-  cl_light_gray,
-  cl_transparent,
-  cl_cream,
-  cl_money_green,
-  cl_sky_blue,
-  cl_size
-};
-
-color_union_t color_union_from_color_const(color_const_t a_color_const);
-color_union_t color_union_from_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
-  irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
-
-class color_t
-{
-public:
-  color_t(irs_u8 a_red = 255, irs_u8 a_green = 255, irs_u8 a_blue = 255,
-    irs_u8 a_alpha = 255);
-  color_t(color_const_t a_color_const);
-  color_t(const color_t& a_color);
-
-  void assign_rgba(irs_u8 a_red = 255, irs_u8 a_green = 255,
-    irs_u8 a_blue = 255, irs_u8 a_alpha = 255);
-  void operator=(color_const_t a_color_const);
-  void operator=(const color_t& a_color);
-
-  void swap(color_t& a_color);
-  irs_u8 red() const;
-  irs_u8 green() const;
-  irs_u8 blue() const;
-  irs_u8 alpha() const;
-  void red(irs_u8 a_red);
-  void green(irs_u8 a_green);
-  void blue(irs_u8 a_blue);
-  void alpha(irs_u8 a_alpha);
-private:
-  color_union_t m_color_union;
-};
-void swap(color_t& a_color_left, color_t& a_color_right);
-
-enum pen_style_t { ps_solid, ps_dash, ps_dot, ps_dash_dot };
-
-class pen_t
-{
-public:
-  pen_t(const color_t& a_color = color_t(), pen_style_t a_style = ps_solid);
-
-  color_t color();
-  void color(const color_t& a_color);
-  pen_style_t style();
-  void style(pen_style_t a_style);
-private:
-  color_t m_color;
-  pen_style_t m_style;
-};
-
-struct mx_ext_chart_types
-{
-  typedef long double float_type;
-  typedef int int_type;
-  typedef size_t size_type;
-  typedef mx_point_t<float_type> point_float_type;
-  typedef mx_rect_t<float_type> rect_float_type;
-  typedef mx_point_t<int_type> point_int_type;
-  typedef mx_rect_t<int_type> rect_int_type;
-  typedef mx_bounds_t<float_type> bounds_float_type;
-  typedef mx_chart_line_t<int_type> line_type;
-  enum paint_style_t { ps_display_paint, ps_black_print, ps_color_print };
-  enum item_change_t { ic_delete = 0, ic_clear = 1, ic_insert = 2,
-    ic_comp_conv_x = 3, ic_comp_conv_y = 4, ic_set_base_item = 5 };
-
-  static size_type last_index_mark();
-};
-
-
 
 class mx_ext_chart_t;
 class mx_ext_chart_select_t;
@@ -228,27 +97,7 @@ public:
   // Конструкторы и деструкторы
   mx_ext_chart_item_t();
   virtual ~mx_ext_chart_item_t();
-  // Свойства
-  //__property size_type GroupX = {index=0, read=FGroup[0], write=SetGroup};
-  //__property size_type GroupY = {index=1, read=FGroup[1], write=SetGroup};
-  //__property float_type ShiftX = {index=0, read=FShiftX, write=FShiftX};
-  //__property float_type ShiftY = {index=1, read=FShiftY, write=FShiftY};
-  //__property float_type ScaleX = {index=0, read=FScaleX, write=FScaleX};
-  //__property float_type ScaleY = {index=1, read=FScaleY, write=FScaleY};
-  //__property bool Hide = {read=FHide, write=SetHide};
-  //__property TPointer DataX = {index=0, read=FData[0], write=SetData};
-  //__property TPointer DataY = {index=1, read=FData[1], write=SetData};
-  //__property TCompConv CompConvX = {index=0, read=GetCompConv,
-    //write=SetCompConv};
-  //__property TCompConv CompConvY = {index=1, read=GetCompConv,
-    //write=SetCompConv};
-  #ifdef NOP
-  __property bool AutoScaleX = {index=0, read=FAutoScale[0],
-    write=SetAutoScale};
-  __property bool AutoScaleY = {index=1, read=FAutoScale[1],
-    write=SetAutoScale};
-  __property float_type Step = {read=FStep, write=SetStep};
-  #endif //NOP
+
   // Методы
   size_type group_x() const;
   void group_x(size_type a_group_x);
@@ -278,27 +127,6 @@ public:
   void auto_scale_y(bool a_auto_scale_y);
   float_type step() const;
   void step(const float_type& a_step);
-  #ifdef NOP
-  __property bounds_float_type Bounds = {read=FBounds, write=SetBounds};
-  __property rect_float_type Area = {read=GetArea, write=SetArea};
-  __property size_type CountMarkerX = {index=0, read=IndexMarkerX};
-  __property size_type CountMarkerY = {index=1, read=IndexMarkerY};
-
-  __property float_type MarkerX[size_type Index] = {read=GetMarkerX,
-    write=SetMarkerX};
-  __property float_type MarkerY[size_type Index] = {read=GetMarkerY,
-    write=SetMarkerY};
-  __property float_type FirstMarkerX = {index=0, read=GetMarkerX,
-    write=SetMarkerX};
-  __property float_type FirstMarkerY = {index=1, read=GetMarkerY,
-    write=SetMarkerY};
-  __property float_type LastMarkerX = {index=-1, read=GetMarkerX,
-    write=SetMarkerX};
-  __property float_type LastMarkerY = {index=-1, read=GetMarkerY,
-    write=SetMarkerY};
-  __property TPen *Pen = {read=FPen, write=SetPen};
-  __property TPen *MarkerPen = {read=FMarkerPen, write=SetMarkerPen};
-  #endif //NOP
   bounds_float_type bounds() const;
   void bounds(const bounds_float_type& a_bounds);
   rect_float_type area() const;
@@ -319,20 +147,19 @@ public:
   void last_marker_y(const float_type& a_position);
   pen_t pen();
   void pen(const pen_t& a_pen);
-  void SetPen(TPen *Value);
-  void SetMarkerPen(TPen *Value);
-
-  void AddMarkerX(float_type Value);
-  void AddMarkerY(float_type Value);
-  void ClearMarkerX();
-  void ClearMarkerY();
-  void DeleteMarkerX(size_type Index);
-  void DeleteMarkerY(size_type Index);
-  void DeleteMarkerX();
-  void DeleteMarkerY();
-  void DeleteMarkerX(size_type Begin, size_type End);
-  void DeleteMarkerY(size_type Begin, size_type End);
-  void Invalidate();
+  pen_t marker_pen();
+  void marker_pen(const pen_t& a_pen);
+  void add_marker_x(float_type a_marker_pos);
+  void add_marker_y(float_type a_marker_pos);
+  void clear_marker_x();
+  void clear_marker_y();
+  void delete_marker_x(size_type Index);
+  void delete_marker_y(size_type Index);
+  void delete_marker_x();
+  void delete_marker_y();
+  void delete_marker_x(size_type Begin, size_type End);
+  void delete_marker_y(size_type Begin, size_type End);
+  void invalidate();
 private:
   friend class mx_ext_chart_t;
 
@@ -358,15 +185,17 @@ private:
   size_type FGroup[2];
   float_type FShiftX, FShiftY;
   float_type FScaleX, FScaleY;
-  TPen *FPen;
-  TPen *FMarkerPen;
+  pen_t FPen;
+  pen_t FMarkerPen;
 
   // Свойства
+  #ifdef NOP
   //generator_events_t ;
   __property int_type Left = {read=GetLeft, write=SetLeft};
   __property int_type Top = {read=GetTop, write=SetTop};
   __property int_type Width = {read=GetWidth, write=SetWidth};
   __property int_type Height = {read=GetHeight, write=SetHeight};
+  #endif //NOP
   __property TCanvas *Canvas = {read=FCanvas, write=SetCanvas};
   __property rect_int_type BoundsRect = {read=GetBoundsRect, write=SetBoundsRect};
   // События
@@ -376,6 +205,16 @@ private:
   // Методы
   void group(idx_t Index, size_type a_group_x);
   void data(idx_t Index, TPointer Value);
+
+  int_type left() const;
+  int_type top() const;
+  int_type width() const;
+  int_type height() const;
+  void left(int_type Value);
+  void top(int_type Value);
+  void width(int_type Value);
+  void height(int_type Value);
+  void canvas(TCanvas *Value);
 
   bool IntoArea(point_float_type P) const;
   bool OutArea(point_float_type P1, point_float_type P2) const;
@@ -389,10 +228,6 @@ private:
   void FloorAxis();
   rect_int_type GetBoundsRect() const;
   //rect_float_type GetArea();
-  int_type GetLeft() const;
-  int_type GetTop() const;
-  int_type GetWidth() const;
-  int_type GetHeight() const;
   TCompConv GetCompConv(idx_t Index) const;
   void PaintMarkerX(size_type i);
   void PaintMarkerY(size_type i);
@@ -401,12 +236,6 @@ private:
   //void SetBounds(bounds_float_type Bounds);
   void SetBoundsRect(rect_int_type Value);
   void SetCompConv(idx_t Index, TCompConv Value);
-  void SetStep(float_type Step);
-  void SetLeft(int_type Value);
-  void SetTop(int_type Value);
-  void SetWidth(int_type Value);
-  void SetHeight(int_type Value);
-  void SetCanvas(TCanvas *Value);
   void SetShift(size_type Index, float_type Value);
   void SetScale(size_type Index, float_type Value);
   bool ValidRect() const;
@@ -875,6 +704,6 @@ private:
 
 #endif //defined(QT_CORE_LIB) || defined(__BORLANDC__)
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
-#endif //NOP
+#endif //MXEXT_OFF
 
 #endif //MXEXTCHARTH
