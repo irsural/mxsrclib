@@ -1096,32 +1096,54 @@ void irs::arm::st_adc_t::tick()
   }
 }
 
-irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
-  select_channel_type a_selected_channels,
-  counter_t a_adc_interval
+irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
+  size_t a_adc_address,
+  select_channel_type a_adc_selected_channels,
+  size_t a_dma_address,
+  dma_stream_t a_dma_stream,
+  dma_channel_t a_dma_channel,
+  size_t a_timer_address,
+  timer_channel_t a_timer_channel
 ):
-  mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
-  m_adc_timer(a_adc_interval),
+  adc_address(a_adc_address),
+  adc_selected_channels(a_adc_selected_channels),
+  dma_address(a_dma_address),
+  dma_stream(a_dma_stream),
+  dma_channel(a_dma_channel),
+  timer_address(a_timer_address),
+  timer_channel(a_timer_channel)
+{
+}
+
+irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t a_settings, 
+   irs::c_array_view_t<irs_u16>* ap_buff, 
+   cpu_traits_t::frequency_type a_frequency
+):
+  mp_adc(reinterpret_cast<adc_regs_t*>(a_settings.adc_address)),
   m_regular_channels_values(),
   m_active_channels(),
   m_current_channel(),
   m_temperature_channel_value(),
-  mp_dma(reinterpret_cast<dma_regs_t*>(IRS_DMA2_BASE)),
-  mp_timer(reinterpret_cast<tim_regs_t*>(IRS_TIM1_PWM1_BASE))
+  mp_dma(reinterpret_cast<dma_regs_t*>(a_settings.dma_address)),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_settings.timer_address)),
+  mp_buff(ap_buff),
+  m_frequency(a_frequency),
+  m_set_freq(0),
+  m_psc(0),
+  m_buff_size(mp_buff->size()),
+  m_start(false)
 {
-  SETENA0_bit.SETENA_TIM1_UP_TIM10 = 1;
+  //SETENA0_bit.SETENA_TIM1_UP_TIM10 = 1;
     
-  for (int i = 0; i < 32; i++) {
-    adc_bytes[i] = 0xFF;
-  }
-  irs::clock_enable(IRS_DMA2_BASE);
+  irs::clock_enable(a_settings.dma_address);
   mp_dma->DMA_S0CR_bit.EN = 0;
+  //mp_dma->DMA_S0CR = 0;
 
   mp_dma->DMA_S0PAR = (irs_u32)&(mp_adc->ADC_DR); //адрес регистра перефирии
-  mp_dma->DMA_S0M0AR = (irs_u32)adc_bytes; //адрес буфера в памяти
-  mp_dma->DMA_S0NDTR = 32; //количество данных для обмена
+  mp_dma->DMA_S0M0AR = (irs_u32)ap_buff->data(); //адрес буфера в памяти
+  mp_dma->DMA_S0NDTR = (irs_u16)m_buff_size; //количество данных для обмена
   
-  mp_dma->DMA_S0CR_bit.CHSEL = 2;
+  mp_dma->DMA_S0CR_bit.CHSEL = a_settings.dma_channel;
   
   //mp_dma->DMA_S0CR_bit.PFCTRL = 1;
   //выключить циклический режим
@@ -1136,9 +1158,10 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
   mp_dma->DMA_S0CR_bit.MSIZE = 1; //размерность данных 16 бит
   mp_dma->DMA_S0CR_bit.MINC = 1; //использовать инкремент указателя
   
-  mp_dma->DMA_S0CR_bit.PL = 2;
+  mp_dma->DMA_S0CR_bit.PL = 2; //приоритет
+  //mp_dma->DMA_S0CR_bit.TCIE = 1;
   
-  mp_dma->DMA_LIFCR_bit.CTCIF2 = 1; //сбросить флаг окончания обмена
+  //mp_dma->DMA_LIFCR_bit.CTCIF0 = 1; //сбросить флаг окончания обмена
   //mp_dma->DMA_S0CR_bit.TCIE = 1;
   //mp_dma->DMA_S0FCR_bit.DMDIS = 1;
   
@@ -1151,7 +1174,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
   
   
   
-  clock_enable(a_adc_address);
+  clock_enable(a_settings.adc_address);
   mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
   mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
   // 3: PCLK2 divided by 8
@@ -1187,8 +1210,8 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
     const select_channel_type adc_mask = (ADC1 | ADC2 | ADC3) & adc_channel;
     const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
-    if ((a_selected_channels & channel_mask) &&
-      (a_selected_channels & adc_mask)) {
+    if ((a_settings.adc_selected_channels & channel_mask) &&
+      (a_settings.adc_selected_channels & adc_mask)) {
       clock_enable(adc_gpio_pairs[i].second);
       gpio_moder_analog_enable(adc_gpio_pairs[i].second);
       m_active_channels.push_back(adc_channel_to_channel_index(adc_channel));
@@ -1220,9 +1243,11 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
   //TIM_TimeBaseInit
   mp_timer->TIM_CR1_bit.CMS = 0; //Center-aligned mode selection
   mp_timer->TIM_CR1_bit.DIR = 0; //Counter used as upcounter
-
-  mp_timer->TIM_ARR = 600-1;
-  mp_timer->TIM_PSC = 1000000-1;
+  
+  m_psc = 100-1;
+  m_set_freq = timer_frequency()/m_frequency;
+  mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
+  mp_timer->TIM_PSC = m_psc;
   
   mp_timer->TIM_RCR = 0;
   //mp_timer->TIM_EGR_bit.UG = 1; //Update generation
@@ -1243,7 +1268,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(size_t a_adc_address,
   
   mp_timer->TIM_CR2_bit.OIS3 = 0; // Output Idle state 1 (OC1 output)
   mp_timer->TIM_CR2_bit.OIS3N = 0; //Output Idle state 1 (OC1N output)
-  mp_timer->TIM_CCR3 = 599; //Capture/Compare 1 value
+  mp_timer->TIM_CCR3 = mp_timer->TIM_ARR - 1; //Capture/Compare 1 value
   
   
   mp_timer->TIM_CCMR2_bit.OC3PE = 0; //Output Compare 1 preload enable
@@ -1272,21 +1297,33 @@ irs_u32 irs::arm::st_adc_dma_t::adc_channel_to_channel_index(
   return 0;
 }
 
+irs::cpu_traits_t::frequency_type irs::arm::st_adc_dma_t::timer_frequency()
+{
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  return cpu_traits_t::timer_frequency(timer_address);
+}
+
 irs::arm::st_adc_dma_t::~st_adc_dma_t()
 {
 }
 
 void irs::arm::st_adc_dma_t::start()
 {
-  mp_timer->TIM_CR1_bit.CEN = 0;
-  mp_adc->ADC_CR2_bit.ADON = 0;
-  mp_dma->DMA_S0CR_bit.EN = 0;
-  mp_dma->DMA_LIFCR_bit.CTCIF0 = 1;
-  mp_dma->DMA_LIFCR_bit.CHTIF0 = 1;
-  mp_dma->DMA_S0NDTR = 32;
-  mp_dma->DMA_S0CR_bit.EN = 1;
-  mp_adc->ADC_CR2_bit.ADON = 1;
-  mp_timer->TIM_CR1_bit.CEN = 1;
+  if (!m_start) {
+    m_start = true;
+    mp_timer->TIM_CR1_bit.CEN = 0;
+    mp_adc->ADC_CR2_bit.ADON = 0;
+    mp_dma->DMA_S0CR_bit.EN = 0;
+    mp_timer->TIM_PSC = m_psc;
+    mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
+    mp_timer->TIM_CCR3 = mp_timer->TIM_ARR - 1;
+    mp_dma->DMA_LIFCR_bit.CTCIF0 = 1;
+    mp_dma->DMA_LIFCR_bit.CHTIF0 = 1;
+    mp_dma->DMA_S0NDTR = (irs_u16)m_buff_size;
+    mp_dma->DMA_S0CR_bit.EN = 1;
+    mp_adc->ADC_CR2_bit.ADON = 1;
+    mp_timer->TIM_CR1_bit.CEN = 1;
+  }
 }
 
 void irs::arm::st_adc_dma_t::stop()
@@ -1294,36 +1331,38 @@ void irs::arm::st_adc_dma_t::stop()
   mp_timer->TIM_CR1_bit.CEN = 0;
   mp_adc->ADC_CR2_bit.ADON = 0;
   mp_dma->DMA_S0CR_bit.EN = 0;
+  m_start = false;
 }
 
 bool irs::arm::st_adc_dma_t::status()
 {
   bool result = false;
-  if(mp_dma->DMA_LISR_bit.TCIF0 == 1) {
-    result = true;    
+  if(mp_dma->DMA_LISR_bit.TCIF0 && m_start) {
+    result = true;
+    m_start = false;    
+  } else if (!m_start) {
+    result = true;
   }
   return result;
 }
-
-void irs::arm::st_adc_dma_t::tick()
+void irs::arm::st_adc_dma_t::set_frequency(
+  cpu_traits_t::frequency_type a_frequency)
 {
-  /*if(mp_dma->DMA_LISR_bit.TCIF0 == 1) {
-    //mp_dma->DMA_S0CR_bit.EN = 0;
-    irs_u16 test = static_cast<irs_u16>(mp_adc->ADC_DR);
-    irs::mlog() << test << " ";
-    irs::mlog() << adc_bytes[0] << " " << flush;
-    mp_timer->TIM_CR1_bit.CEN = 0;
-    mp_adc->ADC_CR2_bit.ADON = 0;
-    mp_dma->DMA_S0CR_bit.EN = 0;
-    mp_dma->DMA_LIFCR_bit.CTCIF0 = 1;
-    mp_dma->DMA_LIFCR_bit.CHTIF0 = 1;
-    mp_dma->DMA_S0NDTR = 32;
-    mp_dma->DMA_S0CR_bit.EN = 1;
-    mp_adc->ADC_CR2_bit.ADON = 1;
-    mp_timer->TIM_CR1_bit.CEN = 1;
-  }*/
+  m_frequency = a_frequency;
+  m_set_freq = timer_frequency()/m_frequency;
+ 
 }
 
+void irs::arm::st_adc_dma_t::set_prescaler(irs_u16 a_psc)
+{
+  m_psc = a_psc;   
+}
+void irs::arm::st_adc_dma_t::set_size(size_t a_size)
+{
+  if (a_size <= mp_buff->size()) { 
+    m_buff_size = a_size;
+  }
+}
 // class st_dac_t
 irs::arm::st_dac_t::st_dac_t(select_channel_type a_selected_channels)
 {

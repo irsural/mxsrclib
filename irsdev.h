@@ -220,7 +220,7 @@ private:
     ocm_pwm_mode_1 = 6
   };
   void set_mode_capture_compare_registers(output_compare_mode_t a_mode);
-  cpu_traits_t::frequency_type  timer_frequency();
+  cpu_traits_t::frequency_type timer_frequency();
   vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
   gpio_channel_t m_gpio_channel;
   tim_regs_t* mp_timer;

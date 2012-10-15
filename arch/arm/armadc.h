@@ -195,7 +195,50 @@ private:
     ADC2 = 1 << 29,
     ADC3 = 1 << 28
   };
+  
 public:
+  enum dma_stream_t {
+    DMA_STREAM0,
+    DMA_STREAM1,
+    DMA_STREAM2,
+    DMA_STREAM3,
+    DMA_STREAM4,
+    DMA_STREAM5,
+    DMA_STREAM6,
+    DMA_STREAM7
+  };
+  enum dma_channel_t {
+    DMA_CH0 = 0,
+    DMA_CH1 = 1,
+    DMA_CH2 = 2,
+    DMA_CH3 = 3,
+    DMA_CH4 = 4,
+    DMA_CH5 = 5,
+    DMA_CH6 = 6,
+    DMA_CH7 = 7
+  };
+  enum timer_channel_t {
+    TIM_CH1,
+    TIM_CH2,
+    TIM_CH3,
+    TIM_CH4
+  };
+  struct settings_adc_dma_t {
+    settings_adc_dma_t(size_t a_adc_address,
+      select_channel_type a_adc_selected_channels,
+      size_t a_dma_address,
+      dma_stream_t a_dma_stream,
+      dma_channel_t a_dma_channel,
+      size_t a_timer_address,
+      timer_channel_t a_timer_channel);
+    size_t adc_address;
+    select_channel_type adc_selected_channels;
+    size_t dma_address;
+    dma_stream_t dma_stream;
+    dma_channel_t dma_channel;
+    size_t timer_address;
+    timer_channel_t timer_channel;
+  };
   enum adc_channel_t {
     ADC123_PA0_CH0 = (1 << 0) | ADC1 | ADC2 | ADC3,
     ADC123_PA1_CH1 = (1 << 1) | ADC1 | ADC2 | ADC3,
@@ -222,19 +265,20 @@ public:
     ADC12_PC5_CH15 = (1 << 15) | ADC1 | ADC2,
     ADC3_PF5_CH15 = (1 << 15) | ADC3
   };
-  st_adc_dma_t(size_t a_adc_address, select_channel_type a_selected_channels,
-    counter_t a_adc_interval = make_cnt_ms(100));
+  st_adc_dma_t(settings_adc_dma_t a_settings, 
+    irs::c_array_view_t<irs_u16>* ap_buff, 
+    cpu_traits_t::frequency_type a_frequency);
   virtual ~st_adc_dma_t();
   virtual void start();
   virtual void stop();
   virtual bool status();
-  virtual void tick();
-  void set_frequency();
-  void set_size();
+  virtual void set_frequency(cpu_traits_t::frequency_type a_frequency);
+  virtual void set_size(size_t a_size);
+  virtual void set_prescaler(irs_u16 a_psc);
 private:
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
+  cpu_traits_t::frequency_type timer_frequency();
   adc_regs_t* mp_adc;
-  irs::loop_timer_t m_adc_timer;
   enum { reqular_channel_count = 16 };
   enum { adc_resolution = 12 };
   enum { adc_max_value = 0xFFF };
@@ -244,7 +288,12 @@ private:
   irs_i16 m_temperature_channel_value;
   dma_regs_t* mp_dma;
   tim_regs_t* mp_timer;
-  irs_u16 adc_bytes[32];
+  irs::c_array_view_t<irs_u16>* mp_buff;
+  cpu_traits_t::frequency_type m_frequency;
+  cpu_traits_t::frequency_type m_set_freq;
+  irs_u16 m_psc;
+  size_t m_buff_size;
+  bool m_start;
 };
 
 //! \brief Драйвер ЦАП для контроллеров семейства STM32F2xx
