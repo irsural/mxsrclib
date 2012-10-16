@@ -192,6 +192,15 @@ typedef struct
   HWREG(address) |= (bits_value << bits_shift);\
 }
 
+#define IRS_GET_BITS(address, bits_shift, bits_count, bits_value)\
+{\
+  typedef irs_u32 reg_t;\
+  const reg_t bits_mask = ~(static_cast<reg_t>(-1) << bits_count);\
+  const reg_t select_mask = (bits_mask << bits_shift);\
+  reg_t reg = HWREG(address) & select_mask;\
+  bits_value = reg >> bits_shift;\
+}
+
 #endif /* __IAR_SYSTEMS_ICC__ */
 
 

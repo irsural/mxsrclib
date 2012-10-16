@@ -3611,6 +3611,11 @@ __IO_REG32(    DMA2_S7M1AR,       IRS_DMA2_BASE + DMA_SxM1AR + DMA_stream_shift*
 __IO_REG32_BIT(DMA2_S7FCR,        IRS_DMA2_BASE + DMA_SxFCR +  DMA_stream_shift*7,
   __READ_WRITE ,__dma_sxfcr_bits);
 
+#define IRS_DMA_ISR 0x00
+#define IRS_DMA_IFCR 0x08
+
+enum { dma_stream_count = 8 };
+
 struct dma_regs_t
 {
   IRS_IO_REG32_BIT(DMA_LISR, __READ ,__dma_lisr_bits);
@@ -3618,62 +3623,51 @@ struct dma_regs_t
   IRS_IO_REG32_BIT(DMA_LIFCR, __READ_WRITE ,__dma_lifcr_bits);
   IRS_IO_REG32_BIT(DMA_HIFCR, __READ_WRITE ,__dma_hifcr_bits);
 
-  IRS_IO_REG32_BIT(DMA_S0CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S0NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S0PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S0M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S0M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S0FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S1CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S1NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S1PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S1M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S1M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S1FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S2CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S2NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S2PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S2M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S2M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S2FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S3CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S3NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S3PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S3M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S3M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S3FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S4CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S4NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S4PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S4M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S4M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S4FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S5CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S5NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S5PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S5M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S5M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S5FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S6CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S6NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S6PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S6M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S6M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S6FCR, __READ_WRITE, __dma_sxfcr_bits);
-
-  IRS_IO_REG32_BIT(DMA_S7CR, __READ_WRITE, __dma_sxcr_bits);
-  IRS_IO_REG32_BIT(DMA_S7NDTR, __READ_WRITE, __dma_sxndtr_bits);
-  IRS_IO_REG32(DMA_S7PAR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S7M0AR, __READ_WRITE);
-  IRS_IO_REG32(DMA_S7M1AR, __READ_WRITE);
-  IRS_IO_REG32_BIT(DMA_S7FCR, __READ_WRITE, __dma_sxfcr_bits);
+  struct dma_stream_regs_t {
+    IRS_IO_REG32_BIT(DMA_SCR, __READ_WRITE, __dma_sxcr_bits);
+    IRS_IO_REG32_BIT(DMA_SNDTR, __READ_WRITE, __dma_sxndtr_bits);
+    IRS_IO_REG32(DMA_SPAR, __READ_WRITE);
+    IRS_IO_REG32(DMA_SM0AR, __READ_WRITE);
+    IRS_IO_REG32(DMA_SM1AR, __READ_WRITE);
+    IRS_IO_REG32_BIT(DMA_SFCR, __READ_WRITE, __dma_sxfcr_bits);
+  } stream[dma_stream_count];
 };
+  
+enum {
+  FEIF = 0,
+  DMEIF = 2,
+  TEIF = 3,
+  HTIF = 4,
+  TCIF = 5
+};
+
+enum {
+  CFEIF = 0,
+  CDMEIF = 2,
+  CTEIF = 3,
+  CHTIF = 4,
+  CTCIF = 5
+};
+
+inline void dma_set_bit(unsigned long a_dma_address, unsigned long a_reg, 
+  int a_stream, int a_bit_shift, int a_bit_value)
+{
+  int shift_stream = (a_stream/2)*2;
+  unsigned long address = a_dma_address + a_reg + shift_stream;
+  int bit_shift = a_bit_shift + 6*(a_stream%2);
+  IRS_SET_BITS(address, bit_shift, 1, a_bit_value);
+}
+
+inline int dma_get_bit(unsigned long a_dma_address, unsigned long a_reg, 
+  int a_stream, int a_bit_shift)
+{
+  int shift_stream = (a_stream/2)*2;
+  unsigned long address = a_dma_address + a_reg + shift_stream;
+  int bit_shift = a_bit_shift + 6*(a_stream%2);
+  int bit_value = 0;
+  IRS_GET_BITS(address, bit_shift, 1, bit_value);
+  return bit_value;
+}
 
 /* DAC control register (DAC_CR) */
 typedef struct {

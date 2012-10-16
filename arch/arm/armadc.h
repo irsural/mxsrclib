@@ -195,17 +195,17 @@ private:
     ADC2 = 1 << 29,
     ADC3 = 1 << 28
   };
-  
+   
 public:
   enum dma_stream_t {
-    DMA_STREAM0,
-    DMA_STREAM1,
-    DMA_STREAM2,
-    DMA_STREAM3,
-    DMA_STREAM4,
-    DMA_STREAM5,
-    DMA_STREAM6,
-    DMA_STREAM7
+    DMA_STREAM0 = 0,
+    DMA_STREAM1 = 1,
+    DMA_STREAM2 = 2,
+    DMA_STREAM3 = 3,
+    DMA_STREAM4 = 4,
+    DMA_STREAM5 = 5,
+    DMA_STREAM6 = 6,
+    DMA_STREAM7 = 7
   };
   enum dma_channel_t {
     DMA_CH0 = 0,
@@ -218,10 +218,10 @@ public:
     DMA_CH7 = 7
   };
   enum timer_channel_t {
-    TIM_CH1,
-    TIM_CH2,
-    TIM_CH3,
-    TIM_CH4
+    TIM_CH1 = 0,
+    TIM_CH2 = 1,
+    TIM_CH3 = 2,
+    TIM_CH4 = 3
   };
   struct settings_adc_dma_t {
     settings_adc_dma_t(size_t a_adc_address,
@@ -265,7 +265,7 @@ public:
     ADC12_PC5_CH15 = (1 << 15) | ADC1 | ADC2,
     ADC3_PF5_CH15 = (1 << 15) | ADC3
   };
-  st_adc_dma_t(settings_adc_dma_t a_settings, 
+  st_adc_dma_t(settings_adc_dma_t* ap_settings, 
     irs::c_array_view_t<irs_u16>* ap_buff, 
     cpu_traits_t::frequency_type a_frequency);
   virtual ~st_adc_dma_t();
@@ -276,6 +276,8 @@ public:
   virtual void set_size(size_t a_size);
   virtual void set_prescaler(irs_u16 a_psc);
 private:
+  void set_adc_timer_channel(size_t a_timer_address, 
+    timer_channel_t a_timer_channel);
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
   cpu_traits_t::frequency_type timer_frequency();
   adc_regs_t* mp_adc;
@@ -294,6 +296,7 @@ private:
   irs_u16 m_psc;
   size_t m_buff_size;
   bool m_start;
+  settings_adc_dma_t* mp_settings;
 };
 
 //! \brief Драйвер ЦАП для контроллеров семейства STM32F2xx
