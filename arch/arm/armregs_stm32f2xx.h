@@ -2117,6 +2117,66 @@ struct tim_regs_t
   IRS_IO_REG32_BIT(TIM_DMAR, __READ_WRITE ,__tim1_dmar_bits);
 };
 
+#define IRS_TIM_CCMR 0x18
+#define IRS_TIM_CCER 0x20
+#define IRS_TIM_CCR 0x34
+
+enum {
+  OCS = 0,
+  OCFE = 2,
+  OCPE = 3,
+  OCM = 4,
+  OCCE = 7,
+  ICSC = 2,
+  ICF = 4
+};
+
+enum {
+  CCE = 0,
+  CCP = 1,
+  CCNE = 2,
+  CCNP = 3
+};
+
+enum {
+  CCR_REG = 0
+};
+
+enum {
+  OCS_SIZE = 2,
+  ICSC_SIZE = 2,
+  OCCE_SIZE = 1,
+  OCFE_SIZE = 1,
+  OCPE_SIZE = 1,
+  OCM_SIZE = 3,
+  ICF_SIZE = 4,
+  CCE_SIZE = 1,
+  CCP_SIZE = 1,
+  CCNE_SIZE = 1,
+  CCNP_SIZE = 1,
+  CCR_REG_SIZE = 32
+};
+
+inline void timer_set_bit(unsigned long a_timer_address, 
+  unsigned long a_reg, int a_channel, int a_bit_shift, int a_size, 
+  int a_bit_value)
+{
+  int shift_stream = 0;
+  if (a_reg == IRS_TIM_CCMR) {
+    shift_stream = (a_channel/2)*4;
+  } else if (a_reg == IRS_TIM_CCR) {
+    shift_stream = a_channel*4;
+  }
+  unsigned long address = a_timer_address + a_reg + shift_stream;
+  int bit_shift = 0;
+  if (a_reg == IRS_TIM_CCMR) {
+    bit_shift = a_bit_shift + 8*(a_channel%2);
+  } else if (a_reg == IRS_TIM_CCER) {
+    bit_shift = a_bit_shift + (a_channel*4);
+  }
+  IRS_SET_BITS(address, bit_shift, a_size, a_bit_value);
+}
+
 
 #define FLASH_ACR_S        0x0
 

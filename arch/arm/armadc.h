@@ -187,6 +187,13 @@ private:
   irs_i16 m_temperature_channel_value;
 };
 
+//! \brief Драйвер АЦП DMA для контроллеров семейства STM32F2xx
+//! \author Gavrishchuk Maxim
+//!
+//! Дата: 17.10.2012
+//! Дата создания: 17.10.2012
+//!Необходимо заполнить структуру settings_adc_dma_t в соответствии
+//! с документацией на контроллер
 class st_adc_dma_t: public adc_dma_t
 {
 private:

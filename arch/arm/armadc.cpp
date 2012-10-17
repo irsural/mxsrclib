@@ -1253,24 +1253,18 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   //TIM_SetCounter
   mp_timer->TIM_CNT = 0;
   //TIM_OC1Init номер канала 1
-  //mp_timer->TIM_CCER_bit.CC3E = 0; //Capture/Compare 1 output enable
-  //mp_timer->TIM_CCMR2_bit.OC3M = 0; //Output Compare 1 mode
-  //mp_timer->TIM_CCMR2_bit.OC3S = 0; //Capture/Compare 1 selection
-  mp_timer->TIM_CCMR2_bit.OC3M = 7; //PWM2
-  //mp_timer->TIM_CCER_bit.CC3P = 0; //Capture/Compare 1 output polarity
-  mp_timer->TIM_CCER_bit.CC3P = 1;
-  mp_timer->TIM_CCER_bit.CC3E = 1; //Capture/Compare 1 output enable
-  
-  //mp_timer->TIM_CCER_bit.CC3NP = 0; //Capture/Compare 1 complementary output polarity
-  //mp_timer->TIM_CCER_bit.CC3NE = 0; //Capture/Compare 1 complementary output enable
-  
-  //mp_timer->TIM_CR2_bit.OIS3 = 0; // Output Idle state 1 (OC1 output)
-  //mp_timer->TIM_CR2_bit.OIS3N = 0; //Output Idle state 1 (OC1N output)
-  mp_timer->TIM_CCR3 = mp_timer->TIM_ARR - 1; //Capture/Compare 1 value
-  
-  
-  //mp_timer->TIM_CCMR2_bit.OC3PE = 0; //Output Compare 1 preload enable
-  //mp_timer->TIM_CR1_bit.OPM = 0; //One pulse mode
+  timer_set_bit(mp_settings->timer_address, 
+    IRS_TIM_CCMR, mp_settings->timer_channel, OCM, OCM_SIZE, 7);
+
+  //Capture/Compare 1 output enable
+  timer_set_bit(mp_settings->timer_address, 
+    IRS_TIM_CCER, mp_settings->timer_channel, CCP, CCP_SIZE, 1);
+  timer_set_bit(mp_settings->timer_address, 
+    IRS_TIM_CCER, mp_settings->timer_channel, CCE, CCE_SIZE, 1);
+ 
+  timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
+    mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
+
   
   mp_timer->TIM_BDTR_bit.MOE = 1;
   mp_timer->TIM_BDTR_bit.AOE = 1;
@@ -1369,7 +1363,8 @@ void irs::arm::st_adc_dma_t::start()
     mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
     mp_timer->TIM_PSC = m_psc;
     mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
-    mp_timer->TIM_CCR3 = mp_timer->TIM_ARR - 1;
+    timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
+      mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
     dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR, 
       mp_settings->dma_stream, CTCIF, 1);
     dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR, 
