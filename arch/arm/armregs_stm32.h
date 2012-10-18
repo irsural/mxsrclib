@@ -3,16 +3,6 @@
 
 #include <armiomacros.h>
 
-//  Определение семейства МК
-
-#if defined(__STM32F100RBT__)
-  #define STM32F100_FAMILY
-#elif defined(IRS_STM32F205RET)
-  #define IRS_STM32F2xx
-#else
-  #error Тип контроллера не определён
-#endif  //  MCU_FAMILY
-
 //  Определение базовых адресов периферии
 
 #ifdef STM32F100_FAMILY

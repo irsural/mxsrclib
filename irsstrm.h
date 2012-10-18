@@ -489,9 +489,9 @@ private:
 
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   volatile usart_regs_t* m_usart;
-  #endif // IRS_STM32F2xx
+  #endif // IRS_STM32F_2_AND_4
   const irs_u32 m_baud_rate;
 };
 

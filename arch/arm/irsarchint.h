@@ -112,7 +112,7 @@ enum {
   gpio_portj_int,
   #endif // __LM3SxBxx__
 
-  #elif defined(IRS_STM32F2xx)
+  #elif defined(IRS_STM32F_2_AND_4)
   //tim1_brk_tim9_int,
   exti3_int,
   tim1_up_tim10_int,

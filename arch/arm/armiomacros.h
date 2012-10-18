@@ -43,6 +43,21 @@
 #endif
 #define __WRITE         /* Not supported */
 
+// Определение семейства МК
+/*#if defined(__STM32F100RBT__)
+  #define STM32F100_FAMILY
+#elif defined(IRS_STM32F205RET)
+  #define IRS_STM32F2xx
+#elfi defined(IRS_STM32F417ZG)
+  #define IRS_STM32F4xx
+#else
+  #error Тип контроллера не определён
+#endif  *///  MCU_FAMILY
+
+#if defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
+  #define IRS_STM32F_2_AND_4
+#endif // defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
+
 /***********************************************
  * I/O reg bits (default names)
  ***********************************************/

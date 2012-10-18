@@ -162,7 +162,7 @@ private:
   irs_u16 calc_load_value(cpu_traits_t::frequency_type a_frequency);
 };
 
-#elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+#elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
 
 class timers_usage_t {
 public:
@@ -293,7 +293,7 @@ public:
     return RESC_bit.WDT;
     #elif defined(__STM32F100RBT__)
     return false;
-    #elif defined(IRS_STM32F2xx)
+    #elif defined(IRS_STM32F_2_AND_4)
     return false;
     #else
       #error Тип контроллера не определён

@@ -150,7 +150,7 @@ void irs::arm::flash_t::flash_erase(irs_u32 a_index)
 void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
 {
 }
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
 {
 }
@@ -185,7 +185,7 @@ void irs::arm::flash_t::flash_write_block(irs_u8* /*ap_buf*/,
   irs_u32 /*a_index*/)
 {
 }
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 void irs::arm::flash_t::flash_write_block(irs_u8* /*ap_buf*/,
   irs_u32 /*a_index*/)
 {

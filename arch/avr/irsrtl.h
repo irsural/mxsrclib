@@ -50,12 +50,12 @@ class rtl8019as_t: public simple_ethernet_t
 public:
   typedef rtl8019as_t this_type;
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
-  
+
   enum {
     //! \brief Регистры
     CR = 0x0,
     PAR0 = 0x01,
-    
+
     PSTART = 0x01,
     PSTOP = 0x02,
     BNRY = 0x03,
@@ -72,14 +72,14 @@ public:
     TCR = 0x0d,
     DCR = 0x0e,
     IMR = 0x0f,
-    
+
     CURR = 0x07,
 
     CONFIG3 = 0x06,
-      
+
     RDMAPORT = 0x10,
     RSTPORT = 0x18,
-    
+
     //! \brief Биты CR
     STP = 0,
     STA = 1,
@@ -102,7 +102,7 @@ public:
 
     //! \brief Биты ISR
     RDC = 0x40,
-    
+
     //! \brief Биты DCR
     WTS = 0,
     BOS = 1,
@@ -111,11 +111,11 @@ public:
     ARM = 4,
     FT0 = 5,
     FT1 = 6,
-    
+
     //! \brief Биты CONFIG3
     //! \brief Тип 0-го светодиода
     LEDS0 = 4,
-    
+
     //! \brief Готовые значения для регистров
     //dcrval = 0x58,
     dcrval = ((1 << LS)|(1 << ARM)|(1 << FT1)),
@@ -137,7 +137,7 @@ public:
     ETHERNET_PACKET_MIN = 64
   };
   enum { mac_size = 6};
-  
+
   rtl8019as_t(
     buffer_num_t a_buf_num,
     size_t a_buf_size,
@@ -150,17 +150,17 @@ public:
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
   virtual void set_send_buf_locked();
-  virtual bool is_recv_buf_filled();
-  virtual bool is_send_buf_empty();
+  virtual bool is_recv_buf_filled() const;
+  virtual bool is_send_buf_empty() const;
   virtual irs_u8* get_recv_buf();
   virtual irs_u8* get_send_buf();
-  virtual irs_size_t recv_buf_size();
-  virtual irs_size_t send_buf_max_size();
-  virtual buffer_num_t get_buf_num();
-  virtual mxmac_t get_local_mac();
+  virtual irs_size_t recv_buf_size() const;
+  virtual irs_size_t send_buf_max_size() const;
+  virtual buffer_num_t get_buf_num() const;
+  virtual mxmac_t get_local_mac() const;
   virtual void set_mac(mxmac_t& a_mac);
   virtual void tick();
-  
+
 private:
   buffer_num_t m_buf_num;
   size_t m_size_buf;
@@ -178,7 +178,7 @@ private:
   irs_u8 m_cur_pack_pointer;
   irs_u8 m_next_pack_pointer;
   rtl_port_str_t m_rtl_port_str;
-  
+
   void rtl_interrupt();
   irs_u8 read_rtl(irs_u8 a_reg_addr);
   void write_rtl(irs_u8 a_reg_addr, irs_u8 a_reg_data);

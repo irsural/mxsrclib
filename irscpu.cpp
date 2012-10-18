@@ -33,6 +33,12 @@ irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_first = 30000000;
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
+#elif defined(IRS_STM32F4xx)
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 168000000;
+irs::cpu_traits_t::frequency_type
+  irs::cpu_traits_t::m_periphery_frequency_first = 42000000;
+irs::cpu_traits_t::frequency_type
+  irs::cpu_traits_t::m_periphery_frequency_second = 84000000;
 #else
   #error Тип контроллера не определён
 #endif // ARM_device
@@ -48,7 +54,7 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::frequency()
   return m_frequency;
 }
 
-#ifdef IRS_STM32F2xx
+#ifdef IRS_STM32F_2_AND_4
 irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::periphery_frequency_first()
 {
@@ -87,7 +93,7 @@ irs::cpu_traits_t::timer_frequency(size_t a_timer_base)
   }
 }
 
-#endif // IRS_STM32F2xx
+#endif // IRS_STM32F_2_AND_4
 
 irs::cpu_traits_t::endian_type irs::cpu_traits_t::endian()
 {

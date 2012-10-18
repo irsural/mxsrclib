@@ -332,7 +332,7 @@ void irs_arm_gpio_portj_func()
 }
 #endif // __LM3SxBxx__
 
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 
 //  Прерывания периферии
 
@@ -382,7 +382,7 @@ void irs_arm_tim8_up_tim13_func()
   TIM13_SR_bit.UIF = 0;
   TIM13_SR_bit.CC1IF = 0;
 }
-#endif // defined(IRS_STM32F2xx)
+#endif // defined(IRS_STM32F_2_AND_4)
 
 void irs_arm_default_int_func()
 {
@@ -504,7 +504,7 @@ __root const intfunc __int_vector_table[] =
   #endif // __LM3SxBxx__
 };
 
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 
 #pragma location = ".periph_intvec"
 __root const intfunc __int_vector_table[] =
@@ -591,6 +591,6 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 79
   irs_arm_default_int_func   // 80
 };
-#endif // defined(IRS_STM32F2xx)
+#endif // defined(IRS_STM32F_2_AND_4)
 
 #endif // !IRS_DISABLE_EVENT_INTERRUPT

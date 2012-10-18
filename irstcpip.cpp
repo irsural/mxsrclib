@@ -184,7 +184,7 @@ irs::arp_t::arp_t(
   m_new_recv_packet(true),
   m_buf_num(mp_ethernet->get_buf_num()),
   mp_recv_buf(mp_ethernet->get_recv_buf()),
-  mp_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
+  mp_send_buf((m_buf_num == simple_ethernet_t::single_buf) ?
     mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
   m_local_ip(a_local_ip),
   m_mac(mp_ethernet->get_local_mac())
@@ -284,7 +284,7 @@ void irs::arp_t::tick()
       }
     }
   }
-  
+
   /*if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet) {
     m_new_recv_packet = false;
     if((mp_recv_buf[ether_type_0] == IRS_CONST_HIBYTE(ARP)) &&
@@ -292,7 +292,7 @@ void irs::arp_t::tick()
     {
       mxip_t ip = IRS_TCPIP_IP(mp_recv_buf + arp_target_ip);
       if(ip == m_local_ip) {
-        
+
       }
     } else {
       m_new_recv_packet = true;
@@ -327,12 +327,12 @@ irs::simple_tcpip_t::simple_tcpip_t(
   m_udp_open(false),
   m_tcp_open(false), // false
   mp_recv_buf(mp_ethernet->get_recv_buf()),
-  mp_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
+  mp_send_buf((m_buf_num == simple_ethernet_t::single_buf) ?
     mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
   mp_user_recv_buf(mp_ethernet->get_recv_buf()),
-  mp_user_send_buf((m_buf_num == simple_ethernet_t::single_buf) ? 
+  mp_user_send_buf((m_buf_num == simple_ethernet_t::single_buf) ?
     mp_ethernet->get_recv_buf() : mp_ethernet->get_send_buf()),
-  m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false : 
+  m_send_buf_filled((m_buf_num == simple_ethernet_t::double_buf) ? false :
     mp_ethernet->is_recv_buf_filled()),
   m_connection_wait_arp_timer(make_cnt_s(1)),
   m_arp_cash(a_arp_cash_size),
@@ -419,7 +419,7 @@ void irs::simple_tcpip_t::write(mxip_t a_dest_ip, irs_u16 a_dest_port,
   if (a_local_port) {
     m_local_port = a_local_port;
   }
-  
+
   if (mp_ethernet->is_send_buf_empty()) {
     if (m_buf_num == simple_ethernet_t::single_buf) {
       m_new_recv_packet = false;
@@ -463,6 +463,7 @@ irs_size_t irs::simple_tcpip_t::read(mxip_t* a_dest_ip,
 void irs::simple_tcpip_t::read_complete()
 {
   m_user_recv_status = false;
+  m_user_recv_buf_size = 0;
   //if (m_udp_open) {
     m_new_recv_packet = true;
     mp_ethernet->set_recv_handled();
@@ -566,7 +567,7 @@ void irs::simple_tcpip_t::view_tcp_packet(irs_u8*
     {
       case ARP:
       {
-        mlog() << irsm("ARP") << endl; 
+        mlog() << irsm("ARP") << endl;
       } break;
       case IPv4:
       {
@@ -580,7 +581,7 @@ void irs::simple_tcpip_t::view_tcp_packet(irs_u8*
       (ap_buf[ip_version] & 0x0F) * 4;
     mlog() << irsm("Header len = ") << incoming_ip_header_length << endl;
     mlog() << irsm("Total len = ") << ntoh16(&ap_buf[ip_length]) << endl;
-    mlog() << irsm("ID = ");    
+    mlog() << irsm("ID = ");
     out_hex(&mlog(), ntoh16(&ap_buf[ip_ident]));
     mlog() << endl;
     mlog() << irsm("fragmentation = ") <<
@@ -717,7 +718,7 @@ irs_u16 irs::simple_tcpip_t::check_sum_ip(irs_u16 a_check_sum, irs_u8 a_dat,
 {
   irs_u8 check_sum_hi = IRS_HIBYTE(a_check_sum);
   irs_u8 check_sum_lo = IRS_LOBYTE(a_check_sum);
-  
+
   if (IRS_LOBYTE(a_count) & 0x01) {
     //* We are processing LSB	
     if ((check_sum_lo = static_cast<irs_u8>(check_sum_lo + a_dat)) < a_dat) {
@@ -745,7 +746,7 @@ irs_u16 irs::simple_tcpip_t::check_sum(irs_size_t a_count, irs_u8* a_addr)
 
   for (irs_size_t check_sum_cnt = 0; check_sum_cnt < a_count; check_sum_cnt++)
   {
-    ip_checksum = 
+    ip_checksum =
       check_sum_ip(ip_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
@@ -776,12 +777,12 @@ irs_u16 irs::simple_tcpip_t::check_sum_udp(irs_size_t a_count, irs_u8* a_addr)
   for (irs_size_t check_sum_cnt = 0; check_sum_cnt < udp_pseudo_header_length;
     check_sum_cnt++)
   {
-    udp_checksum = 
+    udp_checksum =
       check_sum_ip(udp_checksum, pseudo_header[check_sum_cnt], check_sum_cnt);
   }
   for (irs_size_t check_sum_cnt = 0; check_sum_cnt < a_count; check_sum_cnt++)
   {
-    udp_checksum = 
+    udp_checksum =
       check_sum_ip(udp_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
@@ -815,12 +816,12 @@ irs_u16 irs::simple_tcpip_t::check_sum_tcp(irs_size_t a_count,
   for (irs_size_t check_sum_cnt = 0; check_sum_cnt < tcp_pseudo_header_length;
     check_sum_cnt++)
   {
-    tcp_checksum = 
+    tcp_checksum =
       check_sum_ip(tcp_checksum, pseudo_header[check_sum_cnt], check_sum_cnt);
   }
   for (irs_size_t check_sum_cnt = 0; check_sum_cnt < a_count; check_sum_cnt++)
   {
-    tcp_checksum = 
+    tcp_checksum =
       check_sum_ip(tcp_checksum, a_addr[check_sum_cnt], check_sum_cnt);
   }
 
@@ -833,7 +834,7 @@ irs_u16 irs::simple_tcpip_t::check_sum_tcp(irs_size_t a_count,
 void irs::simple_tcpip_t::arp_request(mxip_t a_dest_ip)
 {
   //Заголовок Ethernet:
-  
+
   // Destination MAC
   IRS_TCPIP_MAC(mp_send_buf + dest_mac) = mxmac_t::broadcast_mac();
 
@@ -844,17 +845,17 @@ void irs::simple_tcpip_t::arp_request(mxip_t a_dest_ip)
   mp_send_buf[ether_type_0] = IRS_CONST_HIBYTE(ARP);
   mp_send_buf[ether_type_1] = IRS_CONST_LOBYTE(ARP);
   //-----------------------------------
-  
+
   //ARP-запрос:
-  
+
   //Hardware type
   mp_send_buf[hardware_type_0] = IRS_CONST_HIBYTE(Ethernet);
   mp_send_buf[hardware_type_1] = IRS_CONST_LOBYTE(Ethernet);
-  
+
   //Protocol type
   mp_send_buf[proto_type_0] = IRS_CONST_HIBYTE(IPv4);
   mp_send_buf[proto_type_1] = IRS_CONST_LOBYTE(IPv4);
-  
+
   //Hardware lenght
   mp_send_buf[hardware_length] = mac_len;
   //Protocol lenght
@@ -881,12 +882,12 @@ void irs::simple_tcpip_t::arp_request(mxip_t a_dest_ip)
 void irs::simple_tcpip_t::arp_response()
 {
   //Destination MAC
-  IRS_TCPIP_MAC(mp_send_buf + dest_mac) = 
+  IRS_TCPIP_MAC(mp_send_buf + dest_mac) =
     IRS_TCPIP_MAC(mp_recv_buf + sourse_mac);
 
   //Source MAC
   IRS_TCPIP_MAC(mp_send_buf + sourse_mac) = m_mac;
-  
+
 
   //Operation Code
   mp_send_buf[arp_operation_code_0] = IRS_CONST_HIBYTE(arp_operation_response);
@@ -896,10 +897,10 @@ void irs::simple_tcpip_t::arp_response()
 
   IRS_TCPIP_IP(mp_send_buf + arp_sender_ip) = m_local_ip;
 
-  IRS_TCPIP_MAC(mp_send_buf + arp_target_mac) = 
+  IRS_TCPIP_MAC(mp_send_buf + arp_target_mac) =
     IRS_TCPIP_MAC(mp_recv_buf + arp_sender_mac);
 
-  IRS_TCPIP_IP(mp_send_buf + arp_target_ip) = 
+  IRS_TCPIP_IP(mp_send_buf + arp_target_ip) =
     IRS_TCPIP_IP(mp_recv_buf + arp_sender_ip);
 
   m_send_arp = true;
@@ -958,21 +959,21 @@ void irs::simple_tcpip_t::send_arp()
 void irs::simple_tcpip_t::icmp_packet()
 {
   // Destination MAC
-  IRS_TCPIP_MAC(mp_send_buf + dest_mac) = 
+  IRS_TCPIP_MAC(mp_send_buf + dest_mac) =
     IRS_TCPIP_MAC(mp_send_buf + sourse_mac);
 
   // Source MAC
   IRS_TCPIP_MAC(mp_send_buf + sourse_mac) = m_mac;
-  
+
   // Обнуляем контрольную сумму IP
   hton16(&mp_send_buf[ip_check_sum], 0);
-  
+
   // Контрольная сумма заголовка IP
-  irs_u16 chksum_ip = check_sum(20, &mp_send_buf[0xe]);
+  irs_u16 chksum_ip = check_sum(ip_header_length, &mp_send_buf[ip_begin]);
   hton16(&mp_send_buf[ip_check_sum], chksum_ip);
 
   // IP-адрес приемника
-  IRS_TCPIP_IP(mp_send_buf + icmp_target_ip) = 
+  IRS_TCPIP_IP(mp_send_buf + icmp_target_ip) =
     IRS_TCPIP_IP(mp_send_buf + icmp_sender_ip);
 
   // IP-адрес источника
@@ -987,10 +988,10 @@ void irs::simple_tcpip_t::icmp_packet()
   hton16(&mp_send_buf[icmp_check_sum], 0);
 
   // Контрольная сумма ICMP
-  irs_u16 check_sum_icmp = check_sum(m_recv_buf_size_icmp - 0x22, 
+  irs_u16 check_sum_icmp = check_sum(m_recv_buf_size_icmp - 0x22,
     &mp_send_buf[0x22]);
   hton16(&mp_send_buf[icmp_check_sum], check_sum_icmp);
-  
+
   //-------------------------------------------------------
   m_send_icmp = true;
 }
@@ -1008,7 +1009,7 @@ void irs::simple_tcpip_t::send_icmp()
 
 void irs::simple_tcpip_t::icmp()
 {
-  if ((mp_recv_buf[icmp_type] == icmp_echo_request) && 
+  if ((mp_recv_buf[icmp_type] == icmp_echo_request) &&
     (mp_recv_buf[icmp_code] == 0)) // Эхо-запрос
   {
     m_recv_buf_size_icmp = mp_ethernet->recv_buf_size() - 4;
@@ -1061,9 +1062,9 @@ void irs::simple_tcpip_t::udp_packet()
 
   //ip dest
   IRS_TCPIP_IP(mp_send_buf + udp_dest_ip) = m_dest_ip;
-  
+
   //checksum_ip
-  irs_u16 chksum_ip = check_sum(20, &mp_send_buf[0xe]);
+  irs_u16 chksum_ip = check_sum(ip_header_length, &mp_send_buf[ip_begin]);
   hton16(&mp_send_buf[ip_check_sum], chksum_ip);
 
   //ports udp
@@ -1080,7 +1081,7 @@ void irs::simple_tcpip_t::udp_packet()
   irs_u16 chksum_udp = check_sum_udp(length_udp,
     &mp_send_buf[udp_local_port]);
   hton16(&mp_send_buf[udp_check_sum], chksum_udp);
-  
+
   m_send_udp = true;
 }
 
@@ -1111,10 +1112,10 @@ void irs::simple_tcpip_t::server_udp()
     m_cur_local_port = local_port;
     irs_u16 udp_size = ntoh16(&mp_recv_buf[udp_length]);
     m_user_recv_buf_size = static_cast<irs_u16>(udp_size - 8);
-    
+
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("размер полученного udp пакета = ") <<
       m_user_recv_buf_size << endl);
-    
+
     mxip_t& ip = ip_from_data(mp_recv_buf[udp_source_ip]);
     mxmac_t& mac = mac_from_data(mp_recv_buf[sourse_mac]);
     m_cur_dest_ip = ip;
@@ -1173,7 +1174,7 @@ void irs::simple_tcpip_t::tcp_packet()
   IRS_TCPIP_MAC(mp_send_buf) = m_dest_mac;
 
   IRS_TCPIP_MAC(mp_send_buf + sourse_mac) = m_mac;
-  
+
   //type
   mp_send_buf[ether_type_0] = IRS_CONST_HIBYTE(IPv4);
   mp_send_buf[ether_type_1] = IRS_CONST_LOBYTE(IPv4);
@@ -1201,30 +1202,30 @@ void irs::simple_tcpip_t::tcp_packet()
 
   //ip dest
   IRS_TCPIP_IP(mp_send_buf + tcp_dest_ip) = m_dest_ip;
-  
+
   //checksum_ip
   irs_u16 chksum_ip = check_sum(20, &mp_send_buf[0xe]);
   hton16(&mp_send_buf[ip_check_sum], chksum_ip);
-  
+
   //TCP packet:
   //hton16(&mp_send_buf[tcp_dest_port], m_dest_port);
   hton16(&mp_send_buf[tcp_dest_port], m_cur_dest_port);
 
   //hton16(&mp_send_buf[tcp_local_port], m_local_port);
   hton16(&mp_send_buf[tcp_local_port], m_cur_local_port);
-  
+
   irs_size_t tcp_length = m_user_send_buf_tcp_size + tcp_header_length +
     m_tcp_options_size;
     //ntoh16(&mp_send_buf[ip_length]) - ip_header_length;
     //m_user_send_buf_tcp_size + tcp_header_length;
   //hton16(&mp_send_buf[tcp_window_size], static_cast<irs_u16>(tcp_length));
-  
+
   hton16(&mp_send_buf[tcp_window_size],
     static_cast<irs_u16>(send_data_size_max()));
-  
+
   // обнуляем check_sum_tcp
   hton16(&mp_send_buf[tcp_check_sum], 0);
-  
+
   irs_u16 checksum_tcp = check_sum_tcp(tcp_length,
     &mp_send_buf[tcp_local_port]);
   hton16(&mp_send_buf[tcp_check_sum], checksum_tcp);
@@ -1303,7 +1304,7 @@ void irs::simple_tcpip_t::tcp_send_control(send_mode_t a_send_mode)
     } break;
     default:
     {
-    
+
     } break;
   }
   hton32(&mp_send_buf[tcp_sequence_number],
@@ -1322,17 +1323,17 @@ void irs::simple_tcpip_t::server_tcp()
     view_tcp_packet(mp_recv_buf);
     m_cur_local_port = local_port;
     m_cur_dest_port = ntoh16(&mp_recv_buf[tcp_local_port]);
-    
+
     irs_size_t length_ip = ntoh16(&mp_recv_buf[ip_length]);
     irs_size_t incoming_ip_header_length =
       (mp_recv_buf[ip_version] & 0x0F) * 4;
     irs_size_t incoming_tcp_header_length =
       ((mp_recv_buf[tcp_flags_0] & 0xF0) >> 4) * 4;
     m_tcp_options_size = incoming_tcp_header_length - tcp_header_length;
-      
+
     m_user_recv_buf_size = static_cast<irs_size_t>(length_ip -
       incoming_ip_header_length - incoming_tcp_header_length);
-    
+
     mxip_t& ip = ip_from_data(mp_recv_buf[tcp_source_ip]);
     m_cur_dest_ip = ip;
     m_dest_ip = ip;
@@ -1368,7 +1369,7 @@ void irs::simple_tcpip_t::server_tcp()
     m_list_index = get_tcp_connection();
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("socket = ") <<
       (m_tcp_socket_list[m_list_index].socket) << endl);
-    
+
     m_seq_num = ntoh32(&mp_recv_buf[tcp_sequence_number]);
     m_ack_num = ntoh32(&mp_recv_buf[tcp_acknowledgment_number]);
     if (m_buf_num == simple_ethernet_t::double_buf) {
@@ -1930,7 +1931,7 @@ void irs::simple_tcpip_t::tcp_init()
 /*irs_size_t irs::simple_tcpip_t::tcp_get_socket()
 {
   irs_size_t cur_socket = invalid_socket;
-  
+
   return cur_socket;
 }*/
 
@@ -1951,7 +1952,7 @@ bool irs::simple_tcpip_t::tcp_connect(irs_size_t a_socket,
   }
 
   open_port(a_local_port);
-  
+
   m_tcp_socket_list[a_socket - 1].remote_ip = a_dest_ip;
   m_tcp_socket_list[a_socket - 1].remote_port = a_dest_port;
   m_tcp_socket_list[a_socket - 1].local_port = a_local_port;
@@ -1974,14 +1975,14 @@ bool irs::simple_tcpip_t::tcp_listen(irs_size_t a_socket, irs_u16 a_port)
   }
 
   open_port(a_port);
-  
+
   m_tcp_socket_list[a_socket - 1].remote_ip = mxip_t::zero_ip();
   m_tcp_socket_list[a_socket - 1].remote_port = 0;
   m_tcp_socket_list[a_socket - 1].local_port = a_port;
   m_tcp_socket_list[a_socket - 1].send_unacked = 0;
   m_tcp_socket_list[a_socket - 1].send_next = 0xFFFFFFFF;
   m_tcp_socket_list[a_socket - 1].receive_next = 0;
-  
+
   return true;
 }
 
@@ -2042,7 +2043,7 @@ void irs::simple_tcpip_t::ip()
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
         IRS_TCPIP_IP(mp_recv_buf + udp_dest_ip) <<
         irsm(" пакет принят как icmp") << endl);
-      icmp(); 
+      icmp();
     } else if (mp_recv_buf[ip_proto_type] == udp_proto) {
       IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(irsm("recv: ip() -> udp()") << endl);
       IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(irsm("ip: ") <<
@@ -2118,7 +2119,7 @@ void irs::simple_tcpip_t::tick()
 {
   mp_ethernet->tick();
   m_arp_cash.tick();
-  
+
   if (mp_ethernet->is_recv_buf_filled() && m_new_recv_packet)
   {
     IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(
@@ -2155,14 +2156,14 @@ void irs::simple_tcpip_t::tick()
       send_udp();
     }
   }
-  
+
   if (m_tcp_open) {
     client_tcp();
   }
-  
+
   // Проверка закрытия соединения TCP при инициации закрытия со стороны
   // контроллера:
-  #ifdef NOP 
+  #ifdef NOP
   static bool close_tcp = false;
   if (m_disconnect_timer.check()) {
     close_tcp = true;
@@ -2175,7 +2176,7 @@ void irs::simple_tcpip_t::tick()
     }
   }
   #endif // NOP
-  
+
   if (m_base_timer.check()) {
     m_tcp_init_seq++;
   }

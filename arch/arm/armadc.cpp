@@ -1,6 +1,8 @@
-// Класс для работы с АЦП ARM
-// Дата: 28.06.2011
-// Дата создания: 13.01.2011
+//! \file
+//! \ingroup drivers_group
+//! \brief Класс для работы с АЦП для ARM
+//!
+//! Дата создания: 13.01.2011
 
 #include <irsdefs.h>
 
@@ -898,7 +900,7 @@ void irs::arm::adc_stellaris_t::tick()
   }
 }
 
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 
 // class st_adc_t
 irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
@@ -1115,8 +1117,8 @@ irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
 {
 }
 
-irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings, 
-   irs::c_array_view_t<irs_u16>* ap_buff, 
+irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
+   irs::c_array_view_t<irs_u16>* ap_buff,
    cpu_traits_t::frequency_type a_frequency
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(ap_settings->adc_address)),
@@ -1136,47 +1138,47 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
 {
   irs::clock_enable(mp_settings->dma_address);
 
-  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0; 
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
   //адрес регистра перефирии
-  mp_dma->stream[mp_settings->dma_stream].DMA_SPAR = 
+  mp_dma->stream[mp_settings->dma_stream].DMA_SPAR =
     reinterpret_cast<irs_u32>(&mp_adc->ADC_DR);
   //адрес буфера в памяти
-  mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR = 
+  mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR =
     reinterpret_cast<irs_u32>(ap_buff->data());
   //количество данных для обмена
-  mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR = 
-    static_cast<irs_u16>(m_buff_size); 
-  
-  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.CHSEL = 
+  mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
+    static_cast<irs_u16>(m_buff_size);
+
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.CHSEL =
     mp_settings->dma_channel;
-  
+
   //mp_dma->stream[0].DMA_SCR_bit.PFCTRL = 1;
   //выключить циклический режим
-  //смотреть как работает с PFCTRL 
-  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.CIRC = 0; 
+  //смотреть как работает с PFCTRL
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.CIRC = 0;
 
   //направление: чтение в памяти
-  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.DIR = 0; 
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.DIR = 0;
   //Настроить работу с переферийным устройством
   //размерность данных 16 бит
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.PSIZE = 1;
   //неиспользовать инкремент указателя
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.PINC = 0;
-  
-  //Настроить работу с памятью 
+
+  //Настроить работу с памятью
   //размерность данных 16 бит
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.MSIZE = 1;
   //использовать инкремент указателя
-  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.MINC = 1; 
-  
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.MINC = 1;
+
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.PL = 2; //приоритет
-    
+
   clock_enable(mp_settings->adc_address);
   mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
   mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
   // 3: PCLK2 divided by 8
   ADC_CCR_bit.ADCPRE = 3;
-  
+
   vector<pair<adc_channel_t, gpio_channel_t> > adc_gpio_pairs;
   adc_gpio_pairs.push_back(make_pair(ADC123_PA0_CH0, PA0));
   adc_gpio_pairs.push_back(make_pair(ADC123_PA1_CH1, PA1));
@@ -1205,7 +1207,8 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
 
   for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
-    const select_channel_type adc_mask = (ADC1 | ADC2 | ADC3) & adc_channel;
+    const select_channel_type adc_mask = (ADC1_MASK | ADC2_MASK | ADC3_MASK) &
+      adc_channel;
     const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
     if ((mp_settings->adc_selected_channels & channel_mask) &&
       (mp_settings->adc_selected_channels & adc_mask)) {
@@ -1215,41 +1218,41 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
       m_regular_channels_values.push_back(0);
     }
   }
-   
+
   // 0: Один канал
   mp_adc->ADC_SQR1_bit.L = 0;
   m_current_channel = 0;
   mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
-  
+
   //mp_adc->ADC_CR1_bit.SCAN = 1; //не нужно
   //mp_adc->ADC_CR2_bit.CONT = 1; //если рабоа с таймером то это не надо
-  
+
   //----для таймера
   //mp_adc->ADC_CR2_bit.EXTSEL = 2; //Timer 1 CC3 event
   set_adc_timer_channel(mp_settings->timer_address, mp_settings->timer_channel);
   mp_adc->ADC_CR2_bit.EXTEN = 1; //Trigger detection on the rising edge
   //--------------
-  
+
   mp_adc->ADC_CR2_bit.DDS = 1; //нужно что бы перезпускать дма после окончания одного цикла
   mp_adc->ADC_CR2_bit.DMA = 1;
   //mp_adc->ADC_CR2_bit.ADON = 1;
-  
-  
+
+
   //-----Timer---------------------------
   clock_enable(mp_settings->timer_address);
   mp_timer->TIM_CR1_bit.CEN = 0;
   //TIM_TimeBaseInit
   mp_timer->TIM_CR1_bit.CMS = 0; //Center-aligned mode selection
   mp_timer->TIM_CR1_bit.DIR = 0; //Counter used as upcounter
-  
+
   m_psc = 100-1;
   m_set_freq = timer_frequency()/m_frequency;
   mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
   mp_timer->TIM_PSC = m_psc;
-  
+
   mp_timer->TIM_RCR = 0;
   //mp_timer->TIM_EGR_bit.UG = 1; //Update generation
-  
+
   //TIM_SetCounter
   mp_timer->TIM_CNT = 0;
   //TIM_OC1Init номер канала 1
@@ -1265,25 +1268,36 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
     mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
 
-  
+
+  //mp_timer->TIM_CCER_bit.CC3NP = 0; //Capture/Compare 1 complementary output polarity
+  //mp_timer->TIM_CCER_bit.CC3NE = 0; //Capture/Compare 1 complementary output enable
+
+  //mp_timer->TIM_CR2_bit.OIS3 = 0; // Output Idle state 1 (OC1 output)
+  //mp_timer->TIM_CR2_bit.OIS3N = 0; //Output Idle state 1 (OC1N output)
+  mp_timer->TIM_CCR3 = mp_timer->TIM_ARR - 1; //Capture/Compare 1 value
+
+
+  //mp_timer->TIM_CCMR2_bit.OC3PE = 0; //Output Compare 1 preload enable
+  //mp_timer->TIM_CR1_bit.OPM = 0; //One pulse mode
+
   mp_timer->TIM_BDTR_bit.MOE = 1;
   mp_timer->TIM_BDTR_bit.AOE = 1;
-  
+
   //TIM_Cmd
   mp_timer->TIM_CR1_bit.ARPE = 1;
   //mp_timer->TIM_CR1_bit.CEN = 1;
   //--------------------------------
 }
 
-void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address, 
+void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
   timer_channel_t a_timer_channel)
 {
   int adc_shift = 0;
   if (a_timer_address == IRS_TIM1_PWM1_BASE) {
     adc_shift = 0;
     switch (a_timer_channel) {
-      case TIM_CH1:  
-      case TIM_CH2:  
+      case TIM_CH1:
+      case TIM_CH2:
       case TIM_CH3: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
@@ -1291,8 +1305,8 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
   } else if (a_timer_address == IRS_TIM2_BASE) {
     adc_shift = 3 - TIM_CH2;
     switch (a_timer_channel) {
-      case TIM_CH2:  
-      case TIM_CH3:  
+      case TIM_CH2:
+      case TIM_CH3:
       case TIM_CH4: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
@@ -1314,8 +1328,8 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
   } else if (a_timer_address == IRS_TIM5_BASE) {
     adc_shift = 10;
     switch (a_timer_channel) {
-      case TIM_CH1:  
-      case TIM_CH2:  
+      case TIM_CH1:
+      case TIM_CH2:
       case TIM_CH3: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
@@ -1365,11 +1379,11 @@ void irs::arm::st_adc_dma_t::start()
     mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
     timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
       mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
-    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR, 
+    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
       mp_settings->dma_stream, CTCIF, 1);
-    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR, 
+    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
       mp_settings->dma_stream, CHTIF, 1);
-    mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR = 
+    mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
       static_cast<irs_u16>(m_buff_size);
     mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 1;
     mp_adc->ADC_CR2_bit.ADON = 1;
@@ -1388,11 +1402,11 @@ void irs::arm::st_adc_dma_t::stop()
 bool irs::arm::st_adc_dma_t::status()
 {
   bool result = false;
-  int tcif = dma_get_bit(mp_settings->dma_address, IRS_DMA_ISR, 
+  int tcif = dma_get_bit(mp_settings->dma_address, IRS_DMA_ISR,
     mp_settings->dma_stream, TCIF);
   if(tcif && m_start) {
     result = true;
-    m_start = false;    
+    m_start = false;
   } else if (!m_start) {
     result = true;
   }
@@ -1404,17 +1418,17 @@ void irs::arm::st_adc_dma_t::set_frequency(
 {
   m_frequency = a_frequency;
   m_set_freq = timer_frequency()/m_frequency;
- 
+
 }
 
 void irs::arm::st_adc_dma_t::set_prescaler(irs_u16 a_psc)
 {
-  m_psc = a_psc;   
+  m_psc = a_psc;
 }
 
 void irs::arm::st_adc_dma_t::set_size(size_t a_size)
 {
-  if (a_size <= mp_buff->size()) { 
+  if (a_size <= mp_buff->size()) {
     m_buff_size = a_size;
   }
 }
@@ -1476,4 +1490,4 @@ void irs::arm::st_dac_t::set_u16_normalized_data(size_t a_channel,
   IRS_LIB_ASSERT(a_data <= dac_max_value);
   (*m_channels[a_channel]).data = a_data;
 }
-#endif // IRS_STM32F2xx
+#endif // IRS_STM32F_2_AND_4

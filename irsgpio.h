@@ -344,7 +344,7 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case PORTC_BASE: { port_number = 2; } break;
     case PORTD_BASE: { port_number = 3; } break;
     case PORTE_BASE: { port_number = 4; } break;
-  #elif defined(IRS_STM32F2xx)
+  #elif defined(IRS_STM32F_2_AND_4)
     case IRS_PORTA_BASE: { port_number = 0; } break;
     case IRS_PORTB_BASE: { port_number = 1; } break;
     case IRS_PORTC_BASE: { port_number = 2; } break;
@@ -369,7 +369,7 @@ inline void port_clock_on(irs_u32 a_port)
     for (irs_u32 i = 10; i; i--);
   #elif defined(__STM32F100RBT__)
     RCC_APB2ENR |= (1 << (port_number + 2));
-  #elif defined(IRS_STM32F2xx)
+  #elif defined(IRS_STM32F_2_AND_4)
     RCC_AHB1ENR |= (1 << port_number);
   #else
     #error Тип контроллера не определён

@@ -10,6 +10,12 @@
 
 #include <irsdefs.h>
 
+#ifdef __ICCARM__
+#include <armioregs.h>
+#endif // __ICCARM__
+
+#include <irsfinal.h>
+
 namespace irs {
 
 //! \addtogroup system_utils_group
@@ -29,22 +35,22 @@ public:
   // „астота процессора, √ц
   static void frequency(frequency_type a_frequency);
   static frequency_type frequency();
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   static frequency_type periphery_frequency_first();
   static void periphery_frequency_first(frequency_type a_frequency);
   static frequency_type periphery_frequency_second();
   static void periphery_frequency_second(frequency_type a_frequency);
-  #endif // IRS_STM32F2xx
+  #endif // IRS_STM32F_2_AND_4
   static endian_t endian();
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   static frequency_type timer_frequency(size_t a_timer_base);
-  #endif // IRS_STM32F2xx
+  #endif // IRS_STM32F_2_AND_4
 private:
   static frequency_type m_frequency;
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   static frequency_type m_periphery_frequency_first;
   static frequency_type m_periphery_frequency_second;
-  #endif // IRS_STM32F2xx
+  #endif // IRS_STM32F_2_AND_4
 };
 
 //! @}

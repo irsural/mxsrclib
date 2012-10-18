@@ -7,7 +7,7 @@
 
 #include <irsfinal.h>
 
-#ifdef IRS_STM32F2xx
+#ifdef IRS_STM32F_2_AND_4
 
 #define IRS_RNG_BASE              0x50060800
 #define IRS_DCMI_BASE             0x50050000
@@ -767,6 +767,11 @@ __IO_REG32_BIT(RCC_PLLI2SCFGR,    IRS_RCC_BASE + RCC_PLLI2SCFGR_S,__READ_WRITE ,
 #define GPIO_MODER_ANALOG 3
 #define GPIO_OTYPER_OUTPUT_PUSH_PULL 0
 #define GPIO_OTYPER_OUTPUT_OPEN_DRAIN 1
+
+#define IRS_GPIO_SPEED_2MHZ 0
+#define IRS_GPIO_SPEED_25MHZ 1
+#define IRS_GPIO_SPEED_50MHZ 2
+#define IRS_GPIO_SPEED_100MHZ 3
 
 /* GPIO port mode register (GPIOx_MODER) (x = A..I) */
 typedef struct {
@@ -4089,6 +4094,14 @@ typedef struct {
   __REG32                 :16;
 } __syscfg_exticr4_bits;
 
+/* Compensation cell control register (SYSCFG_CMPCR) */
+typedef struct {
+  __REG32  CMP_PD         : 1;
+  __REG32                 : 7;
+  __REG32  READY          : 1;
+  __REG32                 :23;
+} __syscfg_cmpcr_bits;
+
 /***************************************************************************
  **
  ** SYSCFG
@@ -4100,6 +4113,7 @@ __IO_REG32_BIT(SYSCFG_EXTICR1,    0x40013808,__READ_WRITE ,__syscfg_exticr1_bits
 __IO_REG32_BIT(SYSCFG_EXTICR2,    0x4001380C,__READ_WRITE ,__syscfg_exticr2_bits);
 __IO_REG32_BIT(SYSCFG_EXTICR3,    0x40013810,__READ_WRITE ,__syscfg_exticr3_bits);
 __IO_REG32_BIT(SYSCFG_EXTICR4,    0x40013814,__READ_WRITE ,__syscfg_exticr4_bits);
+__IO_REG32_BIT(SYSCFG_CMPCR,      0x40013820,__READ_WRITE ,__syscfg_cmpcr_bits);
 
 /* Ethernet MAC configuration register (ETH_MACCR) */
 typedef struct {
@@ -4537,6 +4551,6 @@ __IO_REG32(    ETH_DMACHRDR,      0x4002904C,__READ       );
 __IO_REG32(    ETH_DMACHTBAR,     0x40029050,__READ       );
 __IO_REG32(    ETH_DMACHRBAR,     0x40029054,__READ       );
 
-#endif  //  IRS_STM32F2xx
+#endif // IRS_STM32F_2_AND_4
 
 #endif // armregs_stm32f2xxH

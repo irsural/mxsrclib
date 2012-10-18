@@ -18,22 +18,23 @@
 
 #include <irsfinal.h>
 
-#ifdef IRS_LIB_IRSTCPIP_DEBUG_TYPE
-# if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg) msg
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
-# elif (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg) msg
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
-# endif
-#else // IRS_LIB_IRSTCPIP_DEBUG_TYPE
+#ifndef IRS_LIB_IRSTCPIP_DEBUG_TYPE
 # define IRS_LIB_IRSTCPIP_DEBUG_TYPE IRS_LIB_DEBUG_NONE
-# define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg)
-#   define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg)
+#endif // !IRS_LIB_IRSTCPIP_DEBUG_TYPE
+
+#if (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg) msg
 # define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
-#endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE
+#elif (IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg) msg
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+#else // IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BASE(msg)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_BLOCK_BASE(msg)
+# define IRS_LIB_TCPIP_DBG_RAW_MSG_DETAIL(msg)
+#endif // IRS_LIB_IRSTCPIP_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
 
 namespace irs {
 
@@ -62,21 +63,23 @@ public:
   //! \brief  Заблокировать буфер для отправки пакета
   virtual void set_send_buf_locked() = 0;
   //! \brief  Есть ли в приёмном буфере пакет
-  virtual bool is_recv_buf_filled() = 0;
+  virtual bool is_recv_buf_filled() const = 0;
   //! \brief  Свободен ли буфер на запись
-  virtual bool is_send_buf_empty() = 0;
+  virtual bool is_send_buf_empty() const = 0;
   //! \brief  Указатель на буфер приёма
   virtual irs_u8* get_recv_buf() = 0;
   //! \brief  Указатель на буфер передачи
   virtual irs_u8* get_send_buf() = 0;
   //! \brief  Размер принятого пакета ( = DA + SA + L + DATA + FCS)
-  virtual irs_size_t recv_buf_size() = 0;
+  //! \details Контрольная сумма не обрабатывается, но ее размер включен в
+  //!   размер пакета для обратной совместимости
+  virtual irs_size_t recv_buf_size() const = 0;
   //! \brief  Размер буфера передачи ( = DA + SA + L + DATA)
-  virtual irs_size_t send_buf_max_size() = 0;
+  virtual irs_size_t send_buf_max_size() const = 0;
   //! \brief  Один общий буфер или два отдельных буфера на приём и передачу
-  virtual buffer_num_t get_buf_num() = 0;
+  virtual buffer_num_t get_buf_num() const = 0;
   //! \brief  Собственный MAC-адрес
-  virtual mxmac_t get_local_mac() = 0;
+  virtual mxmac_t get_local_mac() const = 0;
   //! \brief  Установка нового МАС-адреса
   virtual void set_mac(mxmac_t& a_mac) = 0;
   virtual void tick() = 0;
@@ -90,7 +93,7 @@ public:
   enum {
     arp_table_size = 3
   };
-  
+
   arp_cash_t(irs_size_t a_size = arp_table_size);
   bool ip_to_mac(const mxip_t& a_ip, mxmac_t& a_mac);
   void add(const mxip_t& a_ip, const mxmac_t& a_mac);
@@ -102,10 +105,10 @@ private:
     mxip_t ip;
     mxmac_t mac;
     bool valid;
-    
+
     cash_item_t(
       mxip_t a_ip = mxip_t::zero_ip(),
-      mxmac_t a_mac = mxmac_t::zero_mac(), 
+      mxmac_t a_mac = mxmac_t::zero_mac(),
       bool a_valid = false
     ):
       ip(a_ip),
@@ -116,7 +119,7 @@ private:
   };
   typedef vector<cash_item_t>::iterator cash_item_it_t;
   typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
-  
+
   vector<cash_item_t> m_cash;
   irs_size_t m_pos;
   irs::loop_timer_t m_reset_timer;
@@ -126,7 +129,7 @@ class arp_t
 {
 public:
   typedef simple_ethernet_t::buffer_num_t buffer_num_t;
-  
+
   enum {
     arp_table_size = 3
   };
@@ -164,7 +167,7 @@ private:
     irs::timer_t reset_timer;
     mode_t mode;
     bool valid;
-    
+
     cash_item_t(
       mxip_t a_ip = mxip_t::zero_ip(),
       mxmac_t a_mac = mxmac_t::zero_mac(),
@@ -184,7 +187,7 @@ private:
   };
   typedef vector<cash_item_t>::iterator cash_item_it_t;
   typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
-  
+
   vector<cash_item_t> m_cash;
   irs_size_t m_pos;
   simple_ethernet_t* mp_ethernet;
@@ -223,12 +226,13 @@ public:
     udp_pseudo_header_length = 12,
     tcp_header_length = 20,
     tcp_pseudo_header_length = 12,
-    
+
     dest_mac = 0x0,
     sourse_mac = 0x6,
     ether_type_0 = 0xc,
     ether_type_1 = 0xd,
-    hardware_type_0 = 0xe,
+    ip_begin = 0xe,
+    hardware_type_0 = ip_begin,
     hardware_type_1 = 0xf,
     proto_type_0 = 0x10,
     proto_type_1 = 0x11,
@@ -285,7 +289,7 @@ public:
   enum {
     invalid_socket = 0
   };
-  
+
   simple_tcpip_t(
     simple_ethernet_t* ap_ethernet,
     const mxip_t& a_ip,
@@ -306,7 +310,7 @@ public:
   bool tcp_connect(irs_size_t a_socket, irs_u16 a_local_port,
     mxip_t a_dest_ip, irs_u16 a_dest_port);
   bool tcp_listen(irs_size_t a_socket, irs_u16 a_port);
-  
+
   bool is_write_complete();
   void write(mxip_t a_dest_ip, irs_u16 a_dest_port,
     irs_u16 a_local_port, irs_size_t a_size);
@@ -326,7 +330,7 @@ public:
   void set_ip(mxip_t& a_ip);
   void set_mac(mxmac_t& a_mac);
 
-public:  
+public:
   enum send_mode_t{
     wait_send_command_mode,
     send_SYN,
@@ -367,7 +371,7 @@ private:
     irs_u32 send_unacked;
     irs_u32 send_next;
     irs_u32 receive_next;
-    
+
     tcp_socket_t():
       socket(invalid_socket),
       state(CLOSED),
@@ -418,7 +422,7 @@ private:
       m_remote_port(a_remote_port),
       m_local_port(a_local_port)
     {
-    
+
     }
     bool operator()(tcp_socket_t a_tcp_socket)
     {
@@ -436,7 +440,7 @@ private:
     irs_u16 m_remote_port;
     irs_u16 m_local_port;
   };
-  
+
   simple_ethernet_t* mp_ethernet;
   buffer_num_t m_buf_num;
   mxip_t m_local_ip;
@@ -489,7 +493,7 @@ private:
   timer_t m_disconnect_timer;
   loop_timer_t m_base_timer;
   loop_timer_t m_recv_timout;
-  
+
   bool cash(mxip_t a_dest_ip);
   irs_u16 check_sum_ip(irs_u16 a_cs, irs_u8 a_dat, irs_size_t a_count);
   irs_u16 check_sum(irs_size_t a_count, irs_u8* a_addr);

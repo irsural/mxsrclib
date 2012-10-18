@@ -2015,10 +2015,10 @@ void irs::hardflow::fixed_flow_t::tick()
         m_read_size_rest);
       mp_read_buf_cur += read_size;
       m_read_size_rest -= read_size;
-      /*mlog() << irsm("mp_read_buf_cur = ") << int(mp_read_buf_cur) << endl; 
-      mlog() << irsm("mp_read_buf = ") << int(mp_read_buf) << endl; 
-      mlog() << irsm("m_read_size_need = ") << int(m_read_size_need) << endl; 
-      mlog() << irsm("m_read_size_rest = ") << int(m_read_size_rest) << endl;*/ 
+      /*mlog() << irsm("mp_read_buf_cur = ") << int(mp_read_buf_cur) << endl;
+      mlog() << irsm("mp_read_buf = ") << int(mp_read_buf) << endl;
+      mlog() << irsm("m_read_size_need = ") << int(m_read_size_need) << endl;
+      mlog() << irsm("m_read_size_rest = ") << int(m_read_size_rest) << endl;*/
       if (mp_read_buf_cur >= (mp_read_buf + m_read_size_need)) {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("read end") << endl);
         m_read_status = status_success;
@@ -2182,8 +2182,10 @@ irs::hardflow::simple_udp_flow_t::size_type
 {
   mxip_t dest_ip_cur = mxip_t::zero_ip();
   irs_u16 dest_port = 0;
+  irs_u16 local_port_of_recieved_packet = 0;
   if (mp_simple_udp->read(&dest_ip_cur, &dest_port,
-    &m_local_port))
+    &local_port_of_recieved_packet) &&
+    (local_port_of_recieved_packet == m_local_port))
   {
     deque<udp_channel_t>::iterator channel_list_cur_it =
       find_if(m_channel_list.begin(), m_channel_list.end(),
@@ -2225,7 +2227,7 @@ irs::hardflow::simple_udp_flow_t::size_type
 }
 
 bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
-  size_type /*a_channel_ident*/)
+  size_type a_channel_ident)
 {
   //mxip_t dest_ip_cur = mxip_t::zero_ip();
   //irs_u16 dest_port = 0;
@@ -2242,7 +2244,7 @@ bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
     return false;
   }
   #endif // NOP
-  return (m_cur_channel != invalid_channel);
+  return (a_channel_ident != invalid_channel);
 }
 
 irs::hardflow::simple_udp_flow_t::size_type
@@ -2326,28 +2328,50 @@ irs::hardflow::simple_udp_flow_t::size_type
     irsm("hardflow read end, return value not zero") << endl);
   return read_data_size;
   #else // NOP
-  size_type read_data_size = 0;
+  size_type read_data_size = 0;  
   if (is_channel_exists(a_channel_ident)) {
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("read channel cur = ") <<
-      a_channel_ident << endl);
-    //size_type deque_index = channel_list_index(a_channel_ident);
-    IRS_LIB_ASSERT(channel_list_index(a_channel_ident) < m_channel_max_count);
-    memcpyex(ap_buf, mp_recv_buf_cur, a_size);
-    if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
-      mp_simple_udp->recv_data_size())
-    {
+    const size_type deque_index = channel_list_index(a_channel_ident);   
+    mxip_t dest_ip = mxip_t::zero_ip();
+    irs_u16 dest_port = 0;  
+    const size_type recv_data_size =
+      mp_simple_udp->read(&dest_ip, &dest_port, &m_local_port);
+    if ((recv_data_size > 0) && 
+      (dest_ip == m_channel_list[deque_index].ip) && 
+      (dest_port == m_channel_list[deque_index].port)) {
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("read channel cur = ") <<
+        a_channel_ident << endl);
+      //size_type deque_index = channel_list_index(a_channel_ident);
+      IRS_LIB_ASSERT(channel_list_index(a_channel_ident) < m_channel_max_count);
+      size_t byte_count =  mp_simple_udp->recv_data_size() -
+        (mp_recv_buf_cur -  mp_recv_buf);
+      const size_t size = min(a_size, byte_count);
+      memcpyex(ap_buf, mp_recv_buf_cur, size);
+      mp_recv_buf_cur += size;
+      byte_count -= size;
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
-        irsm("считан кусок пакета размером = ") << a_size << endl);
-      mp_recv_buf_cur += a_size;
-    } else {
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
-        irsm("считан остаток пакета размером = ") << a_size << endl);
-      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
-        irsm("пакет считан полностью") << endl);
-      mp_recv_buf_cur = mp_recv_buf;
-      mp_simple_udp->read_complete();
-    }
-    read_data_size = a_size;
+        irsm("Считан кусок пакета размером = ") << size << endl);
+      if (byte_count == 0) {
+        mp_recv_buf_cur = mp_recv_buf;
+        mp_simple_udp->read_complete();
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("Пакет считан полностью") << endl);
+      }
+      /*if (static_cast<irs_size_t>(mp_recv_buf_cur + a_size - mp_recv_buf) <
+        mp_simple_udp->recv_data_size())
+      {
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("считан кусок пакета размером = ") << a_size << endl);
+        mp_recv_buf_cur += size;
+      } else {
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("считан остаток пакета размером = ") << a_size << endl);
+        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
+          irsm("пакет считан полностью") << endl);
+        mp_recv_buf_cur = mp_recv_buf;
+        mp_simple_udp->read_complete();
+      }*/
+      read_data_size = size;  
+    }    
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist, "
       "read data not posible ") << endl);
@@ -2511,22 +2535,19 @@ irs::hardflow::simple_tcp_flow_t::size_type
   irs::hardflow::simple_tcp_flow_t::write(size_type a_channel_ident,
   const irs_u8* ap_buf, size_type a_size)
 {
+  size_t size = 0;
   if (is_channel_exists(a_channel_ident)) {
-    if (a_size > mp_simple_tcp->send_data_size_max()) {
-      a_size = mp_simple_tcp->send_data_size_max();
-    }
     if (mp_simple_tcp->is_write_complete()) {
+      size = min(a_size, mp_simple_tcp->send_data_size_max());
       mp_simple_tcp->write(m_cur_dest_ip, m_cur_dest_port,
-        m_local_port, a_size);
-      memcpyex(mp_send_buf, ap_buf, a_size);
-    } else {
-      return 0;
+        m_local_port, size);
+      memcpyex(mp_send_buf, ap_buf, size);
     }
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist,"
       "write data not posible ") << endl);
   }
-  return a_size;
+  return size;
 }
 
 irs::hardflow::simple_tcp_flow_t::string_type

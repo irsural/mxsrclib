@@ -120,7 +120,7 @@ private:
 };
 
 #elif defined(__STM32F100RBT__)
-#elif defined(IRS_STM32F2xx)
+#elif defined(IRS_STM32F_2_AND_4)
 class arm_spi_t: public spi_t
 {
 public:

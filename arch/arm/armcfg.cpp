@@ -90,12 +90,50 @@ void pll_on()
   irs::cpu_traits_t::periphery_frequency_first(30000000);
   irs::cpu_traits_t::periphery_frequency_second(60000000);
   irs::cpu_traits_t::frequency(120000000);
+#elif defined(IRS_STM32F4xx)
+RCC_CR_bit.HSEON = 1;
+  RCC_CR_bit.HSEBYP = 0;
+  while (!RCC_CR_bit.HSERDY);
+
+  // На входе кварц 25 МГц
+  RCC_PLLCFGR_bit.PLLM = 25; // Делитель на входе PLL
+  RCC_PLLCFGR_bit.PLLN = 336; // Множитель внутри PLL
+  RCC_PLLCFGR_bit.PLLP = 0; // 0 это деление на 2, делитель для ядра 168 МГц
+  RCC_PLLCFGR_bit.PLLQ = 7; // Делитель для USB 48 МГц
+  // Main PLL(PLL) and audio PLL (PLLI2S) entry clock source.
+  // HSE oscillator clock selected as PLL and PLLI2S clock entry
+  RCC_PLLCFGR_bit.PLLSRC = 1;
+  // AHB prescaler.system clock not divided
+  RCC_CFGR_bit.HPRE = 0;
+  // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
+  RCC_CFGR_bit.PPRE1 = 5;
+  // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
+  RCC_CFGR_bit.PPRE2 = 4;
+  // Main PLL (PLL) enable. PLL ON
+  RCC_CR_bit.PLLON = 1;
+  while (!RCC_CR_bit.PLLRDY);
+
+  FLASH_ACR_bit.LATENCY = 5;
+  while (FLASH_ACR_bit.LATENCY != 5);
+  // 1: Data cache is enabled
+  FLASH_ACR_bit.DCEN = 1;
+  // 1: Instruction cache is enabled
+  FLASH_ACR_bit.ICEN = 1;
+  // 0: Prefetch is disabled
+  FLASH_ACR_bit.PRFTEN = 0;
+  RCC_CFGR_bit.SW = 2;
+  RCC_CFGR_bit.HPRE = 0;
+  while (RCC_CFGR_bit.SWS != 2);
+  while (RCC_CFGR_bit.HPRE != 0);
+  irs::cpu_traits_t::periphery_frequency_first(42000000);
+  irs::cpu_traits_t::periphery_frequency_second(84000000);
+  irs::cpu_traits_t::frequency(168000000);
 #else
   #error Тип контроллера не определён
 #endif // ARM_devices
 }
 
-#ifdef IRS_STM32F2xx
+#ifdef IRS_STM32F_2_AND_4
 size_t irs::get_port_address(gpio_channel_t a_gpio_channel)
 {
   if (a_gpio_channel == PNONE) {
@@ -390,6 +428,27 @@ void irs::gpio_otyper_output_open_drain_enable(gpio_channel_t a_channel)
     GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
 }
 
+void irs::gpio_alternate_function_select(gpio_channel_t a_channel, 
+  size_t a_function_number)
+{
+  IRS_LIB_ASSERT(a_function_number <= 0xF);
+  const size_t port_address = irs::get_port_address(a_channel);
+  int pin_index = get_pin_index(a_channel);
+  const int bits_count = 4;
+  const int gpio_shift = (pin_index < 8) ? GPIO_AFRL_S : GPIO_AFRH_S;  
+  pin_index = (pin_index < 8) ? pin_index : pin_index%8;
+  gpio_set_bits(a_channel, bits_count, gpio_shift, a_function_number);  
+  IRS_SET_BITS(port_address + gpio_shift, bits_count*pin_index,
+    bits_count, a_function_number);
+}
+
+void irs::gpio_ospeedr_select(gpio_channel_t a_channel, size_t a_speed)
+{
+  IRS_LIB_ASSERT(a_speed <= IRS_GPIO_SPEED_100MHZ);
+  const int bits_count = 2;
+  gpio_set_bits(a_channel, bits_count, GPIO_OSPEEDR_S, a_speed);
+}
+
 void irs::update_interrupt_enable(size_t a_address)
 {
   update_interrupt_enabled(a_address, true);
@@ -448,4 +507,4 @@ void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
   }
 }
 
-#endif // IRS_STM32F2xx
+#endif // IRS_STM32F_2_AND_4

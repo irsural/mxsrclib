@@ -602,8 +602,8 @@ void irs::arm::arm_spi_t::init_default()
 
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
-
-#elif defined(__STM32F100RBT__) || defined(IRS_STM32F2xx)
+#elif defined(__STM32F100RBT__)
+#elif defined(IRS_STM32F_2_AND_4)
 irs::arm::arm_spi_t::arm_spi_t(
   size_t a_spi_address,
   irs_u32 a_bitrate,

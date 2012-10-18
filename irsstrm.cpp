@@ -78,7 +78,7 @@ irs::arm::com_buf::com_buf(
   (*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= PORTA1_UART0Tx;
   #endif // __LM3SxBxx__
   #elif defined(__STM32F100RBT__)
-  #elif defined(IRS_STM32F2xx)
+  #elif defined(IRS_STM32F_2_AND_4)
   //typedef volatile usart_regs_t usart_regs_v_t;
   switch (a_com_index) {
     case 1: {
@@ -206,7 +206,7 @@ void irs::arm::com_buf::trans_simple (char data)
   #elif defined(__STM32F100RBT__)
     volatile char x = data;
     //data = 0;
-  #elif defined(IRS_STM32F2xx)
+  #elif defined(IRS_STM32F_2_AND_4)
     // 1: Transmitter is enabled
     //m_usart->USART_CR1_bit.TE = 1;
     while (m_usart->USART_SR_bit.TC != 1);
