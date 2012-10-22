@@ -1,0 +1,10 @@
+db
+*.bak
+*.html
+*.jpg
+*.pin
+*.rpt
+*.summary
+*.txt
+*.done
+*.smsg
