@@ -14,6 +14,11 @@
 #include <armioregs.h>
 #include <armcfg.h>
 #include <irsdsp.h>
+
+#ifdef IRS_STM32F_2_AND_4
+#include <stm32f4xx_gpio.h>
+#endif //IRS_STM32F_2_AND_4
+
 #endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE
@@ -669,7 +674,8 @@ irs_u16 irs::arm::gptm_generator_t::calc_load_value(
   return load_value;
 }
 
-#elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+#elif defined(__STM32F100RBT__)
+#elif defined(IRS_STM32F_2_AND_4)
 // class st_pwm_gen_t
 irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   size_t a_timer_address,
@@ -765,6 +771,16 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       if (timer_address == IRS_TIM9_BASE) {
         m_timer_channel = 2;
         GPIOE_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+
+    } break;
+    case PA0: {
+      if (timer_address == IRS_TIM2_BASE) {
+        m_timer_channel = 1;
+        gpio_moder_alternate_function_enable(PA0);
+        gpio_alternate_function_select(PA0, GPIO_AF_TIM2);
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }

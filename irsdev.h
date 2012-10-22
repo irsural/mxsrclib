@@ -162,7 +162,8 @@ private:
   irs_u16 calc_load_value(cpu_traits_t::frequency_type a_frequency);
 };
 
-#elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+#elif defined(__STM32F100RBT__)
+#elif defined(IRS_STM32F_2_AND_4)
 
 class timers_usage_t {
 public:

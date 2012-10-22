@@ -10,6 +10,15 @@
 
 #include <irsdefs.h>
 
+#ifdef __ICCARM__
+
+#include <armcfg.h>
+#ifdef IRS_STM32F_2_AND_4
+#include <stm32f4xx_gpio.h>
+#endif //IRS_STM32F_2_AND_4
+
+#endif  // __ICCARM__
+
 #include <irsstd.h>
 
 #ifdef IRS_LINUX
@@ -76,6 +85,29 @@ private:
 };
 
 void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
+
+#ifdef IRS_STM32F_2_AND_4
+
+class encoder_drv_mc_t
+{
+public:
+  encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1, 
+    gpio_channel_t a_gpio_channel_2, size_t a_timer_address);
+  int get_press_count();
+  irskey_t get_key();
+  void add_key(irskey_t a_irskey);
+  void add_press_down_pin(gpio_pin_t* ap_pin);
+private:
+  vector<irskey_t> m_keys;
+  loop_timer_t m_timer;
+  irskey_t m_current_key;
+  gpio_pin_t* mp_press_down_pin;
+};
+
+void set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc);
+
+#endif  // IRS_STM32F_2_AND_4
+
 #endif  //  __ICCARM__ || __ICCAVR__
 
 } // namespace irs

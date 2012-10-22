@@ -171,6 +171,65 @@ void irs::set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc)
   ap_mxkey_drv_mc->add_key(irskey_backspace);
   ap_mxkey_drv_mc->add_key(irskey_enter);
 }
+
+#ifdef IRS_STM32F_2_AND_4
+
+irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
+  gpio_channel_t a_gpio_channel_2, size_t a_timer_address):
+  m_keys(),
+  m_timer(make_cnt_ms(5)),
+  m_current_key(irskey_none),
+  mp_press_down_pin(IRS_NULL)  
+{
+  size_t alternate_function_number = 0;
+  switch (a_timer_address) {
+    case IRS_TIM2_BASE: {
+      alternate_function_number = GPIO_AF_TIM2;  
+    } break;
+    case IRS_TIM3_BASE: {
+      alternate_function_number = GPIO_AF_TIM3;  
+    } break;
+    case IRS_TIM4_BASE: {
+      alternate_function_number = GPIO_AF_TIM4;
+    } break;
+    case IRS_TIM5_BASE: {
+      alternate_function_number = GPIO_AF_TIM5;
+    } break;
+  };  
+  
+  clock_enable(a_gpio_channel_1);
+  clock_enable(a_gpio_channel_2);
+  clock_enable(a_timer_address);
+  irs::gpio_moder_alternate_function_enable(a_gpio_channel_1);
+  irs::gpio_alternate_function_select(a_gpio_channel_1, 
+    alternate_function_number);
+  irs::gpio_moder_alternate_function_enable(a_gpio_channel_2);
+  irs::gpio_alternate_function_select(a_gpio_channel_2, 
+    alternate_function_number);
+}
+
+int irs::encoder_drv_mc_t::get_press_count()
+{
+  return 0;
+}
+
+irskey_t irs::encoder_drv_mc_t::get_key()
+{
+  return irskey_none;
+}
+
+void irs::encoder_drv_mc_t::add_key(irskey_t a_irskey)
+{
+  m_keys.push_back(a_irskey);
+}
+
+void irs::encoder_drv_mc_t::add_press_down_pin(gpio_pin_t* ap_pin)
+{
+  mp_press_down_pin = ap_pin;
+}
+
+#endif  // IRS_STM32F_2_AND_4
+
 #endif  //  __ICCARM__ || __ICCAVR__
 
 //! @}
