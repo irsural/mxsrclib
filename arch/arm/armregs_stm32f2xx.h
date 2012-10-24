@@ -2162,6 +2162,13 @@ enum {
   CCR_REG_SIZE = 32
 };
 
+enum {
+  TIM_CH1 = 0,
+  TIM_CH2 = 1,
+  TIM_CH3 = 2,
+  TIM_CH4 = 3
+};
+
 inline void timer_set_bit(unsigned long a_timer_address, 
   unsigned long a_reg, int a_channel, int a_bit_shift, int a_size, 
   int a_bit_value)

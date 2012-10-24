@@ -64,6 +64,15 @@ public:
   virtual irskey_t operator()() = 0;
 };
 
+class encoder_drv_t
+{
+public:
+  virtual ~encoder_drv_t() {}
+  virtual int get_press_count() = 0;
+  virtual irskey_t get_key_encoder() = 0;
+  virtual irskey_t get_key_button() = 0;
+};
+
 // Абстрактный базовый класс драйвера дисплея
 class mxdisplay_drv_t
 {
@@ -202,6 +211,8 @@ inline bool mxantibounce_t::check(irs_pin_t pin)
 // Изменены 24.03.2009. Взяты из УПМС
 // Время антидребезга по умолчанию
 #define mxkey_antibounce_time_def TIME_TO_CNT(1, 20)
+// Время антидребезга по умолчанию
+#define mxkey_antibounce_encoder_time_def TIME_TO_CNT(1, 20)
 // Время защитного интервала по умолчанию
 #define mxkey_defence_time_def TIME_TO_CNT(1, 1)
 // Время интервала повтора по умолчанию
@@ -218,41 +229,51 @@ class mxkey_event_gen_t: public mx_proc_t
   } mode_t;
 
   mxkey_drv_t *f_mxkey_drv;
+  encoder_drv_t *mp_encoder_drv;
   mxkey_event_t *f_event;
   irs_bool f_abort_request;
-  counter_t f_antibounce_time;
   counter_t f_defence_time;
   counter_t f_rep_time;
   counter_t f_to;
   mxantibounce_t f_antibounce;
+  mxantibounce_t m_antibounce_encoder;
   irskey_t f_key;
+  irskey_t m_encoder_button_key;
   mode_t f_mode;
+  mode_t m_encoder_mode;
+  counter_t m_encoder_button_time;
 public:
   inline mxkey_event_gen_t();
   inline ~mxkey_event_gen_t();
   inline void connect(mxkey_drv_t *mxkey_drv);
+  inline void connect_encoder(encoder_drv_t *ap_encoder_drv);
   inline void add_event(mxkey_event_t *event);
   inline virtual irs_bool tick();
   inline virtual void abort();
   inline void set_antibounce_time(counter_t time);
+  inline void set_antibounce_encoder_time(counter_t a_time);
   inline void set_defence_time(counter_t time);
   inline void set_rep_time(counter_t time);
 };
 inline mxkey_event_gen_t::mxkey_event_gen_t():
   f_mxkey_drv(IRS_NULL),
+  mp_encoder_drv(IRS_NULL),
   f_event(IRS_NULL),
   f_abort_request(irs_false),
-  f_antibounce_time(0),
   f_defence_time(0),
   f_rep_time(0),
   f_to(0),
   f_antibounce(),
+  m_antibounce_encoder(),
   f_key(irskey_none),
-  f_mode(mode_start)
+  m_encoder_button_key(irskey_none),
+  f_mode(mode_start),
+  m_encoder_mode(mode_start),
+  m_encoder_button_time(0)
 {
   init_to_cnt();
-  f_antibounce_time = mxkey_antibounce_time_def;
-  f_antibounce.set_time(f_antibounce_time);
+  f_antibounce.set_time(mxkey_antibounce_time_def);
+  m_antibounce_encoder.set_time(mxkey_antibounce_encoder_time_def);
   f_defence_time = mxkey_defence_time_def;
   f_rep_time = mxkey_rep_time_def;
 }
@@ -263,6 +284,10 @@ inline mxkey_event_gen_t::~mxkey_event_gen_t()
 inline void mxkey_event_gen_t::connect(mxkey_drv_t *mxkey_drv)
 {
   f_mxkey_drv = mxkey_drv;
+}
+inline void mxkey_event_gen_t::connect_encoder(encoder_drv_t *ap_encoder_drv)
+{
+  mp_encoder_drv = ap_encoder_drv;
 }
 inline void mxkey_event_gen_t::add_event(mxkey_event_t *event)
 {
@@ -312,7 +337,56 @@ inline irs_bool mxkey_event_gen_t::tick()
     case mode_stop: {
     } break;
   }
-
+  
+  if (mp_encoder_drv != IRS_NULL) {
+    cur_key = mp_encoder_drv->get_key_button();
+    pin = irs_off;
+    if (cur_key != irskey_none) pin = irs_on;
+    is_key_down = false;
+    if (m_antibounce_encoder.check(pin)) {
+      m_encoder_button_key = cur_key;
+      if (m_encoder_button_key == irskey_none) {
+        m_encoder_mode = mode_wait_front;
+      } else {
+        is_key_down = true;
+      }
+    }
+    switch (m_encoder_mode) {
+      case mode_start: {
+        f_mode = mode_wait_front;
+      } break;
+      case mode_wait_front: {
+        if (is_key_down) {
+          set_to_cnt(m_encoder_button_time, f_defence_time);
+          f_event->exec(m_encoder_button_key);
+          m_encoder_mode = mode_wait_defence;
+        }
+      } break;
+      case mode_wait_defence: {
+        if (test_to_cnt(m_encoder_button_time)) {
+          set_to_cnt(m_encoder_button_time, f_rep_time);
+          f_event->exec(m_encoder_button_key);
+          m_encoder_mode = mode_wait_rep;
+        }
+      } break;
+      case mode_wait_rep: {
+        if (test_to_cnt(m_encoder_button_time)) {
+          set_to_cnt(m_encoder_button_time, f_rep_time);
+          f_event->exec(m_encoder_button_key);
+        }
+      } break;
+      case mode_stop: {
+      } break;
+    }
+    
+    cur_key = mp_encoder_drv->get_key_encoder();
+    if (cur_key != irskey_none) {
+      int count = mp_encoder_drv->get_press_count();
+      for (int i = 0; i < count; i++) {
+        f_event->exec(cur_key);  
+      }
+    }
+  }
   return !f_abort_request;
 }
 inline void mxkey_event_gen_t::abort()
@@ -329,10 +403,12 @@ inline void mxkey_event_gen_t::set_rep_time(counter_t time)
 }
 inline void mxkey_event_gen_t::set_antibounce_time(counter_t time)
 {
-  f_antibounce_time = time;
-  f_antibounce.set_time(f_antibounce_time);
+  f_antibounce.set_time(time);
 }
-
+inline void mxkey_event_gen_t::set_antibounce_encoder_time(counter_t a_time)
+{
+  m_antibounce_encoder.set_time(a_time);
+}
 
 // Сервисный класс драйвера дисплея
 

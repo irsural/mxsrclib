@@ -179,7 +179,12 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   m_keys(),
   m_timer(make_cnt_ms(5)),
   m_current_key(irskey_none),
-  mp_press_down_pin(IRS_NULL)  
+  mp_press_down_pin(IRS_NULL),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_address)),
+  m_curr_count(0),
+  m_result_key(irskey_none),
+  m_delta(0),
+  m_press_count(0)  
 {
   size_t alternate_function_number = 0;
   switch (a_timer_address) {
@@ -206,16 +211,60 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   irs::gpio_moder_alternate_function_enable(a_gpio_channel_2);
   irs::gpio_alternate_function_select(a_gpio_channel_2, 
     alternate_function_number);
+  
+  timer_set_bit(a_timer_address, 
+    IRS_TIM_CCER, TIM_CH1, CCP, CCP_SIZE, 0);//возможно 1
+  timer_set_bit(a_timer_address, 
+    IRS_TIM_CCER, TIM_CH2, CCP, CCP_SIZE, 0);//возможно 1
+  
+  timer_set_bit(a_timer_address, 
+    IRS_TIM_CCMR, TIM_CH1, OCS, OCS_SIZE, 1);
+  timer_set_bit(a_timer_address, 
+    IRS_TIM_CCMR, TIM_CH2, OCS, OCS_SIZE, 1);
+  
+  mp_timer->TIM_SMCR_bit.SMS = 2;
+  
+  mp_timer->TIM_ARR = 0xFFFF;
+  mp_timer->TIM_CNT = m_curr_count;
+  mp_timer->TIM_CR1_bit.CEN = 1;
 }
 
 int irs::encoder_drv_mc_t::get_press_count()
 {
-  return 0;
+  int press_count = m_press_count;
+  m_press_count = 0;
+  return press_count;
 }
 
-irskey_t irs::encoder_drv_mc_t::get_key()
+irskey_t irs::encoder_drv_mc_t::get_key_encoder()
 {
-  return irskey_none;
+  m_result_key = irskey_none;
+  if (m_timer.check()) {
+    irs_i16 count = static_cast<irs_i16>(mp_timer->TIM_CNT);
+    if ((m_curr_count != count) && (m_keys.size() > 1)) {
+      m_delta = count - m_curr_count;
+      m_curr_count = count;
+      if (m_delta > 0) {
+        m_result_key = m_keys[0];   
+      } else if (m_delta < 0) {
+        m_result_key = m_keys[1];
+      }
+      m_press_count = abs(m_delta);
+    }
+  }
+  return m_result_key;
+}
+
+irskey_t irs::encoder_drv_mc_t::get_key_button()
+{
+  m_result_key = irskey_none;
+  if ((mp_press_down_pin != IRS_NULL) && (m_keys.size() > 2)) {
+    if (!mp_press_down_pin->pin()) {
+      m_result_key = m_keys[2];
+      m_press_count = 1; 
+    }
+  }
+  return m_result_key;
 }
 
 void irs::encoder_drv_mc_t::add_key(irskey_t a_irskey)
@@ -223,9 +272,22 @@ void irs::encoder_drv_mc_t::add_key(irskey_t a_irskey)
   m_keys.push_back(a_irskey);
 }
 
+void irs::encoder_drv_mc_t::clear_keys()
+{
+  m_keys.clear();
+}
+
 void irs::encoder_drv_mc_t::add_press_down_pin(gpio_pin_t* ap_pin)
 {
   mp_press_down_pin = ap_pin;
+}
+
+void irs::set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc)
+{
+  ap_encoder_drv_mc->clear_keys();
+  ap_encoder_drv_mc->add_key(irskey_up);
+  ap_encoder_drv_mc->add_key(irskey_down);
+  ap_encoder_drv_mc->add_key(irskey_enter);
 }
 
 #endif  // IRS_STM32F_2_AND_4

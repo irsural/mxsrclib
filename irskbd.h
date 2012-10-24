@@ -88,20 +88,27 @@ void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
 
 #ifdef IRS_STM32F_2_AND_4
 
-class encoder_drv_mc_t
+class encoder_drv_mc_t: public encoder_drv_t
 {
 public:
   encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1, 
     gpio_channel_t a_gpio_channel_2, size_t a_timer_address);
-  int get_press_count();
-  irskey_t get_key();
+  virtual int get_press_count();
+  virtual irskey_t get_key_encoder();
+  virtual irskey_t get_key_button();
   void add_key(irskey_t a_irskey);
   void add_press_down_pin(gpio_pin_t* ap_pin);
+  void clear_keys();
 private:
   vector<irskey_t> m_keys;
   loop_timer_t m_timer;
   irskey_t m_current_key;
   gpio_pin_t* mp_press_down_pin;
+  tim_regs_t* mp_timer;
+  irs_i16 m_curr_count;
+  irskey_t m_result_key;
+  int m_delta;
+  int m_press_count;
 };
 
 void set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc);
