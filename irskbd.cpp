@@ -177,7 +177,7 @@ void irs::set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc)
 irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   gpio_channel_t a_gpio_channel_2, size_t a_timer_address):
   m_keys(),
-  m_timer(make_cnt_ms(5)),
+  m_timer(make_cnt_ms(20)),
   m_current_key(irskey_none),
   mp_press_down_pin(IRS_NULL),
   mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_address)),
