@@ -155,7 +155,11 @@ size_t irs::get_pin_index(gpio_channel_t a_gpio_channel)
 
 void irs::reset_peripheral(size_t a_address)
 {
-  switch (a_address) {
+  switch (a_address) {   
+    case IRS_WWDG_BASE: {
+      RCC_APB1RSTR_bit.WWDGRST = 1;
+      RCC_APB1RSTR_bit.WWDGRST = 0;
+    } break;
     case IRS_TIM1_PWM1_BASE: {
       RCC_APB2RSTR_bit.TIM1RST = 1;
       RCC_APB2RSTR_bit.TIM1RST = 0;
@@ -306,6 +310,9 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     } break;
     case IRS_USART6_BASE: {
       RCC_APB2ENR_bit.USART6EN = value;
+    } break;
+    case IRS_WWDG_BASE: {
+      RCC_APB1ENR_bit.WWDGEN = 1;
     } break;
     case IRS_TIM1_PWM1_BASE: {
       RCC_APB2ENR_bit.TIM1EN = value;

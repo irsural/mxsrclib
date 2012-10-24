@@ -4558,6 +4558,36 @@ __IO_REG32(    ETH_DMACHRDR,      0x4002904C,__READ       );
 __IO_REG32(    ETH_DMACHTBAR,     0x40029050,__READ       );
 __IO_REG32(    ETH_DMACHRBAR,     0x40029054,__READ       );
 
+/* Control Register (WWDG_CR) */
+typedef struct {
+  __REG16 T               : 7;
+  __REG16 WDGA            : 1;
+  __REG16                 : 8;
+} __wwdg_cr_bits;
+
+/* Configuration register (WWDG_CFR) */
+typedef struct {
+  __REG16 W               : 7;
+  __REG16 WDGTB           : 2;
+  __REG16 EWI             : 1;
+  __REG16                 : 6;
+} __wwdg_cfr_bits;
+
+/* Status register (WWDG_SR) */
+typedef struct {
+  __REG16 EWIF            : 1;
+  __REG16                 :15;
+} __wwdg_sr_bits;
+
+/***************************************************************************
+ **
+ ** WWDG
+ **
+ ***************************************************************************/
+__IO_REG16_BIT(WWDG_CR,           0x40002C00,__READ_WRITE ,__wwdg_cr_bits);
+__IO_REG16_BIT(WWDG_CFR,          0x40002C04,__READ_WRITE ,__wwdg_cfr_bits);
+__IO_REG16_BIT(WWDG_SR,           0x40002C08,__READ_WRITE ,__wwdg_sr_bits);
+
 #endif // IRS_STM32F_2_AND_4
 
 #endif // armregs_stm32f2xxH

@@ -15,15 +15,14 @@
 #include <armcfg.h>
 #include <irsdsp.h>
 
-#ifdef IRS_STM32F_2_AND_4
-#include <stm32f4xx_gpio.h>
-#endif //IRS_STM32F_2_AND_4
 
 #endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE
 #include <irserror.h>
 #endif  //  PWM_ZERO_PULSE
+
+#include <irsdsp.h>
 
 #include <irsdev.h>
 
@@ -1031,6 +1030,131 @@ void irs::arm::st_pwm_gen_t::complementary_channel_enable(
   m_complementary_gpio_channel = a_gpio_channel;
   select_alternate_function_for_complementary_channel();
   set_mode_capture_compare_registers(ocm_pwm_mode_1);
+}
+
+// class st_watchdog_timer_t
+irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
+  double a_period_s
+):
+  m_period_s(a_period_s),
+  m_counter_start_value(0)
+{ 
+  IRS_LIB_ASSERT((a_period_s >= 0) && (a_period_s <= 100));
+  RCC_LSICmd(ENABLE);
+  while(RCC_CSR_bit.LSIRDY); 
+  IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);  
+  #if defined(IRS_STM32F2xx)
+  const double divider = 32000;
+  #elif defined(IRS_STM32F4xx)
+  const double divider = 40000;
+  #endif // defined(IRS_STM32F4xx)  
+  size_type prescaler_divider_key_max = 6;
+  size_type prescaler_divider_key = 0;
+  size_type prescaler_divider_value_min = 4;
+  const double counter_max = 0xFFF;
+  const double coefficient = 
+    (1/(divider/prescaler_divider_value_min))*(counter_max);
+  while (prescaler_divider_key < prescaler_divider_key_max) {  
+    if (coefficient*pow(2, prescaler_divider_key) >= a_period_s) {
+      break;
+    }
+    prescaler_divider_key++;
+  }
+  IWDG_SetPrescaler(prescaler_divider_key);
+  const double prescaler_divider_value = 
+    prescaler_divider_value_min*pow(2, prescaler_divider_key);
+  double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
+  counter_start = bound(counter_start, 1., counter_max);
+  IWDG_SetReload(static_cast<irs_u16>(counter_start));
+  IWDG_ReloadCounter();
+}
+
+void irs::arm::st_independent_watchdog_t::start()
+{  
+  IWDG_Enable();
+}
+
+void irs::arm::st_independent_watchdog_t::restart()
+{      
+  IWDG_ReloadCounter();
+}
+
+bool irs::arm::st_independent_watchdog_t::watchdog_reset_cause()
+{  
+  return RCC_CSR_bit.IWDGRSTF;
+}
+
+void irs::arm::st_independent_watchdog_t::clear_reset_status()
+{
+  RCC_CSR_bit.IWDGRSTF = 0;
+}
+
+// class st_window_watchdog_t
+irs::arm::st_window_watchdog_t::st_window_watchdog_t(
+  double a_period_min_s,                                                   
+  double a_period_max_s  
+):  
+  m_counter_start_value(0)
+{   
+  IRS_LIB_ASSERT((a_period_max_s >= 0) && (a_period_max_s <= 1));
+  IRS_LIB_ASSERT((a_period_min_s >= 0) && (a_period_min_s <= 1));
+  IRS_LIB_ASSERT(a_period_min_s < a_period_max_s);
+  const double period_max_ms = a_period_max_s*1000;
+  const double period_min_ms = a_period_min_s*1000;
+  //clock_enable(IRS_WWDG_BASE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_WWDG, ENABLE);
+  const double t_pclk1_ms = 
+    (1./irs::cpu_traits_t::periphery_frequency_first())*1000;  
+  const double coefficient = t_pclk1_ms*4096;
+  const double counter_end = 0x3F;
+  const double counter_min = 0x40;
+  const double counter_max = 0x7F;
+  const double counter_delta = 0x40;
+  size_type wdgtb_prescaler = 0;
+  size_type wdgtb_prescaler_max = 3;  
+  while (wdgtb_prescaler < wdgtb_prescaler_max) {
+    if ((coefficient*pow(2, wdgtb_prescaler)*(counter_delta)) >= 
+      period_max_ms) {
+      break;
+    }
+    wdgtb_prescaler++;
+  }
+  
+  WWDG_CFR_bit.WDGTB = wdgtb_prescaler;  
+  double counter_start_value = 
+    ceil(period_max_ms/(coefficient*pow(2, wdgtb_prescaler))) + counter_end;  
+  m_counter_start_value = static_cast<irs_u8>(bound(counter_start_value, 
+    counter_min, counter_max));
+  double window_value = ceil((period_max_ms - period_min_ms)/
+    (coefficient*pow(2, wdgtb_prescaler))) + counter_end;   
+  if ((window_value > static_cast<double>(m_counter_start_value)) ||
+    (counter_start_value > counter_max)) {    
+    window_value =  floor((m_counter_start_value - counter_end)*
+      (a_period_max_s-a_period_min_s)/a_period_max_s) + counter_end;    
+  } 
+  window_value = bound(window_value, counter_min, 
+    static_cast<double>(m_counter_start_value));
+  WWDG_SetWindowValue(static_cast<irs_u8>(window_value));
+}
+
+void irs::arm::st_window_watchdog_t::start()
+{     
+  WWDG_Enable(m_counter_start_value);
+}
+
+void irs::arm::st_window_watchdog_t::restart()
+{    
+  WWDG_SetCounter(m_counter_start_value);  
+}
+
+bool irs::arm::st_window_watchdog_t::watchdog_reset_cause()
+{    
+  return RCC_CSR_bit.WWDGRSTF; 
+}
+
+void irs::arm::st_window_watchdog_t::clear_reset_status()
+{
+  RCC_CSR_bit.WWDGRSTF = 0; 
 }
 #else
   #error Тип контроллера не определён

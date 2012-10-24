@@ -1540,7 +1540,9 @@ void irs::hardflow::tcp_server_t::tick()
         if(new_sock >= 0) {
           new_channel();
           if (m_channel != invalid_channel) {
-            //pair<map<size_type, int>::iterator, bool> insert_channel =
+            #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+            pair<map<size_type, int>::iterator, bool> insert_channel =
+            #endif // (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
             m_map_channel_sock.insert(make_pair(m_channel, new_sock));
             if(m_map_channel_sock.size() == 1)
               mp_map_channel_sock_it = m_map_channel_sock.begin();

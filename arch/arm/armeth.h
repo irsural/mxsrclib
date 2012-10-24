@@ -136,7 +136,7 @@ private:
 
 //! \brief Драйвер Ethernet для контроллеров STM32F2xx и STM32F4xx
 //! \author Lyashchov Maxim
-class st_arm_ethernet_t: public simple_ethernet_t
+class st_ethernet_t: public simple_ethernet_t
 {
 public:
   typedef irs_size_t size_type;
@@ -185,10 +185,10 @@ public:
       rxd[3] = PB1;
     }
   };
-  st_arm_ethernet_t(
+  st_ethernet_t(
     size_t a_buf_size,
     mxmac_t& a_mac, const config_t a_config);
-  virtual ~st_arm_ethernet_t();
+  virtual ~st_ethernet_t();
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();
   virtual void set_send_buf_locked();

@@ -437,8 +437,8 @@ extern ETH_DMADESCTypeDef  *DMATxDescToSet;
 extern ETH_DMADESCTypeDef  *DMARxDescToGet;
 extern ETH_DMA_Rx_Frame_infos *DMA_RX_FRAME_infos;
 
-// class st_arm_ethernet_t
-irs::arm::st_arm_ethernet_t::st_arm_ethernet_t(
+// class st_ethernet_t
+irs::arm::st_ethernet_t::st_ethernet_t(
   size_t a_buf_size,
   mxmac_t& a_mac,
   const config_t a_config
@@ -471,7 +471,7 @@ irs::arm::st_arm_ethernet_t::st_arm_ethernet_t(
   ETH_InitStructure.ETH_Mode = ETH_Mode_FullDuplex;
   ETH_InitStructure.ETH_RetryTransmission = ETH_RetryTransmission_Disable;
   ETH_InitStructure.ETH_AutomaticPadCRCStrip = ETH_AutomaticPadCRCStrip_Disable; 
-  ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Disable;  
+  ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Enable;  
   ETH_InitStructure.ETH_BroadcastFramesReception = ETH_BroadcastFramesReception_Enable;
   ETH_InitStructure.ETH_PromiscuousMode = ETH_PromiscuousMode_Disable;
   ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
@@ -486,7 +486,7 @@ irs::arm::st_arm_ethernet_t::st_arm_ethernet_t(
   ETH_Start();
 }
 
-void irs::arm::st_arm_ethernet_t::rcc_configuration()
+void irs::arm::st_ethernet_t::rcc_configuration()
 {
   //RCC->APB2ENR |= (1 << 14);	
   RCC_APB2ENR_bit.SYSCFGEN = 1;
@@ -517,7 +517,7 @@ void irs::arm::st_arm_ethernet_t::rcc_configuration()
   //RCC->AHB1ENR |= (1 << 25) + (1 << 26) + (1 << 27) + (1 << 12);
 }
 
-void irs::arm::st_arm_ethernet_t::gpio_configuration()
+void irs::arm::st_ethernet_t::gpio_configuration()
 {
   if (m_config.mii_mode == normal_mii_mode) {
     clock_enable(m_config.txd[2]);
@@ -700,77 +700,77 @@ void irs::arm::st_arm_ethernet_t::gpio_configuration()
   #endif // NOP
 }
 
-irs::arm::st_arm_ethernet_t::~st_arm_ethernet_t()
+irs::arm::st_ethernet_t::~st_ethernet_t()
 {
 }
 
-void irs::arm::st_arm_ethernet_t::send_packet(irs_size_t a_size)
+void irs::arm::st_ethernet_t::send_packet(irs_size_t a_size)
 {
   m_transmit_buf.data_size = a_size;
   m_transmit_buf.status = buf_filled;
 }
 
-void irs::arm::st_arm_ethernet_t::set_recv_handled()
+void irs::arm::st_ethernet_t::set_recv_handled()
 {
   m_receive_buf.status = buf_empty;
 }
 
-void irs::arm::st_arm_ethernet_t::set_send_buf_locked()
+void irs::arm::st_ethernet_t::set_send_buf_locked()
 {
   m_transmit_buf.status = buf_locked;
 }
 
-bool irs::arm::st_arm_ethernet_t::is_recv_buf_filled() const
+bool irs::arm::st_ethernet_t::is_recv_buf_filled() const
 {
   return m_receive_buf.status == buf_filled;
 }
 
-bool irs::arm::st_arm_ethernet_t::is_send_buf_empty() const
+bool irs::arm::st_ethernet_t::is_send_buf_empty() const
 {
   return m_transmit_buf.status == buf_empty;
 }
 
-irs_u8* irs::arm::st_arm_ethernet_t::get_recv_buf()
+irs_u8* irs::arm::st_ethernet_t::get_recv_buf()
 {
   return m_receive_buf.begin();
 }
 
-irs_u8* irs::arm::st_arm_ethernet_t::get_send_buf()
+irs_u8* irs::arm::st_ethernet_t::get_send_buf()
 {
   return m_transmit_buf.begin();
 }
 
-irs::arm::st_arm_ethernet_t::size_type
-irs::arm::st_arm_ethernet_t::recv_buf_size() const
+irs::arm::st_ethernet_t::size_type
+irs::arm::st_ethernet_t::recv_buf_size() const
 {
   return m_receive_buf.data_size + frame_check_sequence_size;
 }
 
-irs::arm::st_arm_ethernet_t::size_type
-irs::arm::st_arm_ethernet_t::send_buf_max_size() const
+irs::arm::st_ethernet_t::size_type
+irs::arm::st_ethernet_t::send_buf_max_size() const
 {
   return m_transmit_buf.size();
 }
 
-irs::arm::st_arm_ethernet_t::buffer_num_t
-irs::arm::st_arm_ethernet_t::get_buf_num() const
+irs::arm::st_ethernet_t::buffer_num_t
+irs::arm::st_ethernet_t::get_buf_num() const
 {
   return double_buf;
 }
 
-mxmac_t irs::arm::st_arm_ethernet_t::get_local_mac() const
+mxmac_t irs::arm::st_ethernet_t::get_local_mac() const
 {
   mxmac_t mac;
   ETH_GetMACAddress(ETH_MAC_Address0, mac.val);
   return mac;
 }
 
-void irs::arm::st_arm_ethernet_t::set_mac(mxmac_t& a_mac)
+void irs::arm::st_ethernet_t::set_mac(mxmac_t& a_mac)
 {
   ETH_MACAddressConfig(ETH_MAC_Address0, a_mac.val);
 }
 
-void irs::arm::st_arm_ethernet_t::tick()
+void irs::arm::st_ethernet_t::tick()
 {
   if (m_receive_buf.status == buf_empty) {
     if (ETH_CheckFrameReceived()) {
@@ -782,7 +782,7 @@ void irs::arm::st_arm_ethernet_t::tick()
   }
 }
 
-void irs::arm::st_arm_ethernet_t::transmit()
+void irs::arm::st_ethernet_t::transmit()
 {
   if ((DMATxDescToSet->Status & ETH_DMATxDesc_OWN) == 0) {
     irs_u8 *buffer =  (irs_u8 *)(DMATxDescToSet->Buffer1Addr);
@@ -795,8 +795,8 @@ void irs::arm::st_arm_ethernet_t::transmit()
   }
 }
 
-void irs::arm::st_arm_ethernet_t::receive()
-{
+void irs::arm::st_ethernet_t::receive()
+{  
   __IO ETH_DMADESCTypeDef *DMARxNextDesc;
   FrameTypeDef frame = ETH_Get_Received_Frame();
   //irs_u16 length = frame.length;
@@ -823,7 +823,7 @@ void irs::arm::st_arm_ethernet_t::receive()
   if ((ETH->DMASR & ETH_DMASR_RBUS) != (u32)RESET) {
     ETH->DMASR = ETH_DMASR_RBUS;
     ETH->DMARPDR = 0;
-  }
+  }  
 }
 #else
   #error Тип контроллера не определён

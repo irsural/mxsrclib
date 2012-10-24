@@ -182,17 +182,14 @@ private:
   irs_u32 m_timers;
 };
 
-/*enum init_pwm_gen_mode_t
-{
-  init_pwm_gen_channel_only,
-  init_pwm_gen_full
-};*/
-
 enum break_polarity_t {
   break_polarity_active_low,
   break_polarity_active_high
 };
 
+//! \brief Драйвер ШИМ-генератора для контроллеров 
+//!   семейств STM32F2xx и STM32F4xx
+//! \author Lyashchov Maxim
 class st_pwm_gen_t: public pwm_gen_t
 {
 public:
@@ -231,15 +228,29 @@ private:
   irs_u32 m_timer_channel;
   gpio_channel_t m_complementary_gpio_channel;
   gpio_channel_t m_break_gpio_channel;
-  //bool m_break_enabled;
-  //break_polarity_t m_break_polarity;
 };
 
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
 
-class watchdog_timer_t
+//! \brief Виртуальный интерфейс для драйверов watchdog
+class watchdog_t
+{
+public:
+  //! \brief Запускает watchdog
+  virtual void start() = 0;
+  //! \brief Сбрасывает watchdog
+  virtual void restart() = 0;
+  //! \brief Возвращает \c true, если произошел сброс из-за watchdog
+  virtual bool watchdog_reset_cause() = 0;
+  //! \brief Сбрасывает статус сброса, произошедшего из-за watchdog
+  virtual void clear_reset_status() = 0;
+};
+
+#if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__) ||\
+  defined(__STM32F100RBT__) 
+class watchdog_timer_t: public watchdog_t
 {
 public:
   watchdog_timer_t(size_t a_period_s = 300):
@@ -254,7 +265,7 @@ public:
     for (irs_u8 i = 10; i; i--);
     #endif  //  __LM3SxBxx__
   }
-  void start()
+  virtual void start()
   {
     #ifdef __LM3SxBxx__
     WDT0LOCK = 0x1ACCE551;
@@ -273,7 +284,7 @@ public:
     WDTLOCK = 0x0;
     #endif  //  __LM3SxBxx__
   }
-  void restart()
+  virtual void restart()
   {
     #ifdef __LM3SxBxx__
     WDT0LOCK = 0x1ACCE551;
@@ -286,7 +297,7 @@ public:
     WDTLOCK = 0x0;
     #endif  //  __LM3Sx9xx__
   }
-  bool watchdog_reset_cause()
+  virtual bool watchdog_reset_cause()
   {
     #if defined(__LM3SxBxx__)
     return RESC_bit.WDT0;
@@ -300,9 +311,76 @@ public:
       #error Тип контроллера не определён
     #endif  //  mcu type
   }
+  virtual void clear_reset_status()
+  {
+    #if defined(__LM3SxBxx__)
+    RESC_bit.WDT0 = 0;
+    #elif defined(__LM3Sx9xx__)
+    RESC_bit.WDT = 0;
+    #elif defined(__STM32F100RBT__)
+    volatile i = 0;
+    #elif defined(IRS_STM32F_2_AND_4)
+    volatile i = 0;
+    #else
+      #error Тип контроллера не определён
+    #endif  //  mcu type
+  }
 private:
   size_t m_period_s;
 }; // watchdog_timer_t
+
+#elif defined(IRS_STM32F_2_AND_4)
+//! \brief Драйвер независимого watchdog для контроллеров 
+//!   семейств STM32F2xx и STM32F4xx
+//! \details Работает от независимого генератора с частотой ~32 кГц
+//! \author Lyashchov Maxim
+class st_independent_watchdog_t: public watchdog_t
+{
+public:
+  typedef irs_size_t size_type;
+  //! \param[in] a_period_s Период срабатывания в секундах. 
+  //! \details Допустимо указывать значения [0, 100]. Однако фактически
+  //!   watchdog работает со следующим диапазоном 
+  //!   (для LSI = 32 кГц) [0.000125, 32.768]
+  st_independent_watchdog_t(double a_period_s = 32);
+  virtual void start();
+  virtual void restart();
+  virtual bool watchdog_reset_cause();
+  virtual void clear_reset_status();
+private:
+  double m_period_s;
+  irs_u8 m_counter_start_value;
+}; // watchdog_timer_t
+
+//! \brief Драйвер оконного watchdog для контроллеров 
+//!   семейств STM32F2xx и STM32F4xx
+//! \details Работает от PCLK1 с тимичными значениями 30 МГц для STM32F2xx и 
+//!   42 Мгц для stm32f4xx 
+//! \author Lyashchov Maxim
+class st_window_watchdog_t: public watchdog_t
+{
+public:
+  typedef irs_size_t size_type;
+  //! \param[in] a_period_min_s Минимальный период сброса в секундах.
+  //! \details Допустимо указывать значения [0, 1]. Однако фактически
+  //!   watchdog работает со следующими диапазономи значений
+  //!   - [0.00013653, 0.06991] (stm32f2xx с Fpclk1 = 30 MHz)
+  //!   - [0.00009752, 0.04993] (stm32f4xx с Fpclk1 = 42 MHz)
+  //!   Должно выполняться условие a_period_min_s <= a_period_max_s
+  //! \param[in] a_period_max_s Максимальный период сброса в секундах.  
+  //! \details Допустимые значения такие же, как у параметра a_period_min_s.
+  //!   Должно выполняться условие a_period_max_s >= a_period_min_s 
+  st_window_watchdog_t(double a_period_min_s, double a_period_max_s);
+  virtual void start();
+  virtual void restart();
+  virtual bool watchdog_reset_cause();
+  virtual void clear_reset_status();
+private:
+  irs_u8 m_counter_start_value;
+}; // watchdog_timer_t
+#else
+  #error Тип контроллера не определён
+#endif  //  mcu type
 
 //! @}
 

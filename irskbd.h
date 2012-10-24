@@ -13,9 +13,6 @@
 #ifdef __ICCARM__
 
 #include <armcfg.h>
-#ifdef IRS_STM32F_2_AND_4
-#include <stm32f4xx_gpio.h>
-#endif //IRS_STM32F_2_AND_4
 
 #endif  // __ICCARM__
 
