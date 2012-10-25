@@ -16,10 +16,8 @@
 #include <armiomacros.h>
 
 #if defined(IRS_STM32F2xx)
-# include <stm32f2xx.h>
 # include <stm32f2x7_eth.h>
 #elif defined(IRS_STM32F4xx)
-# include <stm32f4xx.h>
 # include <stm32f4x7_eth.h>
 #endif // defined(IRS_STM32F4xx)
 

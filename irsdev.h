@@ -51,6 +51,20 @@ public:
   virtual cpu_traits_t::frequency_type get_timer_frequency();
 };
 
+//! \brief Виртуальный интерфейс для драйверов watchdog
+class watchdog_t
+{
+public:
+  //! \brief Запускает watchdog
+  virtual void start() = 0;
+  //! \brief Сбрасывает watchdog
+  virtual void restart() = 0;
+  //! \brief Возвращает \c true, если произошел сброс из-за watchdog
+  virtual bool watchdog_reset_cause() = 0;
+  //! \brief Сбрасывает статус сброса, произошедшего из-за watchdog
+  virtual void clear_reset_status() = 0;
+};
+
 #ifndef __WATCOMC__
 class three_phase_pwm_gen_t : public pwm_gen_t
 {
@@ -233,20 +247,6 @@ private:
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
-
-//! \brief Виртуальный интерфейс для драйверов watchdog
-class watchdog_t
-{
-public:
-  //! \brief Запускает watchdog
-  virtual void start() = 0;
-  //! \brief Сбрасывает watchdog
-  virtual void restart() = 0;
-  //! \brief Возвращает \c true, если произошел сброс из-за watchdog
-  virtual bool watchdog_reset_cause() = 0;
-  //! \brief Сбрасывает статус сброса, произошедшего из-за watchdog
-  virtual void clear_reset_status() = 0;
-};
 
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__) ||\
   defined(__STM32F100RBT__) 

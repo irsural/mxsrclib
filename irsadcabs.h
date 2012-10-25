@@ -10,6 +10,8 @@
 
 #include <irsdefs.h>
 
+#include <irscpu.h>
+
 #include <irsfinal.h>
 
 namespace irs
