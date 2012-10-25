@@ -213,9 +213,9 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
     alternate_function_number);
   
   timer_set_bit(a_timer_address, 
-    IRS_TIM_CCER, TIM_CH1, CCP, CCP_SIZE, 0);//возможно 1
+    IRS_TIM_CCER, TIM_CH1, CCP, CCP_SIZE, 0);
   timer_set_bit(a_timer_address, 
-    IRS_TIM_CCER, TIM_CH2, CCP, CCP_SIZE, 0);//возможно 1
+    IRS_TIM_CCER, TIM_CH2, CCP, CCP_SIZE, 0);
   
   timer_set_bit(a_timer_address, 
     IRS_TIM_CCMR, TIM_CH1, OCS, OCS_SIZE, 1);
