@@ -471,7 +471,7 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   ETH_InitStructure.ETH_Mode = ETH_Mode_FullDuplex;
   ETH_InitStructure.ETH_RetryTransmission = ETH_RetryTransmission_Disable;
   ETH_InitStructure.ETH_AutomaticPadCRCStrip = ETH_AutomaticPadCRCStrip_Disable; 
-  ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Enable;  
+  ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Disable;  
   ETH_InitStructure.ETH_BroadcastFramesReception = ETH_BroadcastFramesReception_Enable;
   ETH_InitStructure.ETH_PromiscuousMode = ETH_PromiscuousMode_Disable;
   ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
