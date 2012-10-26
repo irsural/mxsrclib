@@ -949,7 +949,8 @@ inline void raw_data_view_t<T, VT>::clear()
   mp_viewed_data->clear();
 }
 template <class T, class VT>
-inline void raw_data_view_t<T, VT>::swap(raw_data_view_t<T, VT>* ap_raw_data_view)
+inline void raw_data_view_t<T, VT>::swap(
+  raw_data_view_t<T, VT>* ap_raw_data_view)
 {
   ::swap(mp_viewed_data, ap_raw_data_view->mp_viewed_data);
 }
