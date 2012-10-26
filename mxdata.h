@@ -1359,7 +1359,7 @@ inline void swap(deque_data_t<T>& a_deque_data_first,
 
 #ifdef IRS_LIB_DEBUG
 bool deque_data_test();
-#endif // IRS_DEBUG
+#endif // IRS_LIB_DEBUG
 
 // Дескриптор объекта с автоматическим уничтожением объекта по счетчику ссылок
 template <class T>
