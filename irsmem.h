@@ -162,13 +162,12 @@ class mem_data_t : public comm_data_t
 public:
   typedef comm_data_t::size_type size_type;
   mem_data_t(page_mem_t* ap_page_mem, size_type a_cluster_size = 64);
-  ~mem_data_t();
-  void read(irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
-  void write(const irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
-  irs_status_t status();
-  size_type size();
-  void tick();
-  irs_uarc data_count() const;
+  virtual ~mem_data_t();
+  virtual void read(irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8* ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_status_t status();
+  virtual size_type size();
+  virtual void tick();
   bool error();
 private:
   enum status_t {
@@ -182,7 +181,6 @@ private:
   };
   mem_cluster_t m_cluster;
   status_t m_status;
-  size_type m_size;
   const size_type m_cluster_size;
   const size_type m_cluster_data_size;
   irs_uarc m_data_count;

@@ -524,6 +524,7 @@ irs::mem_data_t::mem_data_t(page_mem_t* ap_page_mem, size_type a_cluster_size):
   m_status(st_free),
   m_cluster_size(a_cluster_size),
   m_cluster_data_size(a_cluster_size - m_cluster.crc_size()),
+  m_data_count(0),
   m_data_buf(),
   m_buf(),
   m_start_index(0),
@@ -552,11 +553,6 @@ irs::mem_data_t::~mem_data_t()
 bool irs::mem_data_t::error()
 {
   return m_cluster.error();
-}
-
-irs_uarc irs::mem_data_t::data_count() const
-{
-  return m_data_count;
 }
 
 void irs::mem_data_t::read(irs_u8* ap_buf, irs_uarc a_index,
@@ -614,7 +610,7 @@ irs_status_t irs::mem_data_t::status()
 
 irs::mem_data_t::size_type irs::mem_data_t::size()
 {
-  return m_size;
+  return m_data_count;
 }
 
 void irs::mem_data_t::tick()
@@ -829,7 +825,7 @@ void irs::mxdata_comm_t::tick()
     case mode_initialization: {
       if (mp_mem_data->status() != irs_st_busy) {
         IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <=
-          mp_mem_data->data_count()), ec_standard, "");
+          mp_mem_data->size()), ec_standard, "");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());
         m_mode = mode_initialization_wait;
