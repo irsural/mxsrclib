@@ -216,7 +216,6 @@ public:
   virtual void write_bit(irs_uarc a_index, irs_uarc a_bit_index,
     irs_bool a_bit);
   virtual void tick();
-  bool error();
   irs::mem_data_t* mem_data();
 protected:
   void connect(irs::mem_data_t* ap_mem_data);
@@ -250,6 +249,7 @@ public:
   eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size,
     bool init_now = false,  irs_uarc a_index = 0, size_type a_cluster_size = 64,
     counter_t init_timeout = irs::make_cnt_s(1));
+  bool error();
 private:
   irs::eeprom_at25_t m_page_mem;
   irs::mem_data_t m_mem_data;

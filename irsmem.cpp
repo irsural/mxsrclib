@@ -868,11 +868,6 @@ void irs::mxdata_comm_t::tick()
   }
 }
 
-bool irs::mxdata_comm_t::error()
-{
-  return mp_mem_data->error();
-}
-
 void irs::mxdata_comm_t::connect(irs::mem_data_t* ap_mem_data)
 {
   mp_mem_data = ap_mem_data;
@@ -905,3 +900,7 @@ irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi,
   connect(&m_mem_data);
 }
 
+bool irs::eeprom_at25128_data_t::error()
+{
+  return m_mem_data.error();
+}
