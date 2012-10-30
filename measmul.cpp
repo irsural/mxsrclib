@@ -199,7 +199,11 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_init_timer(irs::make_cnt_s(1)),
   m_init_mode(im_start),
   m_ic_index(0),
-  m_is_clear_buffer_needed(false)
+  m_is_clear_buffer_needed(false),
+  m_first_meas_resist(true),
+  m_ocomp_resistance_index(0),
+  m_resistance_ocomp_off("OCOMP OFF"),
+  m_resistance_ocomp_on("OCOMP ON")
 {
   IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
     "указатель в качестве hardflow_t*");  
@@ -277,13 +281,13 @@ irs::agilent_3458a_t::agilent_3458a_t(
   #endif //OFF_EXTCOM
 
   // Команды при чтении сопротивления
-  m_resistance_type_index = m_get_resistance_commands.size();
+  /*m_resistance_type_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("OHMF AUTO");
+  m_ocomp_resistance_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("OCOMP OFF");
-  m_get_resistance_commands.push_back("OCOMP ON");
   m_time_int_resistance_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("NPLC 20");
-  m_get_resistance_commands.push_back("TRIG SGL");
+  m_get_resistance_commands.push_back("TRIG SGL");*/
 
   // Очистка буфера приема
   memset(m_read_buf, 0, ma_read_buf_size);
@@ -353,12 +357,14 @@ void irs::agilent_3458a_t::set_dc()
 {
   //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_direct;
   m_volt_curr_type = vct_direct;
+  m_first_meas_resist = true;
 }
 // Установить режим измерения переменного напряжения
 void irs::agilent_3458a_t::set_ac()
 {
   //m_get_measure_commands[m_voltage_type_index] = m_voltage_type_alternate;
   m_volt_curr_type = vct_alternate;
+  m_first_meas_resist = true;
 }
 // Установить положителный фронт запуска
 void irs::agilent_3458a_t::set_positive()
@@ -376,6 +382,7 @@ void irs::agilent_3458a_t::get_value(double *ap_value)
   m_voltage = ap_value;
   m_command = mac_get_param;
   m_status = meas_status_busy;
+  m_first_meas_resist = true;
 }
 // Чтение напряжения
 void irs::agilent_3458a_t::get_voltage(double *voltage)
@@ -385,23 +392,28 @@ void irs::agilent_3458a_t::get_voltage(double *voltage)
   m_voltage = voltage;
   m_command = mac_get_param;
   m_status = meas_status_busy;
+  m_first_meas_resist = true;
 }
 // Чтение усредненного сдвира фаз
 void irs::agilent_3458a_t::get_phase_average(double * /*phase_average*/)
 {
+  m_first_meas_resist = true;
 }
 // Чтение фазового сдвига
 void irs::agilent_3458a_t::get_phase(double * /*phase*/)
 {
+  m_first_meas_resist = true;
 }
 // Чтение временного интервала
 void irs::agilent_3458a_t::get_time_interval(double * /*time_interval*/)
 {
+  m_first_meas_resist = true;
 }
 // Чтение усредненного временного интервала
 void irs::agilent_3458a_t::get_time_interval_average(
   double * /*ap_time_interval*/)
 {
+  m_first_meas_resist = true;
 }
 // Чтения силы тока
 void irs::agilent_3458a_t::get_current(double *current)
@@ -411,28 +423,42 @@ void irs::agilent_3458a_t::get_current(double *current)
   m_voltage = current;
   m_command = mac_get_param;
   m_status = meas_status_busy;
+  m_first_meas_resist = true;
 }
 // Чтение сопротивления
 void irs::agilent_3458a_t::get_resistance2x(double *resistance)
 {
   //if (m_create_error) return;
-  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_2x;
   m_resistance = resistance;
   m_command = mac_get_resistance;
   m_status = meas_status_busy;
+  if (m_first_meas_resist) {
+    m_get_resistance_commands.clear();
+    m_get_resistance_commands.push_back(m_resistance_type_2x);
+    m_get_resistance_commands.push_back(m_resistance_ocomp_off);
+    m_get_resistance_commands.push_back("NPLC 0");
+    m_get_resistance_commands.push_back("TRIG SGL");
+  }
 }
 // Чтение сопротивления
 void irs::agilent_3458a_t::get_resistance4x(double *resistance)
 {
   //if (m_create_error) return;
-  m_get_resistance_commands[m_resistance_type_index] = m_resistance_type_4x;
   m_resistance = resistance;
   m_command = mac_get_resistance;
   m_status = meas_status_busy;
+  if (m_first_meas_resist) {
+    m_get_resistance_commands.clear();
+    m_get_resistance_commands.push_back(m_resistance_type_4x);
+    m_get_resistance_commands.push_back(m_resistance_ocomp_off);
+    m_get_resistance_commands.push_back("NPLC 0");
+    m_get_resistance_commands.push_back("TRIG SGL");
+  }
 }
 // Чтение частоты
 void irs::agilent_3458a_t::get_frequency(double* /*frequency*/)
 {
+  m_first_meas_resist = true;
 }
 // Запуск автокалибровки (команда ACAL) мультиметра
 void irs::agilent_3458a_t::auto_calibration()
@@ -440,6 +466,7 @@ void irs::agilent_3458a_t::auto_calibration()
   //if (m_create_error) return;
   m_command = mac_auto_calibration;
   m_status = meas_status_busy;
+  m_first_meas_resist = true;
 }
 // Чтение статуса текущей операции
 meas_status_t irs::agilent_3458a_t::status()
@@ -452,6 +479,7 @@ void irs::agilent_3458a_t::abort()
 {
   //if (m_create_error) return;
   m_abort_request = true;
+  m_first_meas_resist = true;
 }
 // Отправка команд инициализации в мультиметр
 void irs::agilent_3458a_t::initialize_tick()
@@ -574,7 +602,15 @@ void irs::agilent_3458a_t::tick()
             m_macro_mode = macro_mode_stop;
             m_mode = ma_mode_get_value;
           } else {
-            m_get_parametr_needed = true;
+            if (!m_first_meas_resist) {
+              m_get_parametr_needed = true;
+            } else {
+              m_first_meas_resist = false;
+              m_get_resistance_commands.clear();
+              m_get_resistance_commands.push_back(m_resistance_ocomp_on);
+              m_get_resistance_commands.push_back(m_time_int_measure_command);
+              m_get_resistance_commands.push_back("TRIG SGL");
+            }
             m_mul_commands = &m_get_resistance_commands;
             m_mul_commands_index = 0;
             //m_command_prev = m_command;
@@ -700,7 +736,7 @@ void irs::agilent_3458a_t::set_nplc(double nplc)
   nplc_str = "NPLC " + nplc_str;
   //m_get_measure_commands[m_time_int_voltage_index] = nplc_str;
   m_time_int_measure_command = nplc_str;
-  m_get_resistance_commands[m_time_int_resistance_index] = nplc_str;
+  //m_get_resistance_commands[m_time_int_resistance_index] = nplc_str;
 }
 // Установка времени интегрирования в c
 void irs::agilent_3458a_t::set_aperture(double aperture)
@@ -709,7 +745,7 @@ void irs::agilent_3458a_t::set_aperture(double aperture)
   aperture_str = "APER " + aperture_str;
   //m_get_measure_commands[m_time_int_voltage_index] = aperture_str;
   m_time_int_measure_command = aperture_str;
-  m_get_resistance_commands[m_time_int_resistance_index] = aperture_str;
+  //m_get_resistance_commands[m_time_int_resistance_index] = aperture_str;
 }
 // Установка полосы фильтра
 void irs::agilent_3458a_t::set_bandwidth(double /*bandwidth*/)

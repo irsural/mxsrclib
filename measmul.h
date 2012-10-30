@@ -344,6 +344,12 @@ class agilent_3458a_t: public mxmultimeter_t
   // значения из мультиметра
   bool m_is_clear_buffer_needed;
 
+  bool m_first_meas_resist;
+  index_t m_ocomp_resistance_index;
+
+  const irs::string m_resistance_ocomp_off;
+  const irs::string m_resistance_ocomp_on;
+
   // Запрещение конструктора по умолчанию
   agilent_3458a_t();
   // Создание команд для напряжени/тока
@@ -2488,9 +2494,9 @@ public:
   //! \brief Установить отрицательный фронт канала
   virtual void set_negative() {}
   //! \brief Чтение значения при текущем типа измерения
-  virtual void get_value(double* value) { *value = rand(); }
+  virtual void get_value(double* value) { *value = 100; }//rand(); }
   //! \brief Чтение напряжения
-  virtual void get_voltage(double* voltage) { * voltage = rand(); }
+  virtual void get_voltage(double* voltage) { *voltage = 100; }//rand(); }
   //! \brief Чтения силы тока
   virtual void get_current(double* /*current*/) {}
   //! \brief Чтение сопротивления
