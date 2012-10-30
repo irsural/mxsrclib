@@ -265,8 +265,8 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_init_commands.push_back("MFORMAT DREAL");
   // Компенсация наведенного напряжения смещения (Время счета * 2
   // для сопротивления)
-  m_init_commands.push_back("OCOMP ON");
-  m_init_commands.push_back("LFILTER ON");
+  m_init_commands.push_back("LFREQ LINE");
+  //m_init_commands.push_back("LFILTER ON");
   //m_init_commands.push_back("RANGE 1000");
   //m_init_commands.push_back("RES 1E-6");
   // Входное сопротивление фиксируется на 10 МОм для всех пределов
@@ -279,6 +279,8 @@ irs::agilent_3458a_t::agilent_3458a_t(
   // Команды при чтении сопротивления
   m_resistance_type_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("OHMF AUTO");
+  m_get_resistance_commands.push_back("OCOMP OFF");
+  m_get_resistance_commands.push_back("OCOMP ON");
   m_time_int_resistance_index = m_get_resistance_commands.size();
   m_get_resistance_commands.push_back("NPLC 20");
   m_get_resistance_commands.push_back("TRIG SGL");
