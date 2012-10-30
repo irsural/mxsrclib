@@ -276,15 +276,10 @@ class agilent_3458a_t: public mxmultimeter_t
   irs::string m_time_int_measure_command;
   //  оманды при чтении напр€жени€
   vector<irs::string> m_get_measure_commands;
-  // »ндекс команды установки типа измерени€ сопротивлени€:
-  // 2-/4-проводна€ схема
-  index_t m_resistance_type_index;
   //  оманда дл€ установки 2-проводной схемы измерени€ сопротивлени€
   const irs::string m_resistance_type_2x;
   //  оманда дл€ установки 4-проводной схемы измерени€ сопротивлени€
   const irs::string m_resistance_type_4x;
-  // »ндекс команды установки времени интегрировани€ дл€ сопротивлени€
-  index_t m_time_int_resistance_index;
   //  оманды при чтении сопротивлени€
   vector<irs::string> m_get_resistance_commands;
 
@@ -345,7 +340,6 @@ class agilent_3458a_t: public mxmultimeter_t
   bool m_is_clear_buffer_needed;
 
   bool m_first_meas_resist;
-  index_t m_ocomp_resistance_index;
 
   const irs::string m_resistance_ocomp_off;
   const irs::string m_resistance_ocomp_on;
