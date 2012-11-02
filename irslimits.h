@@ -1136,6 +1136,10 @@ struct float_limits_by_size_base<float_size>
   {
     return 0x007FFFFF;
   }
+  static bool is_intel_spec()
+  {
+    return false;
+  }
 };
 template <>
 struct float_limits_by_size_base<double_size>
@@ -1165,6 +1169,10 @@ struct float_limits_by_size_base<double_size>
     IRS_HIDWORD(mask) = 0x000FFFFF;
     IRS_LODWORD(mask) = 0xFFFFFFFF;
     return mask;
+  }
+  static bool is_intel_spec()
+  {
+    return false;
   }
 };
 template <>
@@ -1308,15 +1316,17 @@ struct float_limits_by_size:
         // Здесь в NAN собрано все, кроме бесконечности. Включая то, что
         // считается у Intel некорректным
         const fraction_type spec_mask = intel_spec_type::spec_fraction_mask();
-        const fraction_type spec_bits = fraction(ap_val)&spec_mask;
+        const fraction_type spec_bits =
+          fraction(const_cast<irs_u8*>(ap_val))&spec_mask;
         const fraction_type other_mask = intel_spec_type::other_fraction_mask();
-        const fraction_type other_bits = ((fraction(ap_val)&other_mask) >>
+        const fraction_type other_bits =
+          ((fraction(const_cast<irs_u8*>(ap_val))&other_mask) >>
           intel_spec_type::spec_fraction_shift);
         bool is_infinity = ((other_bits == 2) && (spec_bits == 0));
         is_nan_res = !is_infinity;
       } else {
         const fraction_type mask = fraction_mask();
-        if ((fraction(ap_val)&mask) != 0) {
+        if ((fraction(const_cast<irs_u8*>(ap_val))&mask) != 0) {
           is_nan_res = true;
         }
       }
