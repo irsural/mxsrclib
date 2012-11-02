@@ -10,7 +10,7 @@
 
 #include <irsdefs.h>
 
-#if defined(QT_CORE_LIB)
+#if defined(QT_GUI_LIB)
 #include <QPen>
 #elif defined(__BORLANDC__)
 #include <Graphics.hpp>

@@ -437,6 +437,106 @@ extern ETH_DMADESCTypeDef  *DMATxDescToSet;
 extern ETH_DMADESCTypeDef  *DMARxDescToGet;
 extern ETH_DMA_Rx_Frame_infos *DMA_RX_FRAME_infos;
 
+// class eth_auto_negotation_t
+irs::arm::st_ethernet_t::eth_auto_negotation_t::eth_auto_negotation_t(
+  const ETH_InitTypeDef& ETH_InitStruct, 
+  const irs_u16 a_phy_address
+):  
+  m_process(process_reset),
+  m_phy_address(a_phy_address),
+  m_auto_negotation(ETH_InitStruct.ETH_AutoNegotiation),
+  m_speed(ETH_InitStruct.ETH_Speed),
+  m_mode(ETH_InitStruct.ETH_Mode),  
+  m_speed_or_mode_phy_changed(true),
+  m_delay_assure_reset_timer(make_cnt_s(0.1)),
+  m_speed_and_mode_check_timer(make_cnt_s(1)),
+  m_phy_register(0)
+{
+  assert_param(IS_ETH_AUTONEGOTIATION(ETH_InitStruct->ETH_AutoNegotiation));
+  assert_param(IS_ETH_SPEED(ETH_InitStruct->ETH_Speed));
+  assert_param(IS_ETH_DUPLEX_MODE(ETH_InitStruct->ETH_Mode));
+  
+  set_speed_and_mode_mac();
+}
+
+void irs::arm::st_ethernet_t::eth_auto_negotation_t::tick()
+{
+  switch(m_process) {
+    case process_reset: {
+      if(ETH_WritePHYRegister(m_phy_address, PHY_BCR, PHY_Reset)) {
+        m_delay_assure_reset_timer.start();
+        m_process = process_delay_assure_reset;        
+      }      
+    } break;
+    case process_delay_assure_reset: {
+      if (m_delay_assure_reset_timer.check()) {
+        if(m_auto_negotation == ETH_AutoNegotiation_Enable) {
+          if(ETH_WritePHYRegister(m_phy_address, PHY_BCR, 
+            PHY_AutoNegotiation)) {            
+            m_process = process_auto_negotation;
+          } else {
+            m_process = process_reset;
+          }         
+        } else {
+          if (set_speed_and_mode_phy()) {            
+            m_process = process_nothing;             
+          } else {
+            m_process = process_reset; 
+          }
+        }
+      }
+    } break; 
+    case process_auto_negotation: {
+      if((m_auto_negotation == ETH_AutoNegotiation_Enable) &&
+        m_speed_and_mode_check_timer.check()) {
+        if (ETH_ReadPHYRegister(m_phy_address, PHY_BSR) & 
+          PHY_AutoNego_Complete) {           
+          read_speed_and_mode_phy(); 
+          if (m_speed_or_mode_phy_changed) {
+            set_speed_and_mode_mac();
+            m_speed_or_mode_phy_changed = false;
+          }
+          m_process = process_auto_negotation;
+        }
+      }      
+    } break;
+    case process_nothing: {
+      // Ничего не делаем
+    } break;
+  }    
+}
+
+void irs::arm::st_ethernet_t::eth_auto_negotation_t::read_speed_and_mode_phy()
+{
+  const irs_u32 prev_mode = m_mode;
+  const irs_u32 prev_speed = m_speed;
+  irs_u32 RegValue = ETH_ReadPHYRegister(m_phy_address, PHY_SR);        
+  if((RegValue & PHY_DUPLEX_STATUS) != (uint32_t)RESET) {          
+    m_mode = ETH_Mode_FullDuplex;  
+  } else {         
+    m_mode = ETH_Mode_HalfDuplex;           
+  }            
+  if(RegValue & PHY_SPEED_STATUS) {               
+    m_speed = ETH_Speed_10M; 
+  } else {             
+    m_speed = ETH_Speed_100M;      
+  }
+  m_speed_or_mode_phy_changed = 
+    (prev_mode != m_mode) || (prev_speed != m_speed);
+}
+
+bool irs::arm::st_ethernet_t::eth_auto_negotation_t::set_speed_and_mode_phy()
+{
+  return ETH_WritePHYRegister(m_phy_address, PHY_BCR, (
+    (uint16_t)(m_mode >> 3) | (uint16_t)(m_speed >> 1)));
+}
+
+void irs::arm::st_ethernet_t::eth_auto_negotation_t::set_speed_and_mode_mac()
+{
+  ETH_MACCR_bit.FES = (m_speed == ETH_Speed_100M) ? 1 : 0;
+  ETH_MACCR_bit.DM = (m_mode == ETH_Mode_FullDuplex) ? 1 : 0;
+}
+
 // class st_ethernet_t
 irs::arm::st_ethernet_t::st_ethernet_t(
   size_t a_buf_size,
@@ -445,7 +545,8 @@ irs::arm::st_ethernet_t::st_ethernet_t(
 ):
   m_receive_buf(a_buf_size),
   m_transmit_buf(a_buf_size),
-  m_config(a_config)
+  m_config(a_config),
+  mp_eth_auto_negotation(IRS_NULL)
 {
   rcc_configuration();
   gpio_configuration();
@@ -454,10 +555,11 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   ETH_DeInit();
 
   /* Software reset */
-  ETH_SoftwareReset();
-
+  ETH_SoftwareReset();  
   /* Wait for software reset */
   while(ETH_GetSoftwareResetStatus()==SET);
+  
+  clock_range_configuration();
 
   ETH_InitTypeDef ETH_InitStructure;
   /* ETHERNET Configuration ------------------------------------------------------*/
@@ -476,8 +578,12 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   ETH_InitStructure.ETH_PromiscuousMode = ETH_PromiscuousMode_Disable;
   ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
   ETH_InitStructure.ETH_UnicastFramesFilter = ETH_UnicastFramesFilter_Perfect;
-    
-  ETH_Init(&ETH_InitStructure, phy_address);  
+  
+  mac_configuration(&ETH_InitStructure);
+  
+  mp_eth_auto_negotation.reset(
+    new eth_auto_negotation_t(ETH_InitStructure, phy_address));
+  
   ETH_DMATxDescChainInit(DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
   ETH_DMARxDescChainInit(DMARxDscrTab, &Rx_Buff[0][0], ETH_RXBUFNB);
 
@@ -488,7 +594,6 @@ irs::arm::st_ethernet_t::st_ethernet_t(
 
 void irs::arm::st_ethernet_t::rcc_configuration()
 {
-  //RCC->APB2ENR |= (1 << 14);	
   RCC_APB2ENR_bit.SYSCFGEN = 1;
   if (m_config.mii_mode == normal_mii_mode) {
     SYSCFG_PMC_bit.MII_RMII_SEL = 0;
@@ -496,25 +601,12 @@ void irs::arm::st_ethernet_t::rcc_configuration()
     SYSCFG_PMC_bit.MII_RMII_SEL = 1;
     SYSCFG_CMPCR_bit.CMP_PD = 1;
   }
-  /*#ifdef MII_MODE
-  SYSCFG->PMC &= (~(1<<23));
-  #else
-  SYSCFG->PMC |= (1 << 23);
-  #endif*/
-  //SYSCFG->CMPCR |= (1 << 0);
-  /*
-  RCC AHB1 peripheral clock register (RCC_AHB1ENR)
-  Bit 25 ETHMACEN: Ethernet MAC clock enable
-  Bit 26 ETHMACTXEN: Ethernet Transmission clock enable
-  Bit 27 ETHMACRXEN: Ethernet Reception clock enable
-  */
-  RCC_AHB2ENR_bit.HASHEN = 1;
-  //RCC->AHB2ENR |= (1 << 5);
+  
+  RCC_AHB2ENR_bit.HASHEN = 1;  
   RCC_AHB1ENR_bit.CRCEN = 1;
   RCC_AHB1ENR_bit.ETHMACRXEN = 1;
   RCC_AHB1ENR_bit.ETHMACTXEN = 1;
-  RCC_AHB1ENR_bit.ETHMACEN = 1;
-  //RCC->AHB1ENR |= (1 << 25) + (1 << 26) + (1 << 27) + (1 << 12);
+  RCC_AHB1ENR_bit.ETHMACEN = 1; 
 }
 
 void irs::arm::st_ethernet_t::gpio_configuration()
@@ -617,87 +709,251 @@ void irs::arm::st_ethernet_t::gpio_configuration()
     gpio_ospeedr_select(m_config.rx_dv_or_crs_dv, IRS_GPIO_SPEED_100MHZ);
     gpio_ospeedr_select(m_config.mdc, IRS_GPIO_SPEED_50MHZ);
     gpio_ospeedr_select(m_config.mdio, IRS_GPIO_SPEED_50MHZ);
-  }
-  #ifdef NOP
-  /* Enable GPIOA, GPIOB, GPIOC, GPIOG clock */
-  RCC->AHB1ENR  |= (1<<0) + (1<<1) + (1<<2) + (1<<6);	
+  }  
+}
 
-  GPIO_InitTypeDef GPIO_InitStructure;
+void irs::arm::st_ethernet_t::clock_range_configuration()
+{
+  RCC_ClocksTypeDef  rcc_clocks;
+  uint32_t hclk = 60000000;
+  /* Get the ETHERNET MACMIIAR value */
+  uint32_t tmpreg = ETH->MACMIIAR;
+  /* Clear CSR Clock Range CR[2:0] bits */
+  tmpreg &= MACMIIAR_CR_MASK;
+  /* Get hclk frequency value */
+  RCC_GetClocksFreq(&rcc_clocks);
+  hclk = rcc_clocks.HCLK_Frequency;
+  
+  /* Set CR bits depending on hclk value */
+  if((hclk >= 20000000)&&(hclk < 35000000)) {
+    /* CSR Clock Range between 20-35 MHz */
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div16;
+  } else if((hclk >= 35000000)&&(hclk < 60000000)) {
+    /* CSR Clock Range between 35-60 MHz */ 
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div26;    
+  } else if((hclk >= 60000000)&&(hclk < 100000000)) {
+    /* CSR Clock Range between 60-100 MHz */ 
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div42;    
+  } else if((hclk >= 100000000)&&(hclk < 150000000)) {
+    /* CSR Clock Range between 100-150 MHz */ 
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div62;    
+  } else /* ((hclk >= 150000000)&&(hclk <= 168000000)) */ {
+    #ifdef IRS_STM32F2xx
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div62;    
+    #else // IRS_STM32F4xx
+    /* CSR Clock Range between 150-168 MHz */ 
+    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div102;    
+    #endif // IRS_STM32F4xx
+  }  
+  /* Write to ETHERNET MAC MIIAR: Configure the ETHERNET CSR Clock Range */
+  ETH->MACMIIAR = (uint32_t)tmpreg;
+}
 
-  // Конфигурация ног  PG13, PG14
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOG, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOG, GPIO_PinSource13, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOG, GPIO_PinSource14, GPIO_AF_ETH);
-
-  /* Configure PB11 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_ETH);
-
-  /* Configure PA7 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOA,GPIO_PinSource7, GPIO_AF_ETH);
-
-  /* Configure PC4 and PC5 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOC,GPIO_PinSource4, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOC,GPIO_PinSource5, GPIO_AF_ETH);
-
-  /* Configure PC1 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOC,GPIO_PinSource1, GPIO_AF_ETH);
-
-  /* Configure PA2 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_ETH);
-
-  /* Configure PA1 as alternate function push-pull */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_ETH);
-
-  /* Configure PA8 */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_MCO);
-  #endif // NOP
+void irs::arm::st_ethernet_t::mac_configuration(
+  const ETH_InitTypeDef* ETH_InitStruct)
+{
+  assert_param(IS_ETH_AUTONEGOTIATION(ETH_InitStruct->ETH_AutoNegotiation));
+  assert_param(IS_ETH_WATCHDOG(ETH_InitStruct->ETH_Watchdog));
+  assert_param(IS_ETH_JABBER(ETH_InitStruct->ETH_Jabber));
+  assert_param(IS_ETH_INTER_FRAME_GAP(ETH_InitStruct->ETH_InterFrameGap));
+  assert_param(IS_ETH_CARRIER_SENSE(ETH_InitStruct->ETH_CarrierSense));
+  assert_param(IS_ETH_SPEED(ETH_InitStruct->ETH_Speed));
+  assert_param(IS_ETH_RECEIVE_OWN(ETH_InitStruct->ETH_ReceiveOwn));
+  assert_param(IS_ETH_LOOPBACK_MODE(ETH_InitStruct->ETH_LoopbackMode));
+  assert_param(IS_ETH_DUPLEX_MODE(ETH_InitStruct->ETH_Mode));
+  assert_param(IS_ETH_CHECKSUM_OFFLOAD(ETH_InitStruct->ETH_ChecksumOffload));
+  assert_param(IS_ETH_RETRY_TRANSMISSION(
+    ETH_InitStruct->ETH_RetryTransmission));
+  assert_param(IS_ETH_AUTOMATIC_PADCRC_STRIP(
+    ETH_InitStruct->ETH_AutomaticPadCRCStrip));
+  assert_param(IS_ETH_BACKOFF_LIMIT(ETH_InitStruct->ETH_BackOffLimit));
+  assert_param(IS_ETH_DEFERRAL_CHECK(ETH_InitStruct->ETH_DeferralCheck));
+  assert_param(IS_ETH_RECEIVE_ALL(ETH_InitStruct->ETH_ReceiveAll));
+  assert_param(IS_ETH_SOURCE_ADDR_FILTER(ETH_InitStruct->ETH_SourceAddrFilter));
+  assert_param(IS_ETH_CONTROL_FRAMES(ETH_InitStruct->ETH_PassControlFrames));
+  assert_param(IS_ETH_BROADCAST_FRAMES_RECEPTION(
+    ETH_InitStruct->ETH_BroadcastFramesReception));
+  assert_param(IS_ETH_DESTINATION_ADDR_FILTER(
+    ETH_InitStruct->ETH_DestinationAddrFilter));
+  assert_param(IS_ETH_PROMISCIOUS_MODE(
+    ETH_InitStruct->ETH_PromiscuousMode));
+  assert_param(IS_ETH_MULTICAST_FRAMES_FILTER(
+    ETH_InitStruct->ETH_MulticastFramesFilter));  
+  assert_param(IS_ETH_UNICAST_FRAMES_FILTER(
+    ETH_InitStruct->ETH_UnicastFramesFilter));
+  assert_param(IS_ETH_PAUSE_TIME(ETH_InitStruct->ETH_PauseTime));
+  assert_param(IS_ETH_ZEROQUANTA_PAUSE(ETH_InitStruct->ETH_ZeroQuantaPause));
+  assert_param(IS_ETH_PAUSE_LOW_THRESHOLD(
+    ETH_InitStruct->ETH_PauseLowThreshold));
+  assert_param(IS_ETH_UNICAST_PAUSE_FRAME_DETECT(
+    ETH_InitStruct->ETH_UnicastPauseFrameDetect));
+  assert_param(IS_ETH_RECEIVE_FLOWCONTROL(
+    ETH_InitStruct->ETH_ReceiveFlowControl));
+  assert_param(IS_ETH_TRANSMIT_FLOWCONTROL(
+    ETH_InitStruct->ETH_TransmitFlowControl));
+  assert_param(IS_ETH_VLAN_TAG_COMPARISON(
+    ETH_InitStruct->ETH_VLANTagComparison));
+  assert_param(IS_ETH_VLAN_TAG_IDENTIFIER(
+    ETH_InitStruct->ETH_VLANTagIdentifier));
+  /* DMA --------------------------*/
+  assert_param(IS_ETH_DROP_TCPIP_CHECKSUM_FRAME(
+    ETH_InitStruct->ETH_DropTCPIPChecksumErrorFrame));
+  assert_param(IS_ETH_RECEIVE_STORE_FORWARD(
+    ETH_InitStruct->ETH_ReceiveStoreForward));
+  assert_param(IS_ETH_FLUSH_RECEIVE_FRAME(
+    ETH_InitStruct->ETH_FlushReceivedFrame));
+  assert_param(IS_ETH_TRANSMIT_STORE_FORWARD(
+    ETH_InitStruct->ETH_TransmitStoreForward));
+  assert_param(IS_ETH_TRANSMIT_THRESHOLD_CONTROL(
+    ETH_InitStruct->ETH_TransmitThresholdControl));
+  assert_param(IS_ETH_FORWARD_ERROR_FRAMES(
+    ETH_InitStruct->ETH_ForwardErrorFrames));
+  assert_param(IS_ETH_FORWARD_UNDERSIZED_GOOD_FRAMES(
+    ETH_InitStruct->ETH_ForwardUndersizedGoodFrames));
+  assert_param(IS_ETH_RECEIVE_THRESHOLD_CONTROL(
+    ETH_InitStruct->ETH_ReceiveThresholdControl));
+  assert_param(IS_ETH_SECOND_FRAME_OPERATE(
+    ETH_InitStruct->ETH_SecondFrameOperate));
+  assert_param(IS_ETH_ADDRESS_ALIGNED_BEATS(
+    ETH_InitStruct->ETH_AddressAlignedBeats));
+  assert_param(IS_ETH_FIXED_BURST(ETH_InitStruct->ETH_FixedBurst));
+  assert_param(IS_ETH_RXDMA_BURST_LENGTH(ETH_InitStruct->ETH_RxDMABurstLength));
+  assert_param(IS_ETH_TXDMA_BURST_LENGTH(ETH_InitStruct->ETH_TxDMABurstLength)); 
+  assert_param(IS_ETH_DMA_DESC_SKIP_LENGTH(
+    ETH_InitStruct->ETH_DescriptorSkipLength));  
+  assert_param(IS_ETH_DMA_ARBITRATION_ROUNDROBIN_RXTX(
+    ETH_InitStruct->ETH_DMAArbitration));
+  
+  /* Get the ETHERNET MACCR value */  
+  uint32_t tmpreg = ETH->MACCR;
+  /* Clear WD, PCE, PS, TE and RE bits */
+  tmpreg &= MACCR_CLEAR_MASK;
+  /* Set the WD bit according to ETH_Watchdog value */
+  /* Set the JD: bit according to ETH_Jabber value */
+  /* Set the IFG bit according to ETH_InterFrameGap value */ 
+  /* Set the DCRS bit according to ETH_CarrierSense value */  
+  /* Set the FES bit according to ETH_Speed value */ 
+  /* Set the DO bit according to ETH_ReceiveOwn value */ 
+  /* Set the LM bit according to ETH_LoopbackMode value */ 
+  /* Set the DM bit according to ETH_Mode value */ 
+  /* Set the IPCO bit according to ETH_ChecksumOffload value */                   
+  /* Set the DR bit according to ETH_RetryTransmission value */ 
+  /* Set the ACS bit according to ETH_AutomaticPadCRCStrip value */ 
+  /* Set the BL bit according to ETH_BackOffLimit value */ 
+  /* Set the DC bit according to ETH_DeferralCheck value */                          
+  tmpreg |= (uint32_t)(ETH_InitStruct->ETH_Watchdog | 
+    ETH_InitStruct->ETH_Jabber | 
+    ETH_InitStruct->ETH_InterFrameGap |
+    ETH_InitStruct->ETH_CarrierSense |
+    ETH_InitStruct->ETH_Speed | 
+    ETH_InitStruct->ETH_ReceiveOwn |
+    ETH_InitStruct->ETH_LoopbackMode |
+    ETH_InitStruct->ETH_Mode | 
+    ETH_InitStruct->ETH_ChecksumOffload |    
+    ETH_InitStruct->ETH_RetryTransmission | 
+    ETH_InitStruct->ETH_AutomaticPadCRCStrip | 
+    ETH_InitStruct->ETH_BackOffLimit | 
+    ETH_InitStruct->ETH_DeferralCheck);
+  /* Write to ETHERNET MACCR */
+  ETH->MACCR = (uint32_t)tmpreg;
+  
+  /*----------------------- ETHERNET MACFFR Configuration --------------------*/ 
+  /* Set the RA bit according to ETH_ReceiveAll value */
+  /* Set the SAF and SAIF bits according to ETH_SourceAddrFilter value */
+  /* Set the PCF bit according to ETH_PassControlFrames value */
+  /* Set the DBF bit according to ETH_BroadcastFramesReception value */
+  /* Set the DAIF bit according to ETH_DestinationAddrFilter value */
+  /* Set the PR bit according to ETH_PromiscuousMode value */
+  /* Set the PM, HMC and HPF bits according to ETH_MulticastFramesFilter value*/
+  /* Set the HUC and HPF bits according to ETH_UnicastFramesFilter value */
+  /* Write to ETHERNET MACFFR */  
+  ETH->MACFFR = (uint32_t)(ETH_InitStruct->ETH_ReceiveAll | 
+    ETH_InitStruct->ETH_SourceAddrFilter |
+    ETH_InitStruct->ETH_PassControlFrames |
+    ETH_InitStruct->ETH_BroadcastFramesReception | 
+    ETH_InitStruct->ETH_DestinationAddrFilter |
+    ETH_InitStruct->ETH_PromiscuousMode |
+    ETH_InitStruct->ETH_MulticastFramesFilter |
+    ETH_InitStruct->ETH_UnicastFramesFilter); 
+  /*--------------- ETHERNET MACHTHR and MACHTLR Configuration ---------------*/
+  /* Write to ETHERNET MACHTHR */
+  ETH->MACHTHR = (uint32_t)ETH_InitStruct->ETH_HashTableHigh;
+  /* Write to ETHERNET MACHTLR */
+  ETH->MACHTLR = (uint32_t)ETH_InitStruct->ETH_HashTableLow;
+  /*----------------------- ETHERNET MACFCR Configuration --------------------*/
+  /* Get the ETHERNET MACFCR value */  
+  tmpreg = ETH->MACFCR;
+  /* Clear xx bits */
+  tmpreg &= MACFCR_CLEAR_MASK;
+  
+  /* Set the PT bit according to ETH_PauseTime value */
+  /* Set the DZPQ bit according to ETH_ZeroQuantaPause value */
+  /* Set the PLT bit according to ETH_PauseLowThreshold value */
+  /* Set the UP bit according to ETH_UnicastPauseFrameDetect value */
+  /* Set the RFE bit according to ETH_ReceiveFlowControl value */
+  /* Set the TFE bit according to ETH_TransmitFlowControl value */  
+  tmpreg |= (uint32_t)((ETH_InitStruct->ETH_PauseTime << 16) | 
+    ETH_InitStruct->ETH_ZeroQuantaPause |
+    ETH_InitStruct->ETH_PauseLowThreshold |
+    ETH_InitStruct->ETH_UnicastPauseFrameDetect | 
+    ETH_InitStruct->ETH_ReceiveFlowControl |
+    ETH_InitStruct->ETH_TransmitFlowControl); 
+  /* Write to ETHERNET MACFCR */
+  ETH->MACFCR = (uint32_t)tmpreg;
+  /*----------------------- ETHERNET MACVLANTR Configuration -----------------*/
+  /* Set the ETV bit according to ETH_VLANTagComparison value */
+  /* Set the VL bit according to ETH_VLANTagIdentifier value */  
+  ETH->MACVLANTR = (uint32_t)(ETH_InitStruct->ETH_VLANTagComparison | 
+                             ETH_InitStruct->ETH_VLANTagIdentifier); 
+       
+  /*-------------------------------- DMA Config ------------------------------*/
+  /*----------------------- ETHERNET DMAOMR Configuration --------------------*/
+  /* Get the ETHERNET DMAOMR value */  
+  tmpreg = ETH->DMAOMR;
+  /* Clear xx bits */
+  tmpreg &= DMAOMR_CLEAR_MASK;
+  
+  /* Set the DT bit according to ETH_DropTCPIPChecksumErrorFrame value */
+  /* Set the RSF bit according to ETH_ReceiveStoreForward value */
+  /* Set the DFF bit according to ETH_FlushReceivedFrame value */
+  /* Set the TSF bit according to ETH_TransmitStoreForward value */
+  /* Set the TTC bit according to ETH_TransmitThresholdControl value */
+  /* Set the FEF bit according to ETH_ForwardErrorFrames value */
+  /* Set the FUF bit according to ETH_ForwardUndersizedGoodFrames value */
+  /* Set the RTC bit according to ETH_ReceiveThresholdControl value */
+  /* Set the OSF bit according to ETH_SecondFrameOperate value */
+  tmpreg |= (uint32_t)(ETH_InitStruct->ETH_DropTCPIPChecksumErrorFrame | 
+    ETH_InitStruct->ETH_ReceiveStoreForward |
+    ETH_InitStruct->ETH_FlushReceivedFrame |
+    ETH_InitStruct->ETH_TransmitStoreForward | 
+    ETH_InitStruct->ETH_TransmitThresholdControl |
+    ETH_InitStruct->ETH_ForwardErrorFrames |
+    ETH_InitStruct->ETH_ForwardUndersizedGoodFrames |
+    ETH_InitStruct->ETH_ReceiveThresholdControl |                                   
+    ETH_InitStruct->ETH_SecondFrameOperate); 
+  /* Write to ETHERNET DMAOMR */
+  ETH->DMAOMR = (uint32_t)tmpreg;
+  
+  /*----------------------- ETHERNET DMABMR Configuration --------------------*/ 
+  /* Set the AAL bit according to ETH_AddressAlignedBeats value */
+  /* Set the FB bit according to ETH_FixedBurst value */
+  /* Set the RPBL and 4*PBL bits according to ETH_RxDMABurstLength value */
+  /* Set the PBL and 4*PBL bits according to ETH_TxDMABurstLength value */
+  /* Set the DSL bit according to ETH_DesciptorSkipLength value */
+  /* Set the PR and DA bits according to ETH_DMAArbitration value */         
+  ETH->DMABMR = (uint32_t)(ETH_InitStruct->ETH_AddressAlignedBeats | 
+    ETH_InitStruct->ETH_FixedBurst |
+    /* !! if 4xPBL is selected for Tx or Rx it is applied for the other */  
+    ETH_InitStruct->ETH_RxDMABurstLength | 
+    ETH_InitStruct->ETH_TxDMABurstLength | 
+    (ETH_InitStruct->ETH_DescriptorSkipLength << 2) |
+    ETH_InitStruct->ETH_DMAArbitration |
+    ETH_DMABMR_USP); /* Enable use of separate PBL for Rx and Tx */
+                          
+  #ifdef USE_ENHANCED_DMA_DESCRIPTORS
+  /* Enable the Enhanced DMA descriptors */
+  ETH->DMABMR |= ETH_DMABMR_EDE;
+  #endif /* USE_ENHANCED_DMA_DESCRIPTORS */                            
 }
 
 irs::arm::st_ethernet_t::~st_ethernet_t()
@@ -772,6 +1028,7 @@ void irs::arm::st_ethernet_t::set_mac(mxmac_t& a_mac)
 
 void irs::arm::st_ethernet_t::tick()
 {
+  mp_eth_auto_negotation->tick();
   if (m_receive_buf.status == buf_empty) {
     if (ETH_CheckFrameReceived()) {
       receive();
