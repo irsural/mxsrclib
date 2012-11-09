@@ -1174,10 +1174,10 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.PL = 2; //приоритет
 
   clock_enable(mp_settings->adc_address);
-  mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
-  mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
-  // 3: PCLK2 divided by 8
-  ADC_CCR_bit.ADCPRE = 3;
+
+  //0: PCLK2 divided by 4
+  ADC_CCR_bit.ADCPRE = 1;
+  set_sample_time(m_frequency);
 
   vector<pair<adc_channel_t, gpio_channel_t> > adc_gpio_pairs;
   adc_gpio_pairs.push_back(make_pair(ADC123_PA0_CH0, PA0));
@@ -1287,6 +1287,56 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   mp_timer->TIM_CR1_bit.ARPE = 1;
   //mp_timer->TIM_CR1_bit.CEN = 1;
   //--------------------------------
+}
+
+void irs::arm::st_adc_dma_t::set_sample_time(cpu_traits_t::frequency_type& 
+  a_frequency)
+{
+  int denominator	= ADC_CCR_bit.ADCPRE*2 + 2;
+  cpu_traits_t::frequency_type adc_frequency = 
+    irs::cpu_traits_t::periphery_frequency_second()/denominator;
+  int cycles = adc_frequency/a_frequency;
+  int res = 12 - mp_adc->ADC_CR1_bit.RES*2;
+  int sample_time = cycles - res;
+  int count_sample  = 0;
+  if (3 < sample_time) {
+    count_sample = 0; 
+  } if (15 < sample_time) {
+    count_sample = 1;
+  } if (28 < sample_time) {
+    count_sample = 2;
+  } if (56 < sample_time) {
+    count_sample = 3;
+  } if (84 < sample_time) {
+    count_sample = 4;
+  } if (112 < sample_time) {
+    count_sample = 5;
+  } if (144 < sample_time) {
+    count_sample = 6;
+  } if (480 < sample_time) {
+    count_sample = 7;
+  }
+ 
+  mp_adc->ADC_SMPR1_bit.SMP10 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP11 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP12 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP13 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP14 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP15 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP16 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP17 = count_sample;
+  mp_adc->ADC_SMPR1_bit.SMP18 = count_sample;
+  
+  mp_adc->ADC_SMPR2_bit.SMP0 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP1 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP2 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP3 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP4 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP5 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP6 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP7 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP8 = count_sample;
+  mp_adc->ADC_SMPR2_bit.SMP9 = count_sample;
 }
 
 void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
@@ -1417,6 +1467,7 @@ void irs::arm::st_adc_dma_t::set_frequency(
   cpu_traits_t::frequency_type a_frequency)
 {
   m_frequency = a_frequency;
+  set_sample_time(m_frequency);
   m_set_freq = timer_frequency()/m_frequency;
 
 }

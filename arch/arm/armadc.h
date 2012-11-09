@@ -286,6 +286,7 @@ private:
     timer_channel_t a_timer_channel);
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
   cpu_traits_t::frequency_type timer_frequency();
+  void set_sample_time(cpu_traits_t::frequency_type& a_frequency);
   adc_regs_t* mp_adc;
   enum { reqular_channel_count = 16 };
   enum { adc_resolution = 12 };

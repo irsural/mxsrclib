@@ -91,7 +91,7 @@ void pll_on()
   irs::cpu_traits_t::periphery_frequency_second(60000000);
   irs::cpu_traits_t::frequency(120000000);
 #elif defined(IRS_STM32F4xx)
-RCC_CR_bit.HSEON = 1;
+  RCC_CR_bit.HSEON = 1;
   RCC_CR_bit.HSEBYP = 0;
   while (!RCC_CR_bit.HSERDY);
 
