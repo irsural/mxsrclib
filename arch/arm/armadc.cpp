@@ -1292,9 +1292,12 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
 void irs::arm::st_adc_dma_t::set_sample_time(cpu_traits_t::frequency_type& 
   a_frequency)
 {
-  int denominator	= ADC_CCR_bit.ADCPRE*2 + 2;
+  int denominator = ADC_CCR_bit.ADCPRE*2 + 2;
   cpu_traits_t::frequency_type adc_frequency = 
     irs::cpu_traits_t::periphery_frequency_second()/denominator;
+  if (adc_frequency > 30000000) {
+    adc_frequency = 30000000;  
+  }
   int cycles = adc_frequency/a_frequency;
   int res = 12 - mp_adc->ADC_CR1_bit.RES*2;
   int sample_time = cycles - res;
