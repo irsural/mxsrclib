@@ -272,15 +272,15 @@ public:
     ADC3_PF5_CH15 = (1 << 15) | ADC3_MASK
   };
   st_adc_dma_t(settings_adc_dma_t* ap_settings,
-    irs::c_array_view_t<irs_u16>* ap_buff,
-    cpu_traits_t::frequency_type a_frequency);
+    irs::c_array_view_t<irs_u16> a_buff,
+    cpu_traits_t::frequency_type a_frequency = 1000);
   virtual ~st_adc_dma_t();
   virtual void start();
   virtual void stop();
   virtual bool status();
   virtual void set_frequency(cpu_traits_t::frequency_type a_frequency);
-  virtual void set_size(size_t a_size);
   virtual void set_prescaler(irs_u16 a_psc);
+  virtual void set_buff(irs::c_array_view_t<irs_u16> a_buff);
 private:
   void set_adc_timer_channel(size_t a_timer_address,
     timer_channel_t a_timer_channel);
@@ -297,7 +297,7 @@ private:
   irs_i16 m_temperature_channel_value;
   dma_regs_t* mp_dma;
   tim_regs_t* mp_timer;
-  irs::c_array_view_t<irs_u16>* mp_buff;
+  irs::c_array_view_t<irs_u16> m_buff;
   cpu_traits_t::frequency_type m_frequency;
   cpu_traits_t::frequency_type m_set_freq;
   irs_u16 m_psc;

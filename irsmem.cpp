@@ -70,7 +70,7 @@ void irs::eeprom_at25_t::write_protect_disable()
 {
   prepare_spi();
   mp_write_buf[m_command_pos] = m_WRSR;
-  mp_write_buf[m_WRSR_data_pos] = 0;
+  mp_write_buf[m_WRSR_data_pos] = (1 << m_WEN);
   mp_spi->write(mp_write_buf, m_WRSR_size);
 }
 
@@ -480,6 +480,7 @@ void irs::mem_cluster_t::tick()
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
           m_error_status = true;
+          irs::mlog() << m_cluster_index << endl;
         }
       }
       break;
@@ -825,7 +826,7 @@ void irs::mxdata_comm_t::tick()
     case mode_initialization: {
       if (mp_mem_data->status() != irs_st_busy) {
         IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <=
-          mp_mem_data->size()), ec_standard, "");
+          mp_mem_data->size()), ec_standard, "Превышен размер eeprom");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());
         m_mode = mode_initialization_wait;

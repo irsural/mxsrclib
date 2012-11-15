@@ -49,8 +49,8 @@ public:
   virtual void stop() = 0;
   virtual bool status() = 0;
   virtual void set_frequency(cpu_traits_t::frequency_type a_frequency) = 0;
-  virtual void set_size(size_t a_size) = 0;
   virtual void set_prescaler(irs_u16 a_psc) = 0;
+  virtual void set_buff(irs::c_array_view_t<irs_u16> ap_buff) = 0;
 };
 
 //! @}

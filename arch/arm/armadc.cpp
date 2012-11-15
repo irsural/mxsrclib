@@ -1118,7 +1118,7 @@ irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
 }
 
 irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
-   irs::c_array_view_t<irs_u16>* ap_buff,
+   irs::c_array_view_t<irs_u16> a_buff,
    cpu_traits_t::frequency_type a_frequency
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(ap_settings->adc_address)),
@@ -1128,14 +1128,19 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   m_temperature_channel_value(),
   mp_dma(reinterpret_cast<dma_regs_t*>(ap_settings->dma_address)),
   mp_timer(reinterpret_cast<tim_regs_t*>(ap_settings->timer_address)),
-  mp_buff(ap_buff),
+  m_buff(a_buff),
   m_frequency(a_frequency),
   m_set_freq(0),
   m_psc(0),
-  m_buff_size(mp_buff->size()),
+  m_buff_size(),
   m_start(false),
   mp_settings(ap_settings)
 {
+  if (m_buff.data() != IRS_NULL) {
+    m_buff_size = m_buff.size();
+  } else {
+    m_buff_size = 0;
+  }
   irs::clock_enable(mp_settings->dma_address);
 
   mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
@@ -1144,7 +1149,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
     reinterpret_cast<irs_u32>(&mp_adc->ADC_DR);
   //адрес буфера в памяти
   mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR =
-    reinterpret_cast<irs_u32>(ap_buff->data());
+    reinterpret_cast<irs_u32>(m_buff.data());
   //количество данных для обмена
   mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
     static_cast<irs_u16>(m_buff_size);
@@ -1423,24 +1428,29 @@ irs::arm::st_adc_dma_t::~st_adc_dma_t()
 
 void irs::arm::st_adc_dma_t::start()
 {
-  if (!m_start) {
-    m_start = true;
-    mp_timer->TIM_CR1_bit.CEN = 0;
-    mp_adc->ADC_CR2_bit.ADON = 0;
-    mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
-    mp_timer->TIM_PSC = m_psc;
-    mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
-    timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
-      mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
-    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
-      mp_settings->dma_stream, CTCIF, 1);
-    dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
-      mp_settings->dma_stream, CHTIF, 1);
-    mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
-      static_cast<irs_u16>(m_buff_size);
-    mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 1;
-    mp_adc->ADC_CR2_bit.ADON = 1;
-    mp_timer->TIM_CR1_bit.CEN = 1;
+  if (m_buff.data() != IRS_NULL) {
+    if (!m_start) {
+      m_start = true;
+      mp_timer->TIM_CR1_bit.CEN = 0;
+      mp_adc->ADC_CR2_bit.ADON = 0;
+      mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
+      mp_timer->TIM_PSC = m_psc;
+      mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
+      timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
+        mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
+      dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
+        mp_settings->dma_stream, CTCIF, 1);
+      dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
+        mp_settings->dma_stream, CHTIF, 1);
+      mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
+        static_cast<irs_u16>(m_buff_size);
+      mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 1;
+      mp_adc->ADC_CR2_bit.ADON = 1;
+      mp_timer->TIM_CR1_bit.CEN = 1;
+    }
+  } else {
+    IRS_LIB_ERROR(ec_standard, "Попытка запуска dma при нулевом " 
+      "указателе на массив данных");
   }
 }
 
@@ -1480,11 +1490,13 @@ void irs::arm::st_adc_dma_t::set_prescaler(irs_u16 a_psc)
   m_psc = a_psc;
 }
 
-void irs::arm::st_adc_dma_t::set_size(size_t a_size)
+void irs::arm::st_adc_dma_t::set_buff(irs::c_array_view_t<irs_u16> a_buff)
 {
-  if (a_size <= mp_buff->size()) {
-    m_buff_size = a_size;
-  }
+  m_buff = a_buff;
+  m_buff_size = m_buff.size();
+  //адрес буфера в памяти
+  mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR =
+    reinterpret_cast<irs_u32>(m_buff.data());
 }
 
 // class st_dac_t

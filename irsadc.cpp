@@ -962,8 +962,10 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
       mp_spi->tick();
     mp_cs_pin->clear();
+    mp_spi->lock();
     mp_spi->write(spi2_buffer, 5);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    mp_spi->unlock();
     mp_cs_pin->set();
     set_to_cnt(cnt, MS_TO_CNT(1));
     while (!test_to_cnt(cnt));
