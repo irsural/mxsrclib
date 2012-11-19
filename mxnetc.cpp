@@ -1893,7 +1893,16 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
     return;
   }
   #endif //IRS_LIB_CHECK
-  fill(begin, end, a_value);
+  if (var_first_idx != var_last_idx) {
+    fill(begin, end, a_value);
+  } else {
+    if (a_size > 0) {
+      // Данные должны отправляться даже когда их размер меньше 4 байт
+      m_write_flags[var_first_idx] = a_value;
+    } else {
+      // Если размер данных 0 байт, то ничего не должно отправляться
+    }
+  }
 }
 void irs::mxnet_client_t::mark_for_write(irs_uarc a_index, irs_uarc a_size)
 {
@@ -1923,7 +1932,9 @@ bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
     *ap_index = begin - m_write_flags.begin();
     *ap_count = end - begin;
     m_index_var = end - m_write_flags.begin();
-    unmark_for_write(*ap_index, *ap_count);
+    irs_uarc index_bytes = (*ap_index)*m_size_var_byte;
+    irs_uarc count_bytes = (*ap_count)*m_size_var_byte;
+    unmark_for_write(index_bytes, count_bytes);
     is_finded = true;
   } else {
     m_index_var = m_write_flags.size();
