@@ -1444,6 +1444,9 @@ void irs::arm::st_adc_dma_t::start()
         mp_settings->dma_stream, CHTIF, 1);
       mp_dma->stream[mp_settings->dma_stream].DMA_SNDTR =
         static_cast<irs_u16>(m_buff_size);
+      //адрес буфера в памяти
+      mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR =
+        reinterpret_cast<irs_u32>(m_buff.data());
       mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 1;
       mp_adc->ADC_CR2_bit.ADON = 1;
       mp_timer->TIM_CR1_bit.CEN = 1;
@@ -1494,9 +1497,6 @@ void irs::arm::st_adc_dma_t::set_buff(irs::c_array_view_t<irs_u16> a_buff)
 {
   m_buff = a_buff;
   m_buff_size = m_buff.size();
-  //адрес буфера в памяти
-  mp_dma->stream[mp_settings->dma_stream].DMA_SM0AR =
-    reinterpret_cast<irs_u32>(m_buff.data());
 }
 
 // class st_dac_t
