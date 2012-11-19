@@ -141,7 +141,7 @@ irs::cur_time_t::~cur_time_t()
 
 void irs::cur_time_t::set(time_t a_time)
 {
-  m_cur_time = a_time;
+  m_cur_time = static_cast<double>(a_time);
   m_time_set = counter_get();
   m_set_time = true;
 }

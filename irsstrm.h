@@ -91,10 +91,10 @@ inline int union_streambuf::overflow(int c)
     size_type put_byte_count = 0;
     size_type buf_fill_size = pptr() - pbase();
     while (put_byte_count < buf_fill_size) {
-      int sended_count =
+      streamsize sended_count =
         m_streambufs[buf_i]->sputn(m_outbuf.data()+put_byte_count,
         buf_fill_size-put_byte_count);
-      put_byte_count += sended_count;
+      put_byte_count += static_cast<size_type>(sended_count);
       if (sended_count == 0) {
         // ѕровер€ем можно ли еще что-нибудь записать
         if (m_streambufs[buf_i]->sputc(m_outbuf[put_byte_count]) == EOF) {

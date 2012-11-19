@@ -35,8 +35,8 @@ irs::assert_e::assert_e(const char *ap_assert_str, const char *ap_file_name,
     if (ap_message) {
       m_full_message_stream << "Сообщение: " << ap_message << endl;
     }
-    m_full_message.
-      assign(m_full_message_stream.str(), m_full_message_stream.pcount());
+    m_full_message.assign(m_full_message_stream.str(),
+      static_cast<std::size_t>(m_full_message_stream.pcount()));
     m_full_message_stream.rdbuf()->freeze(false);
   }
 }

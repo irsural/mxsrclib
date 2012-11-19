@@ -208,7 +208,7 @@ typedef struct _mxifa_hardflow_cfg {
   irs::hardflow_t *user_hardflow;
 } mxifa_hardflow_cfg;
 
-#if defined(__WATCOMC__) || defined(_MSC_VER)
+#if defined(__WATCOMC__)
 // Определение функций для компиляторов для которых нет реализации mxifa
 inline void mxifa_init() {}
 inline void mxifa_deinit() {}

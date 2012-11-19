@@ -1749,23 +1749,24 @@ void irs::agilent_3458a_digitizer_t::get_voltage(double *voltage)
   m_buf_receive.clear();
 }
 // Чтения силы тока
-void irs::agilent_3458a_digitizer_t::get_current(double */*current*/)
+void irs::agilent_3458a_digitizer_t::get_current(double * /*current*/)
 {
 }
 // Чтение сопротивления
-void irs::agilent_3458a_digitizer_t::get_resistance2x(double */*resistance*/)
+void irs::agilent_3458a_digitizer_t::get_resistance2x(double * /*resistance*/)
 {
 }
 // Чтение сопротивления
-void irs::agilent_3458a_digitizer_t::get_resistance4x(double */*resistance*/)
+void irs::agilent_3458a_digitizer_t::get_resistance4x(double * /*resistance*/)
 {
 }
 // Чтение частоты
-void irs::agilent_3458a_digitizer_t::get_frequency(double */*frequency*/)
+void irs::agilent_3458a_digitizer_t::get_frequency(double * /*frequency*/)
 {
 }
 // Чтение усредненного сдвира фаз
-void irs::agilent_3458a_digitizer_t::get_phase_average(double */*phase_average*/)
+void irs::agilent_3458a_digitizer_t::get_phase_average(
+  double * /*phase_average*/)
 {
 }
 // Чтение фазового сдвига
@@ -1773,7 +1774,8 @@ void irs::agilent_3458a_digitizer_t::get_phase(double * /*phase*/)
 {
 }
 // Чтение временного интервала
-void irs::agilent_3458a_digitizer_t::get_time_interval(double * /*time_interval*/)
+void irs::agilent_3458a_digitizer_t::get_time_interval(
+  double * /*time_interval*/)
 {
 }
 // Чтение усредненного временного интервала

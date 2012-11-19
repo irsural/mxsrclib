@@ -631,7 +631,8 @@ void swap(table_t<cell_type_t, column_type_t, container_t>& a_first_table,
   a_first_table.swap(&a_second_table);
 }
 
-#if (false /*defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010)*/)
+#if (defined(NOP)\
+  /*defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER2010)*/)
 template <class T>
 class basic_table_string_t: public table_t<
   basic_irs_string_t<T>,

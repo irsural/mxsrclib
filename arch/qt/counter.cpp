@@ -3,9 +3,13 @@
 // Используем встроенный счетчик процессора
 // Дата 17.11.2008
 
-#include <windows.h>
+#include <irsdefs.h>
+
+#include <winsock2.h>
 #include <time.h>
 #include <counter.h>
+
+#include <irsfinal.h>
 
 // Число секунд в интервале
 counter_t SECONDS_PER_INTERVAL = 1;

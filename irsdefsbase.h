@@ -46,6 +46,8 @@
 #elif defined(__MINGW32__) && defined(UNICODE)
 // Сделано для Qt с MinGW
 #   define IRS_UNICODE_GLOBAL
+#elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
+# define IRS_UNICODE_GLOBAL
 #else
   //#define IRS_UNICODE_GLOBAL
 #endif //__BORLANDC__

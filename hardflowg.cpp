@@ -833,7 +833,7 @@ void irs::hardflow::udp_flow_t::start()
       bool init_success = true;
       local_addr_init(&local_addr, &init_success);
       if (init_success) {
-        if (bind(m_sock, (sockaddr *)&local_addr,
+        if (::bind(m_sock, (sockaddr *)&local_addr,
           sizeof(local_addr)) != IRS_SOCKET_ERROR)
         {
           m_state_info.bind_sock_and_ladr_success = true;
@@ -1296,7 +1296,7 @@ void irs::hardflow::tcp_server_t::start_server()
       m_addr.sin_family = AF_INET;
       m_addr.sin_port = htons(m_local_port);
       m_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-      if(bind(m_server_sock, (struct sockaddr *)&m_addr,
+      if(::bind(m_server_sock, (struct sockaddr *)&m_addr,
         sizeof(m_addr)) >= 0)
       {
         int queue_lenght = 300; //длина очереди
