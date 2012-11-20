@@ -1450,18 +1450,13 @@ void irs::mxnet_client_command_t::tick()
 
       m_channel_ident = m_hardflow.channel_next();
       m_fixed_flow.write(m_channel_ident, buf, new_size);
-      //mxifa_write_begin(m_handle_channel, IRS_NULL,
-        //reinterpret_cast<irs_u8*>(buf), new_size);
       #else //INSERT_LEFT_BYTE
       m_channel_ident = m_hardflow.channel_next();
       m_fixed_flow.write(m_channel_ident, m_packet_data.data(), m_send_size);
-      //mxifa_write_begin(m_handle_channel, IRS_NULL, m_packet_data.data(),
-        //m_send_size);
       #endif //INSERT_LEFT_BYTE
       m_mode = mode_write_wait;
     } break;
     case mode_write_wait: {
-      //if (mxifa_write_end(m_handle_channel, false)) {
       ff_status_type status = m_fixed_flow.write_status();
       if (status == hardflow::fixed_flow_t::status_success) {
         m_mode = mode_read;
@@ -1484,7 +1479,6 @@ void irs::mxnet_client_command_t::tick()
             irs_u8 *buf = m_packet_data.data() + mxn_header_size;
             mxn_sz_t size = m_receive_size - mxn_header_size;
             m_fixed_flow.read(m_channel_ident, buf, size);
-            //mxifa_read_begin(m_handle_channel, IRS_NULL, buf, size);
             m_mode = mode_chunk_read_wait;
           } else {
             m_mode = mode_packet;
@@ -1756,8 +1750,8 @@ void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   size_t size = static_cast<size_t>(a_size);
   c_array_view_t<const irs_u8> buf_view(ap_buf, size);
-  mem_copy(buf_view, 0u, m_write_bytes, a_index, size);
   mark_for_write(a_index, a_size);
+  mem_copy(buf_view, 0u, m_write_bytes, a_index, size);
 }
 irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1779,10 +1773,8 @@ void irs::mxnet_client_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  irs_u8 writed_byte = m_read_bytes[a_index];
-  writed_byte |= static_cast<irs_u8>(1 << a_bit_index);
-  m_write_bytes[a_index] = writed_byte;
   mark_for_write(a_index, 1);
+  m_write_bytes[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
@@ -1793,10 +1785,8 @@ void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  irs_u8 writed_byte = m_read_bytes[a_index];
-  writed_byte &= static_cast<irs_u8>(~(1 << a_bit_index));
-  m_write_bytes[a_index] = writed_byte;
   mark_for_write(a_index, 1);
+  m_write_bytes[a_index] &= static_cast<irs_u8>(~(1 << a_bit_index));
 }
 void irs::mxnet_client_t::tick()
 {
@@ -1850,13 +1840,12 @@ void irs::mxnet_client_t::tick()
       if (find_range(&index, &count)) {
         IRS_LIB_ASSERT(check_index(m_write_vars, index, count));
         #ifdef IRS_LIB_CHECK
-        if (check_index(m_write_vars, index, count)) {
+        if (check_index(m_write_vars, index, count))
         #endif //IRS_LIB_CHECK
+        {
           m_mxnet_client_command.write(index, count,
             m_write_vars.data() + index);
-        #ifdef IRS_LIB_CHECK
         }
-        #endif //IRS_LIB_CHECK
         m_mode = mode_write_wait;
       } else {
         m_mode = mode_read;
@@ -1882,7 +1871,9 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
   bool a_value)
 {
   mxn_cnt_t var_first_idx = a_index/m_size_var_byte;
-  mxn_cnt_t var_last_idx = (a_index + a_size)/m_size_var_byte;
+  mxn_cnt_t var_last_idx = (a_index + a_size + m_size_var_byte - 1)/
+    m_size_var_byte;
+
   vector<bool>::iterator begin = m_write_flags.begin() + var_first_idx;
   vector<bool>::iterator end = m_write_flags.begin() + var_last_idx;
   IRS_LIB_ERROR_IF(!check_iterator(m_write_flags, begin, end), ec_standard,
@@ -1893,15 +1884,13 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
     return;
   }
   #endif //IRS_LIB_CHECK
-  if (var_first_idx != var_last_idx) {
-    fill(begin, end, a_value);
-  } else {
-    if (a_size > 0) {
-      // Данные должны отправляться даже когда их размер меньше 4 байт
-      m_write_flags[var_first_idx] = a_value;
-    } else {
-      // Если размер данных 0 байт, то ничего не должно отправляться
-    }
+  fill(begin, end, a_value);
+
+  if (a_value) {
+    // Копирование из буфкра чтения в буфер записи при пометке на запись
+    size_t var_index = static_cast<size_t>(var_first_idx);
+    size_t var_size = static_cast<size_t>(var_last_idx - var_first_idx);
+    mem_copy(m_read_vars, var_index, m_write_vars, var_index, var_size);
   }
 }
 void irs::mxnet_client_t::mark_for_write(irs_uarc a_index, irs_uarc a_size)
