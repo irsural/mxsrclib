@@ -3829,7 +3829,7 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
   switch(a_type_meas) {
     case tm_volt_dc: {
       m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
-        m_channel[m_current_channel] + m_configure_voltage_dc + range_str;
+        /*m_channel[m_current_channel] + */m_configure_voltage_dc + range_str;
       m_set_params_commands.push_back(m_channel[m_current_channel] +
         m_range_voltage_dc + range_str);
     } break;
