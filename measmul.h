@@ -2103,6 +2103,7 @@ class agilent_34420a_t: public mxmultimeter_t
   //! \brief Команда выбора канала
   index_t m_select_channel_dc_index;
   irs::string m_select_channel;
+  vector<irs::string> m_front;
   vector<irs::string> m_channel;
   size_t m_current_channel;
   vector<irs::string> m_select_channel_command;

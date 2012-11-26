@@ -3310,6 +3310,7 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_resistance_4x_commands(),
   m_select_channel_dc_index(0),
   m_select_channel("ROUTe:TERMinals FRONt"),
+  m_front(),
   m_channel(),
   m_current_channel(0),
   m_select_channel_command(),
@@ -3362,16 +3363,22 @@ irs::agilent_34420a_t::agilent_34420a_t(
   m_get_value_commands.push_back("TRIGger:SOURce IMMediate");
   m_get_value_commands.push_back("READ?");
 
-  //  Текущий канал
+  // Текущий канал
   m_channel.clear();
   m_channel.push_back("SENSe1:");
   m_channel.push_back("SENSe2:");
+
+  // Текущий фронт, то же, что и текущий канал, только для
+  //  применения с другими командами
+  m_front.push_back("(@FRONt1)");
+  m_front.push_back("(@FRONt2)");
 
   // Команды при чтении напряжения
   // Настраиваемся на измерение напряжения
   m_configure_voltage_dc_index = m_get_voltage_dc_commands.size();
   //m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO");
-  m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO");
+  m_get_voltage_dc_commands.push_back(m_configure_voltage_dc + "AUTO, " +
+    m_front[m_current_channel]);
   //m_get_voltage_dc_commands.push_back(m_channel[m_current_channel] +
     //m_range_voltage_dc + "AUTO");
   m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
@@ -3829,7 +3836,7 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
   switch(a_type_meas) {
     case tm_volt_dc: {
       m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
-        /*m_channel[m_current_channel] + */m_configure_voltage_dc + range_str;
+        m_configure_voltage_dc + range_str + ", " + m_front[m_current_channel];
       m_set_params_commands.push_back(m_channel[m_current_channel] +
         m_range_voltage_dc + range_str);
     } break;
@@ -3857,7 +3864,8 @@ void irs::agilent_34420a_t::set_range(type_meas_t a_type_meas,
 void irs::agilent_34420a_t::set_range_auto()
 {
   m_get_voltage_dc_commands[m_configure_voltage_dc_index] =
-    m_channel[m_current_channel] + m_configure_voltage_dc + "AUTO";
+    m_channel[m_current_channel] + m_configure_voltage_dc + "AUTO, " +
+      m_front[m_current_channel];
   m_get_resistance_2x_commands[m_configure_resistance_2x_index] =
     m_configure_resistance_2x + "AUTO";
   m_get_resistance_4x_commands[m_configure_resistance_4x_index] =
