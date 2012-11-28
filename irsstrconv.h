@@ -42,7 +42,7 @@ struct base_str_type<irs_string_t>
   typedef irs_string_t type;
 };
 
-//std_string_t
+// Èç std_string_t
 inline std_string_t str_conv_simple(const std_string_t&,
   const std_string_t& a_str_in)
 {
@@ -55,7 +55,8 @@ inline irs_string_t str_conv_simple(const irs_string_t&,
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
-//std_wstring_t
+# ifndef QT_CORE_LIB
+// Èç std_wstring_t
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
   const std_string_t& a_str_in)
 {
@@ -66,6 +67,20 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
 {
   return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
 }
+# else // QT_CORE_LIB
+inline std_wstring_t str_conv_simple(const std_wstring_t&,
+  const std_string_t& a_str_in)
+{
+  QString String = QString::fromStdString(a_str_in);
+  return String.toStdWString();
+}
+inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
+  const std_string_t& a_str_in)
+{
+  QString String = QString::fromStdString(a_str_in);
+  return String.toStdWString();
+}
+# endif // QT_CORE_LIB
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
@@ -123,13 +138,19 @@ inline QString str_conv(const wchar_t* a_str_in)
 #endif //QT_CORE_LIB
 
 
-//std_string_t
+// Èç std_string_t
 template<class T>
 inline T str_conv(const std_string_t& a_str_in)
 {
   return str_conv_simple(T(), a_str_in);
 }
 #ifdef QT_CORE_LIB
+/*template<>
+inline std_wstring_t str_conv<std_wstring_t>(const std_string_t& a_str_in)
+{
+  QString String = QString::fromStdString(a_str_in);
+  return String.toStdWString();
+}*/
 template<>
 inline QString str_conv<QString>(const std_string_t& a_str_in)
 {
@@ -145,7 +166,7 @@ inline String str_conv<String>(const std_string_t& a_str_in)
 }
 #endif // defined(__BORLANDC__)
 
-//std_wstring_t
+// Èç std_wstring_t
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
   const std_wstring_t& a_str_in)
 {
@@ -156,6 +177,7 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
 {
   return a_str_in;
 }
+# ifndef QT_CORE_LIB
 inline std_string_t str_conv_simple(const std_string_t&,
   const std_wstring_t& a_str_in)
 {
@@ -166,19 +188,39 @@ inline irs_string_t str_conv_simple(const irs_string_t&,
 {
   return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
 }
-
+# else // QT_CORE_LIB
+inline std_string_t str_conv_simple(const std_string_t&,
+  const std_wstring_t& a_str_in)
+{
+  QString String = QString::fromStdWString(a_str_in);
+  return String.toStdString();
+}
+inline irs_string_t str_conv_simple(const irs_string_t&,
+  const std_wstring_t& a_str_in)
+{
+  QString String = QString::fromStdWString(a_str_in);
+  return String.toStdString();
+}
+# endif // QT_CORE_LIB
 template<class T>
 inline T str_conv(const std_wstring_t& a_str_in)
 {
   return str_conv_simple(T(), a_str_in);
 }
 #ifdef QT_CORE_LIB
+/*template<>
+inline std_string_t str_conv<std_string_t>(const std_wstring_t& a_str_in)
+{
+  QString String = QString::fromStdWString(a_str_in);
+  return String.toStdString();
+}*/
+
 template<>
 inline QString str_conv<QString>(const std_wstring_t& a_str_in)
 {
   return QString::fromStdWString(a_str_in);
 }
-#endif //QT_CORE_LIB
+#endif // QT_CORE_LIB
 #if defined(__BORLANDC__)
 template<>
 inline AnsiString str_conv<AnsiString>(const std_wstring_t& a_str_in)
@@ -201,7 +243,7 @@ inline UnicodeString str_conv<UnicodeString>(const std_wstring_t& a_str_in)
 
 #endif // defined(__BORLANDC__)
 
-//irs_string_t
+// Èç irs_string_t
 template<class T>
 inline T str_conv(const irs_string_t& a_str_in)
 {
@@ -226,7 +268,6 @@ inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
   #else // Åñëè íå Builder XE
   return std_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
   #endif // Åñëè íå Builder XE
-
 }
 
 template<>
