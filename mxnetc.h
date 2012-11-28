@@ -462,13 +462,18 @@ private:
   irs::raw_data_t<irs_i32> m_write_vars;
   raw_data_view_t<irs_u8, irs_i32> m_write_bytes;
   mxn_cnt_t m_size_var;
+  mxn_cnt_t m_size_var_prev;
   mxn_cnt_t m_index_var;
   vector<bool> m_write_flags;
+  mxn_cnt_t m_write_index;
+  mxn_cnt_t m_write_count;
   mxnet_client_command_t m_mxnet_client_command;
 
   void fill_for_write(irs_uarc a_index, irs_uarc a_size, bool a_value);
-  void mark_for_write(irs_uarc a_index, irs_uarc a_size);
+  void fill_for_write_vars(mxn_cnt_t a_index, mxn_cnt_t a_size, bool a_value);
+  void mark_for_write_and_copy(irs_uarc a_index, irs_uarc a_size);
   void unmark_for_write(irs_uarc a_index, irs_uarc a_size);
+  void unmark_for_write_vars(irs_uarc a_index, irs_uarc a_size);
   void resize_vars(mxn_cnt_t a_size);
   bool find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count);
 };

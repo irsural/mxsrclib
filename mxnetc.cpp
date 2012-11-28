@@ -1716,8 +1716,11 @@ irs::mxnet_client_t::mxnet_client_t(hardflow_t& a_hardflow,
   m_write_vars(),
   m_write_bytes(&m_write_vars),
   m_size_var(0),
+  m_size_var_prev(0),
   m_index_var(0),
   m_write_flags(),
+  m_write_index(0),
+  m_write_count(0),
   m_mxnet_client_command(a_hardflow, a_disconnect_time)
 {
 }
@@ -1750,7 +1753,7 @@ void irs::mxnet_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 {
   size_t size = static_cast<size_t>(a_size);
   c_array_view_t<const irs_u8> buf_view(ap_buf, size);
-  mark_for_write(a_index, a_size);
+  mark_for_write_and_copy(a_index, a_size);
   mem_copy(buf_view, 0u, m_write_bytes, a_index, size);
 }
 irs_bool irs::mxnet_client_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -1773,7 +1776,7 @@ void irs::mxnet_client_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  mark_for_write(a_index, 1);
+  mark_for_write_and_copy(a_index, 1);
   m_write_bytes[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
 }
 void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
@@ -1785,7 +1788,7 @@ void irs::mxnet_client_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
     return;
   }
   #endif //IRS_LIB_CHECK
-  mark_for_write(a_index, 1);
+  mark_for_write_and_copy(a_index, 1);
   m_write_bytes[a_index] &= static_cast<irs_u8>(~(1 << a_bit_index));
 }
 void irs::mxnet_client_t::tick()
@@ -1800,6 +1803,10 @@ void irs::mxnet_client_t::tick()
     case mode_get_size: {
       switch (m_mxnet_client_command.status()) {
         case mxnet_client_command_t::status_success: {
+          if (m_size_var != m_size_var_prev) {
+            unmark_for_write_vars(0, m_write_flags.size());
+          }
+          m_size_var_prev = m_size_var;
           resize_vars(m_size_var);
           m_mode = mode_read;
         } break;
@@ -1835,16 +1842,15 @@ void irs::mxnet_client_t::tick()
       }
     } break;
     case mode_write: {
-      mxn_cnt_t index = 0;
-      mxn_cnt_t count = 0;
-      if (find_range(&index, &count)) {
-        IRS_LIB_ASSERT(check_index(m_write_vars, index, count));
+      if (find_range(&m_write_index, &m_write_count)) {
+        IRS_LIB_ASSERT(check_index(m_write_vars, m_write_index,
+          m_write_count));
         #ifdef IRS_LIB_CHECK
-        if (check_index(m_write_vars, index, count))
+        if (check_index(m_write_vars, m_write_index, m_write_count))
         #endif //IRS_LIB_CHECK
         {
-          m_mxnet_client_command.write(index, count,
-            m_write_vars.data() + index);
+          m_mxnet_client_command.write(m_write_index, m_write_count,
+            m_write_vars.data() + m_write_index);
         }
         m_mode = mode_write_wait;
       } else {
@@ -1854,6 +1860,7 @@ void irs::mxnet_client_t::tick()
     case mode_write_wait: {
       switch (m_mxnet_client_command.status()) {
         case mxnet_client_command_t::status_success: {
+          unmark_for_write_vars(m_write_index, m_write_count);
           m_mode = mode_write;
         } break;
         case mxnet_client_command_t::status_error: {
@@ -1870,9 +1877,15 @@ void irs::mxnet_client_t::tick()
 void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
   bool a_value)
 {
-  mxn_cnt_t var_first_idx = a_index/m_size_var_byte;
-  mxn_cnt_t var_last_idx = (a_index + a_size + m_size_var_byte - 1)/
-    m_size_var_byte;
+  mxn_cnt_t index = a_index/m_size_var_byte;
+  mxn_cnt_t size = (a_size + m_size_var_byte - 1)/ m_size_var_byte;
+  fill_for_write_vars(index, size, a_value);
+}
+void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
+  mxn_cnt_t a_size, bool a_value)
+{
+  mxn_cnt_t var_first_idx = a_index;
+  mxn_cnt_t var_last_idx = a_index + a_size;
 
   vector<bool>::iterator begin = m_write_flags.begin() + var_first_idx;
   vector<bool>::iterator end = m_write_flags.begin() + var_last_idx;
@@ -1893,13 +1906,19 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
     mem_copy(m_read_vars, var_index, m_write_vars, var_index, var_size);
   }
 }
-void irs::mxnet_client_t::mark_for_write(irs_uarc a_index, irs_uarc a_size)
+void irs::mxnet_client_t::mark_for_write_and_copy(irs_uarc a_index,
+  irs_uarc a_size)
 {
   fill_for_write(a_index, a_size, true);
 }
 void irs::mxnet_client_t::unmark_for_write(irs_uarc a_index, irs_uarc a_size)
 {
   fill_for_write(a_index, a_size, false);
+}
+void irs::mxnet_client_t::unmark_for_write_vars(irs_uarc a_index,
+  irs_uarc a_size)
+{
+  fill_for_write_vars(a_index, a_size, false);
 }
 void irs::mxnet_client_t::resize_vars(mxn_cnt_t a_size)
 {
@@ -1913,6 +1932,8 @@ bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
 {
   IRS_LIB_ASSERT(ap_index != IRS_NULL);
   IRS_LIB_ASSERT(ap_count != IRS_NULL);
+  *ap_index = 0;
+  *ap_count = 0;
   bool is_finded = false;
   vector<bool>::iterator begin =
     find(m_write_flags.begin() + m_index_var, m_write_flags.end(), true);
@@ -1923,7 +1944,6 @@ bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
     m_index_var = end - m_write_flags.begin();
     irs_uarc index_bytes = (*ap_index)*m_size_var_byte;
     irs_uarc count_bytes = (*ap_count)*m_size_var_byte;
-    unmark_for_write(index_bytes, count_bytes);
     is_finded = true;
   } else {
     m_index_var = m_write_flags.size();

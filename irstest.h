@@ -530,6 +530,16 @@ void raw_float_test_out(ostream* ap_stream)
 
 } //namespace float_test
 
+namespace communication_test {
+
+class mxdata_test_t
+{
+public:
+private:
+}; //class mxdata_test_t
+
+} //namespace communication_test
+
 } //namespace irs
 
 #endif //IRSTESTH
