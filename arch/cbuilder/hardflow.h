@@ -184,7 +184,7 @@ public:
     const irs_u8 a_parity = NOPARITY,
     const irs_u8 a_byte_size = 8,
     const irs_u8 a_stop_bits = ONESTOPBIT,
-    const irs_u32 a_f_dtr_control = DTR_CONTROL_ENABLE);
+    const irs_u32 a_f_dtr_control = DTR_CONTROL_DISABLE);
   virtual ~com_flow_t();
   virtual string_type param(const string_type &a_name);
   virtual void set_param(const string_type &a_name, const string_type &a_value);

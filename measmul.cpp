@@ -211,11 +211,12 @@ irs::agilent_3458a_t::agilent_3458a_t(
 
   init_to_cnt();
 
-  m_oper_time = TIME_TO_CNT(1, 1);
+  //m_oper_time = TIME_TO_CNT(1, 1);
+  m_oper_time = TIME_TO_CNT(5, 1);
   m_acal_time = TIME_TO_CNT(20*60, 1);
 
   // Команды при инициализации
-  m_init_commands.push_back("RESET");
+  //m_init_commands.push_back("RESET");
   m_init_commands.push_back("PRESET NORM");
   /*
   Автоматическая коррекция нуля (время счета * 2, обязательна
@@ -276,13 +277,6 @@ irs::agilent_3458a_t::agilent_3458a_t(
   // для четырехпроводной схемы)
   //m_init_commands.push_back("AZERO OFF");
   #endif //OFF_EXTCOM
-
-
-
-
-
-
-
 
   // Очистка буфера приема
   memset(m_read_buf, 0, ma_read_buf_size);
@@ -493,7 +487,10 @@ void irs::agilent_3458a_t::initialize_tick()
           }
         } break;
         case im_write_command: {
-          irs::string& icomm = m_init_commands[m_ic_index];
+          //irs::string& icomm = m_init_commands[m_ic_index];
+          m_cur_mul_command = m_init_commands[m_ic_index];
+          irs::string& icomm = m_cur_mul_command;
+
           size_t icomm_size = icomm.size();
           const irs_u8* icomm_u8 =
             reinterpret_cast<const irs_u8*>(icomm.c_str());

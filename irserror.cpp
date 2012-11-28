@@ -382,3 +382,62 @@ ostream& irs::mlog()
   return mlog_obj;
 }
 
+namespace irs {
+
+class debug_param_implementation_t: public debug_param_t
+{
+public:
+  typedef map<string_type, size_t> param_list_type;
+  //typedef param_list_type::iterator pl_iterator;
+  typedef param_list_type::const_iterator pl_const_iterator;
+
+  debug_param_implementation_t():
+    m_param_list()
+  {
+  }
+  virtual void set(const string_type& a_name, size_t a_value_num)
+  {
+    m_param_list[a_name] = a_value_num;
+  }
+  virtual size_t get(const string_type& a_name) const
+  {
+    size_t param = 0;
+    pl_const_iterator it = m_param_list.find(a_name);
+    if (it != m_param_list.end()) {
+      param = it->second;
+    }
+    return param;
+  }
+  virtual bool is_exist(const string_type& a_name) const
+  {
+    return m_param_list.find(a_name) != m_param_list.end();
+  }
+private:
+  param_list_type m_param_list;
+};
+
+} //namespace irs
+
+irs::debug_param_t& irs::debug_param()
+{
+  static debug_param_implementation_t debug_param_implementation;
+  return debug_param_implementation;
+}
+
+irs::irs_string_t irs::conv_notprintable_to_hex(const irs_string_t& a_str)
+{
+  irs_string_t result_str = "";
+  for (size_t i = 0; i < a_str.size(); i++) {
+    const char space_char = 32;
+    if (a_str[i] >= space_char) {
+      result_str += a_str[i];
+    } else {
+      stringstream stream;
+      stream << "\\x";
+      stream << hex << setw(2) << setfill('0') << (int)a_str[i];
+      result_str += stream.str();
+    }
+  }
+  return result_str;
+}
+

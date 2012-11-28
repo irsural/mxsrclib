@@ -16,6 +16,8 @@
 
 #include <irsfinal.h>
 
+//#define IRS_HARDFLOW_LOG_COM_PORT
+
 // class com_flow_t
 irs::com_flow_t::com_flow_t(
   const string_type& a_portname,
@@ -45,8 +47,8 @@ irs::com_flow_t::com_flow_t(
     NULL);
   if(m_com == INVALID_HANDLE_VALUE){
     fsuccess = FALSE;
-    mp_error_trans->throw_error(
-      ec_standard, __FILE__, __LINE__, "Ошибка открытия порта");
+    ShowMessage(last_error_str().c_str());
+    IRS_LIB_ERROR(ec_standard, "Ошибка открытия COM-порта");
   }
   if(fsuccess){
     // настраиваем
@@ -203,6 +205,35 @@ void irs::com_flow_t::set_param(const string_type &a_name,
   IRS_ASSERT(fsuccess);
 }
 
+#ifdef IRS_HARDFLOW_LOG_COM_PORT
+namespace irs {
+void com_flow_log(const irs_u8* ap_buf, size_t a_size, DWORD result)
+{
+  irs_string_t buf_str(reinterpret_cast<const char*>(ap_buf), a_size);
+  buf_str = conv_notprintable_to_hex(buf_str);
+  stringstream slog;
+  slog << "com_flow_t::write(\"" << buf_str << "\", " << a_size;
+  slog << ") == " << result;
+  slog << endl;
+  static irs_string_t prev_log_line = "";
+  static int counter = 0;
+  fstream flog("S:\\Files\\ASUTP\\U309M\\Основное\\log.txt",
+    ios::app | ios::out);
+  if (slog.str() != prev_log_line) {
+    if (counter) {
+      flog << "Предыдущая строка повторялась ";
+      flog << counter << " раз" << endl;
+      counter = 0;
+    }
+    flog << slog.str();
+  } else {
+    counter++;
+  }
+  prev_log_line = slog.str();
+}
+} //namespace irs
+#endif //IRS_HARDFLOW_LOG_COM_PORT
+
 irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
   irs_u8 *ap_buf, size_type a_size)
 {
@@ -229,6 +260,11 @@ irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
       DWORD num_of_bytes_read = 0;
       size_rd = min(a_size, num_bytes_buf_rd);
       fsuccess = ReadFile(m_com, ap_buf, size_rd, &num_of_bytes_read, NULL);
+
+      #ifdef IRS_HARDFLOW_LOG_COM_PORT
+      com_flow_log(ap_buf, num_of_bytes_read, fsuccess);
+      #endif //IRS_HARDFLOW_LOG_COM_PORT
+
       if (fsuccess) {
         size_rd = num_of_bytes_read;
       } else {
@@ -268,7 +304,13 @@ irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
     if(num_bytes_buf_wr == 0){
       DWORD num_of_bytes_written = 0;
       size_wr = min(a_size, m_max_size_write);
-      fsuccess = WriteFile(m_com, ap_buf, size_wr, &num_of_bytes_written, NULL);
+      fsuccess = WriteFile(m_com, ap_buf, size_wr,
+        &num_of_bytes_written, NULL);
+
+      #ifdef IRS_HARDFLOW_LOG_COM_PORT
+      com_flow_log(ap_buf, num_of_bytes_written, fsuccess);
+      #endif //IRS_HARDFLOW_LOG_COM_PORT
+
       if (fsuccess) {
         size_wr = num_of_bytes_written;
       } else {

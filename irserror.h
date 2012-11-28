@@ -638,6 +638,40 @@ T* new_assert(T* a_new_expr, error_trans_base_t::cstr_type a_file,
 }
 #endif //IRS_LIB_FLASH_ASSERT
 
+class debug_param_t
+{
+public:
+  typedef string_t string_type;
+
+  virtual void set(const string_type& a_name, size_t a_value_num) = 0;
+  virtual size_t get(const string_type& a_name) const = 0;
+  virtual bool is_exist(const string_type& a_name) const = 0;
+};
+
+debug_param_t& debug_param();
+
+template <class T>
+void debug_param_set_ptr(const string_t& a_name, const T* ap_ptr)
+{
+  irs::debug_param().set(a_name, reinterpret_cast<size_t>(ap_ptr));
+}
+template <class T>
+bool debug_param_check_ptr(const string_t& a_name, const T* ap_ptr)
+{
+  bool is_ptr_equal = false;
+  bool is_param_exist = irs::debug_param().is_exist(a_name);
+  if (is_param_exist) {
+    size_t debuged_ptr_num = irs::debug_param().get(a_name);
+    const T* debuged_ptr = reinterpret_cast<const T*>(debuged_ptr_num);
+    if (ap_ptr == debuged_ptr) {
+      is_ptr_equal = true;
+    }
+  }
+  return is_ptr_equal;
+}
+
+irs_string_t conv_notprintable_to_hex(const irs_string_t& a_str);
+
 //! @}
 
 } //namespace irs

@@ -1974,6 +1974,13 @@ void irs::hardflow::fixed_flow_t::write(size_type a_channel_ident,
   const irs_u8 *ap_buf, size_type a_size)
 {
   if (write_status() != status_wait) {
+
+    #ifdef NOP
+    if (debug_param_check_ptr(irst("prologix_hardflow"), mp_hardflow)) {
+      mlog() << "";
+    }
+    #endif //NOP
+
     m_write_status = status_wait;
     m_write_channel = a_channel_ident;
     mp_write_buf_cur = ap_buf;
@@ -2017,27 +2024,18 @@ void irs::hardflow::fixed_flow_t::tick()
         m_read_size_rest);
       mp_read_buf_cur += read_size;
       m_read_size_rest -= read_size;
-      /*mlog() << irsm("mp_read_buf_cur = ") << int(mp_read_buf_cur) << endl;
-      mlog() << irsm("mp_read_buf = ") << int(mp_read_buf) << endl;
-      mlog() << irsm("m_read_size_need = ") << int(m_read_size_need) << endl;
-      mlog() << irsm("m_read_size_rest = ") << int(m_read_size_rest) << endl;*/
       if (mp_read_buf_cur >= (mp_read_buf + m_read_size_need)) {
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("read end") << endl);
         m_read_status = status_success;
-        //mlog() << irsm("read_status = status_success") << endl;
       }
       if (read_size == 0) {
         if (m_read_timeout.stopped()) {
           m_read_timeout.start();
-          //mlog() << irsm("read_timeout.start") << endl;
         }
       } else {
         m_read_timeout.stop();
-        //mlog() << irsm("read_timeout.stop") << endl;
       }
       if (m_read_timeout.check()) {
-        /*mlog() << irsm("read_status = status_error") << endl;
-        mlog() << irsm("read abort by timeout") << endl;*/
         m_read_status = status_error;
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(
           irsm("read abort by timeout") << endl);
@@ -2058,6 +2056,13 @@ void irs::hardflow::fixed_flow_t::tick()
       #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
       m_channel_not_exists = false;
       #endif // IRS_LIB_DEBUG_DETAIL
+
+      #ifdef NOP
+      if (debug_param_check_ptr(irst("prologix_hardflow"), mp_hardflow)) {
+        mlog() << "";
+      }
+      #endif //NOP
+
       size_type write_size = mp_hardflow->write(m_write_channel,
         mp_write_buf_cur, m_write_size_rest);
       mp_write_buf_cur += write_size;
@@ -2074,11 +2079,16 @@ void irs::hardflow::fixed_flow_t::tick()
         m_write_timeout.stop();
       }
       if (m_write_timeout.check()) {
+
+        #ifdef NOP
+        if (debug_param_check_ptr(irst("prologix_hardflow"), mp_hardflow)) {
+          mlog() << "";
+        }
+        #endif //NOP
+
         m_write_status = status_error;
         IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
           irsm("write abort by timeout") << endl);
-        /*mlog() << irsm("write_status = status_error") << endl;
-        mlog() << irsm("write abort by timeout") << endl;*/
       }
     } else {
       m_write_status = status_error;
