@@ -991,7 +991,9 @@ private:
   size_type m_size;
 };
 template <class T>
-inline c_array_view_t<T>::c_array_view_t(pointer ap_data, size_type a_size):
+inline c_array_view_t<T>::c_array_view_t(pointer ap_data,
+  size_type a_size
+):
   mp_data(ap_data),
   #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
