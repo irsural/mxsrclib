@@ -1942,8 +1942,6 @@ bool irs::mxnet_client_t::find_range(mxn_cnt_t* ap_index, mxn_cnt_t* ap_count)
     *ap_index = begin - m_write_flags.begin();
     *ap_count = end - begin;
     m_index_var = end - m_write_flags.begin();
-    irs_uarc index_bytes = (*ap_index)*m_size_var_byte;
-    irs_uarc count_bytes = (*ap_count)*m_size_var_byte;
     is_finded = true;
   } else {
     m_index_var = m_write_flags.size();
