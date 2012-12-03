@@ -68,17 +68,35 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
   return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
 }
 # else // QT_CORE_LIB
+inline std::wstring QStringToStdWString(const QString &str)
+{
+  #ifdef _MSC_VER
+  return std::wstring(reinterpret_cast<const wchar_t*>(str.utf16()));
+  #else
+  return str.toStdWString();
+  #endif
+}
+
+inline QString StdWStringToQString(const std::wstring &str)
+{
+  #ifdef _MSC_VER
+  return QString::fromUtf16(
+    reinterpret_cast<const unsigned short*>(str.c_str()));
+  #else
+  return QString::fromStdWString(str);
+  #endif
+}
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
   const std_string_t& a_str_in)
 {
-  QString String = QString::fromStdString(a_str_in);
-  return String.toStdWString();
+  QString Str = QString::fromStdString(a_str_in);
+  return QStringToStdWString(Str);
 }
 inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
   const std_string_t& a_str_in)
 {
-  QString String = QString::fromStdString(a_str_in);
-  return String.toStdWString();
+  QString Str = QString::fromStdString(a_str_in);
+  return QStringToStdWString(Str);
 }
 # endif // QT_CORE_LIB
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
@@ -192,14 +210,14 @@ inline irs_string_t str_conv_simple(const irs_string_t&,
 inline std_string_t str_conv_simple(const std_string_t&,
   const std_wstring_t& a_str_in)
 {
-  QString String = QString::fromStdWString(a_str_in);
-  return String.toStdString();
+  QString Str = StdWStringToQString(a_str_in);
+  return Str.toStdString();
 }
 inline irs_string_t str_conv_simple(const irs_string_t&,
   const std_wstring_t& a_str_in)
 {
-  QString String = QString::fromStdWString(a_str_in);
-  return String.toStdString();
+  QString Str = StdWStringToQString(a_str_in);
+  return Str.toStdString();
 }
 # endif // QT_CORE_LIB
 template<class T>
