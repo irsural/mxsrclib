@@ -2599,13 +2599,16 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_read_data(),
   m_init_success(false),
   m_init_command(),
-  m_init_count(0)
+  m_init_count(0),
+  m_init_channel_ident(0),
+  m_transmit_data()
 {
   m_init_command.push_back("++addr " + irs::string_t(a_address));
   m_init_command.push_back("++auto 0");
   m_init_command.push_back("++mode 1");
   m_init_count = 0;
   m_init_mode = mode_start;
+  m_init_channel_ident = channel_next();
 }
 irs::hardflow::prologix_flow_t::~prologix_flow_t()
 {
@@ -2685,9 +2688,9 @@ void irs::hardflow::prologix_flow_t::tick()
       if (m_init_count < m_init_command.size()) {
         irs::string_t init_comm = m_init_command[m_init_count];
         init_comm += m_end_line_write;
-        irs::raw_data_t<irs_u8> transmit_data = u8_from_str(init_comm);
-        m_fixed_flow.write(channel_next(), transmit_data.data(),
-          transmit_data.size());
+        m_transmit_data = u8_from_str(init_comm);
+        m_fixed_flow.write(m_init_channel_ident, m_transmit_data.data(),
+          m_transmit_data.size());
         m_init_mode = mode_wait;
       } else {
         m_init_mode = mode_free;

@@ -934,6 +934,8 @@ class prologix_flow_t: public irs::hardflow_t {
   bool m_init_success;
   vector<irs::string_t> m_init_command;
   unsigned int m_init_count;
+  size_type m_init_channel_ident;
+  irs::raw_data_t<irs_u8> m_transmit_data;
 
   static irs::raw_data_t<irs_u8> u8_from_str(const irs::string_t& a_string);
   static irs::string_t str_from_u8(const irs::raw_data_t<irs_u8>& a_data);
