@@ -2577,3 +2577,214 @@ void irs::hardflow::simple_tcp_flow_t::tick()
 {
   mp_simple_tcp->tick();
 }
+
+irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
+  int a_address):
+  mp_hardflow(ap_hardflow),
+  m_buffer(),
+  m_fixed_flow(mp_hardflow.get()),
+  m_is_write(false),
+  m_is_write_wait(false),
+  m_is_read(false),
+  m_is_read_wait(false),
+  m_write_mode(mode_free),
+  m_read_mode(mode_free),
+  m_init_mode(mode_free),
+  m_channel_ident(0),
+  m_write_data(),
+  m_read_chunk_size(100),
+  m_end_line_write(irst("\r\n")),
+  m_end_line_read(irst("\r\n")),
+  m_read_string(irst("")),
+  m_read_data(),
+  m_init_success(false),
+  m_init_command(),
+  m_init_count(0)
+{
+  m_init_command.push_back("++addr " + irs::string_t(a_address));
+  m_init_command.push_back("++auto 0");
+  m_init_command.push_back("++mode 1");
+  m_init_count = 0;
+  m_init_mode = mode_start;
+}
+irs::hardflow::prologix_flow_t::~prologix_flow_t()
+{
+}
+irs::hardflow::simple_tcp_flow_t::string_type
+  irs::hardflow::prologix_flow_t::param(const string_type &a_name)
+{
+  return mp_hardflow->param(a_name);
+}
+void irs::hardflow::prologix_flow_t::set_param(const string_type &a_name,
+  const string_type &a_value)
+{
+  mp_hardflow->set_param(a_name, a_value);
+}
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::prologix_flow_t::read(size_type a_channel_ident,
+  irs_u8 *ap_buf, size_type a_size)
+{
+  size_type read_size = 0;
+  if (!m_is_read) {
+    if (!m_is_read_wait) {
+      m_buffer = "++read" + m_end_line_write;
+      m_read_data = u8_from_str(m_buffer);
+      m_channel_ident = a_channel_ident;
+      m_read_mode = mode_start_read;
+      m_is_read_wait = true;
+    }
+    read_size = 0;
+  } else {
+    irs::c_array_view_t<irs_u8> array_view(ap_buf, a_size);
+    irs::mem_copy(m_read_data, 0, array_view, 0, m_read_data.size());
+    read_size = a_size;
+    m_is_read_wait = false;
+    m_is_read = false;
+  }
+  return read_size;
+}
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::prologix_flow_t::write(size_type a_channel_ident,
+  const irs_u8 *ap_buf, size_type a_size)
+{
+  size_type write_size = 0;
+  if (!m_is_write) {
+    if (!m_is_write_wait) {
+      m_buffer.assign(reinterpret_cast<const char*>(ap_buf), a_size);
+      m_buffer += m_end_line_write;
+      m_write_data = u8_from_str(m_buffer);
+      m_channel_ident = a_channel_ident;
+      m_write_mode = mode_write;
+      m_is_write_wait = true;
+    }
+    write_size = 0;
+  } else {
+    write_size = a_size;
+    m_is_write_wait = false;
+    m_is_write = false;
+  }
+  return write_size;
+}
+irs::hardflow::simple_tcp_flow_t::size_type
+  irs::hardflow::prologix_flow_t::channel_next()
+{
+  return mp_hardflow->channel_next();
+}
+bool irs::hardflow::prologix_flow_t::is_channel_exists(size_type a_channel_ident)
+{
+  return mp_hardflow->is_channel_exists(a_channel_ident);
+}
+void irs::hardflow::prologix_flow_t::tick()
+{
+  mp_hardflow->tick();
+  m_fixed_flow.tick();
+  switch (m_init_mode) {
+    case mode_free: {
+    } break;
+    case mode_start: {
+      if (m_init_count < m_init_command.size()) {
+        irs::string_t init_comm = m_init_command[m_init_count];
+        init_comm += m_end_line_write;
+        irs::raw_data_t<irs_u8> transmit_data = u8_from_str(init_comm);
+        m_fixed_flow.write(channel_next(), transmit_data.data(),
+          transmit_data.size());
+        m_init_mode = mode_wait;
+      } else {
+        m_init_mode = mode_free;
+        m_init_success = true;
+      }
+    } break;
+    case mode_wait: {
+      switch (m_fixed_flow.write_status()) {
+        case irs::hardflow::fixed_flow_t::status_success: { 
+          m_init_count++;
+        } 
+        case irs::hardflow::fixed_flow_t::status_error: {
+          m_init_mode = mode_start;
+        } break;
+      }
+    } break;
+  }
+  if (m_init_success) {
+    switch (m_write_mode) {
+      case mode_free: {
+      } break;
+      case mode_write: {
+        m_fixed_flow.write(m_channel_ident, m_write_data.data(),
+          m_write_data.size());
+        m_write_mode = mode_write_wait;
+      } break;
+      case mode_write_wait: {
+        switch (m_fixed_flow.write_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_is_write = true;
+            m_write_mode = mode_free;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            m_write_mode = mode_write;
+          } break;
+        }
+      } break;
+    }
+    switch (m_read_mode) {
+      case mode_free: {
+      } break;
+      case mode_start_read: {
+        m_fixed_flow.write(m_channel_ident, m_read_data.data(),
+          m_read_data.size());
+        m_read_mode = mode_start_read_wait;
+      } break;
+      case mode_start_read_wait: {
+        switch (m_fixed_flow.write_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_read_mode = mode_read;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            m_read_mode = mode_start_read;
+          } break;
+        }
+      } break;
+      case mode_read: {
+        m_read_data.clear();
+        m_read_data.resize(m_read_chunk_size);
+        m_read_mode = mode_read_wait;
+      } break;
+      case mode_read_wait: {
+        irs_u8* p_data = m_read_data.data() + m_read_data.size() -
+          m_read_chunk_size;
+        size_t cur_read_size = mp_hardflow->read(
+          m_channel_ident, p_data, m_read_chunk_size);
+        m_read_data.resize(m_read_data.size() + cur_read_size);
+        irs::raw_data_t<irs_u8> transmit_data_copy = m_read_data;
+        transmit_data_copy.resize(m_read_data.size() - m_read_chunk_size);
+        irs::string_t read_str = str_from_u8(transmit_data_copy);
+        size_t pos_end_line = read_str.find(m_end_line_read);
+        if (pos_end_line != irs::string_t::npos) {
+          m_read_string = read_str.substr(0, pos_end_line);
+          m_read_data = u8_from_str(m_read_string);
+          m_read_mode = mode_free;
+          m_is_read = true;
+        } else {
+          // ≈сли не нашли конец строки повтор€ем чтение
+        }
+      } break;
+    }
+  }
+}
+irs::raw_data_t<irs_u8> irs::hardflow::prologix_flow_t::u8_from_str(
+  const irs::string_t& a_string)
+{
+  irs::irs_string_t str_simple = IRS_SIMPLE_FROM_TYPE_STR(a_string.c_str());
+  const irs_u8* p_str_u8 = reinterpret_cast<const irs_u8*>(str_simple.c_str());
+  irs::raw_data_t<irs_u8> data_u8(p_str_u8, str_simple.size());
+  return data_u8;
+}
+irs::string_t irs::hardflow::prologix_flow_t::str_from_u8(
+  const irs::raw_data_t<irs_u8>& a_data)
+{
+  const char* p_data = reinterpret_cast<const char*>(a_data.data());
+  irs::irs_string_t str_simple(p_data, a_data.size());
+  irs::string_t str_res = IRS_TYPE_FROM_SIMPLE_STR(str_simple.c_str());
+  return str_res;
+}
+

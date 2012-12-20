@@ -899,6 +899,61 @@ private:
 };
 //! @}
 
+//! \brief Прослойка для работы с prologix-gpib
+//! \author
+class prologix_flow_t: public irs::hardflow_t {
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  irs::irs_string_t m_buffer;
+  irs::hardflow::fixed_flow_t m_fixed_flow;
+  bool m_is_write;
+  bool m_is_write_wait;
+  bool m_is_read;
+  bool m_is_read_wait;
+  enum mode_t {
+    mode_free,
+    mode_start,
+    mode_wait,
+    mode_error,
+    mode_write,
+    mode_write_wait,
+    mode_read,
+    mode_read_wait,
+    mode_start_read,
+    mode_start_read_wait
+  };
+  mode_t m_write_mode;
+  mode_t m_read_mode;
+  mode_t m_init_mode;
+  size_type m_channel_ident;
+  irs::raw_data_t<irs_u8> m_write_data;
+  const size_t m_read_chunk_size;
+  const irs::string_t m_end_line_write;
+  const irs::string_t m_end_line_read;
+  irs::string_t m_read_string;
+  irs::raw_data_t<irs_u8> m_read_data;
+  bool m_init_success;
+  vector<irs::string_t> m_init_command;
+  unsigned int m_init_count;
+
+  static irs::raw_data_t<irs_u8> u8_from_str(const irs::string_t& a_string);
+  static irs::string_t str_from_u8(const irs::raw_data_t<irs_u8>& a_data);
+
+public:
+  prologix_flow_t(irs::hardflow_t* ap_hardflow, int a_address);
+  virtual ~prologix_flow_t();
+  virtual string_type param(const string_type& a_name);
+  virtual void set_param(const string_type& a_name,
+    const string_type& a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8* ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8* ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+};
+//! @}
+
 } // namespace hardflow
 
 } // namespace irs
