@@ -2603,9 +2603,14 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_channel_ident(0),
   m_transmit_data()
 {
-  m_init_command.push_back("++addr " + irs::string_t(a_address));
-  m_init_command.push_back("++auto 0");
-  m_init_command.push_back("++mode 1");
+  m_init_command.push_back(irst("++addr " + irs::string_t(a_address)));
+  m_init_command.push_back(irst("++auto 0"));
+  m_init_command.push_back(irst("++mode 1"));
+  m_init_command.push_back(irst("++eoi 1"));
+  m_init_command.push_back(irst("++eos 0"));
+  m_init_command.push_back(irst("++eot_enable 0"));
+  m_init_command.push_back(irst("++eot_char 0"));
+  
   m_init_count = 0;
   m_init_mode = mode_start;
   m_init_channel_ident = channel_next();
@@ -2630,7 +2635,7 @@ irs::hardflow::simple_tcp_flow_t::size_type
   size_type read_size = 0;
   if (!m_is_read) {
     if (!m_is_read_wait) {
-      m_buffer = "++read" + m_end_line_write;
+      m_buffer = irst("++read") + m_end_line_write;
       m_read_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
       m_read_mode = mode_start_read;
