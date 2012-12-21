@@ -901,9 +901,10 @@ private:
 
 //! \brief Прослойка для работы с prologix-gpib
 //! \author
-class prologix_flow_t: public irs::hardflow_t {
+class prologix_flow_t: public irs::hardflow_t
+{
   irs::handle_t<irs::hardflow_t> mp_hardflow;
-  irs::irs_string_t m_buffer;
+  irs::string_t m_buffer;
   irs::hardflow::fixed_flow_t m_fixed_flow;
   bool m_is_write;
   bool m_is_write_wait;

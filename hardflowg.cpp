@@ -2603,7 +2603,7 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_channel_ident(0),
   m_transmit_data()
 {
-  m_init_command.push_back(irst("++addr " + irs::string_t(a_address)));
+  m_init_command.push_back(irst("++addr ") + irs::string_t(a_address));
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
@@ -2618,7 +2618,7 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
 irs::hardflow::prologix_flow_t::~prologix_flow_t()
 {
 }
-irs::hardflow::simple_tcp_flow_t::string_type
+irs::hardflow_t::string_type
   irs::hardflow::prologix_flow_t::param(const string_type &a_name)
 {
   return mp_hardflow->param(a_name);
@@ -2628,7 +2628,7 @@ void irs::hardflow::prologix_flow_t::set_param(const string_type &a_name,
 {
   mp_hardflow->set_param(a_name, a_value);
 }
-irs::hardflow::simple_tcp_flow_t::size_type
+irs::hardflow_t::size_type
   irs::hardflow::prologix_flow_t::read(size_type a_channel_ident,
   irs_u8 *ap_buf, size_type a_size)
 {
@@ -2651,7 +2651,7 @@ irs::hardflow::simple_tcp_flow_t::size_type
   }
   return read_size;
 }
-irs::hardflow::simple_tcp_flow_t::size_type
+irs::hardflow_t::size_type
   irs::hardflow::prologix_flow_t::write(size_type a_channel_ident,
   const irs_u8 *ap_buf, size_type a_size)
 {
@@ -2673,7 +2673,7 @@ irs::hardflow::simple_tcp_flow_t::size_type
   }
   return write_size;
 }
-irs::hardflow::simple_tcp_flow_t::size_type
+irs::hardflow_t::size_type
   irs::hardflow::prologix_flow_t::channel_next()
 {
   return mp_hardflow->channel_next();
