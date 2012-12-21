@@ -2658,7 +2658,9 @@ irs::hardflow_t::size_type
   size_type write_size = 0;
   if (!m_is_write) {
     if (!m_is_write_wait) {
-      m_buffer.assign(reinterpret_cast<const char*>(ap_buf), a_size);
+      //m_buffer.assign(reinterpret_cast<const char*>(ap_buf), a_size);
+      irs::raw_data_t<irs_u8> data(ap_buf, a_size);
+      m_buffer = str_from_u8(data);
       m_buffer += m_end_line_write;
       m_write_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
