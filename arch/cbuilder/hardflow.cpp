@@ -38,7 +38,7 @@ irs::com_flow_t::com_flow_t(
   COMMTIMEOUTS time_outs;
   // открываем ком порт
   m_com = CreateFile(
-    a_portname.c_str() ,
+    (irst("\\\\.\\") + a_portname).c_str(),
     GENERIC_READ|GENERIC_WRITE,
     0,
     NULL,
