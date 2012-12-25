@@ -47,8 +47,8 @@ irs::com_flow_t::com_flow_t(
     NULL);
   if(m_com == INVALID_HANDLE_VALUE){
     fsuccess = FALSE;
-    ShowMessage(last_error_str().c_str());
-    IRS_LIB_ERROR(ec_standard, "Ошибка открытия COM-порта");
+    IRS_LIB_ERROR(ec_standard,
+      ("Ошибка открытия COM-порта. " + last_error_str()).c_str());
   }
   if(fsuccess){
     // настраиваем
