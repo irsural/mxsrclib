@@ -541,8 +541,9 @@ private:
   {
     mxfact_event_t::exec();
 
-    //if (m_is_first_throw) {
-      //m_is_first_throw = false;
+    if (m_is_first_throw) {
+      m_is_first_throw = true;
+
       ostringstream out_stream;
       m_error_out.out_info(out_stream);
       out_stream << '\0';
@@ -551,8 +552,8 @@ private:
       #else //__BORLANDC__
       throw runtime_error(out_stream.str().c_str());
       #endif //__BORLANDC__
-    //}
-    //m_is_first_throw = true;
+    }
+    m_is_first_throw = true;
   }
 public:
   exception_error_handler_t(
