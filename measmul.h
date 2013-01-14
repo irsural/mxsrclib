@@ -2638,7 +2638,7 @@ public:
   virtual void set_range_auto();
   // Установка входного сопротивления канала
   //virtual void set_filter(double a_time_interval);
-  
+
   mxdata_t* mxdata();
 private:
   enum {
@@ -2722,6 +2722,88 @@ private:
   mode_t m_mode;
   filter_settings_t m_filter;
   size_type m_window_size;
+};
+
+//! \brief Класс для работы с термометром termex lt-300
+class termex_lt_300_t: public mxmultimeter_t
+{
+public:
+  //! \brief Конструктор
+  termex_lt_300_t(hardflow_t* ap_hardflow);
+  //! \brief Деструктор
+  ~termex_lt_300_t();
+  //! \brief Установить режим измерения постоянного напряжения
+  virtual inline void set_dc() {}
+  //! \brief Установить режим измерения переменного напряжения
+  virtual inline void set_ac() {}
+  //! \brief Установить положителный фронт запуска
+  virtual void set_positive() {}
+  //! \brief Установить отрицательный фронт канала
+  virtual void set_negative() {}
+  //! \brief Чтение значения при текущем типа измерения
+  virtual void get_value(double *ap_value);
+  //! \brief Чтение напряжения
+  virtual void get_voltage(double *voltage) {}
+  //! \brief Чтения силы тока
+  virtual void get_current(double *current) {}
+  //! \brief Чтение сопротивления
+  virtual void get_resistance2x(double *resistance) {}
+  //! \brief Чтение сопротивления
+  virtual void get_resistance4x(double *resistance) {}
+  //! \brief Чтение частоты
+  virtual void get_frequency(double *frequency) {}
+  //! \brief Чтение усредненного сдвира фаз
+  virtual void get_phase_average(double *phase_average) {}
+  //! \brief Чтение фазового сдвига
+  virtual void get_phase(double *phase) {}
+  //! \brief Чтение временного интервала
+  virtual void get_time_interval(double *time_interval) {}
+  //! \brief Чтение усредненного временного интервала
+  virtual void get_time_interval_average(double *ap_time_interval) {}
+  //! \brief Запуск автокалибровки (команда ACAL) мультиметра
+  virtual void auto_calibration() {}
+  //! \brief Чтение статуса текущей операции
+  virtual meas_status_t status();
+  //! \brief Прерывание текущей операции
+  virtual void abort() {}
+  //! \brief Элементарное действие
+  virtual void tick();
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
+  virtual void set_nplc(double nplc) {}
+  //! \brief Установка времени интегрирования в c
+  virtual void set_aperture(double aperture) {}
+  //! \brief Установка полосы фильтра
+  virtual void set_bandwidth(double bandwidth) {}
+  //! \brief Установка входного сопротивления канала
+  virtual void set_input_impedance(double impedance) {}
+  //! \brief Устсновка уровня запуска канала
+  virtual void set_start_level(double level) {}
+  //! \brief Установка диапазона измерений
+  virtual void set_range(type_meas_t a_type_meas, double a_range) {}
+  //! \brief Установка автоматического выбора диапазона измерений
+  virtual void set_range_auto() {}
+
+private:
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  irs::hardflow::fixed_flow_t m_fixed_flow;
+  enum mode_t {
+    mode_free,
+    mode_read,
+    mode_read_wait,
+    mode_start_read,
+    mode_start_read_wait
+  };
+  mode_t m_mode;
+  const size_t m_read_chunk_size;
+  const irs::irs_string_t m_end_line;
+  irs::irs_string_t m_read_string;
+  irs::raw_data_t<irs_u8> m_read_data;
+  irs::raw_data_t<irs_u8> m_transmit_data;
+  meas_status_t m_status;
+  double *mp_value;
+  irs_uarc m_ch;
+
+  static irs::raw_data_t<irs_u8> u8_from_str(const irs::irs_string_t& a_string);
 };
 
 //! @}

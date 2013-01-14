@@ -4872,5 +4872,99 @@ irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
   return &m_modbus_client;
 }
 
+irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
+  mp_hardflow(ap_hardflow),
+  m_fixed_flow(mp_hardflow.get()),
+  m_mode(mode_free),
+  m_read_chunk_size(100),
+  m_end_line("\r"),
+  m_read_string(""),
+  m_read_data(),
+  m_transmit_data(),
+  m_status(meas_status_success),
+  mp_value(IRS_NULL),
+  m_ch(0)
+{
+
+}
+
+irs::termex_lt_300_t::~termex_lt_300_t()
+{
+}
+
+void irs::termex_lt_300_t::tick()
+{
+  mp_hardflow->tick();
+  m_fixed_flow.tick();
+  switch (m_mode) {
+    case mode_free: {
+    } break;
+    case mode_start_read: {
+      m_fixed_flow.write(m_ch, m_transmit_data.data(),
+        m_transmit_data.size());
+      m_mode = mode_start_read_wait;
+    } break;
+    case mode_start_read_wait: {
+      switch (m_fixed_flow.write_status()) {
+        case irs::hardflow::fixed_flow_t::status_success: {
+          m_mode = mode_read;
+        } break;
+        case irs::hardflow::fixed_flow_t::status_error: {
+          m_mode = mode_start_read;
+        } break;
+      }
+    } break;
+    case mode_read: {
+      m_read_data.clear();
+      m_read_data.resize(m_read_chunk_size);
+      m_mode = mode_read_wait;
+    } break;
+    case mode_read_wait: {
+      irs_u8* p_data = m_read_data.data() + m_read_data.size() -
+        m_read_chunk_size;
+      size_t cur_read_size = mp_hardflow->read(
+        m_ch, p_data, m_read_chunk_size);
+      m_read_data.resize(m_read_data.size() + cur_read_size);
+      irs::raw_data_t<irs_u8> transmit_data_copy = m_read_data;
+      transmit_data_copy.resize(m_read_data.size() - m_read_chunk_size);
+      irs::irs_string_t read_str =
+        reinterpret_cast<char*>(transmit_data_copy.data());
+      size_t pos_end_line = read_str.find(m_end_line);
+      if (pos_end_line != irs::string_t::npos) {
+        m_read_string = read_str.substr(0, pos_end_line);
+        istrstream stream(m_read_string.c_str());
+        stream >> *mp_value;
+        stream >> *mp_value;
+        m_mode = mode_free;
+        m_status = meas_status_success;
+      } else {
+        // ≈сли не нашли конец строки повтор€ем чтение
+      }
+    } break;
+  }
+}
+
+void irs::termex_lt_300_t::get_value(double *ap_value)
+{
+  mp_value = ap_value;
+  m_mode = mode_start_read;
+  m_transmit_data = u8_from_str("d" + m_end_line);
+  m_status = meas_status_busy;
+  m_ch = mp_hardflow->channel_next();
+}
+
+meas_status_t irs::termex_lt_300_t::status()
+{
+  return m_status;
+}
+
+irs::raw_data_t<irs_u8> irs::termex_lt_300_t::u8_from_str(
+  const irs::irs_string_t& a_string)
+{
+  irs::irs_string_t str_simple = a_string;
+  const irs_u8* p_str_u8 = reinterpret_cast<const irs_u8*>(str_simple.c_str());
+  irs::raw_data_t<irs_u8> data_u8(p_str_u8, str_simple.size());
+  return data_u8;
+}
 //---------------------------------------------------------------------------
 
