@@ -2725,7 +2725,7 @@ private:
 };
 
 //! \brief Класс для работы с термометром termex lt-300
-//! \detail Параметры hardflow 4800, FALSE, NOPARITY, 8, ONESTOPBIT,
+//! \details Параметры hardflow 4800, FALSE, NOPARITY, 8, ONESTOPBIT,
 //!   DTR_CONTROL_ENABLE
 class termex_lt_300_t: public mxmultimeter_t
 {
