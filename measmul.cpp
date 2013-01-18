@@ -4941,6 +4941,8 @@ void irs::termex_lt_300_t::tick()
         // ≈сли не нашли конец строки повтор€ем чтение
       }
     } break;
+    default: {
+    } break;
   }
 }
 
