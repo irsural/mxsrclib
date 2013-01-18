@@ -2735,6 +2735,8 @@ void irs::hardflow::prologix_flow_t::tick()
           case irs::hardflow::fixed_flow_t::status_error: {
             m_write_mode = mode_write;
           } break;
+          default: {
+          } break;
         }
       } break;
       default: {
@@ -2755,6 +2757,8 @@ void irs::hardflow::prologix_flow_t::tick()
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             m_read_mode = mode_start_read;
+          } break;
+          default: {
           } break;
         }
       } break;

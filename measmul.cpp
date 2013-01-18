@@ -4912,6 +4912,8 @@ void irs::termex_lt_300_t::tick()
         case irs::hardflow::fixed_flow_t::status_error: {
           m_mode = mode_start_read;
         } break;
+        default: {
+        } break;
       }
     } break;
     case mode_read: {
