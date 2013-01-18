@@ -156,6 +156,14 @@ void num_to_str(const N& a_num, S* ap_str,
   *ap_str = str_conv<S>(base_str);
 }
 
+template<class N>
+irs::string_t num_to_str(const N& a_num, const locale& a_loc = irs::loc().get())
+{
+  irs::string_t base_str;
+  number_to_string(a_num, &base_str, a_loc);
+  return base_str;
+}
+
 template<class T, class C>
 void number_to_string_classic(const T& a_num, basic_string<C>* ap_str)
 {

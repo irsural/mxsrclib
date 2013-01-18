@@ -691,6 +691,8 @@ public:
     const table_united_cells_t& a_table_united_cells);
   inline const cell_type_t& read_cell(
     const size_type a_col_index, const size_type a_row_index) const;
+  inline cell_type_t& read_cell(
+    const size_type a_col_index, const size_type a_row_index);
   inline void write_cell(
     const size_type a_col_index,
     const size_type a_row_index,
@@ -780,6 +782,16 @@ table_united_cells_t<cell_type_t>::read_cell(const size_type a_col_index,
     // ќставл€ем прежние координаты €чейки
   }
   return m_table.read_cell(final_col_index, final_row_index).value;
+}
+
+template <class cell_type_t>
+inline cell_type_t& table_united_cells_t<cell_type_t>::read_cell(
+  const size_type a_col_index, const size_type a_row_index)
+{
+  const table_united_cells_t<cell_type_t>* table_united_cells = this;
+  const cell_type_t* cell =
+    &table_united_cells->read_cell(a_col_index, a_row_index);
+  return *const_cast<cell_type_t*>(cell);
 }
 
 template <class cell_type_t>

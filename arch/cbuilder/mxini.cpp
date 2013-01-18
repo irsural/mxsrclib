@@ -10,7 +10,9 @@
 #pragma hdrstop
 #endif // __BORLANDC__
 
-#pragma link "cspin"
+#if defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE3)
+# pragma link "cspin"
+#endif // defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE3)
 
 #include <cbsysutils.h>
 

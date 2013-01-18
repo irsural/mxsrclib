@@ -266,6 +266,53 @@ bool irs::calc::func_r_dbl_a_dbl_dbl_t::exec(
 
 namespace {
 
+class assert_t: public irs::calc::function_t
+{
+public:
+  typedef irs::calc::stringns_t string_type;
+  typedef irs::variant::variant_t variant_type;
+  typedef irs::calc::calc_variables_t calc_variables_type;
+  typedef irs::calc::mutable_ref_t mutable_ref_type;
+  virtual bool exec(
+    calc_variables_type* ap_calc_variables,
+    vector<mutable_ref_type>* ap_parameters,
+    variant_type* ap_returned_value) const;
+};
+
+bool assert_t::exec(
+  calc_variables_type* ap_calc_variables,
+  vector<mutable_ref_type>* ap_parameters,
+  variant_type* ap_returned_value) const
+{
+  bool fsuccess = true;
+  if (ap_parameters->size() != 1) {
+    fsuccess = false;
+  }
+  variant_type arg_variant;
+  if (fsuccess) {
+    if (ap_calc_variables->value_read((*ap_parameters)[0], &arg_variant)) {
+      if (!arg_variant.convert_to(irs::variant::var_type_bool)) {
+        // Недопустимый тип аргумента
+        fsuccess = false;
+      }
+    } else {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    if (!arg_variant.as_bool()) {
+      fsuccess = false;
+    }
+  }
+  if (fsuccess) {
+    *ap_returned_value = true;
+  } else {
+    *ap_returned_value = false;
+  }
+  return fsuccess;
+}
+
+
 class pow_t: public irs::calc::function_t
 {
 public:
@@ -1197,6 +1244,7 @@ irs::calc::calculator_t::calculator_t():
   function_add(irst("max"),
     new func_r_dbl_a_dbl_dbl_t(func_r_dbl_a_dbl_dbl_ptr));
 
+  function_add(irst("assert"), new assert_t());
   function_add(irst("pow"), new pow_t());
   function_add(irst("number_to_string"), new number_to_string_t());
   function_add(irst("string_to_number"), new string_to_number_t());
