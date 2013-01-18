@@ -2712,6 +2712,8 @@ void irs::hardflow::prologix_flow_t::tick()
         case irs::hardflow::fixed_flow_t::status_error: {
           m_init_mode = mode_start;
         } break;
+        default: {
+        } break;
       }
     } break;
     default: {
