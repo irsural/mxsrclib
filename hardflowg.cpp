@@ -2714,6 +2714,8 @@ void irs::hardflow::prologix_flow_t::tick()
         } break;
       }
     } break;
+    default: {
+    } break;
   }
   if (m_init_success) {
     switch (m_write_mode) {
@@ -2734,6 +2736,8 @@ void irs::hardflow::prologix_flow_t::tick()
             m_write_mode = mode_write;
           } break;
         }
+      } break;
+      default: {
       } break;
     }
     switch (m_read_mode) {
@@ -2777,6 +2781,8 @@ void irs::hardflow::prologix_flow_t::tick()
         } else {
           // ≈сли не нашли конец строки повтор€ем чтение
         }
+      } break;
+      default: {
       } break;
     }
   }
