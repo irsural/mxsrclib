@@ -57,7 +57,7 @@ irs::com_flow_t::com_flow_t(
     fsuccess = SetupComm(m_com,m_max_size_write*2, m_max_size_write*2);
     if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
-  if(fsuccess) {
+  if (fsuccess) {
     get_param_dbc();
     m_com_param.baud_rate = a_baud_rate;
     m_com_param.f_parity = a_f_parity;
@@ -68,7 +68,9 @@ irs::com_flow_t::com_flow_t(
 
     set_and_get_param_dbc();
     fsuccess = GetCommTimeouts(m_com,&time_outs);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
   }
   if (fsuccess) {
     time_outs.ReadIntervalTimeout = 10;
@@ -100,49 +102,51 @@ irs::com_flow_t::string_type irs::com_flow_t::param(const string_type &a_name)
 {
   string_type param_value_str = irst("");
   if(m_port_status == PS_PREFECT){
-    if(a_name == m_com_param_str.baud_rate){
+    if (a_name == m_com_param_str.baud_rate) {
       param_value_str = m_com_param.baud_rate;
-    }else if(a_name == m_com_param_str.f_parity){
+    } else if(a_name == m_com_param_str.f_parity) {
       param_value_str = m_com_param.f_parity ;
-    }else if(a_name == m_com_param_str.f_outx_cts_flow){
+    } else if(a_name == m_com_param_str.f_outx_cts_flow) {
       param_value_str = m_com_param.f_outx_cts_flow;
-    }else if(a_name == m_com_param_str.f_outx_dsr_flow){
+    } else if(a_name == m_com_param_str.f_outx_dsr_flow) {
       param_value_str = m_com_param.f_outx_dsr_flow;
-    }else if(a_name == m_com_param_str.f_dtr_control){
+    } else if(a_name == m_com_param_str.f_dtr_control) {
       param_value_str = m_com_param.f_dtr_control;
-    }else if(a_name == m_com_param_str.f_dsr_sensitivity){
+    } else if(a_name == m_com_param_str.f_dsr_sensitivity) {
       param_value_str = m_com_param.f_dsr_sensitivity;
-    }else if(a_name == m_com_param_str.f_tx_continue_on_xoff){
+    } else if(a_name == m_com_param_str.f_tx_continue_on_xoff) {
       param_value_str = m_com_param.f_tx_continue_on_xoff;
-    }else if(a_name == m_com_param_str.f_out_x){
+    } else if(a_name == m_com_param_str.f_out_x) {
       param_value_str = m_com_param.f_out_x;
-    }else if(a_name == m_com_param_str.f_in_x){
+    } else if(a_name == m_com_param_str.f_in_x) {
       param_value_str = m_com_param.f_in_x;
-    }else if(a_name == m_com_param_str.f_error_char){
+    } else if(a_name == m_com_param_str.f_error_char) {
       param_value_str = m_com_param.f_error_char;
-    }else if(a_name == m_com_param_str.f_null){
+    } else if(a_name == m_com_param_str.f_null) {
       param_value_str = m_com_param.f_null;
-    }else if(a_name == m_com_param_str.f_abort_on_error){
+    } else if (a_name == m_com_param_str.f_rts_control) {
+      param_value_str = m_com_param.f_rts_control;
+    } else if(a_name == m_com_param_str.f_abort_on_error) {
       param_value_str = m_com_param.f_abort_on_error;
-    }else if(a_name == m_com_param_str.xon_lim){
+    } else if(a_name == m_com_param_str.xon_lim) {
       param_value_str = m_com_param.xon_lim;
-    }else if(a_name == m_com_param_str.xoff_lim){
+    } else if(a_name == m_com_param_str.xoff_lim) {
       param_value_str = m_com_param.xoff_lim;
-    }else if(a_name == m_com_param_str.byte_size){
+    } else if(a_name == m_com_param_str.byte_size) {
       param_value_str = m_com_param.byte_size;
-    }else if(a_name == m_com_param_str.parity){
+    } else if(a_name == m_com_param_str.parity) {
       param_value_str = m_com_param.parity;
-    }else if(a_name == m_com_param_str.stop_bits){
+    } else if(a_name == m_com_param_str.stop_bits) {
       param_value_str = m_com_param.stop_bits;
-    }else if(a_name == m_com_param_str.xon_char){
+    } else if(a_name == m_com_param_str.xon_char) {
       param_value_str = m_com_param.xon_char;
-    }else if(a_name == m_com_param_str.xoff_char){
+    } else if(a_name == m_com_param_str.xoff_char) {
       param_value_str = m_com_param.xoff_char;
-    }else if(a_name == m_com_param_str.error_char){
+    } else if(a_name == m_com_param_str.error_char) {
       param_value_str = m_com_param.error_char;
-    }else if(a_name == m_com_param_str.eof_char){
+    } else if(a_name == m_com_param_str.eof_char) {
       param_value_str = m_com_param.eof_char;
-    }else if(a_name == m_com_param_str.evt_char){
+    } else if(a_name == m_com_param_str.evt_char) {
       param_value_str = m_com_param.evt_char;
     }
   }
@@ -153,53 +157,97 @@ void irs::com_flow_t::set_param(const string_type &a_name,
   const string_type &a_value)
 {
   bool fsuccess = true;
-  if(m_port_status == PS_PREFECT){
+  if (m_port_status == PS_PREFECT) {
     irs_u32 value = 0;
     fsuccess = a_value.to_number(value);
-    if(a_name == m_com_param_str.baud_rate) {
-      if(fsuccess){m_com_param.baud_rate = value;}
-    }else if(a_name == m_com_param_str.f_parity) {
-      if(fsuccess){m_com_param.f_parity = value;}
-    }else if(a_name == m_com_param_str.f_outx_cts_flow){
+    if (a_name == m_com_param_str.baud_rate) {
+      if (fsuccess) {
+        m_com_param.baud_rate = value;
+      }
+    } else if(a_name == m_com_param_str.f_parity) {
+      if (fsuccess) {
+        m_com_param.f_parity = value;
+      }
+    } else if(a_name == m_com_param_str.f_outx_cts_flow) {
       if(fsuccess){m_com_param.f_outx_cts_flow = value;}
-    }else if(a_name == m_com_param_str.f_outx_dsr_flow){
-      if(fsuccess){m_com_param.f_outx_dsr_flow = value;}
-    }else if(a_name == m_com_param_str.f_dtr_control){
-      if(fsuccess){m_com_param.f_dtr_control = value;}
-    }else if(a_name == m_com_param_str.f_dsr_sensitivity){
-      if(fsuccess){m_com_param.f_dsr_sensitivity = value;}
-    }else if(a_name == m_com_param_str.f_tx_continue_on_xoff){
-      if(fsuccess){m_com_param.f_tx_continue_on_xoff = value;}
-    }else if(a_name == m_com_param_str.f_out_x){
-      if(fsuccess){m_com_param.f_out_x = value;}
-    }else if(a_name == m_com_param_str.f_in_x){
-      if(fsuccess){m_com_param.f_in_x = value;}
-    }else if(a_name == m_com_param_str.f_error_char){
-      if(fsuccess){m_com_param.f_error_char = value;}
-    }else if(a_name == m_com_param_str.f_null){
-      if(fsuccess){m_com_param.f_null = value;}
-    }else if(a_name == m_com_param_str.f_abort_on_error){
-      if(fsuccess){m_com_param.f_abort_on_error = value;}
-    }else if(a_name == m_com_param_str.xon_lim){
-      if(fsuccess){m_com_param.xon_lim = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.xoff_lim){
-      if(fsuccess){m_com_param.xoff_lim = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.byte_size){
-      if(fsuccess){m_com_param.byte_size = static_cast<irs_u8>(value);}
-    }else if(a_name == m_com_param_str.parity){
-      if(fsuccess){m_com_param.parity = static_cast<irs_u8>(value);}
-    }else if(a_name == m_com_param_str.stop_bits){
-      if(fsuccess){m_com_param.stop_bits = static_cast<irs_u8>(value);}
-    }else if(a_name == m_com_param_str.xon_char){
-      if(fsuccess){m_com_param.xon_char = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.xoff_char){
-      if(fsuccess){m_com_param.xoff_char = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.error_char){
-      if(fsuccess){m_com_param.error_char = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.eof_char){
-      if(fsuccess){m_com_param.eof_char = static_cast<irs_i8>(value);}
-    }else if(a_name == m_com_param_str.evt_char){
-      if(fsuccess){m_com_param.evt_char = static_cast<irs_i8>(value);}
+    } else if(a_name == m_com_param_str.f_outx_dsr_flow) {
+      if (fsuccess) {
+        m_com_param.f_outx_dsr_flow = value;
+      }
+    } else if (a_name == m_com_param_str.f_dtr_control) {
+      if (fsuccess) {
+        m_com_param.f_dtr_control = value;
+      }
+    } else if (a_name == m_com_param_str.f_dsr_sensitivity) {
+      if (fsuccess) {
+        m_com_param.f_dsr_sensitivity = value;
+      }
+    } else if (a_name == m_com_param_str.f_tx_continue_on_xoff) {
+      if (fsuccess) {
+        m_com_param.f_tx_continue_on_xoff = value;
+      }
+    } else if (a_name == m_com_param_str.f_out_x) {
+      if (fsuccess) {
+        m_com_param.f_out_x = value;
+      }
+    } else if (a_name == m_com_param_str.f_in_x) {
+      if (fsuccess) { m_com_param.f_in_x = value;
+      }
+    } else if (a_name == m_com_param_str.f_error_char) {
+      if (fsuccess) {
+        m_com_param.f_error_char = value;
+      }
+    } else if (a_name == m_com_param_str.f_null) {
+      if (fsuccess) {
+        m_com_param.f_null = value;
+      }
+    } else if (a_name == m_com_param_str.f_rts_control) {
+      if (fsuccess) {
+        m_com_param.f_rts_control = value;
+      }
+    } else if (a_name == m_com_param_str.f_abort_on_error) {
+      if (fsuccess) {
+        m_com_param.f_abort_on_error = value; }
+    } else if (a_name == m_com_param_str.xon_lim) {
+      if (fsuccess) {
+        m_com_param.xon_lim = static_cast<irs_i8>(value);
+      }
+    } else if (a_name == m_com_param_str.xoff_lim) {
+      if (fsuccess) {
+        m_com_param.xoff_lim = static_cast<irs_i8>(value);
+      }
+    } else if (a_name == m_com_param_str.byte_size) {
+      if (fsuccess) {
+        m_com_param.byte_size = static_cast<irs_u8>(value);
+      }
+    } else if (a_name == m_com_param_str.parity) {
+      if (fsuccess) {
+        m_com_param.parity = static_cast<irs_u8>(value);
+      }
+    } else if (a_name == m_com_param_str.stop_bits) {
+      if (fsuccess) {
+        m_com_param.stop_bits = static_cast<irs_u8>(value);
+      }
+    } else if (a_name == m_com_param_str.xon_char) {
+      if (fsuccess) {
+        m_com_param.xon_char = static_cast<irs_i8>(value);
+      }
+    } else if (a_name == m_com_param_str.xoff_char) {
+      if (fsuccess) {
+        m_com_param.xoff_char = static_cast<irs_i8>(value);
+      }
+    } else if (a_name == m_com_param_str.error_char) {
+      if (fsuccess) {
+        m_com_param.error_char = static_cast<irs_i8>(value);
+      }
+    } else if(a_name == m_com_param_str.eof_char) {
+      if (fsuccess) {
+        m_com_param.eof_char = static_cast<irs_i8>(value);
+      }
+    } else if (a_name == m_com_param_str.evt_char) {
+      if (fsuccess) {
+        m_com_param.evt_char = static_cast<irs_i8>(value);
+      }
     }
     set_and_get_param_dbc();
   }
@@ -343,11 +391,13 @@ void irs::com_flow_t::set_and_get_param_dbc()
 {
   DWORD fsuccess = 1;
   DCB dcb;
-  if(m_port_status == PS_DEFECT){
+  if (m_port_status == PS_DEFECT) {
     fsuccess = 0;
-  }else{
+  } else {
     fsuccess = GetCommState(m_com, &dcb);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
   }
   if(fsuccess){
     dcb.BaudRate = m_com_param.baud_rate;
@@ -361,6 +411,7 @@ void irs::com_flow_t::set_and_get_param_dbc()
     dcb.fInX = m_com_param.f_in_x;
     dcb.fErrorChar = m_com_param.f_error_char;
     dcb.fNull = m_com_param.f_null;
+    dcb.fRtsControl = m_com_param.f_rts_control;
     dcb.fAbortOnError = m_com_param.f_abort_on_error;
     dcb.XonLim = m_com_param.xon_lim;
     dcb.XoffLim = m_com_param.xoff_lim;
@@ -373,9 +424,12 @@ void irs::com_flow_t::set_and_get_param_dbc()
     dcb.EofChar = m_com_param.eof_char;
     dcb.EvtChar = m_com_param.evt_char;
     fsuccess = SetCommState(m_com, &dcb);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR(); return;}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+      return;
+    }
     get_param_dbc();
-  }else{
+  } else {
     m_port_status = PS_DEFECT;
     resource_free();
   }
@@ -390,7 +444,7 @@ void irs::com_flow_t::get_param_dbc()
     fsuccess = GetCommState(m_com, &dcb);
     if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
-  if(fsuccess){
+  if (fsuccess) {
     m_com_param.baud_rate = dcb.BaudRate;
     m_com_param.f_parity = dcb.fParity;
     m_com_param.f_outx_cts_flow = dcb.fOutxCtsFlow;
@@ -402,6 +456,7 @@ void irs::com_flow_t::get_param_dbc()
     m_com_param.f_in_x = dcb.fInX;
     m_com_param.f_error_char = dcb.fErrorChar;
     m_com_param.f_null = dcb.fNull;
+    m_com_param.f_rts_control = dcb.fRtsControl;
     m_com_param.f_abort_on_error = dcb.fAbortOnError;
     m_com_param.xon_lim = dcb.XonLim;
     m_com_param.xoff_lim = dcb.XoffLim;
@@ -415,15 +470,17 @@ void irs::com_flow_t::get_param_dbc()
     m_com_param.evt_char = dcb.EvtChar;
 
     //fsuccess = SetCommState(m_com, &dcb);
-    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); }
-  }else{
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
+  } else {
     m_port_status = PS_DEFECT;
     resource_free();
   }
 }
 void irs::com_flow_t::resource_free()
 {
-  if(!m_on_resource_free){
+  if (!m_on_resource_free) {
     m_on_resource_free = true;
     PurgeComm(m_com, PURGE_RXABORT|PURGE_TXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
     CloseHandle(m_com);

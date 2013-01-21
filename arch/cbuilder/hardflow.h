@@ -72,6 +72,7 @@ struct com_param_t
   irs_u32 f_in_x;
   irs_u32 f_error_char;
   irs_u32 f_null;
+  irs_u32 f_rts_control;
   irs_u32 f_abort_on_error;
   irs_u16 xon_lim;
   irs_u16 xoff_lim;
@@ -96,6 +97,7 @@ struct com_param_t
     f_in_x(0),
     f_error_char(0),
     f_null(0),
+    f_rts_control(0),
     f_abort_on_error(0),
     xon_lim(0),
     byte_size(0),
@@ -122,6 +124,7 @@ struct com_param_str_t
   const string_type f_in_x;
   const string_type f_error_char;
   const string_type f_null;
+  const string_type f_rts_control;
   const string_type f_abort_on_error;
   const string_type xon_lim;
   const string_type xoff_lim;
@@ -146,6 +149,7 @@ struct com_param_str_t
     f_in_x(irst("f_in_x")),
     f_error_char(irst("f_error_char")),
     f_null(irst("f_null")),
+    f_rts_control(irst("f_rts_control")),
     f_abort_on_error(irst("f_abort_on_error")),
     xon_lim(irst("xon_lim")),
     xoff_lim(irst("xoff_lim")),

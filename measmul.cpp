@@ -4934,6 +4934,7 @@ void irs::termex_lt_300_t::tick()
         if (pos_end_line != irs::string_t::npos) {
           m_read_string = read_str.substr(0, pos_end_line);
           istrstream stream(m_read_string.c_str());
+          stream.imbue(locale::classic());
           stream >> *mp_value;
           stream >> *mp_value;
           m_mode = mode_free;
