@@ -4874,7 +4874,7 @@ irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
 
 irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
   mp_hardflow(ap_hardflow),
-  m_fixed_flow(mp_hardflow.get()),
+  m_fixed_flow(mp_hardflow),
   m_mode(mode_free),
   m_read_chunk_size(100),
   m_end_line("\r"),

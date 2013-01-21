@@ -2786,7 +2786,7 @@ public:
   virtual void set_range_auto() {}
 
 private:
-  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  irs::hardflow_t* mp_hardflow;
   irs::hardflow::fixed_flow_t m_fixed_flow;
   enum mode_t {
     mode_free,
