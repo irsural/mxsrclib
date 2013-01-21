@@ -4927,20 +4927,20 @@ void irs::termex_lt_300_t::tick()
       size_t cur_read_size = mp_hardflow->read(
         m_ch, p_data, m_read_chunk_size);
       m_read_data.resize(m_read_data.size() + cur_read_size);
-      irs::raw_data_t<irs_u8> transmit_data_copy = m_read_data;
-      transmit_data_copy.resize(m_read_data.size() - m_read_chunk_size);
-      irs::irs_string_t read_str =
-        reinterpret_cast<char*>(transmit_data_copy.data());
-      size_t pos_end_line = read_str.find(m_end_line);
-      if (pos_end_line != irs::string_t::npos) {
-        m_read_string = read_str.substr(0, pos_end_line);
-        istrstream stream(m_read_string.c_str());
-        stream >> *mp_value;
-        stream >> *mp_value;
-        m_mode = mode_free;
-        m_status = meas_status_success;
-      } else {
-        // ≈сли не нашли конец строки повтор€ем чтение
+      if ((m_read_data.size() - m_read_chunk_size) != 0) {
+        irs::irs_string_t read_str(reinterpret_cast<char*>(m_read_data.data()),
+          m_read_data.size() - m_read_chunk_size);
+        size_t pos_end_line = read_str.find(m_end_line);
+        if (pos_end_line != irs::string_t::npos) {
+          m_read_string = read_str.substr(0, pos_end_line);
+          istrstream stream(m_read_string.c_str());
+          stream >> *mp_value;
+          stream >> *mp_value;
+          m_mode = mode_free;
+          m_status = meas_status_success;
+        } else {
+          // ≈сли не нашли конец строки повтор€ем чтение
+        }
       }
     } break;
     default: {
