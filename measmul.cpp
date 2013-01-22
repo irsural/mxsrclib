@@ -4949,7 +4949,7 @@ void irs::termex_lt_300_t::tick()
           double value;
           stream >> value;
           stream >> value;
-          if ((value <= 300) && (value >= -50)) {
+          if ((value >= -50) && (value <= 300)) {
             *mp_value = value;
             m_error_count = 0;
             m_mode = mode_free;
