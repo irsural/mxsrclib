@@ -4872,9 +4872,7 @@ irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
   return &m_modbus_client;
 }
 
-irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow,
-  counter_t a_timeout,
-  counter_t a_delay_after_get_value):
+irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
   m_mode(mode_free),
@@ -4886,14 +4884,14 @@ irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow,
   m_status(meas_status_success),
   mp_value(IRS_NULL),
   m_ch(0),
-  m_delay_after_get_value_timer(a_delay_after_get_value),
+  m_delay_between_get_value_timer(irs::make_cnt_ms(100)),
   m_get_value_size(15),
   m_value_size(0),
-  m_timeout_get_value_timer(a_timeout),
-  m_error_start_count(0),
-  m_error_read_count(0)
+  m_timeout_get_value_timer(irs::make_cnt_s(1)),
+  m_error_count(0),
+  m_max_error_count(2)
 {
-  m_delay_after_get_value_timer.start();
+  m_delay_between_get_value_timer.start();
 }
 
 irs::termex_lt_300_t::~termex_lt_300_t()
@@ -4908,10 +4906,11 @@ void irs::termex_lt_300_t::tick()
     case mode_free: {
     } break;
     case mode_start_read: {
-      if (m_delay_after_get_value_timer.check()) {
+      if (m_delay_between_get_value_timer.check()) {
         m_fixed_flow.write(m_ch, m_transmit_data.data(),
           m_transmit_data.size());
         m_mode = mode_start_read_wait;
+        m_delay_between_get_value_timer.start();
       }
     } break;
     case mode_start_read_wait: {
@@ -4938,48 +4937,39 @@ void irs::termex_lt_300_t::tick()
       size_t cur_read_size = mp_hardflow->read(
         m_ch, p_data, m_read_chunk_size);
       m_read_data.resize(m_read_data.size() + cur_read_size);
-      if ((m_read_data.size() - m_read_chunk_size) == m_value_size) {
-        irs::irs_string_t read_str(reinterpret_cast<char*>(m_read_data.data()),
-          m_read_data.size() - m_read_chunk_size);
-        size_t pos_end_line = read_str.find(m_end_line);
-        if (pos_end_line != irs::string_t::npos) {
+      irs::irs_string_t read_str(reinterpret_cast<char*>(m_read_data.data()),
+        m_read_data.size() - m_read_chunk_size);
+      size_t pos_end_line = read_str.find(m_end_line);
+      if (pos_end_line != irs::string_t::npos) {
+        m_read_string = read_str.substr(0, pos_end_line);
+        if (m_read_string.length() == (m_value_size-1)) {
           m_timeout_get_value_timer.stop();
-          m_error_start_count = 0;
-          m_read_string = read_str.substr(0, pos_end_line);
           istrstream stream(m_read_string.c_str(), m_read_string.length());
           stream.imbue(locale::classic());
           double value;
           stream >> value;
           stream >> value;
-          if ((value >= 300) && (value <= -50)) {
-            m_mode = mode_start_read;
-            m_error_read_count++;
-          } else {
+          if ((value <= 300) && (value >= -50)) {
             *mp_value = value;
-            m_error_read_count = 0;
+            m_error_count = 0;
             m_mode = mode_free;
             m_status = meas_status_success;
+          } else {
+            m_error_count++;
+            m_mode = mode_start_read;
           }
-          m_delay_after_get_value_timer.start();
-          if (m_error_read_count >= 2) {
-            m_mode = mode_free;
-            m_status = meas_status_error;
-            m_error_start_count = 0;
-          }
-        } else {
-          // ≈сли не нашли конец строки повтор€ем чтение
         }
+      } else {
+        // ≈сли не нашли конец строки повтор€ем чтение
       }
       if(m_timeout_get_value_timer.check()) {
-        if (m_error_start_count != 0) {
-          m_mode = mode_free;
-          m_status = meas_status_error;
-          m_error_start_count = 0;
-        } else {
-          m_error_start_count++;
-          m_mode = mode_start_read;
-        }
-        m_delay_after_get_value_timer.start();
+        m_error_count++;
+        m_mode = mode_start_read;
+      }
+      if (m_error_count >= m_max_error_count) {
+        m_mode = mode_free;
+        m_status = meas_status_error;
+        m_error_count = 0;
       }
     } break;
     default: {
