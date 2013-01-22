@@ -21,13 +21,14 @@
 // class com_flow_t
 irs::com_flow_t::com_flow_t(
   const string_type& a_portname,
-  const irs_u32 a_baud_rate,      //CBR_9600
-  const irs_u32 a_f_parity,       //NOPARITY
+  const irs_u32 a_baud_rate,
+  const irs_u32 a_f_parity,
   const irs_u8 a_parity,
-  const irs_u8 a_byte_size,      //8
+  const irs_u8 a_byte_size,
   const irs_u8 a_stop_bits,
   const irs_u32 a_f_dtr_control,
-  const irs_u32 a_f_rts_control): //ONESTOPBIT
+  const irs_u32 a_f_rts_control
+):
   m_max_size_write(256),
   m_com(IRS_NULL),
   mp_error_trans(irs::error_trans()),
@@ -105,11 +106,11 @@ irs::com_flow_t::~com_flow_t()
 irs::com_flow_t::string_type irs::com_flow_t::param(const string_type &a_name)
 {
   string_type param_value_str = irst("");
-  if(m_port_status == PS_PREFECT){
+  if (m_port_status == PS_PREFECT) {
     if (a_name == m_com_param_str.baud_rate) {
       param_value_str = m_com_param.baud_rate;
     } else if(a_name == m_com_param_str.f_parity) {
-      param_value_str = m_com_param.f_parity ;
+      param_value_str = m_com_param.f_parity;
     } else if(a_name == m_com_param_str.f_outx_cts_flow) {
       param_value_str = m_com_param.f_outx_cts_flow;
     } else if(a_name == m_com_param_str.f_outx_dsr_flow) {
@@ -473,7 +474,6 @@ void irs::com_flow_t::get_param_dbc()
     m_com_param.eof_char = dcb.EofChar;
     m_com_param.evt_char = dcb.EvtChar;
 
-    //fsuccess = SetCommState(m_com, &dcb);
     if (!fsuccess) {
       IRS_LIB_SEND_LAST_ERROR();
     }
