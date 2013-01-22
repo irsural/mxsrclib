@@ -2804,6 +2804,7 @@ private:
   meas_status_t m_status;
   double *mp_value;
   irs_uarc m_ch;
+  irs::timer_t m_delay_after_get_value_timer;
 
   static irs::raw_data_t<irs_u8> u8_from_str(const irs::irs_string_t& a_string);
 };

@@ -36,7 +36,6 @@ irs::com_flow_t::com_flow_t(
 {                                             
   BOOL fsuccess = TRUE;
   COMMTIMEOUTS time_outs;
-  // открываем ком порт
   m_com = CreateFile(
     (irst("\\\\.\\") + a_portname).c_str(),
     GENERIC_READ|GENERIC_WRITE,
@@ -45,15 +44,14 @@ irs::com_flow_t::com_flow_t(
     OPEN_EXISTING,
     0,
     NULL);
-  if(m_com == INVALID_HANDLE_VALUE){
+  if (m_com == INVALID_HANDLE_VALUE) {
     fsuccess = FALSE;
-    IRS_LIB_ERROR(ec_standard, "error");
-    //IRS_LIB_ERROR(ec_standard,
-      //("Ошибка открытия COM-порта. " + last_error_str()).c_str());
+    IRS_LIB_ERROR(ec_standard,
+      ("Ошибка открытия COM-порта. " + last_error_str()).c_str());
   }
-  if(fsuccess){
-    // настраиваем
-    //устанавливаем размер внутренних буферов приема-передачи в драйвере порта
+  if (fsuccess) {
+    // Настраиваем
+    // устанавливаем размер внутренних буферов приема-передачи в драйвере порта
     fsuccess = SetupComm(m_com,m_max_size_write*2, m_max_size_write*2);
     if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
   }
@@ -79,13 +77,17 @@ irs::com_flow_t::com_flow_t(
     time_outs.WriteTotalTimeoutMultiplier = 0;
     time_outs.WriteTotalTimeoutConstant = 10;
     fsuccess = SetCommTimeouts(m_com,&time_outs);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
   }
   if (fsuccess) {
-    // сброс порта
+    // Сброс порта
     fsuccess = PurgeComm(
       m_com, PURGE_RXABORT|PURGE_TXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
-    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); }
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
   }
   if (!fsuccess) {
     m_port_status = PS_DEFECT;

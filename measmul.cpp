@@ -4883,9 +4883,10 @@ irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
   m_transmit_data(),
   m_status(meas_status_success),
   mp_value(IRS_NULL),
-  m_ch(0)
+  m_ch(0),
+  m_delay_after_get_value_timer(irs::make_cnt_ms(30))
 {
-
+  m_delay_after_get_value_timer.start();
 }
 
 irs::termex_lt_300_t::~termex_lt_300_t()
@@ -4900,9 +4901,11 @@ void irs::termex_lt_300_t::tick()
     case mode_free: {
     } break;
     case mode_start_read: {
-      m_fixed_flow.write(m_ch, m_transmit_data.data(),
-        m_transmit_data.size());
-      m_mode = mode_start_read_wait;
+      if (m_delay_after_get_value_timer.check()) {
+        m_fixed_flow.write(m_ch, m_transmit_data.data(),
+          m_transmit_data.size());
+        m_mode = mode_start_read_wait;
+      }
     } break;
     case mode_start_read_wait: {
       switch (m_fixed_flow.write_status()) {
@@ -4937,6 +4940,7 @@ void irs::termex_lt_300_t::tick()
           stream.imbue(locale::classic());
           stream >> *mp_value;
           stream >> *mp_value;
+          m_delay_after_get_value_timer.start();
           m_mode = mode_free;
           m_status = meas_status_success;
         } else {
