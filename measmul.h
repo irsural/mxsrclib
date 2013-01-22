@@ -2731,7 +2731,9 @@ class termex_lt_300_t: public mxmultimeter_t
 {
 public:
   //! \brief Конструктор
-  termex_lt_300_t(hardflow_t* ap_hardflow);
+  termex_lt_300_t(hardflow_t* ap_hardflow,
+    counter_t a_timeout = irs::make_cnt_s(1),
+    counter_t a_delay_after_get_value = irs::make_cnt_ms(30));
   //! \brief Деструктор
   ~termex_lt_300_t();
   //! \brief Установить режим измерения постоянного напряжения
@@ -2805,6 +2807,11 @@ private:
   double *mp_value;
   irs_uarc m_ch;
   irs::timer_t m_delay_after_get_value_timer;
+  const size_t m_get_value_size;
+  size_t m_value_size;
+  irs::timer_t m_timeout_get_value_timer;
+  irs_u32 m_error_start_count;
+  irs_u32 m_error_read_count;
 
   static irs::raw_data_t<irs_u8> u8_from_str(const irs::irs_string_t& a_string);
 };

@@ -4872,7 +4872,9 @@ irs::mxdata_t* irs::ni_pxi_4071_t::mxdata()
   return &m_modbus_client;
 }
 
-irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
+irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow,
+  counter_t a_timeout,
+  counter_t a_delay_after_get_value):
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
   m_mode(mode_free),
@@ -4884,7 +4886,12 @@ irs::termex_lt_300_t::termex_lt_300_t(hardflow_t* ap_hardflow):
   m_status(meas_status_success),
   mp_value(IRS_NULL),
   m_ch(0),
-  m_delay_after_get_value_timer(irs::make_cnt_ms(30))
+  m_delay_after_get_value_timer(a_delay_after_get_value),
+  m_get_value_size(15),
+  m_value_size(0),
+  m_timeout_get_value_timer(a_timeout),
+  m_error_start_count(0),
+  m_error_read_count(0)
 {
   m_delay_after_get_value_timer.start();
 }
@@ -4923,6 +4930,7 @@ void irs::termex_lt_300_t::tick()
       m_read_data.clear();
       m_read_data.resize(m_read_chunk_size);
       m_mode = mode_read_wait;
+      m_timeout_get_value_timer.start();
     } break;
     case mode_read_wait: {
       irs_u8* p_data = m_read_data.data() + m_read_data.size() -
@@ -4930,22 +4938,48 @@ void irs::termex_lt_300_t::tick()
       size_t cur_read_size = mp_hardflow->read(
         m_ch, p_data, m_read_chunk_size);
       m_read_data.resize(m_read_data.size() + cur_read_size);
-      if ((m_read_data.size() - m_read_chunk_size) != 0) {
+      if ((m_read_data.size() - m_read_chunk_size) == m_value_size) {
         irs::irs_string_t read_str(reinterpret_cast<char*>(m_read_data.data()),
           m_read_data.size() - m_read_chunk_size);
         size_t pos_end_line = read_str.find(m_end_line);
         if (pos_end_line != irs::string_t::npos) {
+          m_timeout_get_value_timer.stop();
+          m_error_start_count = 0;
           m_read_string = read_str.substr(0, pos_end_line);
-          istrstream stream(m_read_string.c_str());
+          istrstream stream(m_read_string.c_str(), m_read_string.length());
           stream.imbue(locale::classic());
-          stream >> *mp_value;
-          stream >> *mp_value;
+          double value;
+          stream >> value;
+          stream >> value;
+          if ((value >= 300) && (value <= -50)) {
+            m_mode = mode_start_read;
+            m_error_read_count++;
+          } else {
+            *mp_value = value;
+            m_error_read_count = 0;
+            m_mode = mode_free;
+            m_status = meas_status_success;
+          }
           m_delay_after_get_value_timer.start();
-          m_mode = mode_free;
-          m_status = meas_status_success;
+          if (m_error_read_count >= 2) {
+            m_mode = mode_free;
+            m_status = meas_status_error;
+            m_error_start_count = 0;
+          }
         } else {
           // ≈сли не нашли конец строки повтор€ем чтение
         }
+      }
+      if(m_timeout_get_value_timer.check()) {
+        if (m_error_start_count != 0) {
+          m_mode = mode_free;
+          m_status = meas_status_error;
+          m_error_start_count = 0;
+        } else {
+          m_error_start_count++;
+          m_mode = mode_start_read;
+        }
+        m_delay_after_get_value_timer.start();
       }
     } break;
     default: {
@@ -4960,6 +4994,7 @@ void irs::termex_lt_300_t::get_value(double *ap_value)
   m_transmit_data = u8_from_str("d" + m_end_line);
   m_status = meas_status_busy;
   m_ch = mp_hardflow->channel_next();
+  m_value_size = m_get_value_size;
 }
 
 meas_status_t irs::termex_lt_300_t::status()

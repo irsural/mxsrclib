@@ -26,7 +26,8 @@ irs::com_flow_t::com_flow_t(
   const irs_u8 a_parity,
   const irs_u8 a_byte_size,      //8
   const irs_u8 a_stop_bits,
-  const irs_u32 a_f_dtr_control): //ONESTOPBIT
+  const irs_u32 a_f_dtr_control,
+  const irs_u32 a_f_rts_control): //ONESTOPBIT
   m_max_size_write(256),
   m_com(IRS_NULL),
   mp_error_trans(irs::error_trans()),
@@ -63,6 +64,7 @@ irs::com_flow_t::com_flow_t(
     m_com_param.byte_size = a_byte_size;
     m_com_param.stop_bits = a_stop_bits;
     m_com_param.f_dtr_control = a_f_dtr_control;
+    m_com_param.f_rts_control = a_f_rts_control;
 
     set_and_get_param_dbc();
     fsuccess = GetCommTimeouts(m_com,&time_outs);
