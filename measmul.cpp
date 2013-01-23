@@ -4958,6 +4958,9 @@ void irs::termex_lt_300_t::tick()
             m_error_count++;
             m_mode = mode_start_read;
           }
+        } else {
+          m_error_count++;
+          m_mode = mode_start_read;
         }
       } else {
         // ≈сли не нашли конец строки повтор€ем чтение
