@@ -305,12 +305,15 @@ irs::com_flow_t::size_type irs::com_flow_t::read(size_type a_channel_ident,
   if (fsuccess) {
     DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
-    if (!fsuccess) { IRS_LIB_SEND_LAST_ERROR(); return 0;}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+      return 0;
+    }
   }
   size_type size_rd = 0;
   if (fsuccess) {
     irs_uarc num_bytes_buf_rd = com_stat.cbInQue;
-    if(num_bytes_buf_rd > 0){
+    if (num_bytes_buf_rd > 0) {
       DWORD num_of_bytes_read = 0;
       size_rd = min(a_size, num_bytes_buf_rd);
       fsuccess = ReadFile(m_com, ap_buf, size_rd, &num_of_bytes_read, NULL);
@@ -350,10 +353,13 @@ irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
   if (fsuccess) {
     DWORD errors = 0;
     fsuccess = ClearCommError(m_com, &errors, &com_stat);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR(); return 0;}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+      return 0;
+    }
   }
   irs_u32 size_wr = 0;
-  if(fsuccess){
+  if (fsuccess) {
     irs_uarc num_bytes_buf_wr = com_stat.cbOutQue;
     if(num_bytes_buf_wr == 0){
       DWORD num_of_bytes_written = 0;
@@ -372,7 +378,7 @@ irs::com_flow_t::size_type irs::com_flow_t::write(size_type a_channel_ident,
         IRS_LIB_SEND_LAST_ERROR();
       }
     }
-  }else{
+  } else {
     m_port_status = PS_DEFECT;
     resource_free();
   }
@@ -447,7 +453,9 @@ void irs::com_flow_t::get_param_dbc()
     fsuccess = 0;
   } else {
     fsuccess = GetCommState(m_com, &dcb);
-    if(!fsuccess){IRS_LIB_SEND_LAST_ERROR();}
+    if (!fsuccess) {
+      IRS_LIB_SEND_LAST_ERROR();
+    }
   }
   if (fsuccess) {
     m_com_param.baud_rate = dcb.BaudRate;

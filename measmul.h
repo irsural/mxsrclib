@@ -10,7 +10,7 @@
 #define measmulH
 
 // Версия модуля measmul
-#define MESMUL_VERSION 0x0001
+#define MEASMUL_VERSION 0x0001
 
 #include <irsdefs.h>
 

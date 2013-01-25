@@ -690,6 +690,38 @@ inline bool cstr_to_bool(
   return result;
 }
 
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
+struct wave_format_t
+{
+  int format_tag;           // Метка фомата
+  int channels;             // Число каналов
+  int bits;                 // Разрядность канала в битах
+  int sample_size;          // Размер отсчета в байтах (для ИКМ /PCM/)
+  std::size_t frecuency;    // Частота дискретизации в Гц (отсчет/с)
+  std::size_t speed;        // Скорость данных в байт/с
+  std::size_t size;         // Размер данных в байтах
+  std::size_t pos;          // Начало данных
+};
+
+bool get_wave_format(irs::string_t a_file_name, wave_format_t* ap_wave_format);
+
+bool get_pcm_wave_data(irs::string_t a_file_name,
+  const wave_format_t& a_wave_format, std::size_t a_channel,
+  std::vector<irs_i16>* ap_samples);
+
+enum wave_pcm_sampling_rate_t {
+  wave_pcm_sr_8_khz = 8000,
+  wave_pcm_sr_11_025_khz = 11025,
+  wave_pcm_sr_22_05_khz = 22050,
+  wave_pcm_sr_44_1_khz = 44100
+};
+
+void create_wave_pcm_16_mono_file(irs::string_t a_file_name,
+  const std::size_t a_sampling_rate,
+  const std::vector<irs_i16>& a_samples) throw(std::runtime_error);
+
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
+
 //! @}
 
 } //namespace irs

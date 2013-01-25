@@ -255,6 +255,7 @@ bool __fastcall GetWaveFormat(String FileName, TWaveFormat &WaveFormat)
   WaveFormat.Bits = Format->wBitsPerSample;
   WaveFormat.Frecuency = Format->nSamplesPerSec;
   WaveFormat.Speed = Format->nAvgBytesPerSec;
+  free(Format);
   WaveFormat.Sample = WaveFormat.Channels*WaveFormat.Bits/8;
   mmioAscend(hmmio, &mmckinfoSubchunk, 0);
   mmckinfoSubchunk.ckid = mmioFOURCC('d', 'a', 't', 'a');

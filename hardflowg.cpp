@@ -2643,9 +2643,9 @@ irs::hardflow_t::size_type
     }
     read_size = 0;
   } else {
-    irs::c_array_view_t<irs_u8> array_view(ap_buf, a_size);
-    irs::mem_copy(m_read_data, 0, array_view, 0, m_read_data.size());
-    read_size = a_size;
+    read_size = min(a_size, m_read_data.size());
+    irs::c_array_view_t<irs_u8> array_view(ap_buf, read_size);
+    irs::mem_copy(m_read_data, 0, array_view, 0, read_size);
     m_is_read_wait = false;
     m_is_read = false;
   }
@@ -2780,7 +2780,8 @@ void irs::hardflow::prologix_flow_t::tick()
         irs::string_t read_str = str_from_u8(transmit_data_copy);
         size_t pos_end_line = read_str.find(m_end_line_read);
         if (pos_end_line != irs::string_t::npos) {
-          m_read_string = read_str.substr(0, pos_end_line);
+          m_read_string = read_str.substr(0,
+            pos_end_line + m_end_line_read.size());
           m_read_data = u8_from_str(m_read_string);
           m_read_mode = mode_free;
           m_is_read = true;

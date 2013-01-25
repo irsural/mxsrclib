@@ -8,8 +8,6 @@
 #ifndef niusbgpibH
 #define niusbgpibH
 
-//#define UNICODE
-//#include <winsock2.h>
 #include <irsdefs.h>
 
 #if defined(IRS_WIN32)
@@ -18,6 +16,7 @@
 
 #include <irsstrdefs.h>
 #include <irserror.h>
+#include <irsstrconv.h>
 
 #include <irsfinal.h>
 
@@ -27,6 +26,16 @@
 #define TRY_LOAD_FIRST_GPIB_32_DLL
 
 #if defined(IRS_WIN32)
+
+enum ni_usb_gpib_dll_file_name_t {
+  ni_fn_first,
+  ni_fn_gpib_32 = ni_fn_first,
+  ni_fn_agtgpib32,
+  ni_fn_last = ni_fn_agtgpib32
+};
+
+irs::string_t get_ni_usb_gpib_dll_file_name(
+  ni_usb_gpib_dll_file_name_t a_ni_usb_gpib_dll_file_name);
 
 // Класс для работы с National Instruments USB-GPIB
 class ni_usb_gpib_t
@@ -88,16 +97,13 @@ private:
 
   // Ошибка инициализации
   irs_bool f_init_fail;
-  // Счетчик числа инициализаций
-  irs_i32 f_count_init;
-  // Дескриптор gpib-32.dll
+  // Дескриптор dll
   HINSTANCE f_Gpib32Lib;
-
-  // Экземпляр класса ni_usb_gpib_t
-  static ni_usb_gpib_t f_instance;
+public:
+  typedef irs::string_t string_type;
 
   // Конструктор
-  ni_usb_gpib_t():
+  ni_usb_gpib_t(const string_type& a_dll_file_name = string_type()):
     f_pibsta(IRS_NULL),
     f_piberr(IRS_NULL),
     f_pibcntl(IRS_NULL),
@@ -119,28 +125,10 @@ private:
     f_ibconfig(IRS_NULL),
 
     f_init_fail(irs_true),
-    f_count_init(0),
+    //f_count_init(0),
     f_Gpib32Lib(IRS_NULL)
   {
-  }
-  // Деструктор
-  ~ni_usb_gpib_t()
-  {
-    if (f_Gpib32Lib) FreeLibrary(f_Gpib32Lib);
-    f_Gpib32Lib = IRS_NULL;
-    f_init_fail = irs_true;
-    f_count_init = 0;
-  }
-public:
-  //ni_usb_gpib_t
-  static ni_usb_gpib_t *get_instance()
-  {
-    return &f_instance;
-  }
-  // Инициализация
-  void init()
-  {
-    if (!f_count_init) {
+    if (a_dll_file_name.empty()) {
       #ifdef TRY_LOAD_FIRST_GPIB_32_DLL
       f_Gpib32Lib = LoadLibrary(irst("GPIB-32.DLL"));
       if (!f_Gpib32Lib) {
@@ -162,38 +150,43 @@ public:
         IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
       }
       #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
+    } else {
+      f_Gpib32Lib = LoadLibrary(a_dll_file_name.c_str());
       if (f_Gpib32Lib) {
-        f_init_fail = irs_false;
-        DEF_DLL_VAR(f_Gpib32Lib, int, ibsta);
-        DEF_DLL_VAR(f_Gpib32Lib, int, iberr);
-        DEF_DLL_VAR(f_Gpib32Lib, long, ibcntl);
-        DEF_DLL_PROC(f_Gpib32Lib, ibdev);
-        DEF_DLL_PROC(f_Gpib32Lib, ibdma);
-        DEF_DLL_PROC(f_Gpib32Lib, ibfindA);
-        DEF_DLL_PROC(f_Gpib32Lib, ibclr);
-        DEF_DLL_PROC(f_Gpib32Lib, ibcmd);
-        DEF_DLL_PROC(f_Gpib32Lib, ibwrt);
-        DEF_DLL_PROC(f_Gpib32Lib, ibrd);
-        DEF_DLL_PROC(f_Gpib32Lib, ibrda);
-        DEF_DLL_PROC(f_Gpib32Lib, ibwrta);
-        DEF_DLL_PROC(f_Gpib32Lib, ibrsc);
-        DEF_DLL_PROC(f_Gpib32Lib, ibsic);
-        DEF_DLL_PROC(f_Gpib32Lib, ibstop);
-        DEF_DLL_PROC(f_Gpib32Lib, ibonl);
-        DEF_DLL_PROC(f_Gpib32Lib, ibtmo);
-        DEF_DLL_PROC(f_Gpib32Lib, ibwait);
-        DEF_DLL_PROC(f_Gpib32Lib, ibconfig);
-      } else {
-        f_init_fail = irs_true;
-        #ifdef __BORLANDC__
-        ShowMessage("Библиотеки GPIB-32.DLL и agtgpib32.dll не найдена");
-        #else
-        IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
-        #endif //__BORLANDC__
-        return;
+        IRS_LIB_DBG_MSG(irs::str_conv<irs::irs_string_t>(irst("Загружена ") +
+          a_dll_file_name).c_str());
       }
     }
-    f_count_init++;
+    if (f_Gpib32Lib) {
+      f_init_fail = irs_false;
+      DEF_DLL_VAR(f_Gpib32Lib, int, ibsta);
+      DEF_DLL_VAR(f_Gpib32Lib, int, iberr);
+      DEF_DLL_VAR(f_Gpib32Lib, long, ibcntl);
+      DEF_DLL_PROC(f_Gpib32Lib, ibdev);
+      DEF_DLL_PROC(f_Gpib32Lib, ibdma);
+      DEF_DLL_PROC(f_Gpib32Lib, ibfindA);
+      DEF_DLL_PROC(f_Gpib32Lib, ibclr);
+      DEF_DLL_PROC(f_Gpib32Lib, ibcmd);
+      DEF_DLL_PROC(f_Gpib32Lib, ibwrt);
+      DEF_DLL_PROC(f_Gpib32Lib, ibrd);
+      DEF_DLL_PROC(f_Gpib32Lib, ibrda);
+      DEF_DLL_PROC(f_Gpib32Lib, ibwrta);
+      DEF_DLL_PROC(f_Gpib32Lib, ibrsc);
+      DEF_DLL_PROC(f_Gpib32Lib, ibsic);
+      DEF_DLL_PROC(f_Gpib32Lib, ibstop);
+      DEF_DLL_PROC(f_Gpib32Lib, ibonl);
+      DEF_DLL_PROC(f_Gpib32Lib, ibtmo);
+      DEF_DLL_PROC(f_Gpib32Lib, ibwait);
+      DEF_DLL_PROC(f_Gpib32Lib, ibconfig);
+    } else {
+      f_init_fail = irs_true;
+      #ifdef __BORLANDC__
+      ShowMessage("Библиотеки GPIB-32.DLL и agtgpib32.dll не найдена");
+      #else
+      IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
+      #endif //__BORLANDC__
+      return;
+    }
     return;
 
     def_dll_err:
@@ -202,17 +195,21 @@ public:
     //ShowMessage("Ошибка при подключении функций GPIB-32.DLL");
     return;
   }
+  // Деструктор
+  ~ni_usb_gpib_t()
+  {
+    FreeLibrary(f_Gpib32Lib);
+  }
+  static ni_usb_gpib_t *get_instance();
+  // Инициализация
+  void init()
+  {
+    // Для совместимости со старым кодом
+  }
   // Деинициализация
   void deinit()
   {
-    if (!f_init_fail) {
-      f_count_init--;
-      if (!f_count_init) {
-        if (f_Gpib32Lib) FreeLibrary(f_Gpib32Lib);
-        f_Gpib32Lib = IRS_NULL;
-        f_init_fail = irs_true;
-      }
-    }
+    // Для совместимости со старым кодом
   }
   irs_i32 get_ibsta()
   {
@@ -311,6 +308,8 @@ public:
     return f_ibconfig(ud, option, v);
   }
 };
+
+// Экземпляр класса ni_usb_gpib_t
 
 #endif // defined(IRS_WIN32)
 

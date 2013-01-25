@@ -61,7 +61,8 @@ public:
     const size_type a_board_index,
     const size_type a_gpib_adress,
     const double a_session_read_timeout_s = 1,
-    const double a_session_write_timeout_s = 1
+    const double a_session_write_timeout_s = 1,
+    const string_type& a_dll_file_name = string_type()
   );
   virtual ~ni_usb_gpib_flow_t();
   virtual string_type param(const string_type&);
@@ -91,7 +92,7 @@ private:
   process_t m_process;
   typedef void (ni_usb_gpib_flow_t::*p_process)();
   vector<p_process> m_proc_array;
-  ni_usb_gpib_t* mp_ni_usb_gpib;
+  ni_usb_gpib_t m_ni_usb_gpib;
   size_type m_device_id;
   size_type m_channel;
   raw_data_t<irs_u8> m_read_buf;
@@ -132,7 +133,7 @@ private:
   enum { m_no_secondary_addr = 0 };   
   enum { m_eotmode = 1 };
   enum { m_eosmode = 1 };
-  ni_usb_gpib_t* mp_ni_usb_gpib;
+  ni_usb_gpib_t m_ni_usb_gpib;
   size_type m_device_id;
   size_type m_channel;
   double m_read_timeout;

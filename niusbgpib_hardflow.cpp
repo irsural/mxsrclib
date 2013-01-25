@@ -32,11 +32,12 @@ irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   const size_type a_board_index,
   const size_type a_gpib_adress,
   const double a_session_read_timeout_s,
-  const double a_session_write_timeout_s
+  const double a_session_write_timeout_s,
+  const string_type& a_dll_file_name
 ):
   m_process(process_wait),
   m_proc_array(),
-  mp_ni_usb_gpib(ni_usb_gpib_t::get_instance()),
+  m_ni_usb_gpib(a_dll_file_name),
   m_device_id(),
   m_channel(invalid_channel),
   m_read_buf(),
@@ -50,12 +51,12 @@ irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   m_proc_array.push_back(&ni_usb_gpib_flow_t::proc_wait);
   m_proc_array.push_back(&ni_usb_gpib_flow_t::proc_read);
   m_proc_array.push_back(&ni_usb_gpib_flow_t::proc_write);
-  mp_ni_usb_gpib->init();
-  m_device_id = mp_ni_usb_gpib->ibdev(a_board_index, a_gpib_adress,
+  //mp_ni_usb_gpib->init();
+  m_device_id = m_ni_usb_gpib.ibdev(a_board_index, a_gpib_adress,
     m_no_secondary_addr, m_timeout, m_eotmode, m_eosmode);
   if (m_device_id != static_cast<size_type>(-1)) {
     //int ibclr_status =
-    mp_ni_usb_gpib->ibclr(m_device_id);
+    m_ni_usb_gpib.ibclr(m_device_id);
     m_channel = invalid_channel + 1;
   } else {
     m_channel = invalid_channel;
@@ -66,8 +67,8 @@ irs::hardflow::ni_usb_gpib_flow_t::~ni_usb_gpib_flow_t()
 {
   if (m_channel != invalid_channel) {
     // Перевод устройства в offline
-    mp_ni_usb_gpib->ibonl(m_device_id, false);
-    mp_ni_usb_gpib->deinit();
+    m_ni_usb_gpib.ibonl(m_device_id, false);
+    m_ni_usb_gpib.deinit();
   } else {
     // Канал не создан
   }
@@ -121,10 +122,10 @@ irs::hardflow::ni_usb_gpib_flow_t::read(size_type a_channel_ident,
       IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запрашиваем чтение " << a_size <<
         " байт.");
       //const int set_timeout_status =
-      mp_ni_usb_gpib->ibtmo(
+      m_ni_usb_gpib.ibtmo(
         m_device_id, time_s_to_timecode(m_session_read_timeout));
       //const int read_status =
-      mp_ni_usb_gpib->ibrda(m_device_id,
+      m_ni_usb_gpib.ibrda(m_device_id,
         m_read_buf.data(), m_read_buf.size());
       if (time_s_normalize(m_session_read_timeout) != 0.) {
         m_session_read_timer.start();
@@ -150,7 +151,7 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
 
     if (m_process == process_read) {
       //const int clr_status =
-      mp_ni_usb_gpib->ibclr(m_device_id);
+      m_ni_usb_gpib.ibclr(m_device_id);
       m_read_buf.clear();
     } else {
       // Операция чтения не происходит
@@ -162,9 +163,9 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
     IRS_LIB_NIUSBGPIBHF_DBG_MSG_DETAIL("Данные:" <<
       data_to_string_for_mlog(raw_data_t<irs_u8>(ap_buf, a_size)));
     //const int set_timeout_status =
-    mp_ni_usb_gpib->ibtmo(m_device_id, TNONE);
+    m_ni_usb_gpib.ibtmo(m_device_id, TNONE);
     //const int write_status =
-    mp_ni_usb_gpib->ibwrta(m_device_id,
+    m_ni_usb_gpib.ibwrta(m_device_id,
       m_write_buf.data(), m_write_buf.size());
     write_count = a_size;
     if (time_s_normalize(m_session_write_timeout) != 0.) {
@@ -199,16 +200,16 @@ void irs::hardflow::ni_usb_gpib_flow_t::tick()
 void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
 {
   const bool session_read_timeout = m_session_read_timer.check();
-  const int read_status = mp_ni_usb_gpib->ibwait(m_device_id, 0);
+  const int read_status = m_ni_usb_gpib.ibwait(m_device_id, 0);
   if ((read_status & CMPL) ||
     (read_status & ERR) ||
     !m_write_buf.empty() ||
     session_read_timeout) {
 
     if (!m_write_buf.empty() || session_read_timeout) {
-      const int stop_status = mp_ni_usb_gpib->ibstop(m_device_id);
+      const int stop_status = m_ni_usb_gpib.ibstop(m_device_id);
       if (stop_status & ERR) {
-        const int err_status = mp_ni_usb_gpib->get_iberr();
+        const int err_status = m_ni_usb_gpib.get_iberr();
         if (!(err_status & EABO)) {
           // Возвращаем ошибку пользователю
           IRS_LIB_ASSERT("Остановить асинхронную операцию "
@@ -230,8 +231,8 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
     }
 
     //const size_type debug_ibcntl =
-    mp_ni_usb_gpib->get_ibcntl();
-    m_read_buf.resize(mp_ni_usb_gpib->get_ibcntl());
+    m_ni_usb_gpib.get_ibcntl();
+    m_read_buf.resize(m_ni_usb_gpib.get_ibcntl());
     m_process = process_wait;
     if ((read_status & ERR) ||
       !m_write_buf.empty() ||
@@ -260,14 +261,14 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_read()
 void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
 {
   const bool session_write_timeout = m_session_write_timer.check();
-  const int write_status = mp_ni_usb_gpib->ibwait(m_device_id, 0);
+  const int write_status = m_ni_usb_gpib.ibwait(m_device_id, 0);
   if ((write_status & CMPL) ||
     (write_status & ERR) ||
     session_write_timeout) {
       
     m_write_buf.erase(m_write_buf.data(),
       m_write_buf.data() + min(m_write_buf.size(),
-      static_cast<size_t>(mp_ni_usb_gpib->get_ibcntl())));
+      static_cast<size_t>(m_ni_usb_gpib.get_ibcntl())));
     if (write_status & ERR) {
       IRS_LIB_ASSERT("Ошибка при асинхронной операции записи");
     } else {
@@ -278,7 +279,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
       IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запись завершена");
     } else {
       //const int new_write_status =
-      mp_ni_usb_gpib->ibwrta(m_device_id,
+      m_ni_usb_gpib.ibwrta(m_device_id,
         m_write_buf.data(), m_write_buf.size());
       if (time_s_normalize(m_session_write_timeout) != 0.) {
         m_session_write_timer.start();
@@ -302,18 +303,18 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::ni_usb_gpib_flow_syn_t(
   const double a_read_timeout_s,
   const double a_write_timeout_s
 ):
-  mp_ni_usb_gpib(ni_usb_gpib_t::get_instance()),
+  m_ni_usb_gpib(),
   m_device_id(),
   m_channel(invalid_channel),
   m_read_timeout(a_read_timeout_s),
   m_write_timeout(a_write_timeout_s)
 {
-  mp_ni_usb_gpib->init();
-  m_device_id = mp_ni_usb_gpib->ibdev(a_board_index, a_gpib_adress,
+  //m_ni_usb_gpib.init();
+  m_device_id = m_ni_usb_gpib.ibdev(a_board_index, a_gpib_adress,
     m_no_secondary_addr, T100ms, m_eotmode, m_eosmode);
   if (m_device_id != static_cast<size_type>(-1)) {
     //int ibclr_status =
-    mp_ni_usb_gpib->ibclr(m_device_id);
+    m_ni_usb_gpib.ibclr(m_device_id);
     m_channel = invalid_channel + 1;
   } else {
     m_channel = invalid_channel;
@@ -324,8 +325,8 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::~ni_usb_gpib_flow_syn_t()
 {
   if (m_channel != invalid_channel) {
     // Перевод устройства в offline
-    mp_ni_usb_gpib->ibonl(m_device_id, false);
-    mp_ni_usb_gpib->deinit();
+    m_ni_usb_gpib.ibonl(m_device_id, false);
+    m_ni_usb_gpib.deinit();
   } else {
     // Канал не создан
   }
@@ -357,7 +358,7 @@ void irs::hardflow::ni_usb_gpib_flow_syn_t::set_param(const string_type& a_name,
     }
   } else {
     IRS_LIB_ERROR(ec_standard, "Неизвестный параметр");
-  }   
+  }
 }
 
 irs::hardflow::ni_usb_gpib_flow_syn_t::size_type
@@ -367,12 +368,12 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::read(size_type a_channel_ident,
   size_type read_count = 0;
   if ((m_channel != invalid_channel) && (m_channel == a_channel_ident)) {
     //const int set_timeout_status =
-    mp_ni_usb_gpib->ibtmo(
+    m_ni_usb_gpib.ibtmo(
       m_device_id, time_s_to_timecode(m_read_timeout));
     //const int read_status =
-    mp_ni_usb_gpib->ibrd(m_device_id,
+    m_ni_usb_gpib.ibrd(m_device_id,
       ap_buf, a_size);
-    read_count = mp_ni_usb_gpib->get_ibcntl();
+    read_count = m_ni_usb_gpib.get_ibcntl();
   } else {
     // Канал не создан
   }
@@ -386,11 +387,11 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::write(size_type a_channel_ident,
   size_type write_count = 0;
   if ((m_channel != invalid_channel) && (m_channel == a_channel_ident)) {
     //const int set_timeout_status =
-    mp_ni_usb_gpib->ibtmo(
+    m_ni_usb_gpib.ibtmo(
       m_device_id, time_s_to_timecode(m_write_timeout));
-    mp_ni_usb_gpib->ibwrt(m_device_id,
+    m_ni_usb_gpib.ibwrt(m_device_id,
       const_cast<unsigned char*>(ap_buf), a_size);
-    write_count = mp_ni_usb_gpib->get_ibcntl();
+    write_count = m_ni_usb_gpib.get_ibcntl();
   } else {
     // Канал не создан
   }

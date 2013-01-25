@@ -323,30 +323,12 @@ void irs::send_format_msg(
    char* ap_file,
    int a_line)
 {
-  #if defined (IRS_WIN32)
-  LPVOID lpMsgBuf;
-  //LPVOID lpDisplayBuf;
-  FormatMessage(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM |
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      a_error_code,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      reinterpret_cast<LPTSTR>(&lpMsgBuf),
-      0, NULL);
-  irs::string message = static_cast<irs::string>(a_error_code)+
-    ": "+static_cast<char*>(lpMsgBuf);
+  #if defined (IRS_WIN32) || defined (IRS_LINUX)
+  const irs::string message = static_cast<irs::string>(a_error_code)+
+    ": " + error_str(a_error_code);
   irs::error_trans()->throw_error(ec_standard, ap_file, a_line,
     reinterpret_cast<const void*>(message.c_str()));
-  LocalFree(lpMsgBuf);
-  #elif defined(IRS_LINUX)
-  char* errmsg = strerror(a_error_code);
-  irs::string message = static_cast<irs::string>(a_error_code)+
-    ": "+static_cast<char*>(errmsg);
-   irs::error_trans()->throw_error(
-    ec_standard, ap_file, a_line, (void*)(message.c_str()));
-  #endif // defined(IRS_LINUX)
+  #endif // defined (IRS_WIN32) || defined (IRS_LINUX)
 }
 
 void irs::send_last_message_err(char* ap_file, int a_line)
