@@ -2613,10 +2613,8 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
     case lf: {
       m_end_line_read = irst("\n");
     } break;
-    case none: {
-      m_end_line_read = irst("");
-    } break;
     default: {
+      IRS_LIB_ASSERT_MSG("a_read_end_line не должен быть default или none");
     } break;
   }
   switch (a_write_end_line) {
