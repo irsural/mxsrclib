@@ -414,10 +414,11 @@ irs::irs_string_t irs::conv_notprintable_to_hex(const irs_string_t& a_str)
     if (a_str[i] >= space_char) {
       result_str += a_str[i];
     } else {
-      stringstream stream;
+      ostrstream stream;
       stream << "\\x";
       stream << hex << setw(2) << setfill('0') << (int)a_str[i];
       result_str += stream.str();
+      stream.rdbuf()->freeze(false);
     }
   }
   return result_str;

@@ -4945,7 +4945,9 @@ void irs::termex_lt_300_t::tick()
         if (m_read_string.length() == (m_value_size-1)) {
           m_timeout_get_value_timer.stop();
           istrstream stream(m_read_string.c_str(), m_read_string.length());
+          #ifdef IRS_FULL_STDCPPLIB_SUPPORT
           stream.imbue(locale::classic());
+          #endif //IRS_FULL_STDCPPLIB_SUPPORT
           double value;
           stream >> value;
           stream >> value;
