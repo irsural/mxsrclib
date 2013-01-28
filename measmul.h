@@ -2745,23 +2745,23 @@ public:
   //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
   //! \brief Чтение напряжения
-  virtual void get_voltage(double *voltage) {}
+  virtual void get_voltage(double */*voltage*/) {}
   //! \brief Чтения силы тока
-  virtual void get_current(double *current) {}
+  virtual void get_current(double */*current*/) {}
   //! \brief Чтение сопротивления
-  virtual void get_resistance2x(double *resistance) {}
+  virtual void get_resistance2x(double */*resistance*/) {}
   //! \brief Чтение сопротивления
-  virtual void get_resistance4x(double *resistance) {}
+  virtual void get_resistance4x(double */*resistance*/) {}
   //! \brief Чтение частоты
-  virtual void get_frequency(double *frequency) {}
+  virtual void get_frequency(double */*frequency*/) {}
   //! \brief Чтение усредненного сдвира фаз
-  virtual void get_phase_average(double *phase_average) {}
+  virtual void get_phase_average(double */*phase_average*/) {}
   //! \brief Чтение фазового сдвига
-  virtual void get_phase(double *phase) {}
+  virtual void get_phase(double */*phase*/) {}
   //! \brief Чтение временного интервала
-  virtual void get_time_interval(double *time_interval) {}
+  virtual void get_time_interval(double */*time_interval*/) {}
   //! \brief Чтение усредненного временного интервала
-  virtual void get_time_interval_average(double *ap_time_interval) {}
+  virtual void get_time_interval_average(double */*ap_time_interval*/) {}
   //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration() {}
   //! \brief Чтение статуса текущей операции
@@ -2771,17 +2771,17 @@ public:
   //! \brief Элементарное действие
   virtual void tick();
   //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
-  virtual void set_nplc(double nplc) {}
+  virtual void set_nplc(double /*nplc*/) {}
   //! \brief Установка времени интегрирования в c
-  virtual void set_aperture(double aperture) {}
+  virtual void set_aperture(double /*aperture*/) {}
   //! \brief Установка полосы фильтра
-  virtual void set_bandwidth(double bandwidth) {}
+  virtual void set_bandwidth(double /*bandwidth*/) {}
   //! \brief Установка входного сопротивления канала
-  virtual void set_input_impedance(double impedance) {}
+  virtual void set_input_impedance(double /*impedance*/) {}
   //! \brief Устсновка уровня запуска канала
-  virtual void set_start_level(double level) {}
+  virtual void set_start_level(double /*level*/) {}
   //! \brief Установка диапазона измерений
-  virtual void set_range(type_meas_t a_type_meas, double a_range) {}
+  virtual void set_range(type_meas_t /*a_type_meas*/, double /*a_range*/) {}
   //! \brief Установка автоматического выбора диапазона измерений
   virtual void set_range_auto() {}
 
