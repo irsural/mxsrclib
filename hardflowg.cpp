@@ -2579,7 +2579,7 @@ void irs::hardflow::simple_tcp_flow_t::tick()
 }
 
 irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
-  int a_address):
+  int a_address, end_line_t a_read_end_line, end_line_t a_write_end_line):
   mp_hardflow(ap_hardflow),
   m_buffer(),
   m_fixed_flow(mp_hardflow.get()),
@@ -2593,8 +2593,8 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_channel_ident(0),
   m_write_data(),
   m_read_chunk_size(100),
-  m_end_line_write(irst("\r\n")),
-  m_end_line_read(irst("\r\n")),
+  m_end_line_write(irst("")),
+  m_end_line_read(irst("")),
   m_read_string(irst("")),
   m_read_data(),
   m_init_success(false),
@@ -2603,11 +2603,43 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_channel_ident(0),
   m_transmit_data()
 {
+  switch (a_read_end_line) {
+    case cr_lf: {
+      m_end_line_read = irst("\r\n");
+    } break;
+    case cr: {
+      m_end_line_read = irst("\r");
+    } break;
+    case lf: {
+      m_end_line_read = irst("\n");
+    } break;
+    case none: {
+      m_end_line_read = irst("");
+    } break;
+    default: {
+    } break;
+  }
+  switch (a_write_end_line) {
+    case cr_lf: {
+      m_end_line_write = irst("\r\n");
+    } break;
+    case cr: {
+      m_end_line_write = irst("\r");
+    } break;
+    case lf: {
+      m_end_line_write = irst("\n");
+    } break;
+    case none: {
+      m_end_line_write = irst("");
+    } break;
+    default: {
+    } break;
+  }
   m_init_command.push_back(irst("++addr ") + irs::string_t(a_address));
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
-  m_init_command.push_back(irst("++eos 0"));
+  m_init_command.push_back(irst("++eos ") + irs::string_t(a_write_end_line));
   m_init_command.push_back(irst("++eot_enable 0"));
   m_init_command.push_back(irst("++eot_char 0"));
   

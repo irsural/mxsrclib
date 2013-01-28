@@ -928,8 +928,8 @@ class prologix_flow_t: public irs::hardflow_t
   size_type m_channel_ident;
   irs::raw_data_t<irs_u8> m_write_data;
   const size_t m_read_chunk_size;
-  const irs::string_t m_end_line_write;
-  const irs::string_t m_end_line_read;
+  irs::string_t m_end_line_write;
+  irs::string_t m_end_line_read;
   irs::string_t m_read_string;
   irs::raw_data_t<irs_u8> m_read_data;
   bool m_init_success;
@@ -942,7 +942,14 @@ class prologix_flow_t: public irs::hardflow_t
   static irs::string_t str_from_u8(const irs::raw_data_t<irs_u8>& a_data);
 
 public:
-  prologix_flow_t(irs::hardflow_t* ap_hardflow, int a_address);
+  enum end_line_t {
+    cr_lf = 0,
+    cr = 1,
+    lf = 2,
+    none = 3
+  };
+  prologix_flow_t(irs::hardflow_t* ap_hardflow, int a_address,
+    end_line_t a_read_end_line = cr_lf, end_line_t a_write_end_line = cr_lf);
   virtual ~prologix_flow_t();
   virtual string_type param(const string_type& a_name);
   virtual void set_param(const string_type& a_name,
