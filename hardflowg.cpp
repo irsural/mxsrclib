@@ -2637,10 +2637,12 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
-  m_init_command.push_back(irst("++eos ") + irs::string_t(a_write_end_line));
+  m_init_command.push_back(irst("++read_tmo_ms 3000"));
+  m_init_command.push_back(irst("++eos ") + irs::string_t(a_read_end_line));
+  //m_init_command.push_back(irst("++eos 1"));
   m_init_command.push_back(irst("++eot_enable 0"));
   m_init_command.push_back(irst("++eot_char 0"));
-  
+
   m_init_count = 0;
   m_init_mode = mode_start;
   m_init_channel_ident = channel_next();
@@ -2665,7 +2667,7 @@ irs::hardflow_t::size_type
   size_type read_size = 0;
   if (!m_is_read) {
     if (!m_is_read_wait) {
-      m_buffer = irst("++read") + m_end_line_write;
+      m_buffer = irst("++read eoi") + m_end_line_write;
       m_read_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
       m_read_mode = mode_start_read;
@@ -2691,6 +2693,7 @@ irs::hardflow_t::size_type
       //m_buffer.assign(reinterpret_cast<const char*>(ap_buf), a_size);
       irs::raw_data_t<irs_u8> data(ap_buf, a_size);
       m_buffer = str_from_u8(data);
+      //m_buffer = m_buffer.substr(0, m_buffer.find(irst('\n')));
       m_buffer += m_end_line_write;
       m_write_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
