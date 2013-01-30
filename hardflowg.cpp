@@ -2637,7 +2637,7 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
-  m_init_command.push_back(irst("++read_tmo_ms 3000"));
+  m_init_command.push_back(irst("++read_tmo_ms 1"));
   m_init_command.push_back(irst("++eos ") + irs::string_t(a_read_end_line));
   //m_init_command.push_back(irst("++eos 1"));
   m_init_command.push_back(irst("++eot_enable 0"));
