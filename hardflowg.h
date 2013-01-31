@@ -948,7 +948,8 @@ public:
     none = 3
   };
   prologix_flow_t(irs::hardflow_t* ap_hardflow, int a_address,
-    end_line_t a_read_end_line = cr_lf, end_line_t a_write_end_line = cr_lf);
+    end_line_t a_read_end_line = cr_lf, end_line_t a_write_end_line = cr_lf,
+    irs_u16 a_timeout_read_ms = 1);
   virtual ~prologix_flow_t();
   virtual string_type param(const string_type& a_name);
   virtual void set_param(const string_type& a_name,
