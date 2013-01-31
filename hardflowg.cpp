@@ -2580,7 +2580,7 @@ void irs::hardflow::simple_tcp_flow_t::tick()
 
 irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   int a_address, end_line_t a_read_end_line, end_line_t a_write_end_line,
-  irs_u16 a_timeout_read_ms):
+  int a_timeout_read_ms):
   mp_hardflow(ap_hardflow),
   m_buffer(),
   m_fixed_flow(mp_hardflow.get()),
@@ -2638,8 +2638,7 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
-  int timeout = static_cast<int>(a_timeout_read_ms);
-  timeout = bound(timeout, 1, 3000);
+  int timeout = bound(a_timeout_read_ms, 1, 3000);
   m_init_command.push_back(irst("++read_tmo_ms ") +
       irs::string_t(timeout));
   m_init_command.push_back(irst("++eos ") + irs::string_t(a_read_end_line));
