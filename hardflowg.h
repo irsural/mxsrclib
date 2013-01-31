@@ -40,6 +40,7 @@
 #include <irstcpip.h>
 #include <irsnetdefs.h>
 #include <irssysutils.h>
+#include <irsdsp.h>
 
 #include <irsfinal.h>
 
