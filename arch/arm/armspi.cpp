@@ -627,6 +627,7 @@ irs::arm::arm_spi_t::arm_spi_t(
   clock_enable(a_spi_address);
 
   mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  //mp_spi_regs->SPI_CR1_bit.SSM = 0;
   mp_spi_regs->SPI_CR1_bit.SSI = 1;
   // 1: Master configuration
   mp_spi_regs->SPI_CR1_bit.MSTR = 1;
@@ -772,7 +773,7 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
     power++;
   }
   const int min_power = 0;
-  const int max_power = 8;
+  const int max_power = 7;
   power = bound(power, min_power, max_power);
   mp_spi_regs->SPI_CR1_bit.BR = power;
   return true;
@@ -784,11 +785,14 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
+  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
   if (a_polarity == NEGATIVE_POLARITY) {
     mp_spi_regs->SPI_CR1_bit.CPOL = 0;
   } else if (a_polarity == POSITIVE_POLARITY) {
     mp_spi_regs->SPI_CR1_bit.CPOL = 1;
   }
+  mp_spi_regs->SPI_CR1_bit.SPE = spe;
   return true;
 }
 
@@ -798,7 +802,10 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
+  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
   mp_spi_regs->SPI_CR1_bit.CPHA = a_phase;
+  mp_spi_regs->SPI_CR1_bit.SPE = spe;
   return true;
 }
 
@@ -808,11 +815,14 @@ bool irs::arm::arm_spi_t::set_order(order_t a_order)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
+  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
   if (a_order == LSB) {
     mp_spi_regs->SPI_CR1_bit.LSBFIRST = 1;
   } else if (a_order == MSB) {
     mp_spi_regs->SPI_CR1_bit.LSBFIRST = 0;
   }
+  mp_spi_regs->SPI_CR1_bit.SPE = spe;
   return true;
 }
 
