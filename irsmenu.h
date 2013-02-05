@@ -340,6 +340,7 @@ public:
   ~irs_menu_simply_item_t();
   void set_str(char *ap_value_string, char *ap_prefix, char *ap_suffix,
     size_type a_len, size_type a_accur);
+  void set_accuracy(size_type a_accuracy);
   virtual void draw(irs_menu_base_t **a_cur_menu);
   T *get_parametr();
   virtual size_type get_parametr_string(
@@ -393,6 +394,15 @@ void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
 
   strcpy(mp_copy_parametr_string, mp_value_string);
   m_updated = true;
+}
+
+template <class T>
+void irs_menu_simply_item_t<T>::set_accuracy(size_type a_accuracy)
+{
+  m_accur = a_accuracy;
+  if (mp_value_string && mp_prefix && mp_suffix) {
+    set_str(mp_value_string, mp_prefix, mp_suffix, m_len, m_accur);
+  }
 }
 
 template <class T>
