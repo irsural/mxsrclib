@@ -1877,3 +1877,892 @@ void irs::dac_ad5293_t::write_tick()
     }
   }
 }
+
+//--------------------------- AD5791 -------------------------------------------
+irs::dac_ad5791_t::dac_ad5791_t(
+  spi_t *ap_spi,
+  gpio_pin_t *ap_cs_pin,
+  gpio_pin_t *ap_ldac_pin,
+  gpio_pin_t *ap_clr_pin,
+  gpio_pin_t *ap_reset_pin,
+  irs_u32 a_default_value):
+  m_status(st_reset),
+  mp_spi(ap_spi),
+  m_timer(irs::make_cnt_ms(m_reset_interval)),
+  m_need_write_options(true),
+  m_need_write_voltage_code(true),
+  mp_cs_pin(ap_cs_pin),
+  mp_ldac_pin(ap_ldac_pin),
+  mp_clr_pin(ap_clr_pin),
+  mp_reset_pin(ap_reset_pin)
+{
+  memset(mp_buf, 0, m_size);
+  memset(mp_write_buf, 0, m_write_buf_size);
+  
+  mp_cs_pin->set();
+  mp_ldac_pin->set();
+  mp_clr_pin->set();
+  mp_reset_pin->clear();
+  
+  m_timer.start();
+
+  mp_buf[m_options_pos] = 
+    (1 << m_rbuf_bit_pos) ||
+    (1 << m_opgnd_bit_pos) ||
+    (1 << m_dactri_bit_pos) ||
+    (1 << m_bin2sc_bit_pos) ||
+    (1 << m_sdodis_bit_pos);
+  mp_buf[m_lin_comp_pos] = 0;
+  irs_u32* voltage_code = 
+    reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
+  *voltage_code = a_default_value & ((1 << 20) - 1);
+}
+
+irs_uarc irs::dac_ad5791_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::dac_ad5791_t::connected()
+{
+  return true;
+}
+
+void irs::dac_ad5791_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && (a_index != m_status_pos) && ap_buf;
+  if (valid_data) {  
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(mp_buf + index),
+      reinterpret_cast<const void*>(ap_buf), 
+      size);
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index + size >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::dac_ad5791_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && ap_buf;
+  if (valid_data) {
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), 
+      size);
+  }
+  return;
+}
+
+irs_bool irs::dac_ad5791_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = (a_index < m_size) & (a_bit_index <= 7);
+  irs_bool return_value = false;
+  if (valid_data) {
+    return_value =  (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
+  }
+  return return_value;
+}
+
+void irs::dac_ad5791_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = 
+    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::dac_ad5791_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = 
+    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] &= ~static_cast<irs_u8>(1 << a_bit_index);
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::dac_ad5791_t::tick()
+{
+  mp_spi->tick();
+  
+  switch (m_status) {
+    case st_reset: {
+      if (m_timer.check()) {
+        mp_reset_pin->set();
+        m_status = st_prepare_options;
+      }
+      break;
+    }
+    case st_prepare_options: {
+      mp_write_buf[0] = addr_control;
+      mp_write_buf[1] = mp_buf[m_lin_comp_pos] >> 2;
+      mp_write_buf[2] = (mp_buf[m_lin_comp_pos] & 0x03) | mp_buf[m_options_pos];
+      m_need_write_options = false;
+      m_status = st_spi_prepare;
+      break;
+    }
+    case st_prepare_voltage_code: {
+      mp_write_buf[0] = addr_code | (mp_buf[m_voltage_code_pos + 2] & 0x07);
+      mp_write_buf[1] = mp_buf[m_voltage_code_pos + 1];
+      mp_write_buf[2] = mp_buf[m_voltage_code_pos + 0];
+      m_need_write_voltage_code = false;
+      m_status = st_spi_prepare;
+      break;
+    }
+    case st_spi_prepare: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_cs_pin->clear();
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->lock();
+        mp_cs_pin->clear();
+        mp_spi->write(mp_write_buf, m_write_buf_size);
+        m_status = st_spi_wait;
+      }
+      break;
+    }
+    case st_spi_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_status = st_free;
+      }
+      break;
+    }
+    case st_free: {
+      if (m_need_write_options == true) {
+        m_status = st_prepare_options;
+      } else if (m_need_write_voltage_code == true) {
+        m_status = st_prepare_voltage_code;
+      } else {
+        mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
+      }
+      break;
+    }
+  }
+}
+
+//--------------------------- AD7799 -------------------------------------------
+irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
+  gpio_pin_t *ap_cs_pin):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_status(meas_status_busy),
+  m_mode(mode_free),
+  m_spi_transaction_size(0),
+  m_reg(),
+  m_read_all_reg(false),
+  m_count_init(0),
+  m_shift(0),
+  m_read_data(false),
+  m_filter_settle_time_vector(),
+  m_conv_time_vector(),
+  m_freq(0),
+  m_reserved_interval(1),
+  m_timer(make_cnt_ms(m_reserved_interval)),
+  m_ready_wait(false)
+{
+  memset(mp_buf, 0, m_size_buf);
+  memset(mp_spi_buf, 0xFF, m_write_buf_size);
+  
+  m_filter_settle_time_vector.push_back(m_reserved_interval); //  0:  reserve 
+  m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
+  m_filter_settle_time_vector.push_back(4);   //  1:  4 ms 
+  m_conv_time_vector.push_back(2*1000/500);   //  1:  500 Hz
+  m_filter_settle_time_vector.push_back(8);   //  2:  8 ms 
+  m_conv_time_vector.push_back(2*1000/250);   //  2:  250 Hz
+  m_filter_settle_time_vector.push_back(4);   //  3:  16 ms 
+  m_conv_time_vector.push_back(2*1000/125);   //  3:  125 Hz
+  m_filter_settle_time_vector.push_back(4);   //  4:  32 ms 
+  m_conv_time_vector.push_back(2*1000/62.5);  //  4:  62.5 Hz
+  m_filter_settle_time_vector.push_back(40);  //  5:  40 ms 
+  m_conv_time_vector.push_back(2*1000/50);    //  5:  50 Hz
+  m_filter_settle_time_vector.push_back(48);  //  6:  48 ms 
+  m_conv_time_vector.push_back(2*1000/39.2);  //  6:  39.2 Hz
+  m_filter_settle_time_vector.push_back(60);  //  7:  60 ms 
+  m_conv_time_vector.push_back(2*1000/33.3);  //  7:  33.3 Hz
+  m_filter_settle_time_vector.push_back(101); //  8:  101 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  //  8:  19.6 Hz
+  m_filter_settle_time_vector.push_back(120); //  9:  120 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  //  9:  16.7 Hz
+  m_filter_settle_time_vector.push_back(120); // 10:  120 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  // 10:  19.6 Hz
+  m_filter_settle_time_vector.push_back(160); // 11:  160 ms 
+  m_conv_time_vector.push_back(2*1000/12.5);  // 11:  12.5 Hz
+  m_filter_settle_time_vector.push_back(200); // 12:  200 ms 
+  m_conv_time_vector.push_back(2*1000/10);    // 12:  10 Hz
+  m_filter_settle_time_vector.push_back(240); // 13:  240 ms 
+  m_conv_time_vector.push_back(2*1000/8.33);  // 13:  8.33 Hz
+  m_filter_settle_time_vector.push_back(320); // 14:  320 ms 
+  m_conv_time_vector.push_back(2*1000/6.25);  // 14:  6.25 Hz
+  m_filter_settle_time_vector.push_back(480); // 15:  480 ms 
+  m_conv_time_vector.push_back(2*1000/4.17);  // 15:  4.17 Hz
+  
+  m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
+  m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
+  m_reg.push_back(reg_t(m_reg_conf_index, m_reg_conf_size));
+  m_reg.push_back(reg_t(m_reg_data_index, m_reg_data_size));
+  m_reg.push_back(reg_t(m_reg_id_index, m_reg_id_size));
+  m_reg.push_back(reg_t(m_reg_io_index, m_reg_io_size));
+  m_reg.push_back(reg_t(m_reg_offs_index, m_reg_offs_size));
+  m_reg.push_back(reg_t(m_reg_fs_index, m_reg_fs_size));
+  
+  mp_cs_pin->set();
+  
+  m_mode = mode_spi;
+  m_read_all_reg = true;
+  m_spi_transaction_size = m_write_buf_size;
+  m_timer.start();
+}
+irs::adc_ad7799_t::~adc_ad7799_t()
+{
+}
+void irs::adc_ad7799_t::start() 
+{
+  m_read_data = true;
+  creation_reg_comm(m_reg[m_reg_data_index], tt_read);///!!!
+  m_spi_transaction_size = m_reg_comm_size; //!!!
+  m_timer.set(make_cnt_ms(m_filter_settle_time_vector[m_freq]));
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;  
+}
+meas_status_t irs::adc_ad7799_t::status() const 
+{
+  return m_status;
+}
+void irs::adc_ad7799_t::set_channel(irs_u8 a_channel) 
+{
+  creation_reg_comm(m_reg[m_reg_conf_index], tt_write);
+  int shift = calculation_shift(m_reg[m_reg_conf_index]);
+  int number_byte = calculation_number_byte(m_reg[m_reg_conf_index], 
+    m_ch_byte_pos);
+  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_ch_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_channel << m_ch_pos);
+  for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
+  }
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;    
+}
+void irs::adc_ad7799_t::set_mode(irs_u8 a_mode) 
+{
+  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
+  int shift = calculation_shift(m_reg[m_reg_mode_index]);
+    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
+    m_mode_byte_pos);
+  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_mode_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_mode << m_mode_pos);
+  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
+  }
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy; 
+}
+void irs::adc_ad7799_t::set_freq(irs_u8 a_freq)
+{
+  m_freq = a_freq;
+  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
+  int shift = calculation_shift(m_reg[m_reg_mode_index]);
+    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
+    m_freq_byte_pos);
+  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0xF) << m_freq_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_freq << m_freq_pos);
+  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
+  }
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy; 
+}
+void irs::adc_ad7799_t::set_gain(irs_u8 a_gain) 
+{
+  creation_reg_comm(m_reg[m_reg_conf_index], tt_write);
+  int shift = calculation_shift(m_reg[m_reg_conf_index]);
+  int number_byte = calculation_number_byte(m_reg[m_reg_conf_index], 
+    m_gain_byte_pos);
+  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_gain_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_gain << m_gain_pos);
+  for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
+  }
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;    
+}
+irs_u32 irs::adc_ad7799_t::get_value() const
+{
+  return 0;
+}
+void irs::adc_ad7799_t::tick()
+{
+  mp_spi->tick();
+  switch(m_mode) {
+    case mode_free: {
+    } break;
+    case mode_spi: {
+      if (m_timer.check()) {
+        m_mode = mode_spi_rw; 
+      } 
+    } break;
+    case mode_spi_rw: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        spi_prepare();
+        mp_spi->read_write(mp_spi_buf, mp_spi_buf, m_spi_transaction_size);
+        m_mode = mode_spi_rw_wait;
+      }
+    } break;
+    case mode_spi_rw_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        spi_release();
+        if (m_read_all_reg) {
+          m_mode = mode_read_all_reg; 
+        } else if (m_ready_wait) { 
+          m_mode = mode_read;
+        } else if (m_read_data) { 
+          m_mode = mode_read;
+          m_timer.start();
+        } else {  
+          m_mode = mode_free;
+          m_status = meas_status_success;
+        }      
+      } 
+    } break;
+    case mode_read: {
+      if (m_timer.check()) {
+        m_ready_wait = true;
+        creation_reg_comm(m_reg[m_reg_status_index], tt_read);
+        m_mode = mode_spi_rw;
+      } 
+    } break;
+    case mode_read_all_reg: {
+      if (m_count_init != 0) {
+        memcpy(mp_buf + m_shift, 
+          mp_spi_buf + m_reg_comm_size, m_reg[m_count_init-1].size);
+        m_shift += m_reg[m_count_init-1].size;
+      }
+      if (m_count_init < m_reg.size()) {
+        if (m_reg[m_count_init].index != m_reg_data_index) {
+          creation_reg_comm(m_reg[m_count_init], tt_read);
+          m_mode = mode_spi_rw;
+        }
+        m_count_init++;
+      } else {
+        m_read_all_reg = false;
+        set_gain(0);
+      }
+    } break;
+  }
+  if (m_spi_transaction_size > m_write_buf_size) {
+    IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
+  }  
+}
+void irs::adc_ad7799_t::spi_prepare()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+  mp_spi->lock();
+  mp_cs_pin->clear();
+}
+void irs::adc_ad7799_t::spi_release()
+{
+  mp_cs_pin->set();
+  mp_spi->unlock();
+}
+
+void irs::adc_ad7799_t::creation_reg_comm(reg_t a_reg, 
+  transaction_type_t a_tt)
+{
+  memset(mp_spi_buf, 0, m_write_buf_size);
+  mp_spi_buf[m_reg_comm_index] |= 
+    static_cast<irs_u8>(a_reg.index << m_rs_pos);
+  switch(a_tt) {
+    case tt_read: {
+      mp_spi_buf[m_reg_comm_index] |= static_cast<irs_u8>(1 << m_rw_pos);
+    } break;
+    case tt_write: {
+      mp_spi_buf[m_reg_comm_index] &= ~static_cast<irs_u8>(1 << m_rw_pos);
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Недопустимый transaction_type");
+    } break; 
+  }
+  m_spi_transaction_size = a_reg.size + m_reg_comm_size;  
+}
+
+int irs::adc_ad7799_t::calculation_shift(reg_t a_reg)
+{
+  int shift = 0;
+  for(int i = 0; i < a_reg.index; i++) {
+    shift += m_reg[i].size;   
+  }
+  return shift;
+}
+int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg, int byte_pos)
+{
+  //из за того что обратный порядок байт
+  int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8; 
+  return number_byte;
+}  
+
+
+/*irs::adc_ad7799_t::adc_ad7799_t(
+  spi_t *ap_spi,
+  gpio_pin_t *ap_cs_pin):
+  m_status(st_reset),
+  m_target_status(st_reset),
+  m_transaction_type(tt_write),
+  m_mode(md_cont_conv),
+  mp_spi(ap_spi),
+  m_spi_transaction_size(0),
+  m_timer(irs::make_cnt_ms(m_wait_interval)),
+  m_reg_vector(),
+  m_filter_settle_time_vector(),
+  m_conv_time_vector(),
+  mp_cs_pin(ap_cs_pin),
+  m_initial_read(true),
+  m_current_reg(0)
+{
+  memset(mp_buf, 0, m_size);
+  memset(mp_spi_buf, 0xFF, m_reset_size);
+  m_spi_transaction_size = m_reset_size;
+  
+  m_reg_vector.clear();
+  reg_t reg;
+  
+  m_filter_settle_time_vector.push_back(m_reserved_interval); //  0:  reserve 
+  m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
+  m_filter_settle_time_vector.push_back(4);   //  1:  4 ms 
+  m_conv_time_vector.push_back(2*1000/500);   //  1:  500 Hz
+  m_filter_settle_time_vector.push_back(8);   //  2:  8 ms 
+  m_conv_time_vector.push_back(2*1000/250);   //  2:  250 Hz
+  m_filter_settle_time_vector.push_back(4);   //  3:  16 ms 
+  m_conv_time_vector.push_back(2*1000/125);   //  3:  125 Hz
+  m_filter_settle_time_vector.push_back(4);   //  4:  32 ms 
+  m_conv_time_vector.push_back(2*1000/62.5);  //  4:  62.5 Hz
+  m_filter_settle_time_vector.push_back(40);  //  5:  40 ms 
+  m_conv_time_vector.push_back(2*1000/50);    //  5:  50 Hz
+  m_filter_settle_time_vector.push_back(48);  //  6:  48 ms 
+  m_conv_time_vector.push_back(2*1000/39.2);  //  6:  39.2 Hz
+  m_filter_settle_time_vector.push_back(60);  //  7:  60 ms 
+  m_conv_time_vector.push_back(2*1000/33.3);  //  7:  33.3 Hz
+  m_filter_settle_time_vector.push_back(101); //  8:  101 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  //  8:  19.6 Hz
+  m_filter_settle_time_vector.push_back(120); //  9:  120 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  //  9:  16.7 Hz
+  m_filter_settle_time_vector.push_back(120); // 10:  120 ms 
+  m_conv_time_vector.push_back(2*1000/19.6);  // 10:  19.6 Hz
+  m_filter_settle_time_vector.push_back(160); // 11:  160 ms 
+  m_conv_time_vector.push_back(2*1000/12.5);  // 11:  12.5 Hz
+  m_filter_settle_time_vector.push_back(200); // 12:  200 ms 
+  m_conv_time_vector.push_back(2*1000/10);    // 12:  10 Hz
+  m_filter_settle_time_vector.push_back(240); // 13:  240 ms 
+  m_conv_time_vector.push_back(2*1000/8.33);  // 13:  8.33 Hz
+  m_filter_settle_time_vector.push_back(320); // 14:  320 ms 
+  m_conv_time_vector.push_back(2*1000/6.25);  // 14:  6.25 Hz
+  m_filter_settle_time_vector.push_back(480); // 15:  480 ms 
+  m_conv_time_vector.push_back(2*1000/4.17);  // 15:  4.17 Hz
+  
+  mp_cs_pin->set();
+  
+  m_timer.start();
+}
+
+irs_uarc irs::adc_ad7799_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::adc_ad7799_t::connected()
+{
+  return true;
+}
+
+void irs::adc_ad7799_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && (a_size > 0) && ap_buf;
+  if (valid_data) {  
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(mp_buf + index),
+      reinterpret_cast<const void*>(ap_buf), 
+      size);
+    bool was_write = false;
+    for (size_t i = 0; i < m_write_vector.size(); i++) {
+      if (overlap(&m_write_vector[i], index, size)) {
+        m_write_vector[i].need_write = true;
+        was_write = true;
+      }
+    }
+    if (was_write) {
+      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
+    }
+  }
+  return;
+}
+
+void irs::adc_ad7799_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && (a_size > 0) && ap_buf;
+  if (valid_data) {
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index), 
+      size);
+  }
+  return;
+}
+
+irs_bool irs::adc_ad7799_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = (a_index < m_size) & (a_bit_index <= 7);
+  irs_bool return_value = false;
+  if (valid_data) {
+    return_value =  (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
+  }
+  return return_value;
+}
+
+void irs::adc_ad7799_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = 
+    (a_index < m_size) & (a_index != m_buf_status_pos) & (a_bit_index <= 7);
+  valid_data |= 
+    ((a_index == m_buf_status_pos) & (a_bit_index == m_start_bit_pos));
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+    bool was_write = false;
+    for (size_t i = 0; i < m_write_vector.size(); i++) {
+      if (overlap(&m_write_vector[i], index, 0)) {
+        m_write_vector[i].need_write = true;
+        was_write = true;
+      }
+    }
+    if (was_write) {
+      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
+    }
+  }
+  return;
+}
+
+void irs::adc_ad7799_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = 
+    (a_index < m_size) & (a_index != m_buf_status_pos) & (a_bit_index <= 7);
+  valid_data |= 
+    ((a_index == m_buf_status_pos) & (a_bit_index == m_start_bit_pos));
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] &= ~static_cast<irs_u8>(1 << a_bit_index);
+    bool was_write = false;
+    for (size_t i = 0; i < m_write_vector.size(); i++) {
+      if (overlap(&m_write_vector[i], index, 0)) {
+        m_write_vector[i].need_write = true;
+        was_write = true;
+      }
+    }
+    if (was_write) {
+      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
+    }
+  }
+  return;
+}
+
+void irs::adc_ad7799_t::tick()
+{
+  mp_spi->tick();
+  
+  switch (m_status) {
+    case st_reset: {
+      if (m_timer.check()) {
+        m_status = st_spi_prepare;
+        m_target_status = st_prepare_initial_reading;
+      }
+      break;
+    }
+    case st_transaction_prepare: {
+      switch (m_transaction_type) {
+        case tt_read: {
+          m_spi_transaction_size = 
+            m_reg_vector[m_current_reg].request_read_spi_buf(mp_spi_buf);
+          break;
+        }
+        case tt_write: {
+          m_spi_transaction_size = 
+            m_reg_vector[m_current_reg].fill_write_spi_buf(mp_spi_buf);
+          break;
+        }
+      }
+      m_status = st_spi_prepare;
+      break;
+    }
+    case st_spi_prepare: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_cs_pin->clear();
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->lock();
+        mp_cs_pin->clear();
+        mp_spi->read_write(mp_spi_buf, mp_spi_buf, m_spi_transaction_size);
+        m_status = st_spi_wait;
+      }
+      break;
+    }
+    case st_spi_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_status = st_transaction_conclusion;
+      }
+      break;
+    }
+    case st_transaction_conclusion: {
+      switch (m_transaction_type) {
+        case tt_read: {
+          m_reg_vector[m_current_reg].extract_read_spi_buf(mp_spi_buf);
+          break;
+        }
+        case tt_write: {
+          m_spi_transaction_size = 
+            m_reg_vector[m_current_reg].fill_write_spi_buf(mp_spi_buf);
+          break;
+        }
+      }
+      m_status = m_target_status;
+      break;
+    }
+    case st_prepare_initial_reading: {
+      m_current_reg = 0;
+      m_transaction_type = tt_read;
+      m_status = st_transaction_prepare;
+      m_target_status = st_initial_reading;
+      break;
+    }
+    case st_initial_reading: {
+      if (m_current_reg < m_reg_vector.size() - 1) {
+        m_status = st_transaction_prepare;
+        m_current_reg++;
+      } else {
+        set_all_read_bit();
+        set_all_write_bit();
+        m_current_reg = 0;
+        m_status = st_prepare_wait_first_conversion;
+      }
+      break;
+    }
+    case st_prepare_wait_first_conversion: {
+      int time = 
+        m_filter_settle_time_vector[m_filter] + m_conv_time_vector[m_filter];
+      m_timer.set(irs::make_cnt_ms(time));
+      m_timer.start();
+      m_status = st_wait_conversion;
+      break;
+    }
+    case st_prepare_wait_conversion: {
+      int time = m_conv_time_vector[m_filter];
+      m_timer.set(irs::make_cnt_ms(time));
+      m_timer.start();
+      m_status = st_wait_conversion;
+      break;
+    }
+    case st_wait_conversion: {
+      if (m_timer.check()) {
+        m_current_reg = m_reg_data_index;
+        m_transaction_type = tt_read;
+        m_status = st_transaction_prepare;
+        m_target_status = st_conversion_ready;
+      }
+      break;
+    }
+    case st_conversion_ready: {
+      set_ready_bit();
+      m_status = st_check_need_write_reg;
+      break;
+    }
+    case st_check_need_write_reg: {
+      
+      break;
+    }
+    case st_prepare_write_reg: {
+      m_spi_transaction_size = 
+        m_write_vector[m_current_reg].fill_write_spi_buffer(mp_spi_buf);
+      m_current_reg++;
+      m_status = st_spi_prepare;
+      m_target_status = st_free;
+      break;
+    }
+    case st_prepare_read_reg: {
+      //
+      break;
+    }
+    case st_free: {
+      size_t begin_reg = m_current_reg;
+      for (; m_current_reg < m_write_vector.size() - 1; m_current_reg++) {
+        if (m_write_vector[m_current_reg].need_write()) {
+          m_status = st_prepare_write_reg;
+          break;
+      }
+      if (m_current_reg >= m_write_vector.size() - 1) {
+        m_current_reg = 0;
+        if (begin_reg == 0) {
+          set_write_ready_bit();
+        }
+      }
+      break;
+    }
+    case st_cont_conv: {
+      break;
+    }
+  }
+}
+
+irs::adc_ad7799_t::reg_t::reg_t(
+  irs_uarc a_buf_first, 
+  irs_uarc a_buf_size, 
+  irs_uarc a_ic_size, 
+  irs_u8 a_ic_addr,
+  bool a_read_only):
+  m_buf_first(a_buf_first),
+  m_buf_size(a_buf_size),
+  m_ic_addr(a_ic_addr),
+  m_ic_vector(),
+  m_entity_vector(),
+  m_need_read(true),
+  m_need_write(false),
+  m_read_only(a_read_only)
+{
+  m_ic_vector.resize(a_ic_size);
+  m_entity_vector.clear();
+}
+
+void irs::adc_ad7799_t::reg_t::push_back_entity(entity_t a_entity)
+{
+  m_entity_vector.push_back(a_entity);
+}
+
+void irs::adc_ad7799_t::reg_t::write_data_processing(const irs_u8* ap_buf, 
+  irs_uarc a_index, irs_uarc a_size)
+{
+  if (!m_read_only && overlap(a_index, a_size)) {
+    m_need_write = true;
+    for (irs_uarc i = 0; i < m_entity_vector.size(); i++) {
+      irs_uarc size = m_entity_vector[i].size;
+      if (size <= 1) {
+        irs_u8 data = ap_buf[m_entity_vector[i].buf_pos];
+        data >>= m_entity_vector[i].buf_shift;
+
+        irs_u8 clear = m_entity_vector[i].mask << m_entity_vector[i].ic_shift;
+        clear = ~clear;
+
+        irs_u8 set = m_entity_vector[i].mask & data;
+        set <<= m_entity_vector[i].ic_shift;
+
+        m_ic_vector[m_entity_vector[i].ic_pos] &= clear;
+        m_ic_vector[m_entity_vector[i].ic_pos] |= set;
+      } else {
+        for (irs_uarc j = 0; j < size; j++) {
+          m_ic_vector[m_entity_vector[i].ic_pos + size - j - 1] 
+            = ap_buf[j + m_entity_vector[i].buf_pos];
+        }
+      }
+    }
+  }
+}
+
+void irs::adc_ad7799_t::reg_t::read_data_processing(irs_u8 *ap_buf, 
+  irs_uarc a_index, irs_uarc a_size)
+{
+  for (irs_uarc i = 0; i < m_entity_vector.size(); i++) {
+    irs_uarc size = m_entity_vector[i].size;
+    if (size <= 1) {
+      irs_u8 data = m_ic_vector[m_entity_vector[i].ic_pos];
+      data >>= m_entity_vector[i].ic_shift;
+
+      irs_u8 clear = m_entity_vector[i].mask << m_entity_vector[i].buf_shift;
+      clear = ~clear;
+
+      irs_u8 set = m_entity_vector[i].mask & data;
+      set <<= m_entity_vector[i].buf_shift;
+
+      ap_buf[m_entity_vector[i].buf_pos] &= clear;
+      ap_buf[m_entity_vector[i].buf_pos] |= set;
+    } else {
+      for (irs_uarc j = 0; j < size; j++) {
+        ap_buf[j + m_entity_vector[i].buf_pos] = 
+          m_ic_vector[m_entity_vector[i].ic_pos + size - j - 1];
+      }
+    }
+  }
+}
+
+irs_u8 irs::adc_ad7799_t::reg_t::fill_write_spi_buf(irs_u8* ap_spi_buf)
+{
+  ap_spi_buf[m_addr_pos] = m_ic_addr << m_addr_shift;
+  for (irs_uarc i = 0; i < m_ic_vector.size(); i++) {
+    ap_spi_buf[i + m_data_pos] = m_ic_vector[i];
+  }
+  return m_ic_size + 1;
+}
+
+void irs::adc_ad7799_t::reg_t::extract_read_spi_buf(const irs_u8* ap_spi_buf)
+{
+  for (irs_uarc i = 0; i < m_ic_vector.size(); i++) {
+    m_ic_vector[i] = ap_spi_buf[i + m_data_pos];
+  }
+}
+
+irs_u8 irs::adc_ad7799_t::reg_t::request_read_spi_buf(irs_u8* ap_spi_buf)
+{
+  m_need_read = false;
+  ap_spi_buf[m_addr_pos] = (m_ic_addr << m_addr_shift) | (1 << m_r_bit);
+  return m_ic_size + 1;
+}
+
+void irs::adc_ad7799_t::reg_t::need_read()
+{
+  m_need_read = true;
+}*/

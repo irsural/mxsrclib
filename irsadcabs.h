@@ -11,6 +11,7 @@
 #include <irsdefs.h>
 
 #include <irscpu.h>
+#include <measdef.h>
 
 #include <irsfinal.h>
 
@@ -36,6 +37,20 @@ public:
   virtual float get_float_maximum() = 0;
   virtual float get_float_data(irs_u8 a_channel) = 0;
   virtual float get_temperature() = 0;
+  virtual void tick() = 0;
+};
+
+class adc_request_t
+{
+public:
+  virtual ~adc_request_t() {};
+  virtual void start() = 0;
+  virtual meas_status_t status() const = 0; 
+  virtual void set_channel(irs_u8 a_channel) = 0;
+  virtual void set_mode(irs_u8 a_mode) = 0;
+  virtual void set_freq(irs_u8 a_freq) = 0;
+  virtual void set_gain(irs_u8 a_gain) = 0;
+  virtual irs_u32 get_value() const = 0;
   virtual void tick() = 0;
 };
 

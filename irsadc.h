@@ -13,6 +13,7 @@
 #include <irsstd.h>
 #include <mxdata.h>
 #include <irsgpio.h>
+#include <irsadcabs.h>
 
 #include <irsfinal.h>
 
@@ -998,6 +999,517 @@ struct dac_ad5293_data_t
   {
     irs_uarc index = a_start_index;
     index = resistance_code.connect(ap_data, index);
+  }
+};
+
+//--------------------------- AD5791 -------------------------------------------
+// 20-bit DAC
+class dac_ad5791_t : public mxdata_t
+{
+public:
+  dac_ad5791_t(
+    spi_t *ap_spi,
+    gpio_pin_t *ap_cs_pin,
+    gpio_pin_t *ap_ldac_pin,
+    gpio_pin_t *ap_clr_pin,
+    gpio_pin_t *ap_reset_pin,
+    irs_u32 a_default_value);
+  
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  enum status_t {
+    st_reset,
+    st_prepare_options,
+    st_prepare_voltage_code,
+    st_spi_prepare,
+    st_spi_wait,
+    st_free
+  };
+  enum {
+    m_size = 7,
+    m_status_pos = 0,
+    m_options_pos = 1,
+    m_lin_comp_pos = 2,
+    m_voltage_code_pos = 3,
+    m_write_buf_size = 3,
+    m_ready_bit_pos = 0,
+    m_rbuf_bit_pos = 1,
+    m_opgnd_bit_pos = 2,
+    m_dactri_bit_pos = 3,
+    m_bin2sc_bit_pos = 4,
+    m_sdodis_bit_pos = 5
+  };
+  enum {
+    addr_code = 0x01 << 4,
+    addr_control = 0x02 << 4,
+    addr_clearcode = 0x03 << 4,
+    addr_softcontrol = 0x04 << 4
+  };
+  enum {
+    m_reset_interval = 1  //  ms
+  };
+ 
+  status_t m_status;
+  spi_t* mp_spi;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buf[m_write_buf_size];
+  irs::timer_t m_timer;
+  bool m_need_write_options;
+  bool m_need_write_voltage_code;
+  gpio_pin_t* mp_cs_pin;
+  gpio_pin_t* mp_ldac_pin;
+  gpio_pin_t* mp_clr_pin;
+  gpio_pin_t* mp_reset_pin;
+};
+
+struct dac_ad5791_data_t
+{
+  irs::bit_data_t ready_bit;
+  irs::bit_data_t rbuf_bit;
+  irs::bit_data_t opgnd_bit;
+  irs::bit_data_t dactri_bit;
+  irs::bit_data_t bin2sc_bit;
+  irs::bit_data_t sdodis_bit;
+  irs::conn_data_t<irs_u8> lin_comp;
+  irs::conn_data_t<irs_u32> voltage_code;
+  
+  dac_ad5791_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    rbuf_bit(),
+    opgnd_bit(),
+    dactri_bit(),
+    bin2sc_bit(),
+    sdodis_bit(),
+    lin_comp(),
+    voltage_code()
+  {
+    connect(ap_data, a_start_index);
+  }  
+   
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    ready_bit.connect(ap_data, a_start_index, 0);
+    a_start_index++;
+    rbuf_bit.connect(ap_data, a_start_index, 1);
+    opgnd_bit.connect(ap_data, a_start_index, 2);
+    dactri_bit.connect(ap_data, a_start_index, 3);
+    bin2sc_bit.connect(ap_data, a_start_index, 4);
+    sdodis_bit.connect(ap_data, a_start_index, 5);
+    a_start_index = lin_comp.connect(ap_data, a_start_index);
+    a_start_index = voltage_code.connect(ap_data, a_start_index);
+    return a_start_index;
+  }
+};
+
+//-------------------------- AD7799 -------------------------------------------
+// 24-bit 3-channel ADC
+class adc_ad7799_t: public adc_request_t
+{
+public:
+  adc_ad7799_t(spi_t *ap_spi,
+  gpio_pin_t* ap_cs_pin);
+  ~adc_ad7799_t();
+  virtual void start();
+  virtual meas_status_t status() const; 
+  virtual void set_channel(irs_u8 a_channel);
+  virtual void set_mode(irs_u8 a_mode);
+  virtual void set_freq(irs_u8 a_freq);
+  virtual void set_gain(irs_u8 a_gain);
+  virtual irs_u32 get_value() const;
+  virtual void tick();
+
+private:
+  enum mode_t {
+    mode_free,
+    mode_spi,
+    mode_spi_rw,
+    mode_spi_rw_wait,
+    mode_read_all_reg,
+    mode_read
+  };
+  enum {
+    m_size_buf = 16,
+    m_write_buf_size = 4  
+  };
+  enum {
+    m_gain_byte_pos = 1,
+    m_freq_byte_pos = 0,
+    m_ch_byte_pos = 0,
+    m_mode_byte_pos = 1
+  };
+  enum {
+    m_rw_pos = 6,
+    m_rs_pos = 3,
+    m_gain_pos = 0,
+    m_freq_pos = 0,
+    m_ch_pos = 0,
+    m_mode_pos = 5
+  };
+  enum reg_index_t {
+    m_reg_comm_index = 0,
+    m_reg_status_index = 0,
+    m_reg_mode_index = 1,
+    m_reg_conf_index = 2,
+    m_reg_data_index = 3,
+    m_reg_id_index = 4,
+    m_reg_io_index = 5,
+    m_reg_offs_index = 6,
+    m_reg_fs_index = 7
+  };
+  enum reg_size_t {
+    m_reg_comm_size = 1,
+    m_reg_status_size = 1,
+    m_reg_mode_size = 2,
+    m_reg_conf_size = 2,
+    m_reg_data_size = 3,
+    m_reg_id_size = 1,
+    m_reg_io_size = 1,
+    m_reg_offs_size = 3,
+    m_reg_fs_size = 3
+  };
+  enum transaction_type_t {
+    tt_read,
+    tt_write
+  };
+  struct reg_t {
+    reg_t(reg_index_t a_index, reg_size_t a_size):
+      index(a_index),
+      size(a_size)
+    {}
+    ~reg_t() {};
+    reg_index_t index;
+    reg_size_t size;
+  };
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  meas_status_t m_status;
+  mode_t m_mode;
+  irs_u8 mp_buf[m_size_buf];
+  irs_u8 mp_spi_buf[m_write_buf_size];
+  size_t m_spi_transaction_size;
+  vector<reg_t> m_reg;
+  bool m_read_all_reg;
+  irs_u32 m_count_init;
+  irs_u32 m_shift;
+  bool m_read_data;
+  vector<int> m_filter_settle_time_vector;
+  vector<float> m_conv_time_vector;
+  irs_u8 m_freq;
+  int m_reserved_interval;
+  timer_t m_timer;
+  bool m_ready_wait;
+ 
+  void spi_prepare();
+  void spi_release();
+  void creation_reg_comm(reg_t a_reg, transaction_type_t a_tt);
+  int calculation_shift(reg_t a_reg);
+  int calculation_number_byte(reg_t a_reg, int byte_pos);
+};
+/*class adc_ad7799_t : public mxdata_t
+{
+public:
+  adc_ad7799_t(
+    spi_t *ap_spi,
+    gpio_pin_t *ap_cs_pin);
+  
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  enum status_t {
+    st_reset,
+    st_initial_read_reg,
+    st_initial_copy_reg,
+    st_spi_prepare,
+    st_spi_wait,
+    st_prepare_write_reg,
+    st_pwr_down,
+    st_cont_conv,
+    st_single_conv
+  };
+  enum {
+    m_size = 21,
+    // m_buf_status_pos = 0,
+    
+    // m_buf_mode_pos = 1,
+    // m_buf_mode_size = 2,
+    // m_buf_mode_filt_pos = 1,
+    // m_buf_mode_mode_pos = 2,
+    
+    // m_buf_conf_pos = 3,
+    // m_buf_conf_size = 3,
+    // m_buf_conf_gain_pos = 3,
+    // m_buf_conf_chan_pos = 4,
+    // m_buf_conf_bits_pos = 5,
+    // m_buf_conf_buf_bit_pos = 0,
+    // m_buf_conf_refdet_bit_pos = 1,
+    // m_buf_conf_ub_bit_pos = 2,
+    // m_buf_conf_bo_bit_pos = 3,
+    
+    // m_buf_io_pos = 6,
+    // m_buf_io_size = 1,
+    // m_buf_io_io1_bit_pos = 0,
+    // m_buf_io_io2_bit_pos = 1,
+    // m_buf_io_ioen_bit_pos = 2,
+    
+    // m_buf_data_pos = 7,
+    // m_buf_data_size = 4,
+    
+    // m_buf_offs_pos = 12,
+    // m_buf_offs_size = 4,
+    // m_buf_fs_pos = 16,
+    // m_buf_fs_size = 4,
+    
+    // m_write_buf_size = 5,
+    // m_ready_bit_pos = 0,
+    // m_start_bit_pos = 1,
+    // m_error_bit_pos = 2,
+    // m_noref_bit_pos = 3,
+    
+    // m_buf_error_bit_pos = 2,
+    // m_buf_noref_bit_pos = 3,
+    
+    m_buf_filter_pos = 1,
+    m_buf_filter_mask = 0x0F,
+    m_buf_mode_pos = 2,
+    m_buf_mode_mask = 0x07,
+    m_reset_size = 4
+  };
+  // enum {
+    // m_reg_comm_addr = 0x00 << 5,
+    // m_reg_stat_addr = 0x00 << 5,
+    // m_reg_mode_addr = 0x01 << 5,
+    // m_reg_conf_addr = 0x02 << 5,
+    // m_reg_data_addr = 0x03 << 5,
+    // m_reg_id_addr =   0x04 << 5,
+    // m_reg_io_addr =   0x05 << 5,
+    // m_reg_offs_addr = 0x06 << 5,
+    // m_reg_fs_addr =   0x07 << 5,
+    // m_reg_comm_pos = 0,
+    // m_reg_comm_size = 1,
+    // m_reg_comm_pos = 0,
+    // m_reg_stat_pos = 1,
+    // m_reg_stat_size = 1,
+    // m_reg_error_shift = 6,
+    // m_reg_noref_shift = 5,
+    // m_reg_mode_size = 2,
+    // m_reg_filt_pos = 2,
+    // m_reg_filt_shift = 0,
+    // m_reg_filt_mask = 0x0F,
+    // m_reg_mode_pos = 1,
+    // m_reg_mode_shift = 5,
+    // m_reg_mode_mask = 0x07,
+    // m_reg_conf_size = 2,
+    // m_reg_gain_pos = 1,
+    // m_reg_gain_shift = 0,
+    // m_reg_gain_mask = 0x07,
+    // m_reg_chan_pos = 2,
+    // m_reg_chan_shift = 0,
+    // m_reg_chan_mask = 0x07,
+    // m_reg_bo_pos = 1,
+    // m_reg_bo_shift = 5,
+    // m_reg_ub_pos = 1,
+    // m_reg_ub_shift = 4,
+    // m_reg_ref_det_pos = 2,
+    // m_reg_ref_det_shift = 5,
+    // m_reg_buf_pos = 2,
+    // m_reg_buf_shift = 4,
+    // m_reg_io_pos = 1,
+    // m_reg_io1_shift = 4,
+    // m_reg_io1_shift = 5,
+    // m_reg_ioen_shift = 6,
+    // m_reg_data_pos = 1,
+    // m_reg_data_size = 3,
+    // m_reg_id_size = 1,
+    // m_reg_io_size = 1,
+    // m_reg_offs_size = 3,
+    // m_reg_fs_size = 3,
+    
+    // m_reg_bit_mask = 0x01,
+    // m_reg_rw_bit_pos = 6
+  // };
+  enum {
+    m_wait_interval = 1,    //  ms
+    m_reserved_interval = 1
+  };
+  enum mode_t {
+    md_cont_conv = 0,
+    md_single_conv = 1,
+    md_idle = 2,
+    md_pwr_down = 3,
+    md_int_zero = 4,
+    md_int_fs = 5,
+    md_sys_zero = 6,
+    md_sys_fs = 7
+  };
+  enum transaction_type_t {
+    tt_read,
+    tt_write
+  };
+  enum reg_index_t {
+    m_reg_status_index = 0,
+    m_reg_mode_index = 1,
+    m_reg_conf_index = 2,
+    m_reg_io_index = 3,
+    m_reg_data_index = 4,
+    m_reg_id_index = 5,
+    m_reg_offs_index = 6,
+    m_reg_fs_index = 7
+  };
+  struct entity_t {
+    irs_uarc size;      //  кол-во байт в регистре микросхемы и буфере
+    irs_uarc mask;      //  маска (если entity <= 1 байта) до сдвигов
+    irs_uarc ic_pos;    //  смещение в байтах в регистре микросхемы
+    irs_uarc ic_shift;  //  сдвиг внутри байта (если entity <= 1 байта)
+    irs_uarc ic_mask;   //  маска (если entity <= 1 байта)
+    irs_uarc buf_pos;   //  смещение в байтах в буфере
+    irs_uarc buf_shift; //  сдвиг внутри байта (если entity <= 1 байта)
+  };
+  class reg_t {
+  public:
+    reg_t(
+      irs_uarc a_buf_first, 
+      irs_uarc a_buf_size, 
+      irs_uarc a_ic_size, 
+      irs_u8 a_ic_addr,
+	  bool a_read_only);
+    ~reg_t() {};
+    void push_back_entity(entity_t a_entity);
+    void write_data_processing(const irs_u8* ap_buf, 
+      irs_uarc a_index, irs_uarc a_size);
+    void read_data_processing(irs_u8* ap_buf, 
+      irs_uarc a_index, irs_uarc a_size);
+    irs_u8 fill_write_spi_buf(irs_u8* ap_spi_buf);
+    void extract_read_spi_buf(const irs_u8* ap_spi_buf);
+    irs_u8 request_read_spi_buf(irs_u8* ap_spi_buf);
+    bool need_write();
+    void need_read();
+  private:
+  enum {
+    m_addr_pos = 0,
+    m_data_pos = 1,
+    m_addr_shift = 3,
+    m_r_bit = 6
+  };
+    inline bool overlap(irs_uarc a_index, irs_uarc a_size) 
+    {
+      return (a_index < m_buf_first + m_buf_size) 
+          && (a_index + a_size > m_buf_first);
+    };
+    irs_uarc m_buf_first;
+    irs_uarc m_buf_size;
+    irs_u8 m_ic_addr;
+    vector<irs_u8> m_ic_vector;
+    vector<entity_t> m_entity_vector;
+    bool m_need_read;
+    bool m_need_write;
+    bool m_read_only;
+    irs_u8 m_filter;
+    irs_u8 m_mode;
+  };
+  
+  status_t m_status;
+  status_t m_target_status;
+  transaction_type_t m_transaction_type;
+  mode_t m_mode;
+  spi_t* mp_spi;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_spi_buf[m_write_buf_size];
+  size_t m_spi_transaction_size;
+  irs::timer_t m_timer;
+  vector<reg_t> m_reg_vector;
+  vector<int> m_filter_settle_time_vector;
+  vector<int> m_conv_time_vector;
+  gpio_pin_t* mp_cs_pin;
+  bool m_initial_read;
+  size_t m_current_reg;
+  // size_t m_status_reg;
+  // size_t m_data_reg;
+};*/
+
+struct adc_ad7799_data_t
+{
+  irs::bit_data_t ready_bit;
+  irs::bit_data_t start_bit;
+  irs::bit_data_t error_bit;
+  irs::bit_data_t noref_bit;
+  irs::conn_data_t<irs_u8> filter;
+  irs::conn_data_t<irs_u8> mode;
+  irs::conn_data_t<irs_u8> gain;
+  irs::conn_data_t<irs_u8> channel;
+  irs::bit_data_t buf_bit;
+  irs::bit_data_t ref_det_bit;
+  irs::bit_data_t ub_bit;
+  irs::bit_data_t bo_bit;
+  irs::bit_data_t io1_bit;
+  irs::bit_data_t io2_bit;
+  irs::bit_data_t ioen_bit;
+  irs::conn_data_t<irs_u32> data;
+  irs::conn_data_t<irs_u8> id;
+  irs::conn_data_t<irs_u32> offset;
+  irs::conn_data_t<irs_u32> full_scale;
+  
+  adc_ad7799_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    start_bit(),
+    error_bit(),
+    noref_bit(),
+    filter(),
+    mode(),
+    gain(),
+    channel(),
+    buf_bit(),
+    ref_det_bit(),
+    ub_bit(),
+    bo_bit(),
+    io1_bit(),
+    io2_bit(),
+    ioen_bit(),
+    data(),
+    id(),
+    offset(),
+    full_scale()
+  {
+    connect(ap_data, a_start_index);
+  }  
+   
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    ready_bit.connect(ap_data, a_start_index, 0);
+    start_bit.connect(ap_data, a_start_index, 1);
+    error_bit.connect(ap_data, a_start_index, 2);
+    noref_bit.connect(ap_data, a_start_index, 3);
+    a_start_index++;
+    a_start_index = filter.connect(ap_data, a_start_index);
+    a_start_index = mode.connect(ap_data, a_start_index);
+    a_start_index = gain.connect(ap_data, a_start_index);
+    a_start_index = channel.connect(ap_data, a_start_index);
+    buf_bit.connect(ap_data, a_start_index, 0);
+    ref_det_bit.connect(ap_data, a_start_index, 1);
+    ub_bit.connect(ap_data, a_start_index, 2);
+    bo_bit.connect(ap_data, a_start_index, 3);
+    a_start_index++;
+    io1_bit.connect(ap_data, a_start_index, 0);
+    io2_bit.connect(ap_data, a_start_index, 1);
+    ioen_bit.connect(ap_data, a_start_index, 2);
+    a_start_index++;
+    a_start_index = data.connect(ap_data, a_start_index);
+    a_start_index = id.connect(ap_data, a_start_index);
+    a_start_index = offset.connect(ap_data, a_start_index);
+    a_start_index = full_scale.connect(ap_data, a_start_index);
+    return a_start_index;
   }
 };
 
