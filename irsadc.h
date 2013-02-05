@@ -1150,7 +1150,8 @@ private:
     m_gain_pos = 0,
     m_freq_pos = 0,
     m_ch_pos = 0,
-    m_mode_pos = 5
+    m_mode_pos = 5,
+    ready_pos = 7
   };
   enum reg_index_t {
     m_reg_comm_index = 0,
@@ -1205,6 +1206,11 @@ private:
   int m_reserved_interval;
   timer_t m_timer;
   bool m_ready_wait;
+  bool m_get_data;
+  irs_u32 m_value;
+  bool m_ready;
+  irs_u8 m_read_mode;
+  irs_u8 mp_get_buff[4];
  
   void spi_prepare();
   void spi_release();

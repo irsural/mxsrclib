@@ -2093,7 +2093,11 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_freq(0),
   m_reserved_interval(1),
   m_timer(make_cnt_ms(m_reserved_interval)),
-  m_ready_wait(false)
+  m_ready_wait(false),
+  m_get_data(false),
+  m_value(0),
+  m_ready(true),
+  m_read_mode(0)
 {
   memset(mp_buf, 0, m_size_buf);
   memset(mp_spi_buf, 0xFF, m_write_buf_size);
@@ -2153,11 +2157,18 @@ irs::adc_ad7799_t::~adc_ad7799_t()
 void irs::adc_ad7799_t::start() 
 {
   m_read_data = true;
-  creation_reg_comm(m_reg[m_reg_data_index], tt_read);///!!!
-  m_spi_transaction_size = m_reg_comm_size; //!!!
-  m_timer.set(make_cnt_ms(m_filter_settle_time_vector[m_freq]));
+  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
+  int shift = calculation_shift(m_reg[m_reg_mode_index]);
+    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
+    m_mode_byte_pos);
+  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_mode_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(m_read_mode << m_mode_pos);
+  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
+  }
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy;  
+  m_status = meas_status_busy; 
 }
 meas_status_t irs::adc_ad7799_t::status() const 
 {
@@ -2180,18 +2191,7 @@ void irs::adc_ad7799_t::set_channel(irs_u8 a_channel)
 }
 void irs::adc_ad7799_t::set_mode(irs_u8 a_mode) 
 {
-  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
-  int shift = calculation_shift(m_reg[m_reg_mode_index]);
-    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
-    m_mode_byte_pos);
-  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_mode_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_mode << m_mode_pos);
-  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
-    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
-      mp_buf[shift + i];
-  }
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy; 
+  m_read_mode = a_mode;
 }
 void irs::adc_ad7799_t::set_freq(irs_u8 a_freq)
 {
@@ -2217,6 +2217,7 @@ void irs::adc_ad7799_t::set_gain(irs_u8 a_gain)
     m_gain_byte_pos);
   mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_gain_pos);
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_gain << m_gain_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(1 << 4); //Unipolar Bit
   for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
     mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
       mp_buf[shift + i];
@@ -2226,7 +2227,7 @@ void irs::adc_ad7799_t::set_gain(irs_u8 a_gain)
 }
 irs_u32 irs::adc_ad7799_t::get_value() const
 {
-  return 0;
+  return m_value;
 }
 void irs::adc_ad7799_t::tick()
 {
@@ -2251,11 +2252,33 @@ void irs::adc_ad7799_t::tick()
         spi_release();
         if (m_read_all_reg) {
           m_mode = mode_read_all_reg; 
-        } else if (m_ready_wait) { 
-          m_mode = mode_read;
+        } else if (m_ready_wait) {
+          m_ready = 
+            (mp_spi_buf[m_reg_comm_size] & static_cast<irs_u8>(1 << ready_pos));
+          if (!m_ready) {
+            m_ready_wait = false;
+            creation_reg_comm(m_reg[m_reg_data_index], tt_read);
+            m_mode = mode_spi_rw;
+            m_get_data = true;
+          } else {
+            m_mode = mode_read;
+            m_timer.set(make_cnt_ms(m_filter_settle_time_vector[m_freq]));  
+          }
         } else if (m_read_data) { 
-          m_mode = mode_read;
-          m_timer.start();
+          if (!m_get_data) {
+            m_mode = mode_read;
+            m_timer.set(make_cnt_ms
+              (m_filter_settle_time_vector[m_freq]+m_reserved_interval));
+          } else {
+            m_get_data = false;
+            m_read_data = false;
+            m_mode = mode_free;
+            m_status = meas_status_success;
+            mp_get_buff[2] = mp_spi_buf[1];
+            mp_get_buff[1] = mp_spi_buf[2];
+            mp_get_buff[0] = mp_spi_buf[3];
+            m_value = *reinterpret_cast<irs_u32*>(mp_get_buff);
+          }
         } else {  
           m_mode = mode_free;
           m_status = meas_status_success;
