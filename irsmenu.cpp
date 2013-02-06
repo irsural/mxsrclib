@@ -1591,7 +1591,7 @@ void irs_advanced_tablo_t::draw(irs_menu_base_t **a_cur_menu)
                 update_current_item);
               mp_disp_drv->outtextpos(
                 m_parametr_vector[i].x, m_parametr_vector[i].y, mp_lcd_string);
-            }   
+            }
           }
           if (!one_updated) m_updated_item = 0;
 
@@ -3373,17 +3373,17 @@ void irs_menu_2param_master_item_t::
     case value_first: {
       m_point_vector[m_current_point].out_value =
         m_point_vector[m_current_point].value_1;
-    }
+    } break;
     case value_second: {
       m_point_vector[m_current_point].out_value =
         m_point_vector[m_current_point].value_2;
-    }
+    } break;
     default: {
       m_point_vector[m_current_point].out_value =
         m_point_vector[m_current_point].value_2;
       IRS_LIB_ERROR(irs::ec_standard, "Умолчание в switch недопустимо в "
         "функции irs_menu_2param_master_item_t::reset_cur_param_to");
-    }
+    } break;
   }
   m_need_out_param_change = true;
   m_last_point = m_current_point;
