@@ -1887,6 +1887,7 @@ irs::dac_ad5791_t::dac_ad5791_t(
   gpio_pin_t *ap_reset_pin,
   irs_u32 a_default_value):
   m_status(st_reset),
+  m_target_status(st_free),
   mp_spi(ap_spi),
   m_timer(irs::make_cnt_ms(m_reset_interval)),
   m_need_write_options(true),
@@ -1900,22 +1901,22 @@ irs::dac_ad5791_t::dac_ad5791_t(
   memset(mp_write_buf, 0, m_write_buf_size);
   
   mp_cs_pin->set();
-  mp_ldac_pin->set();
-  mp_clr_pin->set();
-  mp_reset_pin->clear();
+  mp_ldac_pin->clear();
+  mp_clr_pin->clear();
+  mp_reset_pin->set();
   
   m_timer.start();
 
   mp_buf[m_options_pos] = 
-    (1 << m_rbuf_bit_pos) ||
-    (1 << m_opgnd_bit_pos) ||
-    (1 << m_dactri_bit_pos) ||
-    (1 << m_bin2sc_bit_pos) ||
+    (1 << m_rbuf_bit_pos) |
+    (1 << m_opgnd_bit_pos) |
+    (1 << m_dactri_bit_pos) |
+    (0 << m_bin2sc_bit_pos) |
     (1 << m_sdodis_bit_pos);
   mp_buf[m_lin_comp_pos] = 0;
   irs_u32* voltage_code = 
     reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
-  *voltage_code = a_default_value & ((1 << 20) - 1);
+  *voltage_code = a_default_value;
 }
 
 irs_uarc irs::dac_ad5791_t::size()
@@ -2020,32 +2021,39 @@ void irs::dac_ad5791_t::tick()
   switch (m_status) {
     case st_reset: {
       if (m_timer.check()) {
-        mp_reset_pin->set();
+        mp_reset_pin->clear();
         m_status = st_prepare_options;
       }
       break;
     }
     case st_prepare_options: {
       mp_write_buf[0] = addr_control;
-      mp_write_buf[1] = mp_buf[m_lin_comp_pos] >> 2;
-      mp_write_buf[2] = (mp_buf[m_lin_comp_pos] & 0x03) | mp_buf[m_options_pos];
+      mp_write_buf[1] = (mp_buf[m_lin_comp_pos] >> 2) & 0x03;
+      mp_write_buf[2] = ((mp_buf[m_lin_comp_pos] & 0x03) << 6) 
+        | (mp_buf[m_options_pos] & 0x3E);
       m_need_write_options = false;
       m_status = st_spi_prepare;
+      m_target_status = st_free;
       break;
     }
     case st_prepare_voltage_code: {
-      mp_write_buf[0] = addr_code | (mp_buf[m_voltage_code_pos + 2] & 0x07);
-      mp_write_buf[1] = mp_buf[m_voltage_code_pos + 1];
-      mp_write_buf[2] = mp_buf[m_voltage_code_pos + 0];
+      irs_u32 voltage_code = 
+        *reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
+      irs_u8 master_byte = voltage_code >> m_master_byte_shift;
+      irs_u8 mid_byte    = voltage_code >> m_mid_byte_shift;
+      irs_u8 least_byte  = voltage_code >> m_least_byte_shift;
+      mp_write_buf[0] = addr_code | master_byte;
+      mp_write_buf[1] = mid_byte;
+      mp_write_buf[2] = least_byte;
       m_need_write_voltage_code = false;
       m_status = st_spi_prepare;
+      m_target_status = st_ldac_clear;
       break;
     }
     case st_spi_prepare: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
-        mp_cs_pin->clear();
         mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
         mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_spi->lock();
         mp_cs_pin->clear();
@@ -2058,6 +2066,20 @@ void irs::dac_ad5791_t::tick()
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
         mp_spi->unlock();
+        m_status = m_target_status;
+      }
+      break;
+    }
+    case st_ldac_clear: {
+      mp_ldac_pin->set();
+      m_timer.set(irs::make_cnt_mcs(1));
+      m_timer.start();
+      m_status = st_ldac_set;
+      break;
+    }
+    case st_ldac_set: {
+      if (m_timer.check()) {
+        mp_ldac_pin->clear();
         m_status = st_free;
       }
       break;
@@ -2217,7 +2239,7 @@ void irs::adc_ad7799_t::set_gain(irs_u8 a_gain)
     m_gain_byte_pos);
   mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_gain_pos);
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_gain << m_gain_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(1 << 4); //Unipolar Bit
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(0 << 4); //Unipolar Bit
   for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
     mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
       mp_buf[shift + i];
