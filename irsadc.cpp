@@ -2118,8 +2118,11 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_ready_wait(false),
   m_get_data(false),
   m_value(0),
-  m_ready(true),
-  m_read_mode(0)
+  m_read_mode(om_continuous),
+  m_cur_read_mode(om_continuous),
+  m_single_mode(false),
+  mp_value_param(IRS_NULL),
+  m_read_calibration_coeff(false)
 {
   memset(mp_buf, 0, m_size_buf);
   memset(mp_spi_buf, 0xFF, m_write_buf_size);
@@ -2127,35 +2130,35 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_filter_settle_time_vector.push_back(m_reserved_interval); //  0:  reserve 
   m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
   m_filter_settle_time_vector.push_back(4);   //  1:  4 ms 
-  m_conv_time_vector.push_back(2*1000/500);   //  1:  500 Hz
+  m_conv_time_vector.push_back(to_int(1000/500));   //  1:  500 Hz
   m_filter_settle_time_vector.push_back(8);   //  2:  8 ms 
-  m_conv_time_vector.push_back(2*1000/250);   //  2:  250 Hz
-  m_filter_settle_time_vector.push_back(4);   //  3:  16 ms 
-  m_conv_time_vector.push_back(2*1000/125);   //  3:  125 Hz
-  m_filter_settle_time_vector.push_back(4);   //  4:  32 ms 
-  m_conv_time_vector.push_back(2*1000/62.5);  //  4:  62.5 Hz
+  m_conv_time_vector.push_back(to_int(1000/250));   //  2:  250 Hz
+  m_filter_settle_time_vector.push_back(16);   //  3:  16 ms 
+  m_conv_time_vector.push_back(to_int(1000/125));   //  3:  125 Hz
+  m_filter_settle_time_vector.push_back(32);   //  4:  32 ms 
+  m_conv_time_vector.push_back(to_int(1000/62.5));  //  4:  62.5 Hz
   m_filter_settle_time_vector.push_back(40);  //  5:  40 ms 
-  m_conv_time_vector.push_back(2*1000/50);    //  5:  50 Hz
+  m_conv_time_vector.push_back(to_int(1000/50));    //  5:  50 Hz
   m_filter_settle_time_vector.push_back(48);  //  6:  48 ms 
-  m_conv_time_vector.push_back(2*1000/39.2);  //  6:  39.2 Hz
+  m_conv_time_vector.push_back(to_int(1000/39.2));  //  6:  39.2 Hz
   m_filter_settle_time_vector.push_back(60);  //  7:  60 ms 
-  m_conv_time_vector.push_back(2*1000/33.3);  //  7:  33.3 Hz
+  m_conv_time_vector.push_back(to_int(1000/33.3));  //  7:  33.3 Hz
   m_filter_settle_time_vector.push_back(101); //  8:  101 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  //  8:  19.6 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6));  //  8:  19.6 Hz
   m_filter_settle_time_vector.push_back(120); //  9:  120 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  //  9:  16.7 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6));  //  9:  16.7 Hz
   m_filter_settle_time_vector.push_back(120); // 10:  120 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  // 10:  19.6 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6));  // 10:  19.6 Hz
   m_filter_settle_time_vector.push_back(160); // 11:  160 ms 
-  m_conv_time_vector.push_back(2*1000/12.5);  // 11:  12.5 Hz
+  m_conv_time_vector.push_back(to_int(1000/12.5));  // 11:  12.5 Hz
   m_filter_settle_time_vector.push_back(200); // 12:  200 ms 
-  m_conv_time_vector.push_back(2*1000/10);    // 12:  10 Hz
+  m_conv_time_vector.push_back(to_int(1000/10.));    // 12:  10 Hz
   m_filter_settle_time_vector.push_back(240); // 13:  240 ms 
-  m_conv_time_vector.push_back(2*1000/8.33);  // 13:  8.33 Hz
+  m_conv_time_vector.push_back(to_int(1000/8.33));  // 13:  8.33 Hz
   m_filter_settle_time_vector.push_back(320); // 14:  320 ms 
-  m_conv_time_vector.push_back(2*1000/6.25);  // 14:  6.25 Hz
+  m_conv_time_vector.push_back(to_int(1000/6.25));  // 14:  6.25 Hz
   m_filter_settle_time_vector.push_back(480); // 15:  480 ms 
-  m_conv_time_vector.push_back(2*1000/4.17);  // 15:  4.17 Hz
+  m_conv_time_vector.push_back(to_int(1000/4.17));  // 15:  4.17 Hz
   
   m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
   m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
@@ -2168,26 +2171,26 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   
   mp_cs_pin->set();
   
-  m_mode = mode_spi;
+  m_mode = mode_spi_rw;
   m_read_all_reg = true;
   m_spi_transaction_size = m_write_buf_size;
-  m_timer.start();
 }
 irs::adc_ad7799_t::~adc_ad7799_t()
 {
 }
 void irs::adc_ad7799_t::start() 
 {
-  m_read_data = true;
-  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
-  int shift = calculation_shift(m_reg[m_reg_mode_index]);
-    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
-    m_mode_byte_pos);
-  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_mode_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(m_read_mode << m_mode_pos);
-  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
-    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
-      mp_buf[shift + i];
+  m_cur_read_mode = m_read_mode;
+  creation_reg(m_reg[m_reg_mode_index], m_cur_read_mode, 
+    m_mode_byte_pos, m_mode_pos, m_mode_size);
+  switch(m_cur_read_mode) {
+    case om_idle:
+    case om_power_down: {
+      m_read_data = false; 
+    } break;
+    default: {
+      m_read_data = true;
+    } break;
   }
   m_mode = mode_spi_rw;
   m_status = meas_status_busy; 
@@ -2196,60 +2199,167 @@ meas_status_t irs::adc_ad7799_t::status() const
 {
   return m_status;
 }
-void irs::adc_ad7799_t::set_channel(irs_u8 a_channel) 
+void irs::adc_ad7799_t::set_channel(int a_channel) 
 {
-  creation_reg_comm(m_reg[m_reg_conf_index], tt_write);
-  int shift = calculation_shift(m_reg[m_reg_conf_index]);
-  int number_byte = calculation_number_byte(m_reg[m_reg_conf_index], 
-    m_ch_byte_pos);
-  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_ch_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_channel << m_ch_pos);
-  for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
-    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
-      mp_buf[shift + i];
-  }
+  creation_reg(m_reg[m_reg_conf_index], a_channel, 
+    m_ch_byte_pos, m_ch_pos, m_ch_size);
   m_mode = mode_spi_rw;
   m_status = meas_status_busy;    
 }
-void irs::adc_ad7799_t::set_mode(irs_u8 a_mode) 
+void irs::adc_ad7799_t::set_mode(int a_mode) 
 {
-  m_read_mode = a_mode;
+  m_read_mode = static_cast<operating_modes_t>(a_mode);
 }
-void irs::adc_ad7799_t::set_freq(irs_u8 a_freq)
+void irs::adc_ad7799_t::set_freq(int a_freq)
 {
   m_freq = a_freq;
-  creation_reg_comm(m_reg[m_reg_mode_index], tt_write);
-  int shift = calculation_shift(m_reg[m_reg_mode_index]);
-    int number_byte = calculation_number_byte(m_reg[m_reg_mode_index], 
-    m_freq_byte_pos);
-  mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0xF) << m_freq_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_freq << m_freq_pos);
-  for (int i = 0; i < m_reg[m_reg_mode_index].size; i++) {
-    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
-      mp_buf[shift + i];
-  }
+  creation_reg(m_reg[m_reg_mode_index], m_freq, 
+    m_freq_byte_pos, m_freq_pos, m_freq_size);
   m_mode = mode_spi_rw;
   m_status = meas_status_busy; 
 }
-void irs::adc_ad7799_t::set_gain(irs_u8 a_gain) 
+void irs::adc_ad7799_t::set_gain(int a_gain) 
 {
+  creation_reg(m_reg[m_reg_conf_index], a_gain, 
+    m_gain_byte_pos, m_gain_pos, m_gain_size);
+  /*m_read_data = false;
   creation_reg_comm(m_reg[m_reg_conf_index], tt_write);
   int shift = calculation_shift(m_reg[m_reg_conf_index]);
   int number_byte = calculation_number_byte(m_reg[m_reg_conf_index], 
     m_gain_byte_pos);
   mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_gain_pos);
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_gain << m_gain_pos);
-  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(0 << 4); //Unipolar Bit
   for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
     mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
       mp_buf[shift + i];
-  }
+  }*/
   m_mode = mode_spi_rw;
   m_status = meas_status_busy;    
 }
-irs_u32 irs::adc_ad7799_t::get_value() const
+void irs::adc_ad7799_t::set_buf(int a_buf)
 {
+  creation_reg(m_reg[m_reg_conf_index], a_buf, 
+    m_buf_byte_pos, m_buf_pos, m_buf_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;    
+}
+void irs::adc_ad7799_t::set_ref_det(int a_ref_det)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_ref_det, 
+    m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy; 
+}
+void irs::adc_ad7799_t::set_ub(int a_ub)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_ub, 
+    m_ub_byte_pos, m_ub_pos, m_ub_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;  
+}
+void irs::adc_ad7799_t::set_bo(int a_bo)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_bo, 
+    m_bo_byte_pos, m_bo_pos, m_bo_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+irs_u32 irs::adc_ad7799_t::get_value()
+{
+  if ((m_cur_read_mode == om_continuous) && m_read_data) {
+    m_status = meas_status_busy;
+  }
   return m_value;
+}
+
+void irs::adc_ad7799_t::set_param(adc_param_t a_param, const int a_value)
+{
+  switch(a_param) {
+    case adc_mode: {
+      set_mode(a_value);  
+    } break;
+    case adc_gain: {
+      set_gain(a_value);  
+    } break;
+    case adc_channel: {
+      set_channel(a_value);  
+    } break; 
+    case adc_freq: {
+      set_freq(a_value);  
+    } break;
+    case adc_buf: {
+      set_buf(a_value);  
+    } break;
+    case adc_ref_det: {
+      set_ref_det(a_value);  
+    } break;
+    case adc_ub: {
+      set_ub(a_value);  
+    } break; 
+    case adc_bo: {
+      set_bo(a_value);  
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
+    } break;
+  }
+}
+
+void irs::adc_ad7799_t::get_param(adc_param_t a_param, int* ap_value)
+{
+  mp_value_param = ap_value;
+  switch(a_param) {  
+    case adc_mode: {
+      /**mp_value_param = get(m_reg[m_reg_mode_index], 
+        m_mode_byte_pos, m_mode_pos, m_mode_size);*/
+      *mp_value_param = m_read_mode;
+    } break;
+    case adc_gain: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_gain_byte_pos, m_gain_pos, m_gain_size);
+    } break;
+    case adc_channel: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_ch_byte_pos, m_ch_pos, m_ch_size);
+    } break; 
+    case adc_freq: {
+      *mp_value_param = get(m_reg[m_reg_mode_index], 
+        m_freq_byte_pos, m_freq_pos, m_freq_size);
+    } break;
+    case adc_buf: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_buf_byte_pos, m_buf_pos, m_buf_size);
+    } break;
+    case adc_ref_det: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
+    } break;
+    case adc_ub: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_ub_byte_pos, m_ub_pos, m_ub_size);
+    } break; 
+    case adc_bo: {
+      *mp_value_param = get(m_reg[m_reg_conf_index], 
+        m_bo_byte_pos, m_bo_pos, m_bo_size);   
+    } break;
+    case adc_offset: {
+      m_read_data = false;
+      m_read_calibration_coeff = true;
+      creation_reg_comm(m_reg[m_reg_offs_index], tt_read);
+      m_mode = mode_spi_rw;
+      m_status = meas_status_busy;
+    } break;
+    case adc_full_scale: {      
+      m_read_data = false;
+      m_read_calibration_coeff = true;
+      creation_reg_comm(m_reg[m_reg_fs_index], tt_read);
+      m_mode = mode_spi_rw;
+      m_status = meas_status_busy;
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Попытка считать несуществующий параметр");
+    } break;
+  }
 }
 void irs::adc_ad7799_t::tick()
 {
@@ -2257,61 +2367,95 @@ void irs::adc_ad7799_t::tick()
   switch(m_mode) {
     case mode_free: {
     } break;
-    case mode_spi: {
-      if (m_timer.check()) {
-        m_mode = mode_spi_rw; 
-      } 
-    } break;
     case mode_spi_rw: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
         spi_prepare();
         mp_spi->read_write(mp_spi_buf, mp_spi_buf, m_spi_transaction_size);
-        m_mode = mode_spi_rw_wait;
+        if (m_read_data) {
+          m_mode = mode_read_wait;
+        } else {
+          m_mode = mode_spi_rw_wait;
+        }
       }
+    } break;
+    case mode_read_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        spi_release();
+        if (m_ready_wait) {
+          m_mode = mode_ready_wait;
+        } else if (m_get_data) {
+          m_mode = mode_get_data;
+        } else {
+          m_mode = mode_read_data;
+          m_timer.set(make_cnt_ms
+            (2*m_conv_time_vector[m_freq] + m_reserved_interval)); 
+        }
+      }
+    } break;
+    case mode_ready_wait: {
+      bool is_unready = 
+        (mp_spi_buf[m_reg_comm_size] & 
+        static_cast<irs_u8>(1 << m_ready_pos));
+      if (!is_unready) {
+        m_ready_wait = false;
+        switch(m_cur_read_mode) {
+          case om_internal_zero_scale:
+          case om_internal_full_scale:
+          case om_system_zero_scale:
+          case om_system_full_scale: {
+            m_mode = mode_free;
+            m_status = meas_status_success;
+          } break;
+          case om_continuous:
+          case om_single: {
+            creation_reg_comm(m_reg[m_reg_data_index], tt_read);
+            m_mode = mode_spi_rw;
+            m_get_data = true;
+          } break;
+          default: {
+            IRS_ASSERT_MSG("Проверка статуса в " 
+              "недопустимом для этого режиме ацп");
+          } break;
+        }
+      } else {
+        m_mode = mode_read_data;
+        m_timer.set(make_cnt_ms(2*m_conv_time_vector[m_freq]));  
+      }  
+    } break;
+    case mode_get_data: {
+      m_get_data = false;
+      if (m_cur_read_mode == om_single) {
+        m_mode = mode_free;
+        //m_read_data = false;
+      } else if (m_cur_read_mode == om_continuous) {
+        m_mode = mode_read_data;
+        m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq])); 
+      } else {
+        IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
+      }
+      m_value = conversion_spi_value();
+      m_status = meas_status_success;
+    } break;
+    case mode_read_data: {
+      if (m_timer.check()) {
+        m_ready_wait = true;
+        creation_reg_comm(m_reg[m_reg_status_index], tt_read);
+        m_mode = mode_spi_rw;
+      } 
     } break;
     case mode_spi_rw_wait: {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         spi_release();
         if (m_read_all_reg) {
           m_mode = mode_read_all_reg; 
-        } else if (m_ready_wait) {
-          m_ready = 
-            (mp_spi_buf[m_reg_comm_size] & static_cast<irs_u8>(1 << ready_pos));
-          if (!m_ready) {
-            m_ready_wait = false;
-            creation_reg_comm(m_reg[m_reg_data_index], tt_read);
-            m_mode = mode_spi_rw;
-            m_get_data = true;
-          } else {
-            m_mode = mode_read;
-            m_timer.set(make_cnt_ms(m_filter_settle_time_vector[m_freq]));  
-          }
-        } else if (m_read_data) { 
-          if (!m_get_data) {
-            m_mode = mode_read;
-            m_timer.set(make_cnt_ms
-              (m_filter_settle_time_vector[m_freq]+m_reserved_interval));
-          } else {
-            m_get_data = false;
-            m_read_data = false;
-            m_mode = mode_free;
-            m_status = meas_status_success;
-            mp_get_buff[2] = mp_spi_buf[1];
-            mp_get_buff[1] = mp_spi_buf[2];
-            mp_get_buff[0] = mp_spi_buf[3];
-            m_value = *reinterpret_cast<irs_u32*>(mp_get_buff);
-          }
-        } else {  
+        } else {
+          if (m_read_calibration_coeff) {
+            m_read_calibration_coeff = false;
+            *mp_value_param = conversion_spi_value();
+          } 
           m_mode = mode_free;
           m_status = meas_status_success;
-        }      
-      } 
-    } break;
-    case mode_read: {
-      if (m_timer.check()) {
-        m_ready_wait = true;
-        creation_reg_comm(m_reg[m_reg_status_index], tt_read);
-        m_mode = mode_spi_rw;
+        }
       } 
     } break;
     case mode_read_all_reg: {
@@ -2378,436 +2522,58 @@ int irs::adc_ad7799_t::calculation_shift(reg_t a_reg)
   }
   return shift;
 }
-int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg, int byte_pos)
+int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg, 
+  param_byte_pos_t byte_pos)
 {
   //из за того что обратный порядок байт
   int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8; 
   return number_byte;
 }  
 
-
-/*irs::adc_ad7799_t::adc_ad7799_t(
-  spi_t *ap_spi,
-  gpio_pin_t *ap_cs_pin):
-  m_status(st_reset),
-  m_target_status(st_reset),
-  m_transaction_type(tt_write),
-  m_mode(md_cont_conv),
-  mp_spi(ap_spi),
-  m_spi_transaction_size(0),
-  m_timer(irs::make_cnt_ms(m_wait_interval)),
-  m_reg_vector(),
-  m_filter_settle_time_vector(),
-  m_conv_time_vector(),
-  mp_cs_pin(ap_cs_pin),
-  m_initial_read(true),
-  m_current_reg(0)
+int irs::adc_ad7799_t::to_int(double a_number)
 {
-  memset(mp_buf, 0, m_size);
-  memset(mp_spi_buf, 0xFF, m_reset_size);
-  m_spi_transaction_size = m_reset_size;
-  
-  m_reg_vector.clear();
-  reg_t reg;
-  
-  m_filter_settle_time_vector.push_back(m_reserved_interval); //  0:  reserve 
-  m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
-  m_filter_settle_time_vector.push_back(4);   //  1:  4 ms 
-  m_conv_time_vector.push_back(2*1000/500);   //  1:  500 Hz
-  m_filter_settle_time_vector.push_back(8);   //  2:  8 ms 
-  m_conv_time_vector.push_back(2*1000/250);   //  2:  250 Hz
-  m_filter_settle_time_vector.push_back(4);   //  3:  16 ms 
-  m_conv_time_vector.push_back(2*1000/125);   //  3:  125 Hz
-  m_filter_settle_time_vector.push_back(4);   //  4:  32 ms 
-  m_conv_time_vector.push_back(2*1000/62.5);  //  4:  62.5 Hz
-  m_filter_settle_time_vector.push_back(40);  //  5:  40 ms 
-  m_conv_time_vector.push_back(2*1000/50);    //  5:  50 Hz
-  m_filter_settle_time_vector.push_back(48);  //  6:  48 ms 
-  m_conv_time_vector.push_back(2*1000/39.2);  //  6:  39.2 Hz
-  m_filter_settle_time_vector.push_back(60);  //  7:  60 ms 
-  m_conv_time_vector.push_back(2*1000/33.3);  //  7:  33.3 Hz
-  m_filter_settle_time_vector.push_back(101); //  8:  101 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  //  8:  19.6 Hz
-  m_filter_settle_time_vector.push_back(120); //  9:  120 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  //  9:  16.7 Hz
-  m_filter_settle_time_vector.push_back(120); // 10:  120 ms 
-  m_conv_time_vector.push_back(2*1000/19.6);  // 10:  19.6 Hz
-  m_filter_settle_time_vector.push_back(160); // 11:  160 ms 
-  m_conv_time_vector.push_back(2*1000/12.5);  // 11:  12.5 Hz
-  m_filter_settle_time_vector.push_back(200); // 12:  200 ms 
-  m_conv_time_vector.push_back(2*1000/10);    // 12:  10 Hz
-  m_filter_settle_time_vector.push_back(240); // 13:  240 ms 
-  m_conv_time_vector.push_back(2*1000/8.33);  // 13:  8.33 Hz
-  m_filter_settle_time_vector.push_back(320); // 14:  320 ms 
-  m_conv_time_vector.push_back(2*1000/6.25);  // 14:  6.25 Hz
-  m_filter_settle_time_vector.push_back(480); // 15:  480 ms 
-  m_conv_time_vector.push_back(2*1000/4.17);  // 15:  4.17 Hz
-  
-  mp_cs_pin->set();
-  
-  m_timer.start();
+  return static_cast<int>(ceil(a_number));   
 }
 
-irs_uarc irs::adc_ad7799_t::size()
+int irs::adc_ad7799_t::filling_units(param_size_t a_size)
 {
-  return m_size;
+  return static_cast<int>(pow(2.0, a_size) - 1);  
 }
 
-irs_bool irs::adc_ad7799_t::connected()
+void irs::adc_ad7799_t::creation_reg(reg_t a_reg, int a_value, 
+  param_byte_pos_t a_byte_pos, param_pos_t a_pos, 
+  param_size_t a_size)
 {
-  return true;
-}
-
-void irs::adc_ad7799_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  bool valid_data = (a_index < m_size) && (a_size > 0) && ap_buf;
-  if (valid_data) {  
-    irs_u8 size = static_cast<irs_u8>(a_size);
-    irs_u8 index = static_cast<irs_u8>(a_index);
-    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
-    memcpy(
-      reinterpret_cast<void*>(mp_buf + index),
-      reinterpret_cast<const void*>(ap_buf), 
-      size);
-    bool was_write = false;
-    for (size_t i = 0; i < m_write_vector.size(); i++) {
-      if (overlap(&m_write_vector[i], index, size)) {
-        m_write_vector[i].need_write = true;
-        was_write = true;
-      }
-    }
-    if (was_write) {
-      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
-    }
-  }
-  return;
-}
-
-void irs::adc_ad7799_t::read(irs_u8 *ap_buf, irs_uarc a_index,
-  irs_uarc a_size)
-{
-  bool valid_data = (a_index < m_size) && (a_size > 0) && ap_buf;
-  if (valid_data) {
-    irs_u8 size = static_cast<irs_u8>(a_size);
-    irs_u8 index = static_cast<irs_u8>(a_index);
-    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
-    memcpy(
-      reinterpret_cast<void*>(ap_buf),
-      reinterpret_cast<void*>(mp_buf + a_index), 
-      size);
-  }
-  return;
-}
-
-irs_bool irs::adc_ad7799_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  bool valid_data = (a_index < m_size) & (a_bit_index <= 7);
-  irs_bool return_value = false;
-  if (valid_data) {
-    return_value =  (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
-  }
-  return return_value;
-}
-
-void irs::adc_ad7799_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  bool valid_data = 
-    (a_index < m_size) & (a_index != m_buf_status_pos) & (a_bit_index <= 7);
-  valid_data |= 
-    ((a_index == m_buf_status_pos) & (a_bit_index == m_start_bit_pos));
-  if (valid_data) {
-    irs_u8 index = static_cast<irs_u8>(a_index);
-    mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
-    bool was_write = false;
-    for (size_t i = 0; i < m_write_vector.size(); i++) {
-      if (overlap(&m_write_vector[i], index, 0)) {
-        m_write_vector[i].need_write = true;
-        was_write = true;
-      }
-    }
-    if (was_write) {
-      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
-    }
-  }
-  return;
-}
-
-void irs::adc_ad7799_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
-{
-  bool valid_data = 
-    (a_index < m_size) & (a_index != m_buf_status_pos) & (a_bit_index <= 7);
-  valid_data |= 
-    ((a_index == m_buf_status_pos) & (a_bit_index == m_start_bit_pos));
-  if (valid_data) {
-    irs_u8 index = static_cast<irs_u8>(a_index);
-    mp_buf[a_index] &= ~static_cast<irs_u8>(1 << a_bit_index);
-    bool was_write = false;
-    for (size_t i = 0; i < m_write_vector.size(); i++) {
-      if (overlap(&m_write_vector[i], index, 0)) {
-        m_write_vector[i].need_write = true;
-        was_write = true;
-      }
-    }
-    if (was_write) {
-      mp_buf[m_buf_status_pos] &= ~(1 << m_ready_bit_pos);
-    }
-  }
-  return;
-}
-
-void irs::adc_ad7799_t::tick()
-{
-  mp_spi->tick();
-  
-  switch (m_status) {
-    case st_reset: {
-      if (m_timer.check()) {
-        m_status = st_spi_prepare;
-        m_target_status = st_prepare_initial_reading;
-      }
-      break;
-    }
-    case st_transaction_prepare: {
-      switch (m_transaction_type) {
-        case tt_read: {
-          m_spi_transaction_size = 
-            m_reg_vector[m_current_reg].request_read_spi_buf(mp_spi_buf);
-          break;
-        }
-        case tt_write: {
-          m_spi_transaction_size = 
-            m_reg_vector[m_current_reg].fill_write_spi_buf(mp_spi_buf);
-          break;
-        }
-      }
-      m_status = st_spi_prepare;
-      break;
-    }
-    case st_spi_prepare: {
-      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
-        mp_cs_pin->clear();
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-        mp_spi->lock();
-        mp_cs_pin->clear();
-        mp_spi->read_write(mp_spi_buf, mp_spi_buf, m_spi_transaction_size);
-        m_status = st_spi_wait;
-      }
-      break;
-    }
-    case st_spi_wait: {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        mp_cs_pin->set();
-        mp_spi->unlock();
-        m_status = st_transaction_conclusion;
-      }
-      break;
-    }
-    case st_transaction_conclusion: {
-      switch (m_transaction_type) {
-        case tt_read: {
-          m_reg_vector[m_current_reg].extract_read_spi_buf(mp_spi_buf);
-          break;
-        }
-        case tt_write: {
-          m_spi_transaction_size = 
-            m_reg_vector[m_current_reg].fill_write_spi_buf(mp_spi_buf);
-          break;
-        }
-      }
-      m_status = m_target_status;
-      break;
-    }
-    case st_prepare_initial_reading: {
-      m_current_reg = 0;
-      m_transaction_type = tt_read;
-      m_status = st_transaction_prepare;
-      m_target_status = st_initial_reading;
-      break;
-    }
-    case st_initial_reading: {
-      if (m_current_reg < m_reg_vector.size() - 1) {
-        m_status = st_transaction_prepare;
-        m_current_reg++;
-      } else {
-        set_all_read_bit();
-        set_all_write_bit();
-        m_current_reg = 0;
-        m_status = st_prepare_wait_first_conversion;
-      }
-      break;
-    }
-    case st_prepare_wait_first_conversion: {
-      int time = 
-        m_filter_settle_time_vector[m_filter] + m_conv_time_vector[m_filter];
-      m_timer.set(irs::make_cnt_ms(time));
-      m_timer.start();
-      m_status = st_wait_conversion;
-      break;
-    }
-    case st_prepare_wait_conversion: {
-      int time = m_conv_time_vector[m_filter];
-      m_timer.set(irs::make_cnt_ms(time));
-      m_timer.start();
-      m_status = st_wait_conversion;
-      break;
-    }
-    case st_wait_conversion: {
-      if (m_timer.check()) {
-        m_current_reg = m_reg_data_index;
-        m_transaction_type = tt_read;
-        m_status = st_transaction_prepare;
-        m_target_status = st_conversion_ready;
-      }
-      break;
-    }
-    case st_conversion_ready: {
-      set_ready_bit();
-      m_status = st_check_need_write_reg;
-      break;
-    }
-    case st_check_need_write_reg: {
-      
-      break;
-    }
-    case st_prepare_write_reg: {
-      m_spi_transaction_size = 
-        m_write_vector[m_current_reg].fill_write_spi_buffer(mp_spi_buf);
-      m_current_reg++;
-      m_status = st_spi_prepare;
-      m_target_status = st_free;
-      break;
-    }
-    case st_prepare_read_reg: {
-      //
-      break;
-    }
-    case st_free: {
-      size_t begin_reg = m_current_reg;
-      for (; m_current_reg < m_write_vector.size() - 1; m_current_reg++) {
-        if (m_write_vector[m_current_reg].need_write()) {
-          m_status = st_prepare_write_reg;
-          break;
-      }
-      if (m_current_reg >= m_write_vector.size() - 1) {
-        m_current_reg = 0;
-        if (begin_reg == 0) {
-          set_write_ready_bit();
-        }
-      }
-      break;
-    }
-    case st_cont_conv: {
-      break;
-    }
+  m_read_data = false;
+  creation_reg_comm(a_reg, tt_write);
+  int shift = calculation_shift(a_reg);
+  int number_byte = calculation_number_byte(a_reg, 
+    a_byte_pos);
+  mp_buf[shift + number_byte]  &= 
+    ~static_cast<irs_u8>(filling_units(a_size) << a_pos);
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_value << a_pos);
+  for (int i = 0; i < a_reg.size; i++) {
+    mp_spi_buf[i + m_reg[m_reg_comm_index].size] = 
+      mp_buf[shift + i];
   }
 }
 
-irs::adc_ad7799_t::reg_t::reg_t(
-  irs_uarc a_buf_first, 
-  irs_uarc a_buf_size, 
-  irs_uarc a_ic_size, 
-  irs_u8 a_ic_addr,
-  bool a_read_only):
-  m_buf_first(a_buf_first),
-  m_buf_size(a_buf_size),
-  m_ic_addr(a_ic_addr),
-  m_ic_vector(),
-  m_entity_vector(),
-  m_need_read(true),
-  m_need_write(false),
-  m_read_only(a_read_only)
+int irs::adc_ad7799_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos, 
+  param_pos_t a_pos, param_size_t a_size)
 {
-  m_ic_vector.resize(a_ic_size);
-  m_entity_vector.clear();
+  int shift = calculation_shift(a_reg);
+  int number_byte = calculation_number_byte(a_reg, 
+    a_byte_pos);
+  irs_u8 test = static_cast<irs_u8>(mp_buf[shift + number_byte] >> a_pos);
+  irs_u8 test_1 = static_cast<irs_u8>(filling_units(a_size));
+  int value = test_1 & test;
+  return value;
 }
 
-void irs::adc_ad7799_t::reg_t::push_back_entity(entity_t a_entity)
+irs_u32 irs::adc_ad7799_t::conversion_spi_value()
 {
-  m_entity_vector.push_back(a_entity);
+  mp_get_buff[2] = mp_spi_buf[1];
+  mp_get_buff[1] = mp_spi_buf[2];
+  mp_get_buff[0] = mp_spi_buf[3];
+  return *reinterpret_cast<irs_u32*>(mp_get_buff);
 }
-
-void irs::adc_ad7799_t::reg_t::write_data_processing(const irs_u8* ap_buf, 
-  irs_uarc a_index, irs_uarc a_size)
-{
-  if (!m_read_only && overlap(a_index, a_size)) {
-    m_need_write = true;
-    for (irs_uarc i = 0; i < m_entity_vector.size(); i++) {
-      irs_uarc size = m_entity_vector[i].size;
-      if (size <= 1) {
-        irs_u8 data = ap_buf[m_entity_vector[i].buf_pos];
-        data >>= m_entity_vector[i].buf_shift;
-
-        irs_u8 clear = m_entity_vector[i].mask << m_entity_vector[i].ic_shift;
-        clear = ~clear;
-
-        irs_u8 set = m_entity_vector[i].mask & data;
-        set <<= m_entity_vector[i].ic_shift;
-
-        m_ic_vector[m_entity_vector[i].ic_pos] &= clear;
-        m_ic_vector[m_entity_vector[i].ic_pos] |= set;
-      } else {
-        for (irs_uarc j = 0; j < size; j++) {
-          m_ic_vector[m_entity_vector[i].ic_pos + size - j - 1] 
-            = ap_buf[j + m_entity_vector[i].buf_pos];
-        }
-      }
-    }
-  }
-}
-
-void irs::adc_ad7799_t::reg_t::read_data_processing(irs_u8 *ap_buf, 
-  irs_uarc a_index, irs_uarc a_size)
-{
-  for (irs_uarc i = 0; i < m_entity_vector.size(); i++) {
-    irs_uarc size = m_entity_vector[i].size;
-    if (size <= 1) {
-      irs_u8 data = m_ic_vector[m_entity_vector[i].ic_pos];
-      data >>= m_entity_vector[i].ic_shift;
-
-      irs_u8 clear = m_entity_vector[i].mask << m_entity_vector[i].buf_shift;
-      clear = ~clear;
-
-      irs_u8 set = m_entity_vector[i].mask & data;
-      set <<= m_entity_vector[i].buf_shift;
-
-      ap_buf[m_entity_vector[i].buf_pos] &= clear;
-      ap_buf[m_entity_vector[i].buf_pos] |= set;
-    } else {
-      for (irs_uarc j = 0; j < size; j++) {
-        ap_buf[j + m_entity_vector[i].buf_pos] = 
-          m_ic_vector[m_entity_vector[i].ic_pos + size - j - 1];
-      }
-    }
-  }
-}
-
-irs_u8 irs::adc_ad7799_t::reg_t::fill_write_spi_buf(irs_u8* ap_spi_buf)
-{
-  ap_spi_buf[m_addr_pos] = m_ic_addr << m_addr_shift;
-  for (irs_uarc i = 0; i < m_ic_vector.size(); i++) {
-    ap_spi_buf[i + m_data_pos] = m_ic_vector[i];
-  }
-  return m_ic_size + 1;
-}
-
-void irs::adc_ad7799_t::reg_t::extract_read_spi_buf(const irs_u8* ap_spi_buf)
-{
-  for (irs_uarc i = 0; i < m_ic_vector.size(); i++) {
-    m_ic_vector[i] = ap_spi_buf[i + m_data_pos];
-  }
-}
-
-irs_u8 irs::adc_ad7799_t::reg_t::request_read_spi_buf(irs_u8* ap_spi_buf)
-{
-  m_need_read = false;
-  ap_spi_buf[m_addr_pos] = (m_ic_addr << m_addr_shift) | (1 << m_r_bit);
-  return m_ic_size + 1;
-}
-
-void irs::adc_ad7799_t::reg_t::need_read()
-{
-  m_need_read = true;
-}*/
