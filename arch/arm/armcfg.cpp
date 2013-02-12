@@ -90,6 +90,7 @@ void pll_on()
   irs::cpu_traits_t::periphery_frequency_first(30000000);
   irs::cpu_traits_t::periphery_frequency_second(60000000);
   irs::cpu_traits_t::frequency(120000000);
+  irs::cpu_traits_t::flash_voltage(3.3);
 #elif defined(IRS_STM32F4xx)
   RCC_CR_bit.HSEON = 1;
   RCC_CR_bit.HSEBYP = 0;
@@ -128,6 +129,7 @@ void pll_on()
   irs::cpu_traits_t::periphery_frequency_first(42000000);
   irs::cpu_traits_t::periphery_frequency_second(84000000);
   irs::cpu_traits_t::frequency(168000000);
+  irs::cpu_traits_t::flash_voltage(3.3);
 #else
   #error Тип контроллера не определён
 #endif // ARM_devices
@@ -155,7 +157,7 @@ size_t irs::get_pin_index(gpio_channel_t a_gpio_channel)
 
 void irs::reset_peripheral(size_t a_address)
 {
-  switch (a_address) {   
+  switch (a_address) {
     case IRS_WWDG_BASE: {
       RCC_APB1RSTR_bit.WWDGRST = 1;
       RCC_APB1RSTR_bit.WWDGRST = 0;
@@ -435,16 +437,16 @@ void irs::gpio_otyper_output_open_drain_enable(gpio_channel_t a_channel)
     GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
 }
 
-void irs::gpio_alternate_function_select(gpio_channel_t a_channel, 
+void irs::gpio_alternate_function_select(gpio_channel_t a_channel,
   size_t a_function_number)
 {
   IRS_LIB_ASSERT(a_function_number <= 0xF);
   const size_t port_address = irs::get_port_address(a_channel);
   int pin_index = get_pin_index(a_channel);
   const int bits_count = 4;
-  const int gpio_shift = (pin_index < 8) ? GPIO_AFRL_S : GPIO_AFRH_S;  
+  const int gpio_shift = (pin_index < 8) ? GPIO_AFRL_S : GPIO_AFRH_S;
   pin_index = (pin_index < 8) ? pin_index : pin_index%8;
-  gpio_set_bits(a_channel, bits_count, gpio_shift, a_function_number);  
+  gpio_set_bits(a_channel, bits_count, gpio_shift, a_function_number);
   IRS_SET_BITS(port_address + gpio_shift, bits_count*pin_index,
     bits_count, a_function_number);
 }

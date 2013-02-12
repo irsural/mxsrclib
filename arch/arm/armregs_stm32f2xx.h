@@ -2169,8 +2169,8 @@ enum {
   TIM_CH4 = 3
 };
 
-inline void timer_set_bit(unsigned long a_timer_address, 
-  unsigned long a_reg, int a_channel, int a_bit_shift, int a_size, 
+inline void timer_set_bit(unsigned long a_timer_address,
+  unsigned long a_reg, int a_channel, int a_bit_shift, int a_size,
   int a_bit_value)
 {
   int shift_stream = 0;
@@ -2190,7 +2190,10 @@ inline void timer_set_bit(unsigned long a_timer_address,
 }
 
 
-#define FLASH_ACR_S        0x0
+#define FLASH_ACR_S 0x0
+#define FLASH_SR_S 0x0C
+#define FLASH_CR_S 0x10
+#define FLASH_OPTCR_S 0x14
 
 /* Flash Access Control Register (FLASH_ACR) */
 typedef struct {
@@ -2204,7 +2207,55 @@ typedef struct {
   __REG32                 :19;
 } __flash_acr_bits;
 
+/* Flash Status Register (FLASH_SR) */
+typedef struct {
+  __REG32  EOP            : 1;
+  __REG32  OPERR          : 1;
+  __REG32                 : 2;
+  __REG32  WRPERR         : 1;
+  __REG32  PGAERR         : 1;
+  __REG32  PGPERR         : 1;
+  __REG32  PGSERR         : 1;
+  __REG32                 : 8;
+  __REG32  BSY            : 1;
+  __REG32                 :15;
+} __flash_sr_bits;
+
+/* Flash Control Register (FLASH_CR) */
+typedef struct {
+  __REG32  PG             : 1;
+  __REG32  SER            : 1;
+  __REG32  MER            : 1;
+  __REG32  SNB            : 4;
+  __REG32                 : 1;
+  __REG32  PSIZE          : 2;
+  __REG32                 : 6;
+  __REG32  STRT           : 1;
+  __REG32                 : 7;
+  __REG32  EOPIE          : 1;
+  __REG32  ERRIE          : 1;
+  __REG32                 : 5;
+  __REG32  LOCK           : 1;
+} __flash_cr_bits;
+
+/* Flash option control register (FLASH_OPTCR) */
+typedef struct {
+  __REG32  OPTLOCK        : 1;
+  __REG32  OPTSTRT        : 1;
+  __REG32  BOR_LEV        : 2;
+  __REG32                 : 1;
+  __REG32  WDG_SW         : 1;
+  __REG32  nRST_STOP      : 1;
+  __REG32  nRST_STDBY     : 1;
+  __REG32  RDP            : 8;
+  __REG32  nWRP           :12;
+  __REG32                 : 4;
+} __flash_optcr_bits;
+
 __IO_REG32_BIT(FLASH_ACR, IRS_FLASH_INTERFACE_BASE + FLASH_ACR_S,__READ_WRITE ,__flash_acr_bits);
+__IO_REG32_BIT(FLASH_SR, IRS_FLASH_INTERFACE_BASE + FLASH_SR_S,__READ_WRITE ,__flash_sr_bits);
+__IO_REG32_BIT(FLASH_CR, IRS_FLASH_INTERFACE_BASE + FLASH_CR_S,__READ_WRITE ,__flash_cr_bits);
+__IO_REG32_BIT(FLASH_OPTCR, IRS_FLASH_INTERFACE_BASE + FLASH_OPTCR_S,__READ_WRITE ,__flash_optcr_bits);
 
 //  NVIC
 /* Interrupt Set-Enable Registers 0-31 */
@@ -3704,7 +3755,7 @@ struct dma_regs_t
     IRS_IO_REG32_BIT(DMA_SFCR, __READ_WRITE, __dma_sxfcr_bits);
   } stream[dma_stream_count];
 };
-  
+
 enum {
   FEIF = 0,
   DMEIF = 2,
@@ -3721,7 +3772,7 @@ enum {
   CTCIF = 5
 };
 
-inline void dma_set_bit(unsigned long a_dma_address, unsigned long a_reg, 
+inline void dma_set_bit(unsigned long a_dma_address, unsigned long a_reg,
   int a_stream, int a_bit_shift, int a_bit_value)
 {
   int shift_stream = (a_stream/2)*2;
@@ -3730,7 +3781,7 @@ inline void dma_set_bit(unsigned long a_dma_address, unsigned long a_reg,
   IRS_SET_BITS(address, bit_shift, 1, a_bit_value);
 }
 
-inline int dma_get_bit(unsigned long a_dma_address, unsigned long a_reg, 
+inline int dma_get_bit(unsigned long a_dma_address, unsigned long a_reg,
   int a_stream, int a_bit_shift)
 {
   int shift_stream = (a_stream/2)*2;

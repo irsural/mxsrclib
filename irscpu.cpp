@@ -33,12 +33,14 @@ irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_first = 30000000;
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
+double irs::cpu_traits_t::m_flash_voltage = 3.3;
 #elif defined(IRS_STM32F4xx)
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 168000000;
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_first = 42000000;
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 84000000;
+double irs::cpu_traits_t::m_flash_voltage = 3.3;
 #else
   #error Тип контроллера не определён
 #endif // ARM_device
@@ -91,6 +93,16 @@ irs::cpu_traits_t::timer_frequency(size_t a_timer_base)
   } else {
     return m_periphery_frequency_first*2;
   }
+}
+
+double irs::cpu_traits_t::flash_voltage()
+{
+  return m_flash_voltage;
+}
+
+void irs::cpu_traits_t::flash_voltage(double a_flash_voltage)
+{
+  m_flash_voltage = a_flash_voltage;
 }
 
 #endif // IRS_STM32F_2_AND_4

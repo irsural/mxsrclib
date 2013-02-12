@@ -64,7 +64,6 @@ public:
 };
 
 //! \brief Класс доступа к памяти со страничной организацией
-
 class page_mem_t
 {
 public:
@@ -74,6 +73,25 @@ public:
   virtual void write_page(const irs_u8 *ap_buf, irs_uarc a_index) = 0;
   virtual size_type page_size() const = 0;
   virtual irs_uarc page_count() const = 0;
+  virtual irs_status_t status() const = 0;
+  virtual void tick() = 0;
+};
+
+//! \brief Класс доступа к памяти со страничной организацией и разными размерами
+//!   страниц
+class various_page_mem_t
+{
+public:
+  typedef size_t size_type;
+  virtual ~various_page_mem_t() {};
+  virtual void read(irs_u8* ap_pos, irs_u8 *ap_buf,
+    size_type a_buf_size) = 0;
+  virtual void erase_page(size_type a_page_index) = 0;
+  virtual void write(irs_u8* ap_pos, const irs_u8 *ap_buf,
+    size_type a_buf_size) = 0;
+  virtual irs_u8* page_begin(size_type a_page_index) = 0;
+  virtual size_type page_size(size_type a_page_index) const = 0;
+  virtual size_type page_count() const = 0;
   virtual irs_status_t status() const = 0;
   virtual void tick() = 0;
 };

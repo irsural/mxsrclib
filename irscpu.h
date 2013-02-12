@@ -44,12 +44,15 @@ public:
   static endian_t endian();
   #ifdef IRS_STM32F_2_AND_4
   static frequency_type timer_frequency(size_t a_timer_base);
+  static double flash_voltage();
+  static void flash_voltage(double a_flash_voltage);
   #endif // IRS_STM32F_2_AND_4
 private:
   static frequency_type m_frequency;
   #ifdef IRS_STM32F_2_AND_4
   static frequency_type m_periphery_frequency_first;
   static frequency_type m_periphery_frequency_second;
+  static double m_flash_voltage;
   #endif // IRS_STM32F_2_AND_4
 };
 
