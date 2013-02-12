@@ -1030,6 +1030,8 @@ private:
     st_prepare_voltage_code,
     st_spi_prepare,
     st_spi_wait,
+    st_ldac_clear,
+    st_ldac_set,
     st_free
   };
   enum {
@@ -1044,7 +1046,10 @@ private:
     m_opgnd_bit_pos = 2,
     m_dactri_bit_pos = 3,
     m_bin2sc_bit_pos = 4,
-    m_sdodis_bit_pos = 5
+    m_sdodis_bit_pos = 5,
+    m_master_byte_shift = 28,
+    m_mid_byte_shift = 20,
+    m_least_byte_shift = 12
   };
   enum {
     addr_code = 0x01 << 4,
@@ -1057,6 +1062,7 @@ private:
   };
  
   status_t m_status;
+  status_t m_target_status;
   spi_t* mp_spi;
   irs_u8 mp_buf[m_size];
   irs_u8 mp_write_buf[m_write_buf_size];
@@ -1078,7 +1084,8 @@ struct dac_ad5791_data_t
   irs::bit_data_t bin2sc_bit;
   irs::bit_data_t sdodis_bit;
   irs::conn_data_t<irs_u8> lin_comp;
-  irs::conn_data_t<irs_u32> voltage_code;
+  irs::conn_data_t<irs_i32> signed_voltage_code;
+  irs::conn_data_t<irs_u32> unsigned_voltage_code;
   
   dac_ad5791_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit(),
@@ -1088,7 +1095,8 @@ struct dac_ad5791_data_t
     bin2sc_bit(),
     sdodis_bit(),
     lin_comp(),
-    voltage_code()
+    signed_voltage_code(),
+    unsigned_voltage_code()
   {
     connect(ap_data, a_start_index);
   }  
@@ -1102,8 +1110,10 @@ struct dac_ad5791_data_t
     dactri_bit.connect(ap_data, a_start_index, 3);
     bin2sc_bit.connect(ap_data, a_start_index, 4);
     sdodis_bit.connect(ap_data, a_start_index, 5);
+    a_start_index++;
     a_start_index = lin_comp.connect(ap_data, a_start_index);
-    a_start_index = voltage_code.connect(ap_data, a_start_index);
+    signed_voltage_code.connect(ap_data, a_start_index);
+    a_start_index = unsigned_voltage_code.connect(ap_data, a_start_index);
     return a_start_index;
   }
 };
