@@ -1128,7 +1128,7 @@ public:
   ~adc_ad7799_t();
   virtual void start();
   virtual meas_status_t status() const; 
-  virtual irs_u32 get_value();
+  virtual irs_i32 get_value();
   virtual void tick();
   virtual void set_param(adc_param_t a_param, const int a_value);
   virtual void get_param(adc_param_t a_param, int* ap_value);
@@ -1254,11 +1254,10 @@ private:
   timer_t m_timer;
   bool m_ready_wait;
   bool m_get_data;
-  irs_u32 m_value;
+  irs_i32 m_value;
   operating_modes_t m_read_mode;
   operating_modes_t m_cur_read_mode;
-  irs_u8 mp_get_buff[m_reg_data_size];
-  bool m_single_mode;
+  irs_u8 mp_get_buff[m_write_buf_size];
   int* mp_value_param;
   bool m_read_calibration_coeff;
  
@@ -1273,7 +1272,7 @@ private:
     param_pos_t a_start_pos, param_size_t a_size);
   int get(reg_t a_reg, param_byte_pos_t a_byte_pos, 
     param_pos_t a_start_pos, param_size_t a_size);
-  irs_u32 conversion_spi_value();
+  irs_i32 conversion_spi_value();
 };
 
 //! @}

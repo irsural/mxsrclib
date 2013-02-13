@@ -70,7 +70,7 @@ public:
   virtual meas_status_t status() const = 0;
   virtual void set_param(adc_param_t a_param, const int a_value) = 0;
   virtual void get_param(adc_param_t a_param, int* ap_value) = 0;
-  virtual irs_u32 get_value() = 0;
+  virtual irs_i32 get_value() = 0;
   virtual void tick() = 0;
 };
 

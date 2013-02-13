@@ -2120,7 +2120,6 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_value(0),
   m_read_mode(om_continuous),
   m_cur_read_mode(om_continuous),
-  m_single_mode(false),
   mp_value_param(IRS_NULL),
   m_read_calibration_coeff(false)
 {
@@ -2264,7 +2263,7 @@ void irs::adc_ad7799_t::set_bo(int a_bo)
   m_mode = mode_spi_rw;
   m_status = meas_status_busy;
 }
-irs_u32 irs::adc_ad7799_t::get_value()
+irs_i32 irs::adc_ad7799_t::get_value()
 {
   if ((m_cur_read_mode == om_continuous) && m_read_data) {
     m_status = meas_status_busy;
@@ -2570,10 +2569,19 @@ int irs::adc_ad7799_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos,
   return value;
 }
 
-irs_u32 irs::adc_ad7799_t::conversion_spi_value()
+irs_i32 irs::adc_ad7799_t::conversion_spi_value()
 {
   mp_get_buff[2] = mp_spi_buf[1];
   mp_get_buff[1] = mp_spi_buf[2];
   mp_get_buff[0] = mp_spi_buf[3];
-  return *reinterpret_cast<irs_u32*>(mp_get_buff);
+  irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);
+  int unipolar = 
+    get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
+  if (unipolar == 1) {
+    value = (value << 7);
+  } else if (unipolar == 0) {
+    value = (value << 8);
+    value = value - 0x8000000;
+  }
+  return value;
 }
