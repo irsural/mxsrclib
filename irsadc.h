@@ -1127,6 +1127,7 @@ public:
   gpio_pin_t* ap_cs_pin);
   ~adc_ad7799_t();
   virtual void start();
+  virtual void stop();
   virtual meas_status_t status() const; 
   virtual irs_i32 get_value();
   virtual void tick();

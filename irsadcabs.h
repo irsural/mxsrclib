@@ -67,6 +67,7 @@ class adc_request_t
 public:
   virtual ~adc_request_t() {};
   virtual void start() = 0;
+  virtual void stop() = 0;
   virtual meas_status_t status() const = 0;
   virtual void set_param(adc_param_t a_param, const int a_value) = 0;
   virtual void get_param(adc_param_t a_param, int* ap_value) = 0;

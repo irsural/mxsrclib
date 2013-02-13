@@ -2194,6 +2194,11 @@ void irs::adc_ad7799_t::start()
   m_mode = mode_spi_rw;
   m_status = meas_status_busy; 
 }
+void irs::adc_ad7799_t::stop()
+{
+  set_mode(adc_mode_power_down);
+  start();
+}
 meas_status_t irs::adc_ad7799_t::status() const 
 {
   return m_status;
