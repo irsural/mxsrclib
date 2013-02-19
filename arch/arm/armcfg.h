@@ -123,7 +123,32 @@ void pll_on();
 
 namespace irs {
 
+void pll_on();
+
 #ifdef IRS_STM32F_2_AND_4
+struct param_pll_t {
+  irs_u32 freq_quartz;
+  irs_u32 PLLM;
+  irs_u32 PLLN;
+  irs_u32 PLLP;
+  irs_u32 PLLQ;
+  irs_u32 PPRE1;
+  irs_u32 PPRE2;
+  irs_u32 FLASH_STATE;
+  param_pll_t():
+    freq_quartz(0),
+    PLLM(0),
+    PLLN(0),
+    PLLP(0),
+    PLLQ(0),
+    PPRE1(0),
+    PPRE2(0),
+    FLASH_STATE(0)
+  {}
+};
+
+void pll_on(param_pll_t a_param_pll);
+
 size_t get_port_address(gpio_channel_t a_gpio_channel);
 size_t get_pin_index(gpio_channel_t a_gpio_channel);
 

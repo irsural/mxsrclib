@@ -52,90 +52,110 @@ void pll_on()
   while (!RCC_CR_bit.PLLRDY);
   RCC_CFGR_bit.SW = 0x2;      //  SRC = PLL
   irs::cpu_traits_t::frequency(24000000);
-#elif defined(IRS_STM32F2xx)
-  RCC_CR_bit.HSEON = 1;
-  RCC_CR_bit.HSEBYP = 0;
-  while (!RCC_CR_bit.HSERDY);
-
-  // На входе кварц 25 МГц
-  RCC_PLLCFGR_bit.PLLM = 20; // Делитель на входе PLL
-  RCC_PLLCFGR_bit.PLLN = 192; // Множитель внутри PLL
-  RCC_PLLCFGR_bit.PLLP = 0; // 0 это деление на 2, делитель для ядра 120 МГц
-  RCC_PLLCFGR_bit.PLLQ = 5; // Делитель для USB 48 МГц
-  // Main PLL(PLL) and audio PLL (PLLI2S) entry clock source.
-  // HSE oscillator clock selected as PLL and PLLI2S clock entry
-  RCC_PLLCFGR_bit.PLLSRC = 1;
-  // AHB prescaler.system clock not divided
-  RCC_CFGR_bit.HPRE = 0;
-  // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
-  RCC_CFGR_bit.PPRE1 = 5;
-  // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
-  RCC_CFGR_bit.PPRE2 = 4;
-  // Main PLL (PLL) enable. PLL ON
-  RCC_CR_bit.PLLON = 1;
-  while (!RCC_CR_bit.PLLRDY);
-
-  FLASH_ACR_bit.LATENCY = 3;
-  while (FLASH_ACR_bit.LATENCY != 3);
-  // 1: Data cache is enabled
-  FLASH_ACR_bit.DCEN = 1;
-  // 1: Instruction cache is enabled
-  FLASH_ACR_bit.ICEN = 1;
-  // 0: Prefetch is disabled
-  FLASH_ACR_bit.PRFTEN = 0;
-  RCC_CFGR_bit.SW = 2;
-  RCC_CFGR_bit.HPRE = 0;
-  while (RCC_CFGR_bit.SWS != 2);
-  while (RCC_CFGR_bit.HPRE != 0);
-  irs::cpu_traits_t::periphery_frequency_first(30000000);
-  irs::cpu_traits_t::periphery_frequency_second(60000000);
-  irs::cpu_traits_t::frequency(120000000);
-  irs::cpu_traits_t::flash_voltage(3.3);
-#elif defined(IRS_STM32F4xx)
-  RCC_CR_bit.HSEON = 1;
-  RCC_CR_bit.HSEBYP = 0;
-  while (!RCC_CR_bit.HSERDY);
-
-  // На входе кварц 25 МГц
-  RCC_PLLCFGR_bit.PLLM = 25; // Делитель на входе PLL
-  RCC_PLLCFGR_bit.PLLN = 336; // Множитель внутри PLL
-  RCC_PLLCFGR_bit.PLLP = 0; // 0 это деление на 2, делитель для ядра 168 МГц
-  RCC_PLLCFGR_bit.PLLQ = 7; // Делитель для USB 48 МГц
-  // Main PLL(PLL) and audio PLL (PLLI2S) entry clock source.
-  // HSE oscillator clock selected as PLL and PLLI2S clock entry
-  RCC_PLLCFGR_bit.PLLSRC = 1;
-  // AHB prescaler.system clock not divided
-  RCC_CFGR_bit.HPRE = 0;
-  // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
-  RCC_CFGR_bit.PPRE1 = 5;
-  // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
-  RCC_CFGR_bit.PPRE2 = 4;
-  // Main PLL (PLL) enable. PLL ON
-  RCC_CR_bit.PLLON = 1;
-  while (!RCC_CR_bit.PLLRDY);
-
-  FLASH_ACR_bit.LATENCY = 5;
-  while (FLASH_ACR_bit.LATENCY != 5);
-  // 1: Data cache is enabled
-  FLASH_ACR_bit.DCEN = 1;
-  // 1: Instruction cache is enabled
-  FLASH_ACR_bit.ICEN = 1;
-  // 0: Prefetch is disabled
-  FLASH_ACR_bit.PRFTEN = 0;
-  RCC_CFGR_bit.SW = 2;
-  RCC_CFGR_bit.HPRE = 0;
-  while (RCC_CFGR_bit.SWS != 2);
-  while (RCC_CFGR_bit.HPRE != 0);
-  irs::cpu_traits_t::periphery_frequency_first(42000000);
-  irs::cpu_traits_t::periphery_frequency_second(84000000);
-  irs::cpu_traits_t::frequency(168000000);
-  irs::cpu_traits_t::flash_voltage(3.3);
+#elif defined(IRS_STM32F_2_AND_4)
+  irs::param_pll_t param_pll;
+  #if defined(IRS_STM32F2xx)
+    // На входе кварц 25 МГц
+    param_pll.freq_quartz = 25000000;
+    param_pll.PLLM = 20; // Делитель на входе PLL
+    param_pll.PLLN = 192; // Множитель внутри PLL
+    param_pll.PLLP = 0; // 0 это деление на 2, делитель для ядра 120 МГц
+    param_pll.PLLQ = 5; // Делитель для USB 48 МГц
+    // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
+    param_pll.PPRE1 = 5;
+    // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
+    param_pll.PPRE2 = 4;
+    param_pll.FLASH_STATE = 3;
+    irs::pll_on(param_pll);
+  #elif defined(IRS_STM32F4xx)
+    // На входе кварц 25 МГц
+    param_pll.freq_quartz = 25000000;
+    param_pll.PLLM = 25; // Делитель на входе PLL
+    param_pll.PLLN = 336; // Множитель внутри PLL
+    param_pll.PLLP = 0; // 0 это деление на 2, делитель для ядра 168 МГц
+    param_pll.PLLQ = 7; // Делитель для USB 48 МГц
+    // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
+    param_pll.PPRE1 = 5;
+    // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
+    param_pll.PPRE2 = 4;
+    param_pll.FLASH_STATE = 5;
+    irs::pll_on(param_pll);
+  #else
+    #error Тип контроллера не определён  
+  #endif //ARM_devices
 #else
   #error Тип контроллера не определён
 #endif // ARM_devices
 }
 
+void irs::pll_on()
+{
+  pll_on();    
+}
+
 #ifdef IRS_STM32F_2_AND_4
+void irs::pll_on(param_pll_t a_param_pll)
+{
+  RCC_CR_bit.HSEON = 1;
+  RCC_CR_bit.HSEBYP = 0;
+  while (!RCC_CR_bit.HSERDY);
+
+  RCC_PLLCFGR_bit.PLLM = a_param_pll.PLLM; // Делитель на входе PLL
+  RCC_PLLCFGR_bit.PLLN = a_param_pll.PLLN; // Множитель внутри PLL
+  RCC_PLLCFGR_bit.PLLP = a_param_pll.PLLP; // 0 это деление на 2
+  RCC_PLLCFGR_bit.PLLQ = a_param_pll.PLLQ; // Делитель для USB 48 МГц
+  // Main PLL(PLL) and audio PLL (PLLI2S) entry clock source.
+  // HSE oscillator clock selected as PLL and PLLI2S clock entry
+  RCC_PLLCFGR_bit.PLLSRC = 1;
+  // AHB prescaler.system clock not divided
+  RCC_CFGR_bit.HPRE = 0;
+  // APB Low speed prescaler (APB1).
+  RCC_CFGR_bit.PPRE1 = a_param_pll.PPRE1;
+  // APB high-speed prescaler (APB2).
+  RCC_CFGR_bit.PPRE2 = a_param_pll.PPRE2;
+  // Main PLL (PLL) enable. PLL ON
+  RCC_CR_bit.PLLON = 1;
+  while (!RCC_CR_bit.PLLRDY);
+  //FLASH_STATE
+  FLASH_ACR_bit.LATENCY = a_param_pll.FLASH_STATE;
+  while (FLASH_ACR_bit.LATENCY != a_param_pll.FLASH_STATE);
+  // 1: Data cache is enabled
+  FLASH_ACR_bit.DCEN = 1;
+  // 1: Instruction cache is enabled
+  FLASH_ACR_bit.ICEN = 1;
+  // 0: Prefetch is disabled
+  FLASH_ACR_bit.PRFTEN = 0;
+  RCC_CFGR_bit.SW = 2;
+  RCC_CFGR_bit.HPRE = 0;
+  while (RCC_CFGR_bit.SWS != 2);
+  while (RCC_CFGR_bit.HPRE != 0);
+  irs_u32 freq = static_cast<irs_u32>(a_param_pll.freq_quartz/a_param_pll.PLLM*
+    a_param_pll.PLLN/pow(2.,(a_param_pll.PLLP+1)));
+  irs::cpu_traits_t::frequency(static_cast<cpu_traits_t::frequency_type>(freq));
+  
+  irs_u32 divider = 2;
+  switch (a_param_pll.PPRE1) {
+    case 4: {divider = 2;} break;
+    case 5: {divider = 4;} break;
+    case 6: {divider = 8;} break;
+    case 7: {divider = 16;} break;
+    default: IRS_ASSERT_MSG("Задан недопустимый делитель APB1");
+  }
+  irs::cpu_traits_t::periphery_frequency_first(
+    static_cast<cpu_traits_t::frequency_type>(freq/divider));
+  
+  switch (a_param_pll.PPRE2) {
+    case 4: {divider = 2;} break;
+    case 5: {divider = 4;} break;
+    case 6: {divider = 8;} break;
+    case 7: {divider = 16;} break;
+    default: IRS_ASSERT_MSG("Задан недопустимый делитель APB1");
+  }
+  irs::cpu_traits_t::periphery_frequency_second(
+    static_cast<cpu_traits_t::frequency_type>(freq/divider));
+  irs::cpu_traits_t::flash_voltage(3.3);
+}
+
 size_t irs::get_port_address(gpio_channel_t a_gpio_channel)
 {
   if (a_gpio_channel == PNONE) {
