@@ -2568,9 +2568,10 @@ int irs::adc_ad7799_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos,
   int shift = calculation_shift(a_reg);
   int number_byte = calculation_number_byte(a_reg, 
     a_byte_pos);
-  irs_u8 test = static_cast<irs_u8>(mp_buf[shift + number_byte] >> a_pos);
-  irs_u8 test_1 = static_cast<irs_u8>(filling_units(a_size));
-  int value = test_1 & test;
+  irs_u8 value_shift = 
+    static_cast<irs_u8>(mp_buf[shift + number_byte] >> a_pos);
+  irs_u8 mask = static_cast<irs_u8>(filling_units(a_size));
+  int value = value_shift & mask;
   return value;
 }
 
