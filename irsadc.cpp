@@ -2072,7 +2072,7 @@ void irs::dac_ad5791_t::tick()
     }
     case st_ldac_clear: {
       mp_ldac_pin->set();
-      m_timer.set(irs::make_cnt_mcs(1));
+      m_timer.set(irs::make_cnt_mcs(10));
       m_timer.start();
       m_status = st_ldac_set;
       break;
@@ -2586,7 +2586,7 @@ irs_i32 irs::adc_ad7799_t::conversion_spi_value()
     value = (value << 7);
   } else if (unipolar == 0) {
     value = (value << 8);
-    value = value - 0x8000000;
+    value = value - 0x80000000;
   }
   return value;
 }
