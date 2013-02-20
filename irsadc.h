@@ -1124,7 +1124,7 @@ class adc_ad7799_t: public adc_request_t
 {
 public:
   adc_ad7799_t(spi_t *ap_spi,
-  gpio_pin_t* ap_cs_pin);
+	gpio_pin_t* ap_cs_pin);
   ~adc_ad7799_t();
   virtual void start();
   virtual void stop();
