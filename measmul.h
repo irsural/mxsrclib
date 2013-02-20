@@ -2745,23 +2745,23 @@ public:
   //! \brief Чтение значения при текущем типа измерения
   virtual void get_value(double *ap_value);
   //! \brief Чтение напряжения
-  virtual void get_voltage(double */*voltage*/) {}
+  virtual void get_voltage(double* /*voltage*/) {}
   //! \brief Чтения силы тока
-  virtual void get_current(double */*current*/) {}
+  virtual void get_current(double* /*current*/) {}
   //! \brief Чтение сопротивления
-  virtual void get_resistance2x(double */*resistance*/) {}
+  virtual void get_resistance2x(double* /*resistance*/) {}
   //! \brief Чтение сопротивления
-  virtual void get_resistance4x(double */*resistance*/) {}
+  virtual void get_resistance4x(double* /*resistance*/) {}
   //! \brief Чтение частоты
-  virtual void get_frequency(double */*frequency*/) {}
+  virtual void get_frequency(double* /*frequency*/) {}
   //! \brief Чтение усредненного сдвира фаз
-  virtual void get_phase_average(double */*phase_average*/) {}
+  virtual void get_phase_average(double* /*phase_average*/) {}
   //! \brief Чтение фазового сдвига
-  virtual void get_phase(double */*phase*/) {}
+  virtual void get_phase(double* /*phase*/) {}
   //! \brief Чтение временного интервала
-  virtual void get_time_interval(double */*time_interval*/) {}
+  virtual void get_time_interval(double* /*time_interval*/) {}
   //! \brief Чтение усредненного временного интервала
-  virtual void get_time_interval_average(double */*ap_time_interval*/) {}
+  virtual void get_time_interval_average(double* /*ap_time_interval*/) {}
   //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration() {}
   //! \brief Чтение статуса текущей операции

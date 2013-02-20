@@ -28,12 +28,12 @@ enum adc_param_t {
   adc_freq = 3,
   adc_buf = 4,
   adc_ref_det = 5,
-  adc_ub = 6,
-  adc_bo = 7,
+  adc_unipolar = 6,
+  adc_burnout = 7,
   adc_offset = 8,
   adc_full_scale = 9
 };
-
+  
 const int adc_mode_continuous_conversion = 0;
 const int adc_mode_single_conversion = 1;
 const int adc_mode_idle = 2;

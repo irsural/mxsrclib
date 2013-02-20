@@ -1123,6 +1123,24 @@ struct dac_ad5791_data_t
 class adc_ad7799_t: public adc_request_t
 {
 public:
+  enum freq_t {
+    freq_500Hz = 1,
+    freq_250Hz = 2,
+    freq_125Hz = 3,
+    freq_62_5Hz = 4,
+    freq_50Hz = 5,
+    freq_39_2Hz = 6,
+    freq_33_3Hz = 7,
+    freq_19_6Hz = 8,
+    freq_16_7Hz_80dB = 9,
+    freq_16_7Hz_65dB = 10,
+    freq_12_5Hz = 11,
+    freq_10Hz = 12,
+    freq_8_33Hz = 13,
+    freq_6_25Hz = 14,
+    freq_4_17Hz = 15
+  };
+  
   adc_ad7799_t(spi_t *ap_spi,
 	  gpio_pin_t* ap_cs_pin);
   ~adc_ad7799_t();

@@ -2280,10 +2280,10 @@ void irs::adc_ad7799_t::set_param(adc_param_t a_param, const int a_value)
     case adc_ref_det: {
       set_ref_det(a_value);  
     } break;
-    case adc_ub: {
+    case adc_unipolar: {
       set_ub(a_value);  
     } break; 
-    case adc_bo: {
+    case adc_burnout: {
       set_bo(a_value);  
     } break;
     default: {
@@ -2321,11 +2321,11 @@ void irs::adc_ad7799_t::get_param(adc_param_t a_param, int* ap_value)
       *mp_value_param = get(m_reg[m_reg_conf_index], 
         m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
     } break;
-    case adc_ub: {
+    case adc_unipolar: {
       *mp_value_param = get(m_reg[m_reg_conf_index], 
         m_ub_byte_pos, m_ub_pos, m_ub_size);
     } break; 
-    case adc_bo: {
+    case adc_burnout: {
       *mp_value_param = get(m_reg[m_reg_conf_index], 
         m_bo_byte_pos, m_bo_pos, m_bo_size);   
     } break;
