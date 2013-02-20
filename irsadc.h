@@ -1124,7 +1124,7 @@ class adc_ad7799_t: public adc_request_t
 {
 public:
   adc_ad7799_t(spi_t *ap_spi,
-	gpio_pin_t* ap_cs_pin);
+	  gpio_pin_t* ap_cs_pin);
   ~adc_ad7799_t();
   virtual void start();
   virtual void stop();
@@ -1248,7 +1248,6 @@ private:
   irs_u32 m_count_init;
   irs_u32 m_shift;
   bool m_read_data;
-  vector<int> m_filter_settle_time_vector;
   vector<int> m_conv_time_vector;
   irs_u8 m_freq;
   int m_reserved_interval;

@@ -2110,7 +2110,6 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_count_init(0),
   m_shift(0),
   m_read_data(false),
-  m_filter_settle_time_vector(),
   m_conv_time_vector(),
   m_freq(0),
   m_reserved_interval(1),
@@ -2126,37 +2125,21 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   memset(mp_buf, 0, m_size_buf);
   memset(mp_spi_buf, 0xFF, m_write_buf_size);
   
-  m_filter_settle_time_vector.push_back(m_reserved_interval); //  0:  reserve 
   m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
-  m_filter_settle_time_vector.push_back(4);   //  1:  4 ms 
   m_conv_time_vector.push_back(to_int(1000/500));   //  1:  500 Hz
-  m_filter_settle_time_vector.push_back(8);   //  2:  8 ms 
   m_conv_time_vector.push_back(to_int(1000/250));   //  2:  250 Hz
-  m_filter_settle_time_vector.push_back(16);   //  3:  16 ms 
   m_conv_time_vector.push_back(to_int(1000/125));   //  3:  125 Hz
-  m_filter_settle_time_vector.push_back(32);   //  4:  32 ms 
   m_conv_time_vector.push_back(to_int(1000/62.5));  //  4:  62.5 Hz
-  m_filter_settle_time_vector.push_back(40);  //  5:  40 ms 
   m_conv_time_vector.push_back(to_int(1000/50));    //  5:  50 Hz
-  m_filter_settle_time_vector.push_back(48);  //  6:  48 ms 
   m_conv_time_vector.push_back(to_int(1000/39.2));  //  6:  39.2 Hz
-  m_filter_settle_time_vector.push_back(60);  //  7:  60 ms 
   m_conv_time_vector.push_back(to_int(1000/33.3));  //  7:  33.3 Hz
-  m_filter_settle_time_vector.push_back(101); //  8:  101 ms 
   m_conv_time_vector.push_back(to_int(1000/19.6));  //  8:  19.6 Hz
-  m_filter_settle_time_vector.push_back(120); //  9:  120 ms 
   m_conv_time_vector.push_back(to_int(1000/19.6));  //  9:  16.7 Hz
-  m_filter_settle_time_vector.push_back(120); // 10:  120 ms 
   m_conv_time_vector.push_back(to_int(1000/19.6));  // 10:  19.6 Hz
-  m_filter_settle_time_vector.push_back(160); // 11:  160 ms 
   m_conv_time_vector.push_back(to_int(1000/12.5));  // 11:  12.5 Hz
-  m_filter_settle_time_vector.push_back(200); // 12:  200 ms 
   m_conv_time_vector.push_back(to_int(1000/10.));    // 12:  10 Hz
-  m_filter_settle_time_vector.push_back(240); // 13:  240 ms 
   m_conv_time_vector.push_back(to_int(1000/8.33));  // 13:  8.33 Hz
-  m_filter_settle_time_vector.push_back(320); // 14:  320 ms 
   m_conv_time_vector.push_back(to_int(1000/6.25));  // 14:  6.25 Hz
-  m_filter_settle_time_vector.push_back(480); // 15:  480 ms 
   m_conv_time_vector.push_back(to_int(1000/4.17));  // 15:  4.17 Hz
   
   m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
