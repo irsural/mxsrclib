@@ -458,12 +458,12 @@ namespace irs {
 
 const int npos = -1;
 
-}
-
 enum switch_t {
   sw_off = 0,
   sw_on = 1
 };
+
+}//namespace irs 
 
 //  Статус всего
 enum irs_status_t {

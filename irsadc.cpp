@@ -2002,7 +2002,8 @@ void irs::dac_ad5791_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
     (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
   if (valid_data) {
     irs_u8 index = static_cast<irs_u8>(a_index);
-    mp_buf[a_index] &= ~static_cast<irs_u8>(1 << a_bit_index);
+    mp_buf[a_index] = static_cast<irs_u8>
+      (mp_buf[a_index] & ~static_cast<irs_u8>(1 << a_bit_index));
     if (index == m_options_pos || index == m_lin_comp_pos) {
       m_need_write_options = true;
     }
@@ -2028,9 +2029,11 @@ void irs::dac_ad5791_t::tick()
     }
     case st_prepare_options: {
       mp_write_buf[0] = addr_control;
-      mp_write_buf[1] = (mp_buf[m_lin_comp_pos] >> 2) & 0x03;
-      mp_write_buf[2] = ((mp_buf[m_lin_comp_pos] & 0x03) << 6) 
-        | (mp_buf[m_options_pos] & 0x3E);
+      mp_write_buf[1] =
+        static_cast<irs_u8>((mp_buf[m_lin_comp_pos] >> 2) & 0x03);
+      mp_write_buf[2] =
+        static_cast<irs_u8>(((mp_buf[m_lin_comp_pos] & 0x03) << 6)
+        | (mp_buf[m_options_pos] & 0x3E));
       m_need_write_options = false;
       m_status = st_spi_prepare;
       m_target_status = st_free;
@@ -2039,10 +2042,13 @@ void irs::dac_ad5791_t::tick()
     case st_prepare_voltage_code: {
       irs_u32 voltage_code = 
         *reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
-      irs_u8 master_byte = voltage_code >> m_master_byte_shift;
-      irs_u8 mid_byte    = voltage_code >> m_mid_byte_shift;
-      irs_u8 least_byte  = voltage_code >> m_least_byte_shift;
-      mp_write_buf[0] = addr_code | master_byte;
+      irs_u8 master_byte =
+        static_cast<irs_u8>(voltage_code >> m_master_byte_shift);
+      irs_u8 mid_byte    =
+        static_cast<irs_u8>(voltage_code >> m_mid_byte_shift);
+      irs_u8 least_byte  =
+        static_cast<irs_u8>(voltage_code >> m_least_byte_shift);
+      mp_write_buf[0] = static_cast<irs_u8>(addr_code | master_byte);
       mp_write_buf[1] = mid_byte;
       mp_write_buf[2] = least_byte;
       m_need_write_voltage_code = false;
@@ -2199,7 +2205,7 @@ void irs::adc_ad7799_t::set_mode(int a_mode)
 }
 void irs::adc_ad7799_t::set_freq(int a_freq)
 {
-  m_freq = a_freq;
+  m_freq = static_cast<irs_u8>(a_freq);
   creation_reg(m_reg[m_reg_mode_index], m_freq, 
     m_freq_byte_pos, m_freq_pos, m_freq_size);
   m_mode = mode_spi_rw;
@@ -2536,8 +2542,9 @@ void irs::adc_ad7799_t::creation_reg(reg_t a_reg, int a_value,
   int shift = calculation_shift(a_reg);
   int number_byte = calculation_number_byte(a_reg, 
     a_byte_pos);
-  mp_buf[shift + number_byte]  &= 
-    ~static_cast<irs_u8>(filling_units(a_size) << a_pos);
+  mp_buf[shift + number_byte] = static_cast<irs_u8>(
+    mp_buf[shift + number_byte] &
+    ~static_cast<irs_u8>(filling_units(a_size) << a_pos));
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_value << a_pos);
   for (int i = 0; i < a_reg.size; i++) {
     mp_spi_buf[i + m_reg[m_reg_comm_index].size] = 
