@@ -1953,7 +1953,7 @@ void irs::hardflow::fixed_flow_t::read(size_type a_channel_ident,
 }
 
 irs::hardflow::fixed_flow_t::status_t
-  irs::hardflow::fixed_flow_t::read_status()
+  irs::hardflow::fixed_flow_t::read_status() const
 {
   return m_read_status;
 }
@@ -1995,7 +1995,7 @@ void irs::hardflow::fixed_flow_t::write(size_type a_channel_ident,
 }
 
 irs::hardflow::fixed_flow_t::status_t
-  irs::hardflow::fixed_flow_t::write_status()
+  irs::hardflow::fixed_flow_t::write_status() const
 {
   return m_write_status;
 }

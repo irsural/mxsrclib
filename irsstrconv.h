@@ -271,6 +271,12 @@ inline T str_conv(const irs_string_t& a_str_in)
 }
 
 template<>
+inline std_string_t str_conv<std_string_t>(const irs_string_t& a_str_in)
+{
+  return a_str_in;
+}
+
+template<>
 inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 {
   return a_str_in;

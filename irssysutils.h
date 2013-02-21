@@ -718,7 +718,7 @@ enum wave_pcm_sampling_rate_t {
 
 void create_wave_pcm_16_mono_file(irs::string_t a_file_name,
   const std::size_t a_sampling_rate,
-  const std::vector<irs_i16>& a_samples) throw(std::runtime_error);
+  const std::vector<irs_i16>& a_samples);
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
 

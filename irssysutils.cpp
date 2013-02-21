@@ -114,7 +114,7 @@ public:
   typedef irs::string_t string_type;
   hmmio_ptr(const string_type& a_file_name, LPMMIOINFO lpmmioinfo,
     DWORD dwOpenFlags
-  ) throw (std::runtime_error):
+  ):
     hmmio(mmioOpen(const_cast<irs::char_t*>(a_file_name.c_str()), lpmmioinfo,
       dwOpenFlags))
   {
@@ -127,7 +127,7 @@ public:
   ~hmmio_ptr()
   {
     if (hmmio) {   // Чтобы можно было копировать
-      mmioClose(hmmio, NULL);
+      mmioClose(hmmio, 0);
     }
   }
   operator HMMIO()
@@ -142,7 +142,7 @@ private:
 
 void irs::create_wave_pcm_16_mono_file(irs::string_t a_file_name,
   const std::size_t a_sampling_rate,
-  const std::vector<irs_i16>& a_samples) throw (std::runtime_error)
+  const std::vector<irs_i16>& a_samples)
 {
   const std::size_t bits_per_sample = 16;
   hmmio_ptr hmmio(a_file_name, NULL, MMIO_CREATE|MMIO_WRITE|MMIO_ALLOCBUF);

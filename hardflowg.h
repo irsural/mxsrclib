@@ -722,11 +722,11 @@ public:
   void write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size);
   //! \brief Возвращает статус операции чтения
-  status_t read_status();
+  status_t read_status() const;
   //! \brief Обрывает чтение и возвращает количество прочитанных байт
   size_type read_abort();
   //! \brief Возвращает статус операции записи
-  status_t write_status();
+  status_t write_status() const;
   //! \brief Обрывает запись и возвращает количество записанных байт
   size_type write_abort();
   //! \brief Элементарная операция
