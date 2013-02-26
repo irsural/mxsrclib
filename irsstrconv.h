@@ -71,6 +71,7 @@ inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
 inline std::wstring QStringToStdWString(const QString &str)
 {
   #ifdef _MSC_VER
+  IRS_STATIC_ASSERT(sizeof(wchar_t) == sizeof(ushort));
   return std::wstring(reinterpret_cast<const wchar_t*>(str.utf16()));
   #else
   return str.toStdWString();
@@ -80,6 +81,7 @@ inline std::wstring QStringToStdWString(const QString &str)
 inline QString StdWStringToQString(const std::wstring &str)
 {
   #ifdef _MSC_VER
+  IRS_STATIC_ASSERT(sizeof(wchar_t) == sizeof(ushort));
   return QString::fromUtf16(
     reinterpret_cast<const unsigned short*>(str.c_str()));
   #else
@@ -502,6 +504,35 @@ inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
 }
 #endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
 #endif // defined(__BORLANDC__)
+
+#ifdef QT_CORE_LIB
+// QString
+template<class T>
+inline T str_conv(const QString& a_str_in)
+{
+  // Непроверенное преобразование
+  IRS_STATIC_ASSERT(false);
+  return T(a_str_in);
+}
+
+template<>
+inline QString str_conv<QString>(const QString& a_str_in)
+{
+  return a_str_in;
+}
+
+template<>
+inline irs_string_t str_conv<irs_string_t>(const QString& a_str_in)
+{
+  return a_str_in.toStdString();
+}
+
+template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const QString& a_str_in)
+{
+  return QStringToStdWString(a_str_in);
+}
+#endif // QT_CORE_LIB
 
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 

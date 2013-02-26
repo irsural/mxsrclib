@@ -479,14 +479,14 @@ public:
   //!
   //! Пример конфигурации сервера:
   //! \code
-  //!   irs::hardflow::udp_flow_t udp_flow("", "5005", "", "",
-  //!     irs::hardflow::udplc_mode_queue, 1000, 0xFFFF,
+  //!   irs::hardflow::udp_flow_t udp_flow(irst(""), irst("5005"), irst(""),
+  //!      irst(""), irs::hardflow::udplc_mode_queue, 1000, 0xFFFF,
   //!     false, 24*60*60, true, 10);
   //! \endcode
   //! Пример конфигурации клиента:
   //! \code
-  //! irs::hardflow::udp_flow_t udp_flow("", "", "127.0.0.1", "5005",
-  //!   irs::hardflow::udplc_mode_limited, 1, 0xFFFF,
+  //! irs::hardflow::udp_flow_t udp_flow(irst(""), irst(""), irst("127.0.0.1"),
+  //!   irst("5005"), irs::hardflow::udplc_mode_limited, 1, 0xFFFF,
   //!   false, 24*60*60, false, 10);
   //! \endcode
   udp_flow_t(
