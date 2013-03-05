@@ -35,11 +35,11 @@ irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
 #elif defined(IRS_STM32F4xx)
-irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 168000000;
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;
 irs::cpu_traits_t::frequency_type
-  irs::cpu_traits_t::m_periphery_frequency_first = 42000000;
+  irs::cpu_traits_t::m_periphery_frequency_first = 16000000;
 irs::cpu_traits_t::frequency_type
-  irs::cpu_traits_t::m_periphery_frequency_second = 84000000;
+  irs::cpu_traits_t::m_periphery_frequency_second = 16000000;
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
 #else
   #error Тип контроллера не определён

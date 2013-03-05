@@ -135,6 +135,7 @@ struct param_pll_t {
   irs_u32 PPRE1;
   irs_u32 PPRE2;
   irs_u32 FLASH_STATE;
+  irs_u32 HSEBYP;
   param_pll_t():
     freq_quartz(0),
     PLLM(0),
@@ -143,7 +144,8 @@ struct param_pll_t {
     PLLQ(0),
     PPRE1(0),
     PPRE2(0),
-    FLASH_STATE(0)
+    FLASH_STATE(0),
+    HSEBYP(0)
   {}
 };
 

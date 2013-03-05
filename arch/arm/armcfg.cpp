@@ -66,6 +66,7 @@ void pll_on()
     // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
     param_pll.PPRE2 = 4;
     param_pll.FLASH_STATE = 3;
+    param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
     irs::pll_on(param_pll);
   #elif defined(IRS_STM32F4xx)
     // На входе кварц 25 МГц
@@ -79,6 +80,7 @@ void pll_on()
     // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
     param_pll.PPRE2 = 4;
     param_pll.FLASH_STATE = 5;
+    param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
     irs::pll_on(param_pll);
   #else
     #error Тип контроллера не определён  
@@ -97,7 +99,7 @@ void irs::pll_on()
 void irs::pll_on(param_pll_t a_param_pll)
 {
   RCC_CR_bit.HSEON = 1;
-  RCC_CR_bit.HSEBYP = 0;
+  RCC_CR_bit.HSEBYP = a_param_pll.HSEBYP;
   while (!RCC_CR_bit.HSERDY);
 
   RCC_PLLCFGR_bit.PLLM = a_param_pll.PLLM; // Делитель на входе PLL
