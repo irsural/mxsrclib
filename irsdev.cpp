@@ -785,6 +785,28 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       }
 
     } break;
+    case PB8: {
+      if (timer_address == IRS_TIM4_BASE) {
+        m_timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH8 = 2;
+      } else if (timer_address == IRS_TIM10_BASE) {
+        m_timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH8 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB9: {
+      if (timer_address == IRS_TIM4_BASE) {
+        m_timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH9 = 2;
+      } else if (timer_address == IRS_TIM11_BASE) {
+        m_timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH9 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
         "порта и таймера");
