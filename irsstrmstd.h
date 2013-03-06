@@ -10,11 +10,16 @@
 #include <irscpp.h>
 #include <irsconsolestd.h>
 #include <irsstrdefs.h>
+#include <irsstrconv.h>
 #include <mxdata.h>
 
 #ifdef __BORLANDC__
 #include <StdCtrls.hpp>
 #endif // __BORLANDC__
+
+#ifdef QT_CORE_LIB
+#include <QPlainTextEdit>
+#endif // QT_CORE_LIB
 
 #include <irsfinal.h>
 
@@ -212,7 +217,7 @@ inline void irs_strm_buf::blink_cursor(irs_i8 a_parametr_immediate_blink_cursor)
 {
   char ChCursor[2]; //вид курсора
   ChCursor[0] = '_';
-  ChCursor[1] = '\0';       
+  ChCursor[1] = '\0';
   irs_u8 one=0;
   if(test_to_cnt(m_test_to_cur) || a_parametr_immediate_blink_cursor != 0)
   {
@@ -628,6 +633,94 @@ typedef basic_memobuf<char> memobuf;
 #endif //IRSSTRM_NEW_MEMOBUF
 
 #endif //__BORLANDC__
+
+#ifdef QT_CORE_LIB
+// Буфер стандартных потоков для QPlainTextEdit
+template <class char_type>
+class basic_plain_text_edit_buf_t: public basic_streambuf<char_type>
+{
+public:
+  typedef std::size_t size_type;
+  typedef typename basic_streambuf<char_type>::int_type int_type;
+  typedef typename basic_streambuf<char_type>::traits_type traits_type;
+
+
+  basic_plain_text_edit_buf_t(const basic_plain_text_edit_buf_t& a_buf);
+  basic_plain_text_edit_buf_t(QPlainTextEdit *ap_edit = 0,
+    size_type a_outbuf_size = 0);
+  void connect(QPlainTextEdit *ap_edit);
+  virtual int_type overflow(int_type a_char = traits_type::eof());
+  virtual int sync();
+private:
+  enum { zero_term_size = 1 };
+
+  raw_data_t<char_type> m_outbuf;
+  QPlainTextEdit *mp_edit;
+  const char_type m_end_of_line_char;
+  const char_type m_zero_term_char;
+};
+template <class char_type>
+basic_plain_text_edit_buf_t<char_type>::basic_plain_text_edit_buf_t(
+  const basic_plain_text_edit_buf_t<char_type>& a_buf
+):
+  m_outbuf(a_buf.m_outbuf),
+  mp_edit(a_buf.mp_edit),
+  m_end_of_line_char(a_buf.m_end_of_line_char),
+  m_zero_term_char(a_buf.m_zero_term_char)
+{
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+}
+template <class char_type>
+basic_plain_text_edit_buf_t<char_type>::basic_plain_text_edit_buf_t(
+  QPlainTextEdit *ap_edit, size_t a_outbuf_size
+):
+  m_outbuf(a_outbuf_size + zero_term_size),
+  mp_edit(ap_edit),
+  m_end_of_line_char(static_cast<char_type>('\n')),
+  m_zero_term_char(static_cast<char_type>('\0'))
+{
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+}
+template <class char_type>
+void basic_plain_text_edit_buf_t<char_type>::connect(QPlainTextEdit *ap_edit)
+{
+  mp_edit = ap_edit;
+}
+template <class char_type>
+typename basic_plain_text_edit_buf_t<char_type>::int_type
+basic_plain_text_edit_buf_t<char_type>::overflow(int_type a_char)
+{
+  if (!mp_edit) {
+    return 0;
+  }
+  const int msg_size = this->pptr() - this->pbase();
+  if (msg_size > 0) {
+    *this->pptr() = m_zero_term_char;
+    //char_type* message = this->pbase();
+    std::basic_string<char_type> message(this->pbase());
+    QString s = irs::str_conv<QString>(message);
+    mp_edit->insertPlainText(irs::str_conv<QString>(message));
+  }
+  if (a_char != traits_type::eof()) {
+    enum { char_str_size = 2 };
+    char_type char_str[char_str_size];
+    enum { char_pos = 0, zero_char_pos = 1 };
+    char_str[char_pos] = traits_type::to_char_type(a_char);
+    char_str[zero_char_pos] = 0;
+    mp_edit->insertPlainText(irs::str_conv<QString>(std::string(char_str)));
+  }
+  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+  return 0;
+}
+template <class char_type>
+int basic_plain_text_edit_buf_t<char_type>::sync()
+{
+  return overflow();
+}
+
+typedef basic_plain_text_edit_buf_t<char_t> plain_text_edit_buf_t;
+typedef basic_plain_text_edit_buf_t<char> plain_text_edit_buf;
+#endif // QT_CORE_LIB
 
 // Стандартная конфигурация консоли
 class conio_cfg_t: public mx_proc_t

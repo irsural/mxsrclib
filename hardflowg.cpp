@@ -29,7 +29,7 @@ bool irs::hardflow::lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
   IRS_HIBYTE(version_requested) = static_cast<irs_u8>(a_version_minor);
   if (WSAStartup(version_requested, ap_wsadata) == 0) {
     // Библиотека удачно загружена
-    IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("Библиотека сокетов удачно загружена");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Библиотека сокетов удачно загружена");
   } else {
     // Ошибка при загрузке библиотеки
     IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(
@@ -1024,15 +1024,15 @@ irs::hardflow::udp_flow_t::string_type irs::hardflow::udp_flow_t::param(
           number_to_string(port, &param_value);
         } else {
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Неверный формат параметра " <<
-            "\"" << a_param_name << "\"");
+            "\"" << str_conv<std::string>(a_param_name) << "\"");
         }
       } else {
         IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Неверный формат параметра" <<
-          "\"" << a_param_name << "\"");
+          "\"" << str_conv<std::string>(a_param_name) << "\"");
       }
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Неизвестный параметр " <<
-        "\"" << a_param_name << "\"");
+        "\"" << str_conv<std::string>(a_param_name) << "\"");
     }
   }
   return param_value;
@@ -1067,7 +1067,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.channel_buf_max_size_set(read_buf_max_size);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "read_buf_max_size == " << a_value);
+        "read_buf_max_size == " << str_conv<std::string>(a_value));
     }
   } else if (a_param_name == irst("limit_lifetime_enabled")) {
     bool limit_lifetime_enabled = false;
@@ -1075,7 +1075,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.limit_lifetime_enabled_set(limit_lifetime_enabled);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "limit_lifetime_enabled == " << a_value);
+        "limit_lifetime_enabled == " << str_conv<std::string>(a_value));
     }
   } else if (a_param_name == irst("max_lifetime")) {
     double max_lifetime = 0.;
@@ -1083,7 +1083,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.max_lifetime_set(max_lifetime);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "max_lifetime == " << a_value);
+        "max_lifetime == " << str_conv<std::string>(a_value));
     }
   } else if (a_param_name == irst("limit_downtime_enabled")) {
     bool limit_downtime_enabled = false;
@@ -1091,7 +1091,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.limit_downtime_enabled_set(limit_downtime_enabled);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "limit_downtime_enabled == " << a_value);
+        "limit_downtime_enabled == " << str_conv<std::string>(a_value));
     }
   } else if (a_param_name == irst("max_downtime")) {
     double max_downtime = 0.;
@@ -1099,7 +1099,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.max_downtime_set(max_downtime);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "max_downtime == " << a_value);
+        "max_downtime == " << str_conv<std::string>(a_value));
     }
   } else if (a_param_name == irst("channel_max_count")) {
     size_type channel_max_count = 0;
@@ -1107,7 +1107,7 @@ void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
       m_channel_list.max_size_set(channel_max_count);
     } else {
       IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Недопустимое значение параметра. " <<
-        "channel_max_count == " << a_value);
+        "channel_max_count == " << str_conv<std::string>(a_value));
     }
   } else {
     IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Неизвестный параметр");
@@ -1137,8 +1137,8 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
           sizeof(remote_host_adr));
       if (ret != IRS_SOCKET_ERROR) {
         size_wr = static_cast<size_type>(ret);
-        IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("Записано " <<
-          static_cast<string_type>(size_wr) << " байт");
+        IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Записано " <<
+          str_conv<std::string>(num_to_str(size_wr)) << " байт");
       } else {
         IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Запись: " <<
           error_str(m_error_sock.get_last_error()));
@@ -1183,8 +1183,8 @@ void irs::hardflow::udp_flow_t::tick()
           m_read_buf.size(), 0, (sockaddr*)&sender_addr, &sender_addr_size);
         if (ret != IRS_SOCKET_ERROR) {
           m_channel_list.write(sender_addr, m_read_buf.data(), ret);
-          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL("Прочитано " <<
-            static_cast<string_type>(ret) << " байт");
+          IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Прочитано " <<
+            str_conv<std::string>(num_to_str(ret)) << " байт");
         } else {
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Чтение: " <<
             error_str(m_error_sock.get_last_error()));

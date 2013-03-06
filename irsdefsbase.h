@@ -97,6 +97,7 @@
 // __WATCOMC__ - Компилятор Open Watcom
 // __GNUC__ - Компилятор GNU
 // __BORLANDC__ - Компилятор Borland
+// _MSC_VER - Компилятор Microsoft Visual C++
 // __AVR32__ - Компилятор GCC для AVR32
 
 // Поддержка частичной специализации для функций
@@ -463,7 +464,7 @@ enum switch_t {
   sw_on = 1
 };
 
-}//namespace irs 
+}//namespace irs
 
 //  Статус всего
 enum irs_status_t {

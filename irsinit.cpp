@@ -50,14 +50,15 @@ irs::init_implement_t::init_implement_t():
   #else //IRS_FULL_STDCPPLIB_SUPPORT
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
 {
-  #ifdef QT_CORE_LIB
+
+  #if defined (QT_CORE_LIB) && (QT_VERSION < 0x05)
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
-  #endif //QT_CORE_LIB
-  
+  #endif // defined (QT_CORE_LIB) && (QT_VERSION < 0x05)
+
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   irs::loc();
   #endif //IRS_FULL_STDCPPLIB_SUPPORT
-  
+
   irs::irsstr_locale_style_def().set(irs::irsstrloc_current);
 }
 void irs::init_implement_t::dummy()
