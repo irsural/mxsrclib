@@ -134,13 +134,13 @@ inline QString StdWStringToQString(const std::wstring &str)
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
   const std_string_t& a_str_in)
 {
-  QString Str = QString::fromStdString(a_str_in);
+  QString Str = StdStringToQString(a_str_in);
   return QStringToStdWString(Str);
 }
 inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
   const std_string_t& a_str_in)
 {
-  QString Str = QString::fromStdString(a_str_in);
+  QString Str = StdStringToQString(a_str_in);
   return QStringToStdWString(Str);
 }
 # endif // QT_CORE_LIB

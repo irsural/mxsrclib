@@ -428,8 +428,8 @@ inline void memsetex(T* ap_data, size_t a_size)
 template <class T>
 inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
 {
-  IRS_LIB_ASSERT(ap_dest != IRS_NULL);
-  IRS_LIB_ASSERT(ap_src != IRS_NULL);
+  IRS_LIB_ASSERT(((ap_dest != IRS_NULL) && (ap_src != IRS_NULL)) ||
+    (a_size == 0));
   return reinterpret_cast<T*>(memcpy(
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),

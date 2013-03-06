@@ -694,12 +694,11 @@ basic_plain_text_edit_buf_t<char_type>::overflow(int_type a_char)
     return 0;
   }
   const int msg_size = this->pptr() - this->pbase();
+  QString s;
   if (msg_size > 0) {
     *this->pptr() = m_zero_term_char;
-    //char_type* message = this->pbase();
     std::basic_string<char_type> message(this->pbase());
-    QString s = irs::str_conv<QString>(message);
-    mp_edit->insertPlainText(irs::str_conv<QString>(message));
+    s = irs::str_conv<QString>(message);
   }
   if (a_char != traits_type::eof()) {
     enum { char_str_size = 2 };
@@ -707,8 +706,17 @@ basic_plain_text_edit_buf_t<char_type>::overflow(int_type a_char)
     enum { char_pos = 0, zero_char_pos = 1 };
     char_str[char_pos] = traits_type::to_char_type(a_char);
     char_str[zero_char_pos] = 0;
-    mp_edit->insertPlainText(irs::str_conv<QString>(std::string(char_str)));
+    s = irs::str_conv<QString>(std::string(char_str));
   }
+  if (!s.isEmpty()) {
+    QTextCursor c = mp_edit->textCursor();
+    c.movePosition(QTextCursor::End);
+    mp_edit->setTextCursor(c);
+    mp_edit->insertPlainText(s);
+    c.movePosition(QTextCursor::End);
+    mp_edit->setTextCursor(c);
+  }
+
   setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
   return 0;
 }
