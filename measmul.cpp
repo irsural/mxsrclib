@@ -203,7 +203,7 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_resistance_ocomp_on("OCOMP ON")
 {
   IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
-    "указатель в качестве hardflow_t*");  
+    "указатель в качестве hardflow_t*");
   irs::string_t read_timeout_str = read_timeout_s;
   mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
   m_fixed_flow.read_timeout(make_cnt_s(
@@ -1892,7 +1892,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!filter_completed()) {
         filter_tick();
         if (filter_completed()) {
-          *mp_value = static_cast<double>(filter_get());   
+          *mp_value = static_cast<double>(filter_get());
           IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
             measure_time_calc.get() << " с");
           if (m_calc_filtered_values_enabled) {
@@ -3204,7 +3204,8 @@ void irs::v7_78_1_t::set_nplc(double nplc)
     nplc = 10;
   else
     nplc = 100;
-  irs::string nplc_str = nplc;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
   irs::string nplc_volt_dc_str =
     static_cast<irs::string>("VOLTage:DC:NPLCycles " +  nplc_str);
   irs::string nplc_resistance_2x_str =
@@ -3227,7 +3228,8 @@ void irs::v7_78_1_t::set_aperture(double aperture)
     aperture = 0.1;
   else
     aperture = 1;
-  irs::string aperture_str = aperture;
+  irs::string aperture_str;
+  num_to_str_classic(aperture, &aperture_str);
   irs::string aperture_frequency_str =
     static_cast<irs::string>("FREQuency:APERture " + aperture_str);
   m_get_frequency_commands[m_aperture_frequency_index] =
@@ -3242,7 +3244,8 @@ void irs::v7_78_1_t::set_bandwidth(double bandwidth)
     bandwidth = 20;
   else
     bandwidth = 200;
-  irs::string bandwidth_str = bandwidth;
+  irs::string bandwidth_str;
+  num_to_str_classic(bandwidth, &bandwidth_str);
   irs::string bandwidth_volt_ac_str =
     static_cast<irs::string>("DETector:BANDwidth " + bandwidth_str);
   m_get_voltage_ac_commands[m_band_width_voltage_ac_index] =
@@ -3555,7 +3558,7 @@ void irs::agilent_34420a_t::set_negative()
 {}
 // Чтение значения при текущем типа измерения
 void irs::agilent_34420a_t::get_value(double *ap_value)
-{    
+{
   if (m_create_error) return;
   mp_value = ap_value;
   m_command = mac_get_value;
@@ -3801,7 +3804,8 @@ void irs::agilent_34420a_t::set_nplc(double nplc)
   } else {
     nplc = 200;
   }
-  irs::string nplc_str = nplc;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
   irs::string nplc_volt_dc_str = m_channel[m_current_channel] +
     static_cast<irs::string>("VOLTage:NPLCycles " + nplc_str);
   irs::string nplc_resistance_2x_str =
@@ -4332,7 +4336,8 @@ void irs::akip_ch3_85_3r_t::set_start_level(double a_level)
 {
   if(m_send_command_stat != CS_BUSY && m_meas_stat != meas_status_busy){
     m_send_command_stat = CS_BUSY;
-    irs::irs_string_t level_str = a_level;
+    irs::irs_string_t level_str;
+    num_to_str_classic(a_level, &level_str);
     ms_set_level_channel_1_command = ":EVENt1:LEVel "+level_str+"\n";
     ms_set_level_channel_2_command = ":EVENt2:LEVel "+level_str+"\n";
     md_buf_cmds.push_back(ms_set_level_channel_1_command);
@@ -4459,22 +4464,22 @@ void irs::ni_pxi_4071_t::get_param(const multimeter_param_t a_param,
     // СКО
     case mul_param_standard_deviation:
     {
-    
+
     } break;
     // Относительное СКО
     case mul_param_standard_deviation_relative:
     {
-    
+
     } break;
     // Дельта
     case mul_param_variation:
     {
-    
+
     } break;
     // Относительная дельта
     case mul_param_variation_relative:
     {
-    
+
     } break;
     case mul_param_filter_settings:
     {
@@ -4495,7 +4500,7 @@ void irs::ni_pxi_4071_t::set_param(const multimeter_param_t a_param,
   {
     case mul_param_sampling_time_s:
     {
-    
+
     } break;
     case mul_param_filter_settings:
     {
@@ -4791,7 +4796,7 @@ void irs::ni_pxi_4071_t::set_range(type_meas_t a_type_meas, double a_range)
 {
   //m_eth_mul_data.meas_type = a_type_meas; // закоменчено временно из-за проблем
                                             // с установкой типа измерения
-  
+
   double range = 0;
   switch(a_type_meas)
   {
