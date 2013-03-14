@@ -728,7 +728,8 @@ void irs::agilent_3458a_t::tick()
 // ”становка времени интегрировани€ в периодах частоты сети (20 мс)
 void irs::agilent_3458a_t::set_nplc(double nplc)
 {
-  irs::string nplc_str = nplc;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
   nplc_str = "NPLC " + nplc_str;
   //m_get_measure_commands[m_time_int_voltage_index] = nplc_str;
   m_time_int_measure_command = nplc_str;
@@ -736,7 +737,8 @@ void irs::agilent_3458a_t::set_nplc(double nplc)
 // ”становка времени интегрировани€ в c
 void irs::agilent_3458a_t::set_aperture(double aperture)
 {
-  irs::string aperture_str = aperture;
+  irs::string aperture_str;
+  num_to_str_classic(aperture, &aperture_str);
   aperture_str = "APER " + aperture_str;
   //m_get_measure_commands[m_time_int_voltage_index] = aperture_str;
   m_time_int_measure_command = aperture_str;
@@ -754,8 +756,8 @@ void irs::agilent_3458a_t::set_start_level(double /*level*/)
 void irs::agilent_3458a_t::set_range(
   type_meas_t a_type_meas, double a_range)
 {
-  //if (m_create_error) return;
-  irs::string range_str = a_range;
+  irs::string range_str;
+  num_to_str_classic(a_range, &range_str);
   switch(a_type_meas) {
     case tm_volt_dc: {
       m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
@@ -1327,7 +1329,8 @@ void mx_agilent_3458a_t::tick()
 // ”становка времени интегрировани€ в периодах частоты сети (20 мс)
 void mx_agilent_3458a_t::set_nplc(double nplc)
 {
-  irs::string nplc_str = nplc;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
   nplc_str = "NPLC " + nplc_str;
   //m_get_measure_commands[m_time_int_voltage_index] = nplc_str;
   m_time_int_measure_command = nplc_str;
@@ -1336,7 +1339,8 @@ void mx_agilent_3458a_t::set_nplc(double nplc)
 // ”становка времени интегрировани€ в c
 void mx_agilent_3458a_t::set_aperture(double aperture)
 {
-  irs::string aperture_str = aperture;
+  irs::string aperture_str;
+  num_to_str_classic(aperture, &aperture_str);
   aperture_str = "APER " + aperture_str;
   //m_get_measure_commands[m_time_int_voltage_index] = aperture_str;
   m_time_int_measure_command = aperture_str;
@@ -1355,8 +1359,8 @@ void mx_agilent_3458a_t::set_start_level(double /*level*/)
 void mx_agilent_3458a_t::set_range(
   type_meas_t a_type_meas, double a_range)
 {
-  //if (m_create_error) return;
-  irs::string range_str = a_range;
+  irs::string range_str;
+  num_to_str_classic(a_range, &range_str);
   switch(a_type_meas) {
     case tm_volt_dc: {
       m_voltage_type_direct_range = m_voltage_type_direct+" "+range_str;
