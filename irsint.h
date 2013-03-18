@@ -113,6 +113,139 @@ void event_connect_t<T>::exec()
   (mp_object->*mp_member)();
 }
 
+template <class A>
+class irs_action_1_t
+{
+public:
+  irs_action_1_t();
+  virtual ~irs_action_1_t();
+  virtual void exec(A a);
+  virtual void connect(irs_action_1_t<A> *&a_action);
+private:
+  irs_action_1_t<A>* mp_prev_action;
+};
+
+template <class A>
+irs_action_1_t<A>::irs_action_1_t():
+  mp_prev_action(IRS_NULL)
+{
+}
+
+template <class A>
+irs_action_1_t<A>::~irs_action_1_t()
+{
+}
+
+template <class A>
+void irs_action_1_t<A>::exec(A a)
+{
+  if (mp_prev_action) {
+    mp_prev_action->exec(a);
+  }
+}
+
+template <class A>
+void irs_action_1_t<A>::connect(irs_action_1_t<A>*& a_action)
+{
+  mp_prev_action = a_action;
+  a_action = this;
+}
+
+// Класс событий для подключения функций с одним параметром
+template <class A>
+class mxfact_event_1_t
+{
+public:
+  mxfact_event_1_t();
+  virtual ~mxfact_event_1_t();
+  virtual void exec(A a);
+  virtual bool check();
+  virtual void reset();
+  virtual void connect(mxfact_event_1_t<A>*& a_event);
+  virtual void add(irs_action_1_t<A> *a_action);
+private:
+  mxfact_event_1_t<A>* mp_prev_event;
+  bool m_occurred;
+  irs_action_1_t<A>* mp_action;
+};
+
+template <class A>
+mxfact_event_1_t<A>::mxfact_event_1_t():
+  mp_prev_event(IRS_NULL),
+  m_occurred(false),
+  mp_action(IRS_NULL)
+{
+}
+
+template <class A>
+mxfact_event_1_t<A>::~mxfact_event_1_t()
+{
+}
+
+template <class A>
+void mxfact_event_1_t<A>::exec(A a)
+{
+  if (mp_prev_event) {
+    mp_prev_event->exec(a);
+  }
+  if (mp_action) {
+    mp_action->exec(a);
+  }
+  m_occurred = true;
+}
+
+template <class A>
+bool mxfact_event_1_t<A>::check()
+{
+  bool prev_occurred = m_occurred;
+  m_occurred = false;
+  return prev_occurred;
+}
+
+template <class A>
+void mxfact_event_1_t<A>::reset()
+{
+  m_occurred = false;
+}
+
+template <class A>
+void mxfact_event_1_t<A>::connect(mxfact_event_1_t<A>*& a_event)
+{
+  mp_prev_event = a_event;
+  a_event = this;
+}
+
+template <class A>
+void mxfact_event_1_t<A>::add(irs_action_1_t<A>* a_action)
+{
+  a_action->connect(mp_action);
+}
+
+template <class T, class A>
+class event_connect_1_t: public mxfact_event_1_t<A>
+{
+public:
+  typedef void (T::*member_type)(A);
+  event_connect_1_t(T* ap_object, member_type ap_member);
+  virtual void exec(A a);
+private:
+  event_connect_1_t();
+  T* mp_object;
+  member_type mp_member;
+};
+template <class T, class A>
+event_connect_1_t<T, A>::event_connect_1_t(T* ap_object, member_type ap_member):
+  mp_object(ap_object),
+  mp_member(ap_member)
+{
+}
+template <class T, class A>
+void event_connect_1_t<T, A>::exec(A a)
+{
+  mxfact_event_1_t<A>::exec(a);
+  (mp_object->*mp_member)(a);
+}
+
 // Интерфейс для работы с прерываниями
 class interrupt_array_base_t
 {
@@ -137,6 +270,50 @@ public:
   virtual bool check();
   virtual void reset();
 };
+
+template <class A>
+// Базовый класс событий
+class event_1_t
+{
+  bool m_occurred;
+public:
+  event_1_t();
+  virtual ~event_1_t();
+  virtual void exec(A);
+  virtual bool check();
+  virtual void reset();
+};
+
+template <class A>
+irs::event_1_t<A>::event_1_t():
+  m_occurred(false)
+{
+}
+
+template <class A>
+irs::event_1_t<A>::~event_1_t()
+{
+}
+
+template <class A>
+void irs::event_1_t<A>::exec(A)
+{
+  m_occurred = true;
+}
+
+template <class A>
+bool irs::event_1_t<A>::check()
+{
+  bool prev_occurred = m_occurred;
+  m_occurred = irs_false;
+  return prev_occurred;
+}
+
+template <class A>
+void irs::event_1_t<A>::reset()
+{
+  m_occurred = false;
+}
 
 // Генератор событий
 class generator_events_t
@@ -216,6 +393,45 @@ inline event_t* make_event(
 )
 {
   return new event_function_t<owner_type>(ap_owner, ap_function);
+}
+
+template<class owner_type, class argument_type>
+class event_function_1_t: public event_1_t<argument_type>
+{
+public:
+  typedef void (owner_type::*function_type)(argument_type);
+  event_function_1_t(owner_type* ap_owner, function_type ap_function);
+  virtual void exec(argument_type a);
+private:
+  // В Watcome без конструктора по умолчанию не компилируется
+  // class error_out_t
+  //event_function_1_t();
+  owner_type* mp_owner;
+  function_type mp_function;
+};
+template<class owner_type, class argument_type>
+event_function_1_t<owner_type, argument_type>::event_function_1_t(
+  owner_type* ap_owner,
+  function_type ap_function
+):
+  mp_owner(ap_owner),
+  mp_function(ap_function)
+{
+}
+template<class owner_type, class argument_type>
+void event_function_1_t<owner_type, argument_type>::exec(argument_type a)
+{
+  (mp_owner->*mp_function)(a);
+}
+
+template<class owner_type, class argument_type>
+inline event_1_t<argument_type>* make_event_1(
+  owner_type* ap_owner,
+  void (owner_type::*ap_function)(argument_type)
+)
+{
+  return new event_function_1_t<owner_type, argument_type>(ap_owner,
+    ap_function);
 }
 
 // Блокировка прерываний по принципу: выделение ресурса есть инициализация

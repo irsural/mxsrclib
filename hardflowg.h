@@ -60,7 +60,7 @@
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
-# define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(msg) 
+# define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_BASE(msg)
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
 # define IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
@@ -272,7 +272,7 @@ public:
   typedef map<adress_type, id_type, less_t> map_adress_id_type;
   typedef map<id_type, channel_t> map_id_channel_type;
   typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
-  typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;   
+  typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;
   typedef deque<id_type> queue_id_type;
   class less_t
   {
@@ -348,9 +348,9 @@ public:
   size_type read(size_type a_id, irs_u8 *ap_buf,
     size_type a_size);
   size_type channel_next();
-  size_type cur_channel() const; 
+  size_type cur_channel() const;
   void tick();
-private:    
+private:
   bool lifetime_exceeded(const map_id_channel_iterator);
   bool downtime_exceeded(const map_id_channel_iterator);
   void next_free_channel_id();
@@ -470,7 +470,7 @@ public:
   //! \param[in] a_channel_buf_max_size - максимальный размер буфера каждого
   //!   канала.
   //! \param[in] a_limit_lifetime_enabled - включает ограничение по времени
-  //!   жизни каналов. 
+  //!   жизни каналов.
   //! \param[in] a_max_lifetime_sec - время жизни каналов в секундах.
   //! \param[in] a_limit_downtime_enabled - включает ограничение по времени
   //!   бездействия каналов. При превышении заданного порога, канал удаляется.
@@ -574,7 +574,7 @@ class tcp_server_t: public hardflow_t
 public:
   //typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
-  
+
   tcp_server_t(irs_u16 local_port);
   virtual ~tcp_server_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -616,7 +616,7 @@ private:
 };
 
 //! \brief Клиент для передачи данных по TCP протоколу
-//! \authors 
+//! \authors
 //! - Sergeev Sergey
 //!     Реализация под Linux
 //! - Lyashchov Maksim
@@ -632,7 +632,7 @@ class tcp_client_t: public hardflow_t
 public:
   //typedef hardflow_t::size_type size_type;
   typedef socketns_t socket_type;
-  
+
   tcp_client_t (mxip_t dest_ip, irs_u16 dest_port);
   virtual ~tcp_client_t();
   virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
@@ -645,7 +645,7 @@ public:
     const string_type &a_param_value);
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
-  
+
 private:
   typedef int errcode_type;
 
@@ -747,7 +747,7 @@ public:
   //! \brief Возвращает тайм-аут записи
   counter_t write_timeout() const;
 private:
-  hardflow_t* mp_hardflow;   
+  hardflow_t* mp_hardflow;
   size_type m_read_channel;
   irs_u8* mp_read_buf_cur;
   irs_u8* mp_read_buf;
@@ -776,9 +776,9 @@ class simple_udp_flow_t: public hardflow_t
 public:
   //typedef hardflow_t::size_type size_type;
   /*********************************
-  
+
           Сделать режим клиента
-  
+
   *********************************/
   simple_udp_flow_t(
     simple_tcpip_t* ap_simple_udp,
@@ -821,7 +821,7 @@ private:
   };
   class channel_equal_t
   {
-  public:  
+  public:
     channel_equal_t(mxip_t a_ip, irs_u16 a_port):
       m_ip(a_ip),
       m_port(a_port)
@@ -840,7 +840,7 @@ private:
     mxip_t m_ip;
     irs_u16 m_port;
   };
-  
+
   simple_tcpip_t* mp_simple_udp;
   mxip_t m_local_ip;
   irs_u16 m_local_port;
@@ -854,7 +854,7 @@ private:
   const size_type m_channel_max_count;
   deque<udp_channel_t> m_channel_list;
   //deque<udp_channel_t>::iterator m_channel_list_it;
-  
+
   void new_channel(mxip_t a_ip, irs_u16 a_port);
   void delete_channels_by_downtime();
   void view_channel_list();
@@ -963,6 +963,30 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
+
+class echo_t: public hardflow_t
+{
+public:
+  echo_t(size_type a_channel_count = 1,
+    size_type a_channel_buf_max_size = 16384);
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+  size_type channel_data_size(size_type a_channel_ident);
+private:
+  typedef vector<irs_u8> channel_buf_type;
+  vector<vector<irs_u8> > m_channels;
+  size_type m_buf_max_size;
+  size_type m_channel;
+};
+
 //! @}
 
 } // namespace hardflow

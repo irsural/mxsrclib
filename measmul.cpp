@@ -690,7 +690,10 @@ void irs::agilent_3458a_t::tick()
             }
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
-            m_mode = ma_mode_macro;
+            //m_mode = ma_mode_macro;
+            m_command = mac_free;
+            m_status = meas_status_error;
+            m_mode = ma_mode_start;
             //mlog() << "---> " << __LINE__ << endl;
           } break;
           default : {

@@ -461,6 +461,20 @@ inline int memcmpex(
   );
 }
 
+//! \brief Возвращает указатель на данные, хранящиеся в std::vector
+template <class T>
+T* vector_data(vector<T>& a_v, std::size_t a_pos = 0)
+{
+  return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
+}
+
+//! \brief Возвращает указатель на данные, хранящиеся в std::vector
+template <class T>
+const T* vector_data(const vector<T>& a_v, std::size_t a_pos = 0)
+{
+  return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
+}
+
 //! \brief Контейнер сырых данных с элементами интерфейса std::vector<T>
 //! \authors
 //! - Krasheninnikov Maxim\n

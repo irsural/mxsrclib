@@ -1777,6 +1777,11 @@ irs::hardflow::tcp_client_t::size_type
         int client_read = recv(m_client_sock, reinterpret_cast<char*>(ap_buf),
           a_size, 0);
         if(client_read > 0) {
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+            std::string s(reinterpret_cast<const char*>(ap_buf), client_read);
+            IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irs::stime <<
+              " recv data: " << s << std::endl);
+          );
           rd_data_size = static_cast<size_type>(client_read);
         } else {
           if(client_read < 0) {
@@ -1810,7 +1815,12 @@ irs::hardflow::tcp_client_t::size_type
       if(FD_ISSET(sock_wr, &m_write_fds)) {
         int client_write = send(sock_wr, reinterpret_cast<const char*>(ap_buf),
           a_size, 0);
-        if(client_write > 0){
+        if (client_write > 0) {
+          IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(
+            std::string s(reinterpret_cast<const char*>(ap_buf), client_write);
+            IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irs::stime <<
+              " send data: " << s << std::endl);
+          );
           wr_data_size =
             static_cast<size_type>(client_write);
         }
@@ -2243,20 +2253,20 @@ bool irs::hardflow::simple_udp_flow_t::is_channel_exists(
 {
   //mxip_t dest_ip_cur = mxip_t::zero_ip();
   //irs_u16 dest_port = 0;
-  #ifdef NOP
-  if (channel_next() != invalid_channel) {
-    if (m_channel >= m_channel_max_count) {
-      return (((m_channel - m_channel_max_count) < a_channel_ident) &&
-        (a_channel_ident <= m_channel));
-    } else {
-      return ((a_channel_ident <= m_channel) &&
-        (a_channel_ident != invalid_channel));
-    }
+  //#ifdef NOP
+  //if (channel_next() != invalid_channel) {
+  if (m_channel >= m_channel_max_count) {
+    return ((a_channel_ident > (m_channel - m_channel_max_count)) &&
+      (a_channel_ident <= m_channel));
   } else {
-    return false;
+    return ((a_channel_ident <= m_channel) &&
+      (a_channel_ident != invalid_channel));
   }
-  #endif // NOP
-  return (a_channel_ident != invalid_channel);
+  /*} else {
+    return false;
+  }*/
+  //#endif // NOP
+  //return (a_channel_ident != invalid_channel);
 }
 
 irs::hardflow::simple_udp_flow_t::size_type
@@ -2340,15 +2350,15 @@ irs::hardflow::simple_udp_flow_t::size_type
     irsm("hardflow read end, return value not zero") << endl);
   return read_data_size;
   #else // NOP
-  size_type read_data_size = 0;  
+  size_type read_data_size = 0;
   if (is_channel_exists(a_channel_ident)) {
-    const size_type deque_index = channel_list_index(a_channel_ident);   
+    const size_type deque_index = channel_list_index(a_channel_ident);
     mxip_t dest_ip = mxip_t::zero_ip();
-    irs_u16 dest_port = 0;  
+    irs_u16 dest_port = 0;
     const size_type recv_data_size =
       mp_simple_udp->read(&dest_ip, &dest_port, &m_local_port);
-    if ((recv_data_size > 0) && 
-      (dest_ip == m_channel_list[deque_index].ip) && 
+    if ((recv_data_size > 0) &&
+      (dest_ip == m_channel_list[deque_index].ip) &&
       (dest_port == m_channel_list[deque_index].port)) {
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BASE(irsm("read channel cur = ") <<
         a_channel_ident << endl);
@@ -2382,8 +2392,8 @@ irs::hardflow::simple_udp_flow_t::size_type
         mp_recv_buf_cur = mp_recv_buf;
         mp_simple_udp->read_complete();
       }*/
-      read_data_size = size;  
-    }    
+      read_data_size = size;
+    }
   } else {
     IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(irsm("Channel don't exist, "
       "read data not posible ") << endl);
@@ -2742,9 +2752,9 @@ void irs::hardflow::prologix_flow_t::tick()
     } break;
     case mode_wait: {
       switch (m_fixed_flow.write_status()) {
-        case irs::hardflow::fixed_flow_t::status_success: { 
+        case irs::hardflow::fixed_flow_t::status_success: {
           m_init_count++;
-        } 
+        }
         case irs::hardflow::fixed_flow_t::status_error: {
           m_init_mode = mode_start;
         } break;
@@ -2847,3 +2857,85 @@ irs::string_t irs::hardflow::prologix_flow_t::str_from_u8(
   return str_res;
 }
 
+// class echo_t
+irs::hardflow::echo_t::echo_t(size_type a_channel_count,
+  size_type a_channel_buf_max_size):
+  m_channels(a_channel_count),
+  m_buf_max_size(a_channel_buf_max_size),
+  m_channel(invalid_channel)
+{
+  if (!m_channels.empty()) {
+    m_channel = 0;
+  }
+}
+
+irs::hardflow::echo_t::string_type
+irs::hardflow::echo_t::param(const string_type& /*a_name*/)
+{
+  return string_type();
+}
+
+void irs::hardflow::echo_t::set_param(const string_type& /*a_name*/,
+  const string_type& /*a_value*/)
+{
+}
+
+irs::hardflow::echo_t::size_type
+irs::hardflow::echo_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
+  size_type a_size)
+{
+  size_type count = 0;
+  if (a_channel_ident < m_channels.size()) {
+    channel_buf_type& channel_buf = m_channels[a_channel_ident];
+    count = std::min(channel_buf.size(), a_size);
+    memcpyex(ap_buf, vector_data(channel_buf), count);
+    channel_buf.erase(channel_buf.begin(), channel_buf.begin() + count);
+  }
+  return count;
+}
+
+irs::hardflow::echo_t::size_type
+irs::hardflow::echo_t::write(size_type a_channel_ident, const irs_u8 *ap_buf,
+  size_type a_size)
+{
+  size_type count = 0;
+  if (a_channel_ident < m_channels.size()) {
+    channel_buf_type& channel_buf = m_channels[a_channel_ident];
+    count = std::min(m_buf_max_size - channel_buf.size(), a_size);
+    const size_type pos = channel_buf.size();
+    channel_buf.resize(channel_buf.size() + count);
+    memcpyex(vector_data(channel_buf, pos), ap_buf, count);
+  }
+  return count;
+}
+
+irs::hardflow::echo_t::size_type irs::hardflow::echo_t::channel_next()
+{
+  if (m_channels.empty()) {
+    return invalid_channel;
+  }
+  m_channel++;
+  if (m_channel >= m_channels.size()) {
+    m_channel = 0;
+  }
+  return m_channel;
+}
+
+bool irs::hardflow::echo_t::is_channel_exists(size_type a_channel_ident)
+{
+  return a_channel_ident < m_channels.size();
+}
+
+void irs::hardflow::echo_t::tick()
+{
+}
+
+irs::hardflow::echo_t::size_type
+irs::hardflow::echo_t::channel_data_size(size_type a_channel_ident)
+{
+  if (a_channel_ident < m_channels.size()) {
+    return m_channels[a_channel_ident].size();
+  } else {
+    return 0;
+  }
+}

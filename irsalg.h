@@ -177,7 +177,7 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
       m_val_array.pop_front();
     }
   }
-}                                              
+}
 
 template<class data_t, class calc_t>
 irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
@@ -393,6 +393,30 @@ irs_u32 crc32_table(const T* ap_buf, const size_t a_size)
       crc32_data->table[(crc ^ *(ap_buf++)) & 0xFF];
   }
   return ~crc;
+}
+
+class crc32_table_stream_t
+{
+public:
+  typedef std::size_t size_type;
+  crc32_table_stream_t();
+  template<class T>
+  inline void put(const T* ap_buf, size_type a_size = 1);
+  irs_u32 get_crc();
+  void reset();
+private:
+  static handle_t<crc32_data_t> mp_crc32_data;
+  irs_u32 m_crc;
+};
+
+template<class T>
+inline void crc32_table_stream_t::put(const T* ap_buf, size_type a_size)
+{
+  IRS_STATIC_ASSERT(sizeof(T) == 1);
+  for (size_t i = 0; i < a_size; i++) {
+    m_crc = ((m_crc >> 8) & 0x00FFFFFF) ^
+      mp_crc32_data->table[(m_crc ^ *(ap_buf++)) & 0xFF];
+  }
 }
 
 // T должно быть 32 битным

@@ -182,6 +182,25 @@ irs::crc32_data_t::crc32_data_t()
 }
 #endif //__ICCAVR__
 
+// class crc32_table_stream_t
+irs::handle_t<irs::crc32_data_t> irs::crc32_table_stream_t::mp_crc32_data =
+  new irs::crc32_data_t();
+
+irs::crc32_table_stream_t::crc32_table_stream_t():
+  m_crc(0xFFFFFFFF)
+{
+}
+
+irs_u32 irs::crc32_table_stream_t::get_crc()
+{
+  return ~m_crc;
+}
+
+void irs::crc32_table_stream_t::reset()
+{
+  m_crc = 0xFFFFFFFF;
+}
+
 irs_u8 irs::crc8(irs_u8 *a_buf, irs_u8 a_start, irs_u8 a_cnt)
 { //  Взято с википедии
   irs_u8 i, j;

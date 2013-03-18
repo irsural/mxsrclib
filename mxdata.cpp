@@ -274,7 +274,7 @@ bool irs::raw_data_test()
     raw_data_type::pointer p_first_elem = raw_data.erase(raw_data.begin(),
       raw_data.begin() + 1);
     raw_data.insert(p_first_elem, test_data_buf[0]);
-    
+
     // Вставляем в начало элемент и сразу же удаляем его
     raw_data_type::pointer p_inserted_elem = raw_data.insert(raw_data.begin(),
       testing_type());
@@ -317,7 +317,7 @@ bool irs::raw_data_test()
   // Проверка функции resize
   if (test_success) {
     raw_data.reserve(buf_size * 10);
-    raw_data.resize(buf_size);   
+    raw_data.resize(buf_size);
     test_success = (memcmpex(raw_data.data(), test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
@@ -368,7 +368,7 @@ bool irs::raw_data_test()
   }
 
   // Проверяем копирование одного контейнера в другой
-  if (test_success) {            
+  if (test_success) {
     irs::raw_data_t<testing_type> raw_data_second;
     raw_data_second = raw_data;
     if (raw_data_second.size() == raw_data.size()) {

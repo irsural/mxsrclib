@@ -38,7 +38,7 @@ public:
   typedef irs_size_t size_type;
 
   interrupt_array_empty_t();
-    
+
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
   virtual void exec_event(size_type a_index);
 private:
@@ -186,7 +186,7 @@ irs::interrupt_array_empty_t::interrupt_array_empty_t():
   m_gen()
 {
 }
-irs_int_event_gen_t* 
+irs_int_event_gen_t*
   irs::interrupt_array_empty_t::int_event_gen(size_type /*a_index*/)
 {
   return &m_gen;
@@ -209,17 +209,17 @@ irs::interrupt_array_base_t* irs::interrupt_array()
 }
 
 // Работа с прерываниями
-irs::interrupt_array_t::interrupt_array_t(gen_index_type a_interrupt_count, 
+irs::interrupt_array_t::interrupt_array_t(gen_index_type a_interrupt_count,
   gen_index_type a_reserve_interrupt_count
 ):
-  m_int_event_gen_indexes(static_cast<size_t>(a_interrupt_count), 
+  m_int_event_gen_indexes(static_cast<size_t>(a_interrupt_count),
     static_cast<gen_index_type>(interrupt_none)),
   m_int_event_gens(),
   m_int_event_index(interrupt_none)
 {
   m_int_event_gens.reserve(a_reserve_interrupt_count);
 }
-irs_int_event_gen_t* 
+irs_int_event_gen_t*
   irs::interrupt_array_t::int_event_gen(size_type a_index)
 {
   gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
