@@ -702,6 +702,7 @@ class dds_ad9854_t : public mxdata_t
   static const irs_u8 m_num_of_registers = 12;
   static const irs_u8 m_dds_size = 40;
   static const irs_u8 m_max_write_bytes = 8 + 1;
+  irs_u8 m_write_buffer[m_max_write_bytes];
   irs_u8 mp_buf[m_size];
   irs_u8 mp_reg_size[m_num_of_registers];
   irs_u8 mp_mxdata_reg_size[m_num_of_registers];

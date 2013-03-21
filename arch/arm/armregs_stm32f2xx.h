@@ -2285,7 +2285,7 @@ typedef struct {
   __REG32  SETENA22       : 1;
   __REG32  SETENA23       : 1;
   __REG32  SETENA24       : 1;
-  __REG32  SETENA_TIM1_UP_TIM10       : 1;
+  __REG32  SETENA_TIM1_UP_TIM10  : 1;
   __REG32  SETENA26       : 1;
   __REG32  SETENA27       : 1;
   __REG32  SETENA28       : 1;
@@ -2304,7 +2304,7 @@ typedef struct {
   __REG32  SETENA37       : 1;
   __REG32  SETENA38       : 1;
   __REG32  SETENA39       : 1;
-  __REG32  SETENA40       : 1;
+  __REG32  SETENA_EXTI15_10     : 1;
   __REG32  SETENA41       : 1;
   __REG32  SETENA42       : 1;
   __REG32  SETENA_TIM8_BRK_TIM12: 1;
@@ -4145,10 +4145,10 @@ typedef struct {
 
 /* SYSCFG external interrupt configuration register 4 (SYSCFG_EXTICR4) */
 typedef struct {
-  __REG32  EXTI4          : 4;
-  __REG32  EXTI5          : 4;
-  __REG32  EXTI6          : 4;
-  __REG32  EXTI7          : 4;
+  __REG32  EXTI12         : 4;
+  __REG32  EXTI13         : 4;
+  __REG32  EXTI14         : 4;
+  __REG32  EXTI15         : 4;
   __REG32                 :16;
 } __syscfg_exticr4_bits;
 

@@ -1088,19 +1088,18 @@ void irs::dds_ad9854_t::tick()
         {
           if (m_need_write_cr)
           {
-            irs_u8 write_buffer[m_max_write_bytes];
-            write_buffer[0] = ADDR_CR;
-            write_buffer[1] = mp_buf[POS_CR + 3];
-            write_buffer[2] = mp_buf[POS_CR + 2];
-            write_buffer[3] = mp_buf[POS_CR + 1];
-            write_buffer[4] = mp_buf[POS_CR];
+            m_write_buffer[0] = ADDR_CR;
+            m_write_buffer[1] = mp_buf[POS_CR + 3];
+            m_write_buffer[2] = mp_buf[POS_CR + 2];
+            m_write_buffer[3] = mp_buf[POS_CR + 1];
+            m_write_buffer[4] = mp_buf[POS_CR];
             fill_n(m_write_vector.begin() + POS_CR, SZ_CR, false);
             mp_spi->set_order(irs::spi_t::MSB);
             mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
             mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
             mp_spi->lock();
             mp_cs_pin->clear();
-            mp_spi->write(write_buffer, SZ_CR + 1);
+            mp_spi->write(m_write_buffer, SZ_CR + 1);
             m_status = DDS_WRITE;
             m_need_write_cr = false;
           }
@@ -1116,46 +1115,45 @@ void irs::dds_ad9854_t::tick()
                 if (m_first_byte < mp_reg_position[register_index]) break;
 
               if (register_index) register_index--;
-              irs_u8 write_buffer[m_max_write_bytes];
               irs_u8 size =  mp_reg_size[register_index];// + 1;
               irs_u8 start_byte = mp_reg_position[register_index];
-              write_buffer[0] = register_index;
+              m_write_buffer[0] = register_index;
               switch (size)
               {
                 case 1:
                 {
-                  write_buffer[1] = mp_buf[start_byte];
+                  m_write_buffer[1] = mp_buf[start_byte];
                   break;
                 }
                 case 2:
                 {
-                  write_buffer[1] = mp_buf[start_byte + 1];
-                  write_buffer[2] = mp_buf[start_byte];
+                  m_write_buffer[1] = mp_buf[start_byte + 1];
+                  m_write_buffer[2] = mp_buf[start_byte];
                   break;
                 }
                 case 3:
                 {
-                  write_buffer[1] = mp_buf[start_byte + 2];
-                  write_buffer[2] = mp_buf[start_byte + 1];
-                  write_buffer[3] = mp_buf[start_byte];
+                  m_write_buffer[1] = mp_buf[start_byte + 2];
+                  m_write_buffer[2] = mp_buf[start_byte + 1];
+                  m_write_buffer[3] = mp_buf[start_byte];
                   break;
                 }
                 case 4:
                 {
-                  write_buffer[1] = mp_buf[start_byte + 3];
-                  write_buffer[2] = mp_buf[start_byte + 2];
-                  write_buffer[3] = mp_buf[start_byte + 1];
-                  write_buffer[4] = mp_buf[start_byte];
+                  m_write_buffer[1] = mp_buf[start_byte + 3];
+                  m_write_buffer[2] = mp_buf[start_byte + 2];
+                  m_write_buffer[3] = mp_buf[start_byte + 1];
+                  m_write_buffer[4] = mp_buf[start_byte];
                   break;
                 }
                 case 6:
                 {
-                  write_buffer[1] = mp_buf[start_byte + 5];
-                  write_buffer[2] = mp_buf[start_byte + 4];
-                  write_buffer[3] = mp_buf[start_byte + 3];
-                  write_buffer[4] = mp_buf[start_byte + 2];
-                  write_buffer[5] = mp_buf[start_byte + 1];
-                  write_buffer[6] = mp_buf[start_byte];
+                  m_write_buffer[1] = mp_buf[start_byte + 5];
+                  m_write_buffer[2] = mp_buf[start_byte + 4];
+                  m_write_buffer[3] = mp_buf[start_byte + 3];
+                  m_write_buffer[4] = mp_buf[start_byte + 2];
+                  m_write_buffer[5] = mp_buf[start_byte + 1];
+                  m_write_buffer[6] = mp_buf[start_byte];
                   break;
                 }
               }
@@ -1169,7 +1167,7 @@ void irs::dds_ad9854_t::tick()
               mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
               mp_spi->lock();
               mp_cs_pin->clear();
-              mp_spi->write(write_buffer, size+1);
+              mp_spi->write(m_write_buffer, size+1);
               m_status = DDS_WRITE;
             }
             //  в 0 - статус

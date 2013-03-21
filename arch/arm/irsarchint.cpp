@@ -365,6 +365,24 @@ void irs_arm_tim3_func()
   irs::arm::interrupt_array()->exec_event(irs::arm::tim3_int);
 }
 
+void irs_arm_exti15_10_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::exti5_10_int);
+  if (EXTI_PR_bit.PR10) {
+    EXTI_PR_bit.PR10 = 1;  
+  } else if (EXTI_PR_bit.PR11) {
+    EXTI_PR_bit.PR11 = 1; 
+  } else if (EXTI_PR_bit.PR12) {
+    EXTI_PR_bit.PR12 = 1; 
+  } else if (EXTI_PR_bit.PR13) {
+    EXTI_PR_bit.PR13 = 1; 
+  } else if (EXTI_PR_bit.PR14) {
+    EXTI_PR_bit.PR14 = 1; 
+  } else if (EXTI_PR_bit.PR15) {
+    EXTI_PR_bit.PR15 = 1; 
+  }
+}
+
 void irs_arm_tim8_brk_tim12_func()
 {
   //irs::arm::interrupt_array()->exec_event(irs::arm::tim8_brk_tim12_int);
@@ -549,7 +567,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 37
   irs_arm_default_int_func,  // 38
   irs_arm_default_int_func,  // 39
-  irs_arm_default_int_func,  // 40
+  irs_arm_exti15_10_func,    // 40
   irs_arm_default_int_func,  // 41
   irs_arm_default_int_func,  // 42
   irs_arm_tim8_brk_tim12_func,// 43
