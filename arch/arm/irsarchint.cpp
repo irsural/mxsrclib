@@ -367,7 +367,7 @@ void irs_arm_tim3_func()
 
 void irs_arm_exti15_10_func()
 {
-  irs::arm::interrupt_array()->exec_event(irs::arm::exti5_10_int);
+  irs::arm::interrupt_array()->exec_event(irs::arm::exti15_10_int);
   if (EXTI_PR_bit.PR10) {
     EXTI_PR_bit.PR10 = 1;  
   } else if (EXTI_PR_bit.PR11) {
@@ -381,6 +381,7 @@ void irs_arm_exti15_10_func()
   } else if (EXTI_PR_bit.PR15) {
     EXTI_PR_bit.PR15 = 1; 
   }
+  //необходимо более подробное исследование
 }
 
 void irs_arm_tim8_brk_tim12_func()

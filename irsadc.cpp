@@ -484,12 +484,12 @@ irs_bool irs::dac_ad8400_t::connected()
 void irs::dac_ad8400_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
-    if (a_index >= m_size) return;
-    irs_u8 size = static_cast<irs_u8>(a_size);
-    if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
-    memcpy(reinterpret_cast<void*>(ap_buf),
-      reinterpret_cast<void*>(mp_buf + a_index), size);
-    return;
+  if (a_index >= m_size) return;
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
+  return;
 }
 
 void irs::dac_ad8400_t::write(const irs_u8 *ap_buf, irs_uarc a_index,

@@ -322,6 +322,7 @@ public:
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
   virtual float get_float_maximum() const;
   virtual void set_float_data(size_t a_channel, const float a_data);
+  virtual void tick() {};
 private:
   void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
   enum { dac_resolution = 12 };

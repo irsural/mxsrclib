@@ -115,7 +115,7 @@ enum {
   #elif defined(IRS_STM32F_2_AND_4)
   //tim1_brk_tim9_int,
   exti3_int,
-  exti5_10_int,
+  exti15_10_int,
   tim1_up_tim10_int,
   tim3_int,
   tim8_brk_tim12_int,

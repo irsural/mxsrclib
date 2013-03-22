@@ -26,6 +26,7 @@ public:
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data) = 0;
   virtual float get_float_maximum() const = 0;
   virtual void set_float_data(size_t a_channel, const float a_data) = 0;
+  virtual void tick() = 0;
 };
 
 //! @}
