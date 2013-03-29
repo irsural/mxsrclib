@@ -419,6 +419,18 @@ T bound(T in, T min, T max)
   return in;
 }
 
+template <class T>
+bool is_in_range(T value, T min, T max)
+{
+  return (value >= min) && (value <= max);
+}
+
+template <class T>
+bool is_in_range_exclusive(T value, T min, T max)
+{
+  return (value > min) && (value < max);
+}
+
 // Возведение в квадрат
 template <class T>
 T sqr(T x)
@@ -1117,7 +1129,7 @@ struct filter_settings_t {
   double low_cutoff_freq_hz;
   double high_cutoff_freq_hz;
   double passband_ripple_db;
-  double stopband_ripple_db; 
+  double stopband_ripple_db;
   filter_settings_t(
     filter_family_t a_family = ff_butterworth,
     filter_bandform_t a_bandform = fb_low_pass,

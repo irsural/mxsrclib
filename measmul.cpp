@@ -3562,7 +3562,7 @@ void irs::agilent_34420a_t::set_negative()
 // Чтение значения при текущем типа измерения
 void irs::agilent_34420a_t::get_value(double *ap_value)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   mp_value = ap_value;
   m_command = mac_get_value;
   m_status = meas_status_busy;
@@ -3570,7 +3570,7 @@ void irs::agilent_34420a_t::get_value(double *ap_value)
 // Чтение напряжения
 void irs::agilent_34420a_t::get_voltage(double *voltage)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   mp_value = voltage;
   m_command = mac_get_voltage;
   m_status = meas_status_busy;
@@ -3598,7 +3598,7 @@ void irs::agilent_34420a_t::get_current(double * /*current*/)
 // Чтение сопротивления по двухпроводной схеме
 void irs::agilent_34420a_t::get_resistance2x(double *resistance)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   mp_value = resistance;
   m_command = mac_get_resistance;
   m_res_meas_type = RES_MEAS_2x;
@@ -3607,7 +3607,7 @@ void irs::agilent_34420a_t::get_resistance2x(double *resistance)
 // Чтение сопротивления по четырехпроводной схеме
 void irs::agilent_34420a_t::get_resistance4x(double *resistance)
 {
-  if (m_create_error) return;
+  //if (m_create_error) return;
   mp_value = resistance;
   m_command = mac_get_resistance;
   m_res_meas_type = RES_MEAS_4x;
@@ -3623,7 +3623,7 @@ void irs::agilent_34420a_t::auto_calibration()
 // Чтение статуса текущей операции
 meas_status_t irs::agilent_34420a_t::status()
 {
-  if (m_create_error) return meas_status_busy;
+  //if (m_create_error) return meas_status_busy;
   return m_status;
 }
 // Прерывание текущей операции
@@ -5018,4 +5018,76 @@ irs::raw_data_t<irs_u8> irs::termex_lt_300_t::u8_from_str(
   return data_u8;
 }
 //---------------------------------------------------------------------------
+
+// class adapter_multimeter_t
+irs::adapter_multimeter_t::adapter_multimeter_t(
+irs::handle_t<fun_get_value_base_t> ap_function,
+double a_interval, size_type average_size
+):
+  mp_function(ap_function),
+  mp_value(IRS_NULL),
+  m_interval(a_interval),
+  m_sko_calc(average_size > 0? average_size : 1),
+  m_point_count(0),
+  m_point_measured(false),
+  m_meas_status(meas_status_success),
+  m_timer(make_cnt_s(a_interval))
+{
+}
+
+void irs::adapter_multimeter_t::get_value(double *ap_value)
+{
+  mp_value = ap_value;
+  m_meas_status = meas_status_busy;
+  m_point_count = 0;
+  mp_function->get(mp_value);
+  m_point_measured = false;
+  m_timer.start();
+}
+
+meas_status_t irs::adapter_multimeter_t::status()
+{
+  return m_meas_status;
+}
+
+void irs::adapter_multimeter_t::tick()
+{
+  if (m_meas_status == meas_status_busy) {
+    if (!m_point_measured) {
+      if (mp_function->status() == meas_status_success) {
+        m_point_measured = true;
+        m_sko_calc.add(*mp_value);
+        m_point_count++;
+      } else if (mp_function->status() == meas_status_error) {
+        m_meas_status = meas_status_error;
+      }
+    }
+    if (m_point_measured) {
+      if (m_point_count < m_sko_calc.size()) {
+        mp_function->get(mp_value);
+        m_timer.start();
+        m_point_measured = false;
+      } else {
+        *mp_value = m_sko_calc.average();
+        m_meas_status = meas_status_success;
+      }
+    }
+    /*if ((m_timer.stopped() || m_timer.check()) &&
+      (mp_function->status() == meas_status_success)) {
+      m_sko_calc.add(*mp_value);
+      m_point_count++;
+      if (m_point_count < m_sko_calc.size()) {
+        mp_function->get(mp_value);
+        m_timer.start();
+      } else {
+        *mp_value = m_sko_calc.average();
+        m_meas_status = meas_status_success;
+      }
+    } else if (mp_function->status() == meas_status_error) {
+      m_meas_status = meas_status_error;
+    }*/
+  }
+}
+
+
 

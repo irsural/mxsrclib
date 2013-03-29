@@ -2814,6 +2814,92 @@ private:
   static irs::raw_data_t<irs_u8> u8_from_str(const irs::irs_string_t& a_string);
 };
 
+class fun_get_value_base_t
+{
+public:
+  virtual ~fun_get_value_base_t()
+  {
+  }
+  virtual void get(double* ap_value) = 0;
+  virtual meas_status_t status()
+  {
+    return meas_status_success;
+  };
+};
+
+template <class T>
+class conn_data_fun_get_value_t: public fun_get_value_base_t
+{
+public:
+  conn_data_fun_get_value_t(conn_data_t<T>* ap_conn_data):
+    mp_conn_data(ap_conn_data),
+    m_status(meas_status_success)
+  {
+  }
+  virtual void get(double* ap_value)
+  {
+    if (mp_conn_data->data()->connected()) {
+      *ap_value = static_cast<double>(*mp_conn_data);
+      m_status = meas_status_success;
+    } else {
+      m_status = meas_status_error;
+    }
+  }
+  virtual meas_status_t status()
+  {
+    return m_status;
+  };
+private:
+  conn_data_t<T>* mp_conn_data;
+  meas_status_t m_status;
+};
+
+class adapter_multimeter_t: public mxmultimeter_t
+{
+public:
+  typedef std::size_t size_type;
+  adapter_multimeter_t(irs::handle_t<fun_get_value_base_t> ap_fun_get_value,
+    double a_interval = 0, size_type average_size = 1);
+  virtual inline void set_dc() {}
+  virtual inline void set_ac() {}
+  virtual void set_positive() {}
+  virtual void set_negative() {}
+  virtual void get_value(double* ap_value);
+  virtual void get_voltage(double* /*voltage*/) {}
+  virtual void get_current(double* /*current*/) {}
+  virtual void get_resistance2x(double* /*resistance*/) {}
+  virtual void get_resistance4x(double* /*resistance*/) {}
+  virtual void get_frequency(double* /*frequency*/) {}
+  virtual void get_phase_average(double* /*phase_average*/) {}
+  virtual void get_phase(double* /*phase*/) {}
+  virtual void get_time_interval(double* /*time_interval*/) {}
+  virtual void get_time_interval_average(double* /*ap_time_interval*/) {}
+  virtual void auto_calibration() {}
+  virtual meas_status_t status();
+  virtual void abort() {}
+  virtual void tick();
+  virtual void set_nplc(double /*nplc*/) {}
+  virtual void set_aperture(double /*aperture*/) {}
+  virtual void set_bandwidth(double /*bandwidth*/) {}
+  virtual void set_input_impedance(double /*impedance*/) {}
+  virtual void set_start_level(double /*level*/) {}
+  virtual void set_range(type_meas_t /*a_type_meas*/, double /*a_range*/) {}
+  virtual void set_range_auto() {}
+private:
+  enum process_t {
+    process_wait_
+  };
+  irs::handle_t<fun_get_value_base_t> mp_function;
+  double* mp_value;
+  double m_value;
+  double m_interval;
+  sko_calc_t<double, double> m_sko_calc;
+  size_type m_point_count;
+  bool m_point_measured;
+  meas_status_t m_meas_status;
+  timer_t m_timer;
+};
+
 //! @}
 
 } //namespace irs

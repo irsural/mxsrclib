@@ -221,6 +221,29 @@ inline QString str_conv<QString>(const std_string_t& a_str_in)
 }
 #endif //QT_CORE_LIB
 #if defined(__BORLANDC__)
+
+template<>
+inline std_wstring_t str_conv<std_wstring_t>(const std_string_t& a_str_in)
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return std_wstring_t(str.c_str(), str.Length());
+  #else
+  return str_conv_simple(std_wstring_t(), a_str_in);
+  #endif
+}
+
+template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const std_string_t& a_str_in)
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return irs_wstring_t(str.c_str(), str.Length());
+  #else // Если не Builder XE
+  return str_conv_simple(irs_wstring_t(), a_str_in);
+  #endif // Если не Builder XE
+}
+
 template<>
 inline String str_conv<String>(const std_string_t& a_str_in)
 {
@@ -330,27 +353,24 @@ inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 template<>
 inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
 {
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE) &&\
-    (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
   String str(a_str_in.c_str(), a_str_in.size());
   return std_wstring_t(str.c_str(), str.Length());
-  #else
+  #else // Если меньше Builder XE
   return str_conv_simple(std_wstring_t(), a_str_in);
-  //return std_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-  #endif
+  #endif // Если меньше Builder XE
 }
 
 template<>
 inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
 {
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE) &&\
-    (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
   String str(a_str_in.c_str(), a_str_in.size());
   return irs_wstring_t(str.c_str(), str.Length());
-  #else // Если не Builder XE
+  #else // Если меньше Builder XE
   return str_conv_simple(irs_wstring_t(), a_str_in);
-  //return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-  #endif // Если не Builder XE
+  #endif // Если меньше Builder XE
+
 }
 
 #if defined(__BORLANDC__)

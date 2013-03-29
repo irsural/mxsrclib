@@ -2843,7 +2843,11 @@ void irs::hardflow::prologix_flow_t::tick()
 irs::raw_data_t<irs_u8> irs::hardflow::prologix_flow_t::u8_from_str(
   const irs::string_t& a_string)
 {
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  irs::irs_string_t str_simple = irs::str_conv<irs::irs_string_t>(a_string);
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
   irs::irs_string_t str_simple = IRS_SIMPLE_FROM_TYPE_STR(a_string.c_str());
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
   const irs_u8* p_str_u8 = reinterpret_cast<const irs_u8*>(str_simple.c_str());
   irs::raw_data_t<irs_u8> data_u8(p_str_u8, str_simple.size());
   return data_u8;
@@ -2853,7 +2857,11 @@ irs::string_t irs::hardflow::prologix_flow_t::str_from_u8(
 {
   const char* p_data = reinterpret_cast<const char*>(a_data.data());
   irs::irs_string_t str_simple(p_data, a_data.size());
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  irs::string_t str_res = irs::str_conv<irs::string_t>(str_simple);
+  #else // !IRS_FULL_STDCPPLIB_SUPPORT
   irs::string_t str_res = IRS_TYPE_FROM_SIMPLE_STR(str_simple.c_str());
+  #endif // !IRS_FULL_STDCPPLIB_SUPPORT
   return str_res;
 }
 
