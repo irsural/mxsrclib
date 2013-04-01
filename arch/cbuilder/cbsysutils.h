@@ -172,6 +172,13 @@ string_t file_path(string_t a_file_name, string_t a_extension = string_t());
 // Вывод в компонент
 //void out_to_tree_view();
 
+struct bad_exe_path {};
+
+//! \brief Имя ini-файла по умолчанию. Состоит из пути и имени exe-файла к
+//!   которому вместо расширения .exe добавлено .ini
+//! \author Крашенинников Максим
+string_t default_ini_name();
+
 //! @}
 
 }; //namespace cbuilder

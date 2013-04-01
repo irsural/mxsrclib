@@ -78,8 +78,6 @@ public:
   void save_grid_row(TStringGrid *a_control, int a_row_index) const;
   void save_grid_size(TStringGrid *a_control) const;
   void clear_control();
-
-  struct bad_exe_path {};
 private:
   struct control_t {
     string_t section;

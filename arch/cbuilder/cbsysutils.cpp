@@ -478,3 +478,12 @@ irs::string_t irs::cbuilder::file_path(string_t a_file_name,
   return file_name;
 }
 
+irs::string_t irs::cbuilder::default_ini_name()
+{
+  String ExeName = Application->ExeName;
+  int Length = ExeName.Length();
+  if (Length < 3) throw bad_exe_path();
+  string_t ini_name = ExeName.SubString(1, Length - 3).c_str();
+  ini_name += irst("ini");
+  return ini_name;
+}

@@ -48,14 +48,9 @@ irs::ini_file_t::ini_file_t():
   m_string_grids(),
   m_value_list_editors(),
   m_forms(),
-  m_ini_name(),
+  m_ini_name(irs::cbuilder::default_ini_name()),
   m_section(irst("Options"))
 {
-  String ExeName = Application->ExeName;
-  int Length = ExeName.Length();
-  if (Length < 3) throw bad_exe_path();
-  m_ini_name = ExeName.SubString(1, Length - 3).c_str();
-  m_ini_name += irst("ini");
 }
 irs::ini_file_t::~ini_file_t()
 {
