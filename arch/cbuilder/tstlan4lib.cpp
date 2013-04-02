@@ -285,12 +285,8 @@ irs::tstlan4_t::controls_t::controls_t(
   //m_inner_options_event.exec();
 
   if (m_form_type == ft_internal) {
-    m_ini_file.set_ini_name(a_ini_name.c_str());
-    m_ini_file.set_section(String(m_ini_section_prefix.c_str()) +
-      irst("Vars"));
-    m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
-    m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
-    m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
+    ini_name(a_ini_name);
+    conf_section(m_ini_section_prefix);
   }
 
   const int btn_gap = 10;
@@ -381,7 +377,9 @@ irs::tstlan4_t::controls_t::controls_t(
 __fastcall irs::tstlan4_t::controls_t::~controls_t()
 {
   //m_csv_file.close();
-  //m_ini_file.save();
+  if (m_form_type == ft_internal) {
+    save_conf();
+  }
 
   mp_form->OnShow = IRS_NULL;
   mp_form->OnHide = IRS_NULL;
@@ -1043,6 +1041,7 @@ void irs::tstlan4_t::controls_t::conf_section(const string_type& a_name)
   m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
+  m_ini_file.add("tstlan4lin_form_", mp_form);
 }
 irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::ini_name()
 {
@@ -1051,5 +1050,6 @@ irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::ini_name()
 void irs::tstlan4_t::controls_t::ini_name(const string_type& a_ini_name)
 {
   m_ini_file.set_ini_name(a_ini_name.c_str());
+  mp_param_box->set_ini_name(a_ini_name);
 }
 
