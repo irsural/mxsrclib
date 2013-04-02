@@ -14,6 +14,7 @@
 #include <mxdata.h>
 #include <irsgpio.h>
 #include <irsadcabs.h>
+#include <irsdacabs.h>
 
 #include <irsfinal.h>
 
@@ -1292,6 +1293,37 @@ private:
   int get(reg_t a_reg, param_byte_pos_t a_byte_pos, 
     param_pos_t a_start_pos, param_size_t a_size);
   irs_i32 conversion_spi_value();
+};
+
+class dac_8531_t: public dac_t
+{
+public:
+  dac_8531_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, float a_init_data);
+  virtual size_t get_resolution() const;
+  virtual irs_u32 get_u32_maximum() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual float get_float_maximum() const;
+  virtual void set_float_data(size_t a_channel, const float a_data);
+  virtual void tick();
+
+private:
+  void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
+  enum { 
+    dac_resolution = 16,
+    write_buf_size = 3
+  };
+  enum { dac_max_value = 0xFFFF };
+  enum mode_t {
+    mode_free,
+    mode_write,
+    mode_write_wait
+  };
+  spi_t *mp_spi;
+  gpio_pin_t *mp_cs_pin;
+  irs_u16 m_data;
+  irs_u16 m_new_data;
+  irs_u8 mp_spi_buf[write_buf_size];
+  mode_t m_mode;
 };
 
 //! @}

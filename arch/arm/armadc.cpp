@@ -1250,9 +1250,9 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   mp_timer->TIM_CR1_bit.CMS = 0; //Center-aligned mode selection
   mp_timer->TIM_CR1_bit.DIR = 0; //Counter used as upcounter
 
-  m_psc = 100-1;
-  m_set_freq = timer_frequency()/m_frequency;
-  mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
+  m_psc = 0;
+  m_set_freq = timer_frequency()/float(m_frequency);
+  mp_timer->TIM_ARR = static_cast<irs_u16>((m_set_freq/float(m_psc+1))-1+0.5);
   mp_timer->TIM_PSC = m_psc;
 
   mp_timer->TIM_RCR = 0;
@@ -1435,7 +1435,8 @@ void irs::arm::st_adc_dma_t::start()
       mp_adc->ADC_CR2_bit.ADON = 0;
       mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
       mp_timer->TIM_PSC = m_psc;
-      mp_timer->TIM_ARR = (m_set_freq/(m_psc+1))-1;
+      mp_timer->TIM_ARR = static_cast<irs_u16>(
+        (m_set_freq/float(m_psc+1))-1+0.5);
       timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
         mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
       dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
@@ -1484,8 +1485,7 @@ void irs::arm::st_adc_dma_t::set_frequency(
 {
   m_frequency = a_frequency;
   set_sample_time(m_frequency);
-  m_set_freq = timer_frequency()/m_frequency;
-
+  m_set_freq = timer_frequency()/float(m_frequency);
 }
 
 void irs::arm::st_adc_dma_t::set_prescaler(irs_u16 a_psc)

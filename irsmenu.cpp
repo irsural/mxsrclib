@@ -2056,9 +2056,7 @@ void irs_menu_trimmer_item_t::draw(irs_menu_base_t **a_cur_menu)
       }
       if ((f_start_value == 0.0) && (*f_parametr == 0.0))
       {
-        //afloat_to_str(f_value_string, (((*f_parametr-f_start_value)/
-          // *f_parametr)*100.), f_trim_len, f_trim_accur);
-        f_value_string = zero_str;
+        strcpy(f_value_string, zero_str);
       }
 
       const size_type trim_prf_x_pos

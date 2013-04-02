@@ -299,7 +299,7 @@ private:
   tim_regs_t* mp_timer;
   irs::c_array_view_t<irs_u16> m_buff;
   cpu_traits_t::frequency_type m_frequency;
-  cpu_traits_t::frequency_type m_set_freq;
+  float m_set_freq;
   irs_u16 m_psc;
   size_t m_buff_size;
   bool m_start;

@@ -101,6 +101,11 @@ void irs::pll_on(param_pll_t a_param_pll)
   RCC_CR_bit.HSEON = 1;
   RCC_CR_bit.HSEBYP = a_param_pll.HSEBYP;
   while (!RCC_CR_bit.HSERDY);
+  
+  #if defined(IRS_STM32F4xx)
+  RCC_CFGR_bit.MCO2 = 3; //PLL clock selected
+  RCC_CFGR_bit.MCO2PRE = 5; //division by 3
+  #endif //ARM_devices
 
   RCC_PLLCFGR_bit.PLLM = a_param_pll.PLLM; // Делитель на входе PLL
   RCC_PLLCFGR_bit.PLLN = a_param_pll.PLLN; // Множитель внутри PLL

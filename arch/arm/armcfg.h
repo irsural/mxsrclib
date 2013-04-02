@@ -109,9 +109,9 @@ public:
 
   virtual void exec()
   {
-    m_pin_led.set();
     hard_fault_handler_c(hard_fault_handler_asm());
     mxfact_event_t::exec();
+    m_pin_led.set();
     while(true)
     {
       //m_hard_fault_blink();
