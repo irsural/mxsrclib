@@ -184,7 +184,6 @@ irs::tstlan4_t::controls_t::param_box_tune_t::param_box_tune_t(
   mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
   mp_param_box->add_bool(irst("Сбросить время"), false);
   mp_param_box->add_bool(irst("Запись CSV включена"), false);
-  mp_param_box->load();
 }
 void irs::tstlan4_t::controls_t::inner_options_apply()
 {
@@ -281,8 +280,6 @@ irs::tstlan4_t::controls_t::controls_t(
   m_is_csv_on(false)
 {
   m_buf.connect(mp_log_memo);
-  inner_options_apply();
-  //m_inner_options_event.exec();
 
   if (m_form_type == ft_internal) {
     ini_name(a_ini_name);
@@ -365,8 +362,7 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_vars_grid->Parent = mp_form;
 
   if (m_form_type == ft_internal) {
-    m_ini_file.load();
-    fill_grid_index_col();
+    load_conf();
   }
 
   //m_out << irs::stime << "start\n";
@@ -411,13 +407,13 @@ void irs::tstlan4_t::controls_t::tick()
       inner_options_apply();
       if (mp_param_box->get_param(irst("Сбросить время")) == irst("true")) {
         mp_param_box->set_param(irst("Сбросить время"), irst("false"));
-        mp_param_box->save();
         m_time.start();
         m_shift_time = 0;
         m_minus_shift_time = 0;
         mp_chart->clear();
       }
     }
+    mp_param_box->save();
   }
 
   if (mp_data)
@@ -1012,11 +1008,14 @@ irs::event_t* irs::tstlan4_t::controls_t::inner_options_event()
 void irs::tstlan4_t::controls_t::save_conf()
 {
   m_ini_file.save();
+  mp_param_box->save();
 }
 void irs::tstlan4_t::controls_t::load_conf()
 {
   m_ini_file.load();
   fill_grid_index_col();
+  mp_param_box->load();
+  inner_options_apply();
 }
 void irs::tstlan4_t::controls_t::clear_conf()
 {

@@ -52,6 +52,7 @@ public:
   virtual void delete_edit(const string_type& a_param_name) = 0;
   template <class T>
   T read_number(const char_t* a_param_name);
+  inline bool read_bool(const char_t* a_param_name);
 }; // param_box_base_t
 
 //! \brief Чтение числа из param_box_base_t
@@ -89,6 +90,16 @@ template <class T>
 T param_box_base_t::read_number(const char_t* a_param_name)
 {
   return param_box_read_number<T>(*this, a_param_name);
+}
+inline bool param_box_base_t::read_bool(const char_t* a_param_name)
+{
+  string_t param_name = a_param_name;
+  string_t number_str = get_param(param_name);
+  bool bool_param = false;
+  if (number_str == irst("true")) {
+    bool_param = true;
+  }
+  return bool_param;
 }
 
 
