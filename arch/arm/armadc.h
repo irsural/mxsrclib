@@ -273,12 +273,12 @@ public:
   };
   st_adc_dma_t(settings_adc_dma_t* ap_settings,
     irs::c_array_view_t<irs_u16> a_buff,
-    cpu_traits_t::frequency_type a_frequency = 1000);
+    double a_frequency = 1000.);
   virtual ~st_adc_dma_t();
   virtual void start();
   virtual void stop();
   virtual bool status();
-  virtual void set_frequency(cpu_traits_t::frequency_type a_frequency);
+  virtual void set_frequency(double a_frequency);
   virtual void set_prescaler(irs_u16 a_psc);
   virtual void set_buff(irs::c_array_view_t<irs_u16> a_buff);
 private:
@@ -286,7 +286,7 @@ private:
     timer_channel_t a_timer_channel);
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
   cpu_traits_t::frequency_type timer_frequency();
-  void set_sample_time(cpu_traits_t::frequency_type& a_frequency);
+  void set_sample_time(double& a_frequency);
   adc_regs_t* mp_adc;
   enum { reqular_channel_count = 16 };
   enum { adc_resolution = 12 };
@@ -298,8 +298,8 @@ private:
   dma_regs_t* mp_dma;
   tim_regs_t* mp_timer;
   irs::c_array_view_t<irs_u16> m_buff;
-  cpu_traits_t::frequency_type m_frequency;
-  float m_set_freq;
+  double m_frequency;
+  double m_set_freq;
   irs_u16 m_psc;
   size_t m_buff_size;
   bool m_start;

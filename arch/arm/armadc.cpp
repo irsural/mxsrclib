@@ -1119,7 +1119,7 @@ irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
 
 irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
    irs::c_array_view_t<irs_u16> a_buff,
-   cpu_traits_t::frequency_type a_frequency
+    double a_frequency
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(ap_settings->adc_address)),
   m_regular_channels_values(),
@@ -1251,7 +1251,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   mp_timer->TIM_CR1_bit.DIR = 0; //Counter used as upcounter
 
   m_psc = 0;
-  m_set_freq = timer_frequency()/float(m_frequency);
+  m_set_freq = timer_frequency()/m_frequency;
   mp_timer->TIM_ARR = static_cast<irs_u16>((m_set_freq/float(m_psc+1))-1+0.5);
   mp_timer->TIM_PSC = m_psc;
 
@@ -1294,7 +1294,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   //--------------------------------
 }
 
-void irs::arm::st_adc_dma_t::set_sample_time(cpu_traits_t::frequency_type& 
+void irs::arm::st_adc_dma_t::set_sample_time(double& 
   a_frequency)
 {
   int denominator = ADC_CCR_bit.ADCPRE*2 + 2;
@@ -1303,7 +1303,7 @@ void irs::arm::st_adc_dma_t::set_sample_time(cpu_traits_t::frequency_type&
   if (adc_frequency > 30000000) {
     adc_frequency = 30000000;  
   }
-  int cycles = adc_frequency/a_frequency;
+  int cycles = static_cast<int>(adc_frequency/a_frequency);
   int res = 12 - mp_adc->ADC_CR1_bit.RES*2;
   int sample_time = cycles - res;
   int count_sample  = 0;
@@ -1324,27 +1324,65 @@ void irs::arm::st_adc_dma_t::set_sample_time(cpu_traits_t::frequency_type&
   } if (480 < sample_time) {
     count_sample = 7;
   }
- 
-  mp_adc->ADC_SMPR1_bit.SMP10 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP11 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP12 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP13 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP14 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP15 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP16 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP17 = count_sample;
-  mp_adc->ADC_SMPR1_bit.SMP18 = count_sample;
-  
-  mp_adc->ADC_SMPR2_bit.SMP0 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP1 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP2 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP3 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP4 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP5 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP6 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP7 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP8 = count_sample;
-  mp_adc->ADC_SMPR2_bit.SMP9 = count_sample;
+  switch (m_active_channels[0]) {
+    case 0: {
+      mp_adc->ADC_SMPR2_bit.SMP0 = count_sample;  
+    } break;
+    case 1: {
+      mp_adc->ADC_SMPR2_bit.SMP1 = count_sample;  
+    } break;
+    case 2: {
+      mp_adc->ADC_SMPR2_bit.SMP2 = count_sample;  
+    } break;
+    case 3: {
+      mp_adc->ADC_SMPR2_bit.SMP3 = count_sample;  
+    } break;
+    case 4: {
+      mp_adc->ADC_SMPR2_bit.SMP4 = count_sample;  
+    } break;
+    case 5: {
+      mp_adc->ADC_SMPR2_bit.SMP5 = count_sample;  
+    } break;
+    case 6: {
+      mp_adc->ADC_SMPR2_bit.SMP6 = count_sample;  
+    } break;
+    case 7: {
+      mp_adc->ADC_SMPR2_bit.SMP7 = count_sample;  
+    } break;
+    case 8: {
+      mp_adc->ADC_SMPR2_bit.SMP8 = count_sample;  
+    } break;
+    case 9: {
+      mp_adc->ADC_SMPR2_bit.SMP9 = count_sample;  
+    } break;
+    case 10: {
+      mp_adc->ADC_SMPR1_bit.SMP10 = count_sample;  
+    } break;
+    case 11: {
+      mp_adc->ADC_SMPR1_bit.SMP11 = count_sample;  
+    } break;
+    case 12: {
+      mp_adc->ADC_SMPR1_bit.SMP12 = count_sample;  
+    } break;
+    case 13: {
+      mp_adc->ADC_SMPR1_bit.SMP13 = count_sample;  
+    } break;
+    case 14: {
+      mp_adc->ADC_SMPR1_bit.SMP14 = count_sample;  
+    } break;
+    case 15: {
+      mp_adc->ADC_SMPR1_bit.SMP15 = count_sample;  
+    } break;
+    case 16: {
+      mp_adc->ADC_SMPR1_bit.SMP16 = count_sample;  
+    } break;
+    case 17: {
+      mp_adc->ADC_SMPR1_bit.SMP17 = count_sample;  
+    } break;
+    case 18: {
+      mp_adc->ADC_SMPR1_bit.SMP18 = count_sample;  
+    } break;
+  };
 }
 
 void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
@@ -1436,7 +1474,7 @@ void irs::arm::st_adc_dma_t::start()
       mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
       mp_timer->TIM_PSC = m_psc;
       mp_timer->TIM_ARR = static_cast<irs_u16>(
-        (m_set_freq/float(m_psc+1))-1+0.5);
+        (m_set_freq/(m_psc+1))-1+0.5);
       timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
         mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
       dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
@@ -1481,11 +1519,11 @@ bool irs::arm::st_adc_dma_t::status()
 }
 
 void irs::arm::st_adc_dma_t::set_frequency(
-  cpu_traits_t::frequency_type a_frequency)
+  double a_frequency)
 {
   m_frequency = a_frequency;
   set_sample_time(m_frequency);
-  m_set_freq = timer_frequency()/float(m_frequency);
+  m_set_freq = timer_frequency()/m_frequency;
 }
 
 void irs::arm::st_adc_dma_t::set_prescaler(irs_u16 a_psc)

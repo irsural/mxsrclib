@@ -939,13 +939,14 @@ template <class T>
 class osc_cir_t
 {
 public:
-  osc_cir_t(T a_n_period, T a_n_fade, T a_y_init);
+  osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init = T(), 
+    T a_y2_init = T(),  T a_x2_init = T());
   ~osc_cir_t();
   //  Число точек на период центральной частоты
   void set_num_of_period_points(T a_n_period);
   //  Число периодов центральной частоты, когда колебания затухают в e раз
   void set_num_of_fade_points(T a_n_fade);
-  void sync(T a_y);
+  void sync(T a_y1, T a_y2 = T());
   T filt(T a_x);
 private:
   T m_n_period;
@@ -955,6 +956,9 @@ private:
   T m_a;
   T m_b;
   T m_c;
+  T m_y2_init;
+  T m_x1_init;
+  T m_x2_init;
   T m_x1;
   T m_x2;
   T m_y1;
@@ -967,18 +971,22 @@ private:
 };
 
 template <class T>
-osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y_init):
+osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init, 
+  T a_y2_init, T a_x2_init):
   m_n_period(a_n_period),
   m_fade(1. / a_n_fade),
-  m_freq_2(sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade)),
+  m_freq_2(sqr(2.* tan(IRS_PI / m_n_period))),
   m_denom(calc_denom()),
   m_a(m_denom * calc_a()),
   m_b(m_denom * calc_b()),
   m_c(m_denom * calc_c()),
-  m_x1(a_y_init),
-  m_x2(a_y_init),
-  m_y1(a_y_init),
-  m_y2(a_y_init)
+  m_y2_init((a_y2_init == T()) ? a_y1_init : a_y2_init),
+  m_x1_init((a_x1_init == T()) ? a_y1_init : a_x1_init),
+  m_x2_init((a_x2_init == T()) ? a_y1_init : a_x2_init),
+  m_x1(m_x1_init),
+  m_x2(m_x2_init),
+  m_y1(a_y1_init),
+  m_y2(m_y2_init)
 {
 }
 
@@ -992,7 +1000,7 @@ void osc_cir_t<T>::set_num_of_period_points(T a_n_period)
 {
   if (a_n_period <= 0) return;
   m_n_period = a_n_period;
-  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade);
+  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period));
   m_denom = calc_denom();
   m_a = m_denom * calc_a();
   m_b = m_denom * calc_b();
@@ -1003,7 +1011,7 @@ template <class T>
 void osc_cir_t<T>::set_num_of_fade_points(T a_n_fade)
 {
   m_fade = 1. / a_n_fade;
-  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period)) - sqr(m_fade);
+  m_freq_2 = sqr(2.* tan(IRS_PI / m_n_period));
   m_denom = calc_denom();
   m_a = m_denom * calc_a();
   m_b = m_denom * calc_b();
@@ -1011,12 +1019,16 @@ void osc_cir_t<T>::set_num_of_fade_points(T a_n_fade)
 }
 
 template <class T>
-void osc_cir_t<T>::sync(T a_y)
+void osc_cir_t<T>::sync(T a_y1, T a_y2)
 {
-  m_x1 = a_y;
-  m_x2 = a_y;
-  m_y1 = 0;
-  m_y2 = 0;
+  if (a_y2 == T()) {
+    a_y2 = a_y1;
+  }  
+  m_x1 = a_y1;
+  m_x2 = a_y2;
+  m_y1 = a_y1;
+  m_y2 = a_y2;
+
 }
 
 template <class T>
