@@ -116,13 +116,14 @@ typedef fstream fstream_t;
 #endif // __embedded_cplusplus
 typedef ofstream ofstream_t;
 typedef ifstream ifstream_t;
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT)  || defined(__ICCARM__)
 #ifndef __embedded_cplusplus
 typedef stringstream stringstream_t;
 #endif // __embedded_cplusplus
 typedef istringstream istringstream_t;
 typedef ostringstream ostringstream_t;
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#endif //defined(IRS_FULL_STDCPPLIB_SUPPORT)  || defined(__ICCARM__)
 
 #endif //IRS_UNICODE
 

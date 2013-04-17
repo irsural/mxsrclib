@@ -66,7 +66,14 @@ IRS_STRING_TEMPLATE
 inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   basic_sdatetime(IRS_STRING_OSTREAM &a_stream)
 {
+  #ifdef __ICCARM__
+  const double seconds = CNT_TO_DBLTIME(counter_get());
+  const int milliseconds =
+    static_cast<int>((seconds - static_cast<irs_u64>(seconds))*1000);
+  time_t timer = static_cast<time_t>(seconds);
+  #else // !__ICCARM__
   time_t timer = time(NULL);
+  #endif // !__ICCARM__
   const tm* date = localtime(&timer);
   a_stream << setfill(static_cast<IRS_STRING_CHAR_TYPE>('0'));
   a_stream << setw(2) << date->tm_mday;
@@ -80,6 +87,10 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   a_stream << setw(2) << date->tm_min;
   a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
   a_stream << setw(2) << date->tm_sec;
+  #ifdef __ICCARM__
+  a_stream << static_cast<IRS_STRING_CHAR_TYPE>(':');
+  a_stream << setw(3) << milliseconds;
+  #endif // __ICCARM__
   a_stream << static_cast<IRS_STRING_CHAR_TYPE>(' ');
   return a_stream;
 }

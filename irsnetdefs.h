@@ -40,11 +40,22 @@ enum {
 
 struct mxip_t
 {
-  irs_u8 val[ip_length];
-
+  union {
+    irs_u8 val[ip_length];
+    irs_u32 addr;
+  };
   static mxip_t zero_ip()
   {
     mxip_t ip = {{0, 0, 0, 0}};
+    return ip;
+  }
+  static mxip_t any_ip()
+  {
+    return zero_ip();
+  }
+  static mxip_t loopback_ip()
+  {
+    mxip_t ip = {{127, 0, 0, 1}};
     return ip;
   }
   static mxip_t broadcast_ip()

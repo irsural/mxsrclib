@@ -193,3 +193,26 @@ void irs::create_wave_pcm_16_mono_file(irs::string_t a_file_name,
 }
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
+
+#if (defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__))
+void irs::binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
+  irs::string_t* ap_str)
+{
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  const irs::char_t data_hex_map[] = {irst('0'),  irst('1'), irst('2'),
+    irst('3'), irst('4'), irst('5'), irst('6'), irst('7'), irst('8'),
+    irst('9'), irst('A'), irst('B'), irst('C'), irst('D'), irst('E'),
+    irst('F')
+  };
+  ap_str->resize(a_buf_size*2);
+  for (size_type elem_i = 0, str_i = 0; elem_i < a_buf_size;
+    elem_i++) {
+    const irs_u8 value = ap_buf[elem_i];
+    (*ap_str)[str_i] = data_hex_map[value >> 4];
+    str_i++;
+    (*ap_str)[str_i] = data_hex_map[value & 0x0F];
+    str_i++;
+  }
+}
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)

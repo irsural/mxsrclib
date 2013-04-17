@@ -90,6 +90,11 @@ public:
   enum {
     invalid_channel = 0
   };
+  enum channel_switching_mode_t {
+    csm_any,
+    csm_ready_for_reading,
+    csm_ready_for_writing
+  };
   //! \brief Деструктор
   virtual ~hardflow_t() {}
   //! \brief Чтение специфического параметра
@@ -116,8 +121,12 @@ public:
   //! \param[in] a_size – размер передаваемых данных.
   virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
     size_type a_size) = 0;
-  //! \brief переход к следующему существующему каналу
+  //! \brief Переход к следующему каналу
   virtual size_type channel_next() = 0;
+  //! \brief Переключение режима перехода к следующему существующему каналу
+  virtual void set_channel_switching_mode(channel_switching_mode_t /*a_mode*/)
+  {
+  }
   //! \brief Проверка на наличие канала
   //!
   //! \param[in] a_channel_ident - проверяемый канал

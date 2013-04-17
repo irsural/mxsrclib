@@ -51,6 +51,10 @@ void hton32(irs_u8* ap_network_out, irs_u32 a_host_in);
 class simple_ethernet_t
 {
 public:
+  enum {
+    //! \brief 6 байт адрес назначения, 6 байт адрес источника, 2 байта длина
+    ethernet_header_size = 14
+  };
   enum buffer_num_t{
     single_buf,
     double_buf

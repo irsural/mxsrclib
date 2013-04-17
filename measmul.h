@@ -2848,7 +2848,7 @@ public:
   virtual meas_status_t status()
   {
     return m_status;
-  };
+  }
 private:
   conn_data_t<T>* mp_conn_data;
   meas_status_t m_status;

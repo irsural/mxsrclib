@@ -47,6 +47,14 @@ irs::timer_t::timer_t(const counter_t& a_time):
 {
   init_timer();
 }
+
+irs::timer_t::timer_t(const timer_t& a_timer):
+  m_to(a_timer.m_to),
+  m_time(a_timer.m_time),
+  m_start(a_timer.m_start)
+{
+  init_timer();
+}
 void irs::timer_t::set(const int& num, const int& denom)
 {
   m_time = TIME_TO_CNT(num, denom);
@@ -99,6 +107,12 @@ irs::loop_timer_t::loop_timer_t(const counter_t& a_time):
   init_timer();
   set_to_cnt(m_to, m_time);
 }
+irs::loop_timer_t::loop_timer_t(const loop_timer_t& a_loop_timer):
+  m_to(a_loop_timer.m_to),
+  m_time(a_loop_timer.m_time)
+{
+  init_timer();
+}
 void irs::loop_timer_t::set(const int& num, const int& denom)
 {
   m_time = TIME_TO_CNT(num, denom);
@@ -138,6 +152,14 @@ irs::strong_loop_timer_t::strong_loop_timer_t(const counter_t& a_time):
   init_timer();
   set_to_cnt(m_to, m_time);
 }
+irs::strong_loop_timer_t::strong_loop_timer_t(
+  const strong_loop_timer_t& a_strong_loop_timer
+):
+  m_to(a_strong_loop_timer.m_to),
+  m_time(a_strong_loop_timer.m_time)
+{
+  init_timer();
+}
 void irs::strong_loop_timer_t::set(const int& num,
   const int& denom)
 {
@@ -165,12 +187,13 @@ bool irs::strong_loop_timer_t::check()
 irs::measure_time_t::measure_time_t():
   m_start_cnt(0)
 {
-  init_to_cnt();
+  init_timer();
   start();
 }
-irs::measure_time_t::~measure_time_t()
+irs::measure_time_t::measure_time_t(const measure_time_t& a_measure_time):
+  m_start_cnt(a_measure_time.m_start_cnt)
 {
-  deinit_to_cnt();
+  init_timer();
 }
 void irs::measure_time_t::start()
 {

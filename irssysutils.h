@@ -216,7 +216,7 @@ bool string_to_number(const basic_string<C>& a_str, T* ap_num,
       *ap_num = static_cast<C>(val_int);
     } else {
       convert_success = false;
-    } 
+    }
   } else {
     istr >> *ap_num;
   }
@@ -408,7 +408,7 @@ private:
     generate(a_byte_count, &id);
     return id;
   }
-  
+
 public:
   // Функция генерации нового уникального значения идентификатора с
   // указанием размера
@@ -559,7 +559,7 @@ void change_file_ext(
     ap_file_name->replace(pos + 1, basic_string<T>::npos, a_ext);
   } else {
     ap_file_name->append(a_ext);
-  }    
+  }
 }
 
 template<class T>
@@ -721,6 +721,149 @@ void create_wave_pcm_16_mono_file(irs::string_t a_file_name,
   const std::vector<irs_i16>& a_samples);
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
+
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+
+//! \brief Конвертирует бинарные данные в строку шестнадцатиричных символов
+//! \param[in] ap_buf - массив данных
+//! \param[in] a_buf_size - размер массива данных
+//! \param[out] ap_str - строка любого типа, для которой определена функция
+//!   irs::str_conv
+//! \see hex_str_to_binary_data
+template<class T>
+void binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
+  T* ap_str)
+{
+  irs::string_t s;
+  binary_data_to_hex_str(ap_buf, a_buf_size, &s);
+  *ap_str = irs::str_conv<T>(s);
+}
+
+//! \brief Конвертирует бинарные данные в строку шестнадцатиричных символов
+//! \param[in] ap_buf - массив данных
+//! \param[in] a_buf_size - размер массива данных
+//! \param[out] ap_str - строка
+//! \see hex_str_to_binary_data
+void binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
+  irs::string_t* ap_str);
+
+//! \brief Конвертирует строку шестнадцатиричных символов в бинарные данные
+//! \param[in] ap_str - строка любого типа, для которой определена функция
+//!   irs::str_conv
+//! \param[in] ap_vector - объект, в который будут скопированы бинарные данные.
+//!   Объект может быть любого типа, у которого реализованы функции size и
+//!   operator[], например std::vector или irs::raw_data_t
+//! \see binary_data_to_hex_str
+template<class T, class VECTOR>
+bool hex_str_to_binary_data(const T& a_str,
+  VECTOR* ap_vector)
+{
+  const std::string s = irs::str_conv<T>(a_str);
+  return hex_str_to_binary_data(s, ap_vector);
+}
+
+//! \brief Конвертирует строку шестнадцатиричных символов в бинарные данные
+//! \param[in] ap_str - строка символов
+//! \param[in] ap_vector - объект, в который будут скопированы бинарные данные.
+//!   Объект может быть любого типа, у которого реализованы функции size и
+//!   operator[], например std::vector или irs::raw_data_t
+//! \see binary_data_to_hex_str
+template<class ARRAY>
+bool hex_str_to_binary_data(const irs::string_t& a_str,
+  ARRAY* ap_vector)
+{
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  const int hex_data_map[] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15
+  };
+
+  const size_type str_elem_size = 2;
+  bool convert_success = true;
+  if (a_str.size() % str_elem_size == 0) {
+    ap_vector->resize(a_str.size() / str_elem_size);
+    const size_type str_size = a_str.size();
+
+    for (size_type elem_i = 0, data_i = 0; elem_i < str_size;
+      elem_i += 2, data_i++) {
+      if ((a_str[elem_i] > irst('f')) || (a_str[elem_i + 1] > irst('f'))) {
+        convert_success = false;
+        break;
+      }
+      const int first_part = hex_data_map[a_str[elem_i]];
+      const int second_part = hex_data_map[a_str[elem_i + 1]];
+      if ((first_part == -1) || (second_part == -1)) {
+        convert_success = false;
+        break;
+      }
+      (*ap_vector)[data_i] = static_cast<irs_u8>(
+        (first_part << 4) + second_part);
+    }
+  } else {
+    convert_success = false;
+  }
+  return convert_success;
+}
+
+template<class T>
+void print_binary_data_to_str(
+  const irs_u8* ap_buf, std::size_t a_buf_size, T* ap_str) {
+  irs::string_t msg;
+  irs::binary_data_to_hex_str(ap_buf, a_buf_size, &msg);
+  irs::ostringstream_t ostr;
+  std::size_t width = std::min(static_cast<std::size_t>(16), msg.size()/2);
+  ostr << setw(5) << irst(" ");
+  for (std::size_t i = 0; i < width; i++) {
+    ostr << std::hex << setw(2) << i;
+    if (i < (width - 1)) {
+      ostr << irst(" ");
+    }
+  }
+  ostr << std::dec << std::endl;
+  std::size_t elem = 0;
+  std::size_t col = 0;
+  std::size_t row = 0;
+  irs::ostringstream_t text;
+  for (std::size_t i = 0; i < msg.size(); i++) {
+    if ((elem == 0) && (col == 0)) {
+      ostr << setw(4) << std::hex << row*0x10 << std::dec << irst(" ");
+    }
+    ostr << msg[i];
+    if ((elem >= 1) && (col < width)) {
+      const irs::char_t ch = ap_buf[col];
+      if (irs::isprintt(ch)) {
+        text << ap_buf[i/2];
+      } else {
+        text << irst(".");
+      }
+    }
+    if ((elem >= 1) && (col < (width - 1))) {
+      ostr << irst(" ");
+    }
+    if ((elem >= 1) && (i < (msg.size() - 1)) && (col == (width - 1))) {
+      row++;
+      col = 0;
+      elem = 0;
+      ostr << irst("|") << text.str() << std::endl;
+      text.str(irst(""));
+      text.clear();
+    } else if (elem >= 1) {
+      elem = 0;
+      col++;
+    } else {
+      elem++;
+    }
+  }
+  *ap_str = irs::str_conv<T>(ostr.str());
+}
+
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //! @}
 

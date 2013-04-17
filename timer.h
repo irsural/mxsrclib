@@ -110,15 +110,15 @@ enum {
   timer_num_def = 0,
   timer_denom_def = 1000
 };
-  
+
 // Класс таймера
 class timer_t
 {
 public:
-
   timer_t(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   timer_t(const counter_t& a_time);
+  timer_t(const timer_t& a_timer);
   void set(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
@@ -144,6 +144,7 @@ public:
   loop_timer_t(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   loop_timer_t(const counter_t& a_time);
+  loop_timer_t(const loop_timer_t& a_loop_timer);
   void set(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
@@ -166,6 +167,7 @@ public:
   strong_loop_timer_t(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   strong_loop_timer_t(const counter_t& a_time);
+  strong_loop_timer_t(const strong_loop_timer_t& a_strong_loop_timer);
   void set(const int& num = timer_num_def,
     const int& denom = timer_denom_def);
   void set(const counter_t& a_time);
@@ -186,7 +188,7 @@ class measure_time_t
 {
 public:
   measure_time_t();
-  ~measure_time_t();
+  measure_time_t(const measure_time_t& a_measure_time);
   void start();
   double get() const;
   counter_t get_cnt() const;

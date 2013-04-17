@@ -183,8 +183,12 @@ public:
       rxd[3] = PB1;
     }
   };
+  //! \param[in] a_recv_buf_size - размер входного буфера.
+  //!   Обычно равен MAX_ETH_PAYLOAD + ETH_HEADER + ETH_CRC
+  //! \param[in] a_mac - локальный MAC-адрес
+  //! \param[in] a_config - конфигурация подключения физического уровня
   st_ethernet_t(
-    size_t a_buf_size,
+    size_t a_recv_buf_size,
     mxmac_t& a_mac, const config_t a_config);
   virtual ~st_ethernet_t();
   virtual void send_packet(irs_size_t a_size);
@@ -200,14 +204,14 @@ public:
   virtual mxmac_t get_local_mac() const;
   virtual void set_mac(mxmac_t& a_mac);
   virtual void tick();
-private:    
+private:
   void rcc_configuration();
   void gpio_configuration();
   void clock_range_configuration();
   void mac_configuration(const ETH_InitTypeDef* ETH_InitStruct);
   void transmit();
-  void receive();    
-  
+  void receive();
+
   enum { phy_address = 0x1 } ;
   enum { frame_check_sequence_size = 4 };
   enum buf_status_t {
@@ -238,8 +242,8 @@ private:
   class eth_auto_negotation_t
   {
   public:
-    eth_auto_negotation_t(const ETH_InitTypeDef& ETH_InitStruct, 
-      const irs_u16 a_phy_address);   
+    eth_auto_negotation_t(const ETH_InitTypeDef& ETH_InitStruct,
+      const irs_u16 a_phy_address);
     void tick();
   private:
     void read_speed_and_mode_phy();
@@ -248,17 +252,17 @@ private:
     enum process_t {
       process_reset,
       process_delay_assure_reset,
-      process_auto_negotation,  
-      process_nothing      
-    };    
+      process_auto_negotation,
+      process_nothing
+    };
     process_t m_process;
     const irs_u16 m_phy_address;
-    const irs_u32 m_auto_negotation;     
-    irs_u32 m_speed;    
+    const irs_u32 m_auto_negotation;
+    irs_u32 m_speed;
     irs_u32 m_mode;
-    bool m_speed_or_mode_phy_changed;    
+    bool m_speed_or_mode_phy_changed;
     timer_t m_delay_assure_reset_timer;
-    loop_timer_t m_speed_and_mode_check_timer;    
+    loop_timer_t m_speed_and_mode_check_timer;
     irs_u16 m_phy_register;
   };
   buf_t m_receive_buf;
