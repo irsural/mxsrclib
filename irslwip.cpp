@@ -7,99 +7,25 @@
 #elif defined(IRS_STM32F4xx)
 # include <stm32f4x7_eth.h>
 #endif // defined(IRS_STM32F4xx)
-//extern ETH_DMADESCTypeDef  DMATxDscrTab[ETH_TXBUFNB];
-
-//#define USE_LWIP // Удалить в финальной версии!!!
-
-#ifdef USE_LWIP
-/*extern "C" {
-# include "lwip/dhcp.h"
-}*/
-#endif // USE_LWIP
 
 #include <irsfinal.h>
 
 #ifdef USE_LWIP
 
-#ifdef USE_DHCP
-
-
-// class dhcp_client_t
-irs::lwip::dhcp_client_t::dhcp_client_t():
-  mp_netif(IRS_NULL),
-  m_ipaddr(),
-  m_netmask(),
-  m_gateway(),
-  m_tries(0),
-  m_status(irs_st_ready)
-{
-
-}
-void irs::lwip::dhcp_client_t::tick()
-{
-  if (m_status == irs_st_busy) {
-    //wait_address();
-  }
-}
-
-void irs::lwip::dhcp_client_t::start(netif* ap_netif, size_type a_tries)
-{
-  if (m_status != irs_st_busy) {
-    IRS_LIB_ASSERT(ap_netif);
-    mp_netif = ap_netif;
-    m_ipaddr.addr = mp_netif->ip_addr.addr;
-    m_netmask.addr = mp_netif->netmask.addr;
-    m_gateway.addr = mp_netif->gw.addr;
-    /*ip_addr ipaddr;
-    ipaddr.addr = 0;
-    ip_addr netmask;
-    netmask.addr = 0;
-    ip_addr gateway;
-    gateway.addr = 0;
-    netif_set_addr(mp_netif, &ipaddr , &netmask, &gateway);*/
-    m_tries = a_tries;
-    dhcp_start(mp_netif);
-    m_status = irs_st_busy;
-  }
-}
-
-void irs::lwip::dhcp_client_t::wait_address()
-{
-  irs_u32 ip_address = mp_netif->ip_addr.addr;
-  if (ip_address != 0) {
-    dhcp_stop(mp_netif);
-    m_status = irs_st_ready;
-  } else {
-    if (mp_netif->dhcp->tries > m_tries)  {
-      m_status = irs_st_error;
-      dhcp_stop(mp_netif);
-      netif_set_addr(mp_netif, &m_ipaddr , &m_netmask, &m_gateway);
-    }
-  }
-}
-#endif // USE_DHCP
 // class ethernet_t
-
-//map<netif*, irs::simple_ethernet_t*>
-  //irs::lwip::ethernet_t::m_netif_simple_ethernet_map;
-irs::simple_ethernet_t* irs::lwip::ethernet_t::mp_simple_ethernet = IRS_NULL;
+irs::simple_ethernet_t* irs::lwip::ethernet_t::mp_simple_ethernet = NULL;
 
 irs::lwip::ethernet_t::ethernet_t(simple_ethernet_t* ap_simple_ethernet,
-  const mxip_t& a_ip, const mxip_t& a_netmask, const mxip_t& a_gateway
+  const configuration_t& a_configuration
 ):
   m_netif(),
-  #if (IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1)
-  m_tcp_tmr_loop_timer(make_cnt_ms(TCP_TMR_INTERVAL)),
-  #else
   m_sys_check_timeouts_loop_timer(make_cnt_ms(10)),
-  #endif
   m_etharp_tmr_loop_timer(make_cnt_ms(ARP_TMR_INTERVAL))
-  #ifdef USE_DHCP
+  #if LWIP_DHCP
   ,
   m_dhcp_fine_tmr_loop_timer(make_cnt_ms(DHCP_FINE_TIMER_MSECS)),
   m_dhcp_coarse_tmr_loop_timer(make_cnt_ms(DHCP_COARSE_TIMER_MSECS))
-  //m_dhcp_process()
-  #endif // USE_DHCP
+  #endif // LWIP_DHCP
 {
   mp_simple_ethernet = ap_simple_ethernet;
   mem_init();
@@ -109,21 +35,23 @@ irs::lwip::ethernet_t::ethernet_t(simple_ethernet_t* ap_simple_ethernet,
   ip_addr netmask;
   ip_addr gateway;
 
-  IP4_ADDR(&ipaddr, a_ip.val[0], a_ip.val[1], a_ip.val[2], a_ip.val[3]);
-  IP4_ADDR(&netmask, a_netmask.val[0], a_netmask.val[1] , a_netmask.val[2],
-    a_netmask.val[3]);
-  IP4_ADDR(&gateway, a_gateway.val[0], a_gateway.val[1], a_gateway.val[2],
-    a_gateway.val[3]);
+  IP4_ADDR(&ipaddr, a_configuration.ip.val[0], a_configuration.ip.val[1],
+    a_configuration.ip.val[2], a_configuration.ip.val[3]);
+  IP4_ADDR(&netmask, a_configuration.netmask.val[0],
+    a_configuration.netmask.val[1], a_configuration.netmask.val[2],
+    a_configuration.netmask.val[3]);
+  IP4_ADDR(&gateway, a_configuration.gateway.val[0],
+    a_configuration.gateway.val[1], a_configuration.gateway.val[2],
+    a_configuration.gateway.val[3]);
 
   netif_add(&m_netif, &ipaddr, &netmask, &gateway, NULL,
     &ethernet_t::ethernetif_init, &ethernet_input);
   netif_set_default(&m_netif);
   netif_set_up(&m_netif);
 
-  #ifdef USE_DHCP
-  //m_dhcp_process.start(&m_netif, 3);
-  dhcp_start(&m_netif);
-  #endif // USE_DHCP
+  if (a_configuration.dhcp_enabled) {
+    start_dhcp();
+  }
 }
 
 netif* irs::lwip::ethernet_t::get_netif()
@@ -137,69 +65,63 @@ void irs::lwip::ethernet_t::tick()
   lwip_tick();
 }
 
+void irs::lwip::ethernet_t::start_dhcp()
+{
+  #if LWIP_DHCP
+  const err_t err = dhcp_start(&m_netif);
+  if (err == ERR_MEM) {
+    IRS_LIB_DBG_MSG("Не хватает памяти для запуска DHCP-клиента");
+  } else if (err == ERR_OK) {
+    IRS_LIB_DBG_MSG("Не удалось запустить DHCP-клиента. Код ошибки " << err);
+  }
+  #endif // LWIP_DHCP
+}
+
 void irs::lwip::ethernet_t::lwip_tick()
 {
-  #if (IRS_LWIP_VERSION >= IRS_LWIP_VERSION_1_4_1)
   if (m_sys_check_timeouts_loop_timer.check()) {
     sys_check_timeouts();
   }
-  #endif // (IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1)
-  #if LWIP_TCP
-  #if (IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1)
-  if (m_tcp_tmr_loop_timer.check()) {
-    tcp_tmr();
-  }
-  #endif // (IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1)
-  #endif // LWIP_TCP
   if (m_etharp_tmr_loop_timer.check()) {
     etharp_tmr();
   }
-  #ifdef USE_DHCP
+  #if LWIP_DHCP
   if (m_dhcp_fine_tmr_loop_timer.check()) {
     dhcp_fine_tmr();
-    //m_dhcp_process.tick();
-    /*if ((DHCP_state != DHCP_ADDRESS_ASSIGNED) && (DHCP_state != DHCP_TIMEOUT)) {
-      LwIP_DHCP_Process_Handle();
-    }*/
   }
   if (m_dhcp_coarse_tmr_loop_timer.check()) {
     dhcp_coarse_tmr();
   }
-  #endif // USE_DHCP
+  #endif // LWIP_DHCP
 }
 
 err_t irs::lwip::ethernet_t::low_level_output(
   struct netif* /*ap_netif*/, struct pbuf *p)
 {
   if (!mp_simple_ethernet) {
-    IRS_LIB_DBG_MSG("Драйвер Ethernet не задан");
+    IRS_LIB_ASSERT_MSG("Драйвер Ethernet не задан");
     return ERR_MEM;
   }
   if (!mp_simple_ethernet->is_send_buf_empty()) {
-    IRS_LIB_DBG_MSG("Нет места в очереди отправляемых пакетов");
+    IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("Нет места в очереди отправляемых пакетов");
     return ERR_MEM;
   }
 
   int framelength = 0;
   irs_u8* buf = mp_simple_ethernet->get_send_buf();
-  for(pbuf* q = p; q != IRS_NULL; q = q->next) {
+  for(pbuf* q = p; q != NULL; q = q->next) {
     if (q->len <= (mp_simple_ethernet->send_buf_max_size() - framelength)) {
       memcpy(buf, q->payload, q->len);
       buf += q->len;
       framelength += q->len;
     } else {
-      IRS_LIB_DBG_MSG("Попытка послать слишком большой пакет");
+      IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Попытка послать слишком большой пакет");
       return ERR_MEM;
     }
   }
   if (framelength > 0) {
-    //#if (IRS_LIB_DEBUG_TYPE >= IRS_LIB_DEBUG_BASE)
-    /*std::string msg;
-    print_binary_data_to_str(mp_simple_ethernet->get_send_buf(), framelength, &msg);
-    IRS_LIB_DBG_MSG("length = " << framelength << std::endl <<
-      msg << std::endl);*/
-    IRS_LIB_DBG_MSG("low_level_output: length = " << framelength);
-    //#endif
+    IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("low_level_output: length = " <<
+      framelength);
     mp_simple_ethernet->send_packet(framelength);
   }
   return ERR_OK;
@@ -214,7 +136,7 @@ err_t irs::lwip::ethernet_t::ethernetif_input()
   }
   err = m_netif.input(p, &m_netif);
   if (err != ERR_OK) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("ethernetif_input: IP input error\n");
     pbuf_free(p);
     p = NULL;
   }
@@ -224,7 +146,7 @@ err_t irs::lwip::ethernet_t::ethernetif_input()
 struct pbuf* irs::lwip::ethernet_t::low_level_input()
 {
   if (!mp_simple_ethernet->is_recv_buf_filled()) {
-    return IRS_NULL;
+    return NULL;
   }
 
   irs_u16 len = static_cast<irs_u16>(mp_simple_ethernet->recv_buf_size());
@@ -284,7 +206,6 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
 }
 
 // class tcp_server_t
-
 irs::lwip::hardflow::tcp_server_t::size_type
 irs::lwip::hardflow::tcp_server_t::m_read_channel =
   irs::lwip::hardflow::tcp_server_t::invalid_channel;
@@ -308,11 +229,12 @@ public:
     }
     return irs::hardflow_t::invalid_channel;
   }
-  void write(void* ap_owner, size_type a_channel,
+  bool write(void* ap_owner, size_type a_channel,
     const irs_u8* ap_buf, size_type a_size)
   {
+    bool status = false;
     if (a_size == 0) {
-      return;
+      return status;
     }
     size_type pos = 0;
     if (m_buf.empty()) {
@@ -323,8 +245,18 @@ public:
       IRS_LIB_ASSERT(m_channel == a_channel);
       pos = m_buf.size();
     }
-    m_buf.resize(m_buf.size() + a_size);
-    irs::memcpyex(irs::vector_data(m_buf, pos), ap_buf, a_size);
+    try {
+      m_buf.resize(m_buf.size() + a_size);
+      irs::memcpyex(irs::vector_data(m_buf, pos), ap_buf, a_size);
+      status = true;
+    } catch (std::bad_alloc&) {
+      status = false;
+      if (m_buf.empty()) {
+        mp_owner = NULL;
+        m_channel = irs::hardflow_t::invalid_channel;
+      }
+    }
+    return status;
   }
   size_type read(const void* ap_owner, size_type a_channel,
     irs_u8* ap_buf, size_type a_size)
@@ -336,6 +268,7 @@ public:
       irs::memcpyex(ap_buf, irs::vector_data(m_buf), size);
       m_buf.erase(m_buf.begin(), m_buf.begin() + size);
       if (m_buf.empty()) {
+        mp_owner = NULL;
         m_channel = irs::hardflow_t::invalid_channel;
       }
     }
@@ -425,21 +358,16 @@ irs::lwip::hardflow::tcp_server_t::write(
   size_type write_data_size = 0;
   if (is_channel_exists(a_channel_ident)) {
     channel_t* channel = m_channels_map.find(a_channel_ident)->second;
-    IRS_DBG_MSG("tcp_sndbuf До " << tcp_sndbuf(channel->pcb));
     size_type available = static_cast<size_type>(tcp_sndbuf(channel->pcb));
     write_data_size = std::min(a_size, available);
     if (write_data_size > 0) {
       err_t err =
         tcp_write(channel->pcb, ap_buf, write_data_size, TCP_WRITE_FLAG_COPY);
-      IRS_DBG_MSG("tcp_sndbuf После " << tcp_sndbuf(channel->pcb));
       if (err == ERR_OK) {
-        static int count = 0;
-        count += write_data_size;
-        IRS_DBG_MSG("write: Записано!!!!!!!!!!! " << write_data_size);
-        IRS_DBG_MSG("write: Записано всего! " << count);
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: записано " << write_data_size);
       } else {
         write_data_size = 0;
-        IRS_DBG_MSG("write: Запись не удалась");
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: запись не удалась");
       }
     }
   }
@@ -492,7 +420,7 @@ bool irs::lwip::hardflow::tcp_server_t::listen(
   ip.addr = a_local_ip.addr;
   err_t err = tcp_bind(mp_pcb, &ip, a_port);
   if (err == ERR_USE) {
-    IRS_DBG_MSG("Указанный порт уже используется");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Указанный порт уже используется");
     if (ERR_OK == tcp_close(mp_pcb)) {
       mp_pcb = NULL;
     }
@@ -543,11 +471,11 @@ bool irs::lwip::hardflow::tcp_server_t::close_connection(channel_t* ap_channel)
 
   const err_t err = tcp_close(ap_channel->pcb);
   if (err == ERR_OK) {
-    IRS_LIB_DBG_MSG("Удален канал " << ap_channel->id);
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Удален канал " << ap_channel->id);
     erase_channel(ap_channel);
     return true;
   } else {
-    IRS_DBG_MSG("Закрыть соединение не удалось");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Закрыть соединение не удалось");
     ap_channel->marked_for_erase = true;
     tcp_arg(ap_channel->pcb, ap_channel);
     tcp_recv(ap_channel->pcb, tcp_server_t::recv);
@@ -579,11 +507,11 @@ irs::lwip::hardflow::tcp_server_t::create_channel(
     tcp_poll(ap_pcb, tcp_server_t::poll, pool_interval);
     tcp_sent(ap_pcb, tcp_server_t::sent);
     m_last_id++;
-    IRS_LIB_DBG_MSG("Добавлен канал " << channel->id);
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Добавлен канал " << channel->id);
   } catch (...) {
     channel.reset();
     m_channels.resize(prev_channel_count);
-    IRS_LIB_DBG_MSG("Создать канал не удалось");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Создать канал не удалось");
   }
   return channel.get();
 }
@@ -606,25 +534,27 @@ void irs::lwip::hardflow::tcp_server_t::erase_channel(channel_t* ap_channel)
 err_t irs::lwip::hardflow::tcp_server_t::recv(void *arg, tcp_pcb *pcb, pbuf *p,
   err_t err)
 {
-  static int received_byte_count = 0;
   if ((err == ERR_OK) && (p != NULL)) {
     if (tcp_read_buffer()->empty()) {
       channel_t* channel = reinterpret_cast<channel_t*>(arg);
-      tcp_recved(pcb, p->tot_len);
       irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
       size_type len = p->tot_len;
       if (len > 0) {
-        tcp_read_buffer()->write(channel->server, channel->id, data, len);
-        received_byte_count += len;
+        if (tcp_read_buffer()->write(channel->server, channel->id, data, len)) {
+          IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
+          tcp_recved(pcb, len);
+          pbuf_free(p);
+        } else {
+          IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные не приняты, так как не удалось "
+            "выделить память");
+          return ERR_MEM;
+        }
       }
-      IRS_LIB_DBG_MSG("Получено: " << len << " Всего: " <<
-        received_byte_count);
-      pbuf_free(p);
     } else {
       return ERR_MEM;
     }
   } else if ((err == ERR_OK) && (p == NULL)) {
-    IRS_DBG_MSG("Удаленный хост разорвал соединение");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Удаленный хост разорвал соединение");
     channel_t* channel = reinterpret_cast<channel_t*>(arg);
     channel->server->close_connection(channel);
   }
@@ -645,8 +575,7 @@ void irs::lwip::hardflow::tcp_server_t::conn_err(void *arg, err_t /*a_err*/)
     }
     ++it;
   }
-
-  IRS_LIB_DBG_MSG("conn_err");
+  IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("conn_err");
 }
 
 err_t irs::lwip::hardflow::tcp_server_t::poll(void* /*a_arg*/,
@@ -656,9 +585,8 @@ err_t irs::lwip::hardflow::tcp_server_t::poll(void* /*a_arg*/,
 }
 
 err_t irs::lwip::hardflow::tcp_server_t::sent(
-  void* /*ap_arg*/, tcp_pcb* /*ap_pcb*/, u16_t a_len)
+  void* /*ap_arg*/, tcp_pcb* /*ap_pcb*/, u16_t /*a_len*/)
 {
-  IRS_LIB_DBG_MSG("sent: отправлено " << a_len);
   return ERR_OK;
 }
 
@@ -710,7 +638,7 @@ bool irs::lwip::hardflow::tcp_client_t::connect()
   local_ip.addr = m_local_ip.addr;
   err_t err = tcp_bind(mp_pcb, &local_ip, m_local_port);
   if (err == ERR_USE) {
-    IRS_DBG_MSG("Указанный порт уже используется");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Указанный порт уже используется");
     if (ERR_OK == tcp_close(mp_pcb)) {
       mp_pcb = NULL;
     }
@@ -721,7 +649,7 @@ bool irs::lwip::hardflow::tcp_client_t::connect()
   err_t connect_err = tcp_connect(mp_pcb, &remote_ip,
     m_dest_port, tcp_client_t::connected);
   if (connect_err == ERR_VAL) {
-    IRS_DBG_MSG("Указаны недопустимые аргументы");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Указаны недопустимые аргументы");
     if (ERR_OK == tcp_close(mp_pcb)) {
       mp_pcb = NULL;
     }
@@ -747,10 +675,10 @@ bool irs::lwip::hardflow::tcp_client_t::close_connection()
     m_marked_for_erase = false;
     m_need_connect = true;
     m_delay_before_connect.start();
-    IRS_DBG_MSG("Соединение успешно закрыто");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Соединение успешно закрыто");
     return true;
   } else {
-    IRS_DBG_MSG("Закрыть соединение не удалось");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Закрыть соединение не удалось");
     m_marked_for_erase = true;
     tcp_arg(mp_pcb, this);
     tcp_recv(mp_pcb, tcp_client_t::recv);
@@ -764,7 +692,7 @@ bool irs::lwip::hardflow::tcp_client_t::close_connection()
 err_t irs::lwip::hardflow::tcp_client_t::connected(
   void* arg, tcp_pcb* /*ap_tpcb*/, err_t /*a_err*/)
 {
-  IRS_DBG_MSG("Соединение установлено");
+  IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Соединение установлено");
   tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
   client->m_connection_is_established = true;
   return ERR_OK;
@@ -773,27 +701,28 @@ err_t irs::lwip::hardflow::tcp_client_t::connected(
 err_t irs::lwip::hardflow::tcp_client_t::recv(void *arg, tcp_pcb *pcb,
   pbuf *p, err_t err)
 {
-  static int received_byte_count = 0;
   if ((err == ERR_OK) && (p != NULL)) {
     if (tcp_read_buffer()->empty()) {
       tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
-      tcp_recved(pcb, p->tot_len);
-      //IRS_LIB_ASSERT(tcp_read_buf.empty());
       irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
       size_type len = p->tot_len;
       if (len > 0) {
-        tcp_read_buffer()->write(client, client->m_channel_id, data, len);
-        received_byte_count += len;
+        if (tcp_read_buffer()->write(client, client->m_channel_id, data, len)) {
+          tcp_recved(pcb, len);
+          pbuf_free(p);
+          IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
+        } else {
+          IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные не приняты, так как не "
+            "удалось выделить память");
+          return ERR_MEM;
+        }
       }
-      IRS_LIB_DBG_MSG("Получено: " << len << " Всего: " <<
-        received_byte_count);
-      pbuf_free(p);
     } else {
       return ERR_MEM;
     }
   } else if ((err == ERR_OK) && (p == NULL)) {
     tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
-    IRS_DBG_MSG("Удаленный хост разорвал соединение");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Удаленный хост разорвал соединение");
     client->close_connection();
   }
   return ERR_OK;
@@ -802,8 +731,7 @@ err_t irs::lwip::hardflow::tcp_client_t::recv(void *arg, tcp_pcb *pcb,
 void irs::lwip::hardflow::tcp_client_t::conn_err(void *arg, err_t /*a_err*/)
 {
   tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
-  IRS_LIB_DBG_MSG("conn_err");
-  //client->close_connection();
+  IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("conn_err");
   client->mp_pcb = NULL;
   client->m_marked_for_erase = false;
   client->m_need_connect = true;
@@ -835,21 +763,16 @@ irs::lwip::hardflow::tcp_client_t::write(
 {
   size_type write_data_size = 0;
   if (m_channel_id == a_channel_ident) {
-    IRS_DBG_MSG("tcp_sndbuf До " << tcp_sndbuf(mp_pcb));
     size_type available = static_cast<size_type>(tcp_sndbuf(mp_pcb));
     write_data_size = std::min(a_size, available);
     if (write_data_size > 0) {
       err_t err =
         tcp_write(mp_pcb, ap_buf, write_data_size, TCP_WRITE_FLAG_COPY);
-      IRS_DBG_MSG("tcp_sndbuf После " << tcp_sndbuf(mp_pcb));
       if (err == ERR_OK) {
-        static int count = 0;
-        count += write_data_size;
-        IRS_DBG_MSG("write: Записано!!!!!!!!!!! " << write_data_size);
-        IRS_DBG_MSG("write: Записано всего! " << count);
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: Записано " << write_data_size);
       } else {
         write_data_size = 0;
-        IRS_DBG_MSG("write: Запись не удалась");
+        IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("write: Запись не удалась");
       }
     }
   }
@@ -864,10 +787,6 @@ void irs::lwip::hardflow::tcp_client_t::tick()
   if (m_need_connect && m_delay_before_connect.check()) {
     connect();
   }
-  /*if (!m_connection_is_established && m_connect_timeout.check()) {
-    IRS_DBG_MSG("Тайм-аут соединения. Соединяемся повторно");
-    connect();
-  }*/
 }
 
 irs::lwip::hardflow::tcp_client_t::string_type
@@ -971,22 +890,36 @@ void irs::lwip::hardflow::udp_channel_list_t::insert(address_type a_address,
       channel.address = a_address;
       channel.lifetime.start();
       channel.downtime.start();
-      m_map_id_channel.insert(make_pair(m_channel_id, channel));
-      m_map_address_id.insert(make_pair(a_address, m_channel_id));
-      m_id_list.push_back(m_channel_id);
-      *ap_id = m_channel_id;
-      //m_channel_id++;
-      if (m_it_cur_channel == m_map_id_channel.end()) {
-        m_it_cur_channel = m_map_id_channel.begin();
-      } else {
-        // Текущий канал уже установлен
+      const size_type channel_prev_count = m_id_list.size();
+      std::pair<map_id_channel_iterator, bool> map_id_channel_res;
+      std::pair<map_address_id_iterator, bool> map_address_id_res;
+      try {
+        map_id_channel_res =
+          m_map_id_channel.insert(make_pair(m_channel_id, channel));
+        map_address_id_res =
+          m_map_address_id.insert(make_pair(a_address, m_channel_id));
+        m_id_list.push_back(m_channel_id);
+        *ap_id = m_channel_id;
+        if (m_it_cur_channel == m_map_id_channel.end()) {
+          m_it_cur_channel = m_map_id_channel.begin();
+        } else {
+          // Текущий канал уже установлен
+        }
+        if (m_it_cur_channel_for_check == m_map_id_channel.end()) {
+          m_it_cur_channel_for_check = m_map_id_channel.begin();
+        } else {
+          // Текущий канал для проверки уже установлен
+        }
+        *ap_insert_success = true;
+      } catch (...) {
+        if (m_map_id_channel.size() > channel_prev_count) {
+          m_map_id_channel.erase(map_id_channel_res.first);
+        }
+        if (m_map_address_id.size() > channel_prev_count) {
+          m_map_address_id.erase(map_address_id_res.first);
+        }
+        m_id_list.resize(channel_prev_count);
       }
-      if (m_it_cur_channel_for_check == m_map_id_channel.end()) {
-        m_it_cur_channel_for_check = m_map_id_channel.begin();
-      } else {
-        // Текущий канал для проверки уже установлен
-      }
-      *ap_insert_success = true;
     } else {
       // Добавление не разрешено
     }
@@ -1465,8 +1398,6 @@ bool irs::lwip::hardflow::udp_channel_list_t::downtime_exceeded(
 void irs::lwip::hardflow::udp_channel_list_t::next_free_channel_id()
 {
   if (!m_channel_id_overflow) {
-    //IRS_LIB_ASSERT(m_map_id_channel.find(m_channel_id) ==
-      //m_map_id_channel.end());
     m_channel_id++;
     if (m_channel_id == invalid_channel) {
       m_channel_id_overflow = true;
@@ -1506,11 +1437,9 @@ void irs::lwip::hardflow::udp_channel_list_t::next_free_channel_id()
       } else {
         // Текущее значение идентификатора является уникальным
       }
-
     } else {
-      //Нет свободных мест под новый канал
       IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
-        "No place for add new channel" << endl);
+        "Нет свободных мест для нового канала" << endl);
       m_channel_id = invalid_channel;
     }
   } else {
@@ -1534,7 +1463,6 @@ irs::lwip::hardflow::udp_t::udp_t(
   m_configuration(a_configuration),
   m_channel_max_count(a_channel_max_count),
   mp_pcb(NULL),
-  m_need_create(true),
   m_channel_list(m_configuration.connections_mode,
     m_channel_max_count,
     0,
@@ -1558,7 +1486,7 @@ void irs::lwip::hardflow::udp_t::create()
   local_ip.addr = m_local_ip.addr;
   err_t err = udp_bind(mp_pcb, &local_ip, m_local_port);
   if (err == ERR_USE) {
-    IRS_DBG_MSG("Указанный порт уже используется");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Указанный порт уже используется");
     udp_remove(mp_pcb);
     mp_pcb = NULL;
     return;
@@ -1568,7 +1496,6 @@ void irs::lwip::hardflow::udp_t::create()
   size_type remote_host_id = 0;
   udp_channel_list_t::address_type remote_host_address(m_dest_ip, m_dest_port);
   m_channel_list.insert(remote_host_address, &remote_host_id, &insert_success);
-  m_need_create = false;
 }
 
 void irs::lwip::hardflow::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
@@ -1587,13 +1514,17 @@ void irs::lwip::hardflow::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
       bool insert_success = false;
       udp->m_channel_list.insert(sender_address, &id, &insert_success);
       if (insert_success) {
-        udp_read_buffer()->write(udp, id, data, len);
+        if (!udp_read_buffer()->write(udp, id, data, len)) {
+          IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные отброшены, так как не "
+          "удалось выделить память");
+        }
       }
     } else if (len > udp->m_configuration.receive_paket_data_max_size) {
-      IRS_LIB_DBG_MSG("Данные отброшены, так как их размер выше допустимого");
+      IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные отброшены, так как их размер "
+        "выше допустимого");
     }
   } else {
-    IRS_LIB_DBG_MSG("Данные отброшены, так как буфер занят");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные отброшены, так как буфер занят");
   }
   pbuf_free(ap_buf);
 }
@@ -1630,7 +1561,7 @@ irs::lwip::hardflow::udp_t::write(size_type a_channel_ident,
     m_configuration.send_paket_data_max_size);
   pbuf* pkt_buf = pbuf_alloc(PBUF_TRANSPORT, size, PBUF_POOL);
   if (!pkt_buf) {
-    IRS_DBG_MSG("Не хватает памяти для отправки пакета");
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Не хватает памяти для отправки пакета");
     return 0;
   }
   udp_channel_list_t::address_type remote_host_address;
@@ -1638,7 +1569,8 @@ irs::lwip::hardflow::udp_t::write(size_type a_channel_ident,
   if (m_channel_list.address_get(a_channel_ident, &remote_host_address)) {
     dst_ip.addr = remote_host_address.ip.addr;
   } else {
-    IRS_LIB_DBG_MSG("Канала с указанным идентификатором не существует");
+    IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Канала с указанным идентификатором не "
+      "существует");
     return 0;
   }
   const irs_u8* buf_src = ap_buf;
@@ -1651,16 +1583,12 @@ irs::lwip::hardflow::udp_t::write(size_type a_channel_ident,
   m_channel_list.downtime_timer_reset(a_channel_ident);
   if (err != ERR_OK) {
     if (err == ERR_MEM) {
-      IRS_LIB_DBG_MSG("Не хватает памяти для отправки пакета");
+      IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Не хватает памяти для отправки пакета");
       return 0;
     } else if (err == ERR_RTE) {
-      IRS_LIB_DBG_MSG("Не удается найти маршрут к адресу");
+      IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Не удается найти маршрут к адресу");
     }
     return 0;
-  } else {
-    static std::size_t sent_byte_count = 0;
-    sent_byte_count += size;
-    IRS_LIB_DBG_MSG("всего отправлено " << sent_byte_count);
   }
   return size;
 }

@@ -11,39 +11,19 @@
 
 extern "C" {
 
-#define IRS_LWIP_VERSION_1_3_1 0
-#define IRS_LWIP_VERSION_1_4_1 1
-#ifdef __ICCARM__
-# define IRS_LWIP_VERSION IRS_LWIP_VERSION_1_4_1
-#else // !__ICCARM__
-# define IRS_LWIP_VERSION IRS_LWIP_VERSION_1_4_1
-#endif // !__ICCARM__
-
-/*#ifdef __ICCARM__
-# pragma diag_suppress=Pe550
-#endif // __ICCARM__*/
-
 #include <lwip/ip_addr.h>
-#if (IRS_LWIP_VERSION >= IRS_LWIP_VERSION_1_4_1)
 #include <lwip/timers.h>
-#endif // (IRS_LWIP_VERSION >= IRS_LWIP_VERSION_1_4_1)
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
 #include <lwip/mem.h>
 #include <lwip/memp.h>
 #include <lwip/dhcp.h>
 #ifdef IRS_STM32F_2_AND_4
-//# include <ethernetif.h>
 #endif // IRS_STM32F_2_AND_4
 #include <netif/etharp.h>
-//#include "lwip\netif.h"
 #ifdef IRS_STM32F_2_AND_4
-//# include "main.h"
 #endif // IRS_STM32F_2_AND_4
 
-//#ifdef __ICCARM__
-//# pragma diag_default=Pe550
-//#endif // __ICCARM__
 } // extern "C"
 
 #endif // USE_LWIP
@@ -52,38 +32,60 @@ extern "C" {
 
 #ifdef USE_LWIP
 
+# if (IRS_LIB_LWIP_ETH_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_BASE(msg) msg
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_DETAIL(msg)
+#elif (IRS_LIB_LWIP_ETH_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_SRC_BASE(msg) IRS_LIB_DBG_MSG_SRC(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_BASE(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_DETAIL(msg) IRS_LIB_DBG_RAW_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
+#else // IRS_LIB_LWIP_ETH_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BASE(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_BASE(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_SRC_BASE(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_BASE(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL(msg)
+# define IRS_LIB_LWIP_ETH_DBG_MSG_SRC_DETAIL(msg)
+# define IRS_LIB_LWIP_ETH_DBG_RAW_MSG_BLOCK_DETAIL(msg)
+#endif // IRS_LIB_LWIP_ETH_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
+
 namespace irs {
 
 namespace lwip {
 
-#ifdef USE_DHCP
-class dhcp_client_t
-{
-public:
-  typedef std::size_t size_type;
-  dhcp_client_t();
-  void start(netif* ap_netif, size_type a_tries);
-  void tick();
-private:
-  typedef void *process_t();
-  void wait_address();
-  netif* mp_netif;
-  ip_addr m_ipaddr;
-  ip_addr m_netmask;
-  ip_addr m_gateway;
-  size_type m_tries;
-  irs_status_t m_status;
-};
-#endif // USE_DHCP
-
 class ethernet_t
 {
 public:
+  struct configuration_t
+  {
+    mxip_t ip;
+    mxip_t netmask;
+    mxip_t gateway;
+    bool dhcp_enabled;
+    configuration_t():
+      ip(mxip_t::any_ip()),
+      netmask(mxip_t::any_ip()),
+      gateway(mxip_t::any_ip()),
+      dhcp_enabled(false)
+    {
+    }
+  };
   ethernet_t(simple_ethernet_t* ap_simple_ethernet,
-    const mxip_t& a_ip, const mxip_t& a_netmask, const mxip_t& a_gateway);
+    const configuration_t& a_configuration);
   netif* get_netif();
   void tick();
 private:
+  void start_dhcp();
   void lwip_tick();
   static err_t low_level_output(struct netif *ap_netif, struct pbuf *p);
   err_t ethernetif_input();
@@ -92,24 +94,15 @@ private:
   static void low_level_init(struct netif *ap_netif);
   static simple_ethernet_t* mp_simple_ethernet;
   netif m_netif;
-  #if (IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1)
-  loop_timer_t m_tcp_tmr_loop_timer;
-  #else // IRS_LWIP_VERSION >= IRS_LWIP_VERSION_1_4_1
   loop_timer_t m_sys_check_timeouts_loop_timer;
-  #endif // IRS_LWIP_VERSION < IRS_LWIP_VERSION_1_4_1
   loop_timer_t m_etharp_tmr_loop_timer;
   #ifdef USE_DHCP
   loop_timer_t m_dhcp_fine_tmr_loop_timer;
   loop_timer_t m_dhcp_coarse_tmr_loop_timer;
-  dhcp_client_t m_dhcp_process;
   #endif // USE_DHCP
-
-  //static map<netif*, simple_ethernet_t*> m_netif_simple_ethernet_map;
 };
 
 namespace hardflow {
-
-//extern std::vector<irs_u8> tcp_read_buf;
 
 class tcp_server_t: public hardflow_t
 {
@@ -138,9 +131,9 @@ private:
     tcp_pcb* pcb;
     bool marked_for_erase;
     channel_t():
-      server(IRS_NULL),
+      server(NULL),
       id(0),
-      pcb(IRS_NULL),
+      pcb(NULL),
       marked_for_erase(false)
     {
     }
@@ -202,46 +195,6 @@ private:
   timer_t m_delay_before_connect;
 };
 
-/*class channel_list_t
-{
-public:
-  virtual insert(ip_addr a_ip, u16_t a_port);
-private:
-  virtual
-  struct address_t
-  {
-    ip_addr ip;
-    u16_t port;
-    bool operator<(const address_t& a_address)
-    {
-      if (ip.addr < a_address.ip.addr) {
-        return true;
-      } else if (ip.addr == a_address.ip.addr) {
-        return port < a_address.port;
-      } else {
-        return false;
-      }
-      return false;
-    }
-  };
-
-  struct channel_t
-  {
-    size_type id;
-    address_t address;
-    channel_t():
-      id(0),
-      address(),
-      port(0)
-    {
-      address.addr = 0;
-    }
-  };
-  std::deque<irs::handle_t<channel_t> > m_channels;
-  std::map<size_type, channel_t*> m_id_channels_map;
-  std::map<address_t, channel_t*> m_address_channels_map;
-};*/
-
 struct lwip_address_t
 {
   ip_addr ip;
@@ -258,18 +211,6 @@ struct lwip_address_t
   }
 };
 
-/*bool operator<(const lwip_address_t& a_address_1,
-  const lwip_address_t& a_address_2)
-{
-  if (a_address_1.ip.addr < a_address_2.ip.addr) {
-    return true;
-  } else if (a_address_1.ip.addr == a_address_2.ip.addr) {
-    return a_address_1.port < a_address_2.port;
-  } else {
-    return false;
-  }
-  return false;
-}*/
 enum udp_limit_connections_mode_t {
   udplc_mode_invalid,      //!< \brief Недопустимый режим
   udplc_mode_queue,        //!< \brief Учитывается переменная m_max_size
@@ -322,6 +263,7 @@ public:
     }
   };
   typedef map<address_type, id_type> map_address_id_type;
+  typedef map<address_type, id_type>::iterator map_address_id_iterator;
   typedef map<id_type, channel_t> map_id_channel_type;
   typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
   typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;
@@ -455,7 +397,6 @@ private:
   configuration_t m_configuration;
   const size_type m_channel_max_count;
   udp_pcb* mp_pcb;
-  bool m_need_create;
   udp_channel_list_t m_channel_list;
   channel_switching_mode_t m_mode;
 };
