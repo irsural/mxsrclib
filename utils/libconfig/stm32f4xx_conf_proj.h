@@ -20,8 +20,10 @@
   */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F4xx_CONF_H
-#define __STM32F4xx_CONF_H
+#ifndef __STM32F4xx_CONF_PROJ_H
+#define __STM32F4xx_CONF_PROJ_H
+
+#if IRS_USE_STM32F4xx_PROJECT_CONFIGURATION
 
 /* Includes ------------------------------------------------------------------*/
 /* Uncomment the line below to enable peripheral header file inclusion */
@@ -83,6 +85,8 @@
   #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */
 
-#endif /* __STM32F4xx_CONF_H */
+#endif // IRS_USE_STM32F4xx_PROJECT_CONFIGURATION
+
+#endif /* __STM32F4xx_CONF_PROJ_H */
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

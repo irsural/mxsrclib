@@ -21,8 +21,10 @@
   ******************************************************************************
   */
 
-#ifndef __LWIPOPTS_H__
-#define __LWIPOPTS_H__
+#ifndef __LWIPOPTS_PROJ_H__
+#define __LWIPOPTS_PROJ_H__
+
+#if IRS_USE_LWIP_PROJECT_CONFIGURATION
 
 /**
  * SYS_LIGHTWEIGHT_PROT==1: if you want inter-task protection for certain
@@ -198,6 +200,8 @@ The STM32F2x7 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 #define ICMP_DEBUG                      LWIP_DBG_OFF
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 
-#endif /* __LWIPOPTS_H__ */
+#endif // IRS_USE_LWIP_PROJECT_CONFIGURATION
+
+#endif /* __LWIPOPTS_PROJ_H__ */
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

@@ -23,6 +23,14 @@
 #ifndef __STM32F2x7_ETH_CONF_H
 #define __STM32F2x7_ETH_CONF_H
 
+#ifndef IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION
+# define IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION 0
+#endif // IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION
+
+#if IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION
+# include "stm32f2x7_eth_conf_proj.h"
+#else !IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -90,6 +98,8 @@
 #ifdef __cplusplus
 }
 #endif
+
+#endif // IRS_USE_STM32F2x7_ETH_PROJECT_CONFIGURATION
 
 #endif /* __STM32F2x7_ETH_CONF_H */
 
