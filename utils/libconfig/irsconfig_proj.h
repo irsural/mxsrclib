@@ -1,23 +1,17 @@
 //! \file
 //! \ingroup configuration_group
-//! \brief Локальная конфигурация для каждого программиста
+//! \brief Rонфигурация mxsrclib для каждого проекта
 //!
-//! Дата 25.11.2010\n
-//! Дата создания 25.09.2009\n
+//! Дата создания 19.04.2013\n
 //!
-//! Скопируйте этот файл "irsconfig0.h" в файл с именем "irsconfig.h".
-//! Измените в "irsconfig.h" (но не "irsconfig0.h") опции, если необходимо
+//! Если требуется использовать особые настройки mxsrclib для проекта,
+//!   скопируйте этот файл "irsconfig_proj.h" в каталог проекта. В настройках
+//!   проекта определите define IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION=1
 
-#ifndef IRSCONFIGH 
-#define IRSCONFIGH
-
-#ifndef IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
-# define IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION 0
-#endif // IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
+#ifndef IRSCONFIG_PROJH
+#define IRSCONFIG_PROJH
 
 #if IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
-# include "irsconfig_proj.h"
-#else // !IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
 
 //! \addtogroup configuration_group
 //! @{
@@ -58,6 +52,6 @@
 
 //! @}
 
-#endif // !IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
+#endif // IRS_USE_MXSRCLIB_PROJECT_CONFIGURATION
 
-#endif //IRSCONFIGH  
+#endif //IRSCONFIG_PROJH
