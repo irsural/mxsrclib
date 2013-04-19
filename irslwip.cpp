@@ -70,9 +70,10 @@ void irs::lwip::ethernet_t::start_dhcp()
   #if LWIP_DHCP
   const err_t err = dhcp_start(&m_netif);
   if (err == ERR_MEM) {
-    IRS_LIB_DBG_MSG("Не хватает памяти для запуска DHCP-клиента");
-  } else if (err == ERR_OK) {
-    IRS_LIB_DBG_MSG("Не удалось запустить DHCP-клиента. Код ошибки " << err);
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Не хватает памяти для запуска DHCP-клиента");
+  } else if (err != ERR_OK) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Не удалось запустить DHCP-клиента. "
+      "Код ошибки " << static_cast<int>(err));
   }
   #endif // LWIP_DHCP
 }
