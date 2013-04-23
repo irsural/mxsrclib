@@ -86,6 +86,7 @@ public:
   };
   ethernet_t(simple_ethernet_t* ap_simple_ethernet,
     const configuration_t& a_configuration);
+  ~ethernet_t();
   netif* get_netif();
   void tick();
 private:
@@ -96,6 +97,7 @@ private:
   static struct pbuf * low_level_input();
   static err_t ethernetif_init(struct netif *ap_netif);
   static void low_level_init(struct netif *ap_netif);
+  //static int accept_udp_port(u16_t a_port);
   static simple_ethernet_t* mp_simple_ethernet;
   netif m_netif;
   loop_timer_t m_sys_check_timeouts_loop_timer;
@@ -106,7 +108,11 @@ private:
   #endif // USE_DHCP
 };
 
+} // namespace lwip
+
 namespace hardflow {
+
+namespace lwip {
 
 class tcp_server_t: public hardflow_t
 {
@@ -199,147 +205,6 @@ private:
   timer_t m_delay_before_connect;
 };
 
-struct lwip_address_t
-{
-  ip_addr ip;
-  u16_t port;
-  bool operator<(const lwip_address_t& a_address)
-  {
-    if (ip.addr < a_address.ip.addr) {
-      return true;
-    } else if (ip.addr == a_address.ip.addr) {
-      return port < a_address.port;
-    } else {
-      return false;
-    }
-  }
-};
-
-enum udp_limit_connections_mode_t {
-  udplc_mode_invalid,      //!< \brief Ќедопустимый режим
-  udplc_mode_queue,        //!< \brief ”читываетс€ переменна€ m_max_size
-  udplc_mode_limited,      //!< \brief ”читываетс€ переменна€ m_max_size
-  udplc_mode_unlimited     //!< \brief ѕеременна€ m_max_size не учитываетс€
-};
-
-class udp_channel_list_t
-{
-public:
-  class less_t;
-  class udp_flow_t;
-  typedef hardflow_t::size_type size_type;
-  typedef hardflow_t::string_type string_type;
-  typedef size_type id_type;
-  typedef irs::deque_data_t<irs_u8> buffer_type;
-  struct address_t
-  {
-    mxip_t ip;
-    irs_u16 port;
-    address_t(const mxip_t& a_ip = mxip_t::any_ip(), irs_u16 a_port = 0):
-      ip(a_ip),
-      port(a_port)
-    {
-    }
-    bool operator<(const address_t& a_address) const
-    {
-      if (ip.addr < a_address.ip.addr) {
-        return true;
-      } else if (ip.addr == a_address.ip.addr) {
-        return port < a_address.port;
-      } else {
-        return false;
-      }
-    }
-  };
-  typedef address_t address_type;
-  struct channel_t
-  {
-    address_type address;
-    buffer_type buffer;
-    measure_time_t lifetime;
-    measure_time_t downtime;
-    channel_t():
-      address(),
-      buffer(),
-      lifetime(),
-      downtime()
-    {
-    }
-  };
-  typedef map<address_type, id_type> map_address_id_type;
-  typedef map<address_type, id_type>::iterator map_address_id_iterator;
-  typedef map<id_type, channel_t> map_id_channel_type;
-  typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
-  typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;
-  typedef deque<id_type> queue_id_type;
-
-  enum { invalid_channel = hardflow_t::invalid_channel };
-  udp_channel_list_t(
-    const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
-    const size_type a_max_size = 1000,
-    const size_type a_channel_buf_max_size = 32768,
-    const bool a_limit_lifetime_enabled = false,
-    const double a_max_lifetime_sec = 24*60*60,
-    const bool a_limit_downtime_enabled = false,
-    const double a_max_downtime_sec = 60*60
-  );
-  bool id_get(address_type a_address, id_type* ap_id);
-  bool address_get(id_type a_id, address_type* ap_address);
-  // ¬озвращает false, если достигнут лимит, и true, если адрес успешно
-  // добавлен в список или такой адрес уже есть
-  void insert(address_type a_address, id_type* ap_id, bool* ap_insert_success);
-  void erase(const id_type a_id);
-  bool is_channel_exists(const id_type a_id);
-  size_type channel_buf_max_size_get() const;
-  void channel_buf_max_size_set(size_type a_channel_buf_max_size);
-  double lifetime_get(const id_type a_channel_id) const;
-  bool limit_lifetime_enabled_get() const;
-  void limit_lifetime_enabled_set(bool a_limit_lifetime_enabled);
-  double max_lifetime_get() const;
-  void max_lifetime_set(double a_max_lifetime_sec);
-  void downtime_timer_reset(const id_type a_channel_id);
-  double downtime_get(const id_type a_channel_id) const;
-  bool limit_downtime_enabled_get() const;
-  void limit_downtime_enabled_set(bool a_limit_downtime_enabled);
-  double max_downtime_get() const;
-  void max_downtime_set(double a_max_downtime_sec);
-  void channel_address_get(const id_type a_channel_id,
-    address_type* ap_address) ;
-  void channel_address_set(const id_type a_channel_id,
-    const address_type& a_address);
-  void clear();
-  size_type size();
-  void mode_set(const udp_limit_connections_mode_t a_mode);
-  size_type max_size_get();
-  void max_size_set(size_type a_max_size);
-  size_type write(const address_type& a_address, const irs_u8 *ap_buf,
-    size_type a_size);
-  size_type read(size_type a_id, irs_u8 *ap_buf,
-    size_type a_size);
-  size_type channel_next();
-  size_type cur_channel() const;
-  void tick();
-private:
-  bool lifetime_exceeded(const map_id_channel_iterator);
-  bool downtime_exceeded(const map_id_channel_iterator);
-  void next_free_channel_id();
-  udp_limit_connections_mode_t m_mode;
-  size_type m_max_size;
-  size_type m_channel_id;
-  bool m_channel_id_overflow;
-  const size_type m_channel_max_count;
-  map_id_channel_type m_map_id_channel;
-  map_address_id_type m_map_address_id;
-  queue_id_type m_id_list;
-  size_type m_buf_max_size;
-  map_id_channel_iterator m_it_cur_channel;
-  map_id_channel_iterator m_it_cur_channel_for_check;
-  bool m_max_lifetime_enabled;
-  bool m_max_downtime_enabled;
-  counter_t m_max_lifetime;
-  counter_t m_max_downtime;
-};
-
 class udp_t: public hardflow_t
 {
 public:
@@ -374,6 +239,18 @@ public:
     {
     }
   };
+  //! \param[in] a_local_ip - локальный адрес. ѕример: "127.0.0.1".
+  //!   ћожно указать mxip_t::any_ip(), тогда он будет выбран автоматически.
+  //! \param[in] a_local_port - локальный порт. ѕример: "5005". ћожно
+  //!   указать 0 (рекомендуетс€ дл€ клиента),
+  //!   тогда будет выбран случайный, свободный порт.
+  //! \param[in] a_dest_ip - удаленный адрес. ѕример: "127.0.0.1".
+  //!   ћожно указать mxip_t::any_ip(), если удаленный хост не задан
+  //!   (например дл€ сервера)
+  //! \param[in] a_dest_port - удаленный порт. ѕример: "5005". ћожно
+  //!   указать 0 (например дл€ сервера).
+  //! \param[in] a_channel_max_count - максимальное количество каналов
+  //! \param[in] a_configuration - дополнительные параметры
   udp_t(const mxip_t& a_local_ip, irs_u16 a_local_port,
     const mxip_t& a_dest_ip, irs_u16 a_dest_port,
     const size_type a_channel_max_count = 3,
@@ -391,6 +268,27 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void set_channel_switching_mode(channel_switching_mode_t a_mode);
 private:
+  struct address_t
+  {
+    mxip_t ip;
+    irs_u16 port;
+    address_t(const mxip_t& a_ip = mxip_t::any_ip(), irs_u16 a_port = 0):
+      ip(a_ip),
+      port(a_port)
+    {
+    }
+    bool operator<(const address_t& a_address) const
+    {
+      if (ip.addr < a_address.ip.addr) {
+        return true;
+      } else if (ip.addr == a_address.ip.addr) {
+        return port < a_address.port;
+      } else {
+        return false;
+      }
+    }
+  };
+  typedef address_t address_type;
   void create();
   static void recv(void *arg, udp_pcb *ap_upcb,
     pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port);
@@ -401,13 +299,13 @@ private:
   configuration_t m_configuration;
   const size_type m_channel_max_count;
   udp_pcb* mp_pcb;
-  udp_channel_list_t m_channel_list;
+  udp_channel_list_t<address_type> m_channel_list;
   channel_switching_mode_t m_mode;
 };
 
-} // namespace hardflow
-
 } // namespace lwip
+
+} // namespace hardflow
 
 } // namespace irs
 

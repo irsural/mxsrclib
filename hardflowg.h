@@ -75,6 +75,36 @@
 # define IRS_LIB_HARDFLOWG_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 #endif // IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
 
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
+inline unsigned long extract_ip(const sockaddr_in& a_address)
+{
+  #if defined(IRS_WIN32)
+  return a_address.sin_addr.S_un.S_addr;
+  #elif defined (IRS_LINUX)
+  return a_address.sin_addr.s_addr;
+  #else //arch
+  #error Current architecture not supported. Supported only IRS_WIN32 \
+    and IRS_LINUX
+  return 0;
+  #endif //arch
+}
+
+inline bool operator<(const sockaddr_in& a_first_adr,
+  const sockaddr_in& a_second_adr)
+{
+  bool first_less_second = false;
+  if (extract_ip(a_first_adr) < extract_ip(a_second_adr))
+  {
+    first_less_second = true;
+  } else if (extract_ip(a_first_adr) == extract_ip(a_second_adr)) {
+    first_less_second = (a_first_adr.sin_port < a_second_adr.sin_port);
+  } else {
+    // Первый больше второго
+  }
+  return first_less_second;
+};
+#endif // defined(IRS_WIN32) || defined(IRS_LINUX)
+
 namespace irs {
 
 //! \brief Абстрактный интерфейс для классов, реализующих обмен данными по
@@ -141,6 +171,784 @@ namespace hardflow {
 //! @{
 
 typedef hardflow_t::string_type stringns_t;
+
+enum udp_limit_connections_mode_t {
+  udplc_mode_invalid,      //!< \brief Недопустимый режим
+  udplc_mode_queue,        //!< \brief Учитывается переменная m_max_size
+  udplc_mode_limited,      //!< \brief Учитывается переменная m_max_size
+  udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
+};
+
+
+
+template <class address_t>
+class udp_channel_list_t
+{
+public:
+  class less_t;
+  class udp_flow_t;
+  typedef hardflow_t::size_type size_type;
+  typedef hardflow_t::string_type string_type;
+  typedef size_type id_type;
+  typedef irs::deque_data_t<irs_u8> buffer_type;
+
+  typedef address_t address_type;
+  struct channel_t
+  {
+    address_type address;
+    buffer_type buffer;
+    measure_time_t lifetime;
+    measure_time_t downtime;
+    channel_t():
+      address(),
+      buffer(),
+      lifetime(),
+      downtime()
+    {
+    }
+  };
+  typedef map<address_type, id_type> map_address_id_type;
+  typedef typename map<address_type, id_type>::iterator map_address_id_iterator;
+  typedef map<id_type, channel_t> map_id_channel_type;
+  typedef typename map<id_type, channel_t>::iterator map_id_channel_iterator;
+  typedef typename map<id_type, channel_t>::const_iterator
+    map_id_channel_const_iterator;
+  typedef deque<id_type> queue_id_type;
+
+  enum { invalid_channel = hardflow_t::invalid_channel };
+  udp_channel_list_t(
+    const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
+    const size_type a_max_size = 1000,
+    const size_type a_channel_buf_max_size = 32768,
+    const bool a_limit_lifetime_enabled = false,
+    const double a_max_lifetime_sec = 24*60*60,
+    const bool a_limit_downtime_enabled = false,
+    const double a_max_downtime_sec = 60*60
+  );
+  bool id_get(address_type a_address, id_type* ap_id);
+  bool address_get(id_type a_id, address_type* ap_address);
+  // Возвращает false, если достигнут лимит, и true, если адрес успешно
+  // добавлен в список или такой адрес уже есть
+  void insert(address_type a_address, id_type* ap_id, bool* ap_insert_success);
+  void erase(const id_type a_id);
+  bool is_channel_exists(const id_type a_id);
+  size_type channel_buf_max_size_get() const;
+  void channel_buf_max_size_set(size_type a_channel_buf_max_size);
+  double lifetime_get(const id_type a_channel_id) const;
+  bool limit_lifetime_enabled_get() const;
+  void limit_lifetime_enabled_set(bool a_limit_lifetime_enabled);
+  double max_lifetime_get() const;
+  void max_lifetime_set(double a_max_lifetime_sec);
+  void downtime_timer_reset(const id_type a_channel_id);
+  double downtime_get(const id_type a_channel_id) const;
+  bool limit_downtime_enabled_get() const;
+  void limit_downtime_enabled_set(bool a_limit_downtime_enabled);
+  double max_downtime_get() const;
+  void max_downtime_set(double a_max_downtime_sec);
+  void channel_address_get(const id_type a_channel_id,
+    address_type* ap_address) ;
+  void channel_address_set(const id_type a_channel_id,
+    const address_type& a_address);
+  void clear();
+  size_type size();
+  void mode_set(const udp_limit_connections_mode_t a_mode);
+  size_type max_size_get();
+  void max_size_set(size_type a_max_size);
+  size_type write(const address_type& a_address, const irs_u8 *ap_buf,
+    size_type a_size);
+  size_type read(size_type a_id, irs_u8 *ap_buf,
+    size_type a_size);
+  size_type channel_next();
+  size_type cur_channel() const;
+  void tick();
+private:
+  bool lifetime_exceeded(const map_id_channel_iterator);
+  bool downtime_exceeded(const map_id_channel_iterator);
+  void next_free_channel_id();
+  udp_limit_connections_mode_t m_mode;
+  size_type m_max_size;
+  size_type m_channel_id;
+  bool m_channel_id_overflow;
+  const size_type m_channel_max_count;
+  map_id_channel_type m_map_id_channel;
+  map_address_id_type m_map_address_id;
+  queue_id_type m_id_list;
+  size_type m_buf_max_size;
+  map_id_channel_iterator m_it_cur_channel;
+  map_id_channel_iterator m_it_cur_channel_for_check;
+  bool m_max_lifetime_enabled;
+  bool m_max_downtime_enabled;
+  counter_t m_max_lifetime;
+  counter_t m_max_downtime;
+};
+
+template <class address_t>
+irs::hardflow::udp_channel_list_t<address_t>::udp_channel_list_t(
+  const udp_limit_connections_mode_t a_mode,
+  const size_type a_max_size,
+  const size_type a_channel_buf_max_size,
+  const bool a_limit_lifetime_enabled,
+  const double a_max_lifetime_sec,
+  const bool a_limit_downtime_enabled,
+  const double a_max_downtime_sec
+):
+  m_mode(a_mode),
+  m_max_size(min(a_max_size, static_cast<size_type>(-1))),
+  m_channel_id(invalid_channel + 1),
+  m_channel_id_overflow(false),
+  m_channel_max_count(static_cast<size_type>(-1)),
+  m_map_id_channel(),
+  //m_map_id_address(),
+  m_map_address_id(),
+  m_id_list(),
+  m_buf_max_size(a_channel_buf_max_size),
+  m_it_cur_channel(m_map_id_channel.end()),
+  m_it_cur_channel_for_check(m_map_id_channel.end()),
+  m_max_lifetime_enabled(a_limit_lifetime_enabled),
+  m_max_downtime_enabled(a_limit_downtime_enabled),
+  m_max_lifetime(irs::make_cnt_s(a_max_lifetime_sec)),
+  m_max_downtime(irs::make_cnt_s(a_max_downtime_sec))
+{
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address,
+  id_type* ap_id, bool* ap_insert_success)
+{
+  *ap_insert_success = false;
+  // Ищем, есть ли уже такой адрес в списке
+  map_address_id_iterator it_map_addr_id = m_map_address_id.find(a_address);
+  if (it_map_addr_id == m_map_address_id.end()) {
+    bool allow_add = false;
+    switch (m_mode) {
+      case udplc_mode_queue: {
+        IRS_ASSERT(m_id_list.size() <= m_max_size);
+        if (m_id_list.size() < m_max_size) {
+          allow_add = true;
+        } else {
+          if (m_id_list.size() > 0) {
+            erase(m_id_list.front());
+            allow_add = true;
+          } else {
+            // Максимальный размер установлен в ноль
+          }
+        }
+      } break;
+      case udplc_mode_limited: {
+        IRS_ASSERT(m_id_list.size() <= m_max_size);
+        if (m_id_list.size() < m_max_size) {
+          allow_add = true;
+        } else {
+          // Достигнут лимит количества записей
+        }
+      } break;
+      case udplc_mode_unlimited: {
+        if (m_id_list.size() <= m_channel_max_count) {
+          allow_add = true;
+        } else {
+          // Достигнут лимит количества записей
+        }
+      } break;
+      default : {
+        IRS_ASSERT_MSG("Неизвестный вариант рабочего режима");
+      }
+    }
+    if (allow_add) {
+      next_free_channel_id();
+      IRS_LIB_ASSERT(m_channel_id != invalid_channel);
+      channel_t channel;
+      channel.address = a_address;
+      channel.lifetime.start();
+      channel.downtime.start();
+      const size_type channel_prev_count = m_id_list.size();
+      std::pair<map_id_channel_iterator, bool> map_id_channel_res;
+      std::pair<map_address_id_iterator, bool> map_address_id_res;
+      try {
+        map_id_channel_res =
+          m_map_id_channel.insert(make_pair(m_channel_id, channel));
+        map_address_id_res =
+          m_map_address_id.insert(make_pair(a_address, m_channel_id));
+        m_id_list.push_back(m_channel_id);
+        *ap_id = m_channel_id;
+        if (m_it_cur_channel == m_map_id_channel.end()) {
+          m_it_cur_channel = m_map_id_channel.begin();
+        } else {
+          // Текущий канал уже установлен
+        }
+        if (m_it_cur_channel_for_check == m_map_id_channel.end()) {
+          m_it_cur_channel_for_check = m_map_id_channel.begin();
+        } else {
+          // Текущий канал для проверки уже установлен
+        }
+        *ap_insert_success = true;
+      } catch (...) {
+        if (m_map_id_channel.size() > channel_prev_count) {
+          m_map_id_channel.erase(map_id_channel_res.first);
+        }
+        if (m_map_address_id.size() > channel_prev_count) {
+          m_map_address_id.erase(map_address_id_res.first);
+        }
+        m_id_list.resize(channel_prev_count);
+      }
+    } else {
+      // Добавление не разрешено
+    }
+  } else {
+    // Элемент уже присутсвует в списке
+    *ap_id = it_map_addr_id->second;
+    *ap_insert_success = true;
+  }
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::id_get(
+  address_type a_address, id_type* ap_id)
+{
+  bool find_success = false;
+  map_address_id_iterator it_map_addr_id = m_map_address_id.end();
+  it_map_addr_id = m_map_address_id.find(a_address);
+  if (it_map_addr_id != m_map_address_id.end()) {
+    *ap_id = it_map_addr_id->second;
+    find_success = true;
+  } else {
+    find_success = false;
+  }
+  return find_success;
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::address_get(id_type a_id,
+  address_type* ap_address)
+{
+  bool find_success = true;
+  map_id_channel_iterator it_map_id_channel = m_map_id_channel.find(a_id);
+  if (it_map_id_channel != m_map_id_channel.end()) {
+    *ap_address = it_map_id_channel->second.address;
+    find_success = true;
+  } else {
+    find_success = false;
+  }
+  return find_success;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::erase(id_type a_id)
+{
+  map_id_channel_iterator it_erase_channel =
+    m_map_id_channel.find(a_id);
+  if (it_erase_channel != m_map_id_channel.end()) {
+    if (m_it_cur_channel == it_erase_channel) {
+      if (m_it_cur_channel != m_map_id_channel.begin()) {
+        m_it_cur_channel--;
+      } else {
+        m_it_cur_channel = m_map_id_channel.end();
+        if (m_map_id_channel.size() > 1) {
+          m_it_cur_channel--;
+        } else {
+          // Текущий канал оставляем неопределенным,
+          // так как удаляется последний канал
+        }
+      }
+    } else {
+      // Удаляемый канал не совпадает с текущим
+    }
+    if (m_it_cur_channel_for_check == it_erase_channel) {
+      if (m_it_cur_channel_for_check != m_map_id_channel.begin()) {
+        m_it_cur_channel_for_check--;
+      } else {
+        m_it_cur_channel_for_check = m_map_id_channel.end();
+        if (m_map_id_channel.size() > 1) {
+          m_it_cur_channel_for_check--;
+        } else {
+          // Текущий канал оставляем неопределенным,
+          // так как удаляется последний канал
+        }
+      }
+    } else {
+      // Удаляемый канал не совпадает с текущим
+    }
+    map_address_id_iterator it_map_address_id =
+      m_map_address_id.find(it_erase_channel->second.address);
+    queue_id_type::iterator it_id =
+      find(m_id_list.begin(), m_id_list.end(), a_id);
+    m_map_id_channel.erase(it_erase_channel);
+    m_map_address_id.erase(it_map_address_id);
+    m_id_list.erase(it_id);
+  } else {
+    IRS_LIB_ASSERT_MSG("Канал отсутсвует");
+  }
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::is_channel_exists(const id_type a_id)
+{
+  return m_map_id_channel.find(a_id) != m_map_id_channel.end();
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::channel_buf_max_size_get() const
+{
+  return m_buf_max_size;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::channel_buf_max_size_set(
+  size_type a_channel_buf_max_size)
+{
+  m_buf_max_size = a_channel_buf_max_size;
+  map_id_channel_iterator it_channel = m_map_id_channel.begin();
+  while (it_channel != m_map_id_channel.end()) {
+    it_channel->second.buffer.resize(m_buf_max_size);
+  }
+}
+
+template <class address_t>
+double irs::hardflow::udp_channel_list_t<address_t>::lifetime_get(
+  const id_type a_channel_id) const
+{
+  double channel_lifetime = 0.;
+  map_id_channel_const_iterator it_channel =
+    m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    channel_lifetime = it_channel->second.lifetime.get();
+  } else {
+    // Канал отсутсвует
+  }
+  return channel_lifetime;
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::limit_lifetime_enabled_get() const
+{
+  return m_max_lifetime_enabled;
+}
+
+template <class address_t>
+double irs::hardflow::udp_channel_list_t<address_t>::max_lifetime_get() const
+{
+  return CNT_TO_DBLTIME(m_max_lifetime);
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::max_lifetime_set(
+  double a_max_lifetime_sec)
+{
+  m_max_lifetime = irs::make_cnt_s(a_max_lifetime_sec);
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::limit_lifetime_enabled_set(
+  bool a_limit_lifetime_enabled)
+{
+  m_max_lifetime_enabled = a_limit_lifetime_enabled;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::downtime_timer_reset(
+  const id_type a_channel_id)
+{
+  map_id_channel_iterator it_channel =
+    m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    it_channel->second.downtime.start();
+  } else {
+    // Канал отсутсвует
+  }
+}
+
+template <class address_t>
+double irs::hardflow::udp_channel_list_t<address_t>::downtime_get(
+  const id_type a_channel_id) const
+{
+  double channel_downtime = 0.;
+  map_id_channel_const_iterator it_channel =
+    m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    channel_downtime = it_channel->second.downtime.get();
+  } else {
+    // Канал отсутсвует
+  }
+  return channel_downtime;
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::limit_downtime_enabled_get() const
+{
+  return m_max_downtime_enabled;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::limit_downtime_enabled_set(
+  bool a_limit_downtime_enabled)
+{
+  m_max_downtime_enabled = a_limit_downtime_enabled;
+}
+
+template <class address_t>
+double irs::hardflow::udp_channel_list_t<address_t>::max_downtime_get() const
+{
+  return CNT_TO_DBLTIME(m_max_downtime);
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::max_downtime_set(
+  double a_max_downtime_sec)
+{
+  m_max_downtime = irs::make_cnt_s(a_max_downtime_sec);
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::channel_address_get(
+  const id_type a_channel_id, address_type* ap_address)
+{
+  map_id_channel_iterator it_channel = m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    *ap_address = it_channel->second.address;
+  } else {
+    // Канал не найден
+  }
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::channel_address_set(
+  const id_type a_channel_id, const address_type& a_address)
+{
+  map_id_channel_iterator it_channel = m_map_id_channel.find(a_channel_id);
+  if (it_channel != m_map_id_channel.end()) {
+    map_address_id_iterator it_map_addr_id = m_map_address_id.find(
+      it_channel->second.address);
+    if (it_map_addr_id != m_map_address_id.end()) {
+      it_channel->second.address = a_address;
+      it_channel->second.buffer.clear();
+      const id_type id = it_map_addr_id->second;
+      m_map_address_id.erase(it_map_addr_id);
+      m_map_address_id.insert(make_pair(a_address, id));
+    } else {
+      IRS_LIB_ASSERT_MSG("Канал с таким адресом должен существовать в "
+        "обоих списках");
+    }
+  } else {
+    // Канал не найден
+  }
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::clear()
+{
+  m_map_id_channel.clear();
+  m_map_address_id.clear();
+  m_id_list.clear();
+  m_it_cur_channel = m_map_id_channel.end();
+  m_it_cur_channel_for_check = m_map_id_channel.end();
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::size()
+{
+  return m_id_list.size();
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::mode_set(
+  const udp_limit_connections_mode_t a_mode)
+{
+  m_mode = a_mode;
+  switch (m_mode) {
+    case udplc_mode_queue: {
+      if (m_id_list.size() > m_max_size) {
+        size_type address_count_need_delete = m_id_list.size() - m_max_size;
+        for (size_type id_i = 0; id_i < address_count_need_delete; id_i++) {
+          erase(m_id_list.front());
+        }
+      } else {
+        // Удаление объектов не требуется
+      }
+    } break;
+    case udplc_mode_limited: {
+      if (m_id_list.size() > m_max_size) {
+        size_type address_count_need_delete = m_id_list.size() - m_max_size;
+        for (size_type id_i = 0; id_i < address_count_need_delete; id_i++) {
+          erase(m_id_list.back());
+        }
+      } else {
+        // Удаление объектов не требуется
+      }
+    } break;
+    case udplc_mode_unlimited: {
+      // Удаление не требуется
+    } break;
+    default : {
+      IRS_ASSERT_MSG("Неизвестный тип рабочего режима");
+    }
+  }
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::max_size_get()
+{
+  return m_max_size;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::max_size_set(
+  size_type a_max_size)
+{
+  m_max_size = min(a_max_size, m_channel_max_count);
+  switch (m_mode) {
+    case udplc_mode_queue: {
+      if (m_id_list.size() > m_max_size) {
+        const size_type channel_erase_count = m_id_list.size() - m_max_size;
+        for (size_type channel_i = 0; channel_i < channel_erase_count;
+          channel_i++)
+        {
+          erase(m_id_list.front());
+          m_id_list.pop_front();
+        }
+      } else {
+        // Удаление лишних каналов не требуется
+      }
+    } break;
+    case udplc_mode_limited: {
+      const size_type channel_erase_count = m_id_list.size() - m_max_size;
+      for (size_type channel_i = 0; channel_i < channel_erase_count;
+        channel_i++)
+      {
+        erase(m_id_list.back());
+        m_id_list.pop_back();
+      }
+    } break;
+    case udplc_mode_unlimited: {
+      // Удаление каналов не требуется
+    } break;
+    default : {
+      IRS_ASSERT_MSG("Неизвестный вариант рабочего режима");
+    }
+  }
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::write(
+  const address_type& a_address, const irs_u8 *ap_buf, size_type a_size)
+{
+  size_type write_byte_count = 0;
+  bool channel_exists = false;
+  id_type id = 0;
+  // Проверяем наличие канала и создаем, если его не существует
+  insert(a_address, &id, &channel_exists);
+  if (channel_exists) {
+    map_id_channel_iterator it_map_id_channel =
+      m_map_id_channel.find(id);
+    if (it_map_id_channel != m_map_id_channel.end()) {
+      buffer_type& buf = it_map_id_channel->second.buffer;
+      IRS_LIB_ASSERT(buf.size() <= m_buf_max_size);
+      write_byte_count = min(a_size, m_buf_max_size - buf.size());
+      buf.push_back(ap_buf, ap_buf + write_byte_count);
+      it_map_id_channel->second.downtime.start();
+    } else {
+      IRS_LIB_ASSERT_MSG("Канал отсутсвует в списке");
+    }
+  } else {
+    // Канала с таким адресом не существует и создать его не удалось
+  }
+  return write_byte_count;
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::read(size_type a_id,
+  irs_u8 *ap_buf, size_type a_size)
+{
+  size_type read_byte_count = 0;
+  map_id_channel_iterator it_map_id_channel =
+    m_map_id_channel.find(a_id);
+  if (it_map_id_channel != m_map_id_channel.end()) {
+    buffer_type& buf = it_map_id_channel->second.buffer;
+    read_byte_count = min(buf.size(), a_size);
+    if (read_byte_count > 0) {
+      buf.copy_to(0, read_byte_count, ap_buf);
+      buf.pop_front(read_byte_count);
+      it_map_id_channel->second.downtime.start();
+    } else {
+      // Нет данных в буфере
+    }
+  } else {
+    // Этого канала не существует
+  }
+  return read_byte_count;
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::channel_next()
+{
+  size_type cur_channel_id = invalid_channel;
+  if (m_it_cur_channel != m_map_id_channel.end()) {
+    m_it_cur_channel++;
+  } else {
+    // Текущий канал не установлен
+  }
+  if (m_it_cur_channel != m_map_id_channel.end()) {
+    cur_channel_id = m_it_cur_channel->first;
+  } else {
+    m_it_cur_channel = m_map_id_channel.begin();
+    if (m_it_cur_channel != m_map_id_channel.end()) {
+      cur_channel_id = m_it_cur_channel->first;
+    } else {
+      // Нет ни одного канала
+    }
+  }
+  return cur_channel_id;
+}
+
+template <class address_t>
+typename irs::hardflow::udp_channel_list_t<address_t>::size_type
+irs::hardflow::udp_channel_list_t<address_t>::cur_channel() const
+{
+  id_type channel_id = invalid_channel;
+  if (m_it_cur_channel != m_map_id_channel.end()) {
+    channel_id = m_it_cur_channel->first;
+  } else {
+    // Текущий канал не установлен
+  }
+  return channel_id;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::tick()
+{
+  if (m_max_lifetime_enabled || m_max_downtime_enabled) {
+    if (m_it_cur_channel_for_check == m_map_id_channel.end()) {
+      m_it_cur_channel_for_check = m_map_id_channel.begin();
+    } else {
+      // Текущий канал правильный
+    }
+    if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
+      bool channel_need_destroy = false;
+      if (m_max_lifetime_enabled) {
+        if (lifetime_exceeded(m_it_cur_channel_for_check)) {
+          channel_need_destroy = true;
+        } else {
+          // Максимальное время жизни не превышено
+        }
+      } else {
+        // Проверка времени жизни отключена
+      }
+      if (m_max_downtime_enabled) {
+        if (downtime_exceeded(m_it_cur_channel_for_check)) {
+          channel_need_destroy = true;
+        } else {
+          // Максимальное время бездействие не превышено
+        }
+      } else {
+        // Проверка времени бездействия отключена
+      }
+      if (channel_need_destroy) {
+        erase(m_it_cur_channel_for_check->first);
+      } else {
+        // Время жизни и время бездействия не превышено
+        m_it_cur_channel_for_check++;
+      }
+    } else {
+      // Нет ни одного канала
+      IRS_LIB_ASSERT(m_map_id_channel.empty());
+    }
+  } else {
+    // Проверка времени жизни и времени бездействия отключена
+  }
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::lifetime_exceeded(
+  const map_id_channel_iterator /*a_it_cur_channel*/)
+{
+  bool lifetime_exceeded_status = false;
+  if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
+    if (m_it_cur_channel_for_check->second.lifetime.get_cnt() > m_max_lifetime)
+    {
+      lifetime_exceeded_status = true;
+    } else {
+      // Максимальное время жизни не превышено
+    }
+  } else {
+    // Недопустимый канал
+  }
+  return lifetime_exceeded_status;
+}
+
+template <class address_t>
+bool irs::hardflow::udp_channel_list_t<address_t>::downtime_exceeded(
+  const map_id_channel_iterator /*a_it_cur_channel*/)
+{
+  bool downtime_exceeded_status = false;
+  if (m_it_cur_channel_for_check != m_map_id_channel.end()) {
+    if (m_it_cur_channel_for_check->second.downtime.get_cnt() > m_max_downtime)
+    {
+      downtime_exceeded_status = true;
+    } else {
+      // Максимальное время бездействия не превышено
+    }
+  } else {
+    // Недопустимый канал
+  }
+  return downtime_exceeded_status;
+}
+
+template <class address_t>
+void irs::hardflow::udp_channel_list_t<address_t>::next_free_channel_id()
+{
+  if (!m_channel_id_overflow) {
+    m_channel_id++;
+    if (m_channel_id == invalid_channel) {
+      m_channel_id_overflow = true;
+    } else {
+      // Переполнение не произошло
+    }
+  } else {
+    // Уже было переполнение счетчика
+  }
+  if (m_channel_id_overflow) {
+    if (m_map_id_channel.size() < m_channel_max_count) {
+      if(m_channel_id == invalid_channel) {
+        m_channel_id++;
+      }
+      map_id_channel_iterator it_prev =
+        m_map_id_channel.find(m_channel_id);
+      map_id_channel_iterator it_cur = it_prev;
+      if(it_cur != m_map_id_channel.end()) {
+        while(true) {
+          it_cur++;
+          if(it_cur == m_map_id_channel.end()) {
+            m_channel_id = it_prev->first + 1;
+            if(m_channel_id == invalid_channel) {
+              m_channel_id++;
+            }
+            it_prev = m_map_id_channel.find(m_channel_id);
+            it_cur = it_prev;
+            if(it_cur == m_map_id_channel.end()) {
+              break;
+            }
+          } else if((it_cur->first - it_prev->first) > 1) {
+            m_channel_id = it_prev->first + 1;
+            break;
+          }
+          it_prev = it_cur;
+        }
+      } else {
+        // Текущее значение идентификатора является уникальным
+      }
+    } else {
+      IRS_LIB_HARDFLOWG_DBG_RAW_MSG_DETAIL(
+        "Нет свободных мест для нового канала" << endl);
+      m_channel_id = invalid_channel;
+    }
+  } else {
+    // Переполнения счетчика не было
+  }
+}
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -253,133 +1061,6 @@ bool lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
   int a_version_minor);
 #endif // defined(IRS_WIN32)
 
-enum udp_limit_connections_mode_t {
-  udplc_mode_invalid,      //!< \brief Недопустимый режим
-  udplc_mode_queue,        //!< \brief Учитывается переменная m_max_size
-  udplc_mode_limited,      //!< \brief Учитывается переменная m_max_size
-  udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
-};
-//! \brief Вспомогательный класс для udp_flow_t
-//! \author Lyashchov Maxim
-class udp_channel_list_t
-{
-public:
-  class less_t;
-  class udp_flow_t;
-  typedef hardflow_t::size_type size_type;
-  typedef hardflow_t::string_type string_type;
-  typedef sockaddr_in adress_type;
-  typedef size_type id_type;
-  typedef irs::deque_data_t<irs_u8> bufer_type;
-  struct channel_t
-  {
-    adress_type adress;
-    bufer_type bufer;
-    measure_time_t lifetime;
-    measure_time_t downtime;
-  };
-  typedef map<adress_type, id_type, less_t> map_adress_id_type;
-  typedef map<id_type, channel_t> map_id_channel_type;
-  typedef map<id_type, channel_t>::iterator map_id_channel_iterator;
-  typedef map<id_type, channel_t>::const_iterator map_id_channel_const_iterator;
-  typedef deque<id_type> queue_id_type;
-  class less_t
-  {
-  public:
-    unsigned long extract_ip(const adress_type& a_address) const
-    {
-      #if defined(IRS_WIN32)
-      return a_address.sin_addr.S_un.S_addr;
-      #elif defined (IRS_LINUX)
-      return a_address.sin_addr.s_addr;
-      #else //arch
-      #error Current architecture not supported. Supported only IRS_WIN32 \
-        and IRS_LINUX
-      return 0;
-      #endif //arch
-    }
-    bool operator()(const adress_type& a_first_adr,
-      const adress_type& a_second_adr) const
-    {
-      bool first_less_second = false;
-      if (extract_ip(a_first_adr) < extract_ip(a_second_adr))
-      {
-        first_less_second = true;
-      } else if (extract_ip(a_first_adr) == extract_ip(a_second_adr)) {
-        first_less_second = (a_first_adr.sin_port < a_second_adr.sin_port);
-      } else {
-        // Первый больше второго
-      }
-      return first_less_second;
-    };
-  };
-  enum { invalid_channel = hardflow_t::invalid_channel };
-  udp_channel_list_t(
-    const udp_limit_connections_mode_t a_mode = udplc_mode_queue,
-    const size_type a_max_size = 1000,
-    const size_type a_channel_buf_max_size = 32768,
-    const bool a_limit_lifetime_enabled = false,
-    const double a_max_lifetime_sec = 24*60*60,
-    const bool a_limit_downtime_enabled = false,
-    const double a_max_downtime_sec = 60*60
-  );
-  bool id_get(adress_type a_adress, id_type* ap_id);
-  bool adress_get(id_type a_id, adress_type* ap_adress);
-  // Возвращает false, если достигнут лимит, и true, если адрес успешно
-  // добавлен в список или такой адрес уже есть
-  void insert(adress_type a_adress, id_type* ap_id, bool* ap_insert_success);
-  void erase(const id_type a_id);
-  bool is_channel_exists(const id_type a_id);
-  size_type channel_buf_max_size_get() const;
-  void channel_buf_max_size_set(size_type a_channel_buf_max_size);
-  double lifetime_get(const id_type a_channel_id) const;
-  bool limit_lifetime_enabled_get() const;
-  void limit_lifetime_enabled_set(bool a_limit_lifetime_enabled);
-  double max_lifetime_get() const;
-  void max_lifetime_set(double a_max_lifetime_sec);
-  void downtime_timer_reset(const id_type a_channel_id);
-  double downtime_get(const id_type a_channel_id) const;
-  bool limit_downtime_enabled_get() const;
-  void limit_downtime_enabled_set(bool a_limit_downtime_enabled);
-  double max_downtime_get() const;
-  void max_downtime_set(double a_max_downtime_sec);
-  void channel_adress_get(const id_type a_channel_id,
-    adress_type* ap_adress) ;
-  void channel_adress_set(const id_type a_channel_id,
-    const adress_type& a_adress);
-  void clear();
-  size_type size();
-  void mode_set(const udp_limit_connections_mode_t a_mode);
-  size_type max_size_get();
-  void max_size_set(size_type a_max_size);
-  size_type write(const adress_type& a_adress, const irs_u8 *ap_buf,
-    size_type a_size);
-  size_type read(size_type a_id, irs_u8 *ap_buf,
-    size_type a_size);
-  size_type channel_next();
-  size_type cur_channel() const;
-  void tick();
-private:
-  bool lifetime_exceeded(const map_id_channel_iterator);
-  bool downtime_exceeded(const map_id_channel_iterator);
-  void next_free_channel_id();
-  udp_limit_connections_mode_t m_mode;
-  size_type m_max_size;
-  size_type m_channel_id;
-  bool m_channel_id_overflow;
-  const size_type m_channel_max_count;
-  map_id_channel_type m_map_id_channel;
-  map_adress_id_type m_map_adress_id;
-  queue_id_type m_id_list;
-  size_type m_buf_max_size;
-  map_id_channel_iterator m_it_cur_channel;
-  map_id_channel_iterator m_it_cur_channel_for_check;
-  bool m_max_lifetime_enabled;
-  bool m_max_downtime_enabled;
-  counter_t m_max_lifetime;
-  counter_t m_max_downtime;
-};
-
 //! \brief Реализует обмен данными по UDP протоколу
 //! \author Lyashchov Maxim
 class udp_flow_t: public hardflow_t
@@ -387,7 +1068,7 @@ class udp_flow_t: public hardflow_t
 public:
   //typedef hardflow_t::size_type size_type;
   //typedef string_t string_type;
-  typedef udp_channel_list_t::adress_type adress_type;
+  typedef sockaddr_in address_type;
   //! \brief Режим работы с каналами
   enum mode_t {
     invalid_mode,             //!< \brief Недопустимый режим
@@ -459,7 +1140,7 @@ private:
   timeval m_func_select_timeout;
   fd_set m_s_kit;
   size_type m_send_msg_max_size;
-  udp_channel_list_t m_channel_list;
+  udp_channel_list_t<address_type> m_channel_list;
   irs::raw_data_t<irs_u8> m_read_buf;
 
 public:
