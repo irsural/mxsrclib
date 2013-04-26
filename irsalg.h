@@ -227,6 +227,32 @@ data_t irs::sko_calc_t<data_t, calc_t>::average()const {
   return sum() / size;
 }
 
+namespace irs {
+  template<class data_t, class calc_t>
+  calc_t sko_calc(data_t* ap_buff, size_t a_size) {
+    calc_t result = 0;
+    if ((ap_buff != IRS_NULL) && (a_size != 0)) {
+      irs::c_array_view_t<data_t> buff = 
+        irs::c_array_view_t<data_t>(
+        reinterpret_cast<data_t*>(ap_buff), a_size);
+      calc_t sum = 0;
+      for (size_t i = 0; i < a_size; i++) {
+        sum += static_cast<calc_t>(buff[i]);
+      }
+      calc_t average = sum / a_size;
+      calc_t val = 0;
+      calc_t square_sum = 0;
+      for (size_t i = 0; i < a_size; i++) {
+        val = static_cast<calc_t>(buff[i]);
+        val -= average;
+        square_sum += val * val; 
+      }
+      result = sqrt(square_sum / a_size);
+    }
+    return result;
+  }  
+} //namespace irs 
+
 
 namespace irs {
 

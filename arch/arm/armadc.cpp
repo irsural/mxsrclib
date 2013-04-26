@@ -960,7 +960,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
       m_regular_channels_values.push_back(0);
     }
   }
-
+  
   const irs_u32 channel_mask = a_selected_channels & 0xFFFFFF;
   if ((a_adc_address == IRS_ADC1_BASE) &&
     (a_selected_channels & ADC1_MASK) &&
@@ -1118,8 +1118,8 @@ irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
 }
 
 irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
-   irs::c_array_view_t<irs_u16> a_buff,
-    double a_frequency
+  irs::c_array_view_t<irs_u16> a_buff,
+  double a_frequency
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(ap_settings->adc_address)),
   m_regular_channels_values(),
