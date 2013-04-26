@@ -500,13 +500,16 @@ irs_bool irs::correct_t<IN_X, IN_Y, OUT_Z, K>::test_map()
   if (mp_map->m_map_id == 0) return irs_false;
   if (mp_map->m_x_count < 1) return irs_false;
   if (mp_map->m_y_count < 1) return irs_false;
-  for (irs_uarc x_index = 1; x_index < mp_map->m_x_count; x_index++)
-    if (mp_map->mp_x_points[x_index] <= mp_map->mp_x_points[x_index-1])
+  for (irs_uarc x_index = 1; x_index < mp_map->m_x_count; x_index++) {
+    if (mp_map->mp_x_points[x_index] <= mp_map->mp_x_points[x_index-1]) {
       return irs_false;
-
-  for (irs_uarc y_index = 1; y_index < mp_map->m_y_count; y_index++)
-    if (mp_map->mp_y_points[y_index] <= mp_map->mp_y_points[y_index-1])
+    }
+  }
+  for (irs_uarc y_index = 1; y_index < mp_map->m_y_count; y_index++) {
+    if (mp_map->mp_y_points[y_index] <= mp_map->mp_y_points[y_index-1]) {
       return irs_false;
+    }
+  }
   return irs_true;
 }
 
