@@ -197,13 +197,15 @@ irs::adc_ad7791_t::adc_ad7791_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   irs_u8 mp_init_buffer[m_init_sequence_size];
   memset(static_cast<void*>(mp_init_buffer), 0xFF, m_reset_sequence_size);
   mp_init_buffer[4] = (1 << RS0)|(0 << CH0)|(0 << CH1);
-  mp_init_buffer[5] = (0 << MD1)|(0 << MD0)|(1 << BO)|(1 << UB)|(1 << BUF);
+  mp_init_buffer[5] = (0 << MD1)|(0 << MD0)|(0 << BO)|(1 << UB)|(1 << BUF);
   mp_init_buffer[6] = (1 << RS1);
   mp_init_buffer[7] = (1 << FS2)|(0 << FS1)|(1 << FS0);
+  mp_spi->lock();
   mp_cs_pin->clear();
   mp_spi->write(mp_init_buffer, m_init_sequence_size);
   for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
   mp_cs_pin->set();
+  mp_spi->unlock();
 }
 
 irs::adc_ad7791_t::~adc_ad7791_t()
@@ -279,12 +281,13 @@ void irs::adc_ad7791_t::tick()
         {
           set_to_cnt(m_read_counter, m_read_delay);
           mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
+          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
           mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
           mp_cs_pin->clear();
-          irs_u8 request = (1 << RW)|(1 << RS0)|(1 << RS1)|(0 << CH0)|(0 << CH1);
-          mp_spi->write(&request, sizeof(request));
+          memset(static_cast<void*>(mp_spi_buf), 0, m_spi_size);
+          mp_spi_buf[0] = (1 << RW)|(1 << RS0)|(1 << RS1)|(0 << CH0)|(0 << CH1);
+          mp_spi->write(mp_spi_buf, sizeof(mp_spi_buf[0]));
           m_status = ADC_REQUEST;
         }
       }
