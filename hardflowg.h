@@ -179,8 +179,6 @@ enum udp_limit_connections_mode_t {
   udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
 };
 
-
-
 template <class address_t>
 class udp_channel_list_t
 {
@@ -1654,6 +1652,56 @@ public:
   virtual void tick();
 };
 
+class connector_t: public hardflow_t
+{
+public:
+  connector_t(hardflow_t* ap_hardflow):
+    mp_hardflow(ap_hardflow)
+  {
+  }
+  virtual string_type param(const string_type& a_name)
+  {
+    return mp_hardflow->param(a_name);
+  }
+  virtual void set_param(const string_type& a_name,
+    const string_type &a_value)
+  {
+    mp_hardflow->set_param(a_name, a_value);
+  }
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size)
+  {
+    return mp_hardflow->read(a_channel_ident, ap_buf, a_size);
+  }
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size)
+  {
+    return mp_hardflow->write(a_channel_ident, ap_buf, a_size);
+  }
+  virtual size_type channel_next()
+  {
+    return mp_hardflow->channel_next();
+  }
+  virtual void set_channel_switching_mode(channel_switching_mode_t a_mode)
+  {
+    mp_hardflow->set_channel_switching_mode(a_mode);
+  }
+  virtual bool is_channel_exists(size_type a_channel_ident)
+  {
+    return mp_hardflow->is_channel_exists(a_channel_ident);
+  }
+  virtual void tick()
+  {
+    return mp_hardflow->tick();
+  }
+  void hardflow(hardflow_t* ap_hardflow)
+  {
+    mp_hardflow = ap_hardflow;
+  }
+private:
+  hardflow_t* mp_hardflow;
+};
+
 class echo_t: public hardflow_t
 {
 public:
@@ -1680,6 +1728,8 @@ private:
 //! @}
 
 } // namespace hardflow
+
+irs_status_t to_irs_status(hardflow::fixed_flow_t::status_t a_status);
 
 } // namespace irs
 

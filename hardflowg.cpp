@@ -2326,3 +2326,22 @@ irs::hardflow::echo_t::channel_data_size(size_type a_channel_ident)
     return 0;
   }
 }
+
+irs_status_t irs::to_irs_status(hardflow::fixed_flow_t::status_t a_status)
+{
+  switch (a_status) {
+    case hardflow::fixed_flow_t::status_wait: {
+      return irs_st_busy;
+    }
+    case hardflow::fixed_flow_t::status_success: {
+      return irs_st_ready;
+    }
+    case hardflow::fixed_flow_t::status_error: {
+      return irs_st_error;
+    }
+    default: {
+      IRS_LIB_ASSERT_MSG("Неучтенный статус");
+    }
+  }
+  return irs_st_error;
+}
