@@ -1005,6 +1005,7 @@ irs_u32 irs::arm::st_adc_t::adc_channel_to_channel_index(
 
 irs::arm::st_adc_t::~st_adc_t()
 {
+  mp_adc->ADC_CR2_bit.ADON = 0;  
 }
 
 irs_u16 irs::arm::st_adc_t::get_u16_minimum()
@@ -1462,6 +1463,9 @@ irs::cpu_traits_t::frequency_type irs::arm::st_adc_dma_t::timer_frequency()
 
 irs::arm::st_adc_dma_t::~st_adc_dma_t()
 {
+  mp_timer->TIM_CR1_bit.CEN = 0;
+  mp_adc->ADC_CR2_bit.ADON = 0;
+  mp_dma->stream[mp_settings->dma_stream].DMA_SCR_bit.EN = 0;
 }
 
 void irs::arm::st_adc_dma_t::start()
