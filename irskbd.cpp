@@ -222,7 +222,7 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   timer_set_bit(a_timer_address, 
     IRS_TIM_CCMR, TIM_CH2, OCS, OCS_SIZE, 1);
   
-  mp_timer->TIM_SMCR_bit.SMS = 2;
+  mp_timer->TIM_SMCR_bit.SMS = 2; 
   
   mp_timer->TIM_ARR = 0xFFFF;
   mp_timer->TIM_CNT = m_curr_count;
@@ -241,15 +241,18 @@ irskey_t irs::encoder_drv_mc_t::get_key_encoder()
   m_result_key = irskey_none;
   if (m_timer.check()) {
     irs_i16 count = static_cast<irs_i16>(mp_timer->TIM_CNT);
-    if ((m_curr_count != count) && (m_keys.size() > 1)) {
-      m_delta = count - m_curr_count;
-      m_curr_count = count;
-      if (m_delta > 0) {
-        m_result_key = m_keys[0];   
-      } else if (m_delta < 0) {
-        m_result_key = m_keys[1];
+    if (count%2 == 0) { //добавлено т.к. на 1 изменение позиции TIM_CNT 
+      count = count/2;  //увеличивается на 2
+      if ((m_curr_count != count) && (m_keys.size() > 1)) {
+        m_delta = count - m_curr_count;
+        m_curr_count = count;
+        if (m_delta > 0) {
+          m_result_key = m_keys[0];   
+        } else if (m_delta < 0) {
+          m_result_key = m_keys[1];
+        }
+        m_press_count = abs(m_delta);
       }
-      m_press_count = abs(m_delta);
     }
   }
   return m_result_key;
