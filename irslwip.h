@@ -87,6 +87,9 @@ public:
   ethernet_t(simple_ethernet_t* ap_simple_ethernet,
     const configuration_t& a_configuration);
   ~ethernet_t();
+  mxip_t get_ip();
+  mxip_t get_netmask();
+  mxip_t get_gateway();
   netif* get_netif();
   void tick();
 private:
@@ -301,6 +304,7 @@ private:
   udp_pcb* mp_pcb;
   udp_channel_list_t<address_type> m_channel_list;
   channel_switching_mode_t m_mode;
+  loop_timer_t m_check_buffer_timer;
 };
 
 } // namespace lwip

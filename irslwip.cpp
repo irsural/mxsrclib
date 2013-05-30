@@ -12,6 +12,28 @@
 
 #ifdef USE_LWIP
 
+namespace {
+
+void copy_pbuf_to_buffer(const pbuf* ap_pbuf, irs_u8* ap_buf)
+{
+  irs_u8* buffer = ap_buf;
+  for (const pbuf* q = ap_pbuf; q != NULL; q = q->next) {
+    memcpy(buffer, reinterpret_cast<irs_u8*>(q->payload), q->len);
+    buffer += q->len;
+  }
+}
+
+void copy_buffer_to_pbuf(const irs_u8* ap_buf, pbuf* ap_pbuf)
+{
+  const irs_u8* buf_src = ap_buf;
+  for (pbuf* buf_dest = ap_pbuf; buf_dest != NULL; buf_dest = buf_dest->next) {
+    memcpy(buf_dest->payload, buf_src, buf_dest->len);
+    buf_src = buf_src + buf_dest->len;
+  }
+}
+
+} // unnamed namespace
+
 // class ethernet_t
 irs::simple_ethernet_t* irs::lwip::ethernet_t::mp_simple_ethernet = NULL;
 
@@ -59,6 +81,27 @@ irs::lwip::ethernet_t::ethernet_t(simple_ethernet_t* ap_simple_ethernet,
 irs::lwip::ethernet_t::~ethernet_t()
 {
   netif_remove(&m_netif);
+}
+
+mxip_t irs::lwip::ethernet_t::get_ip()
+{
+  mxip_t ip;
+  ip.addr = m_netif.ip_addr.addr;
+  return ip;
+}
+
+mxip_t irs::lwip::ethernet_t::get_netmask()
+{
+  mxip_t netmask;
+  netmask.addr = m_netif.netmask.addr;
+  return netmask;
+}
+
+mxip_t irs::lwip::ethernet_t::get_gateway()
+{
+  mxip_t gw;
+  gw.addr = m_netif.gw.addr;
+  return gw;
 }
 
 netif* irs::lwip::ethernet_t::get_netif()
@@ -162,10 +205,7 @@ struct pbuf* irs::lwip::ethernet_t::low_level_input()
   pbuf* p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
   if (p != NULL) {
-    for (pbuf* q = p; q != NULL; q = q->next) {
-      memcpy(reinterpret_cast<irs_u8*>(q->payload), buffer, q->len);
-      buffer += q->len;
-    }
+    copy_buffer_to_pbuf(buffer, p);
     mp_simple_ethernet->set_recv_handled();
     IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("low_level_input: length = " << len);
   }
@@ -214,14 +254,6 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
     NETIF_FLAG_LINK_UP;
 }
 
-/*int irs::lwip::ethernet_t::accept_udp_port(u16_t a_port)
-{
-  if (a_port == 5012) {
-    return true;
-  }
-  return false;
-}*/
-
 // class tcp_server_t
 irs::hardflow::lwip::tcp_server_t::size_type
 irs::hardflow::lwip::tcp_server_t::m_read_channel =
@@ -246,11 +278,10 @@ public:
     }
     return irs::hardflow_t::invalid_channel;
   }
-  bool write(void* ap_owner, size_type a_channel,
-    const irs_u8* ap_buf, size_type a_size)
+  bool write(void* ap_owner, size_type a_channel, const pbuf* ap_pbuf)
   {
     bool status = false;
-    if (a_size == 0) {
+    if (ap_pbuf->tot_len == 0) {
       return status;
     }
     size_type pos = 0;
@@ -263,8 +294,8 @@ public:
       pos = m_buf.size();
     }
     try {
-      m_buf.resize(m_buf.size() + a_size);
-      irs::memcpyex(irs::vector_data(m_buf, pos), ap_buf, a_size);
+      m_buf.resize(m_buf.size() + ap_pbuf->tot_len);
+      copy_pbuf_to_buffer(ap_pbuf, irs::vector_data(m_buf, pos));
       status = true;
     } catch (std::bad_alloc&) {
       status = false;
@@ -290,6 +321,22 @@ public:
       }
     }
     return size;
+  }
+  void clear(const void* ap_owner, size_type a_channel)
+  {
+    if ((mp_owner == ap_owner) && (m_channel == a_channel)) {
+      m_buf.clear();
+      mp_owner = NULL;
+      m_channel = irs::hardflow_t::invalid_channel;
+    }
+  }
+  void clear(const void* ap_owner)
+  {
+    if (mp_owner == ap_owner) {
+      m_buf.clear();
+      mp_owner = NULL;
+      m_channel = irs::hardflow_t::invalid_channel;
+    }
   }
   size_type size()
   {
@@ -335,6 +382,7 @@ irs::hardflow::lwip::tcp_server_t::~tcp_server_t()
   std::deque<irs::handle_t<channel_t> >::iterator it =
     m_channels.begin();
   while (it != m_channels.end()) {
+    tcp_read_buffer()->clear(this, (*it)->id);
     tcp_pcb* pcb = (*it)->pcb;
     tcp_arg(pcb, NULL);
     tcp_recv(pcb, NULL);
@@ -402,10 +450,10 @@ irs::hardflow::lwip::tcp_server_t::channel_next()
       if (m_current_channel >= m_channels.size()) {
         m_current_channel = 0;
       }
-      m_channels[m_current_channel]->id;
+      return m_channels[m_current_channel]->id;
     }
   } else if (m_mode == csm_ready_for_reading) {
-    return m_read_channel;
+    return tcp_read_buffer()->channel(this);//m_read_channel;
   }
   return invalid_channel;
 }
@@ -540,6 +588,7 @@ void irs::hardflow::lwip::tcp_server_t::erase_channel(channel_t* ap_channel)
     m_channels.begin();
   while (it != m_channels.end()) {
     if (it->get() == ap_channel) {
+      tcp_read_buffer()->clear(this, (*it)->id);
       m_channels_map.erase(ap_channel->id);
       m_channels.erase(it);
       break;
@@ -554,10 +603,10 @@ err_t irs::hardflow::lwip::tcp_server_t::recv(void *arg, tcp_pcb *pcb, pbuf *p,
   if ((err == ERR_OK) && (p != NULL)) {
     if (tcp_read_buffer()->empty()) {
       channel_t* channel = reinterpret_cast<channel_t*>(arg);
-      irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
+      //irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
       size_type len = p->tot_len;
       if (len > 0) {
-        if (tcp_read_buffer()->write(channel->server, channel->id, data, len)) {
+        if (tcp_read_buffer()->write(channel->server, channel->id, p)) {
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
           tcp_recved(pcb, len);
           pbuf_free(p);
@@ -586,6 +635,7 @@ void irs::hardflow::lwip::tcp_server_t::conn_err(void *arg, err_t /*a_err*/)
     server->m_channels.begin();
   while (it != server->m_channels.end()) {
     if (it->get() == channel) {
+      tcp_read_buffer()->clear(server, (*it)->id);
       server->m_channels_map.erase(channel->id);
       server->m_channels.erase(it);
       break;
@@ -631,6 +681,7 @@ irs::hardflow::lwip::tcp_client_t::tcp_client_t(
 irs::hardflow::lwip::tcp_client_t::~tcp_client_t()
 {
   if (mp_pcb) {
+    tcp_read_buffer()->clear(this, m_channel_id);
     tcp_arg(mp_pcb, this);
     tcp_recv(mp_pcb, NULL);
     tcp_err(mp_pcb, NULL);
@@ -721,10 +772,10 @@ err_t irs::hardflow::lwip::tcp_client_t::recv(void *arg, tcp_pcb *pcb,
   if ((err == ERR_OK) && (p != NULL)) {
     if (tcp_read_buffer()->empty()) {
       tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
-      irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
+      //irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
       size_type len = p->tot_len;
       if (len > 0) {
-        if (tcp_read_buffer()->write(client, client->m_channel_id, data, len)) {
+        if (tcp_read_buffer()->write(client, client->m_channel_id, p)) {
           tcp_recved(pcb, len);
           pbuf_free(p);
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
@@ -853,8 +904,10 @@ irs::hardflow::lwip::udp_t::udp_t(
     m_configuration.max_lifetime_sec,
     m_configuration.limit_downtime_enabled,
     m_configuration.max_downtime_sec),
-  m_mode(csm_any)
+  m_mode(csm_any),
+  m_check_buffer_timer(irs::make_cnt_s(0.5))
 {
+  m_check_buffer_timer.start();
   create();
 }
 
@@ -889,7 +942,7 @@ void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
 {
   if (udp_read_buffer()->empty()) {
     udp_t* udp = reinterpret_cast<udp_t*>(arg);
-    irs_u8* data = reinterpret_cast<irs_u8*>(ap_buf->payload);
+    //irs_u8* data = reinterpret_cast<irs_u8*>(ap_buf->payload);
     size_type len = ap_buf->tot_len;
     if ((len > 0) &&
       (len <= udp->m_configuration.receive_paket_data_max_size)) {
@@ -900,7 +953,7 @@ void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
       bool insert_success = false;
       udp->m_channel_list.insert(sender_address, &id, &insert_success);
       if (insert_success) {
-        if (!udp_read_buffer()->write(udp, id, data, len)) {
+        if (!udp_read_buffer()->write(udp, id, ap_buf)) {
           IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные отброшены, так как не "
           "удалось выделить память");
         }
@@ -917,6 +970,7 @@ void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
 
 irs::hardflow::lwip::udp_t::~udp_t()
 {
+  udp_read_buffer()->clear(this);
   if (mp_pcb) {
     udp_remove(mp_pcb);
   }
@@ -955,15 +1009,12 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
   if (m_channel_list.address_get(a_channel_ident, &remote_host_address)) {
     dst_ip.addr = remote_host_address.ip.addr;
   } else {
+    pbuf_free(pkt_buf);
     IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Канала с указанным идентификатором не "
       "существует");
     return 0;
   }
-  const irs_u8* buf_src = ap_buf;
-  for (pbuf* buf_dest = pkt_buf; buf_dest != NULL; buf_dest = buf_dest->next) {
-    memcpy(buf_dest->payload, buf_src, buf_dest->len);
-    buf_src = buf_src + buf_dest->len;
-  }
+  copy_buffer_to_pbuf(ap_buf, pkt_buf);
   err_t err = udp_sendto(mp_pcb, pkt_buf, &dst_ip, remote_host_address.port);
   pbuf_free(pkt_buf);
   m_channel_list.downtime_timer_reset(a_channel_ident);
@@ -982,6 +1033,14 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
 void irs::hardflow::lwip::udp_t::tick()
 {
   m_channel_list.tick();
+  if (m_check_buffer_timer.check()) {
+    size_type channel = udp_read_buffer()->channel(this);
+    if (channel != invalid_channel) {
+      if (!m_channel_list.is_channel_exists(channel)) {
+        udp_read_buffer()->clear(this, channel);
+      }
+    }
+  }
 }
 
 irs::hardflow::lwip::udp_t::string_type
