@@ -715,6 +715,15 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   switch (m_gpio_channel) {
+     case PA0: {
+      if (timer_address == IRS_TIM2_BASE) {
+        m_timer_channel = 1;
+        gpio_moder_alternate_function_enable(PA0);
+        gpio_alternate_function_select(PA0, GPIO_AF_TIM2);
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PA8: {
       if (timer_address == IRS_TIM1_PWM1_BASE) {
         m_timer_channel = 1;
@@ -723,10 +732,40 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PA10: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        m_timer_channel = 3;
+        GPIOA_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PB0: {
       if (timer_address == IRS_TIM3_BASE) {
         m_timer_channel = 3;
         GPIOB_AFRL_bit.AFRL0 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB8: {
+      if (timer_address == IRS_TIM4_BASE) {
+        m_timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH8 = 2;
+      } else if (timer_address == IRS_TIM10_BASE) {
+        m_timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH8 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB9: {
+      if (timer_address == IRS_TIM4_BASE) {
+        m_timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH9 = 2;
+      } else if (timer_address == IRS_TIM11_BASE) {
+        m_timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH9 = 3;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
@@ -774,38 +813,6 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
 
-    } break;
-    case PA0: {
-      if (timer_address == IRS_TIM2_BASE) {
-        m_timer_channel = 1;
-        gpio_moder_alternate_function_enable(PA0);
-        gpio_alternate_function_select(PA0, GPIO_AF_TIM2);
-      } else {
-        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }
-
-    } break;
-    case PB8: {
-      if (timer_address == IRS_TIM4_BASE) {
-        m_timer_channel = 3;
-        GPIOB_AFRH_bit.AFRH8 = 2;
-      } else if (timer_address == IRS_TIM10_BASE) {
-        m_timer_channel = 1;
-        GPIOB_AFRH_bit.AFRH8 = 3;
-      } else {
-        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }
-    } break;
-    case PB9: {
-      if (timer_address == IRS_TIM4_BASE) {
-        m_timer_channel = 4;
-        GPIOB_AFRH_bit.AFRH9 = 2;
-      } else if (timer_address == IRS_TIM11_BASE) {
-        m_timer_channel = 1;
-        GPIOB_AFRH_bit.AFRH9 = 3;
-      } else {
-        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
