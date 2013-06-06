@@ -863,6 +863,19 @@ void print_binary_data_to_str(
   *ap_str = irs::str_conv<T>(ostr.str());
 }
 
+template <class map_iterator_t, class value_t>
+map_iterator_t find_value(map_iterator_t a_begin, map_iterator_t a_end,
+  const value_t& a_value)
+{
+  while (a_begin != a_end) {
+    if (a_begin->second == a_value) {
+      break;
+    }
+    ++a_begin;
+  }
+  return a_begin;
+}
+
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //! @}

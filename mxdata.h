@@ -90,6 +90,7 @@ public:
   virtual void write(irs_u8* ap_pos, const irs_u8 *ap_buf,
     size_type a_buf_size) = 0;
   virtual irs_u8* page_begin(size_type a_page_index) = 0;
+  virtual size_type page_index(const irs_u8* ap_pos) const = 0;
   virtual size_type page_size(size_type a_page_index) const = 0;
   virtual size_type page_count() const = 0;
   virtual irs_status_t status() const = 0;

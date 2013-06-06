@@ -30,8 +30,9 @@
 
 #include <irsfinal.h>
 
-namespace irs
-{
+namespace irs {
+
+irs::string_t get_device_name(device_code_t a_device_code);
 
 //! \addtogroup drivers_group
 //! @{
@@ -201,7 +202,7 @@ enum break_polarity_t {
   break_polarity_active_high
 };
 
-//! \brief Драйвер ШИМ-генератора для контроллеров 
+//! \brief Драйвер ШИМ-генератора для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
 //! \author Lyashchov Maxim
 class st_pwm_gen_t: public pwm_gen_t
@@ -249,7 +250,7 @@ private:
 #endif  //  mcu type
 
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__) ||\
-  defined(__STM32F100RBT__) 
+  defined(__STM32F100RBT__)
 class watchdog_timer_t: public watchdog_t
 {
 public:
@@ -330,7 +331,7 @@ private:
 }; // watchdog_timer_t
 
 #elif defined(IRS_STM32F_2_AND_4)
-//! \brief Драйвер независимого сторожевого таймера для контроллеров 
+//! \brief Драйвер независимого сторожевого таймера для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
 //! \details Работает от независимого генератора с частотой ~32 кГц
 //! \author Lyashchov Maxim
@@ -338,9 +339,9 @@ class st_independent_watchdog_t: public watchdog_t
 {
 public:
   typedef irs_size_t size_type;
-  //! \param[in] a_period_s Период срабатывания в секундах. Допустимо указывать 
+  //! \param[in] a_period_s Период срабатывания в секундах. Допустимо указывать
   //!   значения [0, 100]. Однако фактически
-  //!   сторожевой таймер работает со следующим диапазоном 
+  //!   сторожевой таймер работает со следующим диапазоном
   //!   (для LSI = 32 кГц) [0.000125, 32.768]
   st_independent_watchdog_t(double a_period_s = 32);
   virtual void start();
@@ -352,24 +353,24 @@ private:
   irs_u8 m_counter_start_value;
 }; // watchdog_timer_t
 
-//! \brief Драйвер оконного сторожевого таймера для контроллеров 
+//! \brief Драйвер оконного сторожевого таймера для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
-//! \details Работает от PCLK1 с тимичными значениями 30 МГц для STM32F2xx и 
-//!   42 Мгц для stm32f4xx 
+//! \details Работает от PCLK1 с тимичными значениями 30 МГц для STM32F2xx и
+//!   42 Мгц для stm32f4xx
 //! \author Lyashchov Maxim
 class st_window_watchdog_t: public watchdog_t
 {
 public:
   typedef irs_size_t size_type;
-  //! \param[in] a_period_min_s Минимальный период сброса в секундах. Допустимо 
+  //! \param[in] a_period_min_s Минимальный период сброса в секундах. Допустимо
   //!   указывать значения [0, 1]. Однако фактически
   //!   сторожевой таймер работает со следующими диапазономи значений
   //!   - [0.00013653, 0.06991] (stm32f2xx с Fpclk1 = 30 MHz)
   //!   - [0.00009752, 0.04993] (stm32f4xx с Fpclk1 = 42 MHz)
   //!   Должно выполняться условие a_period_min_s <= a_period_max_s
-  //! \param[in] a_period_max_s Максимальный период сброса в секундах.  
+  //! \param[in] a_period_max_s Максимальный период сброса в секундах.
   //!   Допустимые значения такие же, как у параметра a_period_min_s.
-  //!   Должно выполняться условие a_period_max_s >= a_period_min_s 
+  //!   Должно выполняться условие a_period_max_s >= a_period_min_s
   st_window_watchdog_t(double a_period_min_s, double a_period_max_s);
   virtual void start();
   virtual void restart();

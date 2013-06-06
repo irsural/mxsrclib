@@ -203,6 +203,8 @@ public:
   virtual buffer_num_t get_buf_num() const;
   virtual mxmac_t get_local_mac() const;
   virtual void set_mac(mxmac_t& a_mac);
+  virtual bool get_ready_status() const;
+  virtual bool get_linked_status() const;
   virtual void tick();
 private:
   void rcc_configuration();
@@ -244,6 +246,7 @@ private:
   public:
     eth_auto_negotation_t(const ETH_InitTypeDef& ETH_InitStruct,
       const irs_u16 a_phy_address);
+    bool complete() const;
     void tick();
   private:
     void read_speed_and_mode_phy();
@@ -264,12 +267,18 @@ private:
     timer_t m_delay_assure_reset_timer;
     loop_timer_t m_speed_and_mode_check_timer;
     irs_u16 m_phy_register;
+    bool m_complete;
   };
   buf_t m_receive_buf;
   buf_t m_transmit_buf;
   config_t m_config;
   irs::handle_t<eth_auto_negotation_t> mp_eth_auto_negotation;
 };
+
+//! \brief Генерирует MAC-адрес на основе уникального
+//!   96-битного идентификатора контроллера ST
+mxmac_t st_generate_mac(device_code_t a_device_code);
+
 #else
   #error Тип контроллера не определён
 #endif // mcu type

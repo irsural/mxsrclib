@@ -15,6 +15,7 @@
 #include <irsalg.h>
 #include <armcfg.h>
 #include <irscpp.h>
+#include <irssysutils.h>
 
 #include <irsfinal.h>
 
@@ -450,13 +451,19 @@ irs::arm::st_ethernet_t::eth_auto_negotation_t::eth_auto_negotation_t(
   m_speed_or_mode_phy_changed(true),
   m_delay_assure_reset_timer(make_cnt_s(0.1)),
   m_speed_and_mode_check_timer(make_cnt_s(1)),
-  m_phy_register(0)
+  m_phy_register(0),
+  m_complete(false)
 {
   assert_param(IS_ETH_AUTONEGOTIATION(ETH_InitStruct->ETH_AutoNegotiation));
   assert_param(IS_ETH_SPEED(ETH_InitStruct->ETH_Speed));
   assert_param(IS_ETH_DUPLEX_MODE(ETH_InitStruct->ETH_Mode));
 
   set_speed_and_mode_mac();
+}
+
+bool irs::arm::st_ethernet_t::eth_auto_negotation_t::complete() const
+{
+  return m_complete;
 }
 
 void irs::arm::st_ethernet_t::eth_auto_negotation_t::tick()
@@ -479,6 +486,7 @@ void irs::arm::st_ethernet_t::eth_auto_negotation_t::tick()
           }
         } else {
           if (set_speed_and_mode_phy()) {
+            m_complete = true;
             m_process = process_nothing;
           } else {
             m_process = process_reset;
@@ -496,7 +504,8 @@ void irs::arm::st_ethernet_t::eth_auto_negotation_t::tick()
             set_speed_and_mode_mac();
             m_speed_or_mode_phy_changed = false;
           }
-          m_process = process_auto_negotation;
+          m_complete = true;
+          //m_process = process_auto_negotation;
         }
       }
     } break;
@@ -1033,6 +1042,16 @@ void irs::arm::st_ethernet_t::set_mac(mxmac_t& a_mac)
   ETH_MACAddressConfig(ETH_MAC_Address0, a_mac.val);
 }
 
+bool irs::arm::st_ethernet_t::get_ready_status() const
+{
+  return mp_eth_auto_negotation->complete() && get_linked_status();
+}
+
+bool irs::arm::st_ethernet_t::get_linked_status() const
+{
+  return ETH_ReadPHYRegister(phy_address, PHY_BSR) & PHY_Linked_Status;
+}
+
 void irs::arm::st_ethernet_t::tick()
 {
   mp_eth_auto_negotation->tick();
@@ -1089,6 +1108,15 @@ void irs::arm::st_ethernet_t::receive()
     ETH->DMARPDR = 0;
   }
 }
+
+mxmac_t irs::arm::st_generate_mac(device_code_t a_device_code)
+{
+  IRS_STATIC_ASSERT(sizeof(device_code_t) == 1);
+  const irs_u16 device_id = irs::crc16(UNIQUE_DEVICE_ID_BEGIN,
+    UNIQUE_DEVICE_ID_SIZE);
+  return generate_mac(a_device_code, device_id);
+}
+
 #else
   #error Тип контроллера не определён
 #endif // mcu type

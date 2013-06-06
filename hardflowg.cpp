@@ -53,6 +53,34 @@ irs::hardflow::error_sock_t::get_last_error()
 }
 
 // class udp_flow_t
+irs::hardflow::udp_flow_t::udp_flow_t(const configuration_t& a_configuration):
+  m_error_sock(),
+  m_state_info(),
+  #if defined(IRS_WIN32)
+  m_wsd(),
+  #endif // IRS_WIN32
+  m_sock(),
+  m_broadcast_allowed(a_configuration.broadcast_allowed),
+  m_local_host_name(a_configuration.local_host_name),
+  m_local_host_port(a_configuration.local_host_port),
+  m_func_select_timeout(),
+  m_s_kit(),
+  m_send_msg_max_size(65000),
+  m_channel_list(
+    a_configuration.connections_mode,
+    a_configuration.channel_max_count,
+    a_configuration.channel_buf_max_size,
+    a_configuration.limit_lifetime_enabled,
+    a_configuration.max_lifetime_sec,
+    a_configuration.limit_downtime_enabled,
+    a_configuration.max_downtime_sec
+  ),
+  m_read_buf(a_configuration.channel_buf_max_size)
+{
+  init(a_configuration.remote_host_name, a_configuration.remote_host_port);
+}
+
+// class udp_flow_t
 irs::hardflow::udp_flow_t::udp_flow_t(
   const string_type& a_local_host_name,
   const string_type& a_local_host_port,
@@ -72,6 +100,7 @@ irs::hardflow::udp_flow_t::udp_flow_t(
   m_wsd(),
   #endif // IRS_WIN32
   m_sock(),
+  m_broadcast_allowed(false),
   m_local_host_name(a_local_host_name),
   m_local_host_port(a_local_host_port),
   m_func_select_timeout(),
@@ -88,8 +117,16 @@ irs::hardflow::udp_flow_t::udp_flow_t(
   ),
   m_read_buf(a_channel_buf_max_size)
 {
+  init(a_remote_host_name, a_remote_host_port);
+}
+
+void irs::hardflow::udp_flow_t::init(const string_type& a_remote_host_name,
+  const string_type& a_remote_host_port)
+{
   m_func_select_timeout.tv_sec = 0;
   m_func_select_timeout.tv_usec = 0;
+
+  load_lib_socket();
 
   sockaddr_in remote_host_addr;
   memsetex(&remote_host_addr, 1);
@@ -130,8 +167,7 @@ double irs::hardflow::udp_flow_t::def_max_downtime_sec()
   return 60.*60.;
 }
 
-
-void irs::hardflow::udp_flow_t::start()
+void irs::hardflow::udp_flow_t::load_lib_socket()
 {
   if (!m_state_info.lib_socket_loaded) {
     // Загружаем библиотеку сокетов версии 2.2
@@ -148,6 +184,10 @@ void irs::hardflow::udp_flow_t::start()
   } else {
     // Библиотека уже загружена
   }
+}
+
+void irs::hardflow::udp_flow_t::start()
+{
   if (m_state_info.lib_socket_loaded) {
     if (!m_state_info.sock_created) {
       #if defined(IRS_WIN32)
@@ -212,9 +252,13 @@ void irs::hardflow::udp_flow_t::start()
         if (::bind(m_sock, (sockaddr *)&local_addr,
           sizeof(local_addr)) != IRS_SOCKET_ERROR)
         {
-          //int so = 1;
-          //setsockopt(m_sock, SOL_SOCKET, SO_BROADCAST,
-          //  reinterpret_cast<char*>(&so), sizeof(so));
+          if (m_broadcast_allowed) {
+            int so = 1;
+            if (setsockopt(m_sock, SOL_SOCKET, SO_BROADCAST,
+              reinterpret_cast<char*>(&so), sizeof(so))) {
+              error_str(m_error_sock.get_last_error());
+            }
+          }
           m_state_info.bind_sock_and_ladr_success = true;
         } else {
           // Ошибка при связывании сокета с локальным адресом
@@ -312,7 +356,8 @@ bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
         memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);
         adress_convert_success = true;
       } else {
-        // Ошибка получения списка адресов
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE(
+          error_str(m_error_sock.get_last_error()));
       }
     } else {
       *ap_adress_binary = adress;
@@ -355,11 +400,11 @@ irs::hardflow::udp_flow_t::string_type irs::hardflow::udp_flow_t::param(
   const string_type &a_param_name)
 {
   string_type param_value;
-  if (a_param_name == irst("locale_adress")) {
+  if (a_param_name == irst("local_address")) {
     param_value = m_local_host_name;
-  } else if (a_param_name == irst("locale_port")) {
+  } else if (a_param_name == irst("local_port")) {
     param_value = m_local_host_port;
-  } else if (a_param_name == irst("remote_adress")) {
+  } else if (a_param_name == irst("remote_address")) {
     address_type adress;
     m_channel_list.channel_address_get(m_channel_list.cur_channel(), &adress);
     param_value = inet_ntoa(adress.sin_addr);
@@ -392,7 +437,7 @@ irs::hardflow::udp_flow_t::string_type irs::hardflow::udp_flow_t::param(
         } else if (func_name == irst("downtime")) {
           number_to_string(m_channel_list.downtime_get(channel_id),
             &param_value);
-        } else if (func_name == irst("remote_adress")) {
+        } else if (func_name == irst("remote_address")) {
           address_type adress;
           m_channel_list.channel_address_get(channel_id, &adress);
           param_value = inet_ntoa(adress.sin_addr);
@@ -420,7 +465,7 @@ irs::hardflow::udp_flow_t::string_type irs::hardflow::udp_flow_t::param(
 void irs::hardflow::udp_flow_t::set_param(const string_type &a_param_name,
   const string_type &a_value)
 {
-  if (a_param_name == irst("remote_adress")) {
+  if (a_param_name == irst("remote_address")) {
     in_addr_type adress_binary = 0;
     if (adress_str_to_adress_binary(a_value, &adress_binary)) {
       address_type adress;
@@ -1226,7 +1271,7 @@ irs::hardflow::tcp_client_t::string_type
   string_type param_value;
   if (a_param_name == irst("remote_port")) {
     number_to_string(m_dest_port, &param_value);
-  } else if (a_param_name == irst("remote_adress")) {
+  } else if (a_param_name == irst("remote_address")) {
     char ip_str[IP_STR_LEN];
     memsetex(ip_str, IP_STR_LEN);
     mxip_to_cstr(ip_str, m_dest_ip);
@@ -1245,7 +1290,7 @@ void irs::hardflow::tcp_client_t::set_param(const string_type &a_param_name,
       m_dest_port = new_dest_port;
       m_state_info.connect_sock_success = false;
     }
-  } else if (a_param_name == irst("remote_adress")) {
+  } else if (a_param_name == irst("remote_address")) {
     mxip_t new_dest_ip = mxip_t::zero_ip();
     new_dest_ip = make_mxip(a_param_value.c_str());
     if (m_dest_ip != new_dest_ip) {
@@ -2344,4 +2389,210 @@ irs_status_t irs::to_irs_status(hardflow::fixed_flow_t::status_t a_status)
     }
   }
   return irs_st_error;
+}
+
+// class memory_flow_t
+irs::hardflow::memory_flow_t::memory_flow_t(
+  size_type a_channel_receive_buffer_max_size
+):
+  m_channels(),
+  m_channel_buffers(),
+  m_receive_buf_max_size(a_channel_receive_buffer_max_size),
+  m_channel(m_channel_buffers.end())
+{
+}
+
+irs::hardflow::memory_flow_t::~memory_flow_t()
+{
+  std::multimap<size_type, channel_t>::iterator it = m_channels.begin();
+  while (it != m_channels.end()) {
+    size_type local_channel_ident = it->first;
+    size_type remote_channel_ident = it->second.remote_channel_ident;
+    memory_flow_t* memory_flow = it->second.memory_flow;
+    ++it;
+    delete_connection(memory_flow, local_channel_ident, remote_channel_ident);
+  }
+}
+
+irs::hardflow::memory_flow_t::string_type
+irs::hardflow::memory_flow_t::param(const string_type& /*a_name*/)
+{
+  return string_type();
+}
+
+void irs::hardflow::memory_flow_t::set_param(const string_type& /*a_name*/,
+  const string_type& /*a_value*/)
+{
+}
+
+irs::hardflow::memory_flow_t::size_type
+irs::hardflow::memory_flow_t::read(size_type a_channel_ident, irs_u8* ap_buf,
+  size_type a_size)
+{
+  std::map<size_type, vector<irs_u8> >::iterator it =
+    m_channel_buffers.find(a_channel_ident);
+  if (it != m_channel_buffers.end()) {
+    const size_type count = std::min(a_size, it->second.size());
+    irs::memcpyex(ap_buf, vector_data(it->second), count);
+    it->second.erase(it->second.begin(), it->second.begin() + count);
+    return count;
+  }
+  return 0;
+}
+
+irs::hardflow::memory_flow_t::size_type
+irs::hardflow::memory_flow_t::write(size_type a_channel_ident,
+  const irs_u8 *ap_buf, size_type a_size)
+{
+  std::pair<std::multimap<size_type, channel_t>::iterator,
+    std::multimap<size_type, channel_t>::iterator> ret =
+    m_channels.equal_range(a_channel_ident);
+  std::multimap<size_type, channel_t>::iterator it = ret.first;
+
+  if (ret.first != ret.second) {
+    size_type count = a_size;
+    while (it != ret.second) {
+      size_type channel_ident = it->second.remote_channel_ident;
+      std::map<size_type, vector<irs_u8> >::const_iterator buffer_it =
+        it->second.memory_flow->m_channel_buffers.find(channel_ident);
+      const size_type buffer_size = buffer_it->second.size();
+      count = std::min(count, it->second.memory_flow->m_receive_buf_max_size -
+        buffer_size);
+      ++it;
+    }
+    it = ret.first;
+    while (it != ret.second) {
+      memory_flow_t* memory_flow = it->second.memory_flow;
+      size_type channel_ident = it->second.remote_channel_ident;
+      size_type write_count =
+        memory_flow->write_to_local_buffer(channel_ident, ap_buf, count);
+      IRS_LIB_ASSERT(write_count == count);
+      ++it;
+    }
+    return count;
+  }
+  return 0;
+}
+
+irs::hardflow::memory_flow_t::size_type
+irs::hardflow::memory_flow_t::write_to_local_buffer(size_type a_channel_ident,
+  const irs_u8 *ap_buf, size_type a_size)
+{
+  std::map<size_type, vector<irs_u8> >::iterator it =
+    m_channel_buffers.find(a_channel_ident);
+  if (it != m_channel_buffers.end()) {
+    IRS_LIB_ASSERT(it->second.size() <= m_receive_buf_max_size);
+    const size_type count = std::min(a_size,
+      it->second.size() - m_receive_buf_max_size);
+    const size_type pos = it->second.size();
+    it->second.resize(it->second.size() + count);
+    irs::memcpyex(vector_data(it->second, pos), ap_buf, count);
+    return count;
+  }
+  return 0;
+}
+
+irs::hardflow::memory_flow_t::size_type
+irs::hardflow::memory_flow_t::channel_next()
+{
+  if (m_channel != m_channel_buffers.end()) {
+    ++m_channel;
+  }
+  if (m_channel == m_channel_buffers.end()) {
+    m_channel = m_channel_buffers.begin();
+  }
+  if (m_channel != m_channel_buffers.end()) {
+    return m_channel->first;
+  }
+  return invalid_channel;
+}
+
+bool irs::hardflow::memory_flow_t::is_channel_exists(size_type a_channel_ident)
+{
+  return m_channels.find(a_channel_ident) != m_channels.end();
+}
+
+void irs::hardflow::memory_flow_t::tick()
+{
+}
+
+void irs::hardflow::memory_flow_t::add_connection(
+  memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
+  size_type a_remote_channel_ident)
+{
+  IRS_LIB_ASSERT(a_local_channel_ident != invalid_channel);
+  IRS_LIB_ASSERT(a_remote_channel_ident != invalid_channel);
+  add_part_connection(ap_memory_flow, a_local_channel_ident,
+    a_remote_channel_ident);
+  ap_memory_flow->add_part_connection(this, a_remote_channel_ident,
+    a_local_channel_ident);
+}
+
+void irs::hardflow::memory_flow_t::add_part_connection(
+  memory_flow_t* ap_memory_flow,
+  size_type a_local_channel_ident, size_type a_remote_channel_ident)
+{
+  std::multimap<size_type, channel_t>::iterator it =
+    find_channel(ap_memory_flow, a_local_channel_ident,
+    a_remote_channel_ident);
+  if (it == m_channels.end()) {
+    channel_t channel(ap_memory_flow, a_remote_channel_ident);
+    m_channels.insert(make_pair(a_local_channel_ident, channel));
+    m_channel_buffers.insert(make_pair(a_local_channel_ident,
+      std::vector<irs_u8>()));
+  }
+}
+
+irs::hardflow::memory_flow_t::channels_type::iterator
+irs::hardflow::memory_flow_t::find_channel(
+  memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
+  size_type a_remote_channel_ident)
+{
+  std::pair<std::multimap<size_type, channel_t>::iterator,
+    std::multimap<size_type, channel_t>::iterator> ret =
+    m_channels.equal_range(a_local_channel_ident);
+  channel_t channel(ap_memory_flow, a_remote_channel_ident);
+  std::multimap<size_type, channel_t>::iterator it = irs::find_value(
+    ret.first, ret.second, channel);
+  return it;
+}
+
+void irs::hardflow::memory_flow_t::delete_connection(
+  memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
+  size_type a_remote_channel_ident)
+{
+  delete_part_connection(ap_memory_flow, a_local_channel_ident,
+    a_remote_channel_ident);
+  ap_memory_flow->delete_part_connection(this, a_remote_channel_ident,
+    a_local_channel_ident);
+}
+
+void irs::hardflow::memory_flow_t::delete_part_connection(
+  memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
+  size_type a_remote_channel_ident)
+{
+  std::multimap<size_type, channel_t>::iterator it =
+    find_channel(ap_memory_flow, a_local_channel_ident, a_remote_channel_ident);
+  if (it != m_channels.end()) {
+    m_channels.erase(it);
+    if (m_channels.find(a_local_channel_ident) == m_channels.end()) {
+      std::map<size_type, vector<irs_u8> >::iterator buffer_it =
+        m_channel_buffers.find(a_local_channel_ident);
+      if (m_channel == buffer_it) {
+        ++m_channel;
+      }
+      m_channel_buffers.erase(buffer_it);
+    }
+  }
+}
+
+irs::hardflow::memory_flow_t::size_type
+irs::hardflow::memory_flow_t::received_data_size(size_type a_channel_ident)
+{
+  std::map<size_type, vector<irs_u8> >::const_iterator it =
+    m_channel_buffers.find(a_channel_ident);
+  if (it != m_channel_buffers.end()) {
+    return it->second.size();
+  }
+  return 0;
 }

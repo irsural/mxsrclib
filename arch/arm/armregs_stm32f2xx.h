@@ -265,6 +265,15 @@ inline size_t get_timer_address(st_timer_name_t a_st_timer_name)
   return 0;
 }
 
+// Device ID
+
+__IO_REG32(UDEV_ID_PART1, 0x1FFF7A10, __READ);
+__IO_REG32(UDEV_ID_PART2, 0x1FFF7A14, __READ);
+__IO_REG32(UDEV_ID_PART3, 0x1FFF7A18, __READ);
+
+#define UNIQUE_DEVICE_ID_BEGIN (reinterpret_cast<const irs_u8*>(0x1FFF7A10))
+#define UNIQUE_DEVICE_ID_SIZE 12
+
 // RCC
 
 #define RCC_CR_S          0x00

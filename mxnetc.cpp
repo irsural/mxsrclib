@@ -1053,7 +1053,7 @@ void irs::mxdata_to_mxnet_t::tick()
               break;
             }
           }
-          if ((m_current_index >= 
+          if ((m_current_index >=
             static_cast<irs_uarc>(m_mxnet_size_byte - 1)) &&
             (m_status != WRITE))
           {
@@ -1677,7 +1677,7 @@ void irs::mxnet_client_command_t::ip(mxip_t a_ip)
 {
   char ip_cstr[IP_STR_LEN];
   mxip_to_cstr(ip_cstr, a_ip);
-  m_hardflow.set_param(irst("remote_adress"), ip_cstr);
+  m_hardflow.set_param(irst("remote_address"), ip_cstr);
 }
 // Установка порта удаленного устройства
 void irs::mxnet_client_command_t::port(irs_u16 a_port)

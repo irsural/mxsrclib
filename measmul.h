@@ -41,17 +41,18 @@
 
 enum type_meas_t {
   tm_first = 1,
-  tm_volt_dc = tm_first,
-  tm_volt_ac = 2,
-  tm_current_dc = 3,
-  tm_current_ac = 4,
-  tm_resistance_2x = 5,
-  tm_resistance_4x = 6,
-  tm_frequency = 7,
-  tm_phase = 8,
-  tm_phase_average = 9,
-  tm_time_interval = 10,
-  tm_time_interval_average = 11,
+  tm_value = tm_first,
+  tm_volt_dc = 2,
+  tm_volt_ac = 3,
+  tm_current_dc = 4,
+  tm_current_ac = 5,
+  tm_resistance_2x = 6,
+  tm_resistance_4x = 7,
+  tm_frequency = 8,
+  tm_phase = 9,
+  tm_phase_average = 10,
+  tm_time_interval = 11,
+  tm_time_interval_average = 12,
   tm_last = tm_time_interval_average,
   tm_for_set_type_size = 0xFFFFFFFF
 };
@@ -123,7 +124,7 @@ public:
   virtual void set_positive() = 0;
   // ”становить отрицательный фронт канала (статусна€ команда)
   virtual void set_negative() = 0;
-  // „тение значени€ при текущем типа измерени€ (статусна€ команда)
+  // „тение значени€ при текущем типе измерени€ (статусна€ команда)
   virtual void get_value(double *value) = 0;
   // „тение напр€жени€ (статусна€ команда)
   virtual void get_voltage(double *voltage) = 0;

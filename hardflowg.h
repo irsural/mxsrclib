@@ -1088,7 +1088,36 @@ public:
     def_channel_max_count = 1000,
     def_channel_buf_max_size = 0xFFFF
   };
-
+  struct configuration_t
+  {
+    string_type local_host_name;
+    string_type local_host_port;
+    string_type remote_host_name;
+    string_type remote_host_port;
+    udp_limit_connections_mode_t connections_mode;
+    size_type channel_max_count;
+    size_type channel_buf_max_size;
+    bool limit_lifetime_enabled;
+    double max_lifetime_sec;
+    bool limit_downtime_enabled;
+    double max_downtime_sec;
+    bool broadcast_allowed;
+    configuration_t():
+      local_host_name(empty_cstr()),
+      local_host_port(empty_cstr()),
+      remote_host_name(empty_cstr()),
+      remote_host_port(empty_cstr()),
+      connections_mode(udplc_mode_queue),
+      channel_max_count(def_channel_max_count),
+      channel_buf_max_size(def_channel_buf_max_size),
+      limit_lifetime_enabled(false),
+      max_lifetime_sec(def_max_lifetime_sec()),
+      limit_downtime_enabled(false),
+      max_downtime_sec(def_max_downtime_sec()),
+      broadcast_allowed(false)
+    {
+    }
+  };
 private:
   //enum { m_socket_error = socket_error };
   //enum { m_invalid_socket = invalid_socket };
@@ -1133,6 +1162,7 @@ private:
   WSADATA m_wsd;
   #endif // IRS_WIN32
   socket_type m_sock;
+  bool m_broadcast_allowed;
   string_type m_local_host_name;
   string_type m_local_host_port;
   timeval m_func_select_timeout;
@@ -1140,8 +1170,8 @@ private:
   size_type m_send_msg_max_size;
   udp_channel_list_t<address_type> m_channel_list;
   irs::raw_data_t<irs_u8> m_read_buf;
-
 public:
+  udp_flow_t(const configuration_t& a_configuration);
   //! \param[in] a_local_host_name - локальный адрес. Пример: "127.0.0.1".
   //!   Обычно можно передавать пустую строку, тогда он будет установлен
   //!   автоматически.
@@ -1192,6 +1222,9 @@ public:
   );
   virtual ~udp_flow_t();
 private:
+  void init(const string_type& a_remote_host_name,
+    const string_type& a_remote_host_port);
+  void load_lib_socket();
   void start();
   void sock_close();
   void local_addr_init(sockaddr_in* ap_sockaddr, bool* ap_init_success);
@@ -1723,6 +1756,61 @@ private:
   vector<vector<irs_u8> > m_channels;
   size_type m_buf_max_size;
   size_type m_channel;
+};
+
+class memory_flow_t: public hardflow_t
+{
+public:
+  memory_flow_t(size_type a_channel_receive_buffer_max_size = 1024);
+  virtual ~memory_flow_t();
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+  void add_connection(memory_flow_t* ap_memory_flow,
+    size_type a_local_channel_ident, size_type a_remote_channel_ident);
+  void delete_connection(memory_flow_t* ap_memory_flow,
+    size_type a_local_channel_ident, size_type a_remote_channel_ident);
+  size_type received_data_size(size_type a_channel_ident);
+private:
+  struct channel_t
+  {
+    memory_flow_t* memory_flow;
+    size_type remote_channel_ident;
+    channel_t(memory_flow_t* ap_memory_flow,
+      size_type a_remote_channel_ident):
+      memory_flow(ap_memory_flow),
+      remote_channel_ident(a_remote_channel_ident)
+    {
+    }
+    bool operator==(const channel_t& a_channel) const
+    {
+      return (memory_flow == a_channel.memory_flow) &&
+        (remote_channel_ident == a_channel.remote_channel_ident);
+    }
+  };
+  typedef std::multimap<size_type, channel_t> channels_type;
+
+  void add_part_connection(memory_flow_t* ap_memory_flow,
+    size_type a_local_channel_ident, size_type a_remote_channel_ident);
+  void delete_part_connection(memory_flow_t* ap_memory_flow,
+    size_type a_local_channel_ident, size_type a_remote_channel_ident);
+  size_type write_to_local_buffer(size_type a_channel_ident,
+    const irs_u8 *ap_buf, size_type a_size);
+  std::multimap<size_type, channel_t>::iterator find_channel(
+    memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
+    size_type a_remote_channel_ident);
+
+  std::multimap<size_type, channel_t> m_channels;
+  std::map<size_type, vector<irs_u8> > m_channel_buffers;
+  size_type m_receive_buf_max_size;
+  std::map<size_type, vector<irs_u8> >::const_iterator m_channel;
 };
 
 //! @}

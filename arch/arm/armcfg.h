@@ -167,7 +167,7 @@ void gpio_moder_analog_enable(gpio_channel_t a_channel);
 void gpio_moder_input_enable(gpio_channel_t a_channel);
 void gpio_otyper_output_open_drain_enable(gpio_channel_t a_channel);
 
-void gpio_alternate_function_select(gpio_channel_t a_channel, 
+void gpio_alternate_function_select(gpio_channel_t a_channel,
   size_t a_function_number);
 
 void gpio_ospeedr_select(gpio_channel_t a_channel, size_t a_speed);
@@ -180,6 +180,7 @@ enum interrupt_type_t
 
 void update_interrupt_enable(size_t a_address);
 void update_interrupt_enabled(size_t a_address, bool a_enabled);
+
 #endif // IRS_STM32F_2_AND_4
 } // namespace irs
 

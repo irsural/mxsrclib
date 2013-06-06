@@ -27,7 +27,7 @@
 // Длина строки для ip-адреса
 #define IP_STR_LEN 16
 // Длина строки для mac-адреса
-#define MAC_STR_LEN 16
+#define MAC_STR_LEN 18
 // Максимальное число сегмента ip-адреса
 #define IP_NUM_MAX 255
 // Максимальное число сегмента mac-адреса
@@ -38,6 +38,7 @@ enum {
   mac_length = 6
 };
 
+#pragma pack(push, 1)
 struct mxip_t
 {
   union {
@@ -64,6 +65,7 @@ struct mxip_t
     return ip;
   }
 };
+#pragma pack(pop)
 
 inline bool operator ==(mxip_t a_ip1, mxip_t a_ip2)
 {
@@ -85,6 +87,14 @@ inline void mxip_to_cstr(char* a_ip_in_str, mxip_t a_ip)
   strm << static_cast<int>(a_ip.val[2]) << '.';
   strm << static_cast<int>(a_ip.val[3]) << '\0';
   a_ip_in_str[IP_STR_LEN - 1] = 0;
+}
+
+inline irs::string_t mxip_to_str(const mxip_t& a_ip)
+{
+  char cstr[IP_STR_LEN + 1];
+  mxip_to_cstr(cstr, a_ip);
+  std::string str(cstr, IP_STR_LEN);
+  return irs::str_conv<irs::string_t>(str);
 }
 
 inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
@@ -174,6 +184,16 @@ inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
   }
 }
 
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+template<class S>
+bool str_to_mxip(const S& a_str, mxip_t* a_ip)
+{
+  const std::string s = irs::str_conv<std::string>(a_str);
+  return cstr_to_mxip(*a_ip, s.c_str());
+}
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+
+#pragma pack(push, 1)
 struct mxmac_t
 {
   irs_u8 val[mac_length];
@@ -188,7 +208,19 @@ struct mxmac_t
     mxmac_t mac = {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
     return mac;
   }
+  bool operator<(const mxmac_t& a_mac) const
+  {
+    for (irs_size_t i = 0; i < mac_length; i++) {
+      if (val[i] < a_mac.val[i]) {
+        return true;
+      } else if (val[i] > a_mac.val[i]) {
+        return false;
+      }
+    }
+    return false;
+  }
 };
+#pragma pack(pop)
 
 inline bool operator ==(mxmac_t a_mac1, mxmac_t a_mac2)
 {
@@ -213,10 +245,32 @@ inline bool operator !=(mxmac_t a_mac1, mxmac_t a_mac2)
 inline void mxmac_to_cstr(char* a_mac_in_str, mxmac_t a_mac)
 {
   ostrstream strm(a_mac_in_str, MAC_STR_LEN);
-  strm << a_mac.val[0] << "." << a_mac.val[1] << ".";
-  strm << a_mac.val[2] << "." << a_mac.val[3] << ".";
-  strm << a_mac.val[4] << "." << a_mac.val[5] << "\0";
+  strm << hex << setw(2) << setfill('0') <<
+    static_cast<int>(a_mac.val[0]) << ":" <<
+    static_cast<int>(a_mac.val[1]) << ":" <<
+    static_cast<int>(a_mac.val[2]) << ":" <<
+    static_cast<int>(a_mac.val[3]) << ":" <<
+    static_cast<int>(a_mac.val[4]) << ":" <<
+    static_cast<int>(a_mac.val[5]) << "\0";
   a_mac_in_str[MAC_STR_LEN - 1] = 0;
+}
+
+inline irs::string_t mxmac_to_str(const mxmac_t& a_mac)
+{
+  char cstr[MAC_STR_LEN + 1];
+  mxmac_to_cstr(cstr, a_mac);
+  std::string str(cstr, MAC_STR_LEN);
+  return irs::str_conv<irs::string_t>(str);
+}
+
+inline bool cstr_to_hex_num_helper(char* a_str, int* ap_num)
+{
+  istrstream istr(a_str);
+  istr >> hex >> *ap_num;
+  if (!istr) {
+    return false;
+  }
+  return true;
 }
 
 inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
@@ -237,7 +291,7 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
     switch (mode) {
       case find_begin_num: {
         if (char_cur != ' ') {
-          if (isdigit(char_cur)) {
+          if (isxdigit(char_cur)) {
             begin_num = str_ind;
             mode = find_end_num;
           } else {
@@ -247,23 +301,35 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
         }
       } break;
       case find_end_num: {
-        if (!isdigit(char_cur)) {
+        if (!isxdigit(char_cur)) {
           if (cnt_num >= cnt_num_max) {
             exit_for = true;
             break;
           }
           end_num = str_ind;
           irs_i32 size_num = end_num - begin_num;
-          if (size_num > 3) return false;
-          irs_u8 num_in_str[4];
+          if (size_num > 2) return false;
+          irs_u8 num_in_str[3];
           memcpy(num_in_str, str_mac + begin_num, size_num);
           num_in_str[size_num] = 0;
-          int num_int = atoi(reinterpret_cast<char*>(num_in_str));
+          int num_int = 0;
+          if (!cstr_to_hex_num_helper(
+            reinterpret_cast<char*>(num_in_str), &num_int)) {
+            exit_for = true;
+            break;
+          }
+          /*istrstream istr(reinterpret_cast<char*>(num_in_str));
+          int num_int = 0;
+          istr >> hex >> num_int;
+          if (!istr) {
+            exit_for = true;
+            break;
+          }*/
           irs_i16 num = IRS_LOWORD(num_int);
-          if (num > IP_NUM_MAX) return false;
+          if (num > MAC_NUM_MAX) return false;
           a_mac.val[cnt_num] = IRS_LOBYTE(num);
           cnt_num++;
-          if (char_cur == '.') {
+          if (char_cur == ':') {
             mode = find_begin_num;
           } else {
             mode = find_point;
@@ -274,7 +340,7 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
         switch (char_cur) {
           case ' ': {
           } break;
-          case '.': {
+          case ':': {
             mode = find_begin_num;
           } break;
           default: {
@@ -287,13 +353,22 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
   }
   if (mode == find_end_num) {
     irs_i32 size_num = len - begin_num;
-    if (size_num > 3) return false;
-    irs_u8 num_in_str[4];
+    if (size_num > 2) return false;
+    irs_u8 num_in_str[3];
     memcpy(num_in_str, str_mac + begin_num, size_num);
     num_in_str[size_num] = 0;
-    int num_int = atoi(reinterpret_cast<char*>(num_in_str));
+    int num_int = 0;
+    if (!cstr_to_hex_num_helper(reinterpret_cast<char*>(num_in_str), &num_int)) {
+      return false;
+    }
+    /*istrstream istr(reinterpret_cast<char*>(num_in_str));
+    int num_int = 0;
+    istr >> hex >> num_int;
+    if (!istr) {
+      return false;
+    }*/
     irs_i16 num = IRS_LOWORD(num_int);
-    if (num > IP_NUM_MAX) return false;
+    if (num > MAC_NUM_MAX) return false;
     a_mac.val[cnt_num] = IRS_LOBYTE(num);
 
     return true;
@@ -305,6 +380,15 @@ inline bool cstr_to_mxmac(mxmac_t& a_mac, const char* a_str_mac)
     }
   }
 }
+
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+template<class S>
+bool str_to_mxmac(const S& a_str, mxmac_t* a_mac)
+{
+  const std::string s = irs::str_conv<std::string>(a_str);
+  return cstr_to_mxmac(*a_mac, s.c_str());
+}
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //namespace irs_shift_operator_ip_mac {
 
@@ -378,6 +462,20 @@ inline mxmac_t make_mxmac(const irs::char_t* a_mac)
   if (!cstr_to_mxmac(mac, IRS_SIMPLE_FROM_TYPE_STR(a_mac))) {
     mac = mxmac_t();
   }
+  return mac;
+}
+
+inline mxmac_t
+generate_mac(device_code_t a_device_code, irs_u16 a_device_id)
+{
+  IRS_STATIC_ASSERT(device_code_last <= 0xFF);
+  mxmac_t mac = mxmac_t::broadcast_mac();
+  mac.val[0] = 0x2;
+  mac.val[1] = 0x80;
+  mac.val[2] = 0xE1;
+  mac.val[3] = static_cast<irs_u8>(a_device_code);
+  mac.val[4] = IRS_HIBYTE(a_device_id);
+  mac.val[5] = IRS_LOBYTE(a_device_id);
   return mac;
 }
 

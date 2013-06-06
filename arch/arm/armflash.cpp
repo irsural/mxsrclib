@@ -316,6 +316,83 @@ bool irs::arm::flash_protected_t::double_error()
   return m_crc_error;
 }
 
+#ifdef IRS_STM32F_2_AND_4
+
+irs_u8* irs::arm::st_flash_page_begin(std::size_t a_page_index)
+{
+  IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
+  static const std::size_t sector_sizes[] = {
+    0x08000000,
+    0x08004000,
+    0x08008000,
+    0x0800C000,
+    0x08010000,
+    0x08020000,
+    0x08040000,
+    0x08060000,
+    0x08080000,
+    0x080A0000,
+    0x081C0000,
+    0x081E0000
+  };
+  IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
+  return reinterpret_cast<irs_u8*>(sector_sizes[a_page_index]);
+}
+
+std::size_t irs::arm::st_flash_page_index(const irs_u8* ap_pos)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  const std::size_t last_page_index = st_flash_page_count() - 1;
+  if ((ap_pos < st_flash_page_begin(0)) ||
+    (ap_pos >= st_flash_page_begin(last_page_index))) {
+    return std::numeric_limits<std::size_t>::max();
+  }
+  for (int i = st_flash_page_count() - 1; i > 0; i--) {
+    if (ap_pos >= st_flash_page_begin(i)) {
+      return i;
+    }
+  }
+  return std::numeric_limits<std::size_t>::max();
+}
+
+std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
+{
+  IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
+  static const std::size_t sector_sizes[] = {
+    1024*16,
+    1024*16,
+    1024*16,
+    1024*16,
+    1024*64,
+    1024*128,
+    1024*128,
+    1024*128,
+    1024*128,
+    1024*128,
+    1024*128,
+    1024*128
+  };
+  IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
+  return sector_sizes[a_page_index];
+}
+
+std::size_t irs::arm::st_flash_size_of_diapason_pages(
+  std::size_t a_first_page_index, std::size_t a_last_page_index)
+{
+  std::size_t size = 0;
+  std::size_t current_index = a_first_page_index;
+  while (current_index <= a_last_page_index) {
+    size += st_flash_page_size(current_index);
+    current_index++;
+  }
+  return size;
+}
+
+std::size_t irs::arm::st_flash_page_count()
+{
+  return 12;
+}
+
 // class st_flash_t
 irs::arm::st_flash_t::st_flash_t():
   m_process(process_wait_command),
@@ -352,6 +429,9 @@ void irs::arm::st_flash_t::erase_page(size_type a_page_index)
 void irs::arm::st_flash_t::write(irs_u8* ap_pos,
   const irs_u8 *ap_buf, size_type a_buf_size)
 {
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
+      reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
   mp_pos = ap_pos;
   mp_buf = ap_buf;
   mp_end = ap_buf + a_buf_size;
@@ -361,51 +441,25 @@ void irs::arm::st_flash_t::write(irs_u8* ap_pos,
 
 irs_u8* irs::arm::st_flash_t::page_begin(size_type a_page_index)
 {
-  IRS_LIB_ASSERT(a_page_index < sector_count);
-  static const size_type sector_sizes[] = {
-    0x08000000,
-    0x08004000,
-    0x08008000,
-    0x0800C000,
-    0x08010000,
-    0x08020000,
-    0x08040000,
-    0x08060000,
-    0x08080000,
-    0x080A0000,
-    0x081C0000,
-    0x081E0000
-  };
-  IRS_LIB_ASSERT(sector_count == IRS_ARRAYSIZE(sector_sizes));
-  return reinterpret_cast<irs_u8*>(sector_sizes[a_page_index]);
+  return st_flash_page_begin(a_page_index);
+}
+
+irs::arm::st_flash_t::size_type
+irs::arm::st_flash_t::page_index(const irs_u8* ap_pos) const
+{
+  return st_flash_page_index(ap_pos);
 }
 
 irs::arm::st_flash_t::size_type
 irs::arm::st_flash_t::page_size(size_type a_page_index) const
 {
-  IRS_LIB_ASSERT(a_page_index < sector_count);
-  static const size_type sector_sizes[] = {
-    1024*16,
-    1024*16,
-    1024*16,
-    1024*16,
-    1024*64,
-    1024*128,
-    1024*128,
-    1024*128,
-    1024*128,
-    1024*128,
-    1024*128,
-    1024*128
-  };
-  IRS_LIB_ASSERT(sector_count == IRS_ARRAYSIZE(sector_sizes));
-  return sector_sizes[a_page_index];
+  return st_flash_page_size(a_page_index);
 }
 
 irs::arm::st_flash_t::size_type
 irs::arm::st_flash_t::page_count() const
 {
-  return sector_count;
+  return st_flash_page_count();
 }
 
 irs_status_t irs::arm::st_flash_t::status() const
@@ -568,3 +622,320 @@ irs_u8 irs::arm::st_flash_t::voltage_range()
   }
   return voltage_range;
 }
+
+// class st_flash_files_t
+irs::arm::st_flash_files_t::st_flash_files_t(
+  various_page_mem_t* ap_various_page_mem
+):
+  m_files(),
+  mp_various_page_mem(ap_various_page_mem),
+  m_various_page_mem_file_array()
+{
+}
+
+/*void irs::arm::st_flash_files_t::add_file(string_type a_name,
+  size_type a_first_page_index,
+  size_type a_last_page_index, mode_io_t a_mode)
+{
+  IRS_LIB_ASSERT(a_first_page_index <= a_last_page_index);
+  IRS_LIB_ASSERT(a_last_page_index < st_flash_page_count());
+  if (m_files.find(a_name) != m_files.end()) {
+    IRS_LIB_ASSERT_MSG("”казанный файл уже есть в списке");
+    return;
+  }
+  bool diapason_valid = true;
+  if (a_first_page_index > a_last_page_index) {
+    diapason_valid = false;
+  }
+  files_map_type::const_iterator it = m_files.begin();
+  while (it != m_files.end()) {
+    if (!((a_last_page_index < it->second.first_page_index) ||
+      (a_first_page_index > it->second.last_page_index))) {
+      diapason_valid = false;
+      break;
+    }
+    ++it;
+  }
+  if (diapason_valid) {
+    file_t file;
+    file.first_page_index = a_first_page_index;
+    file.last_page_index = a_last_page_index;
+    file.mode = a_mode;
+    m_files.insert(std::make_pair(a_name, file));
+  } else {
+    IRS_LIB_ASSERT_MSG("”казан недопустимый диапазон");
+  }
+}*/
+
+void irs::arm::st_flash_files_t::add_file(
+  const string_type& a_name, irs_u8* ap_begin,
+  size_type a_current_size, size_type a_max_size,
+  bool a_save_load_size_enabled)
+{
+  add_file_helper(a_name, ap_begin, a_current_size, a_max_size,
+    mode_read_write, a_save_load_size_enabled);
+}
+
+void irs::arm::st_flash_files_t::add_file_write_only(
+  const string_type& a_name,
+  irs_u8* ap_begin, size_type a_max_size, bool a_save_size_enabled)
+{
+  add_file_helper(a_name, ap_begin, 0, a_max_size, mode_write_only,
+    a_save_size_enabled);
+}
+
+void irs::arm::st_flash_files_t::add_file_read_only(
+  const string_type& a_name,
+  irs_u8* ap_begin, size_type a_size, bool a_load_size_enabled)
+{
+  add_file_helper(a_name, ap_begin, a_size, a_size, mode_read_only,
+    a_load_size_enabled);
+}
+
+void irs::arm::st_flash_files_t::add_file_helper(
+  const string_type& a_name,
+  irs_u8* ap_begin, size_type a_current_size, size_type a_max_size,
+  mode_io_t a_mode, bool a_save_load_saze_enabled)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_begin)));
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
+      reinterpret_cast<irs_u32>(ap_begin + (a_max_size - 1))));
+  if (m_files.find(a_name) != m_files.end()) {
+    IRS_LIB_ASSERT_MSG("”казанный файл уже есть в списке");
+    return;
+  }
+  file_t file;
+  file.pos = ap_begin;
+  if (a_save_load_saze_enabled) {
+    file.size = 0;
+  } else {
+    file.size = a_current_size;
+  }
+  file.max_size = a_max_size;
+  file.save_load_size_enabled = a_save_load_saze_enabled;
+  file.first_page_index = st_flash_page_index(ap_begin);
+  file.last_page_index = st_flash_page_index(ap_begin + (a_max_size - 1));
+  IRS_LIB_ASSERT(file.first_page_index <= file.last_page_index);
+  file.mode = a_mode;
+
+  bool diapason_valid = true;
+  files_map_type::const_iterator it = m_files.begin();
+  while (diapason_valid && (it != m_files.end())) {
+    if ((a_mode == mode_read_only) && (it->second.mode == mode_read_only)) {
+      const irs_u8* new_file_begin = file.pos;
+      const irs_u8* new_file_end = file.pos + file.size;
+      const irs_u8* file_begin = it->second.pos;
+      const irs_u8* file_end = it->second.pos + it->second.size;
+      diapason_valid = (new_file_end <= file_begin) ||
+        (new_file_begin >= file_end);
+    } else {
+      diapason_valid = ((file.last_page_index < it->second.first_page_index) ||
+        (file.first_page_index > it->second.last_page_index));
+    }
+    ++it;
+  }
+  if (diapason_valid) {
+    if (file.save_load_size_enabled &&
+      ((a_mode == mode_read_only) || (a_mode == mode_read_write))) {
+      //irs_u8* begin = st_flash_page_begin(file.first_page_index);
+      file.size = *reinterpret_cast<file_size_type*>(file.pos);
+      if (file.size > file.max_size) {
+        file.size = 0;
+      }
+    }
+    m_files.insert(std::make_pair(a_name, file));
+  } else {
+    IRS_LIB_ASSERT_MSG("”казаный диапазон страниц уже зан€т");
+  }
+}
+
+irs::hfftp::file_read_only_t* irs::arm::st_flash_files_t::open_for_read(
+  const string_type& a_file_name,
+  irs::hfftp::file_error_t* ap_error_code)
+{
+  files_map_type::iterator it = get_file_for_open(a_file_name, ap_error_code);
+  if (it == m_files.end()) {
+    return IRS_NULL;
+  }
+  if ((it->second.mode != mode_read_only) &&
+    (it->second.mode != mode_read_write)) {
+    *ap_error_code = irs::hfftp::file_error_access_violation;
+    return IRS_NULL;
+  }
+  //irs_u8* begin = st_flash_page_begin(it->second.first_page_index);
+  irs_u8* begin = it->second.pos;
+  if (it->second.save_load_size_enabled) {
+    begin += sizeof(file_size_type);
+  }
+  //const size_type size = get_size_of_diapason_pages(it->second.first_page_index,
+    //it->second.last_page_index);
+  it->second.handle.reset(new irs::hfftp::memory_file_read_only_t(
+    begin, it->second.size));
+  *ap_error_code = irs::hfftp::file_error_no_error;
+  return static_cast<irs::hfftp::file_read_only_t*>(it->second.handle.get());
+}
+
+irs::hfftp::file_write_only_t* irs::arm::st_flash_files_t::open_for_write(
+  const string_type& a_file_name,
+  irs::hfftp::file_error_t* ap_error_code)
+{
+  if (!mp_various_page_mem) {
+    *ap_error_code = irs::hfftp::file_error_access_violation;
+    return IRS_NULL;
+  }
+  files_map_type::iterator it = get_file_for_open(a_file_name, ap_error_code);
+  if (it == m_files.end()) {
+    return IRS_NULL;
+  }
+  if ((it->second.mode != mode_write_only) &&
+    (it->second.mode != mode_read_write)) {
+    *ap_error_code = irs::hfftp::file_error_access_violation;
+    return IRS_NULL;
+  }
+  irs::hfftp::various_page_mem_file_write_only_t* file =
+    new irs::hfftp::various_page_mem_file_write_only_t(
+    mp_various_page_mem,
+    it->second.pos,// first_page_index,
+    it->second.max_size,// last_page_index,
+    it->second.save_load_size_enabled);
+  it->second.handle.reset(file);
+  m_various_page_mem_file_array.push_back(file);
+  return file;
+}
+
+irs::arm::st_flash_files_t::files_map_type::iterator
+irs::arm::st_flash_files_t::get_file_for_open(const string_type& a_file_name,
+  irs::hfftp::file_error_t* ap_error_code)
+{
+  files_map_type::iterator it = m_files.find(a_file_name);
+  if (it == m_files.end()) {
+    *ap_error_code = irs::hfftp::file_error_file_not_found;
+  } else if (!it->second.handle.is_empty()) {
+    *ap_error_code = irs::hfftp::file_error_access_violation;
+    it = m_files.end();
+  } else {
+    *ap_error_code = irs::hfftp::file_error_no_error;
+  }
+  return it;
+}
+
+void irs::arm::st_flash_files_t::close(irs::hfftp::file_base_t* ap_file)
+{
+  files_map_type::iterator it = find_file_iterator(ap_file);
+  if (it != m_files.end()) {
+    irs::hfftp::various_page_mem_file_write_only_t*
+      various_page_mem_write_only =
+      dynamic_cast<irs::hfftp::various_page_mem_file_write_only_t*>(ap_file);
+    if (various_page_mem_write_only) {
+      if ((various_page_mem_write_only->status() == irs_st_busy) ||
+        it->second.save_load_size_enabled) {
+        m_files_marked_as_closed.push_back(various_page_mem_write_only);
+        return;
+      }
+    }
+    close_file(it);
+    /*for (size_type i = 0; i < m_various_page_mem_file_array.size(); i++) {
+      if (m_various_page_mem_file_array[i] == ap_file) {
+        m_various_page_mem_file_array.erase(
+          m_various_page_mem_file_array.begin() + i);
+      }
+    }
+    it->second.size = it->second.handle->size();
+    it->second.handle.reset();*/
+  } else {
+    IRS_LIB_ASSERT_MSG("”казанный файл не был открыт этим экземпл€ром.");
+  }
+}
+
+irs::arm::st_flash_files_t::files_map_type::iterator
+irs::arm::st_flash_files_t::find_file_iterator(
+  irs::hfftp::file_base_t* ap_file)
+{
+  files_map_type::iterator it = m_files.begin();
+  while (it != m_files.end()) {
+    if (it->second.handle.get() == ap_file) {
+      return it;
+    }
+    ++it;
+  }
+  return m_files.end();
+}
+
+void irs::arm::st_flash_files_t::close_file(files_map_type::iterator a_iterator)
+{
+  for (size_type i = 0; i < m_various_page_mem_file_array.size(); i++) {
+    if (m_various_page_mem_file_array[i] == a_iterator->second.handle.get()) {
+      m_various_page_mem_file_array.erase(
+        m_various_page_mem_file_array.begin() + i);
+      break;
+    }
+  }
+  a_iterator->second.size = a_iterator->second.handle->size();
+  a_iterator->second.handle.reset();
+}
+
+irs::arm::st_flash_files_t::file_status_t
+irs::arm::st_flash_files_t::get_file_status(
+  const string_type& a_name) const
+{
+  const files_map_type::const_iterator it = m_files.find(a_name);
+  if (it == m_files.end()) {
+    throw std::logic_error("‘айл не найден");
+  }
+  if (it->second.handle.is_empty()) {
+    return file_status_closed;
+  } else if (
+    dynamic_cast<irs::hfftp::memory_file_read_only_t*>(it->second.handle.get())) {
+    return file_status_reading;
+  } else {
+    return file_status_writing;
+  }
+}
+
+irs::arm::st_flash_files_t::size_type
+irs::arm::st_flash_files_t::get_file_size(
+  const string_type& a_name) const
+{
+  const files_map_type::const_iterator it = m_files.find(a_name);
+  if (it == m_files.end()) {
+    throw std::logic_error("‘айл не найден");
+  }
+  return it->second.size;
+}
+
+irs_u8* irs::arm::st_flash_files_t::get_file_data_begin(const string_type& a_name)
+{
+  const files_map_type::const_iterator it = m_files.find(a_name);
+  if (it == m_files.end()) {
+    throw std::logic_error("‘айл не найден");
+  }
+  irs_u8* begin = st_flash_page_begin(it->second.first_page_index);
+  if (it->second.save_load_size_enabled) {
+    begin += sizeof(file_size_type);
+  }
+  return begin;
+}
+
+void irs::arm::st_flash_files_t::tick()
+{
+  for (size_type i = 0; i < m_various_page_mem_file_array.size(); i++) {
+    m_various_page_mem_file_array[i]->tick();
+  }
+  std::vector<hfftp::various_page_mem_file_write_only_t*>::iterator it =
+    m_files_marked_as_closed.begin();
+  while (it != m_files_marked_as_closed.end()) {
+    if ((*it)->status() != irs_st_busy) {
+      if (((*it)->status() == irs_st_ready) &&
+        (*it)->save_size_enabled() &&
+        !(*it)->size_saved()) {
+        (*it)->save_size();
+      } else {
+        close_file(find_file_iterator((*it)));
+        m_files_marked_as_closed.erase(it);
+        break;
+      }
+    }
+    ++it;
+  }
+}
+#endif  //  IRS_STM32F_2_AND_4

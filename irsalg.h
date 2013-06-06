@@ -76,9 +76,7 @@ namespace irs {
     calc_t m_average;
     bool m_accepted_average;
     calc_t sum()const;
-
     sko_calc_t();
-
   public:
     sko_calc_t(irs_u32 a_count);
     ~sko_calc_t();
@@ -232,7 +230,7 @@ namespace irs {
   calc_t sko_calc(data_t* ap_buff, size_t a_size) {
     calc_t result = 0;
     if ((ap_buff != IRS_NULL) && (a_size != 0)) {
-      irs::c_array_view_t<data_t> buff = 
+      irs::c_array_view_t<data_t> buff =
         irs::c_array_view_t<data_t>(
         reinterpret_cast<data_t*>(ap_buff), a_size);
       calc_t sum = 0;
@@ -245,13 +243,13 @@ namespace irs {
       for (size_t i = 0; i < a_size; i++) {
         val = static_cast<calc_t>(buff[i]);
         val -= average;
-        square_sum += val * val; 
+        square_sum += val * val;
       }
       result = sqrt(square_sum / a_size);
     }
     return result;
-  }  
-} //namespace irs 
+  }
+} //namespace irs
 
 
 namespace irs {
@@ -382,6 +380,71 @@ namespace irs {
 //! \addtogroup signal_processing_group
 //! @{
 
+//! \brief CRC-16/IBM
+//! \details
+//!   Width: 16
+//!   Poly: 0x8005 x^16 + x^15 + x^2 + 1
+//!   Init: 0xFFFF
+//!   RefIn: true
+//!   RefOut: true
+//!   XorOut: 0x0000
+//!   Check : 0x4B37 ("123456789")
+//!   Максимальная длина: 4095 байт (32767 бит) - обнаружение
+//!     одинарных, двойных, тройных и всех нечетных ошибок
+inline irs_u16 crc16(const irs_u8* ap_buf, size_t a_size)
+{
+  irs_u16 crc = 0xffff;
+  for (size_t i = 0; i < a_size; i++) {
+    crc = crc ^ ap_buf[i];
+    for (size_t j = 0;j < 8; j++) {
+      crc = (crc & 0x0001) ? ((crc >> 1) ^ 0xA001) : (crc >> 1);
+    }
+  }
+  return (crc);
+}
+
+struct crc16_data_t {
+  enum {
+    size = 256
+  };
+#ifdef __ICCAVR__
+#define STATIC_MEMORY_MODIFIER static IRS_ICCAVR_FLASH
+#define MEMORY_MODIFIER IRS_ICCAVR_FLASH
+#else //__ICCAVR__
+#define STATIC_MEMORY_MODIFIER
+#define MEMORY_MODIFIER
+#endif //__ICCAVR__
+
+  STATIC_MEMORY_MODIFIER irs_u16 table[size];
+#ifndef __ICCAVR__
+
+  crc16_data_t();
+#endif //__ICCAVR__
+};
+
+//! \brief CRC-16/IBM
+//! \details
+//!   Width: 16
+//!   Poly: 0x8005 x^16 + x^15 + x^2 + 1
+//!   Init: 0xFFFF
+//!   RefIn: true
+//!   RefOut: true
+//!   XorOut: 0x0000
+//!   Check : 0x4B37 ("123456789")
+//!   Максимальная длина: 4095 байт (32767 бит) - обнаружение
+//!     одинарных, двойных, тройных и всех нечетных ошибок
+//!   Потребление памяти: не менее 512 байт
+inline irs_u16 crc16_table(irs_u8* ap_buf, size_t a_size)
+{
+  static handle_t<crc16_data_t> crc16_data = new crc16_data_t();
+  irs_u16 crc = 0xFFFF;
+  for (size_t i = 0; i < a_size; i++) {
+    crc = (crc >> 8) ^ crc16_data->table[(crc & 0xFF) ^ *(ap_buf++)];
+  }
+  return crc;
+}
+
+
 struct crc32_data_t {
   enum {
     size = 256
@@ -401,13 +464,15 @@ struct crc32_data_t {
 #endif //__ICCAVR__
 };
 
-// Зеркальный табличный метод расчета crc32
-// Зеркальный метод является наиболее распространенным
-// Необходимый объем оперативной памяти не менее 1024 байт
-// Значительный прирост в скорости вычисления по сравнению с нетабличным
-// методом
+//! \brief Зеркальный табличный метод расчета crc32
+//! \details Зеркальный метод является наиболее распространенным
+//!   Необходимый объем оперативной памяти не менее 1024 байт
+//!   Значительный прирост в скорости вычисления по сравнению с нетабличным
+//!   методом.
+//!   Тесты производительности (массив на 1000 байт):
+//!     - STM32f217ZGT (120 МГц, IAR 6.3 без оптимизации) - 421 мкс.
 // Перенесен из cpp- в h-файл и сделан шаблонным, чтобы можно было вычислять
-// для eeprom-указателей в AVR
+//  для eeprom-указателей в AVR
 template<class T>
 irs_u32 crc32_table(const T* ap_buf, const size_t a_size)
 {

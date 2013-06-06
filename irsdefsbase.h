@@ -464,6 +464,26 @@ enum switch_t {
   sw_on = 1
 };
 
+//! \brief Код устройства
+enum device_code_t {
+  device_code_unknown = 0,
+  device_code_first = 1,
+  device_code_itn_2400 = device_code_first,
+  device_code_gtch_03m = 14,
+  device_code_u5023m = 16,
+  device_code_u309m = 17,
+  device_code_last = device_code_u309m
+};
+
+inline bool is_known_device_code(irs_size_t a_code)
+{
+  return (a_code == device_code_itn_2400) ||
+    (a_code == device_code_gtch_03m) ||
+    (a_code == device_code_u5023m) ||
+    (a_code == device_code_u309m);
+}
+
+
 }//namespace irs
 
 //  Статус всего

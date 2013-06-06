@@ -46,6 +46,7 @@ namespace {
 
 struct str_tm_cont_t
 {
+  const irs::string_t value;
   const irs::string_t volt_dc;
   const irs::string_t volt_ac;
   const irs::string_t current_dc;
@@ -58,6 +59,7 @@ struct str_tm_cont_t
   const irs::string_t time_interval;
   const irs::string_t time_interval_average;
   str_tm_cont_t():
+    value(irst("Значение при текущих настройках измерения")),
     volt_dc(irst("Постоянное напряжение")),
     volt_ac(irst("Переменное напряжение")),
     current_dc(irst("Постоянный ток")),
@@ -87,6 +89,7 @@ irs::string_t type_meas_to_str(const type_meas_t a_type_meas)
   irs::string_t str_type_meas = str_tm()->volt_dc;
 
   switch(a_type_meas){
+    case tm_value:          { str_type_meas = str_tm()->value;         } break;
     case tm_volt_dc:        { str_type_meas = str_tm()->volt_dc;       } break;
     case tm_volt_ac:        { str_type_meas = str_tm()->volt_ac;       } break;
     case tm_current_dc:     { str_type_meas = str_tm()->current_dc;    } break;
@@ -122,7 +125,9 @@ bool str_to_type_meas(
   const irs::string_t& a_str_type_meas, type_meas_t& a_type_meas)
 {
   bool fsuccess = true;
-  if (a_str_type_meas == str_tm()->volt_dc) {
+  if (a_str_type_meas == str_tm()->value) {
+    a_type_meas = tm_value;
+  } else if (a_str_type_meas == str_tm()->volt_dc) {
     a_type_meas = tm_volt_dc;
   } else if (a_str_type_meas == str_tm()->volt_ac) {
     a_type_meas = tm_volt_ac;
