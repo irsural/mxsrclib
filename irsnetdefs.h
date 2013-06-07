@@ -91,9 +91,9 @@ inline void mxip_to_cstr(char* a_ip_in_str, mxip_t a_ip)
 
 inline irs::string_t mxip_to_str(const mxip_t& a_ip)
 {
-  char cstr[IP_STR_LEN + 1];
+  char cstr[IP_STR_LEN];
   mxip_to_cstr(cstr, a_ip);
-  std::string str(cstr, IP_STR_LEN);
+  std::string str(cstr, IP_STR_LEN - 1);
   return irs::str_conv<irs::string_t>(str);
 }
 
@@ -245,21 +245,21 @@ inline bool operator !=(mxmac_t a_mac1, mxmac_t a_mac2)
 inline void mxmac_to_cstr(char* a_mac_in_str, mxmac_t a_mac)
 {
   ostrstream strm(a_mac_in_str, MAC_STR_LEN);
-  strm << hex << setw(2) << setfill('0') <<
-    static_cast<int>(a_mac.val[0]) << ":" <<
-    static_cast<int>(a_mac.val[1]) << ":" <<
-    static_cast<int>(a_mac.val[2]) << ":" <<
-    static_cast<int>(a_mac.val[3]) << ":" <<
-    static_cast<int>(a_mac.val[4]) << ":" <<
-    static_cast<int>(a_mac.val[5]) << "\0";
+  strm << hex << setfill('0') <<
+    setw(2) << static_cast<int>(a_mac.val[0]) << ':' <<
+    setw(2) << static_cast<int>(a_mac.val[1]) << ':' <<
+    setw(2) << static_cast<int>(a_mac.val[2]) << ':' <<
+    setw(2) << static_cast<int>(a_mac.val[3]) << ':' <<
+    setw(2) << static_cast<int>(a_mac.val[4]) << ':' <<
+    setw(2) << static_cast<int>(a_mac.val[5]) << '\0';
   a_mac_in_str[MAC_STR_LEN - 1] = 0;
 }
 
 inline irs::string_t mxmac_to_str(const mxmac_t& a_mac)
 {
-  char cstr[MAC_STR_LEN + 1];
+  char cstr[MAC_STR_LEN];
   mxmac_to_cstr(cstr, a_mac);
-  std::string str(cstr, MAC_STR_LEN);
+  std::string str(cstr, MAC_STR_LEN - 1);
   return irs::str_conv<irs::string_t>(str);
 }
 
