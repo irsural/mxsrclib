@@ -578,13 +578,28 @@ void mx_ext_chart_item_t::DoColorPrint()
   Paint(2);
 }
 
-void mx_ext_chart_item_t::canvas(TCanvas *Value)
+canvas_t& mx_ext_chart_item_t::canvas()
 {
-  if (FCanvas != Value)
-  {
-    FCanvas = Value;
-    if (FOnChange) FOnChange(this, cctCanvas);
-  }
+  return m_canvas;
+}
+void mx_ext_chart_item_t::canvas(const canvas_t &a_canvas)
+{
+  m_canvas = a_canvas;
+  if (FOnChange) FOnChange(this, cctCanvas);
+}
+rect_int_type mx_ext_chart_item_t::bounds_rect() const
+{
+  ((mx_ext_chart_t *)Owner)->PreCalc();
+  return FBoundsRect;
+}
+void mx_ext_chart_item_t::bounds_rect(const rect_int_type& Value)
+{
+  if ((Value.right - Value.left != FBoundsRect.right - FBoundsRect.left) ||
+      (Value.bottom - Value.top != FBoundsRect.bottom - FBoundsRect.top))
+    NeedCalculate = true;
+  FPrevBoundsRect = FBoundsRect;
+  FBoundsRect = Value;
+  if (FOnChange) FOnChange(this, cctBoundsRect);
 }
 
 void mx_ext_chart_item_t::PaintMarkerX(size_type i)
@@ -1087,22 +1102,6 @@ void mx_ext_chart_item_t::SetAutoScale(idx_t Index, bool Value)
     NeedAutoScale = true;
     if (FOnChange) FOnChange(this, cctAutoScale);
   }
-}
-
-void mx_ext_chart_item_t::SetBoundsRect(rect_int_type Value)
-{
-  if ((Value.Right - Value.Left != FBoundsRect.Right - FBoundsRect.Left) ||
-      (Value.Bottom - Value.Top != FBoundsRect.Bottom - FBoundsRect.Top))
-    NeedCalculate = true;
-  FPrevBoundsRect = FBoundsRect;
-  FBoundsRect = Value;
-  if (FOnChange) FOnChange(this, cctBoundsRect);
-}
-
-rect_int_type mx_ext_chart_item_t::GetBoundsRect() const
-{
-  ((mx_ext_chart_t *)Owner)->PreCalc();
-  return FBoundsRect;
 }
 
 int_type mx_ext_chart_item_t::left() const

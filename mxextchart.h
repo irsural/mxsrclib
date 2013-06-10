@@ -172,7 +172,7 @@ private:
   float_type *FMarkerX, *FMarkerY;
   rect_float_type ClipArea;
   vector<line_type> Lines;
-  TCanvas *FCanvas;
+  canvas_t m_canvas;
   TClassDblFunc FFunc[2];
   TPointer FData[2];
   rect_float_type FArea;
@@ -195,9 +195,9 @@ private:
   __property int_type Top = {read=GetTop, write=SetTop};
   __property int_type Width = {read=GetWidth, write=SetWidth};
   __property int_type Height = {read=GetHeight, write=SetHeight};
-  #endif //NOP
   __property TCanvas *Canvas = {read=FCanvas, write=SetCanvas};
   __property rect_int_type BoundsRect = {read=GetBoundsRect, write=SetBoundsRect};
+  #endif //NOP
   // События
   __property TChartChange OnChange = {read=FOnChange, write=FOnChange};
   __property TChartError OnError = {read=FOnError, write=FOnError};
@@ -214,7 +214,10 @@ private:
   void top(int_type Value);
   void width(int_type Value);
   void height(int_type Value);
-  void canvas(TCanvas *Value);
+  canvas_t& canvas();
+  void canvas(const canvas_t& a_canvas);
+  rect_int_type bounds_rect() const;
+  void bounds_rect(const rect_int_type &Value);
 
   bool IntoArea(point_float_type P) const;
   bool OutArea(point_float_type P1, point_float_type P2) const;
@@ -226,7 +229,6 @@ private:
   point_int_type ConvCoor(point_float_type P);
   point_float_type XYFunc(float_type t) const;
   void FloorAxis();
-  rect_int_type GetBoundsRect() const;
   //rect_float_type GetArea();
   TCompConv GetCompConv(idx_t Index) const;
   void PaintMarkerX(size_type i);
@@ -234,7 +236,6 @@ private:
   //void SetArea(rect_float_type Area);
   void SetAutoScale(idx_t Index, bool Value);
   //void SetBounds(bounds_float_type Bounds);
-  void SetBoundsRect(rect_int_type Value);
   void SetCompConv(idx_t Index, TCompConv Value);
   void SetShift(size_type Index, float_type Value);
   void SetScale(size_type Index, float_type Value);
