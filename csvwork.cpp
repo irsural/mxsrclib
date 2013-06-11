@@ -1175,11 +1175,8 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
 
   if (fsuccess) {
     string_type cell_str;
-    const size_type rdbuf_size = 1024;
-    char_type rdbuf[rdbuf_size];
     size_type quote_count = 0;
-    enum mode_t {
-      inspection_begin_ch_quote, find_delimiter, processing_str} mode;
+    enum mode_t { find_delimiter, processing_str} mode;
     enum delimiter_t {delimiter_col, deliminer_row};
     struct coord_cur_cell_t
     {
@@ -1188,102 +1185,81 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
     } coord_cur_cell = {0, 0};
 
     delimiter_t cur_delimiter = delimiter_col;
-    mode = inspection_begin_ch_quote;
-    size_type cur_elem = 0;
-    ifile.seekg(0, ios::end);
-    const size_type size = ifile.tellg();
-    size_type read_count = 0;
-    ifile.seekg(0, ios::beg);
-    size_type current_read_count = min(size - read_count, rdbuf_size);
-    //size_type current_read_count = ifile.readsome(rdbuf, rdbuf_size);
-    ifile.read(rdbuf, current_read_count);
-    while(current_read_count > 0) {
-      read_count += current_read_count;
-      while(cur_elem < current_read_count) {
-        switch (mode) {
-          case inspection_begin_ch_quote: {
-            if (rdbuf[cur_elem] == m_delimiter_cell) {
-              quote_count++;
-              cell_str += rdbuf[cur_elem];
-              cur_elem++;
-            }
-            mode = find_delimiter;
-          } break;
-          case find_delimiter: {
-            if (((rdbuf[cur_elem] == m_delimiter_col) ||
-              (rdbuf[cur_elem] == m_delimiter_row)) &&
-              (quote_count % 2 == 0))
-            {
-              if (rdbuf[cur_elem] == m_delimiter_col) {
-                cur_delimiter = delimiter_col;
-              } else {
-                cur_delimiter = deliminer_row;
-              }
-              mode = processing_str;
-            } else {
-              if (rdbuf[cur_elem] == m_delimiter_cell) {
-                quote_count++;
-              }
-              cell_str += rdbuf[cur_elem];
-              cur_elem++;
-            }
-          } break;
-          case processing_str: {
-            bool processing_str_success = true;
-            if (quote_count != 0) {
-              cell_str = cell_str.substr(1, cell_str.size()-2);
-              size_type index = 0;
-              size_type index_end = cell_str.size();
-              while (index < index_end) {
-                if (cell_str[index] == m_delimiter_cell) {
-                  index++;
-                  if ((cell_str[index] == m_delimiter_cell) &&
-                    (index < index_end))
-                  {
-                    cell_str.erase(index-1, 1);
-                    index_end = index_end - 1;
-                  } else {
-                    processing_str_success = false;
-                    break;
-                    // Запомнить координаты ячейки, в которой произошла ошибка
-                  }
-                } else {
-                  index++;
-                }
-              }
-            }
-            if (processing_str_success) {
-              size_type col_count = ap_table_string->get_col_count();
-              if (col_count <= coord_cur_cell.col) {
-                ap_table_string->set_col_count(coord_cur_cell.col+1);
-              }
-              size_type row_count = ap_table_string->get_row_count();
-              if (row_count <= coord_cur_cell.row) {
-                ap_table_string->set_row_count(coord_cur_cell.row+1);
-              }
-              ap_table_string->write_cell(
-                coord_cur_cell.col, coord_cur_cell.row, cell_str);
-              if (cur_delimiter == delimiter_col) {
-                coord_cur_cell.col++;
-              } else {
-                coord_cur_cell.col = 0;
-                coord_cur_cell.row++;
-              }
-            } else {
-              // Удаляем все
-              ap_table_string->clear();
-            }
-            cell_str.clear();
-            quote_count = 0;
-            cur_elem++;
-            mode = inspection_begin_ch_quote;
-          } break;
+    mode = find_delimiter;
+    char_type ch = ifile.get();
+    while(ifile.good()) {
+      if (mode == find_delimiter) {
+        if (ch == m_delimiter_cell) {
+          quote_count++;
+          cell_str += ch;
+        }
+        if (((ch == m_delimiter_col) ||
+          (ch == m_delimiter_row)) &&
+          (quote_count % 2 == 0))
+        {
+          if (ch == m_delimiter_col) {
+            cur_delimiter = delimiter_col;
+          } else {
+            cur_delimiter = deliminer_row;
+          }
+          mode = processing_str;
+        } else {
+          if (ch == m_delimiter_cell) {
+            quote_count++;
+          }
+          cell_str += ch;
         }
       }
-      cur_elem = 0;
-      //current_read_count = ifile.readsome(rdbuf, rdbuf_size);
-      current_read_count = min(size - read_count, rdbuf_size);
-      ifile.read(rdbuf, current_read_count);
+      if (mode == processing_str) {
+        bool processing_str_success = true;
+        if (quote_count != 0) {
+          cell_str = cell_str.substr(1, cell_str.size()-2);
+          size_type index = 0;
+          size_type index_end = cell_str.size();
+          while (index < index_end) {
+            if (cell_str[index] == m_delimiter_cell) {
+              index++;
+              if ((cell_str[index] == m_delimiter_cell) &&
+                (index < index_end))
+              {
+                cell_str.erase(index-1, 1);
+                index_end = index_end - 1;
+              } else {
+                processing_str_success = false;
+                break;
+                // Запомнить координаты ячейки, в которой произошла ошибка
+              }
+            } else {
+              index++;
+            }
+          }
+        }
+        if (processing_str_success) {
+          size_type col_count = ap_table_string->get_col_count();
+          if (col_count <= coord_cur_cell.col) {
+            ap_table_string->set_col_count(coord_cur_cell.col+1);
+          }
+          size_type row_count = ap_table_string->get_row_count();
+          if (row_count <= coord_cur_cell.row) {
+            ap_table_string->set_row_count(coord_cur_cell.row+1);
+          }
+          ap_table_string->write_cell(
+            coord_cur_cell.col, coord_cur_cell.row, cell_str);
+          if (cur_delimiter == delimiter_col) {
+            coord_cur_cell.col++;
+          } else {
+            coord_cur_cell.col = 0;
+            coord_cur_cell.row++;
+          }
+        } else {
+          // Удаляем все
+          ap_table_string->clear();
+        }
+        cell_str.clear();
+        quote_count = 0;
+        mode = find_delimiter;
+      }
+      ch = ifile.get();
     }
   }
   ifile.close();
