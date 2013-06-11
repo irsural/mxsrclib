@@ -512,16 +512,18 @@ void irs::tstlan4_t::controls_t::tick()
         if (chart_list->Strings[row] == irst("1")) {
           int var_index = row - m_header_size;
           string_type chart_name = name_list->Strings[row].c_str();
-          mp_chart->add(chart_name, m_chart_time, var_to_double(var_index));
+          mp_chart->add(chart_name, m_chart_time,
+            static_cast<double>(var_to_long_double(var_index)));
 
           if (m_is_csv_opened) {
             string_type csv_name = name_list->Strings[row].c_str();
             if (m_csv_names[csv_name] && (m_is_csv_opened)) {
               m_csv_file.set_var(irst("Time"),
                 irsstr_from_number_russian(char_t(), m_timer.get()));
+
               m_csv_file.set_var(csv_name,
                 irsstr_from_number_russian(char_t(),
-                var_to_double(var_index)));
+                var_to_long_double(var_index)));
             }
           }
         }
@@ -631,6 +633,16 @@ void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
 {
   integer_to_string_helper(a_value, ap_string);
 }
+void irs::tstlan4_t::controls_t::integer_to_string(long long a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
+void irs::tstlan4_t::controls_t::integer_to_string(unsigned long long a_value,
+  string_type* ap_string)
+{
+  integer_to_string_helper(a_value, ap_string);
+}
 String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
 {
   string_type val = 0;
@@ -642,6 +654,9 @@ String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
     } break;
     case netconn_t::item_t::type_bool: {
       integer_to_string(m_netconn.bool_vec[item.index], &val);
+    } break;
+    case netconn_t::item_t::type_i8: {
+      integer_to_string(m_netconn.i8_vec[item.index], &val);
     } break;
     case netconn_t::item_t::type_u8: {
       integer_to_string(m_netconn.u8_vec[item.index], &val);
@@ -655,11 +670,23 @@ String irs::tstlan4_t::controls_t::var_to_bstr(int a_var_index)
     case netconn_t::item_t::type_i32: {
       integer_to_string(m_netconn.i32_vec[item.index], &val);
     } break;
+    case netconn_t::item_t::type_u32: {
+      integer_to_string(m_netconn.u32_vec[item.index], &val);
+    } break;
+    case netconn_t::item_t::type_i64: {
+      integer_to_string(m_netconn.i64_vec[item.index], &val);
+    } break;
+    case netconn_t::item_t::type_u64: {
+      integer_to_string(m_netconn.u64_vec[item.index], &val);
+    } break;
     case netconn_t::item_t::type_float: {
       val = m_netconn.float_vec[item.index];
     } break;
     case netconn_t::item_t::type_double: {
       val = m_netconn.double_vec[item.index];
+    } break;
+    case netconn_t::item_t::type_long_double: {
+      val = m_netconn.long_double_vec[item.index];
     } break;
     default: {
       val = irst("bad");
@@ -687,6 +714,12 @@ void irs::tstlan4_t::controls_t::bstr_to_var(int a_var_index,
         m_netconn.bool_vec[item.index] = val_conn;
       }
     } break;
+    case netconn_t::item_t::type_i8: {
+      irs_i8 val_conn = 0;
+      if (val.to_number(val_conn)) {
+        m_netconn.i8_vec[item.index] = val_conn;
+      }
+    } break;
     case netconn_t::item_t::type_u8: {
       irs_u8 val_conn = 0;
       if (val.to_number(val_conn)) {
@@ -711,6 +744,24 @@ void irs::tstlan4_t::controls_t::bstr_to_var(int a_var_index,
         m_netconn.i32_vec[item.index] = val_conn;
       }
     } break;
+    case netconn_t::item_t::type_u32: {
+      irs_u32 val_conn = 0;
+      if (val.to_number(val_conn)) {
+        m_netconn.u32_vec[item.index] = val_conn;
+      }
+    } break;
+    case netconn_t::item_t::type_i64: {
+      irs_i64 val_conn = 0;
+      if (val.to_number(val_conn)) {
+        m_netconn.i64_vec[item.index] = val_conn;
+      }
+    } break;
+    case netconn_t::item_t::type_u64: {
+      irs_u64 val_conn = 0;
+      if (val.to_number(val_conn)) {
+        m_netconn.u64_vec[item.index] = val_conn;
+      }
+    } break;
     case netconn_t::item_t::type_float: {
       float val_conn = 0;
       if (val.to_number(val_conn)) {
@@ -723,9 +774,15 @@ void irs::tstlan4_t::controls_t::bstr_to_var(int a_var_index,
         m_netconn.double_vec[item.index] = val_conn;
       }
     } break;
+    case netconn_t::item_t::type_long_double: {
+      long double val_conn = 0;
+      if (val.to_number(val_conn)) {
+        m_netconn.long_double_vec[item.index] = val_conn;
+      }
+    } break;
   }
 }
-double irs::tstlan4_t::controls_t::var_to_double(int a_var_index)
+long double irs::tstlan4_t::controls_t::var_to_long_double(int a_var_index)
 {
   double val = 0;
   netconn_t::item_t item = m_netconn.items[a_var_index];
@@ -735,6 +792,9 @@ double irs::tstlan4_t::controls_t::var_to_double(int a_var_index)
     } break;
     case netconn_t::item_t::type_bool: {
       val = m_netconn.bool_vec[item.index];
+    } break;
+    case netconn_t::item_t::type_i8: {
+      val = m_netconn.i8_vec[item.index];
     } break;
     case netconn_t::item_t::type_u8: {
       val = m_netconn.u8_vec[item.index];
@@ -748,11 +808,23 @@ double irs::tstlan4_t::controls_t::var_to_double(int a_var_index)
     case netconn_t::item_t::type_i32: {
       val = m_netconn.i32_vec[item.index];
     } break;
+    case netconn_t::item_t::type_u32: {
+      val = m_netconn.u32_vec[item.index];
+    } break;
+    case netconn_t::item_t::type_i64: {
+      val = m_netconn.i64_vec[item.index];
+    } break;
+    case netconn_t::item_t::type_u64: {
+      val = m_netconn.u64_vec[item.index];
+    } break;
     case netconn_t::item_t::type_float: {
       val = m_netconn.float_vec[item.index];
     } break;
     case netconn_t::item_t::type_double: {
       val = m_netconn.double_vec[item.index];
+    } break;
+    case netconn_t::item_t::type_long_double: {
+      val = m_netconn.long_double_vec[item.index];
     } break;
   }
   return val;

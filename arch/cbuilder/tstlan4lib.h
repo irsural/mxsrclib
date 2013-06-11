@@ -121,8 +121,11 @@ private:
   private:
     struct netconn_t {
       struct item_t {
-        enum type_t { type_unknown, type_bit, type_bool ,type_u8, type_i16,
-          type_u16, type_u32, type_i32, type_u64, type_float, type_double };
+        enum type_t { type_unknown, type_bit, type_bool, type_i8,
+          type_u8, type_i16, type_u16, type_i32, type_u32, type_i64, type_u64,
+          type_float,
+          type_double,
+          type_long_double };
 
         type_t type;
         int index;
@@ -138,21 +141,32 @@ private:
 
       const char *name_bit;
       const char *name_bool;
+      const char *name_i8;
       const char *name_u8;
       const char *name_i16;
       const char *name_u16;
+      const char *name_long;
       const char *name_i32;
+      const char *name_u32;
+      const char *name_i64;
+      const char *name_u64;
       const char *name_float;
       const char *name_double;
+      const char *name_long_double;
 
       vector<bit_data_t> bit_vec;
       vector<conn_data_t<bool> > bool_vec;
+      vector<conn_data_t<irs_i8> > i8_vec;
       vector<conn_data_t<irs_u8> > u8_vec;
       vector<conn_data_t<irs_i16> > i16_vec;
       vector<conn_data_t<irs_u16> > u16_vec;
       vector<conn_data_t<irs_i32> > i32_vec;
+      vector<conn_data_t<irs_u32> > u32_vec;
+      vector<conn_data_t<irs_i64> > i64_vec;
+      vector<conn_data_t<irs_u64> > u64_vec;
       vector<conn_data_t<float> > float_vec;
       vector<conn_data_t<double> > double_vec;
+      vector<conn_data_t<long double> > long_double_vec;
 
       vector<item_t> items;
       //vector<type_t, size_t> m_type_sizes;
@@ -161,22 +175,32 @@ private:
       netconn_t():
         name_bit("bit"),
         name_bool("bool"),
+        name_i8("i8"),
         name_u8("u8"),
         name_i16("i16"),
         name_u16("u16"),
-        name_i32("long"),
+        name_long("long"),
+        name_i32("i32"),
+        name_u32("u32"),
+        name_i64("i64"),
+        name_u64("u64"),
         name_float("float"),
         name_double("double"),
+        name_long_double("long double"),
 
         bit_vec(),
         bool_vec(),
+        i8_vec(),
         u8_vec(),
         i16_vec(),
         u16_vec(),
         i32_vec(),
+        u32_vec(),
+        i64_vec(),
+        u64_vec(),
         float_vec(),
         double_vec(),
-
+        long_double_vec(),
         items(),
         mp_data(IRS_NULL)
       {
@@ -248,10 +272,12 @@ private:
           if (type_str == name_bit) {
             add_conn(bit_vec, var_index, conn_index, bit_index);
             is_cur_item_bit = true;
-
           } else if (type_str == name_bool) {
             add_conn(bool_vec, var_index, conn_index, bit_index,
               item_t::type_bool);
+          } else if (type_str == name_i8) {
+            add_conn(i8_vec, var_index, conn_index, bit_index,
+              item_t::type_i8);
           } else if (type_str == name_u8) {
             add_conn(u8_vec, var_index, conn_index, bit_index,
               item_t::type_u8);
@@ -261,12 +287,24 @@ private:
           } else if (type_str == name_u16) {
             add_conn(u16_vec, var_index, conn_index, bit_index,
               item_t::type_u16);
-          } else if (type_str == name_i32) {
+          } else if ((type_str == name_long) || (type_str == name_i32)) {
             add_conn(i32_vec, var_index, conn_index, bit_index,
               item_t::type_i32);
+          } else if (type_str == name_u32) {
+            add_conn(u32_vec, var_index, conn_index, bit_index,
+              item_t::type_u32);
+          } else if (type_str == name_i64) {
+            add_conn(i64_vec, var_index, conn_index, bit_index,
+              item_t::type_i64);
+          } else if (type_str == name_u64) {
+            add_conn(u64_vec, var_index, conn_index, bit_index,
+              item_t::type_u64);
           } else if (type_str == name_double) {
             add_conn(double_vec, var_index, conn_index, bit_index,
               item_t::type_double);
+          } else if (type_str == name_long_double) {
+            add_conn(long_double_vec, var_index, conn_index, bit_index,
+              item_t::type_long_double);
           } else { //type_float
             add_conn(float_vec, var_index, conn_index, bit_index,
               item_t::type_float);
@@ -398,9 +436,13 @@ private:
       string_type* ap_string);
     void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
       string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(long long a_value,
+      string_type* ap_string);
+    void irs::tstlan4_t::controls_t::integer_to_string(
+      unsigned long long a_value, string_type* ap_string);
     String var_to_bstr(int a_var_index);
     void bstr_to_var(int a_var_index, const String& a_bstr_val);
-    double var_to_double(int a_var_index);
+    long double var_to_long_double(int a_var_index);
     void fill_grid_index_col();
     bool is_saveable_col(int a_col);
     void save_grid_row(int a_row);
