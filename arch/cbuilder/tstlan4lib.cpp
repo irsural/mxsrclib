@@ -224,6 +224,8 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_start_btn(new TButton(mp_form)),
   mp_chart_btn(new TButton(mp_form)),
   mp_options_btn(new TButton(mp_form)),
+  mp_load_table_values_btn(new TButton(mp_form)),
+  mp_save_table_values_btn(new TButton(mp_form)),
   mp_log_memo(new TMemo(mp_form)),
   mp_splitter(new TSplitter(mp_form)),
   mp_grid_popup_insert_item(new TMenuItem(mp_form)),
@@ -318,6 +320,22 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_options_btn->Caption = irst("Настройки");
   mp_options_btn->Parent = mp_top_panel;
   mp_options_btn->OnClick = OptionsBtnClick;
+
+  mp_load_table_values_btn->Left = mp_options_btn->Left +
+    mp_options_btn->Width + btn_gap;
+  mp_load_table_values_btn->Top = mp_top_panel->Height/2 -
+    mp_options_btn->Height/2;
+  mp_load_table_values_btn->Caption = irst("Загр. знач.");
+  mp_load_table_values_btn->Parent = mp_top_panel;
+  mp_load_table_values_btn->OnClick = LoadTableValuesBtnClick;
+
+  mp_save_table_values_btn->Left = mp_load_table_values_btn->Left +
+    mp_load_table_values_btn->Width + btn_gap;
+  mp_save_table_values_btn->Top = mp_top_panel->Height/2 -
+    mp_load_table_values_btn->Height/2;
+  mp_save_table_values_btn->Caption = irst("Сохр. знач.");
+  mp_save_table_values_btn->Parent = mp_top_panel;
+  mp_save_table_values_btn->OnClick = SaveTableValuesBtnClick;
 
   mp_log_memo->Align = alTop;
   mp_log_memo->Height = 100;
@@ -1014,6 +1032,24 @@ void __fastcall irs::tstlan4_t::controls_t::OptionsBtnClick(TObject *Sender)
     m_inner_options_event.exec();
   }
 }
+void __fastcall irs::tstlan4_t::controls_t::LoadTableValuesBtnClick(
+  TObject *Sender)
+{
+  handle_t<TOpenDialog> open_dialog(new TOpenDialog(NULL));
+  if (open_dialog->Execute()) {
+    string_type file_name = str_conv<string_type>(open_dialog->FileName);
+    load_table_values(file_name);
+  }
+}
+void __fastcall irs::tstlan4_t::controls_t::SaveTableValuesBtnClick(
+  TObject *Sender)
+{
+  handle_t<TOpenDialog> open_dialog(new TOpenDialog(NULL));
+  if (open_dialog->Execute()) {
+    string_type file_name = str_conv<string_type>(open_dialog->FileName);
+    save_table_values(file_name);
+  }
+}
 void __fastcall irs::tstlan4_t::controls_t::GridInsertClick(TObject *Sender)
 {
   m_refresh_grid = true;
@@ -1124,3 +1160,124 @@ void irs::tstlan4_t::controls_t::ini_name(const string_type& a_ini_name)
   mp_param_box->set_ini_name(a_ini_name);
 }
 
+void irs::tstlan4_t::controls_t::save_table_values(
+  const string_type& a_file_name) const
+{
+  if (static_cast<std::size_t>((mp_vars_grid->RowCount - m_header_size)) >
+    m_netconn.items.size()) {
+    Application->MessageBox(
+      irst("Для сохранения значений необходимо, чтобы произошло подключение"),
+      irst("Ошибка"),
+      MB_OK + MB_ICONERROR);
+    return;
+  }
+
+  table_string_t table;
+
+  int row_count = mp_vars_grid->RowCount;
+  TStrings* value_list = mp_vars_grid->Cols[m_value_col];
+  table.set_col_count(m_csv_table_col_count);
+  table.set_row_count(mp_vars_grid->RowCount - m_header_size);
+
+  for (int row = m_header_size; row < row_count; row++) {
+    int var_index = row - m_header_size;
+    netconn_t::item_t item = m_netconn.items[var_index];
+    string_type type_str = m_netconn.type_to_str(item.type);
+    table.write_cell(m_csv_table_conn_index_col_index, var_index,
+      num_to_str(item.conn_index));
+    table.write_cell(m_csv_table_bit_index_col_index, var_index,
+      num_to_str(item.bit_index));
+    table.write_cell(m_csv_table_name_col_index, var_index,
+      irs::str_conv<string_type>(mp_vars_grid->Cells[m_name_col][row]));
+    table.write_cell(m_csv_table_type_col_index, var_index, type_str);
+    table.write_cell(m_csv_table_value_index_col_index, var_index,
+      irs::str_conv<string_type>(
+      mp_vars_grid->Cells[m_value_col][row]));
+  }
+  csvwork::csv_file_synchro_t csv_file(a_file_name);
+  csv_file.save(table);
+}
+
+void irs::tstlan4_t::controls_t::load_table_values(
+  const string_type& a_file_name)
+{
+  if (!mp_data->connected()) {
+    Application->MessageBox(
+      irst("Для загрузки значений необходимо подключение"),
+      irst("Ошибка"),
+      MB_OK + MB_ICONERROR);
+    return;
+  }
+  table_string_t table;
+  csvwork::csv_file_synchro_t csv_file(a_file_name);
+  csv_file.load(&table);
+
+  if (table.get_col_count() < m_csv_table_col_count) {
+    Application->MessageBox(
+      irst("В загруженной таблице мало столбцов"),
+      irst("Ошибка"),
+      MB_OK + MB_ICONERROR);
+    return;
+  }
+
+  int row_count = std::min(static_cast<std::size_t>(mp_vars_grid->RowCount),
+    m_netconn.items.size());
+  std::vector<int> rows_with_errors;
+  for (int row = m_header_size; row < row_count; row++) {
+    int var_index = row - m_header_size;
+    netconn_t::item_t item = m_netconn.items[var_index];
+    string_type conn_index_str = table.read_cell(
+      m_csv_table_conn_index_col_index, var_index);
+    int conn_index = 0;
+    if (!str_to_num(conn_index_str, &conn_index)) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+    if (conn_index != item.conn_index) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+    string_type bit_index_str = table.read_cell(
+      m_csv_table_bit_index_col_index, var_index);
+    int bit_index = 0;
+    if (!str_to_num(bit_index_str, &bit_index)) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+    if (bit_index != item.bit_index) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+
+    string_type type_str = table.read_cell(m_csv_table_type_col_index,
+      var_index);
+    netconn_t::item_t::type_t type = netconn_t::item_t::type_unknown;
+    if (!m_netconn.str_to_type(type_str, &type)) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+    if (type != item.type) {
+      rows_with_errors.push_back(var_index);
+      continue;
+    }
+    string_type value_str =
+      table.read_cell(m_csv_table_value_index_col_index, var_index);
+    bstr_to_var(var_index, irs::str_conv<String>(value_str));
+  }
+  if (!rows_with_errors.empty()) {
+    irs::ostringstream_t error_msg_ostr;
+    error_msg_ostr <<
+      irst("При загрузке возникли ошибки в следующих строках: ");
+    for (std::size_t i = 0; i < rows_with_errors.size(); i++) {
+      if (i > 0) {
+        error_msg_ostr << irst(", ");
+      }
+      error_msg_ostr << rows_with_errors[i];
+    }
+    error_msg_ostr << irst(".");
+    Application->MessageBox(
+      error_msg_ostr.str().c_str(),
+      irst("Ошибка"),
+      MB_OK + MB_ICONWARNING);
+  }
+}

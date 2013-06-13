@@ -117,6 +117,8 @@ private:
     void conf_section(const string_type& a_name);
     string_type ini_name();
     void ini_name(const string_type& a_ini_name);
+    void save_table_values(const string_type& a_file_name) const;
+    void load_table_values(const string_type& a_file_name);
     void tick();
   private:
     struct netconn_t {
@@ -129,30 +131,33 @@ private:
 
         type_t type;
         int index;
-
+        int conn_index;
+        int bit_index;
         item_t():
           type(type_unknown),
-          index(0)
+          index(0),
+          conn_index(0),
+          bit_index(0)
         {
         }
       }; //item_t
 
       static const int bit_in_byte = 8;
 
-      const char *name_bit;
-      const char *name_bool;
-      const char *name_i8;
-      const char *name_u8;
-      const char *name_i16;
-      const char *name_u16;
-      const char *name_long;
-      const char *name_i32;
-      const char *name_u32;
-      const char *name_i64;
-      const char *name_u64;
-      const char *name_float;
-      const char *name_double;
-      const char *name_long_double;
+      const string_type name_bit;
+      const string_type name_bool;
+      const string_type name_i8;
+      const string_type name_u8;
+      const string_type name_i16;
+      const string_type name_u16;
+      const string_type name_long;
+      const string_type name_i32;
+      const string_type name_u32;
+      const string_type name_i64;
+      const string_type name_u64;
+      const string_type name_float;
+      const string_type name_double;
+      const string_type name_long_double;
 
       vector<bit_data_t> bit_vec;
       vector<conn_data_t<bool> > bool_vec;
@@ -173,20 +178,20 @@ private:
       mxdata_t* mp_data;
 
       netconn_t():
-        name_bit("bit"),
-        name_bool("bool"),
-        name_i8("i8"),
-        name_u8("u8"),
-        name_i16("i16"),
-        name_u16("u16"),
-        name_long("long"),
-        name_i32("i32"),
-        name_u32("u32"),
-        name_i64("i64"),
-        name_u64("u64"),
-        name_float("float"),
-        name_double("double"),
-        name_long_double("long double"),
+        name_bit(irst("bit")),
+        name_bool(irst("bool")),
+        name_i8(irst("i8")),
+        name_u8(irst("u8")),
+        name_i16(irst("i16")),
+        name_u16(irst("u16")),
+        name_long(irst("long")),
+        name_i32(irst("i32")),
+        name_u32(irst("u32")),
+        name_i64(irst("i64")),
+        name_u64(irst("u64")),
+        name_float(irst("float")),
+        name_double(irst("double")),
+        name_long_double(irst("long double")),
 
         bit_vec(),
         bool_vec(),
@@ -205,6 +210,84 @@ private:
         mp_data(IRS_NULL)
       {
       }
+      string_type type_to_str(item_t::type_t a_type) const
+      {
+        switch (a_type) {
+          case item_t::type_bit: {
+            return name_bit;
+          } break;
+          case item_t::type_bool: {
+            return name_bool;
+          } break;
+          case item_t::type_i8: {
+            return name_i8;
+          } break;
+          case item_t::type_u8: {
+            return name_u8;
+          } break;
+          case item_t::type_i16: {
+            return name_i16;
+          } break;
+          case item_t::type_u16: {
+            return name_u16;
+          } break;
+          case item_t::type_i32: {
+            return name_i32;
+          } break;
+          case item_t::type_u32: {
+            return name_u32;
+          } break;
+          case item_t::type_i64: {
+            return name_i64;
+          } break;
+          case item_t::type_u64: {
+            return name_u64;
+          } break;
+          case item_t::type_float: {
+            return name_float;
+          } break;
+          case item_t::type_double: {
+            return name_double;
+          } break;
+          case item_t::type_long_double: {
+            return name_long_double;
+          } break;
+        }
+        return string_type();
+      }
+      bool str_to_type(const string_type& a_str, item_t::type_t* ap_type)
+      {
+        if (a_str == name_bit) {
+          *ap_type = item_t::type_bit;
+        } else if (a_str == name_bool) {
+          *ap_type = item_t::type_bool;
+        } else if (a_str == name_i8) {
+          *ap_type = item_t::type_i8;
+        } else if (a_str == name_u8) {
+          *ap_type = item_t::type_u8;
+        } else if (a_str == name_i16) {
+          *ap_type = item_t::type_i16;
+        } else if (a_str == name_u16) {
+          *ap_type = item_t::type_u16;
+        } else if ((a_str == name_long) || (a_str == name_i32)) {
+          *ap_type = item_t::type_i32;
+        } else if (a_str == name_u32) {
+          *ap_type = item_t::type_u32;
+        } else if (a_str == name_i64) {
+          *ap_type = item_t::type_i64;
+        } else if (a_str == name_u64) {
+          *ap_type = item_t::type_u64;
+        } else if (a_str == name_float) {
+          *ap_type = item_t::type_float;
+        } else if (a_str == name_double) {
+          *ap_type = item_t::type_double;
+        } else if (a_str == name_long_double) {
+          *ap_type = item_t::type_long_double;
+        } else {
+          return false;
+        }
+        return true;
+      }
       void add_conn(vector<bit_data_t>& a_vec, int a_var_index,
         int& a_conn_index, int& a_bit_index)
       {
@@ -219,9 +302,13 @@ private:
             a_bit_index = 0;
             a_conn_index++;
           }
+          items[a_var_index].conn_index = a_conn_index;
+          items[a_var_index].bit_index = a_bit_index;
         } else {
           items[a_var_index].type = item_t::type_unknown;
           items[a_var_index].index = 0;
+          items[a_var_index].conn_index = 0;
+          items[a_var_index].bit_index = 0;
         }
       }
       template <class T>
@@ -237,9 +324,13 @@ private:
           items[a_var_index].index = a_vec.size();
           a_vec.push_back(conn_data_t<T>());
           a_conn_index = a_vec.back().connect(mp_data, a_conn_index);
+          items[a_var_index].conn_index = a_conn_index;
+          items[a_var_index].bit_index = 0;
         } else {
           items[a_var_index].type = item_t::type_unknown;
           items[a_var_index].index = 0;
+          items[a_var_index].conn_index = 0;
+          items[a_var_index].bit_index = 0;
         }
       }
       int connect(mxdata_t* ap_data, TStringGrid* ap_grid, int a_type_col,
@@ -264,11 +355,12 @@ private:
         int conn_index = 0;
         int bit_index = 0;
         for (int row = 1; row < row_count; row++) {
-          String type_str = types->Strings[row];
+          string_type type_str = irs::str_conv<string_type>(types->Strings[row]);
           const int var_index = row - 1;
           int conn_index_grid = conn_index;
           int bit_index_grid = bit_index;
           bool is_cur_item_bit = false;
+
           if (type_str == name_bit) {
             add_conn(bit_vec, var_index, conn_index, bit_index);
             is_cur_item_bit = true;
@@ -351,6 +443,15 @@ private:
     static const int m_value_col_width = 150;
     static const int m_chart_col_width = 40;
 
+    enum {
+      m_csv_table_conn_index_col_index = 0,
+      m_csv_table_bit_index_col_index = 1,
+      m_csv_table_name_col_index = 2,
+      m_csv_table_type_col_index = 3,
+      m_csv_table_value_index_col_index = 4,
+      m_csv_table_col_count = m_csv_table_value_index_col_index + 1
+    };
+
     TForm* mp_form;
     TPanel* mp_top_panel;
     TOpenDialog* mp_open_dialog;
@@ -358,6 +459,8 @@ private:
     TButton* mp_start_btn;
     TButton* mp_chart_btn;
     TButton* mp_options_btn;
+    TButton* mp_load_table_values_btn;
+    TButton* mp_save_table_values_btn;
     TMemo* mp_log_memo;
     TSplitter* mp_splitter;
     TMenuItem* mp_grid_popup_insert_item;
@@ -456,6 +559,8 @@ private:
     void __fastcall CsvSaveBtnClick(TObject *Sender);
     void __fastcall CsvLoadBtnClick(TObject *Sender);
     void __fastcall OptionsBtnClick(TObject *Sender);
+    void __fastcall LoadTableValuesBtnClick(TObject *Sender);
+    void __fastcall SaveTableValuesBtnClick(TObject *Sender);
     void __fastcall GridInsertClick(TObject *Sender);
     void __fastcall GridDeleteClick(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);
