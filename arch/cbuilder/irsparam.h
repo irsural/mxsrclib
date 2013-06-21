@@ -72,6 +72,8 @@ public:
     vector<string_type>* ap_param_values_list);
   virtual void add_bool(const string_type& a_param_name,
     bool a_param_value);
+  virtual void add_param_box(const string_type& a_param_name,
+    param_box_base_t* ap_param_box_base);
   virtual bool get_param(const string_type& a_param_name,
     string_type* ap_param_value) const;
   virtual string_type get_param(const string_type& a_param_name) const;
@@ -96,12 +98,13 @@ private:
   TValueListEditor* mp_value_list_editor;
   irs_u8 m_cur_param_row;
   map<string_type, string_type> m_param_def_list;
-
+  std::map<string_type, param_box_base_t*> m_param_box_base_map;
   void save_form_params();
   void load_form_params();
   void __fastcall ok_btn_click(TObject *Sender);
   void __fastcall cancel_btn_click(TObject *Sender);
   void __fastcall on_close_event(TObject *Sender, TCloseAction &Action);
+  void __fastcall on_edit_btn_click(TObject *Sender);
 }; // param_box_t
 
 //! @}

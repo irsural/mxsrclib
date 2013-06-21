@@ -47,7 +47,7 @@ public:
   typedef tstlan4_base_t::char_type char_type;
 private:
   static const char_type* def_ini_name();
-  static const char_type* def_ini_section_prefix();
+  static const char_type* def_ini_section();
 public:
   enum form_type_t { ft_internal, ft_external };
   enum global_log_connect_t {
@@ -59,7 +59,7 @@ public:
   tstlan4_t(
     form_type_t a_form_type = ft_internal,
     const string_type& a_ini_name = def_ini_name(),
-    const string_type& a_ini_section_prefix = def_ini_section_prefix(),
+    const string_type& a_ini_section = def_ini_section(),
     counter_t a_update_time_cnt = irs::make_cnt_ms(200),
     global_log_connect_t a_global_log_connect = global_log_unchange
   );
@@ -97,7 +97,7 @@ private:
       form_type_t a_form_type,
       TForm *ap_form,
       const string_type& a_ini_name,
-      const string_type& a_ini_section_prefix,
+      const string_type& a_ini_section,
       irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
       counter_t a_update_time_cnt
     );
@@ -355,7 +355,8 @@ private:
         int conn_index = 0;
         int bit_index = 0;
         for (int row = 1; row < row_count; row++) {
-          string_type type_str = irs::str_conv<string_type>(types->Strings[row]);
+          string_type type_str =
+            irs::str_conv<string_type>(types->Strings[row]);
           const int var_index = row - 1;
           int conn_index_grid = conn_index;
           int bit_index_grid = bit_index;
@@ -506,7 +507,7 @@ private:
     map<string_type, bool> m_chart_names;
     map<string_type, bool> m_csv_names;
     measure_time_t m_timer;
-    string_type m_ini_section_prefix;
+    string_type m_ini_section;
     bool m_start;
     //bool m_first;
     event_t m_refresh_csv_state_event;
@@ -577,7 +578,7 @@ private:
   TForm *mp_form;
   auto_ptr<controls_t> mp_controls;
   const string_type m_ini_name;
-  const string_type m_ini_section_prefix;
+  const string_type m_ini_section;
   irs::memobuf m_log_buf;
   counter_t m_update_time_cnt;
   global_log_connect_t m_global_log_connect;

@@ -37,6 +37,8 @@ public:
     vector<string_type>* ap_param_values_list) = 0;
   virtual void add_bool(const string_type& a_param_name,
     bool a_param_value) = 0;
+  virtual void add_param_box(const string_type& a_param_name,
+    param_box_base_t* ap_param_box_base) = 0;
   virtual bool get_param(const string_type& a_param_name,
     string_type* ap_param_value) const = 0;
   virtual string_type get_param(const string_type& a_param_name) const = 0;

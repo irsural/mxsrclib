@@ -70,6 +70,7 @@ irs::param_box_t::param_box_t(
   mp_value_list_editor->DefaultRowHeight = 17;
   mp_value_list_editor->TitleCaptions->Strings[header_col] = irst("Параметр");
   mp_value_list_editor->TitleCaptions->Strings[option_col] = irst("Значение");
+  mp_value_list_editor->OnEditButtonClick = on_edit_btn_click;
 
   if (a_ini_name == irst("")) {
     m_ini_file.set_ini_name(m_ini_file.ini_name().c_str());
@@ -147,6 +148,15 @@ void __fastcall irs::param_box_t::on_close_event(TObject *Sender,
   save_form_params();
   m_ini_file.load();
   Action = caHide;
+}
+
+void __fastcall irs::param_box_t::on_edit_btn_click(TObject *Sender)
+{
+  String key = mp_value_list_editor->Keys[mp_value_list_editor->Row];
+  std::map<string_type, param_box_base_t*>::iterator it =
+    m_param_box_base_map.find(str_conv<string_type>(key));
+  IRS_LIB_ASSERT(it != m_param_box_base_map.end());
+  it->second->show();
 }
 
 irs::param_box_t::~param_box_t()
@@ -275,6 +285,20 @@ void irs::param_box_t::add_bool(const string_type& a_param_name,
   }
 }
 
+void irs::param_box_t::add_param_box(const string_type& a_param_name,
+  param_box_base_t* ap_param_box_base)
+{
+  String Key = str_conv<String>(a_param_name);
+  int row_index = 0;
+  if (!mp_value_list_editor->FindRow(Key, row_index)) {
+    m_param_box_base_map.insert(std::make_pair(a_param_name,
+      ap_param_box_base));
+    mp_value_list_editor->InsertRow(Key, irst(""), true);
+    mp_value_list_editor->ItemProps[Key]->EditStyle = esEllipsis;
+    mp_value_list_editor->ItemProps[Key]->ReadOnly = true;
+  }
+}
+
 bool irs::param_box_t::get_param(const string_type& a_param_name,
   string_type* ap_param_value) const
 {
@@ -339,5 +363,6 @@ void irs::param_box_t::delete_edit(const string_type& a_param_name)
   int row_index = 0;
   if (mp_value_list_editor->FindRow(Key, row_index)) {
     mp_value_list_editor->DeleteRow(row_index);
+    m_param_box_base_map.erase(a_param_name);
   }
 }

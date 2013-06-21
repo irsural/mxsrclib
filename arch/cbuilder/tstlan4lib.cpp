@@ -25,7 +25,7 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
   mp_form(IRS_NULL),
   mp_controls(IRS_NULL),
   m_ini_name(a_tstlan4.m_ini_name),
-  m_ini_section_prefix(a_tstlan4.m_ini_section_prefix),
+  m_ini_section(a_tstlan4.m_ini_section),
   m_log_buf(a_tstlan4.m_log_buf),
   m_update_time_cnt(a_tstlan4.m_update_time_cnt),
   m_global_log_connect(a_tstlan4.m_global_log_connect)
@@ -41,7 +41,7 @@ irs::tstlan4_t::tstlan4_t(const tstlan4_t& a_tstlan4):
 irs::tstlan4_t::tstlan4_t(
   form_type_t a_form_type,
   const string_type& a_ini_name,
-  const string_type& a_ini_section_prefix,
+  const string_type& a_ini_section,
   counter_t a_update_time_cnt,
   global_log_connect_t a_global_log_connect
 ):
@@ -50,7 +50,7 @@ irs::tstlan4_t::tstlan4_t(
   mp_form(IRS_NULL),
   mp_controls(IRS_NULL),
   m_ini_name(a_ini_name),
-  m_ini_section_prefix(a_ini_section_prefix),
+  m_ini_section(a_ini_section),
   m_log_buf(IRS_NULL, 100),
   m_update_time_cnt(a_update_time_cnt),
   m_global_log_connect(a_global_log_connect)
@@ -79,7 +79,7 @@ void irs::tstlan4_t::init(TForm *ap_form)
   }
   mp_form = ap_form;
   mp_controls.reset(new controls_t(m_form_type, mp_form, m_ini_name,
-    m_ini_section_prefix, stay_on_top, m_update_time_cnt));
+    m_ini_section, stay_on_top, m_update_time_cnt));
   if (m_global_log_connect == global_log_connect) {
     m_log_buf.connect(mp_controls->log());
     irs::mlog().rdbuf(&m_log_buf);
@@ -98,7 +98,7 @@ const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_name()
 {
   return irst("tstlan3.ini");
 }
-const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_section_prefix()
+const irs::tstlan4_t::char_type* irs::tstlan4_t::def_ini_section()
 {
   return irst("");
 }
@@ -212,7 +212,7 @@ irs::tstlan4_t::controls_t::controls_t(
   form_type_t a_form_type,
   TForm *ap_form,
   const string_type& a_ini_name,
-  const string_type& a_ini_section_prefix,
+  const string_type& a_ini_section,
   irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
   counter_t a_update_time_cnt
 ):
@@ -269,7 +269,7 @@ irs::tstlan4_t::controls_t::controls_t(
   m_chart_names(),
   m_csv_names(),
   m_timer(),
-  m_ini_section_prefix(a_ini_section_prefix),
+  m_ini_section(a_ini_section),
   m_start(false),
   //m_first(true),
   m_refresh_csv_state_event(),
@@ -285,7 +285,7 @@ irs::tstlan4_t::controls_t::controls_t(
 
   if (m_form_type == ft_internal) {
     ini_name(a_ini_name);
-    conf_section(m_ini_section_prefix);
+    conf_section(m_ini_section);
   }
 
   const int btn_gap = 10;
@@ -1138,17 +1138,17 @@ void irs::tstlan4_t::controls_t::clear_conf()
 }
 irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::conf_section()
 {
-  return m_ini_section_prefix;
+  return m_ini_section;
 }
 void irs::tstlan4_t::controls_t::conf_section(const string_type& a_name)
 {
-  m_ini_section_prefix = a_name;
+  m_ini_section = a_name;
   m_ini_file.clear_control();
-  m_ini_file.set_section(String(m_ini_section_prefix.c_str()));
+  m_ini_file.set_section(String(m_ini_section.c_str()));
   m_ini_file.add(irst(""), mp_vars_grid, irst("Name_"), m_name_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Type_"), m_type_col);
   m_ini_file.add(irst(""), mp_vars_grid, irst("Graph_"), m_chart_col);
-  m_ini_file.add("tstlan4lin_form_", mp_form);
+  m_ini_file.add("tstlan4lib_form_", mp_form);
 }
 irs::tstlan4_t::string_type irs::tstlan4_t::controls_t::ini_name()
 {
