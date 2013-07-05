@@ -395,9 +395,10 @@ inline irs_u16 crc16(const irs_u8* ap_buf, size_t a_size)
 {
   irs_u16 crc = 0xffff;
   for (size_t i = 0; i < a_size; i++) {
-    crc = crc ^ ap_buf[i];
+    crc = static_cast<irs_u16>(crc ^ ap_buf[i]);
     for (size_t j = 0;j < 8; j++) {
-      crc = (crc & 0x0001) ? ((crc >> 1) ^ 0xA001) : (crc >> 1);
+      crc = static_cast<irs_u16>(
+        (crc & 0x0001) ? ((crc >> 1) ^ 0xA001) : (crc >> 1));
     }
   }
   return (crc);
@@ -439,7 +440,8 @@ inline irs_u16 crc16_table(irs_u8* ap_buf, size_t a_size)
   static handle_t<crc16_data_t> crc16_data = new crc16_data_t();
   irs_u16 crc = 0xFFFF;
   for (size_t i = 0; i < a_size; i++) {
-    crc = (crc >> 8) ^ crc16_data->table[(crc & 0xFF) ^ *(ap_buf++)];
+    crc = static_cast<irs_u16>(
+      (crc >> 8) ^ crc16_data->table[(crc & 0xFF) ^ *(ap_buf++)]);
   }
   return crc;
 }

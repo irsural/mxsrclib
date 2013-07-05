@@ -22,6 +22,7 @@ namespace irs {
 class tstlan4_base_t
 {
 public:
+  typedef irs_size_t size_type;
   typedef string_t string_type;
   typedef char_t char_type;
 
@@ -34,6 +35,8 @@ public:
   virtual void connect(mxdata_t *ap_data) = 0;
   virtual void update_time(const irs_i32 a_update_time) = 0;
   virtual void resize_chart(const irs_u32 a_size) = 0;
+  //! \brief Очистка графика и сброс времени
+  virtual void reset_chart() = 0;
   virtual void options_event_connect(event_t* ap_event) = 0;
   virtual void options_event_clear() = 0;
   virtual event_t* inner_options_event() = 0;

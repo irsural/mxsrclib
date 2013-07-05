@@ -2901,6 +2901,27 @@ private:
   timer_t m_timer;
 };
 
+class multimeter_mxdata_t: public mxdata_t
+{
+public:
+  multimeter_mxdata_t(mxmultimeter_t* ap_mxmultimeter, double a_update_time);
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index,
+    irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual inline void write_bit(irs_uarc a_index, irs_uarc a_bit_index,
+    irs_bool a_bit);
+  virtual void tick();
+private:
+  mxmultimeter_t* mp_mxmultimeter;
+  loop_timer_t m_timer;
+  double m_value;
+};
+
 //! @}
 
 } //namespace irs

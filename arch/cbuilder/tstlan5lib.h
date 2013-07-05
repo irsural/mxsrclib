@@ -1,15 +1,17 @@
 //! \file
 //! \ingroup graphical_user_interface_group
-//! \brief Тест сети 4 - библиотека
+//! \brief Тест сети 5 - библиотека
 //!
-//! Дата: 22.05.2011\n
-//! Дата создания: 17.09.2009
+//! Дата создания: 21.06.2013
 
-#ifndef tstlan4libH
-#define tstlan4libH
+#ifndef tstlan5libH
+#define tstlan5libH
+
+#if IRS_USE_DEV_EXPRESS
 
 #include <irsdefs.h>
 
+#include <tstlan4lib.h>
 #include <tstlan4abs.h>
 #include <timer.h>
 #include <mxini.h>
@@ -21,28 +23,106 @@
 #include <irsparamabs.h>
 #include <irschartwin.h>
 
+#include <cxGrid.hpp>
+#include <cxGridDBTableView.hpp>
+
 #include <irsfinal.h>
+
+
 
 namespace irs {
 
 //! \addtogroup graphical_user_interface_group
 //! @{
 
-struct destructor_test_t
+String extract_file_ultra_short_name(const String& Name);
+
+template <class T>
+T extract_file_ultra_short_name(const T& a_file_name)
 {
-  destructor_test_t()
-  {
-    irs::mlog() << "constructor" << endl;
+  String Name = irs::str_conv<String>(a_file_name);
+  String ShortFileName = ExtractFileName(Name);
+  String ExtFileName = ExtractFileExt(ShortFileName);
+  int LengthFileName = ShortFileName.Length();
+  int LengthExt = ExtFileName.Length();
+  if (LengthFileName > LengthExt) {
+    ShortFileName = ShortFileName.SubString(1, LengthFileName - LengthExt);
   }
-  ~destructor_test_t()
-  {
-    irs::mlog() << "destructor" << endl;
-  }
+  return irs::str_conv<T>(ShortFileName);
+}
+
+namespace tstlan {
+
+enum type_t {
+  type_first = 0,
+  type_unknown = type_first,
+  type_bit,
+  type_bool,
+  type_i8,
+  type_u8,
+  type_i16,
+  type_u16,
+  type_i32,
+  type_u32,
+  type_i64,
+  type_u64,
+  type_float,
+  type_double,
+  type_long_double,
+  type_count
 };
 
-class tstlan4_t: public tstlan4_base_t
+string_t type_to_str(type_t a_type);
+bool str_to_type(const string_t& a_str, type_t* ap_type);
+
+class vars_ini_file_t
 {
 public:
+  typedef string_t string_type;
+  enum vle_load_t { vle_load_value, vle_load_full };
+  vars_ini_file_t(
+    TcxGridTableView* ap_cx_grid_table_view,
+    TcxGridColumn* ap_name_column,
+    TcxGridColumn* ap_type_column,
+    TcxGridColumn* ap_chart_column,
+    const string_type& a_section_prefix);
+  void set_ini_name(const String& a_ini_name);
+  void set_section(const string_type& a_section);
+  void load();
+  void save() const;
+  void save_cx_grid_table_view_row(int a_row_index) const;
+  void save_cx_grid_table_view_row_count() const;
+private:
+  void load_cx_grid_table_view_row_count(TIniFile *ap_ini_file);
+  void save_cx_grid_table_view_row_count(TIniFile *ap_ini_file) const;
+  void load_cx_grid_table_view_row(TIniFile *ap_ini_file,
+    int a_row_index);
+  void save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+    int a_row_index) const;
+  void load_name(TIniFile *ap_ini_file, int a_row_index);
+  void save_name(TIniFile *ap_ini_file, int a_row_index) const;
+  void load_type(TIniFile *ap_ini_file, int a_row_index);
+  void save_type(TIniFile *ap_ini_file, int a_row_index) const;
+  void load_chart(TIniFile *ap_ini_file, int a_row_index);
+  void save_chart(TIniFile *ap_ini_file, int a_row_index) const;
+  string_type m_ini_name;
+  TcxGridTableView* mp_cx_grid_table_view;
+  TcxGridColumn* mp_name_column;
+  TcxGridColumn* mp_type_column;
+  TcxGridColumn* mp_chart_column;
+  string_type m_section_prefix;
+  const string_type m_section_name;
+  string_type m_section_full_name;
+  const string_type m_name_row_count;
+  const string_type m_name_column_prefix;
+  const string_type m_type_column_prefix;
+  const string_type m_chart_column_prefix;
+};
+
+class view_t: public tstlan4_base_t
+{
+public:
+  typedef tstlan4_base_t::size_type size_type;
   typedef tstlan4_base_t::string_type string_type;
   typedef tstlan4_base_t::char_type char_type;
 private:
@@ -55,11 +135,12 @@ public:
     global_log_unchange
   };
 
-  tstlan4_t(const tstlan4_t& a_tstlan4);
-  tstlan4_t(
+  view_t(const view_t& a_view);
+  view_t(
     form_type_t a_form_type = ft_internal,
+    chart_window_t* ap_extern_chart = IRS_NULL,
     const string_type& a_ini_name = def_ini_name(),
-    const string_type& a_ini_section = def_ini_section(),
+    const string_type& a_ini_section_prefix = string_type(),
     counter_t a_update_time_cnt = irs::make_cnt_ms(200),
     global_log_connect_t a_global_log_connect = global_log_unchange
   );
@@ -93,20 +174,25 @@ private:
   class controls_t: public TObject
   {
   public:
-    //controls_t(const controls_t& a_controls, TForm *ap_form);
+    typedef view_t::size_type size_type;
+    typedef view_t::string_type string_type;
+    typedef view_t::char_type char_type;
     controls_t(
       form_type_t a_form_type,
       TForm *ap_form,
+      chart_window_t* ap_extern_chart,
       const string_type& a_ini_name,
       const string_type& a_ini_section,
       irs::chart::builder_chart_window_t::stay_on_top_t a_stay_on_top,
       counter_t a_update_time_cnt
     );
+    void create_grid();
     virtual __fastcall ~controls_t();
     void connect(mxdata_t *ap_data);
     void update_time(const irs_i32 a_update_time);
     void resize_chart(const irs_u32 a_size);
-    // Консоль внутри tstlan4
+    void reset_chart();
+    // Консоль внутри tstlan5
     TMemo* log();
     void options_event_connect(event_t* ap_event);
     void options_event_clear();
@@ -124,12 +210,6 @@ private:
   private:
     struct netconn_t {
       struct item_t {
-        enum type_t { type_unknown, type_bit, type_bool, type_i8,
-          type_u8, type_i16, type_u16, type_i32, type_u32, type_i64, type_u64,
-          type_float,
-          type_double,
-          type_long_double };
-
         type_t type;
         int index;
         int conn_index;
@@ -144,21 +224,6 @@ private:
       }; //item_t
 
       static const int bit_in_byte = 8;
-
-      const string_type name_bit;
-      const string_type name_bool;
-      const string_type name_i8;
-      const string_type name_u8;
-      const string_type name_i16;
-      const string_type name_u16;
-      const string_type name_long;
-      const string_type name_i32;
-      const string_type name_u32;
-      const string_type name_i64;
-      const string_type name_u64;
-      const string_type name_float;
-      const string_type name_double;
-      const string_type name_long_double;
 
       vector<bit_data_t> bit_vec;
       vector<conn_data_t<bool> > bool_vec;
@@ -175,125 +240,18 @@ private:
       vector<conn_data_t<long double> > long_double_vec;
 
       vector<item_t> items;
-      //vector<type_t, size_t> m_type_sizes;
       mxdata_t* mp_data;
 
       netconn_t():
-        name_bit(irst("bit")),
-        name_bool(irst("bool")),
-        name_i8(irst("i8")),
-        name_u8(irst("u8")),
-        name_i16(irst("i16")),
-        name_u16(irst("u16")),
-        name_long(irst("long")),
-        name_i32(irst("i32")),
-        name_u32(irst("u32")),
-        name_i64(irst("i64")),
-        name_u64(irst("u64")),
-        name_float(irst("float")),
-        name_double(irst("double")),
-        name_long_double(irst("long double")),
-
-        bit_vec(),
-        bool_vec(),
-        i8_vec(),
-        u8_vec(),
-        i16_vec(),
-        u16_vec(),
-        i32_vec(),
-        u32_vec(),
-        i64_vec(),
-        u64_vec(),
-        float_vec(),
-        double_vec(),
-        long_double_vec(),
         items(),
         mp_data(IRS_NULL)
       {
-      }
-      string_type type_to_str(item_t::type_t a_type) const
-      {
-        switch (a_type) {
-          case item_t::type_bit: {
-            return name_bit;
-          } break;
-          case item_t::type_bool: {
-            return name_bool;
-          } break;
-          case item_t::type_i8: {
-            return name_i8;
-          } break;
-          case item_t::type_u8: {
-            return name_u8;
-          } break;
-          case item_t::type_i16: {
-            return name_i16;
-          } break;
-          case item_t::type_u16: {
-            return name_u16;
-          } break;
-          case item_t::type_i32: {
-            return name_i32;
-          } break;
-          case item_t::type_u32: {
-            return name_u32;
-          } break;
-          case item_t::type_i64: {
-            return name_i64;
-          } break;
-          case item_t::type_u64: {
-            return name_u64;
-          } break;
-          case item_t::type_float: {
-            return name_float;
-          } break;
-          case item_t::type_double: {
-            return name_double;
-          } break;
-          case item_t::type_long_double: {
-            return name_long_double;
-          } break;
-        }
-        return string_type();
-      }
-      bool str_to_type(const string_type& a_str, item_t::type_t* ap_type)
-      {
-        if (a_str == name_bit) {
-          *ap_type = item_t::type_bit;
-        } else if (a_str == name_bool) {
-          *ap_type = item_t::type_bool;
-        } else if (a_str == name_i8) {
-          *ap_type = item_t::type_i8;
-        } else if (a_str == name_u8) {
-          *ap_type = item_t::type_u8;
-        } else if (a_str == name_i16) {
-          *ap_type = item_t::type_i16;
-        } else if (a_str == name_u16) {
-          *ap_type = item_t::type_u16;
-        } else if ((a_str == name_long) || (a_str == name_i32)) {
-          *ap_type = item_t::type_i32;
-        } else if (a_str == name_u32) {
-          *ap_type = item_t::type_u32;
-        } else if (a_str == name_i64) {
-          *ap_type = item_t::type_i64;
-        } else if (a_str == name_u64) {
-          *ap_type = item_t::type_u64;
-        } else if (a_str == name_float) {
-          *ap_type = item_t::type_float;
-        } else if (a_str == name_double) {
-          *ap_type = item_t::type_double;
-        } else if (a_str == name_long_double) {
-          *ap_type = item_t::type_long_double;
-        } else {
-          return false;
-        }
-        return true;
       }
       void add_conn(vector<bit_data_t>& a_vec, int a_var_index,
         int& a_conn_index, int& a_bit_index)
       {
         if ((size_t)a_conn_index < mp_data->size()) {
-          items[a_var_index].type = item_t::type_bit;
+          items[a_var_index].type = type_bit;
           items[a_var_index].index = a_vec.size();
           a_vec.push_back(bit_data_t());
           a_conn_index = a_vec.back().connect(mp_data, a_conn_index,
@@ -306,7 +264,7 @@ private:
           items[a_var_index].conn_index = a_conn_index;
           items[a_var_index].bit_index = a_bit_index;
         } else {
-          items[a_var_index].type = item_t::type_unknown;
+          items[a_var_index].type = type_unknown;
           items[a_var_index].index = 0;
           items[a_var_index].conn_index = 0;
           items[a_var_index].bit_index = 0;
@@ -314,7 +272,7 @@ private:
       }
       template <class T>
       void add_conn(vector<conn_data_t<T> >& a_vec, int a_var_index,
-        int& a_conn_index, int& a_bit_index, item_t::type_t a_type)
+        int& a_conn_index, int& a_bit_index, type_t a_type)
       {
         if (a_bit_index != 0) {
           a_bit_index = 0;
@@ -328,80 +286,107 @@ private:
           items[a_var_index].conn_index = a_conn_index;
           items[a_var_index].bit_index = 0;
         } else {
-          items[a_var_index].type = item_t::type_unknown;
+          items[a_var_index].type = type_unknown;
           items[a_var_index].index = 0;
           items[a_var_index].conn_index = 0;
           items[a_var_index].bit_index = 0;
         }
       }
-      int connect(mxdata_t* ap_data, TStringGrid* ap_grid, int a_type_col,
+      int connect(mxdata_t* ap_data, TcxGrid* ap_grid, int a_type_col,
         int a_index_col)
       {
         mp_data = ap_data;
 
         bit_vec.clear();
         bool_vec.clear();
+        i8_vec.clear();
         u8_vec.clear();
+        i16_vec.clear();
+        u16_vec.clear();
         i32_vec.clear();
+        u32_vec.clear();
+        i64_vec.clear();
+        u64_vec.clear();
         float_vec.clear();
         double_vec.clear();
+        long_double_vec.clear();
 
         items.clear();
-
-        TStrings *types = ap_grid->Cols[a_type_col];
-        TStrings *indexes = ap_grid->Cols[a_index_col];
-        int row_count = ap_grid->RowCount;
-
+        const int row_count = ap_grid->ActiveView->DataController->RecordCount;
+        ap_grid->ActiveView->BeginUpdate();
         items.resize(row_count);
         int conn_index = 0;
         int bit_index = 0;
-        for (int row = 1; row < row_count; row++) {
-          string_type type_str =
-            irs::str_conv<string_type>(types->Strings[row]);
-          const int var_index = row - 1;
+        for (int row = 0; row < row_count; row++) {
+          Variant type_variant =
+            ap_grid->ActiveView->DataController->Values[row][a_type_col];
+          String type_bstr;
+          if (!type_variant.IsNull()) {
+            type_bstr = type_variant;
+          }
+
+          string_type type_str = irs::str_conv<string_type>(type_bstr);
+          type_t type = type_i32;
+          str_to_type(type_str, &type);
+
+          const int var_index = row;
           int conn_index_grid = conn_index;
           int bit_index_grid = bit_index;
           bool is_cur_item_bit = false;
 
-          if (type_str == name_bit) {
-            add_conn(bit_vec, var_index, conn_index, bit_index);
-            is_cur_item_bit = true;
-          } else if (type_str == name_bool) {
-            add_conn(bool_vec, var_index, conn_index, bit_index,
-              item_t::type_bool);
-          } else if (type_str == name_i8) {
-            add_conn(i8_vec, var_index, conn_index, bit_index,
-              item_t::type_i8);
-          } else if (type_str == name_u8) {
-            add_conn(u8_vec, var_index, conn_index, bit_index,
-              item_t::type_u8);
-          } else if (type_str == name_i16) {
-            add_conn(i16_vec, var_index, conn_index, bit_index,
-              item_t::type_i16);
-          } else if (type_str == name_u16) {
-            add_conn(u16_vec, var_index, conn_index, bit_index,
-              item_t::type_u16);
-          } else if ((type_str == name_long) || (type_str == name_i32)) {
-            add_conn(i32_vec, var_index, conn_index, bit_index,
-              item_t::type_i32);
-          } else if (type_str == name_u32) {
-            add_conn(u32_vec, var_index, conn_index, bit_index,
-              item_t::type_u32);
-          } else if (type_str == name_i64) {
-            add_conn(i64_vec, var_index, conn_index, bit_index,
-              item_t::type_i64);
-          } else if (type_str == name_u64) {
-            add_conn(u64_vec, var_index, conn_index, bit_index,
-              item_t::type_u64);
-          } else if (type_str == name_double) {
-            add_conn(double_vec, var_index, conn_index, bit_index,
-              item_t::type_double);
-          } else if (type_str == name_long_double) {
-            add_conn(long_double_vec, var_index, conn_index, bit_index,
-              item_t::type_long_double);
-          } else { //type_float
-            add_conn(float_vec, var_index, conn_index, bit_index,
-              item_t::type_float);
+          switch (type) {
+            case type_bit: {
+              add_conn(bit_vec, var_index, conn_index, bit_index);
+              is_cur_item_bit = true;
+            } break;
+            case type_bool: {
+              add_conn(bool_vec, var_index, conn_index, bit_index,
+                type_bool);
+            } break;
+            case type_i8: {
+              add_conn(i8_vec, var_index, conn_index, bit_index,
+                type_i8);
+            } break;
+            case type_u8: {
+              add_conn(u8_vec, var_index, conn_index, bit_index,
+                type_u8);
+            } break;
+            case type_i16: {
+              add_conn(i16_vec, var_index, conn_index, bit_index,
+                type_i16);
+            } break;
+            case type_u16: {
+              add_conn(u16_vec, var_index, conn_index, bit_index,
+                type_u16);
+            } break;
+            case type_i32: {
+              add_conn(i32_vec, var_index, conn_index, bit_index,
+                type_i32);
+            } break;
+            case type_u32: {
+              add_conn(u32_vec, var_index, conn_index, bit_index,
+                type_u32);
+            } break;
+            case type_i64: {
+              add_conn(i64_vec, var_index, conn_index, bit_index,
+                type_i64);
+            } break;
+            case type_u64: {
+              add_conn(u64_vec, var_index, conn_index, bit_index,
+                type_u64);
+            } break;
+            case type_float: {
+              add_conn(float_vec, var_index, conn_index, bit_index,
+                type_float);
+            } break;
+            case type_double: {
+              add_conn(double_vec, var_index, conn_index, bit_index,
+                type_double);
+            } break;
+            case type_long_double: {
+              add_conn(long_double_vec, var_index, conn_index, bit_index,
+                type_long_double);
+            } break;
           }
 
           if (!is_cur_item_bit) {
@@ -415,8 +400,10 @@ private:
           if (is_cur_item_bit) {
             index_bstr += "-" + String(bit_index_grid);
           }
-          indexes->Strings[row] = index_bstr;
+          ap_grid->ActiveView->DataController->Values[row][a_index_col] =
+            index_bstr;
         }
+        ap_grid->ActiveView->EndUpdate();
         return conn_index;
       }
     }; //netconn_t
@@ -427,10 +414,7 @@ private:
       param_box_tune_t(param_box_base_t* ap_param_box);
     };
 
-
-    static const int m_vars_count_start = 1;
-    static const int m_header_size = 1;
-    static const int m_grid_size = m_vars_count_start + m_header_size;
+    static const int m_grid_size = 1;
     static const int m_header_row = 0;
     static const int m_index_col = 0;
     static const int m_name_col = m_index_col + 1;
@@ -468,7 +452,16 @@ private:
     TMenuItem* mp_grid_popup_insert_item;
     TMenuItem* mp_grid_popup_delete_item;
     TPopupMenu* mp_grid_popup;
-    TStringGrid* mp_vars_grid;
+    TcxGrid* mp_vars_grid;
+    TcxGridTableView* mp_view;
+    TcxCustomDataController* mp_controller;
+    TcxCustomGridTableController* mp_table_controller;
+    TcxComboBoxProperties* mp_cx_combo_box_properties;
+    TcxGridColumn* mp_index_column;
+    TcxGridColumn* mp_name_column;
+    TcxGridColumn* mp_type_column;
+    TcxGridColumn* mp_value_column;
+    TcxGridColumn* mp_chart_column;
 
     const char_type* mp_read_on_text;
     const char_type* mp_read_off_text;
@@ -478,14 +471,15 @@ private:
     irs::memobuf m_buf;
     ostream m_out;
     irs::ini_file_t m_ini_file;
+    irs::handle_t<vars_ini_file_t> mp_vars_ini_file;
+    string_type m_device_name;
     irs::mxdata_t *mp_data;
     bool m_first_connect;
     bool m_refresh_grid;
     netconn_t m_netconn;
     bool is_edit_mode;
     bool is_write_var;
-    int write_var_index;
-    irs::chart::builder_chart_window_t m_builder_chart;
+    irs::handle_t<chart_window_t> mp_local_chart;
     chart_window_t* mp_chart;
     csv_file m_csv_file;
     csvwork::csv_file_synchro_t m_csv_open_file;
@@ -497,20 +491,15 @@ private:
     double m_chart_time;
     double m_minus_shift_time;
     bool m_refresh_table;
-    bool m_saveable_is_edit;
-    int m_saveable_col;
-    int m_saveable_row;
     bool m_is_lock;
     int m_chart_row;
-    bool m_is_grid_edit;
-    int m_grid_edit_col;
-    int m_grid_edit_row;
+
     map<string_type, bool> m_chart_names;
     map<string_type, bool> m_csv_names;
     measure_time_t m_timer;
-    string_type m_ini_section;
+    string_type m_ini_section_prefix;
+    const string_type m_ini_options_section;
     bool m_start;
-    //bool m_first;
     event_t m_refresh_csv_state_event;
     bool m_is_csv_opened;
     event_t* mp_event;
@@ -521,30 +510,6 @@ private:
 
     template <class T>
     void out_number(ostream_t& a_stream, const T& a_value);
-    template <class T>
-    void integer_to_string_helper(const T& a_value, string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(bool a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(unsigned char a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(signed char a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(unsigned short a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(signed short a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(unsigned int a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(signed int a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(unsigned long a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(signed long a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(long long a_value,
-      string_type* ap_string);
-    void irs::tstlan4_t::controls_t::integer_to_string(
-      unsigned long long a_value, string_type* ap_string);
     String var_to_bstr(int a_var_index);
     void bstr_to_var(int a_var_index, const String& a_bstr_val);
     long double var_to_long_double(int a_var_index);
@@ -553,8 +518,15 @@ private:
     void save_grid_row(int a_row);
     void open_csv();
     void close_csv();
-    void __fastcall VarsGridGetEditText(
-      TObject *Sender, int ACol, int ARow, String &Value);
+
+    void __fastcall cxGridTableViewColumnNamePropertiesValidate(TObject *Sender,
+      Variant &DisplayValue, TCaption &ErrorText, bool &Error);
+    void __fastcall cxGridTableView1ColumnTypePropertiesChange(TObject *Sender);
+    void __fastcall cxGridTableViewColumnValuePropertiesChange(TObject *Sender);
+    void __fastcall cxGridTableViewColumnValuePropertiesValidate(TObject *Sender,
+      Variant &DisplayValue, TCaption &ErrorText, bool &Error);
+    void __fastcall cxGridTableViewColumnChartPropertiesChange(TObject *Sender);
+
     void __fastcall VarsGridKeyDown(
       TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall ChartBtnClick(TObject *Sender);
@@ -568,9 +540,15 @@ private:
     void __fastcall FormHide(TObject *Sender);
     void __fastcall FormShow(TObject *Sender);
     void inner_options_apply();
+    void refresh_chart_items();
+    string_type get_variable_name(size_type a_row);
+    string_type get_chart_name(size_type a_row);
+    string_type make_chart_name(const string_type& a_variable_name);
+    bool get_chart_enabled_status(size_type a_row) const;
   }; //controls_t
 
   form_type_t m_form_type;
+  chart_window_t* mp_extern_chart;
   auto_ptr<TForm> mp_form_auto;
 
   destructor_test_t m_destructor_test;
@@ -579,14 +557,19 @@ private:
   TForm *mp_form;
   auto_ptr<controls_t> mp_controls;
   const string_type m_ini_name;
-  const string_type m_ini_section;
+  string_type m_ini_section_prefix;
+  const string_type m_ini_options_section;
   irs::memobuf m_log_buf;
   counter_t m_update_time_cnt;
   global_log_connect_t m_global_log_connect;
-}; //tstlan4_t
+}; //view_t
+
+} // namespace tstlan
 
 //! @}
 
-} //namespace irs
+} // namespace irs
 
-#endif //tstlan4libH
+#endif // IRS_USE_DEV_EXPRESS
+
+#endif //tstlan5libH

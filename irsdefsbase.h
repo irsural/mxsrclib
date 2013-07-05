@@ -146,6 +146,10 @@
 #define IRS_GNUC_VERSION_LESS_3_4
 #endif // GCC версии < 3.4
 
+#ifndef IRS_USE_DEV_EXPRESS
+# define IRS_USE_DEV_EXPRESS 0
+#endif // IRS_USE_DEV_EXPRESS
+
 // Статические утверждения
 // Взято из STLSoft
 // Перенесено из irserror.h для того, чтобы была возможность применить

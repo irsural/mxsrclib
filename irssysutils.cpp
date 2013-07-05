@@ -9,6 +9,10 @@
 #pragma hdrstop
 #endif // __BORLANDC__
 
+#ifdef __BORLANDC__
+# include <cbsysutils.h>
+#endif // __BORLANDC__
+
 #include <irssysutils.h>
 
 #include <irsfinal.h>
@@ -216,3 +220,12 @@ void irs::binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
   }
 }
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+
+irs::string_t irs::default_ini_name()
+{
+  #ifdef __BORLANDC__
+  return irs::cbuilder::default_ini_name();
+  #else // __BORLANDC__
+  return irst(".\\config.ini");
+  #endif // __BORLANDC__
+}

@@ -22,6 +22,12 @@
 #endif // (defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE))
 #include <SysUtils.hpp>
 
+#if IRS_USE_DEV_EXPRESS
+# include <cxGrid.hpp>
+# include <cxGridDBTableView.hpp>
+#endif // IRS_USE_DEV_EXPRESS
+
+
 #include <irscpp.h>
 #include <irsstd.h>
 #include <irsstrdefs.h>
@@ -70,6 +76,10 @@ public:
   void add(const String& a_name, TStringGrid *a_control);
   void add(const String& a_name, TStringGrid *a_control,
     const String& a_column_name, int a_column_index);
+  #if IRS_USE_DEV_EXPRESS
+  void add(const String& a_name, TcxGridTableView *a_control,
+    const String& a_column_name, TcxGridColumn* ap_column, int a_column_index);
+  #endif // IRS_USE_DEV_EXPRESS
   void add(const String& a_name, TValueListEditor* a_control,
     vle_load_t a_vle_load = vle_load_value);
   void add(const String& a_name, TForm* a_control);
@@ -77,6 +87,11 @@ public:
   void save() const;
   void save_grid_row(TStringGrid *a_control, int a_row_index) const;
   void save_grid_size(TStringGrid *a_control) const;
+  #if IRS_USE_DEV_EXPRESS
+  void save_cx_grid_table_view_row(TcxGridTableView *ap_control,
+    int a_row_index) const;
+  void save_cx_grid_table_view_row_count(TcxGridTableView* ap_control) const;
+  #endif // IRS_USE_DEV_EXPRESS
   void clear_control();
 private:
   struct control_t {
@@ -170,6 +185,34 @@ private:
       columns.push_back(column_t(a_index, a_name));
     }
   };
+  #if IRS_USE_DEV_EXPRESS
+  struct cx_grid_table_view_t: control_t {
+    struct column_t {
+      TcxGridColumn* column;
+      int index;
+      string_t name;
+      column_t(TcxGridColumn* ap_column, int a_index, string_t a_name):
+        column(ap_column),
+        index(a_index),
+        name(a_name)
+      {
+      }
+    };
+
+    vector<column_t> columns;
+
+    cx_grid_table_view_t(const string_t& a_section = irst(""),
+      const string_t& a_name = irst("")):
+      control_t(a_section, a_name),
+      columns()
+    {
+    }
+    void add(TcxGridColumn* ap_column, int a_index, const string_t& a_name)
+    {
+      columns.push_back(column_t(ap_column, a_index, a_name));
+    }
+  };
+  #endif // IRS_USE_DEV_EXPRESS
   typedef generalized_control_t<TValueListEditor> vle_general_type;
   struct value_list_editor_t {
 
@@ -218,6 +261,9 @@ private:
   vector<combo_box_t> m_combo_boxs;
   vector<radio_group_t> m_radio_groups;
   map<TStringGrid*, string_grid_t> m_string_grids;
+  #if IRS_USE_DEV_EXPRESS
+  map<TcxGridTableView*, cx_grid_table_view_t> m_cx_grid_table_views;
+  #endif // IRS_USE_DEV_EXPRESS
   vector<value_list_editor_t> m_value_list_editors;
   vector<form_t> m_forms;
 
@@ -236,7 +282,17 @@ private:
     const string_t& a_name) const;
   void load_save_grid_size(TIniFile *ap_ini_file, load_save_t a_load_save,
     TStringGrid *a_control) const;
-
+  #if IRS_USE_DEV_EXPRESS
+  void load_save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+    load_save_t a_load_save,
+    TcxGridTableView *ap_control, int a_row_index) const;
+  void load_save_cx_grid_table_view_cell(TIniFile *ap_ini_file,
+    load_save_t a_load_save,
+    TcxGridTableView *ap_control, int a_row_index, TcxGridColumn* ap_column,
+    const string_t& a_name) const;
+  void load_save_cx_grid_table_view_row_count(TIniFile *ap_ini_file,
+    load_save_t a_load_save, TcxGridTableView* ap_control) const;
+  #endif // IRS_USE_DEV_EXPRESS
 }; //class ini_file_t
 
 //! @}

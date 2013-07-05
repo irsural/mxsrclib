@@ -5094,5 +5094,69 @@ void irs::adapter_multimeter_t::tick()
   }
 }
 
+// class multimeter_mxdata_t
+irs::multimeter_mxdata_t::multimeter_mxdata_t(mxmultimeter_t* ap_mxmultimeter,
+  double a_update_time
+):
+  mp_mxmultimeter(ap_mxmultimeter),
+  m_timer(make_cnt_s(a_update_time)),
+  m_value(0)
+{
+}
 
+irs_uarc irs::multimeter_mxdata_t::size()
+{
+  return sizeof(m_value);
+}
 
+irs_bool irs::multimeter_mxdata_t::connected()
+{
+  return irs_true;
+}
+
+void irs::multimeter_mxdata_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index + a_size > sizeof(m_value)) {
+    fill(ap_buf, ap_buf + a_size, 0);
+    return;
+  }
+  const irs_u8* pos = reinterpret_cast<irs_u8*>(&m_value) + a_index;
+  memcpyex(ap_buf, pos, a_size);
+}
+
+void irs::multimeter_mxdata_t::write(const irs_u8* /*ap_buf*/,
+  irs_uarc /*a_index*/, irs_uarc /*a_size*/)
+{
+}
+
+irs_bool irs::multimeter_mxdata_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  return (reinterpret_cast<irs_u8*>(&m_value)[a_index]&(1 << a_bit_index)) ?
+    irs_true : irs_false;
+}
+
+void irs::multimeter_mxdata_t::set_bit(irs_uarc /*a_index*/,
+  irs_uarc /*a_bit_index*/)
+{
+}
+
+void irs::multimeter_mxdata_t::clear_bit(irs_uarc /*a_index*/,
+  irs_uarc /*a_bit_index*/)
+{
+}
+
+void irs::multimeter_mxdata_t::write_bit(irs_uarc /*a_index*/,
+  irs_uarc /*a_bit_index*/,
+  irs_bool /*a_bit*/)
+{
+}
+
+void irs::multimeter_mxdata_t::tick()
+{
+  if (mp_mxmultimeter->status() != meas_status_busy) {
+    if (m_timer.check()) {
+      mp_mxmultimeter->get_value(&m_value);
+    }
+  }
+}

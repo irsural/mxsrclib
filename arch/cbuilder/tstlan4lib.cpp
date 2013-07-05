@@ -131,6 +131,11 @@ void irs::tstlan4_t::resize_chart(const irs_u32 a_size)
 {
   mp_controls->resize_chart(a_size);
 }
+
+void irs::tstlan4_t::reset_chart()
+{
+}
+
 void irs::tstlan4_t::options_event_connect(event_t* ap_event)
 {
   mp_controls->options_event_connect(ap_event);
@@ -857,7 +862,7 @@ void irs::tstlan4_t::controls_t::fill_grid_index_col()
 bool irs::tstlan4_t::controls_t::is_saveable_col(int a_col)
 {
   return ((m_name_col == a_col) || (m_type_col == a_col) ||
-      (m_chart_col == a_col));
+    (m_chart_col == a_col));
 }
 void irs::tstlan4_t::controls_t::save_grid_row(int a_row)
 {

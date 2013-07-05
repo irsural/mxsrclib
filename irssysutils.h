@@ -878,6 +878,8 @@ map_iterator_t find_value(map_iterator_t a_begin, map_iterator_t a_end,
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
+string_t default_ini_name();
+
 //! @}
 
 } //namespace irs

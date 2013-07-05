@@ -333,6 +333,18 @@ void irs::ini_file_t::add(const String& a_name, TStringGrid *a_control,
   string_t column_name = a_column_name.c_str();
   m_string_grids[a_control].add(a_column_index, column_name);
 }
+#if IRS_USE_DEV_EXPRESS
+void irs::ini_file_t::add(const String& a_name, TcxGridTableView *a_control,
+  const String& a_column_name, TcxGridColumn* ap_column, int a_column_index)
+{
+  string_t name = a_name.c_str();
+  if (m_cx_grid_table_views.count(a_control) == 0) {
+    m_cx_grid_table_views[a_control] = cx_grid_table_view_t(m_section, name);
+  }
+  string_t column_name = a_column_name.c_str();
+  m_cx_grid_table_views[a_control].add(ap_column, a_column_index, column_name);
+}
+#endif // IRS_USE_DEV_EXPRESS
 void irs::ini_file_t::add(const String& a_name, TValueListEditor* a_control,
   vle_load_t a_vle_load)
 {
@@ -574,6 +586,26 @@ void irs::ini_file_t::load()
         load_save_grid_row(IniFile.get(), ls_load, sg_it->first, row);
       }
     }
+    #if IRS_USE_DEV_EXPRESS
+    typedef map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator
+      cxg_it_t;
+    for (
+      cxg_it_t cxg_it = m_cx_grid_table_views.begin();
+      cxg_it != m_cx_grid_table_views.end();
+      cxg_it++
+    ) {
+      cxg_it->first->BeginUpdate();
+      load_save_cx_grid_table_view_row_count(IniFile.get(), ls_load,
+        cxg_it->first);
+      const int row_count = cxg_it->first->DataController->RecordCount;
+      for (int row = 0; row < row_count; row++) {
+        load_save_cx_grid_table_view_row(IniFile.get(), ls_load,
+          cxg_it->first, row);
+      }
+      cxg_it->first->EndUpdate();
+    }
+
+    #endif // IRS_USE_DEV_EXPRESS
     for (vector<value_list_editor_t>::iterator
       value_list_editor_it = m_value_list_editors.begin();
       value_list_editor_it != m_value_list_editors.end();
@@ -792,6 +824,22 @@ void irs::ini_file_t::save() const
     }
     load_save_grid_size(IniFile.get(), ls_save, sg_it->first);
   }
+  #if IRS_USE_DEV_EXPRESS
+  typedef map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator cxg_it_t;
+  for (
+    cxg_it_t cxg_it = m_cx_grid_table_views.begin();
+    cxg_it != m_cx_grid_table_views.end();
+    cxg_it++
+  ) {
+    const int row_count = cxg_it->first->DataController->RecordCount;
+    for (int row = 0; row < row_count; row++) {
+      load_save_cx_grid_table_view_row(IniFile.get(), ls_save,
+        cxg_it->first, row);
+    }
+    load_save_cx_grid_table_view_row_count(IniFile.get(), ls_save,
+      cxg_it->first);
+  }
+  #endif // IRS_USE_DEV_EXPRESS
   for (vector<value_list_editor_t>::const_iterator
     value_list_editor_it = m_value_list_editors.begin();
     value_list_editor_it != m_value_list_editors.end();
@@ -849,6 +897,24 @@ void irs::ini_file_t::save_grid_size(TStringGrid *a_control) const
   auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
   load_save_grid_size(IniFile.get(), ls_save, a_control);
 }
+
+#if IRS_USE_DEV_EXPRESS
+void irs::ini_file_t::save_cx_grid_table_view_row(
+  TcxGridTableView *ap_control, int a_row_index) const
+{
+  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  load_save_cx_grid_table_view_row(
+    IniFile.get(), ls_save, ap_control, a_row_index);
+}
+
+void irs::ini_file_t::save_cx_grid_table_view_row_count(
+  TcxGridTableView *ap_control) const
+{
+  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  load_save_cx_grid_table_view_row_count(IniFile.get(), ls_save, ap_control);
+}
+#endif // IRS_USE_DEV_EXPRESS
+
 void irs::ini_file_t::clear_control()
 {
   mv_bools.clear();
@@ -1011,4 +1077,81 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
     }
   }
 }
+
+#if IRS_USE_DEV_EXPRESS
+void irs::ini_file_t::load_save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+  load_save_t a_load_save,
+  TcxGridTableView *ap_control, int a_row_index) const
+{
+  map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator it =
+    m_cx_grid_table_views.find(ap_control);
+  //const int header_size = 1;
+  //const int header_col_size = 1;
+
+  typedef vector<cx_grid_table_view_t::column_t>::const_iterator col_it_t;
+  for (
+    col_it_t col_it = it->second.columns.begin();
+    col_it != it->second.columns.end();
+    col_it++
+  ) {
+    int col = col_it->index;
+    //int var_index = a_row_index - header_size;
+    string_t name = it->second.name + col_it->name +
+      string_t(a_row_index);
+    load_save_cx_grid_table_view_cell(ap_ini_file, a_load_save,
+      ap_control, a_row_index, col_it->column, name);
+  }
+}
+
+void irs::ini_file_t::load_save_cx_grid_table_view_cell(
+  TIniFile *ap_ini_file,
+  load_save_t a_load_save,
+  TcxGridTableView *ap_control, int a_row_index, TcxGridColumn* ap_column,
+  const string_t& a_name) const
+{
+  map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator it =
+    m_cx_grid_table_views.find(ap_control);
+  String name_bstr = a_name.c_str();
+  String section_bstr = it->second.section.c_str();
+  Variant value_variant = ap_control->DataController->Values
+    [a_row_index][ap_column->Index];
+  String value_bstr;
+  if (!value_variant.IsNull()) {
+    value_bstr = value_variant;
+  }
+  switch (a_load_save) {
+    case ls_load: {
+      ap_control->DataController->Values[a_row_index][ap_column->Index] =
+        ap_ini_file->ReadString(section_bstr, name_bstr, irst(""));
+    } break;
+    case ls_save: {
+      ap_ini_file->WriteString(section_bstr, name_bstr, value_bstr);
+    }
+  }
+}
+
+void irs::ini_file_t::load_save_cx_grid_table_view_row_count(
+  TIniFile *ap_ini_file,
+  load_save_t a_load_save, TcxGridTableView* ap_control) const
+{
+  map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator it =
+    m_cx_grid_table_views.find(ap_control);
+  if (it != m_cx_grid_table_views.end()) {
+    String section_bstr = it->second.section.c_str();
+    String name_bstr = it->second.name.c_str();
+    String name_row_count = name_bstr + "_row_count";
+    switch (a_load_save) {
+      case ls_load: {
+        ap_control->DataController->RecordCount =
+          ap_ini_file->ReadInteger(section_bstr,
+          name_row_count, ap_control->DataController->RecordCount);
+      } break;
+      case ls_save: {
+        ap_ini_file->WriteInteger(section_bstr, name_row_count,
+          ap_control->DataController->RecordCount);
+      }
+    }
+  }
+}
+#endif // IRS_USE_DEV_EXPRESS
 
