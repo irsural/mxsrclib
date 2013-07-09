@@ -69,7 +69,7 @@ public:
   virtual bool add_combo_by_item(const string_type& a_param_name,
     const string_type& a_param_value);
   virtual void add_combo(const string_type& a_param_name,
-    vector<string_type>* ap_param_values_list);
+    const vector<string_type>* ap_param_values_list);
   virtual void add_bool(const string_type& a_param_name,
     bool a_param_value);
   virtual void add_param_box(const string_type& a_param_name,

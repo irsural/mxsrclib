@@ -63,7 +63,7 @@ bool irs::tstlan::str_to_type(const irs::string_t& a_str,
   }
   for (std::size_t i = 0; i < type_count; i++) {
     if (type_str_map[i] == type_str) {
-      *ap_type = i;
+      *ap_type = static_cast<type_t>(i);
       return true;
     }
   }
@@ -332,7 +332,7 @@ irs::tstlan::view_t::view_t(
     mp_form->Width = 500;
     mp_form->Height = 800;
     mp_form->Position = poDesigned;
-    mp_form->Caption = irst("Тест сети 4");
+    mp_form->Caption = irst("Тест сети 5");
     init(mp_form_auto.get());
   }
 }
@@ -660,6 +660,7 @@ irs::tstlan::view_t::controls_t::controls_t(
   string_type path =  ExePath + irst("Out\\");
   MkDir(path.c_str());
 
+  m_ini_file.load();
 }
 
 void irs::tstlan::view_t::controls_t::create_grid()
@@ -1401,6 +1402,7 @@ void __fastcall irs::tstlan::view_t::controls_t::GridInsertClick(
   TObject *Sender)
 {
   m_refresh_grid = true;
+  //TcxDataRecordHandle record =
   mp_controller->InsertRecord(mp_table_controller->FocusedRecordIndex);
   mp_vars_ini_file->save();
 }
@@ -1422,11 +1424,6 @@ void __fastcall irs::tstlan::view_t::controls_t::FormShow(TObject *Sender)
 {
   m_is_lock = false;
   m_refresh_grid = true;
-  measure_time_t t;
-  t.start();
-  m_ini_file.load();
-  double time = t.get();
-  int i = 0;
 }
 // Консоль внутри tstlan5
 TMemo* irs::tstlan::view_t::controls_t::log()

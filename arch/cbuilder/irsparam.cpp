@@ -243,7 +243,7 @@ bool irs::param_box_t::add_combo_by_item(
 }
 
 void irs::param_box_t::add_combo(const string_type& a_param_name,
-  vector<string_type>* ap_param_values_list)
+  const vector<string_type>* ap_param_values_list)
 {
   String Key = a_param_name.c_str();
   int row_index = 0;

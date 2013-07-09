@@ -2490,7 +2490,15 @@ public:
   //! \brief Установить отрицательный фронт канала
   virtual void set_negative() {}
   //! \brief Чтение значения при текущем типа измерения
-  virtual void get_value(double* value) { *value = 100; }//rand(); }
+  virtual void get_value(double* value)
+  {
+    #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+    *value = rand();
+    #else // !IRS_FULL_STDCPPLIB_SUPPORT
+    static int i = 0;
+    *resistance = i++;
+    #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+  }
   //! \brief Чтение напряжения
   virtual void get_voltage(double* voltage) { *voltage = 100; }//rand(); }
   //! \brief Чтения силы тока
