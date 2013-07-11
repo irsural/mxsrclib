@@ -49,6 +49,9 @@ irs::ini_file_t::ini_file_t():
   m_value_list_editors(),
   m_forms(),
   m_ini_name(irs::cbuilder::default_ini_name()),
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  mp_encoding(TEncoding::Default),
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   m_section(irst("Options"))
 {
 }
@@ -68,6 +71,12 @@ void irs::ini_file_t::set_ini_name(const String& a_ini_name)
     m_ini_name = exe_path + string_t(a_ini_name.c_str());
   }
 }
+#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+void irs::ini_file_t::set_encoding(TEncoding* ap_encoding)
+{
+  mp_encoding = ap_encoding;
+}
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
 String irs::ini_file_t::ini_name() const
 {
   return m_ini_name.c_str();
@@ -369,7 +378,7 @@ void irs::ini_file_t::add(const String& a_name, TForm* a_control)
 void irs::ini_file_t::load()
 {
   if (FileExists(m_ini_name.c_str())) {
-    auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+    auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name.c_str()));
     for (vector<bool_t>::iterator bool_it = mv_bools.begin();
       bool_it != mv_bools.end(); bool_it++) {
       *(bool_it->control) = IniFile->ReadBool(
@@ -666,7 +675,7 @@ void irs::ini_file_t::load()
 
 void irs::ini_file_t::save() const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name));
 
   for (vector<bool_t>::const_iterator bool_it = mv_bools.begin();
     bool_it != mv_bools.end(); bool_it++) {
@@ -885,33 +894,37 @@ void irs::ini_file_t::save() const
     IniFile->WriteInteger(form_it->section.c_str(),
       (form_it->name + irst("Width")).c_str(), form_it->control->Width);
   }
+  IniFile->UpdateFile();
 }
 void irs::ini_file_t::save_grid_row(TStringGrid *a_control,
   int a_row_index) const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name));
   load_save_grid_row(IniFile.get(), ls_save, a_control, a_row_index);
 }
 void irs::ini_file_t::save_grid_size(TStringGrid *a_control) const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name));
   load_save_grid_size(IniFile.get(), ls_save, a_control);
+  IniFile->UpdateFile();
 }
 
 #if IRS_USE_DEV_EXPRESS
 void irs::ini_file_t::save_cx_grid_table_view_row(
   TcxGridTableView *ap_control, int a_row_index) const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name.c_str()));
   load_save_cx_grid_table_view_row(
     IniFile.get(), ls_save, ap_control, a_row_index);
+  IniFile->UpdateFile();
 }
 
 void irs::ini_file_t::save_cx_grid_table_view_row_count(
   TcxGridTableView *ap_control) const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(create_ini_file(m_ini_name));
   load_save_cx_grid_table_view_row_count(IniFile.get(), ls_save, ap_control);
+  IniFile->UpdateFile();
 }
 #endif // IRS_USE_DEV_EXPRESS
 
@@ -944,6 +957,17 @@ void irs::ini_file_t::clear_control()
   m_value_list_editors.clear();
   m_forms.clear();
 }
+
+TCustomIniFile* irs::ini_file_t::create_ini_file(
+  const string_t& a_file_name) const
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  return new ini_file_type(a_file_name.c_str(), mp_encoding);
+  #else  // !(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  return new ini_file_type(a_file_name.c_str());
+  #endif // !(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+}
+
 TTabSheet *irs::ini_file_t::FindTabSheet(TPageControl *a_control,
   const String &a_name)
 {
@@ -1001,7 +1025,7 @@ int irs::ini_file_t::FindRadioGroupIndex(TRadioGroup *a_control,
   }
   return -1;
 }
-void irs::ini_file_t::load_save_grid_row(TIniFile *ap_ini_file,
+void irs::ini_file_t::load_save_grid_row(TCustomIniFile *ap_ini_file,
   load_save_t a_load_save, TStringGrid *a_control, int a_row_index) const
 {
   map<TStringGrid*, string_grid_t>::const_iterator it_sg =
@@ -1032,7 +1056,7 @@ void irs::ini_file_t::load_save_grid_row(TIniFile *ap_ini_file,
     }
   }
 }
-void irs::ini_file_t::load_save_grid_cell(TIniFile *ap_ini_file,
+void irs::ini_file_t::load_save_grid_cell(TCustomIniFile *ap_ini_file,
   load_save_t a_load_save, TStringGrid *a_control, int a_row_index,
   int a_col_index, const string_t& a_name) const
 {
@@ -1051,7 +1075,7 @@ void irs::ini_file_t::load_save_grid_cell(TIniFile *ap_ini_file,
     }
   }
 }
-void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
+void irs::ini_file_t::load_save_grid_size(TCustomIniFile *ap_ini_file,
   load_save_t a_load_save, TStringGrid *a_control) const
 {
   map<TStringGrid*, string_grid_t>::const_iterator it_sg =
@@ -1079,7 +1103,8 @@ void irs::ini_file_t::load_save_grid_size(TIniFile *ap_ini_file,
 }
 
 #if IRS_USE_DEV_EXPRESS
-void irs::ini_file_t::load_save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+void irs::ini_file_t::load_save_cx_grid_table_view_row(
+  TCustomIniFile *ap_ini_file,
   load_save_t a_load_save,
   TcxGridTableView *ap_control, int a_row_index) const
 {
@@ -1104,7 +1129,7 @@ void irs::ini_file_t::load_save_cx_grid_table_view_row(TIniFile *ap_ini_file,
 }
 
 void irs::ini_file_t::load_save_cx_grid_table_view_cell(
-  TIniFile *ap_ini_file,
+  TCustomIniFile *ap_ini_file,
   load_save_t a_load_save,
   TcxGridTableView *ap_control, int a_row_index, TcxGridColumn* ap_column,
   const string_t& a_name) const
@@ -1131,7 +1156,7 @@ void irs::ini_file_t::load_save_cx_grid_table_view_cell(
 }
 
 void irs::ini_file_t::load_save_cx_grid_table_view_row_count(
-  TIniFile *ap_ini_file,
+  TCustomIniFile *ap_ini_file,
   load_save_t a_load_save, TcxGridTableView* ap_control) const
 {
   map<TcxGridTableView*, cx_grid_table_view_t>::const_iterator it =

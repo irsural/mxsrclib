@@ -60,6 +60,10 @@ public:
     const string_type& a_ini_section = def_ini_section(),
     const string_type& a_prefix_name = empty_string(),
     const string_type& a_ini_name = empty_string()
+    #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+    ,
+    TEncoding* ap_encoding = TEncoding::Default
+    #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   );
   virtual ~param_box_t();
   virtual bool show();
@@ -88,8 +92,12 @@ public:
   virtual void load();
   virtual void delete_edit(const string_type& a_param_name);
 private:
+  TCustomIniFile* create_ini_file(const string_type& a_file_name) const;
   string_type m_ini_section;
   const string_type m_prefix_name;
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  TEncoding* mp_encoding;
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   irs::ini_file_t m_ini_file;
   handle_t<TForm> mp_form;
   TPanel* mp_panel;

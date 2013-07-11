@@ -43,11 +43,15 @@ namespace irs {
 class ini_file_t
 {
 public:
+  typedef TMemIniFile ini_file_type;
   enum vle_load_t { vle_load_value, vle_load_full };
 
   ini_file_t();
   ~ini_file_t();
   void set_ini_name(const String& a_ini_name);
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  void set_encoding(TEncoding* ap_encoding);
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   String ini_name() const;
   void set_section(const String& a_name);
   void add(const String& a_name, bool* a_control);
@@ -94,6 +98,7 @@ public:
   #endif // IRS_USE_DEV_EXPRESS
   void clear_control();
 private:
+  TCustomIniFile* create_ini_file(const string_t& a_file_name) const;
   struct control_t {
     string_t section;
     string_t name;
@@ -268,6 +273,9 @@ private:
   vector<form_t> m_forms;
 
   string_t m_ini_name;
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  TEncoding* mp_encoding;
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   string_t m_section;
 
   TTabSheet *FindTabSheet(TPageControl *a_control, const String &a_name);
@@ -275,22 +283,22 @@ private:
   TRadioButton *ActiveRadioButton(TGroupBox *a_control) const;
   int FindComboBoxItem(TComboBox *a_control, const String &a_name);
   int FindRadioGroupIndex(TRadioGroup *a_control, const String &a_name);
-  void load_save_grid_row(TIniFile *ap_ini_file, load_save_t a_load_save,
+  void load_save_grid_row(TCustomIniFile *ap_ini_file, load_save_t a_load_save,
     TStringGrid *a_control, int a_row_index) const;
-  void load_save_grid_cell(TIniFile *ap_ini_file, load_save_t a_load_save,
+  void load_save_grid_cell(TCustomIniFile *ap_ini_file, load_save_t a_load_save,
     TStringGrid *a_control, int a_row_index, int a_col_index,
     const string_t& a_name) const;
-  void load_save_grid_size(TIniFile *ap_ini_file, load_save_t a_load_save,
+  void load_save_grid_size(TCustomIniFile *ap_ini_file, load_save_t a_load_save,
     TStringGrid *a_control) const;
   #if IRS_USE_DEV_EXPRESS
-  void load_save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+  void load_save_cx_grid_table_view_row(TCustomIniFile *ap_ini_file,
     load_save_t a_load_save,
     TcxGridTableView *ap_control, int a_row_index) const;
-  void load_save_cx_grid_table_view_cell(TIniFile *ap_ini_file,
+  void load_save_cx_grid_table_view_cell(TCustomIniFile *ap_ini_file,
     load_save_t a_load_save,
     TcxGridTableView *ap_control, int a_row_index, TcxGridColumn* ap_column,
     const string_t& a_name) const;
-  void load_save_cx_grid_table_view_row_count(TIniFile *ap_ini_file,
+  void load_save_cx_grid_table_view_row_count(TCustomIniFile *ap_ini_file,
     load_save_t a_load_save, TcxGridTableView* ap_control) const;
   #endif // IRS_USE_DEV_EXPRESS
 }; //class ini_file_t

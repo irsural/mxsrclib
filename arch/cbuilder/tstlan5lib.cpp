@@ -61,7 +61,7 @@ bool irs::tstlan::str_to_type(const irs::string_t& a_str,
     *ap_type = type_i32;
     return true;
   }
-  for (std::size_t i = 0; i < type_count; i++) {
+  for (std::size_t i = type_bit; i < type_count; i++) {
     if (type_str_map[i] == type_str) {
       *ap_type = static_cast<type_t>(i);
       return true;
@@ -72,13 +72,16 @@ bool irs::tstlan::str_to_type(const irs::string_t& a_str,
 
 irs::tstlan::vars_ini_file_t::vars_ini_file_t(
   TcxGridTableView* ap_cx_grid_table_view,
+  TcxGridColumn* ap_category_column,
   TcxGridColumn* ap_name_column,
   TcxGridColumn* ap_type_column,
   TcxGridColumn* ap_chart_column,
   const string_type& a_section_prefix
 ):
+  mp_encoding(TEncoding::Default),
   m_ini_name(),
   mp_cx_grid_table_view(ap_cx_grid_table_view),
+  mp_category_column(ap_category_column),
   mp_name_column(ap_name_column),
   mp_type_column(ap_type_column),
   mp_chart_column(ap_chart_column),
@@ -86,6 +89,7 @@ irs::tstlan::vars_ini_file_t::vars_ini_file_t(
   m_section_name(irst("vars")),
   m_section_full_name(m_section_prefix + m_section_name),
   m_name_row_count(irst("_row_count")),
+  m_category_column_prefix(irst("Category_")),
   m_name_column_prefix(irst("Name_")),
   m_type_column_prefix(irst("Type_")),
   m_chart_column_prefix(irst("Graph_"))
@@ -105,6 +109,11 @@ void irs::tstlan::vars_ini_file_t::set_ini_name(const String& a_ini_name)
   }
 }
 
+void irs::tstlan::vars_ini_file_t::set_encoding(TEncoding* ap_encoding)
+{
+  mp_encoding = ap_encoding;
+}
+
 void irs::tstlan::vars_ini_file_t::set_section(const string_type& a_section)
 {
   m_section_prefix = a_section;
@@ -113,7 +122,8 @@ void irs::tstlan::vars_ini_file_t::set_section(const string_type& a_section)
 
 void irs::tstlan::vars_ini_file_t::load()
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(new TMemIniFile(m_ini_name.c_str(),
+    mp_encoding));
   mp_cx_grid_table_view->BeginUpdate();
   load_cx_grid_table_view_row_count(IniFile.get());
   const int row_count = mp_cx_grid_table_view->DataController->RecordCount;
@@ -125,36 +135,43 @@ void irs::tstlan::vars_ini_file_t::load()
 
 void irs::tstlan::vars_ini_file_t::save() const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(new TMemIniFile(m_ini_name.c_str(),
+    mp_encoding));
   const int row_count =
     mp_cx_grid_table_view->DataController->RecordCount;
   for (int row = 0; row < row_count; row++) {
     save_cx_grid_table_view_row(IniFile.get(), row);
   }
   save_cx_grid_table_view_row_count(IniFile.get());
+  IniFile->UpdateFile();
 }
 
 /*void irs::vars_ini_file_t::load_cx_grid_table_view_row(int a_row_index)
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(new TMemIniFile(m_ini_name.c_str(),
+    mp_encoding));
   load_cx_grid_table_view_row(IniFile.get(), a_row_index);
 }*/
 
 void irs::tstlan::vars_ini_file_t::save_cx_grid_table_view_row(
   int a_row_index) const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(new TMemIniFile(m_ini_name.c_str(),
+    mp_encoding));
   save_cx_grid_table_view_row(IniFile.get(), a_row_index);
+  IniFile->UpdateFile();
 }
 
 void irs::tstlan::vars_ini_file_t::save_cx_grid_table_view_row_count() const
 {
-  auto_ptr<TIniFile> IniFile(new TIniFile(m_ini_name.c_str()));
+  auto_ptr<TCustomIniFile> IniFile(new TMemIniFile(m_ini_name.c_str(),
+    mp_encoding));
   save_cx_grid_table_view_row_count(IniFile.get());
+  IniFile->UpdateFile();
 }
 
 void irs::tstlan::vars_ini_file_t::load_cx_grid_table_view_row_count(
-  TIniFile *ap_ini_file)
+  TCustomIniFile *ap_ini_file)
 {
   //mp_cx_grid_table_view->DataController->RecordCount = 0;
   mp_cx_grid_table_view->DataController->RecordCount =
@@ -164,7 +181,7 @@ void irs::tstlan::vars_ini_file_t::load_cx_grid_table_view_row_count(
 }
 
 void irs::tstlan::vars_ini_file_t::save_cx_grid_table_view_row_count(
-  TIniFile *ap_ini_file) const
+  TCustomIniFile *ap_ini_file) const
 {
   ap_ini_file->WriteInteger(m_section_full_name.c_str(),
     m_name_row_count.c_str(),
@@ -172,22 +189,48 @@ void irs::tstlan::vars_ini_file_t::save_cx_grid_table_view_row_count(
 }
 
 void irs::tstlan::vars_ini_file_t::load_cx_grid_table_view_row(
-  TIniFile *ap_ini_file, int a_row_index)
+  TCustomIniFile *ap_ini_file, int a_row_index)
 {
+  load_category(ap_ini_file, a_row_index);
   load_name(ap_ini_file, a_row_index);
   load_type(ap_ini_file, a_row_index);
   load_chart(ap_ini_file, a_row_index);
 }
 
 void irs::tstlan::vars_ini_file_t::save_cx_grid_table_view_row(
-  TIniFile *ap_ini_file, int a_row_index) const
+  TCustomIniFile *ap_ini_file, int a_row_index) const
 {
+  save_category(ap_ini_file, a_row_index);
   save_name(ap_ini_file, a_row_index);
   save_type(ap_ini_file, a_row_index);
   save_chart(ap_ini_file, a_row_index);
 }
 
-void irs::tstlan::vars_ini_file_t::load_name(TIniFile *ap_ini_file,
+void irs::tstlan::vars_ini_file_t::load_category(TCustomIniFile *ap_ini_file,
+  int a_row_index)
+{
+  string_t name = m_category_column_prefix + string_t(a_row_index);
+  mp_cx_grid_table_view->DataController->
+    Values[a_row_index][mp_category_column->Index] =
+    ap_ini_file->ReadString(m_section_full_name.c_str(),
+    name.c_str(), irst(""));
+}
+
+void irs::tstlan::vars_ini_file_t::save_category(
+  TCustomIniFile *ap_ini_file, int a_row_index) const
+{
+  Variant value_variant = mp_cx_grid_table_view->DataController->Values
+    [a_row_index][mp_category_column->Index];
+  String value_bstr;
+  if (!value_variant.IsNull()) {
+    value_bstr = value_variant;
+  }
+  string_t name = m_category_column_prefix + string_t(a_row_index);
+  ap_ini_file->WriteString(
+    m_section_full_name.c_str(), name.c_str(), value_bstr);
+}
+
+void irs::tstlan::vars_ini_file_t::load_name(TCustomIniFile *ap_ini_file,
   int a_row_index)
 {
   string_t name = m_name_column_prefix + string_t(a_row_index);
@@ -198,7 +241,7 @@ void irs::tstlan::vars_ini_file_t::load_name(TIniFile *ap_ini_file,
 }
 
 void irs::tstlan::vars_ini_file_t::save_name(
-  TIniFile *ap_ini_file, int a_row_index) const
+  TCustomIniFile *ap_ini_file, int a_row_index) const
 {
   Variant value_variant = mp_cx_grid_table_view->DataController->Values
     [a_row_index][mp_name_column->Index];
@@ -221,7 +264,7 @@ bool is_type_valid(const irs::string_t& a_type_str)
 
 } // unnamed namespace
 
-void irs::tstlan::vars_ini_file_t::load_type(TIniFile *ap_ini_file,
+void irs::tstlan::vars_ini_file_t::load_type(TCustomIniFile *ap_ini_file,
   int a_row_index)
 {
   string_t name = m_type_column_prefix + string_t(a_row_index);
@@ -238,7 +281,7 @@ void irs::tstlan::vars_ini_file_t::load_type(TIniFile *ap_ini_file,
 }
 
 void irs::tstlan::vars_ini_file_t::save_type(
-  TIniFile *ap_ini_file, int a_row_index) const
+  TCustomIniFile *ap_ini_file, int a_row_index) const
 {
   Variant value_variant = mp_cx_grid_table_view->DataController->Values
     [a_row_index][mp_type_column->Index];
@@ -252,7 +295,7 @@ void irs::tstlan::vars_ini_file_t::save_type(
 }
 
 void irs::tstlan::vars_ini_file_t::load_chart(
-  TIniFile *ap_ini_file, int a_row_index)
+  TCustomIniFile *ap_ini_file, int a_row_index)
 {
   string_t name = m_chart_column_prefix + string_t(a_row_index);
   String graph_enabled_bstr =
@@ -264,7 +307,7 @@ void irs::tstlan::vars_ini_file_t::load_chart(
 }
 
 void irs::tstlan::vars_ini_file_t::save_chart(
-  TIniFile *ap_ini_file, int a_row_index) const
+  TCustomIniFile *ap_ini_file, int a_row_index) const
 {
   Variant value_variant = mp_cx_grid_table_view->DataController->Values
     [a_row_index][mp_chart_column->Index];
@@ -332,7 +375,8 @@ irs::tstlan::view_t::view_t(
     mp_form->Width = 500;
     mp_form->Height = 800;
     mp_form->Position = poDesigned;
-    mp_form->Caption = irst("Тест сети 5");
+    mp_form->Caption = extract_file_ultra_short_name(
+      irs::str_conv<String>(m_ini_name));
     init(mp_form_auto.get());
   }
 }
@@ -443,6 +487,10 @@ irs::tstlan::view_t::string_type irs::tstlan::view_t::ini_name()
 }
 void irs::tstlan::view_t::ini_name(const string_type& a_ini_name)
 {
+  if (m_form_type == ft_internal) {
+    mp_form->Caption = extract_file_ultra_short_name(
+      irs::str_conv<String>(a_ini_name));
+  }
   mp_controls->ini_name(a_ini_name);
 }
 
@@ -495,6 +543,8 @@ irs::tstlan::view_t::controls_t::controls_t(
   mp_form(ap_form),
   mp_top_panel(new TPanel(mp_form)),
   mp_open_dialog(new TOpenDialog(mp_form)),
+  m_csv_files_filter(irst("Файлы CSV (*.csv)|*.csv|")
+    irst("Все файлы (*.*)|*.*")),
   mp_load_btn(new TButton(mp_form)),
   mp_start_btn(new TButton(mp_form)),
   mp_chart_btn(new TButton(mp_form)),
@@ -505,6 +555,7 @@ irs::tstlan::view_t::controls_t::controls_t(
   mp_splitter(new TSplitter(mp_form)),
   mp_grid_popup_insert_item(new TMenuItem(mp_form)),
   mp_grid_popup_delete_item(new TMenuItem(mp_form)),
+  mp_grid_popup_set_category_item(new TMenuItem(mp_form)),
   mp_grid_popup(new TPopupMenu(mp_form)),
   mp_vars_grid(new TcxGrid(mp_form)),
   mp_view(NULL),
@@ -512,6 +563,8 @@ irs::tstlan::view_t::controls_t::controls_t(
   mp_table_controller(NULL),
   mp_cx_combo_box_properties(new TcxComboBoxProperties(mp_vars_grid)),
   mp_index_column(NULL),
+  mp_network_pos_column(NULL),
+  mp_category_column(NULL),
   mp_name_column(NULL),
   mp_type_column(NULL),
   mp_value_column(NULL),
@@ -521,9 +574,12 @@ irs::tstlan::view_t::controls_t::controls_t(
   m_read_loop_timer(a_update_time_cnt),
   m_buf(),
   m_out(&m_buf),
+  mp_encoding(TEncoding::Default),
   m_ini_file(),
   mp_vars_ini_file(NULL),
   m_device_name(),
+  m_grid_options_file_ext(irst("gridconf")),
+  m_grid_options_file_name(),
   m_first_connect(true),
   m_refresh_grid(true),
   m_netconn(),
@@ -556,11 +612,17 @@ irs::tstlan::view_t::controls_t::controls_t(
   mp_event(IRS_NULL),
   m_inner_options_event(),
   mp_param_box(new param_box_t(irst("Внутренние настройки tstlan5"),
-    irst("inner_options"))),
+    irst("inner_options"), string_type(), string_type(), mp_encoding)),
   m_param_box_tune(mp_param_box.get()),
   m_is_csv_on(false)
 {
+
   m_buf.connect(mp_log_memo);
+
+  mp_open_dialog->Filter = m_csv_files_filter;
+  mp_open_dialog->DefaultExt = irst("csv");
+
+  m_ini_file.set_encoding(mp_encoding);
 
   create_grid();
 
@@ -570,8 +632,9 @@ irs::tstlan::view_t::controls_t::controls_t(
     mp_chart = mp_local_chart.get();
   }
 
-  mp_vars_ini_file.reset(new vars_ini_file_t(mp_view, mp_name_column,
-    mp_type_column, mp_chart_column, m_ini_section_prefix));
+  mp_vars_ini_file.reset(new vars_ini_file_t(mp_view, mp_category_column,
+    mp_name_column, mp_type_column, mp_chart_column, m_ini_section_prefix));
+  mp_vars_ini_file->set_encoding(mp_encoding);
 
   if (m_form_type == ft_internal) {
     ini_name(a_ini_name);
@@ -638,15 +701,19 @@ irs::tstlan::view_t::controls_t::controls_t(
   //mp_splitter->Height = 10;
   mp_splitter->Parent = mp_form;
 
-  mp_grid_popup_insert_item->Caption = irst("Добавить строку");
+  mp_grid_popup_insert_item->Caption = irst("Вставить строку");
   mp_grid_popup_insert_item->OnClick = GridInsertClick;
   //mp_grid_popup_insert_item->ShortCut =
     //ShortCut(VK_INSERT, TShiftState() << ssCtrl);
   mp_grid_popup_delete_item->Caption = irst("Удалить строку");
   mp_grid_popup_delete_item->OnClick = GridDeleteClick;
+
+  mp_grid_popup_set_category_item->Caption = irst("Задать категорию");
+  mp_grid_popup_set_category_item->OnClick = GridSetCategoryClick;
+
   mp_grid_popup->Items->Add(mp_grid_popup_insert_item);
   mp_grid_popup->Items->Add(mp_grid_popup_delete_item);
-
+  mp_grid_popup->Items->Add(mp_grid_popup_set_category_item);
 
   mp_vars_grid->PopupMenu = mp_grid_popup;
   mp_vars_grid->Parent = mp_form;
@@ -660,7 +727,7 @@ irs::tstlan::view_t::controls_t::controls_t(
   string_type path =  ExePath + irst("Out\\");
   MkDir(path.c_str());
 
-  m_ini_file.load();
+  //m_ini_file.load();
 }
 
 void irs::tstlan::view_t::controls_t::create_grid()
@@ -682,6 +749,7 @@ void irs::tstlan::view_t::controls_t::create_grid()
   mp_view->OptionsSelection->MultiSelect = true;
   //mp_view->OptionsView->ShowEditButtons = gsebAlways;
   mp_view->OnKeyDown = VarsGridKeyDown;
+  mp_view->Name = irst("GridView");
 
   mp_vars_grid->Align = alClient;
 
@@ -694,15 +762,25 @@ void irs::tstlan::view_t::controls_t::create_grid()
   //mp_vars_grid->DefaultRowHeight = 17;
   mp_index_column = mp_view->CreateColumn();
   mp_index_column->Caption = irst("№");
-  mp_index_column->DataBinding->ValueTypeClass = __classid(TcxStringValueType);
+  mp_index_column->DataBinding->ValueTypeClass = __classid(TcxIntegerValueType);
   mp_index_column->Width = m_index_col_width;
   mp_index_column->Options->Editing = false;
+  mp_index_column->Name = irst("IndexColumn");
+
+  mp_network_pos_column = mp_view->CreateColumn();
+  mp_network_pos_column->Caption = irst("Поз.");
+  mp_network_pos_column->DataBinding->ValueTypeClass =
+    __classid(TcxStringValueType);
+  mp_network_pos_column->Width = m_network_pos_col_width;
+  mp_network_pos_column->Options->Editing = false;
+  mp_network_pos_column->Name = irst("NetworkPosColumn");
 
   mp_name_column = mp_view->CreateColumn();
   mp_name_column->Caption = irst("Имя");
   mp_name_column->DataBinding->ValueTypeClass = __classid(TcxStringValueType);
   mp_name_column->Width = m_name_col_width;
   mp_name_column->PropertiesClass = __classid(TcxTextEditProperties);
+  mp_name_column->Name = irst("NameColumn");
   dynamic_cast<TcxTextEditProperties*>(mp_name_column->Properties)->
     OnValidate = cxGridTableViewColumnNamePropertiesValidate;
 
@@ -711,9 +789,11 @@ void irs::tstlan::view_t::controls_t::create_grid()
   mp_type_column->DataBinding->ValueTypeClass = __classid(TcxStringValueType);
   mp_type_column->Width = m_type_col_width;
   mp_type_column->PropertiesClass = __classid(TcxComboBoxProperties); // = mp_cx_combo_box_properties;
+  mp_type_column->Name = irst("TypeColumn");
   dynamic_cast<TcxComboBoxProperties*>(mp_type_column->Properties)->
     OnChange = cxGridTableView1ColumnTypePropertiesChange;
-
+  dynamic_cast<TcxComboBoxProperties*>(mp_type_column->Properties)->
+    UseMouseWheel = false;
 
   for (int i = type_bit; i < type_count; i++) {
     type_t type = static_cast<type_t>(i);
@@ -733,6 +813,7 @@ void irs::tstlan::view_t::controls_t::create_grid()
   mp_value_column->DataBinding->ValueTypeClass = __classid(TcxStringValueType);
   mp_value_column->Width = m_value_col_width;
   mp_value_column->PropertiesClass = __classid(TcxTextEditProperties);
+  mp_value_column->Name = irst("ValueColumn");
   //dynamic_cast<TcxTextEditProperties*>(mp_value_column->Properties)->
     //OnChange = cxGridTableViewColumnValuePropertiesChange;
   dynamic_cast<TcxTextEditProperties*>(mp_value_column->Properties)->
@@ -743,8 +824,17 @@ void irs::tstlan::view_t::controls_t::create_grid()
   mp_chart_column->DataBinding->ValueTypeClass = __classid(TcxBooleanValueType);
   mp_chart_column->Width = m_chart_col_width;
   mp_chart_column->PropertiesClass = __classid(TcxCheckBoxProperties);
+  mp_chart_column->Name = irst("ChartColumn");
   dynamic_cast<TcxCheckBoxProperties*>(mp_chart_column->Properties)->
     OnChange = cxGridTableViewColumnChartPropertiesChange;
+
+  mp_category_column = mp_view->CreateColumn();
+  mp_category_column->Caption = irst("Категория");
+  mp_category_column->DataBinding->ValueTypeClass =
+    __classid(TcxStringValueType);
+  mp_category_column->Width = m_name_col_width;
+  mp_category_column->PropertiesClass = __classid(TcxTextEditProperties);
+  mp_category_column->Name = irst("CategoryColumn");
 
   mp_vars_grid->ActiveView->DataController->RecordCount = m_grid_size;
 
@@ -800,7 +890,7 @@ void irs::tstlan::view_t::controls_t::refresh_chart_items()
 
   const int row_count = mp_controller->RecordCount;
   for (int row = 0; row < row_count; row++) {
-    const string_type chart_name = get_chart_name(row);
+    string_type chart_name = get_chart_name(row);
     bool chart_enabled = get_chart_enabled_status(row);
     if (chart_enabled && !chart_name.empty()) {
       if (!m_chart_names[chart_name]) {
@@ -814,6 +904,67 @@ void irs::tstlan::view_t::controls_t::refresh_chart_items()
       }
     }
   }
+  map<string_type, bool>::iterator it = m_chart_names.begin();
+  while (it != m_chart_names.end()) {
+    string_type curent_chart_name = it->first;
+    bool find_success = false;
+    for (int row = 0; row < row_count; row++) {
+      string_type chart_name = get_chart_name(row);
+      if (curent_chart_name == chart_name) {
+        find_success = true;
+        break;
+      }
+    }
+    if (!find_success) {
+      map<string_type, bool>::iterator erase_it = it;
+      ++it;
+      mp_chart->delete_param(curent_chart_name);
+      m_chart_names.erase(erase_it);
+      continue;
+    }
+    ++it;
+  }
+}
+
+bool irs::tstlan::view_t::controls_t::find_netconn_item(
+  int a_conn_index, int a_bit_index, int* ap_index)
+{
+  for (size_type i = 0; i < m_netconn.items.size(); i++) {
+    netconn_t::item_t& item = m_netconn.items[i];
+    if ((item.conn_index == a_conn_index) &&
+      (item.bit_index == a_bit_index)) {
+      *ap_index = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+irs::tstlan::view_t::controls_t::string_type
+irs::tstlan::view_t::controls_t::generate_unique_variable_name()
+{
+  string_type name;
+  int index = 0;
+  while (true) {
+    name = irst("переменная_") + num_to_str(index);
+    if (!is_variable_exists(name)) {
+      break;
+    }
+    index++;
+  }
+  return name;
+}
+
+bool irs::tstlan::view_t::controls_t::is_variable_exists(
+  const string_type& a_name)
+{
+  const int record_count = mp_controller->RecordCount;
+  for (int i = 0; i < record_count; i++) {
+    if (a_name == get_variable_name(i)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 irs::tstlan::view_t::controls_t::string_type
@@ -831,7 +982,11 @@ irs::tstlan::view_t::controls_t::get_variable_name(size_type a_row)
 irs::tstlan::view_t::controls_t::string_type
 irs::tstlan::view_t::controls_t::get_chart_name(size_type a_row)
 {
-  return make_chart_name(get_variable_name(a_row));
+  string_type chart_name = get_variable_name(a_row);
+  if (chart_name.empty()) {
+    chart_name = irst("строка №") + num_to_str(a_row);
+  }
+  return make_chart_name(chart_name);
 }
 
 irs::tstlan::view_t::controls_t::string_type
@@ -840,7 +995,7 @@ irs::tstlan::view_t::controls_t::make_chart_name(
 {
   string_type chart_name = a_variable_name;
   if (!chart_name.empty() && mp_local_chart.is_empty()) {
-    chart_name = m_device_name + irst(":") + chart_name;
+    chart_name = m_device_name + irst("::") + chart_name;
   }
   return chart_name;
 }
@@ -876,14 +1031,16 @@ void irs::tstlan::view_t::controls_t::tick()
   if (mp_data->connected()) {
     if (m_refresh_grid) {
       m_refresh_grid = false;
+      fill_grid_index_col();
       int conn_size = m_netconn.connect(mp_data, mp_vars_grid, m_type_col,
-        m_index_col);
+        m_network_pos_col);
       int data_size = (int)mp_data->size();
       if (conn_size < data_size) {
         mp_controller->RecordCount =
           mp_controller->RecordCount +
           (data_size - conn_size)/sizeof(irs_i32);
-        m_netconn.connect(mp_data, mp_vars_grid, m_type_col, m_index_col);
+        m_netconn.connect(mp_data, mp_vars_grid, m_type_col,
+          m_network_pos_col);
       }
       mp_vars_ini_file->save_cx_grid_table_view_row_count();
     }
@@ -1193,6 +1350,25 @@ long double irs::tstlan::view_t::controls_t::var_to_long_double(int a_var_index)
   }
   return val;
 }
+void irs::tstlan::view_t::controls_t::load_grid_options()
+{
+  TcxGridStorageOptions options;
+  options = (TcxGridStorageOptions() << gsoUseFilter << gsoUseSummary);
+  bool children_creating = true;
+  bool children_deleting = false;
+  mp_view->RestoreFromIniFile(irs::str_conv<String>(m_grid_options_file_name),
+    children_creating, children_deleting, options);
+}
+
+void irs::tstlan::view_t::controls_t::save_grid_options()
+{
+  TcxGridStorageOptions AOptions;
+  bool recreate = false;
+  AOptions = (TcxGridStorageOptions() << gsoUseFilter << gsoUseSummary);
+  mp_view->StoreToIniFile(irs::str_conv<String>(m_grid_options_file_name),
+    recreate, AOptions);
+}
+
 void irs::tstlan::view_t::controls_t::fill_grid_index_col()
 {
   for (int row = 0; row < mp_controller->RecordCount; row++) {
@@ -1207,7 +1383,8 @@ bool irs::tstlan::view_t::controls_t::is_saveable_col(int a_col)
 void irs::tstlan::view_t::controls_t::save_grid_row(int a_row)
 {
   mp_vars_ini_file->save_cx_grid_table_view_row(a_row);
-  m_netconn.connect(mp_data, mp_vars_grid, m_type_col, m_index_col);
+  m_netconn.connect(mp_data, mp_vars_grid, m_type_col,
+    m_network_pos_col);
 }
 void irs::tstlan::view_t::controls_t::open_csv()
 {
@@ -1254,6 +1431,7 @@ cxGridTableViewColumnNamePropertiesValidate(TObject *Sender,
 {
   mp_view->DataController->PostEditingData();
   const int row = mp_view->Controller->FocusedRecordIndex;
+  refresh_chart_items();
   save_grid_row(row);
 }
 
@@ -1368,7 +1546,7 @@ void __fastcall irs::tstlan::view_t::controls_t::CsvLoadBtnClick(
     m_shift_time = m_shift_time +
       static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
     m_chart_time = m_chart_time +
-      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero; 
+      static_cast<double>(StrToFloat(time_end.c_str())) - time_zero;
   }
 }
 void __fastcall irs::tstlan::view_t::controls_t::OptionsBtnClick(
@@ -1383,7 +1561,13 @@ void __fastcall irs::tstlan::view_t::controls_t::OptionsBtnClick(
 void __fastcall irs::tstlan::view_t::controls_t::LoadTableValuesBtnClick(
   TObject *Sender)
 {
+  /*bstr_to_var(16, IntToStr(1));
+  bstr_to_var(17, IntToStr(1));
+  bstr_to_var(18, IntToStr(1));
+  return;*/
   handle_t<TOpenDialog> open_dialog(new TOpenDialog(NULL));
+  open_dialog->Filter = m_csv_files_filter;
+  open_dialog->DefaultExt = irst("csv");
   if (open_dialog->Execute()) {
     string_type file_name = str_conv<string_type>(open_dialog->FileName);
     load_table_values(file_name);
@@ -1393,6 +1577,8 @@ void __fastcall irs::tstlan::view_t::controls_t::SaveTableValuesBtnClick(
   TObject *Sender)
 {
   handle_t<TOpenDialog> open_dialog(new TOpenDialog(NULL));
+  open_dialog->Filter = m_csv_files_filter;
+  open_dialog->DefaultExt = irst("csv");
   if (open_dialog->Execute()) {
     string_type file_name = str_conv<string_type>(open_dialog->FileName);
     save_table_values(file_name);
@@ -1402,16 +1588,41 @@ void __fastcall irs::tstlan::view_t::controls_t::GridInsertClick(
   TObject *Sender)
 {
   m_refresh_grid = true;
-  //TcxDataRecordHandle record =
-  mp_controller->InsertRecord(mp_table_controller->FocusedRecordIndex);
+  const int row =
+    mp_controller->InsertRecord(mp_table_controller->FocusedRecordIndex);
+  String name = str_conv<String>(generate_unique_variable_name());
+  mp_controller->Values[row][mp_name_column->Index] = name;
   mp_vars_ini_file->save();
 }
 void __fastcall irs::tstlan::view_t::controls_t::GridDeleteClick(
   TObject *Sender)
 {
   m_refresh_grid = true;
-  mp_controller->DeleteFocused();
+  mp_controller->DeleteSelection();
   mp_vars_ini_file->save();
+}
+void __fastcall irs::tstlan::view_t::controls_t::GridSetCategoryClick(
+  TObject *Sender)
+{
+  /*String category = InputBox(irst("Введите категорию"), irst("Категория"),
+    irst(""));*/
+  String category;
+  if (InputQuery(irst("Введите категорию"), irst("Категория"), category)) {
+    m_refresh_grid = true;
+    mp_controller->BeginUpdate();
+    try {
+      for (int i = 0; i < mp_controller->GetSelectedCount(); i++) {
+        int row = mp_controller->GetSelectedRowIndex(i);
+        TcxRowInfo row_info = mp_controller->GetRowInfo(row);
+        mp_controller->Values[row_info.RecordIndex][mp_category_column->Index] =
+          category;
+      }
+    }
+    __finally {
+      mp_controller->EndUpdate();
+    }
+    mp_vars_ini_file->save();
+  }
 }
 void __fastcall irs::tstlan::view_t::controls_t::FormHide(TObject *Sender)
 {
@@ -1447,6 +1658,7 @@ void irs::tstlan::view_t::controls_t::save_conf()
   m_ini_file.save();
   mp_vars_ini_file->save();
   mp_param_box->save();
+  save_grid_options();
 }
 void irs::tstlan::view_t::controls_t::load_conf()
 {
@@ -1454,6 +1666,7 @@ void irs::tstlan::view_t::controls_t::load_conf()
   mp_vars_ini_file->load();
   fill_grid_index_col();
   mp_param_box->load();
+  load_grid_options();
   inner_options_apply();
 }
 void irs::tstlan::view_t::controls_t::clear_conf()
@@ -1486,6 +1699,10 @@ void irs::tstlan::view_t::controls_t::ini_name(const string_type& a_ini_name)
   mp_vars_ini_file->set_ini_name(a_ini_name.c_str());
   mp_param_box->set_ini_name(a_ini_name);
   m_device_name = extract_file_ultra_short_name(a_ini_name);
+  const string_type dir = irs::str_conv<string_type>(ExtractFileDir(
+    irs::str_conv<String>(a_ini_name)));
+  m_grid_options_file_name = dir + irst("\\") + m_device_name + irst(".") +
+    m_grid_options_file_ext;
 }
 
 void irs::tstlan::view_t::controls_t::save_table_values(
@@ -1506,14 +1723,18 @@ void irs::tstlan::view_t::controls_t::save_table_values(
   table.set_col_count(m_csv_table_col_count);
   table.set_row_count(mp_controller->RecordCount );
 
+  int conn_index = 0;
+  int bit_index = 0;
   for (int row = 0; row < row_count; row++) {
     int var_index = row;// - m_header_size;
     netconn_t::item_t item = m_netconn.items[var_index];
+    conn_index = item.conn_index;
+    bit_index = item.bit_index;
     string_type type_str = type_to_str(item.type);
     table.write_cell(m_csv_table_conn_index_col_index, var_index,
-      num_to_str(item.conn_index));
+      num_to_str(conn_index));
     table.write_cell(m_csv_table_bit_index_col_index, var_index,
-      num_to_str(item.bit_index));
+      num_to_str(bit_index));
 
     String name_bstr = mp_controller->Values[row][mp_name_column->Index];
     table.write_cell(m_csv_table_name_col_index, var_index,
@@ -1522,6 +1743,8 @@ void irs::tstlan::view_t::controls_t::save_table_values(
     String value_bstr = mp_controller->Values[row][mp_value_column->Index];
     table.write_cell(m_csv_table_value_index_col_index, var_index,
       irs::str_conv<string_type>(value_bstr));
+
+
   }
   csvwork::csv_file_synchro_t csv_file(a_file_name);
   csv_file.save(table);
@@ -1540,58 +1763,51 @@ void irs::tstlan::view_t::controls_t::load_table_values(
   table_string_t table;
   csvwork::csv_file_synchro_t csv_file(a_file_name);
   csv_file.load(&table);
-
-  if (table.get_col_count() < m_csv_table_col_count) {
-    Application->MessageBox(
-      irst("В загруженной таблице мало столбцов"),
-      irst("Ошибка"),
-      MB_OK + MB_ICONERROR);
-    return;
-  }
-
-  int row_count = std::min(static_cast<std::size_t>(mp_controller->RecordCount),
-    m_netconn.items.size());
+  const int row_count = table.get_row_count();
   std::vector<int> rows_with_errors;
   for (int row = 0; row < row_count; row++) {
-    int var_index = row;// - m_header_size;
-    netconn_t::item_t item = m_netconn.items[var_index];
     string_type conn_index_str = table.read_cell(
-      m_csv_table_conn_index_col_index, var_index);
-    int conn_index = 0;
-    if (!str_to_num(conn_index_str, &conn_index)) {
-      rows_with_errors.push_back(var_index);
-      continue;
-    }
-    if (conn_index != item.conn_index) {
-      rows_with_errors.push_back(var_index);
+      m_csv_table_conn_index_col_index, row);
+    int file_conn_index = 0;
+    if (!str_to_num(conn_index_str, &file_conn_index)) {
+      rows_with_errors.push_back(row);
       continue;
     }
     string_type bit_index_str = table.read_cell(
-      m_csv_table_bit_index_col_index, var_index);
-    int bit_index = 0;
-    if (!str_to_num(bit_index_str, &bit_index)) {
-      rows_with_errors.push_back(var_index);
+      m_csv_table_bit_index_col_index, row);
+    int file_bit_index = 0;
+    if (!str_to_num(bit_index_str, &file_bit_index)) {
+      rows_with_errors.push_back(row);
       continue;
     }
-    if (bit_index != item.bit_index) {
-      rows_with_errors.push_back(var_index);
+    int index = 0;
+    if (!find_netconn_item(file_conn_index, file_bit_index, &index)) {
+      rows_with_errors.push_back(row);
       continue;
     }
-
+    netconn_t::item_t item = m_netconn.items[index];
+    if (file_conn_index != item.conn_index) {
+      rows_with_errors.push_back(row);
+      continue;
+    }
+    if (file_bit_index != item.bit_index) {
+      rows_with_errors.push_back(row);
+      continue;
+    }
     string_type type_str = table.read_cell(m_csv_table_type_col_index,
-      var_index);
+      row);
     type_t type = type_unknown;
     if (!str_to_type(type_str, &type)) {
-      rows_with_errors.push_back(var_index);
+      rows_with_errors.push_back(row);
       continue;
     }
     if (type != item.type) {
-      rows_with_errors.push_back(var_index);
+      rows_with_errors.push_back(row);
       continue;
     }
     string_type value_str =
-      table.read_cell(m_csv_table_value_index_col_index, var_index);
-    bstr_to_var(var_index, irs::str_conv<String>(value_str));
+      table.read_cell(m_csv_table_value_index_col_index, row);
+    bstr_to_var(index, irs::str_conv<String>(value_str));
   }
   if (!rows_with_errors.empty()) {
     irs::ostringstream_t error_msg_ostr;
@@ -1612,4 +1828,3 @@ void irs::tstlan::view_t::controls_t::load_table_values(
 }
 
 #endif // IRS_USE_DEV_EXPRESS
-

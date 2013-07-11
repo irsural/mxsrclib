@@ -15,6 +15,7 @@
 #include <tstlan4abs.h>
 #include <timer.h>
 #include <mxini.h>
+
 #include <MxChart.h>
 #include <csvwork.h>
 #include <cbsysutils.h>
@@ -35,7 +36,7 @@ namespace irs {
 //! \addtogroup graphical_user_interface_group
 //! @{
 
-String extract_file_ultra_short_name(const String& Name);
+//String extract_file_ultra_short_name(const String& Name);
 
 template <class T>
 T extract_file_ultra_short_name(const T& a_file_name)
@@ -82,31 +83,37 @@ public:
   enum vle_load_t { vle_load_value, vle_load_full };
   vars_ini_file_t(
     TcxGridTableView* ap_cx_grid_table_view,
+    TcxGridColumn* ap_category_column,
     TcxGridColumn* ap_name_column,
     TcxGridColumn* ap_type_column,
     TcxGridColumn* ap_chart_column,
     const string_type& a_section_prefix);
   void set_ini_name(const String& a_ini_name);
+  void set_encoding(TEncoding* ap_encoding);
   void set_section(const string_type& a_section);
   void load();
   void save() const;
   void save_cx_grid_table_view_row(int a_row_index) const;
   void save_cx_grid_table_view_row_count() const;
 private:
-  void load_cx_grid_table_view_row_count(TIniFile *ap_ini_file);
-  void save_cx_grid_table_view_row_count(TIniFile *ap_ini_file) const;
-  void load_cx_grid_table_view_row(TIniFile *ap_ini_file,
+  void load_cx_grid_table_view_row_count(TCustomIniFile *ap_ini_file);
+  void save_cx_grid_table_view_row_count(TCustomIniFile *ap_ini_file) const;
+  void load_cx_grid_table_view_row(TCustomIniFile *ap_ini_file,
     int a_row_index);
-  void save_cx_grid_table_view_row(TIniFile *ap_ini_file,
+  void save_cx_grid_table_view_row(TCustomIniFile *ap_ini_file,
     int a_row_index) const;
-  void load_name(TIniFile *ap_ini_file, int a_row_index);
-  void save_name(TIniFile *ap_ini_file, int a_row_index) const;
-  void load_type(TIniFile *ap_ini_file, int a_row_index);
-  void save_type(TIniFile *ap_ini_file, int a_row_index) const;
-  void load_chart(TIniFile *ap_ini_file, int a_row_index);
-  void save_chart(TIniFile *ap_ini_file, int a_row_index) const;
+  void load_category(TCustomIniFile *ap_ini_file, int a_row_index);
+  void save_category(TCustomIniFile *ap_ini_file, int a_row_index) const;
+  void load_name(TCustomIniFile *ap_ini_file, int a_row_index);
+  void save_name(TCustomIniFile *ap_ini_file, int a_row_index) const;
+  void load_type(TCustomIniFile *ap_ini_file, int a_row_index);
+  void save_type(TCustomIniFile *ap_ini_file, int a_row_index) const;
+  void load_chart(TCustomIniFile *ap_ini_file, int a_row_index);
+  void save_chart(TCustomIniFile *ap_ini_file, int a_row_index) const;
+  TEncoding* mp_encoding;
   string_type m_ini_name;
   TcxGridTableView* mp_cx_grid_table_view;
+  TcxGridColumn* mp_category_column;
   TcxGridColumn* mp_name_column;
   TcxGridColumn* mp_type_column;
   TcxGridColumn* mp_chart_column;
@@ -114,6 +121,7 @@ private:
   const string_type m_section_name;
   string_type m_section_full_name;
   const string_type m_name_row_count;
+  const string_type m_category_column_prefix;
   const string_type m_name_column_prefix;
   const string_type m_type_column_prefix;
   const string_type m_chart_column_prefix;
@@ -253,6 +261,8 @@ private:
         if ((size_t)a_conn_index < mp_data->size()) {
           items[a_var_index].type = type_bit;
           items[a_var_index].index = a_vec.size();
+          items[a_var_index].conn_index = a_conn_index;
+          items[a_var_index].bit_index = a_bit_index;
           a_vec.push_back(bit_data_t());
           a_conn_index = a_vec.back().connect(mp_data, a_conn_index,
             a_bit_index);
@@ -261,8 +271,7 @@ private:
             a_bit_index = 0;
             a_conn_index++;
           }
-          items[a_var_index].conn_index = a_conn_index;
-          items[a_var_index].bit_index = a_bit_index;
+
         } else {
           items[a_var_index].type = type_unknown;
           items[a_var_index].index = 0;
@@ -281,10 +290,11 @@ private:
         if (a_conn_index + sizeof(T) <= mp_data->size()) {
           items[a_var_index].type = a_type;
           items[a_var_index].index = a_vec.size();
-          a_vec.push_back(conn_data_t<T>());
-          a_conn_index = a_vec.back().connect(mp_data, a_conn_index);
           items[a_var_index].conn_index = a_conn_index;
           items[a_var_index].bit_index = 0;
+          a_vec.push_back(conn_data_t<T>());
+          a_conn_index = a_vec.back().connect(mp_data, a_conn_index);
+
         } else {
           items[a_var_index].type = type_unknown;
           items[a_var_index].index = 0;
@@ -326,7 +336,7 @@ private:
           }
 
           string_type type_str = irs::str_conv<string_type>(type_bstr);
-          type_t type = type_i32;
+          type_t type = type_float;
           str_to_type(type_str, &type);
 
           const int var_index = row;
@@ -396,7 +406,7 @@ private:
             }
           }
           String index_bstr =
-            String(var_index) + "/" + String(conn_index_grid);
+            /*String(var_index) + "/" + */String(conn_index_grid);
           if (is_cur_item_bit) {
             index_bstr += "-" + String(bit_index_grid);
           }
@@ -416,14 +426,20 @@ private:
 
     static const int m_grid_size = 1;
     static const int m_header_row = 0;
-    static const int m_index_col = 0;
-    static const int m_name_col = m_index_col + 1;
-    static const int m_type_col = m_name_col + 1;
-    static const int m_value_col = m_type_col + 1;
-    static const int m_chart_col = m_value_col + 1;
-    static const int m_col_count = m_chart_col + 1;
 
-    static const int m_index_col_width = 60;
+    enum {
+      m_index_col = 0,
+      m_network_pos_col,
+      m_name_col,
+      m_type_col,
+      m_value_col,
+      m_chart_col,
+      m_category_col,
+      m_col_count
+    };
+
+    static const int m_index_col_width = 45;
+    static const int m_network_pos_col_width = 45;
     static const int m_name_col_width = 150;
     static const int m_type_col_width = 80;
     static const int m_value_col_width = 150;
@@ -441,6 +457,7 @@ private:
     TForm* mp_form;
     TPanel* mp_top_panel;
     TOpenDialog* mp_open_dialog;
+    const String m_csv_files_filter;
     TButton* mp_load_btn;
     TButton* mp_start_btn;
     TButton* mp_chart_btn;
@@ -451,6 +468,7 @@ private:
     TSplitter* mp_splitter;
     TMenuItem* mp_grid_popup_insert_item;
     TMenuItem* mp_grid_popup_delete_item;
+    TMenuItem* mp_grid_popup_set_category_item;
     TPopupMenu* mp_grid_popup;
     TcxGrid* mp_vars_grid;
     TcxGridTableView* mp_view;
@@ -458,6 +476,8 @@ private:
     TcxCustomGridTableController* mp_table_controller;
     TcxComboBoxProperties* mp_cx_combo_box_properties;
     TcxGridColumn* mp_index_column;
+    TcxGridColumn* mp_network_pos_column;
+    TcxGridColumn* mp_category_column;
     TcxGridColumn* mp_name_column;
     TcxGridColumn* mp_type_column;
     TcxGridColumn* mp_value_column;
@@ -470,9 +490,12 @@ private:
     loop_timer_t m_read_loop_timer;
     irs::memobuf m_buf;
     ostream m_out;
+    TEncoding* mp_encoding;
     irs::ini_file_t m_ini_file;
     irs::handle_t<vars_ini_file_t> mp_vars_ini_file;
     string_type m_device_name;
+    const string_type m_grid_options_file_ext;
+    string_type m_grid_options_file_name;
     irs::mxdata_t *mp_data;
     bool m_first_connect;
     bool m_refresh_grid;
@@ -513,6 +536,8 @@ private:
     String var_to_bstr(int a_var_index);
     void bstr_to_var(int a_var_index, const String& a_bstr_val);
     long double var_to_long_double(int a_var_index);
+    void load_grid_options();
+    void save_grid_options();
     void fill_grid_index_col();
     bool is_saveable_col(int a_col);
     void save_grid_row(int a_row);
@@ -537,10 +562,15 @@ private:
     void __fastcall SaveTableValuesBtnClick(TObject *Sender);
     void __fastcall GridInsertClick(TObject *Sender);
     void __fastcall GridDeleteClick(TObject *Sender);
+    void __fastcall GridSetCategoryClick(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);
     void __fastcall FormShow(TObject *Sender);
     void inner_options_apply();
     void refresh_chart_items();
+    bool find_netconn_item(int a_conn_index, int a_bit_index,
+      int* ap_index);
+    string_type generate_unique_variable_name();
+    bool is_variable_exists(const string_type& a_name);
     string_type get_variable_name(size_type a_row);
     string_type get_chart_name(size_type a_row);
     string_type make_chart_name(const string_type& a_variable_name);

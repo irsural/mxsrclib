@@ -1897,7 +1897,6 @@ void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
     return;
   }
   #endif //IRS_LIB_CHECK
-  fill(begin, end, a_value);
 
   if (a_value) {
     // Копирование из буфкра чтения в буфер записи при пометке на запись
@@ -1917,6 +1916,8 @@ void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
     }
     //mem_copy(m_read_vars, var_index, m_write_vars, var_index, var_size);
   }
+
+  fill(begin, end, a_value);
 }
 void irs::mxnet_client_t::mark_for_write_and_copy(irs_uarc a_index,
   irs_uarc a_size)

@@ -27,7 +27,6 @@
 
 namespace {
 
-
 irs::handle_t<irs::param_box_base_t> make_assembly_param_box(
   const irs::string_t& a_assembly_type_name,
   const irs::string_t& a_assembly_name)
@@ -44,7 +43,6 @@ irs::handle_t<irs::param_box_base_t> make_assembly_param_box(
   #endif // __BORLANDC__
   return irs::handle_t<irs::param_box_base_t>();
 }
-
 
 } // unnamed namespace
 
@@ -202,7 +200,7 @@ void irs::mxnet_assembly_t::tick()
 void irs::mxnet_assembly_t::show_options()
 {
   if (mp_param_box->show() && m_enabled) {
-    mp_mxnet_client_hardflow->set_param(irst("remote_adress"),
+    mp_mxnet_client_hardflow->set_param(irst("remote_address"),
       mp_param_box->get_param(irst("IP")));
     mp_mxnet_client_hardflow->set_param(irst("remote_port"),
       mp_param_box->get_param(irst("Порт")));
@@ -411,7 +409,7 @@ void irs::modbus_assembly_t::tick()
 void irs::modbus_assembly_t::show_options()
 {
   if (mp_param_box->show()) {
-    mp_modbus_client_hardflow->set_param(irst("remote_adress"),
+    mp_modbus_client_hardflow->set_param(irst("remote_address"),
       mp_param_box->get_param(irst("IP")));
     mp_modbus_client_hardflow->set_param(irst("remote_port"),
       mp_param_box->get_param(irst("Порт")));
@@ -647,6 +645,8 @@ irs::mxdata_t* irs::agilent_3458a_assembly_t::mxdata()
 void irs::agilent_3458a_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -795,6 +795,8 @@ irs::mxdata_t* irs::agilent_34420a_assembly_t::mxdata()
 void irs::agilent_34420a_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -927,6 +929,7 @@ irs::mxdata_t* irs::v7_78_1_assembly_t::mxdata()
 void irs::v7_78_1_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -1069,6 +1072,8 @@ irs::mxdata_t* irs::ch3_85_3r_assembly_t::mxdata()
 void irs::ch3_85_3r_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -1232,6 +1237,8 @@ irs::mxdata_t* irs::ni_pxi_4071_assembly_t::mxdata()
 void irs::ni_pxi_4071_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -1377,6 +1384,8 @@ irs::mxdata_t* irs::termex_lt_300_assembly_t::mxdata()
 void irs::termex_lt_300_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }
@@ -1511,6 +1520,7 @@ irs::mxdata_t* irs::test_multimeter_assembly_t::mxdata()
 void irs::test_multimeter_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_multimeter->tick();
     mp_mxdata->tick();
   }
 }

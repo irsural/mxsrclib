@@ -20,9 +20,16 @@ irs::param_box_t::param_box_t(
   const string_type& a_ini_section,
   const string_type& a_prefix_name,
   const string_type& a_ini_name
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  ,
+  TEncoding* ap_encoding
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
 ):
   m_ini_section(a_ini_section),
   m_prefix_name(a_prefix_name),
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  mp_encoding(ap_encoding),
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   m_ini_file(),
   mp_form(new TForm(IRS_NULL, 1)),
   mp_panel(new TPanel(mp_form.get())),
@@ -32,6 +39,10 @@ irs::param_box_t::param_box_t(
   m_cur_param_row(0),
   m_param_def_list()
 {
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  m_ini_file.set_encoding(mp_encoding);
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+
   mp_form->Width = 280;
   mp_form->Height = 400;
   mp_form->Constraints->MinWidth = 280;
@@ -89,7 +100,8 @@ irs::param_box_t::param_box_t(
 
 void irs::param_box_t::save_form_params()
 {
-  TIniFile* IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  TCustomIniFile* IniFile = create_ini_file(
+    irs::str_conv<string_type>(m_ini_file.ini_name()));
   int key_col_width = mp_value_list_editor->ColWidths[0];
   IniFile->WriteInteger(
     m_ini_section.c_str(),
@@ -108,11 +120,13 @@ void irs::param_box_t::save_form_params()
     (m_prefix_name + irst("form_height")).c_str(),
     form_height
   );
+  IniFile->UpdateFile();
 }
 
 void irs::param_box_t::load_form_params()
 {
-  TIniFile* IniFile = new TIniFile(m_ini_file.ini_name().c_str());
+  TCustomIniFile* IniFile = create_ini_file(
+    irs::str_conv<string_type>(m_ini_file.ini_name()));
   mp_value_list_editor->ColWidths[0] = IniFile->ReadInteger(
     m_ini_section.c_str(),
     (m_prefix_name + irst("key_col_width")).c_str(),
@@ -128,6 +142,16 @@ void irs::param_box_t::load_form_params()
     (m_prefix_name + irst("form_height")).c_str(),
     mp_form->Height
   );
+}
+
+TCustomIniFile* irs::param_box_t::create_ini_file(
+  const string_type& a_file_name) const
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  return new TMemIniFile(a_file_name.c_str(), mp_encoding);
+  #else  // !(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  return new TMemIniFile(a_file_name.c_str());
+  #endif // !(defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
 }
 
 void __fastcall irs::param_box_t::ok_btn_click(TObject *Sender)
