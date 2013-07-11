@@ -1899,7 +1899,7 @@ void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
   #endif //IRS_LIB_CHECK
 
   if (a_value) {
-    // Копирование из буфкра чтения в буфер записи при пометке на запись
+    // Копирование из буфера чтения в буфер записи при пометке на запись
     size_t var_index = static_cast<size_t>(var_first_idx);
     size_t var_size = static_cast<size_t>(var_last_idx - var_first_idx);
     if (var_size == 1) {
