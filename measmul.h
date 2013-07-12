@@ -2928,6 +2928,7 @@ private:
   mxmultimeter_t* mp_mxmultimeter;
   loop_timer_t m_timer;
   double m_value;
+  double m_value_multimeter;
 };
 
 //! @}

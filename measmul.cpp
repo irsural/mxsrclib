@@ -5100,7 +5100,8 @@ irs::multimeter_mxdata_t::multimeter_mxdata_t(mxmultimeter_t* ap_mxmultimeter,
 ):
   mp_mxmultimeter(ap_mxmultimeter),
   m_timer(make_cnt_s(a_update_time)),
-  m_value(0)
+  m_value(0),
+  m_value_multimeter(0)
 {
 }
 
@@ -5154,9 +5155,13 @@ void irs::multimeter_mxdata_t::write_bit(irs_uarc /*a_index*/,
 
 void irs::multimeter_mxdata_t::tick()
 {
-  if (mp_mxmultimeter->status() != meas_status_busy) {
+  meas_status_t status = mp_mxmultimeter->status();
+  if (status == meas_status_success) {
+    m_value = m_value_multimeter;
+  }
+  if (status != meas_status_busy) {
     if (m_timer.check()) {
-      mp_mxmultimeter->get_value(&m_value);
+      mp_mxmultimeter->get_value(&m_value_multimeter);
     }
   }
 }

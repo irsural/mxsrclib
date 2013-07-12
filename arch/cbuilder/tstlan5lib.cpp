@@ -21,6 +21,12 @@
 
 #include <irsfinal.h>
 
+
+irs::string_t irs::tstlan::get_grid_options_file_ext()
+{
+  return irst("gridconf");
+}
+
 vector<irs::string_t> make_type_str_map()
 {
   vector<irs::string_t> type_str_map(irs::tstlan::type_count);
@@ -578,7 +584,7 @@ irs::tstlan::view_t::controls_t::controls_t(
   m_ini_file(),
   mp_vars_ini_file(NULL),
   m_device_name(),
-  m_grid_options_file_ext(irst("gridconf")),
+  m_grid_options_file_ext(get_grid_options_file_ext()),
   m_grid_options_file_name(),
   m_first_connect(true),
   m_refresh_grid(true),

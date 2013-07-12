@@ -54,6 +54,8 @@ T extract_file_ultra_short_name(const T& a_file_name)
 
 namespace tstlan {
 
+string_t get_grid_options_file_ext();
+
 enum type_t {
   type_first = 0,
   type_unknown = type_first,
