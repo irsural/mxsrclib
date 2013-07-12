@@ -5100,9 +5100,11 @@ irs::multimeter_mxdata_t::multimeter_mxdata_t(mxmultimeter_t* ap_mxmultimeter,
 ):
   mp_mxmultimeter(ap_mxmultimeter),
   m_timer(make_cnt_s(a_update_time)),
+  m_connected(false),
   m_value(0),
   m_value_multimeter(0)
 {
+  mp_mxmultimeter->get_value(&m_value_multimeter);
 }
 
 irs_uarc irs::multimeter_mxdata_t::size()
@@ -5112,7 +5114,7 @@ irs_uarc irs::multimeter_mxdata_t::size()
 
 irs_bool irs::multimeter_mxdata_t::connected()
 {
-  return irs_true;
+  return m_connected;
 }
 
 void irs::multimeter_mxdata_t::read(irs_u8 *ap_buf, irs_uarc a_index,
@@ -5157,6 +5159,7 @@ void irs::multimeter_mxdata_t::tick()
 {
   meas_status_t status = mp_mxmultimeter->status();
   if (status == meas_status_success) {
+    m_connected = true;
     m_value = m_value_multimeter;
   }
   if (status != meas_status_busy) {
