@@ -347,6 +347,8 @@ public:
   virtual void start();
   virtual void restart();
   virtual bool watchdog_reset_cause();
+  //! \brief —брасывает флаги перезагрузки: LPWRRSTF, WWDGRSTF,
+  //!   IWDGRSTF, SFTRSTF
   virtual void clear_reset_status();
 private:
   double m_period_s;
@@ -375,6 +377,8 @@ public:
   virtual void start();
   virtual void restart();
   virtual bool watchdog_reset_cause();
+  //! \brief —брасывает флаги перезагрузки: LPWRRSTF, WWDGRSTF,
+  //!   IWDGRSTF, SFTRSTF
   virtual void clear_reset_status();
 private:
   irs_u8 m_counter_start_value;

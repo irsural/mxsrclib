@@ -1131,7 +1131,7 @@ bool irs::arm::st_independent_watchdog_t::watchdog_reset_cause()
 
 void irs::arm::st_independent_watchdog_t::clear_reset_status()
 {
-  RCC_CSR_bit.IWDGRSTF = 0;
+  RCC_CSR_bit.RMVF = 1;
 }
 
 // class st_window_watchdog_t
@@ -1199,7 +1199,7 @@ bool irs::arm::st_window_watchdog_t::watchdog_reset_cause()
 
 void irs::arm::st_window_watchdog_t::clear_reset_status()
 {
-  RCC_CSR_bit.WWDGRSTF = 0;
+  RCC_CSR_bit.RMVF = 1;
 }
 #else
   #error Тип контроллера не определён
