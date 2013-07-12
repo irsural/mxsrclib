@@ -464,14 +464,14 @@ inline int memcmpex(
 
 //! \brief ¬озвращает указатель на данные, хран€щиес€ в std::vector
 template <class T>
-T* vector_data(vector<T>& a_v, std::size_t a_pos = 0)
+T* vector_data(vector<T>& a_v, size_t a_pos = 0)
 {
   return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
 }
 
 //! \brief ¬озвращает указатель на данные, хран€щиес€ в std::vector
 template <class T>
-const T* vector_data(const vector<T>& a_v, std::size_t a_pos = 0)
+const T* vector_data(const vector<T>& a_v, size_t a_pos = 0)
 {
   return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
 }
