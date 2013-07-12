@@ -2000,8 +2000,10 @@ private:
 
 irs_status_t to_irs_status(hardflow::fixed_flow_t::status_t a_status);
 
+#ifdef IRS_WIN32
 // Для обратной совместимости
 typedef hardflow::com_flow_t com_flow_t;
+#endif // IRS_WIN32
 
 } // namespace irs
 

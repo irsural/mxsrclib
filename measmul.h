@@ -238,7 +238,7 @@ class agilent_3458a_t: public mxmultimeter_t
   enum {
     read_timeout_s = 200
   };
-  
+
   enum {
     fixed_flow_read_timeout_delta_s = 2
   };
@@ -987,7 +987,7 @@ public:
   //! \brief Чтение временного интервала
   virtual void get_time_interval(double *time_interval);
   //! \brief Чтение усредненного временного интервала
-  virtual void get_time_interval_average(double *ap_time_interval); 
+  virtual void get_time_interval_average(double *ap_time_interval);
   //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
   //! \brief Чтение статуса текущей операции
@@ -2496,7 +2496,7 @@ public:
     *value = rand();
     #else // !IRS_FULL_STDCPPLIB_SUPPORT
     static int i = 0;
-    *resistance = i++;
+    *value = i++;
     #endif // !IRS_FULL_STDCPPLIB_SUPPORT
   }
   //! \brief Чтение напряжения
@@ -2576,12 +2576,12 @@ public:
     high_speed
   };
   //! \brief intergation time units
-  enum { 
+  enum {
     sec,
     plc
   };
-  
-  
+
+
   ni_pxi_4071_t(
     hardflow_t* ap_hardflow,
     const filter_settings_t& a_filter = zero_struct_t<filter_settings_t>::get(),
@@ -2685,9 +2685,9 @@ private:
     conn_data_t<double> meas_value_not_filtered;
     // Статус мультиметра:
     conn_data_t<irs_u16> meas_status;
-        
+
     //bit_data_t out_of_range;
-  
+
     eth_mul_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
       irs_uarc* ap_size = IRS_NULL)
     {
@@ -2699,7 +2699,7 @@ private:
     irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
     {
       irs_uarc index = a_index;
-      
+
       index = samples_per_sec.connect(ap_data, index);
       index = integrate_time.connect(ap_data, index);
       index = resolution_digits.connect(ap_data, index);
