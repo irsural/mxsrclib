@@ -1436,7 +1436,7 @@ cxGridTableViewColumnNamePropertiesValidate(TObject *Sender,
   Variant &DisplayValue, TCaption &ErrorText, bool &Error)
 {
   mp_view->DataController->PostEditingData();
-  const int row = mp_view->Controller->FocusedRecordIndex;
+  const int row = mp_controller->FocusedRecordIndex;
   refresh_chart_items();
   save_grid_row(row);
 }
@@ -1445,7 +1445,7 @@ void __fastcall irs::tstlan::view_t::controls_t::
   cxGridTableView1ColumnTypePropertiesChange(TObject *Sender)
 {
   mp_view->DataController->PostEditingData();
-  const int row = mp_view->Controller->FocusedRecordIndex;
+  const int row = mp_controller->FocusedRecordIndex;
   save_grid_row(row);
 }
 
@@ -1460,7 +1460,7 @@ cxGridTableViewColumnValuePropertiesValidate(TObject *Sender,
   Variant &DisplayValue, TCaption &ErrorText, bool &Error)
 {
   mp_view->DataController->PostEditingData();
-  const int row = mp_view->Controller->FocusedRecordIndex;
+  int row = mp_controller->FocusedRecordIndex;
   bstr_to_var(row, mp_controller->Values[row][mp_value_column->Index]);
   save_grid_row(row);
 }
@@ -1469,7 +1469,7 @@ void __fastcall irs::tstlan::view_t::controls_t::
 cxGridTableViewColumnChartPropertiesChange(TObject *Sender)
 {
   mp_view->DataController->PostEditingData();
-  const int row = mp_view->Controller->FocusedRecordIndex;
+  const int row = mp_controller->FocusedRecordIndex;
   refresh_chart_items();
   save_grid_row(row);
 }
@@ -1595,7 +1595,7 @@ void __fastcall irs::tstlan::view_t::controls_t::GridInsertClick(
 {
   m_refresh_grid = true;
   const int row =
-    mp_controller->InsertRecord(mp_table_controller->FocusedRecordIndex);
+    mp_controller->InsertRecord(mp_controller->FocusedRecordIndex);
   String name = str_conv<String>(generate_unique_variable_name());
   mp_controller->Values[row][mp_name_column->Index] = name;
   mp_vars_ini_file->save();
