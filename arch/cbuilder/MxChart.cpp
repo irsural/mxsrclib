@@ -3055,7 +3055,8 @@ hide()
 irs::rect_t irs::chart::builder_chart_window_t::
 position() const
 {
-  rect_t pos(mp_form->Left, mp_form->Top, mp_form->Width, mp_form->Height);
+  rect_t pos(mp_form->Left, mp_form->Top, mp_form->Left + mp_form->Width,
+    mp_form->Top + mp_form->Height);
   return pos;
 }
 void irs::chart::builder_chart_window_t::
