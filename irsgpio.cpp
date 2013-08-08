@@ -7,6 +7,10 @@
 
 #include <irspch.h>
 
+#ifdef IRS_STM32F_2_AND_4
+# include <armcfg.h>
+#endif // IRS_STM32F_2_AND_4
+
 #include <irsgpio.h>
 
 #include <irsfinal.h>
@@ -166,8 +170,26 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
 ):
   m_port(reinterpret_cast<irs_u32>(&a_port)),
   m_bit(a_bit),
-  m_data_mask(0x04 << a_bit),
+  m_data_mask(0x04 << m_bit),
   m_port_mask(1 << m_bit)
+{
+  init(a_dir, a_value);
+}
+
+#ifdef IRS_STM32F_2_AND_4
+irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
+  io_pin_value_t a_value
+):
+  m_port(*(reinterpret_cast<volatile irs_u32 *>(get_port_address(a_channel)))),
+  m_bit(static_cast<irs_u8>(get_pin_index(a_channel))),
+  m_data_mask(0x04 << m_bit),
+  m_port_mask(1 << m_bit)
+{
+  init(a_dir, a_value);
+}
+#endif // IRS_STM32F_2_AND_4
+
+void irs::arm::io_pin_t::init(dir_t a_dir, io_pin_value_t a_value)
 {
   port_clock_on(m_port);
   #ifdef __LM3SxBxx__

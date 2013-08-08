@@ -158,6 +158,7 @@ public:
     gpio_channel_t col;
     gpio_channel_t mdc;
     gpio_channel_t mdio;
+    gpio_channel_t phy_reset;
     config_t():
       mii_mode(reduced_mii_mode),
       rx_clk_or_ref_clk(PA1),
@@ -170,7 +171,8 @@ public:
       rx_crs(PA0),
       col(PA3),
       mdc(PC1),
-      mdio(PA2)
+      mdio(PA2),
+      phy_reset(PE15)
     {
       txd[0] = PG13;
       txd[1] = PG14;
@@ -207,6 +209,7 @@ public:
   virtual bool get_linked_status() const;
   virtual void tick();
 private:
+  void hardware_reset_phy();
   void rcc_configuration();
   void gpio_configuration();
   void clock_range_configuration();

@@ -10,8 +10,12 @@
 #include <irsdefs.h>
 
 #ifdef __ICCARM__
-#include <armioregs.h>
+# include <armioregs.h>
 #endif //__ICCARM__
+
+#ifdef IRS_STM32F_2_AND_4
+# include <armregs_stm32f2xx.h>
+#endif //
 
 #include <irsfinal.h>
 
@@ -288,12 +292,17 @@ class io_pin_t: public gpio_pin_t
 public:
   io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
     io_pin_value_t a_value = io_pin_no_change);
+  #ifdef IRS_STM32F_2_AND_4
+  io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
+    io_pin_value_t a_value = io_pin_no_change);
+  #endif // IRS_STM32F_2_AND_4
   ~io_pin_t();
   virtual bool pin();
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
 private:
+  void init(dir_t a_dir, io_pin_value_t a_value);
   const irs_u32 m_port;
   const irs_u8 m_bit;
   const irs_u16 m_data_mask;

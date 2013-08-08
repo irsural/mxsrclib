@@ -590,6 +590,8 @@ irs::arm::st_ethernet_t::st_ethernet_t(
 
   mac_configuration(&ETH_InitStructure);
 
+  hardware_reset_phy();
+
   mp_eth_auto_negotation.reset(
     new eth_auto_negotation_t(ETH_InitStructure, phy_address));
 
@@ -605,6 +607,14 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   set_mac(a_mac);
 
   ETH_Start();
+}
+
+void irs::arm::st_ethernet_t::hardware_reset_phy()
+{
+  io_pin_t reset_eth_pin(m_config.phy_reset, io_t::dir_out, io_pin_off);
+  pause(irs::make_cnt_us(100));
+  reset_eth_pin.set();
+  pause(irs::make_cnt_us(100));
 }
 
 void irs::arm::st_ethernet_t::rcc_configuration()
