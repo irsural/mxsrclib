@@ -21,6 +21,7 @@
 #include <irscpp.h>
 #include <irschartwin.h>
 #include <mxdata.h>
+#include <irsint.h>
 
 #include <irsfinal.h>
 
@@ -187,6 +188,8 @@ private:
   float_type FScaleX, FScaleY;
   pen_t FPen;
   pen_t FMarkerPen;
+  generator_events_t m_on_change;
+  TChartChangeType m_data_of_change_event;
 
   // Свойства
   #ifdef NOP
@@ -197,9 +200,9 @@ private:
   __property int_type Height = {read=GetHeight, write=SetHeight};
   __property TCanvas *Canvas = {read=FCanvas, write=SetCanvas};
   __property rect_int_type BoundsRect = {read=GetBoundsRect, write=SetBoundsRect};
+  __property TChartChange OnChange = {read=FOnChange, write=FOnChange};
   #endif //NOP
   // События
-  __property TChartChange OnChange = {read=FOnChange, write=FOnChange};
   __property TChartError OnError = {read=FOnError, write=FOnError};
 
   // Методы
@@ -218,6 +221,20 @@ private:
   void canvas(const canvas_t& a_canvas);
   rect_int_type bounds_rect() const;
   void bounds_rect(const rect_int_type &Value);
+  generator_events_t* on_change();
+  void data_of_change_event(TChartChangeType a_change_type);
+  //point_float_type P, float_type t, TChartErrorType ChartErrorType);
+  //__property TChartError OnError = {read=FOnError, write=FOnError};
+  struct data_of_error_event_t {
+    point_float_type P;
+    float_type t;
+    TChartErrorType ChartErrorType;
+  };
+  generator_events_t m_on_error;
+  data_of_error_event_t m_data_of_error_event;
+  generator_events_t* on_error();
+  void data_of_error_event(point_float_type P, float_type t,
+    TChartErrorType ChartErrorType);
 
   bool IntoArea(point_float_type P) const;
   bool OutArea(point_float_type P1, point_float_type P2) const;

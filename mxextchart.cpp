@@ -244,7 +244,9 @@ mx_ext_chart_item_t::mx_ext_chart_item_t()
   FScaleX(1.),
   FScaleY(1.),
   FPen(new TPen()),
-  FMarkerPen(new TPen())
+  FMarkerPen(new TPen()),
+  m_on_change(),
+  m_data_of_change_event(cctArea)
 {
   for (size_type i = 0; i < 2; i++) {
     FFunc[i] = DefFunc;
@@ -600,6 +602,14 @@ void mx_ext_chart_item_t::bounds_rect(const rect_int_type& Value)
   FPrevBoundsRect = FBoundsRect;
   FBoundsRect = Value;
   if (FOnChange) FOnChange(this, cctBoundsRect);
+}
+generator_events_t* mx_ext_chart_item_t::on_change()
+{
+  return &m_on_change;
+}
+void mx_ext_chart_item_t::data_of_change_event(TChartChangeType a_change_type)
+{
+  m_data_of_change_event = a_change_type;
 }
 
 void mx_ext_chart_item_t::PaintMarkerX(size_type i)
