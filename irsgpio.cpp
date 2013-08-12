@@ -180,7 +180,7 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
 irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
   io_pin_value_t a_value
 ):
-  m_port(*(reinterpret_cast<volatile irs_u32 *>(get_port_address(a_channel)))),
+  m_port(get_port_address(a_channel)),
   m_bit(static_cast<irs_u8>(get_pin_index(a_channel))),
   m_data_mask(0x04 << m_bit),
   m_port_mask(1 << m_bit)
