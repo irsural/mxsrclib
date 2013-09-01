@@ -35,6 +35,7 @@
 #define IRS_CPP_BUILDERXE           0x0630
 #define IRS_CPP_BUILDERXE_UPDATE1   0x0631
 #define IRS_CPP_BUILDERXE3          0x0650
+#define IRS_CPP_BUILDERXE3_UPDATE2  0x0651
 
 // Включение Unicode
 #ifdef __BORLANDC__
