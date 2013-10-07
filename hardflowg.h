@@ -1864,6 +1864,77 @@ public:
   virtual void tick();
 };
 
+#ifdef HID_FLOW_ENABLED
+class hid_flow_t: public hardflow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  typedef hardflow_t::string_type string_type;
+  hid_flow_t(const string_type& a_device_path, size_type a_channel_count,
+    size_type a_report_size);
+  virtual ~hid_flow_t();
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name,
+    const string_type &a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+private:
+  static DWORD WINAPI read_report(void* ap_params);
+  static DWORD WINAPI write_report(void* ap_params);
+  struct thread_params_t
+  {
+    HANDLE buffer_mutex;
+    size_type buffer_size;
+    std::map<size_type, vector<irs_u8> >* channel_buffers;
+    std::vector<irs_u8>* report_buffer;
+    thread_params_t():
+      buffer_mutex(NULL),
+      buffer_size(0),
+      channel_buffers(NULL),
+      report_buffer(NULL)
+    {
+    }
+  };
+  hid_flow_t();
+  const string_type m_device_path;
+  size_type m_channel_count;
+  size_type m_report_size;
+  size_type m_buffer_max_size;
+  HINSTANCE m_hid_dll;
+  HANDLE m_hid_handle;
+  HANDLE m_read_thread;
+  DWORD m_read_thread_id;
+  HANDLE m_write_thread;
+  DWORD m_write_thread_id;
+  thread_params_t m_read_thread_params;
+  thread_params_t m_write_thread_params;
+  OVERLAPPED m_hid_read_overlapped;
+  OVERLAPPED m_hid_write_overlapped;
+  enum { report_max_count = 20 };
+  typedef irs_u8 report_id_field_type;
+  typedef irs_u8 channel_field_type;
+  typedef irs_u16 size_field_type;
+  enum { report_id = 0 };
+  enum { channel_field_size = 1 };
+  enum { size_field_size = 2 };
+  enum { header_size = 4 };
+  HANDLE m_read_buffer_mutex;
+  HANDLE m_write_buffer_mutex;
+  std::vector<irs_u8> m_read_report_buffer;
+  std::vector<irs_u8> m_write_report_buffer;
+  std::map<size_type, vector<irs_u8> > m_read_buffers;
+  std::map<size_type, vector<irs_u8> > m_write_buffers;
+  std::map<size_type, vector<irs_u8> >::iterator m_write_buf_it;
+  size_type m_read_buffer_size;
+  //size_type m_write_buffer_size;
+  size_type m_channel;
+};
+#endif // HID_FLOW_ENABLED
 #endif // IRS_WIN32
 
 class connector_t: public hardflow_t
