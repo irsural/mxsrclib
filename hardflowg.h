@@ -1863,7 +1863,6 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
-
 #ifdef HID_FLOW_ENABLED
 class hid_flow_t: public hardflow_t
 {
@@ -1883,55 +1882,80 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
+
+  enum { report_max_count = 1000 };
+  typedef irs_u8 report_id_field_type;
+  typedef irs_u8 channel_field_type;
+  typedef irs_u16 size_field_type;
+  typedef std::vector< vector<irs_u8> > buffers_type;
+  typedef std::vector< vector<irs_u8> >::iterator buffers_iterator;
+  typedef std::vector< vector<irs_u8> >::const_iterator buffers_const_iterator;
+  enum { report_id = 0 };
+  enum { channel_field_size = sizeof(channel_field_type) };
+  enum { size_field_size = sizeof(size_field_type) };
+  enum { header_size = sizeof(report_id_field_type) +
+    sizeof(channel_field_type) + sizeof(size_field_type) };
+  enum { report_max_size = 64 };
+  enum { packet_max_size = report_max_size + sizeof(report_id_field_type) };
+  enum { data_max_size = packet_max_size -  header_size};
 private:
-  static DWORD WINAPI read_report(void* ap_params);
-  static DWORD WINAPI write_report(void* ap_params);
-  struct thread_params_t
+  #pragma pack(push, 1)
+  struct packet_t
   {
-    HANDLE buffer_mutex;
-    size_type buffer_size;
-    std::map<size_type, vector<irs_u8> >* channel_buffers;
-    std::vector<irs_u8>* report_buffer;
-    thread_params_t():
-      buffer_mutex(NULL),
-      buffer_size(0),
-      channel_buffers(NULL),
-      report_buffer(NULL)
+    report_id_field_type report_id;
+    channel_field_type buf_index;
+    size_field_type data_size;
+    irs_u8 data[data_max_size];
+    packet_t():
+      report_id(0),
+      buf_index(0),
+      data_size(0),
+      data()
     {
+      memsetex(data, irs_u8(0), sizeof(data));
     }
   };
+  #pragma pack(pop)
+  void release_resources();
+  inline size_type channel_id_to_buf_index(size_type a_channel_id)
+  {
+    return a_channel_id - 1;
+  }
+  inline size_type buf_index_to_channel_id(size_type a_buf_index)
+  {
+    return a_buf_index + 1;
+  }
+  size_type read_from_buffer(vector<irs_u8>* ap_buffer, irs_u8 *ap_buf,
+    size_type a_size);
+  size_type write_to_buffer(vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf,
+    size_type a_size);
+  static DWORD WINAPI read_report(void* ap_params);
+  static DWORD WINAPI write_report(void* ap_params);
   hid_flow_t();
   const string_type m_device_path;
   size_type m_channel_count;
   size_type m_report_size;
+  size_type m_packet_size;
+  size_type m_data_max_size;
   size_type m_buffer_max_size;
   HINSTANCE m_hid_dll;
   HANDLE m_hid_handle;
+  HANDLE m_hid_handle_read_only;
   HANDLE m_read_thread;
   DWORD m_read_thread_id;
   HANDLE m_write_thread;
   DWORD m_write_thread_id;
-  thread_params_t m_read_thread_params;
-  thread_params_t m_write_thread_params;
   OVERLAPPED m_hid_read_overlapped;
   OVERLAPPED m_hid_write_overlapped;
-  enum { report_max_count = 20 };
-  typedef irs_u8 report_id_field_type;
-  typedef irs_u8 channel_field_type;
-  typedef irs_u16 size_field_type;
-  enum { report_id = 0 };
-  enum { channel_field_size = 1 };
-  enum { size_field_size = 2 };
-  enum { header_size = 4 };
+  HANDLE m_close_read_thread_event;
+  HANDLE m_close_write_thread_event;
   HANDLE m_read_buffer_mutex;
   HANDLE m_write_buffer_mutex;
-  std::vector<irs_u8> m_read_report_buffer;
-  std::vector<irs_u8> m_write_report_buffer;
-  std::map<size_type, vector<irs_u8> > m_read_buffers;
-  std::map<size_type, vector<irs_u8> > m_write_buffers;
-  std::map<size_type, vector<irs_u8> >::iterator m_write_buf_it;
-  size_type m_read_buffer_size;
-  //size_type m_write_buffer_size;
+  packet_t m_read_packet;
+  packet_t m_write_packet;
+  buffers_type m_read_buffers;
+  buffers_type m_write_buffers;
+  size_type m_write_buf_index;
   size_type m_channel;
 };
 #endif // HID_FLOW_ENABLED

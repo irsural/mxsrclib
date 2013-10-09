@@ -2786,96 +2786,138 @@ irs::hardflow::hid_flow_t::hid_flow_t(const string_type& a_device_path,
   m_device_path(a_device_path),
   m_channel_count(a_channel_count),
   m_report_size(a_report_size),
+  m_packet_size(m_report_size + sizeof(report_id_field_type)),
+  m_data_max_size(m_packet_size - header_size),
+  m_buffer_max_size(a_report_size*report_max_count),
   m_hid_dll(NULL),
   m_hid_handle(NULL),
   m_read_thread(NULL),
   m_read_thread_id(0),
   m_write_thread(NULL),
   m_write_thread_id(0),
-  m_read_thread_params(),
-  m_write_thread_params(),
   m_hid_read_overlapped(),
   m_hid_write_overlapped(),
-  m_read_buffer_mutex(),
-  m_write_buffer_mutex(),
-  m_read_report_buffer(a_report_size + 1, 0),
-  m_write_report_buffer(a_report_size + 1, 0),
-  m_read_buffers(),
-  m_write_buffers(),
-  m_write_buf_it(),
-  m_read_buffer_size(0),
-  //m_write_buffer_size(0),
+  m_close_read_thread_event(NULL),
+  m_close_write_thread_event(NULL),
+  m_read_buffer_mutex(NULL),
+  m_write_buffer_mutex(NULL),
+  m_read_packet(),
+  m_write_packet(),
+  m_read_buffers(m_channel_count),
+  m_write_buffers(m_channel_count),
+  m_write_buf_index(0),
   m_channel(invalid_channel + 1)
 {
-  if ((a_channel_count < invalid_channel + 1) ||
-    (a_channel_count > std::numeric_limits<report_id_field_type>::max())) {
-    throw std::logic_error("Количество каналов должно быть от 1 до 255");
-  }
-  size_type channel = invalid_channel + 1;
-  for (size_type i = 0; i < m_channel_count; i++, channel++) {
-    m_read_buffers[channel] = std::vector<irs_u8>();
-    m_write_buffers[channel] = std::vector<irs_u8>();
-  }
-  m_write_buf_it = m_write_buffers.begin();
+  memset(&m_hid_read_overlapped, 0, sizeof(m_hid_read_overlapped));
+  memset(&m_hid_write_overlapped, 0, sizeof(m_hid_write_overlapped));
+  try {
+    if ((a_channel_count < invalid_channel + 1) ||
+      (a_channel_count > static_cast<size_type>(
+      std::numeric_limits<report_id_field_type>::max()))) {
+      throw std::logic_error("Количество каналов должно быть от 1 до 255");
+    }
+    if ((m_report_size < 1) || (m_report_size > report_max_size)) {
+      std::ostringstream msg;
+      msg << "Значение a_report_size должно быть от 1 до " << report_max_size;
+      throw std::logic_error(msg.str());
+    }
+    m_hid_dll = LoadLibrary(irst("HID.DLL"));
+    if (!m_hid_dll) {
+      throw std::runtime_error("Библиотека HID.DLL не найдена");
+    }
+    m_hid_handle = CreateFile(
+      a_device_path.c_str(),
+      GENERIC_READ|GENERIC_WRITE,
+      FILE_SHARE_READ|FILE_SHARE_WRITE,
+      NULL,
+      OPEN_EXISTING,
+      FILE_FLAG_OVERLAPPED,
+      NULL);
+    if (m_hid_handle == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error(
+        ("Ошибка открытия hid-устройства. " + irs::last_error_str()).c_str());
+    }
 
-  m_hid_dll = LoadLibrary(irst("HID.DLL"));
-  if (!m_hid_dll) {
-    throw std::runtime_error("Библиотека HID.DLL не найдена");
-  }
-  m_hid_handle = CreateFile(
-    a_device_path.c_str(),
-    GENERIC_READ|GENERIC_WRITE,
-    FILE_SHARE_READ|FILE_SHARE_WRITE,
-    NULL,
-    OPEN_EXISTING,
-    FILE_FLAG_OVERLAPPED,
-    NULL);
-  if (m_hid_handle == INVALID_HANDLE_VALUE) {
-    throw std::runtime_error(
-      ("Ошибка открытия hid-устройства. " + irs::last_error_str()).c_str());
-  }
-  /*m_read_thread = (HANDLE)_beginthreadex(NULL, 0,
-    hid_flow_t::read_report,
-    reinterpret_cast<void*>(&m_thread_params), 0, &m_read_thread_id);*/
-  m_read_buffer_mutex = CreateMutex(NULL, FALSE, NULL);
-  //m_read_thread_params.buffer = &m_read_buffers;
-  if (!m_read_buffer_mutex) {
-    throw std::runtime_error(("Ошибка создания mutex буфера чтения. " +
-      irs::last_error_str()).c_str());
-  }
-  m_read_thread = CreateThread(NULL,
-    0,
-    read_report,
-    this,
-    0,
-    &m_read_thread_id);
-  if (!m_read_thread) {
-    throw std::runtime_error(
-      ("Ошибка создания потока чтения. " + irs::last_error_str()).c_str());
-  }
-  m_write_buffer_mutex = CreateMutex(NULL, FALSE, NULL);
-  if (!m_write_buffer_mutex) {
-    throw std::runtime_error(("Ошибка создания mutex буфера записи. " +
-      irs::last_error_str()).c_str());
-  }
-	m_write_thread = CreateThread(NULL,
-    0,
-    write_report,
-    this,
-    0,
-    &m_write_thread_id);
-  if (!m_write_thread) {
-    throw std::runtime_error(
-      ("Ошибка создания потока записи. " + irs::last_error_str()).c_str());
+    m_hid_read_overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    m_hid_write_overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    m_read_buffer_mutex = CreateMutex(NULL, FALSE, NULL);
+    if (!m_read_buffer_mutex) {
+      throw std::runtime_error(("Ошибка создания mutex буфера чтения. " +
+        irs::last_error_str()).c_str());
+    }
+    BOOL manual_reset = TRUE;
+    BOOL initial_state = FALSE;
+    m_close_read_thread_event = CreateEvent(NULL, manual_reset, initial_state,
+      NULL);
+    if (!m_close_read_thread_event) {
+      throw std::runtime_error(
+        ("Ошибка создания события. " + irs::last_error_str()).c_str());
+    }
+    m_close_write_thread_event = CreateEvent(NULL, manual_reset, initial_state,
+      NULL);
+    if (!m_close_write_thread_event) {
+      throw std::runtime_error(
+        ("Ошибка создания события. " + irs::last_error_str()).c_str());
+    }
+
+    m_read_thread = CreateThread(NULL,
+      0,
+      read_report,
+      this,
+      0,
+      &m_read_thread_id);
+    if (!m_read_thread) {
+      throw std::runtime_error(
+        ("Ошибка создания потока чтения. " + irs::last_error_str()).c_str());
+    }
+    m_write_buffer_mutex = CreateMutex(NULL, FALSE, NULL);
+    if (!m_write_buffer_mutex) {
+      throw std::runtime_error(("Ошибка создания mutex буфера записи. " +
+        irs::last_error_str()).c_str());
+    }
+    m_write_thread = CreateThread(NULL,
+      0,
+      write_report,
+      this,
+      0,
+      &m_write_thread_id);
+    if (!m_write_thread) {
+      throw std::runtime_error(
+        ("Ошибка создания потока записи. " + irs::last_error_str()).c_str());
+    }
+  } catch (...) {
+    release_resources();
+    throw;
   }
 }
 
 irs::hardflow::hid_flow_t::~hid_flow_t()
 {
+  release_resources();
+}
+
+void irs::hardflow::hid_flow_t::release_resources()
+{
+  if (m_write_thread) {
+    SetEvent(m_close_write_thread_event);
+    WaitForSingleObject(m_write_thread, INFINITE);
+  }
   CloseHandle(m_write_thread);
-  m_write_thread = IRS_NULL;
+  m_write_thread = NULL;
+  CloseHandle(m_close_write_thread_event);
+
+  if (m_read_thread) {
+    SetEvent(m_close_read_thread_event);
+    WaitForSingleObject(m_read_thread, INFINITE);
+  }
   CloseHandle(m_read_thread);
   m_read_thread = IRS_NULL;
+  CloseHandle(m_close_read_thread_event);
+
+  CloseHandle(m_hid_write_overlapped.hEvent);
+  CloseHandle(m_hid_read_overlapped.hEvent);
+
   CloseHandle(m_hid_handle);
   FreeLibrary(m_hid_dll);
 }
@@ -2896,43 +2938,35 @@ irs::hardflow::hid_flow_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
   size_type a_size)
 {
   size_type read_size = 0;
-  if (WaitForSingleObject(m_read_buffer_mutex, INFINITE) ==
-    WAIT_OBJECT_0) {
-    std::map<size_type, vector<irs_u8> >::iterator it =
-      m_read_buffers.find(a_channel_ident);
-    if (it != m_read_buffers.end()) {
-      const size_type size = std::min(a_size, it->second.size());
-      memcpyex(ap_buf, vector_data(it->second), size);
-      it->second.erase(it->second.begin(), it->second.begin() + size);
-      read_size = size;
-      m_read_buffer_size -= read_size;
+  const size_type buf_index = channel_id_to_buf_index(a_channel_ident);
+
+  if (buf_index < m_channel_count) {
+    if (WaitForSingleObject(m_read_buffer_mutex, INFINITE) ==
+      WAIT_OBJECT_0) {
+      buffers_iterator buf_it = m_read_buffers.begin() +
+        channel_id_to_buf_index(a_channel_ident);
+      read_size = read_from_buffer(&(*buf_it), ap_buf, a_size);
+      ReleaseMutex(m_read_buffer_mutex);
     }
-    ReleaseMutex(m_read_buffer_mutex);
   }
   return read_size;
 }
 
 irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::write(size_type a_channel_ident, const irs_u8 *ap_buf,
-  size_type a_size)
+irs::hardflow::hid_flow_t::write(size_type a_channel_ident,
+  const irs_u8 *ap_buf, size_type a_size)
 {
   size_type write_size = 0;
-  if (WaitForSingleObject(m_write_buffer_mutex, INFINITE) ==
-    WAIT_OBJECT_0) {
-    std::map<size_type, vector<irs_u8> >::iterator it =
-      m_write_buffers.find(a_channel_ident);
-    if (it != m_write_buffers.end()) {
-      const size_type size = std::min(a_size,
-        m_buffer_max_size - it->second.size());
-      irs_u8* pos = vector_data(it->second, it->second.size());
-      it->second.resize(it->second.size() + size);
-      memcpyex(pos, ap_buf, size);
-      write_size = size;
-      //m_write_buffer_size += write_size;
+  const size_type buf_index = channel_id_to_buf_index(a_channel_ident);
+  if (buf_index < m_channel_count) {
+    if (WaitForSingleObject(m_write_buffer_mutex, INFINITE) ==
+      WAIT_OBJECT_0) {
+      buffers_iterator buf_it = m_write_buffers.begin() + buf_index;
+      write_size = write_to_buffer(&(*buf_it), ap_buf, a_size);
+      ReleaseMutex(m_write_buffer_mutex);
     }
-    ReleaseMutex(m_write_buffer_mutex);
   }
-  return 0;
+  return write_size;
 }
 
 irs::hardflow::hid_flow_t::size_type
@@ -2959,58 +2993,97 @@ void irs::hardflow::hid_flow_t::tick()
 {
 }
 
+irs::hardflow::hid_flow_t::size_type
+irs::hardflow::hid_flow_t::read_from_buffer(vector<irs_u8>* ap_buffer,
+  irs_u8 *ap_buf, size_type a_size)
+{
+  const size_type size = std::min(a_size, ap_buffer->size());
+  memcpyex(ap_buf, vector_data(*ap_buffer), size);
+  ap_buffer->erase(ap_buffer->begin(), ap_buffer->begin() + size);
+  return size;
+}
+
+irs::hardflow::hid_flow_t::size_type
+irs::hardflow::hid_flow_t::write_to_buffer(
+  vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf, size_type a_size)
+{
+  const size_type size = std::min(a_size,
+    m_buffer_max_size - ap_buffer->size());
+  size_type pos = ap_buffer->size();
+  ap_buffer->resize(ap_buffer->size() + size);
+  irs_u8* dest = vector_data(*ap_buffer, pos);
+  memcpyex(dest, ap_buf, size);
+  return size;
+}
+
 DWORD WINAPI irs::hardflow::hid_flow_t::read_report(void* ap_params)
 {
   hid_flow_t* owner = static_cast<hid_flow_t*>(ap_params);
+  packet_t* packet =&owner->m_read_packet;
+  int global_count = 0;
   while (true) {
     bool read_success = false;
-    const ULONG report_buffer_length = owner->m_read_report_buffer.size();
+    const ULONG packet_length = owner->m_report_size + 1;
     ULONG byte_read = 0;
+    IRS_LIB_ASSERT(packet_length >= sizeof(*packet));
     if (ReadFile(owner->m_hid_handle,
-      vector_data(owner->m_read_report_buffer),
-      report_buffer_length, &byte_read,
+      packet,
+      packet_length, &byte_read,
       &owner->m_hid_read_overlapped)) {
       read_success = true;
     } else {
-      if (GetOverlappedResult(owner->m_hid_handle,
-        &owner->m_hid_read_overlapped, &byte_read, true)) {
-        read_success = true;
-      } else {
-        //IRS_LIB_SEND_LAST_ERROR();
+      while (true) {
+        if (GetOverlappedResult(owner->m_hid_handle,
+          &owner->m_hid_read_overlapped, &byte_read, false)) {
+          read_success = true;
+          break;
+        } else {
+          if (WaitForSingleObject(owner->m_close_read_thread_event, 0) ==
+            WAIT_OBJECT_0) {
+            CancelIo(owner->m_hid_handle);
+            return 0;
+          }
+          //CancelIo(owner->m_hid_handle);
+          Sleep(1);
+        }
       }
     }
-    if (read_success && (byte_read == report_buffer_length)) {
-      irs_u8* buf = vector_data(owner->m_read_report_buffer, 0);
-      const report_id_field_type id =
-        *reinterpret_cast<report_id_field_type*>(buf);
-      if (id != report_id) {
+    if (read_success && (byte_read == packet_length)) {
+      const irs_u8* buf = NULL;
+      channel_field_type ap_channel_index = 0;
+      if (packet->report_id != report_id) {
         continue;
       }
-      buf += sizeof(report_id_field_type);
-      const size_type channel = *reinterpret_cast<channel_field_type*>(
-        buf) + 1;
-      buf += sizeof(channel_field_type);
-      const size_type data_size = *reinterpret_cast<size_field_type*>(buf);
-      buf += sizeof(size_field_type);
+      if (static_cast<size_type>(packet->data_size) > owner->m_data_max_size) {
+        continue;
+      }
+      global_count += owner->m_read_packet.data_size;
       while (true) {
-        if (WaitForSingleObject(owner->m_read_buffer_mutex, INFINITE) ==
+        if (WaitForSingleObject(owner->m_close_read_thread_event, 0) ==
           WAIT_OBJECT_0) {
-          if ((owner->m_buffer_max_size - owner->m_read_buffer_size) >=
-            data_size) {
-            std::map<size_type, vector<irs_u8> >::iterator it =
-            owner->m_read_buffers.find(channel);
-            if (it != owner->m_read_buffers.end()) {
-              irs_u8* dest = vector_data(it->second, it->second.size());
-              it->second.resize(it->second.size() + data_size);
-              memcpyex(dest, buf, data_size);
-              owner->m_read_buffer_size += data_size;
+          return 0;
+        }
+        if (static_cast<size_type>(packet->buf_index) <
+          owner->m_channel_count) {
+          if (WaitForSingleObject(owner->m_read_buffer_mutex, INFINITE) ==
+            WAIT_OBJECT_0) {
+            buffers_iterator it = owner->m_read_buffers.begin() +
+              packet->buf_index;
+            if ((owner->m_buffer_max_size - it->size()) >=
+              static_cast<size_type>(packet->data_size)) {
+              size_type write_size = owner->write_to_buffer(&(*it),
+                packet->data, packet->data_size);
+              IRS_LIB_ASSERT(write_size ==
+                static_cast<size_type>(packet->data_size));
+              ReleaseMutex(owner->m_read_buffer_mutex);
+              break;
+            } else {
+              ReleaseMutex(owner->m_read_buffer_mutex);
+              Sleep(1);
             }
-            ReleaseMutex(owner->m_read_buffer_mutex);
-            break;
-          } else {
-            ReleaseMutex(owner->m_read_buffer_mutex);
-            Sleep(1);
           }
+        } else {
+          break;
         }
       }
     }
@@ -3020,77 +3093,93 @@ DWORD WINAPI irs::hardflow::hid_flow_t::read_report(void* ap_params)
 
 DWORD WINAPI irs::hardflow::hid_flow_t::write_report(void* ap_params)
 {
-  hid_flow_t* owner = static_cast<hid_flow_t*>(ap_params);
-  bool write_success = true;
-  while (true) {
-    if (write_success) {
-      while (true) {
-        if (WaitForSingleObject(owner->m_write_buffer_mutex, INFINITE) ==
-          WAIT_OBJECT_0) {
-          /*if (owner->m_write_buffer_size == 0) {
-            ReleaseMutex(owner->m_write_buffer_mutex);
-            Sleep(1);
-            continue;
-          }*/
-          std::map<size_type, vector<irs_u8> >::iterator start_it =
-            owner->m_write_buf_it;
-          owner->m_write_buf_it++;
-          while (owner->m_write_buf_it != start_it) {
-            if (owner->m_write_buf_it == owner->m_write_buffers.end()) {
-              owner->m_write_buf_it = owner->m_write_buffers.begin();
-            }
-            if (!owner->m_write_buf_it->second.empty()) {
+  try {
+    hid_flow_t* owner = static_cast<hid_flow_t*>(ap_params);
+    packet_t* packet =&owner->m_write_packet;
+    bool write_success = true;
+    while (true) {
+      if (write_success) {
+        while (true) {
+          if (WaitForSingleObject(owner->m_close_write_thread_event, 0) ==
+            WAIT_OBJECT_0) {
+            return 0;
+          }
+          if (WaitForSingleObject(owner->m_write_buffer_mutex, INFINITE) ==
+            WAIT_OBJECT_0) {
+            size_type start_index = owner->m_write_buf_index;
+            do {
+              if (!owner->m_write_buffers[owner->m_write_buf_index].empty()) {
+                break;
+              }
+              owner->m_write_buf_index++;
+              if (owner->m_write_buf_index >= owner->m_channel_count) {
+                owner->m_write_buf_index = 0;
+              }
+            } while (owner->m_write_buf_index != start_index);
+
+            if (!owner->m_write_buffers[owner->m_write_buf_index].empty()) {
+              packet->report_id = report_id;
+              packet->buf_index =
+                static_cast<channel_field_type>(owner->m_write_buf_index);
+              const size_type size = std::min<size_type>(
+                owner->m_write_buffers[owner->m_write_buf_index].size(),
+                owner->m_data_max_size);
+              packet->data_size = static_cast<size_field_type>(size);
+              const size_type read_count = owner->read_from_buffer(
+                &owner->m_write_buffers[owner->m_write_buf_index],
+                packet->data, size);
+              IRS_LIB_ASSERT(read_count == size);
+              ReleaseMutex(owner->m_write_buffer_mutex);
+              write_success = false;
               break;
+            } else {
+              ReleaseMutex(owner->m_write_buffer_mutex);
+              Sleep(1);
             }
-            owner->m_write_buf_it++;
+            owner->m_write_buf_index++;
+            if (owner->m_write_buf_index >= owner->m_channel_count) {
+              owner->m_write_buf_index = 0;
+            }
           }
-          if (!owner->m_write_buf_it->second.empty()) {
-            irs_u8* pos = vector_data(owner->m_write_report_buffer);
-            *reinterpret_cast<report_id_field_type*>(pos) = report_id;
-            pos += sizeof(report_id_field_type);
-            *reinterpret_cast<channel_field_type*>(pos) =
-              static_cast<channel_field_type>(owner->m_write_buf_it->first - 1);
-            pos += sizeof(channel_field_type);
-            size_type size = std::min(owner->m_write_buf_it->second.size(),
-              owner->m_write_report_buffer.size() - header_size);
-            *reinterpret_cast<size_field_type*>(pos) =
-              static_cast<size_field_type>(size);
-            pos += sizeof(size_field_type);
-            memcpyex(pos, vector_data(owner->m_write_buf_it->second), size);
-            owner->m_write_buf_it->second.erase(
-              owner->m_write_buf_it->second.begin(),
-              owner->m_write_buf_it->second.begin() + size);
-            ReleaseMutex(owner->m_write_buffer_mutex);
-            break;
+        }
+      }
+      const ULONG packet_length = owner->m_packet_size;
+      ULONG byte_write = 0;
+      if (owner->m_hid_handle == INVALID_HANDLE_VALUE) {
+        int i = 1;
+      }
+      if (WriteFile
+        (owner->m_hid_handle,
+        packet,
+        packet_length,
+        &byte_write,
+        (LPOVERLAPPED) &owner->m_hid_write_overlapped)) {
+        write_success = true;
+      } else {
+        while (true) {
+          if (WaitForSingleObject(owner->m_close_write_thread_event, 0) ==
+            WAIT_OBJECT_0) {
+            CancelIo(owner->m_hid_handle);
+            return 0;
+          }
+          const DWORD wait_result =
+            WaitForSingleObject(owner->m_hid_write_overlapped.hEvent, 3);
+          if (wait_result == WAIT_OBJECT_0) {
+            if (GetOverlappedResult(owner->m_hid_handle,
+              &owner->m_hid_write_overlapped, &byte_write, true)) {
+              write_success = true;
+              break;
+            } else {
+              Sleep(1);
+            }
           } else {
-            ReleaseMutex(owner->m_write_buffer_mutex);
             Sleep(1);
           }
         }
       }
     }
-    const ULONG report_buffer_length = owner->m_write_report_buffer.size();
-    ULONG byte_write = 0;
-    if (WriteFile
-      (owner->m_hid_handle,
-      vector_data(owner->m_write_report_buffer),
-      report_buffer_length,
-      &byte_write,
-      (LPOVERLAPPED) &owner->m_hid_write_overlapped)) {
-      write_success = true;
-    } else {
-      irs::timer_t timer(irs::make_cnt_ms(1));
-      timer.start();
-      while (true) {
-        if (GetOverlappedResult(owner->m_hid_handle,
-          &owner->m_hid_write_overlapped, &byte_write, true)) {
-          write_success = true;
-          break;
-        } else {
-          Sleep(1);
-        }
-      }
-    }
+  } catch (...) {
+    int i = 0;
   }
   return 0;
 }
