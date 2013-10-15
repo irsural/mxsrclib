@@ -423,7 +423,7 @@ private:
     struct param_box_tune_t {
       param_box_base_t* mp_param_box;
 
-      param_box_tune_t(param_box_base_t* ap_param_box);
+      param_box_tune_t(param_box_base_t* ap_param_box, bool a_local_chart);
     };
 
     static const int m_grid_size = 1;

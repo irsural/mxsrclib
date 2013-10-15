@@ -503,14 +503,16 @@ void irs::tstlan::view_t::ini_name(const string_type& a_ini_name)
 //TComponent* const zero_comp = IRS_NULL;
 // Компонентов формы
 irs::tstlan::view_t::controls_t::param_box_tune_t::param_box_tune_t(
-  param_box_base_t* ap_param_box
+  param_box_base_t* ap_param_box, bool a_local_chart
 ):
   mp_param_box(ap_param_box)
 {
   mp_param_box->add_bool(irst("Отображать лог"), false);
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
-  mp_param_box->add_bool(irst("Сбросить время"), false);
+  if (a_local_chart) {
+    mp_param_box->add_bool(irst("Сбросить время"), false);
+  }
   mp_param_box->add_bool(irst("Запись CSV включена"), false);
 }
 void irs::tstlan::view_t::controls_t::inner_options_apply()
@@ -619,7 +621,7 @@ irs::tstlan::view_t::controls_t::controls_t(
   m_inner_options_event(),
   mp_param_box(new param_box_t(irst("Внутренние настройки tstlan5"),
     irst("inner_options"), string_type(), string_type(), mp_encoding)),
-  m_param_box_tune(mp_param_box.get()),
+  m_param_box_tune(mp_param_box.get(), !ap_extern_chart),
   m_is_csv_on(false)
 {
 
