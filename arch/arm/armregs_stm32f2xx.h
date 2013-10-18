@@ -2322,7 +2322,7 @@ typedef struct {
   __REG32  SETENA46       : 1;
   __REG32  SETENA47       : 1;
   __REG32  SETENA48       : 1;
-  __REG32  SETENA49       : 1;
+  __REG32  SETENA_SDIO       : 1;
   __REG32  SETENA50       : 1;
   __REG32  SETENA51       : 1;
   __REG32  SETENA52       : 1;
@@ -2332,7 +2332,7 @@ typedef struct {
   __REG32  SETENA56       : 1;
   __REG32  SETENA57       : 1;
   __REG32  SETENA58       : 1;
-  __REG32  SETENA59       : 1;
+  __REG32  SETENA_DMA2_STREAM3  : 1;
   __REG32  SETENA60       : 1;
   __REG32  SETENA61       : 1;
   __REG32  SETENA62       : 1;
@@ -2786,6 +2786,198 @@ struct spi_regs_t
   IRS_IO_REG32_BIT(SPI_I2SCFGR, __READ_WRITE ,__spi_i2scfgr_bits);
   IRS_IO_REG32_BIT(SPI_I2SPR, __READ_WRITE ,__spi_i2spr_bits);
 };
+
+// SDIO
+
+#define SDIO_POWER_S 0x00
+#define SDIO_CLKCR_S 0x04
+#define SDIO_ARG_S 0x08
+#define SDIO_CMD_S 0x0C
+#define SDIO_RESPCMD_S 0x10
+#define SDIO_RESP1_S 0x14
+#define SDIO_RESP2_S 0x18
+#define SDIO_RESP3_S 0x1C
+#define SDIO_RESP4_S 0x20
+#define SDIO_DTIMER_S 0x24
+#define SDIO_DLEN_S 0x28
+#define SDIO_DCTRL_S 0x2C
+#define SDIO_DCOUNT_S 0x30
+#define SDIO_STA_S 0x34
+#define SDIO_ICR_S 0x38
+#define SDIO_MASK_S 0x3C
+#define SDIO_FIFOCNT_S 0x48
+#define SDIO_FIFO_S 0x80
+
+/* SDIO Power Control Register (SDIO_POWER) */
+typedef struct {
+  __REG32 PWRCTRL         : 2;
+  __REG32                 :30;
+} __sdio_power_bits;
+
+/* SDIO Clock Control Register (SDIO_CLKCR) */
+typedef struct {
+  __REG32 CLKDIV          : 8;
+  __REG32 CLKEN           : 1;
+  __REG32 PWRSAV          : 1;
+  __REG32 BYPASS          : 1;
+  __REG32 WIDBUS          : 2;
+  __REG32 NEGEDGE         : 1;
+  __REG32 HWFC_EN         : 1;
+  __REG32                 :17;
+} __sdio_clkcr_bits;
+
+/* SDIO Command Register (SDIO_CMD) */
+typedef struct {
+  __REG32 CMDINDEX        : 6;
+  __REG32 WAITRESP        : 2;
+  __REG32 WAITINT         : 1;
+  __REG32 WAITPEND        : 1;
+  __REG32 CPSMEN          : 1;
+  __REG32 SDIOSuspend     : 1;
+  __REG32 ENCMDcompl      : 1;
+  __REG32 nIEN            : 1;
+  __REG32 ATACMD          : 1;
+  __REG32                 :17;
+} __sdio_cmd_bits;
+
+/* SDIO Command Response Register (SDIO_RESPCMD) */
+typedef struct {
+  __REG32 RESPCMD         : 6;
+  __REG32                 :26;
+} __sdio_respcmd_bits;
+
+/* SDIO Data Length Register (SDIO_DLEN) */
+typedef struct {
+  __REG32 DATALENGTH      :25;
+  __REG32                 : 7;
+} __sdio_dlen_bits;
+
+/* SDIO Data Control Register (SDIO_DCTRL) */
+typedef struct {
+  __REG32 DTEN            : 1;
+  __REG32 DTDIR           : 1;
+  __REG32 DTMODE          : 1;
+  __REG32 DMAEN           : 1;
+  __REG32 DBLOCKSIZE      : 4;
+  __REG32 RWSTART         : 1;
+  __REG32 RWSTOP          : 1;
+  __REG32 RWMOD           : 1;
+  __REG32 SDIOEN          : 1;
+  __REG32                 :20;
+} __sdio_dctrl_bits;
+
+/* SDIO Data Counter Register (SDIO_DCOUNT) */
+typedef struct {
+  __REG32 DATACOUNT       :25;
+  __REG32                 : 7;
+} __sdio_dcount_bits;
+
+/* SDIO Status Register (SDIO_STA) */
+typedef struct {
+  __REG32 CCRCFAIL        : 1;
+  __REG32 DCRCFAIL        : 1;
+  __REG32 CTIMEOUT        : 1;
+  __REG32 DTIMEOUT        : 1;
+  __REG32 TXUNDERR        : 1;
+  __REG32 RXOVERR         : 1;
+  __REG32 CMDREND         : 1;
+  __REG32 CMDSENT         : 1;
+  __REG32 DATAEND         : 1;
+  __REG32 STBITERR        : 1;
+  __REG32 DBCKEND         : 1;
+  __REG32 CMDACT          : 1;
+  __REG32 TXACT           : 1;
+  __REG32 RXACT           : 1;
+  __REG32 TXFIFOHE        : 1;
+  __REG32 RXFIFOHF        : 1;
+  __REG32 TXFIFOF         : 1;
+  __REG32 RXFIFOF         : 1;
+  __REG32 TXFIFOE         : 1;
+  __REG32 RXFIFOE         : 1;
+  __REG32 TXDAVL          : 1;
+  __REG32 RXDAVL          : 1;
+  __REG32 SDIOIT          : 1;
+  __REG32 CEATAEND        : 1;
+  __REG32                 : 8;
+} __sdio_sta_bits;
+
+/* SDIO Interrupt Clear Register (SDIO_ICR) */
+typedef struct {
+  __REG32 CCRCFAILC       : 1;
+  __REG32 DCRCFAILC       : 1;
+  __REG32 CTIMEOUTC       : 1;
+  __REG32 DTIMEOUTC       : 1;
+  __REG32 TXUNDERRC       : 1;
+  __REG32 RXOVERRC        : 1;
+  __REG32 CMDRENDC        : 1;
+  __REG32 CMDSENTC        : 1;
+  __REG32 DATAENDC        : 1;
+  __REG32 STBITERRC       : 1;
+  __REG32 DBCKENDC        : 1;
+  __REG32                 :11;
+  __REG32 SDIOITC         : 1;
+  __REG32 CEATAENDC       : 1;
+  __REG32                 : 8;
+} __sdio_icr_bits;
+
+/* SDIO Mask Register (SDIO_MASK) */
+typedef struct {
+  __REG32 CCRCFAILIE      : 1;
+  __REG32 DCRCFAILIE      : 1;
+  __REG32 CTIMEOUTIE      : 1;
+  __REG32 DTIMEOUTIE      : 1;
+  __REG32 TXUNDERRIE      : 1;
+  __REG32 RXOVERRIE       : 1;
+  __REG32 CMDRENDIE       : 1;
+  __REG32 CMDSENTIE       : 1;
+  __REG32 DATAENDIE       : 1;
+  __REG32 STBITERRIE      : 1;
+  __REG32 DBCKENDIE       : 1;
+  __REG32 CMDACTIE        : 1;
+  __REG32 TXACTIE         : 1;
+  __REG32 RXACTIE         : 1;
+  __REG32 TXFIFOHEIE      : 1;
+  __REG32 RXFIFOHFIE      : 1;
+  __REG32 TXFIFOFIE       : 1;
+  __REG32 RXFIFOFIE       : 1;
+  __REG32 TXFIFOEIE       : 1;
+  __REG32 RXFIFOEIE       : 1;
+  __REG32 TXDAVLIE        : 1;
+  __REG32 RXDAVLIE        : 1;
+  __REG32 SDIOITIE        : 1;
+  __REG32 CEATAENDIE      : 1;
+  __REG32                 : 8;
+} __sdio_mask_bits;
+
+/* SDIO FIFO Counter Register (SDIO_FIFOCNT) */
+typedef struct {
+  __REG32 FIFOCOUNT       :24;
+  __REG32                 : 8;
+} __sdio_fifocnt_bits;
+
+/***************************************************************************
+ **
+ ** SDIO
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(SDIO_POWER,        IRS_SDIO_BASE + SDIO_POWER_S,__READ_WRITE ,__sdio_power_bits  );
+__IO_REG32_BIT(SDIO_CLKCR,        IRS_SDIO_BASE + SDIO_CLKCR_S,__READ_WRITE ,__sdio_clkcr_bits  );
+__IO_REG32(    SDIO_ARG,          IRS_SDIO_BASE + SDIO_ARG_S,__READ_WRITE                     );
+__IO_REG32_BIT(SDIO_CMD,          IRS_SDIO_BASE + SDIO_CMD_S,__READ_WRITE ,__sdio_cmd_bits    );
+__IO_REG32_BIT(SDIO_RESPCMD,      IRS_SDIO_BASE + SDIO_RESPCMD_S,__READ       ,__sdio_respcmd_bits);
+__IO_REG32(    SDIO_RESP1,        IRS_SDIO_BASE + SDIO_RESP1_S,__READ                           );
+__IO_REG32(    SDIO_RESP2,        IRS_SDIO_BASE + SDIO_RESP2_S,__READ                           );
+__IO_REG32(    SDIO_RESP3,        IRS_SDIO_BASE + SDIO_RESP3_S,__READ                           );
+__IO_REG32(    SDIO_RESP4,        IRS_SDIO_BASE + SDIO_RESP4_S,__READ                           );
+__IO_REG32(    SDIO_DTIMER,       IRS_SDIO_BASE + SDIO_DTIMER_S,__READ_WRITE                     );
+__IO_REG32_BIT(SDIO_DLEN,         IRS_SDIO_BASE + SDIO_DLEN_S,__READ_WRITE ,__sdio_dlen_bits   );
+__IO_REG32_BIT(SDIO_DCTRL,        IRS_SDIO_BASE + SDIO_DCTRL_S,__READ_WRITE ,__sdio_dctrl_bits  );
+__IO_REG32_BIT(SDIO_DCOUNT,       IRS_SDIO_BASE + SDIO_DCOUNT_S,__READ       ,__sdio_dcount_bits );
+__IO_REG32_BIT(SDIO_STA,          IRS_SDIO_BASE + SDIO_STA_S,__READ       ,__sdio_sta_bits    );
+__IO_REG32_BIT(SDIO_ICR,          IRS_SDIO_BASE + SDIO_ICR_S,__READ_WRITE ,__sdio_icr_bits    );
+__IO_REG32_BIT(SDIO_MASK,         IRS_SDIO_BASE + SDIO_MASK_S,__READ_WRITE ,__sdio_mask_bits   );
+__IO_REG32_BIT(SDIO_FIFOCNT,      IRS_SDIO_BASE + SDIO_FIFOCNT_S,__READ       ,__sdio_fifocnt_bits);
+__IO_REG32(    SDIO_FIFO,         IRS_SDIO_BASE + SDIO_FIFO_S,__READ_WRITE                     );
 
 // USART
 

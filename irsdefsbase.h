@@ -35,7 +35,6 @@
 #define IRS_CPP_BUILDERXE           0x0630
 #define IRS_CPP_BUILDERXE_UPDATE1   0x0631
 #define IRS_CPP_BUILDERXE3          0x0650
-#define IRS_CPP_BUILDERXE3_UPDATE2  0x0651
 
 // Включение Unicode
 #ifdef __BORLANDC__
@@ -150,6 +149,10 @@
 #ifndef IRS_USE_DEV_EXPRESS
 # define IRS_USE_DEV_EXPRESS 0
 #endif // IRS_USE_DEV_EXPRESS
+
+#ifndef IRS_USE_FREE_RTOS
+# define IRS_USE_FREE_RTOS 0
+#endif // IRS_USE_FREE_RTOS
 
 // Статические утверждения
 // Взято из STLSoft

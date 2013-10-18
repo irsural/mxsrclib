@@ -48,7 +48,7 @@ public:
       // но на всякий случай выполнается return, а не только чтение флага
       return;
     }
-    high_dword += low_dword_cnt;
+    high_dword += SYSTICKRVR_bit.RELOAD + 1;// low_dword_cnt;
   }
 };
 
@@ -81,7 +81,7 @@ counter_t counter_get()
   counter_t SYSTICKCVR_buf = SYSTICKCVR;
   if (SYSTICKCSR_bit.COUNTFLAG) {
     SYSTICKCVR_buf = SYSTICKCVR;
-    high_dword += low_dword_cnt;
+    high_dword += SYSTICKRVR_bit.RELOAD + 1;//low_dword_cnt;
   }
   const counter_t result = high_dword + (low_dword_top - SYSTICKCVR_buf);
   timer_overflow_interrupt_enabled = true;

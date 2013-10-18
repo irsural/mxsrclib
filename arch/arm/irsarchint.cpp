@@ -33,6 +33,12 @@ extern "C"
   void DebugMon_Handler( void );
   void PendSV_Handler( void );
   void SysTick_Handler( void );
+  
+  #if IRS_USE_FREE_RTOS
+  //void free_rtos_SVC_Handler( void );  
+  //void free_rtos_PendSV_Handler( void );  
+  void free_rtos_SysTick_Handler( void );
+  #endif // IRS_USE_FREE_RTOS
 }
 
 //  Прерывания ядра
@@ -57,21 +63,30 @@ void UsageFault_Handler()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::usage_fault_int);
 }
+#if !IRS_USE_FREE_RTOS
 void SVC_Handler()
 {
+  //free_rtos_SVC_Handler();
   irs::arm::interrupt_array()->exec_event(irs::arm::svc_int);
 }
+#endif // !IRS_USE_FREE_RTOS
 void DebugMon_Handler()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::debug_monitor_int);
 }
+#if !IRS_USE_FREE_RTOS
 void PendSV_Handler()
 {
+  //free_rtos_PendSV_Handler();
   irs::arm::interrupt_array()->exec_event(irs::arm::pend_sv_int);
 }
+#endif // !IRS_USE_FREE_RTOS
 void SysTick_Handler()
-{
+{  
   irs::arm::interrupt_array()->exec_event(irs::arm::sys_tick_int);
+  #if IRS_USE_FREE_RTOS
+  free_rtos_SysTick_Handler();
+  #endif // IRS_USE_FREE_RTOS
 }
 
 #ifndef IRS_DISABLE_EVENT_INTERRUPT
@@ -401,6 +416,28 @@ void irs_arm_tim8_up_tim13_func()
   TIM13_SR_bit.UIF = 0;
   TIM13_SR_bit.CC1IF = 0;
 }
+
+void irs_arm_usart3_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::usart3_int); 
+}
+
+void irs_arm_sdio_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::sdio_int);  
+}
+
+void irs_arm_dma2_stream3_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream3_int);  
+}
+
+//#ifndef USE_USB_OTG_FS
+void irs_arm_otg_fs_func()
+{  
+  irs::arm::interrupt_array()->exec_event(irs::arm::otg_fs_int);
+}
+//#endif // USE_USB_OTG_FS
 #endif // defined(IRS_STM32F_2_AND_4)
 
 void irs_arm_default_int_func()
@@ -567,7 +604,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 36
   irs_arm_default_int_func,  // 37
   irs_arm_default_int_func,  // 38
-  irs_arm_default_int_func,  // 39
+  irs_arm_usart3_func,  // 39
   irs_arm_exti15_10_func,    // 40
   irs_arm_default_int_func,  // 41
   irs_arm_default_int_func,  // 42
@@ -577,7 +614,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 46
   irs_arm_default_int_func,  // 47
   irs_arm_default_int_func,  // 48
-  irs_arm_default_int_func,  // 49
+  irs_arm_sdio_func,  // 49
   irs_arm_default_int_func,  // 50
   irs_arm_default_int_func,  // 51
   irs_arm_default_int_func,  // 52
@@ -587,7 +624,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 56
   irs_arm_default_int_func,  // 57
   irs_arm_default_int_func,  // 58
-  irs_arm_default_int_func,  // 59
+  irs_arm_dma2_stream3_func,  // 59
   irs_arm_default_int_func,  // 60
   irs_arm_default_int_func,  // 61
   irs_arm_default_int_func,  // 62
@@ -595,7 +632,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 64
   irs_arm_default_int_func,  // 65
   irs_arm_default_int_func,  // 66
-  irs_arm_default_int_func,  // 67
+  irs_arm_otg_fs_func,  // 67
   irs_arm_default_int_func,  // 68
   irs_arm_default_int_func,  // 69
   irs_arm_default_int_func,  // 70
