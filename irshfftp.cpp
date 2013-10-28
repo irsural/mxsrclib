@@ -1382,7 +1382,8 @@ void irs::hfftp::packet_flow_t::make_packet(opcode_t a_opcode)
     } break;
   }
   if (!mp_receive_packet.is_empty()) {
-    mp_receive_packet->set_data_max_size(m_data_max_size);
+    mp_receive_packet->set_data_max_size(
+      static_cast<data_size_t>(m_data_max_size));
   }
 }
 
