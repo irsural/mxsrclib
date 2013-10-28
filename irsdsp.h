@@ -251,8 +251,13 @@ public:
     // нормирование пропорционального коэффициента
     norm_prop_gain = 32,
     // адаптирование пропорционального коэффициента
+		// исключить из опций
+		// две функции
+		// - измерение начального коэффициента
+		// - измерение текущего коэффициента и подстрока пропорционального
     adapt_prop_gain = 64,
     // быстрый выход на режим
+		// Пока не реализовываем
     fast_mode = 128
   };
 
@@ -261,12 +266,15 @@ public:
     options_t a_options = sync_gains);
   ~pid_regulator_t();
 
-  void start(const &T a_integrator = T());
+	// Выполняется синхронизация на изменившиеся коэффициенты
+  void start();
   void stop();
   void proportional_gain(const &T a_proportional_gain);
   T proportional_gain();
+	// ki = a_integral_gain*dt
   void integral_gain(const &T a_integral_gain);
   T integral_gain();
+	// kd = a_integral_gain/dt
   void derivative_gain(const &T a_derivative_gain);
   T derivative_gain();
   void out_min(const &T a_out_min);
@@ -275,6 +283,7 @@ public:
   T out_max();
   void integrator(const &T a_integrator);
   T integrator();
+	T exec(const T& a_error);
 private:
 };
 
