@@ -123,7 +123,6 @@ private:
     #endif
   #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */ 
   event_connect_t<usb_hid_t> m_otg_fs_event_connect;
-  packet_t m_read_packet;
   packet_t m_write_packet;
   buffers_type m_read_buffers;
   buffers_type m_write_buffers;

@@ -27,11 +27,11 @@
 
 namespace {
 
+#ifdef __BORLANDC__
 irs::handle_t<irs::param_box_base_t> make_assembly_param_box(
   const irs::string_t& a_assembly_type_name,
   const irs::string_t& a_assembly_name)
 {
-  #ifdef __BORLANDC__
   irs::handle_t<irs::param_box_base_t> param_box = new irs::param_box_t(
     irst("Настройки ") + a_assembly_type_name +
       irst(" - ") + a_assembly_name,
@@ -40,9 +40,15 @@ irs::handle_t<irs::param_box_base_t> make_assembly_param_box(
     a_assembly_name
   );
   return param_box;
-  #endif // __BORLANDC__
+}
+#else // Other
+irs::handle_t<irs::param_box_base_t> make_assembly_param_box(
+  const irs::string_t&,
+  const irs::string_t&)
+{
   return irs::handle_t<irs::param_box_base_t>();
 }
+#endif // Other
 
 } // unnamed namespace
 

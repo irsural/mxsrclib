@@ -1863,7 +1863,7 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 };
-#ifdef HID_FLOW_ENABLED
+
 class hid_flow_t: public hardflow_t
 {
 public:
@@ -1925,6 +1925,7 @@ private:
   {
     return a_buf_index + 1;
   }
+  void transfer(vector<irs_u8>* ap_buffer_src, vector<irs_u8>* ap_buffer_dest);
   size_type read_from_buffer(vector<irs_u8>* ap_buffer, irs_u8 *ap_buf,
     size_type a_size);
   size_type write_to_buffer(vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf,
@@ -1938,7 +1939,6 @@ private:
   size_type m_packet_size;
   size_type m_data_max_size;
   size_type m_buffer_max_size;
-  HINSTANCE m_hid_dll;
   HANDLE m_hid_handle;
   HANDLE m_hid_handle_read_only;
   HANDLE m_read_thread;
@@ -1955,10 +1955,14 @@ private:
   packet_t m_write_packet;
   buffers_type m_read_buffers;
   buffers_type m_write_buffers;
+  buffers_type m_user_read_buffers;
+  buffers_type m_user_write_buffers;
+  loop_timer_t m_sync_read_buffers_loop_timer;
+  loop_timer_t m_sync_write_buffers_loop_timer;
   size_type m_write_buf_index;
   size_type m_channel;
 };
-#endif // HID_FLOW_ENABLED
+
 #endif // IRS_WIN32
 
 class connector_t: public hardflow_t

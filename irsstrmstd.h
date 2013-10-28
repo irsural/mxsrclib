@@ -17,9 +17,9 @@
 #include <StdCtrls.hpp>
 #endif // __BORLANDC__
 
-#ifdef QT_CORE_LIB
+#ifdef QT_GUI_LIB
 #include <QPlainTextEdit>
-#endif // QT_CORE_LIB
+#endif // QT_GUI_LIB
 
 #include <irsfinal.h>
 
@@ -634,7 +634,7 @@ typedef basic_memobuf<char> memobuf;
 
 #endif //__BORLANDC__
 
-#ifdef QT_CORE_LIB
+#ifdef QT_GUI_LIB
 // Буфер стандартных потоков для QPlainTextEdit
 template <class char_type>
 class basic_plain_text_edit_buf_t: public basic_streambuf<char_type>
@@ -728,7 +728,7 @@ int basic_plain_text_edit_buf_t<char_type>::sync()
 
 typedef basic_plain_text_edit_buf_t<char_t> plain_text_edit_buf_t;
 typedef basic_plain_text_edit_buf_t<char> plain_text_edit_buf;
-#endif // QT_CORE_LIB
+#endif // QT_GUI_LIB
 
 // Стандартная конфигурация консоли
 class conio_cfg_t: public mx_proc_t

@@ -51,7 +51,6 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   m_buffer_max_size(a_report_size*report_max_count),  
   m_usb_otg_dev(),
   m_otg_fs_event_connect(this, &irs::hardflow::arm::usb_hid_t::otg_fs_event),
-  m_read_packet(),
   m_write_packet(),
   m_read_buffers(m_channel_count),
   m_write_buffers(m_channel_count),
@@ -164,13 +163,13 @@ void irs::hardflow::arm::usb_hid_t::tick()
       IRS_LIB_DBG_MSG("ѕолучен пакет с недопустимым индексом канала");
       prepare_buffer = true;
     }
-    if (prepare_buffer) {      
-      DCD_EP_PrepareRx(mp_dev, HID_OUT_EP, mp_rx_buffer, HID_OUT_PACKET);      
+    if (prepare_buffer) {
+      DCD_EP_PrepareRx(mp_dev, HID_OUT_EP, mp_rx_buffer, HID_OUT_PACKET);
       m_packet_received = false;
-    }  
+    }
   }
   if (m_tx_buffer_is_empty && 
-    (m_usb_otg_dev.dev.device_status == USB_OTG_CONFIGURED)) {    
+    (m_usb_otg_dev.dev.device_status == USB_OTG_CONFIGURED)) {
     size_type start_index = m_write_buf_index;
     do {
       if (!m_write_buffers[m_write_buf_index].empty()) {
@@ -183,19 +182,19 @@ void irs::hardflow::arm::usb_hid_t::tick()
     } while (m_write_buf_index != start_index);
 
     if (!m_write_buffers[m_write_buf_index].empty()) {
-      m_read_packet.buf_index =
+      m_write_packet.buf_index =
         static_cast<channel_field_type>(m_write_buf_index);
       const size_type size = std::min<size_type>(
         m_write_buffers[m_write_buf_index].size(),
         m_data_max_size);
-      m_read_packet.data_size = static_cast<size_field_type>(size);
+      m_write_packet.data_size = static_cast<size_field_type>(size);
       const size_type read_count = read_from_buffer(
         &m_write_buffers[m_write_buf_index],
-        m_read_packet.data, size);
+        m_write_packet.data, size);
       IRS_LIB_ASSERT(read_count == size);  
-      m_tx_buffer_is_empty = false;
+      m_tx_buffer_is_empty = false;    
       usbd_hid_hardflow_send_report(&m_usb_otg_dev, 
-        reinterpret_cast<irs_u8*>(&m_read_packet), packet_max_size);            
+        reinterpret_cast<irs_u8*>(&m_write_packet), packet_max_size);            
     }
     m_write_buf_index++;
     if (m_write_buf_index >= m_channel_count) {
@@ -235,7 +234,7 @@ void irs::hardflow::arm::usb_hid_t::otg_fs_event()
 void irs::hardflow::arm::usb_hid_t::tx_buffer_is_empty_event()
 {
   IRS_LIB_ASSERT(mp_usb_hid); 
-  mp_usb_hid->m_tx_buffer_is_empty = true;
+  mp_usb_hid->m_tx_buffer_is_empty = true;  
 }
 
 void irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
