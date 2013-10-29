@@ -3,6 +3,7 @@
 ƒата создани€: 06.05.2010
 
 Ќадо:
+- 29.10.2013 - ¬ param_box_base_t сделать элементы "список" и "кнопку"
 - 10.11.2010 - проверить в Watcom integer_sign_detect_t (irslimits.h)
 - 06.05.2010 - Ёкономи€ пам€ти в conn_data: создание conn_data через обычные структуры и
                создать conn_data в виде массива битов
@@ -11,8 +12,8 @@
 - 28.04.2010 - mxsrclib: сделать статический класс-массив аналог raw_data_t
 - 28.04.2010 - mxsrclib: deque_data_t все new переделать на IRS_LIB_NEW_ASSERT
 - 28.04.2010 - mxsrclib: irsmenu.cpp все new переделать на IRS_LIB_NEW_ASSERT
-- 28.04.2010 - mxsrclib: crc32_table переделать на flash
 
 —делано:
+- 29.10.2013 - 28.04.2010 - mxsrclib: crc32_table переделать на flash
 - 13.07.2010 - 28.04.2010 - обработка ошибок и лог в стиле irst
 - 25.06.2010 - 12.05.2010 - Ћиквидировать irsstdl и irsstdg
