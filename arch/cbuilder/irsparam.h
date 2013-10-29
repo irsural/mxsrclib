@@ -65,6 +65,7 @@ public:
     TEncoding* ap_encoding = TEncoding::Default
     #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   );
+
   virtual ~param_box_t();
   virtual bool show();
   virtual void hide();
@@ -78,10 +79,12 @@ public:
     bool a_param_value);
   virtual void add_param_box(const string_type& a_param_name,
     param_box_base_t* ap_param_box_base);
+  virtual void add_button(const string_type& a_param_name);
   virtual bool get_param(const string_type& a_param_name,
     string_type* ap_param_value) const;
   virtual string_type get_param(const string_type& a_param_name) const;
   virtual string_type get_param_def(const string_type& a_param_name) const;
+  virtual bool is_button_pressed(const string_type& a_param_name);
   virtual bool set_param(const string_type& a_param_name,
     const string_type& a_param_value);
   virtual void set_ini_name(const string_type& a_ini_name);
@@ -106,7 +109,9 @@ private:
   TValueListEditor* mp_value_list_editor;
   irs_u8 m_cur_param_row;
   map<string_type, string_type> m_param_def_list;
+  map<string_type, bool> m_button_list;
   std::map<string_type, param_box_base_t*> m_param_box_base_map;
+
   void save_form_params();
   void load_form_params();
   void __fastcall ok_btn_click(TObject *Sender);

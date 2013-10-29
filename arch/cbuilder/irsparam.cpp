@@ -177,10 +177,16 @@ void __fastcall irs::param_box_t::on_close_event(TObject *Sender,
 void __fastcall irs::param_box_t::on_edit_btn_click(TObject *Sender)
 {
   String key = mp_value_list_editor->Keys[mp_value_list_editor->Row];
-  std::map<string_type, param_box_base_t*>::iterator it =
-    m_param_box_base_map.find(str_conv<string_type>(key));
-  IRS_LIB_ASSERT(it != m_param_box_base_map.end());
-  it->second->show();
+  map<string_type, bool>::iterator it =
+    m_button_list.find(str_conv<string_type>(key));
+  if (it != m_button_list.end()) {
+    m_button_list[str_conv<string_type>(key)] = true;
+  } else {
+    std::map<string_type, param_box_base_t*>::iterator it =
+      m_param_box_base_map.find(str_conv<string_type>(key));
+    IRS_LIB_ASSERT(it != m_param_box_base_map.end());
+    it->second->show();
+  }
 }
 
 irs::param_box_t::~param_box_t()
@@ -323,6 +329,19 @@ void irs::param_box_t::add_param_box(const string_type& a_param_name,
   }
 }
 
+void irs::param_box_t::add_button(const string_type& a_param_name)
+{
+  //m_button_list
+  String Key = str_conv<String>(a_param_name);
+  int row_index = 0;
+  if (!mp_value_list_editor->FindRow(Key, row_index)) {
+    m_button_list.insert(std::make_pair(a_param_name, false));
+    mp_value_list_editor->InsertRow(Key, irst(""), true);
+    mp_value_list_editor->ItemProps[Key]->EditStyle = esEllipsis;
+    mp_value_list_editor->ItemProps[Key]->ReadOnly = true;
+  }
+}
+
 bool irs::param_box_t::get_param(const string_type& a_param_name,
   string_type* ap_param_value) const
 {
@@ -357,6 +376,13 @@ irs::param_box_t::string_type irs::param_box_t::get_param_def(
   return param_value_def;
 }
 
+bool irs::param_box_t::is_button_pressed(const string_type& a_param_name)
+{
+  bool result = m_button_list[a_param_name];
+  m_button_list[a_param_name] = false;
+  return result;
+}
+
 bool irs::param_box_t::set_param(const string_type& a_param_name,
   const string_type& a_param_value)
 {
@@ -388,5 +414,7 @@ void irs::param_box_t::delete_edit(const string_type& a_param_name)
   if (mp_value_list_editor->FindRow(Key, row_index)) {
     mp_value_list_editor->DeleteRow(row_index);
     m_param_box_base_map.erase(a_param_name);
+    m_button_list.erase(a_param_name);
   }
 }
+
