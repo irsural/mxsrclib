@@ -2014,6 +2014,70 @@ private:
   hardflow_t* mp_hardflow;
 };
 
+class diapason_channels_t: public hardflow_t
+{
+public:
+  diapason_channels_t(hardflow_t* ap_hardflow, size_type a_start_index,
+    size_type a_channel_count):
+    mp_hardflow(ap_hardflow),
+    m_start_index(a_start_index),
+    m_end_index(a_start_index + a_channel_count - 1),
+    m_channel(m_start_index)
+  {
+    IRS_LIB_ASSERT(a_start_index != invalid_channel);
+    IRS_LIB_ASSERT(a_channel_count > 0);
+  }
+  virtual string_type param(const string_type& a_name)
+  {
+    return mp_hardflow->param(a_name);
+  }
+  virtual void set_param(const string_type& a_name,
+    const string_type &a_value)
+  {
+    mp_hardflow->set_param(a_name, a_value);
+  }
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size)
+  {
+    return mp_hardflow->read(a_channel_ident, ap_buf, a_size);
+  }
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size)
+  {
+    return mp_hardflow->write(a_channel_ident, ap_buf, a_size);
+  }
+  virtual size_type channel_next()
+  {
+    if (m_channel == m_end_index) {
+      m_channel = m_start_index;
+    } else {
+      m_channel++;
+    }
+    return m_channel;
+  }
+  virtual void set_channel_switching_mode(channel_switching_mode_t a_mode)
+  {
+    mp_hardflow->set_channel_switching_mode(a_mode);
+  }
+  virtual bool is_channel_exists(size_type a_channel_ident)
+  {
+    return mp_hardflow->is_channel_exists(a_channel_ident);
+  }
+  virtual void tick()
+  {
+    return mp_hardflow->tick();
+  }
+  void hardflow(hardflow_t* ap_hardflow)
+  {
+    mp_hardflow = ap_hardflow;
+  }
+private:
+  hardflow_t* mp_hardflow;
+  size_type m_start_index;
+  size_type m_end_index;
+  size_type m_channel;
+};
+
 class echo_t: public hardflow_t
 {
 public:
