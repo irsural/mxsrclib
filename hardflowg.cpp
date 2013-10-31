@@ -2812,7 +2812,7 @@ irs::hardflow::hid_flow_t::hid_flow_t(const string_type& a_device_path,
   memset(&m_hid_read_overlapped, 0, sizeof(m_hid_read_overlapped));
   memset(&m_hid_write_overlapped, 0, sizeof(m_hid_write_overlapped));
 
-  for (int i = 0; i < m_user_read_buffers.size(); i++) {
+  for (size_type i = 0; i < m_user_read_buffers.size(); i++) {
     m_read_buffers[i].reserve(m_buffer_max_size);
     m_user_read_buffers[i].reserve(m_buffer_max_size);
   }
@@ -2928,13 +2928,13 @@ void irs::hardflow::hid_flow_t::release_resources()
 }
 
 irs::hardflow::hid_flow_t::string_type
-irs::hardflow::hid_flow_t::param(const string_type &a_name)
+irs::hardflow::hid_flow_t::param(const string_type& /*a_name*/)
 {
   return string_type();
 }
 
-void irs::hardflow::hid_flow_t::set_param(const string_type &a_name,
-  const string_type &a_value)
+void irs::hardflow::hid_flow_t::set_param(const string_type& /*a_name*/,
+  const string_type& /*a_value*/)
 {
 }
 
@@ -3083,8 +3083,6 @@ DWORD WINAPI irs::hardflow::hid_flow_t::read_report(void* ap_params)
       }
     }
     if (read_success && (byte_read == packet_length)) {
-      const irs_u8* buf = NULL;
-      channel_field_type ap_channel_index = 0;
       if (packet->report_id != report_id) {
         continue;
       }
@@ -3178,9 +3176,6 @@ DWORD WINAPI irs::hardflow::hid_flow_t::write_report(void* ap_params)
     }
     const ULONG packet_length = owner->m_packet_size;
     ULONG byte_write = 0;
-    if (owner->m_hid_handle == INVALID_HANDLE_VALUE) {
-      int i = 1;
-    }
     if (WriteFile
       (owner->m_hid_handle,
       packet,

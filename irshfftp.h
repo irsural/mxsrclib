@@ -548,7 +548,8 @@ private:
 template <class T>
 void fields_flow_t::add_simple_type(T* ap_value)
 {
-  m_fields.push_back(new field_simple_type_t<T>(ap_value));
+  irs::handle_t<field_t> field(new field_simple_type_t<T>(ap_value));
+  m_fields.push_back(field);
 }
 
 class packet_t

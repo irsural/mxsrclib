@@ -695,12 +695,14 @@ void irs::hfftp::fields_flow_t::set_channel(size_type a_channel)
 
 void irs::hfftp::fields_flow_t::add_string(string_type* ap_string)
 {
-  m_fields.push_back(new field_string_t(ap_string));
+  irs::handle_t<field_t> field(new field_string_t(ap_string));
+  m_fields.push_back(field);
 }
 
 void irs::hfftp::fields_flow_t::add_data(vector<irs_u8>* ap_data)
 {
-  m_fields.push_back(new field_data_t(ap_data));
+  irs::handle_t<field_t> field(new field_data_t(ap_data));
+  m_fields.push_back(field);
 }
 
 void irs::hfftp::fields_flow_t::erase_fields()

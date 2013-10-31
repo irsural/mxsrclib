@@ -12,6 +12,10 @@
 
 #ifdef IRS_WIN32
 #include <Rpc.h>
+#if IRS_USE_HID_WIN_API
+# include <Hidsdi++.h>
+# include <Setupapi.h>
+#endif // IRS_USE_HID_WIN_API
 #else   // Прочие платформы
 #include <stdlib.h>
 #endif  // Прочие платформы
@@ -719,6 +723,87 @@ enum wave_pcm_sampling_rate_t {
 void create_wave_pcm_16_mono_file(irs::string_t a_file_name,
   const std::size_t a_sampling_rate,
   const std::vector<irs_i16>& a_samples);
+
+#if IRS_USE_HID_WIN_API
+struct usb_hid_device_attributes_t
+{
+  typedef irs::string_t string_type;
+  irs_u16 vendor_id;
+  irs_u16 product_id;
+  irs_u16 version_number;
+  string_type manufacturer;
+  string_type product;
+  string_type serial_number;
+  usb_hid_device_attributes_t():
+    vendor_id(0),
+    product_id(0),
+    version_number(0),
+    manufacturer(),
+    product(),
+    serial_number()
+  {
+  }
+};
+
+struct usb_hid_device_info_t
+{
+  typedef irs::string_t string_type;
+  string_type path;
+  usb_hid_device_attributes_t attributes;
+  usb_hid_device_info_t():
+    path(),
+    attributes()
+  {
+  }
+};
+
+class usb_hid_info_t
+{
+public:
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  ~usb_hid_info_t();
+  static usb_hid_info_t *get_instance();
+  std::vector<string_type> get_devices() const;
+  usb_hid_device_attributes_t get_attributes(const string_type& a_path) const;
+  std::vector<usb_hid_device_info_t> get_devices_info() const;
+private:
+  usb_hid_info_t();
+  typedef BOOLEAN (__stdcall *PHidD_GetProductString)(HANDLE, PVOID, ULONG);
+  typedef VOID (__stdcall *PHidD_GetHidGuid)(LPGUID);
+  typedef BOOLEAN (__stdcall *PHidD_GetAttributes)(HANDLE, PHIDD_ATTRIBUTES);
+  typedef BOOLEAN (__stdcall *PHidD_GetNumInputBuffers)(HANDLE, PULONG);
+  typedef BOOLEAN (__stdcall *PHidD_SetFeature)(HANDLE, PVOID, ULONG);
+  typedef BOOLEAN (__stdcall *PHidD_GetFeature)(HANDLE, PVOID, ULONG);
+  typedef BOOLEAN (__stdcall *PHidD_GetInputReport)(HANDLE, PVOID, ULONG);
+  typedef BOOLEAN (__stdcall *PHidD_SetOutputReport)(HANDLE, PVOID, ULONG);
+
+  typedef BOOLEAN (__stdcall *PHidD_GetManufacturerString)
+    (HANDLE, PVOID, ULONG);
+  typedef BOOLEAN (__stdcall *PHidD_GetSerialNumberString)
+    (HANDLE, PVOID, ULONG);
+  typedef BOOLEAN (__stdcall *PHidD_GetPreparsedData)(HANDLE,
+    PHIDP_PREPARSED_DATA*);
+  typedef BOOLEAN (__stdcall *PHidD_FreePreparsedData)(PHIDP_PREPARSED_DATA);
+  typedef NTSTATUS (__stdcall *PHidP_GetCaps)(PHIDP_PREPARSED_DATA,
+    PHIDP_CAPS Capabilities);
+
+  HINSTANCE m_hid_dll;
+  PHidD_GetManufacturerString HidD_GetManufacturerString;
+  PHidD_GetProductString HidD_GetProductString;
+  PHidD_GetSerialNumberString HidD_GetSerialNumberString;
+  PHidD_GetPreparsedData HidD_GetPreparsedData;
+  PHidD_FreePreparsedData HidD_FreePreparsedData;
+  PHidD_GetHidGuid HidD_GetHidGuid;
+  PHidD_GetAttributes HidD_GetAttributes;
+  PHidD_GetNumInputBuffers HidD_GetNumInputBuffers;
+  PHidD_SetFeature HidD_SetFeature;
+  PHidD_GetFeature HidD_GetFeature;
+  PHidD_GetInputReport HidD_GetInputReport;
+  PHidD_SetOutputReport HidD_SetOutputReport;
+  PHidP_GetCaps HidP_GetCaps;
+};
+#endif // IRS_USE_HID_WIN_API
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
 

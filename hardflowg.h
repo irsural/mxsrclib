@@ -1909,8 +1909,7 @@ private:
     packet_t():
       report_id(0),
       buf_index(0),
-      data_size(0),
-      data()
+      data_size(0)
     {
       memsetex(data, irs_u8(0), sizeof(data));
     }

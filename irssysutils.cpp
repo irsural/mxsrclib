@@ -196,6 +196,196 @@ void irs::create_wave_pcm_16_mono_file(irs::string_t a_file_name,
   }
 }
 
+#if IRS_USE_HID_WIN_API
+// class usb_hid_info_t
+irs::usb_hid_info_t::usb_hid_info_t():
+  m_hid_dll(NULL),
+  HidD_GetManufacturerString(NULL),
+  HidD_GetProductString(NULL),
+  HidD_GetSerialNumberString(NULL),
+  HidD_GetPreparsedData(NULL),
+  HidD_FreePreparsedData(NULL),
+  HidD_GetHidGuid(NULL),
+  HidD_GetAttributes(NULL),
+  HidD_GetNumInputBuffers(NULL),
+  HidD_SetFeature(NULL),
+  HidD_GetFeature(NULL),
+  HidD_GetInputReport(NULL),
+  HidD_SetOutputReport(NULL),
+  HidP_GetCaps(NULL)
+{
+  m_hid_dll = LoadLibrary(irst("HID.DLL"));
+  if (!m_hid_dll) {
+    throw std::runtime_error("Библиотека HID.DLL не найдена");
+  }
+  HidD_GetProductString = (PHidD_GetProductString)
+    GetProcAddress(m_hid_dll, "HidD_GetProductString");
+  HidD_GetHidGuid = (PHidD_GetHidGuid)
+    GetProcAddress(m_hid_dll, "HidD_GetHidGuid");
+  HidD_GetAttributes = (PHidD_GetAttributes)
+    GetProcAddress(m_hid_dll, "HidD_GetAttributes");
+  HidD_GetNumInputBuffers = (PHidD_GetNumInputBuffers)
+    GetProcAddress(m_hid_dll, "HidD_GetNumInputBuffers");
+  HidD_SetFeature = (PHidD_SetFeature)
+    GetProcAddress(m_hid_dll, "HidD_SetFeature");
+  HidD_GetFeature = (PHidD_GetFeature)
+    GetProcAddress(m_hid_dll, "HidD_GetFeature");
+  HidD_GetInputReport = (PHidD_GetInputReport)
+    GetProcAddress(m_hid_dll, "HidD_GetInputReport");
+  HidD_SetOutputReport = (PHidD_SetOutputReport)
+    GetProcAddress(m_hid_dll, "HidD_SetOutputReport");
+  HidD_GetManufacturerString = (PHidD_GetManufacturerString)
+    GetProcAddress(m_hid_dll, "HidD_GetManufacturerString");
+  HidD_GetProductString = (PHidD_GetProductString)
+    GetProcAddress(m_hid_dll, "HidD_GetProductString");
+  HidD_GetSerialNumberString = (PHidD_GetSerialNumberString)
+    GetProcAddress(m_hid_dll, "HidD_GetSerialNumberString");
+  HidD_GetPreparsedData = (PHidD_GetPreparsedData)
+    GetProcAddress(m_hid_dll, "HidD_GetPreparsedData");
+  HidD_FreePreparsedData = (PHidD_FreePreparsedData)
+    GetProcAddress(m_hid_dll, "HidD_FreePreparsedData");
+  HidP_GetCaps = (PHidP_GetCaps)
+    GetProcAddress(m_hid_dll, "HidP_GetCaps");
+}
+
+irs::usb_hid_info_t::~usb_hid_info_t()
+{
+  FreeLibrary(m_hid_dll);
+}
+
+irs::usb_hid_info_t* irs::usb_hid_info_t::get_instance()
+{
+  static usb_hid_info_t usb_hid_info;
+  return &usb_hid_info;
+}
+
+std::vector<irs::usb_hid_info_t::string_type>
+irs::usb_hid_info_t::get_devices() const
+{
+  std::vector<string_type> devices;
+  GUID HidGuid;
+  (HidD_GetHidGuid)(&HidGuid);
+
+  // Получаем информацию о hid-устройствах
+  HDEVINFO hDevInfo = SetupDiGetClassDevs
+    (&HidGuid, NULL, NULL, DIGCF_PRESENT|DIGCF_DEVICEINTERFACE);
+  if (hDevInfo == INVALID_HANDLE_VALUE) {
+    throw std::runtime_error("Ошибка получения информации о hid-устройствах: "
+      + last_error_str());
+  }
+
+  SP_DEVICE_INTERFACE_DATA devInfoData = {0};
+  devInfoData.cbSize = sizeof(devInfoData);
+  DWORD device_index = 0;
+  while (true)
+  {
+    BOOL Result = SetupDiEnumDeviceInterfaces(hDevInfo,
+      0,
+      &HidGuid,
+      device_index,
+      &devInfoData);
+    if (!Result) {
+      break;
+    }
+    device_index++;
+    DWORD cbRequired = 0;
+
+    SetupDiGetDeviceInterfaceDetail(hDevInfo,
+      &devInfoData,
+      0,
+      0,
+      &cbRequired,
+      0);
+    PSP_DEVICE_INTERFACE_DETAIL_DATA pdetailData =
+      (PSP_DEVICE_INTERFACE_DETAIL_DATA)LocalAlloc(LPTR, cbRequired);
+    pdetailData->cbSize = sizeof(*pdetailData);
+    Result = SetupDiGetDeviceInterfaceDetail
+      (hDevInfo, &devInfoData, pdetailData, cbRequired, &cbRequired, NULL);
+    if (Result) {
+      string_type path = pdetailData->DevicePath;
+      devices.push_back(path);
+    }
+    LocalFree(pdetailData);
+  }
+  SetupDiDestroyDeviceInfoList(hDevInfo);
+  return devices;
+}
+
+irs::usb_hid_device_attributes_t
+irs::usb_hid_info_t::get_attributes(const string_type& a_path) const
+{
+  usb_hid_device_attributes_t attributes;
+  HANDLE hid = NULL;
+  try {
+    hid = CreateFile (a_path.c_str(),
+      0,
+      FILE_SHARE_READ|FILE_SHARE_WRITE,
+      (LPSECURITY_ATTRIBUTES)NULL,
+      OPEN_EXISTING,
+      0,
+      NULL);
+    if (hid == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error("Ошибка получения информации о hid-устройстве: "
+        + last_error_str());
+    }
+
+    HIDD_ATTRIBUTES Attributes;
+    Attributes.Size = sizeof(Attributes);
+    if (HidD_GetAttributes (hid, &Attributes)) {
+      attributes.vendor_id = Attributes.VendorID;
+      attributes.product_id = Attributes.ProductID;
+      attributes.version_number = Attributes.VersionNumber;
+    }
+
+    const int manufacturer_buf_size = 127;
+    wchar_t manufacturer[manufacturer_buf_size];
+    memset(manufacturer, 0, manufacturer_buf_size + sizeof(wchar_t));
+    if (HidD_GetManufacturerString(hid, manufacturer, manufacturer_buf_size)) {
+      std::wstring manufacturer_wstr = manufacturer;
+      attributes.manufacturer = irs::str_conv<string_type>(manufacturer_wstr);
+    }
+    const int product_buf_size = 127;
+    wchar_t product[product_buf_size];
+    memset(product, 0, product_buf_size + sizeof(wchar_t));
+    if (HidD_GetProductString(hid, product, product_buf_size)) {
+      std::wstring product_wstr = product;
+      attributes.product = irs::str_conv<string_type>(product_wstr);
+    }
+    const int serial_number_buf_size = 127;
+    wchar_t serial_number[serial_number_buf_size];
+    memset(serial_number, 0, serial_number_buf_size + sizeof(wchar_t));
+    if (HidD_GetSerialNumberString(hid, serial_number,
+        serial_number_buf_size)) {
+      std::wstring serial_number_wstr = serial_number;
+      attributes.serial_number = irs::str_conv<string_type>(serial_number_wstr);
+    }
+  } catch (...) {
+    CloseHandle(hid);
+    throw;
+  }
+  CloseHandle(hid);
+  return attributes;
+}
+
+std::vector<irs::usb_hid_device_info_t>
+irs::usb_hid_info_t::get_devices_info() const
+{
+  std::vector<usb_hid_device_info_t> devices;
+  std::vector<string_type> paths = get_devices();
+  for (size_type i = 0; i < paths.size(); i++) {
+    usb_hid_device_info_t info;
+    info.path = paths[i];
+    try {
+      info.attributes = get_attributes(info.path);
+    } catch (...) {
+      continue;
+    }
+    devices.push_back(info);
+  }
+  return devices;
+}
+
+#endif // IRS_USE_HID_WIN_API
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
 
 #if (defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__))

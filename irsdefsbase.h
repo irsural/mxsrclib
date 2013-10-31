@@ -146,6 +146,10 @@
 #define IRS_GNUC_VERSION_LESS_3_4
 #endif // GCC версии < 3.4
 
+#ifndef IRS_USE_HID_WIN_API
+# define IRS_USE_HID_WIN_API 0
+#endif // IRS_USE_HID_WIN_API
+
 #ifndef IRS_USE_DEV_EXPRESS
 # define IRS_USE_DEV_EXPRESS 0
 #endif // IRS_USE_DEV_EXPRESS
