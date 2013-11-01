@@ -240,10 +240,20 @@ public:
 private:
 };
 
+class modbus_usb_hid_assembly_creator_t: public mxdata_assembly_creator_t
+{
+public:
+  virtual handle_t<mxdata_assembly_t> make(tstlan4_base_t* ap_tstlan4,
+    const string_type& a_name);
+private:
+};
+
 class modbus_assembly_t: public mxdata_assembly_t
 {
 public:
-  enum protocol_t { udp_protocol, tcp_protocol };
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  enum protocol_t { udp_protocol, tcp_protocol, usb_hid_protocol };
 
   modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
     const string_type& a_conf_file_name,
@@ -256,15 +266,20 @@ public:
   virtual void show_options();
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
 private:
+  void tune_param_box();
+  void update_usb_hid_device_path_map();
+  void update_param_box_devices_field();
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
-
-    param_box_tune_t(param_box_base_t* ap_param_box);
+    param_box_tune_t(modbus_assembly_t* ap_modbus_assembly,
+      param_box_base_t* ap_param_box, protocol_t a_protocol);
   };
+  friend struct param_box_tune_t;
   string_type m_conf_file_name;
   protocol_t m_protocol;
   handle_t<param_box_base_t> mp_param_box;
-  param_box_tune_t m_param_box_tune;
+  map<string_type, string_type> m_usb_hid_device_path_map;
+  //param_box_tune_t m_param_box_tune;
   tstlan4_base_t* mp_tstlan4;
   bool m_enabled;
   handle_t<hardflow_t> mp_modbus_client_hardflow;
@@ -272,8 +287,7 @@ private:
 
   static handle_t<mxdata_t> make_client(handle_t<hardflow_t> ap_hardflow,
     handle_t<param_box_base_t> ap_param_box);
-  static handle_t<hardflow_t> make_hardflow(protocol_t a_protocol,
-    handle_t<param_box_base_t> ap_param_box);
+  handle_t<hardflow_t> make_hardflow();
   static string_type protocol_name(protocol_t a_protocol);
 };
 
@@ -291,6 +305,14 @@ irs::handle_t<irs::mxdata_assembly_t> irs::modbus_tcp_assembly_creator_t::make(
 {
   return handle_t<mxdata_assembly_t>(new modbus_assembly_t(ap_tstlan4,
     a_name, modbus_assembly_t::tcp_protocol));
+}
+
+irs::handle_t<irs::mxdata_assembly_t>
+irs::modbus_usb_hid_assembly_creator_t::make(
+  tstlan4_base_t* ap_tstlan4, const string_type& a_name)
+{
+  return handle_t<mxdata_assembly_t>(new modbus_assembly_t(ap_tstlan4,
+    a_name, modbus_assembly_t::usb_hid_protocol));
 }
 
 irs::handle_t<irs::mxdata_t> irs::modbus_assembly_t::make_client(
@@ -312,21 +334,33 @@ irs::handle_t<irs::mxdata_t> irs::modbus_assembly_t::make_client(
       irst("Время обновления, мс")))
   );
 }
-irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow(
-  protocol_t a_protocol,
-  handle_t<param_box_base_t> ap_param_box)
+irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
 {
   handle_t<hardflow_t> hardflow_ret = IRS_NULL;
-  switch (a_protocol) {
+  switch (m_protocol) {
     case udp_protocol: {
       hardflow_ret = hardflow::make_udp_flow_client(
-        ap_param_box->get_param(irst("IP")),
-        ap_param_box->get_param(irst("Порт")));
+        mp_param_box->get_param(irst("IP")),
+        mp_param_box->get_param(irst("Порт")));
     } break;
     case tcp_protocol: {
       hardflow_ret.reset(new hardflow::tcp_client_t(
-        make_mxip(ap_param_box->get_param(irst("IP")).c_str()),
-        param_box_read_number<irs_u16>(*ap_param_box, irst("Порт"))));
+        make_mxip(mp_param_box->get_param(irst("IP")).c_str()),
+        param_box_read_number<irs_u16>(*mp_param_box, irst("Порт"))));
+    } break;
+    case usb_hid_protocol: {
+      const string_type device =
+        mp_param_box->get_param(irst("Имя устройства"));
+      map<string_type, string_type>::const_iterator it =
+        m_usb_hid_device_path_map.find(device);
+      string_type device_path;
+      if (it != m_usb_hid_device_path_map.end()) {
+        device_path = it->second;
+      }
+      const irs::hardflow_t::size_type channel_id =
+        param_box_read_number<irs::hardflow_t::size_type>(
+        *mp_param_box, (irst("Номер канала")));
+      hardflow_ret.reset(new hardflow::usb_hid_t(device_path, channel_id));
     } break;
   }
   return hardflow_ret;
@@ -342,6 +376,9 @@ irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
     case tcp_protocol: {
       protocol_name_ret = irst("TCP");
     } break;
+    case usb_hid_protocol: {
+      protocol_name_ret = irst("USB_HID");
+    } break;
   }
   return protocol_name_ret;
 }
@@ -352,25 +389,34 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_protocol(a_protocol),
   mp_param_box(make_assembly_param_box(irst("MODBUS ") +
     protocol_name(a_protocol), m_conf_file_name)),
-  m_param_box_tune(mp_param_box.get()),
+  m_usb_hid_device_path_map(),
+  //m_param_box_tune(this, mp_param_box.get(), a_protocol),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
   mp_modbus_client_hardflow(NULL),
   mp_modbus_client(NULL)
 {
+  tune_param_box();
   mp_tstlan4->ini_name(m_conf_file_name);
 }
 irs::modbus_assembly_t::~modbus_assembly_t()
 {
   mp_param_box->save();
 }
-irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
-  param_box_base_t* ap_param_box
-):
-  mp_param_box(ap_param_box)
+
+void irs::modbus_assembly_t::tune_param_box()
 {
-  mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
-  mp_param_box->add_edit(irst("Порт"), irst("5005"));
+  if (m_protocol == usb_hid_protocol) {
+    update_usb_hid_device_path_map();
+    vector<string_type> devices_items;
+    mp_param_box->add_edit(irst("Имя устройства"), string_type());
+    mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
+    update_param_box_devices_field();
+    mp_param_box->add_edit(irst("Номер канала"), irst("1"));
+  } else {
+    mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
+    mp_param_box->add_edit(irst("Порт"), irst("5005"));
+  }
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
     irst("0"));
@@ -382,6 +428,88 @@ irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
     irst("(Input Registers), кол-во"), irst("0"));
   mp_param_box->load();
 }
+
+irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
+  modbus_assembly_t* ap_modbus_assembly,
+  param_box_base_t* ap_param_box, protocol_t a_protocol
+):
+  mp_param_box(ap_param_box)
+{
+  if (a_protocol == usb_hid_protocol) {
+    ap_modbus_assembly->update_usb_hid_device_path_map();
+    vector<string_type> devices_items;
+    map<string_type, string_type>::const_iterator it =
+      ap_modbus_assembly->m_usb_hid_device_path_map.begin();
+    while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
+      devices_items.push_back(it->first);
+      ++it;
+    }
+    string_type default_device;
+    if (!devices_items.empty()) {
+      default_device = devices_items.front();
+    }
+    mp_param_box->add_edit(irst("Имя устройства"), default_device);
+    mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
+    mp_param_box->add_edit(irst("Номер канала"), irst("1"));
+  } else {
+    mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
+    mp_param_box->add_edit(irst("Порт"), irst("5005"));
+  }
+  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
+    irst("0"));
+  mp_param_box->add_edit(irst("Биты, чтение/запись (Coils), байт"),
+    irst("0"));
+  mp_param_box->add_edit(irst("Регистры, чтение/запись ")
+    irst("(Holding Registers), кол-во"), irst("10"));
+  mp_param_box->add_edit(irst("Регистры, только чтение ")
+    irst("(Input Registers), кол-во"), irst("0"));
+  mp_param_box->load();
+}
+void irs::modbus_assembly_t::update_usb_hid_device_path_map()
+{
+  m_usb_hid_device_path_map.clear();
+  std::vector<irs::usb_hid_device_info_t> devs =
+    irs::usb_hid_info_t::get_instance()->get_devices_info();
+  for (size_type i = 0; i < devs.size(); i++) {
+    string_type device;
+    device += devs[i].attributes.manufacturer;
+    if (!device.empty() && !devs[i].attributes.product.empty()) {
+      device += irst(" ");
+    }
+    device += devs[i].attributes.product;
+    if (!device.empty() && !devs[i].attributes.serial_number.empty()) {
+      device += irst(" ");
+    }
+    device += devs[i].attributes.serial_number;
+    if (!device.empty() && !devs[i].path.empty()) {
+      device += irst(" ");
+    }
+    device += devs[i].path;
+
+    m_usb_hid_device_path_map.insert(make_pair(device, devs[i].path));
+  }
+}
+
+void irs::modbus_assembly_t::update_param_box_devices_field()
+{
+  string_type default_device = mp_param_box->get_param(irst("Имя устройства"));
+  mp_param_box->clear_combo(irst("Имя устройства"));
+
+  update_usb_hid_device_path_map();
+  vector<string_type> devices_items;
+  map<string_type, string_type>::const_iterator it =
+    m_usb_hid_device_path_map.begin();
+  while (it != m_usb_hid_device_path_map.end()) {
+    devices_items.push_back(it->first);
+    ++it;
+  }
+  if (default_device.empty() && !devices_items.empty()) {
+    default_device = devices_items.front();
+  }
+  mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
+}
+
 bool irs::modbus_assembly_t::enabled() const
 {
   return m_enabled;
@@ -392,7 +520,7 @@ void irs::modbus_assembly_t::enabled(bool a_enabled)
     return;
   }
   if (a_enabled) {
-    mp_modbus_client_hardflow = make_hardflow(m_protocol, mp_param_box);
+    mp_modbus_client_hardflow = make_hardflow();
     mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
     mp_tstlan4->connect(mp_modbus_client.get());
   } else {
@@ -414,11 +542,16 @@ void irs::modbus_assembly_t::tick()
 }
 void irs::modbus_assembly_t::show_options()
 {
-  if (mp_param_box->show()) {
-    mp_modbus_client_hardflow->set_param(irst("remote_address"),
-      mp_param_box->get_param(irst("IP")));
-    mp_modbus_client_hardflow->set_param(irst("remote_port"),
-      mp_param_box->get_param(irst("Порт")));
+  update_param_box_devices_field();
+  if (mp_param_box->show() && m_enabled) {
+    if (m_protocol == usb_hid_protocol) {
+      mp_modbus_client_hardflow = make_hardflow();
+    } else {
+      mp_modbus_client_hardflow->set_param(irst("remote_address"),
+        mp_param_box->get_param(irst("IP")));
+      mp_modbus_client_hardflow->set_param(irst("remote_port"),
+        mp_param_box->get_param(irst("Порт")));
+    }
     mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
     mp_tstlan4->connect(mp_modbus_client.get());
   }
@@ -1580,6 +1713,8 @@ irs::mxdata_assembly_types_implementation_t::
     new modbus_udp_assembly_creator_t);
   m_ac_list[irst("modbus tcp")] = handle_t<mxdata_assembly_creator_t>(
     new modbus_udp_assembly_creator_t);
+  m_ac_list[irst("modbus usb hid")] = handle_t<mxdata_assembly_creator_t>(
+    new modbus_usb_hid_assembly_creator_t);
   m_ac_list[irst("Agilent 3458A")] = handle_t<mxdata_assembly_creator_t>(
     new agilent_3458a_assembly_creator_t);
   m_ac_list[irst("Agilent 34420A")] = handle_t<mxdata_assembly_creator_t>(

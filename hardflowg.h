@@ -1869,7 +1869,9 @@ class usb_hid_t: public hardflow_t
 public:
   typedef hardflow_t::size_type size_type;
   typedef hardflow_t::string_type string_type;
-  usb_hid_t(const string_type& a_device_path, size_type a_channel_count = 1,
+  usb_hid_t(const string_type& a_device_path,
+    size_type a_channel_start_index = invalid_channel + 1,
+    size_type a_channel_count = 1,
     size_type a_report_size = 64);
   virtual ~usb_hid_t();
   virtual string_type param(const string_type &a_name);
@@ -1903,12 +1905,13 @@ private:
   struct packet_t
   {
     report_id_field_type report_id;
-    channel_field_type buf_index;
+    //! \brief Идентификатор канала. От 0 до 255
+    channel_field_type channel_id;
     size_field_type data_size;
     irs_u8 data[data_max_size];
     packet_t():
       report_id(0),
-      buf_index(0),
+      channel_id(0),
       data_size(0)
     {
       memsetex(data, irs_u8(0), sizeof(data));
@@ -1918,11 +1921,22 @@ private:
   void release_resources();
   inline size_type channel_id_to_buf_index(size_type a_channel_id)
   {
-    return a_channel_id - 1;
+    return a_channel_id - m_channel_start_index;
   }
   inline size_type buf_index_to_channel_id(size_type a_buf_index)
   {
-    return a_buf_index + 1;
+    return a_buf_index + m_channel_start_index;
+  }
+  inline size_type packet_channel_id_to_buf_index(
+    channel_field_type a_channel_id)
+  {
+    return a_channel_id - (m_channel_start_index - 1);
+  }
+  inline channel_field_type buf_index_to_packet_channel_id(
+    size_type a_buf_index)
+  {
+    return static_cast<channel_field_type>(
+      a_buf_index + (m_channel_start_index - 1));
   }
   void transfer(vector<irs_u8>* ap_buffer_src, vector<irs_u8>* ap_buffer_dest);
   size_type read_from_buffer(vector<irs_u8>* ap_buffer, irs_u8 *ap_buf,
@@ -1933,7 +1947,9 @@ private:
   static DWORD WINAPI write_report(void* ap_params);
   usb_hid_t();
   const string_type m_device_path;
-  size_type m_channel_count;
+  const size_type m_channel_start_index;
+  const size_type m_channel_end_index;
+  const size_type m_channel_count;
   size_type m_report_size;
   size_type m_packet_size;
   size_type m_data_max_size;

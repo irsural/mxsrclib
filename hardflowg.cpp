@@ -2778,10 +2778,13 @@ void irs::hardflow::com_flow_t::resource_free()
 
 // class usb_hid_t
 irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
+  size_type a_channel_start_index,
   size_type a_channel_count,
   size_type a_report_size
 ):
   m_device_path(a_device_path),
+  m_channel_start_index(a_channel_start_index),
+  m_channel_end_index(m_channel_start_index + a_channel_count - 1),
   m_channel_count(a_channel_count),
   m_report_size(a_report_size),
   m_packet_size(m_report_size + sizeof(report_id_field_type)),
@@ -2818,9 +2821,13 @@ irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
   }
 
   try {
-    if ((a_channel_count < invalid_channel + 1) ||
-      (a_channel_count > static_cast<size_type>(
-      std::numeric_limits<report_id_field_type>::max()))) {
+    if ((m_channel_start_index < 1) ||
+      (m_channel_start_index > static_cast<size_type>(
+      std::numeric_limits<channel_field_type>::max() + 1))) {
+      throw std::logic_error("Стартовый индекс должен быть от 1 до 256");
+    }
+    if ((a_channel_count < 1) || (a_channel_count > static_cast<size_type>(
+      std::numeric_limits<channel_field_type>::max()))) {
       throw std::logic_error("Количество каналов должно быть от 1 до 255");
     }
     if ((m_report_size < 1) || (m_report_size > report_max_size)) {
@@ -2970,16 +2977,16 @@ irs::hardflow::usb_hid_t::channel_next()
 {
   size_type channel = m_channel;
   m_channel++;
-  if (m_channel > m_channel_count) {
-    m_channel = invalid_channel + 1;
+  if (m_channel > m_channel_end_index) {
+    m_channel = m_channel_start_index;
   }
   return channel;
 }
 
 bool irs::hardflow::usb_hid_t::is_channel_exists(size_type a_channel_ident)
 {
-  if ((a_channel_ident >= (invalid_channel + 1)) &&
-    (a_channel_ident <= m_channel_count)) {
+  if ((a_channel_ident >= m_channel_start_index) &&
+    (a_channel_ident <= m_channel_start_index)) {
     return true;
   }
   return false;
@@ -3090,17 +3097,17 @@ DWORD WINAPI irs::hardflow::usb_hid_t::read_report(void* ap_params)
         continue;
       }
       global_count += owner->m_read_packet.data_size;
+      const size_type buf_index =
+        owner->packet_channel_id_to_buf_index(packet->channel_id);
       while (true) {
         if (WaitForSingleObject(owner->m_close_read_thread_event, 0) ==
           WAIT_OBJECT_0) {
           return 0;
         }
-        if (static_cast<size_type>(packet->buf_index) <
-          owner->m_channel_count) {
+        if (buf_index < owner->m_channel_count) {
           if (WaitForSingleObject(owner->m_read_buffer_mutex, INFINITE) ==
             WAIT_OBJECT_0) {
-            buffers_iterator it = owner->m_read_buffers.begin() +
-              packet->buf_index;
+            buffers_iterator it = owner->m_read_buffers.begin() + buf_index;
             if ((owner->m_buffer_max_size - it->size()) >=
               static_cast<size_type>(packet->data_size)) {
               const size_type write_size = owner->write_to_buffer(&(*it),
@@ -3150,8 +3157,8 @@ DWORD WINAPI irs::hardflow::usb_hid_t::write_report(void* ap_params)
 
           if (!owner->m_write_buffers[owner->m_write_buf_index].empty()) {
             packet->report_id = report_id;
-            packet->buf_index =
-              static_cast<channel_field_type>(owner->m_write_buf_index);
+            packet->channel_id = owner->buf_index_to_packet_channel_id(
+              owner->m_write_buf_index);
             const size_type size = std::min<size_type>(
               owner->m_write_buffers[owner->m_write_buf_index].size(),
               owner->m_data_max_size);

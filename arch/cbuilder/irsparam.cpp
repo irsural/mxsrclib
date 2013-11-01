@@ -293,6 +293,17 @@ void irs::param_box_t::add_combo(const string_type& a_param_name,
   }
 }
 
+void irs::param_box_t::clear_combo(const string_type& a_param_name)
+{
+  String Key = a_param_name.c_str();
+  int row_index = 0;
+  if (mp_value_list_editor->FindRow(Key, row_index)) {
+    if (mp_value_list_editor->ItemProps[Key]->EditStyle == esPickList) {
+      mp_value_list_editor->ItemProps[Key]->PickList->Clear();
+    }
+  }
+}
+
 void irs::param_box_t::add_bool(const string_type& a_param_name,
   bool a_param_value)
 {

@@ -75,6 +75,7 @@ public:
     const string_type& a_param_value);
   virtual void add_combo(const string_type& a_param_name,
     const vector<string_type>* ap_param_values_list);
+  virtual void clear_combo(const string_type& a_param_name);
   virtual void add_bool(const string_type& a_param_name,
     bool a_param_value);
   virtual void add_param_box(const string_type& a_param_name,

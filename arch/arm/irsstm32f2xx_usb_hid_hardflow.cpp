@@ -41,9 +41,12 @@ irs::hardflow::arm::usb_hid_t*
 irs::hardflow::arm::usb_hid_t::mp_usb_hid = NULL;
 
 irs::hardflow::arm::usb_hid_t::usb_hid_t(
+  size_type a_channel_start_index,
   size_type a_channel_count,
   size_type a_report_size
 ):  
+  m_channel_start_index(a_channel_start_index),
+  m_channel_end_index(a_channel_start_index + a_channel_count),
   m_channel_count(a_channel_count),
   //m_report_size(a_report_size),
   //m_packet_size(m_report_size),
@@ -61,6 +64,20 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   m_tx_buffer_is_empty(true),
   m_packet_received(false)
 {  
+  if ((m_channel_start_index < 1) ||
+    (m_channel_start_index > static_cast<size_type>(
+    std::numeric_limits<channel_field_type>::max() + 1))) {
+    throw std::logic_error("Стартовый индекс должен быть от 1 до 256");
+  }
+  if ((a_channel_count < 1) || (a_channel_count > static_cast<size_type>(
+    std::numeric_limits<channel_field_type>::max()))) {
+    throw std::logic_error("Количество каналов должно быть от 1 до 255");
+  }
+  if ((a_report_size < 1) || (a_report_size > report_max_size)) {
+    std::ostringstream msg;
+    msg << "Значение a_report_size должно быть от 1 до " << report_max_size;
+    throw std::logic_error(msg.str());
+  }
   mp_usb_hid = this;
   irs::interrupt_array()->int_event_gen(irs::arm::otg_fs_int)->
     add(&m_otg_fs_event_connect);
@@ -128,16 +145,16 @@ irs::hardflow::arm::usb_hid_t::channel_next()
 {
   size_type channel = m_channel;
   m_channel++;
-  if (m_channel > m_channel_count) {
-    m_channel = invalid_channel + 1;
+  if (m_channel > m_channel_end_index) {
+    m_channel = m_channel_start_index;
   }
   return channel;
 }
 
 bool irs::hardflow::arm::usb_hid_t::is_channel_exists(size_type a_channel_ident)
 {
-  if ((a_channel_ident >= (invalid_channel + 1)) &&
-    (a_channel_ident <= m_channel_count)) {
+  if ((a_channel_ident >= m_channel_start_index) &&
+    (a_channel_ident <= m_channel_end_index)) {
     return true;
   }
   return false;
@@ -148,9 +165,10 @@ void irs::hardflow::arm::usb_hid_t::tick()
   if (m_packet_received) {
     bool prepare_buffer = false;
     const packet_t* packet = reinterpret_cast<packet_t*>(mp_rx_buffer);
-    if (static_cast<size_type>(packet->buf_index) < m_channel_count) {      
-      buffers_iterator it = m_read_buffers.begin() +
-        packet->buf_index;
+    const size_type buf_index =
+      packet_channel_id_to_buf_index(packet->channel_id);
+    if (buf_index < m_channel_count) {      
+      buffers_iterator it = m_read_buffers.begin() + buf_index;
       if ((m_buffer_max_size - it->size()) >=
         static_cast<size_type>(packet->data_size)) {
         size_type write_size = write_to_buffer(&(*it),
@@ -182,8 +200,8 @@ void irs::hardflow::arm::usb_hid_t::tick()
     } while (m_write_buf_index != start_index);
 
     if (!m_write_buffers[m_write_buf_index].empty()) {
-      m_write_packet.buf_index =
-        static_cast<channel_field_type>(m_write_buf_index);
+      m_write_packet.channel_id =
+        buf_index_to_packet_channel_id(m_write_buf_index);
       const size_type size = std::min<size_type>(
         m_write_buffers[m_write_buf_index].size(),
         m_data_max_size);

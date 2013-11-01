@@ -35,6 +35,7 @@ public:
   //! \brief Добавление выпадающего списка к параметру, созданному add_edit
   virtual void add_combo(const string_type& a_param_name,
     const vector<string_type>* ap_param_values_list) = 0;
+  virtual void clear_combo(const string_type& a_param_name) = 0;
   virtual void add_bool(const string_type& a_param_name,
     bool a_param_value) = 0;
   virtual void add_param_box(const string_type& a_param_name,
