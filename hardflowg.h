@@ -1864,14 +1864,14 @@ public:
   virtual void tick();
 };
 
-class hid_flow_t: public hardflow_t
+class usb_hid_t: public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
   typedef hardflow_t::string_type string_type;
-  hid_flow_t(const string_type& a_device_path, size_type a_channel_count,
-    size_type a_report_size);
-  virtual ~hid_flow_t();
+  usb_hid_t(const string_type& a_device_path, size_type a_channel_count = 1,
+    size_type a_report_size = 64);
+  virtual ~usb_hid_t();
   virtual string_type param(const string_type &a_name);
   virtual void set_param(const string_type &a_name,
     const string_type &a_value);
@@ -1931,7 +1931,7 @@ private:
     size_type a_size);
   static DWORD WINAPI read_report(void* ap_params);
   static DWORD WINAPI write_report(void* ap_params);
-  hid_flow_t();
+  usb_hid_t();
   const string_type m_device_path;
   size_type m_channel_count;
   size_type m_report_size;

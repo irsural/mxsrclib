@@ -2776,8 +2776,8 @@ void irs::hardflow::com_flow_t::resource_free()
   }
 }
 
-// class hid_flow_t
-irs::hardflow::hid_flow_t::hid_flow_t(const string_type& a_device_path,
+// class usb_hid_t
+irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
   size_type a_channel_count,
   size_type a_report_size
 ):
@@ -2895,12 +2895,12 @@ irs::hardflow::hid_flow_t::hid_flow_t(const string_type& a_device_path,
   }
 }
 
-irs::hardflow::hid_flow_t::~hid_flow_t()
+irs::hardflow::usb_hid_t::~usb_hid_t()
 {
   release_resources();
 }
 
-void irs::hardflow::hid_flow_t::release_resources()
+void irs::hardflow::usb_hid_t::release_resources()
 {
   if (m_write_thread) {
     SetEvent(m_close_write_thread_event);
@@ -2927,19 +2927,19 @@ void irs::hardflow::hid_flow_t::release_resources()
   CloseHandle(m_hid_handle);
 }
 
-irs::hardflow::hid_flow_t::string_type
-irs::hardflow::hid_flow_t::param(const string_type& /*a_name*/)
+irs::hardflow::usb_hid_t::string_type
+irs::hardflow::usb_hid_t::param(const string_type& /*a_name*/)
 {
   return string_type();
 }
 
-void irs::hardflow::hid_flow_t::set_param(const string_type& /*a_name*/,
+void irs::hardflow::usb_hid_t::set_param(const string_type& /*a_name*/,
   const string_type& /*a_value*/)
 {
 }
 
-irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
+irs::hardflow::usb_hid_t::size_type
+irs::hardflow::usb_hid_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
   size_type a_size)
 {
   size_type read_size = 0;
@@ -2952,8 +2952,8 @@ irs::hardflow::hid_flow_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
   return read_size;
 }
 
-irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::write(size_type a_channel_ident,
+irs::hardflow::usb_hid_t::size_type
+irs::hardflow::usb_hid_t::write(size_type a_channel_ident,
   const irs_u8 *ap_buf, size_type a_size)
 {
   size_type write_size = 0;
@@ -2965,8 +2965,8 @@ irs::hardflow::hid_flow_t::write(size_type a_channel_ident,
   return write_size;
 }
 
-irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::channel_next()
+irs::hardflow::usb_hid_t::size_type
+irs::hardflow::usb_hid_t::channel_next()
 {
   size_type channel = m_channel;
   m_channel++;
@@ -2976,7 +2976,7 @@ irs::hardflow::hid_flow_t::channel_next()
   return channel;
 }
 
-bool irs::hardflow::hid_flow_t::is_channel_exists(size_type a_channel_ident)
+bool irs::hardflow::usb_hid_t::is_channel_exists(size_type a_channel_ident)
 {
   if ((a_channel_ident >= (invalid_channel + 1)) &&
     (a_channel_ident <= m_channel_count)) {
@@ -2985,7 +2985,7 @@ bool irs::hardflow::hid_flow_t::is_channel_exists(size_type a_channel_ident)
   return false;
 }
 
-void irs::hardflow::hid_flow_t::tick()
+void irs::hardflow::usb_hid_t::tick()
 {
   if (m_sync_read_buffers_loop_timer.check()) {
     if (WaitForSingleObject(m_read_buffer_mutex, INFINITE) ==
@@ -3008,7 +3008,7 @@ void irs::hardflow::hid_flow_t::tick()
   }
 }
 
-void irs::hardflow::hid_flow_t::transfer(vector<irs_u8>* ap_buffer_src,
+void irs::hardflow::usb_hid_t::transfer(vector<irs_u8>* ap_buffer_src,
   vector<irs_u8>* ap_buffer_dest)
 {
   const size_type size = std::min(ap_buffer_src->size(),
@@ -3023,8 +3023,8 @@ void irs::hardflow::hid_flow_t::transfer(vector<irs_u8>* ap_buffer_src,
   }
 }
 
-irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::read_from_buffer(vector<irs_u8>* ap_buffer,
+irs::hardflow::usb_hid_t::size_type
+irs::hardflow::usb_hid_t::read_from_buffer(vector<irs_u8>* ap_buffer,
   irs_u8 *ap_buf, size_type a_size)
 {
   const size_type size = std::min(a_size, ap_buffer->size());
@@ -3035,8 +3035,8 @@ irs::hardflow::hid_flow_t::read_from_buffer(vector<irs_u8>* ap_buffer,
   return size;
 }
 
-irs::hardflow::hid_flow_t::size_type
-irs::hardflow::hid_flow_t::write_to_buffer(
+irs::hardflow::usb_hid_t::size_type
+irs::hardflow::usb_hid_t::write_to_buffer(
   vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf, size_type a_size)
 {
   const size_type size = std::min(a_size,
@@ -3050,9 +3050,9 @@ irs::hardflow::hid_flow_t::write_to_buffer(
   return size;
 }
 
-DWORD WINAPI irs::hardflow::hid_flow_t::read_report(void* ap_params)
+DWORD WINAPI irs::hardflow::usb_hid_t::read_report(void* ap_params)
 {
-  hid_flow_t* owner = static_cast<hid_flow_t*>(ap_params);
+  usb_hid_t* owner = static_cast<usb_hid_t*>(ap_params);
   packet_t* packet =&owner->m_read_packet;
   int global_count = 0;
   while (true) {
@@ -3123,9 +3123,9 @@ DWORD WINAPI irs::hardflow::hid_flow_t::read_report(void* ap_params)
   return 0;
 }
 
-DWORD WINAPI irs::hardflow::hid_flow_t::write_report(void* ap_params)
+DWORD WINAPI irs::hardflow::usb_hid_t::write_report(void* ap_params)
 {
-  hid_flow_t* owner = static_cast<hid_flow_t*>(ap_params);
+  usb_hid_t* owner = static_cast<usb_hid_t*>(ap_params);
   packet_t* packet =&owner->m_write_packet;
   bool write_success = true;
   while (true) {
