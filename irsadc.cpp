@@ -1909,7 +1909,7 @@ irs::dac_ad5791_t::dac_ad5791_t(
   m_timer.start();
 
   mp_buf[m_options_pos] = 
-    (1 << m_rbuf_bit_pos) |
+    (0 << m_rbuf_bit_pos) |//1
     (1 << m_opgnd_bit_pos) |
     (1 << m_dactri_bit_pos) |
     (0 << m_bin2sc_bit_pos) |
@@ -2132,22 +2132,22 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   memset(mp_buf, 0, m_size_buf);
   memset(mp_spi_buf, 0xFF, m_write_buf_size);
   
-  m_conv_time_vector.push_back(m_reserved_interval);          //  0:  reserve
-  m_conv_time_vector.push_back(to_int(1000/500));   //  1:  500 Hz
-  m_conv_time_vector.push_back(to_int(1000/250));   //  2:  250 Hz
-  m_conv_time_vector.push_back(to_int(1000/125));   //  3:  125 Hz
-  m_conv_time_vector.push_back(to_int(1000/62.5));  //  4:  62.5 Hz
-  m_conv_time_vector.push_back(to_int(1000/50));    //  5:  50 Hz
-  m_conv_time_vector.push_back(to_int(1000/39.2));  //  6:  39.2 Hz
-  m_conv_time_vector.push_back(to_int(1000/33.3));  //  7:  33.3 Hz
-  m_conv_time_vector.push_back(to_int(1000/19.6));  //  8:  19.6 Hz
-  m_conv_time_vector.push_back(to_int(1000/19.6));  //  9:  16.7 Hz
-  m_conv_time_vector.push_back(to_int(1000/19.6));  // 10:  19.6 Hz
-  m_conv_time_vector.push_back(to_int(1000/12.5));  // 11:  12.5 Hz
-  m_conv_time_vector.push_back(to_int(1000/10.));    // 12:  10 Hz
-  m_conv_time_vector.push_back(to_int(1000/8.33));  // 13:  8.33 Hz
-  m_conv_time_vector.push_back(to_int(1000/6.25));  // 14:  6.25 Hz
-  m_conv_time_vector.push_back(to_int(1000/4.17));  // 15:  4.17 Hz
+  m_conv_time_vector.push_back(m_reserved_interval);    //  0:  reserve
+  m_conv_time_vector.push_back(to_int(1000/500. + 1));  //  1:  500 Hz
+  m_conv_time_vector.push_back(to_int(1000/250. + 1));  //  2:  250 Hz
+  m_conv_time_vector.push_back(to_int(1000/125. + 1));  //  3:  125 Hz
+  m_conv_time_vector.push_back(to_int(1000/62.5 + 1));  //  4:  62.5 Hz
+  m_conv_time_vector.push_back(to_int(1000/50.0 + 1));  //  5:  50 Hz
+  m_conv_time_vector.push_back(to_int(1000/39.2 + 1));  //  6:  39.2 Hz
+  m_conv_time_vector.push_back(to_int(1000/33.3 + 1));  //  7:  33.3 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6 + 1));  //  8:  19.6 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6 + 1));  //  9:  16.7 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6 + 1));  // 10:  19.6 Hz
+  m_conv_time_vector.push_back(to_int(1000/12.5 + 1));  // 11:  12.5 Hz
+  m_conv_time_vector.push_back(to_int(1000/10.0 + 1));  // 12:  10 Hz
+  m_conv_time_vector.push_back(to_int(1000/8.33 + 1));  // 13:  8.33 Hz
+  m_conv_time_vector.push_back(to_int(1000/6.25 + 1));  // 14:  6.25 Hz
+  m_conv_time_vector.push_back(to_int(1000/4.17 + 1));  // 15:  4.17 Hz
   
   m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
   m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
@@ -2667,5 +2667,114 @@ void irs::dac_8531_t::tick()
         m_mode = mode_free;
       }
     } break;
+  }
+}
+
+//------------------------------------------------------------------------------
+
+irs::dac_1220_t::dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, 
+  float a_init_data, counter_t a_startup_pause
+):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_data(static_cast<irs_u32>(static_cast<float>(m_dac_max_value)*a_init_data)),
+  m_status(st_startup),
+  m_return_status(irs_st_busy),
+  m_need_write(true),
+  m_timer(a_startup_pause)
+{
+  mp_cs_pin->set();
+  m_timer.start();
+}
+
+irs_status_t irs::dac_1220_t::get_status() const
+{
+  return m_return_status;
+}
+
+size_t irs::dac_1220_t::get_resolution() const
+{
+  return m_dac_resolution;
+}
+
+irs_u32 irs::dac_1220_t::get_u32_maximum() const
+{
+  return 0xFFFFF000;
+}
+
+void irs::dac_1220_t::set_u32_data(size_t, const irs_u32 a_data)
+{
+  m_data = a_data >> (32 - m_dac_resolution);
+  m_need_write = true;
+  m_return_status = irs_st_busy;
+}
+
+float irs::dac_1220_t::get_float_maximum() const
+{
+  return 1.0f;
+}
+
+void irs::dac_1220_t::set_float_data(size_t, const float a_data)
+{
+  m_data = static_cast<irs_u32>(static_cast<float>(m_dac_max_value) * a_data);
+  m_need_write = true;
+  m_return_status = irs_st_busy;
+}
+
+void irs::dac_1220_t::tick()
+{
+  mp_spi->tick();
+  switch (m_status) {
+  case st_startup:
+    if (m_timer.check()) {
+      m_status = st_write_command;
+    }
+    break;
+  case st_write_command:
+    mp_spi_buf[m_cmd_pos] = m_command_reg_write_command;
+    mp_spi_buf[m_data_pos + 0] = 
+      (0 << cmr_adpt) | (0 << cmr_calpin) | (1 << cmr_write1) | (0 << cmr_crst);
+    mp_spi_buf[m_data_pos + 1] = 
+      (1 << cmr_res) | (0 << cmr_clr) | (1 << cmr_df) | (1 << cmr_disf) | 
+      (0 << cmr_bd) | (0 << cmr_msb) | (0 << cmr_md1) | (0 << cmr_md0);
+    m_write_buf_size = m_command_reg_size;
+    m_status = st_prepare_spi;
+    break;
+  case st_write_data:
+    m_need_write = false;
+    mp_spi_buf[m_cmd_pos] = m_data_reg_write_command;
+    mp_spi_buf[m_data_pos + 0] = static_cast<irs_u8>(m_data >> 12);
+    mp_spi_buf[m_data_pos + 1] = static_cast<irs_u8>(m_data >> 4);
+    mp_spi_buf[m_data_pos + 2] = static_cast<irs_u8>(m_data << 4);
+    m_write_buf_size = m_data_reg_size;
+    m_status = st_prepare_spi;
+    break;
+  case st_prepare_spi:
+    if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
+      mp_spi->set_order(irs::spi_t::MSB);
+      mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+      mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+      mp_spi->lock();
+      mp_cs_pin->clear();
+      mp_spi->write(mp_spi_buf, m_write_buf_size);
+      m_status = st_wait_spi;
+    }
+    break;
+  case st_wait_spi:
+    if (mp_spi->get_status() == irs::spi_t::FREE) {
+      mp_cs_pin->set();
+      mp_spi->unlock();
+      m_status = st_free;
+    }
+    break;
+  case st_free:
+    if (!m_need_write) {
+      if (m_return_status != irs_st_ready) {
+        m_return_status = irs_st_ready;
+      }
+    } else {
+      m_status = st_write_data;
+    }
+    break;
   }
 }

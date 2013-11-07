@@ -21,6 +21,7 @@ class dac_t
 public:
   typedef irs_u32 select_channel_type;
   virtual ~dac_t() {};
+  virtual irs_status_t get_status() const { return irs_st_ready; }
   virtual size_t get_resolution() const = 0;
   virtual irs_u32 get_u32_maximum() const = 0;
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data) = 0;

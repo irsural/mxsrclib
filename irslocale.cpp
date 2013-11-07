@@ -13,7 +13,7 @@
 
 #include <irsfinal.h>
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 const char* irs::locale_manager_t::m_locale_name_def =
   #if defined(IRS_WIN32) && !defined(__MINGW32__)
@@ -37,5 +37,5 @@ irs::locale_manager_t& irs::loc()
   return loc_manager;
 }
 
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#endif //defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 

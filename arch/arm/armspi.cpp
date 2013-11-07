@@ -646,6 +646,9 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
   if (spi_address == IRS_SPI2_I2S2_BASE) {
     switch (a_sck) {
+      case PB10: {
+        GPIOB_AFRH_bit.AFRH10 = 5;
+      } break;
       case PB13: {
         GPIOB_AFRH_bit.AFRH13 = 5;
       } break;
@@ -657,6 +660,9 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
       case PB14: {
         GPIOB_AFRH_bit.AFRH14 = 5;
       } break;
+      case PC2: {
+        GPIOC_AFRL_bit.AFRL2 = 5;
+      } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
       }
@@ -664,6 +670,9 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_mosi) {
       case PB15: {
         GPIOB_AFRH_bit.AFRH15 = 5;
+      } break;
+      case PC3: {
+        GPIOC_AFRL_bit.AFRL3 = 5;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");

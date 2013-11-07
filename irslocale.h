@@ -15,7 +15,7 @@
 
 namespace irs {
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 class locale_manager_t
 {
@@ -64,7 +64,7 @@ protected:
   }
 };
 
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#endif //defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 } // namespace irs
 

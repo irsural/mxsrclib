@@ -1295,6 +1295,9 @@ private:
   irs_i32 conversion_spi_value();
 };
 
+//-------------------------- DAC8531 -------------------------------------------
+// 16-bit DAC
+
 class dac_8531_t: public dac_t
 {
 public:
@@ -1324,6 +1327,71 @@ private:
   irs_u16 m_new_data;
   irs_u8 mp_spi_buf[write_buf_size];
   mode_t m_mode;
+};
+
+//-------------------------- DAC1220 -------------------------------------------
+// 20-bit sigma-delta DAC
+
+class dac_1220_t: public dac_t
+{
+public:
+  dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, 
+    float a_init_data, counter_t a_startup_pause);
+  virtual irs_status_t get_status() const;
+  virtual size_t get_resolution() const;
+  virtual irs_u32 get_u32_maximum() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual float get_float_maximum() const;
+  virtual void set_float_data(size_t a_channel, const float a_data);
+  virtual void tick();
+
+private:
+  enum { 
+    m_dac_resolution = 20,
+    m_max_write_buf_size = 4,
+    m_dac_max_value = 0x000FFFFF,
+    m_cmd_pos = 0,
+    m_data_pos = 1
+  };
+  enum status_t {
+    st_startup,
+    st_write_command,
+    st_write_data,
+    st_prepare_spi,
+    st_wait_spi,
+    st_free
+  };
+  enum cmr_bits_1_t {
+    cmr_adpt = 7,
+    cmr_calpin = 6,
+    cmr_write1 = 5,
+    cmr_crst = 1
+  };
+  enum cmr_bits_0_t {
+    cmr_res = 7,
+    cmr_clr = 6,
+    cmr_df = 5,
+    cmr_disf = 4,
+    cmr_bd = 3,
+    cmr_msb = 2,
+    cmr_md1 = 1,
+    cmr_md0 = 0
+  };
+  enum {
+    m_data_reg_size = 4,
+    m_data_reg_write_command = 0x40,
+    m_command_reg_size = 3,
+    m_command_reg_write_command = 0x24
+  };
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  irs_u32 m_data;
+  irs_u8 mp_spi_buf[m_max_write_buf_size];
+  status_t m_status;
+  irs_status_t m_return_status;
+  bool m_need_write;
+  timer_t m_timer;
+  size_t m_write_buf_size;
 };
 
 //! @}
