@@ -468,6 +468,7 @@ irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
 }
 void irs::modbus_assembly_t::update_usb_hid_device_path_map()
 {
+  #if IRS_USE_HID_WIN_API
   m_usb_hid_device_path_map.clear();
   std::vector<irs::usb_hid_device_info_t> devs =
     irs::usb_hid_info_t::get_instance()->get_devices_info();
@@ -489,6 +490,10 @@ void irs::modbus_assembly_t::update_usb_hid_device_path_map()
 
     m_usb_hid_device_path_map.insert(make_pair(device, devs[i].path));
   }
+  #else //IRS_USE_HID_WIN_API
+  m_usb_hid_device_path_map.insert(
+    make_pair(irst("define IRS_USE_HID_WIN_API выключен!"), irst("")));
+  #endif //IRS_USE_HID_WIN_API
 }
 
 void irs::modbus_assembly_t::update_param_box_devices_field()
