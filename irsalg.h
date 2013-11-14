@@ -377,6 +377,197 @@ size_t irs::delta_calc_t<T>::size() {
 
 namespace irs {
 
+#define IRS_USE_DEQUE_DATA 1
+
+template <class data_t, class calc_t>
+class fast_average_t
+{
+public:
+  typedef std::size_t size_type;
+  fast_average_t(size_type a_count);
+  void add(data_t a_val);
+  calc_t get() const;
+  void resize(size_type a_count);
+  void clear();
+private:
+  fast_average_t();
+  size_type m_count;
+  #if IRS_USE_DEQUE_DATA
+  irs::deque_data_t<data_t> m_samples;
+  #else
+  std::deque<data_t> m_samples;
+  #endif // IRS_USE_DEQUE_DATA
+  calc_t m_sum;
+};
+
+template <class data_t, class calc_t>
+fast_average_t<data_t, calc_t>::fast_average_t(size_type a_count):
+  m_count(a_count),
+  m_samples(),
+  m_sum(0)
+{
+  #if IRS_USE_DEQUE_DATA
+  m_samples.reserve(a_count);
+  #endif // IRS_USE_DEQUE_DATA
+}
+
+template <class data_t, class calc_t>
+void fast_average_t<data_t, calc_t>::add(data_t a_val)
+{
+  if (m_count > 0) {
+    IRS_LIB_ASSERT(m_samples.size() <= m_count);
+    if (m_samples.size() == m_count) {
+      m_sum -= m_samples.front();
+      m_samples.pop_front();
+    }
+    m_samples.push_back(a_val);
+    m_sum += a_val;
+  }
+}
+
+template <class data_t, class calc_t>
+calc_t fast_average_t<data_t, calc_t>::get() const
+{
+  if (m_samples.empty()) {
+    return 0;
+  }
+  return m_sum/m_samples.size();
+}
+
+template <class data_t, class calc_t>
+void fast_average_t<data_t, calc_t>::resize(size_type a_count)
+{
+  #if IRS_USE_DEQUE_DATA
+  m_samples.reserve(a_count);
+  #endif // IRS_USE_DEQUE_DATA
+  m_count = a_count;
+  while (m_samples.size() > m_count) {
+    m_sum -= m_samples.front();
+    m_samples.pop_front();
+  }
+}
+
+template <class data_t, class calc_t>
+void fast_average_t<data_t, calc_t>::clear()
+{
+  m_samples.clear();
+  m_sum = 0;
+}
+
+template<class data_t, class calc_t>
+class fast_sko_t
+{
+public:
+  typedef std::size_t size_type;
+  fast_sko_t(size_type a_count, size_type a_average_sample_count);
+  ~fast_sko_t();
+  void clear();
+  void add(data_t a_val);
+  operator calc_t()const;
+  void resize(size_type a_size);
+  void resize_average(size_type a_size);
+  void clear_average();
+  size_type size() const;
+  size_type average_size() const;
+private:
+  fast_sko_t();
+  size_type m_count;
+  fast_average_t<data_t, calc_t> m_average;
+  #if IRS_USE_DEQUE_DATA
+  irs::deque_data_t<calc_t> m_square_elems;
+  #else
+  std::deque<calc_t> m_square_elems;
+  #endif // IRS_USE_DEQUE_DATA
+  calc_t m_square_sum;
+};
+
+
+template<class data_t, class calc_t>
+fast_sko_t<data_t, calc_t>::fast_sko_t(
+  size_type a_count, size_type a_average_sample_count
+):
+  m_count(a_count),
+  m_average(a_average_sample_count),
+  m_square_elems(),
+  m_square_sum(0)
+{
+  #if IRS_USE_DEQUE_DATA
+  m_square_elems.reserve(a_count);
+  #endif // IRS_USE_DEQUE_DATA
+}
+
+template<class data_t, class calc_t>
+fast_sko_t<data_t, calc_t>::~fast_sko_t()
+{
+}
+
+template<class data_t, class calc_t>
+void fast_sko_t<data_t, calc_t>::resize(size_type a_size)
+{
+  #if IRS_USE_DEQUE_DATA
+  m_square_elems.reserve(a_size);
+  #endif // IRS_USE_DEQUE_DATA
+  m_count = a_size;
+  while (m_square_elems.size() > m_count) {
+    m_square_sum -= m_square_elems.front();
+    m_square_elems.pop_front();
+  }
+}
+
+template<class data_t, class calc_t>
+void fast_sko_t<data_t, calc_t>::resize_average(size_type a_size)
+{
+  m_average.resize(a_size);
+}
+
+template<class data_t, class calc_t>
+typename fast_sko_t<data_t, calc_t>::size_type
+fast_sko_t<data_t, calc_t>::size() const
+{
+  return m_square_elems.size();
+}
+
+template<class data_t, class calc_t>
+typename fast_sko_t<data_t, calc_t>::size_type
+fast_sko_t<data_t, calc_t>::average_size() const
+{
+  return m_average.size();
+}
+
+template<class data_t, class calc_t>
+void fast_sko_t<data_t, calc_t>::clear()
+{
+  m_square_elems.clear();
+  m_average.clear();
+  m_square_sum = 0;
+}
+
+template<class data_t, class calc_t>
+void fast_sko_t<data_t, calc_t>::add(data_t a_val)
+{
+  m_average.add(a_val);
+  if (m_count > 0) {
+    IRS_LIB_ASSERT(m_square_elems.size() <= m_count);
+    if (m_count == m_square_elems.size()) {
+      m_square_sum -= m_square_elems.front();
+      m_square_elems.pop_front();
+    }
+    calc_t elem = a_val - m_average.get();
+    elem *= elem;
+    m_square_elems.push_back(elem);
+    m_square_sum += elem;
+  }
+}
+
+template<class data_t, class calc_t>
+fast_sko_t<data_t, calc_t>::operator calc_t()const
+{
+  if (m_square_elems.empty()) {
+    return 0;
+  }
+  return sqrt(m_square_sum/m_square_elems.size());
+}
+
 //! \addtogroup signal_processing_group
 //! @{
 

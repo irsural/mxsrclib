@@ -31,6 +31,8 @@
 # include "stm32f2xx_conf_proj.h"
 #else // !IRS_USE_STM32F2xx_PROJECT_CONFIGURATION
 
+#if defined(IRS_STM32F2xx)
+
 /* Includes ------------------------------------------------------------------*/
 /* Uncomment the line below to enable peripheral header file inclusion */
 #include "stm32f2xx_adc.h"
@@ -90,6 +92,8 @@
 #else
   #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */
+
+#endif // defined(IRS_STM32F2xx)
 
 #endif // !IRS_USE_STM32F2xx_PROJECT_CONFIGURATION
 

@@ -1135,6 +1135,8 @@ public:
   ~deque_data_t();
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
+  inline value_type& front();
+  inline const value_type& front() const;
   const deque_data_t& operator=(const deque_data_t<T>& a_raw_data);
   inline size_type size() const;
   inline size_type capacity() const;
@@ -1143,9 +1145,10 @@ public:
   void buf_reserve(size_type a_capacity);
   void resize(size_type a_size);
   void buf_resize(size_type a_size);
-  void push_back(const_pointer ap_first, const_pointer ap_last);
-  void pop_back(size_type);
-  void pop_front(size_type);
+  void push_back(const value_type& a_value);
+  void push_back(const_pointer ap_first, const_pointer ap_last);  
+  void pop_back(size_type = 1);
+  void pop_front(size_type = 1);
   void copy_to(size_type a_pos, size_type a_size,
     pointer ap_dest_first);
   inline void clear();
@@ -1190,6 +1193,20 @@ template <class T>
 irs::deque_data_t<T>::~deque_data_t()
 {
   delete []mp_buf;
+}
+
+template <class T>
+inline typename irs::deque_data_t<T>::reference 
+  irs::deque_data_t<T>::front()
+{
+  return operator[](0);
+}
+
+template <class T>
+inline typename irs::deque_data_t<T>::const_reference 
+  irs::deque_data_t<T>::front() const
+{
+  return operator[](0);
 }
 
 template <class T>
@@ -1275,11 +1292,17 @@ void irs::deque_data_t<T>::resize(size_type a_size)
 }
 
 template <class T>
+void irs::deque_data_t<T>::push_back(const value_type& a_value)
+{
+  push_back(&a_value, &a_value + sizeof(value_type));
+}
+
+template <class T>
 void irs::deque_data_t<T>::push_back(
   const_pointer ap_first, const_pointer ap_last)
 {
   // Размер вставляемых данных
-  const size_type insert_data_size = ap_last - ap_first;
+  const size_type insert_data_size = (ap_last - ap_first)/sizeof(value_type);
   const size_type old_ring_size = m_ring_size;
   const size_type new_ring_size = insert_data_size + m_ring_size;
   resize(new_ring_size);

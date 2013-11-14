@@ -5,6 +5,63 @@
 
 #define BOOST_TEST_MODULE test_irsalg
 
+namespace {
+
+std::vector<double> make_sinus(const std::size_t a_period_point_count,
+  const std::size_t a_period_count)
+{
+  std::size_t point_count = a_period_point_count*a_period_count;
+  std::vector<double> buffer(point_count);
+  double delta = 2*IRS_PI/a_period_point_count;
+  for (std::size_t i = 0; i < point_count; i++) {
+    buffer[i] = sin(delta*i);
+  }
+  return buffer;
+}
+
+} // unnamed namespace
+
+BOOST_AUTO_TEST_SUITE(sko_calc_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  const std::size_t period_size = 1000;
+  const std::size_t period_count = 5;
+  const std::vector<double> sinus = make_sinus(period_size, period_count);
+
+  irs::sko_calc_t<double, double> sko_calc(period_size*period_count);
+
+  for (std::size_t i = 0; i < sinus.size(); i++) {
+    sko_calc.add(sinus[i]);
+  }
+  double result = sko_calc;
+  BOOST_CHECK_EQUAL(result, 1/sqrt(2));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(test_fast_sko_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  const std::size_t period_size = 1000;
+  const std::size_t period_count = 50;
+  const std::vector<double> sinus = make_sinus(period_size, period_count);
+
+  irs::fast_sko_t<double, double> fast_sko(period_size,
+    period_size*period_count);
+  fast_sko.resize_average(period_size);
+  fast_sko.resize(period_size*period_count);
+
+  for (std::size_t i = 0; i < sinus.size(); i++) {
+    fast_sko.add(sinus[i]);
+  }
+  double result = fast_sko;
+  BOOST_CHECK_CLOSE(result, 1/sqrt(2), 0.02);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(test_crc16)
 
 BOOST_AUTO_TEST_CASE(test_case1)

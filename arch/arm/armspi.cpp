@@ -643,8 +643,33 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   set_moder_alternate_function(a_sck);
   set_moder_alternate_function(a_miso);
   set_moder_alternate_function(a_mosi);
-  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
-  if (spi_address == IRS_SPI2_I2S2_BASE) {
+  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs); 
+  if (spi_address == IRS_SPI1_BASE) {
+    switch (a_sck) {
+      case PA5: {
+        GPIOA_AFRL_bit.AFRL5 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_miso) {
+      case PA6: {
+        GPIOA_AFRL_bit.AFRL6 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_mosi) {
+      case PB5: {
+        GPIOB_AFRL_bit.AFRL5 = 5;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+  } else if (spi_address == IRS_SPI2_I2S2_BASE) {
     switch (a_sck) {
       case PB10: {
         GPIOB_AFRH_bit.AFRH10 = 5;
