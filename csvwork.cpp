@@ -1186,7 +1186,7 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
 
     delimiter_t cur_delimiter = delimiter_col;
     mode = find_delimiter;
-    char_type ch = ifile.get();
+    char_type ch = static_cast<char_type>(ifile.get());
     while(ifile.good()) {
       if (mode == find_delimiter) {
         if (ch == m_delimiter_cell) {
@@ -1259,7 +1259,7 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
         quote_count = 0;
         mode = find_delimiter;
       }
-      ch = ifile.get();
+      ch = static_cast<char_type>(ifile.get());
     }
   }
   ifile.close();
