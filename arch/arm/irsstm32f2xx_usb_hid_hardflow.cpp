@@ -59,10 +59,10 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   m_write_buffers(m_channel_count),
   m_write_buf_index(0),
   m_channel(invalid_channel + 1),
+  m_packet_received(false),
   mp_dev(NULL),
   mp_rx_buffer(NULL),
-  m_tx_buffer_is_empty(true),
-  m_packet_received(false)
+  m_tx_buffer_is_empty(true)  
 {  
   if ((m_channel_start_index < 1) ||
     (m_channel_start_index > static_cast<size_type>(
@@ -81,7 +81,7 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   mp_usb_hid = this;
   irs::interrupt_array()->int_event_gen(irs::arm::otg_fs_int)->
     add(&m_otg_fs_event_connect);
-  
+
   USBD_Init(&m_usb_otg_dev,
     #ifdef USE_USB_OTG_HS 
     USB_OTG_HS_CORE_ID,
@@ -103,13 +103,13 @@ void irs::hardflow::arm::usb_hid_t::release_resources()
 }
 
 irs::hardflow::arm::usb_hid_t::string_type
-irs::hardflow::arm::usb_hid_t::param(const string_type &a_name)
+irs::hardflow::arm::usb_hid_t::param(const string_type& /*a_name*/)
 {
   return string_type();
 }
 
-void irs::hardflow::arm::usb_hid_t::set_param(const string_type &a_name,
-  const string_type &a_value)
+void irs::hardflow::arm::usb_hid_t::set_param(const string_type& /*a_name*/,
+  const string_type& /*a_value*/)
 {
 }
 

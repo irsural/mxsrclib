@@ -1204,6 +1204,266 @@ void irs::arm::st_window_watchdog_t::clear_reset_status()
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
+
+#ifdef IRS_STM32F_2_AND_4
+// class st_rtc_t
+irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
+
+irs::arm::st_rtc_t::st_rtc_t(clock_source_t a_clock_source)  
+{
+  mp_st_rtc = this;
+  
+  irs_u32 bkp_data_reg_init[rtc_bkp_dr_number] =
+  {
+    RTC_BKP_DR0, RTC_BKP_DR1, RTC_BKP_DR2, 
+    RTC_BKP_DR3, RTC_BKP_DR4, RTC_BKP_DR5,
+    RTC_BKP_DR6, RTC_BKP_DR7, RTC_BKP_DR8, 
+    RTC_BKP_DR9, RTC_BKP_DR10, RTC_BKP_DR11, 
+    RTC_BKP_DR12, RTC_BKP_DR13, RTC_BKP_DR14, 
+    RTC_BKP_DR15, RTC_BKP_DR16, RTC_BKP_DR17, 
+    RTC_BKP_DR18,  RTC_BKP_DR19
+  };
+  memcpy(bkp_data_reg, bkp_data_reg_init, sizeof(bkp_data_reg_init));
+  
+  // Enable the PWR clock
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+  
+  PWR_BackupAccessCmd(ENABLE);
+  
+  if(RTC_ReadBackupRegister(RTC_BKP_DR0) != backup_first_data) {  
+    rtc_config(a_clock_source);
+  }
+}
+
+irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset(clock_source_t a_clock_source)
+{
+  mp_st_rtc.reset();
+  mp_st_rtc.reset(new st_rtc_t(a_clock_source));
+  return mp_st_rtc.get();
+}
+
+irs::arm::st_rtc_t* irs::arm::st_rtc_t::get_instance()
+{
+  if (mp_st_rtc.is_empty()) {
+    mp_st_rtc.reset(new st_rtc_t(clock_source_lsi));
+  }
+  return mp_st_rtc.get();
+}
+
+time_t irs::arm::st_rtc_t::get_time() const
+{
+  RTC_TimeTypeDef RTC_TimeStruct; 
+  RTC_DateTypeDef RTC_DateSrtruct;   
+  
+  RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);  
+  RTC_GetDate(RTC_Format_BIN, &RTC_DateSrtruct); 
+  
+  tm now_tm;  
+    
+  now_tm.tm_hour = RTC_TimeStruct.RTC_Hours;
+  now_tm.tm_min = RTC_TimeStruct.RTC_Minutes;
+  now_tm.tm_sec = RTC_TimeStruct.RTC_Seconds;
+ 
+  now_tm.tm_mday = RTC_DateSrtruct.RTC_Date;
+  now_tm.tm_mon = RTC_DateSrtruct.RTC_Month - RTC_Month_January;
+  now_tm.tm_year = RTC_DateSrtruct.RTC_Year + 100; 
+
+  now_tm.tm_isdst = 0;
+  
+  now_tm.tm_wday = 0; // Не используется
+  now_tm.tm_yday = 0; // Не используется    
+  
+  return mktime(&now_tm);
+}
+
+double irs::arm::st_rtc_t::get_time_double() const
+{
+  #ifdef IRS_STM32F4xx
+  irs_u32 ms = 
+    1000 - ((irs_u32)((irs_u32)RTC_GetSubSecond()*1000)/(irs_u32)0x3FF); 
+  time_t s = get_time();  
+  return s + ms/1000.;
+  #else // !IRS_STM32F4xx
+  return get_time();
+  #endif // !IRS_STM32F4xx
+}
+
+void irs::arm::st_rtc_t::set_time(const time_t a_time)
+{
+  const tm time_tm = *gmtime(&a_time);
+  RTC_TimeTypeDef  RTC_TimeStruct;
+  RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
+  RTC_TimeStruct.RTC_Hours   = time_tm.tm_hour;
+  RTC_TimeStruct.RTC_Minutes = time_tm.tm_min;
+  RTC_TimeStruct.RTC_Seconds = time_tm.tm_sec;  
+  RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
+  
+  RTC_DateTypeDef RTC_DateSrtruct;
+  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;  
+  RTC_DateSrtruct.RTC_Date = time_tm.tm_mday;
+  RTC_DateSrtruct.RTC_Month = time_tm.tm_mon + RTC_Month_January;
+  RTC_DateSrtruct.RTC_Year = time_tm.tm_year - 100;  
+  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);  
+}
+#ifdef IRS_STM32F4xx
+void irs::arm::st_rtc_t::set_calibration(double a_koefficient)
+{  
+  double calm_value = 0;
+  irs_u32 rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Reset;
+  if (a_koefficient <= 1) {    
+    calm_value = (1 << 20)*(1/a_koefficient - 1);    
+  } else {
+    rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Set;
+    calm_value = (1 << 20)*(1/a_koefficient) - (1 << 20) + 512;    
+  }
+  const double max_cycles = 511.;
+  calm_value = range(calm_value, 0., max_cycles);
+  irs_u32 calm = round<double, irs_u32>(calm_value);
+  RTC_SmoothCalibConfig(RTC_SmoothCalibPeriod_32sec, 
+    rtc_smooth_calib_plus_pulses, calm);  
+}
+#else // !IRS_STM32F4xx
+void irs::arm::st_rtc_t::set_calibration(double)
+{  
+}
+#endif // !IRS_STM32F4xx
+
+double irs::arm::st_rtc_t::get_calibration() const
+{
+  #ifdef IRS_STM32F4xx
+  const int calp = RTC_CALR_bit.CALP;
+  const int calm = RTC_CALR_bit.CALM;    
+  return 1 + static_cast<double>(calp*512 - calm)/((1 << 20) + calm - calp*512);
+  #else // !IRS_STM32F4xx
+  return 1;
+  #endif // !IRS_STM32F4xx
+}
+
+double irs::arm::st_rtc_t::get_calibration_coefficient_min() const
+{
+  const double max_negative_offset_ppm = 487.1;
+  return 1 - max_negative_offset_ppm/1e6; // 0.9995129
+}
+
+double irs::arm::st_rtc_t::get_calibration_coefficient_max() const
+{
+  const double max_positive_offset_ppm = 488.5;
+  return 1 + max_positive_offset_ppm/1e6; // 1.0004885 
+}
+
+void irs::arm::st_rtc_t::rtc_config(clock_source_t a_clock_source)
+{
+  /* Enable the PWR clock */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+
+  /* Allow access to RTC */
+  PWR_BackupAccessCmd(ENABLE);
+
+  /* Reset RTC Domain */
+  RCC_BackupResetCmd(ENABLE);
+  RCC_BackupResetCmd(DISABLE);  
+  
+  if (a_clock_source == clock_source_lsi) {
+    RCC_LSICmd(ENABLE);  
+    // Wait till LSI is ready  
+    while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET) {
+    }   
+    // Select the RTC Clock Source
+    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+  } else {
+    RCC_LSEConfig(RCC_LSE_ON);
+    // Wait till LSE is ready 
+    while(RCC_GetFlagStatus(RCC_FLAG_LSERDY) == RESET) {
+    }  
+    // Select the RTC Clock Source
+    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSE);
+  }
+
+  RCC_RTCCLKCmd(ENABLE);
+  
+  RTC_AlarmCmd(RTC_Alarm_A, DISABLE);
+  RTC_AlarmCmd(RTC_Alarm_B, DISABLE);
+  
+  /* Configure the RTC data register and RTC prescaler */
+  /* ck_spre(1Hz) = RTCCLK(LSI) /(AsynchPrediv + 1)*(SynchPrediv + 1)*/
+
+  RTC_InitTypeDef  RTC_InitStructure;
+  RTC_InitStructure.RTC_AsynchPrediv = 0x7F;
+  RTC_InitStructure.RTC_SynchPrediv  = 0xFF;
+  RTC_InitStructure.RTC_HourFormat   = RTC_HourFormat_24;
+  ErrorStatus status = RTC_Init(&RTC_InitStructure);
+  if (status != SUCCESS) {
+    irs::mlog() << "RTC_Init Error" << endl;
+  }
+  
+  /* Set the time to 00h 00mn 00s AM */
+  RTC_TimeTypeDef  RTC_TimeStruct;
+  RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
+  RTC_TimeStruct.RTC_Hours   = 0;
+  RTC_TimeStruct.RTC_Minutes = 0;
+  RTC_TimeStruct.RTC_Seconds = 0;  
+  RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
+  
+  RTC_DateTypeDef RTC_DateSrtruct;
+  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;  
+  RTC_DateSrtruct.RTC_Date = 14;
+  RTC_DateSrtruct.RTC_Month = RTC_Month_October;
+  RTC_DateSrtruct.RTC_Year = 13;  
+  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);  
+  
+  /*  Backup SRAM ***************************************************************/
+  /* Enable BKPRAM Clock */
+  
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_BKPSRAM, ENABLE);
+
+  /* Write to Backup SRAM with 32-Bit Data */
+  for (irs_u32 uwIndex = 0x0; uwIndex < 0x1000; uwIndex += 4)
+  {
+    *(__IO uint32_t *) (BKPSRAM_BASE + uwIndex) = uwIndex;
+  }
+  /* Check the written Data */
+  irs_u32 uwErrorIndex = 0;
+  for (irs_u32 uwIndex = 0x0; uwIndex < 0x1000; uwIndex += 4)
+  {
+    if ((*(__IO uint32_t *) (BKPSRAM_BASE + uwIndex)) != uwIndex)
+    {
+      uwErrorIndex++;
+    }
+  }
+
+  if(uwErrorIndex)
+  {
+    IRS_DBG_MSG("BKP SRAM Number of errors " << uwErrorIndex);
+  }
+  else
+  {
+    IRS_DBG_MSG("BKP SRAM write OK ");
+  }
+
+  /* Enable the Backup SRAM low power Regulator to retain it's content in VBAT mode */
+  PWR_BackupRegulatorCmd(ENABLE);
+
+  /* Wait until the Backup SRAM low power Regulator is ready */
+  while(PWR_GetFlagStatus(PWR_FLAG_BRR) == RESET)
+  {
+  }
+
+/* RTC Backup Data Registers **************************************************/
+  /* Write to RTC Backup Data Registers */
+  write_to_backup_reg(backup_first_data);
+}
+
+void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
+{
+  for (irs_u32 index = 0; index < rtc_bkp_dr_number; index++)
+  {
+    RTC_WriteBackupRegister(bkp_data_reg[index], 
+      a_first_backup_data + (index * 0x5A));
+  }
+}
+
+#endif // IRS_STM32F_2_AND_4
+
 // class pwm_pin_t
 irs::pwm_pin_t::pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen):
   mp_pwm_gen(ap_pwm_gen),

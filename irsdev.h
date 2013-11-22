@@ -28,6 +28,13 @@
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
 
+
+#if defined(IRS_STM32F2xx)
+# include <stm32f2xx_rtc.h>
+#elif defined(IRS_STM32F4xx)
+# include <stm32f4xx_rtc.h>
+#endif // defined(IRS_STM32F4xx)
+
 #include <irsfinal.h>
 
 namespace irs {
@@ -386,6 +393,46 @@ private:
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
+
+#ifdef IRS_STM32F_2_AND_4
+class st_rtc_t
+{
+public:
+  enum clock_source_t {
+    clock_source_lsi,
+    clock_source_lse
+  };
+  static st_rtc_t* reset(clock_source_t a_clock_source);
+  static st_rtc_t* get_instance();    
+  time_t get_time() const;
+  double get_time_double() const;
+  void set_time(const time_t a_time);
+  //! \param[in] a_koefficient - множитель, на который необходимо домножить
+  //!   частоту, чтобы получить заданную. Если a_koefficient == 1, то 
+  //!   калибровка отсутствует.
+  void set_calibration(double a_koefficient);
+  double get_calibration() const;
+  double get_calibration_coefficient_min() const;
+  double get_calibration_coefficient_max() const;
+private:
+  st_rtc_t(clock_source_t a_clock_source);
+  st_rtc_t();
+  st_rtc_t(const st_rtc_t& a_st_rtc); 
+  st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
+  void rtc_config(clock_source_t a_clock_source);
+  
+  /**
+  * @brief  Writes data to all Backup data registers.
+  * @param  FirstBackupData: data to write to first backup data register.
+  * @retval None
+  */
+  void write_to_backup_reg(irs_u16 a_first_backup_data);
+  enum { backup_first_data = 0x32F2 };
+  enum { rtc_bkp_dr_number = 0x14 };
+  irs_u32 bkp_data_reg[rtc_bkp_dr_number];
+  static handle_t<st_rtc_t> mp_st_rtc;  
+};
+#endif // IRS_STM32F_2_AND_4
 
 //! @}
 

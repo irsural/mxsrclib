@@ -905,15 +905,20 @@ void irs::arm::adc_stellaris_t::tick()
 // class st_adc_t
 irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   select_channel_type a_selected_channels,
-  counter_t a_adc_interval
+  counter_t a_adc_interval,
+  counter_t a_adc_battery_interval
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
   m_adc_timer(a_adc_interval),
+  m_adc_battery_timer(a_adc_battery_interval), 
   m_regular_channels_values(),
   m_active_channels(),
   m_current_channel(),
   m_temperature_sensor_enabled(false),
-  m_temperature_channel_value()
+  m_temperature_channel_value(0),
+  m_v_battery_measurement_enabled(false),
+  m_v_battery_channel_value(0),
+  m_injected_channel_selected(ics_temperature_sensor)
 {
   clock_enable(a_adc_address);
   mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
@@ -967,8 +972,15 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     (channel_mask & ADC1_TEMPERATURE)) {
     m_temperature_sensor_enabled = true;
   }
+  
+  if ((a_adc_address == IRS_ADC1_BASE) &&
+    (a_selected_channels & ADC1_MASK) &&
+    (channel_mask & ADC1_V_BATTERY)) {
+    m_v_battery_measurement_enabled = true;
+  }
 
-  if (m_temperature_sensor_enabled || !m_regular_channels_values.empty()) {
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled ||
+    !m_regular_channels_values.empty()) {
     // Включаем АЦП
     mp_adc->ADC_CR2_bit.ADON = 1;
   }
@@ -981,10 +993,23 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   }
   if (m_temperature_sensor_enabled) {
     ADC_CCR_bit.TSVREFE = 1;
+  }
+  if (m_v_battery_measurement_enabled) { 
+    //ADC_CCR_bit.VBATE = 1;
+  }
+  if (m_temperature_sensor_enabled) {       
+    // Конфигурируем на считывание показаний внутреннего термодатчика
+    mp_adc->ADC_JSQR_bit.JSQ4 = 16;    
+    m_injected_channel_selected = ics_temperature_sensor;    
+  } else if (m_v_battery_measurement_enabled) {    
+    // Конфигурируем на считывание показаний напряжения батарейки    
+    mp_adc->ADC_JSQR_bit.JSQ4 = 18;
+    m_injected_channel_selected = ics_v_battery;
+    ADC_CCR_bit.VBATE = 1;
+  }
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {
     // 0: Один встроенный канал
     mp_adc->ADC_JSQR_bit.JL = 0;
-    // Конфигурируем на считывание показаний внутреннего термодатчика
-    mp_adc->ADC_JSQR_bit.JSQ4 = 16;
     mp_adc->ADC_CR2_bit.JSWSTART = 1;
   }
 }
@@ -1065,20 +1090,36 @@ float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 float irs::arm::st_adc_t::get_temperature()
 {
   if (m_temperature_sensor_enabled) {
-    const float v25 = 0.76;
-    const float avg_Slope = 0.0025;
-    const float v_ref = 3.3;
-    const float koef = v_ref/adc_max_value;
-    const float v_sence = m_temperature_channel_value*koef;
-    return (v_sence - v25)/avg_Slope + 25;
-  } else {
-    return 0;
+    return static_cast<float>(m_temperature_channel_value)/adc_max_value;      
   }
+  return 0;  
+}
+
+float irs::arm::st_adc_t::get_v_battery()
+{   
+  if (m_v_battery_measurement_enabled) {
+    return static_cast<float>(m_v_battery_channel_value)*2./adc_max_value;  
+  }
+  return 0;
+}
+
+float irs::arm::st_adc_t::get_temperature_degree_celsius(
+  const float a_vref)
+{
+  if (m_temperature_sensor_enabled) {
+    const float v25 = 0.76;
+    const float avg_slope = 0.0025;    
+    const float koef = a_vref/adc_max_value;
+    const float v_sence = m_temperature_channel_value*koef;
+    return (v_sence - v25)/avg_slope + 25;
+  }
+  return 0;
 }
 
 void irs::arm::st_adc_t::tick()
 {
-  if (m_adc_timer.check()) {
+  const bool timer_check = m_adc_timer.check();
+  if (timer_check) {
     if (mp_adc->ADC_SR_bit.EOC == 1) {
       m_regular_channels_values[m_current_channel] =
         static_cast<irs_u16>(mp_adc->ADC_DR);
@@ -1088,14 +1129,50 @@ void irs::arm::st_adc_t::tick()
       }
       mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
       mp_adc->ADC_CR2_bit.SWSTART = 1;
-    }
-    if (m_temperature_sensor_enabled) {
-      if (mp_adc->ADC_SR_bit.JEOC == 1) {
-        m_temperature_channel_value =
-          static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
-        mp_adc->ADC_CR2_bit.JSWSTART = 1;
+    }   
+  }  
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {  
+    const bool adc_battery_timer_check = m_adc_battery_timer.check();
+    if (mp_adc->ADC_SR_bit.JEOC == 0) {
+      if (timer_check || adc_battery_timer_check) {            
+        if (m_injected_channel_selected == ics_temperature_sensor) {          
+          if (m_v_battery_measurement_enabled && adc_battery_timer_check) {
+            mp_adc->ADC_JSQR_bit.JSQ4 = 18;
+            ADC_CCR_bit.VBATE = 1;          
+            m_injected_channel_selected = ics_v_battery;
+          }
+        } else {                 
+          if (m_temperature_sensor_enabled && timer_check) {
+            mp_adc->ADC_JSQR_bit.JSQ4 = 16;
+            ADC_CCR_bit.VBATE = 0;
+            m_injected_channel_selected = ics_temperature_sensor;
+          } else {
+            ADC_CCR_bit.VBATE = 1;
+          }
+        }
+        mp_adc->ADC_SR_bit.JEOC = 0;
+        mp_adc->ADC_CR2_bit.JSWSTART = 1;        
       }
+    }    
+    if (mp_adc->ADC_SR_bit.JEOC == 1) {
+      IRS_LIB_ASSERT((m_injected_channel_selected == ics_v_battery) == 
+        (ADC_CCR_bit.VBATE == 1));
+      read_injected_channel_value();
+      // Выключаем делитель для экономии зарадя батарейки
+      ADC_CCR_bit.VBATE = 0;       
+      mp_adc->ADC_SR_bit.JEOC = 0;         
     }
+  }    
+}
+
+void irs::arm::st_adc_t::read_injected_channel_value()
+{
+  if (m_injected_channel_selected == ics_temperature_sensor) {
+    m_temperature_channel_value =
+      static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
+  } else {
+    m_v_battery_channel_value =
+      static_cast<irs_u16>(mp_adc->ADC_JDR1_bit.JDATA);
   }
 }
 

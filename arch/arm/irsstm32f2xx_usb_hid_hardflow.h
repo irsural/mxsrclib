@@ -62,7 +62,7 @@ public:
   static void rx_buffer_is_empty_event(USB_OTG_CORE_HANDLE* ap_dev, 
     irs_u8* ap_rx_buffer, size_type a_size);
   static void tx_buffer_is_empty_event();
-  static usb_hid_t* get_instance();
+  // static usb_hid_t* get_instance();
   enum { report_max_count = 5 };
   typedef irs_u8 channel_field_type;
   typedef irs_u16 size_field_type;

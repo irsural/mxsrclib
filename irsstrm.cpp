@@ -17,9 +17,9 @@
 irs::arm::com_buf::com_buf(const com_buf& a_buf):
   m_outbuf_size(a_buf.m_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   m_usart(a_buf.m_usart),
-  #endif //IRS_STM32F2xx
+  #endif //IRS_STM32F_2_AND_4
   m_baud_rate(a_buf.m_baud_rate)
 {
   memset(m_outbuf.get(), 0, m_outbuf_size);
@@ -32,9 +32,9 @@ irs::arm::com_buf::com_buf(
 ):
   m_outbuf_size(a_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  #ifdef IRS_STM32F2xx
+  #ifdef IRS_STM32F_2_AND_4
   m_usart(0),
-  #endif //IRS_STM32F2xx
+  #endif //IRS_STM32F_2_AND_4
   m_baud_rate(a_baud_rate)
 {
   volatile int index_supress_warning = a_com_index;

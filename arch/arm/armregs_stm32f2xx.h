@@ -1131,6 +1131,256 @@ __IO_REG32_BIT(GPIOI_LCKR,        IRS_PORTI_BASE + GPIO_LCKR_S,__READ_WRITE ,__g
 __IO_REG32_BIT(GPIOI_AFRL,        IRS_PORTI_BASE + GPIO_AFRL_S,__READ_WRITE ,__gpio_afrl_bits);
 __IO_REG32_BIT(GPIOI_AFRH,        IRS_PORTI_BASE + GPIO_AFRH_S,__READ_WRITE ,__gpio_afrh_bits);
 
+// RTC
+
+#define RTC_TR_S      0x00
+#define RTC_DR_S      0x04
+#define RTC_CR_S      0x08
+#define RTC_ISR_S     0x0C
+#define RTC_PRER_S    0x10
+#define RTC_WUTR_S    0x14
+#define RTC_CALIBR_S  0x18
+#define RTC_ALRMAR_S  0x1C
+#define RTC_ALRMBR_S  0x20
+#define RTC_WPR_S     0x24
+#define RTC_TSTR_S    0x30
+#define RTC_TSDR_S    0x34
+#ifdef IRS_STM32F4xx
+# define RTC_CALR_S    0x3C
+#endif // IRS_STM32F4xx
+#define RTC_TCR_S     0x40
+#define RTC_BK0R_S    0x50
+#define RTC_BK1R_S    0x54
+#define RTC_BK2R_S    0x58
+#define RTC_BK3R_S    0x5C
+#define RTC_BK4R_S    0x60
+#define RTC_BK5R_S    0x64
+#define RTC_BK6R_S    0x68
+#define RTC_BK7R_S    0x6C
+#define RTC_BK8R_S    0x70
+#define RTC_BK9R_S    0x74
+#define RTC_BK10R_S   0x78
+#define RTC_BK11R_S   0x7C
+#define RTC_BK12R_S   0x80
+#define RTC_BK13R_S   0x84
+#define RTC_BK14R_S   0x88
+#define RTC_BK15R_S   0x8C
+#define RTC_BK16R_S   0x90
+#define RTC_BK17R_S   0x94
+#define RTC_BK18R_S   0x98
+#define RTC_BK19R_S   0x9C
+
+/* RTC time register (RTC_TR) */
+typedef struct {
+  __REG32 SU              : 4;
+  __REG32 ST              : 3;
+  __REG32                 : 1;
+  __REG32 MNU             : 4;
+  __REG32 MNT             : 3;
+  __REG32                 : 1;
+  __REG32 HU              : 4;
+  __REG32 HT              : 2;
+  __REG32 PM              : 1;
+  __REG32                 : 9;
+} __rtc_tr_bits;
+
+/* RTC date register (RTC_DR) */
+typedef struct {
+  __REG32 DU              : 4;
+  __REG32 DT              : 2;
+  __REG32                 : 2;
+  __REG32 MU              : 4;
+  __REG32 MT              : 1;
+  __REG32 WDU             : 3;
+  __REG32 YU              : 4;
+  __REG32 YT              : 4;
+  __REG32                 : 8;
+} __rtc_dr_bits;
+
+/* RTC control register (RTC_CR) */
+typedef struct {
+  __REG32 WUCKSEL         : 3;
+  __REG32 TSEDGE          : 1;
+  __REG32 REFCKON         : 1;
+  __REG32                 : 1;
+  __REG32 FMT             : 1;
+  __REG32 DCE             : 1;
+  __REG32 ALRAE           : 1;
+  __REG32 ALRBE           : 1;
+  __REG32 WUTE            : 1;
+  __REG32 TSE             : 1;
+  __REG32 ALRAIE          : 1;
+  __REG32 ALRBIE          : 1;
+  __REG32 WUTIE           : 1;
+  __REG32 TSIE            : 1;
+  __REG32 ADD1H           : 1;
+  __REG32 SUB1H           : 1;
+  __REG32 BCK             : 1;
+  __REG32                 : 1;
+  __REG32 POL             : 1;
+  __REG32 OSEL            : 2;
+  __REG32 COE             : 1;
+  __REG32                 : 8;
+} __rtc_cr_bits;
+
+/* RTC initialization and status register (RTC_ISR) */
+typedef struct {
+  __REG32 ALRAWF          : 1;
+  __REG32 ALRBWF          : 1;
+  __REG32 WUTWF           : 1;
+  __REG32                 : 1;
+  __REG32 INITS           : 1;
+  __REG32 RSF             : 1;
+  __REG32 INITF           : 1;
+  __REG32 INIT            : 1;
+  __REG32 ALRAF           : 1;
+  __REG32 ALRBF           : 1;
+  __REG32 WUTF            : 1;
+  __REG32 TSF             : 1;
+  __REG32 TSOVF           : 1;
+  __REG32 TAMPF           : 1;
+  __REG32                 :18;
+} __rtc_isr_bits;
+
+/* RTC prescaler register (RTC_PRER) */
+typedef struct {
+  __REG32 PREDIV_S        :13;
+  __REG32                 : 3;
+  __REG32 PREDIV_A        : 7;
+  __REG32                 : 9;
+} __rtc_prer_bits;
+
+/* RTC wakeup timer register (RTC_WUTR) */
+typedef struct {
+  __REG32 WUARV           :16;
+  __REG32                 :16;
+} __rtc_wutr_bits;
+
+/* RTC calibration register (RTC_CALIBR) */
+typedef struct {
+  __REG32 DC              : 5;
+  __REG32                 : 2;
+  __REG32 DCS             : 1;
+  __REG32                 :24;
+} __rtc_calibr_bits;
+
+/* RTC alarm A register (RTC_ALRMAR) */
+/* RTC alarm B register (RTC_ALRMBR) */
+typedef struct {
+  __REG32 SU              : 4;
+  __REG32 ST              : 3;
+  __REG32 MSK0            : 1;
+  __REG32 MNU             : 4;
+  __REG32 MNT             : 3;
+  __REG32 MSK1            : 1;
+  __REG32 HU              : 4;
+  __REG32 HT              : 2;
+  __REG32 PM              : 1;
+  __REG32 MSK2            : 1;
+  __REG32 DU              : 4;
+  __REG32 DT              : 2;
+  __REG32 WDSEL           : 1;
+  __REG32 MSK3            : 1;
+} __rtc_alrmar_bits;
+
+/* RTC write protection register (RTC_WPR) */
+typedef struct {
+  __REG32 KEY             : 8;
+  __REG32                 :24;
+} __rtc_wpr_bits;
+
+/* RTC time stamp time register (RTC_TSTR) */
+typedef struct {
+  __REG32 SU              : 4;
+  __REG32 ST              : 3;
+  __REG32                 : 1;
+  __REG32 MNU             : 4;
+  __REG32 MNT             : 3;
+  __REG32                 : 1;
+  __REG32 HU              : 4;
+  __REG32 HT              : 2;
+  __REG32 PM              : 1;
+  __REG32                 : 9;
+} __rtc_tstr_bits;
+
+/* RTC time-stamp date register (RTC_TSDR) */
+typedef struct {
+  __REG32 DU              : 4;
+  __REG32 DT              : 2;
+  __REG32                 : 2;
+  __REG32 MU              : 4;
+  __REG32 MT              : 1;
+  __REG32 WDU             : 3;
+  __REG32                 :16;
+} __rtc_tsdr_bits;
+
+#ifdef IRS_STM32F4xx
+/* RTC calibration register (RTC_CALR) */
+typedef struct {
+  __REG32 CALM            : 9;
+  __REG32                 : 4;
+  __REG32 CALW16          : 1;
+  __REG32 CALW8           : 1;
+  __REG32 CALP            : 1;  
+  __REG32                 : 16; 
+} __rtc_calr_bits;
+#endif // IRS_STM32F4xx 
+
+
+/* RTC tamper control register (RTC_TCR) */
+typedef struct {
+  __REG32 TAMPE           : 1;
+  __REG32 TAMPEDGE        : 1;
+  __REG32 TAMPIE          : 1;
+  __REG32                 :13;
+  __REG32 TAMPINSEL       : 1;
+  __REG32 TSINSEL         : 1;
+  __REG32 ALARMOUTTYPE    : 1;
+  __REG32                 :13;
+} __rtc_tcr_bits;
+
+/***************************************************************************
+ **
+ ** RTC
+ **
+ ***************************************************************************/
+__IO_REG32_BIT(RTC_TR,            IRS_RTC_BKP_BASE + RTC_TR_S,__READ_WRITE ,__rtc_tr_bits);
+__IO_REG32_BIT(RTC_DR,            IRS_RTC_BKP_BASE + RTC_DR_S,__READ_WRITE ,__rtc_dr_bits);
+__IO_REG32_BIT(RTC_CR,            IRS_RTC_BKP_BASE + RTC_CR_S,__READ_WRITE ,__rtc_cr_bits);
+__IO_REG32_BIT(RTC_ISR,           IRS_RTC_BKP_BASE + RTC_ISR_S,__READ_WRITE ,__rtc_isr_bits);
+__IO_REG32_BIT(RTC_PRER,          IRS_RTC_BKP_BASE + RTC_PRER_S,__READ_WRITE ,__rtc_prer_bits);
+__IO_REG32_BIT(RTC_WUTR,          IRS_RTC_BKP_BASE + RTC_WUTR_S,__READ_WRITE ,__rtc_wutr_bits);
+__IO_REG32_BIT(RTC_CALIBR,        IRS_RTC_BKP_BASE + RTC_CALIBR_S,__READ_WRITE ,__rtc_calibr_bits);
+__IO_REG32_BIT(RTC_ALRMAR,        IRS_RTC_BKP_BASE + RTC_ALRMAR_S,__READ_WRITE ,__rtc_alrmar_bits);
+__IO_REG32_BIT(RTC_ALRMBR,        IRS_RTC_BKP_BASE + RTC_ALRMBR_S,__READ_WRITE ,__rtc_alrmar_bits);
+__IO_REG32_BIT(RTC_WPR,           IRS_RTC_BKP_BASE + RTC_WPR_S,__WRITE      ,__rtc_wpr_bits);
+__IO_REG32_BIT(RTC_TSTR,          IRS_RTC_BKP_BASE + RTC_TSTR_S,__READ       ,__rtc_tstr_bits);
+__IO_REG32_BIT(RTC_TSDR,          IRS_RTC_BKP_BASE + RTC_TSDR_S,__READ       ,__rtc_tsdr_bits);
+#ifdef IRS_STM32F4xx
+__IO_REG32_BIT(RTC_CALR,          IRS_RTC_BKP_BASE + RTC_CALR_S,__READ       ,__rtc_calr_bits);
+#endif // IRS_STM32F4xx
+__IO_REG32_BIT(RTC_TCR,           IRS_RTC_BKP_BASE + RTC_TCR_S,__READ_WRITE ,__rtc_tcr_bits);
+__IO_REG32(    RTC_BK0R,          IRS_RTC_BKP_BASE + RTC_BK0R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK1R,          IRS_RTC_BKP_BASE + RTC_BK1R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK2R,          IRS_RTC_BKP_BASE + RTC_BK2R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK3R,          IRS_RTC_BKP_BASE + RTC_BK3R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK4R,          IRS_RTC_BKP_BASE + RTC_BK4R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK5R,          IRS_RTC_BKP_BASE + RTC_BK5R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK6R,          IRS_RTC_BKP_BASE + RTC_BK6R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK7R,          IRS_RTC_BKP_BASE + RTC_BK7R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK8R,          IRS_RTC_BKP_BASE + RTC_BK8R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK9R,          IRS_RTC_BKP_BASE + RTC_BK9R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK10R,         IRS_RTC_BKP_BASE + RTC_BK10R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK11R,         IRS_RTC_BKP_BASE + RTC_BK11R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK12R,         IRS_RTC_BKP_BASE + RTC_BK12R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK13R,         IRS_RTC_BKP_BASE + RTC_BK13R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK14R,         IRS_RTC_BKP_BASE + RTC_BK14R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK15R,         IRS_RTC_BKP_BASE + RTC_BK15R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK16R,         IRS_RTC_BKP_BASE + RTC_BK16R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK17R,         IRS_RTC_BKP_BASE + RTC_BK17R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK18R,         IRS_RTC_BKP_BASE + RTC_BK18R_S,__READ_WRITE );
+__IO_REG32(    RTC_BK19R,         IRS_RTC_BKP_BASE + RTC_BK19R_S,__READ_WRITE );
+
 // TIMER3
 #define TIM_CR1_S       0x00
 #define TIM_CR2_S       0x04

@@ -156,10 +156,12 @@ public:
     ADC3_PF4_CH14 = (1 << 14) | ADC3_MASK,
     ADC12_PC5_CH15 = (1 << 15) | ADC1_MASK | ADC2_MASK,
     ADC3_PF5_CH15 = (1 << 15) | ADC3_MASK,
-    ADC1_TEMPERATURE = (1 << 16) | ADC1_MASK
+    ADC1_TEMPERATURE = (1 << 16) | ADC1_MASK,
+    ADC1_V_BATTERY = (1 << 18) | ADC1_MASK
   };
   st_adc_t(size_t a_adc_address, select_channel_type a_selected_channels,
-    counter_t a_adc_interval = make_cnt_ms(100));
+    counter_t a_adc_interval = make_cnt_ms(100),
+    counter_t a_adc_battery_interval = make_cnt_ms(100));
   virtual ~st_adc_t();
   virtual irs_u16 get_u16_minimum();
   virtual irs_u16 get_u16_maximum();
@@ -170,12 +172,16 @@ public:
   virtual float get_float_minimum();
   virtual float get_float_maximum();
   virtual float get_float_data(irs_u8 a_channel);
-  virtual float get_temperature();
-  virtual void tick();
+  virtual float get_temperature();  
+  virtual float get_v_battery();  
+  virtual void tick();  
+  float get_temperature_degree_celsius(const float a_vref);
 private:
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
+  void read_injected_channel_value();
   adc_regs_t* mp_adc;
   irs::loop_timer_t m_adc_timer;
+  irs::loop_timer_t m_adc_battery_timer;
   enum { reqular_channel_count = 16 };
   enum { adc_resolution = 12 };
   enum { adc_max_value = 0xFFF };
@@ -184,6 +190,13 @@ private:
   size_t m_current_channel;
   bool m_temperature_sensor_enabled;
   irs_i16 m_temperature_channel_value;
+  bool m_v_battery_measurement_enabled;  
+  irs_u16 m_v_battery_channel_value;
+  enum injected_channel_switch_t {
+    ics_temperature_sensor, 
+    ics_v_battery
+  };
+  injected_channel_switch_t m_injected_channel_selected;
 };
 
 //! \brief Драйвер АЦП DMA для контроллеров семейства STM32F2xx

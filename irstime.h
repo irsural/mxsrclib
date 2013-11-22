@@ -61,20 +61,37 @@ IRS_STREAMSPECDECL ostream &stime(ostream &a_stream);
 IRS_STREAMSPECDECL wostream &wstime(wostream &a_stream);
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+#ifdef IRS_STM32F4xx
+double get_time_from_stm32f4xx();
+#endif // IRS_STM32F4xx
+
 // «апись в поток текущей даты и времени
 IRS_STRING_TEMPLATE
 inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   basic_sdatetime(IRS_STRING_OSTREAM &a_stream)
 {
   #ifdef __ICCARM__
-  const double seconds = CNT_TO_DBLTIME(counter_get());
-  const int milliseconds =
-    static_cast<int>((seconds - static_cast<irs_u64>(seconds))*1000);
-  time_t timer = static_cast<time_t>(seconds);
+  time_t time_s = time(NULL);
+  double seconds_double = 0;
+  int milliseconds = 0;
+  if (time_s == -1) {
+    seconds_double = CNT_TO_DBLTIME(counter_get());
+    time_s = static_cast<time_t>(seconds_double);    
+  } else {
+    #ifdef IRS_STM32F4xx
+    seconds_double = get_time_from_stm32f4xx();    
+    #else // !IRS_STM32F4xx
+    seconds_double = CNT_TO_DBLTIME(counter_get());
+    time_s = static_cast<time_t>(seconds_double);    
+    #endif // !IRS_STM32F4xx
+  }  
+  //time = time(NULL);
+  milliseconds = static_cast<int>(
+    (seconds_double - static_cast<irs_u64>(seconds_double))*1000);
   #else // !__ICCARM__
-  time_t timer = time(NULL);
+  time_t time_s = time(NULL);
   #endif // !__ICCARM__
-  const tm* date = localtime(&timer);
+  const tm* date = localtime(&time_s);
   a_stream << setfill(static_cast<IRS_STRING_CHAR_TYPE>('0'));
   a_stream << setw(2) << date->tm_mday;
   a_stream << static_cast<IRS_STRING_CHAR_TYPE>('.');
