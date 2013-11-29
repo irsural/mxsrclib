@@ -163,6 +163,7 @@ public:
     counter_t a_adc_interval = make_cnt_ms(100),
     counter_t a_adc_battery_interval = make_cnt_ms(100));
   virtual ~st_adc_t();
+  virtual size_type get_resulution() const;
   virtual irs_u16 get_u16_minimum();
   virtual irs_u16 get_u16_maximum();
   virtual irs_u16 get_u16_data(irs_u8 a_channel);

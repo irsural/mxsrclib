@@ -322,6 +322,94 @@ void irs::adc_ad7791_t::tick()
   }
 }
 
+// class cyclic_adc_ad7791_t
+irs::cyclic_adc_ad7791_t::cyclic_adc_ad7791_t(
+  spi_t* ap_spi, gpio_pin_t* ap_cs_pin, 
+  counter_t a_read_delay
+):
+  m_adc_ad7791(ap_spi, ap_cs_pin, a_read_delay),
+  m_adc_ad7791_data(&m_adc_ad7791)
+{
+}
+
+irs::cyclic_adc_ad7791_t::size_type 
+irs::cyclic_adc_ad7791_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
+bool irs::cyclic_adc_ad7791_t::new_value_exists(irs_u8 a_channel) const
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7791_data.new_data_bit;
+}
+
+/*irs_u16 irs::cyclic_adc_ad7791_t::get_u16_minimum()
+{
+  return 0;
+}
+
+irs_u16 irs::cyclic_adc_ad7791_t::get_u16_maximum()
+{
+  return static_cast<irs_u16>(adc_max_value) << (16 - adc_resolution);
+}
+
+irs_u16 irs::cyclic_adc_ad7791_t::get_u16_data(irs_u8 a_channel)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7791_data.voltage_code << (16 - adc_resolution);
+}
+
+irs_u32 irs::cyclic_adc_ad7791_t::get_u32_minimum()
+{
+  return 0;
+}
+
+irs_u32 irs::cyclic_adc_ad7791_t::get_u32_maximum()
+{
+  return static_cast<irs_u32>(adc_max_value) << (32 - adc_resolution);
+}*/
+
+irs_u32 irs::cyclic_adc_ad7791_t::get_u32_data(irs_u8 a_channel)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7791_data.voltage_code << (32 - adc_resolution);
+}
+
+/*float irs::cyclic_adc_ad7791_t::get_float_minimum()
+{
+  return 0.f;
+}
+
+float irs::cyclic_adc_ad7791_t::get_float_maximum()
+{
+  return 1.f;
+}
+
+float irs::cyclic_adc_ad7791_t::get_float_data(irs_u8 a_channel)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return static_cast<float>(m_adc_ad7791_data.voltage_code)/adc_max_value;
+}
+
+float irs::cyclic_adc_ad7791_t::get_temperature()
+{
+  return 0;
+}*/
+
+void irs::cyclic_adc_ad7791_t::tick()
+{
+  m_adc_ad7791.tick();
+}
+
 //--------------------------  AD7686  ------------------------------------------
 
 irs::adc_ad7686_t::adc_ad7686_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,

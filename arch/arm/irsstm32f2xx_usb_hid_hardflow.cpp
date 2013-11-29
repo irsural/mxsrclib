@@ -37,7 +37,7 @@ extern "C" {
 #if IRS_USE_STM32F2_4_USB_HID_HARDFLOW
 
 // class usb_hid_t
-irs::hardflow::arm::usb_hid_t* 
+irs::handle_t<irs::hardflow::arm::usb_hid_t> 
 irs::hardflow::arm::usb_hid_t::mp_usb_hid = NULL;
 
 irs::hardflow::arm::usb_hid_t::usb_hid_t(
@@ -78,7 +78,7 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
     msg << "Значение a_report_size должно быть от 1 до " << report_max_size;
     throw std::logic_error(msg.str());
   }
-  mp_usb_hid = this;
+  //mp_usb_hid = this;
   irs::interrupt_array()->int_event_gen(irs::arm::otg_fs_int)->
     add(&m_otg_fs_event_connect);
 
@@ -251,7 +251,7 @@ void irs::hardflow::arm::usb_hid_t::otg_fs_event()
 
 void irs::hardflow::arm::usb_hid_t::tx_buffer_is_empty_event()
 {
-  IRS_LIB_ASSERT(mp_usb_hid); 
+  IRS_LIB_ASSERT(!mp_usb_hid.is_empty()); 
   mp_usb_hid->m_tx_buffer_is_empty = true;  
 }
 
@@ -259,7 +259,7 @@ void irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
   USB_OTG_CORE_HANDLE* ap_dev, 
   irs_u8* ap_rx_buffer, size_type a_size)
 {
-  IRS_LIB_ASSERT(mp_usb_hid);  
+  IRS_LIB_ASSERT(!mp_usb_hid.is_empty());  
   if (a_size != report_max_size) {
     DCD_EP_PrepareRx(ap_dev, HID_OUT_EP, ap_rx_buffer, HID_OUT_PACKET);
     return;
@@ -268,6 +268,23 @@ void irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
   mp_usb_hid->mp_dev = ap_dev;
   mp_usb_hid->mp_rx_buffer = ap_rx_buffer;
   mp_usb_hid->m_packet_received = true;  
+}
+
+irs::hardflow::arm::usb_hid_t* 
+irs::hardflow::arm::usb_hid_t::reset(
+  size_type a_channel_start_index,
+  size_type a_channel_count, size_type a_report_size)
+{
+  mp_usb_hid.reset();
+  mp_usb_hid.reset(new usb_hid_t(a_channel_start_index, a_channel_count,
+    a_report_size));
+  return mp_usb_hid.get();
+}
+
+irs::hardflow::arm::usb_hid_t* 
+irs::hardflow::arm::usb_hid_t::get_instance()
+{
+  return mp_usb_hid.get();  
 }
 
 #endif // IRS_USE_STM32F2_4_USB_HID_HARDFLOW

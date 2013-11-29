@@ -1033,6 +1033,11 @@ irs::arm::st_adc_t::~st_adc_t()
   mp_adc->ADC_CR2_bit.ADON = 0;  
 }
 
+irs::arm::st_adc_t::size_type irs::arm::st_adc_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
 irs_u16 irs::arm::st_adc_t::get_u16_minimum()
 {
   return 0;

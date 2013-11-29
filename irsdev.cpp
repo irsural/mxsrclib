@@ -764,6 +764,14 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PB6: {
+      if (timer_address == IRS_TIM4_BASE) {
+        m_timer_channel = 1;
+        GPIOB_AFRL_bit.AFRL6 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PB8: {
       if (timer_address == IRS_TIM4_BASE) {
         m_timer_channel = 3;

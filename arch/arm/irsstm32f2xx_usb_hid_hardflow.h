@@ -46,8 +46,6 @@ class usb_hid_t: public hardflow_t
 public:
   typedef hardflow_t::size_type size_type;
   typedef hardflow_t::string_type string_type;
-  usb_hid_t(size_type a_channel_start_index = invalid_channel + 1,
-    size_type a_channel_count = 1, size_type a_report_size = 64);
   virtual ~usb_hid_t();
   virtual string_type param(const string_type &a_name);
   virtual void set_param(const string_type &a_name,
@@ -62,7 +60,9 @@ public:
   static void rx_buffer_is_empty_event(USB_OTG_CORE_HANDLE* ap_dev, 
     irs_u8* ap_rx_buffer, size_type a_size);
   static void tx_buffer_is_empty_event();
-  // static usb_hid_t* get_instance();
+  static usb_hid_t* reset(size_type a_channel_start_index = invalid_channel + 1,
+    size_type a_channel_count = 1, size_type a_report_size = 64);
+  static usb_hid_t* get_instance();
   enum { report_max_count = 5 };
   typedef irs_u8 channel_field_type;
   typedef irs_u16 size_field_type;
@@ -75,7 +75,7 @@ public:
   enum { report_max_size = 64 };
   enum { packet_max_size = report_max_size };
   enum { data_max_size = packet_max_size -  header_size};
-private:  
+private:
   #pragma pack(push, 1)
   struct packet_t
   {    
@@ -91,6 +91,11 @@ private:
     }
   };
   #pragma pack(pop)
+  usb_hid_t();
+  usb_hid_t(size_type a_channel_start_index = invalid_channel + 1,
+    size_type a_channel_count = 1, size_type a_report_size = 64);
+  usb_hid_t(const usb_hid_t& a_usb_hid);
+  usb_hid_t& operator=(const usb_hid_t& a_usb_hid);
   void release_resources();
   inline size_type channel_id_to_buf_index(size_type a_channel_id)
   {
@@ -117,7 +122,6 @@ private:
     size_type a_size);
   void otg_fs_event();
   //static write_report(void* ap_params);
-  usb_hid_t();
   const size_type m_channel_start_index;
   const size_type m_channel_end_index;
   const size_type m_channel_count;
@@ -146,7 +150,7 @@ private:
   USB_OTG_CORE_HANDLE* mp_dev;
   irs_u8* mp_rx_buffer;
   bool m_tx_buffer_is_empty;
-  static usb_hid_t* mp_usb_hid;  
+  static handle_t<usb_hid_t> mp_usb_hid;
 };
   
 #else

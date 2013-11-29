@@ -164,7 +164,7 @@ class adc_ad7791_t : public mxdata_t
   counter_t m_read_delay;
   bool m_connect;
   //  CS
-  gpio_pin_t *mp_cs_pin;
+  gpio_pin_t* mp_cs_pin;
 public:
   adc_ad7791_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, counter_t a_read_delay);
   ~adc_ad7791_t();
@@ -197,6 +197,32 @@ struct adc_ad7791_data_t
     index++;
     index = voltage_code.connect(ap_data, index);
   }
+};
+
+class cyclic_adc_ad7791_t: public adc_t
+{
+public:
+  enum { channel_count = 1 };
+  enum { adc_resolution = 24 };
+  enum { adc_max_value = 0xFFFFFF };
+  typedef irs_size_t size_type;
+  cyclic_adc_ad7791_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, counter_t a_read_delay);
+  virtual size_type get_resulution() const;
+  virtual bool new_value_exists(irs_u8 a_channel) const;
+  /*virtual irs_u16 get_u16_minimum();
+  virtual irs_u16 get_u16_maximum();
+  virtual irs_u16 get_u16_data(irs_u8 a_channel);
+  virtual irs_u32 get_u32_minimum();
+  virtual irs_u32 get_u32_maximum();*/
+  virtual irs_u32 get_u32_data(irs_u8 a_channel);
+  /*virtual float get_float_minimum();
+  virtual float get_float_maximum();
+  virtual float get_float_data(irs_u8 a_channel);
+  virtual float get_temperature();  */
+  virtual void tick();
+private:
+  adc_ad7791_t m_adc_ad7791;
+  adc_ad7791_data_t m_adc_ad7791_data;
 };
 
 //--------------------------  AD7686  ------------------------------------------

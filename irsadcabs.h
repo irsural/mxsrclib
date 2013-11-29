@@ -46,21 +46,88 @@ const int adc_mode_system_full_scale = 7;
 class adc_t
 {
 public:
+  typedef irs_size_t size_type;
   typedef irs_u32 select_channel_type;
 
   virtual ~adc_t() {};
-  virtual irs_u16 get_u16_minimum() = 0;
-  virtual irs_u16 get_u16_maximum() = 0;
-  virtual irs_u16 get_u16_data(irs_u8 a_channel) = 0;
-  virtual irs_u32 get_u32_minimum() = 0;
-  virtual irs_u32 get_u32_maximum() = 0;
+  virtual size_type get_resulution() const = 0;
+  virtual inline bool new_value_exists(irs_u8 a_channel) const;  
+  virtual inline irs_u16 get_u16_minimum();
+  virtual inline irs_u16 get_u16_maximum();
+  virtual inline irs_u16 get_u16_data(irs_u8 a_channel);
+  virtual inline irs_u32 get_u32_minimum();
+  virtual inline irs_u32 get_u32_maximum();
   virtual irs_u32 get_u32_data(irs_u8 a_channel) = 0;
-  virtual float get_float_minimum() = 0;
-  virtual float get_float_maximum() = 0;
-  virtual float get_float_data(irs_u8 a_channel) = 0;
-  virtual float get_temperature() = 0;
+  virtual inline float get_float_minimum();
+  virtual inline float get_float_maximum();
+  virtual inline float get_float_data(irs_u8 a_channel);
+  virtual inline float get_temperature();
   virtual void tick() = 0;
+private:
+  inline irs_u32 get_adc_max_value() const;
 };
+
+inline bool adc_t::new_value_exists(irs_u8 /*a_channel*/) const
+{
+  return false;
+}
+
+inline irs_u32 adc_t::get_adc_max_value() const
+{
+  return (1 << get_resulution()) - 1;
+}
+
+inline irs_u16 adc_t::get_u16_minimum()
+{
+  return 0;
+}
+
+inline irs_u16 adc_t::get_u16_maximum()
+{
+  irs_u32 u32_max_value = get_adc_max_value();
+  irs_u16 max_value = IRS_HIWORD(u32_max_value);
+  if (16 <= get_resulution()) {
+    return static_cast<irs_u16>(max_value << (16 - get_resulution()));
+  } else {
+    return max_value;
+  }
+}
+
+inline irs_u16 adc_t::get_u16_data(irs_u8 a_channel)
+{
+  irs_u32 data = get_u32_data(a_channel);
+  return IRS_HIWORD(data);
+}
+
+inline irs_u32 adc_t::get_u32_minimum()
+{
+  return 0;
+}
+
+inline irs_u32 adc_t::get_u32_maximum()
+{
+  return static_cast<irs_u32>(get_adc_max_value()) << (32 - get_resulution());
+}
+
+inline float adc_t::get_float_minimum()
+{
+  return 0.f;
+}
+
+inline float adc_t::get_float_maximum()
+{
+  return 1.f;
+}
+
+inline float adc_t::get_float_data(irs_u8 a_channel)
+{
+  return static_cast<float>(get_u32_data(a_channel))/get_u32_maximum();
+}
+
+inline float adc_t::get_temperature()
+{
+  return 0;
+}
 
 class adc_request_t
 {
