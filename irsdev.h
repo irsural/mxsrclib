@@ -209,12 +209,15 @@ enum break_polarity_t {
   break_polarity_active_high
 };
 
+#define NEW_ST_PWM_GEN
+
 //! \brief Драйвер ШИМ-генератора для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
 //! \author Lyashchov Maxim
 class st_pwm_gen_t: public pwm_gen_t
 {
 public:
+  typedef irs_size_t size_type;
   st_pwm_gen_t(gpio_channel_t a_gpio_channel, size_t a_timer_address,
     cpu_traits_t::frequency_type a_frequency, float a_duty = 0.5f);
   virtual void start();
@@ -226,22 +229,66 @@ public:
   virtual irs_uarc get_max_duty();
   virtual cpu_traits_t::frequency_type get_max_frequency();
   virtual cpu_traits_t::frequency_type get_timer_frequency();
+  cpu_traits_t::frequency_type get_frequency() const;
+  void set_duty(gpio_channel_t a_gpio_channel, irs_uarc a_duty);
+  void set_duty(gpio_channel_t a_gpio_channel, float a_duty);
   void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
   void break_disable();
+  void channel_enable(gpio_channel_t a_gpio_channel);
   void complementary_channel_enable(gpio_channel_t a_gpio_channel);
+  void set_dead_time(float a_time);
 private:
-
+  #ifdef NEW_ST_PWM_GEN
+  irs_u32 get_timer_channel_and_select_alternate_function(
+    gpio_channel_t a_gpio_channel);
+  #else // !NEW_ST_PWM_GEN
   void get_timer_channel_and_select_alternate_function_for_main_channel();
+  #endif // !NEW_ST_PWM_GEN
+  #ifndef NEW_ST_PWM_GEN
   void select_alternate_function_for_complementary_channel();
+  #endif // !NEW_ST_PWM_GEN
   void select_alternate_function_for_break_channel();
-  void get_tim_ccr_register();
+  void set_duty_register(irs_u32* ap_tim_ccr, irs_uarc a_duty);
+  void set_duty_register(irs_u32* ap_tim_ccr, float a_duty);
+  irs_u32* get_tim_ccr_register(irs_u32 a_timer_channel);
+
+  void channel_enable_helper(gpio_channel_t a_gpio_channel,
+    bool a_complementary);
   enum output_compare_mode_t {
     ocm_force_inactive_level = 4,
     ocm_pwm_mode_1 = 6
   };
-  void set_mode_capture_compare_registers(output_compare_mode_t a_mode);
-  cpu_traits_t::frequency_type timer_frequency();
+  struct channel_t
+  {
+    //float duty;
+    gpio_channel_t main_channel;
+    bool main_channel_active_low;
+    gpio_channel_t complementary_channel;
+    bool complementary_channel_active_low;
+    irs_u32 timer_channel;
+    irs_u32* tim_ccr;
+    channel_t():
+      //duty(0),
+      main_channel(PNONE),
+      main_channel_active_low(false),
+      complementary_channel(PNONE),
+      complementary_channel_active_low(false),
+      timer_channel(0),
+      tim_ccr(NULL)
+    {
+    }
+  };
+
+  channel_t* find_channel(irs_u32 a_timer_channel);
+  void set_mode_capture_compare_registers_for_all_channels(
+    output_compare_mode_t a_mode);
+  void set_mode_capture_compare_registers(output_compare_mode_t a_mode,
+    channel_t* ap_channel);
+  cpu_traits_t::frequency_type timer_frequency() const;
   vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
+
+  bool m_started;
+  vector<channel_t> m_channels;
   gpio_channel_t m_gpio_channel;
   tim_regs_t* mp_timer;
   cpu_traits_t::frequency_type m_frequency;
@@ -403,12 +450,12 @@ public:
     clock_source_lse
   };
   static st_rtc_t* reset(clock_source_t a_clock_source);
-  static st_rtc_t* get_instance();    
+  static st_rtc_t* get_instance();
   time_t get_time() const;
   double get_time_double() const;
   void set_time(const time_t a_time);
   //! \param[in] a_koefficient - множитель, на который необходимо домножить
-  //!   частоту, чтобы получить заданную. Если a_koefficient == 1, то 
+  //!   частоту, чтобы получить заданную. Если a_koefficient == 1, то
   //!   калибровка отсутствует.
   void set_calibration(double a_koefficient);
   double get_calibration() const;
@@ -417,10 +464,10 @@ public:
 private:
   st_rtc_t(clock_source_t a_clock_source);
   st_rtc_t();
-  st_rtc_t(const st_rtc_t& a_st_rtc); 
+  st_rtc_t(const st_rtc_t& a_st_rtc);
   st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
   void rtc_config(clock_source_t a_clock_source);
-  
+
   /**
   * @brief  Writes data to all Backup data registers.
   * @param  FirstBackupData: data to write to first backup data register.
@@ -430,7 +477,7 @@ private:
   enum { backup_first_data = 0x32F2 };
   enum { rtc_bkp_dr_number = 0x14 };
   irs_u32 bkp_data_reg[rtc_bkp_dr_number];
-  static handle_t<st_rtc_t> mp_st_rtc;  
+  static handle_t<st_rtc_t> mp_st_rtc;
 };
 #endif // IRS_STM32F_2_AND_4
 
@@ -452,6 +499,20 @@ public:
 private:
   irs::handle_t<pwm_gen_t> mp_pwm_gen;
   bool m_started;
+};
+
+class decoder_t
+{
+public:
+  typedef irs_size_t size_type;
+  decoder_t();
+  /*#ifdef IRS_STM32F_2_AND_4
+  void add(gpio_channel_t a_channel);
+  #endif // IRS_STM32F_2_AND_4*/
+  void add(irs::handle_t<gpio_pin_t> ap_gpio_pin);
+  void select_pin(irs_u32 a_pin_index);
+private:
+  vector<irs::handle_t<gpio_pin_t> > m_pins;
 };
 
 } //  irs

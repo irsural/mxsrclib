@@ -246,19 +246,6 @@ void event_connect_1_t<T, A>::exec(A a)
   (mp_object->*mp_member)(a);
 }
 
-// Интерфейс для работы с прерываниями
-class interrupt_array_base_t
-{
-public:
-  typedef irs_size_t size_type;
-
-  virtual irs_int_event_gen_t* int_event_gen(size_type a_index) = 0;
-  virtual void exec_event(size_type a_index) = 0;
-};
-
-// Возвращает массив прерываний
-interrupt_array_base_t* interrupt_array();
-
 // Базовый класс событий
 class event_t
 {
@@ -434,6 +421,20 @@ inline event_1_t<argument_type>* make_event_1(
     ap_function);
 }
 
+// Интерфейс для работы с прерываниями
+class interrupt_array_base_t
+{
+public:
+  typedef irs_size_t size_type;
+
+  virtual irs_int_event_gen_t* int_event_gen(size_type a_index) = 0;
+  virtual generator_events_t* int_gen_events(size_type a_index) = 0;
+  virtual void exec_event(size_type a_index) = 0;
+};
+
+// Возвращает массив прерываний
+interrupt_array_base_t* interrupt_array();
+
 // Блокировка прерываний по принципу: выделение ресурса есть инициализация
 #ifdef __ICCAVR__
 class lock_interrupt_t
@@ -467,8 +468,9 @@ public:
 
   interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type
     a_reserve_interrupt_count);
-
+  //! \break Устаревшая функия
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
+  virtual generator_events_t* int_gen_events(size_type a_index);
   virtual void exec_event(size_type a_index);
 private:
   enum {
@@ -478,7 +480,9 @@ private:
   vector<gen_index_type> m_int_event_gen_indexes;
   vector<irs_int_event_gen_t> m_int_event_gens;
   gen_index_type m_int_event_index;
-
+  vector<gen_index_type> m_int_gen_events_indexes;
+  vector<generator_events_t> m_generators_events;  
+  gen_index_type m_int_gen_event_index;
   interrupt_array_t(const interrupt_array_t&);
 };
 

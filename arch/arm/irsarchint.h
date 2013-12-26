@@ -21,7 +21,7 @@ namespace arm {
 // Номера прерываний
 enum {
   //  Прерывания ядра
-  nmi_int,
+  nmi_int = 1,
   hard_fault_int,
   mem_manage_int,
   bus_fault_int,

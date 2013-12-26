@@ -41,8 +41,8 @@ class th_lm95071_t : public mxdata_t
     m_new_data_bit = 0,
     m_control_byte = 0
   };
-  
-  
+
+
   status_t m_status;
   spi_t *mp_spi;
   const float m_conv_koef;
@@ -73,15 +73,15 @@ struct th_lm95071_data_t
   irs::bit_data_t new_data_bit;
   irs::bit_data_t stop_bit;
   irs::conn_data_t<irs_i16> temperature_code;
-  
+
   th_lm95071_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     new_data_bit(),
     stop_bit(),
     temperature_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -182,14 +182,14 @@ struct adc_ad7791_data_t
 {
   irs::bit_data_t new_data_bit;
   irs::conn_data_t<irs_u32> voltage_code;
-  
+
   adc_ad7791_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     new_data_bit(),
     voltage_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -206,23 +206,90 @@ public:
   enum { adc_resolution = 24 };
   enum { adc_max_value = 0xFFFFFF };
   typedef irs_size_t size_type;
-  cyclic_adc_ad7791_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, counter_t a_read_delay);
+  cyclic_adc_ad7791_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    counter_t a_read_delay);
   virtual size_type get_resulution() const;
   virtual bool new_value_exists(irs_u8 a_channel) const;
-  /*virtual irs_u16 get_u16_minimum();
-  virtual irs_u16 get_u16_maximum();
-  virtual irs_u16 get_u16_data(irs_u8 a_channel);
-  virtual irs_u32 get_u32_minimum();
-  virtual irs_u32 get_u32_maximum();*/
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
-  /*virtual float get_float_minimum();
-  virtual float get_float_maximum();
-  virtual float get_float_data(irs_u8 a_channel);
-  virtual float get_temperature();  */
   virtual void tick();
 private:
   adc_ad7791_t m_adc_ad7791;
   adc_ad7791_data_t m_adc_ad7791_data;
+};
+
+//--------------------------  AD7683  ------------------------------------------
+
+class adc_ad7683_t : public mxdata_t
+{
+  enum status_t
+  {
+    ADC_FREE,
+    ADC_READ
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  static const irs_uarc m_spi_size = 3;
+  static const irs_uarc m_spi_data_size = 2;
+  static const irs_uarc m_size = 3;
+
+  const counter_t m_conv_delay;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_spi_buf[m_spi_size];
+  counter_t m_read_counter;
+  counter_t m_read_delay;
+  bool m_connect;
+  //  CS
+  gpio_pin_t *mp_cs_pin;
+public:
+  adc_ad7683_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, counter_t a_read_delay);
+  ~adc_ad7683_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+};
+
+struct adc_ad7683_data_t
+{
+  irs::bit_data_t new_data_bit;
+  irs::conn_data_t<irs_u16> voltage_code;
+
+  adc_ad7683_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    new_data_bit(),
+    voltage_code()
+  {
+    connect(ap_data, a_start_index);
+  }
+
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = new_data_bit.connect(ap_data, index, 0);
+    index++;
+    index = voltage_code.connect(ap_data, index);
+  }
+};
+
+class cyclic_adc_ad7683_t: public adc_t
+{
+public:
+  enum { channel_count = 1 };
+  enum { adc_resolution = 16 };
+  enum { adc_max_value = 0xFFFF };
+  typedef irs_size_t size_type;
+  cyclic_adc_ad7683_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    counter_t a_read_delay);
+  virtual size_type get_resulution() const;
+  virtual bool new_value_exists(irs_u8 a_channel) const;
+  virtual irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual void tick();
+private:
+  adc_ad7683_t m_adc_ad7683;
+  adc_ad7683_data_t m_adc_ad7683_data;
 };
 
 //--------------------------  AD7686  ------------------------------------------
@@ -264,14 +331,14 @@ struct adc_ad7686_data_t
 {
   irs::bit_data_t new_data_bit;
   irs::conn_data_t<irs_u16> voltage_code;
-  
+
   adc_ad7686_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     new_data_bit(),
     voltage_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -279,6 +346,24 @@ struct adc_ad7686_data_t
     index++;
     index = voltage_code.connect(ap_data, index);
   }
+};
+
+class cyclic_adc_ad7686_t: public adc_t
+{
+public:
+  enum { channel_count = 1 };
+  enum { adc_resolution = 16 };
+  enum { adc_max_value = 0xFFFF };
+  typedef irs_size_t size_type;
+  cyclic_adc_ad7686_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    counter_t a_read_delay);
+  virtual size_type get_resulution() const;
+  virtual bool new_value_exists(irs_u8 a_channel) const;
+  virtual irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual void tick();
+private:
+  adc_ad7686_t m_adc_ad7686;
+  adc_ad7686_data_t m_adc_ad7686_data;
 };
 
 //--------------------------  AD8400  ------------------------------------------
@@ -316,14 +401,14 @@ struct dac_ad8400_data_t
 {
   irs::bit_data_t ready_bit;
   irs::conn_data_t<irs_u8> resistance_code;
-  
+
   dac_ad8400_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit(),
     resistance_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-    
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -380,16 +465,16 @@ struct dac_ad7376_data_t
   irs::bit_data_t rs_bit;
   irs::bit_data_t shdn_bit;
   irs::conn_data_t<irs_u8> resistance_code;
-  
+
   dac_ad7376_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit(),
     rs_bit(),
     shdn_bit(),
     resistance_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     ready_bit.connect(ap_data, a_start_index, 0);
@@ -435,14 +520,14 @@ struct dac_max551_data_t
 {
   irs::bit_data_t ready_bit;
   irs::conn_data_t<irs_u16> voltage_code;
-  
+
   dac_max551_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit(),
     voltage_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     ready_bit.connect(ap_data, a_start_index, 0);
@@ -492,7 +577,7 @@ struct dds_ad9854_data_t
   irs::conn_data_t<irs_u16> q_path_mult_code;
   irs::conn_data_t<irs_u8>  shaped_keying_ramp_rate_code;
   irs::conn_data_t<irs_u16> q_dac_voltage_code;
-  
+
   dds_ad9854_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_status_bit(),
     reset_bit(),
@@ -533,9 +618,9 @@ struct dds_ad9854_data_t
     shaped_keying_ramp_rate_code(),
     q_dac_voltage_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -779,7 +864,7 @@ class dac_ltc2622_t : public mxdata_t
   {
     m_size = 5,
     m_data_regA_position = 1,
-    m_data_regB_position = 3, 
+    m_data_regB_position = 3,
     m_data_reg_size = 2,
     m_packet_size = 2,
     m_write_buf_size = 3,
@@ -788,20 +873,20 @@ class dac_ltc2622_t : public mxdata_t
     m_ready_bit_regB = 1,
     m_log_enable_pos = 7
   };
-  enum 
+  enum
   {
     m_com_write_to_input_register = 0x00,
     m_com_write_to_input_register_and_update_all = 0x40,
     m_com_write_to_input_register_and_update = 0x30,
-    m_com_no_operation = 0xF0 
+    m_com_no_operation = 0xF0
   };
-  enum 
+  enum
   {
     m_addr_DACA = 0x00,
     m_addr_DACB = 0x01,
     m_addr_all_DACs = 0x0F
   };
-  
+
   inline irs_u8 bt(irs_u8 a_enum)
   {
     return a_enum;
@@ -809,32 +894,32 @@ class dac_ltc2622_t : public mxdata_t
   inline irs_u8* to_pu8(irs_u16 &a_reg)
   {
     return reinterpret_cast<irs_u8*> (a_reg);
-  }  
- 
+  }
+
   status_t m_status;
-  
+
   spi_t *mp_spi;
-  
+
   irs_u8 mp_buf[m_size];
   irs_u8 mp_write_buf[m_write_buf_size];
   irs_u8& m_command;
-   
+
   irs_u16& m_regA;
   irs_u16& m_regB;
   irs_u16& m_write_reg;
-  
+
   irs::timer_t m_wait_timer;
-  
+
   bool m_need_write;
-  
+
   gpio_pin_t *mp_cs_pin;
-  
+
 public:
   dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u16 a_init_regA,
     irs_u16 a_init_regB);
   virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
   virtual void tick();
-  
+
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -850,7 +935,7 @@ struct dac_ltc2622_data_t
   irs::bit_data_t log_enable;
   irs::conn_data_t<irs_u16> voltage_code_A;
   irs::conn_data_t<irs_u16> voltage_code_B;
-  
+
   dac_ltc2622_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit_A(),
     ready_bit_B(),
@@ -859,8 +944,8 @@ struct dac_ltc2622_data_t
     voltage_code_B()
   {
     connect(ap_data, a_start_index);
-  }  
-   
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     ready_bit_A.connect(ap_data, a_start_index, 0);
@@ -922,14 +1007,14 @@ struct adc_adc102s021_data_t
   irs::conn_data_t<irs_u16> voltage_code_A;
   irs::conn_data_t<irs_u16> voltage_code_B;
 
-  
+
   adc_adc102s021_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     voltage_code_A(),
     voltage_code_B()
   {
-    connect(ap_data, a_start_index);    
-  }  
-  
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -980,7 +1065,7 @@ class dac_ad5293_t : public mxdata_t
   static const irs_u8 Z5 = 7; //C3
   static const irs_u8 Z4 = 6; //C3
   static const irs_u8 C3 = 5; //C3
-  static const irs_u8 C2 = 4; //C2  
+  static const irs_u8 C2 = 4; //C2
   static const irs_u8 C1 = 3; //C1
   static const irs_u8 C0 = 2; //C0
   static const irs_u8 Control2 = 2; //Calibration enable
@@ -995,9 +1080,9 @@ class dac_ad5293_t : public mxdata_t
 
   bool write_to_dac(status_t a_command);
   inline bool write_ready() { return (m_write_status == WS_READY); };
-  inline bool spi_ready() 
-  { 
-    return (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE); 
+  inline bool spi_ready()
+  {
+    return (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE);
   };
   void write_tick();
 public:
@@ -1016,13 +1101,13 @@ public:
 struct dac_ad5293_data_t
 {
   irs::conn_data_t<irs_u16> resistance_code;
-  
+
   dac_ad5293_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     resistance_code()
   {
-    connect(ap_data, a_start_index);    
-  }  
-    
+    connect(ap_data, a_start_index);
+  }
+
   void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     irs_uarc index = a_start_index;
@@ -1042,7 +1127,7 @@ public:
     gpio_pin_t *ap_clr_pin,
     gpio_pin_t *ap_reset_pin,
     irs_u32 a_default_value);
-  
+
   virtual irs_uarc size();
   virtual irs_bool connected();
   virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
@@ -1088,7 +1173,7 @@ private:
   enum {
     m_reset_interval = 1  //  ms
   };
- 
+
   status_t m_status;
   status_t m_target_status;
   spi_t* mp_spi;
@@ -1114,7 +1199,7 @@ struct dac_ad5791_data_t
   irs::conn_data_t<irs_u8> lin_comp;
   irs::conn_data_t<irs_i32> signed_voltage_code;
   irs::conn_data_t<irs_u32> unsigned_voltage_code;
-  
+
   dac_ad5791_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
     ready_bit(),
     rbuf_bit(),
@@ -1127,8 +1212,8 @@ struct dac_ad5791_data_t
     unsigned_voltage_code()
   {
     connect(ap_data, a_start_index);
-  }  
-   
+  }
+
   irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
   {
     ready_bit.connect(ap_data, a_start_index, 0);
@@ -1144,6 +1229,310 @@ struct dac_ad5791_data_t
     a_start_index = unsigned_voltage_code.connect(ap_data, a_start_index);
     return a_start_index;
   }
+};
+
+//-------------------------- AD5686 -------------------------------------------
+class dac_ad5686_t: public dac_t
+{
+public:
+  typedef irs_u16 sample_type;
+  typedef irs_size_t size_type;
+  typedef irs_u32 select_channel_type;
+  dac_ad5686_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin);
+  virtual ~dac_ad5686_t();
+  virtual irs_status_t get_status() const;
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual void tick();
+private:
+  enum { resolution = 16 };
+  enum { buf_size = 3 };
+  enum command_t {
+    command_write_to_and_update_channel = 3,
+    command_software_reset = 6
+  };
+  enum { command_shift = 4 };
+  enum process_t {
+    process_reset,
+    process_request,
+    process_free,
+    process_write
+  };
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  struct channel_t
+  {
+    bool new_value_exists;
+    sample_type value;
+    channel_t():
+      new_value_exists(false),
+      value(0)
+    {
+    }
+  };
+  vector<channel_t> m_channels;
+  size_type m_current_channel;
+  process_t m_process;
+  irs_u8 mp_buf[buf_size];
+};
+
+
+//-------------------------- AD7794 -------------------------------------------
+// 24-bit 3-channel ADC
+class adc_ad7794_t: public adc_request_t
+{
+public:
+  enum freq_t {
+    freq_470Hz = 1,
+    freq_242Hz = 2,
+    freq_123Hz = 3,
+    freq_62Hz = 4,
+    freq_50Hz = 5,
+    freq_39Hz = 6,
+    freq_33_2Hz = 7,
+    freq_19_6Hz = 8,
+    freq_16_7Hz_80dB = 9,
+    freq_16_7Hz_65dB = 10,
+    freq_12_5Hz = 11,
+    freq_10Hz = 12,
+    freq_8_33Hz = 13,
+    freq_6_25Hz = 14,
+    freq_4_17Hz = 15
+  };
+
+  adc_ad7794_t(spi_t *ap_spi,
+    gpio_pin_t* ap_cs_pin);
+  ~adc_ad7794_t();
+  virtual void start();
+  virtual void stop();
+  virtual meas_status_t status() const;
+  virtual irs_i32 get_value();
+  virtual void tick();
+  virtual void set_param(adc_param_t a_param, const int a_value);
+  virtual void get_param(adc_param_t a_param, int* ap_value);
+
+private:
+  void set_channel(int a_channel);
+  void set_mode(int a_mode);
+  void set_freq(int a_freq);
+  void set_gain(int a_gain);
+  void set_buf(int a_buf);
+  void set_ref_det(int a_ref_det);
+  void set_ub(int a_ub);
+  void set_bo(int a_bo);
+
+  enum mode_t {
+    mode_free,
+    mode_spi_rw,
+    mode_spi_rw_wait,
+    mode_read_all_reg,
+    mode_read_data,
+    mode_read_wait,
+    mode_ready_wait,
+    mode_get_data
+  };
+  enum operating_modes_t {
+    om_continuous = 0,
+    om_single = 1,
+    om_idle = 2,
+    om_power_down = 3,
+    om_internal_zero_scale = 4,
+    om_internal_full_scale = 5,
+    om_system_zero_scale = 6,
+    om_system_full_scale = 7
+  };
+  enum {
+    m_size_buf = 16,
+    m_write_buf_size = 4
+  };
+  enum param_byte_pos_t {
+    m_gain_byte_pos = 1,
+    m_freq_byte_pos = 0,
+    m_ch_byte_pos = 0,
+    m_mode_byte_pos = 1,
+    m_buf_byte_pos = 0,
+    m_ref_det_byte_pos = 0,
+    m_ub_byte_pos = 1,
+    m_bo_byte_pos = 1
+  };
+  enum param_pos_t {
+    m_rw_pos = 6,
+    m_rs_pos = 3,
+    m_gain_pos = 0,
+    m_freq_pos = 0,
+    m_ch_pos = 0,
+    m_mode_pos = 5,
+    m_ready_pos = 7,
+    m_buf_pos = 4,
+    m_ref_det_pos = 5,
+    m_ub_pos = 4,
+    m_bo_pos = 5
+  };
+  enum param_size_t {
+    m_gain_size = 3,
+    m_freq_size = 4,
+    m_ch_size = 4,
+    m_mode_size = 3,
+    m_buf_size = 1,
+    m_ref_det_size = 1,
+    m_ub_size = 1,
+    m_bo_size = 1
+  };
+  enum reg_index_t {
+    m_reg_comm_index = 0,
+    m_reg_status_index = 0,
+    m_reg_mode_index = 1,
+    m_reg_conf_index = 2,
+    m_reg_data_index = 3,
+    m_reg_id_index = 4,
+    m_reg_io_index = 5,
+    m_reg_offs_index = 6,
+    m_reg_fs_index = 7
+  };
+  enum reg_size_t {
+    m_reg_comm_size = 1,
+    m_reg_status_size = 1,
+    m_reg_mode_size = 2,
+    m_reg_conf_size = 2,
+    m_reg_data_size = 3,
+    m_reg_id_size = 1,
+    m_reg_io_size = 1,
+    m_reg_offs_size = 3,
+    m_reg_fs_size = 3
+  };
+  enum transaction_type_t {
+    tt_read,
+    tt_write
+  };
+  struct reg_t {
+    reg_t(reg_index_t a_index, reg_size_t a_size):
+      index(a_index),
+      size(a_size)
+    {}
+    ~reg_t() {};
+    reg_index_t index;
+    reg_size_t size;
+  };
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  meas_status_t m_status;
+  mode_t m_mode;
+  irs_u8 mp_buf[m_size_buf];
+  irs_u8 mp_spi_buf[m_write_buf_size];
+  size_t m_spi_transaction_size;
+  vector<reg_t> m_reg;
+  bool m_read_all_reg;
+  irs_u32 m_count_init;
+  irs_u32 m_shift;
+  bool m_read_data;
+  vector<int> m_conv_time_vector;
+  irs_u8 m_freq;
+  int m_reserved_interval;
+  timer_t m_timer;
+  bool m_ready_wait;
+  bool m_get_data;
+  irs_i32 m_value;
+  operating_modes_t m_read_mode;
+  operating_modes_t m_cur_read_mode;
+  irs_u8 mp_get_buff[m_write_buf_size];
+  int* mp_value_param;
+  bool m_read_calibration_coeff;
+
+  void spi_prepare();
+  void spi_release();
+  void creation_reg_comm(reg_t a_reg, transaction_type_t a_tt);
+  int calculation_shift(reg_t a_reg);
+  int calculation_number_byte(reg_t a_reg, param_byte_pos_t byte_pos);
+  int to_int(double a_number);
+  int filling_units(param_size_t a_size);
+  void creation_reg(reg_t a_reg, int a_value, param_byte_pos_t a_byte_pos,
+    param_pos_t a_start_pos, param_size_t a_size);
+  int get(reg_t a_reg, param_byte_pos_t a_byte_pos,
+    param_pos_t a_start_pos, param_size_t a_size);
+  irs_i32 conversion_spi_value();
+};
+
+class cyclic_adc_ad7794_t: public adc_t
+{
+public:
+  enum { channel_count = 1 };
+  enum { adc_resolution = 24 };
+  enum { adc_max_value = 0xFFFFFF };
+  enum channel_name_t {
+    ch_1 = (1 << 0),            //! < \brief AIN1(+)/AIN1(-)
+    ch_2 = (1 << 1),            //! < \brief AIN2(+)/AIN2(-)
+    ch_3 = (1 << 2),            //! < \brief AIN3(+)/AIN3(-)
+    ch_4 = (1 << 3),            //! < \brief AAIN4(+)/AIN4(-)
+    ch_5 = (1 << 4),            //! < \brief AIN5(+)/AIN5(-)
+    ch_6 = (1 << 5),            //! < \brief AIN6(+)/AIN6(-)
+    ch_temp_sensor = (1 << 6),  //! < \brief Temp Sensor
+    ch_avdd_monitor = (1 << 7), //! < \brief AVDD Monitor
+    ch_0 = (1 << 8)             //! < \brief AIN1(-)/AIN1(-)
+  };
+  enum freq_t {
+    freq_470Hz = 1,
+    freq_242Hz = 2,
+    freq_123Hz = 3,
+    freq_62Hz = 4,
+    freq_50Hz = 5,
+    freq_39Hz = 6,
+    freq_33_2Hz = 7,
+    freq_19_6Hz = 8,
+    freq_16_7Hz_80dB = 9,
+    freq_16_7Hz_65dB = 10,
+    freq_12_5Hz = 11,
+    freq_10Hz = 12,
+    freq_8_33Hz = 13,
+    freq_6_25Hz = 14,
+    freq_4_17Hz = 15
+  };
+  typedef irs_size_t size_type;
+  typedef irs_u32 sample_type;
+  cyclic_adc_ad7794_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    select_channel_type a_selected_channels,
+    counter_t a_read_delay, bool a_unipolar = true,
+    freq_t a_freq = freq_4_17Hz);
+  virtual size_type get_resulution() const;
+  virtual bool new_value_exists(irs_u8 a_channel) const;
+  virtual irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual void tick();
+private:
+
+  enum process_t {
+    process_set_param,
+    process_select_channel,
+    process_read_value,
+    process_wait_read_value
+  };
+  adc_ad7794_t m_adc;
+  struct parameter_t
+  {
+    adc_param_t name;
+    int value;
+    parameter_t(adc_param_t a_name, int a_value):
+      name(a_name),
+      value(a_value)
+    {
+    }
+  };
+  std::vector<parameter_t> m_params;
+  size_type m_current_param;
+  struct channel_t
+  {
+    int index;
+    bool new_value_exists;
+    sample_type value;
+    channel_t():
+      index(1),
+      new_value_exists(false),
+      value(0)
+    {
+    }
+  };
+  vector<channel_t> m_channels;
+  size_type m_current_channel;
+  process_t m_process;
+  loop_timer_t m_timer;
 };
 
 //-------------------------- AD7799 -------------------------------------------
@@ -1168,18 +1557,17 @@ public:
     freq_6_25Hz = 14,
     freq_4_17Hz = 15
   };
-  
-  adc_ad7799_t(spi_t *ap_spi,
-	  gpio_pin_t* ap_cs_pin);
+
+  adc_ad7799_t(spi_t *ap_spi, gpio_pin_t* ap_cs_pin);
   ~adc_ad7799_t();
   virtual void start();
   virtual void stop();
-  virtual meas_status_t status() const; 
+  virtual meas_status_t status() const;
   virtual irs_i32 get_value();
   virtual void tick();
   virtual void set_param(adc_param_t a_param, const int a_value);
   virtual void get_param(adc_param_t a_param, int* ap_value);
-  
+
 private:
   void set_channel(int a_channel);
   void set_mode(int a_mode);
@@ -1189,7 +1577,7 @@ private:
   void set_ref_det(int a_ref_det);
   void set_ub(int a_ub);
   void set_bo(int a_bo);
-  
+
   enum mode_t {
     mode_free,
     mode_spi_rw,
@@ -1212,7 +1600,7 @@ private:
   };
   enum {
     m_size_buf = 16,
-    m_write_buf_size = 4  
+    m_write_buf_size = 4
   };
   enum param_byte_pos_t {
     m_gain_byte_pos = 1,
@@ -1306,17 +1694,17 @@ private:
   irs_u8 mp_get_buff[m_write_buf_size];
   int* mp_value_param;
   bool m_read_calibration_coeff;
- 
+
   void spi_prepare();
   void spi_release();
   void creation_reg_comm(reg_t a_reg, transaction_type_t a_tt);
   int calculation_shift(reg_t a_reg);
   int calculation_number_byte(reg_t a_reg, param_byte_pos_t byte_pos);
-  int to_int(double a_number); 
+  int to_int(double a_number);
   int filling_units(param_size_t a_size);
-  void creation_reg(reg_t a_reg, int a_value, param_byte_pos_t a_byte_pos, 
+  void creation_reg(reg_t a_reg, int a_value, param_byte_pos_t a_byte_pos,
     param_pos_t a_start_pos, param_size_t a_size);
-  int get(reg_t a_reg, param_byte_pos_t a_byte_pos, 
+  int get(reg_t a_reg, param_byte_pos_t a_byte_pos,
     param_pos_t a_start_pos, param_size_t a_size);
   irs_i32 conversion_spi_value();
 };
@@ -1337,7 +1725,7 @@ public:
 
 private:
   void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
-  enum { 
+  enum {
     dac_resolution = 16,
     write_buf_size = 3
   };
@@ -1361,7 +1749,7 @@ private:
 class dac_1220_t: public dac_t
 {
 public:
-  dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, 
+  dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     float a_init_data, counter_t a_startup_pause);
   virtual irs_status_t get_status() const;
   virtual size_t get_resolution() const;
@@ -1372,7 +1760,7 @@ public:
   virtual void tick();
 
 private:
-  enum { 
+  enum {
     m_dac_resolution = 20,
     m_max_write_buf_size = 4,
     m_dac_max_value = 0x000FFFFF,

@@ -324,7 +324,7 @@ void irs::adc_ad7791_t::tick()
 
 // class cyclic_adc_ad7791_t
 irs::cyclic_adc_ad7791_t::cyclic_adc_ad7791_t(
-  spi_t* ap_spi, gpio_pin_t* ap_cs_pin, 
+  spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
   counter_t a_read_delay
 ):
   m_adc_ad7791(ap_spi, ap_cs_pin, a_read_delay),
@@ -332,7 +332,7 @@ irs::cyclic_adc_ad7791_t::cyclic_adc_ad7791_t(
 {
 }
 
-irs::cyclic_adc_ad7791_t::size_type 
+irs::cyclic_adc_ad7791_t::size_type
 irs::cyclic_adc_ad7791_t::get_resulution() const
 {
   return adc_resolution;
@@ -346,34 +346,6 @@ bool irs::cyclic_adc_ad7791_t::new_value_exists(irs_u8 a_channel) const
   return m_adc_ad7791_data.new_data_bit;
 }
 
-/*irs_u16 irs::cyclic_adc_ad7791_t::get_u16_minimum()
-{
-  return 0;
-}
-
-irs_u16 irs::cyclic_adc_ad7791_t::get_u16_maximum()
-{
-  return static_cast<irs_u16>(adc_max_value) << (16 - adc_resolution);
-}
-
-irs_u16 irs::cyclic_adc_ad7791_t::get_u16_data(irs_u8 a_channel)
-{
-  if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
-  }
-  return m_adc_ad7791_data.voltage_code << (16 - adc_resolution);
-}
-
-irs_u32 irs::cyclic_adc_ad7791_t::get_u32_minimum()
-{
-  return 0;
-}
-
-irs_u32 irs::cyclic_adc_ad7791_t::get_u32_maximum()
-{
-  return static_cast<irs_u32>(adc_max_value) << (32 - adc_resolution);
-}*/
-
 irs_u32 irs::cyclic_adc_ad7791_t::get_u32_data(irs_u8 a_channel)
 {
   if (a_channel > 0) {
@@ -382,32 +354,182 @@ irs_u32 irs::cyclic_adc_ad7791_t::get_u32_data(irs_u8 a_channel)
   return m_adc_ad7791_data.voltage_code << (32 - adc_resolution);
 }
 
-/*float irs::cyclic_adc_ad7791_t::get_float_minimum()
+void irs::cyclic_adc_ad7791_t::tick()
 {
-  return 0.f;
+  m_adc_ad7791.tick();
 }
 
-float irs::cyclic_adc_ad7791_t::get_float_maximum()
+//--------------------------  AD7683  ------------------------------------------
+
+irs::adc_ad7683_t::adc_ad7683_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
+  counter_t a_read_delay):
+  m_status(ADC_FREE),
+  mp_spi(ap_spi),
+  m_conv_delay(irs::make_cnt_mcs(2)),
+  m_read_counter(0),
+  m_read_delay(a_read_delay),
+  m_connect(false),
+  mp_cs_pin(ap_cs_pin)
 {
-  return 1.f;
+  memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
+  memset(reinterpret_cast<void*>(mp_spi_buf), 0, m_spi_size);
+  mp_cs_pin->set();
 }
 
-float irs::cyclic_adc_ad7791_t::get_float_data(irs_u8 a_channel)
+irs::adc_ad7683_t::~adc_ad7683_t()
+{
+  return;
+}
+
+irs_uarc irs::adc_ad7683_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::adc_ad7683_t::connected()
+{
+  if (mp_spi && mp_cs_pin && m_connect) return true;
+  else return false;
+}
+
+void irs::adc_ad7683_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_size) return;
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
+  mp_buf[0] = 0;
+  return;
+}
+
+void irs::adc_ad7683_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_size) return;
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
+}
+
+irs_bool irs::adc_ad7683_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return false;
+  if (a_bit_index > 7) return false;
+  bool bit = (mp_buf[a_index] >> a_bit_index) & static_cast<irs_u8>(1);
+  mp_buf[0] = 0;
+  return bit;
+}
+void irs::adc_ad7683_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+}
+
+void irs::adc_ad7683_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
+}
+
+void irs::adc_ad7683_t::tick()
+{  
+  mp_spi->tick();
+  
+  /*static double max_time = 0;
+  double time2 = 0;
+  static irs::loop_timer_t timer2(irs::make_cnt_s(5));
+  static irs::measure_time_t time;
+  */
+  switch (m_status)
+  {
+  case ADC_FREE:
+    {
+      if (test_to_cnt(m_read_counter) && !mp_spi->get_lock()
+          && (mp_spi->get_status() == irs::spi_t::FREE))
+      {
+        set_to_cnt(m_read_counter, m_read_delay);
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+        mp_cs_pin->clear();
+        mp_spi->lock();
+        mp_spi->read(mp_spi_buf, m_spi_size);
+        m_status = ADC_READ;
+        //time.start();
+      }
+      break;
+    }
+  case ADC_READ:
+    {      
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        m_connect = true;
+
+        irs_u32 value = 0;
+        reinterpret_cast<irs_u8*>(&value)[0] = mp_spi_buf[2];
+        reinterpret_cast<irs_u8*>(&value)[1] = mp_spi_buf[1];
+        reinterpret_cast<irs_u8*>(&value)[2] = mp_spi_buf[0];
+        value >>= 2;
+        irs_u16 value_u16 = static_cast<irs_u16>(value);
+        mp_buf[0] = 1;
+        reinterpret_cast<irs_u16&>(mp_buf[1]) = value_u16;
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_status = ADC_FREE;
+        
+        /*time2 = time.get();
+        max_time = max(max_time, time2);    
+        if (timer2.check()) {
+          IRS_LIB_DBG_MSG("adc tick max_time " << max_time);
+          IRS_LIB_DBG_MSG("adc tick time " << time2);              
+        }
+        */
+      }
+      break;
+    }
+  }
+}
+
+// class cyclic_adc_ad7683_t
+irs::cyclic_adc_ad7683_t::cyclic_adc_ad7683_t(
+  spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+  counter_t a_read_delay
+):
+  m_adc_ad7683(ap_spi, ap_cs_pin, a_read_delay),
+  m_adc_ad7683_data(&m_adc_ad7683)
+{
+}
+
+irs::cyclic_adc_ad7683_t::size_type
+irs::cyclic_adc_ad7683_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
+bool irs::cyclic_adc_ad7683_t::new_value_exists(irs_u8 a_channel) const
 {
   if (a_channel > 0) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
-  return static_cast<float>(m_adc_ad7791_data.voltage_code)/adc_max_value;
+  return m_adc_ad7683_data.new_data_bit;
 }
 
-float irs::cyclic_adc_ad7791_t::get_temperature()
+irs_u32 irs::cyclic_adc_ad7683_t::get_u32_data(irs_u8 a_channel)
 {
-  return 0;
-}*/
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7683_data.voltage_code << (32 - adc_resolution);
+}
 
-void irs::cyclic_adc_ad7791_t::tick()
+void irs::cyclic_adc_ad7683_t::tick()
 {
-  m_adc_ad7791.tick();
+  m_adc_ad7683.tick();
 }
 
 //--------------------------  AD7686  ------------------------------------------
@@ -528,6 +650,43 @@ void irs::adc_ad7686_t::tick()
       break;
     }
   }
+}
+
+// class cyclic_adc_ad7686_t
+irs::cyclic_adc_ad7686_t::cyclic_adc_ad7686_t(
+  spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+  counter_t a_read_delay
+):
+  m_adc_ad7686(ap_spi, ap_cs_pin, a_read_delay),
+  m_adc_ad7686_data(&m_adc_ad7686)
+{
+}
+
+irs::cyclic_adc_ad7686_t::size_type
+irs::cyclic_adc_ad7686_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
+bool irs::cyclic_adc_ad7686_t::new_value_exists(irs_u8 a_channel) const
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7686_data.new_data_bit;
+}
+
+irs_u32 irs::cyclic_adc_ad7686_t::get_u32_data(irs_u8 a_channel)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_adc_ad7686_data.voltage_code << (32 - adc_resolution);
+}
+
+void irs::cyclic_adc_ad7686_t::tick()
+{
+  m_adc_ad7686.tick();
 }
 
 //--------------------------  AD8400  ------------------------------------------
@@ -1269,7 +1428,7 @@ void irs::dds_ad9854_t::tick()
             }
           }
         }
-      } 
+      }
     } break;
   case DDS_WRITE:
     {
@@ -1988,22 +2147,22 @@ irs::dac_ad5791_t::dac_ad5791_t(
 {
   memset(mp_buf, 0, m_size);
   memset(mp_write_buf, 0, m_write_buf_size);
-  
+
   mp_cs_pin->set();
   mp_ldac_pin->clear();
   mp_clr_pin->clear();
   mp_reset_pin->set();
-  
+
   m_timer.start();
 
-  mp_buf[m_options_pos] = 
+  mp_buf[m_options_pos] =
     (0 << m_rbuf_bit_pos) |//1
     (1 << m_opgnd_bit_pos) |
     (1 << m_dactri_bit_pos) |
     (0 << m_bin2sc_bit_pos) |
     (1 << m_sdodis_bit_pos);
   mp_buf[m_lin_comp_pos] = 0;
-  irs_u32* voltage_code = 
+  irs_u32* voltage_code =
     reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
   *voltage_code = a_default_value;
 }
@@ -2022,13 +2181,13 @@ void irs::dac_ad5791_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   bool valid_data = (a_index < m_size) && (a_index != m_status_pos) && ap_buf;
-  if (valid_data) {  
+  if (valid_data) {
     irs_u8 size = static_cast<irs_u8>(a_size);
     irs_u8 index = static_cast<irs_u8>(a_index);
     if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
     memcpy(
       reinterpret_cast<void*>(mp_buf + index),
-      reinterpret_cast<const void*>(ap_buf), 
+      reinterpret_cast<const void*>(ap_buf),
       size);
     if (index == m_options_pos || index == m_lin_comp_pos) {
       m_need_write_options = true;
@@ -2051,7 +2210,7 @@ void irs::dac_ad5791_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
     memcpy(
       reinterpret_cast<void*>(ap_buf),
-      reinterpret_cast<void*>(mp_buf + a_index), 
+      reinterpret_cast<void*>(mp_buf + a_index),
       size);
   }
   return;
@@ -2069,7 +2228,7 @@ irs_bool irs::dac_ad5791_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 
 void irs::dac_ad5791_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
-  bool valid_data = 
+  bool valid_data =
     (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
   if (valid_data) {
     irs_u8 index = static_cast<irs_u8>(a_index);
@@ -2087,7 +2246,7 @@ void irs::dac_ad5791_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 
 void irs::dac_ad5791_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
-  bool valid_data = 
+  bool valid_data =
     (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
   if (valid_data) {
     irs_u8 index = static_cast<irs_u8>(a_index);
@@ -2107,7 +2266,7 @@ void irs::dac_ad5791_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 void irs::dac_ad5791_t::tick()
 {
   mp_spi->tick();
-  
+
   switch (m_status) {
     case st_reset: {
       if (m_timer.check()) {
@@ -2129,7 +2288,7 @@ void irs::dac_ad5791_t::tick()
       break;
     }
     case st_prepare_voltage_code: {
-      irs_u32 voltage_code = 
+      irs_u32 voltage_code =
         *reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
       irs_u8 master_byte =
         static_cast<irs_u8>(voltage_code >> m_master_byte_shift);
@@ -2192,6 +2351,703 @@ void irs::dac_ad5791_t::tick()
   }
 }
 
+//-------------------------- AD5686 -------------------------------------------
+
+// class dac_ad5686_t
+irs::dac_ad5686_t::dac_ad5686_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_channels(4),
+  m_current_channel(0),
+  m_process(process_reset)
+{
+  memset(reinterpret_cast<void*>(mp_buf), 0, buf_size);
+  mp_cs_pin->set();
+
+
+  /*mp_buf[0] = (command_software_reset << 4) | 0;
+  while (mp_spi->get_lock() || (mp_spi->get_status() != irs::spi_t::FREE)) {
+    mp_spi->tick();
+  }
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+  mp_cs_pin->clear();
+  mp_spi->lock();
+  mp_spi->write(mp_buf, buf_size);
+
+  while (mp_spi->get_status() != irs::spi_t::FREE) {
+    mp_spi->tick();
+  }
+  mp_cs_pin->set();
+  mp_spi->unlock();          */
+}
+
+irs::dac_ad5686_t::~dac_ad5686_t()
+{
+}
+
+irs_status_t irs::dac_ad5686_t::get_status() const
+{
+  if (m_process == process_request) {
+    for (size_type i = 0; i < m_channels.size(); i++) {
+      if (m_channels[i].new_value_exists) {
+        return irs_st_busy;
+      }
+    }
+    return irs_st_ready;
+  }
+  return irs_st_busy;
+}
+
+size_t irs::dac_ad5686_t::get_resolution() const
+{
+  return resolution;
+}
+
+void irs::dac_ad5686_t::set_u32_data(size_t a_channel, const irs_u32 a_data)
+{
+  m_channels[a_channel].value =
+    static_cast<sample_type>(a_data >> (32 - resolution));
+  m_channels[a_channel].new_value_exists = true;
+}
+
+void irs::dac_ad5686_t::tick()
+{
+  mp_spi->tick();
+  switch (m_process) {
+    case process_reset: {
+      if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
+        mp_buf[0] = (command_software_reset << command_shift) | 0;
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_cs_pin->clear();
+        mp_spi->lock();
+        mp_spi->write(mp_buf, buf_size);
+        m_process = process_write;
+      }
+    } break;
+    case process_request: {
+      if (m_channels[m_current_channel].new_value_exists) {
+        m_channels[m_current_channel].new_value_exists = false;
+        irs_u8 write_to_and_update_channel = 3;
+        irs_u8 address = static_cast<irs_u8>(1 << m_current_channel);
+        irs_u8 header = static_cast<irs_u8>(
+          (write_to_and_update_channel << command_shift) | address);
+        mp_buf[0] = header;
+        irs_u16 value = m_channels[m_current_channel].value;
+        irs_u16 dac_value = 0;
+        IRS_HIBYTE(dac_value) = IRS_FIRSTBYTE(value);
+        IRS_LOBYTE(dac_value) = IRS_SECONDBYTE(value);
+        reinterpret_cast<irs_u16&>(mp_buf[1]) = dac_value;
+      }
+      m_current_channel++;
+      if (m_current_channel >= m_channels.size()) {
+        m_current_channel = 0;
+      }
+      m_process = process_free;
+    } break;
+    case process_free: {
+      if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_cs_pin->clear();
+        mp_spi->lock();
+        mp_spi->write(mp_buf, buf_size);
+        m_process = process_write;
+      }
+    } break;
+    case process_write: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        m_process = process_request;
+      }
+    } break;
+  }
+}
+
+//-------------------------- AD7794 -------------------------------------------
+irs::adc_ad7794_t::adc_ad7794_t(spi_t *ap_spi,
+  gpio_pin_t *ap_cs_pin):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_status(meas_status_busy),
+  m_mode(mode_free),
+  m_spi_transaction_size(0),
+  m_reg(),
+  m_read_all_reg(false),
+  m_count_init(0),
+  m_shift(0),
+  m_read_data(false),
+  m_conv_time_vector(),
+  m_freq(0),
+  m_reserved_interval(1),
+  m_timer(make_cnt_ms(m_reserved_interval)),
+  m_ready_wait(false),
+  m_get_data(false),
+  m_value(0),
+  m_read_mode(om_continuous),
+  m_cur_read_mode(om_continuous),
+  mp_value_param(IRS_NULL),
+  m_read_calibration_coeff(false)
+{
+  memset(mp_buf, 0, m_size_buf);
+  memset(mp_spi_buf, 0xFF, m_write_buf_size);
+
+  m_conv_time_vector.push_back(m_reserved_interval);    //  0:  reserve
+  m_conv_time_vector.push_back(to_int(1000/470.0 + 1)); //  1:  470 Hz
+  m_conv_time_vector.push_back(to_int(1000/242.0 + 1)); //  2:  242 Hz
+  m_conv_time_vector.push_back(to_int(1000/123.0 + 1)); //  3:  123 Hz
+  m_conv_time_vector.push_back(to_int(1000/62.0 + 1));  //  4:  62 Hz
+  m_conv_time_vector.push_back(to_int(1000/50.0 + 1));  //  5:  50 Hz
+  m_conv_time_vector.push_back(to_int(1000/39.0 + 1));  //  6:  39 Hz
+  m_conv_time_vector.push_back(to_int(1000/33.2 + 1));  //  7:  33.2 Hz
+  m_conv_time_vector.push_back(to_int(1000/19.6 + 1));  //  8:  19.6 Hz
+  m_conv_time_vector.push_back(to_int(1000/16.7 + 1));  //  9:  16.7 Hz
+  m_conv_time_vector.push_back(to_int(1000/16.7 + 1));  // 10:  16.7 Hz
+  m_conv_time_vector.push_back(to_int(1000/12.5 + 1));  // 11:  12.5 Hz
+  m_conv_time_vector.push_back(to_int(1000/10.0 + 1));  // 12:  10 Hz
+  m_conv_time_vector.push_back(to_int(1000/8.33 + 1));  // 13:  8.33 Hz
+  m_conv_time_vector.push_back(to_int(1000/6.25 + 1));  // 14:  6.25 Hz
+  m_conv_time_vector.push_back(to_int(1000/4.17 + 1));  // 15:  4.17 Hz
+
+  m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
+  m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
+  m_reg.push_back(reg_t(m_reg_conf_index, m_reg_conf_size));
+  m_reg.push_back(reg_t(m_reg_data_index, m_reg_data_size));
+  m_reg.push_back(reg_t(m_reg_id_index, m_reg_id_size));
+  m_reg.push_back(reg_t(m_reg_io_index, m_reg_io_size));
+  m_reg.push_back(reg_t(m_reg_offs_index, m_reg_offs_size));
+  m_reg.push_back(reg_t(m_reg_fs_index, m_reg_fs_size));
+
+  mp_cs_pin->set();
+
+  m_mode = mode_spi_rw;
+  m_read_all_reg = true;
+  m_spi_transaction_size = m_write_buf_size;
+}
+irs::adc_ad7794_t::~adc_ad7794_t()
+{
+}
+void irs::adc_ad7794_t::start()
+{
+  m_cur_read_mode = m_read_mode;
+  creation_reg(m_reg[m_reg_mode_index], m_cur_read_mode,
+    m_mode_byte_pos, m_mode_pos, m_mode_size);
+  switch(m_cur_read_mode) {
+    case om_idle:
+    case om_power_down: {
+      m_read_data = false;
+    } break;
+    default: {
+      m_read_data = true;
+    } break;
+  }
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::stop()
+{
+  set_mode(adc_mode_power_down);
+  start();
+}
+meas_status_t irs::adc_ad7794_t::status() const
+{
+  return m_status;
+}
+void irs::adc_ad7794_t::set_channel(int a_channel)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_channel,
+    m_ch_byte_pos, m_ch_pos, m_ch_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_mode(int a_mode)
+{
+  m_read_mode = static_cast<operating_modes_t>(a_mode);
+}
+void irs::adc_ad7794_t::set_freq(int a_freq)
+{
+  m_freq = static_cast<irs_u8>(a_freq);
+  creation_reg(m_reg[m_reg_mode_index], m_freq,
+    m_freq_byte_pos, m_freq_pos, m_freq_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_gain(int a_gain)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_gain,
+    m_gain_byte_pos, m_gain_pos, m_gain_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_buf(int a_buf)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_buf,
+    m_buf_byte_pos, m_buf_pos, m_buf_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_ref_det(int a_ref_det)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_ref_det,
+    m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_ub(int a_ub)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_ub,
+    m_ub_byte_pos, m_ub_pos, m_ub_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+void irs::adc_ad7794_t::set_bo(int a_bo)
+{
+  creation_reg(m_reg[m_reg_conf_index], a_bo,
+    m_bo_byte_pos, m_bo_pos, m_bo_size);
+  m_mode = mode_spi_rw;
+  m_status = meas_status_busy;
+}
+irs_i32 irs::adc_ad7794_t::get_value()
+{
+  if ((m_cur_read_mode == om_continuous) && m_read_data) {
+    m_status = meas_status_busy;
+  }
+  return m_value;
+}
+
+void irs::adc_ad7794_t::set_param(adc_param_t a_param, const int a_value)
+{
+  switch(a_param) {
+    case adc_mode: {
+      set_mode(a_value);
+    } break;
+    case adc_gain: {
+      set_gain(a_value);
+    } break;
+    case adc_channel: {
+      set_channel(a_value);
+    } break;
+    case adc_freq: {
+      set_freq(a_value);
+    } break;
+    case adc_buf: {
+      set_buf(a_value);
+    } break;
+    case adc_ref_det: {
+      set_ref_det(a_value);
+    } break;
+    case adc_unipolar: {
+      set_ub(a_value);
+    } break;
+    case adc_burnout: {
+      set_bo(a_value);
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
+    } break;
+  }
+}
+
+void irs::adc_ad7794_t::get_param(adc_param_t a_param, int* ap_value)
+{
+  mp_value_param = ap_value;
+  switch(a_param) {
+    case adc_mode: {
+      *mp_value_param = m_read_mode;
+    } break;
+    case adc_gain: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_gain_byte_pos, m_gain_pos, m_gain_size);
+    } break;
+    case adc_channel: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_ch_byte_pos, m_ch_pos, m_ch_size);
+    } break;
+    case adc_freq: {
+      *mp_value_param = get(m_reg[m_reg_mode_index],
+        m_freq_byte_pos, m_freq_pos, m_freq_size);
+    } break;
+    case adc_buf: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_buf_byte_pos, m_buf_pos, m_buf_size);
+    } break;
+    case adc_ref_det: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
+    } break;
+    case adc_unipolar: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_ub_byte_pos, m_ub_pos, m_ub_size);
+    } break;
+    case adc_burnout: {
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_bo_byte_pos, m_bo_pos, m_bo_size);
+    } break;
+    case adc_offset: {
+      m_read_data = false;
+      m_read_calibration_coeff = true;
+      creation_reg_comm(m_reg[m_reg_offs_index], tt_read);
+      m_mode = mode_spi_rw;
+      m_status = meas_status_busy;
+    } break;
+    case adc_full_scale: {
+      m_read_data = false;
+      m_read_calibration_coeff = true;
+      creation_reg_comm(m_reg[m_reg_fs_index], tt_read);
+      m_mode = mode_spi_rw;
+      m_status = meas_status_busy;
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Попытка считать несуществующий параметр");
+    } break;
+  }
+}
+void irs::adc_ad7794_t::tick()
+{
+  mp_spi->tick();
+  switch(m_mode) {
+    case mode_free: {
+    } break;
+    case mode_spi_rw: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        spi_prepare();
+        mp_spi->read_write(mp_spi_buf, mp_spi_buf, m_spi_transaction_size);
+        if (m_read_data) {
+          m_mode = mode_read_wait;
+        } else {
+          m_mode = mode_spi_rw_wait;
+        }
+      }
+    } break;
+    case mode_read_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        spi_release();
+        if (m_ready_wait) {
+          m_mode = mode_ready_wait;
+        } else if (m_get_data) {
+          m_mode = mode_get_data;
+        } else {
+          m_mode = mode_read_data;
+          m_timer.set(make_cnt_ms
+            (2*m_conv_time_vector[m_freq] + m_reserved_interval));
+        }
+      }
+    } break;
+    case mode_ready_wait: {
+      bool is_unready =
+        (mp_spi_buf[m_reg_comm_size] &
+        static_cast<irs_u8>(1 << m_ready_pos));
+      if (!is_unready) {
+        m_ready_wait = false;
+        switch(m_cur_read_mode) {
+          case om_internal_zero_scale:
+          case om_internal_full_scale:
+          case om_system_zero_scale:
+          case om_system_full_scale: {
+            m_mode = mode_free;
+            m_status = meas_status_success;
+          } break;
+          case om_continuous:
+          case om_single: {
+            creation_reg_comm(m_reg[m_reg_data_index], tt_read);
+            m_mode = mode_spi_rw;
+            m_get_data = true;
+          } break;
+          default: {
+            IRS_ASSERT_MSG("Проверка статуса в "
+              "недопустимом для этого режиме ацп");
+          } break;
+        }
+      } else {
+        m_mode = mode_read_data;
+        m_timer.set(make_cnt_ms(2*m_conv_time_vector[m_freq]));
+      }
+    } break;
+    case mode_get_data: {
+      m_get_data = false;
+      if (m_cur_read_mode == om_single) {
+        m_mode = mode_free;
+        //m_read_data = false;
+      } else if (m_cur_read_mode == om_continuous) {
+        m_mode = mode_read_data;
+        m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq]));
+      } else {
+        IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
+      }
+      m_value = conversion_spi_value();      
+      m_status = meas_status_success;
+    } break;
+    case mode_read_data: {
+      if (m_timer.check()) {
+        m_ready_wait = true;
+        creation_reg_comm(m_reg[m_reg_status_index], tt_read);
+        m_mode = mode_spi_rw;
+      }
+    } break;
+    case mode_spi_rw_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        spi_release();
+        if (m_read_all_reg) {
+          m_mode = mode_read_all_reg;
+        } else {
+          if (m_read_calibration_coeff) {
+            m_read_calibration_coeff = false;
+            *mp_value_param = conversion_spi_value();
+          }
+          m_mode = mode_free;
+          m_status = meas_status_success;
+        }
+      }
+    } break;
+    case mode_read_all_reg: {
+      if (m_count_init != 0) {
+        memcpy(mp_buf + m_shift,
+          mp_spi_buf + m_reg_comm_size, m_reg[m_count_init-1].size);
+        m_shift += m_reg[m_count_init-1].size;
+      }
+      if (m_count_init < m_reg.size()) {
+        if (m_reg[m_count_init].index != m_reg_data_index) {
+          creation_reg_comm(m_reg[m_count_init], tt_read);
+          m_mode = mode_spi_rw;
+        }
+        m_count_init++;
+      } else {
+        m_read_all_reg = false;
+        set_gain(0);
+      }
+    } break;
+  }
+  if (m_spi_transaction_size > m_write_buf_size) {
+    IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
+  }
+}
+void irs::adc_ad7794_t::spi_prepare()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+  mp_spi->lock();
+  mp_cs_pin->clear();
+}
+void irs::adc_ad7794_t::spi_release()
+{
+  mp_cs_pin->set();
+  mp_spi->unlock();
+}
+
+void irs::adc_ad7794_t::creation_reg_comm(reg_t a_reg,
+  transaction_type_t a_tt)
+{
+  memset(mp_spi_buf, 0, m_write_buf_size);
+  mp_spi_buf[m_reg_comm_index] |=
+    static_cast<irs_u8>(a_reg.index << m_rs_pos);
+  switch(a_tt) {
+    case tt_read: {
+      mp_spi_buf[m_reg_comm_index] |= static_cast<irs_u8>(1 << m_rw_pos);
+    } break;
+    case tt_write: {
+      mp_spi_buf[m_reg_comm_index] &= ~static_cast<irs_u8>(1 << m_rw_pos);
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Недопустимый transaction_type");
+    } break;
+  }
+  m_spi_transaction_size = a_reg.size + m_reg_comm_size;
+}
+
+int irs::adc_ad7794_t::calculation_shift(reg_t a_reg)
+{
+  int shift = 0;
+  for(int i = 0; i < a_reg.index; i++) {
+    shift += m_reg[i].size;
+  }
+  return shift;
+}
+int irs::adc_ad7794_t::calculation_number_byte(reg_t a_reg,
+  param_byte_pos_t byte_pos)
+{
+  //из за того что обратный порядок байт
+  int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8;
+  return number_byte;
+}
+
+int irs::adc_ad7794_t::to_int(double a_number)
+{
+  return static_cast<int>(ceil(a_number));
+}
+
+int irs::adc_ad7794_t::filling_units(param_size_t a_size)
+{
+  return static_cast<int>(pow(2.0, a_size) - 1);
+}
+
+void irs::adc_ad7794_t::creation_reg(reg_t a_reg, int a_value,
+  param_byte_pos_t a_byte_pos, param_pos_t a_pos,
+  param_size_t a_size)
+{
+  m_read_data = false;
+  creation_reg_comm(a_reg, tt_write);
+  int shift = calculation_shift(a_reg);
+  int number_byte = calculation_number_byte(a_reg,
+    a_byte_pos);
+  mp_buf[shift + number_byte] = static_cast<irs_u8>(
+    mp_buf[shift + number_byte] &
+    ~static_cast<irs_u8>(filling_units(a_size) << a_pos));
+  mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_value << a_pos);
+  for (int i = 0; i < a_reg.size; i++) {
+    mp_spi_buf[i + m_reg[m_reg_comm_index].size] =
+      mp_buf[shift + i];
+  }
+}
+
+int irs::adc_ad7794_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos,
+  param_pos_t a_pos, param_size_t a_size)
+{
+  int shift = calculation_shift(a_reg);
+  int number_byte = calculation_number_byte(a_reg,
+    a_byte_pos);
+  irs_u8 value_shift =
+    static_cast<irs_u8>(mp_buf[shift + number_byte] >> a_pos);
+  irs_u8 mask = static_cast<irs_u8>(filling_units(a_size));
+  int value = value_shift & mask;
+  return value;
+}
+
+irs_i32 irs::adc_ad7794_t::conversion_spi_value()
+{
+  mp_get_buff[2] = mp_spi_buf[1];
+  mp_get_buff[1] = mp_spi_buf[2];
+  mp_get_buff[0] = mp_spi_buf[3];
+  irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);  
+  int unipolar =
+    get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
+  value = (value << 8);
+  if (unipolar == 0) {    
+    value = value - 0x80000000;
+  }
+  return value;
+}
+
+// class cyclic_adc_ad7794_t
+irs::cyclic_adc_ad7794_t::cyclic_adc_ad7794_t(
+  spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+  select_channel_type a_selected_channels,
+  counter_t a_read_delay,
+  bool a_unipolar,
+  freq_t a_freq
+):
+  m_adc(ap_spi, ap_cs_pin),
+  m_params(),
+  m_current_param(0),
+  m_channels(),
+  m_current_channel(0),
+  m_process(process_set_param),
+  m_timer(a_read_delay)
+{
+  //select_channel_type channel_name = ch_first;
+
+  vector<channel_name_t> names;
+  names.push_back(ch_1);
+  names.push_back(ch_2);
+  names.push_back(ch_3);
+  names.push_back(ch_4);
+  names.push_back(ch_5);
+  names.push_back(ch_6);
+  names.push_back(ch_temp_sensor);
+  names.push_back(ch_avdd_monitor);
+  names.push_back(ch_0);
+  
+  for (size_type i = 0; i < names.size(); i++) {
+    if (a_selected_channels & names[i]) {
+      channel_t channel;
+      channel.index = i;
+      m_channels.push_back(channel);
+    }
+  }
+
+  const int unipolar_code = a_unipolar ? 1 : 0;
+  m_params.push_back(parameter_t(irs::adc_unipolar, unipolar_code));
+  m_params.push_back(parameter_t(irs::adc_gain, 0));
+  m_params.push_back(parameter_t(irs::adc_mode, 
+    irs::adc_mode_single_conversion));  
+  m_params.push_back(parameter_t(irs::adc_freq, a_freq));
+}
+
+irs::cyclic_adc_ad7794_t::size_type
+irs::cyclic_adc_ad7794_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
+bool irs::cyclic_adc_ad7794_t::new_value_exists(irs_u8 a_channel) const
+{
+  if (static_cast<size_type>(a_channel) >= m_channels.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_channels[a_channel].new_value_exists;
+}
+
+irs_u32 irs::cyclic_adc_ad7794_t::get_u32_data(irs_u8 a_channel)
+{
+  if (static_cast<size_type>(a_channel) >= m_channels.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_channels[a_channel].value;
+}
+
+void irs::cyclic_adc_ad7794_t::tick()
+{
+  m_adc.tick();
+  switch (m_process) {
+    case process_set_param: {
+      if (m_adc.status() == meas_status_success) {
+        if (m_current_param < m_params.size()) {
+          const parameter_t param = m_params[m_current_param];
+          m_adc.set_param(param.name, param.value);
+          m_current_param++;
+        } else {
+          m_process = process_select_channel;
+        }
+      }
+    } break;
+    case process_select_channel: {
+      if (m_timer.check()) {
+        if (!m_channels.empty()) {
+          const channel_t& channel = m_channels[m_current_channel];          
+          m_adc.set_param(adc_channel, channel.index);
+          m_process = process_read_value;
+        }
+      }
+    } break;
+    case process_read_value: {
+      if (m_adc.status() == meas_status_success) {
+        m_adc.start();
+        m_process = process_wait_read_value;
+      }
+    } break;
+    case process_wait_read_value: {
+      if (m_adc.status() == meas_status_success) {
+        m_channels[m_current_channel].value = m_adc.get_value();
+        m_channels[m_current_channel].new_value_exists = true;
+        if (m_channels.size() > 1) {
+          m_current_channel++;
+          if (m_current_channel >= m_channels.size()) {
+            m_current_channel = 0;
+          }
+          m_process = process_select_channel;
+        } else {
+          m_process = process_read_value;
+        }
+      }
+    } break;
+  }
+}
+
 //--------------------------- AD7799 -------------------------------------------
 irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   gpio_pin_t *ap_cs_pin):
@@ -2219,7 +3075,7 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
 {
   memset(mp_buf, 0, m_size_buf);
   memset(mp_spi_buf, 0xFF, m_write_buf_size);
-  
+
   m_conv_time_vector.push_back(m_reserved_interval);    //  0:  reserve
   m_conv_time_vector.push_back(to_int(1000/500. + 1));  //  1:  500 Hz
   m_conv_time_vector.push_back(to_int(1000/250. + 1));  //  2:  250 Hz
@@ -2236,7 +3092,7 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_conv_time_vector.push_back(to_int(1000/8.33 + 1));  // 13:  8.33 Hz
   m_conv_time_vector.push_back(to_int(1000/6.25 + 1));  // 14:  6.25 Hz
   m_conv_time_vector.push_back(to_int(1000/4.17 + 1));  // 15:  4.17 Hz
-  
+
   m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
   m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
   m_reg.push_back(reg_t(m_reg_conf_index, m_reg_conf_size));
@@ -2245,9 +3101,9 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
   m_reg.push_back(reg_t(m_reg_io_index, m_reg_io_size));
   m_reg.push_back(reg_t(m_reg_offs_index, m_reg_offs_size));
   m_reg.push_back(reg_t(m_reg_fs_index, m_reg_fs_size));
-  
+
   mp_cs_pin->set();
-  
+
   m_mode = mode_spi_rw;
   m_read_all_reg = true;
   m_spi_transaction_size = m_write_buf_size;
@@ -2255,93 +3111,93 @@ irs::adc_ad7799_t::adc_ad7799_t(spi_t *ap_spi,
 irs::adc_ad7799_t::~adc_ad7799_t()
 {
 }
-void irs::adc_ad7799_t::start() 
+void irs::adc_ad7799_t::start()
 {
   m_cur_read_mode = m_read_mode;
-  creation_reg(m_reg[m_reg_mode_index], m_cur_read_mode, 
+  creation_reg(m_reg[m_reg_mode_index], m_cur_read_mode,
     m_mode_byte_pos, m_mode_pos, m_mode_size);
   switch(m_cur_read_mode) {
     case om_idle:
     case om_power_down: {
-      m_read_data = false; 
+      m_read_data = false;
     } break;
     default: {
       m_read_data = true;
     } break;
   }
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy; 
+  m_status = meas_status_busy;
 }
 void irs::adc_ad7799_t::stop()
 {
   set_mode(adc_mode_power_down);
   start();
 }
-meas_status_t irs::adc_ad7799_t::status() const 
+meas_status_t irs::adc_ad7799_t::status() const
 {
   return m_status;
 }
-void irs::adc_ad7799_t::set_channel(int a_channel) 
+void irs::adc_ad7799_t::set_channel(int a_channel)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_channel, 
+  creation_reg(m_reg[m_reg_conf_index], a_channel,
     m_ch_byte_pos, m_ch_pos, m_ch_size);
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy;    
+  m_status = meas_status_busy;
 }
-void irs::adc_ad7799_t::set_mode(int a_mode) 
+void irs::adc_ad7799_t::set_mode(int a_mode)
 {
   m_read_mode = static_cast<operating_modes_t>(a_mode);
 }
 void irs::adc_ad7799_t::set_freq(int a_freq)
 {
   m_freq = static_cast<irs_u8>(a_freq);
-  creation_reg(m_reg[m_reg_mode_index], m_freq, 
+  creation_reg(m_reg[m_reg_mode_index], m_freq,
     m_freq_byte_pos, m_freq_pos, m_freq_size);
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy; 
+  m_status = meas_status_busy;
 }
-void irs::adc_ad7799_t::set_gain(int a_gain) 
+void irs::adc_ad7799_t::set_gain(int a_gain)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_gain, 
+  creation_reg(m_reg[m_reg_conf_index], a_gain,
     m_gain_byte_pos, m_gain_pos, m_gain_size);
   /*m_read_data = false;
   creation_reg_comm(m_reg[m_reg_conf_index], tt_write);
   int shift = calculation_shift(m_reg[m_reg_conf_index]);
-  int number_byte = calculation_number_byte(m_reg[m_reg_conf_index], 
+  int number_byte = calculation_number_byte(m_reg[m_reg_conf_index],
     m_gain_byte_pos);
   mp_buf[shift + number_byte]  &= ~static_cast<irs_u8>((0x7) << m_gain_pos);
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_gain << m_gain_pos);
   for (int i = 0; i < m_reg[m_reg_conf_index].size; i++) {
-    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] = 
+    mp_spi_buf[m_reg_comm_index + i + m_reg[m_reg_comm_index].size] =
       mp_buf[shift + i];
   }*/
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy;    
+  m_status = meas_status_busy;
 }
 void irs::adc_ad7799_t::set_buf(int a_buf)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_buf, 
+  creation_reg(m_reg[m_reg_conf_index], a_buf,
     m_buf_byte_pos, m_buf_pos, m_buf_size);
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy;    
+  m_status = meas_status_busy;
 }
 void irs::adc_ad7799_t::set_ref_det(int a_ref_det)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_ref_det, 
+  creation_reg(m_reg[m_reg_conf_index], a_ref_det,
     m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy; 
+  m_status = meas_status_busy;
 }
 void irs::adc_ad7799_t::set_ub(int a_ub)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_ub, 
+  creation_reg(m_reg[m_reg_conf_index], a_ub,
     m_ub_byte_pos, m_ub_pos, m_ub_size);
   m_mode = mode_spi_rw;
-  m_status = meas_status_busy;  
+  m_status = meas_status_busy;
 }
 void irs::adc_ad7799_t::set_bo(int a_bo)
 {
-  creation_reg(m_reg[m_reg_conf_index], a_bo, 
+  creation_reg(m_reg[m_reg_conf_index], a_bo,
     m_bo_byte_pos, m_bo_pos, m_bo_size);
   m_mode = mode_spi_rw;
   m_status = meas_status_busy;
@@ -2358,28 +3214,28 @@ void irs::adc_ad7799_t::set_param(adc_param_t a_param, const int a_value)
 {
   switch(a_param) {
     case adc_mode: {
-      set_mode(a_value);  
+      set_mode(a_value);
     } break;
     case adc_gain: {
-      set_gain(a_value);  
+      set_gain(a_value);
     } break;
     case adc_channel: {
-      set_channel(a_value);  
-    } break; 
+      set_channel(a_value);
+    } break;
     case adc_freq: {
-      set_freq(a_value);  
+      set_freq(a_value);
     } break;
     case adc_buf: {
-      set_buf(a_value);  
+      set_buf(a_value);
     } break;
     case adc_ref_det: {
-      set_ref_det(a_value);  
+      set_ref_det(a_value);
     } break;
     case adc_unipolar: {
-      set_ub(a_value);  
-    } break; 
+      set_ub(a_value);
+    } break;
     case adc_burnout: {
-      set_bo(a_value);  
+      set_bo(a_value);
     } break;
     default: {
       IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
@@ -2390,39 +3246,39 @@ void irs::adc_ad7799_t::set_param(adc_param_t a_param, const int a_value)
 void irs::adc_ad7799_t::get_param(adc_param_t a_param, int* ap_value)
 {
   mp_value_param = ap_value;
-  switch(a_param) {  
+  switch(a_param) {
     case adc_mode: {
-      /**mp_value_param = get(m_reg[m_reg_mode_index], 
+      /**mp_value_param = get(m_reg[m_reg_mode_index],
         m_mode_byte_pos, m_mode_pos, m_mode_size);*/
       *mp_value_param = m_read_mode;
     } break;
     case adc_gain: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
+      *mp_value_param = get(m_reg[m_reg_conf_index],
         m_gain_byte_pos, m_gain_pos, m_gain_size);
     } break;
     case adc_channel: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
+      *mp_value_param = get(m_reg[m_reg_conf_index],
         m_ch_byte_pos, m_ch_pos, m_ch_size);
-    } break; 
+    } break;
     case adc_freq: {
-      *mp_value_param = get(m_reg[m_reg_mode_index], 
+      *mp_value_param = get(m_reg[m_reg_mode_index],
         m_freq_byte_pos, m_freq_pos, m_freq_size);
     } break;
     case adc_buf: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
+      *mp_value_param = get(m_reg[m_reg_conf_index],
         m_buf_byte_pos, m_buf_pos, m_buf_size);
     } break;
     case adc_ref_det: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
+      *mp_value_param = get(m_reg[m_reg_conf_index],
         m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
     } break;
     case adc_unipolar: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
+      *mp_value_param = get(m_reg[m_reg_conf_index],
         m_ub_byte_pos, m_ub_pos, m_ub_size);
-    } break; 
+    } break;
     case adc_burnout: {
-      *mp_value_param = get(m_reg[m_reg_conf_index], 
-        m_bo_byte_pos, m_bo_pos, m_bo_size);   
+      *mp_value_param = get(m_reg[m_reg_conf_index],
+        m_bo_byte_pos, m_bo_pos, m_bo_size);
     } break;
     case adc_offset: {
       m_read_data = false;
@@ -2431,7 +3287,7 @@ void irs::adc_ad7799_t::get_param(adc_param_t a_param, int* ap_value)
       m_mode = mode_spi_rw;
       m_status = meas_status_busy;
     } break;
-    case adc_full_scale: {      
+    case adc_full_scale: {
       m_read_data = false;
       m_read_calibration_coeff = true;
       creation_reg_comm(m_reg[m_reg_fs_index], tt_read);
@@ -2470,13 +3326,13 @@ void irs::adc_ad7799_t::tick()
         } else {
           m_mode = mode_read_data;
           m_timer.set(make_cnt_ms
-            (2*m_conv_time_vector[m_freq] + m_reserved_interval)); 
+            (2*m_conv_time_vector[m_freq] + m_reserved_interval));
         }
       }
     } break;
     case mode_ready_wait: {
-      bool is_unready = 
-        (mp_spi_buf[m_reg_comm_size] & 
+      bool is_unready =
+        (mp_spi_buf[m_reg_comm_size] &
         static_cast<irs_u8>(1 << m_ready_pos));
       if (!is_unready) {
         m_ready_wait = false;
@@ -2495,14 +3351,14 @@ void irs::adc_ad7799_t::tick()
             m_get_data = true;
           } break;
           default: {
-            IRS_ASSERT_MSG("Проверка статуса в " 
+            IRS_ASSERT_MSG("Проверка статуса в "
               "недопустимом для этого режиме ацп");
           } break;
         }
       } else {
         m_mode = mode_read_data;
-        m_timer.set(make_cnt_ms(2*m_conv_time_vector[m_freq]));  
-      }  
+        m_timer.set(make_cnt_ms(2*m_conv_time_vector[m_freq]));
+      }
     } break;
     case mode_get_data: {
       m_get_data = false;
@@ -2511,7 +3367,7 @@ void irs::adc_ad7799_t::tick()
         //m_read_data = false;
       } else if (m_cur_read_mode == om_continuous) {
         m_mode = mode_read_data;
-        m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq])); 
+        m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq]));
       } else {
         IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
       }
@@ -2523,26 +3379,26 @@ void irs::adc_ad7799_t::tick()
         m_ready_wait = true;
         creation_reg_comm(m_reg[m_reg_status_index], tt_read);
         m_mode = mode_spi_rw;
-      } 
+      }
     } break;
     case mode_spi_rw_wait: {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         spi_release();
         if (m_read_all_reg) {
-          m_mode = mode_read_all_reg; 
+          m_mode = mode_read_all_reg;
         } else {
           if (m_read_calibration_coeff) {
             m_read_calibration_coeff = false;
             *mp_value_param = conversion_spi_value();
-          } 
+          }
           m_mode = mode_free;
           m_status = meas_status_success;
         }
-      } 
+      }
     } break;
     case mode_read_all_reg: {
       if (m_count_init != 0) {
-        memcpy(mp_buf + m_shift, 
+        memcpy(mp_buf + m_shift,
           mp_spi_buf + m_reg_comm_size, m_reg[m_count_init-1].size);
         m_shift += m_reg[m_count_init-1].size;
       }
@@ -2560,7 +3416,7 @@ void irs::adc_ad7799_t::tick()
   }
   if (m_spi_transaction_size > m_write_buf_size) {
     IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
-  }  
+  }
 }
 void irs::adc_ad7799_t::spi_prepare()
 {
@@ -2576,11 +3432,11 @@ void irs::adc_ad7799_t::spi_release()
   mp_spi->unlock();
 }
 
-void irs::adc_ad7799_t::creation_reg_comm(reg_t a_reg, 
+void irs::adc_ad7799_t::creation_reg_comm(reg_t a_reg,
   transaction_type_t a_tt)
 {
   memset(mp_spi_buf, 0, m_write_buf_size);
-  mp_spi_buf[m_reg_comm_index] |= 
+  mp_spi_buf[m_reg_comm_index] |=
     static_cast<irs_u8>(a_reg.index << m_rs_pos);
   switch(a_tt) {
     case tt_read: {
@@ -2591,63 +3447,63 @@ void irs::adc_ad7799_t::creation_reg_comm(reg_t a_reg,
     } break;
     default: {
       IRS_ASSERT_MSG("Недопустимый transaction_type");
-    } break; 
+    } break;
   }
-  m_spi_transaction_size = a_reg.size + m_reg_comm_size;  
+  m_spi_transaction_size = a_reg.size + m_reg_comm_size;
 }
 
 int irs::adc_ad7799_t::calculation_shift(reg_t a_reg)
 {
   int shift = 0;
   for(int i = 0; i < a_reg.index; i++) {
-    shift += m_reg[i].size;   
+    shift += m_reg[i].size;
   }
   return shift;
 }
-int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg, 
+int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg,
   param_byte_pos_t byte_pos)
 {
   //из за того что обратный порядок байт
-  int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8; 
+  int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8;
   return number_byte;
-}  
+}
 
 int irs::adc_ad7799_t::to_int(double a_number)
 {
-  return static_cast<int>(ceil(a_number));   
+  return static_cast<int>(ceil(a_number));
 }
 
 int irs::adc_ad7799_t::filling_units(param_size_t a_size)
 {
-  return static_cast<int>(pow(2.0, a_size) - 1);  
+  return static_cast<int>(pow(2.0, a_size) - 1);
 }
 
-void irs::adc_ad7799_t::creation_reg(reg_t a_reg, int a_value, 
-  param_byte_pos_t a_byte_pos, param_pos_t a_pos, 
+void irs::adc_ad7799_t::creation_reg(reg_t a_reg, int a_value,
+  param_byte_pos_t a_byte_pos, param_pos_t a_pos,
   param_size_t a_size)
 {
   m_read_data = false;
   creation_reg_comm(a_reg, tt_write);
   int shift = calculation_shift(a_reg);
-  int number_byte = calculation_number_byte(a_reg, 
+  int number_byte = calculation_number_byte(a_reg,
     a_byte_pos);
   mp_buf[shift + number_byte] = static_cast<irs_u8>(
     mp_buf[shift + number_byte] &
     ~static_cast<irs_u8>(filling_units(a_size) << a_pos));
   mp_buf[shift + number_byte]  |= static_cast<irs_u8>(a_value << a_pos);
   for (int i = 0; i < a_reg.size; i++) {
-    mp_spi_buf[i + m_reg[m_reg_comm_index].size] = 
+    mp_spi_buf[i + m_reg[m_reg_comm_index].size] =
       mp_buf[shift + i];
   }
 }
 
-int irs::adc_ad7799_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos, 
+int irs::adc_ad7799_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos,
   param_pos_t a_pos, param_size_t a_size)
 {
   int shift = calculation_shift(a_reg);
-  int number_byte = calculation_number_byte(a_reg, 
+  int number_byte = calculation_number_byte(a_reg,
     a_byte_pos);
-  irs_u8 value_shift = 
+  irs_u8 value_shift =
     static_cast<irs_u8>(mp_buf[shift + number_byte] >> a_pos);
   irs_u8 mask = static_cast<irs_u8>(filling_units(a_size));
   int value = value_shift & mask;
@@ -2660,10 +3516,10 @@ irs_i32 irs::adc_ad7799_t::conversion_spi_value()
   mp_get_buff[1] = mp_spi_buf[2];
   mp_get_buff[0] = mp_spi_buf[3];
   irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);
-  int unipolar = 
+  int unipolar =
     get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
   if (unipolar == 1) {
-    value = (value << 7);
+    value = (value << 7); // Наверно надо сдвигать на 8!
   } else if (unipolar == 0) {
     value = (value << 8);
     value = value - 0x80000000;
@@ -2672,13 +3528,13 @@ irs_i32 irs::adc_ad7799_t::conversion_spi_value()
 }
 
 
-irs::dac_8531_t::dac_8531_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, 
+irs::dac_8531_t::dac_8531_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   float a_init_data):
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
   m_data(0),
   m_new_data(0),
-  m_mode(mode_free)  
+  m_mode(mode_free)
 {
   memset(mp_spi_buf, 0, write_buf_size);
   mp_cs_pin->set();
@@ -2760,7 +3616,7 @@ void irs::dac_8531_t::tick()
 
 //------------------------------------------------------------------------------
 
-irs::dac_1220_t::dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, 
+irs::dac_1220_t::dac_1220_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   float a_init_data, counter_t a_startup_pause
 ):
   mp_spi(ap_spi),
@@ -2820,10 +3676,10 @@ void irs::dac_1220_t::tick()
     break;
   case st_write_command:
     mp_spi_buf[m_cmd_pos] = m_command_reg_write_command;
-    mp_spi_buf[m_data_pos + 0] = 
+    mp_spi_buf[m_data_pos + 0] =
       (0 << cmr_adpt) | (0 << cmr_calpin) | (1 << cmr_write1) | (0 << cmr_crst);
-    mp_spi_buf[m_data_pos + 1] = 
-      (1 << cmr_res) | (0 << cmr_clr) | (1 << cmr_df) | (1 << cmr_disf) | 
+    mp_spi_buf[m_data_pos + 1] =
+      (1 << cmr_res) | (0 << cmr_clr) | (1 << cmr_df) | (1 << cmr_disf) |
       (0 << cmr_bd) | (0 << cmr_msb) | (0 << cmr_md1) | (0 << cmr_md0);
     m_write_buf_size = m_command_reg_size;
     m_status = st_prepare_spi;

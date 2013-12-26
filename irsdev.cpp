@@ -697,24 +697,33 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   cpu_traits_t::frequency_type a_frequency,
   float a_duty
 ):
+  m_started(false),
+  m_channels(),
   m_gpio_channel(a_gpio_channel),
   mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_address)),
   m_frequency(a_frequency),
-  m_duty(a_duty),
-  mp_tim_ccr(0),
   m_timer_channel(0),
   m_complementary_gpio_channel(PNONE),
   m_break_gpio_channel(PNONE)
 {
-  clock_enable(a_gpio_channel);
-  gpio_moder_alternate_function_enable(a_gpio_channel);
+  /*channel_t channel;
+  channel.duty = a_duty;
+  channel.main_channel = a_gpio_channel;
+  channel.timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+  channel.tim_ccr = get_tim_ccr_register(channel.main_channel);
+  m_channels.push_back(channel);
+  */
+  //clock_enable(a_gpio_channel);
+  //gpio_moder_alternate_function_enable(a_gpio_channel);
   clock_enable(a_timer_address);
   // 0: Counter used as upcounter
   mp_timer->TIM_CR1_bit.DIR = 0;
   mp_timer->TIM_ARR = timer_frequency()/a_frequency;
-  get_timer_channel_and_select_alternate_function_for_main_channel();
-  get_tim_ccr_register();
-  set_mode_capture_compare_registers(ocm_force_inactive_level);
+  //get_timer_channel_and_select_alternate_function_for_main_channel();
+  //get_tim_ccr_register();
+  //set_mode_capture_compare_registers(ocm_force_inactive_level); //  !!!???
+  stop();
   // 1: TIMx_ARR register is buffered
   mp_timer->TIM_CR1_bit.ARPE = 1;
   // 1: Re-initialize the counter and generates an update of the registers.
@@ -724,8 +733,178 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
     mp_timer->TIM_BDTR_bit.OSSI = 1;
   }
   mp_timer->TIM_CR1_bit.CEN = 1;
+  channel_enable(a_gpio_channel);
+  set_duty(a_gpio_channel, a_duty);
 }
 
+#ifdef NEW_ST_PWM_GEN
+irs_u32 irs::arm::st_pwm_gen_t::
+get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
+{
+  irs_u32 timer_channel = 0;
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  switch (a_gpio_channel) {
+     case PA0: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL0 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA5: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL5 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA7: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL7 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA8: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRH_bit.AFRH8 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA10: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 3;
+        GPIOA_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB0: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRL_bit.AFRL0 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB6: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRL_bit.AFRL6 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB8: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH8 = 2;
+      } else if (timer_address == IRS_TIM10_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH8 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB9: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH9 = 2;
+      } else if (timer_address == IRS_TIM11_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH9 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB10: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB11: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH11 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PC6: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 1;
+        GPIOC_AFRL_bit.AFRL6 = 2;
+      } else if (timer_address == IRS_TIM8_PWM2_BASE) {
+        timer_channel = 1;
+        GPIOC_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PC7: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 2;
+        GPIOC_AFRL_bit.AFRL7 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE6: {
+      if (timer_address == IRS_TIM9_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE8: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRH_bit.AFRH8 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE9: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRH_bit.AFRH9 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE10: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE11: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRH_bit.AFRH11 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
+        "порта и таймера");
+    }
+  }
+  return timer_channel;
+}
+#else // !NEW_ST_PWM_GEN
 void irs::arm::st_pwm_gen_t::
 get_timer_channel_and_select_alternate_function_for_main_channel()
 {
@@ -836,7 +1015,14 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
-
+    } break;
+     case PE9: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        m_timer_channel = 1;
+        GPIOE_AFRH_bit.AFRH9 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
@@ -844,7 +1030,8 @@ get_timer_channel_and_select_alternate_function_for_main_channel()
     }
   }
 }
-
+#endif // !NEW_ST_PWM_GEN
+#ifndef NEW_ST_PWM_GEN
 void irs::arm::st_pwm_gen_t::
 select_alternate_function_for_complementary_channel()
 {
@@ -857,6 +1044,12 @@ select_alternate_function_for_complementary_channel()
             IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
           }
           GPIOA_AFRL_bit.AFRL7 = 1;
+        } break;
+        case PE8: {
+          if (m_timer_channel != 1) {
+            IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+          }
+          GPIOE_AFRH_bit.AFRH8 = 1;
         } break;
         default: {
           IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
@@ -880,6 +1073,7 @@ select_alternate_function_for_complementary_channel()
     }
   }
 }
+#endif // !NEW_ST_PWM_GEN
 
 void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
 {
@@ -889,6 +1083,9 @@ void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
       switch (m_break_gpio_channel) {
         case PA6: {
           GPIOA_AFRL_bit.AFRL6 = 1;
+        } break;
+        case PE15: {
+          GPIOE_AFRH_bit.AFRH15 = 1;
         } break;
         default: {
           IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
@@ -910,50 +1107,68 @@ void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
   }
 }
 
-void irs::arm::st_pwm_gen_t::get_tim_ccr_register()
+irs_u32* irs::arm::st_pwm_gen_t::get_tim_ccr_register(irs_u32 a_timer_channel)
 {
-  switch (m_timer_channel) {
+  irs_u32* tim_ccr;
+  switch (a_timer_channel) {
     case 1: {
-      mp_tim_ccr = &mp_timer->TIM_CCR1;
+      tim_ccr = &mp_timer->TIM_CCR1;
     } break;
     case 2: {
-      mp_tim_ccr = &mp_timer->TIM_CCR2;
+      tim_ccr = &mp_timer->TIM_CCR2;
     } break;
     case 3: {
-      mp_tim_ccr = &mp_timer->TIM_CCR3;
+      tim_ccr = &mp_timer->TIM_CCR3;
     } break;
     case 4: {
-      mp_tim_ccr = &mp_timer->TIM_CCR4;
+      tim_ccr = &mp_timer->TIM_CCR4;
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимый канал");
     } break;
   }
+  return tim_ccr;
+}
+
+irs::arm::st_pwm_gen_t::channel_t*
+irs::arm::st_pwm_gen_t::find_channel(irs_u32 a_timer_channel)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if (channel->timer_channel == a_timer_channel) {
+      return channel;
+    }
+  }
+  return NULL;
+}
+
+void irs::arm::st_pwm_gen_t::
+set_mode_capture_compare_registers_for_all_channels(
+  output_compare_mode_t a_mode)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    set_mode_capture_compare_registers(a_mode, &m_channels[i]);
+  }
 }
 
 void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
-  output_compare_mode_t a_mode)
+  output_compare_mode_t a_mode, channel_t* ap_channel)
 {
-  const irs_u32 CCR_value = static_cast<irs_u32>(
-    m_duty*get_max_duty()/*timer_frequency()/m_frequency*/);
   const irs_u32 OCxM_value = a_mode;
   // Output Compare preload enable
   const irs_u32 OCxPE_value = 1;
   // 0: OC1 active high
-  const irs_u32 CCxP_value = 0;
+  const irs_u32 CCxP_value = ap_channel->main_channel_active_low ? 1 : 0;
   // 1: On - OCx signal is output on the corresponding output pin
-  const irs_u32 CCxE_value = 1;
+  const irs_u32 CCxE_value = (ap_channel->main_channel == PNONE) ? 0 : 1;
   // 0: OC1N active high.
-  const irs_u32 CCxNP_value = 0;
+  const irs_u32 CCxNP_value =
+    ap_channel->complementary_channel_active_low ? 1 : 0;
   // 0: Off - OC1N is not active
-  irs_u32 CCxNE_value = 0;
-  if (m_complementary_gpio_channel != PNONE) {
-    CCxNE_value = 1;
-  }
-  switch (m_timer_channel) {
+  irs_u32 CCxNE_value = (ap_channel->complementary_channel == PNONE) ? 0 : 1;
+
+  switch (ap_channel->timer_channel) {
     case 1: {
-      mp_tim_ccr = &mp_timer->TIM_CCR1;
-      mp_timer->TIM_CCR1 = CCR_value;
       mp_timer->TIM_CCMR1_bit.OC1M = OCxM_value;
       mp_timer->TIM_CCMR1_bit.OC1PE = OCxPE_value;
       mp_timer->TIM_CCER_bit.CC1P = CCxP_value;
@@ -962,8 +1177,6 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
       mp_timer->TIM_CCER_bit.CC1NE = CCxNE_value;
     } break;
     case 2: {
-      mp_tim_ccr = &mp_timer->TIM_CCR2;
-      mp_timer->TIM_CCR2 = CCR_value;
       mp_timer->TIM_CCMR1_bit.OC2M = OCxM_value;
       mp_timer->TIM_CCMR1_bit.OC2PE = OCxPE_value;
       mp_timer->TIM_CCER_bit.CC2P = CCxP_value;
@@ -972,8 +1185,6 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
       mp_timer->TIM_CCER_bit.CC2NE = CCxNE_value;
     } break;
     case 3: {
-      mp_tim_ccr = &mp_timer->TIM_CCR3;
-      mp_timer->TIM_CCR3 = CCR_value;
       mp_timer->TIM_CCMR2_bit.OC3M = OCxM_value;
       mp_timer->TIM_CCMR2_bit.OC3PE = OCxPE_value;
       mp_timer->TIM_CCER_bit.CC3P = CCxP_value;
@@ -982,8 +1193,6 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
       mp_timer->TIM_CCER_bit.CC3NE = CCxNE_value;
     } break;
     case 4: {
-      mp_tim_ccr = &mp_timer->TIM_CCR4;
-      mp_timer->TIM_CCR4 = CCR_value;
       mp_timer->TIM_CCMR2_bit.OC4M = OCxM_value;
       mp_timer->TIM_CCMR2_bit.OC4PE = OCxPE_value;
       mp_timer->TIM_CCER_bit.CC4P = CCxP_value;
@@ -995,7 +1204,8 @@ void irs::arm::st_pwm_gen_t::set_mode_capture_compare_registers(
   }
 }
 
-irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::timer_frequency()
+irs::cpu_traits_t::frequency_type
+irs::arm::st_pwm_gen_t::timer_frequency() const
 {
   const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
   return cpu_traits_t::timer_frequency(timer_address);
@@ -1003,11 +1213,12 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::timer_frequency()
 
 void irs::arm::st_pwm_gen_t::start()
 {
-  set_mode_capture_compare_registers(ocm_pwm_mode_1);
+  set_mode_capture_compare_registers_for_all_channels(ocm_pwm_mode_1);
   if ((reinterpret_cast<size_t>(mp_timer) == IRS_TIM1_PWM1_BASE) ||
     (reinterpret_cast<size_t>(mp_timer) == IRS_TIM8_PWM2_BASE)) {
     mp_timer->TIM_BDTR_bit.MOE = 1;
   }
+  m_started = true;
 }
 
 void irs::arm::st_pwm_gen_t::stop()
@@ -1017,18 +1228,60 @@ void irs::arm::st_pwm_gen_t::stop()
     mp_timer->TIM_BDTR_bit.MOE = 0;
 
   }
-  set_mode_capture_compare_registers(ocm_force_inactive_level);
+  set_mode_capture_compare_registers_for_all_channels(ocm_force_inactive_level);
+  m_started = false;
 }
 
 void irs::arm::st_pwm_gen_t::set_duty(irs_uarc a_duty)
 {
-  *mp_tim_ccr = static_cast<irs_u32>(a_duty);
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty);
+  }
 }
 
 void irs::arm::st_pwm_gen_t::set_duty(float a_duty)
 {
-  m_duty = a_duty;
-  *mp_tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+  }
+}
+
+void irs::arm::st_pwm_gen_t::set_duty(gpio_channel_t a_gpio_channel,
+  irs_uarc a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if ((channel->main_channel == a_gpio_channel) ||
+        (channel->complementary_channel == a_gpio_channel)) {
+      set_duty_register(channel->tim_ccr, a_duty);
+      break;
+    }
+  }
+}
+
+void irs::arm::st_pwm_gen_t::set_duty(gpio_channel_t a_gpio_channel,
+  float a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if ((channel->main_channel == a_gpio_channel) ||
+        (channel->complementary_channel == a_gpio_channel)) {
+      set_duty_register(channel->tim_ccr, a_duty);
+      break;
+    }
+  }
+}
+
+void irs::arm::st_pwm_gen_t::set_duty_register(irs_u32* ap_tim_ccr,
+  irs_uarc a_duty)
+{
+  *ap_tim_ccr = static_cast<irs_u32>(a_duty);
+}
+
+void irs::arm::st_pwm_gen_t::set_duty_register(irs_u32* ap_tim_ccr,
+  float a_duty)
+{
+  *ap_tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
 }
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
@@ -1036,6 +1289,11 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
 {
   m_frequency = a_frequency;
   mp_timer->TIM_ARR = timer_frequency()/a_frequency;
+  return timer_frequency()/mp_timer->TIM_ARR;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_frequency() const
+{
   return timer_frequency()/mp_timer->TIM_ARR;
 }
 
@@ -1075,14 +1333,153 @@ void irs::arm::st_pwm_gen_t::break_enable(gpio_channel_t a_gpio_channel,
   mp_timer->TIM_SR_bit.BIF = 0;
 }
 
+void irs::arm::st_pwm_gen_t::channel_enable(gpio_channel_t a_gpio_channel)
+{
+  channel_enable_helper(a_gpio_channel, false);
+  /*
+  clock_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+  //channel.duty = 0;
+  channel.main_channel = a_gpio_channel;
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  set_duty_register(channel.tim_ccr, a_duty);
+
+  m_channels.push_back(channel);
+  if (m_started) {
+    set_mode_capture_compare_registers(ocm_pwm_mode_1, &m_channels.back());
+  } else {
+    set_mode_capture_compare_registers(ocm_force_inactive_level,
+      &m_channels.back());
+  }*/
+}
+
 void irs::arm::st_pwm_gen_t::complementary_channel_enable(
   gpio_channel_t a_gpio_channel)
 {
+  channel_enable_helper(a_gpio_channel, true);
+  /*clock_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+  //m_complementary_gpio_channel = a_gpio_channel;
+  //select_alternate_function_for_complementary_channel();
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+
+  channel.complementary_channel = a_gpio_channel;
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  set_duty_register(channel.tim_ccr, 0.f);
+
+  m_channels.push_back(channel);
+
+  if (m_started) {
+    set_mode_capture_compare_registers(ocm_pwm_mode_1, &m_channels.back());
+  } else {
+    set_mode_capture_compare_registers(ocm_force_inactive_level,
+      &m_channels.back());
+  }*/
+}
+
+void irs::arm::st_pwm_gen_t::channel_enable_helper(
+  gpio_channel_t a_gpio_channel, bool a_complementary)
+{
   clock_enable(a_gpio_channel);
   gpio_moder_alternate_function_enable(a_gpio_channel);
-  m_complementary_gpio_channel = a_gpio_channel;
-  select_alternate_function_for_complementary_channel();
-  set_mode_capture_compare_registers(ocm_pwm_mode_1);
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+  if (a_complementary) {
+    channel.complementary_channel = a_gpio_channel;
+  } else {
+    channel.main_channel = a_gpio_channel;
+  }
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  if (!existing_channel) {
+    set_duty_register(channel.tim_ccr, 0.f);
+  }
+
+  set_mode_capture_compare_registers(ocm_pwm_mode_1, &channel);
+  /*if (m_started) {
+
+  } else {
+    set_mode_capture_compare_registers(ocm_force_inactive_level, &channel);
+  }*/
+  if (existing_channel) {
+    *existing_channel = channel;
+  } else {
+    m_channels.push_back(channel);
+  }
+}
+
+void irs::arm::st_pwm_gen_t::set_dead_time(float a_time)
+{
+  const double dead_time = a_time;
+
+  const double t_dtg = 1./timer_frequency();
+
+  const double step_1 = t_dtg;
+  const irs_u8 DTG_6_0_max = 127;
+  const double max_1 = DTG_6_0_max*step_1;
+
+
+  const double step_2 = t_dtg*2;
+  const irs_u8 DTG_5_0_max = 63;
+  const irs_u8 step_count_min_2 = 64;
+  const double max_2 = (step_count_min_2 + DTG_5_0_max)*step_2;
+
+
+  const irs_u8 DTG_4_0_max = 31;
+  const double step_3 = t_dtg*8;
+  const irs_u8 step_count_min_3 = 32;
+  const double max_3 = (step_count_min_3 + DTG_4_0_max)*step_3;
+
+
+  const double step_4 = t_dtg*16;
+  const irs_u8 step_count_min_4 = 32;
+
+
+  if (dead_time <= max_1) {
+    const irs_u8 value = irs::round<double, irs_u8>(dead_time/step_1);
+    mp_timer->TIM_BDTR_bit.DTG = min(value, DTG_6_0_max);
+  } else if (dead_time <= max_2) {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_2-step_count_min_2);
+    mp_timer->TIM_BDTR_bit.DTG = (4 << 5) | min(value, DTG_5_0_max);
+  } else if (dead_time <= max_3) {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_3-step_count_min_3);
+    mp_timer->TIM_BDTR_bit.DTG = (6 << 5) | min(value, DTG_4_0_max);
+  } else {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_4-step_count_min_4);
+    mp_timer->TIM_BDTR_bit.DTG = (7 << 5) | min(value, DTG_4_0_max);
+  }
 }
 
 // class st_watchdog_timer_t
@@ -1217,28 +1614,28 @@ void irs::arm::st_window_watchdog_t::clear_reset_status()
 // class st_rtc_t
 irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
 
-irs::arm::st_rtc_t::st_rtc_t(clock_source_t a_clock_source)  
+irs::arm::st_rtc_t::st_rtc_t(clock_source_t a_clock_source)
 {
   mp_st_rtc = this;
-  
+
   irs_u32 bkp_data_reg_init[rtc_bkp_dr_number] =
   {
-    RTC_BKP_DR0, RTC_BKP_DR1, RTC_BKP_DR2, 
+    RTC_BKP_DR0, RTC_BKP_DR1, RTC_BKP_DR2,
     RTC_BKP_DR3, RTC_BKP_DR4, RTC_BKP_DR5,
-    RTC_BKP_DR6, RTC_BKP_DR7, RTC_BKP_DR8, 
-    RTC_BKP_DR9, RTC_BKP_DR10, RTC_BKP_DR11, 
-    RTC_BKP_DR12, RTC_BKP_DR13, RTC_BKP_DR14, 
-    RTC_BKP_DR15, RTC_BKP_DR16, RTC_BKP_DR17, 
+    RTC_BKP_DR6, RTC_BKP_DR7, RTC_BKP_DR8,
+    RTC_BKP_DR9, RTC_BKP_DR10, RTC_BKP_DR11,
+    RTC_BKP_DR12, RTC_BKP_DR13, RTC_BKP_DR14,
+    RTC_BKP_DR15, RTC_BKP_DR16, RTC_BKP_DR17,
     RTC_BKP_DR18,  RTC_BKP_DR19
   };
   memcpy(bkp_data_reg, bkp_data_reg_init, sizeof(bkp_data_reg_init));
-  
+
   // Enable the PWR clock
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-  
+
   PWR_BackupAccessCmd(ENABLE);
-  
-  if(RTC_ReadBackupRegister(RTC_BKP_DR0) != backup_first_data) {  
+
+  if(RTC_ReadBackupRegister(RTC_BKP_DR0) != backup_first_data) {
     rtc_config(a_clock_source);
   }
 }
@@ -1260,36 +1657,36 @@ irs::arm::st_rtc_t* irs::arm::st_rtc_t::get_instance()
 
 time_t irs::arm::st_rtc_t::get_time() const
 {
-  RTC_TimeTypeDef RTC_TimeStruct; 
-  RTC_DateTypeDef RTC_DateSrtruct;   
-  
-  RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);  
-  RTC_GetDate(RTC_Format_BIN, &RTC_DateSrtruct); 
-  
-  tm now_tm;  
-    
+  RTC_TimeTypeDef RTC_TimeStruct;
+  RTC_DateTypeDef RTC_DateSrtruct;
+
+  RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);
+  RTC_GetDate(RTC_Format_BIN, &RTC_DateSrtruct);
+
+  tm now_tm;
+
   now_tm.tm_hour = RTC_TimeStruct.RTC_Hours;
   now_tm.tm_min = RTC_TimeStruct.RTC_Minutes;
   now_tm.tm_sec = RTC_TimeStruct.RTC_Seconds;
- 
+
   now_tm.tm_mday = RTC_DateSrtruct.RTC_Date;
   now_tm.tm_mon = RTC_DateSrtruct.RTC_Month - RTC_Month_January;
-  now_tm.tm_year = RTC_DateSrtruct.RTC_Year + 100; 
+  now_tm.tm_year = RTC_DateSrtruct.RTC_Year + 100;
 
   now_tm.tm_isdst = 0;
-  
+
   now_tm.tm_wday = 0; // Не используется
-  now_tm.tm_yday = 0; // Не используется    
-  
+  now_tm.tm_yday = 0; // Не используется
+
   return mktime(&now_tm);
 }
 
 double irs::arm::st_rtc_t::get_time_double() const
 {
   #ifdef IRS_STM32F4xx
-  irs_u32 ms = 
-    1000 - ((irs_u32)((irs_u32)RTC_GetSubSecond()*1000)/(irs_u32)0x3FF); 
-  time_t s = get_time();  
+  irs_u32 ms =
+    1000 - ((irs_u32)((irs_u32)RTC_GetSubSecond()*1000)/(irs_u32)0x3FF);
+  time_t s = get_time();
   return s + ms/1000.;
   #else // !IRS_STM32F4xx
   return get_time();
@@ -1303,36 +1700,36 @@ void irs::arm::st_rtc_t::set_time(const time_t a_time)
   RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
   RTC_TimeStruct.RTC_Hours   = time_tm.tm_hour;
   RTC_TimeStruct.RTC_Minutes = time_tm.tm_min;
-  RTC_TimeStruct.RTC_Seconds = time_tm.tm_sec;  
+  RTC_TimeStruct.RTC_Seconds = time_tm.tm_sec;
   RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-  
+
   RTC_DateTypeDef RTC_DateSrtruct;
-  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;  
+  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;
   RTC_DateSrtruct.RTC_Date = time_tm.tm_mday;
   RTC_DateSrtruct.RTC_Month = time_tm.tm_mon + RTC_Month_January;
-  RTC_DateSrtruct.RTC_Year = time_tm.tm_year - 100;  
-  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);  
+  RTC_DateSrtruct.RTC_Year = time_tm.tm_year - 100;
+  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);
 }
 #ifdef IRS_STM32F4xx
 void irs::arm::st_rtc_t::set_calibration(double a_koefficient)
-{  
+{
   double calm_value = 0;
   irs_u32 rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Reset;
-  if (a_koefficient <= 1) {    
-    calm_value = (1 << 20)*(1/a_koefficient - 1);    
+  if (a_koefficient <= 1) {
+    calm_value = (1 << 20)*(1/a_koefficient - 1);
   } else {
     rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Set;
-    calm_value = (1 << 20)*(1/a_koefficient) - (1 << 20) + 512;    
+    calm_value = (1 << 20)*(1/a_koefficient) - (1 << 20) + 512;
   }
   const double max_cycles = 511.;
   calm_value = range(calm_value, 0., max_cycles);
   irs_u32 calm = round<double, irs_u32>(calm_value);
-  RTC_SmoothCalibConfig(RTC_SmoothCalibPeriod_32sec, 
-    rtc_smooth_calib_plus_pulses, calm);  
+  RTC_SmoothCalibConfig(RTC_SmoothCalibPeriod_32sec,
+    rtc_smooth_calib_plus_pulses, calm);
 }
 #else // !IRS_STM32F4xx
 void irs::arm::st_rtc_t::set_calibration(double)
-{  
+{
 }
 #endif // !IRS_STM32F4xx
 
@@ -1340,7 +1737,7 @@ double irs::arm::st_rtc_t::get_calibration() const
 {
   #ifdef IRS_STM32F4xx
   const int calp = RTC_CALR_bit.CALP;
-  const int calm = RTC_CALR_bit.CALM;    
+  const int calm = RTC_CALR_bit.CALM;
   return 1 + static_cast<double>(calp*512 - calm)/((1 << 20) + calm - calp*512);
   #else // !IRS_STM32F4xx
   return 1;
@@ -1356,7 +1753,7 @@ double irs::arm::st_rtc_t::get_calibration_coefficient_min() const
 double irs::arm::st_rtc_t::get_calibration_coefficient_max() const
 {
   const double max_positive_offset_ppm = 488.5;
-  return 1 + max_positive_offset_ppm/1e6; // 1.0004885 
+  return 1 + max_positive_offset_ppm/1e6; // 1.0004885
 }
 
 void irs::arm::st_rtc_t::rtc_config(clock_source_t a_clock_source)
@@ -1369,29 +1766,29 @@ void irs::arm::st_rtc_t::rtc_config(clock_source_t a_clock_source)
 
   /* Reset RTC Domain */
   RCC_BackupResetCmd(ENABLE);
-  RCC_BackupResetCmd(DISABLE);  
-  
+  RCC_BackupResetCmd(DISABLE);
+
   if (a_clock_source == clock_source_lsi) {
-    RCC_LSICmd(ENABLE);  
-    // Wait till LSI is ready  
+    RCC_LSICmd(ENABLE);
+    // Wait till LSI is ready
     while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET) {
-    }   
+    }
     // Select the RTC Clock Source
     RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
   } else {
     RCC_LSEConfig(RCC_LSE_ON);
-    // Wait till LSE is ready 
+    // Wait till LSE is ready
     while(RCC_GetFlagStatus(RCC_FLAG_LSERDY) == RESET) {
-    }  
+    }
     // Select the RTC Clock Source
     RCC_RTCCLKConfig(RCC_RTCCLKSource_LSE);
   }
 
   RCC_RTCCLKCmd(ENABLE);
-  
+
   RTC_AlarmCmd(RTC_Alarm_A, DISABLE);
   RTC_AlarmCmd(RTC_Alarm_B, DISABLE);
-  
+
   /* Configure the RTC data register and RTC prescaler */
   /* ck_spre(1Hz) = RTCCLK(LSI) /(AsynchPrediv + 1)*(SynchPrediv + 1)*/
 
@@ -1403,25 +1800,25 @@ void irs::arm::st_rtc_t::rtc_config(clock_source_t a_clock_source)
   if (status != SUCCESS) {
     irs::mlog() << "RTC_Init Error" << endl;
   }
-  
+
   /* Set the time to 00h 00mn 00s AM */
   RTC_TimeTypeDef  RTC_TimeStruct;
   RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
   RTC_TimeStruct.RTC_Hours   = 0;
   RTC_TimeStruct.RTC_Minutes = 0;
-  RTC_TimeStruct.RTC_Seconds = 0;  
+  RTC_TimeStruct.RTC_Seconds = 0;
   RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-  
+
   RTC_DateTypeDef RTC_DateSrtruct;
-  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;  
+  RTC_DateSrtruct.RTC_WeekDay = RTC_Weekday_Thursday;
   RTC_DateSrtruct.RTC_Date = 14;
   RTC_DateSrtruct.RTC_Month = RTC_Month_October;
-  RTC_DateSrtruct.RTC_Year = 13;  
-  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);  
-  
+  RTC_DateSrtruct.RTC_Year = 13;
+  RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);
+
   /*  Backup SRAM ***************************************************************/
   /* Enable BKPRAM Clock */
-  
+
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_BKPSRAM, ENABLE);
 
   /* Write to Backup SRAM with 32-Bit Data */
@@ -1465,7 +1862,7 @@ void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 {
   for (irs_u32 index = 0; index < rtc_bkp_dr_number; index++)
   {
-    RTC_WriteBackupRegister(bkp_data_reg[index], 
+    RTC_WriteBackupRegister(bkp_data_reg[index],
       a_first_backup_data + (index * 0x5A));
   }
 }
@@ -1499,6 +1896,43 @@ void irs::pwm_pin_t::clear()
 
 void irs::pwm_pin_t::set_dir(dir_t /*a_dir*/)
 {
+}
+
+// class decoder_t
+irs::decoder_t::decoder_t():
+  m_pins()
+{
+}
+
+/*#ifdef IRS_STM32F_2_AND_4
+void irs::decoder_t::add(gpio_channel_t a_channel)
+{
+  const size_t port_address = get_port_address(a_channel);
+  const irs_u32 pin_index = get_pin_index(a_channel);
+  m_pins.push_back(new irs::arm::io_pin_t(port_address, pin_index,
+    irs::io_t::dir_out));
+
+  add(new irs::arm::io_pin_t(port_address, pin_index, irs::io_t::dir_out));
+}
+#endif // IRS_STM32F_2_AND_4*/
+
+void irs::decoder_t::add(irs::handle_t<gpio_pin_t> ap_gpio_pin)
+{
+  m_pins.push_back(ap_gpio_pin);
+}
+
+void irs::decoder_t::select_pin(irs_u32 a_pin_index)
+{
+  const size_type count = min(m_pins.size(), sizeof(a_pin_index));
+  irs_u32 code = 1;
+  for (size_type i = 0; i < count; i++) {
+    code <<= i;
+    if (a_pin_index & code) {
+      m_pins[i]->set();
+    } else {
+      m_pins[i]->clear();
+    }
+  }
 }
 
 #endif  //  __ICCARM__

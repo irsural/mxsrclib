@@ -40,9 +40,11 @@ public:
   interrupt_array_empty_t();
 
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
+  virtual generator_events_t* int_gen_events(size_type a_index);
   virtual void exec_event(size_type a_index);
 private:
-  irs_int_event_gen_t m_gen;
+  irs_int_event_gen_t m_event_gen;
+  generator_events_t m_gen_events;
 };
 
 } //namespace irs
@@ -135,7 +137,7 @@ void irs::event_t::exec()
 bool irs::event_t::check()
 {
   bool prev_occurred = m_occurred;
-  m_occurred = irs_false;
+  m_occurred = false;
   return prev_occurred;
 }
 void irs::event_t::reset()
@@ -176,6 +178,7 @@ void mxfact_event_t::connect(mxfact_event_t *&a_event)
   fp_prev_event = a_event;
   a_event = this;
 }
+
 void mxfact_event_t::add(irs_action_t *a_action)
 {
   a_action->connect(fp_action);
@@ -183,14 +186,21 @@ void mxfact_event_t::add(irs_action_t *a_action)
 
 // Пустая реализация работы с прерываниями
 irs::interrupt_array_empty_t::interrupt_array_empty_t():
-  m_gen()
+  m_event_gen(),
+  m_gen_events()
 {
 }
 irs_int_event_gen_t*
   irs::interrupt_array_empty_t::int_event_gen(size_type /*a_index*/)
 {
-  return &m_gen;
+  return &m_event_gen;
 }
+irs::generator_events_t*
+irs::interrupt_array_empty_t::int_gen_events(size_type /*a_index*/)
+{
+  return &m_gen_events;
+}
+
 void irs::interrupt_array_empty_t::exec_event(size_type /*a_index*/)
 {
 }
@@ -214,8 +224,12 @@ irs::interrupt_array_t::interrupt_array_t(gen_index_type a_interrupt_count,
 ):
   m_int_event_gen_indexes(static_cast<size_t>(a_interrupt_count),
     static_cast<gen_index_type>(interrupt_none)),
-  m_int_event_gens(),
-  m_int_event_index(interrupt_none)
+  m_int_event_gens(1),
+  m_int_event_index(interrupt_none),
+  m_int_gen_events_indexes(static_cast<size_t>(a_interrupt_count),
+    static_cast<gen_index_type>(interrupt_none)),
+  m_generators_events(1),
+  m_int_gen_event_index(interrupt_none)
 {
   m_int_event_gens.reserve(a_reserve_interrupt_count);
 }
@@ -233,9 +247,26 @@ irs_int_event_gen_t*
   }
   return &m_int_event_gens[gen_index];
 }
+irs::generator_events_t*
+irs::interrupt_array_t::int_gen_events(size_type a_index)
+{
+  gen_index_type& gen_index = m_int_gen_events_indexes[a_index];
+  if (gen_index == interrupt_none) {
+    // Создаем генератор прерываний для номера прерывания "a_index"
+    m_int_gen_event_index++;
+    m_generators_events.resize(m_int_gen_event_index + 1);
+    gen_index = m_int_gen_event_index;
+  } else {
+    // Генератор прерываний для номера прерывания "a_index" уже существует
+  }
+  return &m_generators_events[gen_index];
+}
+
 void irs::interrupt_array_t::exec_event(size_type a_index)
 {
-  gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
-  m_int_event_gens[gen_index].exec();
+  gen_index_type& event_gen_index = m_int_event_gen_indexes[a_index];
+  m_int_event_gens[event_gen_index].exec();
+  gen_index_type& gen_event_index = m_int_gen_events_indexes[a_index];
+  m_generators_events[gen_event_index].exec();
 }
 
