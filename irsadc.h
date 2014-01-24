@@ -380,6 +380,7 @@ class dac_ad8400_t : public mxdata_t
   static const irs_uarc m_size = 2;
   static const irs_u8 m_packet_size = 2;
   irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buffer[m_packet_size];
   irs_u8 m_init_value;
   bool m_need_write;
   //  CS
@@ -418,6 +419,21 @@ struct dac_ad8400_data_t
   }
 };
 
+class simple_dac_ad8400_t: public dac_t
+{
+public:
+  simple_dac_ad8400_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    irs_u8 a_init_value);
+  virtual irs_status_t get_status() const;
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual void tick();
+private:
+  enum { dac_resulution = 8 };
+  dac_ad8400_t m_dac_ad8400;
+  dac_ad8400_data_t m_dac_ad8400_data;
+};
+
 //--------------------------  AD7376  ------------------------------------------
 // Цифровой потенциометр 8 бит
 
@@ -436,6 +452,7 @@ class dac_ad7376_t : public mxdata_t
   static const irs_u8 m_rs_bit_position = 1;
   static const irs_u8 m_shdn_bit_position = 2;
   irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buffer[m_packet_size];
   irs_u8 m_init_value;
   bool m_need_write;
   bool m_need_reset;
@@ -498,6 +515,7 @@ class dac_max551_t : public mxdata_t
   static const irs_uarc m_size = 3;
   static const irs_u8 m_packet_size = 2;
   irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buffer[m_packet_size];
   irs_u16 m_init_value;
   bool m_need_write;
   bool m_need_reset;
@@ -1113,6 +1131,20 @@ struct dac_ad5293_data_t
     irs_uarc index = a_start_index;
     index = resistance_code.connect(ap_data, index);
   }
+};
+
+class simple_dac_ad5293_t: public dac_t
+{
+public:
+  simple_dac_ad5293_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin);
+  virtual irs_status_t get_status() const { return irs_st_ready; }
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual void tick();
+private:
+  enum { dac_resulution = 10 };
+  dac_ad5293_t m_dac_ad5293;
+  dac_ad5293_data_t m_dac_ad5293_data;
 };
 
 //--------------------------- AD5791 -------------------------------------------

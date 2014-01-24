@@ -920,7 +920,7 @@ void irs::arm::arm_spi_t::tick()
       if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
         if (mp_write_buf != IRS_NULL) {
           mp_spi_regs->SPI_DR =
-            mp_write_buf[m_write_buf_index*m_data_item_byte_count];
+            mp_write_buf[m_write_buf_index*m_data_item_byte_count];          
         } else {
           mp_spi_regs->SPI_DR = 0;
         }

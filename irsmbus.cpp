@@ -2379,7 +2379,8 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   if (hold_registers_size_byte != 0)
   {
     size_t front_idx = hold_registers_start_byte/2;
-    size_t back_idx = front_idx + (hold_registers_size_byte - 1)/2;
+    size_t back_idx = (hold_registers_start_byte +
+      hold_registers_size_byte - 1)/2;
     m_hold_regs_reg_write[front_idx] = m_hold_regs_reg_read[front_idx];
     m_hold_regs_reg_write[back_idx] = m_hold_regs_reg_read[back_idx];
 

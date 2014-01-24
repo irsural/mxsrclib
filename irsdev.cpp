@@ -1925,13 +1925,13 @@ void irs::decoder_t::select_pin(irs_u32 a_pin_index)
 {
   const size_type count = min(m_pins.size(), sizeof(a_pin_index));
   irs_u32 code = 1;
-  for (size_type i = 0; i < count; i++) {
-    code <<= i;
+  for (size_type i = 0; i < count; i++) {    
     if (a_pin_index & code) {
       m_pins[i]->set();
     } else {
       m_pins[i]->clear();
     }
+    code <<= 1;
   }
 }
 

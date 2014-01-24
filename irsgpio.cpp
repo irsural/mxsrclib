@@ -16,6 +16,15 @@
 #include <irsfinal.h>
 
 // class gpio_pin_t:
+void irs::gpio_pin_t::pin(bool a_pin)
+{
+  if (a_pin) {
+    set();
+  } else {
+    clear();
+  }
+}
+
 void irs::gpio_pin_t::set_state(io_pin_value_t a_value)
 {
   if (a_value == io_pin_on) {

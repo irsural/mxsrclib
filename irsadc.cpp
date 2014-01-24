@@ -437,9 +437,9 @@ void irs::adc_ad7683_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 }
 
 void irs::adc_ad7683_t::tick()
-{  
+{
   mp_spi->tick();
-  
+
   /*static double max_time = 0;
   double time2 = 0;
   static irs::loop_timer_t timer2(irs::make_cnt_s(5));
@@ -465,7 +465,7 @@ void irs::adc_ad7683_t::tick()
       break;
     }
   case ADC_READ:
-    {      
+    {
       if (mp_spi->get_status() == irs::spi_t::FREE)
       {
         m_connect = true;
@@ -481,12 +481,12 @@ void irs::adc_ad7683_t::tick()
         mp_cs_pin->set();
         mp_spi->unlock();
         m_status = ADC_FREE;
-        
+
         /*time2 = time.get();
-        max_time = max(max_time, time2);    
+        max_time = max(max_time, time2);
         if (timer2.check()) {
           IRS_LIB_DBG_MSG("adc tick max_time " << max_time);
-          IRS_LIB_DBG_MSG("adc tick time " << time2);              
+          IRS_LIB_DBG_MSG("adc tick time " << time2);
         }
         */
       }
@@ -699,6 +699,7 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_need_write(false),
   mp_cs_pin(ap_cs_pin)
 {
+  memset(mp_write_buffer, 0, sizeof(mp_write_buffer));
   if (mp_spi && mp_cs_pin)
   {
     mp_buf[0] = 0;
@@ -709,8 +710,10 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     irs_u8 mp_write_buffer[m_packet_size];
     mp_write_buffer[0] = 0;
     mp_write_buffer[1] = m_init_value;
+    mp_spi->lock();
     mp_spi->write(mp_write_buffer, m_packet_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    mp_spi->unlock();
     mp_cs_pin->set();
   }
 }
@@ -793,7 +796,6 @@ void irs::dac_ad8400_t::tick()
       {
         if (!mp_spi->get_lock())
         {
-          irs_u8 mp_write_buffer[m_packet_size];
           mp_write_buffer[0] = 0;
           mp_write_buffer[1] = mp_buf[1];
           mp_cs_pin->clear();
@@ -819,6 +821,42 @@ void irs::dac_ad8400_t::tick()
   }
 }
 
+// class simple_dac_ad8400_t
+irs::simple_dac_ad8400_t::simple_dac_ad8400_t(spi_t* ap_spi,
+  gpio_pin_t* ap_cs_pin, irs_u8 a_init_value):
+  m_dac_ad8400(ap_spi, ap_cs_pin, a_init_value),
+  m_dac_ad8400_data(&m_dac_ad8400)
+{
+}
+
+irs_status_t irs::simple_dac_ad8400_t::get_status() const
+{
+  if (m_dac_ad8400_data.ready_bit) {
+    return irs_st_ready;
+  }
+  return irs_st_busy;
+}
+
+size_t irs::simple_dac_ad8400_t::get_resolution() const
+{
+  return dac_resulution;
+}
+
+void irs::simple_dac_ad8400_t::set_u32_data(
+  size_t a_channel, const irs_u32 a_data)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  m_dac_ad8400_data.resistance_code = (a_data >> (32 - dac_resulution));
+}
+
+void irs::simple_dac_ad8400_t::tick()
+{
+  m_dac_ad8400.tick();
+}
+
+
 //--------------------------  AD7376  ------------------------------------------
 // Цифровой потенциометр 8 бит
 
@@ -834,6 +872,7 @@ irs::dac_ad7376_t::dac_ad7376_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_shdn_pin(ap_shdn_pin),
   timerdelay(irs::make_cnt_s(0.000001))
 {
+  memset(mp_write_buffer, 0, sizeof(mp_write_buffer));
   if (mp_spi && mp_cs_pin && mp_rs_pin && mp_shdn_pin)
   {
     init_to_cnt();
@@ -938,7 +977,6 @@ void irs::dac_ad7376_t::tick()
       {
         if (!mp_spi->get_lock())
         {
-          irs_u8 mp_write_buffer[m_packet_size];
           mp_write_buffer[0] = mp_buf[1];
           mp_cs_pin->clear();
           mp_spi->lock();
@@ -978,6 +1016,7 @@ irs::dac_max551_t::dac_max551_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   m_need_write(false),
   mp_cs_pin(ap_cs_pin)
 {
+  memset(mp_write_buffer, 0, sizeof(mp_write_buffer));
   if (mp_cs_pin)
   {
     mp_cs_pin->set();
@@ -1090,10 +1129,9 @@ void irs::dac_max551_t::tick()
           mp_spi->set_order(irs::spi_t::MSB);
           mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
           mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-          irs_u8 write_buffer[2];
-          write_buffer[0] = mp_buf[2];
-          write_buffer[1] = mp_buf[1];
-          mp_spi->write(write_buffer, m_packet_size);
+          mp_write_buffer[0] = mp_buf[2];
+          mp_write_buffer[1] = mp_buf[1];
+          mp_spi->write(mp_write_buffer, m_packet_size);
           m_status = DAC_WRITE;
           m_need_write = false;
         }
@@ -2126,6 +2164,33 @@ void irs::dac_ad5293_t::write_tick()
   }
 }
 
+// class simple_dac_ad5293_t
+irs::simple_dac_ad5293_t::simple_dac_ad5293_t(spi_t* ap_spi,
+  gpio_pin_t* ap_cs_pin):
+  m_dac_ad5293(ap_spi, ap_cs_pin),
+  m_dac_ad5293_data(&m_dac_ad5293)
+{
+}
+
+size_t irs::simple_dac_ad5293_t::get_resolution() const
+{
+  return dac_resulution;
+}
+
+void irs::simple_dac_ad5293_t::set_u32_data(
+  size_t a_channel, const irs_u32 a_data)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  m_dac_ad5293_data.resistance_code = (a_data >> (32 - dac_resulution));
+}
+
+void irs::simple_dac_ad5293_t::tick()
+{
+  m_dac_ad5293.tick();
+}
+
 //--------------------------- AD5791 -------------------------------------------
 irs::dac_ad5791_t::dac_ad5791_t(
   spi_t *ap_spi,
@@ -2441,12 +2506,12 @@ void irs::dac_ad5686_t::tick()
         IRS_HIBYTE(dac_value) = IRS_FIRSTBYTE(value);
         IRS_LOBYTE(dac_value) = IRS_SECONDBYTE(value);
         reinterpret_cast<irs_u16&>(mp_buf[1]) = dac_value;
+        m_process = process_free;
       }
       m_current_channel++;
       if (m_current_channel >= m_channels.size()) {
         m_current_channel = 0;
       }
-      m_process = process_free;
     } break;
     case process_free: {
       if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
@@ -2779,7 +2844,7 @@ void irs::adc_ad7794_t::tick()
       } else {
         IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
       }
-      m_value = conversion_spi_value();      
+      m_value = conversion_spi_value();
       m_status = meas_status_success;
     } break;
     case mode_read_data: {
@@ -2923,11 +2988,11 @@ irs_i32 irs::adc_ad7794_t::conversion_spi_value()
   mp_get_buff[2] = mp_spi_buf[1];
   mp_get_buff[1] = mp_spi_buf[2];
   mp_get_buff[0] = mp_spi_buf[3];
-  irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);  
+  irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);
   int unipolar =
     get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
   value = (value << 8);
-  if (unipolar == 0) {    
+  if (unipolar == 0) {
     value = value - 0x80000000;
   }
   return value;
@@ -2961,7 +3026,7 @@ irs::cyclic_adc_ad7794_t::cyclic_adc_ad7794_t(
   names.push_back(ch_temp_sensor);
   names.push_back(ch_avdd_monitor);
   names.push_back(ch_0);
-  
+
   for (size_type i = 0; i < names.size(); i++) {
     if (a_selected_channels & names[i]) {
       channel_t channel;
@@ -2973,8 +3038,8 @@ irs::cyclic_adc_ad7794_t::cyclic_adc_ad7794_t(
   const int unipolar_code = a_unipolar ? 1 : 0;
   m_params.push_back(parameter_t(irs::adc_unipolar, unipolar_code));
   m_params.push_back(parameter_t(irs::adc_gain, 0));
-  m_params.push_back(parameter_t(irs::adc_mode, 
-    irs::adc_mode_single_conversion));  
+  m_params.push_back(parameter_t(irs::adc_mode,
+    irs::adc_mode_single_conversion));
   m_params.push_back(parameter_t(irs::adc_freq, a_freq));
 }
 
@@ -3018,7 +3083,7 @@ void irs::cyclic_adc_ad7794_t::tick()
     case process_select_channel: {
       if (m_timer.check()) {
         if (!m_channels.empty()) {
-          const channel_t& channel = m_channels[m_current_channel];          
+          const channel_t& channel = m_channels[m_current_channel];
           m_adc.set_param(adc_channel, channel.index);
           m_process = process_read_value;
         }
