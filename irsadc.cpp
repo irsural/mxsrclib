@@ -848,7 +848,8 @@ void irs::simple_dac_ad8400_t::set_u32_data(
   if (a_channel > 0) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
-  m_dac_ad8400_data.resistance_code = (a_data >> (32 - dac_resulution));
+  m_dac_ad8400_data.resistance_code =
+    static_cast<irs_u8>(a_data >> (32 - dac_resulution));
 }
 
 void irs::simple_dac_ad8400_t::tick()
@@ -2183,7 +2184,8 @@ void irs::simple_dac_ad5293_t::set_u32_data(
   if (a_channel > 0) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
-  m_dac_ad5293_data.resistance_code = (a_data >> (32 - dac_resulution));
+  m_dac_ad5293_data.resistance_code =
+    static_cast<irs_u16>(a_data >> (32 - dac_resulution));
 }
 
 void irs::simple_dac_ad5293_t::tick()

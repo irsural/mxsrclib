@@ -61,9 +61,9 @@ IRS_STREAMSPECDECL ostream &stime(ostream &a_stream);
 IRS_STREAMSPECDECL wostream &wstime(wostream &a_stream);
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#ifdef IRS_STM32F4xx
+#if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
 double get_time_from_stm32f4xx();
-#endif // IRS_STM32F4xx
+#endif // defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
 
 // «апись в поток текущей даты и времени
 IRS_STRING_TEMPLATE
@@ -78,9 +78,9 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
     seconds_double = CNT_TO_DBLTIME(counter_get());
     time_s = static_cast<time_t>(seconds_double);    
   } else {
-    #ifdef IRS_STM32F4xx
+    #if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
     seconds_double = get_time_from_stm32f4xx();    
-    #else // !IRS_STM32F4xx
+    #else // !(IRS_STM32F4xx && defined(USE_STDPERIPH_DRIVER))
     seconds_double = CNT_TO_DBLTIME(counter_get());
     time_s = static_cast<time_t>(seconds_double);    
     #endif // !IRS_STM32F4xx

@@ -388,6 +388,7 @@ public:
   void add(data_t a_val);
   calc_t get() const;
   void resize(size_type a_count);
+  size_type size() const;
   void clear();
 private:
   fast_average_t();
@@ -448,6 +449,13 @@ void fast_average_t<data_t, calc_t>::resize(size_type a_count)
 }
 
 template <class data_t, class calc_t>
+fast_average_t<data_t, calc_t>::size_type
+fast_average_t<data_t, calc_t>::size() const
+{
+  return m_samples.size();
+}
+
+template <class data_t, class calc_t>
 void fast_average_t<data_t, calc_t>::clear()
 {
   m_samples.clear();
@@ -464,6 +472,7 @@ public:
   void clear();
   void add(data_t a_val);
   operator calc_t()const;
+  calc_t average()const;
   void resize(size_type a_size);
   void resize_average(size_type a_size);
   void clear_average();
@@ -565,7 +574,16 @@ fast_sko_t<data_t, calc_t>::operator calc_t()const
   if (m_square_elems.empty()) {
     return 0;
   }
+  if (m_square_sum < 0) {
+    return 0;
+  }
   return sqrt(m_square_sum/m_square_elems.size());
+}
+
+template<class data_t, class calc_t>
+calc_t fast_sko_t<data_t, calc_t>::average()const
+{
+  return m_average.get();
 }
 
 //! \addtogroup signal_processing_group

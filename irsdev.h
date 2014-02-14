@@ -511,8 +511,10 @@ public:
   #endif // IRS_STM32F_2_AND_4*/
   void add(irs::handle_t<gpio_pin_t> ap_gpio_pin);
   void select_pin(irs_u32 a_pin_index);
+  irs_u32 get_selected_pin();
 private:
   vector<irs::handle_t<gpio_pin_t> > m_pins;
+  irs_u32 m_pin_index;
 };
 
 } //  irs

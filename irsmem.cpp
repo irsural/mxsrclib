@@ -219,7 +219,7 @@ void irs::eeprom_at25_t::tick()
           m_status = st_read;
         }
       }
-    }
+    } break;
     case st_read: {
       //  Чтение данных по m_spi_size байт
       if (mp_spi->get_status() == irs::spi_t::FREE) {

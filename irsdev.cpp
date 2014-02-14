@@ -1900,7 +1900,8 @@ void irs::pwm_pin_t::set_dir(dir_t /*a_dir*/)
 
 // class decoder_t
 irs::decoder_t::decoder_t():
-  m_pins()
+  m_pins(),
+  m_pin_index(0)
 {
 }
 
@@ -1923,9 +1924,10 @@ void irs::decoder_t::add(irs::handle_t<gpio_pin_t> ap_gpio_pin)
 
 void irs::decoder_t::select_pin(irs_u32 a_pin_index)
 {
+  m_pin_index = a_pin_index;
   const size_type count = min(m_pins.size(), sizeof(a_pin_index));
   irs_u32 code = 1;
-  for (size_type i = 0; i < count; i++) {    
+  for (size_type i = 0; i < count; i++) {
     if (a_pin_index & code) {
       m_pins[i]->set();
     } else {
@@ -1933,6 +1935,11 @@ void irs::decoder_t::select_pin(irs_u32 a_pin_index)
     }
     code <<= 1;
   }
+}
+
+irs_u32 irs::decoder_t::get_selected_pin()
+{
+  return m_pin_index;
 }
 
 #endif  //  __ICCARM__

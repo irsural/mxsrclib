@@ -90,12 +90,12 @@ IRS_STREAMSPECDECL wostream &irs::wstime(wostream &a_stream)
 }
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#ifdef IRS_STM32F4xx
+#if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
 double irs::get_time_from_stm32f4xx()
 {
   return irs::arm::st_rtc_t::get_instance()->get_time_double();
 }
-#endif // IRS_STM32F4xx
+#endif // defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
 
 // «апись в поток текущей даты и времени
 IRS_STREAMSPECDECL irs::ostream_t &irs::sdatetimet(ostream_t &a_stream)
@@ -186,7 +186,8 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
-#if defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4)
+#if defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4) &&\
+  defined(USE_STDPERIPH_DRIVER)
 _STD_BEGIN
 __time32_t (__time32)(__time32_t *t)
 { 
@@ -209,6 +210,7 @@ __time64_t (__time64)(__time64_t *t)
 //CLOCKS_PER_SEC
 
 _STD_END
-#endif // defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4)
+#endif // defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4) && 
+//  defined(USE_STDPERIPH_DRIVER)
 
 #endif // defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4)
