@@ -643,7 +643,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   set_moder_alternate_function(a_sck);
   set_moder_alternate_function(a_miso);
   set_moder_alternate_function(a_mosi);
-  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs); 
+  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
   if (spi_address == IRS_SPI1_BASE) {
     switch (a_sck) {
       case PA5: {
@@ -920,7 +920,7 @@ void irs::arm::arm_spi_t::tick()
       if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
         if (mp_write_buf != IRS_NULL) {
           mp_spi_regs->SPI_DR =
-            mp_write_buf[m_write_buf_index*m_data_item_byte_count];          
+            mp_write_buf[m_write_buf_index*m_data_item_byte_count];
         } else {
           mp_spi_regs->SPI_DR = 0;
         }

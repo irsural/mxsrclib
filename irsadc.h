@@ -370,6 +370,20 @@ private:
 
 class dac_ad8400_t : public mxdata_t
 {
+public:
+  dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u8 a_init_value);
+  ~dac_ad8400_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  void configure_spi();
+  void configure_spi_default();
   enum status_t
   {
     DAC_FREE,
@@ -385,17 +399,6 @@ class dac_ad8400_t : public mxdata_t
   bool m_need_write;
   //  CS
   gpio_pin_t *mp_cs_pin;
-public:
-  dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u8 a_init_value);
-  ~dac_ad8400_t();
-  virtual irs_uarc size();
-  virtual irs_bool connected();
-  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
-  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
-  virtual void tick();
 };
 
 struct dac_ad8400_data_t

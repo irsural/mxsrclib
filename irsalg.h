@@ -389,6 +389,8 @@ public:
   calc_t get() const;
   void resize(size_type a_count);
   size_type size() const;
+  size_type max_size() const;
+  bool is_full() const;
   void clear();
 private:
   fast_average_t();
@@ -456,6 +458,19 @@ fast_average_t<data_t, calc_t>::size() const
 }
 
 template <class data_t, class calc_t>
+fast_average_t<data_t, calc_t>::size_type
+fast_average_t<data_t, calc_t>::max_size() const
+{
+  return m_count;
+}
+
+template <class data_t, class calc_t>
+bool fast_average_t<data_t, calc_t>::is_full() const
+{
+  return m_samples.size() == m_count;
+}
+
+template <class data_t, class calc_t>
 void fast_average_t<data_t, calc_t>::clear()
 {
   m_samples.clear();
@@ -478,6 +493,9 @@ public:
   void clear_average();
   size_type size() const;
   size_type average_size() const;
+  size_type max_size() const;
+  size_type average_max_size();
+  bool is_full();
 private:
   fast_sko_t();
   size_type m_count;
@@ -541,6 +559,26 @@ typename fast_sko_t<data_t, calc_t>::size_type
 fast_sko_t<data_t, calc_t>::average_size() const
 {
   return m_average.size();
+}
+
+template<class data_t, class calc_t>
+fast_sko_t<data_t, calc_t>::size_type
+fast_sko_t<data_t, calc_t>::max_size() const
+{
+  return m_count;
+}
+
+template<class data_t, class calc_t>
+fast_sko_t<data_t, calc_t>::size_type
+fast_sko_t<data_t, calc_t>::average_max_size()
+{
+  return m_average.max_size();
+}
+
+template<class data_t, class calc_t>
+bool fast_sko_t<data_t, calc_t>::is_full()
+{
+  return (m_square_elems.size() == m_count) && m_average.is_full();
 }
 
 template<class data_t, class calc_t>

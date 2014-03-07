@@ -706,6 +706,7 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_buf[1] = m_init_value;
     for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
       mp_spi->tick();
+    configure_spi();
     mp_cs_pin->clear();
     irs_u8 mp_write_buffer[m_packet_size];
     mp_write_buffer[0] = 0;
@@ -713,6 +714,7 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_spi->lock();
     mp_spi->write(mp_write_buffer, m_packet_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    configure_spi_default();
     mp_spi->unlock();
     mp_cs_pin->set();
   }
@@ -721,6 +723,19 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
 irs::dac_ad8400_t::~dac_ad8400_t()
 {
   return;
+}
+
+void irs::dac_ad8400_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+}
+
+void irs::dac_ad8400_t::configure_spi_default()
+{
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 irs_uarc irs::dac_ad8400_t::size()
@@ -796,10 +811,11 @@ void irs::dac_ad8400_t::tick()
       {
         if (!mp_spi->get_lock())
         {
+          mp_spi->lock();
+          configure_spi();
           mp_write_buffer[0] = 0;
           mp_write_buffer[1] = mp_buf[1];
           mp_cs_pin->clear();
-          mp_spi->lock();
           mp_spi->write(mp_write_buffer, m_packet_size);
           m_status = DAC_WRITE;
           m_need_write = false;
@@ -813,6 +829,7 @@ void irs::dac_ad8400_t::tick()
       {
         mp_buf[0] = 1;
         mp_cs_pin->set();
+        configure_spi_default();
         mp_spi->unlock();
         m_status = DAC_FREE;
       }
