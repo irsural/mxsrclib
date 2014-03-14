@@ -51,7 +51,16 @@ public:
   virtual void tick() = 0;
   virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf,
     irs_uarc a_size) = 0;
+  virtual inline void reset_configuration();
 };
+
+
+void spi_t::reset_configuration()
+{
+  set_order(irs::spi_t::MSB);
+  set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
+  set_phase(irs::spi_t::TRAIL_EDGE);
+}
 
 //! @}
 

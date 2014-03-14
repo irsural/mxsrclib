@@ -44,11 +44,11 @@ irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
 
 void irs::eeprom_at25_t::prepare_spi()
 {
-  mp_spi->set_bitrate(500000);
+  mp_spi->lock();
+  mp_spi->set_bitrate(100000);
   mp_spi->set_order(irs::spi_t::MSB);
   mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
   mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-  mp_spi->lock();
   mp_cs_pin->clear();
 }
 

@@ -33,7 +33,7 @@ enum adc_param_t {
   adc_offset = 8,
   adc_full_scale = 9
 };
-  
+
 const int adc_mode_continuous_conversion = 0;
 const int adc_mode_single_conversion = 1;
 const int adc_mode_idle = 2;
@@ -42,16 +42,16 @@ const int adc_mode_internal_zero_scale = 4;
 const int adc_mode_internal_full_scale = 5;
 const int adc_mode_system_zero_scale = 6;
 const int adc_mode_system_full_scale = 7;
-  
+
 class adc_t
 {
 public:
   typedef irs_size_t size_type;
   typedef irs_u32 select_channel_type;
-
-  virtual ~adc_t() {};
+  virtual ~adc_t() {}
   virtual size_type get_resulution() const = 0;
-  virtual inline bool new_value_exists(irs_u8 a_channel) const;  
+  virtual inline void select_channels(irs_u32 a_selected_channels);
+  virtual inline bool new_value_exists(irs_u8 a_channel) const;
   virtual inline irs_u16 get_u16_minimum();
   virtual inline irs_u16 get_u16_maximum();
   virtual inline irs_u16 get_u16_data(irs_u8 a_channel);
@@ -66,6 +66,10 @@ public:
 private:
   inline irs_u32 get_adc_max_value() const;
 };
+
+inline void adc_t::select_channels(irs_u32 /*a_selected_channels*/)
+{
+}
 
 inline bool adc_t::new_value_exists(irs_u8 /*a_channel*/) const
 {
@@ -146,7 +150,7 @@ class adc_dma_t
 {
 public:
   typedef irs_u32 select_channel_type;
-  
+
   virtual ~adc_dma_t() {};
   virtual void start() = 0;
   virtual void stop() = 0;

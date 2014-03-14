@@ -13,6 +13,7 @@
 #include <irsadc.h>
 #include <irsstrm.h>
 #include <timer.h>
+#include <irsdsp.h>
 #include <irserror.h>
 
 #include <irsfinal.h>
@@ -33,12 +34,10 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   if (mp_spi && mp_cs_pin) {
     memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
     memset(reinterpret_cast<void*>(mp_spi_buf), 0, m_spi_size);
-    mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
-    mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
     mp_cs_pin->clear();
     while(mp_spi->get_lock());
     mp_spi->lock();
+    configure_spi();
     mp_spi->write(mp_spi_buf, m_spi_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; )
       mp_spi->tick();
@@ -46,9 +45,17 @@ irs::th_lm95071_t::th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     for (; mp_spi->get_status() != irs::spi_t::FREE; )
       mp_spi->tick();
     mp_cs_pin->set();
+    mp_spi->reset_configuration();
     mp_spi->unlock();
     set_to_cnt(m_read_counter, m_read_delay);
   }
+}
+
+void irs::th_lm95071_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
 }
 
 irs::th_lm95071_t::~th_lm95071_t()
@@ -132,10 +139,8 @@ void irs::th_lm95071_t::tick()
         if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
         {
           set_to_cnt(m_read_counter, m_read_delay);
-          mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
-          mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
           mp_spi->lock();
+          configure_spi();
           mp_cs_pin->clear();
           mp_spi->read(mp_spi_buf, m_spi_size);
           m_status = TH_READ;
@@ -152,6 +157,7 @@ void irs::th_lm95071_t::tick()
         if (th_value != 0x800F) {
           m_connect = true;
           mp_cs_pin->set();
+          mp_spi->reset_configuration();
           mp_spi->unlock();
           m_status = TH_FREE;
         } else { // Shutdown mode
@@ -167,6 +173,7 @@ void irs::th_lm95071_t::tick()
     {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = TH_FREE;
       } break;
@@ -201,11 +208,20 @@ irs::adc_ad7791_t::adc_ad7791_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_init_buffer[6] = (1 << RS1);
   mp_init_buffer[7] = (1 << FS2)|(0 << FS1)|(1 << FS0);
   mp_spi->lock();
+  configure_spi();
   mp_cs_pin->clear();
   mp_spi->write(mp_init_buffer, m_init_sequence_size);
   for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
   mp_cs_pin->set();
+  mp_spi->reset_configuration();
   mp_spi->unlock();
+}
+
+void irs::adc_ad7791_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 irs::adc_ad7791_t::~adc_ad7791_t()
@@ -280,9 +296,7 @@ void irs::adc_ad7791_t::tick()
         if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
         {
           set_to_cnt(m_read_counter, m_read_delay);
-          mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
-          mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+          configure_spi();
           mp_spi->lock();
           mp_cs_pin->clear();
           memset(static_cast<void*>(mp_spi_buf), 0, m_spi_size);
@@ -314,6 +328,7 @@ void irs::adc_ad7791_t::tick()
         mp_buf[3] = mp_spi_buf[0];
         mp_buf[4] = 0;
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = ADC_FREE;
       }
@@ -357,6 +372,150 @@ irs_u32 irs::cyclic_adc_ad7791_t::get_u32_data(irs_u8 a_channel)
 void irs::cyclic_adc_ad7791_t::tick()
 {
   m_adc_ad7791.tick();
+}
+
+//--------------------------  ADS8344 ------------------------------------------
+irs::cyclic_adc_ads8344_t::cyclic_adc_ads8344_t(spi_t* ap_spi,
+  gpio_pin_t* ap_cs_pin, select_channel_type a_selected_channels,
+  counter_t a_read_delay
+):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_process(process_init),
+  m_new_value_exists(false),
+  m_delay_timer(a_read_delay),
+  m_channels(),
+  m_current_channel(0),
+  m_selected_other_channels(false),
+  m_names()
+{
+  m_names.push_back(ch_0);
+  m_names.push_back(ch_1);
+  m_names.push_back(ch_2);
+  m_names.push_back(ch_3);
+  m_names.push_back(ch_4);
+  m_names.push_back(ch_5);
+  m_names.push_back(ch_6);
+  m_names.push_back(ch_7);
+
+  select_channels(a_selected_channels);
+}
+
+void irs::cyclic_adc_ads8344_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+}
+
+irs::cyclic_adc_ads8344_t::size_type
+irs::cyclic_adc_ads8344_t::get_resulution() const
+{
+  return adc_resolution;
+}
+
+void irs::cyclic_adc_ads8344_t::select_channels(irs_u32 a_selected_channels)
+{
+  m_channels.clear();
+  for (size_type i = 0; i < m_names.size(); i++) {
+    if (a_selected_channels & m_names[i]) {
+      channel_t channel;
+      channel.index = i;
+      m_channels.push_back(channel);
+    }
+  }
+  m_current_channel = 0;
+  m_selected_other_channels = true;
+}
+
+bool irs::cyclic_adc_ads8344_t::new_value_exists(irs_u8 a_channel) const
+{
+  if (static_cast<size_type>(a_channel) >= m_channels.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_channels[a_channel].new_value_exists;
+}
+
+irs_u32 irs::cyclic_adc_ads8344_t::get_u32_data(irs_u8 a_channel)
+{
+  if (static_cast<size_type>(a_channel) >= m_channels.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  m_channels[a_channel].new_value_exists = false;
+  return m_channels[a_channel].value << (32 - adc_resolution);
+}
+
+void irs::cyclic_adc_ads8344_t::tick()
+{
+  mp_spi->tick();
+  switch (m_process) {
+    case process_init: {
+      if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
+        mp_spi->lock();
+        configure_spi();
+        mp_cs_pin->clear();
+        memset(static_cast<void*>(mp_spi_read_buf), 0, m_spi_buf_size);
+        memset(static_cast<void*>(mp_spi_write_buf), 0, m_spi_buf_size);
+        mp_spi_write_buf[0] = make_control_byte(ch_0);
+        mp_spi->read_write(mp_spi_read_buf, mp_spi_write_buf, m_spi_buf_size);
+        m_process = process_wait_init;;
+      }
+    } break;
+    case process_wait_init: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        m_process = process_read_write;;
+      }
+    } break;
+    case process_read_write: {
+      m_delay_timer.check();
+      if (m_delay_timer.stopped() && !mp_spi->get_lock() &&
+          (mp_spi->get_status() == irs::spi_t::FREE)) {
+        mp_spi->lock();
+        configure_spi();
+        mp_cs_pin->clear();
+        memset(static_cast<void*>(mp_spi_read_buf), 0, m_spi_buf_size);
+        memset(static_cast<void*>(mp_spi_write_buf), 0, m_spi_buf_size);
+        mp_spi_write_buf[0] = make_control_byte(m_channels[m_current_channel].index);
+        mp_spi->read_write(mp_spi_read_buf, mp_spi_write_buf, m_spi_buf_size);
+        m_selected_other_channels = false;
+        m_delay_timer.start();
+        m_process = process_wait;
+      }
+    } break;
+    case process_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_spi->reset_configuration();
+        mp_cs_pin->set();
+        mp_spi->unlock();
+        if (!m_selected_other_channels) {
+          int sample = (mp_spi_read_buf[1] << 9) |
+            (mp_spi_read_buf[2] << 1) | ((mp_spi_read_buf[3] & 0x80) >> 7);
+          m_channels[m_current_channel].value =
+            static_cast<sample_type>(sample);
+          m_channels[m_current_channel].new_value_exists = true;
+          if (m_channels.size() > 1) {
+            m_current_channel++;
+            if (m_current_channel >= m_channels.size()) {
+              m_current_channel = 0;
+            }
+          }
+        }
+        m_process = process_read_write;
+      }
+    } break;
+  }
+}
+
+irs_u8 irs::cyclic_adc_ads8344_t::make_control_byte(irs_u8 a_channel)
+{
+  const irs_u8 channel = static_cast<irs_u8>(irs::bound<int>(a_channel, 0, 7));
+  irs_u8 control_byte =
+    (1 << s_bit)|(channel << a0_bit)|
+    (1 << sgl_dif_bit)|(1 << pd1_bit)|(1 << pd0_bit);
+  return control_byte;
 }
 
 //--------------------------  AD7683  ------------------------------------------
@@ -479,6 +638,7 @@ void irs::adc_ad7683_t::tick()
         mp_buf[0] = 1;
         reinterpret_cast<irs_u16&>(mp_buf[1]) = value_u16;
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = ADC_FREE;
 
@@ -644,6 +804,7 @@ void irs::adc_ad7686_t::tick()
         mp_buf[1] = mp_spi_buf[1];
         mp_buf[2] = mp_spi_buf[0];
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = ADC_FREE;
       }
@@ -714,7 +875,7 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_spi->lock();
     mp_spi->write(mp_write_buffer, m_packet_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
-    configure_spi_default();
+    mp_spi->reset_configuration();
     mp_spi->unlock();
     mp_cs_pin->set();
   }
@@ -730,12 +891,6 @@ void irs::dac_ad8400_t::configure_spi()
   mp_spi->set_order(irs::spi_t::MSB);
   mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
   mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
-}
-
-void irs::dac_ad8400_t::configure_spi_default()
-{
-  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
-  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 irs_uarc irs::dac_ad8400_t::size()
@@ -829,7 +984,7 @@ void irs::dac_ad8400_t::tick()
       {
         mp_buf[0] = 1;
         mp_cs_pin->set();
-        configure_spi_default();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = DAC_FREE;
       }
@@ -1016,6 +1171,7 @@ void irs::dac_ad7376_t::tick()
       {
         mp_buf[0] &= (0 << m_ready_bit_position)^0xFF;
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = DAC_FREE;
       }
@@ -1046,6 +1202,13 @@ irs::dac_max551_t::dac_max551_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_cs_pin->clear();
     mp_cs_pin->set();
   }
+}
+
+void irs::dac_max551_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
 }
 
 irs::dac_max551_t::~dac_max551_t()
@@ -1144,9 +1307,7 @@ void irs::dac_max551_t::tick()
         if (!mp_spi->get_lock())
         {
           mp_spi->lock();
-          mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
-          mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+          configure_spi();
           mp_write_buffer[0] = mp_buf[2];
           mp_write_buffer[1] = mp_buf[1];
           mp_spi->write(mp_write_buffer, m_packet_size);
@@ -1162,8 +1323,7 @@ void irs::dac_max551_t::tick()
       {
         mp_cs_pin->clear();
         mp_cs_pin->set();
-        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         mp_buf[0] = 1;
         m_status = DAC_FREE;
@@ -1269,8 +1429,10 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
       mp_spi->tick();
     mp_cs_pin->clear();
     mp_spi->lock();
+    configure_spi();
     mp_spi->write(spi2_buffer, 5);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    mp_spi->reset_configuration();
     mp_spi->unlock();
     mp_cs_pin->set();
     set_to_cnt(cnt, MS_TO_CNT(1));
@@ -1282,6 +1444,13 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     mp_update_pin->clear();
     set_to_cnt(m_refresh_counter, m_refresh_time);
   }
+}
+
+void irs::dds_ad9854_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 irs::dds_ad9854_t::~dds_ad9854_t()
@@ -1400,10 +1569,8 @@ void irs::dds_ad9854_t::tick()
             m_write_buffer[3] = mp_buf[POS_CR + 1];
             m_write_buffer[4] = mp_buf[POS_CR];
             fill_n(m_write_vector.begin() + POS_CR, SZ_CR, false);
-            mp_spi->set_order(irs::spi_t::MSB);
-            mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
-            mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
             mp_spi->lock();
+            configure_spi();
             mp_cs_pin->clear();
             mp_spi->write(m_write_buffer, SZ_CR + 1);
             m_status = DDS_WRITE;
@@ -1467,10 +1634,7 @@ void irs::dds_ad9854_t::tick()
               fill_n(m_write_vector.begin() + start_byte,
                 mp_mxdata_reg_size[register_index], false);
               m_first_byte += mp_mxdata_reg_size[register_index];
-              mp_spi->set_order(irs::spi_t::MSB);
-              mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
-              //FALLING_EDGE);
-              mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+              mp_spi->reset_configuration();
               mp_spi->lock();
               mp_cs_pin->clear();
               mp_spi->write(m_write_buffer, size+1);
@@ -1523,6 +1687,7 @@ void irs::dds_ad9854_t::tick()
       if (test_to_cnt(m_update_time))
       {
         mp_update_pin->clear();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = DDS_FREE;
         if (find(m_write_vector.begin(), m_write_vector.end(), true)
@@ -1572,9 +1737,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_cs_pin->clear();
   mp_spi->lock();
 
-  mp_spi->set_order(irs::spi_t::MSB);
-  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
-  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+  configure_spi();
 
   m_command = m_com_write_to_input_register_and_update|m_addr_DACA;
 
@@ -1609,8 +1772,16 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_spi->write(mp_write_buf, m_write_buf_size);
   for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
   mp_cs_pin->set();
+  mp_spi->reset_configuration();
   mp_spi->unlock();
   //mlog() << "LTC2622 по адресу 0x" << this << " инициализирован" << endl;
+}
+
+void irs::dac_ltc2622_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 void irs::dac_ltc2622_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
@@ -1722,11 +1893,8 @@ void irs::dac_ltc2622_t::tick()
       if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE)){
         if (!mp_spi->get_lock()){
           mp_cs_pin->clear();
-          mp_spi->set_order(irs::spi_t::MSB);
-          mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);//FALLING_EDGE);
-          mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
           mp_spi->lock();
-
+          configure_spi();
           m_command = m_com_write_to_input_register_and_update|m_addr_DACA;
           m_write_reg = m_regA;
           irs_u8 conv_buf[2];
@@ -1771,6 +1939,7 @@ void irs::dac_ltc2622_t::tick()
       if (mp_spi->get_status() == irs::spi_t::FREE){
         mp_buf[0] |= (1 << m_ready_bit_regB);
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_need_write = false;
         m_status = DAC_FREE;
@@ -1912,6 +2081,7 @@ void irs::adc_adc102s021_t::tick()
         }
         m_timer.start();
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = ADC_FREE;
       }
@@ -1938,11 +2108,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
 
     while (!spi_ready()) mp_spi->tick();
     mp_spi->lock();
-
-    mp_spi->set_order(irs::spi_t::MSB);
-    mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
-    mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-
+    configure_spi();
     while (!write_ready()) write_tick();
     write_to_dac(RESET);
     while (!write_ready()) write_tick();
@@ -1951,6 +2117,7 @@ irs::dac_ad5293_t::dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin):
     while (!write_ready()) write_tick();
     write_to_dac(ZERO);
     while (!write_ready()) write_tick();
+    mp_spi->reset_configuration();
     mp_spi->unlock();
   }
 }
@@ -2026,11 +2193,8 @@ void irs::dac_ad5293_t::tick()
     {
       if (m_need_write && write_ready() && spi_ready())
       {
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_spi->lock();
-
+        configure_spi();
         m_need_write = false;
         m_status = UNLOCK;
         write_to_dac(UNLOCK);
@@ -2068,6 +2232,7 @@ void irs::dac_ad5293_t::tick()
     {
       if (write_ready())
       {
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = FREE;
       }
@@ -2180,6 +2345,13 @@ void irs::dac_ad5293_t::write_tick()
       break;
     }
   }
+}
+
+void irs::dac_ad5293_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 // class simple_dac_ad5293_t
@@ -2403,6 +2575,7 @@ void irs::dac_ad5791_t::tick()
     case st_spi_wait: {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_status = m_target_status;
       }
@@ -2503,9 +2676,7 @@ void irs::dac_ad5686_t::tick()
     case process_reset: {
       if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
         mp_buf[0] = (command_software_reset << command_shift) | 0;
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        configure_spi();
         mp_cs_pin->clear();
         mp_spi->lock();
         mp_spi->write(mp_buf, buf_size);
@@ -2534,11 +2705,9 @@ void irs::dac_ad5686_t::tick()
     } break;
     case process_free: {
       if (!mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE)) {
-        mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_cs_pin->clear();
         mp_spi->lock();
+        configure_spi();
         mp_spi->write(mp_buf, buf_size);
         m_process = process_write;
       }
@@ -2546,11 +2715,19 @@ void irs::dac_ad5686_t::tick()
     case process_write: {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         m_process = process_request;
       }
     } break;
   }
+}
+
+void irs::dac_ad5686_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+  mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
 }
 
 //-------------------------- AD7794 -------------------------------------------
@@ -2921,6 +3098,7 @@ void irs::adc_ad7794_t::spi_prepare()
 void irs::adc_ad7794_t::spi_release()
 {
   mp_cs_pin->set();
+  mp_spi->reset_configuration();
   mp_spi->unlock();
 }
 
@@ -3010,8 +3188,10 @@ irs_i32 irs::adc_ad7794_t::conversion_spi_value()
   irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);
   int unipolar =
     get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
-  value = (value << 8);
-  if (unipolar == 0) {
+  if (unipolar == 1) {
+    value = (value << 7);
+  } else {
+    value = (value << 8);
     value = value - 0x80000000;
   }
   return value;
@@ -3031,7 +3211,8 @@ irs::cyclic_adc_ad7794_t::cyclic_adc_ad7794_t(
   m_channels(),
   m_current_channel(0),
   m_process(process_set_param),
-  m_timer(a_read_delay)
+  m_timer(a_read_delay),
+  m_unipolar(a_unipolar)
 {
   //select_channel_type channel_name = ch_first;
 
@@ -3081,6 +3262,7 @@ irs_u32 irs::cyclic_adc_ad7794_t::get_u32_data(irs_u8 a_channel)
   if (static_cast<size_type>(a_channel) >= m_channels.size()) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
+  m_channels[a_channel].new_value_exists = false;
   return m_channels[a_channel].value;
 }
 
@@ -3116,7 +3298,11 @@ void irs::cyclic_adc_ad7794_t::tick()
     } break;
     case process_wait_read_value: {
       if (m_adc.status() == meas_status_success) {
-        m_channels[m_current_channel].value = m_adc.get_value();
+        if (m_unipolar == 1) {
+          m_channels[m_current_channel].value = m_adc.get_value() << 1;
+        } else {
+          m_channels[m_current_channel].value = m_adc.get_value() + 0x80000000u;
+        }
         m_channels[m_current_channel].new_value_exists = true;
         if (m_channels.size() > 1) {
           m_current_channel++;
@@ -3513,6 +3699,7 @@ void irs::adc_ad7799_t::spi_prepare()
 void irs::adc_ad7799_t::spi_release()
 {
   mp_cs_pin->set();
+  mp_spi->reset_configuration();
   mp_spi->unlock();
 }
 
@@ -3603,7 +3790,7 @@ irs_i32 irs::adc_ad7799_t::conversion_spi_value()
   int unipolar =
     get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
   if (unipolar == 1) {
-    value = (value << 7); // Наверно надо сдвигать на 8!
+    value = (value << 7);
   } else if (unipolar == 0) {
     value = (value << 8);
     value = value - 0x80000000;
@@ -3678,10 +3865,10 @@ void irs::dac_8531_t::tick()
     } break;
     case mode_write: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_spi->lock();
         mp_spi->set_order(irs::spi_t::MSB);
         mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
         mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-        mp_spi->lock();
         mp_cs_pin->clear();
         mp_spi->write(mp_spi_buf, write_buf_size);
         m_mode = mode_write_wait;
@@ -3690,6 +3877,7 @@ void irs::dac_8531_t::tick()
     case mode_write_wait: {
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
+        mp_spi->reset_configuration();
         mp_spi->unlock();
         memset(mp_spi_buf, 0, write_buf_size);
         m_mode = mode_free;
@@ -3779,10 +3967,10 @@ void irs::dac_1220_t::tick()
     break;
   case st_prepare_spi:
     if (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE) {
+      mp_spi->lock();
       mp_spi->set_order(irs::spi_t::MSB);
       mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
       mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
-      mp_spi->lock();
       mp_cs_pin->clear();
       mp_spi->write(mp_spi_buf, m_write_buf_size);
       m_status = st_wait_spi;
@@ -3791,6 +3979,7 @@ void irs::dac_1220_t::tick()
   case st_wait_spi:
     if (mp_spi->get_status() == irs::spi_t::FREE) {
       mp_cs_pin->set();
+      mp_spi->reset_configuration();
       mp_spi->unlock();
       m_status = st_free;
     }

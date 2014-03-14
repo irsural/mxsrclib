@@ -54,6 +54,7 @@ class th_lm95071_t : public mxdata_t
   irs::timer_t m_wait_timer;
   //  CS
   gpio_pin_t *mp_cs_pin;
+  void configure_spi();
 public:
   th_lm95071_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, counter_t a_read_delay);
   ~th_lm95071_t();
@@ -165,6 +166,7 @@ class adc_ad7791_t : public mxdata_t
   bool m_connect;
   //  CS
   gpio_pin_t* mp_cs_pin;
+  void configure_spi();
 public:
   adc_ad7791_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, counter_t a_read_delay);
   ~adc_ad7791_t();
@@ -216,6 +218,77 @@ private:
   adc_ad7791_t m_adc_ad7791;
   adc_ad7791_data_t m_adc_ad7791_data;
 };
+
+//--------------------------  ADS8344 ------------------------------------------
+class cyclic_adc_ads8344_t: public adc_t
+{
+public:
+  enum { channel_count = 8 };
+  enum { adc_resolution = 16 };
+  enum { adc_max_value = 0xFFFF };
+  enum channel_name_t {
+    ch_0 = (1 << 0),            //! < \brief Канал 0
+    ch_1 = (1 << 1),            //! < \brief Канал 1
+    ch_2 = (1 << 2),            //! < \brief Канал 2
+    ch_3 = (1 << 3),            //! < \brief Канал 3
+    ch_4 = (1 << 4),            //! < \brief Канал 4
+    ch_5 = (1 << 5),            //! < \brief Канал 5
+    ch_6 = (1 << 6),            //! < \brief Канал 6
+    ch_7 = (1 << 7)             //! < \brief Канал 7
+  };
+  typedef irs_size_t size_type;
+  typedef irs_u16 sample_type;
+  cyclic_adc_ads8344_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    select_channel_type a_selected_channels,
+    counter_t a_read_delay);
+  virtual size_type get_resulution() const;
+  virtual void select_channels(irs_u32 a_selected_channels);
+  virtual bool new_value_exists(irs_u8 a_channel) const;
+  virtual irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual void tick();
+private:
+  void configure_spi();
+  irs_u8 make_control_byte(irs_u8 a_channel);
+  enum process_t {
+    process_init,
+    process_wait_init,
+    process_read_write,
+    process_wait
+  };
+  enum { m_spi_buf_size = 4};
+
+  enum { s_bit = 7 };
+  enum { a0_bit = 4 };
+  enum { sgl_dif_bit = 2 };
+  enum { pd1_bit = 1 };
+  enum { pd0_bit = 0 };
+  //enum { channel_mask = 0x70};
+  irs_u8 mp_spi_write_buf[m_spi_buf_size];
+  irs_u8 mp_spi_read_buf[m_spi_buf_size];
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  process_t m_process;
+  bool m_new_value_exists;
+  irs_u32 m_sample;
+  irs::timer_t m_delay_timer;
+  struct channel_t
+  {
+    int index;
+    bool new_value_exists;
+    sample_type value;
+    channel_t():
+      index(1),
+      new_value_exists(false),
+      value(0)
+    {
+    }
+  };
+  vector<channel_t> m_channels;
+  size_type m_current_channel;
+  bool m_selected_other_channels;
+  vector<channel_name_t> m_names;
+};
+
 
 //--------------------------  AD7683  ------------------------------------------
 
@@ -383,7 +456,6 @@ public:
   virtual void tick();
 private:
   void configure_spi();
-  void configure_spi_default();
   enum status_t
   {
     DAC_FREE,
@@ -524,6 +596,7 @@ class dac_max551_t : public mxdata_t
   bool m_need_reset;
   //  CS
   gpio_pin_t *mp_cs_pin;
+  void configure_spi();
 public:
   dac_max551_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u16 a_init_value);
   ~dac_max551_t();
@@ -856,6 +929,7 @@ class dds_ad9854_t : public mxdata_t
   //
   void reset();
   counter_t m_update_time;
+  void configure_spi();
 public:
   dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, gpio_pin_t *ap_reset_pin,
     gpio_pin_t *ap_update_pin);
@@ -934,7 +1008,7 @@ class dac_ltc2622_t : public mxdata_t
   bool m_need_write;
 
   gpio_pin_t *mp_cs_pin;
-
+  void configure_spi();
 public:
   dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u16 a_init_regA,
     irs_u16 a_init_regB);
@@ -1106,6 +1180,7 @@ class dac_ad5293_t : public mxdata_t
     return (!mp_spi->get_lock() && mp_spi->get_status() == irs::spi_t::FREE);
   };
   void write_tick();
+  void configure_spi();
 public:
   dac_ad5293_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin);
   ~dac_ad5293_t();
@@ -1280,6 +1355,7 @@ public:
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
   virtual void tick();
 private:
+  void configure_spi();
   enum { resolution = 16 };
   enum { buf_size = 3 };
   enum command_t {
@@ -1568,6 +1644,7 @@ private:
   size_type m_current_channel;
   process_t m_process;
   loop_timer_t m_timer;
+  bool m_unipolar;
 };
 
 //-------------------------- AD7799 -------------------------------------------

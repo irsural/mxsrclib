@@ -20,7 +20,7 @@ class dac_t
 {
 public:
   typedef irs_u32 select_channel_type;
-  virtual ~dac_t() {};
+  virtual ~dac_t() {}
   virtual irs_status_t get_status() const { return irs_st_ready; }
   virtual size_t get_resolution() const = 0;
   virtual inline irs_u32 get_u32_maximum() const;
@@ -33,7 +33,7 @@ private:
 };
 
 inline irs_u32 dac_t::get_u32_maximum() const
-{  
+{
   return static_cast<irs_u32>(get_dac_max_value()) << (32 - get_resolution());
 }
 
