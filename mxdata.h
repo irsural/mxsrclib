@@ -1146,7 +1146,7 @@ public:
   void resize(size_type a_size);
   void buf_resize(size_type a_size);
   void push_back(const value_type& a_value);
-  void push_back(const_pointer ap_first, const_pointer ap_last);  
+  void push_back(const_pointer ap_first, const_pointer ap_last);
   void pop_back(size_type = 1);
   void pop_front(size_type = 1);
   void copy_to(size_type a_pos, size_type a_size,
@@ -1196,14 +1196,14 @@ irs::deque_data_t<T>::~deque_data_t()
 }
 
 template <class T>
-inline typename irs::deque_data_t<T>::reference 
+inline typename irs::deque_data_t<T>::reference
   irs::deque_data_t<T>::front()
 {
   return operator[](0);
 }
 
 template <class T>
-inline typename irs::deque_data_t<T>::const_reference 
+inline typename irs::deque_data_t<T>::const_reference
   irs::deque_data_t<T>::front() const
 {
   return operator[](0);
@@ -1383,7 +1383,7 @@ template <class T>
 void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
-  if (a_capacity != m_capacity) {
+  if (a_capacity > m_capacity) {
     size_type new_capacity = a_capacity;
     pointer p_new_buf = new value_type[new_capacity];
     size_type new_ring_size = min(new_capacity, m_ring_size);

@@ -109,8 +109,8 @@ irs_bool irs::collect_data_t::connected()
   return irs_true;
 }
 bool irs::collect_data_t::belong(irs_uarc a_begin, irs_uarc a_end,
-    irs_uarc a_area_begin, irs_uarc a_area_end,
-    irs_uarc* a_out_begin, irs_uarc* a_out_end)
+  irs_uarc a_area_begin, irs_uarc a_area_end,
+  irs_uarc* a_out_begin, irs_uarc* a_out_end)
 {
   bool belong_result = false;
   // √лавна€ область охватывает провер€емую область
