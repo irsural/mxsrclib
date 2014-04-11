@@ -478,7 +478,8 @@ void irs::cyclic_adc_ads8344_t::tick()
         mp_cs_pin->clear();
         memset(static_cast<void*>(mp_spi_read_buf), 0, m_spi_buf_size);
         memset(static_cast<void*>(mp_spi_write_buf), 0, m_spi_buf_size);
-        mp_spi_write_buf[0] = make_control_byte(m_channels[m_current_channel].index);
+        mp_spi_write_buf[0] = make_control_byte(
+          static_cast<irs_u8>(m_channels[m_current_channel].index));
         mp_spi->read_write(mp_spi_read_buf, mp_spi_write_buf, m_spi_buf_size);
         m_selected_other_channels = false;
         m_delay_timer.start();
@@ -512,11 +513,11 @@ void irs::cyclic_adc_ads8344_t::tick()
 irs_u8 irs::cyclic_adc_ads8344_t::make_control_byte(irs_u8 a_channel)
 {
   const irs_u8 channel = static_cast<irs_u8>(irs::bound<int>(a_channel, 0, 7));
-  const irs_u8 channel_inverted = ((channel & 0x1) << 2) |
-    ((channel & 0x2) << 0) | ((channel & 0x4) >> 2);
-  irs_u8 control_byte =
+  const irs_u8 channel_inverted = static_cast<irs_u8>(((channel & 0x1) << 2) |
+    ((channel & 0x2) << 0) | ((channel & 0x4) >> 2));
+  irs_u8 control_byte = static_cast<irs_u8>(
     (1 << s_bit)|(channel_inverted << a0_bit)|
-    (1 << sgl_dif_bit)|(1 << pd1_bit)|(1 << pd0_bit);
+    (1 << sgl_dif_bit)|(1 << pd1_bit)|(1 << pd0_bit));
   return control_byte;
 }
 
