@@ -96,6 +96,9 @@ mxdata_assembly_params_t::mxdata_assembly_params_t(
 
 #ifdef __BORLANDC__
 #endif // __BORLANDC__
+
+#if defined(IRS_WIN32) || defined(IRS_LINUX)
+
 namespace irs {
 
 class mxnet_assembly_creator_t: public mxdata_assembly_creator_t
@@ -565,6 +568,7 @@ void irs::modbus_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 {
   mp_tstlan4 = ap_tstlan4;
 }
+#endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 #if defined(IRS_WIN32)
 

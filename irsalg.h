@@ -488,7 +488,6 @@ void fast_average_t<data_t, calc_t>::preset(
     m_samples.size() - a_count);
   m_samples.pop_back(erase_back_count);
   const size_type size = min(m_samples.size(), a_count);
-  size_type count = 0;
   if (size > 0) {
     while (m_samples.size() < m_max_count) {
       for (size_type i = 0; i < size; i++) {
@@ -1035,12 +1034,12 @@ void fast_multi_sko_with_single_average_t<data_t, calc_t>::preset(
   for (size_type i = 0; i < m_windows.size(); i++) {
     window_t& window = m_windows[i];
     window.square_sum = 0;
-    const size_type size = min(m_square_elems.size(), window.max_size);
-    const size_type start_pos = m_square_elems.size() - size;
-    for (size_type i = start_pos; i < m_square_elems.size(); i++) {
-      window.square_sum += m_square_elems[i];
+    const size_type min_size = min(m_square_elems.size(), window.max_size);
+    const size_type start_pos = m_square_elems.size() - min_size;
+    for (size_type j = start_pos; j < m_square_elems.size(); j++) {
+      window.square_sum += m_square_elems[j];
     }
-    window.size = size;
+    window.size = min_size;
   }
 }
 
@@ -1050,8 +1049,6 @@ void fast_multi_sko_with_single_average_t<data_t, calc_t>::preset_average(
 {
   const size_type average_start_pos =
     m_square_elems.size() - m_average.size();
-  const size_type average_end_pos = average_start_pos + m_average.size();
-
   if ((a_start_pos + a_size) > average_start_pos) {
     size_type average_pos = 0;
     if (a_start_pos < average_start_pos) {
@@ -1089,8 +1086,6 @@ void fast_multi_sko_with_single_average_t<data_t, calc_t>::add(data_t a_val)
     for (size_type i = 0; i < m_windows.size(); i++) {
       window_t& window = m_windows[i];
       if ((window.size > 0) && (window.size == window.max_size)) {
-        size_type count = m_square_elems.size();
-        calc_t value = m_square_elems[m_square_elems.size() - window.max_size];
         window.square_sum -=
           m_square_elems[m_square_elems.size() - window.max_size];
         window.size--;
@@ -1248,7 +1243,6 @@ void fast_multi_sko_t<data_t, calc_t>::resize(size_type a_index,
   size_type a_new_size)
 {
   window_t& window = m_windows[a_index];
-  const size_type start_index = m_square_elems.size() - window.size;
   window.max_size = a_new_size;
   while (window.square_elems.size() > window.max_size) {
     window.square_sum -= window.square_elems.front();

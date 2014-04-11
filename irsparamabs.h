@@ -22,7 +22,7 @@ class param_box_base_t
 {
 public:
   typedef string_t string_type;
-  
+
   virtual ~param_box_base_t() {}
   virtual bool show() = 0;
   virtual void hide() = 0;
@@ -40,12 +40,12 @@ public:
     bool a_param_value) = 0;
   virtual void add_param_box(const string_type& a_param_name,
     param_box_base_t* ap_param_box_base) = 0;
-  virtual void add_button(const string_type& a_param_name) {}
+  virtual void add_button(const string_type& /*a_param_name*/) {}
   virtual bool get_param(const string_type& a_param_name,
     string_type* ap_param_value) const = 0;
   virtual string_type get_param(const string_type& a_param_name) const = 0;
   virtual string_type get_param_def(const string_type& a_param_name) const = 0;
-  virtual bool is_button_pressed(const string_type& a_param_name)
+  virtual bool is_button_pressed(const string_type& /*a_param_name*/)
   { return false; }
   virtual bool set_param(const string_type& a_param_name,
     const string_type& a_param_value) = 0;
