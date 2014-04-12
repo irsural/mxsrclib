@@ -513,10 +513,35 @@ void irs::cyclic_adc_ads8344_t::tick()
 irs_u8 irs::cyclic_adc_ads8344_t::make_control_byte(irs_u8 a_channel)
 {
   const irs_u8 channel = static_cast<irs_u8>(irs::bound<int>(a_channel, 0, 7));
-  const irs_u8 channel_inverted = static_cast<irs_u8>(((channel & 0x1) << 2) |
-    ((channel & 0x2) << 0) | ((channel & 0x4) >> 2));
+  irs_u8 channel_code = 0;
+  switch (channel) {
+    case 0: {
+      channel_code = 0x0;
+    } break;
+    case 1: {
+      channel_code = 0x4;
+    } break;
+    case 2: {
+      channel_code = 0x1;
+    } break;
+    case 3: {
+      channel_code = 0x5;
+    } break;
+    case 4: {
+      channel_code = 0x2;
+    } break;
+    case 5: {
+      channel_code = 0x6;
+    } break;
+    case 6: {
+      channel_code = 0x3;
+    } break;
+    case 7: {
+      channel_code = 0x7;
+    } break;
+  }  
   irs_u8 control_byte = static_cast<irs_u8>(
-    (1 << s_bit)|(channel_inverted << a0_bit)|
+    (1 << s_bit)|(channel_code << a0_bit)|
     (1 << sgl_dif_bit)|(1 << pd1_bit)|(1 << pd0_bit));
   return control_byte;
 }
