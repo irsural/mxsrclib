@@ -151,6 +151,7 @@ __fastcall TMxChartItem::TMxChartItem(TComponent *AOwner)
   for (int i = 0; i < 2; i++) {
     FFunc[i] = DefFunc;
     FAutoScale[i] = true;
+    FMonotone[i] = false;
     FData[i] = (int *)IRS_NULL;
     FGroup[i] = 0;
   }
@@ -262,39 +263,134 @@ bool __fastcall TMxChartItem::ClipLine(TDblPoint &P1, TDblPoint &P2) const
   return false;
 }
 //---------------------------------------------------------------------------
+void TMxChartItem::MonotoneBounds(int ACoor, double AAreaBegin,
+  double AAreaEnd, double* APBegin, double* APEnd, bool* is_finded)
+{
+  // Оптимизация, если по координате, например, массив времени
+  // Поиск границ отображения
+  int count = static_cast<int>((Bounds.End - Bounds.Begin)/FStep);
+  count++; // чтобы обработать Bounds.End
+  double t = Bounds.Begin;
+  is_finded = false;
+  for (int i = 0; i <= count; i++) {
+    if (i == count) {
+      t = Bounds.End;
+    }
+    double x = FFunc[ACoor](t);
+    if (x >= AAreaBegin) {
+      *APBegin = t;
+      *is_finded = true;
+      break;
+    }
+    t += FStep;
+  }
+  if (!is_finded) return;
+  t = Bounds.Begin + FStep*(count - 1);
+  for (int i = 0; i <= count; i++) {
+    if (i == 0) {
+      t = Bounds.End;
+    }
+    double x = FFunc[ACoor](t);
+    if (x <= AAreaEnd) {
+      *APEnd = t;
+      *is_finded = true;
+      break;
+    }
+    t -= FStep;
+  }
+}
+//---------------------------------------------------------------------------
 void __fastcall TMxChartItem::DoCalculate()
 {
-  TPoint P = TPoint(), OldP = TPoint();
-  TDblPoint DP = TDblPoint(), OldDP = TDblPoint();
-  double Begin = 0., End = 0.;
-  double AW = FArea.Right - FArea.Left; double AH = FArea.Top - FArea.Bottom;
+  TPoint P = TPoint();
+  TPoint OldP = TPoint();
+  TDblPoint DP = TDblPoint();
+  TDblPoint OldDP = TDblPoint();
+  double Begin = 0.;
+  double End = 0.;
+  double AW = FArea.Right - FArea.Left;
+  double AH = FArea.Top - FArea.Bottom;
   int B = 0, E = 0, L = 0;
   ClipArea = DblRect(FArea.Left - 0.1*AW, FArea.Top + 0.1*AH,
     FArea.Right + 0.1*AW, FArea.Bottom - 0.1*AH);
   Lines.clear();
-  if (!(int *)DataX)
-  {
+  // Сокращение диапазона для особых случаев
+  if (FMonotone[CoorX]) {
+    bool is_finded = false;
+    MonotoneBounds(CoorX, FArea.Left, FArea.Right, &Begin, &End, &is_finded);
+    if (!is_finded) return;
+    B = ConvCoor(DblPoint(Begin, 0)).x;
+    E = ConvCoor(DblPoint(End, 0)).x;
+    L = E - B + 1;
+  } else if (FMonotone[CoorY]) {
+    bool is_finded = false;
+    MonotoneBounds(CoorY, FArea.Bottom, FArea.Top, &Begin, &End, &is_finded);
+    if (!is_finded) return;
+    B = ConvCoor(DblPoint(0, Begin)).y;
+    E = ConvCoor(DblPoint(0, End)).y;
+    L = E - B + 1;
+  } else if (!(int *)DataX) {
     Begin = max(FStep*floor(FArea.Left/FStep), Bounds.Begin);
     End = min(FStep*ceil(FArea.Right/FStep), Bounds.End);
     B = ConvCoor(DblPoint(Begin, 0)).x;
     E = ConvCoor(DblPoint(End, 0)).x;
     L = E - B + 1;
-  }
-  else if (!(int *)DataY)
-  {
+  } else if (!(int *)DataY) {
     Begin = max(FStep*floor(FArea.Bottom/FStep), Bounds.Begin);
     End = min(FStep*ceil(FArea.Top/FStep), Bounds.End);
     B = ConvCoor(DblPoint(0, Begin)).y;
     E = ConvCoor(DblPoint(0, End)).y;
     L = E - B + 1;
-  }
-  else
-  {
+  } else {
     Begin = Bounds.Begin; End = Bounds.End;
   }
   if (Begin > End) return;
-  if (!(int *)DataX && (End - Begin)/Step > 2*L)
-  {
+  if (FMonotone[CoorX] && (End - Begin)/Step > 2*L) {
+    #ifdef NOP
+    // Не доделано!!!
+    double dA = (End - Begin)/L;
+    double t = Begin, y = 0.;
+    for(int i = 0; i < L; i++)
+    {
+      TPoint P1, P2;
+      double t2 = Begin + (i + 1)*dA - Step/4;
+      FError = false;
+      double Max = FFunc[1](t), Min = Max; t += Step;
+      if (FError) break;
+      for(; t < t2; t += Step)
+      {
+        FError = false; y = FFunc[1](t); if (FError) break;
+        Max = max(Max, y); Min = min(Min, y);
+      }
+      if (FError) break;
+      if (!(Max > FArea.Top && Min > FArea.Top || Max < FArea.Bottom &&
+        Min < FArea.Bottom))
+      {
+        Max = min(Max, FArea.Top); Min = max(Min, FArea.Bottom);
+        FError = false;
+        P1 = ConvCoor(DblPoint(FArea.Left, Max));
+        P2 = ConvCoor(DblPoint(FArea.Left, Min));
+        if (FError) break;
+        P1.x = B + i; P2.x = B + i;
+        Lines.push_back(Line(P1, P2));
+      }
+      double s = y, e = FFunc[1](t);
+      if (!(s > ClipArea.Top && e > ClipArea.Top || s < ClipArea.Bottom &&
+        e < ClipArea.Bottom) && i != L - 1)
+      {
+        s = max(min(s, FArea.Top), FArea.Bottom);
+        e = max(min(e, FArea.Top), FArea.Bottom);
+        FError = false;
+        P1 = ConvCoor(DblPoint(FArea.Left, s));
+        P2 = ConvCoor(DblPoint(FArea.Left, e));
+        if (FError) break;
+        P1.x = B + i; P2.x = B + i + 1;
+        Lines.push_back(Line(P1, P2));
+      }
+    }
+    #endif //NOP
+  } else if (FMonotone[CoorX] && (End - Begin)/Step > 2*L) {
+  } else if (!(int *)DataX && (End - Begin)/Step > 2*L) {
     double dA = (End - Begin)/L;
     double t = Begin, y = 0.;
     for(int i = 0; i < L; i++)
@@ -335,9 +431,7 @@ void __fastcall TMxChartItem::DoCalculate()
         Lines.push_back(Line(P1, P2));
       }
     }
-  }
-  else if (!(int *)DataY && (End - Begin)/Step > 2*L)
-  {
+  } else if (!(int *)DataY && (End - Begin)/Step > 2*L) {
     double dA = (End - Begin)/L;
     double t = Begin, x = 0.;
     for(int i = 0; i < L; i++)
@@ -378,9 +472,7 @@ void __fastcall TMxChartItem::DoCalculate()
         Lines.push_back(Line(P1, P2));
       }
     }
-  }
-  else
-  {
+  } else {
     FError = false;
     OldDP = XYFunc(Begin);
     if (FError) return;
@@ -563,8 +655,12 @@ void __fastcall TMxChartItem::SetData(int Index, TPointer Value)
 // Выравнивание под массив
 void __fastcall TMxChartItem::FloorAxis()
 {
-  if ((FData[0].Type != dtFunction) || (FData[1].Type != dtFunction) ||
-        (FData[0].Type != dtMethod) || (FData[1].Type != dtMethod))
+  // Крашенинников 13.04.2014: Вместо || поставил &&, потому что, иначе,
+  // условие всегда дает true
+  // Смысл условия в том, что выравниваем FBounds и FStep только тогда,
+  // когда ни по какой из координат не задана функция
+  if ((FData[0].Type != dtFunction) && (FData[1].Type != dtFunction) &&
+        (FData[0].Type != dtMethod) && (FData[1].Type != dtMethod))
   {
     FBounds.Begin = floor(FBounds.Begin); FBounds.End = floor(FBounds.End);
     FStep = 1;
@@ -692,7 +788,7 @@ void __fastcall TMxChartItem::SetScale(int Index, double Value)
 // Установка пределов построения
 void __fastcall TMxChartItem::SetBounds(TDblBounds Value)
 {
-	if ((Value.Begin < Value.End) && (FBounds != Value))
+  if ((Value.Begin < Value.End) && (FBounds != Value))
   {
     FBounds = Value; FloorAxis();
     NeedCalculate = NeedAutoScale = true;
@@ -703,7 +799,7 @@ void __fastcall TMxChartItem::SetBounds(TDblBounds Value)
 // Установка шага
 void __fastcall TMxChartItem::SetStep(double Step)
 {
-	if ((Step > 0) && (FStep != Step))
+  if ((Step > 0) && (FStep != Step))
   {
     FStep = Step; FloorAxis();
     NeedCalculate = NeedAutoScale = true;
@@ -714,12 +810,25 @@ void __fastcall TMxChartItem::SetStep(double Step)
 // Установка автомасштабирования
 void __fastcall TMxChartItem::SetAutoScale(int Index, bool Value)
 {
-	if (FAutoScale[Index] != Value)
+  if (FAutoScale[Index] != Value)
   {
     FAutoScale[Index] = Value;
     if (Value) NeedCalculate = true;
     NeedAutoScale = true;
     if (FOnChange) FOnChange(this, cctAutoScale);
+  }
+}
+//---------------------------------------------------------------------------
+// Установка монотонности функции по соответствующей координате
+// Сделано для ускорения обработки, если по X время
+void __fastcall TMxChartItem::SetMonotone(int Index, bool Value)
+{
+  if (FMonotone[Index] != Value)
+  {
+    FMonotone[Index] = Value;
+    NeedCalculate = true;
+    NeedAutoScale = true;
+    if (FOnChange) FOnChange(this, cctMonotone);
   }
 }
 //---------------------------------------------------------------------------
@@ -2442,6 +2551,7 @@ void __fastcall TMxChart::ChildChange(TObject *Sender,
     case cctCompConv:
     case cctArea:
     case cctAutoScale:
+    case cctMonotone:
     case cctBounds:
     case cctHide:
     case cctGroup:
@@ -3659,5 +3769,4 @@ void irs::chart::builder_chart_window_t::TChartForm::
     m_base_chart_name = m_unsort_data.name();
   }
 }
-
 

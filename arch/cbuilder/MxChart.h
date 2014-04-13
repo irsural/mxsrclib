@@ -49,7 +49,7 @@ bool __fastcall operator != (TRect R1, TRect R2);
 #endif //__BORLANDC__ < IRS_CPP_BUILDER2010
 //---------------------------------------------------------------------------
 enum TChartChangeType {cctArea, cctBounds, cctBoundsRect, cctCanvas, cctHide,
-  cctAutoScale, cctGroup, cctShift, cctScale, cctStep, cctCompConv,
+  cctAutoScale, cctMonotone, cctGroup, cctShift, cctScale, cctStep, cctCompConv,
   cctSizeGrid, cctSizeAuxGrid, cctData, cctPrintRect, cctGraphObj, cctItems,
   cctMarker, cctBaseItem};
 enum TChartErrorType {cetConvX, cetConvY, cetCalcX, cetCalcY};
@@ -60,6 +60,8 @@ typedef void __fastcall (__closure *TChartError)(TObject *Sender, Exception &e,
 //---------------------------------------------------------------------------
 class TMxChartItem: public TComponent
 {
+  enum { CoorX = 0, CoorY = 1};
+
   friend class TMxChart;
   // Поля
   bool FHide;
@@ -78,6 +80,7 @@ class TMxChartItem: public TComponent
   TRect FBoundsRect, FPrevBoundsRect;
   double FStep;
   bool FAutoScale[2];
+  bool FMonotone[2];
   TChartChange FOnChange;
   TChartError FOnError;
   int FGroup[2];
@@ -117,8 +120,9 @@ class TMxChartItem: public TComponent
   TCompConv __fastcall GetCompConv(int Index) const;
   void __fastcall PaintMarkerX(int i);
   void __fastcall PaintMarkerY(int i);
-	void __fastcall SetArea(TDblRect Area);
+  void __fastcall SetArea(TDblRect Area);
   void __fastcall SetAutoScale(int Index, bool Value);
+  void __fastcall SetMonotone(int Index, bool Value);
   void __fastcall SetBounds(TDblBounds Bounds);
   void __fastcall SetBoundsRect(TRect Value);
   void __fastcall SetCompConv(int Index, TCompConv Value);
@@ -139,6 +143,8 @@ class TMxChartItem: public TComponent
   bool __fastcall ValidRect() const;
   void __fastcall Paint(int Tag);
   void __fastcall DoAutoScale();
+  void MonotoneBounds(int ACoor, double AAreaBegin,
+    double AAreaEnd, double* APBegin, double* APEnd, bool* is_finded);
   void __fastcall DoCalculate();
   void __fastcall DoPaint();
   void __fastcall DoBlackPrint();
@@ -159,6 +165,8 @@ public:
   __property TCompConv CompConvY = {index=1, read=GetCompConv, write=SetCompConv};
   __property bool AutoScaleX = {index=0, read=FAutoScale[0], write=SetAutoScale};
   __property bool AutoScaleY = {index=1, read=FAutoScale[1], write=SetAutoScale};
+  __property bool MonotoneX = {index=0, read=FMonotone[0], write=SetMonotone};
+  __property bool MonotoneY = {index=1, read=FMonotone[1], write=SetMonotone};
   __property double Step = {read=FStep, write=SetStep};
   __property TDblBounds Bounds = {read=FBounds, write=SetBounds};
   __property TDblRect Area = {read=GetArea, write=SetArea};
