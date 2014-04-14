@@ -284,7 +284,8 @@ void TMxChartItem::MonotoneBounds(int ACoor, double AAreaBegin,
     }
     t += FStep;
   }
-  if (!is_finded) return;
+  if (!*is_finded) return;
+  *is_finded = false;
   t = Bounds.Begin + FStep*(count - 1);
   for (int i = 0; i <= count; i++) {
     if (i == 0) {
@@ -346,21 +347,30 @@ void __fastcall TMxChartItem::DoCalculate()
   }
   if (Begin > End) return;
   if (FMonotone[CoorX] && (End - Begin)/Step > 2*L) {
-    #ifdef NOP
+    #ifndef NOP
     // Не доделано!!!
     double dA = (End - Begin)/L;
-    double t = Begin, y = 0.;
+    int countss = static_cast<int>((Bounds.End - Bounds.Begin)/FStep);
+    double tss = Bounds.Begin;
+    int iss = 0;
     for(int i = 0; i < L; i++)
     {
       TPoint P1, P2;
       double t2 = Begin + (i + 1)*dA - Step/4;
       FError = false;
-      double Max = FFunc[1](t), Min = Max; t += Step;
+      double Max = FFunc[CoorY](tss);
       if (FError) break;
-      for(; t < t2; t += Step)
-      {
-        FError = false; y = FFunc[1](t); if (FError) break;
-        Max = max(Max, y); Min = min(Min, y);
+      double Min = Max;
+      double y = 0.;
+      for (; iss <= countss; iss++) {
+        double x = FFunc[CoorX](tss);
+        if (x < t2) {
+          FError = false; y = FFunc[CoorY](tss); if (FError) break;
+          Max = max(Max, y); Min = min(Min, y);
+        } else {
+          break;
+        }
+        tss += FStep;
       }
       if (FError) break;
       if (!(Max > FArea.Top && Min > FArea.Top || Max < FArea.Bottom &&
@@ -374,7 +384,7 @@ void __fastcall TMxChartItem::DoCalculate()
         P1.x = B + i; P2.x = B + i;
         Lines.push_back(Line(P1, P2));
       }
-      double s = y, e = FFunc[1](t);
+      double s = y, e = FFunc[CoorY](tss);
       if (!(s > ClipArea.Top && e > ClipArea.Top || s < ClipArea.Bottom &&
         e < ClipArea.Bottom) && i != L - 1)
       {
@@ -389,7 +399,8 @@ void __fastcall TMxChartItem::DoCalculate()
       }
     }
     #endif //NOP
-  } else if (FMonotone[CoorX] && (End - Begin)/Step > 2*L) {
+  } else if (FMonotone[CoorY] && (End - Begin)/Step > 2*L) {
+    throw "FMonotone[CoorY] не реализована";
   } else if (!(int *)DataX && (End - Begin)/Step > 2*L) {
     double dA = (End - Begin)/L;
     double t = Begin, y = 0.;
