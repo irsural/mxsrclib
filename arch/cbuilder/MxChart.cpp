@@ -264,28 +264,32 @@ bool __fastcall TMxChartItem::ClipLine(TDblPoint &P1, TDblPoint &P2) const
 }
 //---------------------------------------------------------------------------
 void TMxChartItem::MonotoneBounds(int ACoor, double AAreaBegin,
-  double AAreaEnd, double* APBegin, double* APEnd, bool* is_finded)
+  double AAreaEnd, double* APBegin, double* APEnd, bool* APIsFinded)
 {
   // Оптимизация, если по координате, например, массив времени
   // Поиск границ отображения
   int count = static_cast<int>((Bounds.End - Bounds.Begin)/FStep);
   count++; // чтобы обработать Bounds.End
   double t = Bounds.Begin;
-  is_finded = false;
+  *APIsFinded = false;
   for (int i = 0; i <= count; i++) {
     if (i == count) {
       t = Bounds.End;
     }
     double x = FFunc[ACoor](t);
     if (x >= AAreaBegin) {
-      *APBegin = t;
-      *is_finded = true;
+      if (i > 0) {
+        *APBegin = t - FStep;
+      } else {
+        *APBegin = Bounds.Begin;
+      }
+      *APIsFinded = true;
       break;
     }
     t += FStep;
   }
-  if (!*is_finded) return;
-  *is_finded = false;
+  if (!*APIsFinded) return;
+  *APIsFinded = false;
   t = Bounds.Begin + FStep*(count - 1);
   for (int i = 0; i <= count; i++) {
     if (i == 0) {
@@ -293,8 +297,12 @@ void TMxChartItem::MonotoneBounds(int ACoor, double AAreaBegin,
     }
     double x = FFunc[ACoor](t);
     if (x <= AAreaEnd) {
-      *APEnd = t;
-      *is_finded = true;
+      if (i > 0) {
+        *APEnd = t + FStep;
+      } else {
+        *APEnd = Bounds.End;
+      }
+      *APIsFinded = true;
       break;
     }
     t -= FStep;
@@ -320,15 +328,15 @@ void __fastcall TMxChartItem::DoCalculate()
     bool is_finded = false;
     MonotoneBounds(CoorX, FArea.Left, FArea.Right, &Begin, &End, &is_finded);
     if (!is_finded) return;
-    B = ConvCoor(DblPoint(Begin, 0)).x;
-    E = ConvCoor(DblPoint(End, 0)).x;
+    B = ConvCoor(DblPoint(FFunc[CoorX](Begin), 0)).x;
+    E = ConvCoor(DblPoint(FFunc[CoorX](End), 0)).x;
     L = E - B + 1;
   } else if (FMonotone[CoorY]) {
     bool is_finded = false;
     MonotoneBounds(CoorY, FArea.Bottom, FArea.Top, &Begin, &End, &is_finded);
     if (!is_finded) return;
-    B = ConvCoor(DblPoint(0, Begin)).y;
-    E = ConvCoor(DblPoint(0, End)).y;
+    B = ConvCoor(DblPoint(0, FFunc[CoorY](Begin))).y;
+    E = ConvCoor(DblPoint(0, FFunc[CoorY](End))).y;
     L = E - B + 1;
   } else if (!(int *)DataX) {
     Begin = max(FStep*floor(FArea.Left/FStep), Bounds.Begin);
@@ -347,24 +355,24 @@ void __fastcall TMxChartItem::DoCalculate()
   }
   if (Begin > End) return;
   if (FMonotone[CoorX] && (End - Begin)/Step > 2*L) {
-    #ifndef NOP
-    // Не доделано!!!
-    double dA = (End - Begin)/L;
-    int countss = static_cast<int>((Bounds.End - Bounds.Begin)/FStep);
-    double tss = Bounds.Begin;
+    double AB = FFunc[CoorX](Begin);
+    double AE = FFunc[CoorX](End);
+    double dA = (AE - AB)/L;
+    int countss = static_cast<int>((End - Begin)/FStep);
+    double tss = Begin;
     int iss = 0;
     for(int i = 0; i < L; i++)
     {
-      TPoint P1, P2;
-      double t2 = Begin + (i + 1)*dA - Step/4;
+      double xy_limit = AB + (i + 1)*dA;
       FError = false;
       double Max = FFunc[CoorY](tss);
       if (FError) break;
       double Min = Max;
+      tss += FStep;
       double y = 0.;
       for (; iss <= countss; iss++) {
         double x = FFunc[CoorX](tss);
-        if (x < t2) {
+        if (x < xy_limit) {
           FError = false; y = FFunc[CoorY](tss); if (FError) break;
           Max = max(Max, y); Min = min(Min, y);
         } else {
@@ -378,29 +386,81 @@ void __fastcall TMxChartItem::DoCalculate()
       {
         Max = min(Max, FArea.Top); Min = max(Min, FArea.Bottom);
         FError = false;
-        P1 = ConvCoor(DblPoint(FArea.Left, Max));
-        P2 = ConvCoor(DblPoint(FArea.Left, Min));
+        TPoint P1 = ConvCoor(DblPoint(FArea.Left, Max));
+        TPoint P2 = ConvCoor(DblPoint(FArea.Left, Min));
         if (FError) break;
         P1.x = B + i; P2.x = B + i;
         Lines.push_back(Line(P1, P2));
       }
-      double s = y, e = FFunc[CoorY](tss);
+      double s = y;
+      double e = FFunc[CoorY](tss);
       if (!(s > ClipArea.Top && e > ClipArea.Top || s < ClipArea.Bottom &&
         e < ClipArea.Bottom) && i != L - 1)
       {
         s = max(min(s, FArea.Top), FArea.Bottom);
         e = max(min(e, FArea.Top), FArea.Bottom);
         FError = false;
-        P1 = ConvCoor(DblPoint(FArea.Left, s));
-        P2 = ConvCoor(DblPoint(FArea.Left, e));
+        TPoint P1 = ConvCoor(DblPoint(FArea.Left, s));
+        TPoint P2 = ConvCoor(DblPoint(FArea.Left, e));
         if (FError) break;
         P1.x = B + i; P2.x = B + i + 1;
         Lines.push_back(Line(P1, P2));
       }
     }
-    #endif //NOP
   } else if (FMonotone[CoorY] && (End - Begin)/Step > 2*L) {
-    throw "FMonotone[CoorY] не реализована";
+    // Код для FMonotone[CoorY] не проверялся
+    double AB = FFunc[CoorY](Begin);
+    double AE = FFunc[CoorY](End);
+    double dA = (AE - AB)/L;
+    int countss = static_cast<int>((End - Begin)/FStep);
+    double tss = Begin;
+    int iss = 0;
+    for(int i = 0; i < L; i++)
+    {
+      double xy_limit = AB + (i + 1)*dA;
+      FError = false;
+      double Max = FFunc[CoorX](tss);
+      if (FError) break;
+      double Min = Max;
+      tss += FStep;
+      double x = 0.;
+      for (; iss <= countss; iss++) {
+        double y = FFunc[CoorY](tss);
+        if (y < xy_limit) {
+          FError = false; x = FFunc[CoorX](tss); if (FError) break;
+          Max = max(Max, x); Min = min(Min, x);
+        } else {
+          break;
+        }
+        tss += FStep;
+      }
+      if (FError) break;
+      if (!(Max > ClipArea.Right && Min > ClipArea.Right ||
+        Max < ClipArea.Left && Min < ClipArea.Left))
+      {
+        Max = min(Max, FArea.Right); Min = max(Min, FArea.Left);
+        FError = false;
+        TPoint P1 = ConvCoor(DblPoint(Max, FArea.Bottom));
+        TPoint P2 = ConvCoor(DblPoint(Min, FArea.Bottom));
+        if (FError) break;
+        P1.x = E + i; P2.x = E + i;
+        Lines.push_back(Line(P1, P2));
+      }
+      double s = x;
+      double e = FFunc[CoorX](tss);
+      if (!(s > ClipArea.Right && e > ClipArea.Right || s < ClipArea.Left &&
+        e < ClipArea.Left) && i != L - 1)
+      {
+        s = max(min(s, FArea.Right), FArea.Left);
+        e = max(min(e, FArea.Right), FArea.Left);
+        FError = false;
+        TPoint P1 = ConvCoor(DblPoint(s, FArea.Bottom));
+        TPoint P2 = ConvCoor(DblPoint(s, FArea.Bottom));
+        if (FError) break;
+        P1.x = E - i; P2.x = E - i - 1;
+        Lines.push_back(Line(P1, P2));
+      }
+    }
   } else if (!(int *)DataX && (End - Begin)/Step > 2*L) {
     double dA = (End - Begin)/L;
     double t = Begin, y = 0.;
@@ -3699,6 +3759,7 @@ void irs::chart::builder_chart_window_t::TChartForm::
       if (func->size()) {
         mp_chart->Add(&func->fn, func->size(), color);
         mp_chart->Last->DataX = &time_func->fn;
+        mp_chart->Last->MonotoneX = true;
         if (!m_group_all) mp_chart->NewGroupY();
       }
       m_unsort_data.next();
