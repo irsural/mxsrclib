@@ -368,8 +368,8 @@ void __fastcall TMxChartItem::DoCalculate()
       double Max = FFunc[CoorY](tss);
       if (FError) break;
       double Min = Max;
+      double y = Max;
       tss += FStep;
-      double y = 0.;
       for (; iss <= countss; iss++) {
         double x = FFunc[CoorX](tss);
         if (x < xy_limit) {
