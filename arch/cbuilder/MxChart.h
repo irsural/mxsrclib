@@ -497,6 +497,9 @@ public:
   virtual rect_t position() const;
   virtual void set_position(const rect_t &a_position);
   virtual void add_param(const string_type &a_name);
+  virtual void add_param(const string_type &a_name,
+    const vector<double>& a_array_time,
+    const vector<double>& a_array_value);
   virtual void delete_param(const string_type &a_name);
   virtual void clear_param();
   virtual void set_value(const string_type &a_name, double a_value);

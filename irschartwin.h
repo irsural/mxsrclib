@@ -31,6 +31,9 @@ public:
   virtual rect_t position() const = 0;
   virtual void set_position(const rect_t &a_position) = 0;
   virtual void add_param(const string_type &a_name) = 0;
+  virtual void add_param(const string_type &a_name,
+    const vector<double>& a_array_time,
+    const vector<double>& a_array_value) = 0;
   virtual void delete_param(const string_type &a_name) = 0;
   virtual void clear_param() = 0;
   virtual void set_value(const string_type &a_name, double a_value) = 0;

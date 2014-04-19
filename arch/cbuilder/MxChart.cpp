@@ -3261,6 +3261,24 @@ add_param(const string_type &a_name)
   mp_form->chart_list_changed();
 }
 void irs::chart::builder_chart_window_t::
+add_param(const string_type &a_name, const vector<double>& a_array_time,
+  const vector<double>& a_array_value)
+{
+  m_data[a_name] = chart_point_t();
+  chart_vec_t& vec = m_data[a_name].vec;
+  vec.clear();
+  vec.resize(a_array_value.size() + 1);
+  ::copy(a_array_value.begin(), a_array_value.end(), vec.begin());
+  chart_vec_t& vec_time = m_data[a_name].vectime;
+  vec_time.clear();
+  vec_time.resize(a_array_time.size() + 1);
+  ::copy(a_array_time.begin(), a_array_time.end(), vec_time.begin());
+  m_data[a_name].index = m_chart_index;
+  m_chart_index++;
+  mp_form->invalidate();
+  mp_form->chart_list_changed();
+}
+void irs::chart::builder_chart_window_t::
 delete_param(const string_type &a_name)
 {
   data_t::iterator data_it = m_data.find(a_name);
