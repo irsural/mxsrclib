@@ -361,6 +361,7 @@ void __fastcall TMxChartItem::DoCalculate()
     int countss = static_cast<int>((End - Begin)/FStep);
     double tss = Begin;
     int iss = 0;
+    bool is_long_segment = false;//!
     for(int i = 0; i < L; i++)
     {
       double xy_limit = AB + (i + 1)*dA;
@@ -370,16 +371,24 @@ void __fastcall TMxChartItem::DoCalculate()
       double Min = Max;
       double y = Max;
       tss += FStep;
+      bool is_finded = false;//!
       for (; iss <= countss; iss++) {
         double x = FFunc[CoorX](tss);
         if (x < xy_limit) {
           FError = false; y = FFunc[CoorY](tss); if (FError) break;
           Max = max(Max, y); Min = min(Min, y);
+          is_finded = true;//!
         } else {
           break;
         }
         tss += FStep;
       }
+      //!
+      if (!is_finded) {
+        is_long_segment = true;
+        continue;
+      }
+      //!
       if (FError) break;
       if (!(Max > FArea.Top && Min > FArea.Top || Max < FArea.Bottom &&
         Min < FArea.Bottom))
