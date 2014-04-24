@@ -466,7 +466,7 @@ void irs::cyclic_adc_ads8344_t::tick()
         mp_cs_pin->set();
         mp_spi->reset_configuration();
         mp_spi->unlock();
-        m_process = process_read_write;;
+        m_process = process_read_write;
       }
     } break;
     case process_read_write: {
@@ -492,10 +492,10 @@ void irs::cyclic_adc_ads8344_t::tick()
         mp_cs_pin->set();
         mp_spi->unlock();
         if (!m_selected_other_channels) {
-          int sample = (mp_spi_read_buf[1] << 9) |
+          int raw = (mp_spi_read_buf[1] << 9) |
             (mp_spi_read_buf[2] << 1) | ((mp_spi_read_buf[3] & 0x80) >> 7);
-          m_channels[m_current_channel].value =
-            static_cast<sample_type>(sample);
+          const sample_type sample = static_cast<sample_type>(sample);
+          m_channels[m_current_channel].value = sample;
           m_channels[m_current_channel].new_value_exists = true;
           if (m_channels.size() > 1) {
             m_current_channel++;
@@ -539,7 +539,7 @@ irs_u8 irs::cyclic_adc_ads8344_t::make_control_byte(irs_u8 a_channel)
     case 7: {
       channel_code = 0x7;
     } break;
-  }  
+  }
   irs_u8 control_byte = static_cast<irs_u8>(
     (1 << s_bit)|(channel_code << a0_bit)|
     (1 << sgl_dif_bit)|(1 << pd1_bit)|(1 << pd0_bit));
