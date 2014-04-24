@@ -361,22 +361,24 @@ void __fastcall TMxChartItem::DoCalculate()
     int countss = static_cast<int>((End - Begin)/FStep);
     double tss = Begin;
     int iss = 0;
-    bool is_long_segment = false;//!
-    for(int i = 0; i < L; i++)
+    for(int i = 0; i < L;)
     {
       double xy_limit = AB + (i + 1)*dA;
-      FError = false;
-      double Max = FFunc[CoorY](tss);
-      if (FError) break;
-      double Min = Max;
-      double y = Max;
-      tss += FStep;
+      double Max = 0;
+      double Min = 0;
+      double y = 0;
       bool is_finded = false;//!
+      bool is_first = true;//!
       for (; iss <= countss; iss++) {
         double x = FFunc[CoorX](tss);
         if (x < xy_limit) {
           FError = false; y = FFunc[CoorY](tss); if (FError) break;
-          Max = max(Max, y); Min = min(Min, y);
+          if (is_first) {
+            is_first = false;
+            Max = y; Min = y;
+          } else {
+            Max = max(Max, y); Min = min(Min, y);
+          }
           is_finded = true;//!
         } else {
           break;
@@ -385,7 +387,7 @@ void __fastcall TMxChartItem::DoCalculate()
       }
       //!
       if (!is_finded) {
-        is_long_segment = true;
+        i++;
         continue;
       }
       //!
@@ -401,20 +403,23 @@ void __fastcall TMxChartItem::DoCalculate()
         P1.x = B + i; P2.x = B + i;
         Lines.push_back(Line(P1, P2));
       }
-      double s = y;
-      double e = FFunc[CoorY](tss);
-      if (!(s > ClipArea.Top && e > ClipArea.Top || s < ClipArea.Bottom &&
-        e < ClipArea.Bottom) && i != L - 1)
+      FError = false;
+      TDblPoint DPB = XYFunc(tss - FStep);
+      TDblPoint DPE = XYFunc(tss);
+      if (i < L - 1)
       {
-        s = max(min(s, FArea.Top), FArea.Bottom);
-        e = max(min(e, FArea.Top), FArea.Bottom);
-        FError = false;
-        TPoint P1 = ConvCoor(DblPoint(FArea.Left, s));
-        TPoint P2 = ConvCoor(DblPoint(FArea.Left, e));
-        if (FError) break;
-        P1.x = B + i; P2.x = B + i + 1;
-        Lines.push_back(Line(P1, P2));
+        if (ClipLine(DPB, DPE)) {
+          TPoint PB = ConvCoor(DPB);
+          TPoint PE = ConvCoor(DPE);
+          Lines.push_back(Line(PB, PE));
+          i = PE.x - B;
+        } else {
+          i++;
+        }
+      } else {
+        break;
       }
+      if (FError) break;
     }
   } else if (FMonotone[CoorY] && (End - Begin)/Step > 2*L) {
     // Код для FMonotone[CoorY] не проверялся
