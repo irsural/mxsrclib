@@ -476,11 +476,19 @@ void irs::mem_cluster_t::tick()
         } else {
           //  error
           IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " Ошибка CRC");
+          #ifdef NOP
+          for (int i = 0; i < m_cluster_size; i++) {
+            if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
+              int k = 0;
+              k++;
+            }
+          }
+          #endif //NOP
           memsetex(m_cluster_data.data(), m_cluster_data.size());
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
           m_error_status = true;
-          irs::mlog() << m_cluster_index << endl;
+          IRS_LIB_DBG_MSG("Индекс кластера " << m_cluster_index);
         }
       }
       break;
