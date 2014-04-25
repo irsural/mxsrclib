@@ -494,7 +494,7 @@ void irs::cyclic_adc_ads8344_t::tick()
         if (!m_selected_other_channels) {
           int raw = (mp_spi_read_buf[1] << 9) |
             (mp_spi_read_buf[2] << 1) | ((mp_spi_read_buf[3] & 0x80) >> 7);
-          const sample_type sample = static_cast<sample_type>(sample);
+          const sample_type sample = static_cast<sample_type>(raw);
           m_channels[m_current_channel].value = sample;
           m_channels[m_current_channel].new_value_exists = true;
           if (m_channels.size() > 1) {

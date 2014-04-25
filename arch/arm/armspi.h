@@ -124,12 +124,19 @@ private:
 class arm_spi_t: public spi_t
 {
 public:
+  enum gpio_speed_t {
+    gpio_speed_2mhz = IRS_GPIO_SPEED_2MHZ,
+    gpio_speed_25mhz = IRS_GPIO_SPEED_25MHZ,
+    gpio_speed_50mhz = IRS_GPIO_SPEED_50MHZ,
+    gpio_speed_100mhz = IRS_GPIO_SPEED_100MHZ
+  };
   arm_spi_t(
     size_t a_spi_address,
     irs_u32 a_bitrate,
     gpio_channel_t a_sck,
     gpio_channel_t a_miso,
-    gpio_channel_t a_mosi
+    gpio_channel_t a_mosi,
+    gpio_speed_t a_gpio_speed = gpio_speed_2mhz
   );
   virtual ~arm_spi_t();
   virtual void abort();
@@ -149,10 +156,10 @@ public:
   virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf,
     irs_uarc a_size);
 private:
-  enum { port_speed = IRS_GPIO_SPEED_100MHZ };
   void initialize_gpio_channels(gpio_channel_t a_sck,
     gpio_channel_t a_miso,
-    gpio_channel_t a_mosi);
+    gpio_channel_t a_mosi,
+    int a_gpio_speed);
   void set_moder_alternate_function(gpio_channel_t a_channel);
   void set_default();
   void enable_spi();

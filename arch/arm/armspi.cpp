@@ -609,7 +609,8 @@ irs::arm::arm_spi_t::arm_spi_t(
   irs_u32 a_bitrate,
   gpio_channel_t a_sck,
   gpio_channel_t a_miso,
-  gpio_channel_t a_mosi
+  gpio_channel_t a_mosi,
+  gpio_speed_t a_gpio_speed
 ):
   m_lock(false),
   mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_spi_address)),
@@ -623,7 +624,7 @@ irs::arm::arm_spi_t::arm_spi_t(
 
 {
   reset_peripheral(a_spi_address);
-  initialize_gpio_channels(a_sck, a_miso, a_mosi);
+  initialize_gpio_channels(a_sck, a_miso, a_mosi, a_gpio_speed);
   clock_enable(a_spi_address);
 
   mp_spi_regs->SPI_CR1_bit.SSM = 1;
@@ -638,7 +639,8 @@ irs::arm::arm_spi_t::arm_spi_t(
 
 void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   gpio_channel_t a_miso,
-  gpio_channel_t a_mosi)
+  gpio_channel_t a_mosi,
+  int a_gpio_speed)
 {
   set_moder_alternate_function(a_sck);
   set_moder_alternate_function(a_miso);
@@ -648,7 +650,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_sck) {
       case PA5: {
         GPIOA_AFRL_bit.AFRL5 = 5;
-        GPIOA_OSPEEDR_bit.OSPEEDR5 = port_speed;
+        GPIOA_OSPEEDR_bit.OSPEEDR5 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -657,7 +659,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_miso) {
       case PA6: {
         GPIOA_AFRL_bit.AFRL6 = 5;
-        GPIOA_OSPEEDR_bit.OSPEEDR6 = port_speed;
+        GPIOA_OSPEEDR_bit.OSPEEDR6 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -666,7 +668,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_mosi) {
       case PB5: {
         GPIOB_AFRL_bit.AFRL5 = 5;
-        GPIOB_OSPEEDR_bit.OSPEEDR5 = port_speed;
+        GPIOB_OSPEEDR_bit.OSPEEDR5 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -676,11 +678,11 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_sck) {
       case PB10: {
         GPIOB_AFRH_bit.AFRH10 = 5;
-        GPIOB_OSPEEDR_bit.OSPEEDR10 = port_speed;
+        GPIOB_OSPEEDR_bit.OSPEEDR10 = a_gpio_speed;
       } break;
       case PB13: {
         GPIOB_AFRH_bit.AFRH13 = 5;
-        GPIOB_OSPEEDR_bit.OSPEEDR13 = port_speed;
+        GPIOB_OSPEEDR_bit.OSPEEDR13 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -689,11 +691,11 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_miso) {
       case PB14: {
         GPIOB_AFRH_bit.AFRH14 = 5;
-        GPIOB_OSPEEDR_bit.OSPEEDR14 = port_speed;
+        GPIOB_OSPEEDR_bit.OSPEEDR14 = a_gpio_speed;
       } break;
       case PC2: {
         GPIOC_AFRL_bit.AFRL2 = 5;
-        GPIOC_OSPEEDR_bit.OSPEEDR2 = port_speed;
+        GPIOC_OSPEEDR_bit.OSPEEDR2 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -702,11 +704,11 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_mosi) {
       case PB15: {
         GPIOB_AFRH_bit.AFRH15 = 5;
-        GPIOB_OSPEEDR_bit.OSPEEDR15 = port_speed;
+        GPIOB_OSPEEDR_bit.OSPEEDR15 = a_gpio_speed;
       } break;
       case PC3: {
         GPIOC_AFRL_bit.AFRL3 = 5;
-        GPIOC_OSPEEDR_bit.OSPEEDR3 = port_speed;
+        GPIOC_OSPEEDR_bit.OSPEEDR3 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -716,7 +718,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_sck) {
       case PC10: {
         GPIOC_AFRH_bit.AFRH10 = 6;
-        GPIOC_OSPEEDR_bit.OSPEEDR10 = port_speed;
+        GPIOC_OSPEEDR_bit.OSPEEDR10 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -725,7 +727,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_miso) {
       case PC11: {
         GPIOC_AFRH_bit.AFRH11 = 6;
-        GPIOC_OSPEEDR_bit.OSPEEDR11 = port_speed;
+        GPIOC_OSPEEDR_bit.OSPEEDR11 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -734,7 +736,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
     switch (a_mosi) {
       case PC12: {
         GPIOC_AFRH_bit.AFRH12 = 6;
-        GPIOC_OSPEEDR_bit.OSPEEDR12 = port_speed;
+        GPIOC_OSPEEDR_bit.OSPEEDR12 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
