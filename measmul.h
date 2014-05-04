@@ -212,6 +212,7 @@ class agilent_3458a_t: public mxmultimeter_t
   } macro_mode_t;
   // Тип для индексов
   typedef irs_i32 index_t;
+  typedef size_t size_type;
   typedef irs::hardflow::fixed_flow_t::status_t fixed_flow_status_type;
   // Тип для типа тока и напряжения - перменное/постоянное
   enum volt_curr_type_t { vct_direct, vct_alternate };
@@ -2249,18 +2250,19 @@ inline void irs::agilent_34420a_t::set_ac()
 enum msg_status_t{MSG_BUSY, MSG_SUCCESS};
 class akip_ch3_85_3r_t: public mxmultimeter_t
 {
+  typedef size_t size_type;
   class buf_data_t
   {
-    enum {m_size_buf = 1024};
+    enum { m_size_buf = 1024 };
     irs_u8 m_arr[m_size_buf];
-    irs_u32 m_pos_inf_elem;
-    irs_u32 m_count_inf_elem;
+    size_type m_pos_inf_elem;
+    size_type m_count_inf_elem;
   public:
     buf_data_t():m_pos_inf_elem(0), m_count_inf_elem(0)
     {memset(m_arr,0,sizeof(m_arr));}
-    void push(const irs_u8* const ap_data, const irs_u32 a_size)
+    void push(const irs_u8* const ap_data, const size_type a_size)
     {
-      m_count_inf_elem = min(a_size, static_cast<irs_u32>(m_size_buf));
+      m_count_inf_elem = min(a_size, static_cast<size_type>(m_size_buf));
       memcpy(m_arr, ap_data, m_count_inf_elem);
       m_pos_inf_elem = 0;
     }
@@ -2268,12 +2270,12 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
     {
       return &(m_arr[m_pos_inf_elem]);
     }
-    void pop_front(const irs_u32 a_size)
+    void pop_front(const size_type a_size)
     {
       m_pos_inf_elem += min(a_size, m_count_inf_elem);
       m_count_inf_elem -= min(a_size, m_count_inf_elem);
     }
-    irs_u32 size()
+    size_type size()
     {
       return  m_count_inf_elem;
     }
@@ -2299,8 +2301,8 @@ class akip_ch3_85_3r_t: public mxmultimeter_t
       const size_type line_fit_pos = find('\n');
       if(line_fit_pos != irs::string::npos){
         // Удаление мусора из строк
-        irs_u32 size_bad_str = mv_bad_str.size();
-        for(irs_u32 i = 0; i < size_bad_str; i++){
+        const size_type size_bad_str = mv_bad_str.size();
+        for(size_type i = 0; i < size_bad_str; i++){
           irs::string bad_str = mv_bad_str[i];
           const size_type bad_str_pos = find(bad_str);
           if(bad_str_pos != irs::string::npos){

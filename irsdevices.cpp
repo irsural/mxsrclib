@@ -1014,7 +1014,7 @@ irs::v7_78_1_assembly_t::v7_78_1_assembly_t(tstlan4_base_t* ap_tstlan4,
   const string_type& a_conf_file_name
 ):
   m_conf_file_name(a_conf_file_name),
-  mp_param_box(make_assembly_param_box(irst("Â7-78\/1"), m_conf_file_name)),
+  mp_param_box(make_assembly_param_box(irst("Â7-78/1"), m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
@@ -1148,7 +1148,7 @@ irs::ch3_85_3r_assembly_t::ch3_85_3r_assembly_t(tstlan4_base_t* ap_tstlan4,
   const string_type& a_conf_file_name
 ):
   m_conf_file_name(a_conf_file_name),
-  mp_param_box(make_assembly_param_box(irst("×3-85\/3R"), m_conf_file_name)),
+  mp_param_box(make_assembly_param_box(irst("×3-85/3R"), m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),

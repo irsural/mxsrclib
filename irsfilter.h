@@ -201,7 +201,7 @@ int spln(
   const T a_phi,
   size_t* ap_nz,
   size_t* ap_np,
-	vector<T>* ap_zs_array
+  vector<T>* ap_zs_array
 );
 
 template <class T>
@@ -212,7 +212,7 @@ int zplna(
   const int a_nz,
   const T a_c,
   const T a_wc,
-	const T a_cbp,
+  const T a_cbp,
   const int a_ir,
   const complex<T>& a_cone,
   const T a_cgam,
@@ -1074,7 +1074,7 @@ int spln(
         m = IRS_PI / (2.0 * a_order);
       }
       for(size_t i = 0; i < *ap_np; i++) { /* poles */
-        const int lr = i + i;
+        const size_t lr = i + i;
         (*ap_zs_array)[lr] = -cos(m);
         (*ap_zs_array)[lr+1] = sin(m);
         m += IRS_PI / a_order;
@@ -1084,9 +1084,9 @@ int spln(
       if((a_bandform == fb_high_pass) || (a_bandform == fb_band_stop)) {
         /* map s => 1/s
         */
-        int ii = 0;
+        size_t ii = 0;
         for(size_t j = 0; j < *ap_np; j++) {
-          const int ir = j + j;
+          const size_t ir = j + j;
           ii = ir + 1;
           const T b = (*ap_zs_array)[ir] * (*ap_zs_array)[ir] +
             (*ap_zs_array)[ii] * (*ap_zs_array)[ii];
@@ -1100,7 +1100,7 @@ int spln(
           *ap_nz += a_order/2;
         }
         for(size_t j = 0; j < *ap_nz; j++) {
-          const int ir = ii + 1;
+          const size_t ir = ii + 1;
           ii = ir + 1;
           (*ap_zs_array)[ir] = 0.0;
           (*ap_zs_array)[ii] = 0.0;
@@ -1127,7 +1127,7 @@ int spln(
         m = IRS_PI/(2.0*a_order);
       }
       for(size_t i = 0; i < *ap_np; i++) {/* poles */
-        const int lr = i + i;
+        const size_t lr = i + i;
         (*ap_zs_array)[lr] = -a * cos(m);
         (*ap_zs_array)[lr+1] = b * sin(m);
         m += IRS_PI/a_order;
@@ -1137,9 +1137,9 @@ int spln(
       if((a_bandform == fb_high_pass) || (a_bandform == fb_band_stop)) {
         /* map s => 1/s
         */
-        int ii = 0;
+        size_t ii = 0;
         for(size_t j = 0; j < *ap_np; j++) {
-          const int ir = j + j;
+          const size_t ir = j + j;
           ii = ir + 1;
           const T denom = (*ap_zs_array)[ir]*(*ap_zs_array)[ir] +
             (*ap_zs_array)[ii]*(*ap_zs_array)[ii];
@@ -1153,7 +1153,7 @@ int spln(
           *ap_nz += a_order/2;
         }
         for(size_t j = 0; j < *ap_nz; j++ ) {
-          const int ir = ii + 1;
+          const size_t ir = ii + 1;
           ii = ir + 1;
           (*ap_zs_array)[ir] = 0.0;
           (*ap_zs_array)[ii] = 0.0;
@@ -1178,7 +1178,7 @@ int spln(
         T dn = 0;
         T phi = a_phi;
         ellpj(b, a_m, &sn, &cn, &dn, &phi );
-        const int lr = 2 * *ap_np + 2 * i;
+        const size_t lr = 2 * *ap_np + 2 * i;
         (*ap_zs_array)[ lr ] = 0.0;
         a = a_wc / (a_k * sn);	/* k = sqrt(a_m) */
         (*ap_zs_array)[ lr + 1 ] = a;
@@ -1194,7 +1194,7 @@ int spln(
         const T r = a_k * sn * sn1;
         b = cn1*cn1 + r*r;
         a = -a_wc * cn * dn * sn1 * cn1 / b;
-        const int lr = i + i;
+        const size_t lr = i + i;
         (*ap_zs_array)[lr] = a;
         b = a_wc*sn*dn1/b;
         (*ap_zs_array)[lr + 1] = b;
@@ -1202,16 +1202,17 @@ int spln(
       if((a_bandform == fb_high_pass) || (a_bandform == fb_band_stop)) {
 
         const size_t nt = *ap_np + *ap_nz;
-        int ii = 0;
+        size_t ii = 0;
         for(size_t j = 0; j < nt; j++) {
-          const int ir = j + j;
+          const size_t ir = j + j;
           ii = ir + 1;
-          const T b = (*ap_zs_array)[ir]*(*ap_zs_array)[ir] + (*ap_zs_array)[ii]*(*ap_zs_array)[ii];
+          const T b = (*ap_zs_array)[ir]*(*ap_zs_array)[ir] +
+            (*ap_zs_array)[ii]*(*ap_zs_array)[ii];
           (*ap_zs_array)[ir] = (*ap_zs_array)[ir] / b;
           (*ap_zs_array)[ii] = (*ap_zs_array)[ii] / b;
         }
         while(*ap_np > *ap_nz) {
-          const int ir = ii + 1;
+          const size_t ir = ii + 1;
           ii = ir + 1;
           *ap_nz += 1;
           (*ap_zs_array)[ir] = 0.0;
@@ -1284,7 +1285,7 @@ int zplna(
         case fb_low_pass:
         case fb_high_pass: {
           /* Substitute  s - r  =  s/wc - r = (1/wc)(z-1)/(z+1) - r
-					*
+          *
           *     1  1 - r wc (       1 + r wc )
           * =  --- -------- ( z  -  -------- )
           *    z+1    wc    (       1 - r wc )
@@ -1436,7 +1437,7 @@ int zplnb(
     (*ap_pp_array)[0] = 1.0;
     for(size_t j = 0; j < a_zord; j++) {
       //IRS_LIB_FILTER_DBG_MSG("j=" << j);
-      int jj = j;
+      size_t jj = j;
       if (icnt)
         jj += a_zord;
       const T a = (*ap_z_array)[jj].real();
@@ -1655,15 +1656,15 @@ T response(
 
   complex<T> num = 1.0;
   complex<T> den = 1.0;
-	complex<T> w = 0.0;
-	// w = (exp(j*omega*T) - z[order]) * (exp(j*omega*T) - z[order+1])... /
-	// (exp(j*omega*T) - z[0]) * (exp(j*omega*T) - z[2])...
-	for(size_t i = 0; i < a_zord; i++) {
-		w = x - a_z_array[i];
-		den *= w;
+  complex<T> w = 0.0;
+  // w = (exp(j*omega*T) - z[order]) * (exp(j*omega*T) - z[order+1])... /
+  // (exp(j*omega*T) - z[0]) * (exp(j*omega*T) - z[2])...
+  for(size_t i = 0; i < a_zord; i++) {
+    w = x - a_z_array[i];
+    den *= w;
     w = x - a_z_array[i + a_zord];
     num *= w;
-	}
+  }
   w = num/den;
   return abs(w*a_amp);
 }

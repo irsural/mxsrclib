@@ -635,7 +635,7 @@ void irs::agilent_3458a_t::tick()
       m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
       const irs_u8* command = reinterpret_cast<const irs_u8*>(
         m_cur_mul_command.c_str());
-      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
+      size_type len = strlen(reinterpret_cast<const char*>(command));
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
       m_fixed_flow.write_timeout(m_oper_time);
       m_mode = ma_mode_commands_wait;
@@ -716,7 +716,7 @@ void irs::agilent_3458a_t::tick()
 
     case ma_mode_auto_calibration: {
       const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
-      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
+      size_type len = strlen(reinterpret_cast<const char*>(command));
       m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
       m_fixed_flow.write_timeout(m_acal_time);
       m_mode = ma_mode_auto_calibration_wait;
@@ -3101,7 +3101,8 @@ void irs::v7_78_1_t::tick()
       f_cur_mul_command = (*f_mul_commands)[f_mul_commands_index];
       const irs_u8* command = reinterpret_cast<const irs_u8*>(
         f_cur_mul_command.c_str());
-      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
+      const mxifa_sz_t len = static_cast<mxifa_sz_t>(
+        strlen(reinterpret_cast<const char*>(command)));
       mxifa_write_begin(f_handle, IRS_NULL, command, len);
       f_mode = ma_mode_commands_wait;
       set_to_cnt(f_oper_to, f_oper_time);
@@ -3183,7 +3184,8 @@ void irs::v7_78_1_t::tick()
 
     case ma_mode_auto_calibration: {
       const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
-      irs_u32 len = strlen(reinterpret_cast<const char*>(command));
+      const mxifa_sz_t len = static_cast<mxifa_sz_t>(
+        strlen(reinterpret_cast<const char*>(command)));
       mxifa_write_begin(f_handle, IRS_NULL, command, len);
       set_to_cnt(f_acal_to, f_acal_time);
       f_mode = ma_mode_auto_calibration_wait;
@@ -4034,8 +4036,8 @@ void irs::akip_ch3_85_3r_t::connect(hardflow_t* ap_hardflow)
     mp_hardflow = ap_hardflow;
     if(mp_hardflow != NULL){
       //Запись команд инициализации
-      irs_u32 size = mv_init_commands.size();
-      for(irs_u32 i = 0; i < size; i++){
+      size_type size = mv_init_commands.size();
+      for(size_type i = 0; i < size; i++){
         md_buf_cmds.push_back(mv_init_commands[i]);
       }
     }
@@ -4094,8 +4096,8 @@ void irs::akip_ch3_85_3r_t::get_value(double *ap_value)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_value;
-    irs_u32 size = mv_get_value_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_value_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_value_commands[i]);
     }
     mp_last_commands = &mv_get_value_commands;
@@ -4123,8 +4125,8 @@ void irs::akip_ch3_85_3r_t::get_frequency(double *ap_frequency)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_frequency;
-    irs_u32 size = mv_get_frequency_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_frequency_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_frequency_commands[i]);
     }
     mp_last_commands = &mv_get_frequency_commands;
@@ -4137,8 +4139,8 @@ void irs::akip_ch3_85_3r_t::get_phase_average(double *ap_phase_average)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_phase_average;
-    irs_u32 size = mv_get_phase_average_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_phase_average_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_phase_average_commands[i]);
     }
     mp_last_commands = &mv_get_phase_average_commands;
@@ -4151,8 +4153,8 @@ void irs::akip_ch3_85_3r_t::get_phase(double *ap_phase)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_phase;
-    irs_u32 size = mv_get_phase_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_phase_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_phase_commands[i]);
     }
     mp_last_commands = &mv_get_phase_commands;
@@ -4165,8 +4167,8 @@ void irs::akip_ch3_85_3r_t::get_time_interval(double *ap_time_interval)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_time_interval;
-    irs_u32 size = mv_get_time_interval_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_time_interval_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_time_interval_commands[i]);
     }
     mp_last_commands = &mv_get_time_interval_commands;
@@ -4179,8 +4181,8 @@ void irs::akip_ch3_85_3r_t::get_time_interval_average(double *ap_time_interval)
     m_send_command_stat = CS_BUSY;
     m_meas_stat = meas_status_busy;
     mp_result = ap_time_interval;
-    irs_u32 size = mv_get_time_interval_average_commands.size();
-    for(irs_u32 i = 0; i < size; i++){
+    size_type size = mv_get_time_interval_average_commands.size();
+    for(size_type i = 0; i < size; i++){
       md_buf_cmds.push_back(mv_get_time_interval_average_commands[i]);
     }
     mp_last_commands = &mv_get_time_interval_average_commands;

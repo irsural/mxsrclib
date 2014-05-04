@@ -680,8 +680,8 @@ void irs::csvwork::csv_file_t::tick()
                     mp_row_user->begin() + m_cell_index;
                   *it_cell_str = it_cell_str->substr(1, it_cell_str->size()-2);
                   string_type buf = *it_cell_str;
-                  int index = 0;
-                  int index_end = it_cell_str->size();
+                  size_type index = 0;
+                  size_type index_end = it_cell_str->size();
                   while (index < index_end) {
                     if ((*it_cell_str)[index] == m_quote) {
                       index++;
@@ -745,9 +745,9 @@ void irs::csvwork::csv_file_t::tick()
           //bool fsuccess = true;
           const size_type max_cell_count_pack = 10;
           //int row_user_size = mp_row_user->size();
-          int i_end = min(
+          size_type i_end = min(
             m_table_uses_cell_count - m_cell_index, max_cell_count_pack);
-          for (int i = 0; i < i_end; i++) {
+          for (size_type i = 0; i < i_end; i++) {
             if (!m_file.good()) {
               instruction_success = false;
             } else {
@@ -762,8 +762,8 @@ void irs::csvwork::csv_file_t::tick()
                 m_file << cell;
               } else {
                 string_type cell_modified;
-                int cell_size = cell.size();
-                for (int i = 0; i < cell_size; i++) {
+                const size_type cell_size = cell.size();
+                for (size_type i = 0; i < cell_size; i++) {
                   if (cell[i] == m_quote) {
                     cell_modified += m_quote;
                   }
@@ -811,8 +811,8 @@ void irs::csvwork::csv_file_t::tick()
               if (m_quote_count % 2 == 0) {
                 if (m_quote_count != 0) {
                   m_cell_buf = m_cell_buf.substr(1, m_cell_buf.size()-2);
-                  int index = 0;
-                  int m_cell_buf_size = m_cell_buf.size();
+                  size_type index = 0;
+                  size_type m_cell_buf_size = m_cell_buf.size();
                   while (index < m_cell_buf_size) {
                     if (m_cell_buf[index] == m_quote) {
                       index++;

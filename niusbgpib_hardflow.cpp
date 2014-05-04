@@ -52,9 +52,10 @@ irs::hardflow::ni_usb_gpib_flow_t::ni_usb_gpib_flow_t(
   m_proc_array.push_back(&ni_usb_gpib_flow_t::proc_read);
   m_proc_array.push_back(&ni_usb_gpib_flow_t::proc_write);
   //mp_ni_usb_gpib->init();
-  m_device_id = m_ni_usb_gpib.ibdev(a_board_index, a_gpib_adress,
-    m_no_secondary_addr, m_timeout, m_eotmode, m_eosmode);
-  if (m_device_id != static_cast<size_type>(-1)) {
+  m_device_id = m_ni_usb_gpib.ibdev(static_cast<int>(a_board_index),
+    static_cast<int>(a_gpib_adress), m_no_secondary_addr, m_timeout,
+    m_eotmode, m_eosmode);
+  if (m_device_id != -1) {
     //int ibclr_status =
     m_ni_usb_gpib.ibclr(m_device_id);
     m_channel = invalid_channel + 1;
@@ -100,7 +101,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::set_param(const string_type& a_name,
   } else if (a_name == irst("write_timeout")) {
   } else {
     IRS_LIB_ERROR(ec_standard, "Неизвестный параметр");
-  }   
+  }
 }
 
 irs::hardflow::ni_usb_gpib_flow_t::size_type
@@ -126,7 +127,7 @@ irs::hardflow::ni_usb_gpib_flow_t::read(size_type a_channel_ident,
         m_device_id, time_s_to_timecode(m_session_read_timeout));
       //const int read_status =
       m_ni_usb_gpib.ibrda(m_device_id,
-        m_read_buf.data(), m_read_buf.size());
+        m_read_buf.data(), static_cast<int>(m_read_buf.size()));
       if (time_s_normalize(m_session_read_timeout) != 0.) {
         m_session_read_timer.start();
       } else {
@@ -155,7 +156,7 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
       m_read_buf.clear();
     } else {
       // Операция чтения не происходит
-    }  
+    }
     IRS_LIB_ASSERT(m_write_buf.empty());
     m_write_buf.insert(m_write_buf.data(), ap_buf, ap_buf + a_size);
     IRS_LIB_NIUSBGPIBHF_DBG_MSG_BASE("Запрашиваем запись " << a_size <<
@@ -166,7 +167,7 @@ irs::hardflow::ni_usb_gpib_flow_t::write(size_type a_channel_ident,
     m_ni_usb_gpib.ibtmo(m_device_id, TNONE);
     //const int write_status =
     m_ni_usb_gpib.ibwrta(m_device_id,
-      m_write_buf.data(), m_write_buf.size());
+      m_write_buf.data(), static_cast<int>(m_write_buf.size()));
     write_count = a_size;
     if (time_s_normalize(m_session_write_timeout) != 0.) {
       m_session_write_timer.start();
@@ -265,7 +266,7 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
   if ((write_status & CMPL) ||
     (write_status & ERR) ||
     session_write_timeout) {
-      
+
     m_write_buf.erase(m_write_buf.data(),
       m_write_buf.data() + min(m_write_buf.size(),
       static_cast<size_t>(m_ni_usb_gpib.get_ibcntl())));
@@ -280,13 +281,13 @@ void irs::hardflow::ni_usb_gpib_flow_t::proc_write()
     } else {
       //const int new_write_status =
       m_ni_usb_gpib.ibwrta(m_device_id,
-        m_write_buf.data(), m_write_buf.size());
+        m_write_buf.data(), static_cast<int>(m_write_buf.size()));
       if (time_s_normalize(m_session_write_timeout) != 0.) {
         m_session_write_timer.start();
       } else {
         m_session_write_timer.stop();
       }
-    }                                 
+    }
   } else {
     // Продолжаем запись
   }
@@ -310,9 +311,10 @@ irs::hardflow::ni_usb_gpib_flow_syn_t::ni_usb_gpib_flow_syn_t(
   m_write_timeout(a_write_timeout_s)
 {
   //m_ni_usb_gpib.init();
-  m_device_id = m_ni_usb_gpib.ibdev(a_board_index, a_gpib_adress,
-    m_no_secondary_addr, T100ms, m_eotmode, m_eosmode);
-  if (m_device_id != static_cast<size_type>(-1)) {
+  m_device_id = m_ni_usb_gpib.ibdev(static_cast<int>(a_board_index),
+    static_cast<int>(a_gpib_adress), m_no_secondary_addr, T100ms, m_eotmode,
+    m_eosmode);
+  if (m_device_id != -1) {
     //int ibclr_status =
     m_ni_usb_gpib.ibclr(m_device_id);
     m_channel = invalid_channel + 1;

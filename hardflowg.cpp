@@ -2587,7 +2587,7 @@ irs::hardflow::com_flow_t::read(size_type a_channel_ident,
   }
   size_type size_rd = 0;
   if (fsuccess) {
-    irs_uarc num_bytes_buf_rd = com_stat.cbInQue;
+    size_type num_bytes_buf_rd = com_stat.cbInQue;
     if (num_bytes_buf_rd > 0) {
       DWORD num_of_bytes_read = 0;
       size_rd = min(a_size, num_bytes_buf_rd);

@@ -37,13 +37,13 @@ public:
     irs_bool a_bit);
   virtual void tick() = 0;
 };
-inline void mxdata_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index, 
+inline void mxdata_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
   irs_bool a_bit)
 {
   if (a_bit) {
-    set_bit(a_index, a_bit_index);  
+    set_bit(a_index, a_bit_index);
   } else {
-    clear_bit(a_index, a_bit_index);  
+    clear_bit(a_index, a_bit_index);
   }
 }
 

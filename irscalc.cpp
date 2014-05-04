@@ -253,7 +253,7 @@ bool irs::calc::func_r_dbl_a_dbl_dbl_t::exec(
     } else {
       fsuccess = false;
     }
-    if (fsuccess) { 
+    if (fsuccess) {
       *ap_returned_value = (*mp_func)(first_arg_variant.as_double(),
         second_arg_variant.as_double());
     }
@@ -435,7 +435,7 @@ bool string_to_number_t::exec(
   vector<mutable_ref_type>* ap_parameters,
   variant_type* ap_returned_value) const
 {
-  bool fsuccess = true;  
+  bool fsuccess = true;
   if (ap_parameters->size() != 2) {
     fsuccess = false;
   } else {
@@ -505,7 +505,7 @@ bool string_to_number_t::exec(
     *ap_returned_value = true;
   } else {
     *ap_returned_value = false;
-  }         
+  }
   return fsuccess;
 }
 
@@ -540,7 +540,7 @@ irs::calc::stringns_t remove_space(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (int i = a_str.size() - 1; i > -1; i--) {
+  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
     if (irs::isspacet(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -553,7 +553,7 @@ irs::calc::stringns_t remove_alpha(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (int i = a_str.size() - 1; i > -1; i--) {
+  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
     if (irs::isalphat(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -566,20 +566,20 @@ irs::calc::stringns_t remove_digit(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (int i = a_str.size() - 1; i > -1; i--) {
+  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
     if (irs::isdigitt(str[i], a_loc)) {
       str.erase(i, 1);
     }
   }
   return str;
-} 
+}
 
 //! \brief Возвращает строку с удаленными символами, не являющимися числами
 irs::calc::stringns_t remove_not_digit(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (int i = a_str.size() - 1; i > -1; i--) {
+  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
     if (!irs::isdigitt(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -592,7 +592,7 @@ irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (int i = a_str.size() - 1; i > -1; i--) {
+  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
     if (!irs::isalphat(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -736,7 +736,7 @@ bool str_resize_t::exec(
     if (!irs::variant::is_number_type(number_variant.type())) {
       fsuccess = false;
     }
-  } 
+  }
   if (fsuccess) {
     string_type str = first_arg_variant.as_string();
     str.resize(number_variant.as_unsigned_int());
@@ -771,7 +771,7 @@ bool str_symbol_t::exec(
   vector<mutable_ref_type>* ap_parameters,
   variant_type* ap_returned_value) const
 {
-  bool fsuccess = true;  
+  bool fsuccess = true;
   if (ap_parameters->size() != 2) {
     fsuccess = false;
   } else {
@@ -825,7 +825,7 @@ bool sub_str_t::exec(
   vector<mutable_ref_type>* ap_parameters,
   variant_type* ap_returned_value) const
 {
-  bool fsuccess = true;  
+  bool fsuccess = true;
   if (ap_parameters->size() != 3) {
     fsuccess = false;
   } else {
@@ -1257,7 +1257,7 @@ irs::calc::calculator_t::calculator_t():
   //function_add(irst("remove_space"), new remove_space_t());
   //function_add(irst("to_upper"), new to_upper_t());
   //function_add(irst("to_lower"), new to_lower_t());
-  
+
   variable_add(irst("IRS_E"), IRS_E, v_is_constant);
   variable_add(irst("IRS_LOG2E"), IRS_LOG2E, v_is_constant);
   variable_add(irst("IRS_LOG10E"), IRS_LOG10E, v_is_constant);
@@ -1301,7 +1301,7 @@ bool irs::calc::calculator_t::atom(mutable_ref_t* ap_value)
     if (token.token_type() == tt_identifier) {
       function_t* p_function = IRS_NULL;
       if (m_list_identifier.function_find(token.get_identifier(), &p_function))
-      { 
+      {
         fsuccess = m_detector_token.next_token();
         vector<mutable_ref_t> arguments_func;
         if (fsuccess) {
@@ -1386,7 +1386,7 @@ bool irs::calc::calculator_t::atom(mutable_ref_t* ap_value)
         value_variant = token.get_number();
       } else {
         value_variant = token.get_string();
-      }                                 
+      }
       ap_value->type(mutable_ref_t::type_value);
       ap_value->value(value_variant);
       fsuccess = m_detector_token.next_token();
@@ -1635,7 +1635,7 @@ irs::calc::mutable_ref_t::mutable_ref_t(const variant_t& a_value, value_tag):
   m_value(a_value),
   m_id(),
   m_type(type_value)
-{     
+{
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(
@@ -1644,7 +1644,7 @@ irs::calc::mutable_ref_t::mutable_ref_t(
   m_value(),
   m_id(a_id_variable),
   m_type(type_id)
-{           
+{
 }
 
 irs::calc::mutable_ref_t::mutable_ref_t(const mutable_ref_t& a_mutable_ref):
@@ -1687,7 +1687,7 @@ void irs::calc::mutable_ref_t::id(const id_variable_type& a_id)
 {
   m_type = type_id;
   m_id = a_id;
-}       
+}
 
 irs::calc::mutable_ref_t::type_t irs::calc::mutable_ref_t::type() const
 {

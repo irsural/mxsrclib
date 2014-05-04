@@ -88,12 +88,12 @@ private:
     process_wait,
     process_read,
     process_write
-  };   
+  };
   process_t m_process;
   typedef void (ni_usb_gpib_flow_t::*p_process)();
   vector<p_process> m_proc_array;
   ni_usb_gpib_t m_ni_usb_gpib;
-  size_type m_device_id;
+  int m_device_id;
   size_type m_channel;
   raw_data_t<irs_u8> m_read_buf;
   raw_data_t<irs_u8> m_write_buf;
@@ -130,11 +130,11 @@ public:
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
 private:
-  enum { m_no_secondary_addr = 0 };   
+  enum { m_no_secondary_addr = 0 };
   enum { m_eotmode = 1 };
   enum { m_eosmode = 1 };
   ni_usb_gpib_t m_ni_usb_gpib;
-  size_type m_device_id;
+  int m_device_id;
   size_type m_channel;
   double m_read_timeout;
   double m_write_timeout;

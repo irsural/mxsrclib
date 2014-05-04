@@ -119,9 +119,9 @@ irs::sko_calc_t<data_t, calc_t>::~sko_calc_t() {
 
 template<class data_t, class calc_t>
 calc_t irs::sko_calc_t<data_t, calc_t>::sum()const {
-  irs_u32 size = m_val_array.size();
+  const size_t size = m_val_array.size();
   calc_t sum = 0;
-  for (irs_u32 i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     sum += m_val_array[i];
   }
   return sum;
@@ -137,7 +137,7 @@ void irs::sko_calc_t<data_t, calc_t>::resize(irs_u32 a_count) {
 
 template<class data_t, class calc_t>
 irs_u32 irs::sko_calc_t<data_t, calc_t>::size() {
-  irs_u32 size = m_val_array.size();
+  irs_u32 size = static_cast<irs_u32>(m_val_array.size());
   return size;
 }
 
@@ -161,7 +161,7 @@ void irs::sko_calc_t<data_t, calc_t>::clear() {
 
 template<class data_t, class calc_t>
 void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
-  irs_u32 size = m_val_array.size();
+  const size_t size = m_val_array.size();
   if (size < m_count) {
     m_val_array.push_back(a_val);
   }
@@ -170,8 +170,8 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
     m_val_array.push_back(a_val);
   }
   else if (size > m_count) {
-    irs_u32 margin = size - m_count;
-    for (irs_u32 i = 0; i < margin; i++) {
+    size_t margin = size - m_count;
+    for (size_t i = 0; i < margin; i++) {
       m_val_array.pop_front();
     }
   }
@@ -179,7 +179,7 @@ void irs::sko_calc_t<data_t, calc_t>::add(data_t a_val) {
 
 template<class data_t, class calc_t>
 irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
-  irs_u32 size = m_val_array.size();
+  const size_t size = m_val_array.size();
   if (size) {
     calc_t square_sum = 0.;
     calc_t average = 0;
@@ -188,7 +188,7 @@ irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
     } else {
       average = m_average;
     }
-    for (irs_u32 i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       calc_t val = static_cast<calc_t> (m_val_array[i]);
       val -= average;
       square_sum += val * val;
@@ -201,7 +201,7 @@ irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
 
 template<class data_t, class calc_t>
 data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
-  irs_u32 size = m_val_array.size();
+  const size_t size = m_val_array.size();
   if (size) {
     calc_t average = sum() / size;
     calc_t sko = *this;
@@ -218,7 +218,7 @@ data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
 
 template<class data_t, class calc_t>
 data_t irs::sko_calc_t<data_t, calc_t>::average()const {
-  irs_u32 size = m_val_array.size();
+  size_t size = m_val_array.size();
   if (size == 0) {
     size = 1;
   }
@@ -273,7 +273,7 @@ namespace irs {
 
   private:
     deque<T>m_array;
-    irs_u32 m_count;
+    size_t m_count;
   };
 
 } // namespace irs
@@ -452,14 +452,14 @@ void fast_average_t<data_t, calc_t>::resize(size_type a_count)
 }
 
 template <class data_t, class calc_t>
-fast_average_t<data_t, calc_t>::size_type
+typename fast_average_t<data_t, calc_t>::size_type
 fast_average_t<data_t, calc_t>::size() const
 {
   return m_samples.size();
 }
 
 template <class data_t, class calc_t>
-fast_average_t<data_t, calc_t>::size_type
+typename fast_average_t<data_t, calc_t>::size_type
 fast_average_t<data_t, calc_t>::max_size() const
 {
   return m_max_count;
@@ -640,14 +640,14 @@ void fast_multi_average_t<data_t, calc_t>::resize(size_type a_index,
 }
 
 template <class data_t, class calc_t>
-fast_multi_average_t<data_t, calc_t>::size_type
+typename fast_multi_average_t<data_t, calc_t>::size_type
 fast_multi_average_t<data_t, calc_t>::size(size_type a_index) const
 {
   return m_windows[a_index].size;
 }
 
 template <class data_t, class calc_t>
-fast_multi_average_t<data_t, calc_t>::size_type
+typename fast_multi_average_t<data_t, calc_t>::size_type
 fast_multi_average_t<data_t, calc_t>::max_size(size_type a_index) const
 {
   return m_windows[a_index].max_size;
@@ -759,14 +759,14 @@ fast_sko_t<data_t, calc_t>::average_size() const
 }
 
 template<class data_t, class calc_t>
-fast_sko_t<data_t, calc_t>::size_type
+typename fast_sko_t<data_t, calc_t>::size_type
 fast_sko_t<data_t, calc_t>::max_size() const
 {
   return m_count;
 }
 
 template<class data_t, class calc_t>
-fast_sko_t<data_t, calc_t>::size_type
+typename fast_sko_t<data_t, calc_t>::size_type
 fast_sko_t<data_t, calc_t>::average_max_size()
 {
   return m_average.max_size();
@@ -983,7 +983,7 @@ fast_multi_sko_with_single_average_t<data_t, calc_t>::average_size() const
 }
 
 template<class data_t, class calc_t>
-fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
+typename fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
 fast_multi_sko_with_single_average_t<data_t, calc_t>::
 max_size(size_type a_index) const
 {
@@ -991,14 +991,14 @@ max_size(size_type a_index) const
 }
 
 template<class data_t, class calc_t>
-fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
+typename fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
 fast_multi_sko_with_single_average_t<data_t, calc_t>::max_size() const
 {
   return m_max_count;
 }
 
 template<class data_t, class calc_t>
-fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
+typename fast_multi_sko_with_single_average_t<data_t, calc_t>::size_type
 fast_multi_sko_with_single_average_t<data_t, calc_t>::average_max_size() const
 {
   return m_average.max_size();
@@ -1275,14 +1275,14 @@ fast_multi_sko_t<data_t, calc_t>::average_size(size_type a_index) const
 }
 
 template<class data_t, class calc_t>
-fast_multi_sko_t<data_t, calc_t>::size_type
+typename fast_multi_sko_t<data_t, calc_t>::size_type
 fast_multi_sko_t<data_t, calc_t>::max_size(size_type a_index) const
 {
   return m_windows[a_index].max_size;
 }
 
 template<class data_t, class calc_t>
-fast_multi_sko_t<data_t, calc_t>::size_type
+typename fast_multi_sko_t<data_t, calc_t>::size_type
 fast_multi_sko_t<data_t, calc_t>::average_max_size(size_type a_index) const
 {
   return m_average.max_size(a_index);
