@@ -540,7 +540,9 @@ irs::calc::stringns_t remove_space(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
+  std::size_t i = a_str.size();
+  while (i > 0) {
+    i--;
     if (irs::isspacet(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -553,7 +555,9 @@ irs::calc::stringns_t remove_alpha(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
+  std::size_t i = a_str.size();
+  while (i > 0) {
+    i--;
     if (irs::isalphat(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -566,7 +570,9 @@ irs::calc::stringns_t remove_digit(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
+  std::size_t i = a_str.size();
+  while (i > 0) {
+    i--;
     if (irs::isdigitt(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -579,7 +585,9 @@ irs::calc::stringns_t remove_not_digit(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
+  std::size_t i = a_str.size();
+  while (i > 0) {
+    i--;
     if (!irs::isdigitt(str[i], a_loc)) {
       str.erase(i, 1);
     }
@@ -592,7 +600,9 @@ irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
   irs::calc::stringns_t str = a_str;
-  for (std::size_t i = a_str.size() - 1; i > -1; i--) {
+  std::size_t i = a_str.size();
+  while (i > 0) {
+    i--;
     if (!irs::isalphat(str[i], a_loc)) {
       str.erase(i, 1);
     }

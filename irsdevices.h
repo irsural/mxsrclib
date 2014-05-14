@@ -58,6 +58,7 @@ class mxdata_assembly_types_t
 public:
   typedef mxdata_assembly_t::string_type string_type;
 
+  virtual ~mxdata_assembly_types_t() {}
   virtual void enum_types(vector<string_type>* ap_types) const = 0;
   virtual handle_t<mxdata_assembly_t> make_assembly(
     const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
