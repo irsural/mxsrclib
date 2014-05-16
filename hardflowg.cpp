@@ -3117,18 +3117,6 @@ DWORD WINAPI irs::hardflow::usb_hid_t::read_report(void* ap_params)
           if (owner->check_error()) {
             close_thread = true;
           }
-          /*const DWORD error_code = GetLastError();
-          if (error_code == ERROR_DEVICE_NOT_CONNECTED) {
-            if (WaitForSingleObject(owner->m_error_string_mutex, INFINITE) ==
-              WAIT_OBJECT_0) {
-              owner->m_error_string = irs::str_conv<string_type>(
-                irs::error_str(error_code));
-              ReleaseMutex(owner->m_error_string_mutex);
-            }
-            close_thread = true;
-          }*/
-          const DWORD wait_result =
-            WaitForSingleObject(owner->m_close_read_thread_event, 0);
           if (WaitForSingleObject(owner->m_close_read_thread_event, 0) ==
               WAIT_OBJECT_0) {
             close_thread = true;
@@ -3261,17 +3249,6 @@ DWORD WINAPI irs::hardflow::usb_hid_t::write_report(void* ap_params)
             Sleep(1);
           }
         } else {
-          /*const DWORD error_code = GetLastError();
-          if (error_code == ERROR_DEVICE_NOT_CONNECTED) {
-            if (WaitForSingleObject(owner->m_error_string_mutex, INFINITE) ==
-              WAIT_OBJECT_0) {
-              owner->m_error_string = irs::str_conv<string_type>(
-                irs::error_str(error_code));
-              ReleaseMutex(owner->m_error_string_mutex);
-            }
-            CancelIo(owner->m_hid_handle);
-            return 0;
-          }*/
           if (owner->check_error()) {
             CancelIo(owner->m_hid_handle);
             return 0;
