@@ -86,6 +86,18 @@ mxdata_assembly_params_container_t* mxdata_assembly_params()
   return &mxdata_assembly_params_container;
 }
 
+// class mxdata_assembly_t
+irs::mxdata_assembly_t::status_t irs::mxdata_assembly_t::get_status()
+{
+  return status_not_supported;
+}
+
+irs::mxdata_assembly_t::error_string_list_type
+irs::mxdata_assembly_t::get_last_error_string_list()
+{
+  return error_string_list_type();
+}
+
 mxdata_assembly_params_t::mxdata_assembly_params_t(
   mxdata_assembly_t::string_type a_ini_name)
 {
@@ -268,10 +280,14 @@ public:
   virtual void tick();
   virtual void show_options();
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
+  virtual status_t get_status();
+  virtual string_type get_last_error_string();
+  virtual error_string_list_type get_last_error_string_list();
 private:
   void tune_param_box();
   void update_usb_hid_device_path_map();
   void update_param_box_devices_field();
+  void add_error(const string_type& a_error);
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
     param_box_tune_t(modbus_assembly_t* ap_modbus_assembly,
@@ -287,10 +303,17 @@ private:
   bool m_enabled;
   handle_t<hardflow_t> mp_modbus_client_hardflow;
   handle_t<mxdata_t> mp_modbus_client;
+  bool m_activated;
+  irs::loop_timer_t m_activation_timer;
+  enum { error_list_max_size = 100 };
+  error_string_list_type m_error_list;
 
   static handle_t<mxdata_t> make_client(handle_t<hardflow_t> ap_hardflow,
     handle_t<param_box_base_t> ap_param_box);
   handle_t<hardflow_t> make_hardflow();
+  void try_create_modbus();
+  void create_modbus();
+  void destroy_modbus();
   static string_type protocol_name(protocol_t a_protocol);
 };
 
@@ -397,7 +420,9 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
   mp_modbus_client_hardflow(NULL),
-  mp_modbus_client(NULL)
+  mp_modbus_client(NULL),
+  m_activated(false),
+  m_activation_timer(irs::make_cnt_s(1))
 {
   tune_param_box();
   mp_tstlan4->ini_name(m_conf_file_name);
@@ -518,6 +543,17 @@ void irs::modbus_assembly_t::update_param_box_devices_field()
   mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
 }
 
+void irs::modbus_assembly_t::add_error(const string_type& a_error)
+{
+  stringstream s;
+  s << irs::sdatetime;
+  string_type msg = irs::str_conv<string_type>(s.str()) + a_error;
+  m_error_list.push_back(msg);
+  if (m_error_list.size() > error_list_max_size) {
+    m_error_list.pop_front();
+  }
+}
+
 bool irs::modbus_assembly_t::enabled() const
 {
   return m_enabled;
@@ -528,16 +564,52 @@ void irs::modbus_assembly_t::enabled(bool a_enabled)
     return;
   }
   if (a_enabled) {
-    mp_modbus_client_hardflow = make_hardflow();
-    mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
-    mp_tstlan4->connect(mp_modbus_client.get());
+    if (m_protocol == usb_hid_protocol) {
+      try_create_modbus();
+    } else {
+      try {
+        create_modbus();
+      } catch (...) {
+        destroy_modbus();
+        throw;
+      }
+    }
   } else {
-    mp_tstlan4->connect(NULL);
-    mp_modbus_client.reset();
-    mp_modbus_client_hardflow.reset();
+    destroy_modbus();
   }
   m_enabled = a_enabled;
 }
+
+void irs::modbus_assembly_t::try_create_modbus()
+{
+  try {
+    create_modbus();
+  } catch (std::runtime_error& e) {
+    const string_type s = str_conv<string_type>(string(e.what()));
+    add_error(s);
+    destroy_modbus();
+  } catch (...) {
+    add_error(irst("Неизвестная ошибка"));
+    destroy_modbus();
+  }
+}
+
+void irs::modbus_assembly_t::create_modbus()
+{
+  mp_modbus_client_hardflow = make_hardflow();
+  mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
+  mp_tstlan4->connect(mp_modbus_client.get());
+  m_activated = true;
+}
+
+void irs::modbus_assembly_t::destroy_modbus()
+{
+  mp_tstlan4->connect(NULL);
+  mp_modbus_client.reset();
+  mp_modbus_client_hardflow.reset();
+  m_activated = false;
+}
+
 irs::mxdata_t* irs::modbus_assembly_t::mxdata()
 {
   return mp_modbus_client.get();
@@ -546,6 +618,16 @@ void irs::modbus_assembly_t::tick()
 {
   if (!mp_modbus_client.is_empty()) {
     mp_modbus_client->tick();
+    const string_type error_string =
+      mp_modbus_client_hardflow->param(irst("error_string"));
+    if (!error_string.empty()) {
+      add_error(error_string);
+      destroy_modbus();
+    }
+  }
+  if ((m_protocol == usb_hid_protocol) &&
+      m_enabled && !m_activated && m_activation_timer.check()) {
+    try_create_modbus();
   }
 }
 void irs::modbus_assembly_t::show_options()
@@ -567,6 +649,28 @@ void irs::modbus_assembly_t::show_options()
 void irs::modbus_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 {
   mp_tstlan4 = ap_tstlan4;
+}
+
+irs::modbus_assembly_t::status_t irs::modbus_assembly_t::get_status()
+{
+  if (m_activated) {
+    return status_connected;
+  }
+  return status_busy;
+}
+
+irs::modbus_assembly_t::string_type
+irs::modbus_assembly_t::get_last_error_string()
+{
+  return string_type();
+}
+
+irs::modbus_assembly_t::error_string_list_type
+irs::modbus_assembly_t::get_last_error_string_list()
+{
+  error_string_list_type error_list = m_error_list;
+  m_error_list.clear();
+  return error_list;
 }
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 

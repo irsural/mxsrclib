@@ -24,7 +24,22 @@ class mxdata_assembly_t
 {
 public:
   typedef string_t string_type;
-
+  typedef deque<string_type> error_string_list_type;
+  enum status_t {
+    //! \brief Статус не поддерживается
+    //! \details Этот статус выдается, если работа со статусами не
+    //!   поддерживается. Он выдается по умолчанию
+    status_not_supported,
+    //! \brief Соединение установлено
+    status_connected,
+    //! \brief Ожидание соединения
+    //! \details Этот статус следует выдавать даже тогда, когда происходит
+    //!   ошибка соединения, но это не мешает циклически пытаться установить
+    //!   соединение
+    status_busy,
+    //! \brief Произошла ошибка и попыток соединения больше не происходит
+    status_error
+  };
   virtual ~mxdata_assembly_t() {}
   virtual bool enabled() const = 0;
   virtual void enabled(bool a_enabled) = 0;
@@ -32,6 +47,8 @@ public:
   virtual void tick() = 0;
   virtual void show_options() = 0;
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4) = 0;
+  virtual status_t get_status();
+  virtual error_string_list_type get_last_error_string_list();
 };
 
 class mxdata_assembly_params_t

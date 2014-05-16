@@ -2801,12 +2801,16 @@ irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
   m_close_write_thread_event(NULL),
   m_read_buffer_mutex(NULL),
   m_write_buffer_mutex(NULL),
+  m_error_string_mutex(NULL),
   m_read_packet(),
   m_write_packet(),
   m_read_buffers(m_channel_count),
   m_write_buffers(m_channel_count),
   m_user_read_buffers(m_channel_count),
   m_user_write_buffers(m_channel_count),
+  m_error_string(),
+  m_user_error_string(),
+  m_error(false),
   m_sync_read_buffers_loop_timer(irs::make_cnt_ms(5)),
   m_sync_write_buffers_loop_timer(irs::make_cnt_ms(5)),
   m_write_buf_index(0),
@@ -2843,6 +2847,7 @@ irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
       OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED,
       NULL);
+
     if (m_hid_handle == INVALID_HANDLE_VALUE) {
       throw std::runtime_error(
         ("Ошибка открытия hid-устройства. " + irs::last_error_str()).c_str());
@@ -2886,6 +2891,12 @@ irs::hardflow::usb_hid_t::usb_hid_t(const string_type& a_device_path,
       throw std::runtime_error(("Ошибка создания mutex буфера записи. " +
         irs::last_error_str()).c_str());
     }
+    m_error_string_mutex = CreateMutex(NULL, FALSE, NULL);
+    if (!m_error_string_mutex) {
+      throw std::runtime_error(("Ошибка создания mutex буфера ошибки. " +
+        irs::last_error_str()).c_str());
+    }
+
     m_write_thread = CreateThread(NULL,
       0,
       write_report,
@@ -2916,6 +2927,7 @@ void irs::hardflow::usb_hid_t::release_resources()
   CloseHandle(m_write_thread);
   m_write_thread = NULL;
   CloseHandle(m_close_write_thread_event);
+  m_close_write_thread_event = NULL;
 
   if (m_read_thread) {
     SetEvent(m_close_read_thread_event);
@@ -2924,20 +2936,32 @@ void irs::hardflow::usb_hid_t::release_resources()
   CloseHandle(m_read_thread);
   m_read_thread = IRS_NULL;
   CloseHandle(m_close_read_thread_event);
+  m_close_read_thread_event = NULL;
 
+  CloseHandle(m_error_string_mutex);
+  m_error_string_mutex = NULL;
   CloseHandle(m_write_buffer_mutex);
+  m_write_buffer_mutex = NULL;
   CloseHandle(m_read_buffer_mutex);
+  m_read_buffer_mutex = NULL;
 
   CloseHandle(m_hid_write_overlapped.hEvent);
+  m_hid_write_overlapped.hEvent = NULL;
   CloseHandle(m_hid_read_overlapped.hEvent);
+  m_hid_read_overlapped.hEvent = NULL;
 
   CloseHandle(m_hid_handle);
+  m_hid_handle = NULL;
 }
 
 irs::hardflow::usb_hid_t::string_type
-irs::hardflow::usb_hid_t::param(const string_type& /*a_name*/)
+irs::hardflow::usb_hid_t::param(const string_type& a_param_name)
 {
-  return string_type();
+  string_type param_value;
+  if (a_param_name == irst("error_string")) {
+    param_value = m_user_error_string;
+  }
+  return param_value;
 }
 
 void irs::hardflow::usb_hid_t::set_param(const string_type& /*a_name*/,
@@ -2994,23 +3018,33 @@ bool irs::hardflow::usb_hid_t::is_channel_exists(size_type a_channel_ident)
 
 void irs::hardflow::usb_hid_t::tick()
 {
-  if (m_sync_read_buffers_loop_timer.check()) {
-    if (WaitForSingleObject(m_read_buffer_mutex, INFINITE) ==
-      WAIT_OBJECT_0) {
-      for (size_type i = 0; i < m_channel_count; i++) {
-        transfer(&m_read_buffers[i], &m_user_read_buffers[i]);
+  if (!m_error) {
+    if (m_sync_read_buffers_loop_timer.check()) {
+      if (WaitForSingleObject(m_read_buffer_mutex, INFINITE) ==
+        WAIT_OBJECT_0) {
+        for (size_type i = 0; i < m_channel_count; i++) {
+          transfer(&m_read_buffers[i], &m_user_read_buffers[i]);
+        }
+        ReleaseMutex(m_read_buffer_mutex);
       }
-      ReleaseMutex(m_read_buffer_mutex);
     }
-  }
 
-  if (m_sync_write_buffers_loop_timer.check()) {
-    if (WaitForSingleObject(m_write_buffer_mutex, INFINITE) ==
-      WAIT_OBJECT_0) {
-      for (size_type i = 0; i < m_channel_count; i++) {
-        transfer(&m_user_write_buffers[i], &m_write_buffers[i]);
+    if (m_sync_write_buffers_loop_timer.check()) {
+      if (WaitForSingleObject(m_write_buffer_mutex, INFINITE) ==
+        WAIT_OBJECT_0) {
+        for (size_type i = 0; i < m_channel_count; i++) {
+          transfer(&m_user_write_buffers[i], &m_write_buffers[i]);
+        }
+        ReleaseMutex(m_write_buffer_mutex);
       }
-      ReleaseMutex(m_write_buffer_mutex);
+    }
+    if (WaitForSingleObject(m_error_string_mutex, 0) == WAIT_OBJECT_0) {
+      m_error = !m_error_string.empty();
+      if (m_error) {
+        m_user_error_string = m_error_string;
+        release_resources();
+      }
+      ReleaseMutex(m_error_string_mutex);
     }
   }
 }
@@ -3079,8 +3113,27 @@ DWORD WINAPI irs::hardflow::usb_hid_t::read_report(void* ap_params)
           read_success = true;
           break;
         } else {
+          bool close_thread = false;
+          if (owner->check_error()) {
+            close_thread = true;
+          }
+          /*const DWORD error_code = GetLastError();
+          if (error_code == ERROR_DEVICE_NOT_CONNECTED) {
+            if (WaitForSingleObject(owner->m_error_string_mutex, INFINITE) ==
+              WAIT_OBJECT_0) {
+              owner->m_error_string = irs::str_conv<string_type>(
+                irs::error_str(error_code));
+              ReleaseMutex(owner->m_error_string_mutex);
+            }
+            close_thread = true;
+          }*/
+          const DWORD wait_result =
+            WaitForSingleObject(owner->m_close_read_thread_event, 0);
           if (WaitForSingleObject(owner->m_close_read_thread_event, 0) ==
-            WAIT_OBJECT_0) {
+              WAIT_OBJECT_0) {
+            close_thread = true;
+          }
+          if (close_thread) {
             CancelIo(owner->m_hid_handle);
             return 0;
           }
@@ -3208,12 +3261,42 @@ DWORD WINAPI irs::hardflow::usb_hid_t::write_report(void* ap_params)
             Sleep(1);
           }
         } else {
+          /*const DWORD error_code = GetLastError();
+          if (error_code == ERROR_DEVICE_NOT_CONNECTED) {
+            if (WaitForSingleObject(owner->m_error_string_mutex, INFINITE) ==
+              WAIT_OBJECT_0) {
+              owner->m_error_string = irs::str_conv<string_type>(
+                irs::error_str(error_code));
+              ReleaseMutex(owner->m_error_string_mutex);
+            }
+            CancelIo(owner->m_hid_handle);
+            return 0;
+          }*/
+          if (owner->check_error()) {
+            CancelIo(owner->m_hid_handle);
+            return 0;
+          }
           Sleep(1);
         }
       }
     }
   }
   return 0;
+}
+
+bool irs::hardflow::usb_hid_t::check_error()
+{
+  const DWORD error_code = GetLastError();
+  if (error_code != ERROR_IO_INCOMPLETE /*ERROR_DEVICE_NOT_CONNECTED*/) {
+    if (WaitForSingleObject(m_error_string_mutex, INFINITE) ==
+      WAIT_OBJECT_0) {
+      m_error_string = irs::str_conv<string_type>(
+        irs::error_str(error_code));
+      ReleaseMutex(m_error_string_mutex);
+    }
+    return true;
+  }
+  return false;
 }
 
 #endif // IRS_WIN32

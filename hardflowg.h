@@ -1945,6 +1945,7 @@ private:
     size_type a_size);
   static DWORD WINAPI read_report(void* ap_params);
   static DWORD WINAPI write_report(void* ap_params);
+  bool check_error();
   usb_hid_t();
   const string_type m_device_path;
   const size_type m_channel_start_index;
@@ -1966,12 +1967,16 @@ private:
   HANDLE m_close_write_thread_event;
   HANDLE m_read_buffer_mutex;
   HANDLE m_write_buffer_mutex;
+  HANDLE m_error_string_mutex;
   packet_t m_read_packet;
   packet_t m_write_packet;
   buffers_type m_read_buffers;
   buffers_type m_write_buffers;
   buffers_type m_user_read_buffers;
   buffers_type m_user_write_buffers;
+  string_type m_error_string;
+  string_type m_user_error_string;
+  bool m_error;
   loop_timer_t m_sync_read_buffers_loop_timer;
   loop_timer_t m_sync_write_buffers_loop_timer;
   size_type m_write_buf_index;
