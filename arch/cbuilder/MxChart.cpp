@@ -367,8 +367,8 @@ void __fastcall TMxChartItem::DoCalculate()
       double Max = 0;
       double Min = 0;
       double y = 0;
-      bool is_finded = false;//!
-      bool is_first = true;//!
+      bool is_finded = false;
+      bool is_first = true;
       for (; iss <= countss; iss++) {
         double x = FFunc[CoorX](tss);
         if (x < xy_limit) {
@@ -379,18 +379,16 @@ void __fastcall TMxChartItem::DoCalculate()
           } else {
             Max = max(Max, y); Min = min(Min, y);
           }
-          is_finded = true;//!
+          is_finded = true;
         } else {
           break;
         }
         tss += FStep;
       }
-      //!
       if (!is_finded) {
         i++;
         continue;
       }
-      //!
       if (FError) break;
       if (!(Max > FArea.Top && Min > FArea.Top || Max < FArea.Bottom &&
         Min < FArea.Bottom))
@@ -429,51 +427,63 @@ void __fastcall TMxChartItem::DoCalculate()
     int countss = static_cast<int>((End - Begin)/FStep);
     double tss = Begin;
     int iss = 0;
-    for(int i = 0; i < L; i++)
+    for(int i = 0; i < L;)
     {
       double xy_limit = AB + (i + 1)*dA;
-      FError = false;
-      double Max = FFunc[CoorX](tss);
-      if (FError) break;
-      double Min = Max;
-      double x = Max;
-      tss += FStep;
+      double Max = 0;
+      double Min = 0;
+      double x = 0;
+      bool is_finded = false;
+      bool is_first = true;
       for (; iss <= countss; iss++) {
         double y = FFunc[CoorY](tss);
         if (y < xy_limit) {
           FError = false; x = FFunc[CoorX](tss); if (FError) break;
-          Max = max(Max, x); Min = min(Min, x);
+          if (is_first) {
+            is_first = false;
+            Max = x; Min = x;
+          } else {
+            Max = max(Max, x); Min = min(Min, x);
+          }
+          is_finded = true;
         } else {
           break;
         }
         tss += FStep;
       }
+      if (!is_finded) {
+        i++;
+        continue;
+      }
       if (FError) break;
-      if (!(Max > ClipArea.Right && Min > ClipArea.Right ||
-        Max < ClipArea.Left && Min < ClipArea.Left))
+      if (!(Max > FArea.Right && Min > FArea.Right ||
+        Max < FArea.Left && Min < FArea.Left))
       {
         Max = min(Max, FArea.Right); Min = max(Min, FArea.Left);
         FError = false;
         TPoint P1 = ConvCoor(DblPoint(Max, FArea.Bottom));
         TPoint P2 = ConvCoor(DblPoint(Min, FArea.Bottom));
         if (FError) break;
-        P1.x = E + i; P2.x = E + i;
+        P1.y = B + i; P2.y = B + i;
         Lines.push_back(Line(P1, P2));
       }
-      double s = x;
-      double e = FFunc[CoorX](tss);
-      if (!(s > ClipArea.Right && e > ClipArea.Right || s < ClipArea.Left &&
-        e < ClipArea.Left) && i != L - 1)
+      FError = false;
+      TDblPoint DPB = XYFunc(tss - FStep);
+      TDblPoint DPE = XYFunc(tss);
+      if (i < L - 1)
       {
-        s = max(min(s, FArea.Right), FArea.Left);
-        e = max(min(e, FArea.Right), FArea.Left);
-        FError = false;
-        TPoint P1 = ConvCoor(DblPoint(s, FArea.Bottom));
-        TPoint P2 = ConvCoor(DblPoint(s, FArea.Bottom));
-        if (FError) break;
-        P1.x = E - i; P2.x = E - i - 1;
-        Lines.push_back(Line(P1, P2));
+        if (ClipLine(DPB, DPE)) {
+          TPoint PB = ConvCoor(DPB);
+          TPoint PE = ConvCoor(DPE);
+          Lines.push_back(Line(PB, PE));
+          i = PE.y - B;
+        } else {
+          i++;
+        }
+      } else {
+        break;
       }
+      if (FError) break;
     }
   } else if (!(int *)DataX && (End - Begin)/Step > 2*L) {
     double dA = (End - Begin)/L;
