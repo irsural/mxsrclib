@@ -281,7 +281,6 @@ public:
   virtual void show_options();
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
   virtual status_t get_status();
-  virtual string_type get_last_error_string();
   virtual error_string_list_type get_last_error_string_list();
 private:
   void tune_param_box();
@@ -657,12 +656,6 @@ irs::modbus_assembly_t::status_t irs::modbus_assembly_t::get_status()
     return status_connected;
   }
   return status_busy;
-}
-
-irs::modbus_assembly_t::string_type
-irs::modbus_assembly_t::get_last_error_string()
-{
-  return string_type();
 }
 
 irs::modbus_assembly_t::error_string_list_type
