@@ -19,29 +19,26 @@
 
 #define NEW_18092011
 
-#ifdef IRS_LIB_IRSMBUS_DEBUG_TYPE
-# if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
-#   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)
-#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl)
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
-# elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
-#   define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) msg
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)\
-      IRS_LIB_DBG_RAW_MSG(msg << endl) 
-#   define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl) 
-#   define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
-# endif
-#else // IRS_LIB_IRSMBUS_DEBUG_TYPE
-# define IRS_LIB_IRSMBUS_DEBUG_TYPE IRS_LIB_DEBUG_NONE
+#if (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_BASE)
+# define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
+# define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl)
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
+#elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+# define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg) msg
+# define IRS_LIB_IRSMBUS_DBG_MONITOR(msg) msg
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)\
+    IRS_LIB_DBG_RAW_MSG(msg << endl)
+# define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) IRS_LIB_DBG_RAW_MSG(msg << endl)
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg) msg
+#elif (IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_NONE)
 # define IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(msg)
 # define IRS_LIB_IRSMBUS_DBG_MONITOR(msg)
-# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg) 
-# define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg) 
+# define IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(msg)
+# define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg)
 # define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
-#endif // IRS_LIB_IRSMBUS_DEBUG_TYPE
+#endif // IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
 
 namespace irs {
 
@@ -100,8 +97,8 @@ struct response_exception_t {
 
 #pragma pack(pop)
 
-void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out, 
-  size_t index_data_in, size_t index_data_out, size_t size_data);  
+void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
+  size_t index_data_in, size_t index_data_out, size_t size_data);
 
 //! \brief Определение границ области пересечения двух областей в составе
 //!   одного массива.
@@ -112,7 +109,7 @@ void test_bit_copy(ostream& strm, size_t size_data_in, size_t size_data_out,
 //! \param[in] a_end_range – индекс на конец проверяемой области;
 //! \param[out] a_num – размер совпадающей области;
 //! \param[out] a_start – индекс на начало совпадающей области.
-void range(size_t a_index, size_t a_size, size_t a_start_range, 
+void range(size_t a_index, size_t a_size, size_t a_start_range,
   size_t a_end_range, size_t *a_num, size_t *a_start);
 
 //! \brief Сервер протокола Modbus
@@ -159,7 +156,7 @@ public:
   virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
   virtual void tick();
   virtual void abort();
-  
+
 private:
   enum {
     size_of_MBAP = 7,
@@ -267,7 +264,7 @@ private:
   static char const IRS_CSTR_NONVOLATILE       m_write_end[];
   static IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
     m_ident_name_list[];
-  
+
   void error_response(irs_u8 error_code);
   void modbus_pack_request_monitor(irs_u8 *ap_buf);
   void modbus_pack_response_monitor(irs_u8 *ap_buf);
@@ -334,7 +331,7 @@ public:
   virtual void set_refresh_mode(mode_refresh_t a_refresh_mode);
   virtual void abort();
   virtual void tick();
-  
+
 private:
   enum {
     size_of_MBAP = 7,
@@ -393,7 +390,7 @@ private:
     //!   (для автоматического режима).
     make_request_mode
   };
-  
+
   irs_u16                               m_size_of_packet;
   irs_u16                               m_size_of_data_write_byte;
   irs_u16                               m_size_of_data_read_byte;

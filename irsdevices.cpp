@@ -655,7 +655,10 @@ irs::modbus_assembly_t::status_t irs::modbus_assembly_t::get_status()
   if (m_activated) {
     return status_connected;
   }
-  return status_busy;
+  if (m_enabled) {
+    return status_busy;
+  }
+  return status_disabled;
 }
 
 irs::modbus_assembly_t::error_string_list_type

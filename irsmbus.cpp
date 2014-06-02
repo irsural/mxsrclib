@@ -115,7 +115,7 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     }
     last_part_size = (a_size_data_bit - first_part_size)%
       irs::global_limits_t::bits_in_byte;
-    size_t middle_part_size_byte = (a_size_data_bit - 
+    size_t middle_part_size_byte = (a_size_data_bit -
       (first_part_size + last_part_size))/irs::global_limits_t::bits_in_byte;
     int part_idx = 0;
     if (first_part_size) {
@@ -137,10 +137,10 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     if (last_part_size) {
       irs_u8 last_mask = mask_gen(irs::global_limits_t::bits_in_byte -
         last_part_size, last_part_size);
-      irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size_byte + 
+      irs_u8 last_data_in = ap_data_in[data_start_in + middle_part_size_byte +
         first_part_size/irs::global_limits_t::bits_in_byte];
       last_data_in &= last_mask;
-      ap_data_out[data_start_out + middle_part_size_byte + part_idx] &= 
+      ap_data_out[data_start_out + middle_part_size_byte + part_idx] &=
         static_cast<irs_u8>(~last_mask);
       ap_data_out[data_start_out + middle_part_size_byte + part_idx] |=
         last_data_in;
@@ -234,10 +234,10 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     }
     int offset_index = 0;
     if (last_part_size) {
-      size_t last_external_byte_index = data_cnt + data_start_in + 
+      size_t last_external_byte_index = data_cnt + data_start_in +
         first_part_idx;
       size_t last_internal_byte_index = data_cnt + data_start_out +
-        first_part_idx; 
+        first_part_idx;
       irs_u8 last_mask = 0;
       if (static_cast<irs_u32>(last_part_size) <
         ((irs::global_limits_t::bits_in_byte - 2*offset)*offset_idx + offset))
@@ -271,13 +271,13 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
           } else {
             last_mask = mask_gen(irs::global_limits_t::bits_in_byte - offset,
               offset);
-            first_part(ap_data_out[last_internal_byte_index], 
+            first_part(ap_data_out[last_internal_byte_index],
               ap_data_in[last_external_byte_index], index_bit, last_mask);
           }
         }
       } else {
         if (index_in > index_out) {
-          second_part(ap_data_out[last_internal_byte_index], 
+          second_part(ap_data_out[last_internal_byte_index],
             ap_data_in[last_external_byte_index - 1 + offset_idx],
             index_bit, middle_mask);
         }
@@ -314,13 +314,13 @@ void bit_copy(const irs_u8 *ap_data_in, irs_u8 *ap_data_out,
     {
       size_t external_idx = data_idx + data_start_in + first_part_idx;
       size_t internal_idx = data_idx + data_start_out + first_part_idx;
-      first_part(ap_data_out[internal_idx], 
+      first_part(ap_data_out[internal_idx],
         ap_data_in[external_idx + offset_idx], index_bit, middle_mask);
     }
     for(size_t data_idx = 0; data_idx < data_cnt; data_idx++) {
-      size_t external_idx = data_idx + data_start_in + 
+      size_t external_idx = data_idx + data_start_in +
         first_part_idx*offset_idx;
-      size_t internal_idx = data_idx + data_start_out + 
+      size_t internal_idx = data_idx + data_start_out +
         first_part_idx*offset_idx;
       second_part(ap_data_out[internal_idx + 1 - offset_idx],
         ap_data_in[external_idx], index_bit, middle_mask);
@@ -345,7 +345,7 @@ irs::irs_string_t int_to_str(int a_number, int a_radix, int a_cnt)
     int digit = a_number%a_radix;
     //number_str[a_cnt - digit_idx - 1] = digit_to_char(digit);
     number_str[digit_idx] = digit_to_char(digit);
-    a_number /= a_radix; 
+    a_number /= a_radix;
   }
   return number_str;
 }
@@ -416,21 +416,21 @@ void convert(irs_u8 *ap_mess, irs_u8 a_start, irs_u8 a_length)
   }
 }
 
-void irs::range(size_t a_index, size_t a_size, size_t a_start_range, 
+void irs::range(size_t a_index, size_t a_size, size_t a_start_range,
   size_t a_end_range, size_t *a_num, size_t *a_start)
 {
   size_t var = a_index + a_size;
-  if ((a_index >= a_start_range) && (a_index < a_end_range) && 
+  if ((a_index >= a_start_range) && (a_index < a_end_range) &&
     (var > a_start_range) && (var <= a_end_range))
   {
     *a_num = a_size;
     *a_start = (a_index - a_start_range);
-  } else if((a_index > a_start_range) && (a_index < a_end_range) && 
+  } else if((a_index > a_start_range) && (a_index < a_end_range) &&
     (var > a_end_range))
   {
     *a_num = (a_end_range - a_index);
     *a_start = (a_index - a_start_range);
-  } else if((a_index < a_start_range) && (var > a_start_range) && 
+  } else if((a_index < a_start_range) && (var > a_start_range) &&
     (var < a_end_range))
   {
     *a_num = (var - a_start_range);
@@ -456,7 +456,7 @@ irs::modbus_server_t::modbus_server_t(
   m_coils_size_bit(size_t(a_coils_size_byte*global_limits_t::bits_in_byte)),
   m_hold_registers_size_reg(a_hold_regs_reg),
   m_input_registers_size_reg(a_input_regs_reg),
-  m_size_byte(a_discr_inputs_size_byte + a_coils_size_byte + 
+  m_size_byte(a_discr_inputs_size_byte + a_coils_size_byte +
     a_hold_regs_reg*2 + a_input_regs_reg*2),
   m_discret_inputs_end_byte(a_discr_inputs_size_byte),
   m_coils_end_byte(a_discr_inputs_size_byte + a_coils_size_byte),
@@ -514,8 +514,8 @@ IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
   m_send_response_mode,
   m_read_end_mode,
   m_write_end
-};  
-  
+};
+
 void irs::modbus_server_t::view_mode()
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(m_ident_name_list[m_mode]);
@@ -534,11 +534,11 @@ irs_bool irs::modbus_server_t::connected()
 void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 {
   mlog() << irsm("\n recieved packet") << endl;
-  MBAP_header_t &header = 
+  MBAP_header_t &header =
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
-  request_exception_t &req_header = 
+  request_exception_t &req_header =
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
-    
+
   mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
@@ -554,14 +554,14 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     int(IRS_HIBYTE(header.length)) << endl;
   mlog() << irsm(" unit_identifier ...... ") <<
     int(header.unit_identifier) << endl;
-    
+
   mlog() << irsm(" function_code ........ ") <<
     int(req_header.function_code);
   switch(req_header.function_code)
   {
     case read_discrete_inputs:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -575,7 +575,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_coils:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -589,7 +589,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_hold_registers:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -603,7 +603,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_input_registers:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -617,7 +617,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_coil:
     {
-      response_single_write_t &req_header_inner = 
+      response_single_write_t &req_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single coil") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -631,7 +631,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_register:
     {
-      response_single_write_t &req_header_inner = 
+      response_single_write_t &req_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write hold register") << endl;
       mlog() << irsm(" register_address_lo .. ") <<
@@ -649,7 +649,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_multiple_write_byte_t &req_header_inner = 
+      request_multiple_write_byte_t &req_header_inner =
         reinterpret_cast<request_multiple_write_byte_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple coils") << endl;
@@ -678,7 +678,7 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_registers:
     {
-      request_multiple_write_regs_t &req_header_inner = 
+      request_multiple_write_regs_t &req_header_inner =
         reinterpret_cast<request_multiple_write_regs_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple register") << endl;
@@ -711,11 +711,11 @@ void irs::modbus_server_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
 void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 {
   mlog() << irsm("\n send packet") << endl;
-  MBAP_header_t &header = 
+  MBAP_header_t &header =
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
-  request_exception_t &resp_header = 
+  request_exception_t &resp_header =
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
-    
+
   mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
@@ -731,14 +731,14 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     int(IRS_HIBYTE(header.length)) << endl;
   mlog() << irsm(" unit_identifier ...... ") <<
     int(header.unit_identifier) << endl;
-    
+
   mlog() << irsm(" function_code ........ ") <<
     int(resp_header.function_code);
   switch(resp_header.function_code)
   {
     case read_discrete_inputs:
     {
-      response_read_byte_t &resp_header_inner = 
+      response_read_byte_t &resp_header_inner =
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" byte_count ........... ") <<
@@ -750,13 +750,13 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case read_coils:
     {
-      response_read_byte_t &resp_header_inner = 
+      response_read_byte_t &resp_header_inner =
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
-      for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count; 
-        coils_idx++) 
+      for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count;
+        coils_idx++)
       {
         mlog() << irsm(" coils[") << coils_idx <<
           irsm("] ............. ") <<
@@ -765,13 +765,13 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case read_hold_registers:
     {
-      response_read_reg_t &resp_header_inner = 
+      response_read_reg_t &resp_header_inner =
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
       for(int h_reg_idx = 0; h_reg_idx < int(resp_header_inner.byte_count)/2;
-        h_reg_idx++) 
+        h_reg_idx++)
       {
         mlog() << irsm(" hold regs lo[") << h_reg_idx <<
           irsm("] ...... ") <<
@@ -783,13 +783,13 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case read_input_registers:
     {
-      response_read_reg_t &resp_header_inner = 
+      response_read_reg_t &resp_header_inner =
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
       for(int i_reg_idx = 0; i_reg_idx < int(resp_header_inner.byte_count)/2;
-        i_reg_idx++) 
+        i_reg_idx++)
       {
         mlog() << irsm(" input regs lo[") << i_reg_idx <<
           irsm("] ..... ") <<
@@ -801,7 +801,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_coil:
     {
-      response_single_write_t &resp_header_inner = 
+      response_single_write_t &resp_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single coil") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -815,7 +815,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_register:
     {
-      response_single_write_t &resp_header_inner = 
+      response_single_write_t &resp_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single register") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -829,7 +829,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case read_exception_status:
     {
-      response_exception_t &resp_header_inner = 
+      response_exception_t &resp_header_inner =
         reinterpret_cast<response_exception_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" read exception status ") << endl;
@@ -840,7 +840,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_t &resp_header_inner = 
+      request_t &resp_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -854,7 +854,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_registers:
     {
-      request_t &resp_header_inner = 
+      request_t &resp_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -873,7 +873,7 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
   }
 }
 
-void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index, 
+void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
@@ -882,8 +882,8 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
   m_input_registers_size_byte = 0, m_input_registers_start_byte = 0;
-  
-  range(a_index, a_size, 0, m_discret_inputs_end_byte, 
+
+  range(a_index, a_size, 0, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
   range(a_index, a_size, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
@@ -892,7 +892,7 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   range(a_index, a_size, m_hold_registers_end_byte,
     m_input_registers_end_byte, &m_input_registers_size_byte,
     &m_input_registers_start_byte);
-    
+
   if ((m_discret_inputs_size_byte != 0)) {
     IRS_LIB_ASSERT((m_discret_inputs_start_byte +
       m_discret_inputs_size_byte) <= m_discr_inputs_byte.size());
@@ -902,34 +902,34 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
     IRS_LIB_ASSERT((m_coils_start_byte + m_coils_size_byte) <=
       m_coils_byte.size());
-    memcpyex(ap_buf + m_discret_inputs_size_byte, 
+    memcpyex(ap_buf + m_discret_inputs_size_byte,
       m_coils_byte.data() + m_coils_start_byte, m_coils_size_byte);
   }
   if ((m_hold_registers_size_byte != 0)||(m_hold_registers_start_byte != 0))
   {
     size_t ap_buf_start = m_discret_inputs_size_byte + m_coils_size_byte;
-    irs_u8* hold_regs_data = 
+    irs_u8* hold_regs_data =
       reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
-    IRS_LIB_ASSERT((m_hold_registers_start_byte + 
+    IRS_LIB_ASSERT((m_hold_registers_start_byte +
       m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size());
-    memcpyex(ap_buf + ap_buf_start, hold_regs_data + 
+    memcpyex(ap_buf + ap_buf_start, hold_regs_data +
       m_hold_registers_start_byte, m_hold_registers_size_byte);
   }
   if ((m_input_registers_size_byte != 0)||(m_input_registers_start_byte != 0))
   {
-    size_t ap_buf_start = m_discret_inputs_size_byte + m_coils_size_byte + 
+    size_t ap_buf_start = m_discret_inputs_size_byte + m_coils_size_byte +
       m_hold_registers_size_byte;
-    irs_u8* input_regs_data = 
+    irs_u8* input_regs_data =
       reinterpret_cast<irs_u8*>(m_input_regs_reg.data());
     IRS_LIB_ASSERT((m_input_registers_start_byte +
       m_input_registers_size_byte)/2 <= m_input_regs_reg.size());
-    memcpyex(ap_buf + ap_buf_start, input_regs_data + 
+    memcpyex(ap_buf + ap_buf_start, input_regs_data +
       m_input_registers_start_byte, m_input_registers_size_byte);
   }
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
     for(size_t buf_idx = 0;
-      buf_idx < (m_discret_inputs_size_byte + 
-      m_coils_size_byte + m_hold_registers_size_byte + 
+      buf_idx < (m_discret_inputs_size_byte +
+      m_coils_size_byte + m_hold_registers_size_byte +
       m_input_registers_size_byte); buf_idx++)
     {
       mlog() << irsm("ap_buf[") << buf_idx << irsm("] = ") <<
@@ -947,13 +947,13 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
   m_input_registers_size_byte = 0, m_input_registers_start_byte = 0;
-  
+
   range(a_index, a_size, m_discret_inputs_start_byte,
     m_discret_inputs_end_byte, &m_discret_inputs_size_byte,
     &m_discret_inputs_start_byte);
   range(a_index, a_size, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
-  range(a_index, a_size, m_coils_end_byte, m_hold_registers_end_byte, 
+  range(a_index, a_size, m_coils_end_byte, m_hold_registers_end_byte,
     &m_hold_registers_size_byte, &m_hold_registers_start_byte);
   range(a_index, a_size, m_hold_registers_end_byte,
     m_input_registers_end_byte, &m_input_registers_size_byte,
@@ -977,7 +977,7 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
       reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
     IRS_LIB_ASSERT((m_hold_registers_start_byte +
       m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size());
-    memcpyex(hold_regs_data + m_hold_registers_start_byte, 
+    memcpyex(hold_regs_data + m_hold_registers_start_byte,
       ap_buf + ap_buf_start, m_hold_registers_size_byte);
   }
   if ((m_input_registers_size_byte != 0)||(m_input_registers_start_byte != 0)) {
@@ -1002,7 +1002,7 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
   m_input_registers_size_byte = 0, m_input_registers_start_byte = 0;
   range(a_byte_index, 1, m_discret_inputs_start_byte, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
-  range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte, 
+  range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
   range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte,
     &m_hold_registers_size_byte, &m_hold_registers_start_byte);
@@ -1015,7 +1015,7 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       (m_discret_inputs_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: discret inputs"));
-      irs_u8 di_byte_read_bit = 
+      irs_u8 di_byte_read_bit =
         m_discr_inputs_byte[m_discret_inputs_start_byte];
       di_byte_read_bit &= static_cast<irs_u8>(mask);
       return to_irs_bool(di_byte_read_bit);
@@ -1031,25 +1031,25 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: hold regs"));
       irs_u8 hr_byte_read_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
-        hr_byte_read_bit = 
+        hr_byte_read_bit =
           IRS_LOBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       } else {
-        hr_byte_read_bit = 
+        hr_byte_read_bit =
           IRS_HIBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       }
       hr_byte_read_bit &= static_cast<irs_u8>(mask);
       return to_irs_bool(hr_byte_read_bit);
     }
-    if ((m_input_registers_size_byte != 0) || 
+    if ((m_input_registers_size_byte != 0) ||
       (m_input_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: input regs"));
       irs_u8 ir_byte_read_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
-        ir_byte_read_bit = 
+        ir_byte_read_bit =
           IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       } else {
-        ir_byte_read_bit = 
+        ir_byte_read_bit =
           IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       }
       ir_byte_read_bit &= static_cast<irs_u8>(mask);
@@ -1076,15 +1076,15 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
   m_input_registers_size_byte = 0, m_input_registers_start_byte = 0;
-  range(a_byte_index, 1, 0, m_discret_inputs_end_byte, 
+  range(a_byte_index, 1, 0, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
   range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
   range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte,
     &m_hold_registers_size_byte, &m_hold_registers_start_byte);
-  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte, 
+  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte,
     &m_input_registers_size_byte, &m_input_registers_start_byte);
-  
+
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
     if ((m_coils_size_byte == 0) && (m_discret_inputs_size_byte == 0) &&
       (m_hold_registers_size_byte == 0) && (m_input_registers_size_byte == 0))
@@ -1093,7 +1093,7 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
         "***************\n") << endl;
     }
   );
-  
+
   irs_u8 mask = mask_gen(global_limits_t::bits_in_byte -
     (a_bit_index + 1), 1);
   if (a_bit_index < global_limits_t::bits_in_byte) {
@@ -1102,7 +1102,7 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: discret inputs"));
       m_discr_inputs_byte[m_discret_inputs_start_byte] &=
         static_cast<irs_u8>(~mask);
-      m_discr_inputs_byte[m_discret_inputs_start_byte] |= 
+      m_discr_inputs_byte[m_discret_inputs_start_byte] |=
         static_cast<irs_u8>(mask);
     }
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
@@ -1115,10 +1115,10 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: hold regs"));
       irs_u8 hr_byte_set_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
-        hr_byte_set_bit = 
+        hr_byte_set_bit =
           IRS_LOBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       } else {
-        hr_byte_set_bit = 
+        hr_byte_set_bit =
           IRS_HIBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       }
       hr_byte_set_bit &= static_cast<irs_u8>(~mask);
@@ -1136,10 +1136,10 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: input regs"));
       irs_u8 ir_byte_set_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
-        ir_byte_set_bit = 
+        ir_byte_set_bit =
           IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       } else {
-        ir_byte_set_bit = 
+        ir_byte_set_bit =
           IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       }
       ir_byte_set_bit &= static_cast<irs_u8>(~mask);
@@ -1148,14 +1148,14 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
         IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) =
           ir_byte_set_bit;
       } else {
-        IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) = 
+        IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) =
           ir_byte_set_bit;
       }
     }
   }
 }
 
-void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index, 
+void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
   irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear bit"));
@@ -1164,15 +1164,15 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
   m_input_registers_size_byte = 0, m_input_registers_start_byte = 0;
-  range(a_byte_index, 1, 0, m_discret_inputs_end_byte, 
+  range(a_byte_index, 1, 0, m_discret_inputs_end_byte,
     &m_discret_inputs_size_byte, &m_discret_inputs_start_byte);
   range(a_byte_index, 1, m_discret_inputs_end_byte, m_coils_end_byte,
     &m_coils_size_byte, &m_coils_start_byte);
-  range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte, 
+  range(a_byte_index, 1, m_coils_end_byte, m_hold_registers_end_byte,
     &m_hold_registers_size_byte, &m_hold_registers_start_byte);
-  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte, 
+  range(a_byte_index, 1, m_hold_registers_end_byte, m_input_registers_end_byte,
     &m_input_registers_size_byte, &m_input_registers_start_byte);
-  
+
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
     if ((m_coils_size_byte == 0) && (m_discret_inputs_size_byte == 0) &&
       (m_hold_registers_size_byte == 0) && (m_input_registers_size_byte == 0))
@@ -1181,7 +1181,7 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
         "***************\n") << endl;
     }
   );
-  
+
   irs_u8 mask = mask_gen(global_limits_t::bits_in_byte -
     (a_bit_index + 1), 1);
   if (a_bit_index < global_limits_t::bits_in_byte) {
@@ -1200,18 +1200,18 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: hold regs"));
       irs_u8 hr_byte_clear_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
-        hr_byte_clear_bit = 
+        hr_byte_clear_bit =
           IRS_LOBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       } else {
-        hr_byte_clear_bit = 
+        hr_byte_clear_bit =
           IRS_HIBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]);
       }
       hr_byte_clear_bit &= static_cast<irs_u8>(~mask);
       if (m_hold_registers_start_byte%2 == 0) {
-        IRS_LOBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]) = 
+        IRS_LOBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]) =
           hr_byte_clear_bit;
       } else {
-        IRS_HIBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]) = 
+        IRS_HIBYTE(m_hold_regs_reg[m_hold_registers_start_byte/2]) =
           hr_byte_clear_bit;
       }
     }
@@ -1220,18 +1220,18 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: input regs"));
       irs_u8 ir_byte_clear_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
-        ir_byte_clear_bit = 
+        ir_byte_clear_bit =
           IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       } else {
-        ir_byte_clear_bit = 
+        ir_byte_clear_bit =
           IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]);
       }
       ir_byte_clear_bit &= static_cast<irs_u8>(~mask);
       if (m_input_registers_start_byte%2 == 0) {
-        IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) = 
+        IRS_LOBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) =
           ir_byte_clear_bit;
       } else {
-        IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) = 
+        IRS_HIBYTE(m_input_regs_reg[m_input_registers_start_byte/2]) =
           ir_byte_clear_bit;
       }
     }
@@ -1243,26 +1243,26 @@ void irs::modbus_server_t::error_response(irs_u8 error_type)
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("error_response.................."));
   MBAP_header_t &header = reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
   header.length = size_of_req_excep;
-  request_exception_t &request_exception = 
+  request_exception_t &request_exception =
     reinterpret_cast<request_exception_t&>(*(mp_buf.data() + size_of_MBAP));
-  response_exception_t &response_error = 
-    reinterpret_cast<response_exception_t&>(*(mp_buf.data() + size_of_MBAP + 
+  response_exception_t &response_error =
+    reinterpret_cast<response_exception_t&>(*(mp_buf.data() + size_of_MBAP +
     size_of_resp_header));
   response_error.error_code =
     static_cast<irs_u8>(request_exception.function_code + irs_u8(0x80));
   response_error.exeption_code = error_type;
-  bit_copy(&response_error.error_code, mp_buf.data(), 
+  bit_copy(&response_error.error_code, mp_buf.data(),
     response_error.error_code, size_of_MBAP*global_limits_t::bits_in_byte,
     sizeof(response_error)*global_limits_t::bits_in_byte);
 }
 
-void irs::modbus_server_t::mark_to_send(irs_uarc /*a_index*/, 
+void irs::modbus_server_t::mark_to_send(irs_uarc /*a_index*/,
   irs_uarc /*a_size*/)
 {
   m_operation_status = status_completed;
 }
 
-void irs::modbus_server_t::mark_to_recieve(irs_uarc /*a_index*/, 
+void irs::modbus_server_t::mark_to_recieve(irs_uarc /*a_index*/,
   irs_uarc /*a_size*/)
 {
   m_operation_status = status_completed;
@@ -1287,7 +1287,7 @@ irs::modbus_server_t::status_t irs::modbus_server_t::status() const
 
 void irs::modbus_server_t::set_refresh_mode(mode_refresh_t /*a_refresh_mode*/)
 {
-  
+
 }
 
 void irs::modbus_server_t::update()
@@ -1304,7 +1304,7 @@ void irs::modbus_server_t::tick()
 {
   mp_hardflow_server->tick();
   m_fixed_flow.tick();
-  
+
   switch(m_mode)
   {
     case read_header_mode:
@@ -1319,7 +1319,7 @@ void irs::modbus_server_t::tick()
     break;
     case read_request_mode:
     {
-      if (m_fixed_flow.read_status() == 
+      if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_success)
       {
         convert(mp_buf.data(), 0, size_of_MBAP - 1);
@@ -1333,7 +1333,7 @@ void irs::modbus_server_t::tick()
           m_mode = read_header_mode;
         }
         view_mode();
-      } else if (m_fixed_flow.read_status() == 
+      } else if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_error)
       {
         m_mode = read_header_mode;
@@ -1343,11 +1343,11 @@ void irs::modbus_server_t::tick()
     break;
     case read_end_mode:
     {
-      if (m_fixed_flow.read_status() == 
+      if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_success)
       {
         request_exception_t &convert_pack_for_read =
-          reinterpret_cast<request_exception_t&>(*(mp_buf.data() + 
+          reinterpret_cast<request_exception_t&>(*(mp_buf.data() +
           size_of_MBAP));
         switch(convert_pack_for_read.function_code)
         {
@@ -1377,7 +1377,7 @@ void irs::modbus_server_t::tick()
           } break;
           case read_exception_status:
           {
-            //  
+            //
           } break;
           case write_multiple_coils:
           {
@@ -1386,7 +1386,7 @@ void irs::modbus_server_t::tick()
           case write_multiple_registers:
           {
             convert(mp_buf.data(), size_of_MBAP + 1, size_of_read_header);
-            request_multiple_write_regs_t &reg_convert = 
+            request_multiple_write_regs_t &reg_convert =
               reinterpret_cast<request_multiple_write_regs_t&>(
               *(mp_buf.data() + size_of_MBAP));
             convert(mp_buf.data(), size_of_MBAP + size_of_req_multi_write,
@@ -1408,19 +1408,19 @@ void irs::modbus_server_t::tick()
         IRS_LIB_IRSMBUS_DBG_MONITOR(
           modbus_pack_request_monitor(mp_buf.data()););
         //}
-        MBAP_header_t &header = 
+        MBAP_header_t &header =
           reinterpret_cast<MBAP_header_t&>(*mp_buf.data());
-        request_t &req_header = 
+        request_t &req_header =
           reinterpret_cast<request_t&>(*(mp_buf.data() + size_of_MBAP));
         irs_u16 num_of_elem = req_header.quantity;
         irs_u16 start_addr = req_header.starting_address;
-        
+
         switch(req_header.function_code)
         {
           case read_discrete_inputs:
           {
             if(num_of_elem != 0) {
-              response_read_byte_t &read_di = 
+              response_read_byte_t &read_di =
                 reinterpret_cast<response_read_byte_t&>(*(mp_buf.data() +
                 size_of_MBAP));
               if(num_of_elem%global_limits_t::bits_in_byte == 0) {
@@ -1439,7 +1439,7 @@ void irs::modbus_server_t::tick()
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
                 for(int di_idx = 0; di_idx < read_di.byte_count; di_idx++)
                 {
-                  mlog() << irsm(" m_discr_inputs_byte[") << di_idx << 
+                  mlog() << irsm(" m_discr_inputs_byte[") << di_idx <<
                     irsm("] = ") << int(read_di.value[di_idx]) << endl;
                 }
               );
@@ -1451,8 +1451,8 @@ void irs::modbus_server_t::tick()
           case read_coils:
           {
             if(num_of_elem != 0) {
-              response_read_byte_t &read_coils = 
-                reinterpret_cast<response_read_byte_t&>(*(mp_buf.data() + 
+              response_read_byte_t &read_coils =
+                reinterpret_cast<response_read_byte_t&>(*(mp_buf.data() +
                 size_of_MBAP));
               if(num_of_elem%global_limits_t::bits_in_byte == 0) {
                 read_coils.byte_count = static_cast<irs_u8>(
@@ -1471,40 +1471,40 @@ void irs::modbus_server_t::tick()
                 for(int coils_idx = 0; coils_idx < read_coils.byte_count;
                   coils_idx++)
                 {
-                  mlog() << irsm(" m_coils_byte[") << coils_idx << 
+                  mlog() << irsm(" m_coils_byte[") << coils_idx <<
                     irsm("] = ") << int(read_coils.value[coils_idx]) << endl;
                 }
               );
             } else {
               error_response(ILLEGAL_DATA_ADDRESS);
             }
-          }   
+          }
           break;
           case read_hold_registers:
           {
             if(num_of_elem != 0) {
-              response_read_reg_t &read_hr = 
+              response_read_reg_t &read_hr =
                 reinterpret_cast<response_read_reg_t&>(
                 *(mp_buf.data() + size_of_MBAP));
               read_hr.byte_count = static_cast<irs_u8>(num_of_elem*2);
-              irs_u8* hold_regs_data = 
+              irs_u8* hold_regs_data =
                 reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
-              irs_u8* hr_value_data = 
+              irs_u8* hr_value_data =
                 reinterpret_cast<irs_u8*>(read_hr.value);
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_hold_regs_reg.size());
               memcpyex(hr_value_data, hold_regs_data + start_addr*2,
                 read_hr.byte_count);
-              
+
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
                 for(size_t hr_idx = start_addr;
                   hr_idx < (start_addr + num_of_elem);
                   hr_idx++)
                 {
-                  mlog() << irsm(" hold regs lo[") << hr_idx << 
+                  mlog() << irsm(" hold regs lo[") << hr_idx <<
                     irsm("] = ") <<
                     int(IRS_LOBYTE(read_hr.value[hr_idx])) << endl;
-                  mlog() << irsm(" hold regs hi[") << hr_idx << 
+                  mlog() << irsm(" hold regs hi[") << hr_idx <<
                     irsm("] = ") <<
                     int(IRS_HIBYTE(read_hr.value[hr_idx])) << endl;
                 }
@@ -1519,27 +1519,27 @@ void irs::modbus_server_t::tick()
           case read_input_registers:
           {
             if (num_of_elem != 0) {
-              response_read_reg_t &read_ir = 
-                reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() + 
+              response_read_reg_t &read_ir =
+                reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() +
                 size_of_MBAP));
               read_ir.byte_count = static_cast<irs_u8>(num_of_elem*2);
-              irs_u8* input_regs_data = 
+              irs_u8* input_regs_data =
                 reinterpret_cast<irs_u8*>(m_input_regs_reg.data());
               irs_u8* ir_value_data =
                 reinterpret_cast<irs_u8*>(read_ir.value);
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_input_regs_reg.size());
               memcpyex(ir_value_data, input_regs_data + start_addr*2,
-                read_ir.byte_count);  
+                read_ir.byte_count);
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
                 for(size_t ir_idx = start_addr;
                   ir_idx < (start_addr + num_of_elem);
                   ir_idx++)
                 {
-                  mlog() << irsm(" input regs lo[") << ir_idx << 
+                  mlog() << irsm(" input regs lo[") << ir_idx <<
                     irsm("] = ") <<
                     int(IRS_LOBYTE(read_ir.value[ir_idx])) << endl;
-                  mlog() << irsm(" input regs hi[") << ir_idx << 
+                  mlog() << irsm(" input regs hi[") << ir_idx <<
                     irsm("] = ") <<
                     int(IRS_HIBYTE(read_ir.value[ir_idx])) << endl;
                 }
@@ -1553,8 +1553,8 @@ void irs::modbus_server_t::tick()
           break;
           case write_single_coil:
           {
-            response_single_write_t &response_write_coil = 
-              reinterpret_cast<response_single_write_t&>(*(mp_buf.data() + 
+            response_single_write_t &response_write_coil =
+              reinterpret_cast<response_single_write_t&>(*(mp_buf.data() +
               size_of_MBAP));
             irs_u8 coil_byte = static_cast<irs_u8>(
               response_write_coil.address/global_limits_t::bits_in_byte);
@@ -1570,7 +1570,7 @@ void irs::modbus_server_t::tick()
           }
           break;
           case write_multiple_coils:
-          { 
+          {
             if (num_of_elem != 0) {
               request_multiple_write_byte_t &write_multi_coils =
                 reinterpret_cast<request_multiple_write_byte_t&>(
@@ -1580,7 +1580,7 @@ void irs::modbus_server_t::tick()
                 write_multi_coils.quantity)) <= m_coils_byte.size()*
                 global_limits_t::bits_in_byte);
               bit_copy(write_multi_coils.value, m_coils_byte.data(), 0,
-                size_t(write_multi_coils.starting_address), 
+                size_t(write_multi_coils.starting_address),
                 size_t(write_multi_coils.quantity));
               header.length = static_cast<irs_u16>(1 + 1 +
                 size_of_read_header);
@@ -1591,8 +1591,8 @@ void irs::modbus_server_t::tick()
           break;
           case write_single_register:
           {
-            response_single_write_t &response_write_reg = 
-              reinterpret_cast<response_single_write_t&>(*(mp_buf.data() + 
+            response_single_write_t &response_write_reg =
+              reinterpret_cast<response_single_write_t&>(*(mp_buf.data() +
               size_of_MBAP));
             m_hold_regs_reg[response_write_reg.address] =
               response_write_reg.value;
@@ -1637,7 +1637,7 @@ void irs::modbus_server_t::tick()
         m_size_byte_end = header.length - 1;
       // 15.08.2011 Крашенинников М. В.
       // Была проверка на status_success. Что, очевидно, неверно
-      } else if (m_fixed_flow.read_status() == 
+      } else if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_error)
       {
         m_mode = read_header_mode;
@@ -1651,7 +1651,7 @@ void irs::modbus_server_t::tick()
         modbus_pack_response_monitor(mp_buf.data()););
       convert(mp_buf.data(), 0, size_of_MBAP - 1);
       request_exception_t &convert_pack_for_write =
-        reinterpret_cast<request_exception_t&>(*(mp_buf.data() + 
+        reinterpret_cast<request_exception_t&>(*(mp_buf.data() +
         size_of_MBAP));
       switch(convert_pack_for_write.function_code)
       {
@@ -1666,7 +1666,7 @@ void irs::modbus_server_t::tick()
         case read_hold_registers:
         {
           response_read_reg_t &read_hold_reg =
-            reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() + 
+            reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() +
             size_of_MBAP));
           convert(mp_buf.data(), size_of_MBAP + size_of_resp_header,
             read_hold_reg.byte_count);
@@ -1674,7 +1674,7 @@ void irs::modbus_server_t::tick()
         case read_input_registers:
         {
           response_read_reg_t &read_input_reg =
-            reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() + 
+            reinterpret_cast<response_read_reg_t&>(*(mp_buf.data() +
             size_of_MBAP));
           convert(mp_buf.data(), size_of_MBAP + size_of_resp_header,
             read_input_reg.byte_count);
@@ -1689,7 +1689,7 @@ void irs::modbus_server_t::tick()
         } break;
         case read_exception_status:
         {
-          //  
+          //
         } break;
         case write_multiple_coils:
         {
@@ -1701,11 +1701,11 @@ void irs::modbus_server_t::tick()
         } break;
         default:
         {
-          
+
         } break;
       }
       IRS_LIB_ASSERT((size_of_MBAP + m_size_byte_end) <= mp_buf.size());
-      m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP + 
+      m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP +
         m_size_byte_end);
       m_mode = write_end;
       view_mode();
@@ -1713,13 +1713,13 @@ void irs::modbus_server_t::tick()
     break;
     case write_end:
     {
-      if (m_fixed_flow.write_status() == 
+      if (m_fixed_flow.write_status() ==
         irs::hardflow::fixed_flow_t::status_success)
-      { 
+      {
         memset(mp_buf.data(), 0, mp_buf.size());
         m_mode = read_header_mode;
         view_mode();
-      } else if (m_fixed_flow.write_status() == 
+      } else if (m_fixed_flow.write_status() ==
         irs::hardflow::fixed_flow_t::status_error)
       {
         m_mode = read_header_mode;
@@ -1759,7 +1759,7 @@ irs::modbus_client_t::modbus_client_t(
   m_input_registers_size_reg(a_input_regs_reg),
   m_discret_inputs_end_byte(a_discr_inputs_size_byte),
   m_coils_end_byte(a_discr_inputs_size_byte + a_coils_size_byte),
-  m_hold_registers_end_byte(a_discr_inputs_size_byte + a_coils_size_byte + 
+  m_hold_registers_end_byte(a_discr_inputs_size_byte + a_coils_size_byte +
     a_hold_regs_reg*2),
   m_input_registers_end_byte(a_discr_inputs_size_byte + a_coils_size_byte +
     a_hold_regs_reg*2 + a_input_regs_reg*2),
@@ -1803,7 +1803,7 @@ irs::modbus_client_t::modbus_client_t(
   m_request_quantity_coils_bit(0),
   m_error_count(0),
   m_unit_id(a_unit_id)
-{  
+{
   //m_send_request_timer.set(a_update_time/get_packet_number());
   m_send_request_timer.set(0);
   m_fixed_flow.read_timeout(a_disconnect_time);
@@ -1852,7 +1852,7 @@ char const IRS_CSTR_NONVOLATILE
   irs::modbus_client_t::m_make_request_mode[] =
   "m_mode: make_request_mode";
 
-IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const 
+IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
   irs::modbus_client_t::m_ident_name_list[] =
 {
   m_wait_command_mode,
@@ -1890,7 +1890,7 @@ size_t irs::modbus_client_t::get_packet_number()
   }
   size_t hold_reg_pack_num = 0;
   if ((m_hold_registers_size_reg % m_size_of_data_read_reg) == 0) {
-    hold_reg_pack_num = 
+    hold_reg_pack_num =
       m_hold_registers_size_reg/m_size_of_data_read_reg;
   } else {
     hold_reg_pack_num =
@@ -1920,9 +1920,9 @@ irs_bool irs::modbus_client_t::connected()
   } else if (m_refresh_mode == mode_refresh_manual) {
     connect = true;
   }
-  if ((m_fixed_flow.write_status() == 
+  if ((m_fixed_flow.write_status() ==
     irs::hardflow::fixed_flow_t::status_error) ||
-    (m_fixed_flow.read_status() == 
+    (m_fixed_flow.read_status() ==
     irs::hardflow::fixed_flow_t::status_error))
   {
     connect = false;
@@ -1949,7 +1949,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
   request_exception_t &req_header =
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
-    
+
   mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
@@ -1965,14 +1965,14 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     int(IRS_HIBYTE(header.length)) << endl;
   mlog() << irsm(" unit_identifier ...... ") <<
     int(header.unit_identifier) << endl;
-    
+
   mlog() << irsm(" function_code ........ ") <<
     int(req_header.function_code);
   switch(req_header.function_code)
   {
     case read_discrete_inputs:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -1986,7 +1986,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_coils:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -2000,7 +2000,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_hold_registers:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -2014,7 +2014,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case read_input_registers:
     {
-      request_t &req_header_inner = 
+      request_t &req_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -2042,7 +2042,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_register:
     {
-      response_single_write_t &req_header_inner = 
+      response_single_write_t &req_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single register") << endl;
       mlog() << irsm(" register_address_lo .. ") <<
@@ -2060,7 +2060,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_multiple_write_byte_t &req_header_inner = 
+      request_multiple_write_byte_t &req_header_inner =
         reinterpret_cast<request_multiple_write_byte_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple coils") << endl;
@@ -2088,7 +2088,7 @@ void irs::modbus_client_t::modbus_pack_request_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_registers:
     {
-      request_multiple_write_regs_t &req_header_inner = 
+      request_multiple_write_regs_t &req_header_inner =
         reinterpret_cast<request_multiple_write_regs_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple registers") << endl;
@@ -2124,11 +2124,11 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
   // предназначен текст приведенный ниже
   ap_buf = ap_buf;
   mlog() << irsm("\n recieved packet") << endl;
-  MBAP_header_t &header = 
+  MBAP_header_t &header =
     reinterpret_cast<MBAP_header_t&>(*ap_buf);
-  request_exception_t &resp_header = 
+  request_exception_t &resp_header =
     reinterpret_cast<request_exception_t&>(*(ap_buf + size_of_MBAP));
-    
+
   mlog() << irsm("\n ----------- MODBUS's Header----------------\n");
   mlog() << irsm(" transaction_id_lo .... ") <<
     int(IRS_LOBYTE(header.transaction_id)) << endl;
@@ -2151,7 +2151,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
   {
     case read_discrete_inputs:
     {
-      response_read_byte_t &resp_header_inner = 
+      response_read_byte_t &resp_header_inner =
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read discret inputs") << endl;
       mlog() << irsm(" byte_count ........... ") <<
@@ -2163,7 +2163,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case read_coils:
     {
-      response_read_byte_t &resp_header_inner = 
+      response_read_byte_t &resp_header_inner =
         reinterpret_cast<response_read_byte_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read coils") << endl;
       mlog() << irsm(" byte_count ........... ") <<
@@ -2171,50 +2171,50 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
       for(int coils_idx = 0; coils_idx < resp_header_inner.byte_count;
         coils_idx++)
       {
-        mlog() << irsm(" coils[") << coils_idx << 
+        mlog() << irsm(" coils[") << coils_idx <<
           irsm("] ............. ") <<
           int(resp_header_inner.value[coils_idx]) << endl;
       }
     } break;
     case read_hold_registers:
     {
-      response_read_reg_t &resp_header_inner = 
+      response_read_reg_t &resp_header_inner =
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read hold registers") << endl;
       mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
       for(int h_reg_idx = 0; h_reg_idx < int(resp_header_inner.byte_count)/2;
-        h_reg_idx++) 
+        h_reg_idx++)
       {
-        mlog() << irsm(" hold regs lo[") << h_reg_idx << 
-          irsm("] ...... ") << 
+        mlog() << irsm(" hold regs lo[") << h_reg_idx <<
+          irsm("] ...... ") <<
           int(IRS_LOBYTE(resp_header_inner.value[h_reg_idx])) << endl;
-        mlog() << irsm(" hold regs hi[") << h_reg_idx << 
+        mlog() << irsm(" hold regs hi[") << h_reg_idx <<
           irsm("] ...... ") <<
           int(IRS_HIBYTE(resp_header_inner.value[h_reg_idx])) << endl;
       }
     } break;
     case read_input_registers:
     {
-      response_read_reg_t &resp_header_inner = 
+      response_read_reg_t &resp_header_inner =
         reinterpret_cast<response_read_reg_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" read input registers") << endl;
       mlog() << irsm(" byte_count ........... ") <<
         int(resp_header_inner.byte_count) << endl;
       for(int i_reg_idx = 0; i_reg_idx < int(resp_header_inner.byte_count)/2;
-        i_reg_idx++) 
+        i_reg_idx++)
       {
         mlog() << irsm(" input regs lo[") << i_reg_idx <<
           irsm("] ..... ") <<
           int(IRS_LOBYTE(resp_header_inner.value[i_reg_idx])) << endl;
-        mlog() << irsm(" input regs hi[") << i_reg_idx << 
+        mlog() << irsm(" input regs hi[") << i_reg_idx <<
           irsm("] ..... ") <<
           int(IRS_HIBYTE(resp_header_inner.value[i_reg_idx])) << endl;
       }
     } break;
     case write_single_coil:
     {
-      response_single_write_t &resp_header_inner = 
+      response_single_write_t &resp_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single coil") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -2228,7 +2228,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_single_register:
     {
-      response_single_write_t &resp_header_inner = 
+      response_single_write_t &resp_header_inner =
         reinterpret_cast<response_single_write_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write single register") << endl;
       mlog() << irsm(" output_address_lo .... ") <<
@@ -2243,7 +2243,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     case read_exception_status:
     {
       mlog() << irsm(" read exception status ") << endl;
-      response_exception_t &resp_header_inner = 
+      response_exception_t &resp_header_inner =
         reinterpret_cast<response_exception_t&>(
         *(ap_buf + size_of_MBAP));
       mlog() << irsm(" error_code ........... ") <<
@@ -2253,7 +2253,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_coils:
     {
-      request_t &resp_header_inner = 
+      request_t &resp_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple coils") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -2267,7 +2267,7 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
     } break;
     case write_multiple_registers:
     {
-      request_t &resp_header_inner = 
+      request_t &resp_header_inner =
         reinterpret_cast<request_t&>(*(ap_buf + size_of_MBAP));
       mlog() << irsm(" write multiple registers") << endl;
       mlog() << irsm(" starting_address_lo .. ") <<
@@ -2378,11 +2378,20 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   }
   if (hold_registers_size_byte != 0)
   {
+    // Локальные индексы в массиве hold registers
     size_t front_idx = hold_registers_start_byte/2;
     size_t back_idx = (hold_registers_start_byte +
       hold_registers_size_byte - 1)/2;
-    m_hold_regs_reg_write[front_idx] = m_hold_regs_reg_read[front_idx];
-    m_hold_regs_reg_write[back_idx] = m_hold_regs_reg_read[back_idx];
+
+    // Сквозные индексы через весь сетевой массив
+    size_t front_reg_idx = m_coils_size_bit + front_idx;
+    size_t back_reg_idx = m_coils_size_bit + back_idx;
+    if (!m_need_writes[front_reg_idx]) {
+      m_hold_regs_reg_write[front_idx] = m_hold_regs_reg_read[front_idx];
+    }
+    if (!m_need_writes[back_reg_idx]) {
+      m_hold_regs_reg_write[back_idx] = m_hold_regs_reg_read[back_idx];
+    }
 
     size_t buf_start = discret_inputs_size_byte + coils_size_byte;
     c_array_view_t<const irs_u8> buf_view(ap_buf, a_size);
@@ -2391,8 +2400,6 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
       hold_registers_size_byte);
 
     if (m_refresh_mode == mode_refresh_auto) {
-      size_t front_reg_idx = m_coils_size_bit + front_idx;
-      size_t back_reg_idx = m_coils_size_bit + back_idx;
       for (size_t i = front_reg_idx; i <= back_reg_idx; i++) {
         m_need_writes[i] = true;
       }
@@ -2587,7 +2594,7 @@ void irs::modbus_client_t::clear_bit(irs_uarc a_index,
 
 void irs::modbus_client_t::mark_to_send(irs_uarc a_index, irs_uarc a_size)
 {
-  if (((m_refresh_mode == mode_refresh_manual) && 
+  if (((m_refresh_mode == mode_refresh_manual) &&
     (m_operation_status == status_completed)) ||
     (m_refresh_mode == mode_refresh_auto))
   {
@@ -2641,7 +2648,7 @@ void irs::modbus_client_t::mark_to_send(irs_uarc a_index, irs_uarc a_size)
 
 void irs::modbus_client_t::mark_to_recieve(irs_uarc a_index, irs_uarc a_size)
 {
-  if (((m_refresh_mode == mode_refresh_manual) && 
+  if (((m_refresh_mode == mode_refresh_manual) &&
     (m_operation_status == status_completed)) ||
     (m_refresh_mode == mode_refresh_auto))
   {
@@ -2743,7 +2750,7 @@ void irs::modbus_client_t::mark_to_recieve(irs_uarc a_index, irs_uarc a_size)
 void irs::modbus_client_t::mark_to_send_bit(irs_uarc a_byte_index,
   irs_uarc a_bit_index)
 {
-  if (((m_refresh_mode == mode_refresh_manual) && 
+  if (((m_refresh_mode == mode_refresh_manual) &&
     (m_operation_status == status_completed)) ||
     (m_refresh_mode == mode_refresh_auto))
   {
@@ -2877,11 +2884,11 @@ void irs::modbus_client_t::abort()
 {
   m_operation_status = status_completed;
   // Снятие меток чтения:
-  size_t read_flags_size = m_discret_inputs_size_bit + m_coils_size_bit + 
+  size_t read_flags_size = m_discret_inputs_size_bit + m_coils_size_bit +
     m_hold_registers_size_reg + m_input_registers_size_reg;
   m_need_read.clear();
   m_need_read.resize(read_flags_size);
-  
+
   // Снятие меток записи:
   size_t write_flags_size = m_coils_size_bit + m_hold_registers_size_reg;
   m_need_writes.clear();
@@ -2904,7 +2911,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
   {
     case read_discrete_inputs:
     {
-      request_t &sec_header = 
+      request_t &sec_header =
         reinterpret_cast<request_t&>(*(m_spacket.data() + size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = static_cast<irs_u8>(a_index);
@@ -2915,7 +2922,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case read_coils:
     {
-      request_t &sec_header = 
+      request_t &sec_header =
         reinterpret_cast<request_t&>(*(m_spacket.data() + size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = static_cast<irs_u16>(a_index);
@@ -2926,7 +2933,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case read_hold_registers:
     {
-      request_t &sec_header = 
+      request_t &sec_header =
         reinterpret_cast<request_t&>(*(m_spacket.data() + size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = static_cast<irs_u16>(a_index);
@@ -2936,7 +2943,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case read_input_registers:
     {
-      request_t &sec_header = 
+      request_t &sec_header =
         reinterpret_cast<request_t&>(*(m_spacket.data() + size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.starting_address = static_cast<irs_u16>(a_index);
@@ -2946,7 +2953,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case read_exception_status:
     {
-      request_exception_t &sec_header = 
+      request_exception_t &sec_header =
         reinterpret_cast<request_exception_t&>(*(m_spacket.data() +
         size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
@@ -2955,17 +2962,17 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case write_single_coil:
     {
-      response_single_write_t &sec_header = 
-        reinterpret_cast<response_single_write_t&>(*(m_spacket.data() + 
+      response_single_write_t &sec_header =
+        reinterpret_cast<response_single_write_t&>(*(m_spacket.data() +
         size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
       sec_header.address = static_cast<irs_u16>(a_index);
       header.length  = static_cast<irs_u16>(size_of_resp_multi_write);
     }
-    break; 
+    break;
     case write_single_register:
     {
-      response_single_write_t &sec_header = 
+      response_single_write_t &sec_header =
         reinterpret_cast<response_single_write_t&>(*(m_spacket.data() +
         size_of_MBAP));
       sec_header.function_code = static_cast<irs_u8>(m_command);
@@ -2975,7 +2982,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case write_multiple_coils:
     {
-      request_multiple_write_byte_t &sec_header = 
+      request_multiple_write_byte_t &sec_header =
         reinterpret_cast<request_multiple_write_byte_t&>(*(m_spacket.data() +
         size_of_MBAP));
       irs_u16 bytes_count = 0;
@@ -2996,7 +3003,7 @@ void irs::modbus_client_t::make_packet(size_t a_index, irs_u16 a_size)
     break;
     case write_multiple_registers:
     {
-      request_multiple_write_regs_t &sec_header = 
+      request_multiple_write_regs_t &sec_header =
         reinterpret_cast<request_multiple_write_regs_t&>(*(m_spacket.data() +
         size_of_MBAP));
       sec_header.starting_address = static_cast<irs_u16>(a_index);
@@ -3038,10 +3045,10 @@ void irs::modbus_client_t::view_mode()
 }
 
 void irs::modbus_client_t::tick()
-{ 
+{
   mp_hardflow_client->tick();
   m_fixed_flow.tick();
-  
+
   switch(m_mode)
   {
     case wait_command_mode:
@@ -3085,7 +3092,7 @@ void irs::modbus_client_t::tick()
           m_search_index++;
           if ((catch_block) &&
             (m_search_index == (m_coils_size_bit + m_hold_registers_size_reg)))
-          { 
+          {
             m_write_quantity =
               static_cast<irs_u16>(m_search_index - m_start_block);
             if (m_start_block < m_coils_size_bit) {
@@ -3103,7 +3110,7 @@ void irs::modbus_client_t::tick()
             m_search_index = 0;
             m_write_table = false;
             size_t write_flags_cnt = 0;
-            for(size_t write_idx = 0; write_idx < (m_coils_size_bit + 
+            for(size_t write_idx = 0; write_idx < (m_coils_size_bit +
               m_hold_registers_size_reg); write_idx++)
             {
               if (m_need_writes[write_idx] == 1) {
@@ -3143,8 +3150,8 @@ void irs::modbus_client_t::tick()
             global_limits_t::bits_in_byte));
           coils_packet.byte_count =
             static_cast<irs_u8>(m_size_of_data_write_byte);
-          bit_copy(m_coils_byte_write.data(), 
-            reinterpret_cast<irs_u8*>(coils_packet.value), 
+          bit_copy(m_coils_byte_write.data(),
+            reinterpret_cast<irs_u8*>(coils_packet.value),
             m_start_block, 0, m_size_of_data_write_byte*
             global_limits_t::bits_in_byte);
           m_search_index = m_start_block + m_size_of_data_write_byte*
@@ -3155,12 +3162,12 @@ void irs::modbus_client_t::tick()
           if (m_write_quantity > 1) {
             make_packet(m_start_block, m_write_quantity);
             bit_copy(m_coils_byte_write.data(),
-              reinterpret_cast<irs_u8*>(coils_packet.value), 
+              reinterpret_cast<irs_u8*>(coils_packet.value),
                 m_start_block, 0, m_write_quantity);
           } else {
             m_command = write_single_coil;
             response_single_write_t &sec_head =
-              reinterpret_cast<response_single_write_t&>(*(m_spacket.data() + 
+              reinterpret_cast<response_single_write_t&>(*(m_spacket.data() +
               size_of_MBAP));
             //sec_head.value = m_coil_write_bit;
             //make_packet(m_coil_bit_index, 0);
@@ -3181,8 +3188,8 @@ void irs::modbus_client_t::tick()
         }
       }
       //запись hold regs
-      else if ((m_start_block >= m_coils_size_bit) && 
-        (m_start_block <= static_cast<size_t>(m_coils_size_bit + 
+      else if ((m_start_block >= m_coils_size_bit) &&
+        (m_start_block <= static_cast<size_t>(m_coils_size_bit +
         m_hold_registers_size_reg)) && (m_hold_registers_size_reg))
       {
         m_write_table = true;
@@ -3204,7 +3211,7 @@ void irs::modbus_client_t::tick()
             m_size_of_data_write_reg*2);
           make_packet(hr_start,
             static_cast<irs_u16>(m_size_of_data_write_reg*2));
-          m_search_index = m_coils_size_bit + hr_start + 
+          m_search_index = m_coils_size_bit + hr_start +
             m_size_of_data_write_reg;
         } else {
           IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(
@@ -3258,7 +3265,7 @@ void irs::modbus_client_t::tick()
       );
       convert(m_spacket.data(), 0, size_of_MBAP - 1);
       request_exception_t &convert_pack_for_write =
-        reinterpret_cast<request_exception_t&>(*(m_spacket.data() + 
+        reinterpret_cast<request_exception_t&>(*(m_spacket.data() +
         size_of_MBAP));
       switch(convert_pack_for_write.function_code)
       {
@@ -3305,7 +3312,7 @@ void irs::modbus_client_t::tick()
         } break;
         default:
         {
-          
+
         } break;
       }
       m_mode = send_request_mode;
@@ -3318,8 +3325,8 @@ void irs::modbus_client_t::tick()
       if (m_send_request_timer.check()) {
         // > Убрать в дебаг
         IRS_LIB_ASSERT(!reinterpret_cast<MBAP_header_t&>(
-          *m_spacket.data()).proto_id);        
-        IRS_LIB_ASSERT(reinterpret_cast<request_t&>(*(m_spacket.data() + 
+          *m_spacket.data()).proto_id);
+        IRS_LIB_ASSERT(reinterpret_cast<request_t&>(*(m_spacket.data() +
           size_of_MBAP)).function_code);
         // Убрать в дебаг <
         m_fixed_flow.write(m_channel, m_spacket.data(), size_of_MBAP +
@@ -3331,13 +3338,13 @@ void irs::modbus_client_t::tick()
     } break;
     case read_header_mode:
     {
-      if (m_fixed_flow.write_status() == 
+      if (m_fixed_flow.write_status() ==
         irs::hardflow::fixed_flow_t::status_success)
       {
         m_fixed_flow.read(m_channel, m_rpacket.data(), size_of_MBAP);
         m_mode = read_response_mode;
         view_mode();
-      } else if (m_fixed_flow.write_status() == 
+      } else if (m_fixed_flow.write_status() ==
         irs::hardflow::fixed_flow_t::status_error)
       {
         m_transaction_id--;
@@ -3357,14 +3364,14 @@ void irs::modbus_client_t::tick()
       }
     }
     break;
-    case read_response_mode: 
-    { 
-      if (m_fixed_flow.read_status() == 
+    case read_response_mode:
+    {
+      if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_success)
       {
-        MBAP_header_t &send_pack_header = 
+        MBAP_header_t &send_pack_header =
           reinterpret_cast<MBAP_header_t&>(*m_spacket.data());
-        MBAP_header_t &recv_pack_header = 
+        MBAP_header_t &recv_pack_header =
           reinterpret_cast<MBAP_header_t&>(*m_rpacket.data());
         if ((send_pack_header.transaction_id ==
           recv_pack_header.transaction_id))
@@ -3377,9 +3384,9 @@ void irs::modbus_client_t::tick()
           m_mode = read_header_mode;
         }
         view_mode();
-      } else if (m_fixed_flow.read_status() == 
+      } else if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_error)
-      {  
+      {
         m_mode = wait_command_mode;
         m_request_type = request_start;
         m_start = true;
@@ -3398,27 +3405,27 @@ void irs::modbus_client_t::tick()
     break;
     case treatment_response_mode:
     {
-      if (m_fixed_flow.read_status() == 
+      if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_success)
       {
         IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" treatment_response_mode"));
         request_t &convert_pack_for_read =
-          reinterpret_cast<request_t&>(*(m_rpacket.data() + 
+          reinterpret_cast<request_t&>(*(m_rpacket.data() +
           size_of_MBAP));
         switch(convert_pack_for_read.function_code)
         {
           case read_discrete_inputs:
           {
-            //  
+            //
           } break;
           case read_coils:
           {
-            //  
+            //
           } break;
           case read_hold_registers:
           {
             response_read_reg_t &read_hold_reg =
-              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() + 
+              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             convert(m_rpacket.data(), size_of_MBAP + size_of_resp_header,
               read_hold_reg.byte_count);
@@ -3426,7 +3433,7 @@ void irs::modbus_client_t::tick()
           case read_input_registers:
           {
             response_read_reg_t &read_input_reg =
-              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() + 
+              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             convert(m_rpacket.data(), size_of_MBAP + size_of_resp_header,
               read_input_reg.byte_count);
@@ -3441,7 +3448,7 @@ void irs::modbus_client_t::tick()
           } break;
           case read_exception_status:
           {
-            //  
+            //
           } break;
           case write_multiple_coils:
           {
@@ -3453,10 +3460,10 @@ void irs::modbus_client_t::tick()
           } break;
           default:
           {
-            
+
           } break;
         }
-        request_t &req_header = 
+        request_t &req_header =
           reinterpret_cast<request_t&>(*(m_spacket.data() + size_of_MBAP));
         //Recieve packet:
         IRS_LIB_IRSMBUS_DBG_MONITOR(
@@ -3468,8 +3475,8 @@ void irs::modbus_client_t::tick()
         switch(convert_pack_for_read.function_code)
         {
           case read_discrete_inputs:
-          { 
-            response_read_byte_t &read_di = 
+          {
+            response_read_byte_t &read_di =
               reinterpret_cast<response_read_byte_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr/
@@ -3487,10 +3494,10 @@ void irs::modbus_client_t::tick()
             fill_n(m_need_read.begin() + start_addr,
               m_request_quantity_discr_inputs_bit, 0);
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
-              for(int di_idx = start_addr; 
+              for(int di_idx = start_addr;
                 di_idx < start_addr + read_di.byte_count; di_idx++)
               {
-                mlog() << irsm(" m_discr_inputs_byte_read[") << di_idx << 
+                mlog() << irsm(" m_discr_inputs_byte_read[") << di_idx <<
                   irsm("] = ") << int(m_discr_inputs_byte_read[di_idx]) << endl;
               }
             );
@@ -3501,7 +3508,7 @@ void irs::modbus_client_t::tick()
             {
               m_first_read = true;
               IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
-                double time_delta_read = m_measure_time.get() - 
+                double time_delta_read = m_measure_time.get() -
                   m_measure_int_time;
                 m_measure_int_time = m_measure_time.get();
                 mlog() << stime << irsm(" ") <<
@@ -3512,7 +3519,7 @@ void irs::modbus_client_t::tick()
           break;
           case read_coils:
           {
-            response_read_byte_t &read_coils = 
+            response_read_byte_t &read_coils =
               reinterpret_cast<response_read_byte_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             #ifdef IRS_LIB_DEBUG
@@ -3534,7 +3541,7 @@ void irs::modbus_client_t::tick()
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr/
               global_limits_t::bits_in_byte +
               read_coils.byte_count) <= m_coils_byte_read.size());
-            bit_copy(read_coils.value, m_coils_byte_read.data(), 0, 
+            bit_copy(read_coils.value, m_coils_byte_read.data(), 0,
               start_addr, m_request_quantity_coils_bit);
             #ifdef NOP
             for(irs_u16 coils_index = 0;
@@ -3547,10 +3554,10 @@ void irs::modbus_client_t::tick()
             fill_n(m_need_read.begin() + m_discret_inputs_size_bit +
               start_addr, m_request_quantity_coils_bit, 0);
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
-              for(int coils_idx = start_addr; 
+              for(int coils_idx = start_addr;
                 coils_idx < start_addr + read_coils.byte_count; coils_idx++)
               {
-                mlog() << irsm(" m_coils_byte_read[") << coils_idx << 
+                mlog() << irsm(" m_coils_byte_read[") << coils_idx <<
                   irsm("] = ") << int(m_coils_byte_read[coils_idx]) << endl;
               }
             );
@@ -3561,7 +3568,7 @@ void irs::modbus_client_t::tick()
             {
               m_first_read = true;
               IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
-                double time_delta_read = m_measure_time.get() - 
+                double time_delta_read = m_measure_time.get() -
                   m_measure_int_time;
                 m_measure_int_time = m_measure_time.get();
                 mlog() << stime << irsm(" ") <<
@@ -3572,8 +3579,8 @@ void irs::modbus_client_t::tick()
           break;
           case read_hold_registers:
           {
-            response_read_reg_t &hr_packet = 
-              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() + 
+            response_read_reg_t &hr_packet =
+              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr +
               hr_packet.byte_count/2) <= m_hold_regs_reg_read.size());
@@ -3587,31 +3594,31 @@ void irs::modbus_client_t::tick()
             for(irs_u16 hr_index = 0; hr_index < hr_packet.byte_count/2;
               hr_index++)
             {
-              m_need_read[m_discret_inputs_size_bit + m_coils_size_bit + 
+              m_need_read[m_discret_inputs_size_bit + m_coils_size_bit +
                 start_addr + hr_index] = 0;
             }
             #endif // NOP
             fill_n(m_need_read.begin() + m_discret_inputs_size_bit +
               m_coils_size_bit + start_addr, hr_packet.byte_count/2, 0);
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
-              for(int hr_idx = start_addr; 
+              for(int hr_idx = start_addr;
                 hr_idx < start_addr + hr_packet.byte_count/2; hr_idx++)
               {
                 mlog() << irsm(" m_hold_regs_reg_lo[") <<
                   hr_idx << irsm("] = ") <<
                   int(IRS_LOBYTE(m_hold_regs_reg_read[hr_idx])) << endl;
                 mlog() << irsm(" m_hold_regs_reg_hi[") <<
-                  hr_idx << irsm("] = ") << 
+                  hr_idx << irsm("] = ") <<
                   int(IRS_HIBYTE(m_hold_regs_reg_read[hr_idx])) << endl;
               }
             );
             if ((!m_input_registers_size_reg) &&
               static_cast<size_t>((start_addr + hr_packet.byte_count/2)) ==
               m_hold_registers_size_reg)
-            {  
+            {
               m_first_read = true;
               IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
-                double time_delta_read = m_measure_time.get() - 
+                double time_delta_read = m_measure_time.get() -
                   m_measure_int_time;
                 m_measure_int_time = m_measure_time.get();
                 mlog() << stime << irsm(" ") <<
@@ -3623,7 +3630,7 @@ void irs::modbus_client_t::tick()
           case read_input_registers:
           {
             response_read_reg_t &ir_packet =
-              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() + 
+              reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() +
               size_of_MBAP));
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr +
               ir_packet.byte_count/2) <= m_input_regs_reg_read.size());
@@ -3637,7 +3644,7 @@ void irs::modbus_client_t::tick()
             for(irs_u16 ir_index = 0; ir_index < ir_packet.byte_count/2;
               ir_index++)
             {
-              m_need_read[m_discret_inputs_size_bit + m_coils_size_bit + 
+              m_need_read[m_discret_inputs_size_bit + m_coils_size_bit +
                 m_hold_registers_size_reg + start_addr + ir_index] = 0;
             }
             #endif // NOP
@@ -3645,23 +3652,23 @@ void irs::modbus_client_t::tick()
               m_coils_size_bit + m_hold_registers_size_reg + start_addr,
               ir_packet.byte_count/2, 0);
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
-              for(int ir_idx = start_addr; 
+              for(int ir_idx = start_addr;
                 ir_idx < start_addr + ir_packet.byte_count/2; ir_idx++)
               {
                 mlog() << irsm(" m_input_regs_reg_lo[") <<
                   ir_idx << irsm("] = ") <<
                   int(IRS_LOBYTE(m_input_regs_reg_read[ir_idx])) << endl;
                 mlog() << irsm(" m_input_regs_reg_hi[") <<
-                  ir_idx << irsm("] = ") << 
+                  ir_idx << irsm("] = ") <<
                   int(IRS_HIBYTE(m_input_regs_reg_read[ir_idx])) << endl;
               }
             );
-            if((start_addr + ir_packet.byte_count/2) == 
+            if((start_addr + ir_packet.byte_count/2) ==
               static_cast<int>(m_input_registers_size_reg))
             {
               m_first_read = true;
               IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
-                double time_delta_read = m_measure_time.get() - 
+                double time_delta_read = m_measure_time.get() -
                   m_measure_int_time;
                 m_measure_int_time = m_measure_time.get();
                 mlog() << stime << irsm(" ") <<
@@ -3673,7 +3680,7 @@ void irs::modbus_client_t::tick()
           case write_single_coil:
           {
             response_single_write_t &sec_head =
-              reinterpret_cast<response_single_write_t&>(*(m_spacket.data() + 
+              reinterpret_cast<response_single_write_t&>(*(m_spacket.data() +
               size_of_MBAP));
             if (m_need_writes_reserve[sec_head.address]) {
               m_need_writes_reserve[sec_head.address] = 0;
@@ -3763,9 +3770,9 @@ void irs::modbus_client_t::tick()
           m_mode = search_write_data_mode;
         }
         view_mode();
-      } else if (m_fixed_flow.read_status() == 
+      } else if (m_fixed_flow.read_status() ==
         irs::hardflow::fixed_flow_t::status_error)
-      {  
+      {
         m_mode = wait_command_mode;
         m_request_type = request_start;
         m_start = true;
@@ -3788,18 +3795,18 @@ void irs::modbus_client_t::tick()
         m_mode = request_read_data_mode;
         irs_bool catch_block = false;
         m_read_quantity = 0;
-        for(; m_search_index < (m_discret_inputs_size_bit + m_coils_size_bit + 
+        for(; m_search_index < (m_discret_inputs_size_bit + m_coils_size_bit +
           m_hold_registers_size_reg + m_input_registers_size_reg);)
         {
-          if ((m_need_read[m_search_index] == true) && 
-            (catch_block == irs_false)) 
+          if ((m_need_read[m_search_index] == true) &&
+            (catch_block == irs_false))
           {
             IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" block catched"));
             m_start_block = m_search_index;
             catch_block = true;
           }
-          if ((catch_block == irs_true) && 
-            (m_need_read[m_search_index] == false)) 
+          if ((catch_block == irs_true) &&
+            (m_need_read[m_search_index] == false))
           {
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_data_mode"));
             m_read_quantity =
@@ -3813,11 +3820,11 @@ void irs::modbus_client_t::tick()
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
             }
-            else if ((m_start_block > (m_discret_inputs_size_bit + 
-              m_coils_size_bit)) && 
+            else if ((m_start_block > (m_discret_inputs_size_bit +
+              m_coils_size_bit)) &&
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
-              m_hold_registers_size_reg)) && 
-              (m_search_index > (m_discret_inputs_size_bit + m_coils_size_bit + 
+              m_hold_registers_size_reg)) &&
+              (m_search_index > (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg)))
             {
               m_search_index = m_discret_inputs_size_bit + m_coils_size_bit +
@@ -3825,10 +3832,10 @@ void irs::modbus_client_t::tick()
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
             }
-            else if ((m_start_block > (m_discret_inputs_size_bit + 
-              m_coils_size_bit + m_hold_registers_size_reg)) && 
+            else if ((m_start_block > (m_discret_inputs_size_bit +
+              m_coils_size_bit + m_hold_registers_size_reg)) &&
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
-              m_hold_registers_size_reg + m_input_registers_size_reg)) && 
+              m_hold_registers_size_reg + m_input_registers_size_reg)) &&
               (m_search_index >= (m_discret_inputs_size_bit +
               m_coils_size_bit + m_hold_registers_size_reg +
               m_input_registers_size_reg)))
@@ -3842,9 +3849,9 @@ void irs::modbus_client_t::tick()
           }
           m_search_index++;
           if ((catch_block == irs_true) &&
-            (m_search_index == (m_discret_inputs_size_bit + m_coils_size_bit + 
+            (m_search_index == (m_discret_inputs_size_bit + m_coils_size_bit +
             m_hold_registers_size_reg + m_input_registers_size_reg)))
-          { 
+          {
             IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("send_data_mode"));
             m_write_quantity =
               static_cast<irs_u16>(m_search_index - m_start_block);
@@ -3854,16 +3861,16 @@ void irs::modbus_client_t::tick()
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
             }
-            else if ((m_start_block > m_discret_inputs_size_bit) && 
-              (m_start_block < (m_discret_inputs_size_bit + 
+            else if ((m_start_block > m_discret_inputs_size_bit) &&
+              (m_start_block < (m_discret_inputs_size_bit +
               m_coils_size_bit)))
             {
               m_search_index = m_discret_inputs_size_bit + m_coils_size_bit;
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
             }
-            else if ((m_start_block > (m_discret_inputs_size_bit + 
-              m_coils_size_bit)) && 
+            else if ((m_start_block > (m_discret_inputs_size_bit +
+              m_coils_size_bit)) &&
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg)))
             {
@@ -3872,8 +3879,8 @@ void irs::modbus_client_t::tick()
               m_read_quantity =
                 static_cast<irs_u16>(m_search_index - m_start_block);
             }
-            else if ((m_start_block > (m_discret_inputs_size_bit + 
-              m_coils_size_bit + m_hold_registers_size_reg)) && 
+            else if ((m_start_block > (m_discret_inputs_size_bit +
+              m_coils_size_bit + m_hold_registers_size_reg)) &&
               (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
               m_hold_registers_size_reg + m_input_registers_size_reg)))
             {
@@ -3881,8 +3888,8 @@ void irs::modbus_client_t::tick()
             }
             break;
           }
-          if ((catch_block == irs_false) && 
-            (m_search_index >= (m_discret_inputs_size_bit + m_coils_size_bit + 
+          if ((catch_block == irs_false) &&
+            (m_search_index >= (m_discret_inputs_size_bit + m_coils_size_bit +
             m_hold_registers_size_reg + m_input_registers_size_reg)))
           {
             m_search_index = 0;
@@ -3930,32 +3937,32 @@ void irs::modbus_client_t::tick()
           m_search_index = m_start_block + m_size_of_data_read_byte*
             global_limits_t::bits_in_byte;
         } else {
-          make_packet(m_start_block - m_discret_inputs_size_bit, 
+          make_packet(m_start_block - m_discret_inputs_size_bit,
             m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
         }
       }
       // Чтение holding registers
-      else if ((m_start_block >= (m_discret_inputs_size_bit + 
-        m_coils_size_bit)) && (m_start_block < (m_discret_inputs_size_bit + 
+      else if ((m_start_block >= (m_discret_inputs_size_bit +
+        m_coils_size_bit)) && (m_start_block < (m_discret_inputs_size_bit +
         m_coils_size_bit + m_hold_registers_size_reg)))
       {
         m_command = read_hold_registers;
         if (m_read_quantity*2 > m_size_of_data_read_byte) {
-          make_packet(m_start_block - m_discret_inputs_size_bit - 
+          make_packet(m_start_block - m_discret_inputs_size_bit -
             m_coils_size_bit, m_size_of_data_read_reg);
           m_search_index = m_start_block + m_size_of_data_read_reg;
         } else {
-          make_packet(m_start_block - m_discret_inputs_size_bit - 
+          make_packet(m_start_block - m_discret_inputs_size_bit -
             m_coils_size_bit, m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
         }
       }
       // Чтение input registers
-      else if ((m_start_block >= (m_discret_inputs_size_bit + 
-        m_coils_size_bit + m_hold_registers_size_reg)) && 
-        (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit + 
-        m_hold_registers_size_reg + m_input_registers_size_reg))) 
+      else if ((m_start_block >= (m_discret_inputs_size_bit +
+        m_coils_size_bit + m_hold_registers_size_reg)) &&
+        (m_start_block < (m_discret_inputs_size_bit + m_coils_size_bit +
+        m_hold_registers_size_reg + m_input_registers_size_reg)))
       {
         m_command = read_input_registers;
         if (m_read_quantity*2 > m_size_of_data_read_byte) {
@@ -3967,8 +3974,8 @@ void irs::modbus_client_t::tick()
           make_packet(m_start_block - (m_discret_inputs_size_bit +
             m_coils_size_bit + m_hold_registers_size_reg), m_read_quantity);
           m_search_index = m_start_block + m_read_quantity;
-          if (m_search_index == (m_input_registers_size_reg + 
-            m_hold_registers_size_reg + m_discret_inputs_size_bit + 
+          if (m_search_index == (m_input_registers_size_reg +
+            m_hold_registers_size_reg + m_discret_inputs_size_bit +
             m_coils_size_bit))
           {
             m_search_index = 0;
@@ -3988,7 +3995,7 @@ void irs::modbus_client_t::tick()
           if ((m_loop_timer.check()) && (m_refresh_mode == mode_refresh_auto))
           {
             IRS_LIB_IRSMBUS_DBG_OPERATION_TIME(
-              double time_delta_write = m_measure_time.get() - 
+              double time_delta_write = m_measure_time.get() -
                 m_measure_int_time;
               m_measure_int_time = m_measure_time.get();
               mlog() << stime << irsm(" ") <<
@@ -4056,7 +4063,7 @@ void irs::modbus_client_t::tick()
         {
           if (m_hold_registers_size_reg) {
             m_command = m_request_type;
-            if (irs_u32(m_global_read_index + m_size_of_data_read_reg) < 
+            if (irs_u32(m_global_read_index + m_size_of_data_read_reg) <
               irs_u32(m_hold_registers_size_reg))
             {
               make_packet(m_global_read_index, m_size_of_data_read_reg);
@@ -4099,7 +4106,7 @@ void irs::modbus_client_t::tick()
           }
           size_t read_flags_cnt = 0;
           for(size_t read_idx = 0; read_idx < (m_discret_inputs_size_bit +
-            m_coils_size_bit + m_hold_registers_size_reg + 
+            m_coils_size_bit + m_hold_registers_size_reg +
             m_input_registers_size_reg); read_idx++)
           {
             if (m_need_read[read_idx] == 1) {
