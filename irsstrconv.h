@@ -184,6 +184,14 @@ struct base_str_type<UnicodeString>
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
+#ifdef QT_CORE_LIB
+template<>
+struct base_str_type<QString>
+{
+  typedef irs_wstring_t type;
+};
+#endif //QT_CORE_LIB
+
 //char*
 #ifdef QT_CORE_LIB
 inline QString str_conv(const char* a_str_in)
