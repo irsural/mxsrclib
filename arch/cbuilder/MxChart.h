@@ -486,12 +486,17 @@ private:
 class builder_chart_window_t: public irs::chart_window_t
 {
 public:
+  typedef std::size_t size_type;
   typedef irs::string_t string_type;
+  enum form_type_t { ft_internal, ft_external };
   enum stay_on_top_t { stay_on_top_on, stay_on_top_off };
 
   builder_chart_window_t(irs_u32 a_size = 1000,
     irs_i32 a_refresh_time_ms = 1000,
     stay_on_top_t a_stay_on_top = stay_on_top_on);
+  builder_chart_window_t(TForm* ap_form,
+    irs_u32 a_size = 1000,
+    irs_i32 a_refresh_time_ms = 1000);
   virtual void show();
   virtual void hide();
   virtual rect_t position() const;
@@ -514,7 +519,13 @@ public:
   virtual irs_u32 size() const;
   virtual void group_all();
   virtual void ungroup_all();
+  void load_from_csv(const string_type& a_file_name);
+  void save_to_csv(const string_type& a_file_name);
 private:
+   // Подключение к форме и создание элементов управления
+  void init(TForm *ap_form);
+  // Уничтожение всех компонентов формы
+  void deinit();
   class chart_func_t;
   struct chart_point_t;
 
@@ -574,29 +585,41 @@ private:
     chart_point_t m_bad_point;
   };
   // Форма с графиком
-  class TChartForm: public TForm
+  class controls_t: public TObject
   {
   public:
     typedef irs::string_t string_type;
-    TChartForm(const data_t &a_data, chart_event_t &a_event,
+    controls_t(builder_chart_window_t* ap_builder_chart_window,
+      form_type_t a_form_type,
+      TForm* ap_form, const data_t &a_data, chart_event_t &a_event,
       irs_i32 a_refresh_time_ms, stay_on_top_t a_stay_on_top);
-    virtual __fastcall ~TChartForm();
-    inline irs_bool fix();
+    virtual __fastcall ~controls_t();
+    inline bool fix();
     inline void group_all();
     inline void ungroup_all();
     inline void invalidate();
     void chart_list_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
   private:
+    builder_chart_window_t* mp_builder_chart_window;
+    form_type_t m_form_type;
+    TForm* mp_form;
     irs_bool m_group_all;
     //chart_point_t m_pause_time;
     data_t m_pause_data;
-    irs_bool m_pause;
-    irs_bool m_fix;
+    bool m_pause;
+    bool m_fix;
     //const chart_point_t &m_time;
     const data_t &m_data;
     chart_event_t &m_event;
     TIdleEvent m_IdleEvent;
+    TOpenDialog* mp_file_open_dialog;
+    TSaveDialog* mp_file_save_dialog;
+    TMainMenu* mp_main_menu;
+    TMenuItem* mp_file_menu_item;
+    TMenuItem* mp_file_open_menu_item;
+    TMenuItem* mp_file_save_menu_item;
+    TMenuItem* mp_file_save_as_menu_item;
     TPanel* mp_panel;
     TPaintBox* mp_chart_box;
     TMxChart* mp_chart;
@@ -625,6 +648,11 @@ private:
 
     void __fastcall FormResize(TObject *Sender);
     void __fastcall TimerEvent(TObject *Sender);
+
+    void __fastcall FileOpenMenuItemClick(TObject *Sender);
+    void __fastcall FileSaveMenuItemClick(TObject *Sender);
+    void __fastcall FileSaveAsMenuItemClick(TObject *Sender);
+
     void __fastcall PauseBtnClick(TObject *Sender);
     void __fastcall FixBtnClick(TObject *Sender);
     void __fastcall ClearBtnClick(TObject *Sender);
@@ -637,13 +665,17 @@ private:
     void set_base_item(int a_base_item);
     int chart_from_combo_item(int a_combo_item);
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
-  }; //class TChartForm
+  }; //class controls_t
 
   //chart_point_t m_time;
   data_t m_data;
   irs_u32 m_size;
   chart_event_t m_event;
-  auto_ptr<TChartForm> mp_form;
+  irs_i32 m_refresh_time_ms;
+  form_type_t m_form_type;
+  irs::handle_t<TForm> mp_internal_form;
+  TForm* mp_form;
+  irs::handle_t<controls_t> mp_controls;
   rect_t m_position;
   stay_on_top_t m_stay_on_top;
   irs_i32 m_chart_index;
