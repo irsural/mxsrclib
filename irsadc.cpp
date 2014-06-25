@@ -4023,3 +4023,88 @@ void irs::dac_1220_t::tick()
     break;
   }
 }
+
+//------------------------------------------------------------------------------
+
+irs::dac_ltc8043_t::dac_ltc8043_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
+  float a_init_data):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_data(0),
+  m_new_data(0),
+  m_mode(mode_free),
+  m_timer(irs::make_cnt_mcs(cs_interval))
+{
+  memset(mp_spi_buf, 0, write_buf_size);
+  mp_cs_pin->set();
+  set_float_data(0, a_init_data);
+}
+
+size_t irs::dac_ltc8043_t::get_resolution() const
+{
+  return dac_resolution;
+}
+
+irs_u32 irs::dac_ltc8043_t::get_u32_maximum() const
+{
+  return static_cast<irs_u32>(dac_max_value) << (32 - dac_resolution);
+}
+
+void irs::dac_ltc8043_t::set_u32_data(size_t, const irs_u32 a_data)
+{
+  m_new_data = static_cast<irs_u16>(a_data >> (32 - dac_resolution));
+}
+
+float irs::dac_ltc8043_t::get_float_maximum() const
+{
+  return 1.f;
+}
+
+void irs::dac_ltc8043_t::set_float_data(size_t, const float a_data)
+{
+  if (a_data > 1.f) {
+    IRS_LIB_ERROR(ec_standard, "Значение должно быть от 0 до 1");
+  }
+  m_new_data = static_cast<irs_u16>(a_data*dac_max_value);
+}
+
+void irs::dac_ltc8043_t::tick()
+{
+  mp_spi->tick();
+  switch (m_mode) {
+    case mode_free: {
+      if (m_new_data != m_data) {
+        m_data = m_new_data;
+        mp_spi_buf[0] = IRS_HIBYTE(m_data);
+        mp_spi_buf[1] = IRS_LOBYTE(m_data);
+        m_mode = mode_write;
+      }
+    } break;
+    case mode_write: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_spi->lock();
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+        mp_spi->write(mp_spi_buf, write_buf_size);
+        m_mode = mode_write_wait;
+      }
+    } break;
+    case mode_write_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->clear();
+        m_timer.start();
+        m_mode = mode_wait_cs;
+      }
+    } break;
+    case mode_wait_cs: {
+      if (m_timer.check()) {
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        memset(mp_spi_buf, 0, write_buf_size);
+        m_mode = mode_free;
+      }
+    } break;
+  }
+}

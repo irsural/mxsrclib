@@ -1920,6 +1920,42 @@ private:
   size_t m_write_buf_size;
 };
 
+//-------------------------- LTC8043 -------------------------------------------
+// 12-bit DAC
+
+class dac_ltc8043_t: public dac_t
+{
+public:
+  dac_ltc8043_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, float a_init_data = 0.);
+  virtual size_t get_resolution() const;
+  virtual irs_u32 get_u32_maximum() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual float get_float_maximum() const;
+  virtual void set_float_data(size_t a_channel, const float a_data);
+  virtual void tick();
+
+private:
+  enum {
+    dac_resolution = 12,
+    write_buf_size = 2,
+    cs_interval = 1
+  };
+  enum { dac_max_value = 0x0FFF };
+  enum mode_t {
+    mode_free,
+    mode_write,
+    mode_write_wait,
+    mode_wait_cs
+  };
+  spi_t *mp_spi;
+  gpio_pin_t *mp_cs_pin;
+  irs_u16 m_data;
+  irs_u16 m_new_data;
+  irs_u8 mp_spi_buf[write_buf_size];
+  mode_t m_mode;
+  timer_t m_timer;
+};
+
 //! @}
 
 } // namespace irs
