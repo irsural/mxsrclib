@@ -685,6 +685,7 @@ public:
   void clear();
   void add(data_t a_val);
   operator calc_t()const;
+  calc_t relative()const;
   calc_t average()const;
   void resize(size_type a_size);
   void resize_average(size_type a_size);
@@ -813,6 +814,21 @@ fast_sko_t<data_t, calc_t>::operator calc_t()const
     return 0;
   }
   return sqrt(m_square_sum/m_square_elems.size());
+}
+
+template<class data_t, class calc_t>
+calc_t fast_sko_t<data_t, calc_t>::relative() const
+{
+  if (m_square_elems.empty()) {
+    return 0;
+  }
+  const calc_t average = m_average.get();
+  if (average == 0) {
+    return 0;
+  }
+  const calc_t sko = *this;
+  calc_t sko_reltive = sko/average;
+  return sko_reltive;
 }
 
 template<class data_t, class calc_t>

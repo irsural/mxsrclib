@@ -142,6 +142,16 @@ public:
     normal_mii_mode,
     reduced_mii_mode
   };
+  //! \brief Конфигурация вставки контрольной суммы для отправляемых пакетов
+  //! \details Описание в RM0090 Reference Manual.
+  //!   Раздел "TDES0: Transmit descriptor Word0".
+  //!   Bits 23:22 CIC: Checksum insertion control.
+  enum tx_checksum_insertion_control_t {
+    tx_checksum_bypass = ETH_DMATxDesc_ChecksumByPass,
+    tx_checksum_ipv4_header = ETH_DMATxDesc_ChecksumIPV4Header,
+    tx_checksum_tcp_udp_icmp_segment = ETH_DMATxDesc_ChecksumTCPUDPICMPSegment,
+    tx_checksum_tcp_udp_icmp_full = ETH_DMATxDesc_ChecksumTCPUDPICMPFull
+  };
   struct config_t
   {
     enum { txd_count = 4 };
@@ -189,9 +199,15 @@ public:
   //!   Обычно равен MAX_ETH_PAYLOAD + ETH_HEADER + ETH_CRC
   //! \param[in] a_mac - локальный MAC-адрес
   //! \param[in] a_config - конфигурация подключения физического уровня
+  //! \param[in] a_tx_checksum_insertion_control - конфигурация расчета
+  //!   контрольной суммы. Для LwIP установливать tx_checksum_tcp_udp_icmp_full,
+  //!   для irs::hardflow::simple_udp_flow_t устанавливать
+  //!   tx_checksum_bypass
   st_ethernet_t(
     size_t a_recv_buf_size,
-    mxmac_t& a_mac, const config_t a_config);
+    mxmac_t& a_mac, const config_t a_config,
+    tx_checksum_insertion_control_t a_tx_checksum_insertion_control =
+      tx_checksum_tcp_udp_icmp_full);
   virtual ~st_ethernet_t();
   virtual void send_packet(irs_size_t a_size);
   virtual void set_recv_handled();

@@ -550,7 +550,8 @@ void irs::arm::st_ethernet_t::eth_auto_negotation_t::set_speed_and_mode_mac()
 irs::arm::st_ethernet_t::st_ethernet_t(
   size_t a_recv_buf_size,
   mxmac_t& a_mac,
-  const config_t a_config
+  const config_t a_config,
+  tx_checksum_insertion_control_t a_tx_checksum_insertion_control
 ):
   m_receive_buf(a_recv_buf_size),
   m_transmit_buf(a_recv_buf_size - frame_check_sequence_size),
@@ -598,10 +599,10 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   ETH_DMATxDescChainInit(DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
   ETH_DMARxDescChainInit(DMARxDscrTab, &Rx_Buff[0][0], ETH_RXBUFNB);
 
-  // Enable the TCP, UDP and ICMP checksum insertion for the Tx frames
+  // Конфигурация расчета контрольной суммы
   for(int i = 0; i<ETH_TXBUFNB; i++) {
     ETH_DMATxDescChecksumInsertionConfig(
-      &DMATxDscrTab[i], ETH_DMATxDesc_ChecksumTCPUDPICMPFull);
+      &DMATxDscrTab[i], a_tx_checksum_insertion_control);
   }
 
   set_mac(a_mac);
