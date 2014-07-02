@@ -3482,19 +3482,59 @@ ungroup_all()
 void irs::chart::builder_chart_window_t::
 load_from_csv(const string_type& a_file_name)
 {
+  const string_type x_suffix = irst("_x");
   csvwork::csv_file_synchro_t csv_file;
   csv_file.set_file_name(a_file_name);
   table_string_t table_string;
   if (!csv_file.load(&table_string)) {
     throw runtime_error("Не удалось загрузить файл");
   }
+  const size_type data_row_start_index = 1;
+  const size_type col_count =
+    table_string.get_col_count() - table_string.get_col_count()%2;
+  size_type row_count = table_string.get_row_count();
+  size_type row_index = 0;
 
+  vector<string_type> names;
+
+  size_type col_index = 0;
+  while (col_index < col_count) {
+    string_type name = table_string.read_cell(col_index, 0);
+    if (name.size() >= x_suffix.size()) {
+      const size_type pos = name.size()- x_suffix.size();
+      string_type suffix = name.substr(pos);
+      if (suffix == x_suffix) {
+        name = name.substr(0, pos);
+      }
+    }
+    names.push_back(name);
+    col_index += 2;
+  }
+  clear();
+  size_type x_col_index = 0;
+  for (size_type chart_i = 0; chart_i < names.size(); chart_i++) {
+    vector<double> x_array;
+    vector<double> y_array;
+    for (size_type row_index = data_row_start_index; row_index < row_count;
+        row_index++) {
+      double x = 0;
+      double y = 0;
+      string_type x_str = table_string.read_cell(x_col_index, row_index);
+      string_type y_str = table_string.read_cell(x_col_index + 1, row_index);
+      if (str_to_num(x_str, &x) && str_to_num(y_str, &y)) {
+        x_array.push_back(x);
+        y_array.push_back(y);
+      }
+    }
+    add_param(names[chart_i], x_array, y_array);
+    x_col_index += 2;
+  }
 }
 
 void irs::chart::builder_chart_window_t::
 save_to_csv(const string_type& a_file_name)
 {
-  const size_type data_row_start_index = 0;
+  const size_type data_row_start_index = 1;
 
   table_string_t table_string;
   table_string.set_col_count(m_data.size()*2);
@@ -3698,6 +3738,7 @@ irs::chart::builder_chart_window_t::controls_t::
   m_IdleEvent(Application->OnIdle),
   mp_file_open_dialog(new TOpenDialog(mp_form)),
   mp_file_save_dialog(new TSaveDialog(mp_form)),
+  m_file_name(),
   mp_main_menu(new TMainMenu(mp_form)),
   mp_file_menu_item(new TMenuItem(mp_form)),
   mp_file_open_menu_item(new TMenuItem(mp_form)),
@@ -3856,22 +3897,35 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
 FileOpenMenuItemClick(TObject *Sender)
 {
-
+  mp_file_open_dialog->FileName = m_file_name;
+  if (mp_file_open_dialog->Execute()) {
+    const string_type file_name =
+      irs::str_conv<string_type>(mp_file_open_dialog->FileName);
+    mp_builder_chart_window->load_from_csv(file_name);
+    m_file_name = mp_file_open_dialog->FileName;
+  }
 }
 
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
 FileSaveMenuItemClick(TObject *Sender)
 {
- 
+  if (m_file_name.IsEmpty()) {
+    FileSaveAsMenuItemClick(Sender);
+  } else {
+    const string_type file_name = irs::str_conv<string_type>(m_file_name);
+    mp_builder_chart_window->save_to_csv(file_name);
+  }
 }
 
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
 FileSaveAsMenuItemClick(TObject *Sender)
 {
+  mp_file_save_dialog->FileName = m_file_name;
   if (mp_file_save_dialog->Execute()) {
     const string_type file_name =
       irs::str_conv<string_type>(mp_file_save_dialog->FileName);
     mp_builder_chart_window->save_to_csv(file_name);
+    m_file_name = mp_file_save_dialog->FileName;
   }
 }
 

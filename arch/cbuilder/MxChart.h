@@ -615,6 +615,7 @@ private:
     TIdleEvent m_IdleEvent;
     TOpenDialog* mp_file_open_dialog;
     TSaveDialog* mp_file_save_dialog;
+    String m_file_name;
     TMainMenu* mp_main_menu;
     TMenuItem* mp_file_menu_item;
     TMenuItem* mp_file_open_menu_item;
