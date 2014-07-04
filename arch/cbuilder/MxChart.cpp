@@ -3234,6 +3234,133 @@ int irs::chart::color_gen_t::size() const
   return (int)m_colors.size();
 }
 
+// class charts_xml_file_t
+irs::chart::charts_xml_file_t::charts_xml_file_t():
+  mp_xmldoc(NewXMLDocument()),
+  m_root_element_name("mx_chart"),
+  m_charts_node_name("charts"),
+  m_chart_node_name("chart"),
+  m_point_node_name("point"),
+  m_x_attribute_name("x"),
+  m_y_attribute_name("y")
+{
+
+}
+
+irs::chart::charts_xml_file_t::charts_type
+irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
+{
+  using namespace chart_data;
+  if (!FileExists(a_file_name.c_str())) {
+    throw runtime_error("Указан несуществующий файл");
+  }
+  _di_IXMLNode root_eleme_node = IRS_NULL;
+  mp_xmldoc->Active = false;
+  mp_xmldoc->LoadFromFile(a_file_name.c_str());
+  mp_xmldoc->Active = true;
+
+  const String root_elem_name = root_eleme_node->NodeName;
+  if (root_elem_name != m_root_element_name) {
+    throw runtime_error("Указанный файл не является файлом программы MXСhart");
+  }
+
+  _di_IXMLNodeList root_children =  root_eleme_node->GetChildNodes();
+  _di_IXMLNode charts_node = root_children->FindNode(m_charts_node_name);
+  if (!charts_node) {
+    const std::string msg = std::string("Не найден узел ") +
+      irs::str_conv<std::string>(
+      irs::str_conv<string_type>(m_charts_node_name));
+    throw runtime_error(msg);
+  }
+  charts_t charts;
+  _di_IXMLNodeList charts_node_list = charts_node->GetChildNodes();
+  for (int chart_i = 0; chart_i < charts_node_list->Count; chart_i++) {
+    chart_t chart;
+    _di_IXMLNode chart_node = charts_node_list->Get(chart_i);
+    if (chart_node->NodeName != m_chart_node_name) {
+      continue;
+    }
+    String chart_name_bstr =
+      chart_node->GetAttribute(m_chart_name_attribute_name);
+    string_type chart_name = irs::str_conv<string_type>(chart_name_bstr);
+
+    String chart_index_bstr =
+      chart_node->GetAttribute(m_chart_index_attribute_name);
+    string_type chart_index_str = irs::str_conv<string_type>(chart_name_bstr);
+    if (str_to_num(chart_index_str, &chart.index)) {
+      throw runtime_error("Неправильно указан индекс графика");
+    }
+
+    _di_IXMLNodeList points_node_list = chart_node->GetChildNodes();
+    chart_t::points_type points;
+    for (int point_i = 0; point_i < points_node_list->Count; point_i++) {
+      _di_IXMLNode point_node = points_node_list->Get(point_i);
+      String point_name_bstr = point_node->NodeName;
+      if (point_name_bstr!= m_point_node_name) {
+        continue;
+      }
+      chart_t::point_type point;
+      String x_value_bstr = point_node->GetAttribute(m_x_attribute_name);
+      string_type x_value_str = irs::str_conv<string_type>(x_value_bstr);
+
+      String y_value_bstr = point_node->GetAttribute(m_y_attribute_name);
+      string_type y_value_str = irs::str_conv<string_type>(y_value_bstr);
+
+      if (str_to_num(x_value_str, &point.x) &&
+          str_to_num(y_value_str, &point.y)) {
+        chart.points.push_back(point);
+      }
+    }
+    charts.insert(make_pair(chart_name, chart));
+  }
+  return charts;
+}
+
+void irs::chart::charts_xml_file_t::save(
+const charts_type& a_charts, const string_type& a_file_name) const
+{
+  using namespace chart_data;
+
+  mp_xmldoc->Active = false;
+  mp_xmldoc->FileName = "";
+  mp_xmldoc->XML->Clear();
+  mp_xmldoc->XML->Add(irst("<?xml version=\"1.0\" encoding=\"utf-8\"?>"));
+  mp_xmldoc->XML->Add((irst("<") + m_root_element_name + irst(">")).c_str());
+  mp_xmldoc->XML->Add((irst("</") + m_root_element_name + irst(">")).c_str());
+  mp_xmldoc->Active = true;
+
+  _di_IXMLNode charts_node =
+    mp_xmldoc->DocumentElement->AddChild(m_charts_node_name);
+
+  charts_t::const_iterator it = a_charts.begin();
+  while (it != a_charts.end()) {
+    _di_IXMLNode chart_node = charts_node->AddChild(WideString("chart"));
+
+    chart_node->SetAttribute("name", irs::str_conv<WideString>(it->first));
+    string_type index_str;
+    num_to_str(it->second.index, &index_str);
+    chart_node->SetAttribute("index", irs::str_conv<WideString>(index_str));
+    const chart_t::points_type& points = it->second.points;
+
+    for (size_type i = 0; i < points.size(); i++) {
+      _di_IXMLNode point_node = chart_node->AddChild(WideString("point"));
+      chart_t::point_type point = points[i];
+
+      string_type x_str;
+      num_to_str(point.x, &x_str);
+      point_node->SetAttribute(m_x_attribute_name,
+        irs::str_conv<WideString>(x_str));
+
+      string_type y_str;
+      num_to_str(point.y, &y_str);
+      point_node->SetAttribute(m_y_attribute_name,
+        irs::str_conv<WideString>(y_str));
+    }
+    ++it;
+  }
+  mp_xmldoc->SaveToFile(a_file_name.c_str());
+}
+
 // Окно с графиком для C++ Builder
 irs::chart::builder_chart_window_t::
 builder_chart_window_t(irs_u32 a_size,
@@ -3483,13 +3610,15 @@ void irs::chart::builder_chart_window_t::
 load_from_csv(const string_type& a_file_name)
 {
   const string_type x_suffix = irst("_x");
+  const size_type data_row_start_index = 1;
+
   csvwork::csv_file_synchro_t csv_file;
   csv_file.set_file_name(a_file_name);
   table_string_t table_string;
   if (!csv_file.load(&table_string)) {
     throw runtime_error("Не удалось загрузить файл");
   }
-  const size_type data_row_start_index = 1;
+
   const size_type col_count =
     table_string.get_col_count() - table_string.get_col_count()%2;
   size_type row_count = table_string.get_row_count();
@@ -3507,7 +3636,9 @@ load_from_csv(const string_type& a_file_name)
         name = name.substr(0, pos);
       }
     }
-    names.push_back(name);
+    if (find(names.begin(), names.end(), name) == names.end()) {
+      names.push_back(name);
+    }
     col_index += 2;
   }
   clear();
@@ -3534,6 +3665,8 @@ load_from_csv(const string_type& a_file_name)
 void irs::chart::builder_chart_window_t::
 save_to_csv(const string_type& a_file_name)
 {
+  const string_type x_suffix = irst("_x");
+  const string_type y_suffix = irst("_y");
   const size_type data_row_start_index = 1;
 
   table_string_t table_string;
@@ -3553,9 +3686,9 @@ save_to_csv(const string_type& a_file_name)
   size_type col_index = 0;
   while (it != m_data.end()) {
     const string_type name = it->first;
-    table_string.write_cell(col_index, 0, name + irst("_x"));
+    table_string.write_cell(col_index, 0, name + x_suffix);
     col_index++;
-    table_string.write_cell(col_index, 0, name + irst("_y"));
+    table_string.write_cell(col_index, 0, name + y_suffix);
     col_index++;
     ++it;
   }

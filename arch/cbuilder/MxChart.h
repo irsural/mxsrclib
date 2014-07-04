@@ -14,11 +14,13 @@
 #include <irsdefs.h>
 
 #include <MxBase.h>
+#include <XMLDoc.hpp>
 #include <limits> // Отсутствует в IAR
 
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irschartwin.h>
+#include <irs_chart_data.h>
 
 #include <irsfinal.h>
 
@@ -480,6 +482,27 @@ private:
   vector<TColor> m_colors;
   vector<string_type> m_names;
   int m_index;
+};
+
+class charts_xml_file_t
+{
+public:
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  typedef irs::chart_data::charts_t charts_type;
+  charts_xml_file_t();
+  charts_type load(const string_type& a_file_name) const;
+  void save(const charts_type& a_charts, const string_type& a_file_name) const;
+private:
+  _di_IXMLDocument mp_xmldoc;
+  String m_root_element_name;
+  String m_charts_node_name;
+  String m_chart_node_name;
+  String m_chart_name_attribute_name;
+  String m_chart_index_attribute_name;
+  String m_point_node_name;
+  String m_x_attribute_name;
+  String m_y_attribute_name;
 };
 
 // Окно с графиком для C++ Builder
