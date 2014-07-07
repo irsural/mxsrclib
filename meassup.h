@@ -264,73 +264,73 @@ private:
 
   struct supply_conn_data_t
   {
-  enum supply_type_t{
-    supply_200V,
-    supply_20V,
-    supply_1A,
-    supply_17A
-  };
+    enum supply_type_t{
+      supply_200V,
+      supply_20V,
+      supply_1A,
+      supply_17A
+    };
 
-  irs::conn_data_t<float> temperature;
-  irs::conn_data_t<float> ADC_output;
-  irs::conn_data_t<float> temperature_ref;
-  irs::conn_data_t<float> correct_koef;
-  irs::conn_data_t<float> ADC_correct_koef;
-  // пропорциональный коэффициент регулятора температуры (write only)
-  irs::conn_data_t<float> temp_k;
-  // интегральный коэффициент регулятора температуры (write only)
-  irs::conn_data_t<float> temp_ki;
-  // дифференциальный коэффициент регулятора температуры (write only)
-  irs::conn_data_t<float> temp_kd;
-  // значение записываемое в регистр А (write only)
-  irs::conn_data_t<float> sense_regA;
-  // значение записываемое в регистр B (write only)
-  irs::conn_data_t<float> sense_regB;
-  // значение цифрового потенциометра (read only)
-  irs::conn_data_t<irs_i32> temp_dac_value;
-  // значение интегратора (read only)
-  irs::conn_data_t<irs_i32> int_val;
-  // постоянная времени фильтра температуры (read only)
-  irs::conn_data_t<float> temp_time_const;
-  // фильтрованная температура (read only)
-  irs::conn_data_t<float> temp_filtered;
-  // коэффициент передачи пропорциональной части изодромного звена
-  irs::conn_data_t<float> temp_prop_koef;
-  irs::conn_data_t<float> temp_k_stable;
-  irs::conn_data_t<float> temp_ki_stable;
-  irs::conn_data_t<float> temp_kd_stable;
-  irs::conn_data_t<float> stable_time_sec;
+    irs::conn_data_t<float> temperature;
+    irs::conn_data_t<float> ADC_output;
+    irs::conn_data_t<float> temperature_ref;
+    irs::conn_data_t<float> correct_koef;
+    irs::conn_data_t<float> ADC_correct_koef;
+    // пропорциональный коэффициент регулятора температуры (write only)
+    irs::conn_data_t<float> temp_k;
+    // интегральный коэффициент регулятора температуры (write only)
+    irs::conn_data_t<float> temp_ki;
+    // дифференциальный коэффициент регулятора температуры (write only)
+    irs::conn_data_t<float> temp_kd;
+    // значение записываемое в регистр А (write only)
+    irs::conn_data_t<float> sense_regA;
+    // значение записываемое в регистр B (write only)
+    irs::conn_data_t<float> sense_regB;
+    // значение цифрового потенциометра (read only)
+    irs::conn_data_t<irs_i32> temp_dac_value;
+    // значение интегратора (read only)
+    irs::conn_data_t<irs_i32> int_val;
+    // постоянная времени фильтра температуры (read only)
+    irs::conn_data_t<float> temp_time_const;
+    // фильтрованная температура (read only)
+    irs::conn_data_t<float> temp_filtered;
+    // коэффициент передачи пропорциональной части изодромного звена
+    irs::conn_data_t<float> temp_prop_koef;
+    irs::conn_data_t<float> temp_k_stable;
+    irs::conn_data_t<float> temp_ki_stable;
+    irs::conn_data_t<float> temp_kd_stable;
+    irs::conn_data_t<float> stable_time_sec;
 
-  supply_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
-    irs_uarc* ap_size = IRS_NULL)
-  {
-    irs_uarc size = connect(ap_data, a_index);
-    if(ap_size != IRS_NULL){
-      *ap_size = size;
+    supply_conn_data_t(irs::mxdata_t *ap_data = IRS_NULL, irs_uarc a_index = 0,
+      irs_uarc* ap_size = IRS_NULL)
+    {
+      irs_uarc size = connect(ap_data, a_index);
+      if(ap_size != IRS_NULL){
+        *ap_size = size;
+      }
     }
-  }
 
-  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
-  {
-    irs_uarc index = a_index;
+    irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_index)
+    {
+      irs_uarc index = a_index;
 
-    index = temperature.connect(ap_data, index);
-    index = ADC_output.connect(ap_data, index);
-    index = temperature_ref.connect(ap_data, index);
-    index = correct_koef.connect(ap_data, index);
-    index = ADC_correct_koef.connect(ap_data, index);
-    index = temp_k.connect(ap_data, index);
-    index = temp_ki.connect(ap_data, index);
-    index = temp_kd.connect(ap_data, index);
-    index = sense_regA.connect(ap_data, index);
-    index = sense_regB.connect(ap_data, index);
-    index = temp_dac_value.connect(ap_data, index);
-    index = int_val.connect(ap_data, index);
-    index = temp_time_const.connect(ap_data, index);
-    index = temp_filtered.connect(ap_data, index);
+      index = temperature.connect(ap_data, index);
+      index = ADC_output.connect(ap_data, index);
+      index = temperature_ref.connect(ap_data, index);
+      index = correct_koef.connect(ap_data, index);
+      index = ADC_correct_koef.connect(ap_data, index);
+      index = temp_k.connect(ap_data, index);
+      index = temp_ki.connect(ap_data, index);
+      index = temp_kd.connect(ap_data, index);
+      index = sense_regA.connect(ap_data, index);
+      index = sense_regB.connect(ap_data, index);
+      index = temp_dac_value.connect(ap_data, index);
+      index = int_val.connect(ap_data, index);
+      index = temp_time_const.connect(ap_data, index);
+      index = temp_filtered.connect(ap_data, index);
 
-    return index;
-  }
+      return index;
+    }
   };
 
   struct eth_data_t
