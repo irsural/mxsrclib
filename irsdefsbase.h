@@ -158,6 +158,14 @@
 # define IRS_USE_FREE_RTOS 0
 #endif // IRS_USE_FREE_RTOS
 
+#ifndef IRS_USE_JSON_CPP
+# define IRS_USE_JSON_CPP 0
+#endif // IRS_USE_JSON_CPP
+
+#ifndef IRS_USE_UTF8_CPP
+# define IRS_USE_UTF8_CPP 0
+#endif // IRS_USE_UTF8_CPP
+
 // Статические утверждения
 // Взято из STLSoft
 // Перенесено из irserror.h для того, чтобы была возможность применить

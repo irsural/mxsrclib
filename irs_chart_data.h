@@ -52,8 +52,12 @@ struct chart_t
       points.push_back(point_type(a_x_array[i], a_y_array[i]));
     }
   }
-  vector<double> get_x_array();
-  vector<double> get_y_array();
+  vector<double> get_x_array() const;
+  vector<double> get_y_array() const;
+  void set_x_y_arrays(const vector<double>& a_x_array,
+    const vector<double>& a_y_array);
+  void set_x_y_arrays(const vector<double>& a_x_array,
+    const vector<double>& a_y_array, size_type a_size);
 };
 
 typedef map<irs::string_t, chart_t> charts_t;

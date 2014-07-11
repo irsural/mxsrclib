@@ -607,6 +607,12 @@ inline irs_string_t str_conv<irs_string_t>(const QString& a_str_in)
 }
 
 template<>
+inline std_wstring_t str_conv<std_wstring_t>(const QString& a_str_in)
+{
+  return QStringToStdWString(a_str_in);
+}
+
+template<>
 inline irs_wstring_t str_conv<irs_wstring_t>(const QString& a_str_in)
 {
   return QStringToStdWString(a_str_in);
@@ -637,6 +643,114 @@ inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 }
 # endif // __ICCARM__
 #endif // !IRS_FULL_STDCPPLIB_SUPPORT
+
+#ifdef IRS_WIN32
+# ifdef QT_CORE_LIB
+inline std::wstring utf_8_to_wstring(const std::string& a_str)
+{
+  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
+  QString Str = codec_utf_8->toUnicode(a_str.c_str());
+  return irs::str_conv<std::wstring>(Str);
+}
+
+inline std::string wstring_to_utf_8(const std::wstring& a_str)
+{
+  QString Str = irs::str_conv<QString>(a_str);
+  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
+  QByteArray str_utf_8 = codec_utf_8->fromUnicode(Str);
+  return std::string(str_utf_8.data());
+}
+
+# else // !QT_CORE_LIB
+inline std::wstring utf_8_to_wstring(const std::string& a_str)
+{
+  int size =  MultiByteToWideChar(CP_UTF8 ,0 , a_str.c_str(), a_str.size(),
+    NULL, 0);
+  wchar_t* wcstr = new wchar_t[size];
+  MultiByteToWideChar(CP_UTF8, 0, a_str.c_str(), a_str.size(), wstr, size);
+  std::wstring wstr(wcstr, size);
+  delete[] wcstr;
+  return wstr;
+}
+
+inline std::string wstring_to_utf_8(const std::wstring& a_str)
+{
+  int size = WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(),
+    a_str.size(), NULL, 0, NULL, NULL);
+  char* cstr = new wchar_t[size];
+  WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(), a_str.size(), cstr,
+    size, NULL, NULL);
+  std::string str(cstr, size);
+  delete[] cstr;
+  return str;
+}
+
+/*inline std::string utf_8_to_cp1251(const std::string& a_str)
+{
+
+}*/
+
+# endif // !QT_CORE_LIB
+#else //
+# if IRS_USE_UTF8_CPP
+inline std::wstring utf_8_to_wstring(const std::string& a_str)
+{
+  vector<wchar_t> wchar_vec;
+  if (sizeof(wchar_t) == 2) {
+    utf8::utf8to16(a_str.begin(), a_str.end(), back_inserter(wchar_vec));
+  } else if (sizeof(wchar_t) == 2) {
+    utf8::utf8to32(a_str.begin(), a_str.end(), back_inserter(wchar_vec));
+  } else {
+    // Недопустимый размер
+    IRS_STATIC_ASSERT(false);
+  }
+  std::wstring wstr(wchar_vec.front(), wchar_vec.size());
+  return wstr;
+}
+
+inline std::string wstring_to_utf_8(const std::wstring& a_str)
+{
+  int size = WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(),
+    a_str.size(), NULL, 0, NULL, NULL);
+  char* cstr = new wchar_t[size];
+  WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(), a_str.size(), cstr,
+    size, NULL, NULL);
+  std::string str(cstr, size);
+  delete[] cstr;
+  return str;
+}
+# endif // IRS_USE_UTF8_CPP
+#endif //
+
+#if (defined(IRS_WIN32) || defined(QT_CORE_LIB))
+template <class T>
+std::string encode_utf_8(const T& a_str)
+{
+  std::wstring wstr = irs::str_conv<std::wstring>(a_str);
+  return wstring_to_utf_8(wstr);
+}
+
+template <class T>
+T decode_utf_8(const std::string& a_str)
+{
+  std::wstring wstr = utf_8_to_wstring(a_str);
+  return irs::str_conv<T>(wstr);
+}
+#elif IRS_USE_UTF8_CPP
+template <class T>
+std::string encode_utf_8(const T& a_str)
+{
+  std::wstring wstr = irs::str_conv<std::wstring>(a_str);
+  return wstring_to_utf_8(wstr);
+}
+
+template <class T>
+T decode_utf_8(const std::string& a_str)
+{
+  std::wstring wstr = utf_8_to_wstring(a_str);
+  return irs::str_conv<T>(wstr);
+}
+#endif // IRS_USE_UTF8_CPP
 
 //! @}
 

@@ -3240,11 +3240,13 @@ irs::chart::charts_xml_file_t::charts_xml_file_t():
   m_root_element_name("mx_chart"),
   m_charts_node_name("charts"),
   m_chart_node_name("chart"),
+  m_chart_name_attribute_name("name"),
+  m_chart_index_attribute_name("index"),
   m_point_node_name("point"),
   m_x_attribute_name("x"),
   m_y_attribute_name("y")
 {
-
+  mp_xmldoc->Options = mp_xmldoc->Options << doNodeAutoIndent;
 }
 
 irs::chart::charts_xml_file_t::charts_type
@@ -3254,17 +3256,17 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
   if (!FileExists(a_file_name.c_str())) {
     throw runtime_error("Указан несуществующий файл");
   }
-  _di_IXMLNode root_eleme_node = IRS_NULL;
+  _di_IXMLNode root_elem_node = IRS_NULL;
   mp_xmldoc->Active = false;
   mp_xmldoc->LoadFromFile(a_file_name.c_str());
   mp_xmldoc->Active = true;
-
-  const String root_elem_name = root_eleme_node->NodeName;
+  root_elem_node = mp_xmldoc->DocumentElement;
+  const String root_elem_name = root_elem_node->NodeName;
   if (root_elem_name != m_root_element_name) {
     throw runtime_error("Указанный файл не является файлом программы MXСhart");
   }
 
-  _di_IXMLNodeList root_children =  root_eleme_node->GetChildNodes();
+  _di_IXMLNodeList root_children =  root_elem_node->GetChildNodes();
   _di_IXMLNode charts_node = root_children->FindNode(m_charts_node_name);
   if (!charts_node) {
     const std::string msg = std::string("Не найден узел ") +
@@ -3280,6 +3282,7 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
     if (chart_node->NodeName != m_chart_node_name) {
       continue;
     }
+
     String chart_name_bstr =
       chart_node->GetAttribute(m_chart_name_attribute_name);
     string_type chart_name = irs::str_conv<string_type>(chart_name_bstr);
@@ -3607,122 +3610,91 @@ ungroup_all()
 }
 
 void irs::chart::builder_chart_window_t::
+load_from_mxchart_file(const string_type& a_file_name)
+{
+  using namespace irs::chart_data;
+  charts_xml_file_t charts_xml_file;
+  charts_t charts = charts_xml_file.load(a_file_name);
+  clear_param();
+  charts_t::const_iterator it = charts.begin();
+  while (it != charts.end()) {
+    const chart_t& chart = it->second;
+    string_type name = it->first;
+    vector<double> x_array = chart.get_x_array();
+    vector<double> y_array = chart.get_y_array();
+    add_param(name, x_array, y_array);
+    ++it;
+  }
+}
+
+void irs::chart::builder_chart_window_t::
+save_to_mxchart_file(const string_type& a_file_name)
+{
+  using namespace irs::chart_data;
+  charts_t charts = make_charts();
+  charts_xml_file_t charts_xml_file;
+  charts_xml_file.save(charts, a_file_name);
+}
+
+void irs::chart::builder_chart_window_t::
 load_from_csv(const string_type& a_file_name)
 {
-  const string_type x_suffix = irst("_x");
-  const size_type data_row_start_index = 1;
-
-  csvwork::csv_file_synchro_t csv_file;
-  csv_file.set_file_name(a_file_name);
-  table_string_t table_string;
-  if (!csv_file.load(&table_string)) {
-    throw runtime_error("Не удалось загрузить файл");
-  }
-
-  const size_type col_count =
-    table_string.get_col_count() - table_string.get_col_count()%2;
-  size_type row_count = table_string.get_row_count();
-  size_type row_index = 0;
-
-  vector<string_type> names;
-
-  size_type col_index = 0;
-  while (col_index < col_count) {
-    string_type name = table_string.read_cell(col_index, 0);
-    if (name.size() >= x_suffix.size()) {
-      const size_type pos = name.size()- x_suffix.size();
-      string_type suffix = name.substr(pos);
-      if (suffix == x_suffix) {
-        name = name.substr(0, pos);
-      }
-    }
-    if (find(names.begin(), names.end(), name) == names.end()) {
-      names.push_back(name);
-    }
-    col_index += 2;
-  }
-  clear();
-  size_type x_col_index = 0;
-  for (size_type chart_i = 0; chart_i < names.size(); chart_i++) {
-    vector<double> x_array;
-    vector<double> y_array;
-    for (size_type row_index = data_row_start_index; row_index < row_count;
-        row_index++) {
-      double x = 0;
-      double y = 0;
-      string_type x_str = table_string.read_cell(x_col_index, row_index);
-      string_type y_str = table_string.read_cell(x_col_index + 1, row_index);
-      if (str_to_num(x_str, &x) && str_to_num(y_str, &y)) {
-        x_array.push_back(x);
-        y_array.push_back(y);
-      }
-    }
-    add_param(names[chart_i], x_array, y_array);
-    x_col_index += 2;
+  using namespace irs::chart_data;
+  charts_csv_file_t charts_csv_file;
+  charts_t charts = charts_csv_file.load(a_file_name);
+  clear_param();
+  charts_t::const_iterator it = charts.begin();
+  while (it != charts.end()) {
+    const chart_t& chart = it->second;
+    string_type name = it->first;
+    vector<double> x_array = chart.get_x_array();
+    vector<double> y_array = chart.get_y_array();
+    add_param(name, x_array, y_array);
+    ++it;
   }
 }
 
 void irs::chart::builder_chart_window_t::
 save_to_csv(const string_type& a_file_name)
 {
-  const string_type x_suffix = irst("_x");
-  const string_type y_suffix = irst("_y");
-  const size_type data_row_start_index = 1;
+  using namespace irs::chart_data;
+  charts_t charts = make_charts();
+  charts_csv_file_t charts_csv_file;
+  charts_csv_file.save(charts, a_file_name);
+}
 
-  table_string_t table_string;
-  table_string.set_col_count(m_data.size()*2);
-  size_type row_count = 0;
+irs::chart_data::charts_t
+irs::chart::builder_chart_window_t::make_charts() const
+{
+  using namespace irs::chart_data;
+  charts_t charts;
+
   data_t::const_iterator it = m_data.begin();
-  while (it != m_data.end()) {
-    // В массивах последний элемент недействительный
-    row_count = std::max(it->second.vectime.size() - 1, row_count);
-    row_count = std::max(it->second.vec.size() - 1, row_count);
-    ++it;
-  }
-  // На 1 больше для названия столбцов
-  table_string.set_row_count(row_count + 1);
-
-  it = m_data.begin();
-  size_type col_index = 0;
+  size_type chart_index = 0;
   while (it != m_data.end()) {
     const string_type name = it->first;
-    table_string.write_cell(col_index, 0, name + x_suffix);
-    col_index++;
-    table_string.write_cell(col_index, 0, name + y_suffix);
-    col_index++;
+
+    // В массиве последний элемент недействительный
+    const size_type size = it->second.vectime.size() - 1;
+
+    chart_t chart;
+    chart.index = chart_index;
+    chart.visible = true;
+
+    std::vector<double> x_array(size);
+    std::vector<double> y_array(size);
+
+    std::copy(it->second.vectime.begin(), it->second.vectime.end(),
+      x_array.begin());
+    std::copy(it->second.vec.begin(), it->second.vec.end(), y_array.begin());
+
+    chart.set_x_y_arrays(x_array, y_array);
+    charts.insert(make_pair(name, chart));
+
+    chart_index++;
     ++it;
   }
-
-  it = m_data.begin();
-  col_index = 0;
-  while (it != m_data.end()) {
-    size_type row_index = data_row_start_index;
-    // В массиве последний элемент недействительный
-    const size_type vectime_size = it->second.vectime.size() - 1;
-    for (size_type i = 0; i < vectime_size; i++, row_index++) {
-      string_type cell;
-      double d = it->second.vectime[i];
-      num_to_str(it->second.vectime[i], &cell);
-      table_string.write_cell(col_index, row_index, cell);
-    }
-    col_index++;
-    row_index = data_row_start_index;
-    // В массиве последний элемент недействительный
-    const size_type vec_size = it->second.vec.size() - 1;
-    for (size_type i = 0; i < vec_size; i++, row_index++) {
-      string_type cell;
-      num_to_str(it->second.vec[i], &cell);
-      table_string.write_cell(col_index, row_index, cell);
-    }
-    col_index++;
-    ++it;
-  }
-
-  csvwork::csv_file_synchro_t csv_file;
-  csv_file.set_file_name(a_file_name);
-  if (!csv_file.save(table_string)) {
-    throw runtime_error("Не удалось сохранить файл");
-  }
+  return charts;
 }
 
 irs::chart::builder_chart_window_t::chart_func_t::
@@ -3922,9 +3894,13 @@ irs::chart::builder_chart_window_t::controls_t::
 
   mp_form->BorderIcons = mp_form->BorderIcons >> biMinimize;
 
-  mp_file_save_dialog->DefaultExt = irst("csv");
-  mp_file_save_dialog->Filter = irst("CSV (*.csv)|*.csv");
+  const String filter = irst("Файлы MXChart (*.mxchart)|*.mxchart|")
+    irst("CSV (*.csv)|*.csv");
 
+  mp_file_open_dialog->Filter = filter;
+
+  mp_file_save_dialog->DefaultExt = irst("csv");
+  mp_file_save_dialog->Filter = filter;
   //mp_file_menu_item->
   mp_file_menu_item->Caption = irst("Файл");
   mp_main_menu->Items->Add(mp_file_menu_item);
@@ -4034,7 +4010,12 @@ FileOpenMenuItemClick(TObject *Sender)
   if (mp_file_open_dialog->Execute()) {
     const string_type file_name =
       irs::str_conv<string_type>(mp_file_open_dialog->FileName);
-    mp_builder_chart_window->load_from_csv(file_name);
+    const string_type ext = get_file_ext(file_name);
+    if (ext == irst("mxchart")) {
+      mp_builder_chart_window->load_from_mxchart_file(file_name);
+    } else {
+      mp_builder_chart_window->load_from_csv(file_name);
+    }
     m_file_name = mp_file_open_dialog->FileName;
   }
 }
@@ -4046,7 +4027,12 @@ FileSaveMenuItemClick(TObject *Sender)
     FileSaveAsMenuItemClick(Sender);
   } else {
     const string_type file_name = irs::str_conv<string_type>(m_file_name);
-    mp_builder_chart_window->save_to_csv(file_name);
+    const string_type ext = get_file_ext(file_name);
+    if (ext == irst("mxchart")) {
+      mp_builder_chart_window->save_to_mxchart_file(file_name);
+    } else {
+      mp_builder_chart_window->save_to_csv(file_name);
+    }
   }
 }
 
@@ -4057,7 +4043,12 @@ FileSaveAsMenuItemClick(TObject *Sender)
   if (mp_file_save_dialog->Execute()) {
     const string_type file_name =
       irs::str_conv<string_type>(mp_file_save_dialog->FileName);
-    mp_builder_chart_window->save_to_csv(file_name);
+    const string_type ext = get_file_ext(file_name);
+    if (ext == irst("mxchart")) {
+      mp_builder_chart_window->save_to_mxchart_file(file_name);
+    } else {
+      mp_builder_chart_window->save_to_csv(file_name);
+    }
     m_file_name = mp_file_save_dialog->FileName;
   }
 }

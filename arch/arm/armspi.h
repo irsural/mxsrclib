@@ -130,6 +130,18 @@ public:
     gpio_speed_50mhz = IRS_GPIO_SPEED_50MHZ,
     gpio_speed_100mhz = IRS_GPIO_SPEED_100MHZ
   };
+  //! \brief Конструктор
+  //!
+  //! \param[in] a_spi_address - адрес
+  //! \param[in] a_bitrate - битрейт
+  //! \param[in] a_sck - ножка контроллера SCK
+  //! \param[in] a_miso - ножка контроллера MISO
+  //! \param[in] a_mosi - ножка контроллера MOSI
+  //! \param[in] a_gpio_speed - скорость ножек, подбирается опытным путем
+  //!
+  //! \details Пример создания SPI для отладочной платы SK-STM32F417:
+  //!   arm_spi_t spi(IRS_SPI1_BASE, 500000, PA5, PA6, PB5,
+  //!     irs::arm::arm_spi_t::gpio_speed_100mhz);
   arm_spi_t(
     size_t a_spi_address,
     irs_u32 a_bitrate,

@@ -542,6 +542,8 @@ public:
   virtual irs_u32 size() const;
   virtual void group_all();
   virtual void ungroup_all();
+  void load_from_mxchart_file(const string_type& a_file_name);
+  void save_to_mxchart_file(const string_type& a_file_name);
   void load_from_csv(const string_type& a_file_name);
   void save_to_csv(const string_type& a_file_name);
 private:
@@ -549,6 +551,7 @@ private:
   void init(TForm *ap_form);
   // ”ничтожение всех компонентов формы
   void deinit();
+  irs::chart_data::charts_t make_charts() const;
   class chart_func_t;
   struct chart_point_t;
 

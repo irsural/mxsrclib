@@ -19,7 +19,7 @@
 //---------------------------------------------------------------------------
 
 // struct chart_t
-vector<double> irs::chart_data::chart_t::get_x_array()
+vector<double> irs::chart_data::chart_t::get_x_array() const
 {
   vector<double> x_array;
   for (size_type i = 0; i < points.size(); i++) {
@@ -28,13 +28,39 @@ vector<double> irs::chart_data::chart_t::get_x_array()
   return x_array;
 }
 
-vector<double> irs::chart_data::chart_t::get_y_array()
+vector<double> irs::chart_data::chart_t::get_y_array() const
 {
   vector<double> y_array;
   for (size_type i = 0; i < points.size(); i++) {
     y_array.push_back(points[i].y);
   }
   return y_array;
+}
+
+void irs::chart_data::chart_t::set_x_y_arrays(
+  const vector<double>& a_x_array,
+  const vector<double>& a_y_array)
+{
+  if (a_x_array.size() != a_y_array.size()) {
+    throw logic_error("Не совпадают размеры массивов");
+  }
+  set_x_y_arrays(a_x_array, a_y_array, a_x_array.size());
+}
+
+void irs::chart_data::chart_t::set_x_y_arrays(
+  const vector<double>& a_x_array,
+  const vector<double>& a_y_array, size_type a_size)
+{
+  if ((a_x_array.size() < a_size) || (a_y_array.size() < a_size)) {
+    throw logic_error("Недостаточно элементов в массивах");
+  }
+  points.clear();
+  for (size_type i = 0; i < a_size; i++) {
+    point_type point;
+    point.x = a_x_array[i];
+    point.y = a_y_array[i];
+    points.push_back(point);
+  }
 }
 
 // class charts_csv_file_t
@@ -108,7 +134,6 @@ void irs::chart_data::charts_csv_file_t::save(
   size_type row_count = 0;
   charts_t::const_iterator it = a_charts.begin();
   while (it != a_charts.end()) {
-    // В массивах последний элемент недействительный
     row_count = std::max(it->second.points.size(), row_count);
     ++it;
   }
@@ -130,9 +155,8 @@ void irs::chart_data::charts_csv_file_t::save(
   col_index = 0;
   while (it != a_charts.end()) {
     size_type row_index = m_data_row_start_index;
-    // В массиве последний элемент недействительный
     const size_type chart_size = it->second.points.size();
-    for (size_type i = 0; i < chart_size; i++, row_index++) {
+    for (size_type i = 0; i < chart_size; i++) {
       const point_t<double> point = it->second.points[i];
       string_type x_cell;
       num_to_str(point.x, &x_cell);
