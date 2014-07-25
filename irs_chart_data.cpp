@@ -13,6 +13,10 @@
 
 #include <csvwork.h>
 
+#ifdef IRS_USE_JSON_CPP
+# include <json/json.h>
+#endif // IRS_USE_JSON_CPP
+
 #include <irs_chart_data.h>
 
 #include <irsfinal.h>
@@ -177,4 +181,102 @@ void irs::chart_data::charts_csv_file_t::save(
     throw runtime_error("Не удалось сохранить файл");
   }
 }
+
+#ifdef IRS_USE_JSON_CPP
+// class charts_json_file_t
+irs::chart_data::charts_json_file_t::charts_json_file_t()
+{
+}
+
+irs::chart_data::charts_t irs::chart_data::charts_json_file_t::load(
+  const string_type& a_file_name) const
+{
+  using namespace chart_data;
+
+  std::ifstream ifile;
+  ifile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()), ios::in);
+  if (!ifile.good()) {
+    throw runtime_error("Не удалось загрузить файл");
+  }
+
+  Json::Reader reader;
+  Json::Value mx_chart;
+  const bool collect_сomments = false;
+  const bool parsed_success = reader.parse(ifile, mx_chart, collect_сomments);
+  if(!parsed_success) {
+    std::cout << "Failed to parse JSON" <<
+      std::endl << reader.getFormatedErrorMessages() <<
+      std::endl;
+    throw std::runtime_error("Неудалось разобрать файл");
+  }
+
+  charts_t charts;
+  const Json::Value charts_value = mx_chart["charts"];
+  for (size_type chart_i = 0; chart_i < charts_value.size(); chart_i++) {
+    chart_t chart;
+    Json::Value chart_value = charts_value[chart_i];
+    string_type chart_name = irs::decode_utf_8<string_type>(
+      chart_value["name"].asString());
+    int index = chart_value["index"].asUInt();
+
+    chart_t::points_type points;
+    Json::Value points_x_y_value = chart_value["points_x_y"];
+    for (size_type point_i = 0; point_i < points_x_y_value.size(); point_i++) {
+      Json::Value point_x_y_value = points_x_y_value[point_i];
+      if (point_x_y_value.size() != 2) {
+        throw std::runtime_error("Недопустимое количество элементов в массиве");
+      }
+      std::string x_str = point_x_y_value["x"].asString();
+      std::string y_str = point_x_y_value["y"].asString();
+      chart_t::point_type point;
+      if (str_to_num_classic(x_str, &point.x) &&
+          str_to_num_classic(y_str, &point.y)) {
+        chart.points.push_back(point);
+      }
+      chart.points.push_back(point);
+    }
+    charts.insert(make_pair(chart_name, chart));
+  }
+
+  return charts;
+}
+
+void irs::chart_data::charts_json_file_t::save(
+  const charts_t& a_charts, const string_type& a_file_name) const
+{
+  Json::Value mx_chart;
+  Json::Value charts_value(Json::arrayValue);
+  charts_t::const_iterator it = a_charts.begin();
+  while (it != a_charts.end()) {
+    Json::Value chart_value;
+    chart_value["name"] = encode_utf_8(it->first);
+    chart_value["index"] = it->second.index;
+    const chart_t::points_type& points = it->second.points;
+    Json::Value points_x_y_value(Json::arrayValue);
+    for (size_type i = 0; i < points.size(); i++) {
+      chart_t::point_type point = points[i];
+      Json::Value point_value;
+      string_type x_str;
+      num_to_str_classic(point.x, &x_str);
+      point_value["x"] = encode_utf_8(x_str);
+      string_type y_str;
+      num_to_str_classic(point.y, &y_str);
+      point_value["y"] = encode_utf_8(y_str);
+      points_x_y_value.append(point_value);
+    }
+    chart_value["points_x_y"] = points_x_y_value;
+    charts_value.append(chart_value);
+    ++it;
+  }
+  mx_chart["charts"] = charts_value;
+
+  ofstream ofile;
+  ofile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()),
+    ios::in|ios::out|ios::trunc);
+  if (!ofile.good()) {
+    throw runtime_error("Не удалось сохранить файл");
+  }
+  ofile << mx_chart << std::endl;
+}
+#endif // IRS_USE_JSON_CPP
 

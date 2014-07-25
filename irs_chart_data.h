@@ -76,6 +76,19 @@ private:
   const size_type m_data_row_start_index;
 };
 
+#ifdef IRS_USE_JSON_CPP
+class charts_json_file_t
+{
+public:
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
+  charts_json_file_t();
+  charts_t load(const string_type& a_file_name) const;
+  void save(const charts_t& a_charts, const string_type& a_file_name) const;
+private:
+};
+#endif // IRS_USE_JSON_CPP
+
 } // namespace chart_data
 
 } // namespace irs

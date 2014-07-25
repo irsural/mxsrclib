@@ -3309,8 +3309,8 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
       String y_value_bstr = point_node->GetAttribute(m_y_attribute_name);
       string_type y_value_str = irs::str_conv<string_type>(y_value_bstr);
 
-      if (str_to_num(x_value_str, &point.x) &&
-          str_to_num(y_value_str, &point.y)) {
+      if (str_to_num_classic(x_value_str, &point.x) &&
+          str_to_num_classic(y_value_str, &point.y)) {
         chart.points.push_back(point);
       }
     }
@@ -3350,12 +3350,12 @@ const charts_type& a_charts, const string_type& a_file_name) const
       chart_t::point_type point = points[i];
 
       string_type x_str;
-      num_to_str(point.x, &x_str);
+      num_to_str_classic(point.x, &x_str);
       point_node->SetAttribute(m_x_attribute_name,
         irs::str_conv<WideString>(x_str));
 
       string_type y_str;
-      num_to_str(point.y, &y_str);
+      num_to_str_classic(point.y, &y_str);
       point_node->SetAttribute(m_y_attribute_name,
         irs::str_conv<WideString>(y_str));
     }
@@ -3613,8 +3613,10 @@ void irs::chart::builder_chart_window_t::
 load_from_mxchart_file(const string_type& a_file_name)
 {
   using namespace irs::chart_data;
-  charts_xml_file_t charts_xml_file;
-  charts_t charts = charts_xml_file.load(a_file_name);
+  //charts_xml_file_t charts_xml_file;
+  //charts_t charts = charts_xml_file.load(a_file_name);
+  charts_json_file_t charts_json_file;
+  charts_t charts = charts_json_file.load(a_file_name);;
   clear_param();
   charts_t::const_iterator it = charts.begin();
   while (it != charts.end()) {
@@ -3632,8 +3634,10 @@ save_to_mxchart_file(const string_type& a_file_name)
 {
   using namespace irs::chart_data;
   charts_t charts = make_charts();
-  charts_xml_file_t charts_xml_file;
-  charts_xml_file.save(charts, a_file_name);
+  /*charts_xml_file_t charts_xml_file;
+  charts_xml_file.save(charts, a_file_name);*/
+  charts_json_file_t charts_json_file;
+  charts_json_file.save(charts, a_file_name);
 }
 
 void irs::chart::builder_chart_window_t::
@@ -3895,6 +3899,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_form->BorderIcons = mp_form->BorderIcons >> biMinimize;
 
   const String filter = irst("װאיכû MXChart (*.mxchart)|*.mxchart|")
+    irst("MXChart CSV (*.mxchartcsv)|*.mxchartcsv|")
     irst("CSV (*.csv)|*.csv");
 
   mp_file_open_dialog->Filter = filter;

@@ -43,6 +43,12 @@ struct base_str_type<irs_string_t>
   typedef irs_string_t type;
 };
 
+template<>
+struct base_str_type<std_string_t>
+{
+  typedef irs_string_t type;
+};
+
 // Из std_string_t
 inline std_string_t str_conv_simple(const std_string_t&,
   const std_string_t& a_str_in)
@@ -667,7 +673,7 @@ inline std::wstring utf_8_to_wstring(const std::string& a_str)
   int size =  MultiByteToWideChar(CP_UTF8 ,0 , a_str.c_str(), a_str.size(),
     NULL, 0);
   wchar_t* wcstr = new wchar_t[size];
-  MultiByteToWideChar(CP_UTF8, 0, a_str.c_str(), a_str.size(), wstr, size);
+  MultiByteToWideChar(CP_UTF8, 0, a_str.c_str(), a_str.size(), wcstr, size);
   std::wstring wstr(wcstr, size);
   delete[] wcstr;
   return wstr;
@@ -677,7 +683,7 @@ inline std::string wstring_to_utf_8(const std::wstring& a_str)
 {
   int size = WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(),
     a_str.size(), NULL, 0, NULL, NULL);
-  char* cstr = new wchar_t[size];
+  char* cstr = new char[size];
   WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(), a_str.size(), cstr,
     size, NULL, NULL);
   std::string str(cstr, size);
