@@ -13,7 +13,7 @@
 
 #include <csvwork.h>
 
-#ifdef IRS_USE_JSON_CPP
+#if IRS_USE_JSON_CPP
 # include <json/json.h>
 #endif // IRS_USE_JSON_CPP
 
@@ -182,7 +182,7 @@ void irs::chart_data::charts_csv_file_t::save(
   }
 }
 
-#ifdef IRS_USE_JSON_CPP
+#if IRS_USE_JSON_CPP
 // class charts_json_file_t
 irs::chart_data::charts_json_file_t::charts_json_file_t()
 {

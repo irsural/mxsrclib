@@ -1097,6 +1097,7 @@ private:
   param_box_tune_t m_param_box_tune;
   tstlan4_base_t* mp_tstlan4;
   bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
   handle_t<mxmultimeter_t> mp_multimeter;
   handle_t<multimeter_mxdata_t> mp_mxdata;
 };
@@ -1118,6 +1119,7 @@ irs::v7_78_1_assembly_t::v7_78_1_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_param_box_tune(mp_param_box.get()),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
+  mp_hardflow(),
   mp_multimeter(),
   mp_mxdata()
 {
@@ -1132,9 +1134,13 @@ irs::v7_78_1_assembly_t::param_box_tune_t::param_box_tune_t(
 ):
   mp_param_box(ap_param_box)
 {
-  mp_param_box->add_edit(irst("GPIB адрес"), irst("23"));
+  add_gpib_options_to_param_box(ap_param_box);
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->load();
+
+  //mp_param_box->add_edit(irst("GPIB адрес"), irst("23"));
+  //mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  //mp_param_box->load();
 }
 bool irs::v7_78_1_assembly_t::enabled() const
 {
@@ -1157,10 +1163,11 @@ void irs::v7_78_1_assembly_t::disable()
   mp_tstlan4->connect(NULL);
   mp_mxdata.reset();
   mp_multimeter.reset();
+  mp_hardflow.reset();
 }
 void irs::v7_78_1_assembly_t::reset()
 {
-  disable();
+  /*disable();
   const int gpib_address = param_box_read_number<int>(*mp_param_box,
     irst("GPIB адрес"));
   mp_multimeter.reset(new irs::v7_78_1_t(
@@ -1168,6 +1175,26 @@ void irs::v7_78_1_assembly_t::reset()
   mp_mxdata.reset(new irs::multimeter_mxdata_t(mp_multimeter.get(),
     param_box_read_number<int>(*mp_param_box,
     irst("Время обновления, мс"))/1000.));
+  mp_tstlan4->connect(mp_mxdata.get());*/
+
+
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr;
+  const int prologix_timeout_ms = 3000;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::akip_v7_78_1_t(mp_hardflow.get(),
+    mul_mode_type_passive));
+
+  const int update_time_ms =
+    param_box_read_number<int>(*mp_param_box, irst("Время обновления, мс"));
+  mp_mxdata.reset(new irs::multimeter_mxdata_t(mp_multimeter.get(),
+    update_time_ms/1000.));
+
   mp_tstlan4->connect(mp_mxdata.get());
 }
 irs::mxdata_t* irs::v7_78_1_assembly_t::mxdata()
@@ -1177,6 +1204,7 @@ irs::mxdata_t* irs::v7_78_1_assembly_t::mxdata()
 void irs::v7_78_1_assembly_t::tick()
 {
   if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
     mp_multimeter->tick();
     mp_mxdata->tick();
   }

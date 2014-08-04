@@ -2678,6 +2678,680 @@ bool irs::iir_filter_asynch_test()
 // Класс для работы с мультиметром v7-78/1
 
 // Конструктор
+irs::akip_v7_78_1_t::akip_v7_78_1_t(
+  hardflow_t* ap_hardflow,
+  multimeter_mode_type_t a_mul_mode_type
+):
+  m_meas_type(DC_MEAS),
+  m_res_meas_type(RES_MEAS_2x),
+  mp_hardflow(ap_hardflow),
+  m_fixed_flow(mp_hardflow),
+  m_mul_mode_type(a_mul_mode_type),
+  m_init_commands(),
+  m_nplc_voltage_dc_index(0),
+  m_band_width_voltage_ac_index(0),
+  m_get_value_commands(0),
+  m_get_voltage_dc_commands(),
+  m_get_voltage_ac_commands(),
+  m_nplc_resistance_2x_index(0),
+  m_nplc_resistance_4x_index(0),
+  m_get_resistance_2x_commands(),
+  m_get_resistance_4x_commands(),
+  m_nplc_current_dc_index(0),
+  m_nplc_current_ac_index(0),
+  m_get_current_dc_commands(),
+  m_get_current_ac_commands(),
+  m_aperture_frequency_index(0),
+  m_get_frequency_commands(),
+  m_create_error(irs_false),
+  m_mode(ma_mode_start),
+  m_macro_mode(macro_mode_stop),
+  m_status(meas_status_success),
+  m_command(mac_free),
+  mp_value(IRS_NULL),
+  mp_voltage(IRS_NULL),
+  mp_resistance(IRS_NULL),
+  mp_current(IRS_NULL),
+  mp_frequency(IRS_NULL),
+  m_abort_request(irs_false),
+  m_read_pos(0),
+  m_cur_mul_command(),
+  m_mul_commands(IRS_NULL),
+  m_mul_commands_index(0),
+  //f_command_prev(mac_free),
+  m_value(IRS_NULL),
+  m_get_parametr_needed(irs_false),
+  m_oper_time(TIME_TO_CNT(1, 1)),
+  m_oper_to(0),
+  m_acal_time(TIME_TO_CNT(20*60, 1)),
+  m_acal_to(0),
+  m_current_volt_dc_meas(true),
+  m_init_timer(irs::make_cnt_s(1)),
+  m_init_mode(im_start),
+  m_ic_index(0),
+  m_is_clear_buffer_needed(false)
+{
+  init_to_cnt();
+
+  //m_oper_time = TIME_TO_CNT(1, 1);
+  //f_acal_time = TIME_TO_CNT(20*60, 1);
+
+  // Команды при инициализации
+  // Очистка регистров
+  m_init_commands.push_back("*CLS");
+  // Програмный запуск
+  m_init_commands.push_back("TRIGger:SOURce IMMediate");
+
+  // Команды чтения значения измеряемой величины, при произвольных настройках
+  m_get_value_commands.push_back("TRIGger:SOURce IMMediate");
+  m_get_value_commands.push_back("READ?");
+
+  // Команды при чтении напряжения
+  // Настраиваемся на измерение напряжения
+  // m_get_voltage_commands.push_back("MEAS:VOLT:DC?");
+  m_get_voltage_dc_commands.push_back("CONFigure:VOLTage:DC");
+  m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
+  // Установка разрешения
+  //m_get_voltage_dc_commands.push_back("VOLTage:DC:RESolution MIN");
+  // Автовыбор пределов
+  m_get_voltage_dc_commands.push_back("VOLTage:DC:RANGe:AUTO ON");
+  m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_voltage_dc_commands.push_back("VOLTage:DC:NPLCycles 10");
+  // запускаем измерение
+  m_get_voltage_dc_commands.push_back("READ?");
+
+  m_get_voltage_ac_commands.push_back("CONFigure:VOLTage:AC");
+  m_get_voltage_ac_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_voltage_ac_commands.push_back("VOLTage:AC:RANGe:AUTO ON");
+  m_band_width_voltage_ac_index = m_get_voltage_ac_commands.size();
+  m_get_voltage_ac_commands.push_back("DETector:BANDwidth 20");
+  // запускаем измерение
+  m_get_voltage_ac_commands.push_back("READ?");
+
+  // Команды при чтении сопротивления по 2-х проводной линии
+  m_get_resistance_2x_commands.push_back("CONFigure:RESistance");
+  m_get_resistance_2x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_resistance_2x_commands.push_back("RESistance:RANGe:AUTO ON");
+  m_nplc_resistance_2x_index = m_get_resistance_2x_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_resistance_2x_commands.push_back("RESistance:NPLCycles 10");
+  // запускаем измерение
+  m_get_resistance_2x_commands.push_back("READ?");
+
+  // Команды при чтении сопротивления по 4-х проводной линии
+  m_get_resistance_4x_commands.push_back("CONFigure:FRESistance");
+  m_get_resistance_4x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_resistance_4x_commands.push_back("FRESistance:RANGe:AUTO ON");
+  m_nplc_resistance_4x_index = m_get_resistance_4x_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_resistance_4x_commands.push_back("FRESistance:NPLCycles 10");
+  // запускаем измерение
+  m_get_resistance_4x_commands.push_back("READ?");
+
+  // Команды при чтении постоянного тока
+  m_get_current_dc_commands.push_back("CONFigure:Current:DC");
+  m_get_current_dc_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_current_dc_commands.push_back("Current:DC:RANGe:AUTO ON");
+  m_nplc_current_dc_index = m_get_current_dc_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_current_dc_commands.push_back("Current:DC:NPLCycles 10");
+  // запускаем измерение
+  m_get_current_dc_commands.push_back("READ?");
+
+  // Команды при чтении переменного тока
+  m_get_current_ac_commands.push_back("CONFigure:Current:AC");
+  m_get_current_ac_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_current_ac_commands.push_back("Current:AC:RANGe:AUTO ON");
+  m_nplc_current_ac_index = m_get_current_ac_commands.size();
+  m_get_current_ac_commands.push_back("DETector:BANDwidth 20");
+  // запускаем измерение
+  m_get_current_ac_commands.push_back("READ?");
+
+  // Команды при чтении частоты
+  m_get_frequency_commands.push_back("CONFigure:FREQuency");
+  m_get_frequency_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_frequency_commands.push_back("FREQuency:VOLT:RANGe:AUTO ON");
+  m_aperture_frequency_index = m_get_frequency_commands.size();
+  m_get_frequency_commands.push_back("FREQuency:APERture 0.1");
+  // запускаем измерение
+  m_get_frequency_commands.push_back("READ?");
+
+  /*{
+    if (m_mul_mode_type == mul_mode_type_active) {
+      // Запись команд инициализации
+      #define write_t TIME_TO_CNT(2, 1)
+      counter_t write_to = 0;
+      irs_bool write_wait = irs_false;
+      set_to_cnt(write_to, write_t);
+      index_t ic_index = 0;
+      for (;;) {
+        mxifa_tick();
+        if (write_wait) {
+          if (mxifa_write_end(f_handle, irs_false)) {
+            write_wait = irs_false;
+            ic_index++;
+            if (ic_index >= static_cast<irs_u8>(f_init_commands.size())) {
+              break;
+            }
+          } else if (test_to_cnt(f_oper_to)) {
+            mxifa_write_end(f_handle, irs_true);
+            write_wait = irs_false;
+          } else if (test_to_cnt(write_to)) {
+            mxifa_write_end(f_handle, irs_true);
+            goto _error;
+          }
+        } else {
+
+          const irs_u8* icommand = reinterpret_cast<const irs_u8*>(
+            f_init_commands[ic_index].c_str());
+          irs_u32 len = strlen(reinterpret_cast<const char*>(icommand));
+          mxifa_write_begin(f_handle, IRS_NULL, icommand, len);
+          set_to_cnt(f_oper_to, f_oper_time);
+          write_wait = irs_true;
+        }
+      }
+    }
+  }*/
+
+  // Очистка буфера приема
+  memset(m_read_buf, 0, ma_read_buf_size);
+}
+
+// Деструктор
+irs::akip_v7_78_1_t::~akip_v7_78_1_t()
+{
+  deinit_to_cnt();
+}
+// Установить положителный фронт запуска
+void irs::akip_v7_78_1_t::set_positive()
+{}
+// Установить отрицательный фронт канала
+void irs::akip_v7_78_1_t::set_negative()
+{}
+// Чтение значения при текущем типа измерения
+void irs::akip_v7_78_1_t::get_value(double *ap_value)
+{
+  if (m_create_error) return;
+  mp_value = ap_value;
+  m_command = mac_get_value;
+  m_status = meas_status_busy;
+}
+// Чтение напряжения
+void irs::akip_v7_78_1_t::get_voltage(double *voltage)
+{
+  if (m_create_error) return;
+  mp_voltage = voltage;
+  m_command = mac_get_voltage;
+  m_status = meas_status_busy;
+}
+// Чтение усредненного сдвира фаз
+void irs::akip_v7_78_1_t::get_phase_average(double * /*phase_average*/)
+{
+}
+// Чтение фазового сдвига
+void irs::akip_v7_78_1_t::get_phase(double * /*phase*/)
+{
+}
+// Чтение временного интервала
+void irs::akip_v7_78_1_t::get_time_interval(double * /*time_interval*/)
+{
+}
+// Чтение усредненного временного интервала
+void irs::akip_v7_78_1_t::get_time_interval_average(double * /*ap_time_interval*/)
+{
+}
+// Чтения силы тока
+void irs::akip_v7_78_1_t::get_current(double *current)
+{
+  if (m_create_error) return;
+  mp_current = current;
+  m_command = mac_get_current;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления по двухпроводной схеме
+void irs::akip_v7_78_1_t::get_resistance2x(double *resistance)
+{
+  if (m_create_error) return;
+  mp_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_res_meas_type = RES_MEAS_2x;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления по четырехпроводной схеме
+void irs::akip_v7_78_1_t::get_resistance4x(double *resistance)
+{
+  if (m_create_error) return;
+  mp_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_res_meas_type = RES_MEAS_4x;
+  m_status = meas_status_busy;
+}
+// Чтение частоты
+void irs::akip_v7_78_1_t::get_frequency(double *frequency)
+{
+  if (m_create_error) return;
+  mp_frequency = frequency;
+  m_command = mac_get_frequency;
+  m_status = meas_status_busy;
+}
+// Запуск автокалибровки мультиметра
+void irs::akip_v7_78_1_t::auto_calibration()
+{}
+// Чтение статуса текущей операции
+meas_status_t irs::akip_v7_78_1_t::status()
+{
+  if (m_create_error) return meas_status_busy;
+  return m_status;
+}
+// Прерывание текущей операции
+void irs::akip_v7_78_1_t::abort()
+{
+  if (m_create_error) return;
+  m_abort_request = irs_true;
+}
+// Элементарное действие
+void irs::akip_v7_78_1_t::tick()
+{
+  IRS_LIB_ASSERT(mp_hardflow);
+  mp_hardflow->tick();
+  m_fixed_flow.tick();
+  initialize_tick();
+  if (m_create_error) return;
+  mxifa_tick();
+  switch (m_mode) {
+    case ma_mode_start: {
+      m_abort_request = irs_false;
+      switch (m_command) {
+        case mac_get_value: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_value;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_voltage: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_voltage;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_resistance: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_resistance;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_current: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_current;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_frequency: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_frequency;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_auto_calibration: {
+          m_macro_mode = macro_mode_stop;
+          m_mode = ma_mode_auto_calibration;
+        } break;
+        case mac_free: {
+        } break;
+      }
+    } break;
+    case ma_mode_macro: {
+      if (m_abort_request) {
+        m_abort_request = irs_false;
+        m_macro_mode = macro_mode_stop;
+      }
+      switch (m_macro_mode) {
+        case macro_mode_get_value:{
+          if (m_get_parametr_needed) {
+            m_value = mp_value;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            m_mul_commands = &m_get_value_commands;
+            m_mul_commands_index = 0;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_voltage: {
+          if (m_get_parametr_needed) {
+            m_value = mp_voltage;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_meas_type == DC_MEAS)
+              m_mul_commands = &m_get_voltage_dc_commands;
+            else
+              m_mul_commands = &m_get_voltage_ac_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_resistance: {
+          if (m_get_parametr_needed) {
+            m_value = mp_resistance;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_res_meas_type == RES_MEAS_2x)
+              m_mul_commands = &m_get_resistance_2x_commands;
+            else
+              m_mul_commands = &m_get_resistance_4x_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_current: {
+          if (m_get_parametr_needed) {
+            m_value = mp_current;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_meas_type == DC_MEAS)
+              m_mul_commands = &m_get_current_dc_commands;
+            else
+              m_mul_commands = &m_get_current_ac_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_frequency: {
+          if (m_get_parametr_needed) {
+            m_value = mp_frequency;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            m_mul_commands = &m_get_frequency_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_stop: {
+          m_command = mac_free;
+          m_status = meas_status_success;
+          m_mode = ma_mode_start;
+        } break;
+        default : {
+        }
+      }
+    } break;
+    case ma_mode_commands: {
+      m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
+      const irs_u8* command = reinterpret_cast<const irs_u8*>(
+        m_cur_mul_command.c_str());
+      const size_type len = static_cast<size_type>(
+        strlen(reinterpret_cast<const char*>(command)));
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_oper_time);
+      m_mode = ma_mode_commands_wait;
+      set_to_cnt(m_oper_to, m_oper_time);
+    } break;
+    case ma_mode_commands_wait: {
+      if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      } else {
+        switch (m_fixed_flow.write_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_mul_commands_index++;
+            if (m_mul_commands_index >=
+                static_cast<index_t>(m_mul_commands->size())) {
+              m_mode = ma_mode_macro;
+            } else {
+              m_mode = ma_mode_commands;
+            }
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            m_mode = ma_mode_commands;
+          } break;
+          default : {
+            // Ожидаем окончания операции
+          }
+        }
+      }
+    } break;
+    case ma_mode_get_value: {
+      m_fixed_flow.read(mp_hardflow->channel_next(),
+        m_read_buf, sample_size);
+      //mlog() << "---> " << __LINE__ << endl;
+      *m_value = 0;
+      m_mode = ma_mode_get_value_wait;
+    } break;
+    case ma_mode_get_value_wait: {
+      if (m_abort_request) {
+        m_fixed_flow.read_abort();
+        // Считаем что если чтение прервано, то в буфере hardflow
+        // останется предыдущее число и необходимо очистить буфер
+        m_is_clear_buffer_needed = true;
+        m_mode = ma_mode_macro;
+      } else {
+        switch (m_fixed_flow.read_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            if (!m_is_clear_buffer_needed) {
+              char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+              if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
+                *m_value = 0;
+                //mlog() << "---> " << __LINE__ << endl;
+              }
+              //mlog() << *m_value << endl;
+              //mlog() << "---> " << __LINE__ << endl;
+              m_mode = ma_mode_macro;
+            } else {
+              // Если требовалась очистка буфера, то считаем что
+              // это чтение и есть очистка буфера. Идем на второй круг
+              // и считываем уже действительное значение
+              m_is_clear_buffer_needed = false;
+              //mlog() << "---> " << __LINE__ << endl;
+              m_mode = ma_mode_get_value;
+            }
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            //m_mode = ma_mode_macro;
+            m_command = mac_free;
+            m_status = meas_status_error;
+            m_mode = ma_mode_start;
+            //mlog() << "---> " << __LINE__ << endl;
+          } break;
+          default : {
+            // Ожидаем выполнения
+          }
+        }
+      }
+    } break;
+
+    case ma_mode_auto_calibration: {
+      const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
+      size_type len = strlen(reinterpret_cast<const char*>(command));
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_acal_time);
+      m_mode = ma_mode_auto_calibration_wait;
+    } break;
+    case ma_mode_auto_calibration_wait: {
+      if (test_to_cnt(m_acal_to)) {
+        const fixed_flow_status_type status = m_fixed_flow.write_status();
+        if (status == irs::hardflow::fixed_flow_t::status_success) {
+          m_mode = ma_mode_macro;
+        }
+      } else if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      }
+    } break;
+  }
+}
+
+void irs::akip_v7_78_1_t::initialize_tick()
+{
+  switch (m_mul_mode_type) {
+    case mul_mode_type_active: {
+      // Запись команд инициализации
+      switch (m_init_mode) {
+        case im_start: {
+          if (m_create_error) {
+            m_init_timer.start();
+            m_ic_index = 0;
+            m_init_mode = im_write_command;
+          }
+        } break;
+        case im_write_command: {
+          //irs::string& icomm = m_init_commands[m_ic_index];
+          m_cur_mul_command = m_init_commands[m_ic_index];
+          irs::string& icomm = m_cur_mul_command;
+
+          size_t icomm_size = icomm.size();
+          const irs_u8* icomm_u8 =
+            reinterpret_cast<const irs_u8*>(icomm.c_str());
+          m_fixed_flow.write(mp_hardflow->channel_next(), icomm_u8, icomm_size);
+          m_fixed_flow.write_timeout(m_oper_time);
+          m_init_mode = im_next_command;
+        } break;
+        case im_next_command: {
+          switch (m_fixed_flow.write_status()) {
+            case irs::hardflow::fixed_flow_t::status_success: {
+              m_ic_index++;
+              if (m_ic_index < static_cast<index_t>(m_init_commands.size())) {
+                m_init_mode = im_write_command;
+              } else {
+                m_create_error = false;
+                m_init_mode = im_start;
+              }
+            } break;
+            case irs::hardflow::fixed_flow_t::status_error: {
+              m_init_mode = im_write_command;
+            } break;
+            case irs::hardflow::fixed_flow_t::status_wait: {
+              if (m_init_timer.check()) {
+                m_fixed_flow.write_abort();
+                m_init_mode = im_start;
+              }
+            } break;
+            default : {
+              IRS_LIB_ASSERT_MSG("Неучтенный статус");
+            }
+          }
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("m_init_mode не должен быть default");
+        } break;
+      } //switch (m_init_mode)
+    } break;
+    case mul_mode_type_passive: {
+      m_create_error = false;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("m_mul_mode_type не должен быть default");
+    } break;
+  } //switch (m_mul_mode_type)
+}
+
+// Установка времени интегрирования в периодах частоты сети (20 мс)
+void irs::akip_v7_78_1_t::set_nplc(double nplc)
+{
+  if (nplc <= 0.02)
+    nplc = 0.02;
+  else if (nplc <= 0.2)
+    nplc = 0.2;
+  else if (nplc <= 1)
+    nplc = 1;
+  else if (nplc <= 10)
+    nplc = 10;
+  else
+    nplc = 100;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
+  irs::string nplc_volt_dc_str =
+    static_cast<irs::string>("VOLTage:DC:NPLCycles " +  nplc_str);
+  irs::string nplc_resistance_2x_str =
+    static_cast<irs::string>("RESistance:NPLCycles " + nplc_str);
+  irs::string nplc_resistance_4x_str =
+    static_cast<irs::string>("FRESistance:NPLCycles " + nplc_str);
+  m_get_voltage_dc_commands[m_nplc_voltage_dc_index] = nplc_volt_dc_str;
+  m_get_resistance_2x_commands[m_nplc_resistance_2x_index] =
+    nplc_resistance_2x_str;
+  m_get_resistance_4x_commands[m_nplc_resistance_4x_index] =
+    nplc_resistance_4x_str;
+}
+// Установка времени интегрирования в c
+void irs::akip_v7_78_1_t::set_aperture(double aperture)
+{
+  set_time_interval_meas(aperture);
+  if (aperture <= 0.01)
+    aperture = 0.01;
+  else if (aperture <= 0.1)
+    aperture = 0.1;
+  else
+    aperture = 1;
+  irs::string aperture_str;
+  num_to_str_classic(aperture, &aperture_str);
+  irs::string aperture_frequency_str =
+    static_cast<irs::string>("FREQuency:APERture " + aperture_str);
+  m_get_frequency_commands[m_aperture_frequency_index] =
+    aperture_frequency_str;
+}
+// Установка полосы фильтра
+void irs::akip_v7_78_1_t::set_bandwidth(double bandwidth)
+{
+  if (bandwidth <= 3)
+    bandwidth = 3;
+  else if (bandwidth <= 20)
+    bandwidth = 20;
+  else
+    bandwidth = 200;
+  irs::string bandwidth_str;
+  num_to_str_classic(bandwidth, &bandwidth_str);
+  irs::string bandwidth_volt_ac_str =
+    static_cast<irs::string>("DETector:BANDwidth " + bandwidth_str);
+  m_get_voltage_ac_commands[m_band_width_voltage_ac_index] =
+    bandwidth_volt_ac_str;
+}
+void irs::akip_v7_78_1_t::set_input_impedance(double /*impedance*/)
+{
+}
+void irs::akip_v7_78_1_t::set_start_level(double /*level*/)
+{
+}
+void irs::akip_v7_78_1_t::set_range(type_meas_t /*a_type_meas*/, double /*a_range*/)
+{
+}
+void irs::akip_v7_78_1_t::set_range_auto()
+{
+}
+ // Установка временного интервала измерения
+void irs::akip_v7_78_1_t::set_time_interval_meas(const double a_time_interval_meas)
+{
+  double nplc = 0.0;
+  double bandwidth = 0.0;
+  if (a_time_interval_meas != 0){
+    const double coef_time_interval_to_nplc = 50;
+    const double coef_time_interval_to_bandwidth = 1;
+    nplc = a_time_interval_meas/coef_time_interval_to_nplc;
+    bandwidth = coef_time_interval_to_bandwidth/a_time_interval_meas;
+  }else{
+    nplc = 0.0;
+    bandwidth = 0.0;
+  }
+  set_nplc(nplc);
+  set_bandwidth(bandwidth);
+}
+
+// Класс для работы с мультиметром v7-78/1
+
+// Конструктор
 irs::v7_78_1_t::v7_78_1_t(mxifa_ch_t channel,
   gpib_addr_t address,
   multimeter_mode_type_t a_mul_mode_type

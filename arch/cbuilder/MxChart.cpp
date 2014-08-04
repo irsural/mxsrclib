@@ -3612,6 +3612,7 @@ ungroup_all()
 void irs::chart::builder_chart_window_t::
 load_from_mxchart_file(const string_type& a_file_name)
 {
+  #if IRS_USE_JSON_CPP
   using namespace irs::chart_data;
   //charts_xml_file_t charts_xml_file;
   //charts_t charts = charts_xml_file.load(a_file_name);
@@ -3627,17 +3628,24 @@ load_from_mxchart_file(const string_type& a_file_name)
     add_param(name, x_array, y_array);
     ++it;
   }
+  #else // !IRS_USE_JSON_CPP
+  throw logic_error("Не подключена библиотека JSONCPP");
+  #endif // !IRS_USE_JSON_CPP
 }
 
 void irs::chart::builder_chart_window_t::
 save_to_mxchart_file(const string_type& a_file_name)
 {
+  #if IRS_USE_JSON_CPP
   using namespace irs::chart_data;
   charts_t charts = make_charts();
   /*charts_xml_file_t charts_xml_file;
   charts_xml_file.save(charts, a_file_name);*/
   charts_json_file_t charts_json_file;
   charts_json_file.save(charts, a_file_name);
+  #else // !IRS_USE_JSON_CPP
+  throw logic_error("Не подключена библиотека JSONCPP");
+  #endif // !IRS_USE_JSON_CPP
 }
 
 void irs::chart::builder_chart_window_t::

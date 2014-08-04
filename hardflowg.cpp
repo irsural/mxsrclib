@@ -2032,11 +2032,13 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
   m_end_line_read(irst("")),
   m_read_string(irst("")),
   m_read_data(),
+  m_read_command_data(),
   m_init_success(false),
   m_init_command(),
   m_init_count(0),
   m_init_channel_ident(0),
-  m_transmit_data()
+  m_transmit_data(),
+  m_timeout(irs::make_cnt_s(0))
 {
   switch (a_read_end_line) {
     case cr_lf: {
@@ -2068,17 +2070,24 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
     default: {
     } break;
   }
+
+  m_read_command_data = u8_from_str(
+    string_type(irst("++read eoi") + m_end_line_write));
+
+  const int timeout = bound(a_timeout_read_ms, 1, 3000);
+  m_timeout.set(irs::make_cnt_ms(timeout));
+
   m_init_command.push_back(irst("++addr ") + irs::string_t(a_address));
   m_init_command.push_back(irst("++auto 0"));
   m_init_command.push_back(irst("++mode 1"));
   m_init_command.push_back(irst("++eoi 1"));
-  int timeout = bound(a_timeout_read_ms, 1, 3000);
   m_init_command.push_back(irst("++read_tmo_ms ") +
       irs::string_t(timeout));
   m_init_command.push_back(irst("++eos ") + irs::string_t(a_read_end_line));
   //m_init_command.push_back(irst("++eos 1"));
   m_init_command.push_back(irst("++eot_enable 0"));
   m_init_command.push_back(irst("++eot_char 0"));
+  m_init_command.push_back(irst("++clr"));
 
   m_init_count = 0;
   m_init_mode = mode_start;
@@ -2086,6 +2095,32 @@ irs::hardflow::prologix_flow_t::prologix_flow_t(irs::hardflow_t* ap_hardflow,
 }
 irs::hardflow::prologix_flow_t::~prologix_flow_t()
 {
+  // Завершение сеанса с включением локального управления.
+  // На Agilent 3458A занимает несколько секунд, поэтому код отключен
+  #ifdef NOP
+  timer_t timeout(make_cnt_s(5));
+  timeout.start();
+  while ((m_fixed_flow.write_status() ==
+    irs::hardflow::fixed_flow_t::status_wait) && !timeout.stopped()) {
+    m_fixed_flow.tick();
+    for (int i = 0; i < 5; i++) {
+      mp_hardflow->tick();
+    }
+    timeout.check();
+  }
+  string_type buffer = irst("++loc") + m_end_line_write;
+  m_write_data = u8_from_str(buffer);
+  m_fixed_flow.write(m_channel_ident, m_write_data.data(),
+    m_write_data.size());
+  while ((m_fixed_flow.write_status() ==
+      irs::hardflow::fixed_flow_t::status_wait) && !timeout.stopped()) {
+    m_fixed_flow.tick();
+    for (int i = 0; i < 5; i++) {
+      mp_hardflow->tick();
+      timeout.check();
+    }
+  }
+  #endif // NOP
 }
 irs::hardflow_t::string_type
   irs::hardflow::prologix_flow_t::param(const string_type &a_name)
@@ -2104,8 +2139,8 @@ irs::hardflow_t::size_type
   size_type read_size = 0;
   if (!m_is_read) {
     if (!m_is_read_wait) {
-      m_buffer = irst("++read eoi") + m_end_line_write;
-      m_read_data = u8_from_str(m_buffer);
+      //m_buffer = irst("++read eoi") + m_end_line_write;
+      //m_read_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
       m_read_mode = mode_start_read;
       m_is_read_wait = true;
@@ -2218,13 +2253,14 @@ void irs::hardflow::prologix_flow_t::tick()
       case mode_free: {
       } break;
       case mode_start_read: {
-        m_fixed_flow.write(m_channel_ident, m_read_data.data(),
-          m_read_data.size());
+        m_fixed_flow.write(m_channel_ident, m_read_command_data.data(),
+          m_read_command_data.size());
         m_read_mode = mode_start_read_wait;
       } break;
       case mode_start_read_wait: {
         switch (m_fixed_flow.write_status()) {
           case irs::hardflow::fixed_flow_t::status_success: {
+            m_timeout.start();
             m_read_mode = mode_read;
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
@@ -2257,6 +2293,11 @@ void irs::hardflow::prologix_flow_t::tick()
           m_is_read = true;
         } else {
           // Если не нашли конец строки повторяем чтение
+          if (m_timeout.check()) {
+            //m_buffer = irst("++read eoi") + m_end_line_write;
+            //m_read_data = u8_from_str(m_buffer);
+            m_read_mode = mode_start_read;
+          }
         }
       } break;
       default: {

@@ -76,7 +76,7 @@ private:
   const size_type m_data_row_start_index;
 };
 
-#ifdef IRS_USE_JSON_CPP
+#if IRS_USE_JSON_CPP
 class charts_json_file_t
 {
 public:

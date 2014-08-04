@@ -1625,6 +1625,8 @@ private:
 //! \author
 class prologix_flow_t: public irs::hardflow_t
 {
+  typedef irs_size_t size_type;
+  typedef irs::string_t string_type;
   irs::handle_t<irs::hardflow_t> mp_hardflow;
   irs::string_t m_buffer;
   irs::hardflow::fixed_flow_t m_fixed_flow;
@@ -1650,15 +1652,17 @@ class prologix_flow_t: public irs::hardflow_t
   size_type m_channel_ident;
   irs::raw_data_t<irs_u8> m_write_data;
   const size_t m_read_chunk_size;
-  irs::string_t m_end_line_write;
-  irs::string_t m_end_line_read;
-  irs::string_t m_read_string;
+  string_type m_end_line_write;
+  string_type m_end_line_read;
+  string_type m_read_string;
   irs::raw_data_t<irs_u8> m_read_data;
+  irs::raw_data_t<irs_u8> m_read_command_data;
   bool m_init_success;
   vector<irs::string_t> m_init_command;
   unsigned int m_init_count;
   size_type m_init_channel_ident;
   irs::raw_data_t<irs_u8> m_transmit_data;
+  irs::timer_t m_timeout;
   static irs::raw_data_t<irs_u8> u8_from_str(const irs::string_t& a_string);
   static irs::string_t str_from_u8(const irs::raw_data_t<irs_u8>& a_data);
 
