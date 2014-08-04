@@ -2382,7 +2382,18 @@ get_sample_count(const double a_sampling_time, const double a_interval)
 
 double get_aperture(const double a_sampling_time)
 {
-  return a_sampling_time/10.0;
+  if (a_sampling_time < 20e-6) {
+    return a_sampling_time*0.14;
+  } else if (a_sampling_time < (1./5300)) {
+    return a_sampling_time*0.5;
+  } else if (a_sampling_time < (1./592)) {
+    return a_sampling_time*0.8852;
+  } else if (a_sampling_time < (1./60)) {
+    return a_sampling_time*0.989;
+  } else if (a_sampling_time < (1./6)) {
+    return a_sampling_time*0.996;
+  }
+  return a_sampling_time*0.999;
 }
 
 irs::irs_string_t make_sweep_cmd(const double a_sampling_time,
