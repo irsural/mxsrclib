@@ -3906,14 +3906,21 @@ irs::chart::builder_chart_window_t::controls_t::
 
   mp_form->BorderIcons = mp_form->BorderIcons >> biMinimize;
 
-  const String filter = irst("Ôàéëû MXChart (*.mxchart)|*.mxchart|")
+
+  const String open_dialog_filter =
+    irst("Âñå (*.mxchart; *.mxchartcsv; *.csv)|*.mxchart;*.mxchartcsv;*.csv|")
+    irst("Ôàéëû MXChart (*.mxchart)|*.mxchart|")
     irst("MXChart CSV (*.mxchartcsv)|*.mxchartcsv|")
     irst("CSV (*.csv)|*.csv");
 
-  mp_file_open_dialog->Filter = filter;
+  const String save_dialog_filter = irst("Ôàéëû MXChart (*.mxchart)|*.mxchart|")
+    irst("MXChart CSV (*.mxchartcsv)|*.mxchartcsv|")
+    irst("CSV (*.csv)|*.csv");
+
+  mp_file_open_dialog->Filter = open_dialog_filter;
 
   mp_file_save_dialog->DefaultExt = irst("csv");
-  mp_file_save_dialog->Filter = filter;
+  mp_file_save_dialog->Filter = save_dialog_filter;
   //mp_file_menu_item->
   mp_file_menu_item->Caption = irst("Ôàéë");
   mp_main_menu->Items->Add(mp_file_menu_item);
