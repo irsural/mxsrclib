@@ -124,6 +124,7 @@ irs::chart_data::charts_t irs::chart_data::charts_csv_file_t::load(
       }
     }
     chart.index = chart_i;
+    chart.visible = true;
     charts.insert(make_pair(names[chart_i], chart));
     x_col_index += 2;
   }
@@ -215,10 +216,10 @@ irs::chart_data::charts_t irs::chart_data::charts_json_file_t::load(
   for (size_type chart_i = 0; chart_i < charts_value.size(); chart_i++) {
     chart_t chart;
     Json::Value chart_value = charts_value[chart_i];
-    string_type chart_name = irs::decode_utf_8<string_type>(
+    const string_type chart_name = irs::decode_utf_8<string_type>(
       chart_value["name"].asString());
-    int index = chart_value["index"].asUInt();
-
+    const int index = chart_value["index"].asUInt();
+    const bool visible = chart_value["visible"].asBool();
     chart_t::points_type points;
     Json::Value points_x_y_value = chart_value["points_x_y"];
     for (size_type point_i = 0; point_i < points_x_y_value.size(); point_i++) {
@@ -235,6 +236,8 @@ irs::chart_data::charts_t irs::chart_data::charts_json_file_t::load(
       }
       chart.points.push_back(point);
     }
+    chart.index = index;
+    chart.visible = visible;
     charts.insert(make_pair(chart_name, chart));
   }
 
@@ -251,6 +254,7 @@ void irs::chart_data::charts_json_file_t::save(
     Json::Value chart_value;
     chart_value["name"] = encode_utf_8(it->first);
     chart_value["index"] = it->second.index;
+    chart_value["visible"] = it->second.visible;
     const chart_t::points_type& points = it->second.points;
     Json::Value points_x_y_value(Json::arrayValue);
     for (size_type i = 0; i < points.size(); i++) {

@@ -15,12 +15,15 @@
 
 #include <MxBase.h>
 #include <XMLDoc.hpp>
+#include <CheckLst.hpp>
+#include <Grids.hpp>
 #include <limits> // Отсутствует в IAR
 
 #include <irsstd.h>
 #include <irscpp.h>
 #include <irschartwin.h>
 #include <irs_chart_data.h>
+#include <cbsysutils.h>
 
 #include <irsfinal.h>
 
@@ -542,6 +545,7 @@ public:
   virtual irs_u32 size() const;
   virtual void group_all();
   virtual void ungroup_all();
+  void set_visible(const string_type &a_name, bool a_enabled);
   void load_from_mxchart_file(const string_type& a_file_name);
   void save_to_mxchart_file(const string_type& a_file_name);
   void load_from_csv(const string_type& a_file_name);
@@ -562,7 +566,7 @@ private:
   {
   public:
     explicit chart_func_t(const chart_vec_t &a_data);
-    double fn(double a_index);
+    double fn(double a_index) const;
     irs_u32 size() const;
   private:
     const chart_vec_t &m_data;
@@ -574,6 +578,7 @@ private:
     auto_ptr<chart_func_t> func;
     auto_ptr<chart_func_t> time;
     irs_i32 index;
+    bool visible;
     chart_point_t();
     chart_point_t(const chart_point_t& a_point);
     chart_point_t& operator=(const chart_point_t& a_point);
@@ -602,7 +607,9 @@ private:
     void next();
     void set(size_type a_index);
     string_type name();
+    string_type name(size_type a_index);
     const chart_point_t& vec();
+    const chart_point_t& vec(size_type a_index);
     size_type size();
   private:
     const data_t* mp_data;
@@ -627,9 +634,11 @@ private:
     void chart_list_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
   private:
+    enum { list_box_scroll_width_additive = 20 };
     builder_chart_window_t* mp_builder_chart_window;
     form_type_t m_form_type;
     TForm* mp_form;
+    irs::cbuilder::file_version_t m_version;
     irs_bool m_group_all;
     //chart_point_t m_pause_time;
     data_t m_pause_data;
@@ -647,7 +656,17 @@ private:
     TMenuItem* mp_file_open_menu_item;
     TMenuItem* mp_file_save_menu_item;
     TMenuItem* mp_file_save_as_menu_item;
+    TMenuItem* mp_tools_menu_item;
+    TMenuItem* mp_chart_options_menu_item;
+    TMenuItem* mp_help_menu_item;
+    TMenuItem* mp_about_menu_item;
     TPanel* mp_panel;
+    TPanel* mp_options_panel;
+    TCheckListBox* mp_chart_list;
+    TButton* mp_delete_chart_btn;
+    TStringGrid* mp_points_grid;
+    TSplitter* mp_options_splitter;
+    TPanel* mp_paint_panel;
     TPaintBox* mp_chart_box;
     TMxChart* mp_chart;
     auto_ptr<TMxChartSelect> mp_select;
@@ -657,6 +676,12 @@ private:
     TButton* mp_fix_btn;
     TButton* mp_clear_btn;
     TComboBox* mp_base_chart_combo;
+    //! \brief Соответсвие индексов mp_base_chart_combo индексам в
+    //!   m_unsort_data
+    map<int, int> m_base_chart_combo_index_map;
+    //! \brief Соответствие индексов m_unsort_data индексам отображаемых
+    //!   графиков. Содержит индексы только отображаемых графиков
+    map<int, int> m_unsort_data_chart_item_map;
     const char *mp_pause_on_text;
     const char *mp_pause_off_text;
     const char *mp_fix_on_text;
@@ -673,12 +698,16 @@ private:
     string_type m_base_chart_name;
     unsort_data_t m_unsort_data;
 
+    void __fastcall PaintPanelResize(TObject *Sender);
+
     void __fastcall FormResize(TObject *Sender);
     void __fastcall TimerEvent(TObject *Sender);
 
     void __fastcall FileOpenMenuItemClick(TObject *Sender);
     void __fastcall FileSaveMenuItemClick(TObject *Sender);
     void __fastcall FileSaveAsMenuItemClick(TObject *Sender);
+    void __fastcall ChartOptionsMenuItemClick(TObject *Sender);
+    void __fastcall HelpMenuItemClick(TObject *Sender);
 
     void __fastcall PauseBtnClick(TObject *Sender);
     void __fastcall FixBtnClick(TObject *Sender);
@@ -687,8 +716,18 @@ private:
     void __fastcall FormShow(TObject *Sender);
     void __fastcall FormHide(TObject *Sender);
     void __fastcall BaseChartComboChange(TObject *Sender);
+
+    void __fastcall ChartCheckListBoxClick(TObject *Sender);
+    void __fastcall ChartCheckListBoxClickCheck(TObject *Sender);
+    void __fastcall DeleteChartBtnClick(TObject *Sender);
+
     void connect_data(const data_t &a_data);
     void update_chart_combo();
+    void update_chart_list();
+    void update_points_grid();
+    void update_chart();
+    //! \brief Устанавливает текущий график
+    //! \param[in] a_base_item - индекс графика в mp_base_chart_combo
     void set_base_item(int a_base_item);
     int chart_from_combo_item(int a_combo_item);
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
