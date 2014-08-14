@@ -539,6 +539,11 @@ public:
   virtual void set_time(double a_time);
   virtual void add();
   virtual void add(const string_type &a_name, double a_time, double a_value);
+  virtual void set(const string_type &a_name,
+    const vector<double>& a_array_time,
+    const vector<double>& a_array_value);
+  virtual void erase(const string_type &a_name, size_type a_pos,
+    size_type a_count);
   virtual void clear();
   virtual void set_refresh_time(irs_i32 a_refresh_time_ms);
   virtual void resize(irs_u32 a_size);
@@ -611,6 +616,7 @@ private:
     const chart_point_t& vec();
     const chart_point_t& vec(size_type a_index);
     size_type size();
+    bool exists(const string_type& a_name) const;
   private:
     const data_t* mp_data;
     map<int, string_type> m_unsort_data;
@@ -632,9 +638,14 @@ private:
     inline void ungroup_all();
     inline void invalidate();
     void chart_list_changed();
+    void points_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
   private:
     enum { list_box_scroll_width_additive = 20 };
+    enum { index_col = 0 };
+    enum { x_col = 1 };
+    enum { y_col = 2 };
+    enum { grid_row_count_min = 2 };
     builder_chart_window_t* mp_builder_chart_window;
     form_type_t m_form_type;
     TForm* mp_form;
@@ -663,8 +674,16 @@ private:
     TPanel* mp_panel;
     TPanel* mp_options_panel;
     TCheckListBox* mp_chart_list;
+    TButton* mp_add_chart_btn;
     TButton* mp_delete_chart_btn;
+    TButton* mp_apply_points_btn;
+    TButton* mp_cancel_points_btn;
     TStringGrid* mp_points_grid;
+    TPopupMenu* mp_points_grid_menu;
+    TMenuItem* mp_insert_point_before_menu_item;
+    TMenuItem* mp_insert_point_after_menu_item;
+    TMenuItem* mp_delete_point_menu_item;
+    TMenuItem* mp_delete_and_apply_point_menu_item;
     TSplitter* mp_options_splitter;
     TPanel* mp_paint_panel;
     TPaintBox* mp_chart_box;
@@ -695,6 +714,7 @@ private:
     color_gen_t m_colors;
     bool m_is_lock;
     bool m_is_chart_list_changed;
+    bool m_is_points_changed;
     string_type m_base_chart_name;
     unsort_data_t m_unsort_data;
 
@@ -719,7 +739,19 @@ private:
 
     void __fastcall ChartCheckListBoxClick(TObject *Sender);
     void __fastcall ChartCheckListBoxClickCheck(TObject *Sender);
+    void __fastcall AddChartBtnClick(TObject *Sender);
     void __fastcall DeleteChartBtnClick(TObject *Sender);
+    void __fastcall ApplyPointsBtnClick(TObject *Sender);
+    void __fastcall CancelPointsBtnClick(TObject *Sender);
+
+    void __fastcall PointsGridSelectCell(TObject *Sender, int ACol,
+      int ARow, bool &CanSelect);
+    void __fastcall PointsGridKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+
+    void __fastcall PointsMenuPopup(TObject* ap_sender);
+    void __fastcall InsertPointBeforeMenuItemClick(TObject *Sender);
+    void __fastcall InsertPointAfterMenuItemClick(TObject *Sender);
+    void __fastcall DeletePointMenuItemClick(TObject *Sender);
 
     void connect_data(const data_t &a_data);
     void update_chart_combo();
@@ -730,6 +762,8 @@ private:
     //! \param[in] a_base_item - индекс графика в mp_base_chart_combo
     void set_base_item(int a_base_item);
     int chart_from_combo_item(int a_combo_item);
+    void insert_row_points_grid(int a_row_pos);
+    void check_and_create_new_row();
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
   }; //class controls_t
 
