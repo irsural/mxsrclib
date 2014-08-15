@@ -613,7 +613,7 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
 template <class I, class O>
 void round(const I& a_input, O* ap_output)
 {
-  *ap_output = static_cast<O>(a_input + 0.5);
+  *ap_output = static_cast<O>(floor(a_input + 0.5));
 }
 template <class I, class O>
 O round(const I& a_input, O)

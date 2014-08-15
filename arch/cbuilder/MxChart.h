@@ -17,6 +17,7 @@
 #include <XMLDoc.hpp>
 #include <CheckLst.hpp>
 #include <Grids.hpp>
+#include <ValEdit.hpp>
 #include <limits> // Отсутствует в IAR
 
 #include <irsstd.h>
@@ -646,6 +647,8 @@ private:
     enum { x_col = 1 };
     enum { y_col = 2 };
     enum { grid_row_count_min = 2 };
+    enum { header_col = 0 };
+    enum { option_col = 1 };
     builder_chart_window_t* mp_builder_chart_window;
     form_type_t m_form_type;
     TForm* mp_form;
@@ -668,6 +671,7 @@ private:
     TMenuItem* mp_file_save_menu_item;
     TMenuItem* mp_file_save_as_menu_item;
     TMenuItem* mp_tools_menu_item;
+    TMenuItem* mp_chart_params_menu_item;
     TMenuItem* mp_chart_options_menu_item;
     TMenuItem* mp_help_menu_item;
     TMenuItem* mp_about_menu_item;
@@ -685,6 +689,10 @@ private:
     TMenuItem* mp_delete_point_menu_item;
     TMenuItem* mp_delete_and_apply_point_menu_item;
     TSplitter* mp_options_splitter;
+    TPanel* mp_params_panel;
+    TSplitter* mp_params_splitter;
+    TButton* mp_update_param_list_btn;
+    TValueListEditor* mp_param_list;
     TPanel* mp_paint_panel;
     TPaintBox* mp_chart_box;
     TMxChart* mp_chart;
@@ -726,6 +734,7 @@ private:
     void __fastcall FileOpenMenuItemClick(TObject *Sender);
     void __fastcall FileSaveMenuItemClick(TObject *Sender);
     void __fastcall FileSaveAsMenuItemClick(TObject *Sender);
+    void __fastcall ChartParamsMenuItemClick(TObject *Sender);
     void __fastcall ChartOptionsMenuItemClick(TObject *Sender);
     void __fastcall HelpMenuItemClick(TObject *Sender);
 
@@ -753,15 +762,19 @@ private:
     void __fastcall InsertPointAfterMenuItemClick(TObject *Sender);
     void __fastcall DeletePointMenuItemClick(TObject *Sender);
 
+    void __fastcall UpdateParamListBtnClick(TObject *Sender);
+
     void connect_data(const data_t &a_data);
     void update_chart_combo();
     void update_chart_list();
     void update_points_grid();
     void update_chart();
+    void update_param_list();
     //! \brief Устанавливает текущий график
     //! \param[in] a_base_item - индекс графика в mp_base_chart_combo
     void set_base_item(int a_base_item);
     int chart_from_combo_item(int a_combo_item);
+    int unsort_chart_index_from_combo_item(int a_combo_item);
     void insert_row_points_grid(int a_row_pos);
     void check_and_create_new_row();
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);

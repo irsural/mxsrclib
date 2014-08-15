@@ -1926,7 +1926,7 @@ private:
 class dac_ltc8043_t: public dac_t
 {
 public:
-  dac_ltc8043_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, float a_init_data = 0.);
+  dac_ltc8043_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, float a_init_data = 0.f);
   virtual size_t get_resolution() const;
   virtual irs_u32 get_u32_maximum() const;
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);

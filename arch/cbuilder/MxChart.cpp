@@ -12,6 +12,7 @@
 
 #include <timer.h>
 #include <csvwork.h>
+#include <irsalg.h>
 
 #include <MxChart.h>
 
@@ -3980,6 +3981,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_file_save_menu_item(new TMenuItem(mp_form)),
   mp_file_save_as_menu_item(new TMenuItem(mp_form)),
   mp_tools_menu_item(new TMenuItem(mp_form)),
+  mp_chart_params_menu_item(new TMenuItem(mp_form)),
   mp_chart_options_menu_item(new TMenuItem(mp_form)),
   mp_help_menu_item(new TMenuItem(mp_form)),
   mp_about_menu_item(new TMenuItem(mp_form)),
@@ -3996,6 +3998,10 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_insert_point_after_menu_item(new TMenuItem(mp_form)),
   mp_delete_point_menu_item(new TMenuItem(mp_form)),
   mp_options_splitter(new TSplitter(mp_form)),
+  mp_params_panel(new TPanel(mp_form)),
+  mp_params_splitter(new TSplitter(mp_form)),
+  mp_update_param_list_btn(new TButton(mp_form)),
+  mp_param_list(new TValueListEditor(mp_form)),
   mp_paint_panel(new TPanel(mp_form)),
   mp_chart_box(new TPaintBox(mp_form)),
   mp_chart(new TMxChart(mp_paint_panel, mp_chart_box->Canvas)),
@@ -4078,6 +4084,10 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_tools_menu_item->Caption = irst("Инструменты");
   mp_main_menu->Items->Add(mp_tools_menu_item);
 
+  mp_chart_params_menu_item->Caption = irst("Параметры графика");
+  mp_chart_params_menu_item->OnClick = ChartParamsMenuItemClick;
+  mp_tools_menu_item->Add(mp_chart_params_menu_item);
+
   mp_chart_options_menu_item->Caption = irst("Настройки графика");
   mp_chart_options_menu_item->OnClick = ChartOptionsMenuItemClick;
   mp_tools_menu_item->Add(mp_chart_options_menu_item);
@@ -4092,6 +4102,7 @@ irs::chart::builder_chart_window_t::controls_t::
   //biSystemMenu >>
   mp_panel->Align = alTop;
   mp_form->InsertControl(mp_panel);
+
   mp_options_panel->Visible =false;
   mp_options_panel->Align = alRight;
   mp_options_panel->Width = 400;
@@ -4101,7 +4112,6 @@ irs::chart::builder_chart_window_t::controls_t::
 
   //mp_options_panel->InsertComponent(mp_chart_list);
   mp_chart_list->Parent = mp_options_panel;
-
   mp_chart_list->Left = 8;
   mp_chart_list->Top = 8;
   mp_chart_list->Width = mp_options_panel->Width - 8*2;
@@ -4189,6 +4199,59 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_options_splitter->Visible = false;
   mp_options_splitter->Align = alRight;
   mp_form->InsertControl(mp_options_splitter);
+
+  mp_params_panel->Visible = false;
+  mp_params_panel->Align = alLeft;
+  mp_params_panel->Width = 300;
+  mp_params_panel->Height = 500;
+  mp_params_panel->Constraints->MinWidth = 30;
+  mp_form->InsertControl(mp_params_panel);
+
+  mp_params_splitter->Visible = false;
+  mp_params_splitter->Align = alLeft;
+  mp_form->InsertControl(mp_params_splitter);
+
+  mp_update_param_list_btn->Parent = mp_params_panel;
+  mp_update_param_list_btn->Left = 8;
+  mp_update_param_list_btn->Top = 8;
+  mp_update_param_list_btn->OnClick = UpdateParamListBtnClick;
+  mp_update_param_list_btn->Caption = irst("Обновить");
+
+  mp_param_list->Parent = mp_params_panel;
+  mp_param_list->Left = 8;
+  mp_param_list->Top = mp_update_param_list_btn->Top +
+    mp_update_param_list_btn->Height + 8;
+  mp_param_list->Width = mp_params_panel->Width - 8*2;
+  mp_param_list->Height = mp_params_panel->Height - mp_param_list->Top - 8;
+  //mp_param_list->Height = 100;
+  mp_param_list->Anchors = (TAnchors() << akTop << akLeft << akRight <<
+    akBottom);
+  mp_param_list->Options = (mp_param_list->Options >> goEditing);
+
+  const int row_height = mp_param_list->Canvas->TextHeight(
+    irst("+1.7976931348623157e+308")) + 3;
+  mp_param_list->DefaultRowHeight = row_height;
+  mp_param_list->TitleCaptions->Strings[header_col] = irst("Параметр");
+  mp_param_list->TitleCaptions->Strings[option_col] = irst("Значение");
+
+  mp_param_list->InsertRow(irst("Количество точек"), irst(""), true);
+  mp_param_list->InsertRow(irst("Xmin"), irst(""), true);
+  mp_param_list->InsertRow(irst("Xmax"), irst(""), true);
+  mp_param_list->InsertRow(irst("Ymin"), irst(""), true);
+  mp_param_list->InsertRow(irst("Ymax"), irst(""), true);
+  mp_param_list->InsertRow(irst("Yaverage"), irst(""), true);
+  mp_param_list->InsertRow(irst("(Xmax-Xmin)"), irst(""), true);
+  mp_param_list->InsertRow(irst("|Ymax-Ymin|/|Ymin|*100/2, %"),
+    irst(""), true);
+  mp_param_list->InsertRow(irst("|Ymax-Ymin|/|Yaverage|*100/2, %"),
+    irst(""), true);
+  mp_param_list->InsertRow(irst("СКО/|Ymin|*100, %"),
+    irst(""), true);
+  mp_param_list->InsertRow(irst("СКО/|Yaverage|*100, %"),
+    irst(""), true);
+
+
+
   mp_paint_panel->Align = alClient;
   mp_paint_panel->Constraints->MinWidth = 30;
   mp_paint_panel->OnResize = PaintPanelResize;
@@ -4328,6 +4391,15 @@ FileSaveAsMenuItemClick(TObject *Sender)
     }
     m_file_name = mp_file_save_dialog->FileName;
   }
+}
+
+void __fastcall irs::chart::builder_chart_window_t::controls_t::
+ChartParamsMenuItemClick(TObject *Sender)
+{
+  mp_chart_params_menu_item->Checked = !mp_chart_params_menu_item->Checked;
+  mp_params_panel->Visible = mp_chart_params_menu_item->Checked;
+  mp_params_splitter->Left = mp_params_panel->Left + mp_params_panel->Height;
+  mp_params_splitter->Visible = mp_chart_params_menu_item->Checked;
 }
 
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
@@ -4701,6 +4773,12 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
   connect_data(m_data);*/
 }
 
+void __fastcall irs::chart::builder_chart_window_t::controls_t::
+  UpdateParamListBtnClick(TObject* ap_sender)
+{
+  update_param_list();
+}
+
 int irs::chart::builder_chart_window_t::controls_t::
   chart_from_combo_item(int a_combo_item)
 {
@@ -4737,6 +4815,15 @@ int irs::chart::builder_chart_window_t::controls_t::
     //int chart_item = 0;
   }
   return chart_item;*/
+}
+int irs::chart::builder_chart_window_t::controls_t::
+unsort_chart_index_from_combo_item(int a_combo_item)
+{
+  int unsort_chart_index = -1;
+  if (!m_base_chart_combo_index_map.empty()) {
+    unsort_chart_index = m_base_chart_combo_index_map[a_combo_item];
+  }
+  return unsort_chart_index;
 }
 void irs::chart::builder_chart_window_t::controls_t::
   connect_data(const data_t &a_data)
@@ -4924,6 +5011,110 @@ void irs::chart::builder_chart_window_t::controls_t::update_chart()
   }
   mp_chart->BaseItem = chart_from_combo_item(m_base_item);
   mp_chart->Paint();
+}
+
+void irs::chart::builder_chart_window_t::controls_t::update_param_list()
+{
+  const int index = unsort_chart_index_from_combo_item(m_base_item);
+  if (index >= 0) {
+    TDblRect rect = mp_chart->Area;
+    mp_param_list->Values["Xmin"] = FloatToStr(rect.Left);
+    mp_param_list->Values["Xmax"] = FloatToStr(rect.Right);
+    mp_param_list->Values["Ymin"] = FloatToStr(rect.Bottom);
+    mp_param_list->Values["Ymax"] = FloatToStr(rect.Top);
+
+    string_type name = m_unsort_data.name();
+    const chart_point_t& chart_point = m_unsort_data.vec();
+    const chart_func_t* time_func = chart_point.time.get();
+    const chart_func_t* func = chart_point.func.get();
+    vector<mx_point_t<double> > points;
+    points.reserve(time_func->size());
+
+    //size_type point_count = 0;
+    for (size_type i = 0; i < time_func->size(); i++) {
+      const double x = time_func->fn(i);
+      const double y = func->fn(i);
+      if ((x >= FloatToStr(rect.Left)) && (x <= FloatToStr(rect.Right))) {
+        if ((y >= FloatToStr(rect.Bottom)) && (y <= FloatToStr(rect.Top))) {
+          /*if (point_count == 0) {
+            x_min = x;
+            x_max = x;
+            y_min = y;
+            y_max = y;
+          } else {
+            mx_point_t<double> point(x, y);
+
+            x_min = std::min(x, x_min);
+            x_max = std::max(x, x_max);
+            y_min = std::min(y, y_min);
+            y_max = std::max(y, y_max);
+          }
+          point_count++;*/
+          mx_point_t<double> point(x, y);
+          points.push_back(point);
+        }
+      }
+    }
+
+    double x_min = 0;
+    double x_max = 0;
+    double y_min = 0;
+    double y_max = 0;
+    if (!points.empty()) {
+      mx_point_t<double>& point = points[0];
+      const double x = point.left;
+      const double y = point.top;
+      x_min = x;
+      x_max = x;
+      y_min = y;
+      y_max = y;
+    }
+    sko_calc_t<double, double> sko_calc(points.size());
+    for (size_type i = 0; i < points.size(); i++) {
+      mx_point_t<double>& point = points[i];
+      const double x = point.left;
+      const double y = point.top;
+      x_min = std::min(x, x_min);
+      x_max = std::max(x, x_max);
+      y_min = std::min(y, y_min);
+      y_max = std::max(y, y_max);
+      sko_calc.add(y);
+    }
+
+    String y_average_str = irst("+INF");
+    String delta_str = irst("+INF");
+    String delta_2_str = irst("+INF");
+    String sko_str = irst("+INF");
+    String sko_2_str = irst("+INF");
+    double y_average = 0;
+    if (!points.empty()) {
+      y_average = sko_calc.average();
+      y_average_str = FloatToStr(y_average);
+    }
+    if (y_min != 0) {
+      delta_str = FloatToStr(std::fabs(y_max - y_min)/std::fabs(y_min)*100/2);
+      sko_str = FloatToStr(sko_calc/fabs(y_min)*100);
+    }
+    if (y_average != 0) {
+      delta_2_str = FloatToStr(std::fabs(y_max - y_min)/
+        std::fabs(y_average)*100/2);
+      sko_2_str = FloatToStr(sko_calc/fabs(y_average)*100);
+    }
+
+    mp_param_list->Values[irst("Количество точек")] = points.size();
+    mp_param_list->Values[irst("Xmin")] = x_min;
+    mp_param_list->Values[irst("Xmax")] = x_max;
+    mp_param_list->Values[irst("Ymin")] = y_min;
+    mp_param_list->Values[irst("Ymax")] = y_max;
+    mp_param_list->Values[irst("Yaverage")] = y_average_str;
+    mp_param_list->Values[irst("(Xmax-Xmin)")] = abs(x_max - x_min);
+    mp_param_list->Values[irst("|Ymax-Ymin|/|Ymin|*100/2, %")] = delta_str;
+    mp_param_list->Values[irst("|Ymax-Ymin|/|Yaverage|*100/2, %")] =
+      delta_2_str;
+    mp_param_list->Values[irst("СКО/|Ymin|*100, %")] = sko_str;
+    mp_param_list->Values[irst("СКО/|Yaverage|*100, %")] = sko_2_str;
+  } else {
+  }
 }
 
 void irs::chart::builder_chart_window_t::controls_t::
