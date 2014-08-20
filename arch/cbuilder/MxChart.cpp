@@ -3962,7 +3962,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_builder_chart_window(ap_builder_chart_window),
   m_form_type(a_form_type),
   mp_form(ap_form),
-  m_version(1, 1, 0, 0),
+  m_version(1, 1, 0, 1),
   m_group_all(irs_false),
   //m_pause_time(),
   m_pause_data(),
@@ -4202,7 +4202,7 @@ irs::chart::builder_chart_window_t::controls_t::
 
   mp_params_panel->Visible = false;
   mp_params_panel->Align = alLeft;
-  mp_params_panel->Width = 300;
+  mp_params_panel->Width = 350;
   mp_params_panel->Height = 500;
   mp_params_panel->Constraints->MinWidth = 30;
   mp_form->InsertControl(mp_params_panel);
@@ -4241,16 +4241,31 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_param_list->InsertRow(irst("Ymax"), irst(""), true);
   mp_param_list->InsertRow(irst("Yaverage"), irst(""), true);
   mp_param_list->InsertRow(irst("(Xmax-Xmin)"), irst(""), true);
-  mp_param_list->InsertRow(irst("|Ymax-Ymin|/|Ymin|*100/2, %"),
-    irst(""), true);
+  //mp_param_list->InsertRow(irst("|Ymax-Ymin|/|Ymin|*100/2, %"),
+    //irst(""), true);
   mp_param_list->InsertRow(irst("|Ymax-Ymin|/|Yaverage|*100/2, %"),
     irst(""), true);
-  mp_param_list->InsertRow(irst("СКО/|Ymin|*100, %"),
-    irst(""), true);
+  //mp_param_list->InsertRow(irst("СКО/|Ymin|*100, %"),
+    //irst(""), true);
   mp_param_list->InsertRow(irst("СКО/|Yaverage|*100, %"),
     irst(""), true);
+  mp_param_list->InsertRow(irst("Доверительный интервал (95 %), %"),
+    irst(""), true);
+  mp_param_list->InsertRow(irst("Доверительный интервал (99 %), %"),
+    irst(""), true);
+  mp_param_list->InsertRow(irst("Доверительный интервал (99.9 %), %"),
+    irst(""), true);
 
-
+  //mp_param_list->ColWidths[header_col] = mp_param_list->Canvas->TextWidth(
+    //irst("Доверительный интервал (99.9 %), %")) + 5;
+  // Находим и устанавливаем ширину столбца ключей
+  int key_width_max = 0;
+  for (int i = 0; i < mp_param_list->RowCount; i++) {
+    String s = mp_param_list->Keys[i];
+    int width = mp_param_list->Canvas->TextWidth(s);
+    key_width_max = max(width, key_width_max);
+  }
+  mp_param_list->ColWidths[header_col] = key_width_max + 5;
 
   mp_paint_panel->Align = alClient;
   mp_paint_panel->Constraints->MinWidth = 30;
@@ -5023,8 +5038,8 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     mp_param_list->Values["Ymin"] = FloatToStr(rect.Bottom);
     mp_param_list->Values["Ymax"] = FloatToStr(rect.Top);
 
-    string_type name = m_unsort_data.name();
-    const chart_point_t& chart_point = m_unsort_data.vec();
+    //string_type name = m_unsort_data.name(index);
+    const chart_point_t& chart_point = m_unsort_data.vec(index);
     const chart_func_t* time_func = chart_point.time.get();
     const chart_func_t* func = chart_point.func.get();
     vector<mx_point_t<double> > points;
@@ -5036,20 +5051,6 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
       const double y = func->fn(i);
       if ((x >= FloatToStr(rect.Left)) && (x <= FloatToStr(rect.Right))) {
         if ((y >= FloatToStr(rect.Bottom)) && (y <= FloatToStr(rect.Top))) {
-          /*if (point_count == 0) {
-            x_min = x;
-            x_max = x;
-            y_min = y;
-            y_max = y;
-          } else {
-            mx_point_t<double> point(x, y);
-
-            x_min = std::min(x, x_min);
-            x_max = std::max(x, x_max);
-            y_min = std::min(y, y_min);
-            y_max = std::max(y, y_max);
-          }
-          point_count++;*/
           mx_point_t<double> point(x, y);
           points.push_back(point);
         }
@@ -5091,14 +5092,49 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
       y_average = sko_calc.average();
       y_average_str = FloatToStr(y_average);
     }
+    double sko = 0;
+    double sko_2 = 0;
     if (y_min != 0) {
+      sko = sko_calc/fabs(y_min)*100;
       delta_str = FloatToStr(std::fabs(y_max - y_min)/std::fabs(y_min)*100/2);
-      sko_str = FloatToStr(sko_calc/fabs(y_min)*100);
+      sko_str = FloatToStr(sko);
     }
-    if (y_average != 0) {
+    double y_reference = y_average;
+    if ((y_average == 0) && !points.empty()) {
+      // Ищем ближайшее ненулевое значение
+      mx_point_t<double>& point_0 = points[0];
+      double y_absolute_min = fabs(point_0.top);
+      for (size_type i = 0; i < points.size(); i++) {
+        mx_point_t<double>& point = points[i];
+        const double y = point.top;
+        y_absolute_min = std::min(fabs(y), y_min);
+      }
+      y_reference = y_absolute_min;
+    }
+    if (y_reference != 0) {
+      sko_2 = sko_calc/fabs(y_reference)*100;
       delta_2_str = FloatToStr(std::fabs(y_max - y_min)/
-        std::fabs(y_average)*100/2);
-      sko_2_str = FloatToStr(sko_calc/fabs(y_average)*100);
+        std::fabs(y_reference)*100/2);
+      sko_2_str = FloatToStr(sko_2);
+    }
+
+    String student_t_95_str = irst("+INF");
+    String student_t_99_str = irst("+INF");
+    String student_t_99_9_str = irst("+INF");
+
+    if (!points.empty()) {
+      const double student_t_95 = student_t_inverse_distribution_2x(0.95,
+        points.size());
+      const double student_t_99 = student_t_inverse_distribution_2x(0.99,
+        points.size());
+      const double student_t_99_9 = student_t_inverse_distribution_2x(0.999,
+        points.size());
+      double confidence_interval_95 = sko_2*student_t_95;
+      double confidence_interval_99 = sko_2*student_t_99;
+      double confidence_interval_99_9 = sko_2*student_t_99_9;
+      student_t_95_str = FloatToStr(confidence_interval_95);
+      student_t_99_str = FloatToStr(confidence_interval_99);
+      student_t_99_9_str = FloatToStr(confidence_interval_99_9);
     }
 
     mp_param_list->Values[irst("Количество точек")] = points.size();
@@ -5108,12 +5144,18 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     mp_param_list->Values[irst("Ymax")] = y_max;
     mp_param_list->Values[irst("Yaverage")] = y_average_str;
     mp_param_list->Values[irst("(Xmax-Xmin)")] = abs(x_max - x_min);
-    mp_param_list->Values[irst("|Ymax-Ymin|/|Ymin|*100/2, %")] = delta_str;
+    //mp_param_list->Values[irst("|Ymax-Ymin|/|Ymin|*100/2, %")] = delta_str;
     mp_param_list->Values[irst("|Ymax-Ymin|/|Yaverage|*100/2, %")] =
       delta_2_str;
-    mp_param_list->Values[irst("СКО/|Ymin|*100, %")] = sko_str;
+    //mp_param_list->Values[irst("СКО/|Ymin|*100, %")] = sko_str;
     mp_param_list->Values[irst("СКО/|Yaverage|*100, %")] = sko_2_str;
-  } else {
+
+    mp_param_list->Values[irst("Доверительный интервал (95 %), %")] =
+      student_t_95_str;
+    mp_param_list->Values[irst("Доверительный интервал (99 %), %")] =
+      student_t_99_str;
+    mp_param_list->Values[irst("Доверительный интервал (99.9 %), %")] =
+      student_t_99_9_str;
   }
 }
 

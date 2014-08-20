@@ -66,40 +66,49 @@ public:
 //------------------------------------------------------------------------------
 namespace irs {
 
-  //! \ingroup signal_processing_group
-  //! \brief Расчет СКО
-  // template <class data_t = double, class calc_t = double>
-  template<class data_t, class calc_t>
-  class sko_calc_t {
-    irs_u32 m_count;
-    deque<data_t> m_val_array;
-    calc_t m_average;
-    bool m_accepted_average;
-    calc_t sum()const;
-    sko_calc_t();
-  public:
-    sko_calc_t(irs_u32 a_count);
-    ~sko_calc_t();
-    void clear();
-    void add(data_t a_val);
-    operator data_t()const;
-    data_t relative()const;
-    data_t average()const;
-    void resize(irs_u32 a_count);
-    void set_average(data_t a_average);
-    void clear_average();
-    irs_u32 size();
-  };
+//! \brief Возвращает двустороннее обратное t-распределение Стьюдента
+//! \param a_probability - вероятность [0, 1]. Реализовано только для
+//!   значений 0.95, 0.99, 0.999
+//! \param a_degrees_of_freedom - количество степеней свободы
+//! \return Значение распределения
+double student_t_inverse_distribution_2x(double a_probability,
+  size_t a_degrees_of_freedom);
 
-  // Версия sko_calc_t для sko_calc_t<double, double>
-  // Т. к. C++ Builder 4 криво работает с параметрами шаблона по умолчанию
-  class sko_calc_dbl_t : public sko_calc_t<double, double> {
-  public:
-    sko_calc_dbl_t(irs_u32 a_count) : sko_calc_t<double, double>(a_count) {
-    }
-  private:
-    sko_calc_dbl_t();
-  };
+
+//! \ingroup signal_processing_group
+//! \brief Расчет СКО
+// template <class data_t = double, class calc_t = double>
+template<class data_t, class calc_t>
+class sko_calc_t {
+  irs_u32 m_count;
+  deque<data_t> m_val_array;
+  calc_t m_average;
+  bool m_accepted_average;
+  calc_t sum()const;
+  sko_calc_t();
+public:
+  sko_calc_t(irs_u32 a_count);
+  ~sko_calc_t();
+  void clear();
+  void add(data_t a_val);
+  operator data_t()const;
+  data_t relative()const;
+  data_t average()const;
+  void resize(irs_u32 a_count);
+  void set_average(data_t a_average);
+  void clear_average();
+  irs_u32 size();
+};
+
+// Версия sko_calc_t для sko_calc_t<double, double>
+// Т. к. C++ Builder 4 криво работает с параметрами шаблона по умолчанию
+class sko_calc_dbl_t : public sko_calc_t<double, double> {
+public:
+  sko_calc_dbl_t(irs_u32 a_count) : sko_calc_t<double, double>(a_count) {
+  }
+private:
+  sko_calc_dbl_t();
+};
 
 } // namespace irs
 
