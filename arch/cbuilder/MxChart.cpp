@@ -838,7 +838,7 @@ void __fastcall TMxChartItem::SetMarkerPen(TPen *Value)
 }
 //---------------------------------------------------------------------------
 // Установка области построения
-void __fastcall TMxChartItem::SetArea(TDblRect AArea)
+void TMxChartItem::SetAreaInner(TDblRect AArea, bool AIsChangeAutoScale)
 {
   bool AreaChange = false;
   double ScX = FScaleX, ScY = FScaleY;
@@ -850,18 +850,27 @@ void __fastcall TMxChartItem::SetArea(TDblRect AArea)
   if (!(FltEqual(FArea.Left, AArea.Left) && FltEqual(FArea.Right, AArea.Right)))
   {
     FArea.Left = AArea.Left; FArea.Right = AArea.Right;
-    FAutoScale[0] = false;
+    if (AIsChangeAutoScale) {
+      FAutoScale[0] = false;
+    }
     NeedCalculate = NeedAutoScale = true;
     AreaChange = true;
   }
   if (!(FltEqual(FArea.Bottom, AArea.Bottom) && FltEqual(FArea.Top, AArea.Top)))
   {
     FArea.Top = AArea.Top; FArea.Bottom = AArea.Bottom;
-    FAutoScale[1] = false;
+    if (AIsChangeAutoScale) {
+      FAutoScale[1] = false;
+    }
     NeedCalculate = NeedAutoScale = true;
     AreaChange = true;
   }
   if (AreaChange) if (FOnChange) FOnChange(this, cctArea);
+}
+// Установка области построения
+void __fastcall TMxChartItem::SetArea(TDblRect AArea)
+{
+  SetAreaInner(AArea, true);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMxChartItem::SetHide(bool Value)
@@ -1982,7 +1991,7 @@ void __fastcall TMxChart::SetChildRect()
   {
     TDblRect A = FItems[vec[i]]->Area;
     A.Left = Area.Left; A.Right = Area.Right;
-    FItems[vec[i]]->Area = A;
+    FItems[vec[i]]->SetAreaInner(A, false);
   }
   for (size_t i = 0; i < vec.size(); i++)
   {
@@ -1998,7 +2007,7 @@ void __fastcall TMxChart::SetChildRect()
   {
     TDblRect A = FItems[vec[i]]->Area;
     A.Bottom = Area.Bottom; A.Top = Area.Top;
-    FItems[vec[i]]->Area = A;
+    FItems[vec[i]]->SetAreaInner(A, false);
   }
   for (size_t i = 0; i < vec.size(); i++)
   {
@@ -2933,11 +2942,14 @@ void __fastcall TMxChartSelect::RestoreAreas()
 void __fastcall TMxChartSelect::SaveAutoScales()
 {
   ValidAutoScales = true;
-  AutoScales.insert(make_pair(Chart,
-    make_pair(Chart->AutoScaleX, Chart->AutoScaleY)));
-  for (int i = 0; i < Chart->Count; i++)
-    AutoScales.insert(make_pair(Chart->Items[i],
-      make_pair(Chart->Items[i]->AutoScaleX, Chart->Items[i]->AutoScaleY)));
+  AutoScales[Chart] = make_pair(Chart->AutoScaleX, Chart->AutoScaleY);
+  for (int i = 0; i < Chart->Count; i++) 
+  {
+    TComponent* chart_item = Chart->Items[i];
+    bool auto_scale_x = Chart->Items[i]->AutoScaleX;
+    bool auto_scale_y = Chart->Items[i]->AutoScaleY;
+    AutoScales[chart_item] = make_pair(auto_scale_x, auto_scale_y);
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TMxChartSelect::RestoreAutoScales()
@@ -3064,11 +3076,16 @@ void __fastcall TMxChartSelect::ZoomOut()
   if (Areas.size())
   {
     LockEvent = true;
-    Chart->BaseItem = BaseItems.back(); BaseItems.pop_back();
+    Chart->BaseItem = BaseItems.back();
+    BaseItems.pop_back();
     RestoreCompConvs();
     LockEvent = false;
-    Chart->Area = Areas.back(); Areas.pop_back();
-    if (!Areas.size()) RestoreAutoScales();
+    Chart->Area = Areas.back();
+    Areas.pop_back();
+    if (!Areas.size())
+    {
+      RestoreAutoScales();
+    }
     SaveAreas();
     DoPaint();
   }
@@ -3119,8 +3136,8 @@ void __fastcall TMxChartSelect::ItemChange(int Oper, int Index)
       Areas.clear(); BaseItems.clear();
       break;
     case 2:
-      AutoScales.insert(make_pair(Chart->Items[Index], make_pair(
-        Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY)));
+      AutoScales[Chart->Items[Index]] = make_pair(
+        Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY);
       for(vector<int>::iterator i = BaseItems.begin(); i != BaseItems.end(); i++)
         if (*i >= Index) (*i)++;
       break;
@@ -3962,7 +3979,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_builder_chart_window(ap_builder_chart_window),
   m_form_type(a_form_type),
   mp_form(ap_form),
-  m_version(1, 1, 0, 1),
+  m_version(1, 1, 1, 2),
   m_group_all(irs_false),
   //m_pause_time(),
   m_pause_data(),
@@ -5143,7 +5160,7 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     mp_param_list->Values[irst("Ymin")] = y_min;
     mp_param_list->Values[irst("Ymax")] = y_max;
     mp_param_list->Values[irst("Yaverage")] = y_average_str;
-    mp_param_list->Values[irst("(Xmax-Xmin)")] = abs(x_max - x_min);
+    mp_param_list->Values[irst("(Xmax-Xmin)")] = fabs(x_max - x_min);
     //mp_param_list->Values[irst("|Ymax-Ymin|/|Ymin|*100/2, %")] = delta_str;
     mp_param_list->Values[irst("|Ymax-Ymin|/|Yaverage|*100/2, %")] =
       delta_2_str;

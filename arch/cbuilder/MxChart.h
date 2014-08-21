@@ -156,6 +156,7 @@ class TMxChartItem: public TComponent
   void __fastcall DoBlackPrint();
   void __fastcall DoColorPrint();
   void __fastcall SetGroup(int Index, int AGroup);
+  void SetAreaInner(TDblRect AArea, bool AIsChangeAutoScale);
 public:
   // Свойства
   __property int GroupX = {index=0, read=FGroup[0], write=SetGroup};
