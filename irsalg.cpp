@@ -135,7 +135,6 @@ double irs::student_t_inverse_distribution_2x(double a_probability,
     index = 58;
   }
   double result = 0;
-  double** table = NULL;
   if (a_probability == 0.95) {
     double table_0_95[] = {
       // ƒл€ n от 1 до 50
