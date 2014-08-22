@@ -4209,7 +4209,8 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_points_grid_menu->Items->Add(mp_insert_point_after_menu_item);
 
   mp_delete_point_menu_item->Caption = irst("Удалить");
-  mp_delete_point_menu_item->ShortCut = ShortCut(VK_DELETE, TShiftState());
+  mp_delete_point_menu_item->ShortCut = ShortCut(
+    VK_DELETE, TShiftState() << ssCtrl);
   mp_delete_point_menu_item->OnClick = DeletePointMenuItemClick;
   mp_points_grid_menu->Items->Add(mp_delete_point_menu_item);
 
@@ -4264,6 +4265,7 @@ irs::chart::builder_chart_window_t::controls_t::
     irst(""), true);
   //mp_param_list->InsertRow(irst("СКО/|Ymin|*100, %"),
     //irst(""), true);
+  mp_param_list->InsertRow(irst("СКО"), irst(""), true);
   mp_param_list->InsertRow(irst("СКО/|Yaverage|*100, %"),
     irst(""), true);
   mp_param_list->InsertRow(irst("Доверительный интервал (95 %), %"),
@@ -5066,8 +5068,8 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     for (size_type i = 0; i < time_func->size(); i++) {
       const double x = time_func->fn(i);
       const double y = func->fn(i);
-      if ((x >= FloatToStr(rect.Left)) && (x <= FloatToStr(rect.Right))) {
-        if ((y >= FloatToStr(rect.Bottom)) && (y <= FloatToStr(rect.Top))) {
+      if ((x >= rect.Left) && (x <= rect.Right)) {
+        if ((y >= rect.Bottom) && (y <= rect.Top)) {
           mx_point_t<double> point(x, y);
           points.push_back(point);
         }
@@ -5103,19 +5105,20 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     String delta_str = irst("+INF");
     String delta_2_str = irst("+INF");
     String sko_str = irst("+INF");
-    String sko_2_str = irst("+INF");
+    String sko_percent_str = irst("+INF");
     double y_average = 0;
     if (!points.empty()) {
       y_average = sko_calc.average();
       y_average_str = FloatToStr(y_average);
     }
+    //double sko = 0;
     double sko = 0;
-    double sko_2 = 0;
-    if (y_min != 0) {
+    double sko_percent = 0;
+    /*if (y_min != 0) {
       sko = sko_calc/fabs(y_min)*100;
       delta_str = FloatToStr(std::fabs(y_max - y_min)/std::fabs(y_min)*100/2);
       sko_str = FloatToStr(sko);
-    }
+    } */
     double y_reference = y_average;
     if ((y_average == 0) && !points.empty()) {
       // Ищем ближайшее ненулевое значение
@@ -5129,10 +5132,12 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
       y_reference = y_absolute_min;
     }
     if (y_reference != 0) {
-      sko_2 = sko_calc/fabs(y_reference)*100;
+      sko = sko_calc;
+      sko_percent = sko/fabs(y_reference)*100;
       delta_2_str = FloatToStr(std::fabs(y_max - y_min)/
         std::fabs(y_reference)*100/2);
-      sko_2_str = FloatToStr(sko_2);
+      sko_str = FloatToStr(sko);
+      sko_percent_str = FloatToStr(sko_percent);
     }
 
     String student_t_95_str = irst("+INF");
@@ -5146,9 +5151,9 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
         points.size());
       const double student_t_99_9 = student_t_inverse_distribution_2x(0.999,
         points.size());
-      double confidence_interval_95 = sko_2*student_t_95;
-      double confidence_interval_99 = sko_2*student_t_99;
-      double confidence_interval_99_9 = sko_2*student_t_99_9;
+      double confidence_interval_95 = sko_percent*student_t_95;
+      double confidence_interval_99 = sko_percent*student_t_99;
+      double confidence_interval_99_9 = sko_percent*student_t_99_9;
       student_t_95_str = FloatToStr(confidence_interval_95);
       student_t_99_str = FloatToStr(confidence_interval_99);
       student_t_99_9_str = FloatToStr(confidence_interval_99_9);
@@ -5165,7 +5170,8 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     mp_param_list->Values[irst("|Ymax-Ymin|/|Yaverage|*100/2, %")] =
       delta_2_str;
     //mp_param_list->Values[irst("СКО/|Ymin|*100, %")] = sko_str;
-    mp_param_list->Values[irst("СКО/|Yaverage|*100, %")] = sko_2_str;
+    mp_param_list->Values[irst("СКО")] = sko_str;
+    mp_param_list->Values[irst("СКО/|Yaverage|*100, %")] = sko_percent_str;
 
     mp_param_list->Values[irst("Доверительный интервал (95 %), %")] =
       student_t_95_str;

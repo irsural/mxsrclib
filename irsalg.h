@@ -74,6 +74,47 @@ namespace irs {
 double student_t_inverse_distribution_2x(double a_probability,
   size_t a_degrees_of_freedom);
 
+template <class T>
+class pred_remove_errors_smirov
+{
+public:
+  pred_remove_errors_smirov(T a_average, T a_sko, T a_student_coefficient):
+    m_average(a_average),
+    m_sko(a_sko),
+    m_student_coefficient(a_student_coefficient)
+  {
+  }
+  bool operator() (T a_value) const
+  {
+    return fabs(a_value - m_average)/m_sko > m_student_coefficient;
+  }
+private:
+  pred_remove_errors_smirov();
+  const T m_average;
+  const T m_sko;
+  const T m_student_coefficient;
+};
+
+//template<class data_t, class calc_t>
+//class sko_calc_t;
+
+template <class forward_iterator, class T>
+forward_iterator remove_errors_metod_smirov(forward_iterator first,
+  forward_iterator last,
+  const T a_probability)
+{
+  const size_t size = distance(first, last);
+  const T student_coefficient = static_cast<T>(
+    student_t_inverse_distribution_2x(a_probability, size));
+  sko_calc_t<T, T> sko(size);
+  forward_iterator current = first;
+  while (current != last) {
+    sko.add(*current);
+    ++current;
+  }
+  pred_remove_errors_smirov<T> pred(sko.average(), sko, student_coefficient);
+  return remove_if(first, last, pred);
+}
 
 //! \ingroup signal_processing_group
 //! \brief Расчет СКО

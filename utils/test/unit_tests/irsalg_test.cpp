@@ -21,6 +21,50 @@ std::vector<double> make_sinus(const std::size_t a_period_point_count,
 
 } // unnamed namespace
 
+BOOST_AUTO_TEST_SUITE(remove_errors_metod_smirov)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  std::vector<double> values;
+  values.push_back(0.8404);
+  values.push_back(-0.8880);
+  values.push_back(0.1001);
+  values.push_back(-0.5445);
+  values.push_back(0.3035);
+  values.push_back(-0.6003);
+  values.push_back(0.4900);
+  values.push_back(0.7394);
+  values.push_back(1.7119);
+  values.push_back(-0.1941);
+  values.push_back(-2.7);    // Грубая ошибка
+  values.push_back(-0.8396);
+  values.push_back(1.3546);
+  values.push_back(-1.0722);
+  values.push_back(0.9610);
+  values.push_back(0.1240);
+  values.push_back(1.4367);
+  values.push_back(-1.9609);
+  values.push_back(-0.1977);
+  values.push_back(-1.2078);
+
+  const double sko = 1.12037111970766;
+  const double average = -0.107175;
+  const double student_coef = 2.085963447; // 95 %
+
+  std::vector<double>::iterator it_end =
+    irs::remove_errors_metod_smirov(values.begin(), values.end(), 0.95);
+  values.erase(it_end, values.end());
+  BOOST_CHECK(values.size() == 19);
+  std::vector<double>::iterator it = values.begin();
+  while (it != values.end()) {
+    const double value = *it;
+    BOOST_CHECK(fabs(value - average)/sko <= student_coef);
+    ++it;
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(sko_calc_t)
 
 BOOST_AUTO_TEST_CASE(test_case1)
