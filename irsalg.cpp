@@ -206,6 +206,116 @@ double irs::student_t_inverse_distribution_2x(double a_probability,
   return result;
 }
 
+double irs::critical_values_for_t_a_criterion(double a_level_of_significance,
+  size_t a_sample_size)
+{
+  const int n_min = 3;
+  const int n_max = 25;
+  const int array_size = n_max - n_min + 1;
+  const size_t n = a_sample_size;
+  size_t index = 0;
+  if ((n >= 0) && (n <= n_min)) {
+    index = 0 ;
+  } else if (n <= n_max) {
+    index = n - n_min ;
+  } else {
+    index = 0;
+  }
+  double result = 0;
+  if (a_level_of_significance == 0.1) {
+    // Для n от 3 до 25
+    double table_0_1[] = {
+      1.50, 1.70, 1.84, 1.94, 2.02, 2.09, 2.15, 2.20, 2.24, 2.28, 2.32, 2.35,
+      2.38, 2.41, 2.43, 2.46, 2.48, 2.50, 2.52, 2.54, 2.56, 2.57, 2.59
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_1) == array_size);
+    if (n <= n_max) {
+      result = table_0_1[index];
+    } else {
+      // Приближенное значение
+      result = 0.3053*log(n) + 1.6513;
+    }
+  } else if (a_level_of_significance == 0.05) {
+    // Для n от 3 до 25
+    double table_0_05[] = {
+      1.74, 1.94, 2.08, 2.18, 2.27, 2.33, 2.39, 2.44, 2.48, 2.52, 2.56, 2.59,
+      2.62, 2.64, 2.67, 2.69, 2.71, 2.73, 2.75, 2.77, 2.78, 2.80, 2.82
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_05) == array_size);
+    if (n <= n_max) {
+      result = table_0_05[index];
+    } else {
+      // Приближенное значение
+      result = 0.2849*log(n) + 1.9517;
+    }
+  } else if (a_level_of_significance == 0.01) {
+    // Для n от 3 до 25
+    double table_0_01[] = {
+      1.22, 2.43, 2.57, 2.68, 2.76, 2.83, 2.88, 2.93, 2.97, 3.01, 3.04, 3.07,
+      3.10, 3.12, 3.15, 3.17, 3.19, 3.21, 3.22, 3.24, 3.26, 3.27, 3.28
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_01) == array_size);
+    if (n <= n_max) {
+      result = table_0_01[index];
+    } else {
+      // Приближенное значение
+      result = 0.2648*log(n) + 2.4839;
+    }
+  } else {
+    IRS_LIB_ASSERT_MSG("Для указанного значения a_probability функция не "
+      "реализована");
+  }
+  return result;
+}
+
+double irs::critical_values_for_smirnov_criterion(
+  double a_level_of_significance,
+  size_t a_sample_size)
+{
+  const int n_min = 3;
+  const int n_max = 25;
+  const int array_size = n_max - n_min + 1;
+  const size_t n = a_sample_size;
+  size_t index = 0;
+  if ((n >= 0) && (n <= n_min)) {
+    index = 0 ;
+  } else if (n <= n_max) {
+    index = n - n_min ;
+  } else {
+    index = array_size - 1;
+  }
+  double result = 0;
+  if (a_level_of_significance == 0.1) {
+    // Для n от 3 до 25
+    double table_0_1[] = {
+      1.15, 1.42, 1.60, 1.73, 1.83, 1.91, 1.98, 2.03, 2.09, 2.13, 2.17, 2.21,
+      2.25, 2.28, 2.31, 2.34, 2.36, 2.38, 2.41, 2.43, 2.45, 2.47, 2.49
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_1) == array_size);
+    result = table_0_1[index];
+  } else if (a_level_of_significance == 0.05) {
+    // Для n от 3 до 25
+    double table_0_05[] = {
+      1.15, 1.46, 1.67, 1.82, 1.94, 2.03, 2.11, 2.18, 2.23, 2.29, 2.33, 2.37,
+      2.41, 2.44, 2.48, 2.50, 2.53, 2.56, 2.58, 2.60, 2.62, 2.64, 2.66
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_05) == array_size);
+    result = table_0_05[index];
+  } else if (a_level_of_significance == 0.01) {
+    // Для n от 3 до 25
+    double table_0_01[] = {
+      1.15, 1.49, 1.75, 1.94, 2.10, 2.22, 2.32, 2.41, 2.48, 2.55, 2.61, 2.66,
+      2.70, 2.75, 2.78, 2.82, 2.85, 2.88, 2.91, 2.94, 2.96, 2.99, 3.01
+    };
+    IRS_LIB_ASSERT(IRS_ARRAYSIZE(table_0_01) == array_size);
+    result = table_0_01[index];
+  } else {
+    IRS_LIB_ASSERT_MSG("Для указанного значения a_probability функция не "
+      "реализована");
+  }
+  return result;
+}
+
 #ifdef __ICCAVR__
 MEMORY_MODIFIER irs_u16 irs::crc16_data_t::table[size] =
 #else //__ICCAVR__

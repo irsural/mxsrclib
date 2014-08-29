@@ -66,19 +66,239 @@ public:
 //------------------------------------------------------------------------------
 namespace irs {
 
+//! \ingroup signal_processing_group
 //! \brief Возвращает двустороннее обратное t-распределение Стьюдента
-//! \param a_probability - вероятность [0, 1]. Реализовано только для
-//!   значений 0.95, 0.99, 0.999
-//! \param a_degrees_of_freedom - количество степеней свободы
+//! \param[in] a_probability - доверительная вероятность [0, 1].
+//! Реализовано только для значений 0.95, 0.99, 0.999
+//! \param[in] a_degrees_of_freedom - количество степеней свободы
 //! \return Значение распределения
 double student_t_inverse_distribution_2x(double a_probability,
   size_t a_degrees_of_freedom);
 
+//! \ingroup signal_processing_group
+//! \brief Возвращает критическое значение для критерия ta
+//! \details
+//! \param[in] a_level_of_significance - уровень значимости [0, 1].
+//!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \param[in] a_sample_size - размер последовательности. Для значений
+//!   меньше 3, возвращается значение для 3. Для значений больше 25,
+//!   возвращается приближенное значение
+double critical_values_for_t_a_criterion(double a_level_of_significance,
+  size_t a_sample_size);
+
+//! \brief Возвращает критическое значение для критерия Смирнова
+//! \param[in] a_level_of_significance - уровень значимости [0, 1].
+//!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \param[in] a_sample_size - размер последовательности.
+//!   Реализовано только для значений от 3 до 25. Если значение выходит
+//!   за диапазон, то выбирается ближайшее граничное значение
+double critical_values_for_smirnov_criterion(double a_level_of_significance,
+  size_t a_sample_size);
+
 template <class T>
-class pred_remove_errors_smirov
+class pred_eliminating_outliers_t
 {
 public:
-  pred_remove_errors_smirov(T a_average, T a_sko, T a_student_coefficient):
+  pred_eliminating_outliers_t(T a_sko, T a_average,
+    T a_critical_value
+  ):
+    m_sko(a_sko),
+    m_average(a_average),
+    m_critical_value(a_critical_value)
+  {
+  }
+  bool operator() (T a_value) const
+  {
+    return fabs(a_value - m_average)/m_sko > m_critical_value;
+  }
+private:
+  pred_eliminating_outliers_t();
+  const T m_sko;
+  const T m_average;
+  const T m_critical_value;
+};
+
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_t_a_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  double a_level_of_significance,
+  T a_standard_deviation)
+{
+  const double level = a_level_of_significance;
+  const size_t size = distance(ap_first, ap_last);
+  double critical_value = 0;
+  if (size < 3) {
+    return ap_last;
+  } else {
+    critical_value = critical_values_for_t_a_criterion(level, size);
+  }
+  const T average = accumulate(ap_first, ap_last, T(0));
+  pred_eliminating_outliers_t<double> pred(a_standard_deviation, average,
+    critical_value);
+  return remove_if(ap_first, ap_last, pred);
+}
+
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_t_a_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  double a_level_of_significance,
+  T a_standard_deviation,
+  T a_average)
+{
+  const double level = a_level_of_significance;
+  const size_t size = distance(ap_first, ap_last);
+  double critical_value = 0;
+  if (size < 3) {
+    return ap_last;
+  } else {
+    critical_value = critical_values_for_t_a_criterion(level, size);
+  }
+  pred_eliminating_outliers_t<double> pred(a_standard_deviation, a_average,
+    critical_value);
+  return remove_if(ap_first, ap_last, pred);
+}
+
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_smirnov_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  double a_level_of_significance)
+{
+  const double level = a_level_of_significance;
+  const size_t size = distance(ap_first, ap_last);
+  double critical_value = 0;
+  if (size < 3) {
+    return ap_last;
+  } else if (size <= 25) {
+    critical_value = critical_values_for_smirnov_criterion(level, size);
+  } else {
+    critical_value = critical_values_for_t_a_criterion(level, size);
+  }
+
+  T sko = 0;
+  T average = 0;
+  sample_standard_deviation(ap_first, ap_last, &sko, &average);
+
+  pred_eliminating_outliers_t<T> pred(sko, average, critical_value);
+  return remove_if(ap_first, ap_last, pred);
+}
+
+template <class forward_iterator>
+forward_iterator eliminating_outliers_smirnov_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  double a_level_of_significance)
+{
+  return eliminating_outliers_smirnov_criterion<forward_iterator, double>(
+    ap_first, ap_last, a_level_of_significance);
+}
+
+template <class forward_iterator, class T>
+bool is_outlier_smirnov_criterion(T a_value,
+  double a_level_of_significance, size_t a_size, T a_average,
+  T a_standard_diviation)
+{
+  const double level = a_level_of_significance;
+  double critical_value = 0;
+  if (a_size < 3) {
+    return false;
+  } else if (a_size <= 25) {
+    critical_value = critical_values_for_smirnov_criterion(level, a_size);
+  } else {
+    critical_value = critical_values_for_t_a_criterion(level, a_size);
+  }
+  return (abs(a_value - a_average)/a_standard_diviation > critical_value);
+}
+
+//! \ingroup signal_processing_group
+//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
+//!   границу диапазона. Многопроходный
+//! \details Данный способ удаления выбросов применяется для случаев, когда
+//!   среднеквадратическое отклонение не известно.
+//!   Алгоритм.
+//!   Выполняется поиск наибольшего выброса по критерию смирнова. Если
+//!   выброс обнаружен, он удаляется. После этого происходит пересчет параметров
+//!   и процедура поиска и удаления наибольшего выброса повторяется. Этот
+//!   процесс повторяется до тех пор, пока все выбросы не будут удалены
+//! \param[in] ap_first - итератор на первую позицию последовательности
+//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[in] a_level_of_significance - уровень значимости ошибки [0, 1].
+//!   Реализовано только для значений 0.1, 0.05, 0.01
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  const T a_level_of_significance)
+{
+  const T level = a_level_of_significance;
+  multimap<T, forward_iterator> values_map;
+
+  forward_iterator current = ap_first;
+  while (current != ap_last) {
+    values_map.insert(make_pair(fabs(*current), current));
+    ++current;
+  }
+
+  if (values_map.size() < 3) {
+    return ap_last;
+  }
+
+  typename multimap<T, forward_iterator>::const_iterator end_it_map =
+    values_map.end();
+  set<forward_iterator> bad_elements;
+  while (end_it_map != values_map.begin()) {
+    double sko = 0;
+    double average = 0;
+    vector<T> values;
+    values.reserve(values_map.size());
+    typename multimap<T, forward_iterator>::const_iterator it =
+      values_map.begin();
+    while (it != end_it_map) {
+      values.push_back(*it->second);
+      ++it;
+    }
+    const size_t size = values.size();
+    sample_standard_deviation(values.begin(), values.end(), &sko, &average);
+    --end_it_map;
+    const T value = *end_it_map->second;
+    T critical_value = 0;
+    if (size < 3) {
+      break;
+    } else if (size <= 25) {
+      critical_value = critical_values_for_smirnov_criterion(level, size);
+    } else {
+      critical_value = critical_values_for_t_a_criterion(level, size);
+    }
+
+    if (fabs(value - average)/sko > critical_value) {
+      bad_elements.insert(end_it_map->second);
+    } else {
+      break;
+    }
+  }
+
+  forward_iterator it = ap_first;
+  forward_iterator result = ap_first;
+  while (it != ap_last) {
+    if (bad_elements.find(it) == bad_elements.end()) {
+      *result = *it;
+      ++result;
+    }
+    ++it;
+  }
+  return result;
+}
+/*
+template <class T>
+class pred_remove_errors_criterion_smirov_t
+{
+public:
+  pred_remove_errors_criterion_smirov_t(T a_average, T a_sko,
+    T a_student_coefficient
+  ):
     m_average(a_average),
     m_sko(a_sko),
     m_student_coefficient(a_student_coefficient)
@@ -89,17 +309,23 @@ public:
     return fabs(a_value - m_average)/m_sko > m_student_coefficient;
   }
 private:
-  pred_remove_errors_smirov();
+  pred_remove_errors_criterion_smirov_t();
   const T m_average;
   const T m_sko;
   const T m_student_coefficient;
 };
 
-//template<class data_t, class calc_t>
-//class sko_calc_t;
+template<class data_t, class calc_t>
+class sko_calc_t;
 
+//! \ingroup signal_processing_group
+//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
+//!   границу диапазона. Однопроходный
+//! \param a_probability - доверительная вероятность [0, 1].
+//!   Реализовано только для значений 0.95, 0.99, 0.999
 template <class forward_iterator, class T>
-forward_iterator remove_errors_metod_smirov(forward_iterator first,
+forward_iterator remove_errors_criterion_smirov_single_pass(
+  forward_iterator first,
   forward_iterator last,
   const T a_probability)
 {
@@ -112,8 +338,181 @@ forward_iterator remove_errors_metod_smirov(forward_iterator first,
     sko.add(*current);
     ++current;
   }
-  pred_remove_errors_smirov<T> pred(sko.average(), sko, student_coefficient);
+  pred_remove_errors_criterion_smirov_t<T> pred(sko.average(), sko, student_coefficient);
   return remove_if(first, last, pred);
+}
+
+//! \ingroup signal_processing_group
+//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
+//!   границу диапазона
+//! \param a_probability - доверительная вероятность [0, 1].
+//!   Реализовано только для значений 0.95, 0.99, 0.999
+template <class forward_iterator, class T>
+forward_iterator remove_errors_criterion_smirov(forward_iterator first,
+  forward_iterator last,
+  const T a_probability)
+{
+  //const size_t size = distance(first, last);
+
+
+  multimap<T, forward_iterator> values_map;
+
+  forward_iterator current = first;
+  while (current != last) {
+    values_map.insert(make_pair(fabs(*current), current));
+    ++current;
+  }
+
+  multimap<T, forward_iterator>::iterator end_it_map = values_map.end();
+  set<forward_iterator> bad_elements;
+  while (end_it_map != values_map.begin()) {
+    double sko = 0;
+    double average = 0;
+    std::vector<T> values;
+    values.reserve(values_map.size());
+    multimap<T, forward_iterator>::const_iterator it = values_map.begin();
+    while (it != end_it_map) {
+      values.push_back(*it->second);
+      ++it;
+    }
+    standard_deviation(values.begin(), values.end(), &sko, &average);
+    --end_it_map;
+    const T value = *end_it_map->second;
+    const T student_coefficient = static_cast<T>(
+      student_t_inverse_distribution_2x(a_probability, values.size()));
+    if (fabs(value - average)/sko > student_coefficient) {
+      bad_elements.insert(end_it_map->second);
+    } else {
+      break;
+    }
+  }
+
+  forward_iterator it = first;
+  forward_iterator result = first;
+  while (it != last) {
+    if (bad_elements.find(it) == bad_elements.end()) {
+      *result = *it;
+      ++result;
+    }
+    ++it;
+  }
+  return result;
+}
+*/
+template <class forward_iterator, class T>
+bool is_outlier_3_sigma_criterion(T a_value,
+  T a_average, T a_standard_deviation)
+{
+  return is_outlier_max_diviation_criterion(a_value, a_average,
+    3*a_standard_deviation);
+}
+
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_3_sigma_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last, T a_average, T a_standard_deviation)
+{
+  return eliminating_outliers_max_diviation_criterion(
+    ap_first, ap_last, a_average, 3*a_standard_deviation);
+}
+
+template <class forward_iterator, class T>
+bool is_outlier_max_diviation_criterion(T a_value,
+  T a_average, T a_max_diviation)
+{
+  return (abs(a_value - a_average) > a_max_diviation);
+}
+
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_max_diviation_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last, T a_average, T a_max_deviation)
+{
+  forward_iterator it = ap_first;
+  forward_iterator result = ap_first;
+  while (it != ap_last) {
+    const T value = *it;
+    if (is_outlier_max_diviation_criterion(value, a_average, a_max_deviation)) {
+      *result = *it;
+      ++result;
+    }
+    ++it;
+  }
+  return result;
+}
+
+//! \ingroup signal_processing_group
+//! \brief Расчитывает СКО и среднее значение входной последовательности.
+//! \details Используется формула
+//!   \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//! \param[in] ap_first - итератор на первую позицию последовательности
+//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
+//! \param[out] ap_average - переменная, в которую будет помещено среднее
+//!   значение. Можно не передавать указатель, если среднее значение не
+//!   требуется
+//! \see sample_standard_deviation
+//! \see sko_calc_t
+//! \see fast_sko_t
+//! \see fast_multi_sko_with_single_average_t
+//! \see fast_multi_sko_t
+template <class forward_iterator, class T>
+void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
+  T* ap_result, T* ap_average = NULL,
+  bool a_use_sample_standatd_deviation = false)
+{
+  const size_t size = distance(ap_first, ap_last);
+  if (size == 0) {
+    *ap_result = 0;
+    *ap_average = 0;
+    return;
+  }
+
+  const T sum = accumulate(ap_first, ap_last,  0.0);
+
+  const double average = sum/size;
+  if (ap_average) {
+    *ap_average = average;
+  }
+
+  T square_sum = 0;
+  while (ap_first != ap_last) {
+    const T value = *ap_first - average;
+    square_sum += value*value;
+    ++ap_first;
+  }
+  if (a_use_sample_standatd_deviation && (size > 1)) {
+    *ap_result = std::sqrt(square_sum/(size - 1));
+  } else {
+    *ap_result = std::sqrt(square_sum/size);
+  }
+}
+
+//! \ingroup signal_processing_group
+//! \brief Расчитывает СКО и среднее значение входной последовательности
+//! \details Используется формула
+//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//! \param[in] ap_first - итератор на первую позицию последовательности
+//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
+//! \param[out] ap_average - переменная, в которую будет помещено среднее
+//!   значение. Можно не передавать указатель, если среднее значение не
+//!   требуется
+//! \see standard_deviation
+//! \see sko_calc_t
+//! \see fast_sko_t
+//! \see fast_multi_sko_with_single_average_t
+//! \see fast_multi_sko_t
+template <class forward_iterator, class T>
+void sample_standard_deviation(forward_iterator ap_first,
+  forward_iterator ap_last,
+  T* ap_result, T* ap_average = NULL)
+{
+  const bool use_sample_standatd_deviation = true;
+  return standard_deviation<forward_iterator, T>(
+    ap_first, ap_last, ap_result, ap_average, use_sample_standatd_deviation);
 }
 
 //! \ingroup signal_processing_group
@@ -1414,6 +1813,136 @@ calc_t fast_multi_sko_t<data_t, calc_t>::average(size_type a_index) const
 {
   return m_average.get(a_index);
 }
+/*
+template<class data_t, class calc_t>
+class eliminating_outliers_smirnov_criterion_t
+{
+public:
+  typedef size_t size_type;
+  eliminating_outliers_smirnov_criterion_t(size_type a_count,
+    size_type a_average_sample_count,
+    const double a_level_of_significance);
+  void clear();
+  bool add(data_t a_value);
+  calc_t sko() const;
+  calc_t relative() const;
+  calc_t average() const;
+  void resize(size_type a_size);
+  void resize_average(size_type a_size);
+  void clear_average();
+  size_type size() const;
+  size_type average_size() const;
+  size_type max_size() const;
+  size_type average_max_size();
+  bool is_full();
+private:
+  eliminating_outliers_smirnov_criterion_t();
+  const double m_level_of_significance;
+  fast_sko_t<data_t, calc_t> m_sko;
+};
+
+template<class data_t, class calc_t>
+eliminating_outliers_smirnov_criterion_t::
+eliminating_outliers_smirnov_criterion_t(size_type a_count,
+  size_type a_average_sample_count,
+  const double a_level_of_significance
+):
+  m_sko(a_count, a_average_sample_count),
+  m_level_of_significance(a_level_of_significance)
+{
+}
+
+template<class data_t, class calc_t>
+bool eliminating_outliers_smirnov_criterion_t::add(data_t a_value)
+{
+  m_sko.add(a_value);
+  const calc_t sko = m_sko;
+  const calc_t mean = m_sko.average();
+  const calc_t level = m_level_of_significance;
+  const size_type n = m_sko.size();
+  double critical_value = 0;
+  if (size < 3) {
+    return ap_last;
+  } else if (size <= 25) {
+    critical_value = critical_values_for_smirnov_criterion(level, size);
+  } else {
+    critical_value = critical_values_for_t_a_criterion(alevel, size);
+  }
+  if (abs(a_value - mean)/sko <= critical_value) {
+    return true;
+  }
+}
+
+template<class data_t, class calc_t>
+calc_t eliminating_outliers_smirnov_criterion_t::sko() const
+{
+  return m_sko;
+}
+
+template<class data_t, class calc_t>
+calc_t eliminating_outliers_smirnov_criterion_t::relative() const
+{
+  return m_sko.relative();
+}
+
+template<class data_t, class calc_t>
+calc_t eliminating_outliers_smirnov_criterion_t::average() const
+{
+  return m_sko.average();
+}
+
+template<class data_t, class calc_t>
+void eliminating_outliers_smirnov_criterion_t::resize(size_type a_size)
+{
+  return m_sko.resize(a_size);
+}
+
+template<class data_t, class calc_t>
+void eliminating_outliers_smirnov_criterion_t::resize_average(size_type a_size)
+{
+  m_sko.resize_average(a_size);
+}
+
+template<class data_t, class calc_t>
+void eliminating_outliers_smirnov_criterion_t::clear_average()
+{
+  m_sko.clear_average();
+}
+
+template<class data_t, class calc_t>
+eliminating_outliers_smirnov_criterion_t::size_type
+eliminating_outliers_smirnov_criterion_t::size() const
+{
+  return m_sko.size();
+}
+
+template<class data_t, class calc_t>
+eliminating_outliers_smirnov_criterion_t::size_type
+eliminating_outliers_smirnov_criterion_t::average_size() const
+{
+  m_sko.average_size();
+}
+
+template<class data_t, class calc_t>
+eliminating_outliers_smirnov_criterion_t::size_type
+eliminating_outliers_smirnov_criterion_t::max_size() const
+{
+  m_sko.max_size();
+}
+
+template<class data_t, class calc_t>
+eliminating_outliers_smirnov_criterion_t::size_type
+eliminating_outliers_smirnov_criterion_t::average_max_size()
+{
+  m_sko.average_max_size();
+}
+
+template <class T>
+bool eliminating_outliers_smirnov_criterion_t::is_full()
+{
+  m_sko.is_full();
+}
+*/
 
 //! \addtogroup signal_processing_group
 //! @{

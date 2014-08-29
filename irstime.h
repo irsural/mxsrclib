@@ -74,17 +74,17 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   time_t time_s = time(NULL);
   double seconds_double = 0;
   int milliseconds = 0;
-  if (time_s == -1) {
+  if (time_s == static_cast<time_t>(-1)) {
     seconds_double = CNT_TO_DBLTIME(counter_get());
-    time_s = static_cast<time_t>(seconds_double);    
+    time_s = static_cast<time_t>(seconds_double);
   } else {
     #if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
-    seconds_double = get_time_from_stm32f4xx();    
+    seconds_double = get_time_from_stm32f4xx();
     #else // !(IRS_STM32F4xx && defined(USE_STDPERIPH_DRIVER))
     seconds_double = CNT_TO_DBLTIME(counter_get());
-    time_s = static_cast<time_t>(seconds_double);    
+    time_s = static_cast<time_t>(seconds_double);
     #endif // !IRS_STM32F4xx
-  }  
+  }
   //time = time(NULL);
   milliseconds = static_cast<int>(
     (seconds_double - static_cast<irs_u64>(seconds_double))*1000);
