@@ -233,7 +233,7 @@ double irs::critical_values_for_t_a_criterion(double a_level_of_significance,
       result = table_0_1[index];
     } else {
       // Приближенное значение
-      result = 0.3053*log(n) + 1.6513;
+      result = 0.3053*log(static_cast<double>(n)) + 1.6513;
     }
   } else if (a_level_of_significance == 0.05) {
     // Для n от 3 до 25
@@ -246,7 +246,7 @@ double irs::critical_values_for_t_a_criterion(double a_level_of_significance,
       result = table_0_05[index];
     } else {
       // Приближенное значение
-      result = 0.2849*log(n) + 1.9517;
+      result = 0.2849*log(static_cast<double>(n)) + 1.9517;
     }
   } else if (a_level_of_significance == 0.01) {
     // Для n от 3 до 25
@@ -259,7 +259,7 @@ double irs::critical_values_for_t_a_criterion(double a_level_of_significance,
       result = table_0_01[index];
     } else {
       // Приближенное значение
-      result = 0.2648*log(n) + 2.4839;
+      result = 0.2648*log(static_cast<double>(n)) + 2.4839;
     }
   } else {
     IRS_LIB_ASSERT_MSG("Для указанного значения a_probability функция не "

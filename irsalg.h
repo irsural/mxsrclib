@@ -442,9 +442,8 @@ forward_iterator eliminating_outliers_max_diviation_criterion(
 }
 
 //! \ingroup signal_processing_group
-//! \brief Расчитывает СКО и среднее значение входной последовательности.
-//! \details Используется формула
-//!   \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//! \brief Расчитывает СКО и среднее значение входной последовательности по
+//!   формуле \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-x)^2}\f$
 //! \param[in] ap_first - итератор на первую позицию последовательности
 //! \param[in] ap_last - итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
@@ -491,8 +490,7 @@ void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
 
 //! \ingroup signal_processing_group
 //! \brief Расчитывает СКО и среднее значение входной последовательности
-//! \details Используется формула
-//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//!   формуле \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-x)^2}\f$
 //! \param[in] ap_first - итератор на первую позицию последовательности
 //! \param[in] ap_last - итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки

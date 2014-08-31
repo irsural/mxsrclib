@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(test_case1)
   double average = 0;
   double result = 0;
   irs::standard_deviation(sinus.begin(), sinus.end(), &result, &average);
-  BOOST_CHECK_EQUAL(result, 1/sqrt(2));
+  BOOST_CHECK_EQUAL(result, 1/sqrt(2.));
   BOOST_CHECK_SMALL(average, 1e-15);
 }
 
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(test_case1)
     sko_calc.add(sinus[i]);
   }
   double result = sko_calc;
-  BOOST_CHECK_EQUAL(result, 1/sqrt(2));
+  BOOST_CHECK_EQUAL(result, 1/sqrt(2.));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE(test_case1)
     fast_sko.add(sinus[i]);
   }
   double result = fast_sko;
-  BOOST_CHECK_CLOSE(result, 1/sqrt(2), 0.02);
+  BOOST_CHECK_CLOSE(result, 1/sqrt(2.), 0.02);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
