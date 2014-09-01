@@ -468,7 +468,7 @@ public:
 
   interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type
     a_reserve_interrupt_count);
-  //! \break Устаревшая функия
+  //! \brief Устаревшая функия
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
   virtual generator_events_t* int_gen_events(size_type a_index);
   virtual void exec_event(size_type a_index);
@@ -481,7 +481,7 @@ private:
   vector<irs_int_event_gen_t> m_int_event_gens;
   gen_index_type m_int_event_index;
   vector<gen_index_type> m_int_gen_events_indexes;
-  vector<generator_events_t> m_generators_events;  
+  vector<generator_events_t> m_generators_events;
   gen_index_type m_int_gen_event_index;
   interrupt_array_t(const interrupt_array_t&);
 };

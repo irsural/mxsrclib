@@ -122,7 +122,9 @@ inline QString StdStringToQString(const std::string &str)
   return QString::fromUtf8(str.c_str(), str.size());
   #else
   const std::string s = win_1251_to_utf_8(str);
-  return QString::fromUtf8(s.c_str(), s.size());
+  IRS_LIB_ASSERT(s.size() <
+    static_cast<std::size_t>(std::numeric_limits<int>::max()));
+  return QString::fromUtf8(s.c_str(), static_cast<int>(s.size()));
   #endif
 }
 
@@ -200,6 +202,7 @@ struct base_str_type<QString>
 
 //char*
 #ifdef QT_CORE_LIB
+
 inline QString str_conv(const char* a_str_in)
 {
   return a_str_in;

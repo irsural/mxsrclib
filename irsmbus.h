@@ -126,13 +126,13 @@ public:
   //!
   //! \param[in] ap_hardflow Ц указатель на используемый коммуникационный
   //!   протокол;
-  //! \param[in] a_discr_inputs_size Ц размер discret inputs в байтах 0 .. 8192;
-  //! \param[in] a_coils_size Ц размер coils в байтах 0 .. 8192;
+  //! \param[in] a_discr_inputs_size_byte Ц размер discret inputs в байтах 0 .. 8192;
+  //! \param[in] a_coils_size_byte Ц размер coils в байтах 0 .. 8192;
   //! \param[in] a_hold_regs_reg Ц размер holding registers в регистрах
   //!   0 .. 65536;
   //! \param[in] a_input_regs_reg Ц размер input registers в регистрах
   //!   0 ..65536;
-  //! \param[in] double a_disconnect_time_sec Ц врем€, через которое сервер
+  //! \param[in] a_disconnect_time Ц врем€, через которое сервер
   //!   реагирует на обрыв св€зи в случае сбоев при попытках совершить обмен
   //!   данными.
   modbus_server_t(

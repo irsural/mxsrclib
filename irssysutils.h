@@ -833,7 +833,7 @@ void binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
   irs::string_t* ap_str);
 
 //! \brief Конвертирует строку шестнадцатиричных символов в бинарные данные
-//! \param[in] ap_str - строка любого типа, для которой определена функция
+//! \param[in] a_str - строка любого типа, для которой определена функция
 //!   irs::str_conv
 //! \param[in] ap_vector - объект, в который будут скопированы бинарные данные.
 //!   Объект может быть любого типа, у которого реализованы функции size и
@@ -848,7 +848,7 @@ bool hex_str_to_binary_data(const T& a_str,
 }
 
 //! \brief Конвертирует строку шестнадцатиричных символов в бинарные данные
-//! \param[in] ap_str - строка символов
+//! \param[in] a_str - строка символов
 //! \param[in] ap_vector - объект, в который будут скопированы бинарные данные.
 //!   Объект может быть любого типа, у которого реализованы функции size и
 //!   operator[], например std::vector или irs::raw_data_t
@@ -948,6 +948,12 @@ void print_binary_data_to_str(
   *ap_str = irs::str_conv<T>(ostr.str());
 }
 
+//! \brief Ищет пару в словаре, содержащую указанное значение, и возвращает
+//!   итератор на этой пары
+//! \param[in] a_begin - начальная позиция
+//! \param[in] a_end - конечная позиция, не входит в диапазон поиска
+//! \param[in] a_value - значение, которое должна содержать па
+//! \return итератор найденной пары
 template <class map_iterator_t, class value_t>
 map_iterator_t find_value(map_iterator_t a_begin, map_iterator_t a_end,
   const value_t& a_value)
