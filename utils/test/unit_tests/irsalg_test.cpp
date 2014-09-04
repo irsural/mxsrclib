@@ -127,6 +127,105 @@ struct samples_two_outliers_t
 
 } // unnamed namespace
 
+BOOST_AUTO_TEST_SUITE(student_t_inverse_distribution_2x)
+
+BOOST_AUTO_TEST_CASE(test_confidence_level_0_95_n_20)
+{
+  BOOST_CHECK_CLOSE(
+    irs::student_t_inverse_distribution_2x(irs::confidence_level_0_95, 20),
+    2.0860, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(test_confidence_level_0_99_n_25)
+{
+  BOOST_CHECK_CLOSE(
+    irs::student_t_inverse_distribution_2x(irs::confidence_level_0_99, 25),
+    2.7874, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(test_confidence_level_0_999_n_30)
+{
+  BOOST_CHECK_CLOSE(
+    irs::student_t_inverse_distribution_2x(irs::confidence_level_0_999, 30),
+    3.646, 0.01);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(critical_values_for_t_a_criterion)
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_01_n_20)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_01, 20),
+    3.21, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_01_n_30)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_01, 30),
+    3.38454, 0.0001);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_05_n_20)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_05, 20),
+    2.73, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_05_n_30)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_05, 30),
+    2.92070, 0.0001);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_1_n_20)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_1, 20),
+    2.50, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_1_n_30)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_t_a_criterion(irs::level_of_significance_0_1, 30),
+    2.6897, 0.001);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(critical_values_for_smirnov_criterion)
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_01_n_10)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_smirnov_criterion(
+    irs::level_of_significance_0_01, 10),
+    2.41, 0.0001);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_05_n_20)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_smirnov_criterion(
+    irs::level_of_significance_0_05, 20),
+    2.56, 0.0001);
+}
+
+BOOST_AUTO_TEST_CASE(test_level_of_significance_0_1_n_25)
+{
+  BOOST_CHECK_CLOSE(
+    irs::critical_values_for_smirnov_criterion(
+    irs::level_of_significance_0_1, 25),
+    2.49, 0.0001);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(eliminating_outliers_t_a_criterion)
 
 BOOST_AUTO_TEST_CASE(test_case_no_outliers)
@@ -137,7 +236,8 @@ BOOST_AUTO_TEST_CASE(test_case_no_outliers)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_t_a_criterion(values.begin(),
-    values.end(), 0.01, samples.sample_standard_deviation);
+    values.end(), irs::level_of_significance_0_01,
+    samples.sample_standard_deviation);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -154,7 +254,7 @@ BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_t_a_criterion(values.begin(),
-    values.end(), 0.01, sd);
+    values.end(), irs::level_of_significance_0_01, sd);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -172,7 +272,7 @@ BOOST_AUTO_TEST_CASE(test_case_no_outliers)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion(values.begin(),
-    values.end(), 0.01);
+    values.end(), irs::level_of_significance_0_01);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -188,7 +288,7 @@ BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion(values.begin(),
-    values.end(), 0.01);
+    values.end(), irs::level_of_significance_0_01);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -207,7 +307,7 @@ BOOST_AUTO_TEST_CASE(test_case_no_ountiers)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion_multiple_pass(values.begin(),
-    values.end(), 0.01);
+    values.end(), irs::level_of_significance_0_01);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -223,7 +323,7 @@ BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion_multiple_pass(values.begin(),
-    values.end(), 0.01);
+    values.end(), irs::level_of_significance_0_01);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);
@@ -241,7 +341,7 @@ BOOST_AUTO_TEST_CASE(test_case_two_outliers)
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion_multiple_pass(
     values.begin(),
-    values.end(), 0.01);
+    values.end(), irs::level_of_significance_0_01);
   values.erase(it_end, values.end());
 
   BOOST_CHECK(values == result);

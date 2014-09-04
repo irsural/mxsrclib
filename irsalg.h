@@ -66,19 +66,17 @@ public:
 //------------------------------------------------------------------------------
 namespace irs {
 
-/*enum confidence_interval_t {
-  confidence_interval_0_95,
-  confidence_interval_0_99,
-  confidence_interval_0_999
+enum confidence_level_t {
+  confidence_level_0_95,
+  confidence_level_0_99,
+  confidence_level_0_999
 };
 
 enum level_of_significance_t {
   level_of_significance_0_01,
   level_of_significance_0_05,
   level_of_significance_0_1
-};*/
-
-const double confidence_interval_0_95 = 0.95;
+};
 
 //! \ingroup signal_processing_group
 //! \brief Возвращает двустороннее обратное t-распределение Стьюдента
@@ -86,7 +84,8 @@ const double confidence_interval_0_95 = 0.95;
 //!   Реализовано только для значений 0.95, 0.99, 0.999
 //! \param[in] a_degrees_of_freedom количество степеней свободы
 //! \return Значение распределения
-double student_t_inverse_distribution_2x(double a_probability,
+double student_t_inverse_distribution_2x(
+  confidence_level_t a_confidence_level,
   size_t a_degrees_of_freedom);
 
 //! \ingroup signal_processing_group
@@ -97,7 +96,9 @@ double student_t_inverse_distribution_2x(double a_probability,
 //! \param[in] a_sample_size размер последовательности. Для значений
 //!   меньше 3, возвращается значение для 3. Для значений больше 25,
 //!   возвращается приближенное значение
-double critical_values_for_t_a_criterion(double a_level_of_significance,
+//! \return Критическое значение
+double critical_values_for_t_a_criterion(
+  level_of_significance_t a_level_of_significance,
   size_t a_sample_size);
 
 //! \brief Возвращает критическое значение критерия Смирнова
@@ -106,7 +107,9 @@ double critical_values_for_t_a_criterion(double a_level_of_significance,
 //! \param[in] a_sample_size размер последовательности.
 //!   Реализовано только для значений от 3 до 25. Если значение выходит
 //!   за диапазон, то выбирается ближайшее граничное значение
-double critical_values_for_smirnov_criterion(double a_level_of_significance,
+//! \return Критическое значение
+double critical_values_for_smirnov_criterion(
+  level_of_significance_t a_level_of_significance,
   size_t a_sample_size);
 
 template <class T>
@@ -136,8 +139,8 @@ private:
 //!   конец контейнера и возвращает новую границу диапазона. Однопроходный
 //!   вариант алгоритма
 //! \details Данный способ удаления выбросов применяется для случаев, когда
-//!   среднеквадратическое отклонение заранее известно и оно не должно
-//!   учитывать выбросы. Если же оно заранее не известно, то следует
+//!   среднеквадратическое отклонение заранее известно или оно рассчитано
+//!   по отсчетам без выбросов. Если же оно заранее не известно, то следует
 //!   использовать функцию eliminating_outliers_smirnov_criterion.
 //!   Подробнее об исключении выбросов можно почитать
 //!   [сдесь] (http://termist.com/laborat/stat/otsew/stepnow_01.htm)
@@ -146,14 +149,23 @@ private:
 //!   и если он является выбросом, то переносится в конец последовательности.
 //!   Функция возвращает итератор на элемент, следующий за последним элементом,
 //!   не являющимся выбросом.
+//! \param[in] ap_first итератор на первую позицию последовательности
+//! \param[in] ap_last итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[in] a_level_of_significance уровень значимости ошибки
+//! \param[in] a_standard_deviation среднеквадратическое отклонение, известное
+//!   заранее или рассчитанное по отсчетам, не содержащим выбросов
+//! \return итератор на элемент, следующий за последним неперенесенным элементом
+//! \see eliminating_outliers_t_a_criterion(
+//!   forward_iterator, forward_iterator, level_of_significance_t, T, T)
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_t_a_criterion(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  double a_level_of_significance,
+  level_of_significance_t a_level_of_significance,
   T a_standard_deviation)
 {
-  const double level = a_level_of_significance;
+  const level_of_significance_t level = a_level_of_significance;
   const size_t size = distance(ap_first, ap_last);
   double critical_value = 0;
   if (size < 3) {
@@ -169,27 +181,30 @@ forward_iterator eliminating_outliers_t_a_criterion(
 
 //! \brief Обнаруживает выбросы по критерию t_a, переносит их в
 //!   конец контейнера и возвращает новую границу диапазона. Однопроходный
-//!   вариант алгоритма
-//! \details Данный способ удаления выбросов применяется для случаев, когда
-//!   среднеквадратическое отклонение заранее известно и оно не должно
-//!   учитывать выбросы. Если же оно заранее не известно, то следует
-//!   использовать функцию eliminating_outliers_smirnov_criterion.
-//!   Среднее значение можно рассчитать по имеющейся
-//!   последовательности, включающей в себя выбросы.
-//! \par Алгоритм
-//!   По переданным параметрам проверяется каждый элемент последовательности
-//!   и если он является выбросом, то переносится в конец последовательности.
-//!   Функция возвращает итератор на элемент, следующий за последним элементом,
-//!   не являющимся выбросом.
+//!   вариант алгоритма. Это перегруженный вариант функции
+//!   eliminating_outliers_t_a_criterion(
+//!   forward_iterator, forward_iterator, level_of_significance_t, T),
+//!   позволяющий передать среднее значение, если оно уже рассчитано
+//! \param[in] ap_first итератор на первую позицию последовательности
+//! \param[in] ap_last итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[in] a_level_of_significance уровень значимости ошибки
+//! \param[in] a_standard_deviation среднеквадратическое отклонение, известное
+//!   заранее или рассчитанное по отсчетам, не содержащим выбросов
+//! \param[in] a_average среднее значение, рассчитанное по последовательности,
+//!   которая может содержать выбросы
+//! \return итератор на элемент, следующий за последним неперенесенным элементом
+//! \see eliminating_outliers_t_a_criterion(
+//!   forward_iterator, forward_iterator, level_of_significance_t, T)
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_t_a_criterion(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  double a_level_of_significance,
+  level_of_significance_t a_level_of_significance,
   T a_standard_deviation,
   T a_average)
 {
-  const double level = a_level_of_significance;
+  const level_of_significance_t level = a_level_of_significance;
   const size_t size = distance(ap_first, ap_last);
   double critical_value = 0;
   if (size < 3) {
@@ -223,16 +238,15 @@ forward_iterator eliminating_outliers_t_a_criterion(
 //! \param[in] ap_first итератор на первую позицию последовательности
 //! \param[in] ap_last итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
-//! \param[in] a_level_of_significance уровень значимости ошибки [0, 1].
-//!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \param[in] a_level_of_significance уровень значимости ошибки
 //! \return итератор на элемент, следующий за последним неперенесенным элементом
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  double a_level_of_significance)
+  level_of_significance_t a_level_of_significance)
 {
-  const double level = a_level_of_significance;
+  const level_of_significance_t level = a_level_of_significance;
   const size_t size = distance(ap_first, ap_last);
   double critical_value = 0;
   if (size < 3) {
@@ -256,7 +270,7 @@ template <class forward_iterator>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  double a_level_of_significance)
+  level_of_significance_t a_level_of_significance)
 {
   return eliminating_outliers_smirnov_criterion<forward_iterator, double>(
     ap_first, ap_last, a_level_of_significance);
@@ -275,7 +289,7 @@ forward_iterator eliminating_outliers_smirnov_criterion(
 //!   более отсчетов. Для последовательности размером до 25 отсчетов
 //!   испльзуется критерий Смирнова, а для размера более 25 используется t_a
 //!   критерий.
-//!   Пример использования:
+//! \par Пример использования
 //! \code{.cpp}
 //! irs::sko_calc_t sko_calc(100);
 //! std::vector<double> correct_samples;
@@ -294,15 +308,14 @@ forward_iterator eliminating_outliers_smirnov_criterion(
 //!   }
 //! }
 //! \endcode
-//! \param[in] a_value - тестируемое значение
-//! \param[in] a_level_of_significance - уровень значимости ошибки.
-//!   Реализовано только для значений 0.1, 0.05, 0.01
-//! \param[in] a_size - размер выборки
-//! \param[in] a_standard_diviation - стандартное отклонение, рассчитанное по
+//! \param[in] a_value тестируемое значение
+//! \param[in] a_level_of_significance уровень значимости ошибки
+//! \param[in] a_size размер выборки
+//! \param[in] a_standard_diviation стандартное отклонение, рассчитанное по
 //!   формуле \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$.
 //!   Последовательность, по которой рассчитывается стандартное
 //!   отклонение, должна включать и тестируемое значение
-//! \param[in] a_average - среднее значение, рассчитанное по
+//! \param[in] a_average среднее значение, рассчитанное по
 //!   формуле \f$\frac{1}{N}\sum_{i=1}^{N}(x_i)\f$.
 //!   Последовательность, по которой рассчитывается среднее
 //!   значение, должна включать и тестируемое значение
@@ -310,10 +323,11 @@ forward_iterator eliminating_outliers_smirnov_criterion(
 //!   и \c false в противном случае
 template <class forward_iterator, class T>
 bool is_outlier_smirnov_criterion(T a_value,
-  double a_level_of_significance, size_t a_size, T a_standard_diviation,
+  level_of_significance_t a_level_of_significance,
+  size_t a_size, T a_standard_diviation,
   T a_average)
 {
-  const double level = a_level_of_significance;
+  const level_of_significance_t level = a_level_of_significance;
   double critical_value = 0;
   if (a_size < 3) {
     return false;
@@ -348,12 +362,12 @@ template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  const double a_level_of_significance)
+  level_of_significance_t a_level_of_significance)
 {
   typedef std::iterator_traits<forward_iterator> traits;
   typedef traits::value_type value_type;
 
-  const double level = a_level_of_significance;
+  const level_of_significance_t level = a_level_of_significance;
   multimap<value_type, forward_iterator> values_map;
 
   forward_iterator current = ap_first;
@@ -417,7 +431,7 @@ template <class forward_iterator>
 forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  const double a_level_of_significance)
+  level_of_significance_t a_level_of_significance)
 {
   return eliminating_outliers_smirnov_criterion_multiple_pass
     <forward_iterator, double>(ap_first, ap_last, a_level_of_significance);
