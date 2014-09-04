@@ -19,22 +19,156 @@ std::vector<double> make_sinus(const std::size_t a_period_point_count,
   return buffer;
 }
 
+struct samples_no_outliers_t
+{
+  const double standard_deviation;
+  const double sample_standard_deviation;
+  const double average;
+  samples_no_outliers_t():
+    standard_deviation(0.89059917505702),
+    sample_standard_deviation(0.961957053293416),
+    average(-0.115371428571429)
+  {
+  }
+  std::vector<double> get()
+  {
+    double array[] = {
+      -0.7549, 1.3703, -1.7115, -0.1022, -0.2414, 0.3192, 0.3129
+    };
+    return std::vector<double>(array, array + IRS_ARRAYSIZE(array));
+  }
+};
+
+struct samples_one_outlier_t
+{
+  const double standard_deviation;
+  const double sample_standard_deviation;
+  const double sample_standard_deviation_without_outliers;
+  const double average;
+  const std::size_t bad_value_pos;
+  samples_one_outlier_t():
+    standard_deviation(1.40135521759296),
+    sample_standard_deviation(1.43776011683195),
+    sample_standard_deviation_without_outliers(0.982809705238266),
+    average(-0.207175),
+    bad_value_pos(10)
+  {
+  }
+  std::vector<double> get()
+  {
+    double array[] = {
+      0.8404,
+      -0.8880,
+      0.1001,
+      -0.5445,
+      0.3035,
+      -0.6003,
+      0.4900,
+      0.7394,
+      1.7119,
+      -0.1941,
+      -4.7,    // Грубая ошибка
+      -0.8396,
+      1.3546,
+      -1.0722,
+      0.9610,
+      0.1240,
+      1.4367,
+      -1.9609,
+      -0.1977,
+      -1.2078
+    };
+    return std::vector<double>(array, array + IRS_ARRAYSIZE(array));
+  }
+};
+
+struct samples_two_outliers_t
+{
+  const double standard_deviation;
+  const double sample_standard_deviation;
+  const double average;
+  const std::size_t bad_value_1_pos;
+  const std::size_t bad_value_2_pos;
+  samples_two_outliers_t():
+    standard_deviation(1.90446865841237),
+    sample_standard_deviation(1.95394361575574),
+    average(-0.056675),
+    bad_value_1_pos(6),
+    bad_value_2_pos(10)
+  {
+  }
+  std::vector<double> get()
+  {
+    double array[] = {
+      0.8404,
+      -0.8880,
+      0.1001,
+      -0.5445,
+      0.3035,
+      -0.6003,
+      4.600,   // Грубая ошибка
+      0.7394,
+      1.7119,
+      -0.1941,
+      -5.8,    // Грубая ошибка
+      -0.8396,
+      1.3546,
+      -1.0722,
+      0.9610,
+      0.1240,
+      1.4367,
+      -1.9609,
+      -0.1977,
+      -1.2078
+    };
+    return std::vector<double>(array, array + IRS_ARRAYSIZE(array));
+  }
+};
+
 } // unnamed namespace
+
+BOOST_AUTO_TEST_SUITE(eliminating_outliers_t_a_criterion)
+
+BOOST_AUTO_TEST_CASE(test_case_no_outliers)
+{
+  samples_no_outliers_t samples;
+  std::vector<double> values = samples.get();
+  const std::vector<double> result(values);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_t_a_criterion(values.begin(),
+    values.end(), 0.01, samples.sample_standard_deviation);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
+BOOST_AUTO_TEST_CASE(test_case_one_outlier)
+{
+  samples_one_outlier_t samples;
+  const double sd = samples.sample_standard_deviation_without_outliers;
+  std::vector<double> values = samples.get();
+
+  std::vector<double> result(values);
+  result.erase(result.begin() + samples.bad_value_pos);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_t_a_criterion(values.begin(),
+    values.end(), 0.01, sd);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(eliminating_outliers_smirnov_criterion)
 
-BOOST_AUTO_TEST_CASE(test_case_no_ountiers)
+BOOST_AUTO_TEST_CASE(test_case_no_outliers)
 {
-  std::vector<double> values;
-  values.push_back(-0.7549);
-  values.push_back(1.3703);
-  values.push_back(-1.7115);
-  values.push_back(-0.1022);
-  values.push_back(-0.2414);
-  values.push_back(0.3192);
-  values.push_back(0.3129);
-
-  std::vector<double> result(values);
+  samples_no_outliers_t samples;
+  std::vector<double> values = samples.get();
+  const std::vector<double> result(values);
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion(values.begin(),
@@ -46,32 +180,11 @@ BOOST_AUTO_TEST_CASE(test_case_no_ountiers)
 
 BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 {
-  std::vector<double> values;
-  values.push_back(0.8404);
-  values.push_back(-0.8880);
-  values.push_back(0.1001);
-  values.push_back(-0.5445);
-  values.push_back(0.3035);
-  values.push_back(-0.6003);
-  values.push_back(0.4900);
-  values.push_back(0.7394);
-  values.push_back(1.7119);
-  values.push_back(-0.1941);
-  values.push_back(-4.7);    // Грубая ошибка
-  values.push_back(-0.8396);
-  values.push_back(1.3546);
-  values.push_back(-1.0722);
-  values.push_back(0.9610);
-  values.push_back(0.1240);
-  values.push_back(1.4367);
-  values.push_back(-1.9609);
-  values.push_back(-0.1977);
-  values.push_back(-1.2078);
-
-  const std::size_t bad_value_pos = 10;
+  samples_one_outlier_t samples;
+  std::vector<double> values = samples.get();
 
   std::vector<double> result(values);
-  result.erase(result.begin() + bad_value_pos);
+  result.erase(result.begin() + samples.bad_value_pos);
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion(values.begin(),
@@ -87,14 +200,8 @@ BOOST_AUTO_TEST_SUITE(eliminating_outliers_smirnov_criterion_multiple_pass)
 
 BOOST_AUTO_TEST_CASE(test_case_no_ountiers)
 {
-  std::vector<double> values;
-  values.push_back(-0.7549);
-  values.push_back(1.3703);
-  values.push_back(-1.7115);
-  values.push_back(-0.1022);
-  values.push_back(-0.2414);
-  values.push_back(0.3192);
-  values.push_back(0.3129);
+  samples_no_outliers_t samples;
+  std::vector<double> values = samples.get();
 
   std::vector<double> result(values);
 
@@ -108,32 +215,11 @@ BOOST_AUTO_TEST_CASE(test_case_no_ountiers)
 
 BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 {
-  std::vector<double> values;
-  values.push_back(0.8404);
-  values.push_back(-0.8880);
-  values.push_back(0.1001);
-  values.push_back(-0.5445);
-  values.push_back(0.3035);
-  values.push_back(-0.6003);
-  values.push_back(0.4900);
-  values.push_back(0.7394);
-  values.push_back(1.7119);
-  values.push_back(-0.1941);
-  values.push_back(-4.7);    // Грубая ошибка
-  values.push_back(-0.8396);
-  values.push_back(1.3546);
-  values.push_back(-1.0722);
-  values.push_back(0.9610);
-  values.push_back(0.1240);
-  values.push_back(1.4367);
-  values.push_back(-1.9609);
-  values.push_back(-0.1977);
-  values.push_back(-1.2078);
-
-  const std::size_t bad_value_pos = 10;
+  samples_one_outlier_t samples;
+  std::vector<double> values = samples.get();
 
   std::vector<double> result(values);
-  result.erase(result.begin() + bad_value_pos);
+  result.erase(result.begin() + samples.bad_value_pos);
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion_multiple_pass(values.begin(),
@@ -145,34 +231,12 @@ BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 
 BOOST_AUTO_TEST_CASE(test_case_two_outliers)
 {
-  std::vector<double> values;
-  values.push_back(0.8404);
-  values.push_back(-0.8880);
-  values.push_back(0.1001);
-  values.push_back(-0.5445);
-  values.push_back(0.3035);
-  values.push_back(-0.6003);
-  values.push_back(4.600);   // Грубая ошибка
-  values.push_back(0.7394);
-  values.push_back(1.7119);
-  values.push_back(-0.1941);
-  values.push_back(-5.8);    // Грубая ошибка
-  values.push_back(-0.8396);
-  values.push_back(1.3546);
-  values.push_back(-1.0722);
-  values.push_back(0.9610);
-  values.push_back(0.1240);
-  values.push_back(1.4367);
-  values.push_back(-1.9609);
-  values.push_back(-0.1977);
-  values.push_back(-1.2078);
-
-  const std::size_t bad_value_1_pos = 6;
-  const std::size_t bad_value_2_pos = 10;
+  samples_two_outliers_t samples;
+  std::vector<double> values = samples.get();
 
   std::vector<double> result(values);
-  result.erase(result.begin() + bad_value_2_pos);
-  result.erase(result.begin() + bad_value_1_pos);
+  result.erase(result.begin() + samples.bad_value_2_pos);
+  result.erase(result.begin() + samples.bad_value_1_pos);
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion_multiple_pass(

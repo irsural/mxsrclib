@@ -509,8 +509,8 @@ irs::tstlan::view_t::controls_t::param_box_tune_t::param_box_tune_t(
 {
   mp_param_box->add_bool(irst("Отображать лог"), false);
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
-  mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
   if (a_local_chart) {
+    mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
     mp_param_box->add_bool(irst("Сбросить время"), false);
   }
   mp_param_box->add_bool(irst("Запись CSV включена"), false);

@@ -2742,6 +2742,14 @@ irs::akip_v7_78_1_t::akip_v7_78_1_t(
   m_ic_index(0),
   m_is_clear_buffer_needed(false)
 {
+
+  IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
+    "указатель в качестве hardflow_t*");
+  irs::string_t read_timeout_str = read_timeout_s;
+  mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
+  m_fixed_flow.read_timeout(make_cnt_s(
+    read_timeout_s + fixed_flow_read_timeout_delta_s));
+
   init_to_cnt();
 
   //m_oper_time = TIME_TO_CNT(1, 1);

@@ -1847,6 +1847,14 @@ class akip_v7_78_1_t: public mxmultimeter_t
     sample_size = 16
   };
 
+  enum {
+    read_timeout_s = 20
+  };
+
+  enum {
+    fixed_flow_read_timeout_delta_s = 2
+  };
+
   enum meas_type_t{DC_MEAS, AC_MEAS} m_meas_type;
   enum resistance_meas_type_t{RES_MEAS_2x, RES_MEAS_4x} m_res_meas_type;
   //! \brief Тип для индексов

@@ -66,30 +66,44 @@ public:
 //------------------------------------------------------------------------------
 namespace irs {
 
+/*enum confidence_interval_t {
+  confidence_interval_0_95,
+  confidence_interval_0_99,
+  confidence_interval_0_999
+};
+
+enum level_of_significance_t {
+  level_of_significance_0_01,
+  level_of_significance_0_05,
+  level_of_significance_0_1
+};*/
+
+const double confidence_interval_0_95 = 0.95;
+
 //! \ingroup signal_processing_group
 //! \brief Возвращает двустороннее обратное t-распределение Стьюдента
-//! \param[in] a_probability - доверительная вероятность [0, 1].
-//! Реализовано только для значений 0.95, 0.99, 0.999
-//! \param[in] a_degrees_of_freedom - количество степеней свободы
+//! \param[in] a_probability доверительная вероятность.
+//!   Реализовано только для значений 0.95, 0.99, 0.999
+//! \param[in] a_degrees_of_freedom количество степеней свободы
 //! \return Значение распределения
 double student_t_inverse_distribution_2x(double a_probability,
   size_t a_degrees_of_freedom);
 
 //! \ingroup signal_processing_group
-//! \brief Возвращает критическое значение для критерия ta
+//! \brief Возвращает критическое значение критерия ta
 //! \details
-//! \param[in] a_level_of_significance - уровень значимости [0, 1].
+//! \param[in] a_level_of_significance уровень значимости.
 //!   Реализовано только для значений 0.1, 0.05, 0.01
-//! \param[in] a_sample_size - размер последовательности. Для значений
+//! \param[in] a_sample_size размер последовательности. Для значений
 //!   меньше 3, возвращается значение для 3. Для значений больше 25,
 //!   возвращается приближенное значение
 double critical_values_for_t_a_criterion(double a_level_of_significance,
   size_t a_sample_size);
 
-//! \brief Возвращает критическое значение для критерия Смирнова
-//! \param[in] a_level_of_significance - уровень значимости [0, 1].
+//! \brief Возвращает критическое значение критерия Смирнова
+//! \param[in] a_level_of_significance уровень значимости.
 //!   Реализовано только для значений 0.1, 0.05, 0.01
-//! \param[in] a_sample_size - размер последовательности.
+//! \param[in] a_sample_size размер последовательности.
 //!   Реализовано только для значений от 3 до 25. Если значение выходит
 //!   за диапазон, то выбирается ближайшее граничное значение
 double critical_values_for_smirnov_criterion(double a_level_of_significance,
@@ -118,6 +132,20 @@ private:
   const T m_critical_value;
 };
 
+//! \brief Обнаруживает выбросы по критерию t_a, переносит их в
+//!   конец контейнера и возвращает новую границу диапазона. Однопроходный
+//!   вариант алгоритма
+//! \details Данный способ удаления выбросов применяется для случаев, когда
+//!   среднеквадратическое отклонение заранее известно и оно не должно
+//!   учитывать выбросы. Если же оно заранее не известно, то следует
+//!   использовать функцию eliminating_outliers_smirnov_criterion.
+//!   Подробнее об исключении выбросов можно почитать
+//!   [сдесь] (http://termist.com/laborat/stat/otsew/stepnow_01.htm)
+//! \par Алгоритм
+//!   По переданным параметрам проверяется каждый элемент последовательности
+//!   и если он является выбросом, то переносится в конец последовательности.
+//!   Функция возвращает итератор на элемент, следующий за последним элементом,
+//!   не являющимся выбросом.
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_t_a_criterion(
   forward_iterator ap_first,
@@ -133,12 +161,26 @@ forward_iterator eliminating_outliers_t_a_criterion(
   } else {
     critical_value = critical_values_for_t_a_criterion(level, size);
   }
-  const T average = accumulate(ap_first, ap_last, T(0));
-  pred_eliminating_outliers_t<double> pred(a_standard_deviation, average,
+  const T average = accumulate(ap_first, ap_last, T(0))/size;
+  pred_eliminating_outliers_t<T> pred(a_standard_deviation, average,
     critical_value);
   return remove_if(ap_first, ap_last, pred);
 }
 
+//! \brief Обнаруживает выбросы по критерию t_a, переносит их в
+//!   конец контейнера и возвращает новую границу диапазона. Однопроходный
+//!   вариант алгоритма
+//! \details Данный способ удаления выбросов применяется для случаев, когда
+//!   среднеквадратическое отклонение заранее известно и оно не должно
+//!   учитывать выбросы. Если же оно заранее не известно, то следует
+//!   использовать функцию eliminating_outliers_smirnov_criterion.
+//!   Среднее значение можно рассчитать по имеющейся
+//!   последовательности, включающей в себя выбросы.
+//! \par Алгоритм
+//!   По переданным параметрам проверяется каждый элемент последовательности
+//!   и если он является выбросом, то переносится в конец последовательности.
+//!   Функция возвращает итератор на элемент, следующий за последним элементом,
+//!   не являющимся выбросом.
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_t_a_criterion(
   forward_iterator ap_first,
@@ -155,11 +197,35 @@ forward_iterator eliminating_outliers_t_a_criterion(
   } else {
     critical_value = critical_values_for_t_a_criterion(level, size);
   }
-  pred_eliminating_outliers_t<double> pred(a_standard_deviation, a_average,
+  pred_eliminating_outliers_t<T> pred(a_standard_deviation, a_average,
     critical_value);
   return remove_if(ap_first, ap_last, pred);
 }
 
+//! \ingroup signal_processing_group
+//! \brief Обнаруживает выбросы по критерию Смирнова, переносит их в
+//!   конец контейнера и возвращает новую границу диапазона. Однопроходный
+//!   вариант алгоритма
+//! \details Данный способ удаления выбросов применяется для случаев, когда
+//!   среднеквадратическое отклонение заранее не известно.
+//! \par Алгоритм
+//!   Выполняется расчет стандартного отклонения и среднего значения. Далее
+//!   по рассчитанным параметрам проверяется каждое значение последовательности
+//!   и если оно является выбросом, то переносится в конец последовательности.
+//!   Функция возвращает итератор на элемент, следующий за последним элементом,
+//!   не являющимся выбросом.
+//!   Эта функция требует явного указания параметров шаблона, один из которых
+//!   является типом вычислений (T). Этот вариант функции следует использовать,
+//!   если тип расчета \c double не подходит. Если же элементы имеют тип
+//!   \c double или тип меньшей точности, то можно использовать вариант этой
+//!   функции с одним параметром шаблона,
+//!   который не требуется указывать явно
+//! \param[in] ap_first итератор на первую позицию последовательности
+//! \param[in] ap_last итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[in] a_level_of_significance уровень значимости ошибки [0, 1].
+//!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \return итератор на элемент, следующий за последним неперенесенным элементом
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
@@ -185,6 +251,7 @@ forward_iterator eliminating_outliers_smirnov_criterion(
   return remove_if(ap_first, ap_last, pred);
 }
 
+//! \overload
 template <class forward_iterator>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
@@ -195,10 +262,56 @@ forward_iterator eliminating_outliers_smirnov_criterion(
     ap_first, ap_last, a_level_of_significance);
 }
 
+//! \ingroup signal_processing_group
+//! \brief Возвращает \c true, если a_value является выбросом по
+//!   критерию Смирнова
+//! \details Эту функцию следует использовать, если не известно заранее
+//!   значение среднеквадратического отклонения и среднего значения. Функции
+//!   необходимо передать рассчитанные значения стандартного
+//!   отклонения и среднего значения последовательности. Их можно рассчитать
+//!   с использованием функции sample_standard_deviation или классов:
+//!   sko_calc_t, fast_multi_sko_with_single_average_t, fast_multi_sko_t.
+//!   Функция начинает детектировать выбросы для последовательности из трех и
+//!   более отсчетов. Для последовательности размером до 25 отсчетов
+//!   испльзуется критерий Смирнова, а для размера более 25 используется t_a
+//!   критерий.
+//!   Пример использования:
+//! \code{.cpp}
+//! irs::sko_calc_t sko_calc(100);
+//! std::vector<double> correct_samples;
+//! for (int i = 0; i < 1000; i++) {
+//!   // Здесь код ожидания нового отсчета
+//!   // ...
+//!   // Получение нового отсчета, например с АЦП
+//!   const double sample = get_sample_from_adc();
+//!   sko_calc.add(sample);
+//!   const double sko = sko_calc;
+//!   const average = sko_calc.average();
+//!   if (!is_outlier_smirnov_criterion(sample, 0.01, sko_calc.size(),
+//!       sko, average)) {
+//!     // Это значение не является выбросом
+//!     correct_samples.push_back(sample);
+//!   }
+//! }
+//! \endcode
+//! \param[in] a_value - тестируемое значение
+//! \param[in] a_level_of_significance - уровень значимости ошибки.
+//!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \param[in] a_size - размер выборки
+//! \param[in] a_standard_diviation - стандартное отклонение, рассчитанное по
+//!   формуле \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$.
+//!   Последовательность, по которой рассчитывается стандартное
+//!   отклонение, должна включать и тестируемое значение
+//! \param[in] a_average - среднее значение, рассчитанное по
+//!   формуле \f$\frac{1}{N}\sum_{i=1}^{N}(x_i)\f$.
+//!   Последовательность, по которой рассчитывается среднее
+//!   значение, должна включать и тестируемое значение
+//! \return \c true, если тестируемое значение является выбросом,
+//!   и \c false в противном случае
 template <class forward_iterator, class T>
 bool is_outlier_smirnov_criterion(T a_value,
-  double a_level_of_significance, size_t a_size, T a_average,
-  T a_standard_diviation)
+  double a_level_of_significance, size_t a_size, T a_standard_diviation,
+  T a_average)
 {
   const double level = a_level_of_significance;
   double critical_value = 0;
@@ -213,28 +326,35 @@ bool is_outlier_smirnov_criterion(T a_value,
 }
 
 //! \ingroup signal_processing_group
-//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
-//!   границу диапазона. Многопроходный
+//! \brief Обнаруживает выбросы по критерию Смирнова, переносит их в
+//!   конец контейнера и возвращает новую границу диапазона. Многопроходный
+//!   вариант алгоритма
 //! \details Данный способ удаления выбросов применяется для случаев, когда
-//!   среднеквадратическое отклонение не известно.
+//!   среднеквадратическое отклонение заранее не известно.
 //!   Алгоритм.
-//!   Выполняется поиск наибольшего выброса по критерию смирнова. Если
-//!   выброс обнаружен, он удаляется. После этого происходит пересчет параметров
-//!   и процедура поиска и удаления наибольшего выброса повторяется. Этот
-//!   процесс повторяется до тех пор, пока все выбросы не будут удалены
-//! \param[in] ap_first - итератор на первую позицию последовательности
-//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   Выполняется поиск наибольшего выброса по критерию Н.В. Смирнова. Если
+//!   выброс обнаружен, он переносится в конец последовательности. После этого
+//!   происходит пересчет параметров и процедура поиска и удаления наибольшего
+//!   выброса повторяется. Этот процесс повторяется до тех пор, пока все
+//!   выбросы не будут перенесены в конец. Функция возвращает итератор на
+//!   элемент, следующий за последним элементом, не являющимся выбросом
+//! \param[in] ap_first итератор на первую позицию последовательности
+//! \param[in] ap_last итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
-//! \param[in] a_level_of_significance - уровень значимости ошибки [0, 1].
+//! \param[in] a_level_of_significance уровень значимости ошибки.
 //!   Реализовано только для значений 0.1, 0.05, 0.01
+//! \return итератор на элемент, следующий за последним неперенесенным элементом
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   forward_iterator ap_first,
   forward_iterator ap_last,
-  const T a_level_of_significance)
+  const double a_level_of_significance)
 {
-  const T level = a_level_of_significance;
-  multimap<T, forward_iterator> values_map;
+  typedef std::iterator_traits<forward_iterator> traits;
+  typedef traits::value_type value_type;
+
+  const double level = a_level_of_significance;
+  multimap<value_type, forward_iterator> values_map;
 
   forward_iterator current = ap_first;
   while (current != ap_last) {
@@ -246,13 +366,13 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
     return ap_last;
   }
 
-  typename multimap<T, forward_iterator>::const_iterator end_it_map =
+  typename multimap<value_type, forward_iterator>::const_iterator end_it_map =
     values_map.end();
   set<forward_iterator> bad_elements;
   while (end_it_map != values_map.begin()) {
-    double sko = 0;
-    double average = 0;
-    vector<T> values;
+    T sko = 0;
+    T average = 0;
+    vector<value_type> values;
     values.reserve(values_map.size());
     typename multimap<T, forward_iterator>::const_iterator it =
       values_map.begin();
@@ -261,10 +381,11 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
       ++it;
     }
     const size_t size = values.size();
-    sample_standard_deviation(values.begin(), values.end(), &sko, &average);
+    sample_standard_deviation<forward_iterator, T>(
+      values.begin(), values.end(), &sko, &average);
     --end_it_map;
-    const T value = *end_it_map->second;
-    T critical_value = 0;
+    const value_type value = *end_it_map->second;
+    double critical_value = 0;
     if (size < 3) {
       break;
     } else if (size <= 25) {
@@ -291,6 +412,17 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   }
   return result;
 }
+
+template <class forward_iterator>
+forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
+  forward_iterator ap_first,
+  forward_iterator ap_last,
+  const double a_level_of_significance)
+{
+  return eliminating_outliers_smirnov_criterion_multiple_pass
+    <forward_iterator, double>(ap_first, ap_last, a_level_of_significance);
+}
+
 /*
 template <class T>
 class pred_remove_errors_criterion_smirov_t
@@ -420,7 +552,7 @@ template <class forward_iterator, class T>
 bool is_outlier_max_diviation_criterion(T a_value,
   T a_average, T a_max_diviation)
 {
-  return (abs(a_value - a_average) > a_max_diviation);
+  return (fabs(a_value - a_average) > a_max_diviation);
 }
 
 template <class forward_iterator, class T>
@@ -442,8 +574,9 @@ forward_iterator eliminating_outliers_max_diviation_criterion(
 }
 
 //! \ingroup signal_processing_group
-//! \brief Расчитывает СКО и среднее значение входной последовательности по
-//!   формуле \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//! \brief Расчитывает СКО и среднее значение входной последовательности. СКО
+//!   рассчитывается по формуле
+//!   \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
 //! \param[in] ap_first - итератор на первую позицию последовательности
 //! \param[in] ap_last - итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
@@ -489,8 +622,9 @@ void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
 }
 
 //! \ingroup signal_processing_group
-//! \brief Расчитывает СКО и среднее значение входной последовательности
-//!   формуле \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-x)^2}\f$
+//! \brief Расчитывает СКО и среднее значение входной последовательности.
+//!   СКО рассчитывается по формуле
+//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
 //! \param[in] ap_first - итератор на первую позицию последовательности
 //! \param[in] ap_last - итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
@@ -2077,10 +2211,11 @@ inline void crc32_table_stream_t::put(const T* ap_buf, size_type a_size)
   }
 }
 
-// T должно быть 32 битным
-// Алгоритм является зеркальным, но не совпадает с распространенными
-// алгоритмами. В распространенных алгоритмах инвертируется выходное значение
-// Функция используется для внутренних потребностей и переделыватся не будет.
+//! \brief Расчет СКО. Тип T должен быть 32-х битным
+//! \details Алгоритм является зеркальным, но не совпадает с распространенными
+//!   алгоритмами. В распространенных алгоритмах инвертируется выходное
+//!   значение. Функция используется для внутренних потребностей и
+//!   переделыватся не будет.
 template<class T>
 irs_u32 crc32(T * a_buf, irs_uarc a_start, irs_uarc a_cnt) {
   // Взято с википедии
@@ -2107,13 +2242,14 @@ inline irs_u32 crc32(T * a_buf, size_t a_size) {
 
 irs_u8 crc8(irs_u8 * a_buf, irs_u8 a_start, irs_u8 a_cnt);
 
-// Приведение фазы к диапазону a_phase_begin - a_phase_end
+//! \brief Приведение фазы к диапазону a_phase_begin - a_phase_end
 double phase_normalize(double a_phase_in, double a_phase_begin = 0.,
   double a_phase_end = 360.);
-// Приведение фазы к диапазону -180 - +180
+
+//! \brief Приведение фазы к диапазону -180 - +180
 double phase_normalize_180(double a_phase_in);
 
-// Приведение фазы к диапазону a_phase_begin - a_phase_end
+//! \brief Приведение фазы к диапазону a_phase_begin - a_phase_end
 template<class T>
 T phase_norm(T a_phase_in, T a_phase_begin = 0., T a_phase_end = 360.) {
   const T phase_period = a_phase_end - a_phase_begin;
@@ -2123,16 +2259,16 @@ T phase_norm(T a_phase_in, T a_phase_begin = 0., T a_phase_end = 360.) {
   return phase_out;
 }
 
-// Приведение фазы к диапазону -180 - +180
+//! \brief Приведение фазы к диапазону -180 - +180
 template<class T>
 T phase_norm_180(T a_phase_in) {
   return phase_norm(a_phase_in, T(-180.), T(+180.));
 }
 
-// функция интерполяции массива точек прямой методом МНК.
-// Записывает в a_korf_k и a_koef_b коэффициенты прямой y=a_korf_k*x+a_koef_b,
-// апроксимирующей набор точек, представленный массивами a_array_x и a_array_y,
-// размера a_size
+//! \brief функция интерполяции массива точек прямой методом МНК.
+//! \details Записывает в a_korf_k и a_koef_b коэффициенты
+//!   прямой y=a_korf_k*x+a_koef_b, апроксимирующей набор точек, представленный
+//!   массивами a_array_x и a_array_y, размера a_size
 template<class TYPE>
 void interp_line_mnk(TYPE* a_array_x, TYPE* a_array_y,
   const unsigned int& a_size, long double& a_koef_k, long double& a_koef_b) {
@@ -2147,7 +2283,7 @@ void interp_line_mnk(TYPE* a_array_x, TYPE* a_array_y,
   a_koef_b = (S_y - a_koef_k * S_x) / a_size;
 }
 
-// Вычисляет коэффициенты k и b прямой y = k*x+b
+//! \brief Вычисляет коэффициенты k и b прямой y = k*x+b
 template<class TYPE>
 int koef_line(const TYPE a_y1, const TYPE a_x1, const TYPE a_y2,
   const TYPE a_x2, TYPE& a_k, TYPE& a_b) {
@@ -2159,17 +2295,25 @@ int koef_line(const TYPE a_y1, const TYPE a_x1, const TYPE a_y2,
   return 0;
 }
 
-// Функция возвращает среднее арифметическое значение элементов массива
-// Аналог функции Mean из библиотеки Math.hpp C++ Builder6
-double mean(const double*ap_data, const int a_data_size);
+//! \brief Функция возвращает среднее арифметическое значение элементов массива
+//! \details Аналог функции Mean из библиотеки Math.hpp C++ Builder6
+double mean(const double* ap_data, const int a_data_size);
 
-// Функция возвращает дисперсию элементов массива
-// Аналог функции Variance из библиотеки Math.hpp C++ Builder6
-double variance(const double*ap_data, const int a_data_size);
+//! \brief Функция возвращает дисперсию элементов массива. Рассчитывается по
+//!   формуле \f$\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2\f$
+//! \details Аналог функции Variance из библиотеки Math.hpp C++ Builder6
+double variance(const double* ap_data, const int a_data_size);
 
-// Функция возвращает среднее квадратическое отклонение элементов массива
-// Аналог функции StdDev из библиотеки Math.hpp C++ Builder6
-double std_dev(const double*ap_data, const int a_data_size);
+//! \brief Функция возвращает среднее квадратическое отклонение элементов
+//!   массива. Рассчитывается по формуле
+//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
+//! \details Аналог функции StdDev из библиотеки Math.hpp C++ Builder6
+//! \see sample_standard_deviation
+//! \see sko_calc_t
+//! \see fast_sko_t
+//! \see fast_multi_sko_with_single_average_t
+//! \see fast_multi_sko_t
+double std_dev(const double* ap_data, const int a_data_size);
 
 template<class In, class Out, class Pred>
 Out copy_if(In a_first, In a_last, Out a_res, Pred a_pred) {
