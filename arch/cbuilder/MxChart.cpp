@@ -5145,12 +5145,12 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     String student_t_99_9_str = irst("+INF");
 
     if (!points.empty()) {
-      const double student_t_95 = student_t_inverse_distribution_2x(0.95,
-        points.size());
-      const double student_t_99 = student_t_inverse_distribution_2x(0.99,
-        points.size());
-      const double student_t_99_9 = student_t_inverse_distribution_2x(0.999,
-        points.size());
+      const double student_t_95 = student_t_inverse_distribution_2x(
+        confidence_level_0_95, points.size());
+      const double student_t_99 = student_t_inverse_distribution_2x(
+        confidence_level_0_99, points.size());
+      const double student_t_99_9 = student_t_inverse_distribution_2x(
+        confidence_level_0_999, points.size());
       double confidence_interval_95 = sko_percent*student_t_95;
       double confidence_interval_99 = sko_percent*student_t_99;
       double confidence_interval_99_9 = sko_percent*student_t_99_9;

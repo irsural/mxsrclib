@@ -66,19 +66,95 @@ public:
 //------------------------------------------------------------------------------
 namespace irs {
 
+//! \addtogroup signal_processing_group
+//! @{
+
+//! \brief Расчитывает СКО и среднее значение входной последовательности. СКО
+//!   рассчитывается по формуле
+//!   \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
+//! \param[in] ap_first - итератор на первую позицию последовательности
+//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
+//! \param[out] ap_average - переменная, в которую будет помещено среднее
+//!   значение. Можно не передавать указатель, если среднее значение не
+//!   требуется
+//! \see sample_standard_deviation
+//! \see sko_calc_t
+//! \see fast_sko_t
+//! \see fast_multi_sko_with_single_average_t
+//! \see fast_multi_sko_t
+template <class forward_iterator, class T>
+void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
+  T* ap_result, T* ap_average = NULL,
+  bool a_use_sample_standatd_deviation = false)
+{
+  const size_t size = distance(ap_first, ap_last);
+  if (size == 0) {
+    *ap_result = 0;
+    *ap_average = 0;
+    return;
+  }
+
+  const T sum = accumulate(ap_first, ap_last,  0.0);
+
+  const double average = sum/size;
+  if (ap_average) {
+    *ap_average = average;
+  }
+
+  T square_sum = 0;
+  while (ap_first != ap_last) {
+    const T value = *ap_first - average;
+    square_sum += value*value;
+    ++ap_first;
+  }
+  if (a_use_sample_standatd_deviation && (size > 1)) {
+    *ap_result = std::sqrt(square_sum/(size - 1));
+  } else {
+    *ap_result = std::sqrt(square_sum/size);
+  }
+}
+
+//! \brief Расчитывает СКО и среднее значение входной последовательности.
+//!   СКО рассчитывается по формуле
+//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
+//! \param[in] ap_first - итератор на первую позицию последовательности
+//! \param[in] ap_last - итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
+//! \param[out] ap_average - переменная, в которую будет помещено среднее
+//!   значение. Можно не передавать указатель, если среднее значение не
+//!   требуется
+//! \see standard_deviation
+//! \see sko_calc_t
+//! \see fast_sko_t
+//! \see fast_multi_sko_with_single_average_t
+//! \see fast_multi_sko_t
+template <class forward_iterator, class T>
+void sample_standard_deviation(forward_iterator ap_first,
+  forward_iterator ap_last,
+  T* ap_result, T* ap_average = NULL)
+{
+  const bool use_sample_standatd_deviation = true;
+  return standard_deviation<forward_iterator, T>(
+    ap_first, ap_last, ap_result, ap_average, use_sample_standatd_deviation);
+}
+
+//! \brief Доверительная вероятность
 enum confidence_level_t {
   confidence_level_0_95,
   confidence_level_0_99,
   confidence_level_0_999
 };
 
+//! \brief Уровень значимости
 enum level_of_significance_t {
   level_of_significance_0_01,
   level_of_significance_0_05,
   level_of_significance_0_1
 };
 
-//! \ingroup signal_processing_group
 //! \brief Возвращает двустороннее обратное t-распределение Стьюдента
 //! \param[in] a_probability доверительная вероятность.
 //!   Реализовано только для значений 0.95, 0.99, 0.999
@@ -88,7 +164,6 @@ double student_t_inverse_distribution_2x(
   confidence_level_t a_confidence_level,
   size_t a_degrees_of_freedom);
 
-//! \ingroup signal_processing_group
 //! \brief Возвращает критическое значение критерия ta
 //! \details
 //! \param[in] a_level_of_significance уровень значимости.
@@ -156,7 +231,7 @@ private:
 //! \param[in] a_standard_deviation среднеквадратическое отклонение, известное
 //!   заранее или рассчитанное по отсчетам, не содержащим выбросов
 //! \return итератор на элемент, следующий за последним неперенесенным элементом
-//! \see eliminating_outliers_t_a_criterion(
+//! \see irs::eliminating_outliers_t_a_criterion(
 //!   forward_iterator, forward_iterator, level_of_significance_t, T, T)
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_t_a_criterion(
@@ -182,7 +257,7 @@ forward_iterator eliminating_outliers_t_a_criterion(
 //! \brief Обнаруживает выбросы по критерию t_a, переносит их в
 //!   конец контейнера и возвращает новую границу диапазона. Однопроходный
 //!   вариант алгоритма. Это перегруженный вариант функции
-//!   eliminating_outliers_t_a_criterion(
+//!   irs::eliminating_outliers_t_a_criterion(
 //!   forward_iterator, forward_iterator, level_of_significance_t, T),
 //!   позволяющий передать среднее значение, если оно уже рассчитано
 //! \param[in] ap_first итератор на первую позицию последовательности
@@ -217,7 +292,97 @@ forward_iterator eliminating_outliers_t_a_criterion(
   return remove_if(ap_first, ap_last, pred);
 }
 
-//! \ingroup signal_processing_group
+//! \brief Возвращает \c true, если a_value является выбросом по
+//!   критерию 3 сигрма
+//! \details Эта функция используется, если СКО и среднее значение
+//!   заранее известны
+//! \par Пример использования
+//! \code{.cpp}
+//!   // СКО и среднее значение известны и вычислены без учета выбросов
+//!   const double standard_deviation = 10;
+//!   const double average = 1;
+//!   std::vector<double> samples;
+//!   // Код получения отсчетов
+//!   // ...
+//!   // Набор отсчетов без выбросов
+//!   std::vector<double> correct_samples;
+//!   for (std::size_t i = 0; i < samples.size(); i++) {
+//!     if (!is_outlier_3_sigma_criterion(samples[i],
+//!         standard_deviation, average)) {
+//!       correct_samples.push_back(sample);
+//!     }
+//!   }
+//! \endcode
+//! \param[in] a_value тестируемое значение
+//! \param[in] a_standard_diviation стандартное отклонение, рассчитанное по
+//!   формуле \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$.
+//!   Последовательность, по которой рассчитывается стандартное
+//!   отклонение, не должна включать выбросов
+//! \param[in] a_average среднее значение, рассчитанное по
+//!   формуле \f$\frac{1}{N}\sum_{i=1}^{N}(x_i)\f$.
+//!   Последовательность, по которой рассчитывается среднее
+//!   значение, не должна включать выбросов
+//! \return \c true, если тестируемое значение является выбросом,
+//!   и \c false в противном случае
+template <class forward_iterator, class T>
+bool is_outlier_3_sigma_criterion(T a_value,
+  T a_standard_deviation, T a_average)
+{
+  return is_outlier_max_diviation_criterion(a_value, a_average,
+    3*a_standard_deviation);
+}
+
+//! \brief Эта функция перемещает выбросы в конец последовательности.
+//!   Каждое значение проверяется с помощью функции
+//!   is_outlier_max_diviation_criterion
+//! \details СКО и среднее значение должны быть рассчитаны без учета выбросов
+//! \param[in] ap_first итератор на первую позицию последовательности
+//! \param[in] ap_last итератор на последнюю позицию последовательности,
+//!   последний элемент не входит в диапазон обработки
+//! \param[in] a_standard_diviation стандартное отклонение, рассчитанное
+//!   без учета выбросов
+//! \param[in] a_average среднее значение, рассчитанное без учета выбросов
+//!   Последовательность, по которой рассчитывается среднее
+//!   значение, не должна включать выбросов
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_3_sigma_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last, T a_standard_deviation, T a_average)
+{
+  return eliminating_outliers_max_diviation_criterion(
+    ap_first, ap_last, a_average, 3*a_standard_deviation);
+}
+
+//! \brief Эта функция работает аналогично функции is_outlier_3_sigma_criterion,
+//!   но вместо СКО принимает максимальное отклонение
+template <class forward_iterator, class T>
+bool is_outlier_max_diviation_criterion(T a_value,
+  T a_max_diviation, T a_average)
+{
+  return (fabs(a_value - a_average) > a_max_diviation);
+}
+
+//! \brief Эта функция работает аналогично функции
+//!   irs::eliminating_outliers_3_sigma_criterion, но вместо СКО принимает
+//!   максимальное отклонение
+template <class forward_iterator, class T>
+forward_iterator eliminating_outliers_max_diviation_criterion(
+  forward_iterator ap_first,
+  forward_iterator ap_last, T a_max_deviation, T a_average)
+{
+  forward_iterator it = ap_first;
+  forward_iterator result = ap_first;
+  while (it != ap_last) {
+    const T value = *it;
+    if (is_outlier_max_diviation_criterion(value, a_average, a_max_deviation)) {
+      *result = *it;
+      ++result;
+    }
+    ++it;
+  }
+  return result;
+}
+
 //! \brief Обнаруживает выбросы по критерию Смирнова, переносит их в
 //!   конец контейнера и возвращает новую границу диапазона. Однопроходный
 //!   вариант алгоритма
@@ -232,14 +397,30 @@ forward_iterator eliminating_outliers_t_a_criterion(
 //!   Эта функция требует явного указания параметров шаблона, один из которых
 //!   является типом вычислений (T). Этот вариант функции следует использовать,
 //!   если тип расчета \c double не подходит. Если же элементы имеют тип
-//!   \c double или тип меньшей точности, то можно использовать вариант этой
-//!   функции с одним параметром шаблона,
+//!   \c double или тип меньшей точности, то можно использовать перегруженный
+//!   вариант этой функции с одним параметром шаблона,
 //!   который не требуется указывать явно
+//! \par Пример использования
+//! \code{.cpp}
+//!   std::vector<double> samples;
+//!   // Здесь код заполнения samples
+//!   // ...
+//!   // Переносим выбросы в конец
+//!   std::vector<double>::iterator new_end =
+//!     eliminating_outliers_smirnov_criterion<std::vector<double>::iterator,
+//!     long double>(samples.begin(), samples.end(),
+//!     level_of_significance_0_01);
+//!   // Удаляем выбросы
+//!   samples.erase(new_end, samples.end());
+//! \endcode
 //! \param[in] ap_first итератор на первую позицию последовательности
 //! \param[in] ap_last итератор на последнюю позицию последовательности,
 //!   последний элемент не входит в диапазон обработки
 //! \param[in] a_level_of_significance уровень значимости ошибки
 //! \return итератор на элемент, следующий за последним неперенесенным элементом
+//! \see template <class forward_iterator>
+//!   forward_iterator eliminating_outliers_smirnov_criterion(
+//!   forward_iterator, forward_iterator, level_of_significance_t)
 template <class forward_iterator, class T>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
@@ -265,7 +446,25 @@ forward_iterator eliminating_outliers_smirnov_criterion(
   return remove_if(ap_first, ap_last, pred);
 }
 
-//! \overload
+//! \brief Это перегруженный вариант функции
+//!   template <class forward_iterator, class T>
+//!   forward_iterator eliminating_outliers_smirnov_criterion(
+//!     forward_iterator, forward_iterator,level_of_significance_t).
+//!   Позволяет не указывать явно тип, который будет использован для расчетов.
+//!   Для расчетов используется тип \c double
+//! \details
+//! \par Пример использования
+//! \code{.cpp}
+//!   std::vector<double> samples;
+//!   // Здесь код заполнения samples
+//!   // ...
+//!   // Переносим выбросы в конец
+//!   std::vector<double>::iterator new_end =
+//!     eliminating_outliers_smirnov_criterion(samples.begin(), samples.end(),
+//!     level_of_significance_0_01);
+//!   // Удаляем выбросы
+//!   samples.erase(new_end, samples.end());
+//! \endcode
 template <class forward_iterator>
 forward_iterator eliminating_outliers_smirnov_criterion(
   forward_iterator ap_first,
@@ -276,7 +475,6 @@ forward_iterator eliminating_outliers_smirnov_criterion(
     ap_first, ap_last, a_level_of_significance);
 }
 
-//! \ingroup signal_processing_group
 //! \brief Возвращает \c true, если a_value является выбросом по
 //!   критерию Смирнова
 //! \details Эту функцию следует использовать, если не известно заранее
@@ -291,22 +489,22 @@ forward_iterator eliminating_outliers_smirnov_criterion(
 //!   критерий.
 //! \par Пример использования
 //! \code{.cpp}
-//! irs::sko_calc_t sko_calc(100);
-//! std::vector<double> correct_samples;
-//! for (int i = 0; i < 1000; i++) {
-//!   // Здесь код ожидания нового отсчета
-//!   // ...
-//!   // Получение нового отсчета, например с АЦП
-//!   const double sample = get_sample_from_adc();
-//!   sko_calc.add(sample);
-//!   const double sko = sko_calc;
-//!   const average = sko_calc.average();
-//!   if (!is_outlier_smirnov_criterion(sample, 0.01, sko_calc.size(),
-//!       sko, average)) {
-//!     // Это значение не является выбросом
-//!     correct_samples.push_back(sample);
+//!   irs::sko_calc_t sko_calc(100);
+//!   std::vector<double> correct_samples;
+//!   for (int i = 0; i < 1000; i++) {
+//!     // Здесь код ожидания нового отсчета
+//!     // ...
+//!     // Получение нового отсчета, например с АЦП
+//!     const double sample = get_sample_from_adc();
+//!     sko_calc.add(sample);
+//!     const double sko = sko_calc;
+//!     const average = sko_calc.average();
+//!     if (!is_outlier_smirnov_criterion(sample, 0.01, sko_calc.size(),
+//!         sko, average)) {
+//!       // Это значение не является выбросом
+//!       correct_samples.push_back(sample);
+//!     }
 //!   }
-//! }
 //! \endcode
 //! \param[in] a_value тестируемое значение
 //! \param[in] a_level_of_significance уровень значимости ошибки
@@ -339,7 +537,6 @@ bool is_outlier_smirnov_criterion(T a_value,
   return (abs(a_value - a_average)/a_standard_diviation > critical_value);
 }
 
-//! \ingroup signal_processing_group
 //! \brief Обнаруживает выбросы по критерию Смирнова, переносит их в
 //!   конец контейнера и возвращает новую границу диапазона. Многопроходный
 //!   вариант алгоритма
@@ -365,7 +562,7 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   level_of_significance_t a_level_of_significance)
 {
   typedef std::iterator_traits<forward_iterator> traits;
-  typedef traits::value_type value_type;
+  typedef typename traits::value_type value_type;
 
   const level_of_significance_t level = a_level_of_significance;
   multimap<value_type, forward_iterator> values_map;
@@ -437,231 +634,6 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
     <forward_iterator, double>(ap_first, ap_last, a_level_of_significance);
 }
 
-/*
-template <class T>
-class pred_remove_errors_criterion_smirov_t
-{
-public:
-  pred_remove_errors_criterion_smirov_t(T a_average, T a_sko,
-    T a_student_coefficient
-  ):
-    m_average(a_average),
-    m_sko(a_sko),
-    m_student_coefficient(a_student_coefficient)
-  {
-  }
-  bool operator() (T a_value) const
-  {
-    return fabs(a_value - m_average)/m_sko > m_student_coefficient;
-  }
-private:
-  pred_remove_errors_criterion_smirov_t();
-  const T m_average;
-  const T m_sko;
-  const T m_student_coefficient;
-};
-
-template<class data_t, class calc_t>
-class sko_calc_t;
-
-//! \ingroup signal_processing_group
-//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
-//!   границу диапазона. Однопроходный
-//! \param a_probability - доверительная вероятность [0, 1].
-//!   Реализовано только для значений 0.95, 0.99, 0.999
-template <class forward_iterator, class T>
-forward_iterator remove_errors_criterion_smirov_single_pass(
-  forward_iterator first,
-  forward_iterator last,
-  const T a_probability)
-{
-  const size_t size = distance(first, last);
-  const T student_coefficient = static_cast<T>(
-    student_t_inverse_distribution_2x(a_probability, size));
-  sko_calc_t<T, T> sko(size);
-  forward_iterator current = first;
-  while (current != last) {
-    sko.add(*current);
-    ++current;
-  }
-  pred_remove_errors_criterion_smirov_t<T> pred(sko.average(), sko, student_coefficient);
-  return remove_if(first, last, pred);
-}
-
-//! \ingroup signal_processing_group
-//! \brief Переносит грубые ошибки в конец контейнера и возвращает новую
-//!   границу диапазона
-//! \param a_probability - доверительная вероятность [0, 1].
-//!   Реализовано только для значений 0.95, 0.99, 0.999
-template <class forward_iterator, class T>
-forward_iterator remove_errors_criterion_smirov(forward_iterator first,
-  forward_iterator last,
-  const T a_probability)
-{
-  //const size_t size = distance(first, last);
-
-
-  multimap<T, forward_iterator> values_map;
-
-  forward_iterator current = first;
-  while (current != last) {
-    values_map.insert(make_pair(fabs(*current), current));
-    ++current;
-  }
-
-  multimap<T, forward_iterator>::iterator end_it_map = values_map.end();
-  set<forward_iterator> bad_elements;
-  while (end_it_map != values_map.begin()) {
-    double sko = 0;
-    double average = 0;
-    std::vector<T> values;
-    values.reserve(values_map.size());
-    multimap<T, forward_iterator>::const_iterator it = values_map.begin();
-    while (it != end_it_map) {
-      values.push_back(*it->second);
-      ++it;
-    }
-    standard_deviation(values.begin(), values.end(), &sko, &average);
-    --end_it_map;
-    const T value = *end_it_map->second;
-    const T student_coefficient = static_cast<T>(
-      student_t_inverse_distribution_2x(a_probability, values.size()));
-    if (fabs(value - average)/sko > student_coefficient) {
-      bad_elements.insert(end_it_map->second);
-    } else {
-      break;
-    }
-  }
-
-  forward_iterator it = first;
-  forward_iterator result = first;
-  while (it != last) {
-    if (bad_elements.find(it) == bad_elements.end()) {
-      *result = *it;
-      ++result;
-    }
-    ++it;
-  }
-  return result;
-}
-*/
-template <class forward_iterator, class T>
-bool is_outlier_3_sigma_criterion(T a_value,
-  T a_average, T a_standard_deviation)
-{
-  return is_outlier_max_diviation_criterion(a_value, a_average,
-    3*a_standard_deviation);
-}
-
-template <class forward_iterator, class T>
-forward_iterator eliminating_outliers_3_sigma_criterion(
-  forward_iterator ap_first,
-  forward_iterator ap_last, T a_average, T a_standard_deviation)
-{
-  return eliminating_outliers_max_diviation_criterion(
-    ap_first, ap_last, a_average, 3*a_standard_deviation);
-}
-
-template <class forward_iterator, class T>
-bool is_outlier_max_diviation_criterion(T a_value,
-  T a_average, T a_max_diviation)
-{
-  return (fabs(a_value - a_average) > a_max_diviation);
-}
-
-template <class forward_iterator, class T>
-forward_iterator eliminating_outliers_max_diviation_criterion(
-  forward_iterator ap_first,
-  forward_iterator ap_last, T a_average, T a_max_deviation)
-{
-  forward_iterator it = ap_first;
-  forward_iterator result = ap_first;
-  while (it != ap_last) {
-    const T value = *it;
-    if (is_outlier_max_diviation_criterion(value, a_average, a_max_deviation)) {
-      *result = *it;
-      ++result;
-    }
-    ++it;
-  }
-  return result;
-}
-
-//! \ingroup signal_processing_group
-//! \brief Расчитывает СКО и среднее значение входной последовательности. СКО
-//!   рассчитывается по формуле
-//!   \f$\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
-//! \param[in] ap_first - итератор на первую позицию последовательности
-//! \param[in] ap_last - итератор на последнюю позицию последовательности,
-//!   последний элемент не входит в диапазон обработки
-//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
-//! \param[out] ap_average - переменная, в которую будет помещено среднее
-//!   значение. Можно не передавать указатель, если среднее значение не
-//!   требуется
-//! \see sample_standard_deviation
-//! \see sko_calc_t
-//! \see fast_sko_t
-//! \see fast_multi_sko_with_single_average_t
-//! \see fast_multi_sko_t
-template <class forward_iterator, class T>
-void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
-  T* ap_result, T* ap_average = NULL,
-  bool a_use_sample_standatd_deviation = false)
-{
-  const size_t size = distance(ap_first, ap_last);
-  if (size == 0) {
-    *ap_result = 0;
-    *ap_average = 0;
-    return;
-  }
-
-  const T sum = accumulate(ap_first, ap_last,  0.0);
-
-  const double average = sum/size;
-  if (ap_average) {
-    *ap_average = average;
-  }
-
-  T square_sum = 0;
-  while (ap_first != ap_last) {
-    const T value = *ap_first - average;
-    square_sum += value*value;
-    ++ap_first;
-  }
-  if (a_use_sample_standatd_deviation && (size > 1)) {
-    *ap_result = std::sqrt(square_sum/(size - 1));
-  } else {
-    *ap_result = std::sqrt(square_sum/size);
-  }
-}
-
-//! \ingroup signal_processing_group
-//! \brief Расчитывает СКО и среднее значение входной последовательности.
-//!   СКО рассчитывается по формуле
-//!   \f$\sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2}\f$
-//! \param[in] ap_first - итератор на первую позицию последовательности
-//! \param[in] ap_last - итератор на последнюю позицию последовательности,
-//!   последний элемент не входит в диапазон обработки
-//! \param[out] ap_result - переменная, в которую будет помещено значение СКО
-//! \param[out] ap_average - переменная, в которую будет помещено среднее
-//!   значение. Можно не передавать указатель, если среднее значение не
-//!   требуется
-//! \see standard_deviation
-//! \see sko_calc_t
-//! \see fast_sko_t
-//! \see fast_multi_sko_with_single_average_t
-//! \see fast_multi_sko_t
-template <class forward_iterator, class T>
-void sample_standard_deviation(forward_iterator ap_first,
-  forward_iterator ap_last,
-  T* ap_result, T* ap_average = NULL)
-{
-  const bool use_sample_standatd_deviation = true;
-  return standard_deviation<forward_iterator, T>(
-    ap_first, ap_last, ap_result, ap_average, use_sample_standatd_deviation);
-}
-
-//! \ingroup signal_processing_group
 //! \brief Расчет СКО
 // template <class data_t = double, class calc_t = double>
 template<class data_t, class calc_t>
@@ -695,6 +667,8 @@ public:
 private:
   sko_calc_dbl_t();
 };
+
+//! @}
 
 } // namespace irs
 

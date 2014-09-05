@@ -243,11 +243,86 @@ BOOST_AUTO_TEST_CASE(test_case_no_outliers)
   BOOST_CHECK(values == result);
 }
 
+BOOST_AUTO_TEST_CASE(test_case_no_outliers_calc_type_long_double)
+{
+  samples_no_outliers_t samples;
+  std::vector<double> values = samples.get();
+  const std::vector<double> result(values);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_t_a_criterion<
+    std::vector<double>::iterator, long double>(values.begin(),
+    values.end(), irs::level_of_significance_0_01,
+    samples.sample_standard_deviation);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
 BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 {
   samples_one_outlier_t samples;
   const double sd = samples.sample_standard_deviation_without_outliers;
   std::vector<double> values = samples.get();
+
+  std::vector<double> result(values);
+  result.erase(result.begin() + samples.bad_value_pos);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_t_a_criterion(values.begin(),
+    values.end(), irs::level_of_significance_0_01, sd);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
+namespace {
+
+template <class T>
+class offset_t
+{
+public:
+  offset_t(T a_offset):
+    m_offset(a_offset)
+  {
+  }
+  T operator() (T a_value)
+  {
+    return a_value + m_offset;
+  }
+private:
+  offset_t();
+  const T m_offset;
+};
+
+} // unnamed namespace
+
+BOOST_AUTO_TEST_CASE(test_case_one_outlier_shifted_upwards)
+{
+  samples_one_outlier_t samples;
+  const double sd = samples.sample_standard_deviation_without_outliers;
+  std::vector<double> values = samples.get();
+  std::transform(values.begin(), values.end(), values.begin(),
+    offset_t<double>(+10.));
+
+  std::vector<double> result(values);
+  result.erase(result.begin() + samples.bad_value_pos);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_t_a_criterion(values.begin(),
+    values.end(), irs::level_of_significance_0_01, sd);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
+BOOST_AUTO_TEST_CASE(test_case_one_outlier_shifted_downwards)
+{
+  samples_one_outlier_t samples;
+  const double sd = samples.sample_standard_deviation_without_outliers;
+  std::vector<double> values = samples.get();
+  std::transform(values.begin(), values.end(), values.begin(),
+    offset_t<double>(-10.));
 
   std::vector<double> result(values);
   result.erase(result.begin() + samples.bad_value_pos);
@@ -278,6 +353,21 @@ BOOST_AUTO_TEST_CASE(test_case_no_outliers)
   BOOST_CHECK(values == result);
 }
 
+BOOST_AUTO_TEST_CASE(test_case_no_outliers_calc_type_long_double)
+{
+  samples_no_outliers_t samples;
+  std::vector<double> values = samples.get();
+  const std::vector<double> result(values);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_smirnov_criterion<
+    std::vector<double>::iterator, long double>(values.begin(),
+    values.end(), irs::level_of_significance_0_01);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
 BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 {
   samples_one_outlier_t samples;
@@ -285,6 +375,23 @@ BOOST_AUTO_TEST_CASE(test_case_one_outlier)
 
   std::vector<double> result(values);
   result.erase(result.begin() + samples.bad_value_pos);
+
+  std::vector<double>::iterator it_end =
+    irs::eliminating_outliers_smirnov_criterion(values.begin(),
+    values.end(), irs::level_of_significance_0_01);
+  values.erase(it_end, values.end());
+
+  BOOST_CHECK(values == result);
+}
+
+BOOST_AUTO_TEST_CASE(test_case_two_outlier)
+{
+  samples_two_outliers_t samples;
+  std::vector<double> values = samples.get();
+
+  std::vector<double> result(values);
+  // Используемый метод детектирует только одну ошибку
+  result.erase(result.begin() + samples.bad_value_2_pos);
 
   std::vector<double>::iterator it_end =
     irs::eliminating_outliers_smirnov_criterion(values.begin(),

@@ -41,6 +41,7 @@
 #include <stack>
 #include <utility>
 #include <vector>
+#include <valarray>
 #include <fstream>
 #ifndef __embedded_cplusplus
 #include <locale>

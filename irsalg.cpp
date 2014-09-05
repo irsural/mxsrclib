@@ -219,7 +219,7 @@ double irs::critical_values_for_t_a_criterion(
   const int array_size = n_max - n_min + 1;
   const size_t n = a_sample_size;
   size_t index = 0;
-  if ((n >= 0) && (n <= n_min)) {
+  if ((n > 0) && (n <= n_min)) {
     index = 0 ;
   } else if (n <= n_max) {
     index = n - n_min ;
@@ -287,7 +287,7 @@ double irs::critical_values_for_smirnov_criterion(
   const int array_size = n_max - n_min + 1;
   const size_t n = a_sample_size;
   size_t index = 0;
-  if ((n >= 0) && (n <= n_min)) {
+  if ((n > 0) && (n <= n_min)) {
     index = 0 ;
   } else if (n <= n_max) {
     index = n - n_min ;
