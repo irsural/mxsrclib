@@ -98,6 +98,8 @@ public:
   inline virtual irskey_t check();
   inline virtual void reset();
   inline virtual void connect(mxkey_event_t *&a_event);
+  inline virtual mxkey_event_t* disconnect();
+  inline virtual mxkey_event_t* prev();
 };
 inline mxkey_event_t::mxkey_event_t():
   f_prev_event(IRS_NULL),
@@ -127,7 +129,14 @@ inline void mxkey_event_t::connect(mxkey_event_t *&a_event)
   f_prev_event = a_event;
   a_event = this;
 }
-
+inline mxkey_event_t* mxkey_event_t::disconnect()
+{
+  return f_prev_event;
+}
+inline mxkey_event_t* mxkey_event_t::prev()
+{
+  return f_prev_event;
+}
 
 // Класс для выполнения антидребезга
 class mxantibounce_t
@@ -248,6 +257,7 @@ public:
   inline void connect(mxkey_drv_t *mxkey_drv);
   inline void connect_encoder(encoder_drv_t *ap_encoder_drv);
   inline void add_event(mxkey_event_t *event);
+  inline void delete_event(mxkey_event_t *event);
   inline virtual irs_bool tick();
   inline virtual void abort();
   inline void set_antibounce_time(counter_t time);
@@ -293,6 +303,25 @@ inline void mxkey_event_gen_t::add_event(mxkey_event_t *event)
 {
   event->connect(f_event);
 }
+inline void mxkey_event_gen_t::delete_event(mxkey_event_t *event)
+{
+  mxkey_event_t* cur = f_event;
+  mxkey_event_t* next = NULL;
+  while (cur) {
+    if (cur == event) {
+      mxkey_event_t* prev = cur->disconnect();
+      if (next) {
+        next->connect(prev);
+      } else {
+        f_event = prev;
+      }
+      break;
+    } else {
+      next = cur;
+      cur = cur->prev();
+    }
+  }
+}
 inline irs_bool mxkey_event_gen_t::tick()
 {
   irskey_t cur_key = (*f_mxkey_drv)();
@@ -337,7 +366,7 @@ inline irs_bool mxkey_event_gen_t::tick()
     case mode_stop: {
     } break;
   }
-  
+
   if (mp_encoder_drv != IRS_NULL) {
     cur_key = mp_encoder_drv->get_key_button();
     pin = irs_off;
@@ -378,12 +407,12 @@ inline irs_bool mxkey_event_gen_t::tick()
       case mode_stop: {
       } break;
     }
-    
+
     cur_key = mp_encoder_drv->get_key_encoder();
     if (cur_key != irskey_none) {
       int count = mp_encoder_drv->get_press_count();
       for (int i = 0; i < count; i++) {
-        f_event->exec(cur_key);  
+        f_event->exec(cur_key);
       }
     }
   }

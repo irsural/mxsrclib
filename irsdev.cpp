@@ -35,6 +35,7 @@ irs::string_t irs::get_device_name(device_code_t a_device_code)
     case device_code_gtch_03m: return irst("ГТЧ-03М");
     case device_code_u5023m: return irst("У5023М");
     case device_code_u309m: return irst("У309М");
+    case device_code_hrm: return irst("ВУ");
     default: {
       return irst("Неизвестный прибор");
     }

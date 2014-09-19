@@ -246,7 +246,7 @@ void event_connect_1_t<T, A>::exec(A a)
   (mp_object->*mp_member)(a);
 }
 
-// Базовый класс событий
+//! \brief Базовый класс событий
 class event_t
 {
   bool m_occurred;
@@ -258,8 +258,8 @@ public:
   virtual void reset();
 };
 
+//! \brief Базовый класс событий для вызова функций с одним аргументом
 template <class A>
-// Базовый класс событий
 class event_1_t
 {
   bool m_occurred;
@@ -320,6 +320,7 @@ private:
   event_container_type m_events;
   bool m_is_enabled;
 };
+
 inline generator_events_t& operator << (generator_events_t& a_generator_events,
   event_t* ap_event)
 {
@@ -340,6 +341,145 @@ inline generator_events_t& operator << (generator_events_t& a_generator_events,
 }
 inline generator_events_t& operator >> (generator_events_t& a_generator_events,
   event_t& p_event)
+{
+  a_generator_events.erase(&p_event);
+  return a_generator_events;
+}
+
+// Генератор событий
+template <class argument_type>
+class generator_events_1_t
+{
+public:
+  typedef event_1_t<argument_type> event_type;
+  typedef vector<event_type*> event_container_type;
+
+  generator_events_1_t();
+  void exec(argument_type a);
+  void push_back(event_type* ap_event);
+  void erase(event_type* ap_event);
+  void clear();
+  void enable();
+  void disable();
+  bool is_enabled() const;
+private:
+  event_container_type m_events;
+  bool m_is_enabled;
+};
+
+template <class argument_type>
+irs::generator_events_1_t<argument_type>::generator_events_1_t():
+  m_events(),
+  m_is_enabled(true)
+{
+}
+
+template <class argument_type>
+class event_exec_fun_1_t
+{
+public:
+  event_exec_fun_1_t(argument_type arg):
+    m_argument(arg)
+  {
+  }
+  void operator()(event_1_t<argument_type> *ap_event)
+  {
+    ap_event->exec(m_argument);
+  }
+private:
+  event_exec_fun_1_t();
+  argument_type m_argument;
+};
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::exec(argument_type a)
+{
+  if (m_is_enabled) {
+    event_exec_fun_1_t<argument_type> event_exec_fun_1(a);
+    for_each(m_events.begin(), m_events.end(), event_exec_fun_1);
+  } else {
+    // Генератор выключен. События не генерируются
+  }
+}
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::push_back(event_type* ap_event)
+{
+  typename event_container_type::iterator it_event =
+    find(m_events.begin(), m_events.end(), ap_event);
+  if (it_event == m_events.end()) {
+    m_events.push_back(ap_event);
+  } else {
+    // Объект уже добавлен
+  }
+}
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::erase(event_type* ap_event)
+{
+  typename event_container_type::iterator it_event =
+    find(m_events.begin(), m_events.end(), ap_event);
+  IRS_LIB_ASSERT(it_event != m_events.end());
+  if (it_event != m_events.end()) {
+    m_events.erase(it_event);
+  }
+}
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::clear()
+{
+  m_events.clear();
+}
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::enable()
+{
+  m_is_enabled = true;
+}
+
+template <class argument_type>
+void irs::generator_events_1_t<argument_type>::disable()
+{
+  m_is_enabled = false;
+}
+
+template <class argument_type>
+bool irs::generator_events_1_t<argument_type>::is_enabled() const
+{
+  return m_is_enabled;
+}
+
+template <class argument_type>
+inline generator_events_1_t<argument_type>& operator <<
+  (generator_events_1_t<argument_type>& a_generator_events,
+  event_1_t<argument_type>* ap_event)
+{
+  a_generator_events.push_back(ap_event);
+  return a_generator_events;
+}
+
+template <class argument_type>
+inline generator_events_1_t<argument_type>& operator >> (
+  generator_events_1_t<argument_type>& a_generator_events,
+  event_1_t<argument_type>* ap_event)
+{
+  a_generator_events.erase(ap_event);
+  return a_generator_events;
+}
+
+template <class argument_type>
+inline generator_events_1_t<argument_type>& operator << (
+  generator_events_1_t<argument_type>& a_generator_events,
+  event_1_t<argument_type>& p_event)
+{
+  a_generator_events.push_back(&p_event);
+  return a_generator_events;
+}
+
+template <class argument_type>
+inline generator_events_1_t<argument_type>& operator >> (
+  generator_events_1_t<argument_type>& a_generator_events,
+  event_1_t<argument_type>& p_event)
 {
   a_generator_events.erase(&p_event);
   return a_generator_events;

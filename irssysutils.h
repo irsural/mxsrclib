@@ -40,14 +40,6 @@ enum {
   num_precision_default = -1
 };
 
-enum num_mode_t {
-  num_mode_invalid,
-  num_mode_general,
-  num_mode_fixed,
-  num_mode_scientific,
-  num_mode_default = num_mode_general
-};
-
 enum num_base_t {
   num_base_invalid,
   num_base_dec,

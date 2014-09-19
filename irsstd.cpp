@@ -177,14 +177,23 @@ void *irs_renew(void *pointer, size_t old_size, size_t new_size)
 }
 mxapplication_t *mxapplication = IRS_NULL;
 
-void afloat_to_str(char *str, double N, size_t len, size_t accur)
+void afloat_to_str(char *str, double N, size_t len, size_t accur,
+  irs::num_mode_t a_num_mode)
 {
   ostrstream strm(str, len + 1);
-  //strm << setiosflags(ios::fixed) << setw(len) << setprecision(accur) << N;
-  strm << fixed << setw(len) << setprecision(accur) << N;
+  switch (a_num_mode) {
+    case irs::num_mode_general: {
+    } break;
+    case irs::num_mode_fixed: {
+      strm << fixed;
+    } break;
+    case irs::num_mode_scientific: {
+      strm << scientific;
+    } break;
+  }
+  strm << setw(len) << setprecision(accur) << N;
   strm << '\0';
   str[len] = '\0';
-  //str[strm.pcount()] = 0;
 }
 
 #ifdef __ICCAVR__

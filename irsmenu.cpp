@@ -686,6 +686,7 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   f_prefix(empty_str),
   f_suffix(empty_str),
   f_value_string(empty_str),
+  f_num_mode(irs::num_mode_fixed),
   f_len(0),
   f_accur(0),
   f_max(0.0f),
@@ -733,9 +734,11 @@ void irs_menu_double_item_t::set_min_value(float a_min_value)
 }
 
 void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
-  char *a_suffix, size_type a_len, size_type a_accur)
+  char *a_suffix, size_type a_len, size_type a_accur,
+  irs::num_mode_t a_num_mode)
 {
   f_value_string = a_value_string;
+  f_num_mode = a_num_mode;
   f_len = a_len;
   f_accur = a_accur;
   f_prefix = a_prefix;
@@ -748,7 +751,7 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   delete []f_copy_parametr_string;
   f_copy_parametr_string = new char [full_len + 1];
   f_copy_parametr = *f_parametr;
-  afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
+  afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur, f_num_mode);
   strcpy(f_copy_parametr_string, f_value_string);
   m_updated = true;
 }
@@ -798,7 +801,8 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
       if (a_update == IMU_UPDATE)
       {
         f_copy_parametr = *f_parametr;
-        afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
+        afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+          f_num_mode);
         strcpy(f_copy_parametr_string, f_value_string);
       }
       else
@@ -925,7 +929,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
         f_cur_symbol = 0;
         //mp_disp_drv->clear_line(EDIT_LINE);
         mp_disp_drv->outtextpos(0, 0, f_header);
-        afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+        afloat_to_str(f_value_string, *f_parametr, f_len, f_accur, f_num_mode);
 
         const size_type space = 1;
         size_type prf_x_pos = 0;
@@ -977,7 +981,8 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               mp_disp_drv->clear();
               mp_disp_drv->outtextpos(0, 0, f_header);
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
 
               const size_type space = 1;
               size_type prf_x_pos = 0;
@@ -1184,7 +1189,8 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               {
                 f_copy_parametr = *f_parametr;
               }
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
               strcpy(f_copy_parametr_string, f_value_string);
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
@@ -1203,7 +1209,8 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               {
                 *f_parametr = f_copy_parametr;
               }
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
               strcpy(f_copy_parametr_string, f_value_string);
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
@@ -1256,11 +1263,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
 
             if (f_apply_immediately)
             {
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
             }
             else
             {
-              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur);
+              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+                f_num_mode);
             }
 
             mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));

@@ -78,6 +78,7 @@ enum irs_menu_param_update_t
   IMU_NO_UPDATE
 };
 
+//! \brief тип
 enum irs_menu_key_type_t
 {
   IMK_DIGITS,
@@ -128,9 +129,12 @@ public:
   void add_change_event(mxfact_event_t *ap_event);
   virtual void set_disp_drv(mxdisplay_drv_service_t *ap_disp_drv);
   void set_cursor_symbol(char a_cursor_symbol);
+  //! \brief Задает родительское меню, переход к которому осуществляется по
+  //!   нажатию клавиши irskey_escape
   void set_master_menu(irs_menu_base_t *a_master_menu);
   void set_header(char *a_header);
   char *get_header();
+  //! \brief Часть бегущей строки
   void set_message(char *a_message);
   char *get_message();
   void set_creep(irs_menu_creep_t *a_creep);
@@ -150,6 +154,8 @@ public:
   virtual size_type get_dynamic_string(char *a_buffer,
     size_type a_length = 0) = 0;
   virtual bool is_updated();
+  //! \brief Функция для обработки событий в режиме опроса. Аналог метода
+  //!   tick, имеющегося во многих классах библиотеки mxsrclib
   virtual void draw(irs_menu_base_t **a_cur_menu) = 0;
 };
 
@@ -259,6 +265,8 @@ public:
     size_type a_length = 0,
     irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
     irs_menu_param_update_t a_update = IMU_UPDATE);
+  //! \brief Задает дочернее меню, переход к которому осуществляется по нажатию
+  //!   клавиши irskey_enter, а возврат по нажатию клавиши irskey_escape
   void set_slave_menu(irs_menu_base_t *ap_slave_menu);
   bool add(irs_menu_base_t* ap_parametr, size_type a_x, size_type a_y,
     irs_menu_param_show_mode_t a_show_mode);
@@ -282,6 +290,7 @@ class irs_menu_double_item_t: public irs_menu_base_t
   char *f_prefix;
   char *f_suffix;
   char *f_value_string;
+  irs::num_mode_t f_num_mode;
   size_type f_len;
   size_type f_accur;
   float f_max;
@@ -299,8 +308,17 @@ class irs_menu_double_item_t: public irs_menu_base_t
 public:
   irs_menu_double_item_t(double *a_parametr, irs_bool a_can_edit);
   ~irs_menu_double_item_t();
+  //! \brief Задает буфер для вывода числа, префикс, суффикс, длину числа,
+  //!   точность отображения числа
+  //! \param[in] a_value_string буфер для вывода числа, включая префикс и суффикс
+  //! \param[in] a_prefix префикс
+  //! \param[in] a_suffix суффикс
+  //! \param[in] a_len длина выводимого числа, без суффикса и префикса
+  //! \param[in] a_accur точность вывода числа
+  //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
   void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
-    size_type a_len, size_type a_accur);
+    size_type a_len, size_type a_accur,
+    irs::num_mode_t a_num_mode = irs::num_mode_fixed);
   void reset_str();
   void set_min_value(float a_min_value);
   float get_min_value();

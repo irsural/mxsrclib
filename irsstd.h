@@ -162,8 +162,23 @@ public:
 // Перераспределение памяти с сохранением данных
 void *irs_renew(void *pointer, size_t old_size, size_t new_size);
 
-// Функция Макса Полякова для преобразования double в char*
-void afloat_to_str(char *str, double N, size_t len, size_t accur);
+namespace irs {
+
+// Перенесено из irssysutils.h
+enum num_mode_t {
+  num_mode_invalid,
+  num_mode_general,
+  num_mode_fixed,
+  num_mode_scientific,
+  num_mode_default = num_mode_general
+};
+
+} // namespace irs
+
+//! \brief Функция Макса Полякова для преобразования double в char*
+//! \author Polyakov Maxim
+void afloat_to_str(char *str, double N, size_t len, size_t accur,
+  irs::num_mode_t a_num_mode  = irs::num_mode_fixed);
 
 extern mxapplication_t *mxapplication;
 
