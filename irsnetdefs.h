@@ -89,13 +89,15 @@ inline void mxip_to_cstr(char* a_ip_in_str, mxip_t a_ip)
   a_ip_in_str[IP_STR_LEN - 1] = 0;
 }
 
+#ifndef __ICCAVR__
 inline irs::string_t mxip_to_str(const mxip_t& a_ip)
 {
   char cstr[IP_STR_LEN];
   mxip_to_cstr(cstr, a_ip);
-  std::string str(cstr, IP_STR_LEN - 1);
+  string str(cstr, IP_STR_LEN - 1);
   return irs::str_conv<irs::string_t>(str);
 }
+#endif //__ICCAVR__
 
 inline bool cstr_to_mxip(mxip_t& a_ip, const char* a_str_ip)
 {
@@ -255,6 +257,7 @@ inline void mxmac_to_cstr(char* a_mac_in_str, mxmac_t a_mac)
   a_mac_in_str[MAC_STR_LEN - 1] = 0;
 }
 
+#ifndef __ICCAVR__
 inline irs::string_t mxmac_to_str(const mxmac_t& a_mac)
 {
   char cstr[MAC_STR_LEN];
@@ -262,6 +265,7 @@ inline irs::string_t mxmac_to_str(const mxmac_t& a_mac)
   std::string str(cstr, MAC_STR_LEN - 1);
   return irs::str_conv<irs::string_t>(str);
 }
+#endif //__ICCAVR__
 
 inline bool cstr_to_hex_num_helper(char* a_str, int* ap_num)
 {

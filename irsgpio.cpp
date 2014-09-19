@@ -12,6 +12,7 @@
 #endif // IRS_STM32F_2_AND_4
 
 #include <irsgpio.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
@@ -40,8 +41,9 @@ void irs::gpio_pin_t::set_state(io_pin_value_t a_value)
 
 irs::avr::io_pin_t::io_pin_t(p_avr_port_t ap_port,
   p_avr_port_t, p_avr_port_t,
-  irs_u8 a_bit, dir_t a_dir, bool a_pull_up):
-  mp_port(ap_port),
+  irs_u8 a_bit, dir_t a_dir, bool a_pull_up
+):
+  io_aux_port_t(*ap_port),
   m_mask(1 << a_bit)
 {
   if (a_dir == dir_in)
@@ -57,8 +59,9 @@ irs::avr::io_pin_t::io_pin_t(p_avr_port_t ap_port,
 }
 
 irs::avr::io_pin_t::io_pin_t(avr_port_t &a_port,
-  irs_u8 a_bit, dir_t a_dir, bool a_pull_up):
-  mp_port(&a_port),
+  irs_u8 a_bit, dir_t a_dir, bool a_pull_up
+):
+  io_aux_port_t(a_port),
   m_mask(1 << a_bit)
 {
   if (a_dir == dir_in)
@@ -96,6 +99,57 @@ void irs::avr::io_pin_t::set_dir(dir_t a_dir)
 {
   if (a_dir == dir_in) dir() &= (m_mask^0xFF);
   if (a_dir == dir_out) dir() |= m_mask;
+}
+
+// irs::avr::io_port_t
+// Крашенинников: В io_pin_t используется параметр a_pull_up.
+// В io_port_t для этого следует использовать параметр a_dir
+// со значением dir_in_pull_up
+irs::avr::io_port_t::io_port_t(avr_port_t &a_port, data_t a_mask, dir_t a_dir,
+  irs_u8 a_shift
+):
+  io_aux_port_t(a_port),
+  m_mask(a_mask),
+  m_shift(a_shift)
+{
+  set_dir(a_dir);
+}
+irs::avr::io_port_t::~io_port_t()
+{
+}
+irs::avr::io_port_t::data_t irs::avr::io_port_t::get()
+{
+  return static_cast<data_t>((in() & m_mask) >> m_shift);
+}
+void irs::avr::io_port_t::set(data_t a_data)
+{
+  out() &= ~m_mask;
+  out() |= (a_data << m_shift) & m_mask;
+}
+// Выход сбрасывается при смене направления порта
+void irs::avr::io_port_t::set_dir(dir_t a_dir)
+{
+  switch (a_dir) {
+    case dir_in:
+    case dir_in_pull_up: {
+      dir() &= ~m_mask;
+      if (a_dir == dir_in_pull_up) {
+        out() |= m_mask;
+      } else {
+        out() &= ~m_mask;
+      }
+    }
+    case dir_out: {
+      dir() |= m_mask;
+      out() &= ~m_mask;
+    }
+    default: {
+      IRS_LIB_ASSERT_MSG("irs::avr::io_port_t: Для AVR, в параметре "
+        "dir_t a_dir, поддерживаются только значения: dir_in, "
+        "dir_in_pull_up, dir_out. Использован параметр выходящий за "
+        "пределы этого списка");
+    }
+  }
 }
 
 //-----------------------------  mem_out_pin_t  --------------------------------

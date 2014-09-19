@@ -353,15 +353,15 @@ inline void irs_strm_buf::outputbuf(irs_i32 a_ich)      //вывод в экранный буфер
     if(m_top_activecursor_buf > m_height_display-2)
     {
       //сдвигаемн на одну строчку вверх
-      std::size_t LeftShiftStr=m_width_display+1;
-      std::size_t LenBufTextDisplay=m_height_display*(m_width_display+1)-
+      size_t LeftShiftStr=m_width_display+1;
+      size_t LenBufTextDisplay=m_height_display*(m_width_display+1)-
         LeftShiftStr;
-      for(std::size_t PositioinCur=0;PositioinCur<LenBufTextDisplay;PositioinCur++)
+      for(size_t PositioinCur=0;PositioinCur<LenBufTextDisplay;PositioinCur++)
         m_BufTextDisplay[PositioinCur]=
           m_BufTextDisplay[LeftShiftStr+PositioinCur];
-      std::size_t LeftShiftAtEndStr=LeftShiftStr*(m_height_display-1);
+      size_t LeftShiftAtEndStr=LeftShiftStr*(m_height_display-1);
       //очищаем буфер,заполн€€ его пробелами
-      for(std::size_t PositioinCur=0; PositioinCur<m_width_display;PositioinCur++)
+      for(size_t PositioinCur=0; PositioinCur<m_width_display;PositioinCur++)
         m_BufTextDisplay[LeftShiftAtEndStr+PositioinCur]=' ';
       m_left_activecursor_buf=0;
       if(ChTime[0] != '\0' && ChTime[0] != '\n')

@@ -115,17 +115,17 @@ class spi_slave_flow_t : public hardflow_t
   irs_u8 *mp_write_buffer;
   irs_u8 *mp_user_write_buffer;
   irs_u8 m_buffer_size;
-  irs_u8 m_current_byte;
   irs_u8 m_rb_channel_id;
   irs_u8 m_rb_read_size;
   irs_u8 m_rb_packet_size;
   irs_u8 m_buffer_top;
+  irs_u8 m_current_byte;
+  spi_stc_interrupt_t m_spi_stc_interrupt;
+  pcint0_interrupt_t m_pcint0_interrupt;
   //  флаги
   bool m_rb_new_data;
   bool m_wb_new_data;
   bool m_can_write;
-  spi_stc_interrupt_t m_spi_stc_interrupt;
-  pcint0_interrupt_t m_pcint0_interrupt;
   //  функции обращения к железу
   inline void write_data_register(irs_u8 a_data);
   inline irs_u8 read_data_register();

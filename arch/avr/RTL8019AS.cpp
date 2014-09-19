@@ -50,11 +50,11 @@ class rtl_t
 {
 public:
   typedef rtl_t this_type;
-  
+
   enum {
     // Регистры
     CR = 0x0,
-    
+
     PSTART = 0x01,
     PSTOP = 0x02,
     BNRY = 0x03,
@@ -71,14 +71,14 @@ public:
     TCR = 0x0d,
     DCR = 0x0e,
     IMR = 0x0f,
-    
+
     CURR = 0x07,
 
     CONFIG3 = 0x06,
-      
+
     RDMAPORT = 0x10,
     RSTPORT = 0x18,
-    
+
     // Биты CR
     STP = 0,
     STA = 1,
@@ -101,7 +101,7 @@ public:
 
     // Биты ISR
     RDC = 0x40,
-    
+
     // Биты DCR
     WTS = 0,
     BOS = 1,
@@ -110,11 +110,11 @@ public:
     ARM = 4,
     FT0 = 5,
     FT1 = 6,
-    
+
     // Биты CONFIG3
     // Тип 0-го светодиода
     LEDS0 = 4,
-    
+
     // Готовые значения для регистров
     //dcrval = 0x58,
     dcrval = ((1 << LS)|(1 << ARM)|(1 << FT1)),
@@ -145,7 +145,7 @@ public:
   void send_packet(irs_u16 length, irs_u8 *ext_tx_buf);
   void set_ports(irs_avr_port_t a_data_port, irs_avr_port_t a_address_port);
   irs_size_t tx_buf_size();
-  
+
 private:
   irs_u8 m_mac_save[mac_size];
   irs_size_t m_buf_size;
@@ -153,7 +153,7 @@ private:
   irs::raw_data_t<irs_u8> m_tx_buf_data;
   irs::raw_data_t<irs_u8> m_rx_buf_data;
   bool m_is_initialized;
-  
+
   void rtl_interrupt();
   void reset_rtl();
   bool wait_dma();
@@ -165,7 +165,7 @@ private:
 
 rtl_t::rtl_t():
   m_buf_size(0),
-  m_rtl_interrupt_event(this, rtl_interrupt),
+  m_rtl_interrupt_event(this, &rtl_t::rtl_interrupt),
   m_tx_buf_data(0),
   m_rx_buf_data(0),
   m_is_initialized(false)
@@ -185,17 +185,17 @@ void rtl_t::init(const irs_u8 *ap_mac, irs_size_t a_bufs_size)
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - a_bufs_size перед: ") <<
     a_bufs_size << endl);
   #endif //RTL_DBG_MSG
-  
+
   #ifdef IRS_LIB_DEBUG
   bool is_bufs_size_valid =
-    (a_bufs_size == irs_rtl8019as_packet_def_mark) || 
+    (a_bufs_size == irs_rtl8019as_packet_def_mark) ||
     (
       (irs_rtl8019as_packet_min <= a_bufs_size) &&
       (a_bufs_size <= irs_rtl8019as_packet_max)
     );
   IRS_LIB_ASSERT(is_bufs_size_valid);
   #endif //IRS_LIB_DEBUG
-  
+
   if (a_bufs_size == irs_rtl8019as_packet_def_mark) {
     a_bufs_size = irs_rtl8019as_packet_def;
   } else if (irs_rtl8019as_packet_min > a_bufs_size) {
@@ -203,22 +203,22 @@ void rtl_t::init(const irs_u8 *ap_mac, irs_size_t a_bufs_size)
   } else if (a_bufs_size > irs_rtl8019as_packet_max) {
     a_bufs_size = irs_rtl8019as_packet_max;
   }
-  
+
   m_tx_buf_data.resize(a_bufs_size);
   m_rx_buf_data.resize(a_bufs_size + 4);
   tx_buf = m_tx_buf_data.data();
   rx_buf = m_rx_buf_data.data();
-  
+
   #ifdef RTL_DBG_MSG
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - a_bufs_size после: ") <<
     a_bufs_size << endl);
   #endif //RTL_DBG_MSG
-  
+
   memcpy(m_mac_save, ap_mac, mac_size);
-  
+
   // Сброс RTL
   reset_rtl();
-  
+
   m_is_initialized = true;
 }
 
@@ -227,7 +227,7 @@ irs_u8 rtl_t::readrtl(irs_u8 regaddr)
   #ifdef RTL_DISABLE_INT_BYTE
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT_BYTE
-  
+
   irs_u8 READ=0x0;
 
   *port_str.rtl_data_port_dir = 0x00;
@@ -365,7 +365,7 @@ void rtl_t::reset_rtl()
 void rtl_t::rtl_interrupt()
 {
   if (!m_is_initialized) return;
-  
+
   #ifdef NOP
   static irs::blink_t blink_14(irs_avr_portd, 3);
   blink_14.flip();
@@ -455,18 +455,18 @@ void rtl_t::overrun()
 void rtl_t::getpacket()
 {
   writertl(CR, 0x1a);
-  
+
   readrtl(RDMAPORT);
   readrtl(RDMAPORT);
   irs_u16 rxlen_hard_cur = 0;
   IRS_LOBYTE(rxlen_hard_cur) = readrtl(RDMAPORT);
   IRS_HIBYTE(rxlen_hard_cur) = readrtl(RDMAPORT);
-  
+
   #ifdef RTL_DBG_MSG
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - receive size = ") << rxlen_hard_cur);
   IRS_LIB_DBG_RAW_MSG(endl);
   #endif //RTL_DBG_MSG
-  
+
   if (rx_hard == 0) {
     if (rxlen_hard_cur <= m_rx_buf_data.size()) {
       // Если размер пакета в норме, то принимаем его
@@ -487,7 +487,7 @@ void rtl_t::getpacket()
       readrtl(RDMAPORT);
     }
   }
-  
+
   //if ((byte&RDC) != 64) byte = readrtl(ISR);
   writertl(ISR, 0xF5);
 }
@@ -497,11 +497,11 @@ void rtl_t::send_packet(irs_u16 length, irs_u8 *ext_tx_buf)
   #ifdef RTL_DBG_MSG
   IRS_LIB_DBG_RAW_MSG(irsm("rtl - send size = ") << length << endl);
   #endif //RTL_DBG_MSG
-  
+
   #ifdef RTL_DISABLE_INT
   irs_disable_interrupt();
   #endif //RTL_DISABLE_INT
-  
+
   //STA RD2
   //writertl(CR,0x22);
   writertl(CR, cr_rtl_start|cr_dma_abort_complete|cr_page0);
@@ -524,13 +524,13 @@ void rtl_t::send_packet(irs_u16 length, irs_u8 *ext_tx_buf)
   //writertl(TBCR0,(irs_u8)(length&0xFF));
   //writertl(TBCR1,length>>8);
   writertl(CR,0x24);
-  
+
   #ifdef RTL_DISABLE_INT
   irs_enable_interrupt();
   #endif //RTL_DISABLE_INT
 }
 
-void rtl_t::set_ports(irs_avr_port_t a_data_port, 
+void rtl_t::set_ports(irs_avr_port_t a_data_port,
   irs_avr_port_t a_address_port)
 {
   port_str.rtl_data_port_set = avr_port_map[a_data_port].set;
@@ -552,7 +552,7 @@ rtl_t* get_rtl()
   return &rtl;
 }
 
-}; // namespace 
+}; // namespace
 
 void initrtl(const irs_u8 *mac, irs_size_t bufs_size)
 {

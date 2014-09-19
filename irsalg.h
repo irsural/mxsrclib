@@ -110,9 +110,9 @@ void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
     ++ap_first;
   }
   if (a_use_sample_standatd_deviation && (size > 1)) {
-    *ap_result = std::sqrt(square_sum/(size - 1));
+    *ap_result = sqrt(square_sum/(size - 1));
   } else {
-    *ap_result = std::sqrt(square_sum/size);
+    *ap_result = sqrt(square_sum/size);
   }
 }
 
@@ -561,7 +561,7 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
   forward_iterator ap_last,
   level_of_significance_t a_level_of_significance)
 {
-  typedef std::iterator_traits<forward_iterator> traits;
+  typedef iterator_traits<forward_iterator> traits;
   typedef typename traits::value_type value_type;
 
   const level_of_significance_t level = a_level_of_significance;
@@ -952,7 +952,7 @@ template <class data_t, class calc_t>
 class fast_average_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   fast_average_t(size_type a_count);
   void add(data_t a_val);
   calc_t get() const;
@@ -1074,7 +1074,7 @@ template <class data_t, class calc_t>
 class fast_multi_average_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   //! \brief Конструктор
   //! \param[in] a_sizes - массив размеров окон
   fast_multi_average_t(const vector<size_type>& a_sizes);
@@ -1248,7 +1248,7 @@ template<class data_t, class calc_t>
 class fast_sko_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   fast_sko_t(size_type a_count, size_type a_average_sample_count);
   ~fast_sko_t();
   void clear();
@@ -1410,7 +1410,7 @@ template<class data_t, class calc_t>
 class fast_multi_sko_with_single_average_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   //! \brief Конструктор
   //! \param[in] a_sizes - массив размеров окон
   //! \param[in] a_average_sizes - массив размеров окон для среднего значения
@@ -1725,7 +1725,7 @@ template<class data_t, class calc_t>
 class fast_multi_sko_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   //! \brief Конструктор
   //! \param[in] a_sizes - массив размеров окон
   //! \param[in] a_average_sizes - массив размеров окон для среднего значения
@@ -2178,7 +2178,7 @@ irs_u32 crc32_table(const T* ap_buf, const size_t a_size)
 class crc32_table_stream_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   crc32_table_stream_t();
   template<class T>
   inline void put(const T* ap_buf, size_type a_size = 1);

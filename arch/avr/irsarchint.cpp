@@ -11,11 +11,12 @@
 
 #include <irsarchint.h>
 #include <irsconfig.h>
+#include <irserror.h>
 
 #include <irsfinal.h>
 
 namespace irs {
-  
+
 namespace avr {
 
 // Работа с прерываниями в AVR
@@ -27,8 +28,9 @@ public:
   typedef irs_u8 gen_index_type;
 
   interrupt_array_t();
-  
+
   virtual irs_int_event_gen_t* int_event_gen(size_type a_index);
+  virtual generator_events_t* int_gen_events(size_type a_index);
   virtual void exec_event(size_type a_index);
 private:
   enum {
@@ -38,7 +40,7 @@ private:
   vector<gen_index_type> m_int_event_gen_indexes;
   vector<irs_int_event_gen_t> m_int_event_gens;
   size_type m_int_event_index;
-  
+
   interrupt_array_t(const interrupt_array_t&);
 };
 
@@ -48,13 +50,13 @@ private:
 
 // Работа с прерываниями в AVR
 irs::avr::interrupt_array_t::interrupt_array_t():
-  m_int_event_gen_indexes(static_cast<size_t>(interrupt_count), 
+  m_int_event_gen_indexes(static_cast<size_t>(interrupt_count),
     static_cast<gen_index_type>(interrupt_none)),
   m_int_event_gens(1),
   m_int_event_index(interrupt_none)
 {
 }
-irs_int_event_gen_t* 
+irs_int_event_gen_t*
   irs::avr::interrupt_array_t::int_event_gen(size_type a_index)
 {
   gen_index_type& gen_index = m_int_event_gen_indexes[a_index];
@@ -67,6 +69,13 @@ irs_int_event_gen_t*
     // Генератор прерываний для номера прерывания "a_index" уже существует
   }
   return &m_int_event_gens[gen_index];
+}
+irs::generator_events_t* irs::avr::interrupt_array_t::
+  int_gen_events(size_type /*a_index*/)
+{
+  IRS_LIB_ASSERT_MSG("Функция int_gen_events возвращающая generator_events_t*"
+    "в AVR-версии не реализована");
+  return IRS_NULL;
 }
 void irs::avr::interrupt_array_t::exec_event(size_type a_index)
 {

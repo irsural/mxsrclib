@@ -442,7 +442,8 @@ irs_u32 irs::cyclic_adc_ads8344_t::get_u32_data(irs_u8 a_channel)
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
   m_channels[a_channel].new_value_exists = false;
-  return m_channels[a_channel].value << (32 - adc_resolution);
+  return static_cast<irs_u32>(m_channels[a_channel].value) <<
+    (32 - adc_resolution);
 }
 
 void irs::cyclic_adc_ads8344_t::tick()
@@ -712,7 +713,8 @@ irs_u32 irs::cyclic_adc_ad7683_t::get_u32_data(irs_u8 a_channel)
   if (a_channel > 0) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
-  return m_adc_ad7683_data.voltage_code << (32 - adc_resolution);
+  return static_cast<irs_u32>(m_adc_ad7683_data.voltage_code) <<
+    (32 - adc_resolution);
 }
 
 void irs::cyclic_adc_ad7683_t::tick()
@@ -870,7 +872,8 @@ irs_u32 irs::cyclic_adc_ad7686_t::get_u32_data(irs_u8 a_channel)
   if (a_channel > 0) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
   }
-  return m_adc_ad7686_data.voltage_code << (32 - adc_resolution);
+  return static_cast<irs_u32>(m_adc_ad7686_data.voltage_code) <<
+    (32 - adc_resolution);
 }
 
 void irs::cyclic_adc_ad7686_t::tick()

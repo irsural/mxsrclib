@@ -26,8 +26,8 @@ irs::avr::spi_master_flow_t::spi_master_flow_t(irs_u8 a_buffer_size):
   m_buffer_size(a_buffer_size),
   m_current_byte(0),
   m_rb_channel_id(0),
-  m_rb_read_size(0),
   m_rb_packet_size(0),
+  m_rb_read_size(0),
   m_max_buffer_size(a_buffer_size),
   //  флаги
   m_rb_new_data(false),
@@ -349,11 +349,11 @@ irs::avr::spi_slave_flow_t::spi_slave_flow_t(irs_u8 a_buffer_size):
   mp_write_buffer(IRS_NULL),
   mp_user_write_buffer(IRS_NULL),
   m_buffer_size(a_buffer_size),
-  m_buffer_top(m_buffer_size - 1),
-  m_current_byte(0),
   m_rb_channel_id(0),
   m_rb_read_size(0),
   m_rb_packet_size(0),
+  m_buffer_top(m_buffer_size - 1),
+  m_current_byte(0),
   m_spi_stc_interrupt(this),
   m_pcint0_interrupt(this),
   //  флаги

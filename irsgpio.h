@@ -51,7 +51,7 @@ class gpio_pin_t: public io_t
 {
 public:
   virtual ~gpio_pin_t() {}
-  virtual bool pin() = 0;  
+  virtual bool pin() = 0;
   virtual void set() = 0;
   virtual void clear() = 0;
   virtual void set_dir(dir_t a_dir) = 0;
@@ -76,7 +76,12 @@ private:
 class gpio_port_t: public io_t
 {
 public:
+  #ifdef __ICCAVR__
+  typedef irs_u8 data_t;
+  #else //__ICCAVR__
   typedef irs_u32 data_t;
+  #endif //__ICCAVR__
+
   virtual ~gpio_port_t() {}
   virtual data_t get() = 0;
   virtual void set(data_t a_data) = 0;
@@ -120,20 +125,29 @@ namespace avr
 //! \addtogroup drivers_group
 //! @{
 
-class io_pin_t : public gpio_pin_t
+class io_aux_port_t
 {
-  enum
-  {
+public:
+  enum {
     out_idx = 0,
     dir_idx = -1,
     in_idx = -2
   };
-  p_avr_port_t mp_port;
-  irs_u8 m_mask;
+
+  io_aux_port_t(avr_port_t &a_port):
+    mp_port(&a_port)
+  {}
 
   inline avr_port_t& out() { return *(mp_port + out_idx); }
   inline avr_port_t& dir() { return *(mp_port + dir_idx); }
   inline avr_port_t& in() { return *(mp_port + in_idx); }
+private:
+  p_avr_port_t mp_port;
+};
+
+class io_pin_t: public gpio_pin_t, public io_aux_port_t
+{
+  irs_u8 m_mask;
 public:
   io_pin_t(p_avr_port_t ap_write_port, p_avr_port_t ap_read_port,
     p_avr_port_t ap_dir_port, irs_u8 a_bit, dir_t a_dir, bool a_pull_up);
@@ -144,6 +158,23 @@ public:
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir);
+};
+
+class io_port_t: public gpio_port_t, public io_aux_port_t
+{
+public:
+  // Крашенинников: В io_pin_t используется параметр a_pull_up.
+  // В io_port_t для этого следует использовать параметр a_dir
+  // со значением dir_in_pull_up
+  io_port_t(avr_port_t &a_port, data_t a_mask, dir_t a_dir,
+    irs_u8 a_shift = 0);
+  virtual ~io_port_t();
+  virtual data_t get();
+  virtual void set(data_t a_data);
+  virtual void set_dir(dir_t a_dir);
+private:
+  data_t m_mask;
+  const irs_u8 m_shift;
 };
 
 class mem_out_register_t

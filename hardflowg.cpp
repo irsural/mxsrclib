@@ -3349,7 +3349,7 @@ irs::hardflow::echo_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
   size_type count = 0;
   if (a_channel_ident < m_channels.size()) {
     channel_buf_type& channel_buf = m_channels[a_channel_ident];
-    count = std::min(channel_buf.size(), a_size);
+    count = min(channel_buf.size(), a_size);
     memcpyex(ap_buf, vector_data(channel_buf), count);
     channel_buf.erase(channel_buf.begin(), channel_buf.begin() + count);
   }
@@ -3363,7 +3363,7 @@ irs::hardflow::echo_t::write(size_type a_channel_ident, const irs_u8 *ap_buf,
   size_type count = 0;
   if (a_channel_ident < m_channels.size()) {
     channel_buf_type& channel_buf = m_channels[a_channel_ident];
-    count = std::min(m_buf_max_size - channel_buf.size(), a_size);
+    count = min(m_buf_max_size - channel_buf.size(), a_size);
     const size_type pos = channel_buf.size();
     channel_buf.resize(channel_buf.size() + count);
     memcpyex(vector_data(channel_buf, pos), ap_buf, count);
@@ -3421,6 +3421,7 @@ irs_status_t irs::to_irs_status(hardflow::fixed_flow_t::status_t a_status)
   return irs_st_error;
 }
 
+#ifndef __ICCAVR__
 // class memory_flow_t
 irs::hardflow::memory_flow_t::memory_flow_t(
   size_type a_channel_receive_buffer_max_size
@@ -3434,7 +3435,7 @@ irs::hardflow::memory_flow_t::memory_flow_t(
 
 irs::hardflow::memory_flow_t::~memory_flow_t()
 {
-  std::multimap<size_type, channel_t>::iterator it = m_channels.begin();
+  multimap<size_type, channel_t>::iterator it = m_channels.begin();
   while (it != m_channels.end()) {
     size_type local_channel_ident = it->first;
     size_type remote_channel_ident = it->second.remote_channel_ident;
@@ -3459,10 +3460,10 @@ irs::hardflow::memory_flow_t::size_type
 irs::hardflow::memory_flow_t::read(size_type a_channel_ident, irs_u8* ap_buf,
   size_type a_size)
 {
-  std::map<size_type, vector<irs_u8> >::iterator it =
+  map<size_type, vector<irs_u8> >::iterator it =
     m_channel_buffers.find(a_channel_ident);
   if (it != m_channel_buffers.end()) {
-    const size_type count = std::min(a_size, it->second.size());
+    const size_type count = min(a_size, it->second.size());
     irs::memcpyex(ap_buf, vector_data(it->second), count);
     it->second.erase(it->second.begin(), it->second.begin() + count);
     return count;
@@ -3474,19 +3475,19 @@ irs::hardflow::memory_flow_t::size_type
 irs::hardflow::memory_flow_t::write(size_type a_channel_ident,
   const irs_u8 *ap_buf, size_type a_size)
 {
-  std::pair<std::multimap<size_type, channel_t>::iterator,
-    std::multimap<size_type, channel_t>::iterator> ret =
+  pair<multimap<size_type, channel_t>::iterator,
+    multimap<size_type, channel_t>::iterator> ret =
     m_channels.equal_range(a_channel_ident);
-  std::multimap<size_type, channel_t>::iterator it = ret.first;
+  multimap<size_type, channel_t>::iterator it = ret.first;
 
   if (ret.first != ret.second) {
     size_type count = a_size;
     while (it != ret.second) {
       size_type channel_ident = it->second.remote_channel_ident;
-      std::map<size_type, vector<irs_u8> >::const_iterator buffer_it =
+      map<size_type, vector<irs_u8> >::const_iterator buffer_it =
         it->second.memory_flow->m_channel_buffers.find(channel_ident);
       const size_type buffer_size = buffer_it->second.size();
-      count = std::min(count, it->second.memory_flow->m_receive_buf_max_size -
+      count = min(count, it->second.memory_flow->m_receive_buf_max_size -
         buffer_size);
       ++it;
     }
@@ -3494,7 +3495,9 @@ irs::hardflow::memory_flow_t::write(size_type a_channel_ident,
     while (it != ret.second) {
       memory_flow_t* memory_flow = it->second.memory_flow;
       size_type channel_ident = it->second.remote_channel_ident;
+      #ifdef IRS_LIB_DEBUG
       size_type write_count =
+      #endif //IRS_LIB_DEBUG
         memory_flow->write_to_local_buffer(channel_ident, ap_buf, count);
       IRS_LIB_ASSERT(write_count == count);
       ++it;
@@ -3508,11 +3511,11 @@ irs::hardflow::memory_flow_t::size_type
 irs::hardflow::memory_flow_t::write_to_local_buffer(size_type a_channel_ident,
   const irs_u8 *ap_buf, size_type a_size)
 {
-  std::map<size_type, vector<irs_u8> >::iterator it =
+  map<size_type, vector<irs_u8> >::iterator it =
     m_channel_buffers.find(a_channel_ident);
   if (it != m_channel_buffers.end()) {
     IRS_LIB_ASSERT(it->second.size() <= m_receive_buf_max_size);
-    const size_type count = std::min(a_size,
+    const size_type count = min(a_size,
       it->second.size() - m_receive_buf_max_size);
     const size_type pos = it->second.size();
     it->second.resize(it->second.size() + count);
@@ -3562,14 +3565,14 @@ void irs::hardflow::memory_flow_t::add_part_connection(
   memory_flow_t* ap_memory_flow,
   size_type a_local_channel_ident, size_type a_remote_channel_ident)
 {
-  std::multimap<size_type, channel_t>::iterator it =
+  multimap<size_type, channel_t>::iterator it =
     find_channel(ap_memory_flow, a_local_channel_ident,
     a_remote_channel_ident);
   if (it == m_channels.end()) {
     channel_t channel(ap_memory_flow, a_remote_channel_ident);
     m_channels.insert(make_pair(a_local_channel_ident, channel));
     m_channel_buffers.insert(make_pair(a_local_channel_ident,
-      std::vector<irs_u8>()));
+      vector<irs_u8>()));
   }
 }
 
@@ -3578,11 +3581,11 @@ irs::hardflow::memory_flow_t::find_channel(
   memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
   size_type a_remote_channel_ident)
 {
-  std::pair<std::multimap<size_type, channel_t>::iterator,
-    std::multimap<size_type, channel_t>::iterator> ret =
+  pair<multimap<size_type, channel_t>::iterator,
+    multimap<size_type, channel_t>::iterator> ret =
     m_channels.equal_range(a_local_channel_ident);
   channel_t channel(ap_memory_flow, a_remote_channel_ident);
-  std::multimap<size_type, channel_t>::iterator it = irs::find_value(
+  multimap<size_type, channel_t>::iterator it = irs::find_value(
     ret.first, ret.second, channel);
   return it;
 }
@@ -3601,12 +3604,12 @@ void irs::hardflow::memory_flow_t::delete_part_connection(
   memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
   size_type a_remote_channel_ident)
 {
-  std::multimap<size_type, channel_t>::iterator it =
+  multimap<size_type, channel_t>::iterator it =
     find_channel(ap_memory_flow, a_local_channel_ident, a_remote_channel_ident);
   if (it != m_channels.end()) {
     m_channels.erase(it);
     if (m_channels.find(a_local_channel_ident) == m_channels.end()) {
-      std::map<size_type, vector<irs_u8> >::iterator buffer_it =
+      map<size_type, vector<irs_u8> >::iterator buffer_it =
         m_channel_buffers.find(a_local_channel_ident);
       if (m_channel == buffer_it) {
         ++m_channel;
@@ -3619,10 +3622,11 @@ void irs::hardflow::memory_flow_t::delete_part_connection(
 irs::hardflow::memory_flow_t::size_type
 irs::hardflow::memory_flow_t::received_data_size(size_type a_channel_ident)
 {
-  std::map<size_type, vector<irs_u8> >::const_iterator it =
+  map<size_type, vector<irs_u8> >::const_iterator it =
     m_channel_buffers.find(a_channel_ident);
   if (it != m_channel_buffers.end()) {
     return it->second.size();
   }
   return 0;
 }
+#endif //__ICCAVR__

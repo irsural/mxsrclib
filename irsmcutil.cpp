@@ -12,9 +12,9 @@
 
 #include <irsfinal.h>
 
-#ifdef _ICCAVR__
+#ifdef __ICCAVR__
 
-irs::blink_t::blink_t(irs_avr_port_t a_port, irs_u8 a_bit, 
+irs::blink_t::blink_t(irs_avr_port_t a_port, irs_u8 a_bit,
   counter_t a_blink_time
 ):
   m_pin_led(*(get_avr_port_map()[a_port].set), a_bit, gpio_pin_t::dir_out),
@@ -22,4 +22,4 @@ irs::blink_t::blink_t(irs_avr_port_t a_port, irs_u8 a_bit,
 {
 }
 
-#endif //_ICCAVR__
+#endif //__ICCAVR__

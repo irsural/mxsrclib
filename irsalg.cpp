@@ -216,7 +216,9 @@ double irs::critical_values_for_t_a_criterion(
 {
   const int n_min = 3;
   const int n_max = 25;
+  #ifdef IRS_LIB_DEBUG
   const int array_size = n_max - n_min + 1;
+  #endif //IRS_LIB_DEBUG
   const size_t n = a_sample_size;
   size_t index = 0;
   if ((n > 0) && (n <= n_min)) {

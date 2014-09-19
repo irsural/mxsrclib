@@ -22,6 +22,8 @@
 #include <irsfinal.h>
 //---------------------------------------------------------------------------
 
+#ifndef __ICCAVR__
+
 // struct chart_t
 vector<double> irs::chart_data::chart_t::get_x_array() const
 {
@@ -284,3 +286,4 @@ void irs::chart_data::charts_json_file_t::save(
 }
 #endif // IRS_USE_JSON_CPP
 
+#endif //__ICCAVR__

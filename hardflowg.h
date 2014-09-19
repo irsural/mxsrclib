@@ -179,6 +179,7 @@ enum udp_limit_connections_mode_t {
   udplc_mode_unlimited     //!< \brief Переменная m_max_size не учитывается
 };
 
+#ifndef __ICCAVR__
 template <class address_t>
 class udp_channel_list_t
 {
@@ -947,6 +948,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::next_free_channel_id()
     // Переполнения счетчика не было
   }
 }
+#endif //__ICCAVR__
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -1061,7 +1063,7 @@ bool lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
 
 //! \brief Реализует обмен данными по UDP протоколу
 //! \author Lyashchov Maxim
-class udp_flow_t: public hardflow_t
+//class udp_flow_t: public hardflow_t
 {
 public:
   //typedef hardflow_t::size_type size_type;
@@ -2126,6 +2128,7 @@ private:
   size_type m_channel;
 };
 
+#ifndef __ICCAVR__
 class memory_flow_t: public hardflow_t
 {
 public:
@@ -2163,7 +2166,7 @@ private:
         (remote_channel_ident == a_channel.remote_channel_ident);
     }
   };
-  typedef std::multimap<size_type, channel_t> channels_type;
+  typedef multimap<size_type, channel_t> channels_type;
 
   void add_part_connection(memory_flow_t* ap_memory_flow,
     size_type a_local_channel_ident, size_type a_remote_channel_ident);
@@ -2171,15 +2174,16 @@ private:
     size_type a_local_channel_ident, size_type a_remote_channel_ident);
   size_type write_to_local_buffer(size_type a_channel_ident,
     const irs_u8 *ap_buf, size_type a_size);
-  std::multimap<size_type, channel_t>::iterator find_channel(
+  multimap<size_type, channel_t>::iterator find_channel(
     memory_flow_t* ap_memory_flow, size_type a_local_channel_ident,
     size_type a_remote_channel_ident);
 
-  std::multimap<size_type, channel_t> m_channels;
-  std::map<size_type, vector<irs_u8> > m_channel_buffers;
+  multimap<size_type, channel_t> m_channels;
+  map<size_type, vector<irs_u8> > m_channel_buffers;
   size_type m_receive_buf_max_size;
-  std::map<size_type, vector<irs_u8> >::const_iterator m_channel;
+  map<size_type, vector<irs_u8> >::const_iterator m_channel;
 };
+#endif //__ICCAVR__
 
 //! @}
 

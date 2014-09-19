@@ -13,6 +13,8 @@
 
 #include <irsfinal.h>
 
+#ifndef __ICCAVR__
+
 namespace irs {
 
 //! \addtogroup network_in_out_group
@@ -85,7 +87,7 @@ struct packet_t
 class packet_flow_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   packet_flow_t(irs::hardflow_t* ap_hardflow);
   void hardflow(irs::hardflow_t* ap_hardflow);
   void send(size_type a_channel, const packet_t& a_packet);
@@ -158,9 +160,9 @@ struct device_info_t
 class client_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   typedef irs::string_t string_type;
-  typedef std::map<mxmac_t, device_info_t> devices_type;
+  typedef map<mxmac_t, device_info_t> devices_type;
   client_t(irs::hardflow_t* ap_client_hardflow,
     irs::hardflow_t* ap_server_hardflow,
     size_type a_divece_max_count = 255);
@@ -212,7 +214,7 @@ private:
 class device_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   struct configuration_t
   {
     irs::hardflow_t* client_hardflow;
@@ -272,5 +274,7 @@ private:
 //! @}
 
 } // irs
+
+#endif //__ICCAVR__
 
 #endif // IRSDCP_H

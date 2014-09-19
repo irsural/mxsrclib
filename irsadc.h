@@ -1626,7 +1626,7 @@ private:
     {
     }
   };
-  std::vector<parameter_t> m_params;
+  vector<parameter_t> m_params;
   size_type m_current_param;
   struct channel_t
   {

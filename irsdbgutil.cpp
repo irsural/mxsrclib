@@ -302,25 +302,30 @@ irs::avr_memory_checker_t::avr_memory_checker_t(
   m_range_param_list(mcrpi_avr_size),
   m_param_list(mcpi_avr_size),
   m_heap_array_size(heap_array_size_def),
-  m_check_event(this, check),
+  m_check_event(this, &irs::avr_memory_checker_t::check),
   m_out_timer(make_cnt_s(m_out_time_s_def)),
   m_reg_Y(*reinterpret_cast<irs_u16*>(0x1C))
 {
   lock_interrupt_t lock_interrupt;
 
   m_range_param_list[mcrpi_avr_return_stack] = range_param_type(
-    memory_checker_range_param_t(), second_delta, first_delta);
+    memory_checker_range_param_t(), &irs::avr_memory_checker_t::second_delta,
+    &irs::avr_memory_checker_t::first_delta);
   m_range_param_list[mcrpi_avr_call_stack] = range_param_type(
-    memory_checker_range_param_t(), second_delta, first_delta);
+    memory_checker_range_param_t(), &irs::avr_memory_checker_t::second_delta,
+    &irs::avr_memory_checker_t::first_delta);
   m_range_param_list[mcrpi_avr_heap] = range_param_type(
-    memory_checker_range_param_t(), first_delta, second_delta);
+    memory_checker_range_param_t(), &irs::avr_memory_checker_t::first_delta,
+    &irs::avr_memory_checker_t::second_delta);
 
   if (a_interrupt_flag == interrupt_on) {
     m_param_list[mcpi_avr_interrupt] = param_type(mcp_avr_interrupt_timer0,
-      simple_param_get, interrupt_set);
+      &irs::avr_memory_checker_t::simple_param_get,
+      &irs::avr_memory_checker_t::interrupt_set);
   }
   m_param_list[mcpi_avr_out_time_s] = param_type(m_out_time_s_def,
-    simple_param_get, out_time_set);
+    &irs::avr_memory_checker_t::simple_param_get,
+    &irs::avr_memory_checker_t::out_time_set);
 
   m_range_param_list[mcrpi_avr_call_stack].param.current = m_reg_Y;
   m_range_param_list[mcrpi_avr_heap].param.current = heap_pointer();

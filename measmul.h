@@ -3106,7 +3106,7 @@ private:
 class adapter_multimeter_t: public mxmultimeter_t
 {
 public:
-  typedef std::size_t size_type;
+  typedef size_t size_type;
   adapter_multimeter_t(irs::handle_t<fun_get_value_base_t> ap_fun_get_value,
     double a_interval = 0, size_type average_size = 1);
   virtual inline void set_dc() {}

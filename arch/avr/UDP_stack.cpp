@@ -24,11 +24,11 @@ irs_u8 *user_tx_buf = 0;
 namespace irs {
 
 namespace udp {
-  
-struct mac_t 
+
+struct mac_t
 {
   irs_u8 val[IRS_RTL_MAC_SIZE];
-  
+
   bool operator==(const mac_t& a_mac) const
   {
     return memcmp((void *)val, (void *)a_mac.val, IRS_RTL_MAC_SIZE) == 0;
@@ -45,7 +45,7 @@ const mac_t broadcast_mac = {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 struct ip_t
 {
   irs_u8 val[IRS_UDP_IP_SIZE];
-  
+
   bool operator==(const ip_t& a_ip) const
   {
     return memcmp((void *)val, (void *)a_ip.val, IRS_UDP_IP_SIZE) == 0;
@@ -78,7 +78,7 @@ class arp_cash_t
 {
 public:
   static const irs_uarc m_def_size = 3;
-  
+
   arp_cash_t(irs_uarc a_size = m_def_size);
   bool ip_to_mac(const ip_t& a_ip, mac_t& a_mac);
   void add(const ip_t& a_ip, const mac_t& a_mac);
@@ -89,8 +89,8 @@ private:
     ip_t ip;
     mac_t mac;
     bool valid;
-    
-    cash_item_t(ip_t a_ip = zero_ip, mac_t a_mac = zero_mac, 
+
+    cash_item_t(ip_t a_ip = zero_ip, mac_t a_mac = zero_mac,
       bool a_valid = false):
       ip(a_ip), mac(a_mac), valid(a_valid)
     {
@@ -98,14 +98,14 @@ private:
   };
   typedef vector<cash_item_t>::iterator cash_item_it_t;
   typedef vector<cash_item_t>::const_iterator cash_item_const_it_t;
-  
+
   vector<cash_item_t> m_cash;
   irs_uarc m_pos;
   loop_timer_t m_reset_timer;
 };
-  
+
 } //namespace udp
-  
+
 } //namespace irs
 
 // Переобразование данных в mac_t
@@ -185,7 +185,7 @@ void irs::udp::arp_cash_t::resize(irs_uarc a_size)
   m_cash.resize(a_size);
   if (m_pos >= m_cash.size()) m_pos = 0;
 }
-  
+
 namespace {
 
 class udp_t
@@ -204,7 +204,7 @@ public:
   void read_end();
   irs_size_t udp_buf_size();
   void tick();
-  
+
 private:
   enum {
     prot_icmp = 0x01,
@@ -216,7 +216,7 @@ private:
     ARPBUF_SENDSIZE = 60,
     ICMPBUF_SIZE = 100
   };
-  
+
   irs_u8 m_ip[ip_size];
   irs_u8 m_mac[6];
   irs::raw_data_t<irs_u8> m_arpbuf_data;
@@ -247,7 +247,7 @@ private:
   irs::udp::arp_cash_t m_arp_cash;
   irs::udp::ip_t& m_cash_ip;
   irs::udp::mac_t& m_cash_mac;
-  
+
   irs_u8 cash(irs_u8 a_dest_ip[4]);
   irs_u16 ip_checksum (irs_u16 cs, irs_u8 dat, irs_u16 count);
   irs_u16 cheksum(irs_u16 count, irs_u8 *adr);
@@ -325,10 +325,10 @@ void udp_t::init(const irs_u8 *mymac,const irs_u8 *myip,
   m_mac[3]=mymac[3];
   m_mac[4]=mymac[4];
   m_mac[5]=mymac[5];
-  
+
   user_rx_buf=&rx_buf[HEADERS_SIZE];
   user_tx_buf=&tx_buf[HEADERS_SIZE];
-  
+
   IRS_LIB_ASSERT(m_arp_buf != IRS_NULL);
   IRS_LIB_ASSERT(m_icmp_buf != IRS_NULL);
 }
@@ -338,9 +338,9 @@ udp_t::~udp_t()
 }
 
 irs_u8 udp_t::cash(irs_u8 a_dest_ip[4])
-{ 
+{
   irs_u8 result = 0;
-  
+
   const irs::udp::ip_t& ip = irs::udp::ip_from_data(a_dest_ip);
   if (ip != irs::udp::broadcast_ip) {
     if (m_arp_cash.ip_to_mac(ip, m_cash_mac)) {
@@ -352,7 +352,7 @@ irs_u8 udp_t::cash(irs_u8 a_dest_ip[4])
     m_cash_mac = irs::udp::broadcast_mac;
     result = 1;
   }
-  
+
   return result;
 }
 
@@ -457,18 +457,18 @@ void udp_t::arp_ping(irs_u8 a_dest_ip[4])
   m_arp_buf[0xa]=m_mac[0x4];
   m_arp_buf[0xb]=m_mac[0x5];
 
-  //EtherType пакетов запроса 0x0806 
+  //EtherType пакетов запроса 0x0806
   m_arp_buf[0xc]=0x8;
   m_arp_buf[0xd]=0x6;
 
   //Hardware type
   m_arp_buf[0xe]=0x0;
   m_arp_buf[0xf]=0x1;
-  
+
   //Protocol type
   m_arp_buf[0x10]=0x8;
   m_arp_buf[0x11]=0x0;
-  
+
   //Hardware lenght
   m_arp_buf[0x12]=0x6;
   //Protocol lenght
@@ -564,13 +564,13 @@ void udp_t::arp_cash(void)
 
 void udp_t::arp()
 {
-  
+
 #ifdef NOP
     static irs::blink_t blink_2(irs_avr_porte, 2);
     blink_2.set();
     //for(;;);
 #endif //NOP
-    
+
   //irs_u8 i=0;
   if((rx_buf[0x26]==m_ip[0])&&(rx_buf[0x27]==m_ip[1])&&
     (rx_buf[0x28]==m_ip[2])&&(rx_buf[0x29]==m_ip[3]))
@@ -588,7 +588,7 @@ void udp_t::arp()
 }
 
 void udp_t::send_arp(void)
-{ 
+{
   //sendpacketARP(&m_arp_buf[0]);
   sendpacket(ARPBUF_SENDSIZE, m_arp_buf);
   //sendpacket(60, m_arp_buf);
@@ -675,7 +675,7 @@ void udp_t::icmp()
       m_rxlenicmp = rxlen_hard - 4;
       if (m_rxlenicmp <= ICMPBUF_SIZE) {
         m_rx_icmp = true;
-        for (irs_i16 i = 0; i < m_rxlenicmp; i++) m_icmp_buf[i] = rx_buf[i];
+        for (irs_u16 i = 0; i < m_rxlenicmp; i++) m_icmp_buf[i] = rx_buf[i];
         icmp_packet();
       }
     }
@@ -723,7 +723,7 @@ void udp_t::udp_packet()
   tx_buf[0xd]=0x0;
   //ver//tos
   tx_buf[0xe]=0x45;
-  tx_buf[0xf]=0x10; 
+  tx_buf[0xf]=0x10;
   ///alllenth
   irs_u16 ip_length = m_tx_user_length_udp + 28;
   tx_buf[0x11]=IRS_LOBYTE(ip_length);
@@ -930,10 +930,10 @@ void udp_t::ip(void)
   if ((rx_buf[0x1e] == m_ip[0]) && (rx_buf[0x1f] == m_ip[1])&&
     (rx_buf[0x20] == m_ip[2]) && (rx_buf[0x21] == m_ip[3]))
   {
-    if (rx_buf[0x17] == 0x01) { 
-      icmp(); 
+    if (rx_buf[0x17] == 0x01) {
+      icmp();
     }
-    if(rx_buf[0x17] == 0x11) { 
+    if(rx_buf[0x17] == 0x11) {
       udp();
     }
     //if (packet[0x17]==0x6) tcp();
@@ -998,7 +998,7 @@ void Tick_UDP()
   get_udp()->tick();
 }
 
-void OpenUDP(irs_u16 a_local_port, irs_u16 a_dest_port, 
+void OpenUDP(irs_u16 a_local_port, irs_u16 a_dest_port,
   const irs_u8* ap_dest_ip)
 {
   get_udp()->open(a_local_port, a_dest_port, ap_dest_ip);

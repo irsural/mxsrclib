@@ -4,6 +4,8 @@
 
 #include <irsfinal.h>
 
+#ifndef __ICCAVR__
+
 namespace {
 
 char packet_id[] = {'i', 'r', 's', 'd', 'c', 'p'};
@@ -620,3 +622,5 @@ void irs::dcp::device_t::init_packet_send_from_configuration()
     m_send_packet.options |= option_use_dhcp;
   }
 }
+
+#endif //__ICCAVR__

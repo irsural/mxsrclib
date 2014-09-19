@@ -14,6 +14,8 @@
 
 #include <irsfinal.h>
 
+#ifndef __ICCAVR__
+
 namespace irs {
 
 namespace chart_data {
@@ -92,5 +94,7 @@ private:
 } // namespace chart_data
 
 } // namespace irs
+
+#endif //__ICCAVR__
 //---------------------------------------------------------------------------
 #endif
