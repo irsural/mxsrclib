@@ -196,202 +196,7 @@ void afloat_to_str(char *str, double N, size_t len, size_t accur,
   str[len] = '\0';
 }
 
-#ifdef __ICCAVR__
-// Карта преобразования номеров клавиш в коды
-// для вертикального расположения клавиатуры
-__flash irskey_t irskbd_table_vertical[] =
-{
-  irskey_none,      // 0
-  irskey_0,         // 1
-  irskey_1,         // 2
-  irskey_2,         // 3
-  irskey_3,         // 4
-  irskey_4,         // 5
-  irskey_5,         // 6
-  irskey_6,         // 7
-  irskey_7,         // 8
-  irskey_8,         // 9
-  irskey_9,         // 10
-  irskey_point,     // 11
-  irskey_enter,     // 12
-  irskey_up,        // 13
-  irskey_down,      // 14
-  irskey_backspace, // 15
-  irskey_escape     // 16
-};
-
-// Карта преобразования номеров клавиш в коды
-// для горизонтального расположения клавиатуры
-__flash irskey_t irskbd_table_horisontal[] =
-{
-  irskey_none,      // 0
-  irskey_enter,     // 1
-  irskey_backspace, // 2
-  irskey_3,         // 3
-  irskey_6,         // 4
-  irskey_point,     // 5
-  irskey_2,         // 6
-  irskey_5,         // 7
-  irskey_0,         // 8
-  irskey_1,         // 9
-  irskey_4,         // 10
-  irskey_down,      // 11
-  irskey_escape,    // 12
-  irskey_8,         // 13
-  irskey_9,         // 14
-  irskey_up,        // 15
-  irskey_7          // 16
-};
-
-// Карта преобразования номеров клавиш в коды
-// для расположения клавиатуры для ГТЧ rev 0 (макетка edition)
-__flash irskey_t irskbd_table_gtch_rev_0[] =
-{
-  irskey_none,      // 0
-  irskey_none,      // 1
-  irskey_none,      // 2
-  irskey_escape,    // 3
-  irskey_6,         // 4
-  irskey_none,      // 5
-  irskey_2,         // 6
-  irskey_5,         // 7
-  irskey_none,      // 8
-  irskey_1,         // 9
-  irskey_4,         // 10
-  irskey_enter,     // 11
-  irskey_up,        // 12
-  irskey_8,         // 13
-  irskey_9,         // 14
-  irskey_down,      // 15
-  irskey_7          // 16
-};
-
-// Карта преобразования номеров клавиш в коды
-// для расположения клавиатуры для ГТЧ rev 1 (чемодан edition)
-__flash irskey_t irskbd_table_gtch_rev_1[] =
-{
-  irskey_none,      // 0
-  irskey_none,      // 1
-  irskey_none,      // 2
-  irskey_2,         // 3
-  irskey_5,         // 4
-  irskey_none,      // 5
-  irskey_escape,    // 6
-  irskey_6,         // 7
-  irskey_none,      // 8
-  irskey_enter,     // 9
-  irskey_down,      // 10
-  irskey_1,         // 11
-  irskey_7,         // 12
-  irskey_9,         // 13
-  irskey_8,         // 14
-  irskey_4,         // 15
-  irskey_up         // 16
-};
-
-//#define avr_port_map_size IRS_ARRAYOFSIZE(avr_port_map);
-const irs_avr_port_map_t* irs::get_avr_port_map()
-{
-  static const irs_avr_port_map_t avr_port_map_i[] = {
-    {&PORTA, &PINA, &DDRA},
-    {&PORTB, &PINB, &DDRB},
-    {&PORTC, &PINC, &DDRC},
-    {&PORTD, &PIND, &DDRD},
-    {&PORTE, &PINE, &DDRE},
-    {&PORTF, &PINF, &DDRF},
-    {&PORTG, &PING, &DDRG}
-  };
-
-  return avr_port_map_i;
-}
-
-
-//__flash irs_u8 lcd_table[] =
-
-mxkey_drv_avr_t::mxkey_drv_avr_t(irskbd_t type, irskbd_map_t map_type,
-  irs_avr_port_t a_port):
-  m_high_set_bit(7),
-  m_high_get_bit(3),
-  mp_set(avr_port_map[a_port].set),
-  mp_get(avr_port_map[a_port].get),
-  mp_dir(avr_port_map[a_port].dir)
-{
-  switch (type) {
-    case irskbd_high_pull_up: {
-      m_high_set_bit = 3;
-      m_high_get_bit = 7;
-      (*mp_dir) = 0x0F;
-    } break;
-
-    default:
-    case irskbd_low_pull_up: {
-      m_high_set_bit = 7;
-      m_high_get_bit = 3;
-      (*mp_dir) = 0xF0;
-    } break;
-  }
-  switch(map_type) {
-    default:
-    case irskbd_map_vertical: {
-      mp_key_map = irskbd_table_vertical;
-    } break;
-
-    case irskbd_map_horisontal: {
-      mp_key_map = irskbd_table_horisontal;
-    } break;
-
-    case irskbd_map_gtch_rev_1: {
-      mp_key_map = irskbd_table_gtch_rev_1;
-    } break;
-  }
-  (*mp_set) = (*mp_dir)^0xFF;
-}
-mxkey_drv_avr_t::~mxkey_drv_avr_t()
-{
-  (*mp_dir) = 0x00;
-  (*mp_set) = 0x00;
-}
-irskey_t mxkey_drv_avr_t::operator()()
-{
-  reshor(0);
-  sethor(1);
-  sethor(2);
-  sethor(3);
-  if (!chkver(0)) return mp_key_map[8];
-  if (!chkver(1)) return mp_key_map[9];
-  if (!chkver(2)) return mp_key_map[10];
-  if (!chkver(3)) return mp_key_map[16];
-  sethor(0);
-  reshor(1);
-  sethor(2);
-  sethor(3);
-  if (!chkver(0)) return mp_key_map[5];
-  if (!chkver(1)) return mp_key_map[6];
-  if (!chkver(2)) return mp_key_map[7];
-  if (!chkver(3)) return mp_key_map[13];
-  sethor(0);
-  sethor(1);
-  reshor(2);
-  sethor(3);
-  if (!chkver(0)) return mp_key_map[2];
-  if (!chkver(1)) return mp_key_map[3];
-  if (!chkver(2)) return mp_key_map[4];
-  if (!chkver(3)) return mp_key_map[14];
-  sethor(0);
-  sethor(1);
-  sethor(2);
-  reshor(3);
-  if (!chkver(0)) return mp_key_map[1];
-  if (!chkver(1)) return mp_key_map[11];
-  if (!chkver(2)) return mp_key_map[15];
-  if (!chkver(3)) return mp_key_map[12];
-
-  return mp_key_map[0];
-}
-
-//  Перекодировка символов Windows-1251 в коды контроллера Epson на базе
-// HD44780 с разными прибамбасами
-
+#if defined(__ICCAVR__) || defined(__ICCARM__)
 #if defined(__ICCAVR__)
 __flash irs_u8 lcd_table[] =
 #elif defined(__ICCARM__)
@@ -655,6 +460,203 @@ const irs_u8 lcd_table[] =
   0xC6, // 'ю':254
   0xC7  // 'я':255
 };
+#endif //defined(__ICCAVR__) || defined(__ICCARM__)
+
+#ifdef __ICCAVR__
+// Карта преобразования номеров клавиш в коды
+// для вертикального расположения клавиатуры
+__flash irskey_t irskbd_table_vertical[] =
+{
+  irskey_none,      // 0
+  irskey_0,         // 1
+  irskey_1,         // 2
+  irskey_2,         // 3
+  irskey_3,         // 4
+  irskey_4,         // 5
+  irskey_5,         // 6
+  irskey_6,         // 7
+  irskey_7,         // 8
+  irskey_8,         // 9
+  irskey_9,         // 10
+  irskey_point,     // 11
+  irskey_enter,     // 12
+  irskey_up,        // 13
+  irskey_down,      // 14
+  irskey_backspace, // 15
+  irskey_escape     // 16
+};
+
+// Карта преобразования номеров клавиш в коды
+// для горизонтального расположения клавиатуры
+__flash irskey_t irskbd_table_horisontal[] =
+{
+  irskey_none,      // 0
+  irskey_enter,     // 1
+  irskey_backspace, // 2
+  irskey_3,         // 3
+  irskey_6,         // 4
+  irskey_point,     // 5
+  irskey_2,         // 6
+  irskey_5,         // 7
+  irskey_0,         // 8
+  irskey_1,         // 9
+  irskey_4,         // 10
+  irskey_down,      // 11
+  irskey_escape,    // 12
+  irskey_8,         // 13
+  irskey_9,         // 14
+  irskey_up,        // 15
+  irskey_7          // 16
+};
+
+// Карта преобразования номеров клавиш в коды
+// для расположения клавиатуры для ГТЧ rev 0 (макетка edition)
+__flash irskey_t irskbd_table_gtch_rev_0[] =
+{
+  irskey_none,      // 0
+  irskey_none,      // 1
+  irskey_none,      // 2
+  irskey_escape,    // 3
+  irskey_6,         // 4
+  irskey_none,      // 5
+  irskey_2,         // 6
+  irskey_5,         // 7
+  irskey_none,      // 8
+  irskey_1,         // 9
+  irskey_4,         // 10
+  irskey_enter,     // 11
+  irskey_up,        // 12
+  irskey_8,         // 13
+  irskey_9,         // 14
+  irskey_down,      // 15
+  irskey_7          // 16
+};
+
+// Карта преобразования номеров клавиш в коды
+// для расположения клавиатуры для ГТЧ rev 1 (чемодан edition)
+__flash irskey_t irskbd_table_gtch_rev_1[] =
+{
+  irskey_none,      // 0
+  irskey_none,      // 1
+  irskey_none,      // 2
+  irskey_2,         // 3
+  irskey_5,         // 4
+  irskey_none,      // 5
+  irskey_escape,    // 6
+  irskey_6,         // 7
+  irskey_none,      // 8
+  irskey_enter,     // 9
+  irskey_down,      // 10
+  irskey_1,         // 11
+  irskey_7,         // 12
+  irskey_9,         // 13
+  irskey_8,         // 14
+  irskey_4,         // 15
+  irskey_up         // 16
+};
+
+//#define avr_port_map_size IRS_ARRAYOFSIZE(avr_port_map);
+const irs_avr_port_map_t* irs::get_avr_port_map()
+{
+  static const irs_avr_port_map_t avr_port_map_i[] = {
+    {&PORTA, &PINA, &DDRA},
+    {&PORTB, &PINB, &DDRB},
+    {&PORTC, &PINC, &DDRC},
+    {&PORTD, &PIND, &DDRD},
+    {&PORTE, &PINE, &DDRE},
+    {&PORTF, &PINF, &DDRF},
+    {&PORTG, &PING, &DDRG}
+  };
+
+  return avr_port_map_i;
+}
+
+
+//__flash irs_u8 lcd_table[] =
+
+mxkey_drv_avr_t::mxkey_drv_avr_t(irskbd_t type, irskbd_map_t map_type,
+  irs_avr_port_t a_port):
+  m_high_set_bit(7),
+  m_high_get_bit(3),
+  mp_set(avr_port_map[a_port].set),
+  mp_get(avr_port_map[a_port].get),
+  mp_dir(avr_port_map[a_port].dir)
+{
+  switch (type) {
+    case irskbd_high_pull_up: {
+      m_high_set_bit = 3;
+      m_high_get_bit = 7;
+      (*mp_dir) = 0x0F;
+    } break;
+
+    default:
+    case irskbd_low_pull_up: {
+      m_high_set_bit = 7;
+      m_high_get_bit = 3;
+      (*mp_dir) = 0xF0;
+    } break;
+  }
+  switch(map_type) {
+    default:
+    case irskbd_map_vertical: {
+      mp_key_map = irskbd_table_vertical;
+    } break;
+
+    case irskbd_map_horisontal: {
+      mp_key_map = irskbd_table_horisontal;
+    } break;
+
+    case irskbd_map_gtch_rev_1: {
+      mp_key_map = irskbd_table_gtch_rev_1;
+    } break;
+  }
+  (*mp_set) = (*mp_dir)^0xFF;
+}
+mxkey_drv_avr_t::~mxkey_drv_avr_t()
+{
+  (*mp_dir) = 0x00;
+  (*mp_set) = 0x00;
+}
+irskey_t mxkey_drv_avr_t::operator()()
+{
+  reshor(0);
+  sethor(1);
+  sethor(2);
+  sethor(3);
+  if (!chkver(0)) return mp_key_map[8];
+  if (!chkver(1)) return mp_key_map[9];
+  if (!chkver(2)) return mp_key_map[10];
+  if (!chkver(3)) return mp_key_map[16];
+  sethor(0);
+  reshor(1);
+  sethor(2);
+  sethor(3);
+  if (!chkver(0)) return mp_key_map[5];
+  if (!chkver(1)) return mp_key_map[6];
+  if (!chkver(2)) return mp_key_map[7];
+  if (!chkver(3)) return mp_key_map[13];
+  sethor(0);
+  sethor(1);
+  reshor(2);
+  sethor(3);
+  if (!chkver(0)) return mp_key_map[2];
+  if (!chkver(1)) return mp_key_map[3];
+  if (!chkver(2)) return mp_key_map[4];
+  if (!chkver(3)) return mp_key_map[14];
+  sethor(0);
+  sethor(1);
+  sethor(2);
+  reshor(3);
+  if (!chkver(0)) return mp_key_map[1];
+  if (!chkver(1)) return mp_key_map[11];
+  if (!chkver(2)) return mp_key_map[15];
+  if (!chkver(3)) return mp_key_map[12];
+
+  return mp_key_map[0];
+}
+
+//  Перекодировка символов Windows-1251 в коды контроллера Epson на базе
+// HD44780 с разными прибамбасами
 
 // Класс драйвера дисплея AVR
 
