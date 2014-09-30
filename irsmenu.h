@@ -203,8 +203,9 @@ public:
     irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
     irs_menu_param_update_t a_update = IMU_UPDATE);
   void draw(irs_menu_base_t **a_cur_menu);
-  size_type get_current_item();
-  size_type get_items_count();
+  size_type get_current_item() const;
+  void set_current_item(size_type a_item);
+  size_type get_items_count() const;
   size_type add(irs_menu_base_t *item, bool a_show = true);
   size_type get_dynamic_string(char *ap_buffer, size_type a_length = 0);
   size_type get_last_item_number();

@@ -1063,7 +1063,7 @@ bool lib_socket_load(WSADATA* ap_wsadata, int a_version_major,
 
 //! \brief Реализует обмен данными по UDP протоколу
 //! \author Lyashchov Maxim
-//class udp_flow_t: public hardflow_t
+class udp_flow_t: public hardflow_t
 {
 public:
   //typedef hardflow_t::size_type size_type;

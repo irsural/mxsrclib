@@ -572,12 +572,20 @@ void irs_advanced_menu_t::draw(irs_menu_base_t **a_cur_menu)
   }
 }
 
-irs_menu_base_t::size_type irs_advanced_menu_t::get_current_item()
+irs_menu_base_t::size_type irs_advanced_menu_t::get_current_item() const
 {
   return m_current_item;
 }
 
-irs_menu_base_t::size_type irs_advanced_menu_t::get_items_count()
+void irs_advanced_menu_t::set_current_item(size_type a_item)
+{
+  if (m_menu_vector.empty()) {
+    return;
+  }
+  m_current_item = min(a_item, m_menu_vector.size() - 1) ;
+}
+
+irs_menu_base_t::size_type irs_advanced_menu_t::get_items_count() const
 {
   return m_menu_vector.size();
 }
@@ -2850,12 +2858,12 @@ void irs_menu_string_item_t::draw(irs_menu_base_t **ap_cur_menu)
 
 irs_menu_progress_bar_t::irs_menu_progress_bar_t(
   irs_menu_base_t::size_type a_symbol,
-  irs_menu_base_t::size_type /*a_length*/,
+  irs_menu_base_t::size_type a_length,
   float a_max_value):
 
   mp_bar(0),
   m_symbol(a_symbol),
-  m_length(0),
+  m_length(a_length),
   m_progress(0),
   m_max_value(a_max_value),
   m_value(0.f)
@@ -2869,7 +2877,7 @@ void irs_menu_progress_bar_t::fill_bar()
 {
   if ((m_max_value > 0.f) && (m_length > 0))
   {
-    m_progress = static_cast<irs_u8>(m_length * irs_u8(m_value / m_max_value));
+    m_progress = static_cast<irs_u8>(m_length*(m_value / m_max_value));
     memset(mp_bar, m_symbol, m_progress);
     memset(&mp_bar[m_progress], ' ', m_length - m_progress);
     mp_bar[m_length] = '\0';
@@ -2894,11 +2902,8 @@ void irs_menu_progress_bar_t::set_length(irs_menu_base_t::size_type a_length)
 
 void irs_menu_progress_bar_t::set_value(float a_value)
 {
-  if (a_value < m_max_value)
-  {
-    m_value = a_value;
-    fill_bar();
-  }
+  m_value = irs::bound(a_value, 0.f, m_max_value);
+  fill_bar();
 }
 
 void irs_menu_progress_bar_t::set_max_value(float a_max_value)

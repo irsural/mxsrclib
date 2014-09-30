@@ -1878,7 +1878,8 @@ void irs::mxnet_client_t::fill_for_write(irs_uarc a_index, irs_uarc a_size,
   bool a_value)
 {
   mxn_cnt_t index = a_index/m_size_var_byte;
-  mxn_cnt_t size = (a_size + m_size_var_byte - 1)/ m_size_var_byte;
+  mxn_cnt_t index_back = (a_index + a_size - 1)/m_size_var_byte;
+  mxn_cnt_t size = index_back - index + 1;
   fill_for_write_vars(index, size, a_value);
 }
 void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
