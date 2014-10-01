@@ -2864,23 +2864,42 @@ irs_menu_progress_bar_t::irs_menu_progress_bar_t(
   mp_bar(0),
   m_symbol(a_symbol),
   m_length(a_length),
-  m_progress(0),
   m_max_value(a_max_value),
   m_value(0.f)
 {
   mp_bar = new char[m_length + 1];
   memset(mp_bar, ' ', m_length);
   mp_bar[m_length] = '\0';
+  fill_bar();
 }
 
 void irs_menu_progress_bar_t::fill_bar()
 {
-  if ((m_max_value > 0.f) && (m_length > 0))
-  {
-    m_progress = static_cast<irs_u8>(m_length*(m_value / m_max_value));
-    memset(mp_bar, m_symbol, m_progress);
-    memset(&mp_bar[m_progress], ' ', m_length - m_progress);
-    mp_bar[m_length] = '\0';
+  const size_type separator_width = 1;
+  const size_type percent_field_width = 5;
+  const size_type percent_suffix_width = 2;
+
+  if ((m_max_value > 0.f) && (m_length > percent_field_width)) {
+    const size_type percent = irs::round<float, size_type>(
+      (m_value / m_max_value)*100);
+    size_type pos = 0;
+
+    const size_type bar_field_width = m_length - percent_field_width -
+      separator_width;
+    size_type bar_width = irs::round<float, size_type>(
+      bar_field_width*(m_value / m_max_value));
+    memset(&mp_bar[pos], m_symbol, bar_width);
+    pos += bar_width;
+    memset(&mp_bar[pos], ' ', bar_field_width - bar_width);
+    pos += (bar_field_width - bar_width);
+    memset(&mp_bar[pos], ' ', separator_width);
+    pos += separator_width;
+
+    ostrstream strm(&mp_bar[pos], percent_field_width + 1);
+    strm << setw(percent_field_width - percent_suffix_width) << right <<
+      percent << ' ' << '%'<< '\0';
+    pos += percent_field_width;
+    mp_bar[pos] = '\0';
   }
 }
 
@@ -2922,21 +2941,18 @@ irs_menu_base_t::size_type irs_menu_progress_bar_t::get_parametr_string(
   irs_menu_param_show_mode_t /*a_show_mode*/,
   irs_menu_param_update_t /*a_update*/)
 {
-  if ((a_length > 0) && (a_length < m_length))
-  {
+  if ((a_length > 0) && (a_length < m_length)) {
     memcpy(a_parametr_string, mp_bar, a_length);
     a_parametr_string[a_length] = '\0';
     return a_length;
-  }
-  else
-  {
+  } else {
     strcpy(a_parametr_string, mp_bar);
     return m_length;
   }
 }
 
-irs_menu_base_t::size_type irs_menu_progress_bar_t::get_dynamic_string(char *ap_buffer,
-  irs_menu_base_t::size_type a_length)
+irs_menu_base_t::size_type irs_menu_progress_bar_t::get_dynamic_string(
+  char *ap_buffer, irs_menu_base_t::size_type a_length)
 {
   if (a_length > 0) strcpy(ap_buffer, empty_str);
   return 0;

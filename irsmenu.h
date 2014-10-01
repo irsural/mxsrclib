@@ -793,7 +793,6 @@ class irs_menu_progress_bar_t: public irs_menu_base_t
   char *mp_bar;
   size_type m_symbol;
   size_type m_length;
-  size_type m_progress;
   float m_max_value;
   float m_value;
   void fill_bar();
