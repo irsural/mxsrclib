@@ -1903,16 +1903,16 @@ void irs::mxnet_client_t::fill_for_write_vars(mxn_cnt_t a_index,
     // Копирование из буфера чтения в буфер записи при пометке на запись
     size_t var_index = static_cast<size_t>(var_first_idx);
     size_t var_size = static_cast<size_t>(var_last_idx - var_first_idx);
-    if (var_size == 1) {
+    if (var_size >= 1) {
       mxn_cnt_t var_index_front = var_index;
       if (m_write_flags[var_index_front] == false) {
-        m_write_vars[var_index_front] = m_read_vars[var_index];
+        m_write_vars[var_index_front] = m_read_vars[var_index_front];
       }
     }
     if (var_size > 1) {
       mxn_cnt_t var_index_back = var_index + var_size - 1;
       if (m_write_flags[var_index_back] == false) {
-        m_write_vars[var_index_back] = m_read_vars[var_index];
+        m_write_vars[var_index_back] = m_read_vars[var_index_back];
       }
     }
     //mem_copy(m_read_vars, var_index, m_write_vars, var_index, var_size);
