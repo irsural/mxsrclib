@@ -1624,7 +1624,6 @@ private:
 //! @}
 
 //! \brief Прослойка для работы с prologix-gpib
-//! \author
 class prologix_flow_t: public irs::hardflow_t
 {
   typedef irs_size_t size_type;
@@ -1643,7 +1642,6 @@ class prologix_flow_t: public irs::hardflow_t
     mode_error,
     mode_write,
     mode_write_wait,
-    mode_read,
     mode_read_wait,
     mode_start_read,
     mode_start_read_wait

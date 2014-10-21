@@ -4910,7 +4910,11 @@ void irs::chart::builder_chart_window_t::controls_t::points_changed()
   if (m_pause) {
     m_is_points_changed = true;
   } else {
-    connect_data(m_data);
+    if (m_is_lock) {
+      m_is_points_changed = true;
+    } else {
+      connect_data(m_data);
+    }
   }
 }
 void irs::chart::builder_chart_window_t::controls_t::

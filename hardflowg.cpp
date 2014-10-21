@@ -2139,8 +2139,6 @@ irs::hardflow_t::size_type
   size_type read_size = 0;
   if (!m_is_read) {
     if (!m_is_read_wait) {
-      //m_buffer = irst("++read eoi") + m_end_line_write;
-      //m_read_data = u8_from_str(m_buffer);
       m_channel_ident = a_channel_ident;
       m_read_mode = mode_start_read;
       m_is_read_wait = true;
@@ -2150,8 +2148,14 @@ irs::hardflow_t::size_type
     read_size = min(a_size, m_read_data.size());
     irs::c_array_view_t<irs_u8> array_view(ap_buf, read_size);
     irs::mem_copy(m_read_data, 0, array_view, 0, read_size);
-    m_is_read_wait = false;
-    m_is_read = false;
+    if (read_size == m_read_data.size()) {
+      m_read_data.clear();
+      m_is_read_wait = false;
+      m_is_read = false;
+    } else if (read_size > 0) {
+      irs::raw_data_t<irs_u8> read_data(m_read_data.data(), read_size);
+      m_read_data = read_data;
+    }
   }
   return read_size;
 }
@@ -2261,7 +2265,7 @@ void irs::hardflow::prologix_flow_t::tick()
         switch (m_fixed_flow.write_status()) {
           case irs::hardflow::fixed_flow_t::status_success: {
             m_timeout.start();
-            m_read_mode = mode_read;
+            m_read_mode = mode_read_wait;
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             m_read_mode = mode_start_read;
@@ -2270,32 +2274,33 @@ void irs::hardflow::prologix_flow_t::tick()
           } break;
         }
       } break;
-      case mode_read: {
-        m_read_data.clear();
-        m_read_data.resize(m_read_chunk_size);
-        m_read_mode = mode_read_wait;
-      } break;
       case mode_read_wait: {
-        irs_u8* p_data = m_read_data.data() + m_read_data.size() -
-          m_read_chunk_size;
-        size_t cur_read_size = mp_hardflow->read(
-          m_channel_ident, p_data, m_read_chunk_size);
-        m_read_data.resize(m_read_data.size() + cur_read_size);
-        irs::raw_data_t<irs_u8> transmit_data_copy = m_read_data;
-        transmit_data_copy.resize(m_read_data.size() - m_read_chunk_size);
-        irs::string_t read_str = str_from_u8(transmit_data_copy);
-        size_t pos_end_line = read_str.find(m_end_line_read);
-        if (pos_end_line != irs::string_t::npos) {
-          m_read_string = read_str.substr(0,
-            pos_end_line + m_end_line_read.size());
-          m_read_data = u8_from_str(m_read_string);
-          m_read_mode = mode_free;
-          m_is_read = true;
-        } else {
+        const size_t prev_read_data_size = m_read_data.size();
+        size_t size = m_read_chunk_size - prev_read_data_size;
+        if (size > 0) {
+          vector<irs_u8> read_buf(size);
+          irs_u8* p_data = &read_buf.front();
+          const size_t cur_read_size = mp_hardflow->read(
+            m_channel_ident, p_data, size);
+          if (cur_read_size > 0) {
+            m_read_data.resize(m_read_data.size() + cur_read_size);
+            memcpyex(m_read_data.data() + prev_read_data_size, p_data,
+              cur_read_size);
+            irs::raw_data_t<irs_u8> transmit_data_copy = m_read_data;
+            irs::string_t read_str = str_from_u8(transmit_data_copy);
+            size_t pos_end_line = read_str.find(m_end_line_read);
+            if (pos_end_line != irs::string_t::npos) {
+              m_read_string = read_str.substr(0,
+                pos_end_line + m_end_line_read.size());
+              m_read_data = u8_from_str(m_read_string);
+              m_read_mode = mode_free;
+              m_is_read = true;
+            }
+          }
+        }
+        if (!m_is_read)  {
           // Если не нашли конец строки повторяем чтение
           if (m_timeout.check()) {
-            //m_buffer = irst("++read eoi") + m_end_line_write;
-            //m_read_data = u8_from_str(m_buffer);
             m_read_mode = mode_start_read;
           }
         }
@@ -2586,8 +2591,7 @@ void com_flow_log(const irs_u8* ap_buf, size_t a_size, DWORD result)
   slog << endl;
   static irs_string_t prev_log_line = "";
   static int counter = 0;
-  fstream flog("S:\\Files\\ASUTP\\U309M\\Основное\\log.txt",
-    ios::app | ios::out);
+  fstream flog("com_log.txt", ios::app | ios::out);
   if (slog.str() != prev_log_line) {
     if (counter) {
       flog << "Предыдущая строка повторялась ";

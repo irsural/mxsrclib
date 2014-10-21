@@ -668,6 +668,7 @@ void irs::agilent_3458a_t::tick()
     case ma_mode_get_value: {
       m_fixed_flow.read(mp_hardflow->channel_next(),
         m_read_buf, sample_size);
+      memsetex(m_read_buf,  IRS_ARRAYSIZE(m_read_buf));
       //mlog() << "---> " << __LINE__ << endl;
       *m_value = 0;
       m_mode = ma_mode_get_value_wait;
@@ -680,10 +681,7 @@ void irs::agilent_3458a_t::tick()
               char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
               if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
                 *m_value = 0;
-                //mlog() << "---> " << __LINE__ << endl;
               }
-              //mlog() << *m_value << endl;
-              //mlog() << "---> " << __LINE__ << endl;
               m_mode = ma_mode_macro;
             } else {
               // Если требовалась очистка буфера, то считаем что
