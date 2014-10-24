@@ -27,6 +27,11 @@
 #include <arpa/inet.h>
 #endif // IRS_WINDOWS IRS_LINUX
 
+#ifdef __ICCARM__
+# include <armioregs.h>
+# include <armcfg.h>
+#endif //__ICCARM__
+
 // Standart C++ headers
 #include <string.h>
 
@@ -1988,6 +1993,55 @@ private:
 };
 
 #endif // IRS_WIN32
+
+#ifdef IRS_STM32F_2_AND_4
+namespace arm {
+
+class st_com_flow_t: public hardflow_t
+{
+public:
+  typedef hardflow_t::size_type size_type;
+  st_com_flow_t(
+    int a_com_index,
+    gpio_channel_t a_rx,
+    gpio_channel_t a_tx,
+    size_type a_inbuf_size = 128,
+    size_type a_outbuf_size = 128,
+    irs_u32 a_baud_rate = 9600);
+  virtual ~st_com_flow_t();
+  virtual string_type param(const string_type &a_name);
+  virtual void set_param(const string_type &a_name, const string_type &a_value);
+  virtual size_type read(size_type a_channel_ident, irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type write(size_type a_channel_ident, const irs_u8 *ap_buf,
+    size_type a_size);
+  virtual size_type channel_next();
+  virtual bool is_channel_exists(size_type a_channel_ident);
+  virtual void tick();
+private:
+  class usart_event_t: public irs::event_t
+  {
+  public:
+    usart_event_t(st_com_flow_t* ap_st_com_flow);
+    virtual void exec();
+
+  private:
+    st_com_flow_t* mp_st_com_flow;
+  };
+  void set_usart_options(int a_com_index);
+  usart_regs_t* get_usart(int a_com_index);
+  int get_alternate_function_code(int a_com_index);
+  enum { m_channel_id = 1};
+  size_type m_inbuf_max_size;
+  size_type m_outbuf_max_size;
+  irs::deque_data_t<irs_u8> m_inbuf;
+  irs::deque_data_t<irs_u8> m_outbuf;
+  volatile usart_regs_t* m_usart;
+  const irs_u32 m_baud_rate;
+};
+
+} // namespace arm
+#endif // IRS_STM32F_2_AND_4
 
 class connector_t: public hardflow_t
 {

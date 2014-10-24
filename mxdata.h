@@ -1283,7 +1283,7 @@ void irs::deque_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
-    size_type new_capacity = new_size * 2;
+    size_type new_capacity = new_size*2;
     reserve_buf(new_capacity);
   } else {
     //
@@ -1294,7 +1294,7 @@ void irs::deque_data_t<T>::resize(size_type a_size)
 template <class T>
 void irs::deque_data_t<T>::push_back(const value_type& a_value)
 {
-  push_back(&a_value, &a_value + sizeof(value_type));
+  push_back(&a_value, &a_value + 1);
 }
 
 template <class T>
@@ -1302,7 +1302,7 @@ void irs::deque_data_t<T>::push_back(
   const_pointer ap_first, const_pointer ap_last)
 {
   // Размер вставляемых данных
-  const size_type insert_data_size = (ap_last - ap_first)/sizeof(value_type);
+  const size_type insert_data_size = (ap_last - ap_first);
   const size_type old_ring_size = m_ring_size;
   const size_type new_ring_size = insert_data_size + m_ring_size;
   resize(new_ring_size);

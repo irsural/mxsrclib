@@ -120,6 +120,8 @@ enum {
   tim3_int,
   tim8_brk_tim12_int,
   tim8_up_tim13_int,
+  usart1_int,
+  usart2_int,
   usart3_int,
   sdio_int,
   dma2_stream3_int,

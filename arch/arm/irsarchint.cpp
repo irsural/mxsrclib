@@ -33,10 +33,10 @@ extern "C"
   void DebugMon_Handler( void );
   void PendSV_Handler( void );
   void SysTick_Handler( void );
-  
+
   #if IRS_USE_FREE_RTOS
-  //void free_rtos_SVC_Handler( void );  
-  //void free_rtos_PendSV_Handler( void );  
+  //void free_rtos_SVC_Handler( void );
+  //void free_rtos_PendSV_Handler( void );
   void free_rtos_SysTick_Handler( void );
   #endif // IRS_USE_FREE_RTOS
 }
@@ -82,7 +82,7 @@ void PendSV_Handler()
 }
 #endif // !IRS_USE_FREE_RTOS
 void SysTick_Handler()
-{  
+{
   irs::arm::interrupt_array()->exec_event(irs::arm::sys_tick_int);
   #if IRS_USE_FREE_RTOS
   free_rtos_SysTick_Handler();
@@ -384,17 +384,17 @@ void irs_arm_exti15_10_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti15_10_int);
   if (EXTI_PR_bit.PR10) {
-    EXTI_PR_bit.PR10 = 1;  
+    EXTI_PR_bit.PR10 = 1;
   } else if (EXTI_PR_bit.PR11) {
-    EXTI_PR_bit.PR11 = 1; 
+    EXTI_PR_bit.PR11 = 1;
   } else if (EXTI_PR_bit.PR12) {
-    EXTI_PR_bit.PR12 = 1; 
+    EXTI_PR_bit.PR12 = 1;
   } else if (EXTI_PR_bit.PR13) {
-    EXTI_PR_bit.PR13 = 1; 
+    EXTI_PR_bit.PR13 = 1;
   } else if (EXTI_PR_bit.PR14) {
-    EXTI_PR_bit.PR14 = 1; 
+    EXTI_PR_bit.PR14 = 1;
   } else if (EXTI_PR_bit.PR15) {
-    EXTI_PR_bit.PR15 = 1; 
+    EXTI_PR_bit.PR15 = 1;
   }
   //необходимо более подробное исследование
 }
@@ -417,24 +417,34 @@ void irs_arm_tim8_up_tim13_func()
   TIM13_SR_bit.CC1IF = 0;
 }
 
+void irs_arm_usart1_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::usart1_int);
+}
+
+void irs_arm_usart2_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::usart2_int);
+}
+
 void irs_arm_usart3_func()
 {
-  irs::arm::interrupt_array()->exec_event(irs::arm::usart3_int); 
+  irs::arm::interrupt_array()->exec_event(irs::arm::usart3_int);
 }
 
 void irs_arm_sdio_func()
 {
-  irs::arm::interrupt_array()->exec_event(irs::arm::sdio_int);  
+  irs::arm::interrupt_array()->exec_event(irs::arm::sdio_int);
 }
 
 void irs_arm_dma2_stream3_func()
 {
-  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream3_int);  
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream3_int);
 }
 
 //#ifndef USE_USB_OTG_FS
 void irs_arm_otg_fs_func()
-{  
+{
   irs::arm::interrupt_array()->exec_event(irs::arm::otg_fs_int);
 }
 //#endif // USE_USB_OTG_FS
@@ -602,8 +612,8 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 34
   irs_arm_default_int_func,  // 35
   irs_arm_default_int_func,  // 36
-  irs_arm_default_int_func,  // 37
-  irs_arm_default_int_func,  // 38
+  irs_arm_usart1_func,  // 37
+  irs_arm_usart2_func,  // 38
   irs_arm_usart3_func,  // 39
   irs_arm_exti15_10_func,    // 40
   irs_arm_default_int_func,  // 41
