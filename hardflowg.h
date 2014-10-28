@@ -1997,10 +1997,41 @@ private:
 #ifdef IRS_STM32F_2_AND_4
 namespace arm {
 
+//! \brief Класс для работы с COM-портом через прерывания
+//! \details Для использования этого класса необходимо включить соответствующее
+//!   прерывание.
+//!   Рекомендуется выставлять скорость не выше 300 кбит/с. Это максимальная
+//!   скорость, на которой данные не теряются. При проверке использовался
+//!   процессор stm32f2(120 МГц), в компиляторе оптимизация выключена. На более
+//!   быстрых процессорах скорость может быть выше. Ограничение скорости связано
+//!   с медленной работой открытых функций класса read/write. Эти функции на
+//!   время своей работы выключают прерывание, что приводит к переполнению
+//!   приемного буфера при большой скорости com-порта.
+//! \par Пример создания объекта и настройки прерывания
+//! \code{.cpp}
+//!   NVIC_InitTypeDef NVIC_InitStructure;
+//!   // Прерывание по uart1
+//!   NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+//!   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//!   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+//!   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//!   NVIC_Init(&NVIC_InitStructure);
+//!   irs::hardflow::arm::st_com_flow_t st_com_flow(1, PA10, PA9, 10024, 10024,
+//!     300000);
+//! \endcode
 class st_com_flow_t: public hardflow_t
 {
 public:
   typedef hardflow_t::size_type size_type;
+  //! \brief Конструктор
+  //! \param[in] a_com_index индекс порта, от 1 до 6
+  //! \param[in] a_rx пин для RX, можно указать PNONE, если данные будут только
+  //!   записываться
+  //! \param[in] a_tx пин для TX, можно указать PNONE, если данные будут только
+  //!   читаться
+  //! \param[in] a_inbuf_size размер буфера чтения
+  //! \param[in] a_outbuf_size размер буфера записи
+  //! \param[in] a_baud_rate скорость
   st_com_flow_t(
     int a_com_index,
     gpio_channel_t a_rx,
@@ -2018,6 +2049,7 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
+  bool check_input_buffer_overflow();
 private:
   class usart_event_t: public irs::event_t
   {
@@ -2028,15 +2060,22 @@ private:
   private:
     st_com_flow_t* mp_st_com_flow;
   };
+  st_com_flow_t();
   void set_usart_options(int a_com_index);
   usart_regs_t* get_usart(int a_com_index);
   int get_alternate_function_code(int a_com_index);
+  void connect_event(int a_com_index);
   enum { m_channel_id = 1};
+  usart_event_t m_event;
+  gpio_channel_t m_rx;
+  gpio_channel_t m_tx;
   size_type m_inbuf_max_size;
   size_type m_outbuf_max_size;
   irs::deque_data_t<irs_u8> m_inbuf;
+  volatile bool m_inbuf_overflow;
   irs::deque_data_t<irs_u8> m_outbuf;
   volatile usart_regs_t* m_usart;
+  USART_TypeDef* m_usart_typedef;
   const irs_u32 m_baud_rate;
 };
 

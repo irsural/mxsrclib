@@ -124,8 +124,11 @@ enum {
   usart2_int,
   usart3_int,
   sdio_int,
+  usart4_int,
+  usart5_int,
   dma2_stream3_int,
   otg_fs_int,
+  usart6_int,
   #endif //Микроконтроллеры
 
   #endif // !IRS_DISABLE_EVENT_INTERRUPT

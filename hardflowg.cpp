@@ -3333,11 +3333,16 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
   size_type a_outbuf_size,
   irs_u32 a_baud_rate
 ):
+  m_event(this),
+  m_rx(a_rx),
+  m_tx(a_tx),
   m_inbuf_max_size(a_inbuf_size),
   m_outbuf_max_size(a_outbuf_size),
   m_inbuf(),
+  m_inbuf_overflow(false),
   m_outbuf(),
   m_usart(0),
+  m_usart_typedef(0),
   m_baud_rate(a_baud_rate)
 {
   m_inbuf.reserve(m_inbuf_max_size);
@@ -3346,6 +3351,8 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
   IRS_LIB_ASSERT((a_rx != PNONE) || (a_tx != PNONE));
 
   m_usart = get_usart(a_com_index);
+  irs_u32 usart_address = reinterpret_cast<irs_u32>(m_usart);
+  m_usart_typedef = reinterpret_cast<USART_TypeDef*>(usart_address);
   irs::clock_enable(reinterpret_cast<size_t>(m_usart));
 
   if (a_tx != PNONE) {
@@ -3365,6 +3372,15 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
     gpio_moder_alternate_function_enable(a_tx);
     gpio_alternate_function_select(a_tx, alternate_function);
   }
+
+  connect_event(a_com_index);
+  if (a_rx != PNONE) {
+    USART_ITConfig(m_usart_typedef, USART_IT_RXNE, ENABLE);
+  }
+  if (a_tx != PNONE) {
+    USART_ITConfig(m_usart_typedef, USART_IT_TXE, ENABLE);
+  }
+
   set_usart_options(a_com_index);
   if (a_rx != PNONE) {
     m_usart->USART_CR1_bit.RE = 1;
@@ -3372,25 +3388,6 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
   if (a_tx != PNONE) {
     m_usart->USART_CR1_bit.TE = 1; // 1: Transmitter is enabled
   }
-
-  //irs::interrupt_array()->int_gen_events(irs::arm::usart1_int)->
-    //push_back(ap_event);
-
-  NVIC_InitTypeDef NVIC_InitStructure;
-  /* Configure the Priority Group to 2 bits */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //конфигурируем количество групп и подгрупп прерываний, пока у нас одно прерывание нам это особо ничего не дает
-
-  /* Enable the USARTx Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //прерывание по uart2
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; //задаем приоритет в группе
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; //задаем приоритет в подгруппе
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //разрешаем прерывание
-  NVIC_Init(&NVIC_InitStructure); //инициализируем
-
-  USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-  USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
-
-
 }
 
 void irs::hardflow::arm::st_com_flow_t::set_usart_options(int a_com_index)
@@ -3483,6 +3480,36 @@ int irs::hardflow::arm::st_com_flow_t::get_alternate_function_code(
   return alternate_function;
 }
 
+void irs::hardflow::arm::st_com_flow_t::connect_event(int a_com_index)
+{
+  switch (a_com_index) {
+    case 1: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart1_int)->
+        push_back(&m_event);
+    } break;
+    case 2: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart2_int)->
+        push_back(&m_event);
+    } break;
+    case 3: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart3_int)->
+        push_back(&m_event);
+    } break;
+    case 4: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart4_int)->
+        push_back(&m_event);
+    } break;
+    case 5: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart5_int)->
+        push_back(&m_event);
+    } break;
+    case 6: {
+      irs::interrupt_array()->int_gen_events(irs::arm::usart6_int)->
+        push_back(&m_event);
+    } break;
+  }
+}
+
 irs::hardflow::arm::st_com_flow_t::~st_com_flow_t()
 {
 }
@@ -3505,12 +3532,18 @@ irs::hardflow::arm::st_com_flow_t::read(
   if (a_channel_ident != m_channel_id) {
     return 0;
   }
+  if (m_rx == PNONE) {
+    return 0;
+  }
+  USART_ITConfig(m_usart_typedef, USART_IT_RXNE, DISABLE);
   if (m_inbuf.empty()) {
+    USART_ITConfig(m_usart_typedef, USART_IT_RXNE, ENABLE);
     return 0;
   }
   const size_type size = min(m_inbuf.size(), a_size);
   m_inbuf.copy_to(0, size, ap_buf);
   m_inbuf.pop_front(size);
+  USART_ITConfig(m_usart_typedef, USART_IT_RXNE, ENABLE);
   return size;
 }
 
@@ -3522,11 +3555,17 @@ irs::hardflow::arm::st_com_flow_t::write(
   if (a_channel_ident != m_channel_id) {
     return 0;
   }
+  if (m_tx == PNONE) {
+    return 0;
+  }
+  USART_ITConfig(m_usart_typedef, USART_IT_TXE, DISABLE);
   if (m_outbuf.size() >= m_outbuf_max_size) {
+    USART_ITConfig(m_usart_typedef, USART_IT_TXE, ENABLE);
     return 0;
   }
   const size_type size = min(a_size, m_outbuf_max_size - m_outbuf.size());
   m_outbuf.push_back(ap_buf, ap_buf + size);
+  USART_ITConfig(m_usart_typedef, USART_IT_TXE, ENABLE);
   return size;
 }
 
@@ -3544,16 +3583,13 @@ bool irs::hardflow::arm::st_com_flow_t::is_channel_exists(
 
 void irs::hardflow::arm::st_com_flow_t::tick()
 {
-  if ((m_inbuf.size() < m_inbuf_max_size) &&
-      (m_usart->USART_SR_bit.RXNE == 1)) {
-    irs_u8 data = m_usart->USART_DR;
-    m_inbuf.push_back(data);
-  }
-  if (!m_outbuf.empty() && (m_usart->USART_SR_bit.TC == 1)) {
-    irs_u8 data = m_outbuf.front();
-    m_outbuf.pop_front();
-    m_usart->USART_DR = data;
-  }
+}
+
+bool irs::hardflow::arm::st_com_flow_t::check_input_buffer_overflow()
+{
+  bool status = m_inbuf_overflow;
+  m_inbuf_overflow = false;
+  return status;
 }
 
 irs::hardflow::arm::st_com_flow_t::usart_event_t::usart_event_t(
@@ -3565,39 +3601,41 @@ irs::hardflow::arm::st_com_flow_t::usart_event_t::usart_event_t(
 
 void irs::hardflow::arm::st_com_flow_t::usart_event_t::exec()
 {
-  /*if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET) //прерывание по приему данных
-  {
-    if ((USART1->SR & (USART_FLAG_NE|USART_FLAG_FE|USART_FLAG_PE|USART_FLAG_ORE)) == 0) //проверяем нет ли ошибок
-    {
-      rx_buffer[rx_wr_index++]= (uint8_t) (USART_ReceiveData(USART1)& 0xFF); //считываем данные в буфер, инкрементируя хвост буфера
-      if (rx_wr_index == RX_BUFFER_SIZE) rx_wr_index=0; //идем по кругу
-      if (++rx_counter == RX_BUFFER_SIZE) //переполнение буфера
-      {
-        rx_counter=0; //начинаем сначала (удаляем все данные)
-        rx_buffer_overflow=1;  //сообщаем о переполнении
+  USART_TypeDef* usart_typedef = mp_st_com_flow->m_usart_typedef;
+  // Прерывание по приему данных
+  if (USART_GetITStatus(usart_typedef, USART_IT_RXNE) == SET) {
+    // Проверяем нет ли ошибок
+    if ((usart_typedef->SR &
+        (USART_FLAG_NE|USART_FLAG_FE|USART_FLAG_PE|USART_FLAG_ORE)) == 0) {
+      irs_u8 data = static_cast<irs_u8>(
+        (USART_ReceiveData(usart_typedef)& 0xFF));
+      if (mp_st_com_flow->m_inbuf.size() < mp_st_com_flow->m_inbuf_max_size) {
+        mp_st_com_flow->m_inbuf.push_back(data);
+      } else {
+        mp_st_com_flow->m_inbuf_overflow = 1;
       }
+    } else {
+      USART_ReceiveData(usart_typedef);
+      mp_st_com_flow->m_inbuf_overflow = 1;
     }
-    else USART_ReceiveData(USART1); //в идеале пишем здесь обработчик ошибок, в данном случае просто пропускаем ошибочный байт.
   }
 
-  if(USART_GetITStatus(USART1, USART_IT_ORE_RX) == SET) //прерывание по переполнению буфера
-  {
-     USART_ReceiveData(USART1); //в идеале пишем здесь обработчик переполнения буфера, но мы просто сбрасываем этот флаг прерывания чтением из регистра данных.
+  // Прерывание по переполнению буфера
+  if (USART_GetITStatus(usart_typedef, USART_IT_ORE_RX) == SET) {
+    USART_ReceiveData(usart_typedef);
+    mp_st_com_flow->m_inbuf_overflow = 1;
   }
 
-  if(USART_GetITStatus(USART1, USART_IT_TXE) == SET) //прерывание по передачи
-  {
-    if (tx_counter) //если есть что передать
-    {
-      --tx_counter; // уменьшаем количество не переданных данных
-      USART_SendData(USART1,tx_buffer[tx_rd_index++]); //передаем данные инкрементируя хвост буфера
-      if (tx_rd_index == TX_BUFFER_SIZE) tx_rd_index=0; //идем по кругу
+  // Прерывание, когда данные переданы
+  if(USART_GetITStatus(usart_typedef, USART_IT_TXE) == SET) {
+    if (!mp_st_com_flow->m_outbuf.empty()) {
+      irs_u8 data = mp_st_com_flow->m_outbuf.front();
+      mp_st_com_flow->m_outbuf.pop_front();
+      USART_SendData(usart_typedef, data);
+    } else {
+      USART_ITConfig(usart_typedef, USART_IT_TXE, DISABLE);
     }
-    else //если нечего передать, запрещаем прерывание по передачи
-    {
-      USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
-    }
-  }*/
+  }
 }
 #endif // IRS_STM32F_2_AND_4
 
