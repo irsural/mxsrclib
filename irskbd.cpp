@@ -184,15 +184,15 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   m_curr_count(0),
   m_result_key(irskey_none),
   m_delta(0),
-  m_press_count(0)  
+  m_press_count(0)
 {
   size_t alternate_function_number = 0;
   switch (a_timer_address) {
     case IRS_TIM2_BASE: {
-      alternate_function_number = GPIO_AF_TIM2;  
+      alternate_function_number = GPIO_AF_TIM2;
     } break;
     case IRS_TIM3_BASE: {
-      alternate_function_number = GPIO_AF_TIM3;  
+      alternate_function_number = GPIO_AF_TIM3;
     } break;
     case IRS_TIM4_BASE: {
       alternate_function_number = GPIO_AF_TIM4;
@@ -200,30 +200,30 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
     case IRS_TIM5_BASE: {
       alternate_function_number = GPIO_AF_TIM5;
     } break;
-  };  
-  
+  };
+
   clock_enable(a_gpio_channel_1);
   clock_enable(a_gpio_channel_2);
   clock_enable(a_timer_address);
   irs::gpio_moder_alternate_function_enable(a_gpio_channel_1);
-  irs::gpio_alternate_function_select(a_gpio_channel_1, 
+  irs::gpio_alternate_function_select(a_gpio_channel_1,
     alternate_function_number);
   irs::gpio_moder_alternate_function_enable(a_gpio_channel_2);
-  irs::gpio_alternate_function_select(a_gpio_channel_2, 
+  irs::gpio_alternate_function_select(a_gpio_channel_2,
     alternate_function_number);
-  
-  timer_set_bit(a_timer_address, 
+
+  timer_set_bit(a_timer_address,
     IRS_TIM_CCER, TIM_CH1, CCP, CCP_SIZE, 0);
-  timer_set_bit(a_timer_address, 
+  timer_set_bit(a_timer_address,
     IRS_TIM_CCER, TIM_CH2, CCP, CCP_SIZE, 0);
-  
-  timer_set_bit(a_timer_address, 
+
+  timer_set_bit(a_timer_address,
     IRS_TIM_CCMR, TIM_CH1, OCS, OCS_SIZE, 1);
-  timer_set_bit(a_timer_address, 
+  timer_set_bit(a_timer_address,
     IRS_TIM_CCMR, TIM_CH2, OCS, OCS_SIZE, 1);
-  
-  mp_timer->TIM_SMCR_bit.SMS = 2; 
-  
+
+  mp_timer->TIM_SMCR_bit.SMS = 2;
+
   mp_timer->TIM_ARR = 0xFFFF;
   mp_timer->TIM_CNT = m_curr_count;
   mp_timer->TIM_CR1_bit.CEN = 1;
@@ -241,13 +241,13 @@ irskey_t irs::encoder_drv_mc_t::get_key_encoder()
   m_result_key = irskey_none;
   if (m_timer.check()) {
     irs_i16 count = static_cast<irs_i16>(mp_timer->TIM_CNT);
-    if (count%2 == 0) { //добавлено т.к. на 1 изменение позиции TIM_CNT 
+    if (count%2 == 0) { //добавлено т.к. на 1 изменение позиции TIM_CNT
       count = count/2;  //увеличивается на 2
       if ((m_curr_count != count) && (m_keys.size() > 1)) {
         m_delta = count - m_curr_count;
         m_curr_count = count;
         if (m_delta > 0) {
-          m_result_key = m_keys[0];   
+          m_result_key = m_keys[0];
         } else if (m_delta < 0) {
           m_result_key = m_keys[1];
         }
@@ -264,7 +264,7 @@ irskey_t irs::encoder_drv_mc_t::get_key_button()
   if ((mp_press_down_pin != IRS_NULL) && (m_keys.size() > 2)) {
     if (!mp_press_down_pin->pin()) {
       m_result_key = m_keys[2];
-      m_press_count = 1; 
+      m_press_count = 1;
     }
   }
   return m_result_key;
@@ -296,5 +296,110 @@ void irs::set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc)
 #endif  // IRS_STM32F_2_AND_4
 
 #endif  //  __ICCARM__ || __ICCAVR__
+
+#ifdef __BORLANDC__
+irs::mouse_drv_builder_t::mouse_drv_builder_t():
+  m_timer(make_cnt_ms(20)),
+  m_delta(0),
+  m_press_count(0),
+  m_key_button_left(irskey_none),
+  m_key_button_right(irskey_none),
+  m_key_button_middle(irskey_none),
+  m_key_wheel_rotation_up(irskey_none),
+  m_key_wheel_rotation_down(irskey_none),
+  m_key_button(irskey_none)
+{
+}
+
+int irs::mouse_drv_builder_t::get_press_count()
+{
+  int press_count = m_press_count;
+  m_press_count = 0;
+  return press_count;
+}
+
+irskey_t irs::mouse_drv_builder_t::get_key_encoder()
+{
+  irskey_t result_key = irskey_none;
+  if (m_timer.check()) {
+    if (m_delta > 0) {
+      result_key = m_key_wheel_rotation_up;
+    } else if (m_delta < 0) {
+      result_key = m_key_wheel_rotation_down;
+    }
+    m_press_count = abs(m_delta);
+    m_delta = 0;
+  }
+  return result_key;
+}
+
+irskey_t irs::mouse_drv_builder_t::get_key_button()
+{
+  irskey_t result_key = m_key_button;
+  m_key_button = irskey_none;
+  m_press_count = 1;
+  return result_key;
+}
+
+/*void irs::mouse_drv_builder_t::connect(TForm* ap_control)
+{
+  ap_control->OnMouseWheel = MouseWheel;
+  ap_control->OnMouseDown = MouseDown;
+} */
+
+void irs::mouse_drv_builder_t::set_key_button_left(irskey_t a_irskey)
+{
+  m_key_button_left = a_irskey;
+}
+
+void irs::mouse_drv_builder_t::set_key_button_right(irskey_t a_irskey)
+{
+  m_key_button_right = a_irskey;
+}
+
+void irs::mouse_drv_builder_t::set_key_button_middle(irskey_t a_irskey)
+{
+  m_key_button_middle = a_irskey;
+}
+
+void irs::mouse_drv_builder_t::set_key_wheel_rotation_up(irskey_t a_irskey)
+{
+  m_key_wheel_rotation_up = a_irskey;
+}
+
+void irs::mouse_drv_builder_t::set_key_wheel_rotation_down(irskey_t a_irskey)
+{
+  m_key_wheel_rotation_down = a_irskey;
+}
+
+void __fastcall irs::mouse_drv_builder_t::MouseWheel(
+  TObject *Sender, TShiftState Shift, int WheelDelta,
+  TPoint &MousePos, bool &Handled)
+{
+  const int devider = 120;
+  const int current_delta = WheelDelta/devider;
+  m_delta += current_delta;
+}
+
+void __fastcall irs::mouse_drv_builder_t::MouseDown(
+  TObject *Sender, TMouseButton Button,
+  TShiftState Shift, int X, int Y)
+{
+  switch (Button) {
+    case mbLeft: {
+      m_key_button = m_key_button_left;
+    } break;
+    case mbRight: {
+      m_key_button = m_key_button_right;
+    } break;
+    case mbMiddle: {
+      m_key_button = m_key_button_middle;
+    } break;
+  }
+}
+
+
+
+#endif // __BORLANDC__
 
 //! @}

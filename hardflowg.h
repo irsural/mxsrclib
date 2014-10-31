@@ -2031,7 +2031,8 @@ public:
   //!   читаться
   //! \param[in] a_inbuf_size размер буфера чтения
   //! \param[in] a_outbuf_size размер буфера записи
-  //! \param[in] a_baud_rate скорость
+  //! \param[in] a_baud_rate скорость. Желательно не превышать 300 кбит/с,
+  //!   подробности смотреть в описании класса
   st_com_flow_t(
     int a_com_index,
     gpio_channel_t a_rx,

@@ -88,7 +88,7 @@ void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
 class encoder_drv_mc_t: public encoder_drv_t
 {
 public:
-  encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1, 
+  encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
     gpio_channel_t a_gpio_channel_2, size_t a_timer_address);
   virtual int get_press_count();
   virtual irskey_t get_key_encoder();
@@ -113,6 +113,42 @@ void set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc);
 #endif  // IRS_STM32F_2_AND_4
 
 #endif  //  __ICCARM__ || __ICCAVR__
+
+#ifdef __BORLANDC__
+class mouse_drv_builder_t: public encoder_drv_t
+{
+public:
+  mouse_drv_builder_t();
+  virtual int get_press_count();
+  virtual irskey_t get_key_encoder();
+  virtual irskey_t get_key_button();
+  template <class F>
+  void connect(F* ap_f)
+  {
+    ap_f->OnMouseWheel = MouseWheel;
+    ap_f->OnMouseDown = MouseDown;
+  }
+  void set_key_button_left(irskey_t a_irskey);
+  void set_key_button_right(irskey_t a_irskey);
+  void set_key_button_middle(irskey_t a_irskey);
+  void set_key_wheel_rotation_up(irskey_t a_irskey);
+  void set_key_wheel_rotation_down(irskey_t a_irskey);
+private:
+  void __fastcall MouseWheel(TObject *Sender, TShiftState Shift, int WheelDelta,
+    TPoint &MousePos, bool &Handled);
+  void __fastcall MouseDown(TObject *Sender, TMouseButton Button,
+    TShiftState Shift, int X, int Y);
+  loop_timer_t m_timer;
+  int m_delta;
+  int m_press_count;
+  irskey_t m_key_button_left;
+  irskey_t m_key_button_right;
+  irskey_t m_key_button_middle;
+  irskey_t m_key_wheel_rotation_up;
+  irskey_t m_key_wheel_rotation_down;
+  irskey_t m_key_button;
+};
+#endif // __BORLANDC__
 
 } // namespace irs
 

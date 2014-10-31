@@ -1339,12 +1339,8 @@ mxdisplay_drv_builder_t::mxdisplay_drv_builder_t(mxdisp_pos_t a_height,
   m_length(mxdisp_pos_t(m_height*m_width)),
   mp_display_ram(new char[m_length]),
   m_display_ram_changed(irs_true),
-  m_refresh_time(mxdisplay_refresh_time_def),
-  m_refresh_to(0)
+  m_refresh_timer(irs::make_cnt_ms(50))
 {
-  //lcd_clear();
-  init_to_cnt();
-  set_to_cnt(m_refresh_to, m_refresh_time);
 }
 mxdisplay_drv_builder_t::~mxdisplay_drv_builder_t()
 {
@@ -1372,8 +1368,7 @@ void mxdisplay_drv_builder_t::outtextpos(
 }
 void mxdisplay_drv_builder_t::tick()
 {
-  if (test_to_cnt(m_refresh_to)) {
-    set_to_cnt(m_refresh_to, m_refresh_time);
+  if (m_refresh_timer.check()) {
     if (m_display_ram_changed)
     if (mp_console) {
       m_display_ram_changed = irs_false;
@@ -1408,7 +1403,7 @@ void mxdisplay_drv_builder_t::connect(TMemo *ap_display)
 }
 void mxdisplay_drv_builder_t::set_refresh_time(counter_t a_refresh_time)
 {
-  m_refresh_time = a_refresh_time;
+  m_refresh_timer.set(a_refresh_time);
 }
 
 

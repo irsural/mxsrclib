@@ -421,8 +421,7 @@ class mxdisplay_drv_builder_t: public mxdisplay_drv_t
   mxdisp_pos_t m_length;
   char *mp_display_ram;
   irs_bool m_display_ram_changed;
-  counter_t m_refresh_time;
-  counter_t m_refresh_to;
+  irs::loop_timer_t m_refresh_timer;
 public:
   mxdisplay_drv_builder_t(mxdisp_pos_t a_height, mxdisp_pos_t a_width);
   ~mxdisplay_drv_builder_t();

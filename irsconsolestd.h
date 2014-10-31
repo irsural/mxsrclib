@@ -53,7 +53,10 @@ enum irskey_t {
   irskey_up       = 13,
   irskey_down     = 14,
   irskey_backspace= 15,
-  irskey_escape   = 16
+  irskey_escape   = 16,
+  irskey_encoder_down,
+  irskey_encoder_rotation_left,
+  irskey_encoder_rotation_right
 };
 
 // Абстрактный базовый класс драйвера клавиатуры
