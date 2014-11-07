@@ -1308,6 +1308,945 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
 
 //------------------------------------------------------------------------------
 
+//--------------------------  MENU_DOUBLE_EX_ITEM  -----------------------------
+
+irs_menu_double_ex_item_t::irs_menu_double_ex_item_t(double *a_parametr,
+  irs_bool a_can_edit):
+  mp_prefix(empty_str),
+  mp_suffix(empty_str),
+  mp_value_string(empty_str),
+  m_num_mode(irs::num_mode_fixed),
+  m_len(0),
+  m_accur(0),
+  m_max(0.0f),
+  m_min(0.0f),
+  mp_parametr(a_parametr),
+  mp_unit(empty_str),
+  m_prefixes(),
+  m_selected_digit(0),
+  m_point_flag(irs_false),
+  mp_double_trans(IRS_NULL),
+  m_blink_accept(irs_true),
+  m_blink_accept_to(0),
+  m_copy_parametr(*mp_parametr),
+  mp_copy_parametr_string(0),
+  m_key_type(IMK_DIGITS),
+  m_step(0.),
+  m_apply_immediately(false),
+  mp_key_event(NULL),
+  m_value_view(empty_str)
+{
+  f_master_menu = IRS_NULL;
+  f_cur_symbol = 0;
+  f_cursor[0] = f_cursor_symbol;
+  f_cursor[1] = '\0';
+  f_can_edit = a_can_edit;
+  f_creep = IRS_NULL;
+  init_to_cnt();
+  set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+}
+
+irs_menu_double_ex_item_t::~irs_menu_double_ex_item_t()
+{
+  deinit_to_cnt();
+}
+
+void irs_menu_double_ex_item_t::set_trans_function(double_trans_t a_double_trans)
+{
+  mp_double_trans = a_double_trans;
+  delete []mp_copy_parametr_string;
+}
+
+void irs_menu_double_ex_item_t::set_max_value(float a_max_value)
+{
+  m_max = a_max_value;
+}
+
+void irs_menu_double_ex_item_t::set_min_value(float a_min_value)
+{
+  m_min = a_min_value;
+}
+
+void irs_menu_double_ex_item_t::set_personal_key_event(
+  mxkey_event_t* ap_key_event)
+{
+  mp_key_event = ap_key_event;
+}
+
+void irs_menu_double_ex_item_t::set_str(char *a_value_string, char *a_prefix,
+  char *a_suffix, size_type a_len, size_type a_accur,
+  irs::num_mode_t a_num_mode)
+{
+  mp_value_string = a_value_string;
+  m_num_mode = a_num_mode;
+  m_len = a_len;
+  m_accur = a_accur;
+  mp_prefix = a_prefix;
+  mp_suffix = a_suffix;
+
+  size_type space = 1;
+  size_type full_len
+    = m_len + space + strlen(mp_prefix) + space + strlen(mp_suffix);
+
+  delete []mp_copy_parametr_string;
+  mp_copy_parametr_string = new char [full_len + 1];
+  m_copy_parametr = *mp_parametr;
+  afloat_to_str(mp_value_string, m_copy_parametr, m_len, m_accur, m_num_mode);
+  strcpy(mp_copy_parametr_string, mp_value_string);
+  m_value_view.set_str(a_value_string, a_prefix, a_suffix, a_len, m_accur);
+  m_updated = true;
+}
+
+void irs_menu_double_ex_item_t::set_unit(char* ap_unit,
+  map<int, char*> a_prefixes)
+{
+}
+
+void irs_menu_double_ex_item_t::reset_str()
+{
+  //for (irs_u8 i = 0; i < m_len; mp_value_string[i++] = ' ');
+  memset(mp_value_string, ' ', m_len);
+  mp_value_string[m_len] = '\0';
+}
+
+double *irs_menu_double_ex_item_t::get_parametr()
+{
+  return mp_parametr;
+}
+
+irs_menu_base_t::size_type irs_menu_double_ex_item_t::get_parametr_string(
+  char *a_parametr_string,
+  irs_menu_base_t::size_type a_length,
+  irs_menu_param_show_mode_t a_show_mode,
+  irs_menu_param_update_t a_update)
+{
+  if (a_parametr_string) {
+    size_type len = 0;
+    if (a_show_mode != IMM_WITHOUT_PREFIX) {
+      len = strlen(mp_prefix);
+      if ((a_length > 0) && (len > a_length)) {
+        len = a_length;
+        memcpy(a_parametr_string, mp_prefix, len);
+        a_parametr_string[len] = '\0';
+        return len;
+      }
+      for (size_type i = 0; i < len; i++) {
+        a_parametr_string[i] = mp_prefix[i];
+      }
+      a_parametr_string[len] = ' ';
+      len++;
+    }
+    if (m_copy_parametr != *mp_parametr) {
+      m_updated = true;
+      if (a_update == IMU_UPDATE) {
+        m_copy_parametr = *mp_parametr;
+        afloat_to_str(mp_value_string, m_copy_parametr, m_len, m_accur,
+          m_num_mode);
+        strcpy(mp_copy_parametr_string, mp_value_string);
+      } else {
+        strcpy(mp_value_string, mp_copy_parametr_string);
+      }
+    } else {
+      strcpy(mp_value_string, mp_copy_parametr_string);
+    }
+
+    /*double intpart = 0;
+    double fractpart =  modf(*mp_parametr, &intpart);
+    const int intpart_digit_count = intpart < 10 ? 1 :
+      static_cast<int>(log10(intpart) + 1);
+    const int pos_max = (intpart == 0) ? -1 : log10(intpart);
+    //const int pos_max =
+    const int pos_min = m_accur - pos_max;
+      */
+
+    size_type len2 = strlen(mp_value_string);
+
+    if ((a_length > 0) && ((len + len2) > a_length)) {
+      len2 = a_length - len;
+      memcpy(reinterpret_cast<void*>(&a_parametr_string[len]),
+        mp_value_string, len2);
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+    static irs::loop_timer_t t(irs::make_cnt_ms(200));
+    static bool selector = false;
+    if (t.check()) {
+      selector = !selector;
+    }
+    char* first_digit = strpbrk (mp_value_string, "0123456789");
+    char* last_digit = mp_value_string;
+    char* point = strchr(mp_value_string, '.');
+    size_t diff =  distance(mp_value_string, point);
+    const int first_digit_pos = distance(mp_value_string, first_digit);
+    const int point_pos = distance(mp_value_string, point);
+    const int last_digit_pos = len2 - 1;
+    const int pos_max = first_digit_pos;
+    const int pos_min = last_digit_pos;
+
+    /*const double val = *mp_parametr;
+    const int p = (m_selected_digit < point_pos) ?
+      (point_pos - m_selected_digit - 1) : (point_pos - m_selected_digit);
+    const double par1 = irs::round<double, double>(val*pow(10, (p*(-1))-1))*pow(10, (p+1));
+    const int a = p >= 0 ? p : p*(-1);
+    const double part2 = irs::round<double, double>(val*pow(10, a))*pow(10, a*(-1));
+
+
+    const double step = part2 - par1;
+    */
+    const int p = (m_selected_digit < point_pos) ?
+      (point_pos - m_selected_digit - 1) : (point_pos - m_selected_digit);
+    const double step = pow(10, p);
+
+    IRS_LIB_ASSERT(mp_key_event);
+    irskey_t key = irskey_none;
+    if (mp_key_event) {
+      key = mp_key_event->check();
+    }
+    switch(key) {
+      case irskey_up: {
+        m_selected_digit = max(m_selected_digit - 1, pos_max);
+        if (m_selected_digit == point_pos) {
+          m_selected_digit = max(m_selected_digit - 1, pos_max);
+        }
+      } break;
+      case irskey_down: {
+        m_selected_digit = min(m_selected_digit + 1, pos_min);
+        if (m_selected_digit == point_pos) {
+          m_selected_digit = min(m_selected_digit + 1, pos_min);
+        }
+      } break;
+      case irskey_0: {
+        *mp_parametr = *mp_parametr - step;
+        if (mp_double_trans) mp_double_trans(mp_parametr);
+        if (mp_event) mp_event->exec();
+        m_updated = true;
+      } break;
+      case irskey_1: {
+        *mp_parametr = *mp_parametr + step;
+        if (mp_double_trans) mp_double_trans(mp_parametr);
+        if (mp_event) mp_event->exec();
+        m_updated = true;
+      } break;
+    }
+
+    //int point_pos = m_accur - intpart_digit_count;
+    int pos = point_pos + m_selected_digit;
+
+    for (size_type i = 0; i < len2; i++) {
+      if (i == m_selected_digit) {
+        if (selector) {
+          a_parametr_string[i+len] = ' ';
+        } else {
+          a_parametr_string[i+len] = mp_value_string[i];
+        }
+      } else {
+        a_parametr_string[i+len] = mp_value_string[i];
+      }
+    }
+
+    if (a_show_mode != IMM_WITHOUT_SUFFIX)
+    {
+      a_parametr_string[len+len2] = ' ';
+      len2++;
+      size_type len3 = strlen(mp_suffix);
+
+      if ((a_length > 0) && ((len + len2 + len3) > a_length))
+      {
+        len3 = a_length - len - len2;
+        memcpy(reinterpret_cast<void*>(&a_parametr_string[len+len2]),
+          mp_suffix, len3);
+        size_type real_len = len + len2 + len3;
+        a_parametr_string[real_len] = '\0';
+        return real_len;
+      }
+
+      for (size_type i = 0; i < len3; i++)
+      {
+        a_parametr_string[i+len+len2] = mp_suffix[i];
+      }
+      size_type real_len = len + len2 + len3;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+    else
+    {
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+  }
+  return 0;
+}
+
+irs_menu_base_t::size_type irs_menu_double_ex_item_t::get_dynamic_string(
+  char *a_buffer, irs_menu_base_t::size_type /*a_length*/)
+{
+  a_buffer = a_buffer;
+  return 0;
+}
+
+void irs_menu_double_ex_item_t::set_can_edit(irs_bool a_can_edit)
+{
+  f_can_edit = a_can_edit;
+}
+
+void irs_menu_double_ex_item_t::set_key_type(irs_menu_key_type_t a_key_type)
+{
+  m_key_type = a_key_type;
+  if (m_key_type == IMK_DIGITS) m_apply_immediately = false;
+}
+
+void irs_menu_double_ex_item_t::set_change_step(double a_step)
+{
+  m_step = a_step;
+}
+
+void irs_menu_double_ex_item_t::set_apply_immediately(bool a_apply_immediately)
+{
+  if (m_key_type == IMK_ARROWS) m_apply_immediately = a_apply_immediately;
+}
+
+bool irs_menu_double_ex_item_t::is_updated()
+{
+  if (m_copy_parametr != *mp_parametr)
+  {
+    // Sobaka рылась here
+    //m_copy_parametr = *mp_parametr;
+    m_updated = false;
+    return true;
+  }
+  bool updated = m_updated;
+  m_updated = false;
+  return updated;
+}
+
+void irs_menu_double_ex_item_t::draw(irs_menu_base_t **a_cur_menu)
+{
+  if (f_show_needed) {
+    f_show_needed = irs_false;
+    show();
+  }
+  irskey_t a_key = irskey_none;
+  if (f_key_event) a_key = f_key_event->check();
+  switch (f_state)
+  {
+  case ims_show:
+    {
+      if (f_can_edit)
+      {
+        reset_str();
+        mp_disp_drv->clear();
+        f_want_redraw = irs_true;
+        set_to_cnt(f_blink_counter,MS_TO_CNT(CUR_BLINK));
+        m_point_flag = irs_false;
+        f_cur_symbol = 0;
+        //mp_disp_drv->clear_line(EDIT_LINE);
+        mp_disp_drv->outtextpos(0, 0, f_header);
+        afloat_to_str(mp_value_string, *mp_parametr, m_len, m_accur, m_num_mode);
+
+        const size_type space = 1;
+        size_type prf_x_pos = 0;
+        size_type val_x_pos = strlen(mp_prefix) + space;
+        size_type suf_x_pos = val_x_pos + space + strlen(mp_value_string);
+        size_type y_pos = 1;
+
+        mp_disp_drv->outtextpos(prf_x_pos, y_pos, mp_prefix);
+        mp_disp_drv->outtextpos(val_x_pos, y_pos, mp_value_string);
+        mp_disp_drv->outtextpos(suf_x_pos, y_pos, mp_suffix);
+        f_cursor[0] = ' ';
+        m_copy_parametr = *mp_parametr;
+        edit();
+      }
+      else
+      {
+        switch(a_key)
+        {
+        case irskey_enter:
+          {
+            if (f_can_edit)
+            {
+              //reset_str();
+              f_want_redraw = irs_true;
+              //set_to_cnt(f_blink_counter,MS_TO_CNT(CUR_BLINK));
+              //m_point_flag = irs_false;
+              //f_cur_symbol = 0;
+              //mp_disp_drv->clear_line(EDIT_LINE);
+              //edit();
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (!f_creep)
+                mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+              //f_master_menu->show();
+            }
+            break;
+          }
+        case irskey_escape:
+          {
+            //hide();
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+            //f_master_menu->show();
+            break;
+          }
+        default:
+          {
+            if (f_want_redraw || (!f_can_edit))
+            {
+              mp_disp_drv->clear();
+              mp_disp_drv->outtextpos(0, 0, f_header);
+              afloat_to_str(mp_value_string, *mp_parametr, m_len, m_accur,
+                m_num_mode);
+
+              const size_type space = 1;
+              size_type prf_x_pos = 0;
+              size_type val_x_pos = strlen(mp_prefix) + space;
+              size_type suf_x_pos = val_x_pos + space + strlen(mp_value_string);
+              size_type y_pos = 1;
+
+              mp_disp_drv->outtextpos(prf_x_pos, y_pos, mp_prefix);
+              mp_disp_drv->outtextpos(val_x_pos, y_pos, mp_value_string);
+              mp_disp_drv->outtextpos(suf_x_pos, y_pos, mp_suffix);
+              f_want_redraw = irs_false;
+            }
+            if (f_creep != IRS_NULL)
+            {
+              f_creep->shift();
+              mxdisp_pos_t x_pos = 0;
+              mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+              mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+            }
+            else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            break;
+          }
+        }
+      }
+      break;
+    }
+  case ims_edit:
+    {
+      switch (m_key_type)
+      {
+        case IMK_DIGITS:
+        {
+          if (a_key == irskey_backspace)
+          {
+            if (f_cur_symbol > 0)
+            {
+              f_cur_symbol--;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "  ");
+              if (mp_value_string[f_cur_symbol] == '.') {
+                m_point_flag = irs_false;
+              }
+              mp_value_string[f_cur_symbol] = ' ';
+            }
+            else
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+            }
+          }
+          if (a_key == irskey_escape)
+          {
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (a_key == irskey_enter)
+          {
+            mp_value_string[f_cur_symbol] = '\0';
+            if (f_cur_symbol > 0)
+            {
+              *mp_parametr = atof(mp_value_string);
+              if (*mp_parametr > m_max) *mp_parametr = m_max;
+              if (*mp_parametr < m_min) *mp_parametr = m_min;
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+            }
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (f_creep)
+          {
+            f_creep->shift();
+            mxdisp_pos_t x_pos = 0;
+            mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+            mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+          }
+          if (f_cur_symbol < m_len)
+          {
+            switch(a_key)
+            {
+            case irskey_1:
+              {
+                mp_value_string[f_cur_symbol] = '1';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "1");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_2:
+              {
+                mp_value_string[f_cur_symbol] = '2';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "2");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_3:
+              {
+                mp_value_string[f_cur_symbol] = '3';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "3");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_4:
+              {
+                mp_value_string[f_cur_symbol] = '4';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "4");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_5:
+              {
+                mp_value_string[f_cur_symbol] = '5';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "5");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_6:
+              {
+                mp_value_string[f_cur_symbol] = '6';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "6");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_7:
+              {
+                mp_value_string[f_cur_symbol] = '7';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "7");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_8:
+              {
+                mp_value_string[f_cur_symbol] = '8';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "8");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_9:
+              {
+                mp_value_string[f_cur_symbol] = '9';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "9");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_0:
+              {
+                mp_value_string[f_cur_symbol] = '0';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "0");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_point:
+              {
+                if (!m_point_flag)
+                {
+                  mp_value_string[f_cur_symbol] = '.';
+                  mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, ".");
+                  f_cur_symbol++;
+                  m_point_flag = irs_true;
+                }
+                break;
+              }
+            default :
+              {
+                // Остальные клавиши игнорируем
+              }
+            }
+          }
+
+          if (a_key != irskey_none) {
+            set_to_cnt(m_blink_accept_to, blink_accept_time);
+            m_blink_accept = irs_false;
+            f_cursor[0] = f_cursor_symbol;
+            mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+          }
+          if (m_blink_accept) {
+            if (test_to_cnt(f_blink_counter)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              f_cursor[0] =
+                (f_cursor[0] == f_cursor_symbol) ? ' ' : f_cursor_symbol;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+            }
+          } else {
+            if (test_to_cnt(m_blink_accept_to)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              m_blink_accept = irs_true;
+            }
+          }
+          break;
+        }
+        case IMK_ARROWS:
+        {
+          switch (a_key)
+          {
+            case irskey_escape:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (m_apply_immediately)
+              {
+                *mp_parametr = m_copy_parametr;
+              }
+              else
+              {
+                m_copy_parametr = *mp_parametr;
+              }
+              afloat_to_str(mp_value_string, *mp_parametr, m_len, m_accur,
+                m_num_mode);
+              strcpy(mp_copy_parametr_string, mp_value_string);
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            case irskey_enter:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (m_apply_immediately)
+              {
+                m_copy_parametr = *mp_parametr;
+              }
+              else
+              {
+                *mp_parametr = m_copy_parametr;
+              }
+              afloat_to_str(mp_value_string, *mp_parametr, m_len, m_accur,
+                m_num_mode);
+              strcpy(mp_copy_parametr_string, mp_value_string);
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            case irskey_up:
+            {
+              if (m_apply_immediately)
+              {
+                *mp_parametr += m_step;
+                if (*mp_parametr > m_max) *mp_parametr = m_max;
+                if (mp_double_trans) mp_double_trans(mp_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                m_copy_parametr += m_step;
+                if (m_copy_parametr > m_max) m_copy_parametr = m_max;
+              }
+              f_want_redraw = true;
+              break;
+            }
+            case irskey_down:
+            {
+              if (m_apply_immediately)
+              {
+                *mp_parametr -= m_step;
+                if (*mp_parametr < m_min) *mp_parametr = m_min;
+                if (mp_double_trans) mp_double_trans(mp_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                m_copy_parametr -= m_step;
+                if (m_copy_parametr < m_min) m_copy_parametr = m_min;
+              }
+              f_want_redraw = true;
+              break;
+            }
+            default : {
+              // Остальные клавиши игнорируем
+            }
+          }
+          if (f_want_redraw)
+          {
+            f_want_redraw = false;
+
+            if (m_apply_immediately)
+            {
+              afloat_to_str(mp_value_string, *mp_parametr, m_len, m_accur,
+                m_num_mode);
+            }
+            else
+            {
+              afloat_to_str(mp_value_string, m_copy_parametr, m_len, m_accur,
+                m_num_mode);
+            }
+
+            mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(mp_prefix));
+            mxdisp_pos_t val_len = mxdisp_pos_t(strlen(mp_value_string));
+            mxdisp_pos_t space = 1;
+            mxdisp_pos_t val_pos_x =
+              static_cast<mxdisp_pos_t>(pref_len + space);
+            mxdisp_pos_t suff_pos_x = static_cast<mxdisp_pos_t>(pref_len +
+              space + val_len + space);
+            mxdisp_pos_t line_num = 1;
+
+            mp_disp_drv->clear_line(1);
+            mp_disp_drv->outtextpos(0, 1, mp_prefix);
+            mp_disp_drv->outtextpos(val_pos_x, line_num, mp_value_string);
+            mp_disp_drv->outtextpos(suff_pos_x, line_num, mp_suffix);
+          }
+          break;
+        }
+      }
+      break;
+    }
+  default :
+    {
+      // Остальные режимы меню игнорируем
+    }
+  }
+}
+
+//class value_view_t
+irs_menu_double_ex_item_t::value_view_t::value_view_t(char* ap_empty_str):
+  m_value(0),
+  m_exponent(1),
+  m_min(0),
+  m_max(0),
+  m_precision(5),
+  m_selected_digit(0),
+  mp_prefix(ap_empty_str),
+  mp_suffix(ap_empty_str),
+  mp_value_string(ap_empty_str),
+  m_value_string_size(0),
+  m_blink_cursor_timer(irs::make_cnt_s(0.2)),
+  m_show_cursor(true),
+  m_show_extra_high_digit(false)
+{
+}
+
+void irs_menu_double_ex_item_t::value_view_t::set_unit(char* ap_unit,
+  map<int, char*> a_prefixes)
+{
+  mp_unit = ap_unit;
+  m_prefixes = a_prefixes;
+}
+
+double irs_menu_double_ex_item_t::value_view_t::get_value() const
+{
+  return m_value;
+}
+
+void irs_menu_double_ex_item_t::value_view_t::set_value(const double a_value)
+{
+  m_value = a_value;
+  m_mantissa = a_value;
+}
+
+void irs_menu_double_ex_item_t::value_view_t::set_str(
+  char* a_value_string, char* a_prefix, char *a_suffix,
+  size_type a_len, size_type a_accur)
+{
+  mp_value_string = a_value_string;
+  mp_prefix = a_prefix;
+  mp_suffix = a_suffix;
+}
+
+void irs_menu_double_ex_item_t::value_view_t::set_min_value(double a_min_value)
+{
+  m_min = a_min_value;
+}
+
+void irs_menu_double_ex_item_t::value_view_t::set_max_value(double a_max_value)
+{
+  m_max = a_max_value;
+}
+
+bool irs_menu_double_ex_item_t::value_view_t::increase_value()
+{
+  if (m_value < m_max) {
+    m_value = m_value + step();
+    m_value = irs::bound(m_value, m_min, m_max);
+  }
+  return false;
+}
+
+bool irs_menu_double_ex_item_t::value_view_t::reduce_value()
+{
+  if (m_value > m_min) {
+    m_value = m_value - step();
+    m_value = irs::bound(m_value, m_min, m_max);
+  }
+  return false;
+}
+
+double irs_menu_double_ex_item_t::value_view_t::step()
+{
+  const double step = pow(10, m_selected_digit);
+  return step;
+}
+
+bool irs_menu_double_ex_item_t::value_view_t::shift_cursor_left()
+{
+  shift(shift_left);
+}
+
+bool irs_menu_double_ex_item_t::value_view_t::shift_cursor_right()
+{
+  shift(shift_right);
+}
+
+bool irs_menu_double_ex_item_t::value_view_t::shift(shift_mode_t a_mode)
+{
+  double intpart = 0;
+  double fractpart =  modf(m_mantissa, &intpart);
+  const int intpart_digit_count = intpart < 10 ? 1 :
+    static_cast<int>(log10(intpart) + 1);
+  const int max_digit = (intpart == 0) ? 0 : log10(intpart) + 1;
+  const int min_digit = m_precision - max_digit - 1;
+  m_selected_digit = irs::bound(m_selected_digit, min_digit, max_digit);
+
+  /*char* first_digit = strpbrk (mp_value_string, "0123456789");
+  char* last_digit = mp_value_string;
+  char* point = strchr(mp_value_string, '.');
+  const int first_digit_pos = distance(mp_value_string, first_digit);
+  const int point_pos = distance(mp_value_string, point);
+  const int last_digit_pos = len2 - 1;
+  const int pos_max = first_digit_pos;
+  const int pos_min = last_digit_pos;*/
+
+  if (a_mode == shift_left) {
+    if (m_selected_digit < max_digit) {
+      m_selected_digit++;
+      return true;
+    }
+  } else {
+    if (m_selected_digit > min_digit) {
+      m_selected_digit--;
+      return true;
+    }
+  }
+  return false;
+}
+
+irs_menu_double_ex_item_t::value_view_t::size_type
+irs_menu_double_ex_item_t::value_view_t::get_parametr_string(
+  char *a_parametr_string,
+  size_type a_length,
+  irs_menu_param_show_mode_t a_show_mode)
+{
+  if (a_parametr_string) {
+    if (m_blink_cursor_timer.check()) {
+      m_show_cursor = !m_show_cursor;
+    }
+
+    size_type len = 0;
+    if (a_show_mode != IMM_WITHOUT_PREFIX) {
+      len = strlen(mp_prefix);
+      if ((a_length > 0) && (len > a_length)) {
+        len = a_length;
+        memcpy(a_parametr_string, mp_prefix, len);
+        a_parametr_string[len] = '\0';
+        return len;
+      }
+      for (size_type i = 0; i < len; i++) {
+        a_parametr_string[i] = mp_prefix[i];
+      }
+      a_parametr_string[len] = ' ';
+      len++;
+    }
+
+    size_type len2 = strlen(mp_value_string);
+
+    if ((a_length > 0) && ((len + len2) > a_length)) {
+      len2 = a_length - len;
+      memcpy(reinterpret_cast<void*>(&a_parametr_string[len]),
+        mp_value_string, len2);
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+    static irs::loop_timer_t t(irs::make_cnt_ms(200));
+    static bool selector = false;
+    if (t.check()) {
+      selector = !selector;
+    }
+    char* first_digit = strpbrk (mp_value_string, "0123456789");
+    char* last_digit = mp_value_string;
+    char* point = strchr(mp_value_string, '.');
+    size_t diff =  distance(mp_value_string, point);
+    const int first_digit_pos = distance(mp_value_string, first_digit);
+    const int point_pos = distance(mp_value_string, point);
+    const int last_digit_pos = len2 - 1;
+    const int pos_max = first_digit_pos;
+    const int pos_min = last_digit_pos;
+
+    /*const double val = *mp_parametr;
+    const int p = (m_selected_digit < point_pos) ?
+      (point_pos - m_selected_digit - 1) : (point_pos - m_selected_digit);
+    const double par1 = irs::round<double, double>(val*pow(10, (p*(-1))-1))*pow(10, (p+1));
+    const int a = p >= 0 ? p : p*(-1);
+    const double part2 = irs::round<double, double>(val*pow(10, a))*pow(10, a*(-1));
+
+
+    const double step = part2 - par1; */
+
+    int selected_digit = m_selected_digit + (m_exponent*(-1));
+    //int point_pos = m_accur - intpart_digit_count;
+    int pos = point_pos + m_selected_digit;
+
+    for (size_type i = 0; i < len2; i++) {
+      if (i == m_selected_digit) {
+        if (selector) {
+          a_parametr_string[i+len] = ' ';
+        } else {
+          a_parametr_string[i+len] = mp_value_string[i];
+        }
+      } else {
+        a_parametr_string[i+len] = mp_value_string[i];
+      }
+    }
+
+    if (a_show_mode != IMM_WITHOUT_SUFFIX) {
+      a_parametr_string[len+len2] = ' ';
+      len2++;
+      size_type len3 = strlen(mp_suffix);
+
+      if ((a_length > 0) && ((len + len2 + len3) > a_length))
+      {
+        len3 = a_length - len - len2;
+        memcpy(reinterpret_cast<void*>(&a_parametr_string[len+len2]),
+          mp_suffix, len3);
+        size_type real_len = len + len2 + len3;
+        a_parametr_string[real_len] = '\0';
+        return real_len;
+      }
+
+      for (size_type i = 0; i < len3; i++)
+      {
+        a_parametr_string[i+len+len2] = mp_suffix[i];
+      }
+      size_type real_len = len + len2 + len3;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+    else
+    {
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+  }
+  return 0;
+}
+
+//----------------------   MENU_DOUBLE_EX_ITEM   --------------------------
+
+
 irs_tablo_t::irs_tablo_t():
   f_parametr_count(0),
   mp_lcd_string(IRS_NULL),

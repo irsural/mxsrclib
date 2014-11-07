@@ -58,18 +58,19 @@ public:
 };
 
 //------------------------------------------------------------------------------
-
+//! \brief Состояние пункта меню
 typedef enum _irs_menu_state_t{
-  ims_hide,
-  ims_edit,
-  ims_show
+  ims_hide, //!< Скрыт
+  ims_edit, //!< В режиме редактирования
+  ims_show  //!< В режиме отображения
 } irs_menu_state_t;
 
+//! \brief Режим отображения пункта меню
 enum irs_menu_param_show_mode_t
 {
-  IMM_FULL,
-  IMM_WITHOUT_PREFIX,
-  IMM_WITHOUT_SUFFIX
+  IMM_FULL,             //!< Полностью
+  IMM_WITHOUT_PREFIX,   //!< Без префикса
+  IMM_WITHOUT_SUFFIX    //!< Без суффикса
 };
 
 enum irs_menu_param_update_t
@@ -145,7 +146,8 @@ public:
   irs_bool can_edit();
   void* get_data_attached();
   void set_data_attached(void* ap_data);
-
+  //! \brief Используется для получения отображения пункта меню на
+  //    индикаторе
   virtual size_type get_parametr_string(
     char *a_parametr_string,
     size_type a_length = 0,
@@ -314,12 +316,127 @@ public:
   //! \param[in] a_value_string буфер для вывода числа, включая префикс и суффикс
   //! \param[in] a_prefix префикс
   //! \param[in] a_suffix суффикс
+  //! \param[in] a_len длина поля числа, без суффикса и префикса
+  //! \param[in] a_accur точность вывода числа
+  //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
+  void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
+    size_type a_len, size_type a_accur,
+    irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  void reset_str();
+  void set_min_value(float a_min_value);
+  float get_min_value();
+  void set_max_value(float a_max_value);
+  float get_max_value();
+  virtual void draw(irs_menu_base_t **a_cur_menu);
+  double *get_parametr();
+  virtual void set_trans_function(double_trans_t a_double_trans);
+  size_type get_parametr_string(
+    char *a_parametr_string,
+    size_type a_length = 0,
+    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
+    irs_menu_param_update_t a_update = IMU_UPDATE);
+  size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
+  void set_can_edit(irs_bool a_can_edit);
+  void set_key_type(irs_menu_key_type_t a_key_type);
+  void set_change_step(double a_step);
+  void set_apply_immediately(bool a_apply_immediately);
+  virtual bool is_updated();
+};
+
+class irs_menu_double_ex_item_t: public irs_menu_base_t
+{
+  char *mp_prefix;
+  char *mp_suffix;
+  char *mp_value_string;
+  irs::num_mode_t m_num_mode;
+  size_type m_len;
+  size_type m_accur;
+  float m_max;
+  float m_min;
+  double *mp_parametr;
+  char* mp_unit;
+  map<int, char*> m_prefixes;
+  int m_selected_digit;
+  class value_view_t
+  {
+  public:
+    typedef irs_menu_double_ex_item_t::size_type size_type;
+    value_view_t(char* ap_empty_str);
+    void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
+      size_type a_len, size_type a_accur);
+    void set_unit(char* ap_unit, map<int, char*> a_prefixes);
+    double get_value() const;
+    void set_value(const double a_value);
+    bool increase_value();
+    bool reduce_value();
+    bool shift_cursor_left();
+    bool shift_cursor_right();
+    void set_min_value(double a_min_value);
+    void set_max_value(double a_max_value);
+    size_type get_parametr_string(
+      char *a_parametr_string,
+      size_type a_length = 0,
+      irs_menu_param_show_mode_t a_show_mode = IMM_FULL);
+  private:
+    double step();
+    /*enum action_t {
+      action_shift_left,
+      action_shift_right,
+      action_increase_value,
+      action_reduce_value
+    };
+    bool action(action_t a_action);*/
+    enum shift_mode_t {
+      shift_left,
+      shift_right
+    };
+    bool shift(shift_mode_t a_mode);
+    double m_value;
+    double m_mantissa;
+    int m_exponent;
+    double m_min;
+    double m_max;
+    double m_precision;
+    int m_selected_digit;
+    char* mp_prefix;
+    char* mp_suffix;
+    char* mp_value_string;
+    size_type m_value_string_size;
+    irs::loop_timer_t m_blink_cursor_timer;
+    bool m_show_cursor;
+    bool m_show_extra_high_digit;
+    char* mp_unit;
+    map<int, char*> m_prefixes;
+  };
+  irs_bool m_point_flag;
+  double_trans_t mp_double_trans;
+  irs_bool m_blink_accept;
+  counter_t m_blink_accept_to;
+  double m_copy_parametr;
+  char *mp_copy_parametr_string;
+  irs_menu_key_type_t m_key_type;
+  double m_step;
+  bool m_apply_immediately;
+  mxkey_event_t* mp_key_event;
+  value_view_t m_value_view;
+public:
+  irs_menu_double_ex_item_t(double *a_parametr, irs_bool a_can_edit);
+  ~irs_menu_double_ex_item_t();
+  void set_personal_key_event(mxkey_event_t* ap_key_event);
+  //! \brief Задает буфер для вывода числа, префикс, суффикс, длину числа,
+  //!   точность отображения числа
+  //! \param[in] a_value_string буфер для вывода числа, включая
+  //!   префикс и суффикс
+  //! \param[in] a_prefix префикс
+  //! \param[in] a_suffix суффикс
   //! \param[in] a_len длина выводимого числа, без суффикса и префикса
   //! \param[in] a_accur точность вывода числа
   //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
   void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
     size_type a_len, size_type a_accur,
     irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  //! \brief Задает единицы измерения и префиксы
+  void set_unit(char* ap_unit, map<int, char*> a_prefixes);
   void reset_str();
   void set_min_value(float a_min_value);
   float get_min_value();
