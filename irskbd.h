@@ -127,6 +127,7 @@ public:
   {
     ap_f->OnMouseWheel = MouseWheel;
     ap_f->OnMouseDown = MouseDown;
+    ap_f->OnMouseUp = MouseUp;
   }
   void set_key_button_left(irskey_t a_irskey);
   void set_key_button_right(irskey_t a_irskey);
@@ -137,6 +138,8 @@ private:
   void __fastcall MouseWheel(TObject *Sender, TShiftState Shift, int WheelDelta,
     TPoint &MousePos, bool &Handled);
   void __fastcall MouseDown(TObject *Sender, TMouseButton Button,
+    TShiftState Shift, int X, int Y);
+  void __fastcall MouseUp(TObject *Sender, TMouseButton Button,
     TShiftState Shift, int X, int Y);
   loop_timer_t m_timer;
   int m_delta;

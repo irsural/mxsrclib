@@ -3565,7 +3565,8 @@ add()
     }
   }
   mp_controls->points_changed();
-  mp_controls->invalidate();
+  mp_controls->deferred_update_chart();
+  //mp_controls->invalidate();
 }
 void irs::chart::builder_chart_window_t::
 add(const string_type &a_name, double a_time, double a_value)
@@ -3581,7 +3582,8 @@ add(const string_type &a_name, double a_time, double a_value)
       (*it).second.vec.pop_front();
     }
     mp_controls->points_changed();
-    mp_controls->invalidate();
+    mp_controls->deferred_update_chart();
+    //mp_controls->invalidate();
   } else {
     // Ничего если параметра нет
   }
@@ -4037,6 +4039,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_fix_off_text("Разфиксация"),
   m_refresh_time_ms(a_refresh_time_ms),
   m_invalidate(irs_false),
+  m_deferred_update_chart(false),
   m_time_int(0.),
   mp_data(&m_data),
   m_base_item(0),
@@ -4359,6 +4362,9 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
     } else {
       if (!m_is_lock) {
         connect_data(m_data);
+        if (m_deferred_update_chart) {
+          update_chart();
+        }
       }
     }
 
@@ -4900,6 +4906,11 @@ inline void irs::chart::builder_chart_window_t::controls_t::
 {
   m_invalidate = irs_true;
 }
+inline void irs::chart::builder_chart_window_t::controls_t::
+deferred_update_chart()
+{
+  m_deferred_update_chart = true;
+}
 void irs::chart::builder_chart_window_t::controls_t::
   chart_list_changed()
 {
@@ -5020,6 +5031,7 @@ void irs::chart::builder_chart_window_t::controls_t::update_points_grid()
 void irs::chart::builder_chart_window_t::controls_t::update_chart()
 {
   m_invalidate = irs_false;
+  m_deferred_update_chart = false;
   mp_chart->Clear();
   m_unsort_data_chart_item_map.clear();
   m_colors.start();

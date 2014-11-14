@@ -639,6 +639,7 @@ private:
     inline void group_all();
     inline void ungroup_all();
     inline void invalidate();
+    inline void deferred_update_chart();
     void chart_list_changed();
     void points_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
@@ -716,6 +717,7 @@ private:
     const char *mp_fix_off_text;
     irs_i32 m_refresh_time_ms;
     irs_bool m_invalidate;
+    bool m_deferred_update_chart;
     mx_time_int_local_t m_time_int;
     const data_t* mp_data;
     //TMxChart *mp_chart;

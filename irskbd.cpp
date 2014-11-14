@@ -336,7 +336,7 @@ irskey_t irs::mouse_drv_builder_t::get_key_encoder()
 irskey_t irs::mouse_drv_builder_t::get_key_button()
 {
   irskey_t result_key = m_key_button;
-  m_key_button = irskey_none;
+  //m_key_button = irskey_none;
   m_press_count = 1;
   return result_key;
 }
@@ -396,6 +396,12 @@ void __fastcall irs::mouse_drv_builder_t::MouseDown(
       m_key_button = m_key_button_middle;
     } break;
   }
+}
+
+void __fastcall irs::mouse_drv_builder_t::MouseUp(TObject *Sender,
+  TMouseButton Button, TShiftState Shift, int X, int Y)
+{
+  m_key_button = irskey_none;
 }
 
 

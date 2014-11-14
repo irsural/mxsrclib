@@ -357,57 +357,7 @@ class irs_menu_double_ex_item_t: public irs_menu_base_t
   char* mp_unit;
   map<int, char*> m_prefixes;
   int m_selected_digit;
-  class value_view_t
-  {
-  public:
-    typedef irs_menu_double_ex_item_t::size_type size_type;
-    value_view_t(char* ap_empty_str);
-    void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
-      size_type a_len, size_type a_accur);
-    void set_unit(char* ap_unit, map<int, char*> a_prefixes);
-    double get_value() const;
-    void set_value(const double a_value);
-    bool increase_value();
-    bool reduce_value();
-    bool shift_cursor_left();
-    bool shift_cursor_right();
-    void set_min_value(double a_min_value);
-    void set_max_value(double a_max_value);
-    size_type get_parametr_string(
-      char *a_parametr_string,
-      size_type a_length = 0,
-      irs_menu_param_show_mode_t a_show_mode = IMM_FULL);
-  private:
-    double step();
-    /*enum action_t {
-      action_shift_left,
-      action_shift_right,
-      action_increase_value,
-      action_reduce_value
-    };
-    bool action(action_t a_action);*/
-    enum shift_mode_t {
-      shift_left,
-      shift_right
-    };
-    bool shift(shift_mode_t a_mode);
-    double m_value;
-    double m_mantissa;
-    int m_exponent;
-    double m_min;
-    double m_max;
-    double m_precision;
-    int m_selected_digit;
-    char* mp_prefix;
-    char* mp_suffix;
-    char* mp_value_string;
-    size_type m_value_string_size;
-    irs::loop_timer_t m_blink_cursor_timer;
-    bool m_show_cursor;
-    bool m_show_extra_high_digit;
-    char* mp_unit;
-    map<int, char*> m_prefixes;
-  };
+
   irs_bool m_point_flag;
   double_trans_t mp_double_trans;
   irs_bool m_blink_accept;
@@ -418,7 +368,7 @@ class irs_menu_double_ex_item_t: public irs_menu_base_t
   double m_step;
   bool m_apply_immediately;
   mxkey_event_t* mp_key_event;
-  value_view_t m_value_view;
+  //value_view_t m_value_view;
 public:
   irs_menu_double_ex_item_t(double *a_parametr, irs_bool a_can_edit);
   ~irs_menu_double_ex_item_t();
@@ -457,6 +407,117 @@ public:
   void set_apply_immediately(bool a_apply_immediately);
   virtual bool is_updated();
 };
+
+//#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+class value_view_t: public irs_menu_base_t
+{
+public:
+  typedef irs::char_t char_type;
+  typedef irs::string_t string_type;
+  value_view_t(double* ap_parametr, irs_bool a_can_edit);
+  ~value_view_t();
+  virtual void set_trans_function(double_trans_t a_double_trans);
+  virtual size_type get_parametr_string(
+    char *a_parametr_string,
+    size_type a_length = 0,
+    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
+    irs_menu_param_update_t a_update = IMU_UPDATE);
+  virtual size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
+  virtual bool is_updated();
+  virtual void draw(irs_menu_base_t **a_cur_menu);
+
+  void set_personal_key_event(mxkey_event_t* ap_key_event);
+  void set_encoder_drv(encoder_drv_t* ap_encoder_drv);
+  void set_str(const string_type& a_prefix,
+    const size_type a_parameter_field_width, const string_type& a_suffix,
+    size_type a_accur);
+  void set_unit(string_type a_unit, map<int, string_type> a_prefixes);
+  //double get_value() const;
+  //void set_value(const double a_value);
+  void set_min_value(double a_min_value);
+  void set_max_value(double a_max_value);
+  void set_can_edit(irs_bool a_can_edit);
+  void set_key_type(irs_menu_key_type_t a_key_type);
+  bool increase_value();
+  bool reduce_value();
+  bool shift_cursor_left();
+  bool shift_cursor_right();
+private:
+  void check_key_event();
+  string_type get_str_from_param();
+  string_type conv_num_to_str(double a_value) const;
+  void convert_param_to_str();
+  int calc_max_digit();
+  double step();
+  void switch_mode_encoder();
+  void update_min_max_exponent();
+  void update_mantissa_and_exponent();
+  void normalize_selected_digit();
+  double round(double a_value, int a_digit);
+  /*enum action_t {
+    action_shift_left,
+    action_shift_right,
+    action_increase_value,
+    action_reduce_value
+  };
+  bool action(action_t a_action);*/
+  enum shift_mode_t {
+    shift_left,
+    shift_right
+  };
+  enum encoder_mode_t {
+    encoder_mode_digit_editing,
+    encoder_mode_digit_selection
+  };
+
+  bool shift(shift_mode_t a_mode);
+  char_type m_decimal_point;
+  double *mp_parametr;
+  double m_copy_parametr;
+  irs_menu_key_type_t m_key_type;
+  double_trans_t mp_double_trans;
+  // На самом деле эта переменная не является мантиссой в кла
+  double m_mantissa;
+  int m_exponent;
+  double m_min;
+  double m_max;
+  size_type m_precision;
+  // Выбранный разряд. Справа от разделителя разряды нумеруются по убыванию, с
+  // лева на право, со знаком минус. Слева от разделителя разряды нумеруются по
+  // возрастанию, с права на лево
+  // Пример. Число 12.345.
+  // Разряды   | 1 2 . 3 4 5
+  // Позиция   | 1 0  -1-2-3
+  int m_selected_digit;
+  size_type m_parameter_field_width;
+  string_type m_prefix;
+  string_type m_suffix;
+  string_type m_value_str;
+  irs::loop_timer_t m_blink_cursor_timer;
+  bool m_show_cursor;
+  bool m_show_extra_high_digit;
+  string_type m_unit;
+  map<int, string_type> m_prefixes;
+  bool m_apply_immediately;
+  mxkey_event_t* mp_key_event;
+  encoder_drv_t* mp_encoder_drv;
+  encoder_mode_t m_encoder_mode;
+  char m_cursor;
+  char m_character_under_cursor;
+  int m_int_part_digit_count;
+  int m_cursor_pos;
+  int m_decimal_point_pos;
+  size_type m_start_digit;
+  int m_mantissa_min_digit;
+  int m_min_digit;
+  int m_max_digit;
+  int m_min_exponent;
+  int m_max_exponent;
+  irs::loop_timer_t m_update_timer;
+  vector<char> m_result_str;
+  bool m_reset_selected_digit;
+};
+//#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //------------------------- SIMPLY ITEM ---------------------------------------
 
