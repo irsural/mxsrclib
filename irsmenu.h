@@ -14,6 +14,7 @@
 //#include <irslcd.h>
 #include <irsstd.h>
 #include <irserror.h>
+#include <irssysutils.h>
 #include <irsdbgutil.h>
 
 #include <irsfinal.h>
@@ -343,6 +344,9 @@ public:
   virtual bool is_updated();
 };
 
+#define NEW_MENU_DOUBLE 0
+
+#if NEW_MENU_DOUBLE
 class irs_menu_double_ex_item_t: public irs_menu_base_t
 {
   char *mp_prefix;
@@ -408,6 +412,68 @@ public:
   virtual bool is_updated();
 };
 
+class irs_menu_double_item_2_t: public irs_menu_base_t
+{
+public:
+  typedef irs::char_t char_type;
+  typedef irs::string_t string_type;
+private:
+  char *f_prefix;
+  char *f_suffix;
+  char *f_value_string;
+  irs::num_mode_t f_num_mode;
+  size_type f_len;
+  size_type f_accur;
+  float f_max;
+  float f_min;
+  double *f_parametr;
+  irs_bool f_point_flag;
+  double_trans_t f_double_trans;
+  irs_bool f_blink_accept;
+  counter_t f_blink_accept_to;
+  double f_copy_parametr;
+  char *f_copy_parametr_string;
+  irs_menu_key_type_t f_key_type;
+  double f_step;
+  bool f_apply_immediately;
+  string_type m_unit;
+  map<int, string_type> m_prefixes;
+public:
+  irs_menu_double_item_2_t(double *a_parametr, irs_bool a_can_edit);
+  ~irs_menu_double_item_2_t();
+  //! \brief Задает буфер для вывода числа, префикс, суффикс, длину числа,
+  //!   точность отображения числа
+  //! \param[in] a_value_string буфер для вывода числа, включая префикс и суффикс
+  //! \param[in] a_prefix префикс
+  //! \param[in] a_suffix суффикс
+  //! \param[in] a_len длина поля числа, без суффикса и префикса
+  //! \param[in] a_accur точность вывода числа
+  //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
+  void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
+    size_type a_len, size_type a_accur,
+    irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  void set_unit(string_type a_unit, map<int, string_type> a_prefixes);
+  void reset_str();
+  void set_min_value(float a_min_value);
+  float get_min_value();
+  void set_max_value(float a_max_value);
+  float get_max_value();
+  virtual void draw(irs_menu_base_t **a_cur_menu);
+  double *get_parametr();
+  virtual void set_trans_function(double_trans_t a_double_trans);
+  size_type get_parametr_string(
+    char *a_parametr_string,
+    size_type a_length = 0,
+    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
+    irs_menu_param_update_t a_update = IMU_UPDATE);
+  size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
+  void set_can_edit(irs_bool a_can_edit);
+  void set_key_type(irs_menu_key_type_t a_key_type);
+  void set_change_step(double a_step);
+  void set_apply_immediately(bool a_apply_immediately);
+  virtual bool is_updated();
+};
+
 //#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 class value_view_t: public irs_menu_base_t
 {
@@ -442,18 +508,62 @@ public:
   bool reduce_value();
   bool shift_cursor_left();
   bool shift_cursor_right();
+  //! \brief Задает минимальный и максимальный разряды, которые разрешено
+  //!   редактировать. Если не задать вручную, то они будут рассчитаны
+  //!   автоматически. Фактически диапазон редактируемых разрядов означает
+  //!   диапазон дискретов, с использованием которых пользователь может
+  //!   изменять параметр
+  //! \details Эти значения рекомендуется задавать вручную, так как
+  //!   автоматический расчет иногда может давать нежелательный результат.
+  //!   Например, максимальный разряд, который пользователь может редактировать,
+  //!   может не совпасть с максимальным разрядом числа. Если же минимальное
+  //!   значение параметра равно нулю, то в автоматическом режиме минимальный
+  //!   разряд будет установлен равным -15 (точность double)
+  void set_edited_digit_diapason(int a_min_digit, int a_max_digit);
+  void set_cursor_visible(bool a_enabled);
 private:
+  enum { max_presicion = 15 };
+  /*enum direction_t {
+    direction_up,
+    direction_down
+  };
+  void change_parameter(direction_t a_direction);*/
   void check_key_event();
   string_type get_str_from_param();
-  string_type conv_num_to_str(double a_value) const;
+  void reset_selected_digit();
+  int get_mantissa_selected_digit() const;
+  size_type get_mantissa_first_number_pos(const string_type& a_str_value) const;
+  int get_mantissa_first_number() const;
+  size_type get_mantissa_selected_digit_pos(const string_type& a_str_value) const;
+  size_type get_start_pos(const string_type& a_str_value) const;
+  int get_precision_fixed() const;
+  string_type param_to_str() const;
+  bool str_to_param(const string_type& a_mantissa_str);
+  //! \brief Получение скорректированной экспоненты. Если экспонента правильная,
+  //!   то она же и возвращается из фукции
+  int get_corrected_exponent(const string_type& a_str_value);
+
+  string_type conv_num_to_str_general(double a_value) const;
   void convert_param_to_str();
+  void set_result_str(string_type a_str);
+  string_type get_suffix() const;
+  // Обновляет первую и вторую строки индикатора
+  void update_first_and_second_rows();
+  // Обновляет третью строку
+  void update_third_row();
   int calc_max_digit();
   double step();
   void switch_mode_encoder();
   void update_min_max_exponent();
   void update_mantissa_and_exponent();
   void normalize_selected_digit();
+  //! \brief Устанавливает минимальный выбранный разряд, с учетом точности
+  void set_min_selected_digit();
+  double get_max_digit(double a_value) const;
+  double get_min_digit(double a_value) const;
   double round(double a_value, int a_digit);
+  size_type find_graphical_character(const string_type& a_str,
+    size_type a_pos = 0);
   /*enum action_t {
     action_shift_left,
     action_shift_right,
@@ -472,11 +582,13 @@ private:
 
   bool shift(shift_mode_t a_mode);
   char_type m_decimal_point;
+  char m_decimal_point_narrow_char;
   double *mp_parametr;
   double m_copy_parametr;
   irs_menu_key_type_t m_key_type;
   double_trans_t mp_double_trans;
-  // На самом деле эта переменная не является мантиссой в кла
+  // На самом деле эта переменная всего лишь результат деления m_copy_parametr
+  // на m_exponent
   double m_mantissa;
   int m_exponent;
   double m_min;
@@ -489,16 +601,18 @@ private:
   // Разряды   | 1 2 . 3 4 5
   // Позиция   | 1 0  -1-2-3
   int m_selected_digit;
+  bool m_unit_selected;
   size_type m_parameter_field_width;
   string_type m_prefix;
   string_type m_suffix;
   string_type m_value_str;
   irs::loop_timer_t m_blink_cursor_timer;
   bool m_show_cursor;
+  bool m_cursor_visible;
   bool m_show_extra_high_digit;
   string_type m_unit;
   map<int, string_type> m_prefixes;
-  bool m_apply_immediately;
+  //bool m_apply_immediately;
   mxkey_event_t* mp_key_event;
   encoder_drv_t* mp_encoder_drv;
   encoder_mode_t m_encoder_mode;
@@ -511,14 +625,44 @@ private:
   int m_mantissa_min_digit;
   int m_min_digit;
   int m_max_digit;
+  int m_min_edited_digit;
+  int m_max_edited_digit;
+  bool m_min_max_edited_digits_enabled;
   int m_min_exponent;
   int m_max_exponent;
   irs::loop_timer_t m_update_timer;
   vector<char> m_result_str;
   bool m_reset_selected_digit;
+  // Переменные для функции draw
+  irs_bool f_point_flag;
+  irs_bool f_blink_accept;
+  counter_t f_blink_accept_to;
 };
-//#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
+template <class T>
+int get_exponent(T a_value)
+{
+  if (a_value == 0) {
+    return 0;
+  }
+  int e = floor((log10(fabs(a_value))));
+  return e;
+}
+template <class T>
+T round(T a_value, int a_digit)
+{
+  const T k = pow(static_cast<T>(10), static_cast<T>(a_digit));
+  return irs::round<T, T>(a_value*k)/k;
+}
+template <class T>
+T round_precision(T a_value, int a_precision)
+{
+  const int precision = max(1, a_precision);
+  const int exp = get_exponent(a_value);
+  return round(a_value, (precision - 1) - exp);
+}
+//#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+#endif // NEW_MENU_DOUBLE
 //------------------------- SIMPLY ITEM ---------------------------------------
 
 template <class T>

@@ -1310,7 +1310,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
 //------------------------------------------------------------------------------
 
 //--------------------------  MENU_DOUBLE_EX_ITEM  -----------------------------
-
+#if NEW_MENU_DOUBLE
 irs_menu_double_ex_item_t::irs_menu_double_ex_item_t(double *a_parametr,
   irs_bool a_can_edit):
   mp_prefix(empty_str),
@@ -2014,10 +2014,637 @@ void irs_menu_double_ex_item_t::draw(irs_menu_base_t **a_cur_menu)
   }
 }
 
+irs_menu_double_item_2_t::irs_menu_double_item_2_t(double *a_parametr,
+  irs_bool a_can_edit):
+  f_prefix(empty_str),
+  f_suffix(empty_str),
+  f_value_string(empty_str),
+  f_num_mode(irs::num_mode_fixed),
+  f_len(0),
+  f_accur(0),
+  f_max(0.0f),
+  f_min(0.0f),
+  f_parametr(a_parametr),
+  f_point_flag(irs_false),
+  f_double_trans(IRS_NULL),
+  f_blink_accept(irs_true),
+  f_blink_accept_to(0),
+  f_copy_parametr(*f_parametr),
+  f_copy_parametr_string(0),
+  f_key_type(IMK_DIGITS),
+  f_step(0.),
+  f_apply_immediately(false),
+  m_unit(),
+  m_prefixes()
+{
+  f_master_menu = IRS_NULL;
+  f_cur_symbol = 0;
+  f_cursor[0] = f_cursor_symbol;
+  f_cursor[1] = '\0';
+  f_can_edit = a_can_edit;
+  f_creep = IRS_NULL;
+  init_to_cnt();
+  set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+}
+
+irs_menu_double_item_2_t::~irs_menu_double_item_2_t()
+{
+  deinit_to_cnt();
+}
+
+void irs_menu_double_item_2_t::set_trans_function(double_trans_t a_double_trans)
+{
+  f_double_trans = a_double_trans;
+  delete []f_copy_parametr_string;
+}
+
+void irs_menu_double_item_2_t::set_max_value(float a_max_value)
+{
+  f_max = a_max_value;
+}
+
+void irs_menu_double_item_2_t::set_min_value(float a_min_value)
+{
+  f_min = a_min_value;
+}
+
+void irs_menu_double_item_2_t::set_str(char *a_value_string, char *a_prefix,
+  char *a_suffix, size_type a_len, size_type a_accur,
+  irs::num_mode_t a_num_mode)
+{
+  f_value_string = a_value_string;
+  f_num_mode = a_num_mode;
+  f_len = a_len;
+  f_accur = a_accur;
+  f_prefix = a_prefix;
+  f_suffix = a_suffix;
+
+  size_type space = 1;
+  size_type full_len
+    = f_len + space + strlen(f_prefix) + space + strlen(f_suffix);
+
+  delete []f_copy_parametr_string;
+  f_copy_parametr_string = new char [full_len + 1];
+  f_copy_parametr = *f_parametr;
+  afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur, f_num_mode);
+  strcpy(f_copy_parametr_string, f_value_string);
+  m_updated = true;
+}
+
+void irs_menu_double_item_2_t::set_unit(
+  string_type a_unit, map<int, string_type> a_prefixes)
+{
+  m_unit = a_unit;
+  m_prefixes = a_prefixes;
+}
+
+void irs_menu_double_item_2_t::reset_str()
+{
+  //for (irs_u8 i = 0; i < f_len; f_value_string[i++] = ' ');
+  memset(f_value_string, ' ', f_len);
+  f_value_string[f_len] = '\0';
+}
+
+double *irs_menu_double_item_2_t::get_parametr()
+{
+  return f_parametr;
+}
+
+irs_menu_base_t::size_type irs_menu_double_item_2_t::get_parametr_string(
+  char *a_parametr_string,
+  irs_menu_base_t::size_type a_length,
+  irs_menu_param_show_mode_t a_show_mode,
+  irs_menu_param_update_t a_update)
+{
+  /*if (a_parametr_string)
+  {
+    size_type len = 0;
+    if (a_show_mode != IMM_WITHOUT_PREFIX)
+    {
+      len = strlen(f_prefix);
+      if ((a_length > 0) && (len > a_length))
+      {
+        len = a_length;
+        memcpy(a_parametr_string, f_prefix, len);
+        a_parametr_string[len] = '\0';
+        return len;
+      }
+      for (size_type i = 0; i < len; i++)
+      {
+        a_parametr_string[i] = f_prefix[i];
+      }
+      a_parametr_string[len] = ' ';
+      len++;
+    }
+    if (f_copy_parametr != *f_parametr)
+    {
+      m_updated = true;
+
+      if (a_update == IMU_UPDATE)
+      {
+        f_copy_parametr = *f_parametr;
+        afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+          f_num_mode);
+        strcpy(f_copy_parametr_string, f_value_string);
+      }
+      else
+      {
+        strcpy(f_value_string, f_copy_parametr_string);
+      }
+    }
+    else
+    {
+      strcpy(f_value_string, f_copy_parametr_string);
+    }
+    size_type len2 = strlen(f_value_string);
+
+    if ((a_length > 0) && ((len + len2) > a_length))
+    {
+      len2 = a_length - len;
+      memcpy(reinterpret_cast<void*>(&a_parametr_string[len]),
+        f_value_string, len2);
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+
+    for (size_type i = 0; i < len2; i++)
+    {
+      a_parametr_string[i+len] = f_value_string[i];
+    }
+
+    if (a_show_mode != IMM_WITHOUT_SUFFIX)
+    {
+      a_parametr_string[len+len2] = ' ';
+      len2++;
+      size_type len3 = strlen(f_suffix);
+
+      if ((a_length > 0) && ((len + len2 + len3) > a_length))
+      {
+        len3 = a_length - len - len2;
+        memcpy(reinterpret_cast<void*>(&a_parametr_string[len+len2]),
+          f_suffix, len3);
+        size_type real_len = len + len2 + len3;
+        a_parametr_string[real_len] = '\0';
+        return real_len;
+      }
+
+      for (size_type i = 0; i < len3; i++)
+      {
+        a_parametr_string[i+len+len2] = f_suffix[i];
+      }
+      size_type real_len = len + len2 + len3;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+    else
+    {
+      size_type real_len = len + len2;
+      a_parametr_string[real_len] = '\0';
+      return real_len;
+    }
+  }*/
+  return 0;
+}
+
+irs_menu_base_t::size_type irs_menu_double_item_2_t::get_dynamic_string(char *a_buffer,
+  irs_menu_base_t::size_type /*a_length*/)
+{
+  a_buffer = a_buffer;
+  return 0;
+}
+
+void irs_menu_double_item_2_t::set_can_edit(irs_bool a_can_edit)
+{
+  f_can_edit = a_can_edit;
+}
+
+void irs_menu_double_item_2_t::set_key_type(irs_menu_key_type_t a_key_type)
+{
+  f_key_type = a_key_type;
+  if (f_key_type == IMK_DIGITS) f_apply_immediately = false;
+}
+
+void irs_menu_double_item_2_t::set_change_step(double a_step)
+{
+  f_step = a_step;
+}
+
+void irs_menu_double_item_2_t::set_apply_immediately(bool a_apply_immediately)
+{
+  if (f_key_type == IMK_ARROWS) f_apply_immediately = a_apply_immediately;
+}
+
+bool irs_menu_double_item_2_t::is_updated()
+{
+  if (f_copy_parametr != *f_parametr)
+  {
+    // Sobaka рылась here
+    //f_copy_parametr = *f_parametr;
+    m_updated = false;
+    return true;
+  }
+  bool updated = m_updated;
+  m_updated = false;
+  return updated;
+}
+
+void irs_menu_double_item_2_t::draw(irs_menu_base_t **a_cur_menu)
+{
+  if (f_show_needed) {
+    f_show_needed = irs_false;
+    show();
+  }
+  irskey_t a_key = irskey_none;
+  if (f_key_event) a_key = f_key_event->check();
+  switch (f_state)
+  {
+  case ims_show:
+    {
+      if (f_can_edit)
+      {
+        reset_str();
+        mp_disp_drv->clear();
+        f_want_redraw = irs_true;
+        set_to_cnt(f_blink_counter,MS_TO_CNT(CUR_BLINK));
+        f_point_flag = irs_false;
+        f_cur_symbol = 0;
+        //mp_disp_drv->clear_line(EDIT_LINE);
+        mp_disp_drv->outtextpos(0, 0, f_header);
+        afloat_to_str(f_value_string, *f_parametr, f_len, f_accur, f_num_mode);
+
+        const size_type space = 1;
+        size_type prf_x_pos = 0;
+        size_type val_x_pos = strlen(f_prefix) + space;
+        size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+        size_type y_pos = 1;
+
+        mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
+        mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+        mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);
+        f_cursor[0] = ' ';
+        f_copy_parametr = *f_parametr;
+        edit();
+      }
+      else
+      {
+        switch(a_key)
+        {
+        case irskey_enter:
+          {
+            if (f_can_edit)
+            {
+              //reset_str();
+              f_want_redraw = irs_true;
+              //set_to_cnt(f_blink_counter,MS_TO_CNT(CUR_BLINK));
+              //f_point_flag = irs_false;
+              //f_cur_symbol = 0;
+              //mp_disp_drv->clear_line(EDIT_LINE);
+              //edit();
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (!f_creep)
+                mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+              //f_master_menu->show();
+            }
+            break;
+          }
+        case irskey_escape:
+          {
+            //hide();
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+            //f_master_menu->show();
+            break;
+          }
+        default:
+          {
+            if (f_want_redraw || (!f_can_edit))
+            {
+              mp_disp_drv->clear();
+              mp_disp_drv->outtextpos(0, 0, f_header);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+
+              const size_type space = 1;
+              size_type prf_x_pos = 0;
+              size_type val_x_pos = strlen(f_prefix) + space;
+              size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+              size_type y_pos = 1;
+
+              mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
+              mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+              mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);
+              f_want_redraw = irs_false;
+            }
+            if (f_creep != IRS_NULL)
+            {
+              f_creep->shift();
+              mxdisp_pos_t x_pos = 0;
+              mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+              mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+            }
+            else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            break;
+          }
+        }
+      }
+      break;
+    }
+  case ims_edit:
+    {
+      switch (f_key_type)
+      {
+        case IMK_DIGITS:
+        {
+          if (a_key == irskey_backspace)
+          {
+            if (f_cur_symbol > 0)
+            {
+              f_cur_symbol--;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "  ");
+              if (f_value_string[f_cur_symbol] == '.') {
+                f_point_flag = irs_false;
+              }
+              f_value_string[f_cur_symbol] = ' ';
+            }
+            else
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+            }
+          }
+          if (a_key == irskey_escape)
+          {
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (a_key == irskey_enter)
+          {
+            f_value_string[f_cur_symbol] = '\0';
+            if (f_cur_symbol > 0)
+            {
+              *f_parametr = atof(f_value_string);
+              if (*f_parametr > f_max) *f_parametr = f_max;
+              if (*f_parametr < f_min) *f_parametr = f_min;
+              if (f_double_trans) f_double_trans(f_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+            }
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (f_creep)
+          {
+            f_creep->shift();
+            mxdisp_pos_t x_pos = 0;
+            mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+            mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+          }
+          if (f_cur_symbol < f_len)
+          {
+            switch(a_key)
+            {
+            case irskey_1:
+              {
+                f_value_string[f_cur_symbol] = '1';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "1");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_2:
+              {
+                f_value_string[f_cur_symbol] = '2';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "2");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_3:
+              {
+                f_value_string[f_cur_symbol] = '3';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "3");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_4:
+              {
+                f_value_string[f_cur_symbol] = '4';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "4");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_5:
+              {
+                f_value_string[f_cur_symbol] = '5';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "5");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_6:
+              {
+                f_value_string[f_cur_symbol] = '6';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "6");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_7:
+              {
+                f_value_string[f_cur_symbol] = '7';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "7");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_8:
+              {
+                f_value_string[f_cur_symbol] = '8';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "8");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_9:
+              {
+                f_value_string[f_cur_symbol] = '9';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "9");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_0:
+              {
+                f_value_string[f_cur_symbol] = '0';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "0");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_point:
+              {
+                if (!f_point_flag)
+                {
+                  f_value_string[f_cur_symbol] = '.';
+                  mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, ".");
+                  f_cur_symbol++;
+                  f_point_flag = irs_true;
+                }
+                break;
+              }
+            default :
+              {
+                // Остальные клавиши игнорируем
+              }
+            }
+          }
+
+          if (a_key != irskey_none) {
+            set_to_cnt(f_blink_accept_to, blink_accept_time);
+            f_blink_accept = irs_false;
+            f_cursor[0] = f_cursor_symbol;
+            mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+          }
+          if (f_blink_accept) {
+            if (test_to_cnt(f_blink_counter)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              //set_to_cnt(f_blink_counter, TIME_TO_CNT(CUR_BLINK, 1000));
+              f_cursor[0] =
+                (f_cursor[0] == f_cursor_symbol) ? ' ' : f_cursor_symbol;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+            }
+          } else {
+            if (test_to_cnt(f_blink_accept_to)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              f_blink_accept = irs_true;
+            }
+          }
+          break;
+        }
+        case IMK_ARROWS:
+        {
+          switch (a_key)
+          {
+            case irskey_escape:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (f_apply_immediately)
+              {
+                *f_parametr = f_copy_parametr;
+              }
+              else
+              {
+                f_copy_parametr = *f_parametr;
+              }
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+              strcpy(f_copy_parametr_string, f_value_string);
+              if (f_double_trans) f_double_trans(f_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            case irskey_enter:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (f_apply_immediately)
+              {
+                f_copy_parametr = *f_parametr;
+              }
+              else
+              {
+                *f_parametr = f_copy_parametr;
+              }
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+              strcpy(f_copy_parametr_string, f_value_string);
+              if (f_double_trans) f_double_trans(f_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            case irskey_up:
+            {
+              if (f_apply_immediately)
+              {
+                *f_parametr += f_step;
+                if (*f_parametr > f_max) *f_parametr = f_max;
+                if (f_double_trans) f_double_trans(f_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                f_copy_parametr += f_step;
+                if (f_copy_parametr > f_max) f_copy_parametr = f_max;
+              }
+              f_want_redraw = true;
+              break;
+            }
+            case irskey_down:
+            {
+              if (f_apply_immediately)
+              {
+                *f_parametr -= f_step;
+                if (*f_parametr < f_min) *f_parametr = f_min;
+                if (f_double_trans) f_double_trans(f_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                f_copy_parametr -= f_step;
+                if (f_copy_parametr < f_min) f_copy_parametr = f_min;
+              }
+              f_want_redraw = true;
+              break;
+            }
+            default : {
+              // Остальные клавиши игнорируем
+            }
+          }
+          if (f_want_redraw)
+          {
+            f_want_redraw = false;
+
+            if (f_apply_immediately)
+            {
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+            }
+            else
+            {
+              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+                f_num_mode);
+            }
+
+            mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));
+            mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string));
+            mxdisp_pos_t space = 1;
+            mxdisp_pos_t val_pos_x =
+              static_cast<mxdisp_pos_t>(pref_len + space);
+            mxdisp_pos_t suff_pos_x = static_cast<mxdisp_pos_t>(pref_len +
+              space + val_len + space);
+            mxdisp_pos_t line_num = 1;
+
+            mp_disp_drv->clear_line(1);
+            mp_disp_drv->outtextpos(0, 1, f_prefix);
+            mp_disp_drv->outtextpos(val_pos_x, line_num, f_value_string);
+            mp_disp_drv->outtextpos(suff_pos_x, line_num, f_suffix);
+          }
+          break;
+        }
+      }
+      break;
+    }
+  default :
+    {
+      // Остальные режимы меню игнорируем
+    }
+  }
+}
+
 //#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 //class value_view_t
 value_view_t::value_view_t(double *ap_parametr, irs_bool a_can_edit):
   m_decimal_point(irst('.')),
+  m_decimal_point_narrow_char('.'),
   mp_parametr(ap_parametr),
   m_copy_parametr(0),
   mp_double_trans(NULL),
@@ -2027,6 +2654,7 @@ value_view_t::value_view_t(double *ap_parametr, irs_bool a_can_edit):
   m_max(0),
   m_precision(5),
   m_selected_digit(0),
+  m_unit_selected(false),
   m_parameter_field_width(0),
   m_prefix(),
   m_suffix(),
@@ -2035,10 +2663,11 @@ value_view_t::value_view_t(double *ap_parametr, irs_bool a_can_edit):
   m_key_type(IMK_DIGITS),
   m_blink_cursor_timer(irs::make_cnt_s(0.2)),
   m_show_cursor(true),
+  m_cursor_visible(false),
   m_show_extra_high_digit(false),
   m_unit(),
   m_prefixes(),
-  m_apply_immediately(false),
+  //m_apply_immediately(false),
   mp_key_event(NULL),
   mp_encoder_drv(NULL),
   m_encoder_mode(encoder_mode_digit_editing),
@@ -2051,10 +2680,16 @@ value_view_t::value_view_t(double *ap_parametr, irs_bool a_can_edit):
   m_mantissa_min_digit(0),
   m_min_digit(0),
   m_max_digit(0),
+  m_min_edited_digit(0),
+  m_max_edited_digit(0),
+  m_min_max_edited_digits_enabled(false),
   m_min_exponent(0),
   m_max_exponent(0),
   m_result_str(),
-  m_reset_selected_digit(true)
+  m_reset_selected_digit(true),
+  f_point_flag(irs_false),
+  f_blink_accept(irs_true),
+  f_blink_accept_to(0)
 {
   f_master_menu = IRS_NULL;
   f_cur_symbol = 0;
@@ -2070,6 +2705,8 @@ value_view_t::value_view_t(double *ap_parametr, irs_bool a_can_edit):
 
   #if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
   m_decimal_point = use_facet<numpunct<char_type> >(locale()).decimal_point();
+  m_decimal_point_narrow_char =
+    use_facet<numpunct<char> >(locale()).decimal_point();
   #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 }
 
@@ -2078,9 +2715,448 @@ value_view_t::~value_view_t()
   deinit_to_cnt();
 }
 
+/*void value_view_t::reset_str()
+{
+  //for (irs_u8 i = 0; i < f_len; f_value_string[i++] = ' ');
+  memset(f_value_string, ' ', f_len);
+  f_value_string[f_len] = '\0';
+} */
+
 void value_view_t::draw(irs_menu_base_t **a_cur_menu)
 {
+//#ifdef NOP
+  if (f_show_needed) {
+    f_show_needed = irs_false;
+    show();
+  }
+  irskey_t a_key = irskey_none;
+  //if (f_key_event) a_key = f_key_event->check();
+  if (mp_key_event) a_key = mp_key_event->check();
+  switch (f_state)
+  {
+  case ims_show:
+    {
+      if (f_can_edit) {
+        f_want_redraw = irs_true;
+        set_to_cnt(f_blink_counter,MS_TO_CNT(CUR_BLINK));
+        f_point_flag = irs_false;
+        f_cur_symbol = 0;
 
+        update_first_and_second_rows();
+
+        /*const size_type space = 1;
+        size_type prf_x_pos = 0;
+        size_type val_x_pos = strlen(f_prefix) + space;
+        size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+        size_type y_pos = 1;
+
+        mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
+        mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+        mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);*/
+        f_cursor[0] = ' ';
+        m_copy_parametr = *mp_parametr;
+        edit();
+      } else {
+        switch(a_key)
+        {
+        case irskey_enter:
+          {
+            if (f_can_edit)
+            {
+              f_want_redraw = irs_true;
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              if (!f_creep)
+                mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            }
+            break;
+          }
+        case irskey_escape:
+          {
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+
+            break;
+          }
+        default:
+          {
+            if (f_want_redraw || (!f_can_edit))
+            {
+              update_first_and_second_rows();
+
+              /*mp_disp_drv->clear();
+              mp_disp_drv->outtextpos(0, 0, f_header);
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+
+              const size_type space = 1;
+              size_type prf_x_pos = 0;
+              size_type val_x_pos = strlen(f_prefix) + space;
+              size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+              size_type y_pos = 1;
+
+              mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
+              mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+              mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);*/
+              f_want_redraw = irs_false;
+            }
+            if (f_creep != IRS_NULL)
+            {
+              f_creep->shift();
+              mxdisp_pos_t x_pos = 0;
+              mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+              mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+            }
+            else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            break;
+          }
+        }
+      }
+      break;
+    }
+  case ims_edit:
+    {
+      switch (m_key_type)
+      {
+        case IMK_DIGITS:
+        {
+          if (a_key == irskey_backspace)
+          {
+            if (f_cur_symbol > 0)
+            {
+              f_cur_symbol--;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "  ");
+              if (m_result_str[f_cur_symbol] == '.') {
+                f_point_flag = irs_false;
+              }
+              m_result_str[f_cur_symbol] = ' ';
+            }
+            else
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+            }
+          }
+          if (a_key == irskey_escape)
+          {
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (a_key == irskey_enter)
+          {
+            m_result_str[f_cur_symbol] = '\0';
+            if (f_cur_symbol > 0)
+            {
+              *mp_parametr = atof(irs::vector_data(m_result_str));
+              *mp_parametr = irs::bound(*mp_parametr, m_min, m_max);
+              /*if (*mp_parametr > f_max) *mp_parametr = f_max;
+              if (*mp_parametr < f_min) *mp_parametr = f_min;*/
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+            }
+            *a_cur_menu = f_master_menu;
+            f_show_needed = irs_true;
+          }
+          if (f_creep)
+          {
+            f_creep->shift();
+            mxdisp_pos_t x_pos = 0;
+            mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+            mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+          }
+          if (f_cur_symbol < m_parameter_field_width)
+          {
+            switch(a_key)
+            {
+            case irskey_1:
+              {
+                m_result_str[f_cur_symbol] = '1';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "1");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_2:
+              {
+                m_result_str[f_cur_symbol] = '2';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "2");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_3:
+              {
+                m_result_str[f_cur_symbol] = '3';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "3");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_4:
+              {
+                m_result_str[f_cur_symbol] = '4';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "4");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_5:
+              {
+                m_result_str[f_cur_symbol] = '5';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "5");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_6:
+              {
+                m_result_str[f_cur_symbol] = '6';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "6");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_7:
+              {
+                m_result_str[f_cur_symbol] = '7';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "7");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_8:
+              {
+                m_result_str[f_cur_symbol] = '8';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "8");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_9:
+              {
+                m_result_str[f_cur_symbol] = '9';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "9");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_0:
+              {
+                m_result_str[f_cur_symbol] = '0';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "0");
+                f_cur_symbol++;
+                break;
+              }
+            case irskey_point:
+              {
+                if (!f_point_flag)
+                {
+                  const string point = irs::str_conv<string>(
+                    string_type(m_decimal_point));
+                  char point_ch = '.';
+                  if (!point.empty()) {
+                    point_ch = point.front();
+                  }
+                  m_result_str[f_cur_symbol] = point_ch;
+                  mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, ".");
+
+                  f_cur_symbol++;
+                  f_point_flag = irs_true;
+                }
+                break;
+              }
+            default :
+              {
+                // Остальные клавиши игнорируем
+              }
+            }
+          }
+
+          if (a_key != irskey_none) {
+            set_to_cnt(f_blink_accept_to, blink_accept_time);
+            f_blink_accept = irs_false;
+            f_cursor[0] = f_cursor_symbol;
+            mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+          }
+          if (f_blink_accept) {
+            if (test_to_cnt(f_blink_counter)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              //set_to_cnt(f_blink_counter, TIME_TO_CNT(CUR_BLINK, 1000));
+              f_cursor[0] =
+                (f_cursor[0] == f_cursor_symbol) ? ' ' : f_cursor_symbol;
+              mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, f_cursor);
+            }
+          } else {
+            if (test_to_cnt(f_blink_accept_to)) {
+              set_to_cnt(f_blink_counter, MS_TO_CNT(CUR_BLINK));
+              f_blink_accept = irs_true;
+            }
+          }
+          break;
+        }
+        case IMK_ARROWS:
+        {
+          switch (a_key)
+          {
+            case irskey_escape:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              /*if (m_apply_immediately) {
+                *mp_parametr = m_copy_parametr;
+              } else {
+                m_copy_parametr = *mp_parametr;
+              }*/
+              m_copy_parametr = *mp_parametr;
+              /*afloat_to_str(f_value_string, *mp_parametr, f_len, f_accur,
+                f_num_mode);
+              strcpy(f_copy_parametr_string, f_value_string);*/
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            case irskey_enter:
+            {
+              *a_cur_menu = f_master_menu;
+              f_show_needed = irs_true;
+              /*if (m_apply_immediately) {
+                m_copy_parametr = *mp_parametr;
+              } else {
+                *mp_parametr = m_copy_parametr;
+              }*/
+              *mp_parametr = m_copy_parametr;
+              /*afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+              strcpy(f_copy_parametr_string, f_value_string);*/
+              if (mp_double_trans) mp_double_trans(mp_parametr);
+              if (mp_event) mp_event->exec();
+              m_updated = true;
+              break;
+            }
+            /*case irskey_up:
+            {
+              if (m_apply_immediately)
+              {
+                *mp_parametr += f_step;
+                if (*mp_parametr > m_max) *mp_parametr = m_max;
+                if (mp_double_trans) mp_double_trans(mp_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                m_copy_parametr += f_step;
+                if (m_copy_parametr > m_max) m_copy_parametr = m_max;
+              }
+              f_want_redraw = true;
+              break;
+            }
+            case irskey_down:
+            {
+              if (m_apply_immediately)
+              {
+                *mp_parametr -= f_step;
+                if (*mp_parametr < m_min) *mp_parametr = m_min;
+                if (mp_double_trans) mp_double_trans(mp_parametr);
+                if (mp_event) mp_event->exec();
+                m_updated = true;
+              }
+              else
+              {
+                m_copy_parametr -= f_step;
+                if (m_copy_parametr < m_min) m_copy_parametr = f_min;
+              }
+              f_want_redraw = true;
+              break;
+            }*/
+            default : {
+              // Остальные клавиши игнорируем
+            }
+          }
+          if (f_want_redraw) {
+            f_want_redraw = false;
+
+            /*if (m_apply_immediately) {
+              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+                f_num_mode);
+            } else {
+              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+                f_num_mode);
+            }*/
+
+            /*mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));
+            mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string));
+            mxdisp_pos_t space = 1;
+            mxdisp_pos_t val_pos_x =
+              static_cast<mxdisp_pos_t>(pref_len + space);
+            mxdisp_pos_t suff_pos_x = static_cast<mxdisp_pos_t>(pref_len +
+              space + val_len + space);
+            mxdisp_pos_t line_num = 1;
+
+            mp_disp_drv->clear_line(1);
+            mp_disp_drv->outtextpos(0, 1, f_prefix);
+            mp_disp_drv->outtextpos(val_pos_x, line_num, f_value_string);
+            mp_disp_drv->outtextpos(suff_pos_x, line_num, f_suffix);*/
+            update_first_and_second_rows();
+          }
+          break;
+        }
+      }
+      break;
+    }
+  default :
+    {
+      // Остальные режимы меню игнорируем
+    }
+  }
+//#endif // NOP
+}
+
+void value_view_t::update_first_and_second_rows()
+{
+  mp_disp_drv->clear();
+
+  mp_disp_drv->outtextpos(0, 0, f_header);
+
+  string_type parameter_str;
+
+  parameter_str = m_prefix + irst(' ');
+  const size_type parameter_size_after_add_prefix = parameter_str.size();
+
+  string_type mantissa_str = conv_num_to_str_general(m_mantissa);
+
+  if (mantissa_str.size() <= m_parameter_field_width) {
+    const int insert_space_count = m_parameter_field_width -
+      m_value_str.size();
+    string_type spaces(insert_space_count, irst(' '));
+    int a = spaces.size();
+    parameter_str = parameter_str + spaces + m_value_str;
+  } else {
+    const size_type begin_pos = 0;
+    size_type size = min(m_value_str.size(), m_parameter_field_width);
+    parameter_str += m_value_str.substr(begin_pos, size);
+  }
+
+  parameter_str += irst(' ');
+  parameter_str += get_suffix();
+
+  set_result_str(parameter_str);
+
+  const size_type y_pos = 1;
+  mp_disp_drv->outtextpos(0, y_pos, irs::vector_data(m_result_str));
+}
+
+void value_view_t::update_third_row()
+{
+
+}
+
+value_view_t::string_type value_view_t::get_suffix() const
+{
+  string_type sf;
+  map<int, string_type>::const_iterator it =
+    m_prefixes.find(m_exponent);
+  if (it != m_prefixes.end()) {
+    sf = it->second + m_unit;
+  } else if (!m_unit.empty()) {
+    sf = m_unit;
+  } else {
+    sf = m_suffix;
+  }
+  return sf;
 }
 
 void value_view_t::set_trans_function(double_trans_t a_double_trans)
@@ -2143,12 +3219,14 @@ void value_view_t::set_str(const string_type& a_prefix,
 void value_view_t::set_min_value(double a_min_value)
 {
   m_min = a_min_value;
+  m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
   normalize_selected_digit();
 }
 
 void value_view_t::set_max_value(double a_max_value)
 {
   m_max = a_max_value;
+  m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
   normalize_selected_digit();
 }
 
@@ -2167,17 +3245,32 @@ void value_view_t::set_can_edit(irs_bool a_can_edit)
 void value_view_t::set_key_type(irs_menu_key_type_t a_key_type)
 {
   m_key_type = a_key_type;
-  if (m_key_type == IMK_DIGITS) m_apply_immediately = false;
+  //if (m_key_type == IMK_DIGITS) m_apply_immediately = false;
 }
-
 
 bool value_view_t::increase_value()
 {
-  if (*mp_parametr < m_max) {
-    const int count = mp_encoder_drv ? mp_encoder_drv->get_press_count() : 1;
-    *mp_parametr = *mp_parametr + step()*count;
-    m_mantissa = *mp_parametr;
-    *mp_parametr = irs::bound(*mp_parametr, m_min, m_max);
+  if (m_copy_parametr < m_max) {
+    bool correct_selected_digit = false;
+    const int count = 1;
+    if (m_unit_selected) {
+      const double step = 10*count;
+      if (step > 0) {
+        m_copy_parametr *= step;
+      }
+      correct_selected_digit = true;
+    } else {
+      m_copy_parametr = m_copy_parametr + step()*count;
+    }
+    m_mantissa = m_copy_parametr;
+    m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
+    m_copy_parametr = round_precision(m_copy_parametr, m_precision);
+    *mp_parametr = m_copy_parametr;
+
+    if (correct_selected_digit) {
+      set_min_selected_digit();
+    }
+
     if (mp_double_trans) mp_double_trans(mp_parametr);
     if (mp_event) mp_event->exec();
     m_updated = true;
@@ -2188,11 +3281,33 @@ bool value_view_t::increase_value()
 
 bool value_view_t::reduce_value()
 {
-  if (*mp_parametr > m_min) {
-    const int count = mp_encoder_drv ? mp_encoder_drv->get_press_count() : 1;
-    *mp_parametr = *mp_parametr - step()*count;
-    m_mantissa = *mp_parametr;
-    *mp_parametr = irs::bound(*mp_parametr, m_min, m_max);
+  if (m_copy_parametr > m_min) {
+    bool correct_selected_digit = false;
+    const int count = 1;
+    if (m_unit_selected) {
+      const double step = 10*count;
+      if (step > 0) {
+        m_copy_parametr /= step;
+        correct_selected_digit = true;
+      }
+    } else {
+      m_copy_parametr = m_copy_parametr - step()*count;
+    }
+    m_mantissa = m_copy_parametr;
+    m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
+
+    const double min_value = pow(10., m_min_digit);
+    if (m_copy_parametr < min_value) {
+      m_copy_parametr = m_min;
+    }
+
+    m_copy_parametr = round_precision(m_copy_parametr, m_precision);
+    *mp_parametr = m_copy_parametr;
+
+    if (correct_selected_digit) {
+      set_min_selected_digit();
+    }
+
     if (mp_double_trans) mp_double_trans(mp_parametr);
     if (mp_event) mp_event->exec();
     m_updated = true;
@@ -2200,6 +3315,44 @@ bool value_view_t::reduce_value()
   }
   return false;
 }
+
+/*void value_view_t::change_parameter(direction_t a_direction)
+{
+  if (a_direction == direction_up) {
+    if (*mp_parametr >= m_max) {
+      return false;
+    }
+  } else {
+    if (*mp_parametr <= m_min) {
+      return false;
+    }
+  }
+
+  const int count = mp_encoder_drv ? mp_encoder_drv->get_press_count() : 1;
+
+  if (m_unit_selected) {
+    if (a_direction == direction_up) {
+      *mp_parametr *= 10*count;
+    } else {
+      *mp_parametr /= 10*count;
+    }
+  } else {
+    if (a_direction == direction_up) {
+      *mp_parametr = *mp_parametr + step()*count;
+    } else {
+      *mp_parametr = *mp_parametr - step()*count;
+    }
+  }
+
+  m_mantissa = *mp_parametr;
+  *mp_parametr = irs::bound(*mp_parametr, m_min, m_max);
+  *mp_parametr = round_precision(*mp_parametr, m_precision);
+  m_copy_parametr = *mp_parametr;
+  if (mp_double_trans) mp_double_trans(mp_parametr);
+  if (mp_event) mp_event->exec();
+  m_updated = true;
+  return true;
+}*/
 
 bool value_view_t::shift_cursor_left()
 {
@@ -2211,18 +3364,58 @@ bool value_view_t::shift_cursor_right()
   return shift(shift_right);
 }
 
+void value_view_t::set_edited_digit_diapason(int a_min_digit, int a_max_digit)
+{
+  IRS_LIB_ASSERT(a_min_digit < a_max_digit);
+  if (a_min_digit < a_max_digit) {
+    m_min_edited_digit = a_min_digit;
+    m_max_edited_digit = a_max_digit;
+    m_min_max_edited_digits_enabled = true;
+    normalize_selected_digit();
+  }
+}
+
+void value_view_t::set_cursor_visible(bool a_enabled)
+{
+  m_cursor_visible = a_enabled;
+}
+
 bool value_view_t::shift(shift_mode_t a_mode)
 {
   if (a_mode == shift_left) {
-    double value = pow(10., m_selected_digit + 1);
-    if (value <= m_max) {
+    const int mantissa_selected_digit = m_selected_digit - m_exponent;
+    const int mantissa_max_digit = max(m_max_digit, m_max_digit - m_exponent);
+    /*int mantissa_min_digit = 0;
+    if (m_max_digit > m_exponent) {
+      mantissa_min_digit = max(m_max_digit, m_max_digit - m_exponent);
+    } */
+
+    if (m_unit_selected) {
+      m_unit_selected = false;
+      m_updated = true;
+      return true;
+    } else if (mantissa_selected_digit < mantissa_max_digit) {
       m_selected_digit++;
       m_updated = true;
       return true;
     }
+
+    /* else {
+      double value = pow(10., m_selected_digit + 1);
+      if (value <= m_max) {
+        m_selected_digit++;
+        m_updated = true;
+        return true;
+      }
+    } */
   } else {
-    if (m_selected_digit > m_mantissa_min_digit) {
+    const int mantissa_selected_digit = m_selected_digit - m_exponent;
+    if (mantissa_selected_digit > m_mantissa_min_digit) {
       m_selected_digit--;
+      m_updated = true;
+      return true;
+    } else if (!m_unit_selected) {
+      m_unit_selected = true;
       m_updated = true;
       return true;
     }
@@ -2311,6 +3504,34 @@ void value_view_t::convert_param_to_str()
   //m_mantissa_min_digit = min_digit;
 }
 
+void value_view_t::update_mantissa_and_exponent()
+{
+  m_mantissa = m_copy_parametr;
+  m_exponent = 0;
+
+  //const double param = max(m_copy_parametr, pow(10, m_min_digit));
+  double max_value = m_copy_parametr;
+  if (!m_reset_selected_digit) {
+    max_value = max(m_copy_parametr, pow(10., m_selected_digit));
+  }
+  if (!m_prefixes.empty()) {
+    m_exponent = m_prefixes.begin()->first;
+    map<int, string_type>::reverse_iterator rit = m_prefixes.rbegin();
+    while (rit != m_prefixes.rend()) {
+      const int exp = rit->first;
+      const double diapason_min = pow(10., exp);
+      //*** Ввести проверку с указанной точностью
+      //if ((max_value/pow(10., exp)) >= 1) {
+      if ((max_value/diapason_min) >= 1) {
+        m_exponent = exp;
+        break;
+      }
+      ++rit;
+    }
+  }
+  m_mantissa = m_copy_parametr/pow(10., m_exponent);
+}
+
 /*int value_view_t::calc_max_digit()
 {
   int max_digit = 0;
@@ -2332,40 +3553,61 @@ void value_view_t::convert_param_to_str()
   return max_digit;
 }*/
 
-#define ROUND_STR 0
+//#define ROUND_STR 0
 
 value_view_t::string_type value_view_t::get_str_from_param()
 {
-  string_type str_value;
+  //string_type str_value;
 
-  double intpart = 0;
+  /*double intpart = 0;
   double fractpart =  modf(m_mantissa, &intpart);
   int int_part_digit_count = intpart < 10 ? 1 :
     static_cast<int>(log10(abs(intpart)) + 1);
 
-  IRS_LIB_ASSERT(int_part_digit_count > 0);
+  IRS_LIB_ASSERT(int_part_digit_count > 0);*/
 
-  int precision = m_precision - (int_part_digit_count - 1);
-  if (precision < 0) {
-    precision = 0;
+  if (m_reset_selected_digit) {
+    reset_selected_digit();
   }
 
-  const int mantissa_selected_digit = m_selected_digit - m_exponent;
+  int mantissa_selected_digit = get_mantissa_selected_digit();
 
+
+  /*int precision = 0;
   if (mantissa_selected_digit < 0) {
     precision = max(precision, abs(mantissa_selected_digit));
-  }
+  } else {
+    precision = m_precision - (int_part_digit_count - 1);
+    if (precision < 0) {
+      precision = 0;
+    }
+  }*/
 
-  //str_value = conv_num_to_str(m_mantissa);
+  string_type str_value = param_to_str();
 
-  ostrstream ostr;
+  /*ostrstream ostr;
   ostr << fixed << setprecision(precision) << m_mantissa << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
-  ostr.rdbuf()->freeze(false);
+  ostr.rdbuf()->freeze(false);*/
 
+  int corrected_exponent = get_corrected_exponent(str_value);
+  if (corrected_exponent != m_exponent) {
+    m_exponent = corrected_exponent;
+    m_mantissa = m_copy_parametr/pow(10., m_exponent);
+    if (m_reset_selected_digit) {
+      reset_selected_digit();
+    }
+    mantissa_selected_digit = get_mantissa_selected_digit();
+    str_value = param_to_str();
 
+  }
 
+  /*if (!str_to_param(str_value)) {
+
+  } */
+
+  m_reset_selected_digit = false;
 
 
 
@@ -2373,7 +3615,54 @@ value_view_t::string_type value_view_t::get_str_from_param()
   size_type last_digit_pos = str_value.size() - 1;
   size_type decimal_point_pos = str_value.find(m_decimal_point);
 
-  #if ROUND_STR
+  /*const int mantissa_first_number_pos = get_mantissa_first_number_pos(
+    str_value);*/
+
+  // Удаляем лишние нули после запятой
+  if ((decimal_point_pos != string_type::npos)/* &&
+      (mantissa_first_number_pos < last_digit_pos)*/) {
+    const size_type last_not_zero_pos =
+      str_value.find_last_of(string_type(m_decimal_point) +
+      irst("123456789"));
+    const size_type last_not_zero_pos1 =
+      str_value.find_last_of(m_decimal_point + irst("123456789"));
+    if (last_not_zero_pos != string_type::npos) {
+      size_type erase_pos = last_not_zero_pos;
+      if (last_not_zero_pos != decimal_point_pos) {
+        erase_pos++;
+      }
+
+      const int selected_digit = get_mantissa_selected_digit();
+      if (selected_digit < 0) {
+        const size_type selected_digit_pos =
+          get_mantissa_selected_digit_pos(str_value);
+        erase_pos = max(selected_digit_pos + 1, erase_pos);
+      }
+
+      /*const int selected_digit = get_mantissa_selected_digit();
+      const size_type start_pos = get_start_pos(str_value);
+      if (selected_digit < 0) {
+        const size_type digit_pos = start_pos + abs(selected_digit) + 1;
+        erase_pos = max(digit_pos, erase_pos);
+      } */
+
+      if (erase_pos < str_value.size()) {
+        str_value.erase(erase_pos);
+        last_digit_pos = str_value.size() - 1;
+      }
+    }
+    /*if ((last_not_zero_pos > decimal_point_pos) &&
+      (last_not_zero_pos != string_type::npos)) {
+      size_type erase_pos = last_not_zero_pos + 1;
+      if (erase_pos < str_value.size()) {
+        str_value.erase(erase_pos);
+        last_digit_pos = str_value.size() - 1;
+      }
+    }*/
+  }
+
+
+  /*#if ROUND_STR
   int_part_digit_count = 0;
   if (decimal_point_pos != string_type::npos) {
     int_part_digit_count = decimal_point_pos - first_digit_pos;
@@ -2381,26 +3670,74 @@ value_view_t::string_type value_view_t::get_str_from_param()
   } else {
     int_part_digit_count = last_digit_pos - first_digit_pos;
   }
-  #endif // ROUND_STR
+  if (decimal_point_pos != string_type::npos) {
+    map<int, string_type>::reverse_iterator it = m_prefixes.find(m_exponent);
+    int prev_exponent = m_exponent;
+    int next_exponent = m_exponent;
+    if (it != m_prefixes.rend()) {
+      if (it != m_prefixes.rbegin()) {
+        --it;
+        prev_exponent = it->first;
+        ++it;
+      }
+      ++it;
+      if (it != m_prefixes.rend()) {
+        next_exponent = it->first;
+      }
+    }
+    if (int_part_digit_count > (prev_exponent - m_exponent)) {
+      m_exponent = prev_exponent;
+    } else if (int_part_digit_count == 1) {
+      if (str_value[first_digit_pos] == irst('0')) {
+        m_exponent = next_exponent;
+      }
+    }
+    size_type need_fract_part_digit_count = m_precision - (int_part_digit_count - 1)
+    need_erase = min(need_fract_part_digit_count, fract_part_digit_count);
+    const size_type need_erase = fract_part_digit_count -
+      need_fract_part_digit_count;
+    str_value.erase(decimal_point_pos + need_fract_part_digit_count,
+      need_erase);
+  }
+  #endif // ROUND_STR*/
 
 
-  int_part_digit_count = 0;
+  int int_part_digit_count = 0;
   int fract_part_digit_count = 0;
 
   if (decimal_point_pos != string_type::npos) {
     int_part_digit_count = decimal_point_pos - first_digit_pos;
     fract_part_digit_count = last_digit_pos - decimal_point_pos;
   } else {
-    int_part_digit_count = last_digit_pos - first_digit_pos;
+    int_part_digit_count = last_digit_pos - first_digit_pos + 1;
   }
 
   int_part_digit_count = max(1, int_part_digit_count);
   fract_part_digit_count = max(0, fract_part_digit_count);
 
   // Находим минимальный разряд
-  m_mantissa_min_digit = max(0, fract_part_digit_count)*-1;
+  //m_mantissa_min_digit = int_part_digit_count - m_precision;
+  //m_mantissa_min_digit = max(m_mantissa_min_digit, m_min_digit - m_exponent);
+  if (m_copy_parametr == 0) {
+    m_mantissa_min_digit = m_min_digit - m_exponent;
+  } else {
+    if (m_precision > 0) {
+      m_mantissa_min_digit = get_mantissa_first_number() - (m_precision - 1);
+    } else {
+      m_mantissa_min_digit = get_mantissa_first_number();
+    }
+    m_mantissa_min_digit = max(m_mantissa_min_digit, m_min_digit - m_exponent);
+  }
+  //m_mantissa_min_digit = max(0, fract_part_digit_count)*-1;
 
-  if (mantissa_selected_digit > 0) {
+  if (mantissa_selected_digit < 0) {
+    // Добавляем в конец нули, если необходимо
+    if (mantissa_selected_digit < fract_part_digit_count*(-1)) {
+      int insert_digit_count = abs(mantissa_selected_digit) -
+        fract_part_digit_count;
+      str_value += string_type(insert_digit_count, irst('0'));
+    }
+  } else if (mantissa_selected_digit > 0) {
     // Находим первый и последний разряды, а также позицию разделителя
     /*size_type first_digit_pos = str_value.find_first_of(irst("0123456789"));
     size_type last_digit_pos = str_value.size() - 1;
@@ -2437,23 +3774,228 @@ value_view_t::string_type value_view_t::get_str_from_param()
   return str_value;
 }
 
-/*value_view_t::string_type value_view_t::conv_num_to_str(double a_value) const
+void value_view_t::reset_selected_digit()
 {
-  string_type str_value;
+  m_selected_digit = irs::bound(m_exponent, m_min_digit, m_max_digit);
+}
 
-  int precision = m_precision - (m_int_part_digit_count - 1);
-  if (precision < 0) {
-    precision = 0;
+int value_view_t::get_mantissa_selected_digit() const
+{
+  return m_selected_digit - m_exponent;
+}
+
+value_view_t::size_type value_view_t::get_mantissa_first_number_pos(
+  const string_type& a_str_value) const
+{
+  int first_number = get_mantissa_first_number();
+
+  const size_type start_pos = get_start_pos(a_str_value);
+
+  if (static_cast<int>(start_pos) < first_number) {
+    return string_type::npos;
   }
 
+  const size_type first_number_pos = static_cast<int>(start_pos) - first_number;
+  return first_number_pos;
+}
+
+int value_view_t::get_mantissa_first_number() const
+{
+  const int exp = get_exponent(m_copy_parametr);
+  int mantissa_first_number = exp - m_exponent;
+  return mantissa_first_number;
+}
+
+value_view_t::size_type
+value_view_t::get_mantissa_selected_digit_pos(
+  const string_type& a_str_value) const
+{
+  if (a_str_value.empty()) {
+    return string_type::npos;
+  }
+
+  const int selected_digit = get_mantissa_selected_digit();
+  const size_type start_pos = get_start_pos(a_str_value);
+  const size_type digit_pos = start_pos - selected_digit;
+
+  if (digit_pos < 0) {
+    return string_type::npos;
+  }
+
+  return digit_pos;
+}
+
+value_view_t::size_type
+value_view_t::get_start_pos(const string_type& a_str_value) const
+{
+  if (a_str_value.empty()) {
+    return string_type::npos;
+  }
+  const size_type decimal_point_pos = a_str_value.find(m_decimal_point);
+
+  size_type start_pos = 0;
+  if ((decimal_point_pos != 0) && (decimal_point_pos != string_type::npos)) {
+    start_pos = (decimal_point_pos - 1);
+  } else {
+    const size_type last_digit_pos = a_str_value.size() - 1;
+    start_pos = last_digit_pos;
+  }
+  return start_pos;
+}
+
+value_view_t::string_type value_view_t::param_to_str() const
+{
+  const int precision = get_precision_fixed();
+
+  int str_precision = precision;
+  const int last_digit = precision*(-1);
+
+  /*const int exp = get_exponent(m_copy_parametr);
+  int mantissa_first_number = exp - m_exponent;*/
+  const int mantissa_first_number = get_mantissa_first_number();
+  if (mantissa_first_number < 0) {
+    if ((last_digit - 1) <= mantissa_first_number) {
+      str_precision = abs(
+        static_cast<int>(mantissa_first_number - (m_precision - 1)));
+    }
+  }
+
+  string_type str_value;
+
   ostrstream ostr;
-  ostr << fixed << setprecision(precision) << a_value << ends;
+  ostr << fixed << setprecision(str_precision) << m_mantissa << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
   ostr.rdbuf()->freeze(false);
 
+  if (str_precision > precision) {
+    size_type decimal_point_pos = str_value.find(m_decimal_point);
+    if (decimal_point_pos != string_type::npos) {
+      const size_type erase_pos = decimal_point_pos + precision + 1;
+      if (erase_pos < str_value.size()) {
+        str_value.erase(erase_pos);
+      }
+    }
+  }
+
   return str_value;
-}*/
+}
+
+bool value_view_t::str_to_param(const string_type& a_mantissa_str)
+{
+  double mantissa = 0;
+  bool result = irs::str_to_num(a_mantissa_str, &mantissa);
+  if (result) {
+    m_copy_parametr = mantissa*m_exponent;
+    *mp_parametr = m_copy_parametr;
+  }
+  return result;
+}
+
+int value_view_t::get_precision_fixed() const
+{
+  const int mantissa_selected_digit = get_mantissa_selected_digit();
+
+  double intpart = 0;
+  double fractpart =  modf(m_mantissa, &intpart);
+  //int int_part_digit_count = intpart < 10 ? 1 :
+    //static_cast<int>(log10(abs(intpart)) + 1);
+
+  int int_part_digit_count = get_exponent(intpart);
+  if (int_part_digit_count == 0) {
+    int_part_digit_count = 1;
+  }
+
+  if (mantissa_selected_digit > 0) {
+    int_part_digit_count = max(mantissa_selected_digit + 1,
+      int_part_digit_count);
+  }
+
+  IRS_LIB_ASSERT(int_part_digit_count > 0);
+
+  int precision = m_precision - (int_part_digit_count/* - 1*/);
+  if (precision < 0) {
+    precision = 0;
+  }
+  if (mantissa_selected_digit < 0) {
+    precision = max(precision, abs(mantissa_selected_digit));
+  }
+
+  return precision;
+}
+
+int value_view_t::get_corrected_exponent(const string_type& a_str_value)
+{
+  const int mantissa_selected_digit = get_mantissa_selected_digit();
+
+  int new_exponent = m_exponent;
+  size_type first_digit_pos = a_str_value.find_first_of(irst("0123456789"));
+  size_type last_digit_pos = a_str_value.size() - 1;
+  size_type decimal_point_pos = a_str_value.find(m_decimal_point);
+
+  int int_part_digit_count = 0;
+  int fract_part_digit_count = 0;
+  if (decimal_point_pos != string_type::npos) {
+    int_part_digit_count = decimal_point_pos - first_digit_pos;
+    fract_part_digit_count = last_digit_pos - decimal_point_pos;
+  } else {
+    int_part_digit_count = last_digit_pos - first_digit_pos;
+  }
+  if (mantissa_selected_digit >= 0) {
+    int_part_digit_count = max(mantissa_selected_digit + 1,
+      int_part_digit_count);
+  }
+  if (decimal_point_pos != string_type::npos) {
+
+    map<int, string_type>::reverse_iterator it(m_prefixes.find(m_exponent));
+    if (it != m_prefixes.rbegin()) {
+      it--;
+    }
+    int prev_exponent = m_exponent;
+    int next_exponent = m_exponent;
+    if (it != m_prefixes.rend()) {
+      if (it != m_prefixes.rbegin()) {
+        int a = it->first;
+        --it;
+        prev_exponent = it->first;
+        ++it;
+        int b = it->first;
+        int c = a;
+      }
+      ++it;
+      if (it != m_prefixes.rend()) {
+        next_exponent = it->first;
+      }
+    }
+    if (int_part_digit_count > (prev_exponent - m_exponent)) {
+      new_exponent = prev_exponent;
+    } else if ((int_part_digit_count == 1) && (mantissa_selected_digit < 0)) {
+      if (a_str_value[first_digit_pos] == irst('0')) {
+        new_exponent = next_exponent;
+      }
+    }
+  }
+  return new_exponent;
+}
+
+value_view_t::string_type value_view_t::conv_num_to_str_general(
+  double a_value) const
+{
+  string_type str_value;
+
+  int precision = m_precision;
+  if (precision < 1) {
+    precision = 1;
+  }
+
+  ostrstream ostr;
+  ostr << setprecision(m_precision) << a_value << ends;
+  str_value = irs::str_conv<string_type>(string(ostr.str()));
+  // Для совместимости с различными компиляторами
+  ostr.rdbuf()->freeze(false);
+  return str_value;
+}
+
 
 void value_view_t::check_key_event()
 {
@@ -2498,37 +4040,11 @@ void value_view_t::switch_mode_encoder()
 {
   if (m_encoder_mode == encoder_mode_digit_editing) {
     m_encoder_mode = encoder_mode_digit_selection;
-    m_cursor = '^';
+    m_cursor = '_';
   } else {
     m_encoder_mode = encoder_mode_digit_editing;
     m_cursor = ' ';
   }
-}
-
-void value_view_t::update_mantissa_and_exponent()
-{
-  m_mantissa = m_copy_parametr;
-  m_exponent = 0;
-
-  //const double param = max(m_copy_parametr, pow(10, m_min_digit));
-  double max_value = m_copy_parametr;
-  if (!m_reset_selected_digit) {
-    max_value = max(m_copy_parametr, pow(10., m_selected_digit));
-  }
-  if (!m_prefixes.empty()) {
-    m_exponent = m_prefixes.begin()->first;
-    map<int, string_type>::reverse_iterator rit = m_prefixes.rbegin();
-    while (rit != m_prefixes.rend()) {
-      const int exp = rit->first;
-      const double diapason_min = pow(10., exp);
-      if ((max_value/diapason_min) >= 1) {
-        m_exponent = exp;
-        break;
-      }
-      ++rit;
-    }
-  }
-  m_mantissa = m_copy_parametr/pow(10., m_exponent);
 }
 
 void value_view_t::normalize_selected_digit()
@@ -2548,20 +4064,71 @@ void value_view_t::normalize_selected_digit()
       max_digit = irs::round<double, int>(floor(log10(fabs(m_max))));
     }
 
-    if (m_min == 1) {
+    /*if (m_min == 1) {
       min_digit = 0;
     } else if (m_min == 0) {
       min_digit = 0;
     } else {
       min_digit = irs::round<double, int>(floor(log10(fabs(m_min))));
+    } */
+
+
+    if (m_min == 0) {
+      min_digit = -max_presicion;
+    } else {
+      if (m_min == 1) {
+        min_digit = 0;
+      } else {
+        min_digit = irs::round<double, int>(floor(log10(fabs(m_min))));
+      }
+      if (m_precision > 0) {
+        min_digit = min_digit - (m_precision - 1);
+      }
     }
 
-    min_digit = min_digit - m_precision;
     m_selected_digit = irs::bound(m_selected_digit, min_digit, max_digit);
 
-    m_min_digit = min_digit;
-    m_max_digit = max_digit;
+    if (m_min_max_edited_digits_enabled) {
+      m_min_digit = max(min_digit, m_min_edited_digit);
+      m_max_digit = min(max_digit, m_max_edited_digit);
+    } else {
+      m_min_digit = min_digit;
+      m_max_digit = max_digit;
+    }
   }
+}
+
+void value_view_t::set_min_selected_digit()
+{
+
+
+  if (m_copy_parametr == 0) {
+    m_selected_digit = m_min_digit;
+  } else {
+    int min_digit = 0;
+    if (m_copy_parametr == 1) {
+      min_digit = 0;
+    } else {
+      min_digit = irs::round<double, int>(floor(log10(fabs(m_copy_parametr))));
+    }
+    if (m_precision > 0) {
+      min_digit = min_digit - (m_precision - 1);
+    }
+    m_selected_digit = max(m_min_digit, min_digit);
+  }
+
+  /*if (m_copy_parametr == 1) {
+    min_digit = 0;
+  } else if (m_copy_parametr == 0) {
+    min_digit = 0;
+  } else {
+    min_digit = irs::round<double, int>(floor(log10(fabs(m_copy_parametr))));
+  }
+  if (m_precision > 0) {
+    min_digit = min_digit - (m_precision - 1);
+  } */
+
+
 }
 
 double value_view_t::round(double a_value, int a_digit)
@@ -2572,6 +4139,17 @@ double value_view_t::round(double a_value, int a_digit)
   value = irs::round<double, double>(value);
   value = value*k;
   return value;
+}
+
+value_view_t::size_type value_view_t::find_graphical_character(
+  const string_type& a_str, size_type a_pos)
+{
+  for (size_type pos = a_pos; pos < a_str.size(); pos++) {
+    if (irs::isgrapht(a_str[pos])) {
+      return pos;
+    }
+  }
+  return string_type::npos;
 }
 
 double value_view_t::step()
@@ -2603,11 +4181,16 @@ value_view_t::get_parametr_string(
 
     if (m_copy_parametr != *mp_parametr) {
       m_copy_parametr = irs::bound(*mp_parametr, m_min, m_max);
-      *mp_parametr = m_copy_parametr;
+      if (*mp_parametr != m_copy_parametr) {
+        *mp_parametr = m_copy_parametr;
+        if (mp_double_trans) mp_double_trans(mp_parametr);
+        if (mp_event) mp_event->exec();
+      }
       m_reset_selected_digit = true;
       m_updated = true;
     }
     if (a_update == IMU_UPDATE) {
+      IRS_LIB_DBG_MSG("mp_parametr = " << *mp_parametr);
       irs::measure_time_t t;
       t.start();
       convert_param_to_str();
@@ -2622,7 +4205,7 @@ value_view_t::get_parametr_string(
         //(mantissa_selected_digit + shift)*(-1);
 
 
-      const size_type parameter_size_after_add_suffix = parameter_str.size();
+      const size_type parameter_size_after_add_prefix = parameter_str.size();
 
       if (m_value_str.size() <= m_parameter_field_width) {
         //m_cursor_pos = parameter_str.size() + mantissa_cursor_pos;
@@ -2636,7 +4219,7 @@ value_view_t::get_parametr_string(
       } else {
         size_type begin_pos = 0;
         if (mantissa_cursor_pos >= m_parameter_field_width) {
-          begin_pos = mantissa_cursor_pos - m_parameter_field_width;
+          begin_pos = (mantissa_cursor_pos - m_parameter_field_width) + 1;
         }
         size_type size = min(m_value_str.size() - begin_pos,
           m_parameter_field_width);
@@ -2645,7 +4228,9 @@ value_view_t::get_parametr_string(
 
         mantissa_cursor_pos -= begin_pos;
       }
-      m_cursor_pos = parameter_size_after_add_suffix + mantissa_cursor_pos;
+      if (!m_unit_selected) {
+        m_cursor_pos = parameter_size_after_add_prefix + mantissa_cursor_pos;
+      }
       //parameter_str += m_value_str;
 
 
@@ -2654,7 +4239,10 @@ value_view_t::get_parametr_string(
 
       if (a_show_mode != IMM_WITHOUT_SUFFIX) {
         parameter_str += irst(' ');
-        map<int, string_type>::const_iterator it =
+
+        const size_type parameter_size_before_add_suffix = parameter_str.size();
+
+        /*map<int, string_type>::const_iterator it =
           m_prefixes.find(m_exponent);
         if (it != m_prefixes.end()) {
           parameter_str += it->second + m_unit;
@@ -2662,17 +4250,27 @@ value_view_t::get_parametr_string(
           parameter_str += m_unit;
         } else {
           parameter_str += m_suffix;
+        }*/
+        parameter_str += get_suffix();
+
+        if (m_unit_selected) {
+          if (parameter_size_before_add_suffix < parameter_str.size()) {
+            m_cursor_pos = find_graphical_character(parameter_str,
+              parameter_size_before_add_suffix);
+            //m_cursor_pos = parameter_size_before_add_suffix;
+          } else {
+            m_cursor_pos = string_type::npos;
+          }
         }
       }
 
-      const string s = irs::str_conv<string>(parameter_str);
-
-
+      /*const string s = irs::str_conv<string>(parameter_str);
       m_result_str.resize(s.size());
       if (!s.empty()) {
         memcpy(reinterpret_cast<void*>(irs::vector_data(m_result_str)),
           s.c_str(), s.size());
-      }
+      }*/
+      set_result_str(parameter_str);
 
       if (m_cursor_pos < m_result_str.size()) {
         m_character_under_cursor = m_result_str[m_cursor_pos];
@@ -2730,10 +4328,15 @@ value_view_t::get_parametr_string(
       }
     } */
 
-
-    if (m_cursor_pos < m_result_str.size()) {
-      m_result_str[m_cursor_pos] = m_show_cursor ? m_cursor :
-        m_character_under_cursor;
+    if (!m_result_str.empty()) {
+      if (m_cursor_visible) {
+        if (m_cursor_pos < m_result_str.size()) {
+          m_result_str[m_cursor_pos] = m_show_cursor ? m_cursor :
+            m_character_under_cursor;
+        }
+      } else {
+        m_result_str[m_cursor_pos] = m_character_under_cursor;
+      }
     }
 
     const size_type size = min(m_result_str.size(), a_length - 1);
@@ -2748,13 +4351,23 @@ value_view_t::get_parametr_string(
   return 0;
 }
 
+void value_view_t::set_result_str(string_type a_str)
+{
+  const string s = irs::str_conv<string>(a_str);
+  m_result_str.resize(s.size());
+  if (!s.empty()) {
+    memcpy(reinterpret_cast<void*>(irs::vector_data(m_result_str)),
+      s.c_str(), s.size());
+  }
+}
+
 value_view_t::size_type value_view_t::get_dynamic_string(
   char* /*a_buffer*/, irs_menu_base_t::size_type /*a_length*/)
 {
   return 0;
 }
 //#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
-
+#endif // NEW_MENU_DOUBLE
 //----------------------   MENU_DOUBLE_EX_ITEM   --------------------------
 
 
