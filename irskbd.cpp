@@ -182,6 +182,8 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   mp_press_down_pin(IRS_NULL),
   mp_timer(reinterpret_cast<tim_regs_t*>(a_timer_address)),
   m_curr_count(0),
+  m_count_min(0),
+  m_count_max(0),
   m_result_key(irskey_none),
   m_delta(0),
   m_press_count(0)
@@ -222,7 +224,9 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   timer_set_bit(a_timer_address,
     IRS_TIM_CCMR, TIM_CH2, OCS, OCS_SIZE, 1);
 
+  //mp_timer->TIM_SMCR_bit.TS = 6;
   mp_timer->TIM_SMCR_bit.SMS = 2;
+
 
   mp_timer->TIM_ARR = 0xFFFF;
   mp_timer->TIM_CNT = m_curr_count;
@@ -240,11 +244,22 @@ irskey_t irs::encoder_drv_mc_t::get_key_encoder()
 {
   m_result_key = irskey_none;
   if (m_timer.check()) {
-    irs_i16 count = static_cast<irs_i16>(mp_timer->TIM_CNT);
-    if (count%2 == 0) { //добавлено т.к. на 1 изменение позиции TIM_CNT
-      count = count/2;  //увеличивается на 2
+    static irs_i16 prev = 0;
+    const irs_i16 count = static_cast<irs_i16>(mp_timer->TIM_CNT);
+
+    m_count_min = min(count, m_count_min);
+    m_count_max = max(count, m_count_max);
+    if (prev != count) {
+      //IRS_LIB_DBG_MSG("count = " << count << " m_curr_count = " << m_curr_count <<
+        //" m_count_min = " << m_count_min << " m_count_max = " << m_count_max);
+    }
+    prev = count;
+    if (abs(m_count_max - m_count_min) >= 2) {
+      m_count_min = count;
+      m_count_max = count;
       if ((m_curr_count != count) && (m_keys.size() > 1)) {
-        m_delta = count - m_curr_count;
+        const int delta = (count - m_curr_count);
+        m_delta = delta/2;
         m_curr_count = count;
         if (m_delta > 0) {
           m_result_key = m_keys[0];
@@ -337,7 +352,9 @@ irskey_t irs::mouse_drv_builder_t::get_key_button()
 {
   irskey_t result_key = m_key_button;
   //m_key_button = irskey_none;
-  m_press_count = 1;
+  if (result_key != irskey_none) {
+    m_press_count = 1;
+  }
   return result_key;
 }
 

@@ -652,6 +652,305 @@ BOOST_AUTO_TEST_CASE(test_case1)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(test_median_filter_t)
+
+template<class data_t, class calc_t>
+class median_filter_base_implementation_t
+{
+public:
+  typedef size_t size_type;
+  median_filter_base_implementation_t(size_type a_max_count);
+  ~median_filter_base_implementation_t();
+  void clear();
+  void add(data_t a_val);
+  calc_t get() const;
+  void resize(size_type a_size);
+  size_type size() const;
+  size_type max_size() const;
+  bool is_full();
+private:
+  median_filter_base_implementation_t();
+  void update_result();
+  size_type m_max_count;
+  deque<data_t> m_deque;
+  multiset<data_t> m_sort_values;
+  calc_t m_result;
+};
+
+template<class data_t, class calc_t>
+median_filter_base_implementation_t<data_t, calc_t>::
+median_filter_base_implementation_t(size_type a_max_count
+):
+  m_max_count(a_max_count),
+  m_deque(),
+  m_sort_values(),
+  m_result(0)
+{
+}
+
+template<class data_t, class calc_t>
+median_filter_base_implementation_t<data_t, calc_t>::
+~median_filter_base_implementation_t()
+{
+}
+
+template<class data_t, class calc_t>
+void median_filter_base_implementation_t<data_t, calc_t>::clear()
+{
+  m_deque.clear();
+  m_sort_values.clear();
+  m_result = 0;
+}
+
+template<class data_t, class calc_t>
+void median_filter_base_implementation_t<data_t, calc_t>::
+add(data_t a_val)
+{
+  if (m_max_count == 0) {
+    return;
+  }
+  if (m_deque.size() >= m_max_count) {
+    multiset<data_t>::iterator it =
+      m_sort_values.find(m_deque.front());
+    m_sort_values.erase(it);
+    m_deque.pop_front();
+  }
+  m_deque.push_back(a_val);
+  m_sort_values.insert(a_val);
+  update_result();
+}
+
+template<class data_t, class calc_t>
+void median_filter_base_implementation_t<data_t, calc_t>::
+update_result()
+{
+  const std::size_t size_2 = m_sort_values.size()/2;
+  if (m_sort_values.size()%2 == 0) {
+    const std::size_t pos = size_2 == 0 ? 0: size_2 - 1;
+    multiset<data_t>::iterator it_1 = m_sort_values.begin();
+    advance(it_1, pos);
+    multiset<data_t>::iterator it_2 = it_1;
+    ++it_2;
+    m_result = (static_cast<calc_t>(*it_1) +
+      static_cast<calc_t>(*it_2))/2;
+  } else {
+    const std::size_t pos = size_2;
+    multiset<data_t>::iterator it = m_sort_values.begin();
+    advance(it, pos);
+    m_result = *it;
+  }
+}
+
+template<class data_t, class calc_t>
+calc_t median_filter_base_implementation_t<data_t, calc_t>::
+get() const
+{
+  return m_result;
+}
+
+template<class data_t, class calc_t>
+void median_filter_base_implementation_t<data_t, calc_t>::
+resize(size_type a_size)
+{
+  m_max_count = a_size;
+  while (m_deque.size() >= m_max_count) {
+    multiset<data_t>::iterator it =
+      m_sort_values.find(m_deque.front());
+    m_sort_values.erase(it);
+    m_deque.pop_front();
+  }
+  update_result();
+}
+
+template<class data_t, class calc_t>
+typename median_filter_base_implementation_t<data_t, calc_t>::size_type
+median_filter_base_implementation_t<data_t, calc_t>::size() const
+{
+  return m_deque.size();
+}
+
+template<class data_t, class calc_t>
+typename median_filter_base_implementation_t<data_t, calc_t>::size_type
+median_filter_base_implementation_t<data_t, calc_t>::max_size() const
+{
+  return m_max_count;
+}
+
+template<class data_t, class calc_t>
+bool median_filter_base_implementation_t<data_t, calc_t>::is_full()
+{
+  return (m_deque.size() == m_max_count);
+}
+
+
+std::vector<double> make_values()
+{
+  std::vector<double> values;
+  values.push_back(1);
+  values.push_back(2);
+  values.push_back(3);
+  values.push_back(3);
+  values.push_back(4);
+  values.push_back(5);
+  values.push_back(6);
+  values.push_back(7);
+  values.push_back(7);
+  values.push_back(7);
+  values.push_back(8);
+  values.push_back(8);
+  values.push_back(8);
+  values.push_back(8);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(7);
+  values.push_back(6);
+  values.push_back(5);
+  values.push_back(4);
+  values.push_back(3);
+  values.push_back(2);
+  values.push_back(1);
+  return values;
+}
+
+void test_median_filter(const std::size_t a_window_max_size,
+  const std::vector<double>& a_values)
+{
+  irs::median_filter_t<double, double> filter(a_window_max_size);
+  median_filter_base_implementation_t<double, double>
+    filter_base(a_window_max_size);
+
+  for (std::size_t i = 0; i < a_values.size(); i++) {
+    filter.add(a_values[i]);
+    filter_base.add(a_values[i]);
+
+    const double filter_value = filter.get();
+    const double filter_base_value = filter_base.get();
+    BOOST_CHECK_EQUAL(filter_value, filter_base_value);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_window_add_size)
+{
+  std::vector<double> values = make_values();
+  const std::size_t window_max_size = 5;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_window_even_size)
+{
+  std::vector<double> values = make_values();
+  const std::size_t window_max_size = 4;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_window_size_0)
+{
+  std::vector<double> values = make_values();
+  const std::size_t window_max_size = 0;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_window_size_1)
+{
+  std::vector<double> values = make_values();
+  const std::size_t window_max_size = 1;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_window_size_2)
+{
+  std::vector<double> values = make_values();
+  const std::size_t window_max_size = 2;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_add_with_bipolar_values)
+{
+  std::vector<double> values;
+  values.push_back(-1);
+  values.push_back(-2);
+  values.push_back(-3);
+  values.push_back(-3);
+  values.push_back(4);
+  values.push_back(5);
+  values.push_back(-6);
+  values.push_back(-7);
+  values.push_back(7);
+  values.push_back(7);
+  values.push_back(-8);
+  values.push_back(-8);
+  values.push_back(-8);
+  values.push_back(-8);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(-9);
+  values.push_back(9);
+  values.push_back(9);
+  values.push_back(7);
+  values.push_back(-6);
+  values.push_back(5);
+  values.push_back(4);
+  values.push_back(3);
+  values.push_back(-2);
+  values.push_back(1);
+
+  const std::size_t window_max_size = 4;
+  test_median_filter(window_max_size, values);
+}
+
+BOOST_AUTO_TEST_CASE(test_resize)
+{
+  std::vector<double> values = make_values();
+
+  std::size_t window_max_size = 5;
+  const std::size_t window_new_max_size = 3;
+  irs::median_filter_t<double, double> filter(window_max_size);
+  median_filter_base_implementation_t<double, double>
+    filter_base(window_max_size);
+
+  for (std::size_t i = 0; i < values.size(); i++) {
+    if (i == values.size()/2) {
+      window_max_size = window_new_max_size;
+      filter.resize(window_max_size);
+      filter_base.resize(window_max_size);
+    }
+    filter.add(values[i]);
+    filter_base.add(values[i]);
+
+    const double filter_value = filter.get();
+    const double filter_base_value = filter_base.get();
+    BOOST_CHECK_EQUAL(filter_value, filter_base_value);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_size_and_full)
+{
+  std::vector<double> values = make_values();
+
+  std::size_t window_max_size = 3;
+  irs::median_filter_t<double, double> filter(window_max_size);
+  filter.add(values[0]);
+  BOOST_CHECK_EQUAL(filter.size(), 1);
+  BOOST_CHECK_EQUAL(filter.is_full(), false);
+  filter.add(values[1]);
+  BOOST_CHECK_EQUAL(filter.size(), 2);
+  BOOST_CHECK_EQUAL(filter.is_full(), false);
+  filter.add(values[2]);
+  BOOST_CHECK_EQUAL(filter.size(), 3);
+  BOOST_CHECK_EQUAL(filter.is_full(), true);
+  filter.add(values[3]);
+  BOOST_CHECK_EQUAL(filter.size(), 3);
+  BOOST_CHECK_EQUAL(filter.is_full(), true);
+  filter.clear();
+  BOOST_CHECK_EQUAL(filter.size(), 0);
+  BOOST_CHECK_EQUAL(filter.is_full(), false);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(test_crc16)
 
 BOOST_AUTO_TEST_CASE(test_case1)

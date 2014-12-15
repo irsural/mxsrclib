@@ -557,6 +557,7 @@ public:
   void save_to_mxchart_file(const string_type& a_file_name);
   void load_from_csv(const string_type& a_file_name);
   void save_to_csv(const string_type& a_file_name);
+  void set_file_name(const string_type& a_file_name);
 private:
    // Подключение к форме и создание элементов управления
   void init(TForm *ap_form);
@@ -643,6 +644,7 @@ private:
     void chart_list_changed();
     void points_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
+    void set_file_name(const string_type& a_file_name);
   private:
     enum { list_box_scroll_width_additive = 20 };
     enum { index_col = 0 };
@@ -781,6 +783,7 @@ private:
     void insert_row_points_grid(int a_row_pos);
     void check_and_create_new_row();
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
+    void update_form_caption();
   }; //class controls_t
 
   //chart_point_t m_time;

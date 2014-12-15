@@ -1933,6 +1933,217 @@ calc_t fast_multi_sko_t<data_t, calc_t>::average(size_type a_index) const
 {
   return m_average.get(a_index);
 }
+
+//! \brief Реализация медианного фильтра
+template<class data_t, class calc_t>
+class median_filter_t
+{
+public:
+  typedef size_t size_type;
+  median_filter_t(size_type a_max_count);
+  ~median_filter_t();
+  void clear();
+  void add(data_t a_val);
+  calc_t get() const;
+  void resize(size_type a_size);
+  size_type size() const;
+  size_type max_size() const;
+  bool is_full();
+private:
+  typedef typename multiset<data_t>::iterator multiset_iterator_type;
+  median_filter_t();
+  void update_result();
+  size_type difference_size_first_second_half() const;
+  size_type m_max_count;
+  enum half_t {
+    first_half,
+    second_half
+  };
+  deque_data_t<data_t> m_deque;
+  multiset<data_t> m_first_half;
+  multiset<data_t> m_second_half;
+  calc_t m_result;
+};
+
+template<class data_t, class calc_t>
+median_filter_t<data_t, calc_t>::
+median_filter_t(size_type a_max_count
+):
+  m_max_count(a_max_count),
+  m_deque(),
+  m_first_half(),
+  m_second_half(),
+  m_result(0)
+{
+  m_deque.reserve(m_max_count);
+}
+
+template<class data_t, class calc_t>
+median_filter_t<data_t, calc_t>::~median_filter_t()
+{
+}
+
+template<class data_t, class calc_t>
+void median_filter_t<data_t, calc_t>::clear()
+{
+  m_deque.clear();
+  m_first_half.clear();
+  m_second_half.clear();
+  m_result = 0;
+}
+
+template<class data_t, class calc_t>
+void median_filter_t<data_t, calc_t>::add(data_t a_val)
+{
+  if (m_max_count == 0) {
+    return;
+  } else if (m_max_count == 1) {
+    m_first_half.clear();
+    m_second_half.clear();
+    m_first_half.insert(a_val);
+    m_deque.push_back(a_val);
+    m_result = a_val;
+    return;
+  }
+
+  if (m_deque.size() >= m_max_count) {
+    const data_t erase_value = m_deque.front();
+    multiset_iterator_type it = m_first_half.find(erase_value);
+    if (it != m_first_half.end()) {
+      m_first_half.erase(it);
+    } else {
+      multiset_iterator_type erase_it = m_second_half.find(erase_value);
+      IRS_LIB_ASSERT(erase_it != m_second_half.end());
+      m_second_half.erase(erase_it);
+    }
+    m_deque.pop_front();
+  }
+  if (m_first_half.empty() && m_second_half.empty()) {
+    m_first_half.insert(a_val);
+  } else if (!m_first_half.empty() && m_second_half.empty()) {
+    const data_t first_half_back = *m_first_half.rbegin();
+    if (first_half_back < a_val) {
+      m_second_half.insert(a_val);
+    } else {
+      m_second_half.insert(first_half_back);
+      multiset_iterator_type back_it = --m_first_half.end();
+      m_first_half.erase(back_it);
+      m_first_half.insert(a_val);
+    }
+  } else if (m_first_half.empty() && !m_second_half.empty()) {
+    const data_t second_half_front = *m_second_half.begin();
+    if (second_half_front > a_val) {
+      m_first_half.insert(a_val);
+    } else {
+      m_first_half.insert(second_half_front);
+      m_second_half.erase(m_second_half.begin());
+      m_second_half.insert(a_val);
+    }
+  } else {
+    const data_t first_half_back = *m_first_half.rbegin();
+    if (first_half_back < a_val) {
+      if (m_first_half.size() < m_second_half.size()) {
+        multiset_iterator_type back_it = --m_first_half.end();
+        m_first_half.insert(back_it, *m_second_half.begin());
+        m_second_half.erase(m_second_half.begin());
+      }
+      m_second_half.insert(a_val);
+    } else {
+      if (m_first_half.size() > m_second_half.size()) {
+        m_second_half.insert(m_second_half.begin(), *m_first_half.rbegin());
+        multiset_iterator_type back_it = --m_first_half.end();
+        m_first_half.erase(back_it);
+      }
+      m_first_half.insert(a_val);
+    }
+  }
+  m_deque.push_back(a_val);
+  update_result();
+}
+
+template<class data_t, class calc_t>
+void median_filter_t<data_t, calc_t>::update_result()
+{
+  if (m_first_half.empty() && m_second_half.empty()) {
+    m_result = 0;
+    return;
+  }
+  if (m_first_half.size() > m_second_half.size()) {
+    m_result = *m_first_half.rbegin();
+  } else if (m_first_half.size() < m_second_half.size()) {
+    m_result = *m_second_half.begin();
+  } else {
+    m_result = (static_cast<calc_t>(*m_first_half.rbegin()) +
+      static_cast<calc_t>(*m_second_half.begin()))/2;
+  }
+}
+
+template<class data_t, class calc_t>
+calc_t median_filter_t<data_t, calc_t>::get() const
+{
+  return m_result;
+}
+
+template<class data_t, class calc_t>
+void median_filter_t<data_t, calc_t>::resize(size_type a_size)
+{
+  m_max_count = a_size;
+  while (m_deque.size() > m_max_count) {
+    const data_t erase_value = m_deque.front();
+    multiset_iterator_type it = m_first_half.find(erase_value);
+    if (it != m_first_half.end()) {
+      m_first_half.erase(it);
+    } else {
+      multiset_iterator_type erase_it = m_second_half.find(erase_value);
+      IRS_LIB_ASSERT(erase_it != m_second_half.end());
+      m_second_half.erase(erase_it);
+    }
+    m_deque.pop_front();
+  }
+  while (difference_size_first_second_half() > 1) {
+    if (m_first_half.size() > m_second_half.size()) {
+      m_second_half.insert(m_second_half.begin(), *m_first_half.rbegin());
+      multiset_iterator_type back_it = --m_first_half.end();
+      m_first_half.erase(back_it);
+    } else if (m_first_half.size() < m_second_half.size()) {
+      m_first_half.insert(m_first_half.end(), *m_second_half.begin());
+      m_second_half.erase(m_second_half.begin());
+    }
+  }
+  m_deque.reserve(a_size);
+  update_result();
+}
+
+template<class data_t, class calc_t>
+typename median_filter_t<data_t, calc_t>::size_type
+median_filter_t<data_t, calc_t>::difference_size_first_second_half() const
+{
+  const size_type size_1 = m_first_half.size();
+  const size_type size_2 = m_second_half.size();
+
+  return size_1 > size_2 ? (size_1 - size_2) : (size_2 - size_1);
+}
+
+template<class data_t, class calc_t>
+typename median_filter_t<data_t, calc_t>::size_type
+median_filter_t<data_t, calc_t>::size() const
+{
+  return m_deque.size();
+}
+
+template<class data_t, class calc_t>
+typename median_filter_t<data_t, calc_t>::size_type
+median_filter_t<data_t, calc_t>::max_size() const
+{
+  return m_max_count;
+}
+
+template<class data_t, class calc_t>
+bool median_filter_t<data_t, calc_t>::is_full()
+{
+  return (m_deque.size() == m_max_count);
+}
+
 /*
 template<class data_t, class calc_t>
 class eliminating_outliers_smirnov_criterion_t

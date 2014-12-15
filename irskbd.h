@@ -103,6 +103,8 @@ private:
   gpio_pin_t* mp_press_down_pin;
   tim_regs_t* mp_timer;
   irs_i16 m_curr_count;
+  irs_i16 m_count_min;
+  irs_i16 m_count_max;
   irskey_t m_result_key;
   int m_delta;
   int m_press_count;

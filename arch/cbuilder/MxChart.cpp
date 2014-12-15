@@ -3808,6 +3808,12 @@ irs::chart::builder_chart_window_t::make_charts() const
   return charts;
 }
 
+void irs::chart::builder_chart_window_t::set_file_name(
+  const string_type& a_file_name)
+{
+  mp_controls->set_file_name(a_file_name);
+}
+
 irs::chart::builder_chart_window_t::chart_func_t::
 chart_func_t(const chart_vec_t &a_data):
   m_data(a_data)
@@ -4052,7 +4058,8 @@ irs::chart::builder_chart_window_t::controls_t::
 {
   m_unsort_data.connect(m_data);
 
-  mp_form->Caption = irst("График");
+  //mp_form->Caption = irst("График");
+  update_form_caption();
   mp_form->Width = 700;
   mp_form->Height = 500;
   if (a_stay_on_top == stay_on_top_on) {
@@ -4247,7 +4254,7 @@ irs::chart::builder_chart_window_t::controls_t::
   //mp_param_list->Height = 100;
   mp_param_list->Anchors = (TAnchors() << akTop << akLeft << akRight <<
     akBottom);
-  mp_param_list->Options = (mp_param_list->Options >> goEditing);
+  //mp_param_list->Options = (mp_param_list->Options >> goEditing);
 
   const int row_height = mp_param_list->Canvas->TextHeight(
     irst("+1.7976931348623157e+308")) + 3;
@@ -4339,6 +4346,16 @@ __fastcall irs::chart::builder_chart_window_t::controls_t::
   ~controls_t()
 {
 }
+
+void irs::chart::builder_chart_window_t::controls_t::update_form_caption()
+{
+  if (m_file_name.IsEmpty()) {
+    mp_form->Caption = irst("График");
+  } else {
+    mp_form->Caption = String(irst("График - ")) + m_file_name;
+  }
+}
+
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
   PaintPanelResize(TObject *Sender)
 {
@@ -4431,6 +4448,7 @@ FileSaveAsMenuItemClick(TObject *Sender)
     }
     m_file_name = mp_file_save_dialog->FileName;
   }
+  update_form_caption();
 }
 
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
@@ -4938,6 +4956,12 @@ void irs::chart::builder_chart_window_t::controls_t::
   }
   mp_timer->Enabled = false;
   mp_timer->Enabled = true;
+}
+void irs::chart::builder_chart_window_t::controls_t::set_file_name(
+  const string_type& a_file_name)
+{
+  m_file_name = irs::str_conv<String>(a_file_name);
+  update_form_caption();
 }
 void irs::chart::builder_chart_window_t::controls_t::
   update_chart_combo()
