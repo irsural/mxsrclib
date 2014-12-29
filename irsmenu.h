@@ -344,144 +344,13 @@ public:
   virtual bool is_updated();
 };
 
-#define NEW_MENU_DOUBLE 0
-
-#if NEW_MENU_DOUBLE
-class irs_menu_double_ex_item_t: public irs_menu_base_t
-{
-  char *mp_prefix;
-  char *mp_suffix;
-  char *mp_value_string;
-  irs::num_mode_t m_num_mode;
-  size_type m_len;
-  size_type m_accur;
-  float m_max;
-  float m_min;
-  double *mp_parametr;
-  char* mp_unit;
-  map<int, char*> m_prefixes;
-  int m_selected_digit;
-
-  irs_bool m_point_flag;
-  double_trans_t mp_double_trans;
-  irs_bool m_blink_accept;
-  counter_t m_blink_accept_to;
-  double m_copy_parametr;
-  char *mp_copy_parametr_string;
-  irs_menu_key_type_t m_key_type;
-  double m_step;
-  bool m_apply_immediately;
-  mxkey_event_t* mp_key_event;
-  //value_view_t m_value_view;
-public:
-  irs_menu_double_ex_item_t(double *a_parametr, irs_bool a_can_edit);
-  ~irs_menu_double_ex_item_t();
-  void set_personal_key_event(mxkey_event_t* ap_key_event);
-  //! \brief Задает буфер для вывода числа, префикс, суффикс, длину числа,
-  //!   точность отображения числа
-  //! \param[in] a_value_string буфер для вывода числа, включая
-  //!   префикс и суффикс
-  //! \param[in] a_prefix префикс
-  //! \param[in] a_suffix суффикс
-  //! \param[in] a_len длина выводимого числа, без суффикса и префикса
-  //! \param[in] a_accur точность вывода числа
-  //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
-  void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
-    size_type a_len, size_type a_accur,
-    irs::num_mode_t a_num_mode = irs::num_mode_fixed);
-  //! \brief Задает единицы измерения и префиксы
-  void set_unit(char* ap_unit, map<int, char*> a_prefixes);
-  void reset_str();
-  void set_min_value(float a_min_value);
-  float get_min_value();
-  void set_max_value(float a_max_value);
-  float get_max_value();
-  virtual void draw(irs_menu_base_t **a_cur_menu);
-  double *get_parametr();
-  virtual void set_trans_function(double_trans_t a_double_trans);
-  size_type get_parametr_string(
-    char *a_parametr_string,
-    size_type a_length = 0,
-    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
-    irs_menu_param_update_t a_update = IMU_UPDATE);
-  size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
-  void set_can_edit(irs_bool a_can_edit);
-  void set_key_type(irs_menu_key_type_t a_key_type);
-  void set_change_step(double a_step);
-  void set_apply_immediately(bool a_apply_immediately);
-  virtual bool is_updated();
-};
-
-class irs_menu_double_item_2_t: public irs_menu_base_t
+class irs_menu_spin_item_t: public irs_menu_base_t
 {
 public:
   typedef irs::char_t char_type;
   typedef irs::string_t string_type;
-private:
-  char *f_prefix;
-  char *f_suffix;
-  char *f_value_string;
-  irs::num_mode_t f_num_mode;
-  size_type f_len;
-  size_type f_accur;
-  float f_max;
-  float f_min;
-  double *f_parametr;
-  irs_bool f_point_flag;
-  double_trans_t f_double_trans;
-  irs_bool f_blink_accept;
-  counter_t f_blink_accept_to;
-  double f_copy_parametr;
-  char *f_copy_parametr_string;
-  irs_menu_key_type_t f_key_type;
-  double f_step;
-  bool f_apply_immediately;
-  string_type m_unit;
-  map<int, string_type> m_prefixes;
-public:
-  irs_menu_double_item_2_t(double *a_parametr, irs_bool a_can_edit);
-  ~irs_menu_double_item_2_t();
-  //! \brief Задает буфер для вывода числа, префикс, суффикс, длину числа,
-  //!   точность отображения числа
-  //! \param[in] a_value_string буфер для вывода числа, включая префикс и суффикс
-  //! \param[in] a_prefix префикс
-  //! \param[in] a_suffix суффикс
-  //! \param[in] a_len длина поля числа, без суффикса и префикса
-  //! \param[in] a_accur точность вывода числа
-  //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
-  void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
-    size_type a_len, size_type a_accur,
-    irs::num_mode_t a_num_mode = irs::num_mode_fixed);
-  void set_unit(string_type a_unit, map<int, string_type> a_prefixes);
-  void reset_str();
-  void set_min_value(float a_min_value);
-  float get_min_value();
-  void set_max_value(float a_max_value);
-  float get_max_value();
-  virtual void draw(irs_menu_base_t **a_cur_menu);
-  double *get_parametr();
-  virtual void set_trans_function(double_trans_t a_double_trans);
-  size_type get_parametr_string(
-    char *a_parametr_string,
-    size_type a_length = 0,
-    irs_menu_param_show_mode_t a_show_mode = IMM_FULL,
-    irs_menu_param_update_t a_update = IMU_UPDATE);
-  size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
-  void set_can_edit(irs_bool a_can_edit);
-  void set_key_type(irs_menu_key_type_t a_key_type);
-  void set_change_step(double a_step);
-  void set_apply_immediately(bool a_apply_immediately);
-  virtual bool is_updated();
-};
-
-//#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
-class value_view_t: public irs_menu_base_t
-{
-public:
-  typedef irs::char_t char_type;
-  typedef irs::string_t string_type;
-  value_view_t(double* ap_parametr, irs_bool a_can_edit);
-  ~value_view_t();
+  irs_menu_spin_item_t(double* ap_parametr, irs_bool a_can_edit);
+  ~irs_menu_spin_item_t();
   virtual void set_trans_function(double_trans_t a_double_trans);
   virtual size_type get_parametr_string(
     char *a_parametr_string,
@@ -497,17 +366,12 @@ public:
   void set_str(const string_type& a_prefix,
     const size_type a_parameter_field_width, const string_type& a_suffix,
     size_type a_accur);
-  void set_unit(string_type a_unit, map<int, string_type> a_prefixes);
-  //double get_value() const;
-  //void set_value(const double a_value);
+  void set_unit(string_type a_unit, map<int, string_type> a_prefixes =
+    get_default_prefixes());
   void set_min_value(double a_min_value);
   void set_max_value(double a_max_value);
   void set_can_edit(irs_bool a_can_edit);
-  void set_key_type(irs_menu_key_type_t a_key_type);
-  bool increase_value();
-  bool reduce_value();
-  bool shift_cursor_left();
-  bool shift_cursor_right();
+
   //! \brief Задает минимальный и максимальный разряды, которые разрешено
   //!   редактировать. Если не задать вручную, то они будут рассчитаны
   //!   автоматически. Фактически диапазон редактируемых разрядов означает
@@ -521,13 +385,19 @@ public:
   //!   разряд будет установлен равным -15 (точность double)
   void set_edited_digit_diapason(int a_min_digit, int a_max_digit);
   void set_cursor_visible(bool a_enabled);
+  irs::generator_events_t* permitted_action_events();
+  irs::generator_events_t* forbidden_action_events();
+  static map<int, irs::string_t> get_default_prefixes();
 private:
   enum { max_presicion = 15 };
-  /*enum direction_t {
-    direction_up,
-    direction_down
-  };
-  void change_parameter(direction_t a_direction);*/
+  void try_increase_value();
+  bool increase_value();
+  void try_reduce_value();
+  bool reduce_value();
+  void try_shift_cursor_left();
+  bool shift_cursor_left();
+  void try_shift_cursor_right();
+  bool shift_cursor_right();
   void check_key_event();
   string_type get_str_from_param();
   void reset_selected_digit();
@@ -545,12 +415,16 @@ private:
 
   string_type conv_num_to_str_general(double a_value) const;
   void convert_param_to_str();
-  void set_result_str(string_type a_str);
+  void set_result_str(const string_type& a_str);
+  void str_to_buf(const string_type& a_str, vector<char>* ap_buf);
   string_type get_suffix() const;
-  // Обновляет первую и вторую строки индикатора
+  string_type get_suffix_dialog() const;
+  // Обновляет первую и вторую строки индикатора в режиме диалога
   void update_first_and_second_rows();
   // Обновляет третью строку
   void update_third_row();
+  // Обновляет единицы измерения в третьей строке
+  void update_third_row_suffix();
   int calc_max_digit();
   double step();
   void switch_mode_encoder();
@@ -564,6 +438,22 @@ private:
   double round(double a_value, int a_digit);
   size_type find_graphical_character(const string_type& a_str,
     size_type a_pos = 0);
+  bool is_graph(char_type a_ch) const;
+  void processing_of_digital_key_mode_dialog(irskey_t a_key);
+  int get_mantissa_min_digit() const;
+
+  template <class T>
+  static int get_exponent(T a_value, int a_precision);
+
+  template <class T>
+  static int get_exponent(T a_value);
+
+  template <class T>
+  static T round_digit(T a_value, int a_digit);
+
+  template <class T>
+  static T round_precision(T a_value, int a_precision);
+
   /*enum action_t {
     action_shift_left,
     action_shift_right,
@@ -583,14 +473,17 @@ private:
   bool shift(shift_mode_t a_mode);
   char_type m_decimal_point;
   char m_decimal_point_narrow_char;
+  char m_exp_narrow_char;
+  map<irskey_t, char> m_irskey_char_map_mode_dialog;
   double *mp_parametr;
   double m_copy_parametr;
-  irs_menu_key_type_t m_key_type;
+  //irs_menu_key_type_t m_key_type;
   double_trans_t mp_double_trans;
   // На самом деле эта переменная всего лишь результат деления m_copy_parametr
   // на m_exponent
   double m_mantissa;
   int m_exponent;
+  int m_exponent_dialog;
   double m_min;
   double m_max;
   size_type m_precision;
@@ -619,7 +512,7 @@ private:
   char m_cursor;
   char m_character_under_cursor;
   int m_int_part_digit_count;
-  int m_cursor_pos;
+  size_type m_cursor_pos;
   int m_decimal_point_pos;
   size_type m_start_digit;
   int m_mantissa_min_digit;
@@ -632,37 +525,55 @@ private:
   int m_max_exponent;
   irs::loop_timer_t m_update_timer;
   vector<char> m_result_str;
+  string m_str_input_value_dialog;
   bool m_reset_selected_digit;
   // Переменные для функции draw
-  irs_bool f_point_flag;
+  bool m_point_flag;
+  bool m_exp_flag;
+  bool m_minus_flag;
   irs_bool f_blink_accept;
   counter_t f_blink_accept_to;
+  irs::generator_events_t m_permitted_actions_events;
+  irs::generator_events_t m_forbidden_actions_events;
 };
 
 template <class T>
-int get_exponent(T a_value)
+int irs_menu_spin_item_t::get_exponent(T a_value, int a_precision)
 {
   if (a_value == 0) {
     return 0;
   }
-  int e = floor((log10(fabs(a_value))));
+  int e = get_exponent(a_value);
+  double a = pow(10., e + 1);
+  if (fabs(a - a_value) < pow(10., -a_precision)) {
+    e += 1;
+  }
+  return e;
+}
+
+template <class T>
+int irs_menu_spin_item_t::get_exponent(T a_value)
+{
+  if (a_value == 0) {
+    return 0;
+  }
+  int e = static_cast<int>(floor((log10(fabs(a_value)))));
   return e;
 }
 template <class T>
-T round(T a_value, int a_digit)
+T irs_menu_spin_item_t::round_digit(T a_value, int a_digit)
 {
   const T k = pow(static_cast<T>(10), static_cast<T>(a_digit));
   return irs::round<T, T>(a_value*k)/k;
 }
 template <class T>
-T round_precision(T a_value, int a_precision)
+T irs_menu_spin_item_t::round_precision(T a_value, int a_precision)
 {
   const int precision = max(1, a_precision);
   const int exp = get_exponent(a_value);
-  return round(a_value, (precision - 1) - exp);
+  return round_digit(a_value, (precision - 1) - exp);
 }
-//#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
-#endif // NEW_MENU_DOUBLE
+
 //------------------------- SIMPLY ITEM ---------------------------------------
 
 template <class T>
