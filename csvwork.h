@@ -223,7 +223,7 @@ private:
   string_type m_special_character;
   //csv_file_t();
 
-public:   
+public:
   csv_file_t(const string_type& a_filename = string_type());
   ~csv_file_t();
   //! \brief Выдает текущее состояние выполняемой операции. Значения от 0 до 1.

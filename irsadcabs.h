@@ -49,7 +49,7 @@ public:
   typedef irs_size_t size_type;
   typedef irs_u32 select_channel_type;
   virtual ~adc_t() {}
-  virtual size_type get_resulution() const = 0;
+  virtual inline size_type get_resulution() const;
   virtual inline void select_channels(irs_u32 a_selected_channels);
   virtual inline bool new_value_exists(irs_u8 a_channel) const;
   virtual inline irs_u16 get_u16_minimum();
@@ -66,7 +66,11 @@ public:
 private:
   inline irs_u32 get_adc_max_value() const;
 };
-
+inline adc_t::size_type adc_t::get_resulution() const
+{
+  IRS_LIB_ASSERT_MSG("adc_t::get_resulution not implemented");
+  return 0;
+}
 inline void adc_t::select_channels(irs_u32 /*a_selected_channels*/)
 {
 }
