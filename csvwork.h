@@ -144,7 +144,7 @@ namespace csvwork {
 
 // ¬ Embeded C++ нет fstream, а есть либо ifstream, либо ofstream
 // Watcom не переваривает irstable.h в котором определен тип table_string_t
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //! \brief —татус операции.
 enum csv_file_status_t {
@@ -296,7 +296,7 @@ private:
   enum status_file_t {stat_file_close, stat_file_open};
 };
 
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //! @}
 

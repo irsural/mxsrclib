@@ -284,7 +284,7 @@ void csv_file::clear_pars()
 }
 //---------------------------------------------------------------------------
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //class csv_file_t
 irs::csvwork::csv_file_t::csv_file_t(const string_type& a_filename
@@ -561,7 +561,7 @@ void irs::csvwork::csv_file_t::tick()
           size_type row_user_size = mp_row_user->size();
           size_type i_end =
             min(row_user_size - m_cell_index, max_cell_count_pack);
-          for (size_type i = 0; i < i_end; i++) {
+          for (size_type cell_i = 0; cell_i < i_end; cell_i++) {
             if (!m_file.good()) {
               fsuccess = false;
               break;
@@ -747,7 +747,7 @@ void irs::csvwork::csv_file_t::tick()
           //int row_user_size = mp_row_user->size();
           size_type i_end = min(
             m_table_uses_cell_count - m_cell_index, max_cell_count_pack);
-          for (size_type i = 0; i < i_end; i++) {
+          for (size_type cell_i = 0; cell_i < i_end; cell_i++) {
             if (!m_file.good()) {
               instruction_success = false;
             } else {
@@ -1266,5 +1266,5 @@ bool irs::csvwork::csv_file_synchro_t::load(table_string_t* ap_table_string)
   return fsuccess;
 }
 
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 

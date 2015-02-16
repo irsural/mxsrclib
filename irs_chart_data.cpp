@@ -90,7 +90,7 @@ irs::chart_data::charts_t irs::chart_data::charts_csv_file_t::load(
   const size_type col_count =
     table_string.get_col_count() - table_string.get_col_count()%2;
   size_type row_count = table_string.get_row_count();
-  size_type row_index = 0;
+  //size_type row_index = 0;
 
   vector<string_type> names;
 
@@ -117,8 +117,6 @@ irs::chart_data::charts_t irs::chart_data::charts_csv_file_t::load(
     for (size_type row_index = m_data_row_start_index; row_index < row_count;
         row_index++) {
       chart_t::point_type point;
-      double x = 0;
-      double y = 0;
       string_type x_str = table_string.read_cell(x_col_index, row_index);
       string_type y_str = table_string.read_cell(x_col_index + 1, row_index);
       if (str_to_num(x_str, &point.x) && str_to_num(y_str, &point.y)) {

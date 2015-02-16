@@ -166,6 +166,10 @@
 # define IRS_USE_UTF8_CPP 0
 #endif // IRS_USE_UTF8_CPP
 
+#ifndef IRS_USE_STM32F2_4_USB_HID_HARDFLOW
+# define IRS_USE_STM32F2_4_USB_HID_HARDFLOW 0
+#endif // IRS_USE_STM32F2_4_USB_HID_HARDFLOW
+
 // Статические утверждения
 // Взято из STLSoft
 // Перенесено из irserror.h для того, чтобы была возможность применить
