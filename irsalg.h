@@ -1052,10 +1052,18 @@ void fast_average_t<data_t, calc_t>::preset(
   size_type a_start_pos, size_type a_count)
 {
   const size_type erase_front_count = min(m_samples.size(), a_start_pos);
+  #if IRS_USE_DEQUE_DATA
   m_samples.pop_front(erase_front_count);
+  #else // !IRS_USE_DEQUE_DATA
+  m_samples.erase(m_samples.begin(), m_samples.begin() + erase_front_count);
+  #endif // !IRS_USE_DEQUE_DATA
   const size_type erase_back_count = min(m_samples.size(),
     m_samples.size() - a_count);
+  #if IRS_USE_DEQUE_DATA
   m_samples.pop_back(erase_back_count);
+  #else // !IRS_USE_DEQUE_DATA
+  m_samples.erase(m_samples.end() - erase_back_count, m_samples.end());
+  #endif // !IRS_USE_DEQUE_DATA
   const size_type size = min(m_samples.size(), a_count);
   if (size > 0) {
     while (m_samples.size() < m_max_count) {
@@ -1262,7 +1270,7 @@ public:
   size_type size() const;
   size_type average_size() const;
   size_type max_size() const;
-  size_type average_max_size();
+  size_type average_max_size() const;
   bool is_full();
 private:
   fast_sko_t();
@@ -1337,7 +1345,7 @@ fast_sko_t<data_t, calc_t>::max_size() const
 
 template<class data_t, class calc_t>
 typename fast_sko_t<data_t, calc_t>::size_type
-fast_sko_t<data_t, calc_t>::average_max_size()
+fast_sko_t<data_t, calc_t>::average_max_size() const
 {
   return m_average.max_size();
 }
@@ -1604,10 +1612,20 @@ void fast_multi_sko_with_single_average_t<data_t, calc_t>::preset(
   preset_average(a_start_pos, a_size);
 
   const size_type erase_front_count = min(m_square_elems.size(), a_start_pos);
+  #if IRS_USE_DEQUE_DATA
   m_square_elems.pop_front(erase_front_count);
+  #else // !IRS_USE_DEQUE_DATA
+  m_square_elems.erase(m_square_elems.begin(), m_square_elems.begin() +
+    erase_front_count);
+  #endif // !IRS_USE_DEQUE_DATA
   const size_type erase_back_count = min(m_square_elems.size(),
     m_square_elems.size() - a_size);
+  #if IRS_USE_DEQUE_DATA
   m_square_elems.pop_back(erase_back_count);
+  #else // !IRS_USE_DEQUE_DATA
+  m_square_elems.erase(m_square_elems.end() - erase_back_count,
+    m_square_elems.end());
+  #endif // !IRS_USE_DEQUE_DATA
   const size_type size = min(m_square_elems.size(), a_size);
   if (size > 0) {
     while (m_square_elems.size() < m_max_count) {

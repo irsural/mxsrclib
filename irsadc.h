@@ -289,7 +289,421 @@ private:
   vector<channel_name_t> m_names;
 };
 
+//--------------------------  ADS1298 ------------------------------------------
+// 24-bit 8-channel ADC
+template<size_t n>
+struct get_pos_right_set_bit {
 
+//enum { value = n*Factorial<n-1>::value };
+private:
+  enum { x = static_cast<int>(n) };
+public:
+  enum {
+    value = ((((x & -x) & 0x0000FFFF) ? 0 : 16)+\
+      (((x & -x) & 0x00FF00FF) ? 0 : 8)+\
+      (((x & -x) & 0x0F0F0F0F) ? 0 : 4)+\
+      (((x & -x) & 0x33333333) ? 0 : 2)+\
+      (((x & -x) & 0x55555555) ? 0 : 1)+\
+      ((x & -x) ? 0 : 1))
+  };
+};
+template <class field_t, class reg_t, size_t mask>
+class register_field_t
+{
+public:
+  register_field_t(reg_t* ap_reg);
+  const field_t& operator=(const field_t &a_elem);
+  operator field_t() const;
+private:
+  enum { pos = get_pos_right_set_bit<mask>::value};
+  reg_t* mp_reg;
+};
+
+template <class field_t, class reg_t, size_t mask>
+register_field_t<field_t, reg_t, mask>::register_field_t(reg_t* ap_buf):
+  mp_reg(ap_buf)
+{
+}
+
+template <class field_t, class reg_t, size_t mask>
+const field_t& register_field_t<field_t, reg_t, mask>::operator=(
+  const field_t &a_value)
+{
+  if (mp_reg) {
+    *mp_reg &= ~mask;
+    *mp_reg |= (a_value << pos) & mask;
+  }
+  return a_value;
+}
+
+template <class field_t, class reg_t, size_t mask>
+register_field_t<field_t, reg_t, mask>::operator field_t() const
+{
+  field_t value = field_t();
+  if (mp_reg) {
+    value = *mp_reg & mask;
+  }
+  return value;
+}
+#define ADS_1298_ENABLED 0
+#if ADS_1298_ENABLED
+#define IRS_GET_POS_RIGHT_SET_BIT(x) (\
+  (((x & -x) & 0x0000FFFF) ? 0 : 16)+\
+  (((x & -x) & 0x00FF00FF) ? 0 : 8)+\
+  (((x & -x) & 0x0F0F0F0F) ? 0 : 4)+\
+  (((x & -x) & 0x33333333) ? 0 : 2)+\
+  (((x & -x) & 0x55555555) ? 0 : 1)+\
+  ((x & -x) ? 0 : 1))
+
+class adc_ads1298_t: public adc_request_t
+{
+public:
+  typedef irs_size_t size_type;
+  /*struct config_t
+  {
+    gpio_channel_t reset;
+    gpio_channel_t date_ready;
+    config_t(gpio_channel_t a_reset,
+      gpio_channel_t a_date_ready);
+  };*/
+
+  adc_ads1298_t(spi_t *ap_spi,
+    gpio_pin_t* ap_cs_pin,
+    gpio_pin_t* ap_power_down_pin,
+    gpio_pin_t* ap_reset_pin,
+    gpio_pin_t* ap_date_ready_pin);
+  ~adc_ads1298_t();
+  virtual void start();
+  virtual void stop();
+  virtual meas_status_t status() const;
+  virtual irs_i32 get_value();
+  virtual void tick();
+  virtual void set_param(adc_param_t a_param, const int a_value);
+  virtual void get_param(adc_param_t a_param, int* ap_value);
+
+private:
+  void set_channel(int a_channel);
+  void set_mode(int a_mode);
+  void set_freq(int a_freq);
+  void set_gain(int a_gain);
+  void set_buf(int a_buf);
+  void set_ref_det(int a_ref_det);
+  void set_ub(int a_ub);
+  void set_bo(int a_bo);
+
+  enum mode_t {
+    mode_free,
+    mode_spi_rw,
+    mode_spi_rw_wait,
+    mode_read_all_reg,
+    mode_read_data,
+    mode_read_wait,
+    mode_ready_wait,
+    mode_get_data
+  };
+  enum operating_modes_t {
+    om_continuous = 0,
+    om_single = 1,
+    om_idle = 2,
+    om_power_down = 3,
+    om_internal_zero_scale = 4,
+    om_internal_full_scale = 5,
+    om_system_zero_scale = 6,
+    om_system_full_scale = 7
+  };
+  enum {
+    m_size_buf = 16,
+    m_write_buf_size = 4
+  };
+  enum param_byte_pos_t {
+    m_gain_byte_pos = 1,
+    m_freq_byte_pos = 0,
+    m_ch_byte_pos = 0,
+    m_mode_byte_pos = 1,
+    m_buf_byte_pos = 0,
+    m_ref_det_byte_pos = 0,
+    m_ub_byte_pos = 1,
+    m_bo_byte_pos = 1
+  };
+  enum param_pos_t {
+    m_rw_pos = 6,
+    m_rs_pos = 3,
+    m_gain_pos = 0,
+    m_freq_pos = 0,
+    m_ch_pos = 0,
+    m_mode_pos = 5,
+    m_ready_pos = 7,
+    m_buf_pos = 4,
+    m_ref_det_pos = 5,
+    m_ub_pos = 4,
+    m_bo_pos = 5
+  };
+  enum param_size_t {
+    m_gain_size = 3,
+    m_freq_size = 4,
+    m_ch_size = 4,
+    m_mode_size = 3,
+    m_buf_size = 1,
+    m_ref_det_size = 1,
+    m_ub_size = 1,
+    m_bo_size = 1
+  };
+  enum reg_index_t {
+    m_reg_comm_index = 0,
+    m_reg_status_index = 0,
+    m_reg_mode_index = 1,
+    m_reg_conf_index = 2,
+    m_reg_data_index = 3,
+    m_reg_id_index = 4,
+    m_reg_io_index = 5,
+    m_reg_offs_index = 6,
+    m_reg_fs_index = 7
+  };
+  enum reg_size_t {
+    m_reg_comm_size = 1,
+    m_reg_status_size = 1,
+    m_reg_mode_size = 2,
+    m_reg_conf_size = 2,
+    m_reg_data_size = 3,
+    m_reg_id_size = 1,
+    m_reg_io_size = 1,
+    m_reg_offs_size = 3,
+    m_reg_fs_size = 3
+  };
+  enum transaction_type_t {
+    tt_read,
+    tt_write
+  };
+  //-------------------------------------------------
+  enum test_process_t {
+    test_process_off,
+    test_process_get_spi,
+    test_process_wait_after_get_spi,
+    test_process_wait_before_spi_release,
+    test_process_read_id,
+    test_process_check_id,
+    test_process_wait_spi_read_write,
+    test_process_send_sdatac,
+    test_process_includint_input_short,
+    test_process_send_start,
+    test_process_send_rdatac,
+    test_process_wait_data,
+    test_process_check_noise
+  };
+
+  enum opcode_t {
+    opcode_wakeup = 0x2,
+    opcode_standby = 0x4,
+    opcode_reset = 0x6,
+    opcode_start = 0x8,
+    opcode_stop = 0xA,
+    opcode_rdatac = 0x10,
+    opcode_sdatac = 0x11,
+    opcode_rdata = 0x12,
+    opcode_rreg = 0x20,
+    opcode_wreg = 0x40
+  };
+
+  enum reg_t {
+    reg_id = 0x0,
+    reg_config_1 = 0x1,
+    reg_config_2 = 0x2,
+    reg_config_3 = 0x3,
+    reg_loff = 0x4,
+    reg_ch1set = 0x5,
+    reg_ch2set = 0x6,
+    reg_ch3set = 0x7,
+    reg_ch4set = 0x8,
+    reg_ch5set = 0x9,
+    reg_ch6set = 0xA,
+    reg_ch7set = 0xB,
+    reg_ch8set = 0xC,
+    reg_rld_sensp = 0xD,
+    reg_rld_sensn = 0xE,
+    reg_loff_sensp = 0xF,
+    reg_loff_sensn = 0x10,
+    reg_loff_flip = 0x11,
+    reg_loff_statp = 0x12,
+    reg_loff_statn = 0x13,
+    reg_gpio = 0x14,
+    reg_pace = 0x15,
+    reg_rest = 0x16,
+    reg_config4 = 0x17,
+    reg_wct1 = 0x18,
+    reg_wct2 = 0x19,
+    reg_last = reg_wct2
+  };
+  //--------------------------------------------
+  /* ADC JEXTEN mask */
+  enum {
+    ch_set_power_down_mask = ((size_t)0x1 << 7),
+    ch_set_gain_mask = ((size_t)0x7 << 4),
+    ch_set_mux_mask = ((size_t)0x7)
+  };
+
+  /*inline size_t get_reg_field(size_t a_field_mask)
+  {
+    return *mp_register & a_field_mask;
+  }
+
+  inline void set_reg_field(size_t a_field_mask, size_t a_value)
+  {
+    *mp_register &= ~a_field_mask;
+    *mp_register |=
+      (a_value << IRS_GET_POS_RIGHT_SET_BIT(a_field_mask)) & a_field_mask;
+  }*/
+
+  /*struct reg_t {
+    reg_t(reg_index_t a_index, reg_size_t a_size):
+      index(a_index),
+      size(a_size)
+    {}
+    ~reg_t() {};
+    reg_index_t index;
+    reg_size_t size;
+  };*/
+  spi_t* mp_spi;
+  gpio_pin_t* mp_cs_pin;
+  gpio_pin_t* mp_reset_pin;
+  gpio_pin_t* mp_date_ready_pin;
+  meas_status_t m_status;
+  mode_t m_mode;
+  test_process_t m_test_process;
+  test_process_t m_test_process_next;
+  deque<test_process_t> m_test_process_deque;
+  //--------------------------------------------
+  /*class adc_spi_t
+  {
+  public:
+    adc_spi_t(spi_t* ap_spi, vector<irs_u8>* ap_spi_buf);
+    void run_read_write();
+    bool ready() const;
+    void tick();
+  private:
+    spi_t* mp_spi;
+    vector<irs_u8>* mp_spi_buf;
+  };*/
+
+  irs_u8 mp_register;
+  //register_field_t<bool, irs_u8, 0x1 << 7> m_ch_set_power_down;
+  //register_field_t<size_t, irs_u8, 0x7 << 4> m_ch_set_gain;
+  //register_field_t<size_t, irs_u8, 0x7> m_ch_set_channel_input;
+  struct ch_set_t
+  {
+    irs_u8 reg;
+    register_field_t<bool, irs_u8, 0x1 << 7> power_down;
+    register_field_t<size_t, irs_u8, 0x7 << 4> gain;
+    register_field_t<size_t, irs_u8, 0x7> channel_input;
+    ch_set_t():
+      reg(0),
+      power_down(&reg),
+      gain(&reg),
+      channel_input(&reg)
+    {
+    }
+  };
+  struct config1_t
+  {
+    irs_u8 reg;
+    register_field_t<bool, irs_u8, 0x1 << 7> hight_resolution;
+    register_field_t<bool, irs_u8, 0x1 << 6> daisy_en;
+    register_field_t<bool, irs_u8, 0x1 << 5> clk_connection;
+    register_field_t<size_t, irs_u8, 0x7> output_data_rate;
+    config1_t():
+      reg(0),
+      hight_resolution(&reg),
+      daisy_en(&reg),
+      clk_connection(&reg),
+      output_data_rate(&reg)
+    {
+    }
+  };
+  struct config2_t
+  {
+    irs_u8 reg;
+    register_field_t<bool, irs_u8, 0x1 << 5> wct_chopping_scheme;
+    register_field_t<bool, irs_u8, 0x1 << 4> test_source;
+    register_field_t<bool, irs_u8, 0x1 << 3> test_signal_amplitude;
+    register_field_t<size_t, irs_u8, 0x3> test_signal_frequency;
+    config2_t():
+      reg(0),
+      wct_chopping_scheme(&reg),
+      test_source(&reg),
+      test_signal_amplitude(&reg),
+      test_signal_frequency(&reg)
+    {
+    }
+  };
+
+  ch_set_t m_ch_set;
+  config1_t m_config1;
+  config2_t m_config2;
+
+  //--------------------------------------------
+  const double m_t_clk_max;
+
+  vector<irs_u8> m_buf;
+  vector<irs_u8> m_spi_buf;
+  vector<irs_u8> m_spi_read_buf;
+  vector<irs_u32> m_test_signal_buf;
+  enum { channel_count = 8 };
+  const size_type m_test_point_count;
+  size_type m_test_point_index;
+  size_t m_spi_transaction_size;
+  vector<reg_t> m_reg;
+  bool m_read_all_reg;
+  irs_u32 m_count_init;
+  irs_u32 m_shift;
+  bool m_read_data;
+  //vector<int> m_conv_time_vector;
+  irs_u8 m_freq;
+  int m_reserved_interval;
+  timer_t m_timer;
+  bool m_ready_wait;
+  bool m_get_data;
+  irs_i32 m_value;
+  operating_modes_t m_read_mode;
+  operating_modes_t m_cur_read_mode;
+  irs_u8 mp_get_buff[m_write_buf_size];
+  int* mp_value_param;
+  bool m_read_calibration_coeff;
+
+  irs::timer_t m_t_cssc_delay;
+  irs::timer_t m_t_sccs_delay;
+  irs::timer_t m_t_csh_delay;
+
+  //--------------------------------------
+  void test_adc();
+  bool try_get_spi();
+  void send_opcode(opcode_t a_opcode);
+  void write_reg(reg_t a_reg, irs_u8 a_value);
+  bool try_write_regs(const map<reg_t, irs_u8>& a_regs);
+  void read_reg(reg_t a_reg);
+  void read_data();
+  void read_data_single_shot();
+  //bool try_read_write_regs(vectorirs_u8 a_reg);
+  bool spi_read_write_is_complete() const;
+
+  void send_opcode_block_mode(opcode_t a_opcode);
+  void write_reg_block_mode(reg_t a_reg, irs_u8 a_value);
+  irs_u8 read_reg_block_mode(reg_t a_reg);
+  void read_data_block_mode();
+  void read_data_single_shot_block_mode();
+  //--------------------------------------
+  void spi_prepare();
+  void spi_release();
+  void creation_reg_comm(reg_t a_reg, transaction_type_t a_tt);
+  int calculation_shift(reg_t a_reg);
+  int calculation_number_byte(reg_t a_reg, param_byte_pos_t byte_pos);
+  int to_int(double a_number);
+  int filling_units(param_size_t a_size);
+  void creation_reg(reg_t a_reg, int a_value, param_byte_pos_t a_byte_pos,
+    param_pos_t a_start_pos, param_size_t a_size);
+  int get(reg_t a_reg, param_byte_pos_t a_byte_pos,
+    param_pos_t a_start_pos, param_size_t a_size);
+  irs_i32 conversion_spi_value();
+};
+#endif // ADS_1298_ENABLED
 //--------------------------  AD7683  ------------------------------------------
 
 class adc_ad7683_t : public mxdata_t

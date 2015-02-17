@@ -709,7 +709,11 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   f_copy_parametr_string(0),
   f_key_type(IMK_DIGITS),
   f_step(0.),
-  f_apply_immediately(false)
+  f_step_max(0.),
+  f_apply_immediately(false),
+  mp_internal_progressive_change_value(NULL),
+  mp_external_progressive_change_value(NULL),
+  mp_progressive_change_value(NULL)
 {
   f_master_menu = IRS_NULL;
   f_cur_symbol = 0;
@@ -735,11 +739,13 @@ void irs_menu_double_item_t::set_trans_function(double_trans_t a_double_trans)
 void irs_menu_double_item_t::set_max_value(float a_max_value)
 {
   f_max = a_max_value;
+  update_progressive_change_parameters();
 }
 
 void irs_menu_double_item_t::set_min_value(float a_min_value)
 {
   f_min = a_min_value;
+  update_progressive_change_parameters();
 }
 
 void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
@@ -896,11 +902,62 @@ void irs_menu_double_item_t::set_key_type(irs_menu_key_type_t a_key_type)
 void irs_menu_double_item_t::set_change_step(double a_step)
 {
   f_step = a_step;
+  update_progressive_change_parameters();
+}
+
+void irs_menu_double_item_t::set_change_step_max(double a_step_max)
+{
+  f_step_max = a_step_max;
+  update_progressive_change_parameters();
 }
 
 void irs_menu_double_item_t::set_apply_immediately(bool a_apply_immediately)
 {
   if (f_key_type == IMK_ARROWS) f_apply_immediately = a_apply_immediately;
+}
+
+void irs_menu_double_item_t::progressive_change_enabled(bool a_enabled)
+{
+  if (a_enabled == (mp_progressive_change_value != NULL)) {
+    return;
+  }
+
+  if (!a_enabled) {
+    mp_progressive_change_value = NULL;
+    if (!mp_internal_progressive_change_value.is_empty()) {
+      mp_internal_progressive_change_value.reset();
+    }
+    return;
+  }
+
+  if (mp_external_progressive_change_value) {
+    mp_progressive_change_value = mp_external_progressive_change_value;
+    mp_progressive_change_value->set_min(f_min);
+    mp_progressive_change_value->set_max(f_max);
+    mp_progressive_change_value->set_step_min(f_step);
+    mp_progressive_change_value->set_step_max(f_step_max);
+  } else {
+    mp_internal_progressive_change_value.reset(
+      new progressive_change_value_polyakov_t<double>(
+        f_min, f_max, f_step, f_step_max));
+    mp_progressive_change_value = mp_internal_progressive_change_value.get();
+  }
+}
+
+void irs_menu_double_item_t::update_progressive_change_parameters()
+{
+  if (mp_progressive_change_value) {
+    mp_progressive_change_value->set_min(f_min);
+    mp_progressive_change_value->set_max(f_max);
+    mp_progressive_change_value->set_step_min(f_step);
+    mp_progressive_change_value->set_step_max(f_step_max);
+  }
+}
+
+void irs_menu_double_item_t::connect_progressive_change(
+  progressive_change_value_type* ap_progressive_change_value)
+{
+  mp_external_progressive_change_value = ap_progressive_change_value;
 }
 
 bool irs_menu_double_item_t::is_updated()
@@ -1190,6 +1247,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             case irskey_escape:
             {
               *a_cur_menu = f_master_menu;
+              if (mp_progressive_change_value) {
+                mp_progressive_change_value->reset();
+              }
               f_show_needed = irs_true;
               if (f_apply_immediately)
               {
@@ -1210,6 +1270,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             case irskey_enter:
             {
               *a_cur_menu = f_master_menu;
+              if (mp_progressive_change_value) {
+                mp_progressive_change_value->reset();
+              }
               f_show_needed = irs_true;
               if (f_apply_immediately)
               {
@@ -1231,16 +1294,24 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               if (f_apply_immediately)
               {
-                *f_parametr += f_step;
-                if (*f_parametr > f_max) *f_parametr = f_max;
+                if (mp_progressive_change_value) {
+                  mp_progressive_change_value->increment(f_parametr);
+                } else {
+                  *f_parametr += f_step;
+                  if (*f_parametr > f_max) *f_parametr = f_max;
+                }
                 if (f_double_trans) f_double_trans(f_parametr);
                 if (mp_event) mp_event->exec();
                 m_updated = true;
               }
               else
               {
-                f_copy_parametr += f_step;
-                if (f_copy_parametr > f_max) f_copy_parametr = f_max;
+                if (mp_progressive_change_value) {
+                  mp_progressive_change_value->increment(&f_copy_parametr);
+                } else {
+                  f_copy_parametr += f_step;
+                  if (f_copy_parametr > f_max) f_copy_parametr = f_max;
+                }
               }
               f_want_redraw = true;
               break;
@@ -1249,16 +1320,24 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               if (f_apply_immediately)
               {
-                *f_parametr -= f_step;
-                if (*f_parametr < f_min) *f_parametr = f_min;
+                if (mp_progressive_change_value) {
+                  mp_progressive_change_value->decrement(f_parametr);
+                } else {
+                  *f_parametr -= f_step;
+                  if (*f_parametr < f_min) *f_parametr = f_min;
+                }
                 if (f_double_trans) f_double_trans(f_parametr);
                 if (mp_event) mp_event->exec();
                 m_updated = true;
               }
               else
               {
-                f_copy_parametr -= f_step;
-                if (f_copy_parametr < f_min) f_copy_parametr = f_min;
+                if (mp_progressive_change_value) {
+                  mp_progressive_change_value->decrement(&f_copy_parametr);
+                } else {
+                  f_copy_parametr -= f_step;
+                  if (f_copy_parametr < f_min) f_copy_parametr = f_min;
+                }
               }
               f_want_redraw = true;
               break;

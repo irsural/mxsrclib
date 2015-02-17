@@ -289,8 +289,169 @@ public:
   bool item_is_hidden(irs_menu_base_t *ap_parametr);
 };
 
+template <class T>
+class progressive_change_value_t
+{
+public:
+  virtual ~progressive_change_value_t(){}
+  virtual bool increment(T* ap_value) = 0;
+  virtual bool decrement(T* ap_value) = 0;
+  virtual void reset() = 0;
+  virtual void set_step_min(T a_min) = 0;
+  virtual void set_step_max(T a_max) = 0;
+  virtual void set_min(T a_min) = 0;
+  virtual void set_max(T a_max) = 0;
+};
+
+template <class T>
+class progressive_change_value_polyakov_t: public progressive_change_value_t<T>
+{
+public:
+  progressive_change_value_polyakov_t(
+    T a_min, T a_max, T a_step_min, T a_step_max);
+  ~progressive_change_value_polyakov_t();
+  virtual bool increment(T* ap_value);
+  virtual bool decrement(T* ap_value);
+  virtual void reset();
+  virtual void set_step_min(T a_min);
+  virtual void set_step_max(T a_max);
+  virtual void set_min(T a_min);
+  virtual void set_max(T a_max);
+private:
+  enum process_t {
+    INC,
+    DEC,
+    NONE
+  };
+  enum {
+    m_step_count_before_step_increment = 9
+  };
+  T m_step_min;
+  T m_step_max;
+  T m_min;
+  T m_max;
+  T m_current_step;
+  irs_u8 m_step_count;
+  process_t m_process;
+  irskey_t m_key_inc;
+  irskey_t m_key_dec;
+};
+
+template <class T>
+progressive_change_value_polyakov_t<T>::progressive_change_value_polyakov_t(
+  T a_min, T a_max, T a_step_min, T a_step_max
+):
+  m_step_min(a_step_min),
+  m_step_max(a_step_max),
+  m_min(a_min),
+  m_max(a_max),
+  m_current_step(a_step_min),
+  m_step_count(0),
+  m_process(NONE),
+  m_key_inc(irskey_none),
+  m_key_dec(irskey_none)
+{
+}
+
+template <class T>
+progressive_change_value_polyakov_t<T>::~progressive_change_value_polyakov_t()
+{
+}
+
+template <class T>
+bool progressive_change_value_polyakov_t<T>::increment(T* ap_value)
+{
+  if ((*ap_value >= m_max) || (m_current_step == 0)) {
+    return false;
+  }
+
+  if (m_process == DEC) {
+    m_current_step = m_step_min;
+    m_step_count = 0;
+  }
+  m_process = INC;
+  if (m_step_count >= m_step_count_before_step_increment) {
+    m_current_step = min(m_current_step*10, m_step_max);
+    m_step_count = 0;
+  } else {
+    m_step_count++;
+  }
+
+  irs_i64 int_var = static_cast<irs_i64>((*ap_value/m_current_step) +
+    static_cast<T>(0.05));
+  *ap_value = static_cast<T>(int_var + 1);
+  *ap_value *= m_current_step;
+  //*ap_value += m_current_step;
+  if (*ap_value > m_max) {
+    *ap_value = m_max;
+  }
+  return true;
+}
+
+template <class T>
+bool progressive_change_value_polyakov_t<T>::decrement(T* ap_value)
+{
+  if ((*ap_value <= m_min) || (m_current_step == 0)) {
+    return false;
+  }
+
+  if (m_process == INC) {
+    m_current_step = m_step_min;
+    m_step_count = 0;
+  }
+  m_process = DEC;
+  if (m_step_count >= m_step_count_before_step_increment) {
+    m_current_step = min(m_current_step*10, m_step_max);
+    m_step_count = 0;
+  } else {
+    m_step_count++;
+  }
+
+  irs_i64 int_var = static_cast<irs_i64>((*ap_value/m_current_step) +
+    static_cast<T>(0.95));
+  *ap_value = static_cast<T>(int_var - 1);
+  *ap_value *= m_current_step;
+  //*ap_value -= m_current_step;
+  if (*ap_value < m_min) {
+    *ap_value = m_min;
+  }
+  return true;
+}
+
+template <class T>
+void progressive_change_value_polyakov_t<T>::reset()
+{
+  m_current_step = m_step_min;
+  m_step_count = 0;
+}
+
+template <class T>
+void progressive_change_value_polyakov_t<T>::set_step_min(const T a_min)
+{
+  m_step_min = a_min;
+}
+
+template <class T>
+void progressive_change_value_polyakov_t<T>::set_step_max(const T a_max)
+{
+  m_step_max = a_max;
+}
+
+template <class T>
+void progressive_change_value_polyakov_t<T>::set_min(const T a_min)
+{
+  m_min = a_min;
+}
+
+template <class T>
+void progressive_change_value_polyakov_t<T>::set_max(const T a_max)
+{
+  m_max = a_max;
+}
+
 class irs_menu_double_item_t: public irs_menu_base_t
 {
+  typedef progressive_change_value_t<double> progressive_change_value_type;
   char *f_prefix;
   char *f_suffix;
   char *f_value_string;
@@ -308,7 +469,13 @@ class irs_menu_double_item_t: public irs_menu_base_t
   char *f_copy_parametr_string;
   irs_menu_key_type_t f_key_type;
   double f_step;
+  double f_step_max;
   bool f_apply_immediately;
+  irs::handle_t<progressive_change_value_type>
+    mp_internal_progressive_change_value;
+  progressive_change_value_type* mp_external_progressive_change_value;
+  progressive_change_value_type* mp_progressive_change_value;
+  void update_progressive_change_parameters();
 public:
   irs_menu_double_item_t(double *a_parametr, irs_bool a_can_edit);
   ~irs_menu_double_item_t();
@@ -340,7 +507,11 @@ public:
   void set_can_edit(irs_bool a_can_edit);
   void set_key_type(irs_menu_key_type_t a_key_type);
   void set_change_step(double a_step);
+  void set_change_step_max(double a_step_max);
   void set_apply_immediately(bool a_apply_immediately);
+  void progressive_change_enabled(bool a_enabled);
+  void connect_progressive_change(
+    progressive_change_value_type* ap_progressive_change_value);
   virtual bool is_updated();
 };
 
@@ -592,6 +763,7 @@ public:
   ~irs_menu_simply_item_t();
   void set_str(char *ap_value_string, char *ap_prefix, char *ap_suffix,
     size_type a_len, size_type a_accur);
+  void set_length(size_type a_len);
   void set_accuracy(size_type a_accuracy);
   virtual void draw(irs_menu_base_t **a_cur_menu);
   T *get_parametr();
@@ -646,6 +818,15 @@ void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
 
   strcpy(mp_copy_parametr_string, mp_value_string);
   m_updated = true;
+}
+
+template <class T>
+void irs_menu_simply_item_t<T>::set_length(size_type a_len)
+{
+  m_len = a_len;
+  if (mp_value_string && mp_prefix && mp_suffix) {
+    set_str(mp_value_string, mp_prefix, mp_suffix, m_len, m_accur);
+  }
 }
 
 template <class T>

@@ -16,7 +16,7 @@
 // Преобразование времени в секундах в виде отношения числителя
 // _TIME_NUM_ к знаменателю _TIME_DENOM_ в масштаб счетчика
 #define TIME_TO_CNT(_TIME_NUM_, _TIME_DENOM_)\
-	( \
+  ( \
     static_cast<counter_t>(\
       ( (static_cast<calccnt_t>(_TIME_NUM_)) * COUNTER_PER_INTERVAL) / \
       ( (static_cast<calccnt_t>(_TIME_DENOM_)) * SECONDS_PER_INTERVAL )\
@@ -102,6 +102,13 @@ inline counter_t make_cnt_us(const int& a_time_us)
 {
   init_timer();
   return TIME_TO_CNT(a_time_us, 1000000);
+}
+
+// в наносекундах
+inline counter_t make_cnt_ns(const int& a_time_us)
+{
+  init_timer();
+  return TIME_TO_CNT(a_time_us, 1000000000);
 }
 
 //#define irs_timer_num_def 0

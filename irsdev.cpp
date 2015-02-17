@@ -734,8 +734,11 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
     mp_timer->TIM_BDTR_bit.OSSI = 1;
   }
   mp_timer->TIM_CR1_bit.CEN = 1;
-  channel_enable(a_gpio_channel);
-  set_duty(a_gpio_channel, a_duty);
+
+  if (a_gpio_channel != PNONE) {
+    channel_enable(a_gpio_channel);
+    set_duty(a_gpio_channel, a_duty);
+  }
 }
 
 #ifdef NEW_ST_PWM_GEN
@@ -1289,13 +1292,13 @@ irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::set_frequency(
   cpu_traits_t::frequency_type a_frequency)
 {
   m_frequency = a_frequency;
-  mp_timer->TIM_ARR = timer_frequency()/a_frequency;
-  return timer_frequency()/mp_timer->TIM_ARR;
+  mp_timer->TIM_ARR = timer_frequency()/a_frequency - 1;
+  return get_frequency();
 }
 
 irs::cpu_traits_t::frequency_type irs::arm::st_pwm_gen_t::get_frequency() const
 {
-  return timer_frequency()/mp_timer->TIM_ARR;
+  return timer_frequency()/(mp_timer->TIM_ARR + 1);
 }
 
 irs_uarc irs::arm::st_pwm_gen_t::get_max_duty()

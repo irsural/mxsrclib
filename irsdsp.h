@@ -316,6 +316,25 @@ typedef struct _pid_data {
   // дополнительный диапазон сверху и снизу где интегратор не сбрасываетс€.
   // –екомендуемое значение 0.1
   double k_d_pid;
+  bool operator==(const _pid_data& ap_pid_data) const
+  {
+    return (k == ap_pid_data.k) &&
+      (ki == ap_pid_data.ki) &&
+      (kd == ap_pid_data.kd) &&
+      (min == ap_pid_data.min) &&
+      (max == ap_pid_data.max) &&
+      (prev_e == ap_pid_data.prev_e) &&
+      (pp_e == ap_pid_data.pp_e) &&
+      (prev_out == ap_pid_data.prev_out) &&
+      (block_int == ap_pid_data.block_int) &&
+      (block_int_ext == ap_pid_data.block_int_ext) &&
+      (int_val == ap_pid_data.int_val) &&
+      (k_d_pid == ap_pid_data.k_d_pid);
+  }
+  bool operator!=(const _pid_data& ap_pid_data) const
+  {
+    return !operator==(ap_pid_data);
+  }
 } pid_data_t;
 
 // —труктура с данными дл€ колебательного звена
@@ -948,7 +967,7 @@ template <class T>
 class osc_cir_t
 {
 public:
-  osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init = T(), 
+  osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init = T(),
     T a_y2_init = T(),  T a_x2_init = T());
   ~osc_cir_t();
   //  „исло точек на период центральной частоты
@@ -980,7 +999,7 @@ private:
 };
 
 template <class T>
-osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init, 
+osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init,
   T a_y2_init, T a_x2_init):
   m_n_period(a_n_period),
   m_fade(1. / a_n_fade),
@@ -1032,7 +1051,7 @@ void osc_cir_t<T>::sync(T a_y1, T a_y2)
 {
   if (a_y2 == T()) {
     a_y2 = a_y1;
-  }  
+  }
   m_x1 = a_y1;
   m_x2 = a_y2;
   m_y1 = a_y1;
