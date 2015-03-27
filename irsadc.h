@@ -211,7 +211,7 @@ public:
   typedef irs_size_t size_type;
   cyclic_adc_ad7791_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     counter_t a_read_delay);
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual bool new_value_exists(irs_u8 a_channel) const;
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
   virtual void tick();
@@ -242,7 +242,7 @@ public:
   cyclic_adc_ads8344_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     select_channel_type a_selected_channels,
     counter_t a_read_delay);
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual void select_channels(irs_u32 a_selected_channels);
   virtual bool new_value_exists(irs_u8 a_channel) const;
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
@@ -445,7 +445,7 @@ public:
 
   adc_ads1298_continuous_mode_t(const settings_t& a_settings);
   ~adc_ads1298_continuous_mode_t();
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual void select_channels(irs_u32 a_selected_channels);
   virtual inline bool new_value_exists(irs_u8 a_channel) const;
   virtual inline irs_u32 get_u32_data(irs_u8 a_channel);
@@ -750,7 +750,7 @@ public:
   typedef irs_size_t size_type;
   cyclic_adc_ad7683_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     counter_t a_read_delay);
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual bool new_value_exists(irs_u8 a_channel) const;
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
   virtual void tick();
@@ -824,7 +824,7 @@ public:
   typedef irs_size_t size_type;
   cyclic_adc_ad7686_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     counter_t a_read_delay);
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual bool new_value_exists(irs_u8 a_channel) const;
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
   virtual void tick();
@@ -1997,7 +1997,7 @@ public:
     select_channel_type a_selected_channels,
     counter_t a_read_delay, bool a_unipolar = true,
     freq_t a_freq = freq_4_17Hz);
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual bool new_value_exists(irs_u8 a_channel) const;
   virtual irs_u32 get_u32_data(irs_u8 a_channel);
   virtual void tick();

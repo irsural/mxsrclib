@@ -49,7 +49,7 @@ public:
   typedef irs_size_t size_type;
   typedef irs_u32 select_channel_type;
   virtual ~adc_t() {}
-  virtual inline size_type get_resulution() const;
+  virtual inline size_type get_resolution() const;
   virtual inline void select_channels(irs_u32 a_selected_channels);
   virtual inline bool new_value_exists(irs_u8 a_channel) const;
   virtual inline irs_u16 get_u16_minimum();
@@ -66,9 +66,9 @@ public:
 private:
   inline irs_u32 get_adc_max_value() const;
 };
-inline adc_t::size_type adc_t::get_resulution() const
+inline adc_t::size_type adc_t::get_resolution() const
 {
-  IRS_LIB_ASSERT_MSG("adc_t::get_resulution not implemented");
+  IRS_LIB_ASSERT_MSG("adc_t::get_resolution not implemented");
   return 0;
 }
 inline void adc_t::select_channels(irs_u32 /*a_selected_channels*/)
@@ -82,7 +82,7 @@ inline bool adc_t::new_value_exists(irs_u8 /*a_channel*/) const
 
 inline irs_u32 adc_t::get_adc_max_value() const
 {
-  return (1 << get_resulution()) - 1;
+  return (1 << get_resolution()) - 1;
 }
 
 inline irs_u16 adc_t::get_u16_minimum()
@@ -94,8 +94,8 @@ inline irs_u16 adc_t::get_u16_maximum()
 {
   irs_u32 u32_max_value = get_adc_max_value();
   irs_u16 max_value = IRS_HIWORD(u32_max_value);
-  if (16 <= get_resulution()) {
-    return static_cast<irs_u16>(max_value << (16 - get_resulution()));
+  if (16 <= get_resolution()) {
+    return static_cast<irs_u16>(max_value << (16 - get_resolution()));
   } else {
     return max_value;
   }
@@ -114,7 +114,7 @@ inline irs_u32 adc_t::get_u32_minimum()
 
 inline irs_u32 adc_t::get_u32_maximum()
 {
-  return static_cast<irs_u32>(get_adc_max_value()) << (32 - get_resulution());
+  return static_cast<irs_u32>(get_adc_max_value()) << (32 - get_resolution());
 }
 
 inline float adc_t::get_float_minimum()

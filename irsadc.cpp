@@ -348,7 +348,7 @@ irs::cyclic_adc_ad7791_t::cyclic_adc_ad7791_t(
 }
 
 irs::cyclic_adc_ad7791_t::size_type
-irs::cyclic_adc_ad7791_t::get_resulution() const
+irs::cyclic_adc_ad7791_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -409,7 +409,7 @@ void irs::cyclic_adc_ads8344_t::configure_spi()
 }
 
 irs::cyclic_adc_ads8344_t::size_type
-irs::cyclic_adc_ads8344_t::get_resulution() const
+irs::cyclic_adc_ads8344_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -614,7 +614,7 @@ irs::adc_ads1298_continuous_mode_t::~adc_ads1298_continuous_mode_t()
 }
 
 irs::adc_ads1298_continuous_mode_t::size_type
-irs::adc_ads1298_continuous_mode_t::get_resulution() const
+irs::adc_ads1298_continuous_mode_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -1047,7 +1047,7 @@ irs::cyclic_adc_ad7683_t::cyclic_adc_ad7683_t(
 }
 
 irs::cyclic_adc_ad7683_t::size_type
-irs::cyclic_adc_ad7683_t::get_resulution() const
+irs::cyclic_adc_ad7683_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -1206,7 +1206,7 @@ irs::cyclic_adc_ad7686_t::cyclic_adc_ad7686_t(
 }
 
 irs::cyclic_adc_ad7686_t::size_type
-irs::cyclic_adc_ad7686_t::get_resulution() const
+irs::cyclic_adc_ad7686_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -3625,7 +3625,7 @@ irs::cyclic_adc_ad7794_t::cyclic_adc_ad7794_t(
 }
 
 irs::cyclic_adc_ad7794_t::size_type
-irs::cyclic_adc_ad7794_t::get_resulution() const
+irs::cyclic_adc_ad7794_t::get_resolution() const
 {
   return adc_resolution;
 }

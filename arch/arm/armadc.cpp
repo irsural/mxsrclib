@@ -910,7 +910,7 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
   m_adc_timer(a_adc_interval),
-  m_adc_battery_timer(a_adc_battery_interval), 
+  m_adc_battery_timer(a_adc_battery_interval),
   m_regular_channels_values(),
   m_active_channels(),
   m_current_channel(),
@@ -965,14 +965,14 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
       m_regular_channels_values.push_back(0);
     }
   }
-  
+
   const irs_u32 channel_mask = a_selected_channels & 0xFFFFFF;
   if ((a_adc_address == IRS_ADC1_BASE) &&
     (a_selected_channels & ADC1_MASK) &&
     (channel_mask & ADC1_TEMPERATURE)) {
     m_temperature_sensor_enabled = true;
   }
-  
+
   if ((a_adc_address == IRS_ADC1_BASE) &&
     (a_selected_channels & ADC1_MASK) &&
     (channel_mask & ADC1_V_BATTERY)) {
@@ -994,15 +994,15 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   if (m_temperature_sensor_enabled) {
     ADC_CCR_bit.TSVREFE = 1;
   }
-  if (m_v_battery_measurement_enabled) { 
+  if (m_v_battery_measurement_enabled) {
     //ADC_CCR_bit.VBATE = 1;
   }
-  if (m_temperature_sensor_enabled) {       
+  if (m_temperature_sensor_enabled) {
     // Конфигурируем на считывание показаний внутреннего термодатчика
-    mp_adc->ADC_JSQR_bit.JSQ4 = 16;    
-    m_injected_channel_selected = ics_temperature_sensor;    
-  } else if (m_v_battery_measurement_enabled) {    
-    // Конфигурируем на считывание показаний напряжения батарейки    
+    mp_adc->ADC_JSQR_bit.JSQ4 = 16;
+    m_injected_channel_selected = ics_temperature_sensor;
+  } else if (m_v_battery_measurement_enabled) {
+    // Конфигурируем на считывание показаний напряжения батарейки
     mp_adc->ADC_JSQR_bit.JSQ4 = 18;
     m_injected_channel_selected = ics_v_battery;
     ADC_CCR_bit.VBATE = 1;
@@ -1030,10 +1030,10 @@ irs_u32 irs::arm::st_adc_t::adc_channel_to_channel_index(
 
 irs::arm::st_adc_t::~st_adc_t()
 {
-  mp_adc->ADC_CR2_bit.ADON = 0;  
+  mp_adc->ADC_CR2_bit.ADON = 0;
 }
 
-irs::arm::st_adc_t::size_type irs::arm::st_adc_t::get_resulution() const
+irs::arm::st_adc_t::size_type irs::arm::st_adc_t::get_resolution() const
 {
   return adc_resolution;
 }
@@ -1095,15 +1095,15 @@ float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 float irs::arm::st_adc_t::get_temperature()
 {
   if (m_temperature_sensor_enabled) {
-    return static_cast<float>(m_temperature_channel_value)/adc_max_value;      
+    return static_cast<float>(m_temperature_channel_value)/adc_max_value;
   }
-  return 0;  
+  return 0;
 }
 
 float irs::arm::st_adc_t::get_v_battery()
-{   
+{
   if (m_v_battery_measurement_enabled) {
-    return static_cast<float>(m_v_battery_channel_value)*2./adc_max_value;  
+    return static_cast<float>(m_v_battery_channel_value)*2./adc_max_value;
   }
   return 0;
 }
@@ -1113,7 +1113,7 @@ float irs::arm::st_adc_t::get_temperature_degree_celsius(
 {
   if (m_temperature_sensor_enabled) {
     const float v25 = 0.76;
-    const float avg_slope = 0.0025;    
+    const float avg_slope = 0.0025;
     const float koef = a_vref/adc_max_value;
     const float v_sence = m_temperature_channel_value*koef;
     return (v_sence - v25)/avg_slope + 25;
@@ -1134,19 +1134,19 @@ void irs::arm::st_adc_t::tick()
       }
       mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
       mp_adc->ADC_CR2_bit.SWSTART = 1;
-    }   
-  }  
-  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {  
+    }
+  }
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {
     const bool adc_battery_timer_check = m_adc_battery_timer.check();
     if (mp_adc->ADC_SR_bit.JEOC == 0) {
-      if (timer_check || adc_battery_timer_check) {            
-        if (m_injected_channel_selected == ics_temperature_sensor) {          
+      if (timer_check || adc_battery_timer_check) {
+        if (m_injected_channel_selected == ics_temperature_sensor) {
           if (m_v_battery_measurement_enabled && adc_battery_timer_check) {
             mp_adc->ADC_JSQR_bit.JSQ4 = 18;
-            ADC_CCR_bit.VBATE = 1;          
+            ADC_CCR_bit.VBATE = 1;
             m_injected_channel_selected = ics_v_battery;
           }
-        } else {                 
+        } else {
           if (m_temperature_sensor_enabled && timer_check) {
             mp_adc->ADC_JSQR_bit.JSQ4 = 16;
             ADC_CCR_bit.VBATE = 0;
@@ -1156,18 +1156,18 @@ void irs::arm::st_adc_t::tick()
           }
         }
         mp_adc->ADC_SR_bit.JEOC = 0;
-        mp_adc->ADC_CR2_bit.JSWSTART = 1;        
+        mp_adc->ADC_CR2_bit.JSWSTART = 1;
       }
-    }    
+    }
     if (mp_adc->ADC_SR_bit.JEOC == 1) {
-      IRS_LIB_ASSERT((m_injected_channel_selected == ics_v_battery) == 
+      IRS_LIB_ASSERT((m_injected_channel_selected == ics_v_battery) ==
         (ADC_CCR_bit.VBATE == 1));
       read_injected_channel_value();
       // Выключаем делитель для экономии зарадя батарейки
-      ADC_CCR_bit.VBATE = 0;       
-      mp_adc->ADC_SR_bit.JEOC = 0;         
+      ADC_CCR_bit.VBATE = 0;
+      mp_adc->ADC_SR_bit.JEOC = 0;
     }
-  }    
+  }
 }
 
 void irs::arm::st_adc_t::read_injected_channel_value()
@@ -1344,16 +1344,16 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   //TIM_SetCounter
   mp_timer->TIM_CNT = 0;
   //TIM_OC1Init номер канала 1
-  timer_set_bit(mp_settings->timer_address, 
+  timer_set_bit(mp_settings->timer_address,
     IRS_TIM_CCMR, mp_settings->timer_channel, OCM, OCM_SIZE, 7);
 
   //Capture/Compare 1 output enable
-  timer_set_bit(mp_settings->timer_address, 
+  timer_set_bit(mp_settings->timer_address,
     IRS_TIM_CCER, mp_settings->timer_channel, CCP, CCP_SIZE, 1);
-  timer_set_bit(mp_settings->timer_address, 
+  timer_set_bit(mp_settings->timer_address,
     IRS_TIM_CCER, mp_settings->timer_channel, CCE, CCE_SIZE, 1);
- 
-  timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
+
+  timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR,
     mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
 
 
@@ -1377,21 +1377,21 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   //--------------------------------
 }
 
-void irs::arm::st_adc_dma_t::set_sample_time(double& 
+void irs::arm::st_adc_dma_t::set_sample_time(double&
   a_frequency)
 {
   int denominator = ADC_CCR_bit.ADCPRE*2 + 2;
-  cpu_traits_t::frequency_type adc_frequency = 
+  cpu_traits_t::frequency_type adc_frequency =
     irs::cpu_traits_t::periphery_frequency_second()/denominator;
   if (adc_frequency > 30000000) {
-    adc_frequency = 30000000;  
+    adc_frequency = 30000000;
   }
   int cycles = static_cast<int>(adc_frequency/a_frequency);
   int res = 12 - mp_adc->ADC_CR1_bit.RES*2;
   int sample_time = cycles - res;
   int count_sample  = 0;
   if (3 < sample_time) {
-    count_sample = 0; 
+    count_sample = 0;
   } if (15 < sample_time) {
     count_sample = 1;
   } if (28 < sample_time) {
@@ -1409,61 +1409,61 @@ void irs::arm::st_adc_dma_t::set_sample_time(double&
   }
   switch (m_active_channels[0]) {
     case 0: {
-      mp_adc->ADC_SMPR2_bit.SMP0 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP0 = count_sample;
     } break;
     case 1: {
-      mp_adc->ADC_SMPR2_bit.SMP1 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP1 = count_sample;
     } break;
     case 2: {
-      mp_adc->ADC_SMPR2_bit.SMP2 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP2 = count_sample;
     } break;
     case 3: {
-      mp_adc->ADC_SMPR2_bit.SMP3 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP3 = count_sample;
     } break;
     case 4: {
-      mp_adc->ADC_SMPR2_bit.SMP4 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP4 = count_sample;
     } break;
     case 5: {
-      mp_adc->ADC_SMPR2_bit.SMP5 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP5 = count_sample;
     } break;
     case 6: {
-      mp_adc->ADC_SMPR2_bit.SMP6 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP6 = count_sample;
     } break;
     case 7: {
-      mp_adc->ADC_SMPR2_bit.SMP7 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP7 = count_sample;
     } break;
     case 8: {
-      mp_adc->ADC_SMPR2_bit.SMP8 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP8 = count_sample;
     } break;
     case 9: {
-      mp_adc->ADC_SMPR2_bit.SMP9 = count_sample;  
+      mp_adc->ADC_SMPR2_bit.SMP9 = count_sample;
     } break;
     case 10: {
-      mp_adc->ADC_SMPR1_bit.SMP10 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP10 = count_sample;
     } break;
     case 11: {
-      mp_adc->ADC_SMPR1_bit.SMP11 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP11 = count_sample;
     } break;
     case 12: {
-      mp_adc->ADC_SMPR1_bit.SMP12 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP12 = count_sample;
     } break;
     case 13: {
-      mp_adc->ADC_SMPR1_bit.SMP13 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP13 = count_sample;
     } break;
     case 14: {
-      mp_adc->ADC_SMPR1_bit.SMP14 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP14 = count_sample;
     } break;
     case 15: {
-      mp_adc->ADC_SMPR1_bit.SMP15 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP15 = count_sample;
     } break;
     case 16: {
-      mp_adc->ADC_SMPR1_bit.SMP16 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP16 = count_sample;
     } break;
     case 17: {
-      mp_adc->ADC_SMPR1_bit.SMP17 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP17 = count_sample;
     } break;
     case 18: {
-      mp_adc->ADC_SMPR1_bit.SMP18 = count_sample;  
+      mp_adc->ADC_SMPR1_bit.SMP18 = count_sample;
     } break;
   };
 }
@@ -1561,7 +1561,7 @@ void irs::arm::st_adc_dma_t::start()
       mp_timer->TIM_PSC = m_psc;
       mp_timer->TIM_ARR = static_cast<irs_u16>(
         (m_set_freq/(m_psc+1))-1+0.5);
-      timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR, 
+      timer_set_bit(mp_settings->timer_address, IRS_TIM_CCR,
         mp_settings->timer_channel, CCR_REG, CCR_REG_SIZE, mp_timer->TIM_ARR - 1);
       dma_set_bit(mp_settings->dma_address, IRS_DMA_IFCR,
         mp_settings->dma_stream, CTCIF, 1);
@@ -1577,7 +1577,7 @@ void irs::arm::st_adc_dma_t::start()
       mp_timer->TIM_CR1_bit.CEN = 1;
     }
   } else {
-    IRS_LIB_ERROR(ec_standard, "Попытка запуска dma при нулевом " 
+    IRS_LIB_ERROR(ec_standard, "Попытка запуска dma при нулевом "
       "указателе на массив данных");
   }
 }

@@ -163,7 +163,7 @@ public:
     counter_t a_adc_interval = make_cnt_ms(100),
     counter_t a_adc_battery_interval = make_cnt_ms(100));
   virtual ~st_adc_t();
-  virtual size_type get_resulution() const;
+  virtual size_type get_resolution() const;
   virtual irs_u16 get_u16_minimum();
   virtual irs_u16 get_u16_maximum();
   virtual irs_u16 get_u16_data(irs_u8 a_channel);
@@ -173,9 +173,9 @@ public:
   virtual float get_float_minimum();
   virtual float get_float_maximum();
   virtual float get_float_data(irs_u8 a_channel);
-  virtual float get_temperature();  
-  virtual float get_v_battery();  
-  virtual void tick();  
+  virtual float get_temperature();
+  virtual float get_v_battery();
+  virtual void tick();
   float get_temperature_degree_celsius(const float a_vref);
 private:
   irs_u32 adc_channel_to_channel_index(adc_channel_t a_adc_channel);
@@ -191,10 +191,10 @@ private:
   size_t m_current_channel;
   bool m_temperature_sensor_enabled;
   irs_i16 m_temperature_channel_value;
-  bool m_v_battery_measurement_enabled;  
+  bool m_v_battery_measurement_enabled;
   irs_u16 m_v_battery_channel_value;
   enum injected_channel_switch_t {
-    ics_temperature_sensor, 
+    ics_temperature_sensor,
     ics_v_battery
   };
   injected_channel_switch_t m_injected_channel_selected;
