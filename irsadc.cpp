@@ -549,727 +549,121 @@ irs_u8 irs::cyclic_adc_ads8344_t::make_control_byte(irs_u8 a_channel)
 
 //--------------------------  ADS1298 ------------------------------------------
 
-#if ADS_1298_ENABLED
-irs::adc_ads1298_t::adc_ads1298_t(spi_t *ap_spi,
-  gpio_pin_t *ap_cs_pin,
-  gpio_pin_t* ap_power_down_pin,
-  gpio_pin_t* ap_reset_pin,
-  gpio_pin_t* ap_date_ready_pin
+// class adc_ads1298_continuous_mode_t
+irs::adc_ads1298_continuous_mode_t::adc_ads1298_continuous_mode_t(
+  const settings_t& a_settings
 ):
-  mp_spi(ap_spi),
-  mp_cs_pin(ap_cs_pin),
-  mp_reset_pin(ap_reset_pin),
-  mp_date_ready_pin(ap_date_ready_pin),
-  m_status(meas_status_busy),
-  m_mode(mode_free),
-  m_test_process(test_process_off),
-  m_test_process_deque(),
+  m_settings(a_settings),
+  mp_spi(m_settings.spi),
+  mp_cs_pin(m_settings.cs_pin),
+  mp_power_down_pin(m_settings.power_down_pin),
+  mp_reset_pin(m_settings.reset_pin),
+  mp_date_ready_pin(m_settings.date_ready_pin),
+  m_process(process_wait_after_power_up),
   m_ch_set(),
   m_config1(),
   m_config2(),
   m_t_clk_max(514e-9),
-  m_buf(),
   m_spi_buf(),
-  m_spi_read_buf(),
-  m_test_signal_buf(),
-  m_test_point_index(0),
-  m_test_point_count(100),
-  m_spi_transaction_size(0),
-  m_reg(),
-  m_read_all_reg(false),
-  m_count_init(0),
-  m_shift(0),
-  m_read_data(false),
-  //m_conv_time_vector(),
-  m_freq(0),
-  m_reserved_interval(1),
-  m_timer(make_cnt_ms(m_reserved_interval)),
-  m_ready_wait(false),
-  m_get_data(false),
-  m_value(0),
-  m_read_mode(om_continuous),
-  m_cur_read_mode(om_continuous),
-  mp_value_param(IRS_NULL),
-  m_read_calibration_coeff(false),
+  m_results(channel_count),
+  m_temperature_sensor_enabled(false),
+  m_temperature_channel_index(0),
+  m_t_after_power_up_delay(irs::make_cnt_s(pow(2., 18.)*m_t_clk_max)),
+  m_t_reset_delay(make_cnt_s(2*m_t_clk_max)),
+  m_t_after_reset_delay(make_cnt_s(18*m_t_clk_max)),
   m_t_cssc_delay(irs::make_cnt_ns(17)),
   m_t_sccs_delay(irs::make_cnt_s(4*m_t_clk_max)),
   m_t_csh_delay(irs::make_cnt_s(2*m_t_clk_max))
 {
+  vector<channel_settings_t*> channels;
+  channels.push_back(&m_settings.channel_1);
+  channels.push_back(&m_settings.channel_2);
+  channels.push_back(&m_settings.channel_3);
+  channels.push_back(&m_settings.channel_4);
+  channels.push_back(&m_settings.channel_5);
+  channels.push_back(&m_settings.channel_6);
+  channels.push_back(&m_settings.channel_7);
+  channels.push_back(&m_settings.channel_8);
+
+  for (size_type i = 0; i < channels.size(); i++) {
+    m_results[i].enabled = !channels[i]->power_down;
+  }
+
+  for (size_type i = 0; i < channels.size(); i++) {
+    if ((channels[i]->input == chi_temperature_sensor) &&
+        !channels[i]->power_down) {
+      m_temperature_sensor_enabled = true;
+      m_temperature_channel_index = i;
+      break;
+    }
+  }
+
   m_t_csh_delay.start();
 
-  m_buf.reserve(reg_last + 1);
   m_spi_buf.reserve(reg_last + 1);
-  m_spi_read_buf.reserve(reg_last + 1);
-  //memset(m_buf, 0, m_size_buf);
-  //memset(m_spi_buf, 0xFF, m_write_buf_size);
 
-
-
-  /*m_conv_time_vector.push_back(m_reserved_interval);    //  0:  reserve
-  m_conv_time_vector.push_back(to_int(1000/470.0 + 1)); //  1:  470 Hz
-  m_conv_time_vector.push_back(to_int(1000/242.0 + 1)); //  2:  242 Hz
-  m_conv_time_vector.push_back(to_int(1000/123.0 + 1)); //  3:  123 Hz
-  m_conv_time_vector.push_back(to_int(1000/62.0 + 1));  //  4:  62 Hz
-  m_conv_time_vector.push_back(to_int(1000/50.0 + 1));  //  5:  50 Hz
-  m_conv_time_vector.push_back(to_int(1000/39.0 + 1));  //  6:  39 Hz
-  m_conv_time_vector.push_back(to_int(1000/33.2 + 1));  //  7:  33.2 Hz
-  m_conv_time_vector.push_back(to_int(1000/19.6 + 1));  //  8:  19.6 Hz
-  m_conv_time_vector.push_back(to_int(1000/16.7 + 1));  //  9:  16.7 Hz
-  m_conv_time_vector.push_back(to_int(1000/16.7 + 1));  // 10:  16.7 Hz
-  m_conv_time_vector.push_back(to_int(1000/12.5 + 1));  // 11:  12.5 Hz
-  m_conv_time_vector.push_back(to_int(1000/10.0 + 1));  // 12:  10 Hz
-  m_conv_time_vector.push_back(to_int(1000/8.33 + 1));  // 13:  8.33 Hz
-  m_conv_time_vector.push_back(to_int(1000/6.25 + 1));  // 14:  6.25 Hz
-  m_conv_time_vector.push_back(to_int(1000/4.17 + 1));  // 15:  4.17 Hz
-*/
-  /*m_reg.push_back(reg_t(m_reg_status_index, m_reg_status_size));
-  m_reg.push_back(reg_t(m_reg_mode_index, m_reg_mode_size));
-  m_reg.push_back(reg_t(m_reg_conf_index, m_reg_conf_size));
-  m_reg.push_back(reg_t(m_reg_data_index, m_reg_data_size));
-  m_reg.push_back(reg_t(m_reg_id_index, m_reg_id_size));
-  m_reg.push_back(reg_t(m_reg_io_index, m_reg_io_size));
-  m_reg.push_back(reg_t(m_reg_offs_index, m_reg_offs_size));
-  m_reg.push_back(reg_t(m_reg_fs_index, m_reg_fs_size));
-*/
   mp_cs_pin->set();
-
-  /*m_buf.resize(1);
-  memcpy(vector_data(m_buf), m_buf.size(), static_cast<irs_u8>(opcode_sdatac));
-  m_test_process = test_process_send_sdatac;*/
-  m_test_process_deque.push_back(test_process_get_spi);
-  m_test_process_deque.push_back(test_process_send_sdatac);
-  m_test_process_deque.push_back(test_process_wait_spi_read_write);
-  m_test_process_deque.push_back(test_process_get_spi);
-  m_test_process_deque.push_back(test_process_read_id);
-  m_test_process_deque.push_back(test_process_wait_spi_read_write);
-  m_test_process_deque.push_back(test_process_check_id);
-
-  m_mode = mode_spi_rw;
-
-  // Ножку передавать через конструктор
-  //irs::arm::io_pin_t m_reset_pin(GPIO_PORTA, 5, irs::io_t::dir_out, irs::io_pin_on);
-
-  // Убрать в tick
-  const double t_clk_max = 514e-9;
-  const double t_after_power_up = pow(2., 18.)*t_clk_max;
-  const double t_reset = 2*t_clk_max;
-  const double t_after_reset = 18*t_clk_max;
-
   mp_reset_pin->set();
 
-  irs::pause(irs::make_cnt_s(t_after_power_up));
-  //m_reset_pin.clear();
-  ap_power_down_pin->set();
-  mp_reset_pin->clear();
-  irs::pause(make_cnt_s(t_reset));
-  mp_reset_pin->set();
-  irs::pause(make_cnt_s(t_after_reset));
+  m_t_after_power_up_delay.start();
+}
 
-  send_opcode_block_mode(opcode_start);
-  irs::pause(make_cnt_s(10*t_clk_max));
+irs::adc_ads1298_continuous_mode_t::~adc_ads1298_continuous_mode_t()
+{
+  spi_release();
+}
 
-  send_opcode_block_mode(opcode_stop);
-  irs::pause(make_cnt_s(0.1));
+irs::adc_ads1298_continuous_mode_t::size_type
+irs::adc_ads1298_continuous_mode_t::get_resulution() const
+{
+  return adc_resolution;
+}
 
+void irs::adc_ads1298_continuous_mode_t::select_channels(
+   irs_u32 /*a_selected_channels*/)
+{
+}
 
-  //------------------------------------
-  send_opcode_block_mode(opcode_sdatac);
+float irs::adc_ads1298_continuous_mode_t::get_temperature_degree_celsius(
+  const float a_vref)
+{
+  if (m_temperature_sensor_enabled) {
+    float value = get_float_data(m_temperature_channel_index);
+    return convert_value_to_temperature_degree_celsius(value, a_vref);
+  }
+  return 0;
+}
 
-  //irs::pause(make_cnt_s(3));
+float irs::adc_ads1298_continuous_mode_t::
+  convert_value_to_temperature_degree_celsius(irs_u32 a_value,
+  const float a_vref)
+{
+  const irs_i32 i32_min = IRS_I32_MIN;
+  const float value = a_value/fabs(static_cast<float>(i32_min));
+  return convert_value_to_temperature_degree_celsius(value, a_vref);
+}
 
+float irs::adc_ads1298_continuous_mode_t::
+  convert_value_to_temperature_degree_celsius(float a_value,
+  const float a_vref)
+{
+  float voltage = a_vref*a_value;
+  float t = (voltage*1000000 - 145300)/490 + 25;
+  return t;
+}
 
-  do {
-    irs_u8 id = read_reg_block_mode(reg_id);
-    if ((id != 255) && (id != 0)) {
-      if (id == 146) {
-        IRS_LIB_DBG_MSG("ID SUPER");
-      } else if ((id & 0x10) && !(id & 0x08)) {
-        IRS_LIB_DBG_MSG("ID IDEAL = " << hex << (int)id << dec);
-      } else {
-        IRS_LIB_DBG_MSG("ID OK = " << hex << (int)id << dec);
-      }
-    }
-  } while (true);
-
-
-  //irs::pause(make_cnt_s(10*t_clk_max));
-  irs_u8 reg_ch1set_value = read_reg_block_mode(reg_ch1set);
-  IRS_LIB_DBG_MSG("reg_ch1set_value = " << hex << (int)reg_ch1set_value << dec);
-
-  /*ch_set_t ch_set;
-  ch_set.reg = 0x0;
-  // Input shorted (for offset or noise measurements)
-  ch_set.channel_input = 0;//0x3;
-  ch_set.gain = 1;
-  write_reg_block_mode(reg_ch1set, ch_set.reg);*/
-
-  /*while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-
-  map<reg_t, irs_u8> regs1;*/
-
-  /*m_config1.reg = 0;
-  m_config1.hight_resolution = true;
-  m_config1.output_data_rate = 110;
-  regs1.insert(make_pair(reg_config_1, m_config1.reg));
-
-  m_config2.reg = 0;
-  regs1.insert(make_pair(reg_config_2, m_config2.reg));
-
-  irs_u8 config3_reg_1 = 0x40;
-  regs1.insert(make_pair(reg_config_3, config3_reg_1));
-*/
-  /*irs_u8 loff_reg_1 = 0;
-  regs1.insert(make_pair(reg_loff, loff_reg_1));
-
+irs::adc_ads1298_continuous_mode_t::ch_set_t
+irs::adc_ads1298_continuous_mode_t::get_ch_set_from_channel_settings(
+  const channel_settings_t& a_channel_settings)
+{
   ch_set_t ch_set;
-  ch_set.reg = 0;
-  ch_set.channel_input = 4;
-  ch_set.gain = 1;
-  regs1.insert(make_pair(reg_ch1set, ch_set.reg));
-
-  IRS_LIB_ASSERT(try_write_regs(regs1));
-
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*t_clk_max));
-  spi_release();
-
-  irs_u8 reg_ch1set_value2 = read_reg_block_mode(reg_ch1set);
-  IRS_LIB_DBG_MSG("reg_ch1set_value2 = " << hex << (int)reg_ch1set_value2 << dec);*/
-
-
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-
-  map<reg_t, irs_u8> regs;
-
-  m_config1.reg = 0;
-  m_config1.hight_resolution = true;
-  m_config1.output_data_rate = 110;
-  regs.insert(make_pair(reg_config_1, m_config1.reg));
-
-  m_config2.reg = 0;
-  regs.insert(make_pair(reg_config_2, m_config2.reg));
-
-  irs_u8 config3_reg = 0x60;
-  regs.insert(make_pair(reg_config_3, config3_reg));
-
-  irs_u8 loff_reg = 0;
-  regs.insert(make_pair(reg_loff, loff_reg));
-
-  ch_set_t ch_set;
-  ch_set.reg = 0;
-  // Input shorted (for offset or noise measurements)
-  ch_set.channel_input = 0;
-  ch_set.gain = 1;
-  regs.insert(make_pair(reg_ch1set, ch_set.reg));
-  regs.insert(make_pair(reg_ch2set, ch_set.reg));
-  regs.insert(make_pair(reg_ch3set, ch_set.reg));
-  regs.insert(make_pair(reg_ch4set, ch_set.reg));
-  regs.insert(make_pair(reg_ch5set, ch_set.reg));
-  regs.insert(make_pair(reg_ch6set, ch_set.reg));
-  regs.insert(make_pair(reg_ch7set, ch_set.reg));
-  regs.insert(make_pair(reg_ch8set, ch_set.reg));
-
-  IRS_LIB_ASSERT(try_write_regs(regs));
-
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*t_clk_max));
-  spi_release();
-
-  irs_u8 reg_ch1set_value4 = read_reg_block_mode(reg_ch1set);
-
-  //write_reg_block_mode(reg_config4, 0x8);
-  write_reg_block_mode(reg_config4, 0x0);
-  irs_u8 reg_config4_value4 = read_reg_block_mode(reg_config4);
-
-  send_opcode_block_mode(opcode_start);
-
-  send_opcode_block_mode(opcode_rdatac);
-
-
-  irs::pause(make_cnt_s(0.1));
-  //irs::arm::io_pin_t m_start_pin(GPIO_PORTE, 9, irs::io_t::dir_out, irs::io_pin_on);
-  //m_start_pin.set();
-
-  //while (!try_get_spi());
-  vector<int> samples1;
-  samples1.reserve(1000);
-  int count = 0;
-  measure_time_t time;
-  time.start();
-  while (true) {
-    //bool pin = m_start_pin.pin();
-    if (!mp_date_ready_pin->pin()) {
-      //read_data_block_mode();
-      read_data_single_shot_block_mode();
-
-      irs_u8* buf = &m_spi_buf[0];
-      for (int i = 0; i < m_spi_buf.size(); i++) {
-        IRS_LIB_DBG_MSG(i << ": " << hex << setw(2) << setfill('0') << (int)m_spi_buf[i] << dec);
-      }
-      irs_u8 b0 = m_spi_buf[0];
-      irs_u8 b1 = m_spi_buf[1];
-      irs_u8 b2 = m_spi_buf[2];
-      irs_u8 b3 = m_spi_buf[3];
-      irs_u8 b4 = m_spi_buf[4];
-      irs_u8 b5 = m_spi_buf[5];
-      irs_u8 b6 = m_spi_buf[6];
-      irs_u8 b7 = m_spi_buf[7];
-      irs_u8 b8 = m_spi_buf[8];
-      irs_u8 b9 = m_spi_buf[9];
-      //irs_i32 channel_value = static_cast<int>((b5 << 8) | (b4 << 16) | (b3 << 24)) >> 8;
-      //irs_i32 channel_value = static_cast<int>((b9 << 8) | (b8 << 16) | (b7 << 24)) >> 8;
-      //irs_i32 channel_value = static_cast<int>((b6 << 8) | (b5 << 16) | (b4 << 24)) >> 8;
-      irs_i32 channel_value = static_cast<int>((b3 << 24) | (b4 << 16) | (b5 << 8)) >> 8 ;
-      IRS_LIB_DBG_MSG("channel_value = " << channel_value);
-      //mlog() << channel_value << endl;
-      //send_opcode_block_mode(opcode_start);
-      count++;
-      //irs::pause(make_cnt_s(0.3));
-      //IRS_LIB_DBG_MSG("DATA READY");
-      /*if (count > 2000) {
-        samples1.push_back(channel_value);
-      }
-      if (count > 3000) {
-        break;
-      }*/
-    } else {
-      //IRS_LIB_DBG_MSG("DATA NOT READY");
-    }
-  }
-  double t = time.get();
-  for (int i = 0; i < samples1.size(); i++) {
-    mlog() << samples1[i] << endl;
-  }
-  int a = 0;
-
-  send_opcode_block_mode(opcode_sdatac);
-
-  int b = 0;
-
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  regs.clear();
-  m_config1.reg = 0;
-  m_config1.hight_resolution = true;
-  m_config1.output_data_rate = 110;
-  regs.insert(make_pair(reg_config_1, m_config1.reg));
-
-  m_config2.reg = 0x0;
-  m_config2.test_signal_frequency = 0;
-  regs.insert(make_pair(reg_config_2, m_config2.reg));
-
-  config3_reg = 0x40;
-  regs.insert(make_pair(reg_config_3, config3_reg));
-
-  loff_reg = 0;
-  regs.insert(make_pair(reg_loff, loff_reg));
-
-  //ch_set;
-  ch_set.reg = 0x0;
-  // Input shorted (for offset or noise measurements)
-  ch_set.channel_input = 0;//0x3;
-  ch_set.gain = 1;
-  regs.insert(make_pair(reg_ch1set, ch_set.reg));
-  regs.insert(make_pair(reg_ch2set, ch_set.reg));
-  regs.insert(make_pair(reg_ch3set, ch_set.reg));
-  regs.insert(make_pair(reg_ch4set, ch_set.reg));
-  regs.insert(make_pair(reg_ch5set, ch_set.reg));
-  regs.insert(make_pair(reg_ch6set, ch_set.reg));
-  regs.insert(make_pair(reg_ch7set, ch_set.reg));
-  regs.insert(make_pair(reg_ch8set, ch_set.reg));
-
-  IRS_LIB_ASSERT(try_write_regs(regs));
-
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*t_clk_max));
-  spi_release();
-
-  irs_u8 reg_ch1set_value3 = read_reg_block_mode(reg_ch1set);
-  irs_u8 reg_config_2_value3 = read_reg_block_mode(reg_config_2);
-
-  send_opcode_block_mode(opcode_rdatac);
-
-  /*irs::arm::io_pin_t m_start_pin(GPIO_PORTE, 9, irs::io_t::dir_out, irs::io_pin_off);
-  m_start_pin.clear();
-  irs::pause(make_cnt_s(0.1));
-  m_start_pin.set();
-*/
-  IRS_LIB_DBG_MSG("----------------------------------------------------");
-  count = 0;
-  vector<int> samples;
-  while (true) {
-    //bool pin = m_start_pin.pin();
-    if (!mp_date_ready_pin->pin()) {
-      while (!try_get_spi());
-      m_t_cssc_delay.start();
-      while (!m_t_cssc_delay.check());
-      read_data();
-      while (!spi_read_write_is_complete()) mp_spi->tick();
-      irs::pause(make_cnt_s(4*t_clk_max));
-      spi_release();
-
-      irs_u8 b0 = m_spi_buf[0];
-      irs_u8 b1 = m_spi_buf[1];
-      irs_u8 b2 = m_spi_buf[2];
-      irs_u8 b3 = m_spi_buf[3];
-      irs_u8 b4 = m_spi_buf[4];
-      irs_u8 b5 = m_spi_buf[5];
-      irs_u8 b6 = m_spi_buf[6];
-      irs_u8 b7 = m_spi_buf[7];
-      irs_u8 b8 = m_spi_buf[8];
-      irs_u8 b9 = m_spi_buf[9];
-      //irs_u32 channel_value = b3 | (b4 << 8) | (b5 << 16);
-      irs_u32 channel_value = (b3 << 16) | (b4 << 8) | b5;
-      samples.push_back(channel_value);
-      //IRS_LIB_DBG_MSG("channel_value = " << channel_value);
-
-      count++;
-      //IRS_LIB_DBG_MSG("DATA READY");
-      if (count > 2000) {
-        break;
-      }
-    } else {
-      //IRS_LIB_DBG_MSG("DATA NOT READY");
-    }
-  }
-  for (int i = 1000; i < samples.size(); i++) {
-    mlog() << samples[i] << endl;
-  }
-  a = 0;
-}
-irs::adc_ads1298_t::~adc_ads1298_t()
-{
-}
-void irs::adc_ads1298_t::start()
-{
-  m_cur_read_mode = m_read_mode;
-  creation_reg(m_reg[m_reg_mode_index], m_cur_read_mode,
-    m_mode_byte_pos, m_mode_pos, m_mode_size);
-  switch(m_cur_read_mode) {
-    case om_idle:
-    case om_power_down: {
-      m_read_data = false;
-    } break;
-    default: {
-      m_read_data = true;
-    } break;
-  }
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::stop()
-{
-  set_mode(adc_mode_power_down);
-  start();
-}
-meas_status_t irs::adc_ads1298_t::status() const
-{
-  return m_status;
-}
-void irs::adc_ads1298_t::set_channel(int a_channel)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_channel,
-    m_ch_byte_pos, m_ch_pos, m_ch_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_mode(int a_mode)
-{
-  m_read_mode = static_cast<operating_modes_t>(a_mode);
-}
-void irs::adc_ads1298_t::set_freq(int a_freq)
-{
-  m_freq = static_cast<irs_u8>(a_freq);
-  creation_reg(m_reg[m_reg_mode_index], m_freq,
-    m_freq_byte_pos, m_freq_pos, m_freq_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_gain(int a_gain)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_gain,
-    m_gain_byte_pos, m_gain_pos, m_gain_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_buf(int a_buf)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_buf,
-    m_buf_byte_pos, m_buf_pos, m_buf_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_ref_det(int a_ref_det)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_ref_det,
-    m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_ub(int a_ub)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_ub,
-    m_ub_byte_pos, m_ub_pos, m_ub_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-void irs::adc_ads1298_t::set_bo(int a_bo)
-{
-  creation_reg(m_reg[m_reg_conf_index], a_bo,
-    m_bo_byte_pos, m_bo_pos, m_bo_size);
-  m_mode = mode_spi_rw;
-  m_status = meas_status_busy;
-}
-irs_i32 irs::adc_ads1298_t::get_value()
-{
-  if ((m_cur_read_mode == om_continuous) && m_read_data) {
-    m_status = meas_status_busy;
-  }
-  return m_value;
+  ch_set.power_down = a_channel_settings.power_down;
+  ch_set.channel_input = a_channel_settings.input;
+  ch_set.gain = a_channel_settings.gain;
+  return ch_set;
 }
 
-void irs::adc_ads1298_t::set_param(adc_param_t a_param, const int a_value)
-{
-  switch(a_param) {
-    case adc_mode: {
-      set_mode(a_value);
-    } break;
-    case adc_gain: {
-      set_gain(a_value);
-    } break;
-    case adc_channel: {
-      set_channel(a_value);
-    } break;
-    case adc_freq: {
-      set_freq(a_value);
-    } break;
-    case adc_buf: {
-      set_buf(a_value);
-    } break;
-    case adc_ref_det: {
-      set_ref_det(a_value);
-    } break;
-    case adc_unipolar: {
-      set_ub(a_value);
-    } break;
-    case adc_burnout: {
-      set_bo(a_value);
-    } break;
-    default: {
-      IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
-    } break;
-  }
-}
-
-void irs::adc_ads1298_t::get_param(adc_param_t a_param, int* ap_value)
-{
-  mp_value_param = ap_value;
-  switch(a_param) {
-    case adc_mode: {
-      *mp_value_param = m_read_mode;
-    } break;
-    case adc_gain: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_gain_byte_pos, m_gain_pos, m_gain_size);
-    } break;
-    case adc_channel: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_ch_byte_pos, m_ch_pos, m_ch_size);
-    } break;
-    case adc_freq: {
-      *mp_value_param = get(m_reg[m_reg_mode_index],
-        m_freq_byte_pos, m_freq_pos, m_freq_size);
-    } break;
-    case adc_buf: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_buf_byte_pos, m_buf_pos, m_buf_size);
-    } break;
-    case adc_ref_det: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_ref_det_byte_pos, m_ref_det_pos, m_ref_det_size);
-    } break;
-    case adc_unipolar: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_ub_byte_pos, m_ub_pos, m_ub_size);
-    } break;
-    case adc_burnout: {
-      *mp_value_param = get(m_reg[m_reg_conf_index],
-        m_bo_byte_pos, m_bo_pos, m_bo_size);
-    } break;
-    case adc_offset: {
-      m_read_data = false;
-      m_read_calibration_coeff = true;
-      creation_reg_comm(m_reg[m_reg_offs_index], tt_read);
-      m_mode = mode_spi_rw;
-      m_status = meas_status_busy;
-    } break;
-    case adc_full_scale: {
-      m_read_data = false;
-      m_read_calibration_coeff = true;
-      creation_reg_comm(m_reg[m_reg_fs_index], tt_read);
-      m_mode = mode_spi_rw;
-      m_status = meas_status_busy;
-    } break;
-    default: {
-      IRS_ASSERT_MSG("Попытка считать несуществующий параметр");
-    } break;
-  }
-}
-
-void irs::adc_ads1298_t::test_adc()
-{
-  if (m_test_process_deque.empty()) {
-    return;
-  }
-  test_process_t test_process = m_test_process_deque.front();
-
-  switch (test_process) {
-    case test_process_off: {
-    } break;
-    case test_process_get_spi: {
-      if (try_get_spi()) {
-        m_t_cssc_delay.start();
-        m_test_process_deque.front() = test_process_wait_after_get_spi;
-      }
-    } break;
-    case test_process_wait_after_get_spi: {
-      m_t_cssc_delay.check();
-      if (m_t_cssc_delay.stopped()) {
-        m_test_process_deque.pop_front();
-      }
-    } break;
-    case test_process_wait_spi_read_write: {
-      if (spi_read_write_is_complete()) {
-        m_t_sccs_delay.start();
-        m_test_process_deque.front() = test_process_wait_before_spi_release;
-      }
-    } break;
-    case test_process_wait_before_spi_release: {
-      m_t_sccs_delay.check();
-      if (m_t_sccs_delay.stopped()) {
-        spi_release();
-        m_test_process_deque.pop_front();
-      }
-    } break;
-    case test_process_send_sdatac: {
-      send_opcode(opcode_sdatac);
-      m_test_process_deque.pop_front();
-    } break;
-    case test_process_read_id: {
-      read_reg(reg_id);
-      m_test_process_deque.pop_front();
-    } break;
-    case test_process_check_id: {
-      irs_u8 id = m_spi_buf[2];
-      if (id != 0x92) {
-        IRS_LIB_DBG_MSG("Wrong ID");
-      }
-      m_test_process_deque.pop_front();
-      m_test_process_deque.push_back(test_process_get_spi);
-      m_test_process_deque.push_back(test_process_includint_input_short);
-
-    } break;
-    case test_process_includint_input_short: {
-
-      map<reg_t, irs_u8> regs;
-
-      m_config1.reg = 0;
-      m_config1.hight_resolution = true;
-      m_config1.output_data_rate = 110; // 500SPS*/
-      regs.insert(make_pair(reg_config_1, m_config1.reg));
-
-      m_config2.reg = 0;
-      //m_config2.reg = 0x10;
-      regs.insert(make_pair(reg_config_2, m_config2.reg));
-
-      irs_u8 config3_reg = 0x40;
-      regs.insert(make_pair(reg_config_3, config3_reg));
-
-      irs_u8 loff_reg = 0;
-      regs.insert(make_pair(reg_loff, loff_reg));
-
-      ch_set_t ch_set;
-      ch_set.reg = 0;
-      // Input shorted (for offset or noise measurements)
-      ch_set.channel_input = 1;
-      // Temperature sensor
-      //ch_set.channel_input = 4;
-      // Test signal
-      //ch_set.channel_input = 5;
-      regs.insert(make_pair(reg_ch1set, ch_set.reg));
-      regs.insert(make_pair(reg_ch2set, ch_set.reg));
-      regs.insert(make_pair(reg_ch3set, ch_set.reg));
-      regs.insert(make_pair(reg_ch4set, ch_set.reg));
-      regs.insert(make_pair(reg_ch5set, ch_set.reg));
-      regs.insert(make_pair(reg_ch6set, ch_set.reg));
-      regs.insert(make_pair(reg_ch7set, ch_set.reg));
-      regs.insert(make_pair(reg_ch8set, ch_set.reg));
-
-      /*m_config1.reg = 0;
-      m_config1.hight_resolution = true;
-      m_config1.output_data_rate = 110; // 500SPS*/
-      if (try_write_regs(regs)) {
-        m_test_process_deque.pop_front();
-        m_test_process_deque.push_back(test_process_wait_spi_read_write);
-        m_test_process_deque.push_back(test_process_get_spi);
-        m_test_process_deque.push_back(test_process_send_start);
-      }
-    } break;
-    case test_process_send_start: {
-      send_opcode(opcode_start);
-      m_test_process_deque.pop_front();
-      m_test_process_deque.push_back(test_process_wait_spi_read_write);
-      m_test_process_deque.push_back(test_process_get_spi);
-      m_test_process_deque.push_back(test_process_send_rdatac);
-    } break;
-    case test_process_send_rdatac: {
-      send_opcode(opcode_rdatac);
-      m_test_process_deque.pop_front();
-      m_test_process_deque.push_back(test_process_wait_spi_read_write);
-      m_test_process_deque.push_back(test_process_get_spi);
-      m_test_process_deque.push_back(test_process_wait_data);
-    } break;
-    case test_process_wait_data: {
-      if (!mp_date_ready_pin->pin()) {
-        read_data();
-        m_test_process_deque.pop_front();
-        m_test_process_deque.push_back(test_process_wait_spi_read_write);
-        m_test_process_deque.push_back(test_process_check_noise);
-
-      } else {
-        IRS_LIB_DBG_MSG("DATA NOT READY");
-      }
-    } break;
-    case test_process_check_noise: {
-      irs_u8 b0 = m_spi_buf[0];
-      irs_u8 b1 = m_spi_buf[1];
-      irs_u8 b2 = m_spi_buf[2];
-      irs_u8 b3 = m_spi_buf[3];
-      irs_u8 b4 = m_spi_buf[4];
-      irs_u8 b5 = m_spi_buf[5];
-      irs_u8 b6 = m_spi_buf[6];
-      irs_u32 channel_value = b3 | (b4 << 8) | (b5 << 16);
-      IRS_LIB_DBG_MSG("channel_value = " << channel_value);
-      m_test_signal_buf.push_back(channel_value);
-      m_test_point_index++;
-      if (m_test_point_index < m_test_point_count) {
-        m_test_process_deque.pop_front();
-        m_test_process_deque.push_back(test_process_get_spi);
-        m_test_process_deque.push_back(test_process_wait_data);
-      } else {
-        m_test_process_deque.pop_front();
-      }
-      int a = 0;
-    } break;
-  }
-}
-
-bool irs::adc_ads1298_t::try_get_spi()
+bool irs::adc_ads1298_continuous_mode_t::try_get_spi()
 {
   m_t_csh_delay.check();
   if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock() &&
@@ -1280,309 +674,215 @@ bool irs::adc_ads1298_t::try_get_spi()
   return false;
 }
 
-void irs::adc_ads1298_t::send_opcode(opcode_t a_opcode)
+void irs::adc_ads1298_continuous_mode_t::send_opcode(opcode_t a_opcode)
 {
   m_spi_buf.resize(1);
   irs_u8 opcode = static_cast<irs_u8>(a_opcode);
-  void* src = &opcode;
-  memcpy(vector_data(m_spi_buf), &opcode, m_spi_buf.size());
-
+  memcpy(vector_data(m_spi_buf), &opcode, 1);
   mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
     m_spi_buf.size());
 }
 
-void irs::adc_ads1298_t::write_reg(reg_t a_reg, irs_u8 a_value)
+void irs::adc_ads1298_continuous_mode_t::write_regs(
+  const map<reg_t, irs_u8>& a_regs)
 {
-  m_spi_buf.clear();
-  m_spi_buf.resize(3, 0);
+  if (a_regs.empty()) {
+    return;
+  }
 
-  irs_u8 opcode1 = static_cast<irs_u8>(opcode_wreg | a_reg);
-  irs_u8 opcode2 = 0;
+  m_spi_buf.clear();
+  m_spi_buf.resize(2 + a_regs.size(), 0);
+
+  irs_u8 starting_reg_addr = a_regs.begin()->first;
+  irs_u8 opcode1 = static_cast<irs_u8>(opcode_wreg | starting_reg_addr);
+  irs_u8 opcode2 = a_regs.size() - 1;
 
   irs_u8* buf = vector_data(m_spi_buf);
+
   memcpy(buf, &opcode1, 1);
   ++buf;
   memcpy(buf, &opcode2, 1);
   ++buf;
-  memcpy(buf, &a_value, 1);
+
+  map<reg_t, irs_u8>::const_iterator it = a_regs.begin();
+  size_t prev_reg_addr = it->first;
+  while (it != a_regs.end()) {
+    if ((it->first - prev_reg_addr) > 1) {
+      IRS_LIB_ASSERT_MSG(
+        "Последовательность регистров должна быть без пропусков");
+    }
+    irs_u8 reg_value = it->second;
+    memcpy(buf, &reg_value, 1);
+    prev_reg_addr = it->first;
+    ++buf;
+    ++it;
+  }
 
   mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
     m_spi_buf.size());
 }
 
-bool irs::adc_ads1298_t::try_write_regs(const map<reg_t, irs_u8>& a_regs)
+void irs::adc_ads1298_continuous_mode_t::read_data()
 {
-  //if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
-    if (a_regs.empty()) {
-      return true;
-    }
-    //spi_prepare();
+  const size_type read_data_size = 27;
 
+  // Оптимизация!!!
+  if (m_spi_buf.size() != read_data_size) {
     m_spi_buf.clear();
-    m_spi_buf.resize(2 + a_regs.size(), 0);
-
-    irs_u8 starting_reg_addr = a_regs.begin()->first;
-    irs_u8 opcode1 = static_cast<irs_u8>(opcode_wreg | starting_reg_addr);
-    irs_u8 opcode2 = a_regs.size() - 1;
-
-    irs_u8* buf = vector_data(m_spi_buf);
-
-    memcpy(buf, &opcode1, 1);
-    ++buf;
-    memcpy(buf, &opcode2, 1);
-    ++buf;
-
-    map<reg_t, irs_u8>::const_iterator it = a_regs.begin();
-    size_t prev_reg_addr = it->first;
-    while (it != a_regs.end()) {
-      if ((it->first - prev_reg_addr) > 1) {
-        IRS_LIB_ASSERT_MSG(
-          "Последовательность регистров должна быть без пропусков");
-      }
-      irs_u8 reg_value = it->second;
-      memcpy(buf, &reg_value, 1);
-      prev_reg_addr = it->first;
-      ++buf;
-      ++it;
-    }
-
-    irs_u8* b = vector_data(m_spi_buf);
-    mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
-      m_spi_buf.size());
-
-    return true;
-  /*}
-  return false;*/
-}
-
-void irs::adc_ads1298_t::read_reg(reg_t a_reg)
-{
-  const double t_clk_max = 514e-9;
-  irs::pause(make_cnt_s(100*t_clk_max));
-
-  m_spi_buf.clear();
-  m_spi_buf.resize(3, 0);
-  m_spi_read_buf.resize(3, 0);
-
-  irs_u8 opcode1 = static_cast<irs_u8>(opcode_rreg | a_reg);
-  irs_u8 opcode2 = 0;
-
-  irs_u8* buf = vector_data(m_spi_buf);
-  memcpy(buf, &opcode1, 1);
-  ++buf;
-  memcpy(buf, &opcode2, 1);
-  //++buf;
-  //memcpy(buf, &a_value, 1);
+    m_spi_buf.resize(read_data_size, 0);
+  } else {
+    memset(irs::vector_data(m_spi_buf), 0, m_spi_buf.size());
+  }
 
   mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
     m_spi_buf.size());
 }
 
-void irs::adc_ads1298_t::read_data()
-{
-  m_spi_buf.clear();
-  m_spi_buf.resize(27, 0);
-  mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
-    m_spi_buf.size());
-}
-
-void irs::adc_ads1298_t::read_data_single_shot()
-{
-  m_spi_buf.clear();
-  m_spi_buf.resize(28, 0);
-  irs_u8 opcode = static_cast<irs_u8>(opcode_rdata);
-  void* src = &opcode;
-  memcpy(vector_data(m_spi_buf), &opcode, m_spi_buf.size());
-
-  mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
-    m_spi_buf.size());
-}
-
-bool irs::adc_ads1298_t::spi_read_write_is_complete() const
+bool irs::adc_ads1298_continuous_mode_t::spi_read_write_is_complete() const
 {
   return (mp_spi->get_status() == irs::spi_t::FREE);
 }
 
-void irs::adc_ads1298_t::send_opcode_block_mode(opcode_t a_opcode)
-{
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  send_opcode(a_opcode);
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*m_t_clk_max));
-  spi_release();
-}
-
-void irs::adc_ads1298_t::write_reg_block_mode(reg_t a_reg, irs_u8 a_value)
-{
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  irs::pause(make_cnt_s(10*m_t_clk_max));
-  write_reg(a_reg, a_value);
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*m_t_clk_max));
-  spi_release();
-}
-
-irs_u8 irs::adc_ads1298_t::read_reg_block_mode(reg_t a_reg)
-{
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  irs::pause(make_cnt_s(10*m_t_clk_max));
-  read_reg(a_reg);
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*m_t_clk_max));
-  spi_release();
-  return m_spi_buf[2];
-}
-
-void irs::adc_ads1298_t::read_data_block_mode()
-{
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  read_data();
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*m_t_clk_max));
-  spi_release();
-}
-
-void irs::adc_ads1298_t::read_data_single_shot_block_mode()
-{
-  while (!try_get_spi());
-  m_t_cssc_delay.start();
-  while (!m_t_cssc_delay.check());
-  read_data_single_shot();
-  while (!spi_read_write_is_complete()) mp_spi->tick();
-  irs::pause(make_cnt_s(4*m_t_clk_max));
-  spi_release();
-}
-
-void irs::adc_ads1298_t::tick()
+void irs::adc_ads1298_continuous_mode_t::tick()
 {
   mp_spi->tick();
-  test_adc();
-  /*switch(m_mode) {
-    case mode_free: {
+  switch (m_process) {
+    case process_off: {
     } break;
-    case mode_spi_rw: {
-      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
-        spi_prepare();
-        mp_spi->read_write(vector_data(m_spi_buf), vector_data(m_spi_buf),
-          m_spi_buf.size());
-        if (m_read_data) {
-          m_mode = mode_read_wait;
-        } else {
-          m_mode = mode_spi_rw_wait;
-        }
+    case process_wait_after_power_up: {
+      if (m_t_after_power_up_delay.check()) {
+        mp_power_down_pin->set();
+        m_t_reset_delay.start();
+        m_process = process_wait_reset;
       }
     } break;
-    case mode_read_wait: {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        spi_release();
-        if (m_ready_wait) {
-          m_mode = mode_ready_wait;
-        } else if (m_get_data) {
-          m_mode = mode_get_data;
-        } else {
-          m_mode = mode_read_data;
-          m_timer.set(make_cnt_ms
-            (2*m_conv_time_vector[m_freq] + m_reserved_interval));
-        }
+    case process_wait_reset: {
+      if (m_t_reset_delay.check()) {
+        mp_reset_pin->set();
+        m_t_after_reset_delay.start();
+        m_process = process_wait_after_reset;
       }
     } break;
-    case mode_ready_wait: {
-      bool is_unready =
-        (m_spi_buf[m_reg_comm_size] &
-        static_cast<irs_u8>(1 << m_ready_pos));
-      if (!is_unready) {
-        m_ready_wait = false;
-        switch(m_cur_read_mode) {
-          case om_internal_zero_scale:
-          case om_internal_full_scale:
-          case om_system_zero_scale:
-          case om_system_full_scale: {
-            m_mode = mode_free;
-            m_status = meas_status_success;
-          } break;
-          case om_continuous:
-          case om_single: {
-            creation_reg_comm(m_reg[m_reg_data_index], tt_read);
-            m_mode = mode_spi_rw;
-            m_get_data = true;
-          } break;
-          default: {
-            IRS_ASSERT_MSG("Проверка статуса в "
-              "недопустимом для этого режиме ацп");
-          } break;
-        }
-      } else {
-        m_mode = mode_read_data;
-        m_timer.set(make_cnt_ms(2*m_conv_time_vector[m_freq]));
+    case process_wait_after_reset: {
+      if (m_t_after_reset_delay.check()) {
+        m_process = process_get_spi;
       }
     } break;
-    case mode_get_data: {
-      m_get_data = false;
-      if (m_cur_read_mode == om_single) {
-        m_mode = mode_free;
-        //m_read_data = false;
-      } else if (m_cur_read_mode == om_continuous) {
-        m_mode = mode_read_data;
-        m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq]));
-      } else {
-        IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
-      }
-      m_value = conversion_spi_value();
-      m_status = meas_status_success;
-    } break;
-    case mode_read_data: {
-      if (m_timer.check()) {
-        m_ready_wait = true;
-        creation_reg_comm(m_reg[m_reg_status_index], tt_read);
-        m_mode = mode_spi_rw;
+    case process_get_spi: {
+      if (try_get_spi()) {
+        m_t_cssc_delay.start();
+        m_process = process_send_sdatac;
       }
     } break;
-    case mode_spi_rw_wait: {
-      if (mp_spi->get_status() == irs::spi_t::FREE) {
-        spi_release();
-        if (m_read_all_reg) {
-          m_mode = mode_read_all_reg;
-        } else {
-          if (m_read_calibration_coeff) {
-            m_read_calibration_coeff = false;
-            *mp_value_param = conversion_spi_value();
-          }
-          m_mode = mode_free;
-          m_status = meas_status_success;
-        }
+    case process_send_sdatac: {
+      m_t_cssc_delay.check();
+      if (m_t_cssc_delay.stopped()) {
+        send_opcode(opcode_sdatac);
+        m_process = process_activate_normal_mode;
       }
     } break;
-    case mode_read_all_reg: {
-      if (m_count_init != 0) {
-        memcpy(m_buf + m_shift,
-          m_spi_buf + m_reg_comm_size, m_reg[m_count_init-1].size);
-        m_shift += m_reg[m_count_init-1].size;
+    case process_wait_spi_read_write: {
+      if (spi_read_write_is_complete()) {
+        m_process = process_data_conversion;
       }
-      if (m_count_init < m_reg.size()) {
-        if (m_reg[m_count_init].index != m_reg_data_index) {
-          creation_reg_comm(m_reg[m_count_init], tt_read);
-          m_mode = mode_spi_rw;
-        }
-        m_count_init++;
-      } else {
-        m_read_all_reg = false;
-        set_gain(0);
+    } break;
+    case process_activate_normal_mode: {
+      if (spi_read_write_is_complete()) {
+        write_regs_for_activate_normal_mode();
+        m_process = process_send_start;
       }
+    } break;
+    case process_send_start: {
+      if (spi_read_write_is_complete()) {
+        send_opcode(opcode_start);
+        m_process = process_send_rdatac;
+      }
+    } break;
+    case process_send_rdatac: {
+      if (spi_read_write_is_complete()) {
+        send_opcode(opcode_rdatac);
+        m_process = process_wait_send_rdatac;
+      }
+    } break;
+    case process_wait_send_rdatac: {
+      if (spi_read_write_is_complete()) {
+        m_process = process_fast_read_data;
+      }
+    } break;
+    case process_fast_read_data: {
+      if (!mp_date_ready_pin->pin()) {
+        read_data();
+        m_process = process_wait_spi_read_write;
+      }
+
+    } break;
+    case process_data_conversion: {
+      read_samples_from_spi_buf();
+      m_process = process_fast_read_data;
     } break;
   }
-  if (m_spi_transaction_size > m_write_buf_size) {
-    IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
-  }*/
 }
-void irs::adc_ads1298_t::spi_prepare()
+
+void irs::adc_ads1298_continuous_mode_t::write_regs_for_activate_normal_mode()
+{
+  map<reg_t, irs_u8> regs;
+
+  m_config1.reg = 0;
+  m_config1.hight_resolution = true;
+  m_config1.output_data_rate = m_settings.data_rate;
+  regs.insert(make_pair(reg_config_1, m_config1.reg));
+
+  m_config2.reg = 0;
+  regs.insert(make_pair(reg_config_2, m_config2.reg));
+
+  irs_u8 config3_reg = 0x40;
+  regs.insert(make_pair(reg_config_3, config3_reg));
+
+  irs_u8 loff_reg = 0;
+  regs.insert(make_pair(reg_loff, loff_reg));
+
+  ch_set_t ch_1_set =
+    get_ch_set_from_channel_settings(m_settings.channel_1);
+  ch_set_t ch_2_set =
+    get_ch_set_from_channel_settings(m_settings.channel_2);
+  ch_set_t ch_3_set =
+    get_ch_set_from_channel_settings(m_settings.channel_3);
+  ch_set_t ch_4_set =
+    get_ch_set_from_channel_settings(m_settings.channel_4);
+  ch_set_t ch_5_set =
+    get_ch_set_from_channel_settings(m_settings.channel_5);
+  ch_set_t ch_6_set =
+    get_ch_set_from_channel_settings(m_settings.channel_6);
+  ch_set_t ch_7_set =
+    get_ch_set_from_channel_settings(m_settings.channel_7);
+  ch_set_t ch_8_set =
+    get_ch_set_from_channel_settings(m_settings.channel_8);
+
+  regs.insert(make_pair(reg_ch1set, ch_1_set.reg));
+  regs.insert(make_pair(reg_ch2set, ch_2_set.reg));
+  regs.insert(make_pair(reg_ch3set, ch_3_set.reg));
+  regs.insert(make_pair(reg_ch4set, ch_4_set.reg));
+  regs.insert(make_pair(reg_ch5set, ch_5_set.reg));
+  regs.insert(make_pair(reg_ch6set, ch_6_set.reg));
+  regs.insert(make_pair(reg_ch7set, ch_7_set.reg));
+  regs.insert(make_pair(reg_ch8set, ch_8_set.reg));
+
+  write_regs(regs);
+}
+
+void irs::adc_ads1298_continuous_mode_t::read_samples_from_spi_buf()
+{
+  read_sample_from_channel<0>();
+  read_sample_from_channel<1>();
+  read_sample_from_channel<2>();
+  read_sample_from_channel<3>();
+  read_sample_from_channel<4>();
+  read_sample_from_channel<5>();
+  read_sample_from_channel<6>();
+  read_sample_from_channel<7>();
+}
+
+void irs::adc_ads1298_continuous_mode_t::spi_prepare()
 {
   mp_spi->set_order(irs::spi_t::MSB);
   mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
@@ -1590,7 +890,7 @@ void irs::adc_ads1298_t::spi_prepare()
   mp_spi->lock();
   mp_cs_pin->clear();
 }
-void irs::adc_ads1298_t::spi_release()
+void irs::adc_ads1298_continuous_mode_t::spi_release()
 {
   mp_cs_pin->set();
   mp_spi->reset_configuration();
@@ -1598,103 +898,7 @@ void irs::adc_ads1298_t::spi_release()
   m_t_csh_delay.start();
 }
 
-void irs::adc_ads1298_t::creation_reg_comm(reg_t a_reg,
-  transaction_type_t a_tt)
-{
-  /*memset(m_spi_buf, 0, m_write_buf_size);
-  m_spi_buf[m_reg_comm_index] |=
-    static_cast<irs_u8>(a_reg.index << m_rs_pos);
-  switch(a_tt) {
-    case tt_read: {
-      m_spi_buf[m_reg_comm_index] |= static_cast<irs_u8>(1 << m_rw_pos);
-    } break;
-    case tt_write: {
-      m_spi_buf[m_reg_comm_index] &= ~static_cast<irs_u8>(1 << m_rw_pos);
-    } break;
-    default: {
-      IRS_ASSERT_MSG("Недопустимый transaction_type");
-    } break;
-  }
-  m_spi_transaction_size = a_reg.size + m_reg_comm_size;*/
-}
 
-int irs::adc_ads1298_t::calculation_shift(reg_t a_reg)
-{
-  /*int shift = 0;
-  for(int i = 0; i < a_reg.index; i++) {
-    shift += m_reg[i].size;
-  }
-  return shift;*/
-  return 0;
-}
-int irs::adc_ads1298_t::calculation_number_byte(reg_t a_reg,
-  param_byte_pos_t byte_pos)
-{
-  //из за того что обратный порядок байт
-  /*int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8;
-  return number_byte;*/
-  return 0;
-}
-
-int irs::adc_ads1298_t::to_int(double a_number)
-{
-  return static_cast<int>(ceil(a_number));
-}
-
-int irs::adc_ads1298_t::filling_units(param_size_t a_size)
-{
-  return static_cast<int>(pow(2.0, a_size) - 1);
-}
-
-void irs::adc_ads1298_t::creation_reg(reg_t a_reg, int a_value,
-  param_byte_pos_t a_byte_pos, param_pos_t a_pos,
-  param_size_t a_size)
-{
-  /*m_read_data = false;
-  creation_reg_comm(a_reg, tt_write);
-  int shift = calculation_shift(a_reg);
-  int number_byte = calculation_number_byte(a_reg,
-    a_byte_pos);
-  m_buf[shift + number_byte] = static_cast<irs_u8>(
-    m_buf[shift + number_byte] &
-    ~static_cast<irs_u8>(filling_units(a_size) << a_pos));
-  m_buf[shift + number_byte]  |= static_cast<irs_u8>(a_value << a_pos);
-  for (int i = 0; i < a_reg.size; i++) {
-    m_spi_buf[i + m_reg[m_reg_comm_index].size] =
-      m_buf[shift + i];
-  }*/
-}
-
-int irs::adc_ads1298_t::get(reg_t a_reg, param_byte_pos_t a_byte_pos,
-  param_pos_t a_pos, param_size_t a_size)
-{
-  int shift = calculation_shift(a_reg);
-  int number_byte = calculation_number_byte(a_reg,
-    a_byte_pos);
-  irs_u8 value_shift =
-    static_cast<irs_u8>(m_buf[shift + number_byte] >> a_pos);
-  irs_u8 mask = static_cast<irs_u8>(filling_units(a_size));
-  int value = value_shift & mask;
-  return value;
-}
-
-irs_i32 irs::adc_ads1298_t::conversion_spi_value()
-{
-  mp_get_buff[2] = m_spi_buf[1];
-  mp_get_buff[1] = m_spi_buf[2];
-  mp_get_buff[0] = m_spi_buf[3];
-  irs_i32 value = *reinterpret_cast<irs_i32*>(mp_get_buff);
-  int unipolar =
-    get(m_reg[m_reg_conf_index], m_ub_byte_pos, m_ub_pos, m_ub_size);
-  if (unipolar == 1) {
-    value = (value << 7);
-  } else {
-    value = (value << 8);
-    value = value - 0x80000000;
-  }
-  return value;
-}
-#endif // ADS_1298_ENABLED
 //--------------------------  AD7683  ------------------------------------------
 
 irs::adc_ad7683_t::adc_ad7683_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
@@ -3929,8 +3133,6 @@ irs::adc_ad7794_t::adc_ad7794_t(spi_t *ap_spi,
   m_ready_wait(false),
   m_get_data(false),
   m_value(0),
-  m_read_mode(om_continuous),
-  m_cur_read_mode(om_continuous),
   mp_value_param(IRS_NULL),
   m_read_calibration_coeff(false)
 {

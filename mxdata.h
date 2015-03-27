@@ -1007,6 +1007,7 @@ public:
   typedef const T& const_reference;
 
   inline c_array_view_t(pointer ap_carray, size_type a_size);
+  inline c_array_view_t(const c_array_view_t<T>& a_c_array_view);
   inline pointer data();
   inline const_pointer data() const;
   inline size_type size() const;
@@ -1032,6 +1033,16 @@ inline c_array_view_t<T>::c_array_view_t(pointer ap_data,
   m_bad_index_value(value_type()),
   #endif //IRS_LIB_CHECK
   m_size(a_size)
+{
+}
+template <class T>
+inline c_array_view_t<T>::c_array_view_t(const c_array_view_t<T> &a_c_array_view
+):
+  mp_data(a_c_array_view.mp_data),
+  #ifdef IRS_LIB_CHECK
+  m_bad_index_value(a_c_array_view.m_bad_index_value),
+  #endif //IRS_LIB_CHECK
+  m_size(a_c_array_view.m_size)
 {
 }
 template <class T>
@@ -1137,6 +1148,8 @@ public:
   inline const_reference operator[](size_type a_index) const;
   inline value_type& front();
   inline const value_type& front() const;
+  inline value_type& back();
+  inline const value_type& back() const;
   const deque_data_t& operator=(const deque_data_t<T>& a_raw_data);
   inline size_type size() const;
   inline size_type capacity() const;
@@ -1211,6 +1224,20 @@ inline typename irs::deque_data_t<T>::const_reference
 
 template <class T>
 inline typename irs::deque_data_t<T>::reference
+  irs::deque_data_t<T>::back()
+{
+  return operator[](size() - 1);
+}
+
+template <class T>
+inline typename irs::deque_data_t<T>::const_reference
+  irs::deque_data_t<T>::back() const
+{
+  return operator[](size() - 1);
+}
+
+template <class T>
+inline typename irs::deque_data_t<T>::reference
   irs::deque_data_t<T>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
@@ -1233,9 +1260,9 @@ inline typename irs::deque_data_t<T>::const_reference
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (a_index < buf_right_part_size) {
-    p_elem = mp_buf[m_ring_begin_pos + a_index];
+    p_elem = &mp_buf[m_ring_begin_pos + a_index];
   } else {
-    p_elem = mp_buf[a_index - buf_right_part_size];
+    p_elem = &mp_buf[a_index - buf_right_part_size];
   }
   return *p_elem;
 }

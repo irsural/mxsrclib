@@ -611,6 +611,88 @@ BOOST_AUTO_TEST_CASE(test_case1)
 BOOST_AUTO_TEST_SUITE_END()
 
 
+BOOST_AUTO_TEST_SUITE(fast_average_as_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  const double f = 50.17;
+  const double t = 1/f;
+  const double f_adc = 8203.125;
+  const double t_adc = 1/f_adc;
+  const double pi = IRS_PI;
+
+  vector<double> y;
+  const double x_max = 50*t;
+  const double window_size = (48*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  irs::fast_average_as_t<double, double> fast_average(window_size);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    fast_average.add(y[i]);
+  }
+
+  const double result = fast_average.get();
+
+  BOOST_CHECK_CLOSE(result, 7.93284352151207e-09, 0.0001);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(fast_multi_sko_with_single_average_as_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  //const double f = 50.1752;
+  const double f = 50;
+  const double t = 1/f;
+  const double f_adc = 8203.125;
+  const double t_adc = 1/f_adc;
+  const double pi = IRS_PI;
+
+  vector<double> y;
+  const double x_max = 200*t;
+  const double average_size = (35*t)/t_adc;
+  const double window_size = (48*t)/t_adc;
+  const double short_window_size = (5*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(3 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<double> sizes;
+  sizes.push_back(window_size);
+  sizes.push_back(short_window_size);
+
+  irs::fast_multi_sko_with_single_average_as_t<double, double> sko(sizes,
+    average_size);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko.add(y[i]);
+    if (i > y.size()/2) {
+      const double result = sko.get(0);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+    }
+  }
+
+  /*irs::fast_multi_sko_with_single_average_as_t<float, float> sko_float(sizes,
+    window_size);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko_float.add(y[i]);
+    if (sko_float.is_full(0)) {
+      const double result = sko_float.get(0);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00015);
+    }
+  }*/
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(sko_calc_t)
 
 BOOST_AUTO_TEST_CASE(test_case1)

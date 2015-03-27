@@ -366,6 +366,22 @@ void irs_arm_exti3_func()
   EXTI_PR_bit.PR3 = 1;
 }
 
+void irs_arm_exti9_5_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::exti9_5_int);
+  if (EXTI_PR_bit.PR5) {
+    EXTI_PR_bit.PR5 = 1;
+  } else if (EXTI_PR_bit.PR6) {
+    EXTI_PR_bit.PR6 = 1;
+  } else if (EXTI_PR_bit.PR7) {
+    EXTI_PR_bit.PR7 = 1;
+  } else if (EXTI_PR_bit.PR8) {
+    EXTI_PR_bit.PR8 = 1;
+  } else if (EXTI_PR_bit.PR9) {
+    EXTI_PR_bit.PR9 = 1;
+  }
+}
+
 void irs_arm_tim1_up_tim10_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim1_up_tim10_int);
@@ -612,7 +628,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 20
   irs_arm_default_int_func,  // 21
   irs_arm_default_int_func,  // 22
-  irs_arm_default_int_func,  // 23
+  irs_arm_exti9_5_func,      // 23
   irs_arm_default_int_func,  // 24
   irs_arm_tim1_up_tim10_func,// 25
   irs_arm_default_int_func,  // 26

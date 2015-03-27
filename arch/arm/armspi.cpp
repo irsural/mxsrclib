@@ -604,40 +604,70 @@ void irs::arm::arm_spi_t::init_default()
 }
 #elif defined(__STM32F100RBT__)
 #elif defined(IRS_STM32F_2_AND_4)
-irs::arm::arm_spi_t::arm_spi_t(
-  size_t a_spi_address,
-  irs_u32 a_bitrate,
-  gpio_channel_t a_sck,
-  gpio_channel_t a_miso,
-  gpio_channel_t a_mosi,
-  gpio_speed_t a_gpio_speed
-):
-  m_lock(false),
-  mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_spi_address)),
-  m_bitrate_default(a_bitrate),
-  m_process(process_wait_command),
-  mp_write_buf(IRS_NULL),
-  mp_read_buf(IRS_NULL),
-  m_packet_size(0),
-  m_read_buf_index(0),
-  m_data_item_byte_count(1)
 
+bool irs::arm::st_spi_base_t::_set_bitrate(spi_regs_t* ap_spi_regs,
+  irs_u32 a_bitrate)
 {
-  reset_peripheral(a_spi_address);
-  initialize_gpio_channels(a_sck, a_miso, a_mosi, a_gpio_speed);
-  clock_enable(a_spi_address);
-
-  mp_spi_regs->SPI_CR1_bit.SSM = 1;
-  //mp_spi_regs->SPI_CR1_bit.SSM = 0;
-  mp_spi_regs->SPI_CR1_bit.SSI = 1;
-  // 1: Master configuration
-  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
-
-  set_default();
-  enable_spi();
+  cpu_traits_t::frequency_type frequency = 0;
+  size_t spi_address = reinterpret_cast<size_t>(ap_spi_regs);
+  if (spi_address == IRS_SPI1_BASE) {
+    frequency = cpu_traits_t::periphery_frequency_second();
+  } else {
+    frequency = cpu_traits_t::periphery_frequency_first();
+  }
+  irs_u32 divider = frequency/a_bitrate;
+  int power = -1;
+  while (divider > 0) {
+    divider >>= 1;
+    power++;
+  }
+  const int min_power = 0;
+  const int max_power = 7;
+  power = bound(power, min_power, max_power);
+  ap_spi_regs->SPI_CR1_bit.BR = power;
+  return true;
 }
 
-void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
+bool irs::arm::st_spi_base_t::_set_polarity(spi_regs_t* ap_spi_regs,
+  polarity_t a_polarity)
+{
+  irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  if (a_polarity == spi_t::NEGATIVE_POLARITY) {
+    ap_spi_regs->SPI_CR1_bit.CPOL = 0;
+  } else if (a_polarity == spi_t::POSITIVE_POLARITY) {
+    ap_spi_regs->SPI_CR1_bit.CPOL = 1;
+  }
+  ap_spi_regs->SPI_CR1_bit.SPE = spe;
+  return true;
+}
+
+bool irs::arm::st_spi_base_t::_set_phase(spi_regs_t* ap_spi_regs,
+  phase_t a_phase)
+{
+  irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  ap_spi_regs->SPI_CR1_bit.CPHA = a_phase;
+  ap_spi_regs->SPI_CR1_bit.SPE = spe;
+  return true;
+}
+
+bool irs::arm::st_spi_base_t::_set_order(spi_regs_t* ap_spi_regs,
+  order_t a_order)
+{
+  irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  if (a_order == spi_t::LSB) {
+    ap_spi_regs->SPI_CR1_bit.LSBFIRST = 1;
+  } else if (a_order == spi_t::MSB) {
+    ap_spi_regs->SPI_CR1_bit.LSBFIRST = 0;
+  }
+  ap_spi_regs->SPI_CR1_bit.SPE = spe;
+  return true;
+}
+
+void irs::arm::st_spi_base_t::initialize_gpio_channels(spi_regs_t* ap_spi_regs,
+  gpio_channel_t a_sck,
   gpio_channel_t a_miso,
   gpio_channel_t a_mosi,
   int a_gpio_speed)
@@ -645,7 +675,7 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   set_moder_alternate_function(a_sck);
   set_moder_alternate_function(a_miso);
   set_moder_alternate_function(a_mosi);
-  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
+  size_t spi_address = reinterpret_cast<size_t>(ap_spi_regs);
   if (spi_address == IRS_SPI1_BASE) {
     switch (a_sck) {
       case PA5: {
@@ -747,7 +777,8 @@ void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
   }
 }
 
-void irs::arm::arm_spi_t::set_moder_alternate_function(gpio_channel_t a_channel)
+void irs::arm::st_spi_base_t::set_moder_alternate_function(
+  gpio_channel_t a_channel)
 {
   const size_t port_address = get_port_address(a_channel);
   const irs_u32 pin_index = get_pin_index(a_channel);
@@ -755,6 +786,404 @@ void irs::arm::arm_spi_t::set_moder_alternate_function(gpio_channel_t a_channel)
   const irs_u32 bits_count = 2;
   IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
     bits_count, GPIO_MODER_ALTERNATE_FUNCTION);
+}
+
+// class st_spi_dma_t
+irs::arm::st_spi_dma_t::st_spi_dma_t(
+  const settings_t& a_settings
+):
+  m_lock(false),
+  m_settings(a_settings),
+  mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_settings.spi_address)),
+  mp_dma(reinterpret_cast<dma_regs_t*>(a_settings.dma_address)),
+  mp_rx_dma_y_stream_x(a_settings.rx_dma_y_stream_x),
+  mp_tx_dma_y_stream_x(a_settings.tx_dma_y_stream_x),
+  m_rx_buffer(a_settings.rx_buffer),
+  m_tx_buffer(a_settings.tx_buffer),
+  m_bitrate_default(a_settings.bitrate),
+  m_process(process_wait_command),
+  mp_write_buf(IRS_NULL),
+  mp_read_buf(IRS_NULL),
+  m_packet_size(0),
+  m_index(0),
+  m_data_item_byte_count(1),
+  m_byte_count(0),
+  m_max_byte_count(calc_max_byte_count())
+{
+  IRS_LIB_ASSERT(a_settings.spi_address);
+  IRS_LIB_ASSERT(a_settings.dma_address);
+  IRS_LIB_ASSERT(a_settings.bitrate > 0);
+  IRS_LIB_ASSERT(a_settings.sck != PNONE);
+  IRS_LIB_ASSERT(a_settings.miso != PNONE);
+  IRS_LIB_ASSERT(a_settings.mosi != PNONE);
+
+  IRS_LIB_ASSERT(a_settings.rx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.rx_buffer.size() > 0);
+  IRS_LIB_ASSERT(IS_DMA_ALL_PERIPH(a_settings.rx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.rx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.rx_dma_priority));
+
+  IRS_LIB_ASSERT(a_settings.tx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.tx_buffer.size() > 0);
+  IRS_LIB_ASSERT(IS_DMA_ALL_PERIPH(a_settings.tx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.tx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.tx_dma_priority));
+
+  reset_peripheral(a_settings.spi_address);
+  initialize_gpio_channels(a_settings.sck, a_settings.miso, a_settings.mosi,
+    a_settings.gpio_speed);
+
+  clock_enable(a_settings.spi_address);
+
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  // 1: Master configuration
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+
+  set_default();
+  enable_spi();
+
+  irs::clock_enable(a_settings.dma_address);
+
+  reset_dma();
+}
+
+void irs::arm::st_spi_dma_t::reset_dma()
+{
+  DMA_DeInit(m_settings.tx_dma_y_stream_x); //For STM32F4
+  while (DMA_GetCmdStatus(m_settings.tx_dma_y_stream_x) != DISABLE) {}
+  DMA_DeInit(m_settings.rx_dma_y_stream_x); //For STM32F4
+  while (DMA_GetCmdStatus(m_settings.rx_dma_y_stream_x) != DISABLE) {}
+
+  // TX
+  DMA_InitTypeDef DMA_Init_SPI_TX;
+  DMA_Init_SPI_TX.DMA_Channel = m_settings.tx_dma_channel;
+  DMA_Init_SPI_TX.DMA_PeripheralBaseAddr =
+    reinterpret_cast<irs_u32>(&mp_spi_regs->SPI_DR);
+  DMA_Init_SPI_TX.DMA_Memory0BaseAddr =
+    reinterpret_cast<uint32_t>(m_tx_buffer.data());
+  DMA_Init_SPI_TX.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  DMA_Init_SPI_TX.DMA_BufferSize = 2;
+  DMA_Init_SPI_TX.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_Init_SPI_TX.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_Init_SPI_TX.DMA_PeripheralDataSize = (m_data_item_byte_count == 1) ?
+    DMA_PeripheralDataSize_Byte : DMA_PeripheralDataSize_HalfWord;
+  DMA_Init_SPI_TX.DMA_MemoryDataSize = (m_data_item_byte_count == 1) ?
+    DMA_MemoryDataSize_Byte : DMA_MemoryDataSize_HalfWord;
+  DMA_Init_SPI_TX.DMA_Mode = DMA_Mode_Normal;
+  DMA_Init_SPI_TX.DMA_Priority = m_settings.tx_dma_priority;
+  DMA_Init_SPI_TX.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  DMA_Init_SPI_TX.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+  DMA_Init_SPI_TX.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+  DMA_Init_SPI_TX.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+
+  DMA_Init(m_settings.tx_dma_y_stream_x, &DMA_Init_SPI_TX);
+
+  SPI_I2S_DMACmd(reinterpret_cast<SPI_TypeDef*>(mp_spi_regs),
+    SPI_I2S_DMAReq_Tx, ENABLE);
+
+  // RX
+  DMA_InitTypeDef DMA_Init_SPI_RX;
+  DMA_Init_SPI_RX.DMA_Channel = DMA_Channel_0;
+  DMA_Init_SPI_RX.DMA_PeripheralBaseAddr =
+    reinterpret_cast<irs_u32>(&mp_spi_regs->SPI_DR);
+  DMA_Init_SPI_RX.DMA_Memory0BaseAddr =
+    reinterpret_cast<uint32_t>(m_rx_buffer.data());
+  DMA_Init_SPI_RX.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_Init_SPI_RX.DMA_BufferSize = 2;
+  DMA_Init_SPI_RX.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_Init_SPI_RX.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_Init_SPI_RX.DMA_PeripheralDataSize = (m_data_item_byte_count == 1) ?
+    DMA_PeripheralDataSize_Byte : DMA_PeripheralDataSize_HalfWord;;
+  DMA_Init_SPI_RX.DMA_MemoryDataSize = (m_data_item_byte_count == 1) ?
+    DMA_MemoryDataSize_Byte : DMA_MemoryDataSize_HalfWord;
+  DMA_Init_SPI_RX.DMA_Mode = DMA_Mode_Normal;
+  DMA_Init_SPI_RX.DMA_Priority = m_settings.rx_dma_priority;
+  DMA_Init_SPI_RX.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  DMA_Init_SPI_RX.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+  DMA_Init_SPI_RX.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+  DMA_Init_SPI_RX.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+
+  DMA_Init(m_settings.rx_dma_y_stream_x, &DMA_Init_SPI_RX);
+
+  SPI_I2S_DMACmd(reinterpret_cast<SPI_TypeDef*>(mp_spi_regs),
+    SPI_I2S_DMAReq_Rx, ENABLE);
+}
+
+void irs::arm::st_spi_dma_t::start_spi_dma()
+{
+  DMA_SetCurrDataCounter(mp_rx_dma_y_stream_x, m_byte_count);
+  DMA_SetCurrDataCounter(mp_tx_dma_y_stream_x, m_byte_count);
+  DMA_Cmd(mp_rx_dma_y_stream_x, ENABLE);
+  DMA_Cmd(mp_tx_dma_y_stream_x, ENABLE);
+}
+
+void irs::arm::st_spi_dma_t::stop_spi_dma()
+{
+  DMA_Cmd(mp_rx_dma_y_stream_x, DISABLE);
+  DMA_Cmd(mp_tx_dma_y_stream_x, DISABLE);
+}
+
+void irs::arm::st_spi_dma_t::initialize_gpio_channels(gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi,
+  int a_gpio_speed)
+{
+  st_spi_base_t::initialize_gpio_channels(
+    mp_spi_regs, a_sck, a_miso, a_mosi, a_gpio_speed);
+}
+
+irs::arm::st_spi_dma_t::~st_spi_dma_t()
+{
+  disable_spi();
+}
+
+void irs::arm::st_spi_dma_t::set_default()
+{
+  set_bitrate(m_bitrate_default);
+  set_polarity(POSITIVE_POLARITY);
+  set_phase(FIRST_EDGE);
+  set_data_size(data_size_default);
+  set_order(MSB);
+}
+
+void irs::arm::st_spi_dma_t::enable_spi()
+{
+  // 1: Peripheral enabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 1;
+}
+
+void irs::arm::st_spi_dma_t::disable_spi()
+{
+  while (mp_spi_regs->SPI_SR_bit.RXNE != 0);
+  while (mp_spi_regs->SPI_SR_bit.TXE != 1);
+  while (mp_spi_regs->SPI_SR_bit.BSY != 0);
+  // 0: Peripheral disabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+}
+
+void irs::arm::st_spi_dma_t::abort()
+{
+  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  stop_spi_dma();
+  m_process = process_wait_command;
+}
+
+irs::spi_t::status_t irs::arm::st_spi_dma_t::get_status()
+{
+  if (m_process == process_wait_command) {
+    return FREE;
+  } else {
+    return BUSY;
+  }
+}
+
+bool irs::arm::st_spi_dma_t::set_bitrate(irs_u32 a_bitrate)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_bitrate(mp_spi_regs, a_bitrate);
+}
+
+bool irs::arm::st_spi_dma_t::set_polarity(polarity_t a_polarity)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_polarity(mp_spi_regs, a_polarity);
+}
+
+bool irs::arm::st_spi_dma_t::set_phase(phase_t a_phase)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_phase(mp_spi_regs, a_phase);
+}
+
+bool irs::arm::st_spi_dma_t::set_order(order_t a_order)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_order(mp_spi_regs, a_order);
+}
+
+bool irs::arm::st_spi_dma_t::set_data_size(irs_u16 a_data_size)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  if ((a_data_size != 8) && (a_data_size != 16)) {
+    IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
+  }
+  disable_spi();
+  if (a_data_size == 8) {
+    mp_spi_regs->SPI_CR1_bit.DFF = 0;
+    m_data_item_byte_count = 1;
+  } else {
+    mp_spi_regs->SPI_CR1_bit.DFF = 1;
+    m_data_item_byte_count = 2;
+  }
+  m_max_byte_count = calc_max_byte_count();
+  enable_spi();
+  reset_dma();
+  return true;
+}
+
+void irs::arm::st_spi_dma_t::write(const irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(IRS_NULL, ap_buf, a_size);
+}
+
+void irs::arm::st_spi_dma_t::read(irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(ap_buf, IRS_NULL, a_size);
+}
+
+void irs::arm::st_spi_dma_t::lock()
+{
+  m_lock = true;
+}
+
+void irs::arm::st_spi_dma_t::unlock()
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя разблокировать в процессе "
+      "передачи данных");
+  }
+  m_lock = false;
+}
+
+bool irs::arm::st_spi_dma_t::get_lock()
+{
+  return m_lock;
+}
+
+void irs::arm::st_spi_dma_t::tick()
+{
+  if (m_process == process_read_write) {
+    if ((DMA_GetFlagStatus(mp_tx_dma_y_stream_x, DMA_FLAG_TCIF4) == SET) &&
+        (DMA_GetFlagStatus(mp_rx_dma_y_stream_x, DMA_FLAG_TCIF3) == SET)) {
+
+      if (mp_read_buf) {
+        memcpy(mp_read_buf, m_rx_buffer.data(), m_byte_count);
+      }
+      m_index += m_byte_count/m_data_item_byte_count;
+
+      DMA_ClearFlag(mp_tx_dma_y_stream_x, DMA_FLAG_TCIF4);
+      DMA_ClearFlag(mp_rx_dma_y_stream_x, DMA_FLAG_TCIF3);
+
+      if (m_index < m_packet_size) {
+        const size_type need_size = (m_packet_size - m_index)*
+          m_data_item_byte_count;
+        const size_type start_index = m_index/m_data_item_byte_count;
+        if (mp_write_buf != IRS_NULL) {
+          m_byte_count = min(m_max_byte_count, need_size);
+          memcpy(m_tx_buffer.data(), mp_write_buf + start_index, m_byte_count);
+        } else {
+          memset(m_tx_buffer.data(), 0, m_byte_count);
+        }
+        start_spi_dma();
+      } else {
+        m_process = process_wait_command;
+      }
+
+      if (m_index >= m_packet_size) {
+        m_process = process_wait_command;
+      }
+    }
+  }
+}
+
+irs::arm::st_spi_dma_t::size_type
+irs::arm::st_spi_dma_t::calc_max_byte_count() const
+{
+  size_type byte_count = 0;
+  byte_count = min(m_rx_buffer.size(), m_tx_buffer.size());
+  byte_count = min<size_type>(byte_count, 0xFFFF);
+  // Берем четное количество, если необходимо
+  byte_count = (byte_count/m_data_item_byte_count)*m_data_item_byte_count;
+
+  return byte_count;
+}
+
+void irs::arm::st_spi_dma_t::read_write(irs_u8 *ap_read_buf,
+  const irs_u8 *ap_write_buf, irs_uarc a_size)
+{
+  if (!ap_read_buf && !ap_write_buf) {
+    IRS_LIB_ERROR(ec_standard, "ap_read_buf и ap_write_buf "
+      "не могут быть одновременно равны IRS_NULL");
+  }
+  if (m_data_item_byte_count == 2) {
+    if ((a_size % 2) != 0) {
+      IRS_LIB_ERROR(ec_standard, "Количество байт должно быть четным");
+    }
+  }
+  if (!m_lock) {
+    IRS_LIB_ERROR(ec_standard, "Вызов read_write на разблокированном spi");
+  }
+  m_packet_size = a_size/m_data_item_byte_count;
+  m_byte_count = min(m_max_byte_count, a_size);
+  if (ap_write_buf) {
+    memcpy(m_tx_buffer.data(), ap_write_buf, m_byte_count);
+  } else {
+    memset(m_tx_buffer.data(), 0, m_byte_count);
+  }
+  mp_read_buf = ap_read_buf;
+  mp_write_buf = ap_write_buf;
+  m_index = 0;
+
+  m_process = process_read_write;
+  start_spi_dma();
+}
+
+irs::arm::arm_spi_t::arm_spi_t(
+  size_t a_spi_address,
+  irs_u32 a_bitrate,
+  gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi,
+  gpio_speed_t a_gpio_speed
+):
+  m_lock(false),
+  mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_spi_address)),
+  m_bitrate_default(a_bitrate),
+  m_process(process_wait_command),
+  mp_write_buf(IRS_NULL),
+  mp_read_buf(IRS_NULL),
+  m_packet_size(0),
+  m_read_buf_index(0),
+  m_data_item_byte_count(1)
+
+{
+  reset_peripheral(a_spi_address);
+  initialize_gpio_channels(a_sck, a_miso, a_mosi, a_gpio_speed);
+  clock_enable(a_spi_address);
+
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  //mp_spi_regs->SPI_CR1_bit.SSM = 0;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  // 1: Master configuration
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+
+  set_default();
+  enable_spi();
+}
+
+void irs::arm::arm_spi_t::initialize_gpio_channels(gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi,
+  int a_gpio_speed)
+{
+  st_spi_base_t::initialize_gpio_channels(
+    mp_spi_regs, a_sck, a_miso, a_mosi, a_gpio_speed);
 }
 
 irs::arm::arm_spi_t::~arm_spi_t()
@@ -807,24 +1236,7 @@ bool irs::arm::arm_spi_t::set_bitrate(irs_u32 a_bitrate)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
-  cpu_traits_t::frequency_type frequency = 0;
-  size_t spi_address = reinterpret_cast<size_t>(mp_spi_regs);
-  if (spi_address == IRS_SPI1_BASE) {
-    frequency = cpu_traits_t::periphery_frequency_second();
-  } else {
-    frequency = cpu_traits_t::periphery_frequency_first();
-  }
-  irs_u32 divider = frequency/a_bitrate;
-  int power = -1;
-  while (divider > 0) {
-    divider >>= 1;
-    power++;
-  }
-  const int min_power = 0;
-  const int max_power = 7;
-  power = bound(power, min_power, max_power);
-  mp_spi_regs->SPI_CR1_bit.BR = power;
-  return true;
+  return st_spi_base_t::_set_bitrate(mp_spi_regs, a_bitrate);
 }
 
 bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
@@ -833,15 +1245,7 @@ bool irs::arm::arm_spi_t::set_polarity(polarity_t a_polarity)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
-  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
-  if (a_polarity == NEGATIVE_POLARITY) {
-    mp_spi_regs->SPI_CR1_bit.CPOL = 0;
-  } else if (a_polarity == POSITIVE_POLARITY) {
-    mp_spi_regs->SPI_CR1_bit.CPOL = 1;
-  }
-  mp_spi_regs->SPI_CR1_bit.SPE = spe;
-  return true;
+  return st_spi_base_t::_set_polarity(mp_spi_regs, a_polarity);
 }
 
 bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
@@ -850,11 +1254,7 @@ bool irs::arm::arm_spi_t::set_phase(phase_t a_phase)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
-  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
-  mp_spi_regs->SPI_CR1_bit.CPHA = a_phase;
-  mp_spi_regs->SPI_CR1_bit.SPE = spe;
-  return true;
+  return st_spi_base_t::_set_phase(mp_spi_regs, a_phase);
 }
 
 bool irs::arm::arm_spi_t::set_order(order_t a_order)
@@ -863,15 +1263,7 @@ bool irs::arm::arm_spi_t::set_order(order_t a_order)
     IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
       "передачи данных");
   }
-  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
-  if (a_order == LSB) {
-    mp_spi_regs->SPI_CR1_bit.LSBFIRST = 1;
-  } else if (a_order == MSB) {
-    mp_spi_regs->SPI_CR1_bit.LSBFIRST = 0;
-  }
-  mp_spi_regs->SPI_CR1_bit.SPE = spe;
-  return true;
+  return st_spi_base_t::_set_order(mp_spi_regs, a_order);
 }
 
 bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
@@ -881,8 +1273,7 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
       "передачи данных");
   }
   if ((a_data_size != 8) && (a_data_size != 16)) {
-    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
-      "передачи данных");
+    IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
   }
   disable_spi();
   if (a_data_size == 8) {

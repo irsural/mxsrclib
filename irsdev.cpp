@@ -720,7 +720,7 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   clock_enable(a_timer_address);
   // 0: Counter used as upcounter
   mp_timer->TIM_CR1_bit.DIR = 0;
-  mp_timer->TIM_ARR = timer_frequency()/a_frequency;
+  mp_timer->TIM_ARR = timer_frequency()/a_frequency - 1;
   //get_timer_channel_and_select_alternate_function_for_main_channel();
   //get_tim_ccr_register();
   //set_mode_capture_compare_registers(ocm_force_inactive_level); //  !!!???

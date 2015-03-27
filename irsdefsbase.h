@@ -365,15 +365,15 @@ inline endian_t detect_cpu_endian()
 #define IRS_SQRT_2    0.707106781186547524401
 
 // ћаксимальные и минимальные значени€ по типам
-#define IRS_I8_MIN -128
+#define IRS_I8_MIN (-128)
 #define IRS_I8_MAX 127
 #define IRS_U8_MIN 0
 #define IRS_U8_MAX 255
-#define IRS_I16_MIN -32768
+#define IRS_I16_MIN (-32767 - 1)
 #define IRS_I16_MAX 32767
 #define IRS_U16_MIN 0
 #define IRS_U16_MAX 65535
-#define IRS_I32_MIN -2147483648L
+#define IRS_I32_MIN (-2147483647L - 1)
 #define IRS_I32_MAX 2147483647L
 #define IRS_U32_MIN 0UL
 #define IRS_U32_MAX 4294967295UL

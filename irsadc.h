@@ -12,6 +12,7 @@
 #include <irsspi.h>
 #include <irsstd.h>
 #include <mxdata.h>
+#include <irsalg.h>
 #include <irsgpio.h>
 #include <irsadcabs.h>
 #include <irsdacabs.h>
@@ -345,150 +346,156 @@ register_field_t<field_t, reg_t, mask>::operator field_t() const
   }
   return value;
 }
-#define ADS_1298_ENABLED 0
-#if ADS_1298_ENABLED
-#define IRS_GET_POS_RIGHT_SET_BIT(x) (\
-  (((x & -x) & 0x0000FFFF) ? 0 : 16)+\
-  (((x & -x) & 0x00FF00FF) ? 0 : 8)+\
-  (((x & -x) & 0x0F0F0F0F) ? 0 : 4)+\
-  (((x & -x) & 0x33333333) ? 0 : 2)+\
-  (((x & -x) & 0x55555555) ? 0 : 1)+\
-  ((x & -x) ? 0 : 1))
 
-class adc_ads1298_t: public adc_request_t
+class adc_ads1298_continuous_mode_t: public adc_t
 {
 public:
   typedef irs_size_t size_type;
-  /*struct config_t
+  enum { adc_resolution = 24 };
+  enum { channel_count = 8 };
+
+  //! \brief Скорость АЦП
+  //! \details Скорость задается через делитель частоты fmod. fmod = fclk/4 в
+  //!   режиме высокого разрешения и fmod = fclk/8 в режиме низкого
+  //!   энергопотребления. Подробности здесь
+  //!   http://www.ti.com/lit/ds/symlink/ads1298.pdf .
+  //!   Значения скорости приведены для fclk = 2,048 МГц.
+  enum data_rate_t {
+    //! \brief fmod/16: 32kSPS(HR mode) или 16kSPS(low power mode)
+    data_rate_fmod_16 = 0,
+    //! \brief fmod/32: 16kSPS(HR mode) или 8kSPS(low power mode)
+    data_rate_fmod_32 = 1,
+    //! \brief fmod/64: 8kSPS(HR mode) или 4kSPS(low power mode)
+    data_rate_fmod_64 = 2,
+    //! \brief fmod/128: 4kSPS(HR mode) или 2kSPS(low power mode)
+    data_rate_fmod_128 = 3,
+    //! \brief fmod/256: 2kSPS(HR mode) или 1kSPS(low power mode)
+    data_rate_fmod_256 = 4,
+    //! \brief fmod/512: 1kSPS(HR mode) или 500SPS(low power mode)
+    data_rate_fmod_512 = 5,
+    //! \brief fmod/1024: 500SPS(HR mode) или 250SPS(low power mode)
+    data_rate_fmod_1024 = 6
+  };
+
+  enum channel_input_t {
+    chi_normal_electrode_input = 0,
+    chi_input_shorted = 1,
+    chi_supply = 3,
+    chi_temperature_sensor = 4,
+    chi_test_signal = 5
+  };
+
+  enum gain_t {
+    gain_1 = 1,
+    gain_2 = 2,
+    gain_3 = 3,
+    gain_4 = 4,
+    gain_6 = 0,
+    gain_8 = 5,
+    gain_12 = 6
+  };
+
+  struct channel_settings_t
   {
-    gpio_channel_t reset;
-    gpio_channel_t date_ready;
-    config_t(gpio_channel_t a_reset,
-      gpio_channel_t a_date_ready);
-  };*/
+    bool power_down;
+    channel_input_t input;
+    gain_t gain;
+    channel_settings_t():
+      power_down(false),
+      input(chi_normal_electrode_input),
+      gain(gain_1)
+    {
+    }
+  };
 
-  adc_ads1298_t(spi_t *ap_spi,
-    gpio_pin_t* ap_cs_pin,
-    gpio_pin_t* ap_power_down_pin,
-    gpio_pin_t* ap_reset_pin,
-    gpio_pin_t* ap_date_ready_pin);
-  ~adc_ads1298_t();
-  virtual void start();
-  virtual void stop();
-  virtual meas_status_t status() const;
-  virtual irs_i32 get_value();
+  struct settings_t
+  {
+    spi_t* spi;
+    gpio_pin_t* cs_pin;
+    gpio_pin_t* power_down_pin;
+    gpio_pin_t* reset_pin;
+    gpio_pin_t* date_ready_pin;
+    data_rate_t data_rate;
+    channel_settings_t channel_1;
+    channel_settings_t channel_2;
+    channel_settings_t channel_3;
+    channel_settings_t channel_4;
+    channel_settings_t channel_5;
+    channel_settings_t channel_6;
+    channel_settings_t channel_7;
+    channel_settings_t channel_8;
+    settings_t():
+      spi(NULL),
+      cs_pin(NULL),
+      power_down_pin(NULL),
+      reset_pin(NULL),
+      date_ready_pin(NULL),
+      data_rate(data_rate_fmod_1024),
+      channel_1(),
+      channel_2(),
+      channel_3(),
+      channel_4(),
+      channel_5(),
+      channel_6(),
+      channel_7(),
+      channel_8()
+    {
+    }
+  };
+
+  adc_ads1298_continuous_mode_t(const settings_t& a_settings);
+  ~adc_ads1298_continuous_mode_t();
+  virtual size_type get_resulution() const;
+  virtual void select_channels(irs_u32 a_selected_channels);
+  virtual inline bool new_value_exists(irs_u8 a_channel) const;
+  virtual inline irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual inline float get_float_minimum();
+  virtual inline float get_float_maximum();
+  virtual inline float get_float_data(irs_u8 a_channel);
+  virtual inline float get_temperature();
   virtual void tick();
-  virtual void set_param(adc_param_t a_param, const int a_value);
-  virtual void get_param(adc_param_t a_param, int* ap_value);
-
+  float get_temperature_degree_celsius(const float a_vref);
+  static float convert_value_to_temperature_degree_celsius(irs_u32 a_value,
+    const float a_vref);
+  static float convert_value_to_temperature_degree_celsius(float a_value,
+    const float a_vref);
 private:
-  void set_channel(int a_channel);
-  void set_mode(int a_mode);
-  void set_freq(int a_freq);
   void set_gain(int a_gain);
-  void set_buf(int a_buf);
-  void set_ref_det(int a_ref_det);
-  void set_ub(int a_ub);
-  void set_bo(int a_bo);
+  template <size_t channel>
+  inline void read_sample_from_channel()
+  {
+    if (m_results[channel].enabled) {
+      enum {
+        channel_1_pos = 3,
+        channel_size = 3,
+        pos_0 = channel*channel_size + channel_1_pos,
+        pos_1 = pos_0 + 1,
+        pos_2 = pos_1 + 1
+      };
 
-  enum mode_t {
-    mode_free,
-    mode_spi_rw,
-    mode_spi_rw_wait,
-    mode_read_all_reg,
-    mode_read_data,
-    mode_read_wait,
-    mode_ready_wait,
-    mode_get_data
-  };
-  enum operating_modes_t {
-    om_continuous = 0,
-    om_single = 1,
-    om_idle = 2,
-    om_power_down = 3,
-    om_internal_zero_scale = 4,
-    om_internal_full_scale = 5,
-    om_system_zero_scale = 6,
-    om_system_full_scale = 7
-  };
-  enum {
-    m_size_buf = 16,
-    m_write_buf_size = 4
-  };
-  enum param_byte_pos_t {
-    m_gain_byte_pos = 1,
-    m_freq_byte_pos = 0,
-    m_ch_byte_pos = 0,
-    m_mode_byte_pos = 1,
-    m_buf_byte_pos = 0,
-    m_ref_det_byte_pos = 0,
-    m_ub_byte_pos = 1,
-    m_bo_byte_pos = 1
-  };
-  enum param_pos_t {
-    m_rw_pos = 6,
-    m_rs_pos = 3,
-    m_gain_pos = 0,
-    m_freq_pos = 0,
-    m_ch_pos = 0,
-    m_mode_pos = 5,
-    m_ready_pos = 7,
-    m_buf_pos = 4,
-    m_ref_det_pos = 5,
-    m_ub_pos = 4,
-    m_bo_pos = 5
-  };
-  enum param_size_t {
-    m_gain_size = 3,
-    m_freq_size = 4,
-    m_ch_size = 4,
-    m_mode_size = 3,
-    m_buf_size = 1,
-    m_ref_det_size = 1,
-    m_ub_size = 1,
-    m_bo_size = 1
-  };
-  enum reg_index_t {
-    m_reg_comm_index = 0,
-    m_reg_status_index = 0,
-    m_reg_mode_index = 1,
-    m_reg_conf_index = 2,
-    m_reg_data_index = 3,
-    m_reg_id_index = 4,
-    m_reg_io_index = 5,
-    m_reg_offs_index = 6,
-    m_reg_fs_index = 7
-  };
-  enum reg_size_t {
-    m_reg_comm_size = 1,
-    m_reg_status_size = 1,
-    m_reg_mode_size = 2,
-    m_reg_conf_size = 2,
-    m_reg_data_size = 3,
-    m_reg_id_size = 1,
-    m_reg_io_size = 1,
-    m_reg_offs_size = 3,
-    m_reg_fs_size = 3
-  };
-  enum transaction_type_t {
-    tt_read,
-    tt_write
-  };
-  //-------------------------------------------------
-  enum test_process_t {
-    test_process_off,
-    test_process_get_spi,
-    test_process_wait_after_get_spi,
-    test_process_wait_before_spi_release,
-    test_process_read_id,
-    test_process_check_id,
-    test_process_wait_spi_read_write,
-    test_process_send_sdatac,
-    test_process_includint_input_short,
-    test_process_send_start,
-    test_process_send_rdatac,
-    test_process_wait_data,
-    test_process_check_noise
+      irs_u8 b0 = m_spi_buf[pos_0];
+      irs_u8 b1 = m_spi_buf[pos_1];
+      irs_u8 b2 = m_spi_buf[pos_2];
+      m_results[channel].value =
+        static_cast<irs_u32>((b0 << 24) | (b1 << 16) | (b2 << 8));
+      m_results[channel].new_value_exists = true;
+    }
+  }
+
+  enum process_t {
+    process_off,
+    process_wait_after_power_up,
+    process_wait_reset,
+    process_wait_after_reset,
+    process_get_spi,
+    process_send_sdatac,
+    process_wait_spi_read_write,
+    process_activate_normal_mode,
+    process_send_start,
+    process_send_rdatac,
+    process_wait_send_rdatac,
+    process_fast_read_data,
+    process_data_conversion
   };
 
   enum opcode_t {
@@ -533,61 +540,16 @@ private:
     reg_wct2 = 0x19,
     reg_last = reg_wct2
   };
-  //--------------------------------------------
-  /* ADC JEXTEN mask */
-  enum {
-    ch_set_power_down_mask = ((size_t)0x1 << 7),
-    ch_set_gain_mask = ((size_t)0x7 << 4),
-    ch_set_mux_mask = ((size_t)0x7)
-  };
 
-  /*inline size_t get_reg_field(size_t a_field_mask)
-  {
-    return *mp_register & a_field_mask;
-  }
-
-  inline void set_reg_field(size_t a_field_mask, size_t a_value)
-  {
-    *mp_register &= ~a_field_mask;
-    *mp_register |=
-      (a_value << IRS_GET_POS_RIGHT_SET_BIT(a_field_mask)) & a_field_mask;
-  }*/
-
-  /*struct reg_t {
-    reg_t(reg_index_t a_index, reg_size_t a_size):
-      index(a_index),
-      size(a_size)
-    {}
-    ~reg_t() {};
-    reg_index_t index;
-    reg_size_t size;
-  };*/
+  settings_t m_settings;
   spi_t* mp_spi;
   gpio_pin_t* mp_cs_pin;
+  gpio_pin_t* mp_power_down_pin;
   gpio_pin_t* mp_reset_pin;
   gpio_pin_t* mp_date_ready_pin;
-  meas_status_t m_status;
-  mode_t m_mode;
-  test_process_t m_test_process;
-  test_process_t m_test_process_next;
-  deque<test_process_t> m_test_process_deque;
-  //--------------------------------------------
-  /*class adc_spi_t
-  {
-  public:
-    adc_spi_t(spi_t* ap_spi, vector<irs_u8>* ap_spi_buf);
-    void run_read_write();
-    bool ready() const;
-    void tick();
-  private:
-    spi_t* mp_spi;
-    vector<irs_u8>* mp_spi_buf;
-  };*/
+  process_t m_process;
 
   irs_u8 mp_register;
-  //register_field_t<bool, irs_u8, 0x1 << 7> m_ch_set_power_down;
-  //register_field_t<size_t, irs_u8, 0x7 << 4> m_ch_set_gain;
-  //register_field_t<size_t, irs_u8, 0x7> m_ch_set_channel_input;
   struct ch_set_t
   {
     irs_u8 reg;
@@ -635,75 +597,93 @@ private:
     }
   };
 
+  ch_set_t get_ch_set_from_channel_settings(
+    const channel_settings_t& a_channel_settings);
+
   ch_set_t m_ch_set;
   config1_t m_config1;
   config2_t m_config2;
 
-  //--------------------------------------------
   const double m_t_clk_max;
 
-  vector<irs_u8> m_buf;
+
   vector<irs_u8> m_spi_buf;
-  vector<irs_u8> m_spi_read_buf;
-  vector<irs_u32> m_test_signal_buf;
-  enum { channel_count = 8 };
-  const size_type m_test_point_count;
-  size_type m_test_point_index;
-  size_t m_spi_transaction_size;
-  vector<reg_t> m_reg;
-  bool m_read_all_reg;
-  irs_u32 m_count_init;
-  irs_u32 m_shift;
-  bool m_read_data;
-  //vector<int> m_conv_time_vector;
-  irs_u8 m_freq;
-  int m_reserved_interval;
-  timer_t m_timer;
-  bool m_ready_wait;
-  bool m_get_data;
-  irs_i32 m_value;
-  operating_modes_t m_read_mode;
-  operating_modes_t m_cur_read_mode;
-  irs_u8 mp_get_buff[m_write_buf_size];
-  int* mp_value_param;
-  bool m_read_calibration_coeff;
+
+  struct channel_result_t
+  {
+    bool enabled;
+    bool new_value_exists;
+    irs_u32 value;
+    channel_result_t(bool a_enabled = false):
+      enabled(a_enabled),
+      new_value_exists(0),
+      value(0)
+    {}
+  };
+
+  vector<channel_result_t> m_results;
+
+  bool m_temperature_sensor_enabled;
+  size_type m_temperature_channel_index;
+
+  irs::timer_t m_t_after_power_up_delay;
+  irs::timer_t m_t_reset_delay;
+  irs::timer_t m_t_after_reset_delay;
 
   irs::timer_t m_t_cssc_delay;
   irs::timer_t m_t_sccs_delay;
   irs::timer_t m_t_csh_delay;
 
-  //--------------------------------------
-  void test_adc();
   bool try_get_spi();
   void send_opcode(opcode_t a_opcode);
-  void write_reg(reg_t a_reg, irs_u8 a_value);
-  bool try_write_regs(const map<reg_t, irs_u8>& a_regs);
-  void read_reg(reg_t a_reg);
+  void write_regs(const map<reg_t, irs_u8>& a_regs);
   void read_data();
-  void read_data_single_shot();
-  //bool try_read_write_regs(vectorirs_u8 a_reg);
   bool spi_read_write_is_complete() const;
-
-  void send_opcode_block_mode(opcode_t a_opcode);
-  void write_reg_block_mode(reg_t a_reg, irs_u8 a_value);
-  irs_u8 read_reg_block_mode(reg_t a_reg);
-  void read_data_block_mode();
-  void read_data_single_shot_block_mode();
-  //--------------------------------------
   void spi_prepare();
   void spi_release();
-  void creation_reg_comm(reg_t a_reg, transaction_type_t a_tt);
-  int calculation_shift(reg_t a_reg);
-  int calculation_number_byte(reg_t a_reg, param_byte_pos_t byte_pos);
-  int to_int(double a_number);
-  int filling_units(param_size_t a_size);
-  void creation_reg(reg_t a_reg, int a_value, param_byte_pos_t a_byte_pos,
-    param_pos_t a_start_pos, param_size_t a_size);
-  int get(reg_t a_reg, param_byte_pos_t a_byte_pos,
-    param_pos_t a_start_pos, param_size_t a_size);
-  irs_i32 conversion_spi_value();
+  void write_regs_for_activate_normal_mode();
+  void read_samples_from_spi_buf();
 };
-#endif // ADS_1298_ENABLED
+
+inline bool adc_ads1298_continuous_mode_t::new_value_exists(
+  irs_u8 a_channel) const
+{
+  return m_results[a_channel].new_value_exists;
+}
+
+inline irs_u32 adc_ads1298_continuous_mode_t::get_u32_data(
+  irs_u8 a_channel)
+{
+  m_results[a_channel].new_value_exists = false;
+  return m_results[a_channel].value;
+}
+
+inline float adc_ads1298_continuous_mode_t::get_float_minimum()
+{
+  return -1.f;
+}
+
+inline float adc_ads1298_continuous_mode_t::get_float_maximum()
+{
+  return +1.f;
+}
+
+inline float adc_ads1298_continuous_mode_t::get_float_data(irs_u8 a_channel)
+{
+  m_results[a_channel].new_value_exists = false;
+  const float value = static_cast<irs_i32>(m_results[a_channel].value);
+  const irs_i32 i32_min = IRS_I32_MIN;
+  return value/(i32_min*-1.f) ;
+}
+
+inline float adc_ads1298_continuous_mode_t::get_temperature()
+{
+  if (m_temperature_sensor_enabled) {
+    return get_float_data(m_temperature_channel_index);
+  }
+  return 0;
+}
+
 //--------------------------  AD7683  ------------------------------------------
 
 class adc_ad7683_t : public mxdata_t

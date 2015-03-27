@@ -1321,10 +1321,10 @@ typedef struct {
   __REG32                 : 4;
   __REG32 CALW16          : 1;
   __REG32 CALW8           : 1;
-  __REG32 CALP            : 1;  
-  __REG32                 : 16; 
+  __REG32 CALP            : 1;
+  __REG32                 : 16;
 } __rtc_calr_bits;
-#endif // IRS_STM32F4xx 
+#endif // IRS_STM32F4xx
 
 
 /* RTC tamper control register (RTC_TCR) */
@@ -2542,7 +2542,7 @@ typedef struct {
   __REG32  SETENA20       : 1;
   __REG32  SETENA21       : 1;
   __REG32  SETENA22       : 1;
-  __REG32  SETENA23       : 1;
+  __REG32  SETENA_EXTI9_5 : 1;
   __REG32  SETENA24       : 1;
   __REG32  SETENA_TIM1_UP_TIM10  : 1;
   __REG32  SETENA26       : 1;
