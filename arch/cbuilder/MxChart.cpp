@@ -2942,13 +2942,17 @@ void __fastcall TMxChartSelect::RestoreAreas()
 void __fastcall TMxChartSelect::SaveAutoScales()
 {
   ValidAutoScales = true;
-  AutoScales[Chart] = make_pair(Chart->AutoScaleX, Chart->AutoScaleY);
-  for (int i = 0; i < Chart->Count; i++) 
+  // ¬озможно здесь специально используетс€ insert
+  AutoScales.insert(make_pair(Chart,
+    make_pair(Chart->AutoScaleX, Chart->AutoScaleY)));
+  for (int i = 0; i < Chart->Count; i++)
   {
     TComponent* chart_item = Chart->Items[i];
     bool auto_scale_x = Chart->Items[i]->AutoScaleX;
     bool auto_scale_y = Chart->Items[i]->AutoScaleY;
-    AutoScales[chart_item] = make_pair(auto_scale_x, auto_scale_y);
+    // ¬озможно здесь специально используетс€ insert
+    AutoScales.insert(make_pair(chart_item,
+      make_pair(auto_scale_x, auto_scale_y)));
   }
 }
 //---------------------------------------------------------------------------
@@ -3136,8 +3140,9 @@ void __fastcall TMxChartSelect::ItemChange(int Oper, int Index)
       Areas.clear(); BaseItems.clear();
       break;
     case 2:
-      AutoScales[Chart->Items[Index]] = make_pair(
-        Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY);
+      // ¬озможно здесь специально используетс€ insert
+      AutoScales.insert(make_pair(Chart->Items[Index], make_pair(
+        Chart->Items[Index]->AutoScaleX, Chart->Items[Index]->AutoScaleY)));
       for(vector<int>::iterator i = BaseItems.begin(); i != BaseItems.end(); i++)
         if (*i >= Index) (*i)++;
       break;
