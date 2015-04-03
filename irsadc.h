@@ -331,7 +331,7 @@ const field_t& register_field_t<field_t, reg_t, mask>::operator=(
   const field_t &a_value)
 {
   if (mp_reg) {
-    *mp_reg &= static_cast<reg_t>(~mask);
+    *mp_reg = static_cast<reg_t>(*mp_reg & ~mask);
     *mp_reg |= static_cast<reg_t>((a_value << pos) & mask);
   }
   return a_value;
