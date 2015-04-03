@@ -331,8 +331,8 @@ const field_t& register_field_t<field_t, reg_t, mask>::operator=(
   const field_t &a_value)
 {
   if (mp_reg) {
-    *mp_reg &= ~mask;
-    *mp_reg |= (a_value << pos) & mask;
+    *mp_reg &= static_cast<reg_t>(~mask);
+    *mp_reg |= static_cast<reg_t>((a_value << pos) & mask);
   }
   return a_value;
 }
@@ -679,7 +679,7 @@ inline float adc_ads1298_continuous_mode_t::get_float_data(irs_u8 a_channel)
 inline float adc_ads1298_continuous_mode_t::get_temperature()
 {
   if (m_temperature_sensor_enabled) {
-    return get_float_data(m_temperature_channel_index);
+    return get_float_data(static_cast<irs_u8>(m_temperature_channel_index));
   }
   return 0;
 }

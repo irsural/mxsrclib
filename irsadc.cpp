@@ -628,7 +628,8 @@ float irs::adc_ads1298_continuous_mode_t::get_temperature_degree_celsius(
   const float a_vref)
 {
   if (m_temperature_sensor_enabled) {
-    float value = get_float_data(m_temperature_channel_index);
+    float value = get_float_data(
+      static_cast<irs_u8>(m_temperature_channel_index));
     return convert_value_to_temperature_degree_celsius(value, a_vref);
   }
   return 0;
@@ -695,7 +696,7 @@ void irs::adc_ads1298_continuous_mode_t::write_regs(
 
   irs_u8 starting_reg_addr = a_regs.begin()->first;
   irs_u8 opcode1 = static_cast<irs_u8>(opcode_wreg | starting_reg_addr);
-  irs_u8 opcode2 = a_regs.size() - 1;
+  irs_u8 opcode2 = static_cast<reg_t>(a_regs.size() - 1);
 
   irs_u8* buf = vector_data(m_spi_buf);
 
