@@ -763,6 +763,125 @@ irs::handle_t<irs::hardflow_t> irs::make_gpib_hardflow(
 #if defined(IRS_WIN32)
 namespace irs {
 
+class agilent_3458a_mxmultimeter_creator_t:
+  public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+};
+
+class agilent_3458a_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  agilent_3458a_mxmultimeter_t(const string_type& a_conf_file_name);
+  ~agilent_3458a_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enabled(bool a_enabled);
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+private:
+  void reset();
+  void disable();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::agilent_3458a_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(
+    new agilent_3458a_mxmultimeter_t(a_name));
+}
+
+irs::agilent_3458a_mxmultimeter_t::agilent_3458a_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(make_assembly_param_box(irst("Agilent 3458A"),
+    m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  m_enabled(false),
+  mp_hardflow(),
+  mp_multimeter()
+{
+}
+irs::agilent_3458a_mxmultimeter_t::~agilent_3458a_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::agilent_3458a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  add_gpib_options_to_param_box(ap_param_box);
+  mp_param_box->load();
+}
+bool irs::agilent_3458a_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::agilent_3458a_mxmultimeter_t::enabled(bool a_enabled)
+{
+  if (a_enabled == m_enabled) {
+    return;
+  }
+  if (a_enabled) {
+    reset();
+  } else {
+    disable();
+  }
+  m_enabled = a_enabled;
+}
+void irs::agilent_3458a_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+}
+
+void irs::agilent_3458a_mxmultimeter_t::reset()
+{
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::cr_lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr_lf;
+  const int prologix_timeout_ms = 30;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::agilent_3458a_t(mp_hardflow.get(),
+    mul_mode_type_passive));
+}
+mxmultimeter_t* irs::agilent_3458a_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::agilent_3458a_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+  }
+}
+void irs::agilent_3458a_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
 class agilent_3458a_assembly_creator_t: public mxdata_assembly_creator_t
 {
 public:
@@ -913,6 +1032,132 @@ void irs::agilent_3458a_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 #if defined(IRS_WIN32)
 namespace irs {
 
+class agilent_34420a_mxmultimeter_creator_t:
+  public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+};
+
+class agilent_34420a_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  agilent_34420a_mxmultimeter_t(const string_type& a_conf_file_name);
+  virtual ~agilent_34420a_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enabled(bool a_enabled);
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+private:
+  void reset();
+  void disable();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::agilent_34420a_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(
+    new agilent_34420a_mxmultimeter_t(a_name));
+}
+
+irs::agilent_34420a_mxmultimeter_t::agilent_34420a_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(make_assembly_param_box(irst("Agilent 34420A"),
+    m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  m_enabled(false),
+  mp_hardflow(),
+  mp_multimeter()
+{
+
+}
+irs::agilent_34420a_mxmultimeter_t::~agilent_34420a_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::agilent_34420a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  add_gpib_options_to_param_box(ap_param_box);
+  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  mp_param_box->load();
+}
+bool irs::agilent_34420a_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::agilent_34420a_mxmultimeter_t::enabled(bool a_enabled)
+{
+  if (a_enabled == m_enabled) {
+    return;
+  }
+  if (a_enabled) {
+    reset();
+  } else {
+    disable();
+  }
+  m_enabled = a_enabled;
+}
+void irs::agilent_34420a_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+}
+
+void irs::agilent_34420a_mxmultimeter_t::reset()
+{
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr;
+  const int prologix_timeout_ms = 3000;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::agilent_34420a_t(mp_hardflow.get(),
+    mul_mode_type_passive));
+}
+mxmultimeter_t* irs::agilent_34420a_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::agilent_34420a_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+  }
+}
+void irs::agilent_34420a_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
+namespace irs {
+
 class agilent_34420a_assembly_creator_t: public mxdata_assembly_creator_t
 {
 public:
@@ -1061,6 +1306,126 @@ void irs::agilent_34420a_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 #endif // defined(IRS_WIN32)
 
 #if defined(IRS_WIN32)
+namespace irs {
+
+class v7_78_1_mxmultimeter_creator_t: public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+};
+
+class v7_78_1_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  v7_78_1_mxmultimeter_t(const string_type& a_conf_file_name);
+  virtual ~v7_78_1_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enabled(bool a_enabled);
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+private:
+  void reset();
+  void disable();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::v7_78_1_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(new v7_78_1_mxmultimeter_t(a_name));
+}
+
+irs::v7_78_1_mxmultimeter_t::v7_78_1_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(make_assembly_param_box(irst("В7-78/1"), m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  m_enabled(false),
+  mp_hardflow(),
+  mp_multimeter()
+{
+}
+irs::v7_78_1_mxmultimeter_t::~v7_78_1_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::v7_78_1_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  add_gpib_options_to_param_box(ap_param_box);
+  mp_param_box->load();
+}
+bool irs::v7_78_1_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::v7_78_1_mxmultimeter_t::enabled(bool a_enabled)
+{
+  if (a_enabled == m_enabled) {
+    return;
+  }
+  if (a_enabled) {
+    reset();
+  } else {
+    disable();
+  }
+  m_enabled = a_enabled;
+}
+void irs::v7_78_1_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+}
+void irs::v7_78_1_mxmultimeter_t::reset()
+{
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr;
+  const int prologix_timeout_ms = 3000;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::akip_v7_78_1_t(mp_hardflow.get(),
+    mul_mode_type_passive));
+}
+mxmultimeter_t* irs::v7_78_1_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::v7_78_1_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+  }
+}
+void irs::v7_78_1_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
 namespace irs {
 
 class v7_78_1_assembly_creator_t: public mxdata_assembly_creator_t
@@ -1222,6 +1587,127 @@ void irs::v7_78_1_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 #endif // defined(IRS_WIN32)
 
 #if defined(IRS_WIN32)
+namespace irs {
+
+class ch3_85_3r_mxmultimeter_creator_t: public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+};
+
+class ch3_85_3r_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  ch3_85_3r_mxmultimeter_t(const string_type& a_conf_file_name);
+  virtual ~ch3_85_3r_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enabled(bool a_enabled);
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+  private:
+  void reset();
+  void disable();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::ch3_85_3r_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(
+    new ch3_85_3r_mxmultimeter_t(a_name));
+}
+
+irs::ch3_85_3r_mxmultimeter_t::ch3_85_3r_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(make_assembly_param_box(irst("Ч3-85/3R"), m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+
+  m_enabled(false),
+  mp_hardflow(),
+  mp_multimeter()
+{
+}
+irs::ch3_85_3r_mxmultimeter_t::~ch3_85_3r_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::ch3_85_3r_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  mp_param_box->add_edit(irst("COM name"), irst("com1"));
+  mp_param_box->load();
+}
+bool irs::ch3_85_3r_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::ch3_85_3r_mxmultimeter_t::enabled(bool a_enabled)
+{
+  if (a_enabled == m_enabled) {
+    return;
+  }
+  if (a_enabled) {
+    reset();
+  } else {
+    disable();
+  }
+  m_enabled = a_enabled;
+}
+void irs::ch3_85_3r_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+}
+void irs::ch3_85_3r_mxmultimeter_t::reset()
+{
+  disable();
+  const string_type com_name = mp_param_box->get_param(irst("COM name"));
+
+  mp_hardflow.reset(new irs::hardflow::com_flow_t(
+    com_name, CBR_9600, FALSE, NOPARITY, 8,
+    ONESTOPBIT, DTR_CONTROL_DISABLE));
+
+  mp_multimeter.reset(
+    new irs::akip_ch3_85_3r_t(mp_hardflow.get(), mul_mode_type_passive));
+}
+
+mxmultimeter_t* irs::ch3_85_3r_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::ch3_85_3r_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+  }
+}
+void irs::ch3_85_3r_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
 namespace irs {
 
 class ch3_85_3r_assembly_creator_t: public mxdata_assembly_creator_t
@@ -1856,9 +2342,9 @@ irs::mxdata_assembly_types_implementation_t::
     new agilent_3458a_assembly_creator_t);
   m_ac_list[irst("Agilent 34420A")] = handle_t<mxdata_assembly_creator_t>(
     new agilent_34420a_assembly_creator_t);
-  m_ac_list[irst("В7-78\/1")] = handle_t<mxdata_assembly_creator_t>(
+  m_ac_list[irst("В7-78/1")] = handle_t<mxdata_assembly_creator_t>(
     new v7_78_1_assembly_creator_t);
-  m_ac_list[irst("Ч3-85\/3R")] = handle_t<mxdata_assembly_creator_t>(
+  m_ac_list[irst("Ч3-85/3R")] = handle_t<mxdata_assembly_creator_t>(
     new ch3_85_3r_assembly_creator_t);
   m_ac_list[irst("NI PXI 4071")] = handle_t<mxdata_assembly_creator_t>(
     new ni_pxi_4071_assembly_creator_t);
@@ -1889,6 +2375,77 @@ irs::handle_t<irs::mxdata_assembly_t>
   if (it != m_ac_list.end()) {
     result_assembly = IRS_NULL;
     result_assembly = it->second->make(ap_tstlan4, a_name);
+  }
+  return result_assembly;
+}
+
+///
+
+namespace irs {
+
+class mxmultimeter_assembly_types_implementation_t:
+  public mxmultimeter_assembly_types_t
+{
+public:
+  mxmultimeter_assembly_types_implementation_t();
+  virtual void enum_types(vector<string_type>* ap_types) const;
+  virtual handle_t<mxmultimeter_assembly_t> make_assembly(
+    const string_type& a_assembly_type, const string_type& a_name);
+private:
+  typedef map<string_type, handle_t<mxmultimeter_assembly_creator_t> >
+    ac_list_type;
+  typedef ac_list_type::iterator ac_list_it_type;
+  typedef ac_list_type::const_iterator ac_list_const_it_type;
+
+  ac_list_type m_ac_list;
+};
+
+} //namespace irs
+
+irs::mxmultimeter_assembly_types_t* irs::mxmultimeter_assembly_types()
+{
+  static mxmultimeter_assembly_types_implementation_t
+    mxmultimeter_assembly_types_implementation;
+  return &mxmultimeter_assembly_types_implementation;
+}
+
+irs::mxmultimeter_assembly_types_implementation_t::
+  mxmultimeter_assembly_types_implementation_t(
+):
+  m_ac_list()
+{
+  #ifdef __BORLANDC__
+  m_ac_list[irst("Agilent 3458A")] = handle_t<mxmultimeter_assembly_creator_t>(
+    new agilent_3458a_mxmultimeter_creator_t);
+  m_ac_list[irst("Agilent 34420A")] = handle_t<mxmultimeter_assembly_creator_t>(
+    new agilent_34420a_mxmultimeter_creator_t);
+  m_ac_list[irst("В7-78/1")] = handle_t<mxmultimeter_assembly_creator_t>(
+    new v7_78_1_mxmultimeter_creator_t);
+  m_ac_list[irst("Ч3-85/3R")] = handle_t<mxmultimeter_assembly_creator_t>(
+    new ch3_85_3r_mxmultimeter_creator_t);
+  #endif // __BORLANDC__
+}
+void irs::mxmultimeter_assembly_types_implementation_t::
+  enum_types(vector<string_type>* ap_types) const
+{
+  ap_types->clear();
+  for (ac_list_const_it_type it = m_ac_list.begin();
+    it != m_ac_list.end(); it++)
+  {
+    ap_types->push_back(it->first);
+  }
+}
+irs::handle_t<irs::mxmultimeter_assembly_t>
+  irs::mxmultimeter_assembly_types_implementation_t::make_assembly
+(
+  const string_type& a_assembly_type,
+  const string_type& a_name)
+{
+  handle_t<mxmultimeter_assembly_t> result_assembly(IRS_NULL);
+  ac_list_it_type it = m_ac_list.find(a_assembly_type);
+  if (it != m_ac_list.end()) {
+    result_assembly = IRS_NULL;
+    result_assembly = it->second->make(a_name);
   }
   return result_assembly;
 }

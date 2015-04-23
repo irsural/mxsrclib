@@ -2001,13 +2001,21 @@ void irs_menu_spin_item_t::set_edited_digit_diapason(int a_min_digit, int a_max_
     m_min_edited_digit = a_min_digit;
     m_max_edited_digit = a_max_digit;
     m_min_max_edited_digits_enabled = true;
-    normalize_selected_digit();
+
+    if (m_copy_parametr != *mp_parametr) {
+      m_copy_parametr = irs::bound(*mp_parametr, m_min, m_max);
+    }
+
+    calc_min_max_digit();
     const double min_value = pow(10., m_min_digit);
-    if (m_copy_parametr < min_value) {
-      m_copy_parametr = m_min;
+    if ((m_copy_parametr < min_value) || (m_copy_parametr != *mp_parametr)) {
+      if (m_copy_parametr < min_value) {
+        m_copy_parametr = m_min;
+      }
       *mp_parametr = m_copy_parametr;
       if (mp_event) mp_event->exec();
     }
+    normalize_selected_digit();
   }
 }
 
@@ -2490,6 +2498,18 @@ void irs_menu_spin_item_t::switch_mode_encoder()
 void irs_menu_spin_item_t::normalize_selected_digit()
 {
   if (m_max >= m_min) {
+    calc_min_max_digit();
+    if (m_unit_selected) {
+      m_selected_digit = get_mantissa_min_digit();
+    } else {
+      m_selected_digit = irs::bound(m_selected_digit, m_min_digit, m_max_digit);
+    }
+  }
+}
+
+void irs_menu_spin_item_t::calc_min_max_digit()
+{
+  if (m_max >= m_min) {
     int max_digit = 0;
     int min_digit = 0;
     if ((m_max == 1) && (m_min == 1)) {
@@ -2523,12 +2543,6 @@ void irs_menu_spin_item_t::normalize_selected_digit()
     } else {
       m_min_digit = min_digit;
       m_max_digit = max_digit;
-    }
-
-    if (m_unit_selected) {
-      m_selected_digit = get_mantissa_min_digit();
-    } else {
-      m_selected_digit = irs::bound(m_selected_digit, m_min_digit, m_max_digit);
     }
   }
 }

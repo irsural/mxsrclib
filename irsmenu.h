@@ -584,6 +584,8 @@ private:
   //!   то она же и возвращается из фукции
   int get_corrected_exponent(const string_type& a_str_value);
 
+  void extern_param_to_copy_param();
+
   string_type conv_num_to_str_general(double a_value) const;
   void convert_param_to_str();
   void set_result_str(const string_type& a_str);
@@ -602,6 +604,7 @@ private:
   void update_min_max_exponent();
   void update_mantissa_and_exponent();
   void normalize_selected_digit();
+  void calc_min_max_digit();
   //! \brief Устанавливает минимальный выбранный разряд, с учетом точности
   void set_min_selected_digit();
   double get_max_digit(double a_value) const;

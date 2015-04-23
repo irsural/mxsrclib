@@ -4383,10 +4383,10 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
       }
     } else {
       if (!m_is_lock) {
-        connect_data(m_data);
         if (m_deferred_update_chart) {
-          update_chart();
+          m_invalidate = true;
         }
+        connect_data(m_data);
       }
     }
 

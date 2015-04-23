@@ -769,6 +769,8 @@ private:
 
     void __fastcall UpdateParamListBtnClick(TObject *Sender);
 
+    // Устанавливает набор графиков. В зависимости от установленных флагов,
+    // обновляет различные элементы графического интерфейса пользователя
     void connect_data(const data_t &a_data);
     void update_chart_combo();
     void update_chart_list();
