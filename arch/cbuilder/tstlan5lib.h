@@ -410,7 +410,7 @@ private:
           String index_bstr =
             /*String(var_index) + "/" + */String(conn_index_grid);
           if (is_cur_item_bit) {
-            index_bstr += "-" + String(bit_index_grid);
+            index_bstr += irst("-") + String(bit_index_grid);
           }
           ap_grid->ActiveView->DataController->Values[row][a_index_col] =
             index_bstr;

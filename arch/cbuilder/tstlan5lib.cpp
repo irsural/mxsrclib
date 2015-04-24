@@ -1313,7 +1313,7 @@ void irs::tstlan::view_t::controls_t::bstr_to_var(int a_var_index,
 }
 long double irs::tstlan::view_t::controls_t::var_to_long_double(int a_var_index)
 {
-  double val = 0;
+  long double val = 0;
   netconn_t::item_t item = m_netconn.items[a_var_index];
   switch (item.type) {
     case type_bit: {

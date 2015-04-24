@@ -580,6 +580,12 @@ inline irs_string_t str_conv<irs_string_t>(const UnicodeString& a_str_in)
 }
 
 template<>
+inline std_string_t str_conv<std_string_t>(const UnicodeString& a_str_in)
+{
+  return std_string_t(convert_str_t<wchar_t, char>(a_str_in.c_str()).get());
+}
+
+template<>
 inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
 {
   return irs_wstring_t(a_str_in.c_str());

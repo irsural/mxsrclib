@@ -24,6 +24,7 @@
 
 irs::ini_file_t::ini_file_t():
   mv_bools(),
+  mv_ints(),
   mv_irs_u8s(),
   mv_irs_i8s(),
   mv_irs_u16s(),
@@ -37,6 +38,9 @@ irs::ini_file_t::ini_file_t():
   mv_long_doubles(),
   mv_irs_strings(),
   mv_ansi_strings(),
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  mv_cbstrings(),
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   m_edits(),
   m_spin_edits(),
   m_cspin_edits(),
@@ -91,6 +95,16 @@ void irs::ini_file_t::add(const String& a_name, bool* a_control)
   bool_t bool_var(m_section, name, a_control);
   if(find(mv_bools.begin(), mv_bools.end(), bool_var) == mv_bools.end()) {
     mv_bools.push_back(bool_var);
+  }
+}
+void irs::ini_file_t::add(const String& a_name, int* a_control)
+{
+  string_t name = a_name.c_str();
+  int_t int_var(m_section, name, a_control);
+  if(find(mv_ints.begin(), mv_ints.end(),
+    int_var) == mv_ints.end())
+  {
+    mv_ints.push_back(int_var);
   }
 }
 void irs::ini_file_t::add(const String& a_name, irs_u8* a_control)
@@ -245,6 +259,20 @@ void irs::ini_file_t::add(const String& a_name, AnsiString* a_control)
     mv_ansi_strings.push_back(ansi_string_var);
   }
 }
+#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+void irs::ini_file_t::add(const String& a_name, String* a_control)
+{
+  string_t name = a_name.c_str();
+  cbstring_t cbstring_var(m_section, name, a_control);
+  if(
+    find(
+      mv_cbstrings.begin(),
+      mv_cbstrings.end(),
+      cbstring_var) == mv_cbstrings.end()){
+    mv_cbstrings.push_back(cbstring_var);
+  }
+}
+#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
 void irs::ini_file_t::add(const String& a_name, TEdit *a_control)
 {
   string_t name = a_name.c_str();
@@ -387,6 +415,13 @@ void irs::ini_file_t::load()
         *(bool_it->control)
       );
     }
+    for (vector<int_t>::iterator int_it = mv_ints.begin();
+      int_it != mv_ints.end(); int_it++) {
+      *(int_it->control) = static_cast<int>(IniFile->ReadInteger(
+        int_it->section.c_str(),
+        int_it->name.c_str(),
+        *(int_it->control)));
+    }
     for (vector<irs_u8_t>::iterator irs_u8_it = mv_irs_u8s.begin();
       irs_u8_it != mv_irs_u8s.end(); irs_u8_it++) {
       *(irs_u8_it->control) = static_cast<irs_u8>(IniFile->ReadInteger(
@@ -492,6 +527,16 @@ void irs::ini_file_t::load()
         ansi_string_it->name.c_str(),
         *(ansi_string_it->control));
     }
+    #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+    for (
+      vector<cbstring_t>::iterator cbstring_it = mv_cbstrings.begin();
+      cbstring_it != mv_cbstrings.end(); cbstring_it++) {
+      *(cbstring_it->control) = IniFile->ReadString(
+        cbstring_it->section.c_str(),
+        cbstring_it->name.c_str(),
+        *(cbstring_it->control));
+    }
+    #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
     for (vector<edit_t>::iterator edit_it = m_edits.begin();
       edit_it != m_edits.end(); edit_it++) {
       (*edit_it).control->Text = IniFile->ReadString(
@@ -682,6 +727,11 @@ void irs::ini_file_t::save() const
     IniFile->WriteBool(bool_it->section.c_str(),
       bool_it->name.c_str(), *(bool_it->control));
   }
+  for (vector<int_t>::const_iterator int_it = mv_ints.begin();
+    int_it != mv_ints.end(); int_it++) {
+    IniFile->WriteInteger(int_it->section.c_str(),
+      int_it->name.c_str(), *(int_it->control));
+  }
   for (vector<irs_u8_t>::const_iterator irs_u8_it = mv_irs_u8s.begin();
     irs_u8_it != mv_irs_u8s.end(); irs_u8_it++) {
     IniFile->WriteInteger(irs_u8_it->section.c_str(),
@@ -754,6 +804,14 @@ void irs::ini_file_t::save() const
     IniFile->WriteString((*ansi_string_it).section.c_str(),
       (*ansi_string_it).name.c_str(), *((*ansi_string_it).control));
   }
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  for (vector<cbstring_t>::const_iterator cbstring_it =
+    mv_cbstrings.begin();
+    cbstring_it != mv_cbstrings.end(); cbstring_it++) {
+    IniFile->WriteString((*cbstring_it).section.c_str(),
+      (*cbstring_it).name.c_str(), *((*cbstring_it).control));
+  }
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   for (vector<edit_t>::const_iterator edit_it = m_edits.begin();
     edit_it != m_edits.end(); edit_it++) {
     IniFile->WriteString((*edit_it).section.c_str(),
@@ -931,6 +989,7 @@ void irs::ini_file_t::save_cx_grid_table_view_row_count(
 void irs::ini_file_t::clear_control()
 {
   mv_bools.clear();
+  mv_ints.clear();
   mv_irs_u8s.clear();
   mv_irs_i8s.clear();
   mv_irs_u16s.clear();
@@ -944,6 +1003,9 @@ void irs::ini_file_t::clear_control()
   mv_long_doubles.clear();
   mv_irs_strings.clear();
   mv_ansi_strings.clear();
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  mv_cbstrings.clear();
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   m_edits.clear();
   m_spin_edits.clear();
   m_cspin_edits.clear();

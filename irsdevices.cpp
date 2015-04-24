@@ -87,6 +87,11 @@ mxdata_assembly_params_container_t* mxdata_assembly_params()
 }
 
 // class mxdata_assembly_t
+mxdata_assembly_t::options_type *irs::mxdata_assembly_t::options()
+{
+  return NULL;
+}
+
 irs::mxdata_assembly_t::status_t irs::mxdata_assembly_t::get_status()
 {
   return status_not_supported;
@@ -133,6 +138,7 @@ public:
   virtual void tick();
   virtual void show_options();
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
+  virtual options_type* options();
 private:
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
@@ -143,6 +149,7 @@ private:
   string_type m_conf_file_name;
   handle_t<param_box_base_t> mp_param_box;
   param_box_tune_t m_param_box_tune;
+  param_box_base_options_t m_param_box_base_options;
   tstlan4_base_t* mp_tstlan4;
   bool m_enabled;
   handle_t<hardflow_t> mp_mxnet_client_hardflow;
@@ -163,6 +170,7 @@ irs::mxnet_assembly_t::mxnet_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_conf_file_name(a_conf_file_name),
   mp_param_box(make_assembly_param_box(irst("mxnet"), m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
+  m_param_box_base_options(mp_param_box.get()),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
   mp_mxnet_client_hardflow(),
@@ -235,6 +243,11 @@ void irs::mxnet_assembly_t::show_options()
 void irs::mxnet_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 {
   mp_tstlan4 = ap_tstlan4;
+}
+
+irs::mxnet_assembly_t::options_type* irs::mxnet_assembly_t::options()
+{
+  return &m_param_box_base_options;
 }
 
 namespace irs {
@@ -374,6 +387,11 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
         param_box_read_number<irs_u16>(*mp_param_box, irst("Порт"))));
     } break;
     case usb_hid_protocol: {
+      #if !IRS_USE_HID_WIN_API
+      throw std::logic_error(
+        "Не включен IRS_USE_HID_WIN_API. См. mxsrclib desc");
+      #endif // !IRS_USE_HID_WIN_API
+
       const string_type device =
         mp_param_box->get_param(irst("Имя устройства"));
       map<string_type, string_type>::const_iterator it =
@@ -587,6 +605,8 @@ void irs::modbus_assembly_t::try_create_modbus()
     const string_type s = str_conv<string_type>(string(e.what()));
     add_error(s);
     destroy_modbus();
+  } catch (std::logic_error& e) {
+    throw;
   } catch (...) {
     add_error(irst("Неизвестная ошибка"));
     destroy_modbus();
@@ -776,13 +796,13 @@ public:
   agilent_3458a_mxmultimeter_t(const string_type& a_conf_file_name);
   ~agilent_3458a_mxmultimeter_t();
   virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
   virtual mxmultimeter_t* mxmultimeter();
   virtual void tick();
   virtual void show_options();
 private:
   void reset();
-  void disable();
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
     param_box_tune_t(param_box_base_t* ap_param_box);
@@ -792,6 +812,7 @@ private:
   handle_t<param_box_base_t> mp_param_box;
   param_box_tune_t m_param_box_tune;
   bool m_enabled;
+  multimeter_mode_type_t m_mul_mode_type;
   irs::handle_t<irs::hardflow_t> mp_hardflow;
   handle_t<mxmultimeter_t> mp_multimeter;
 };
@@ -812,6 +833,7 @@ irs::agilent_3458a_mxmultimeter_t::agilent_3458a_mxmultimeter_t(
     m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
   m_enabled(false),
+  m_mul_mode_type(mul_mode_type_passive),
   mp_hardflow(),
   mp_multimeter()
 {
@@ -832,22 +854,20 @@ bool irs::agilent_3458a_mxmultimeter_t::enabled() const
 {
   return m_enabled;
 }
-void irs::agilent_3458a_mxmultimeter_t::enabled(bool a_enabled)
+void irs::agilent_3458a_mxmultimeter_t::enable(
+  multimeter_mode_type_t a_mul_mode_type)
 {
-  if (a_enabled == m_enabled) {
+  if (m_enabled) {
     return;
   }
-  if (a_enabled) {
-    reset();
-  } else {
-    disable();
-  }
-  m_enabled = a_enabled;
+  m_mul_mode_type = a_mul_mode_type;
+  reset();
 }
 void irs::agilent_3458a_mxmultimeter_t::disable()
 {
   mp_multimeter.reset();
   mp_hardflow.reset();
+  m_enabled = false;
 }
 
 void irs::agilent_3458a_mxmultimeter_t::reset()
@@ -862,7 +882,8 @@ void irs::agilent_3458a_mxmultimeter_t::reset()
   mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
     write_end_line, prologix_timeout_ms);
   mp_multimeter.reset(new irs::agilent_3458a_t(mp_hardflow.get(),
-    mul_mode_type_passive));
+    m_mul_mode_type));
+  m_enabled = true;
 }
 mxmultimeter_t* irs::agilent_3458a_mxmultimeter_t::mxmultimeter()
 {
@@ -1045,13 +1066,14 @@ public:
   agilent_34420a_mxmultimeter_t(const string_type& a_conf_file_name);
   virtual ~agilent_34420a_mxmultimeter_t();
   virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
   virtual mxmultimeter_t* mxmultimeter();
   virtual void tick();
   virtual void show_options();
 private:
   void reset();
-  void disable();
+
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
 
@@ -1062,6 +1084,7 @@ private:
   handle_t<param_box_base_t> mp_param_box;
   param_box_tune_t m_param_box_tune;
   bool m_enabled;
+  multimeter_mode_type_t m_mul_mode_type;
   irs::handle_t<irs::hardflow_t> mp_hardflow;
   handle_t<mxmultimeter_t> mp_multimeter;
 };
@@ -1084,6 +1107,7 @@ irs::agilent_34420a_mxmultimeter_t::agilent_34420a_mxmultimeter_t(
     m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
   m_enabled(false),
+  m_mul_mode_type(mul_mode_type_passive),
   mp_hardflow(),
   mp_multimeter()
 {
@@ -1099,29 +1123,26 @@ irs::agilent_34420a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   mp_param_box(ap_param_box)
 {
   add_gpib_options_to_param_box(ap_param_box);
-  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->load();
 }
 bool irs::agilent_34420a_mxmultimeter_t::enabled() const
 {
   return m_enabled;
 }
-void irs::agilent_34420a_mxmultimeter_t::enabled(bool a_enabled)
+void irs::agilent_34420a_mxmultimeter_t::enable(
+  multimeter_mode_type_t a_mul_mode_type)
 {
-  if (a_enabled == m_enabled) {
+  if (m_enabled) {
     return;
   }
-  if (a_enabled) {
-    reset();
-  } else {
-    disable();
-  }
-  m_enabled = a_enabled;
+  m_mul_mode_type = a_mul_mode_type;
+  reset();
 }
 void irs::agilent_34420a_mxmultimeter_t::disable()
 {
   mp_multimeter.reset();
   mp_hardflow.reset();
+  m_enabled = false;
 }
 
 void irs::agilent_34420a_mxmultimeter_t::reset()
@@ -1136,7 +1157,8 @@ void irs::agilent_34420a_mxmultimeter_t::reset()
   mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
     write_end_line, prologix_timeout_ms);
   mp_multimeter.reset(new irs::agilent_34420a_t(mp_hardflow.get(),
-    mul_mode_type_passive));
+    m_mul_mode_type));
+  m_enabled = true;
 }
 mxmultimeter_t* irs::agilent_34420a_mxmultimeter_t::mxmultimeter()
 {
@@ -1320,13 +1342,13 @@ public:
   v7_78_1_mxmultimeter_t(const string_type& a_conf_file_name);
   virtual ~v7_78_1_mxmultimeter_t();
   virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
   virtual mxmultimeter_t* mxmultimeter();
   virtual void tick();
   virtual void show_options();
 private:
   void reset();
-  void disable();
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
 
@@ -1337,6 +1359,7 @@ private:
   handle_t<param_box_base_t> mp_param_box;
   param_box_tune_t m_param_box_tune;
   bool m_enabled;
+  multimeter_mode_type_t m_mul_mode_type;
   irs::handle_t<irs::hardflow_t> mp_hardflow;
   handle_t<mxmultimeter_t> mp_multimeter;
 };
@@ -1357,6 +1380,7 @@ irs::v7_78_1_mxmultimeter_t::v7_78_1_mxmultimeter_t(
   mp_param_box(make_assembly_param_box(irst("В7-78/1"), m_conf_file_name)),
   m_param_box_tune(mp_param_box.get()),
   m_enabled(false),
+  m_mul_mode_type(mul_mode_type_passive),
   mp_hardflow(),
   mp_multimeter()
 {
@@ -1377,22 +1401,20 @@ bool irs::v7_78_1_mxmultimeter_t::enabled() const
 {
   return m_enabled;
 }
-void irs::v7_78_1_mxmultimeter_t::enabled(bool a_enabled)
+void irs::v7_78_1_mxmultimeter_t::enable(
+  multimeter_mode_type_t a_mul_mode_type)
 {
-  if (a_enabled == m_enabled) {
+  if (m_enabled) {
     return;
   }
-  if (a_enabled) {
-    reset();
-  } else {
-    disable();
-  }
-  m_enabled = a_enabled;
+  m_mul_mode_type = a_mul_mode_type;
+  reset();
 }
 void irs::v7_78_1_mxmultimeter_t::disable()
 {
   mp_multimeter.reset();
   mp_hardflow.reset();
+  m_enabled = false;
 }
 void irs::v7_78_1_mxmultimeter_t::reset()
 {
@@ -1406,7 +1428,8 @@ void irs::v7_78_1_mxmultimeter_t::reset()
   mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
     write_end_line, prologix_timeout_ms);
   mp_multimeter.reset(new irs::akip_v7_78_1_t(mp_hardflow.get(),
-    mul_mode_type_passive));
+    m_mul_mode_type));
+  m_enabled = true;
 }
 mxmultimeter_t* irs::v7_78_1_mxmultimeter_t::mxmultimeter()
 {
@@ -1601,13 +1624,13 @@ public:
   ch3_85_3r_mxmultimeter_t(const string_type& a_conf_file_name);
   virtual ~ch3_85_3r_mxmultimeter_t();
   virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
   virtual mxmultimeter_t* mxmultimeter();
   virtual void tick();
   virtual void show_options();
   private:
   void reset();
-  void disable();
   struct param_box_tune_t {
     param_box_base_t* mp_param_box;
 
@@ -1618,6 +1641,7 @@ public:
   handle_t<param_box_base_t> mp_param_box;
   param_box_tune_t m_param_box_tune;
   bool m_enabled;
+  multimeter_mode_type_t m_mul_mode_type;
   irs::handle_t<irs::hardflow_t> mp_hardflow;
   handle_t<mxmultimeter_t> mp_multimeter;
 };
@@ -1640,6 +1664,7 @@ irs::ch3_85_3r_mxmultimeter_t::ch3_85_3r_mxmultimeter_t(
   m_param_box_tune(mp_param_box.get()),
 
   m_enabled(false),
+  m_mul_mode_type(mul_mode_type_passive),
   mp_hardflow(),
   mp_multimeter()
 {
@@ -1660,22 +1685,20 @@ bool irs::ch3_85_3r_mxmultimeter_t::enabled() const
 {
   return m_enabled;
 }
-void irs::ch3_85_3r_mxmultimeter_t::enabled(bool a_enabled)
+void irs::ch3_85_3r_mxmultimeter_t::enable(
+  multimeter_mode_type_t a_mul_mode_type)
 {
-  if (a_enabled == m_enabled) {
+  if (m_enabled) {
     return;
   }
-  if (a_enabled) {
-    reset();
-  } else {
-    disable();
-  }
-  m_enabled = a_enabled;
+  m_mul_mode_type = a_mul_mode_type;
+  reset();
 }
 void irs::ch3_85_3r_mxmultimeter_t::disable()
 {
   mp_multimeter.reset();
   mp_hardflow.reset();
+  m_enabled = false;
 }
 void irs::ch3_85_3r_mxmultimeter_t::reset()
 {
@@ -1687,7 +1710,8 @@ void irs::ch3_85_3r_mxmultimeter_t::reset()
     ONESTOPBIT, DTR_CONTROL_DISABLE));
 
   mp_multimeter.reset(
-    new irs::akip_ch3_85_3r_t(mp_hardflow.get(), mul_mode_type_passive));
+    new irs::akip_ch3_85_3r_t(mp_hardflow.get(), m_mul_mode_type));
+  m_enabled = true;
 }
 
 mxmultimeter_t* irs::ch3_85_3r_mxmultimeter_t::mxmultimeter()

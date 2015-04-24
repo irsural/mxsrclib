@@ -77,6 +77,44 @@ void index_matrix2_t<TYPE>::set_index(const int a_index1, const int a_index2)
 }
 
 template<class TYPE>
+class const_index_matrix2_t
+{
+private:
+  const vector<TYPE>& m_vec;
+  int m_index1;
+  int m_index2;
+  const int m_col_count;
+public:
+  const_index_matrix2_t(const vector<TYPE>& a_vec, int a_col_count);
+  operator const TYPE&();
+  void set_index(const int a_index1 ,const int a_index2);
+};
+
+template<class TYPE>
+const_index_matrix2_t<TYPE>::const_index_matrix2_t(const vector<TYPE>& a_vec,
+  int a_col_count):
+  m_vec(a_vec),
+  m_index1(0),
+  m_index2(0),
+  m_col_count(a_col_count)
+{
+}
+
+template<class TYPE>
+const_index_matrix2_t<TYPE>::operator const TYPE&()
+{
+  return m_vec[m_index2 * m_col_count + m_index1];
+}
+
+template<class TYPE>
+void const_index_matrix2_t<TYPE>::set_index(
+  const int a_index1, const int a_index2)
+{
+  m_index1 = a_index1;
+  m_index2 = a_index2;
+}
+
+template<class TYPE>
 class index_matrix_t
 {
 private:
@@ -125,6 +163,48 @@ void index_matrix_t<TYPE>::set_index(const int a_index1)
   m_index1 = a_index1;
 }
 
+template<class TYPE>
+class const_index_matrix_t
+{
+private:
+  const vector<TYPE>& m_vec;
+  const_index_matrix2_t<TYPE> m_index_matrix2;
+  int m_index1;
+public:
+  const_index_matrix_t(const vector<TYPE>& a_vec, int a_col_count);
+  //оператор чтения
+  operator TYPE();
+  const_index_matrix2_t<TYPE>& operator[](int a_index2);
+  void set_index(const int a_index1);
+};
+template<class TYPE>
+const_index_matrix_t<TYPE>::const_index_matrix_t(
+  const vector<TYPE>& a_vec,
+  int a_col_count):
+  m_vec(a_vec),
+  m_index_matrix2(a_vec, a_col_count),
+  m_index1(0)
+{
+}
+template<class TYPE>
+const_index_matrix_t<TYPE>::operator TYPE()
+{
+  return m_vec[m_index1];
+}
+
+template<class TYPE>
+const_index_matrix2_t<TYPE>&
+const_index_matrix_t<TYPE>::operator[](int a_index2)
+{
+  m_index_matrix2.set_index(m_index1, a_index2);
+  return m_index_matrix2;
+}
+template<class TYPE>
+void const_index_matrix_t<TYPE>::set_index(const int a_index1)
+{
+  m_index1 = a_index1;
+}
+
 //! ingroup single_type_group
 template<class TYPE>
 class matrix_t
@@ -145,7 +225,8 @@ public:
   inline int col_count() const;
   inline int row_count() const;
   inline TYPE operator()(int a_i) const;
-  inline index_matrix_t<TYPE> operator[](int a_index) const;
+  inline index_matrix_t<TYPE> operator[](int a_index);
+  inline const_index_matrix_t<TYPE> operator[](int a_index) const;
   inline void newcols(
     const int a_index_pos,
     const unsigned int a_new_col_count,
@@ -251,10 +332,18 @@ inline TYPE matrix_t<TYPE>::operator()(int a_i) const
 }
 
 template<class TYPE>
-inline index_matrix_t<TYPE> matrix_t<TYPE>::operator[](int a_index) const
+inline index_matrix_t<TYPE> matrix_t<TYPE>::operator[](int a_index)
 {
   m_index_matrix.set_index(a_index);
   return m_index_matrix;
+}
+
+template<class TYPE>
+inline const_index_matrix_t<TYPE> matrix_t<TYPE>::operator[](int a_index) const
+{
+  const_index_matrix_t<TYPE> index_matrix(mv_elem, m_col_count);
+  index_matrix.set_index(a_index);
+  return index_matrix;
 }
 
 template<class TYPE>

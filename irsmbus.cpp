@@ -2538,8 +2538,18 @@ void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
     if ((hold_registers_size_byte != 0)||(hold_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: hold regs"));
-      m_hold_regs_reg_write[hold_registers_start_byte/2] =
-        m_hold_regs_reg_read[hold_registers_start_byte/2];
+      const size_t write_bit_idx =
+        m_coils_size_bit + hold_registers_start_byte/2;
+      if (m_refresh_mode == mode_refresh_auto) {
+        if (!m_need_writes[write_bit_idx]) {
+          m_hold_regs_reg_write[hold_registers_start_byte/2] =
+            m_hold_regs_reg_read[hold_registers_start_byte/2];
+        }
+      } else {
+        // Для режима mode_refresh_manual не дописано!!!
+        m_hold_regs_reg_write[hold_registers_start_byte/2] =
+          m_hold_regs_reg_read[hold_registers_start_byte/2];
+      }
       irs_u8* p_hold_regs_write_byte = reinterpret_cast<irs_u8*>(
         m_hold_regs_reg_write.data());
       if (a_bit) {
@@ -2550,8 +2560,6 @@ void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
           static_cast<irs_u8>(~(1 << a_bit_index));
       }
       if (m_refresh_mode == mode_refresh_auto) {
-        size_t write_bit_idx =
-          m_coils_size_bit + hold_registers_start_byte/2;
         if (!m_need_writes[write_bit_idx]) {
           m_need_writes[write_bit_idx] = 1;
         } else {

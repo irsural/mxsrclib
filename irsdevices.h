@@ -13,6 +13,7 @@
 #include <hardflowg.h>
 #include <mxdata.h>
 #include <measmul.h>
+#include <irsparamabs.h>
 
 #include <irsfinal.h>
 
@@ -26,6 +27,18 @@ class mxdata_assembly_t
 public:
   typedef string_t string_type;
   typedef deque<string_type> error_string_list_type;
+  class options_base_t
+  {
+  public:
+    typedef mxdata_assembly_t::string_type string_type;
+    virtual ~options_base_t()
+    {
+    }
+    virtual string_type get_option(const string_type& a_option_name) const = 0;
+    virtual bool set_option(const string_type& a_option_name,
+      const string_type& a_option_value) = 0;
+  };
+  typedef options_base_t options_type;
   enum status_t {
     //! \brief Статус не поддерживается
     //! \details Этот статус выдается, если работа со статусами не
@@ -50,8 +63,30 @@ public:
   virtual void tick() = 0;
   virtual void show_options() = 0;
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4) = 0;
+  virtual options_type* options();
   virtual status_t get_status();
   virtual error_string_list_type get_last_error_string_list();
+};
+
+class param_box_base_options_t: public mxdata_assembly_t::options_type
+{
+public:
+  param_box_base_options_t(param_box_base_t* ap_param_box_base):
+    mp_param_box_base(ap_param_box_base)
+  {
+  }
+  virtual string_type get_option(const string_type& a_option_name) const
+  {
+    return mp_param_box_base->get_param(a_option_name);
+  }
+  virtual bool set_option(const string_type& a_option_name,
+    const string_type& a_option_value)
+  {
+    return mp_param_box_base->set_param(a_option_name, a_option_value);
+  }
+private:
+  param_box_base_options_t();
+  param_box_base_t* mp_param_box_base;
 };
 
 class mxdata_assembly_params_t
@@ -95,7 +130,8 @@ public:
   typedef string_t string_type;
   virtual ~mxmultimeter_assembly_t() {}
   virtual bool enabled() const = 0;
-  virtual void enabled(bool a_enabled) = 0;
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type) = 0;
+  virtual void disable() = 0;
   virtual mxmultimeter_t* mxmultimeter() = 0;
   virtual void tick() = 0;
   virtual void show_options() = 0;

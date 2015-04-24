@@ -55,6 +55,7 @@ public:
   String ini_name() const;
   void set_section(const String& a_name);
   void add(const String& a_name, bool* a_control);
+  void add(const String& a_name, int* a_control);
   void add(const String& a_name, irs_u8* a_control);
   void add(const String& a_name, irs_i8* a_control);
   void add(const String& a_name, irs_u16* a_control);
@@ -68,6 +69,9 @@ public:
   void add(const String& a_name, long double* a_control);
   void add(const String& a_name, string_t* a_control);
   void add(const String& a_name, AnsiString* a_control);
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  void add(const String& a_name, String* a_control);
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   void add(const String& a_name, TEdit *a_control);
   void add(const String& a_name, TSpinEdit *a_control);
   void add(const String& a_name, TCSpinEdit *a_control);
@@ -148,7 +152,11 @@ private:
   typedef generalized_control_t<TForm> form_t;
 
   typedef generalized_control_t<AnsiString> ansi_string_t;
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  typedef generalized_control_t<String> cbstring_t;
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   typedef generalized_control_t<bool> bool_t;
+  typedef generalized_control_t<int> int_t;
   typedef generalized_control_t<irs_u8> irs_u8_t;
   typedef generalized_control_t<irs_i8> irs_i8_t;
   typedef generalized_control_t<irs_u16> irs_u16_t;
@@ -243,6 +251,7 @@ private:
   enum load_save_t { ls_load, ls_save };
 
   vector<bool_t> mv_bools;
+  vector<int_t> mv_ints;
   vector<irs_u8_t> mv_irs_u8s;
   vector<irs_i8_t> mv_irs_i8s;
   vector<irs_u16_t> mv_irs_u16s;
@@ -256,6 +265,9 @@ private:
   vector<long_double_t> mv_long_doubles;
   vector<irs_string_t> mv_irs_strings;
   vector<ansi_string_t> mv_ansi_strings;
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
+  vector<cbstring_t> mv_cbstrings;
+  #endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   vector<edit_t> m_edits;
   vector<spin_edit_t> m_spin_edits;
   vector<cspin_edit_t> m_cspin_edits;
