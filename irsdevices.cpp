@@ -605,7 +605,7 @@ void irs::modbus_assembly_t::try_create_modbus()
     const string_type s = str_conv<string_type>(string(e.what()));
     add_error(s);
     destroy_modbus();
-  } catch (std::logic_error& e) {
+  } catch (std::logic_error& /*e*/) {
     throw;
   } catch (...) {
     add_error(irst("Неизвестная ошибка"));
