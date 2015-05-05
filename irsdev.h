@@ -209,8 +209,6 @@ enum break_polarity_t {
   break_polarity_active_high
 };
 
-#define NEW_ST_PWM_GEN
-
 //! \brief Драйвер ШИМ-генератора для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
 //! \author Lyashchov Maxim
@@ -218,6 +216,10 @@ class st_pwm_gen_t: public pwm_gen_t
 {
 public:
   typedef irs_size_t size_type;
+  enum output_polarity_t {
+    op_active_high,
+    op_active_low
+  };
   st_pwm_gen_t(gpio_channel_t a_gpio_channel, size_t a_timer_address,
     cpu_traits_t::frequency_type a_frequency, float a_duty = 0.5f);
   virtual void start();
@@ -234,26 +236,21 @@ public:
   void set_duty(gpio_channel_t a_gpio_channel, float a_duty);
   void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
   void break_disable();
-  void channel_enable(gpio_channel_t a_gpio_channel);
-  void complementary_channel_enable(gpio_channel_t a_gpio_channel);
+  void channel_enable(gpio_channel_t a_gpio_channel,
+    output_polarity_t a_output_polarity = op_active_high);
+  void complementary_channel_enable(gpio_channel_t a_gpio_channel,
+    output_polarity_t a_output_polarity = op_active_high);
   void set_dead_time(float a_time);
 private:
-  #ifdef NEW_ST_PWM_GEN
   irs_u32 get_timer_channel_and_select_alternate_function(
     gpio_channel_t a_gpio_channel);
-  #else // !NEW_ST_PWM_GEN
-  void get_timer_channel_and_select_alternate_function_for_main_channel();
-  #endif // !NEW_ST_PWM_GEN
-  #ifndef NEW_ST_PWM_GEN
-  void select_alternate_function_for_complementary_channel();
-  #endif // !NEW_ST_PWM_GEN
   void select_alternate_function_for_break_channel();
   void set_duty_register(irs_u32* ap_tim_ccr, irs_uarc a_duty);
   void set_duty_register(irs_u32* ap_tim_ccr, float a_duty);
   irs_u32* get_tim_ccr_register(irs_u32 a_timer_channel);
 
   void channel_enable_helper(gpio_channel_t a_gpio_channel,
-    bool a_complementary);
+    bool a_complementary, output_polarity_t a_output_polarity);
   enum output_compare_mode_t {
     ocm_force_inactive_level = 4,
     ocm_pwm_mode_1 = 6
