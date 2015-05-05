@@ -274,7 +274,7 @@ irs::usb_hid_info_t::get_devices() const
       + last_error_str());
   }
 
-  SP_DEVICE_INTERFACE_DATA devInfoData = {0};
+  SP_DEVICE_INTERFACE_DATA devInfoData;
   devInfoData.cbSize = sizeof(devInfoData);
   DWORD device_index = 0;
   while (true)

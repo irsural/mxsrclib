@@ -258,6 +258,7 @@ private:
       }
       bool str_to_type(const string_type& a_str, item_t::type_t* ap_type)
       {
+        bool status = true;
         if (a_str == name_bit) {
           *ap_type = item_t::type_bit;
         } else if (a_str == name_bool) {
@@ -285,9 +286,9 @@ private:
         } else if (a_str == name_long_double) {
           *ap_type = item_t::type_long_double;
         } else {
-          return false;
+          status = false;
         }
-        return true;
+        return status;
       }
       void add_conn(vector<bit_data_t>& a_vec, int a_var_index,
         int& a_conn_index, int& a_bit_index)

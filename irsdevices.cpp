@@ -2189,6 +2189,115 @@ void irs::termex_lt_300_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 
 namespace irs {
 
+class test_multimeter_mxmultimeter_creator_t:
+  public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+private:
+};
+
+class test_multimeter_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  test_multimeter_mxmultimeter_t(const string_type& a_conf_file_name);
+  virtual ~test_multimeter_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+private:
+  void reset();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  tstlan4_base_t* mp_tstlan4;
+  bool m_enabled;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::test_multimeter_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(
+    new test_multimeter_mxmultimeter_t(a_name));
+}
+
+irs::test_multimeter_mxmultimeter_t::test_multimeter_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(make_assembly_param_box(
+    irst("Тестовый мультиметр"), m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  m_enabled(false),
+  mp_multimeter()
+{
+}
+irs::test_multimeter_mxmultimeter_t::~test_multimeter_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::test_multimeter_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  mp_param_box->load();
+}
+bool irs::test_multimeter_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::test_multimeter_mxmultimeter_t::enable(
+  multimeter_mode_type_t /*a_mul_mode_type*/)
+{
+  if (m_enabled) {
+    return;
+  }
+  reset();
+}
+void irs::test_multimeter_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  m_enabled = false;
+}
+void irs::test_multimeter_mxmultimeter_t::reset()
+{
+  disable();
+
+  mp_multimeter.reset(new irs::dummy_multimeter_t());
+  m_enabled = true;
+}
+mxmultimeter_t* irs::test_multimeter_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::test_multimeter_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_multimeter->tick();
+  }
+}
+void irs::test_multimeter_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
+
+namespace irs {
+
 class test_multimeter_assembly_creator_t: public mxdata_assembly_creator_t
 {
 public:
@@ -2440,14 +2549,17 @@ irs::mxmultimeter_assembly_types_implementation_t::
 {
   #ifdef __BORLANDC__
   m_ac_list[irst("Agilent 3458A")] = handle_t<mxmultimeter_assembly_creator_t>(
-    new agilent_3458a_mxmultimeter_creator_t);
+    new agilent_3458a_mxmultimeter_creator_t());
   m_ac_list[irst("Agilent 34420A")] = handle_t<mxmultimeter_assembly_creator_t>(
-    new agilent_34420a_mxmultimeter_creator_t);
+    new agilent_34420a_mxmultimeter_creator_t());
   m_ac_list[irst("В7-78/1")] = handle_t<mxmultimeter_assembly_creator_t>(
-    new v7_78_1_mxmultimeter_creator_t);
+    new v7_78_1_mxmultimeter_creator_t());
   m_ac_list[irst("Ч3-85/3R")] = handle_t<mxmultimeter_assembly_creator_t>(
-    new ch3_85_3r_mxmultimeter_creator_t);
+    new ch3_85_3r_mxmultimeter_creator_t());
   #endif // __BORLANDC__
+  m_ac_list[irst("Тестовый мультиметр")] =
+    handle_t<mxmultimeter_assembly_creator_t>(
+    new test_multimeter_mxmultimeter_creator_t());
 }
 void irs::mxmultimeter_assembly_types_implementation_t::
   enum_types(vector<string_type>* ap_types) const
