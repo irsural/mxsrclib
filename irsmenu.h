@@ -210,6 +210,7 @@ public:
   void set_current_item(size_type a_item);
   size_type get_items_count() const;
   size_type add(irs_menu_base_t *item, bool a_show = true);
+  void clear();
   size_type get_dynamic_string(char *ap_buffer, size_type a_length = 0);
   size_type get_last_item_number();
   void hide_item(size_type a_item_number);
@@ -274,6 +275,7 @@ public:
   void set_slave_menu(irs_menu_base_t *ap_slave_menu);
   bool add(irs_menu_base_t* ap_parametr, size_type a_x, size_type a_y,
     irs_menu_param_show_mode_t a_show_mode);
+  void clear();
   size_type get_dynamic_string(char *a_buffer, size_type a_length = 0);
   void creep_start();
   void creep_stop();
@@ -456,6 +458,7 @@ class irs_menu_double_item_t: public irs_menu_base_t
   char *f_suffix;
   char *f_value_string;
   irs::num_mode_t f_num_mode;
+  size_type f_space_count_after_prefix;
   size_type f_len;
   size_type f_accur;
   float f_max;
@@ -476,6 +479,7 @@ class irs_menu_double_item_t: public irs_menu_base_t
   progressive_change_value_type* mp_external_progressive_change_value;
   progressive_change_value_type* mp_progressive_change_value;
   void update_progressive_change_parameters();
+  void update_str_parameters();
 public:
   irs_menu_double_item_t(double *a_parametr, irs_bool a_can_edit);
   ~irs_menu_double_item_t();
@@ -490,6 +494,7 @@ public:
   void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
     size_type a_len, size_type a_accur,
     irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  void set_space_count_after_prefix(size_type a_count);
   void reset_str();
   void set_min_value(float a_min_value);
   float get_min_value();
@@ -520,6 +525,10 @@ class irs_menu_spin_item_t: public irs_menu_base_t
 public:
   typedef irs::char_t char_type;
   typedef irs::string_t string_type;
+  enum encoder_mode_t {
+    encoder_mode_digit_editing,
+    encoder_mode_digit_selection
+  };
   irs_menu_spin_item_t(double* ap_parametr, irs_bool a_can_edit);
   ~irs_menu_spin_item_t();
   virtual void set_trans_function(double_trans_t a_double_trans);
@@ -537,6 +546,7 @@ public:
   void set_str(const string_type& a_prefix,
     const size_type a_parameter_field_width, const string_type& a_suffix,
     size_type a_accur);
+  void set_space_count_after_prefix(size_type a_count);
   void set_unit(string_type a_unit, map<int, string_type> a_prefixes =
     get_default_prefixes());
   void set_min_value(double a_min_value);
@@ -555,7 +565,19 @@ public:
   //!   значение параметра равно нулю, то в автоматическом режиме минимальный
   //!   разр€д будет установлен равным -15 (точность double)
   void set_edited_digit_diapason(int a_min_digit, int a_max_digit);
+  //void set_step(double a_step);
+  //! \brief —брасывает шаг в значение по умолчанию, если оно задано или в
+  //!   значение, рассчитанное автоматически
+  void set_step_to_default();
+  //! \brief «адает шаг по умолчанию. ѕри изменении внешнего значени€ шаг
+  //!   будет сбрасыватьс€ в это значение
+  void set_default_step(double a_step);
+  //! \brief —брасывает шаг по умолчанию. ѕри изменении внешнего значени€
+  //!   шаг будет настраиватьс€ автоматически
+  void reset_default_step();
   void set_cursor_visible(bool a_enabled);
+  encoder_mode_t get_encoder_mode() const;
+  void set_encoder_mode(encoder_mode_t a_encoder_mode);
   irs::generator_events_t* permitted_action_events();
   irs::generator_events_t* forbidden_action_events();
   static map<int, irs::string_t> get_default_prefixes();
@@ -639,10 +661,6 @@ private:
     shift_left,
     shift_right
   };
-  enum encoder_mode_t {
-    encoder_mode_digit_editing,
-    encoder_mode_digit_selection
-  };
 
   bool shift(shift_mode_t a_mode);
   char_type m_decimal_point;
@@ -661,18 +679,26 @@ private:
   double m_min;
   double m_max;
   size_type m_precision;
-  // ¬ыбранный разр€д. —права от разделител€ разр€ды нумеруютс€ по убыванию, с
-  // лева на право, со знаком минус. —лева от разделител€ разр€ды нумеруютс€ по
-  // возрастанию, с права на лево
+  // ¬ыбранный разр€д. —права от разделител€ разр€ды нумеруютс€ по убыванию,
+  // слева направо, со знаком минус. —лева от разделител€ разр€ды нумеруютс€ по
+  // возрастанию, справа налево
   // ѕример. „исло 12.345.
   // –азр€ды   | 1 2 . 3 4 5
   // ѕозици€   | 1 0  -1-2-3
   int m_selected_digit;
+  int m_default_selected_digit;
   bool m_unit_selected;
+  double m_step;
+  enum default_step_mode_t {
+    default_step_is_not_set,
+    default_step_is_set
+  };
+  default_step_mode_t m_default_step_mode;
   size_type m_parameter_field_width;
   string_type m_prefix;
   string_type m_suffix;
   string_type m_value_str;
+  size_type m_space_count_after_prefix;
   irs::loop_timer_t m_blink_cursor_timer;
   bool m_show_cursor;
   bool m_cursor_visible;

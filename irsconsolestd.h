@@ -163,6 +163,7 @@ public:
   // 25.03.2009 - добавлена проверка события при изменении на выходе
   inline bool check();
   inline bool check(irs_pin_t pin);
+  inline void reset();
 };
 inline mxantibounce_t::mxantibounce_t():
   f_pin(irs_off),
@@ -217,6 +218,13 @@ inline bool mxantibounce_t::check(irs_pin_t pin)
   return check();
 }
 
+inline void mxantibounce_t::reset()
+{
+  f_pin = irs_off;
+  f_mode = mode_start;
+  f_occur = true;
+}
+
 
 // Класс для генерации событий клавиатуры
 
@@ -254,6 +262,7 @@ class mxkey_event_gen_t: public mx_proc_t
   mode_t f_mode;
   mode_t m_encoder_mode;
   counter_t m_encoder_button_time;
+  irs::loop_timer_t m_tick_period_max_timer;
 public:
   inline mxkey_event_gen_t();
   inline ~mxkey_event_gen_t();
@@ -282,7 +291,8 @@ inline mxkey_event_gen_t::mxkey_event_gen_t():
   m_encoder_button_key(irskey_none),
   f_mode(mode_start),
   m_encoder_mode(mode_start),
-  m_encoder_button_time(0)
+  m_encoder_button_time(0),
+  m_tick_period_max_timer(mxkey_defence_time_def)
 {
   init_to_cnt();
   f_antibounce.set_time(mxkey_antibounce_time_def);
@@ -331,6 +341,14 @@ inline irs_bool mxkey_event_gen_t::tick()
 
   irs_pin_t pin = irs_off;
   if (cur_key != irskey_none) pin = irs_on;
+
+  // Этот код используется для предотвращения срабатывания двойного нажатия,
+  //  если в программе произошло длительное зависание
+  if (m_tick_period_max_timer.check()) {
+    f_antibounce.reset();
+    m_antibounce_encoder.reset();
+  }
+  m_tick_period_max_timer.start();
 
   bool is_key_down = false;
   if (f_antibounce.check(pin)) {
@@ -428,6 +446,7 @@ inline void mxkey_event_gen_t::abort()
 inline void mxkey_event_gen_t::set_defence_time(counter_t time)
 {
   f_defence_time = time;
+  m_tick_period_max_timer.set(time);
 }
 inline void mxkey_event_gen_t::set_rep_time(counter_t time)
 {

@@ -346,7 +346,7 @@ inline bool get_closed_file_size(const irs::string& a_file_name, int& a_size)
   return fsuccess;
 }
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 //  ласс дл€ генерации, хранени€ и преобразовани€ уникальных идентификаторов
 class id_t
@@ -581,7 +581,19 @@ basic_string<T> get_file_name(const basic_string<T>& a_file_name)
   if (pos != basic_string<T>::npos) {
     file_name = a_file_name.substr(pos + 1);
   } else {
-    // ¬озращаем пустую строку
+    file_name = a_file_name;
+  }
+  return file_name;
+}
+
+template<class T>
+basic_string<T> get_ultra_short_file_name(const basic_string<T>& a_file_name)
+{
+  typedef irs_size_t size_type;
+  basic_string<T> file_name = irs::get_file_name(a_file_name);
+  size_type pos = file_name.find_last_of(irst("."));
+  if (pos != basic_string<T>::npos) {
+    file_name = file_name.substr(0, pos);
   }
   return file_name;
 }
@@ -599,7 +611,7 @@ basic_string<T> get_file_dir(const basic_string<T>& a_file_name)
   }
   return file_dir;
 }
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
+#endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
 
 // ќкругление до ближайшего целого
 template <class I, class O>
@@ -941,7 +953,7 @@ void print_binary_data_to_str(
 }
 
 //! \brief »щет пару в словаре, содержащую указанное значение, и возвращает
-//!   итератор на этой пары
+//!   итератор дл€ этой пары
 //! \param[in] a_begin - начальна€ позици€
 //! \param[in] a_end - конечна€ позици€, не входит в диапазон поиска
 //! \param[in] a_value - значение, которое должна содержать па

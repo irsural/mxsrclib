@@ -20,6 +20,8 @@
 #define IRS_FLASH_INTERFACE_BASE  0x40023C00
 #define IRS_RCC_BASE              0x40023800
 #define IRS_CRC_BASE              0x40023000
+#define IRS_PORTK_BASE            0x40022800
+#define IRS_PORTJ_BASE            0x40022400
 #define IRS_PORTI_BASE            0x40022000
 #define IRS_PORTH_BASE            0x40021C00
 #define IRS_PORTG_BASE            0x40021800
@@ -223,7 +225,41 @@ enum gpio_channel_t {
   PI12,
   PI13,
   PI14,
-  PI15
+  PI15,
+
+  PJ0,
+  PJ1,
+  PJ2,
+  PJ3,
+  PJ4,
+  PJ5,
+  PJ6,
+  PJ7,
+  PJ8,
+  PJ9,
+  PJ10,
+  PJ11,
+  PJ12,
+  PJ13,
+  PJ14,
+  PJ15,
+    
+  PK0,
+  PK1,
+  PK2,
+  PK3,
+  PK4,
+  PK5,
+  PK6,
+  PK7,
+  PK8,
+  PK9,
+  PK10,
+  PK11,
+  PK12,
+  PK13,
+  PK14,
+  PK15  
 };
 
 enum st_timer_name_t {

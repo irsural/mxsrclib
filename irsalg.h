@@ -92,7 +92,9 @@ void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
   const size_t size = distance(ap_first, ap_last);
   if (size == 0) {
     *ap_result = 0;
-    *ap_average = 0;
+    if (ap_average) {
+      *ap_average = 0;
+    }
     return;
   }
 

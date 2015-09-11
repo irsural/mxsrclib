@@ -18,11 +18,26 @@
 #include <QTextCodec>
 #endif //QT_CORE_LIB
 
+#if IRS_USE_UTF8_CPP
+#include <utf8.h>
+#endif // IRS_USE_UTF8_CPP
+
 #include <irsstrdefs.h>
 #include <string.h>
 #include <irscpp.h>
+//#include <irsstrconv.h>
 //#include <irsstring.h>
 #include <mxdata.h>
+#include <irsstrconvbase.h>
+#include <irs_codecvt.h>
+
+#if defined(__BORLANDC__)
+# include <irscbstrconv.h>
+#endif // defined(__BORLANDC__)
+
+#ifdef QT_CORE_LIB
+# include <irsqtstrconv.h>
+#endif //QT_CORE_LIB
 
 #include <irsfinal.h>
 
@@ -31,243 +46,9 @@ namespace irs {
 //! \addtogroup string_processing_group
 //! @{
 
-template<class T>
-struct base_str_type
-{
-  typedef void type;
-};
-
-template<>
-struct base_str_type<irs_string_t>
-{
-  typedef irs_string_t type;
-};
-
-template<>
-struct base_str_type<std_string_t>
-{
-  typedef irs_string_t type;
-};
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 // Из std_string_t
-inline std_string_t str_conv_simple(const std_string_t&,
-  const std_string_t& a_str_in)
-{
-  return a_str_in;
-}
-inline irs_string_t str_conv_simple(const irs_string_t&,
-  const std_string_t& a_str_in)
-{
-  return a_str_in;
-}
-
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-# ifndef QT_CORE_LIB
-// Из std_wstring_t
-inline std_wstring_t str_conv_simple(const std_wstring_t&,
-  const std_string_t& a_str_in)
-{
-  return std_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-}
-inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
-  const std_string_t& a_str_in)
-{
-  return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-}
-# else // QT_CORE_LIB
-inline std::string utf_8_to_win_1251(const std::string& a_str)
-{
-  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
-  QString Str = codec_utf_8->toUnicode(a_str.c_str());
-  QTextCodec *codec_win_1251 = QTextCodec::codecForName("Windows-1251");
-  QByteArray str_win_1251 = codec_win_1251->fromUnicode(Str);
-  return str_win_1251.data();
-}
-
-inline std::string win_1251_to_utf_8(const std::string& a_str)
-{
-  QTextCodec *codec_win_1251 = QTextCodec::codecForName("Windows-1251");
-  QString Str = codec_win_1251->toUnicode(a_str.c_str());
-  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
-  QByteArray str_utf_8 = codec_utf_8->fromUnicode(Str);
-  return str_utf_8.data();
-}
-
-inline std::string QStringToStdString(const QString &str)
-{
-  #if (defined(__GNUC__) && (QT_VERSION < 0x05))
-  return str.toStdString();
-  #elif defined(__GNUC__)
-  return std::string(str.toUtf8().constData());
-  #else
-  return utf_8_to_win_1251(str.toUtf8().constData());
-  #endif
-}
-
-inline std::wstring QStringToStdWString(const QString &str)
-{
-  #ifdef _MSC_VER
-  IRS_STATIC_ASSERT(sizeof(wchar_t) == sizeof(ushort));
-  return std::wstring(reinterpret_cast<const wchar_t*>(str.utf16()));
-  #else
-  return str.toStdWString();
-  #endif
-}
-
-inline QString StdStringToQString(const std::string &str)
-{
-  #if (defined(__GNUC__) && (QT_VERSION < 0x05))
-  return QString::fromStdString(str);
-  #elif defined(__GNUC__)
-  return QString::fromUtf8(str.c_str(), str.size());
-  #else
-  const std::string s = win_1251_to_utf_8(str);
-  IRS_LIB_ASSERT(s.size() <
-    static_cast<std::size_t>(std::numeric_limits<int>::max()));
-  return QString::fromUtf8(s.c_str(), static_cast<int>(s.size()));
-  #endif
-}
-
-inline QString StdWStringToQString(const std::wstring &str)
-{
-  #ifdef _MSC_VER
-  IRS_STATIC_ASSERT(sizeof(wchar_t) == sizeof(ushort));
-  return QString::fromUtf16(
-    reinterpret_cast<const unsigned short*>(str.c_str()));
-  #else
-  return QString::fromStdWString(str);
-  #endif
-}
-
-inline std_wstring_t str_conv_simple(const std_wstring_t&,
-  const std_string_t& a_str_in)
-{
-  QString Str = StdStringToQString(a_str_in);
-  return QStringToStdWString(Str);
-}
-inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
-  const std_string_t& a_str_in)
-{
-  QString Str = StdStringToQString(a_str_in);
-  return QStringToStdWString(Str);
-}
-# endif // QT_CORE_LIB
-#endif //IRS_FULL_STDCPPLIB_SUPPORT
-
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-template<>
-struct base_str_type<irs_wstring_t>
-{
-  typedef irs_wstring_t type;
-};
-template<>
-struct base_str_type<std_wstring_t>
-{
-  typedef irs_wstring_t type;
-};
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
-
-#if defined(__BORLANDC__)
-template<>
-struct base_str_type<AnsiString>
-{
-  typedef irs_string_t type;
-};
-
-template<>
-struct base_str_type<WideString>
-{
-  typedef irs_wstring_t type;
-};
-
-#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
-template<>
-struct base_str_type<UnicodeString>
-{
-  typedef irs_wstring_t type;
-};
-#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
-
-#endif // __BORLANDC__
-
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-
-#ifdef QT_CORE_LIB
-template<>
-struct base_str_type<QString>
-{
-  typedef irs_wstring_t type;
-};
-#endif //QT_CORE_LIB
-
-//char*
-#ifdef QT_CORE_LIB
-
-inline QString str_conv(const char* a_str_in)
-{
-  return a_str_in;
-}
-#endif //QT_CORE_LIB
-
-//wchar_t*
-#ifdef QT_CORE_LIB
-inline QString str_conv(const wchar_t* a_str_in)
-{
-  return QString::fromWCharArray(a_str_in);
-}
-#endif //QT_CORE_LIB
-
-
-// Из std_string_t
-template<class T>
-inline T str_conv(const std_string_t& a_str_in)
-{
-  return str_conv_simple(T(), a_str_in);
-}
-#ifdef QT_CORE_LIB
-/*template<>
-inline std_wstring_t str_conv<std_wstring_t>(const std_string_t& a_str_in)
-{
-  QString String = QString::fromStdString(a_str_in);
-  return String.toStdWString();
-}*/
-template<>
-inline QString str_conv<QString>(const std_string_t& a_str_in)
-{
-  return StdStringToQString(a_str_in);
-}
-#endif //QT_CORE_LIB
-#if defined(__BORLANDC__)
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const std_string_t& a_str_in)
-{
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
-  String str(a_str_in.c_str(), a_str_in.size());
-  return std_wstring_t(str.c_str(), str.Length());
-  #else
-  return str_conv_simple(std_wstring_t(), a_str_in);
-  #endif
-}
-
-template<>
-inline irs_wstring_t str_conv<irs_wstring_t>(const std_string_t& a_str_in)
-{
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
-  String str(a_str_in.c_str(), a_str_in.size());
-  return irs_wstring_t(str.c_str(), str.Length());
-  #else // Если не Builder XE
-  return str_conv_simple(irs_wstring_t(), a_str_in);
-  #endif // Если не Builder XE
-}
-
-template<>
-inline String str_conv<String>(const std_string_t& a_str_in)
-{
-  irs::irs_string_t str(a_str_in.c_str(), a_str_in.size());
-  return str_conv<String>(str);
-}
-#endif // defined(__BORLANDC__)
 
 // Из std_wstring_t
 inline std_wstring_t str_conv_simple(const std_wstring_t&,
@@ -291,81 +72,10 @@ inline irs_string_t str_conv_simple(const irs_string_t&,
 {
   return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
 }
-# else // QT_CORE_LIB
-inline std_string_t str_conv_simple(const std_string_t&,
-  const std_wstring_t& a_str_in)
-{
-  QString Str = StdWStringToQString(a_str_in);
-  return QStringToStdString(Str);
-}
-inline irs_string_t str_conv_simple(const irs_string_t&,
-  const std_wstring_t& a_str_in)
-{
-  QString Str = StdWStringToQString(a_str_in);
-  return QStringToStdString(Str);
-}
-# endif // QT_CORE_LIB
-template<class T>
-inline T str_conv(const std_wstring_t& a_str_in)
-{
-  return str_conv_simple(T(), a_str_in);
-}
-#ifdef QT_CORE_LIB
-/*template<>
-inline std_string_t str_conv<std_string_t>(const std_wstring_t& a_str_in)
-{
-  QString String = QString::fromStdWString(a_str_in);
-  return String.toStdString();
-}*/
-
-template<>
-inline QString str_conv<QString>(const std_wstring_t& a_str_in)
-{
-  return StdWStringToQString(a_str_in);
-}
-#endif // QT_CORE_LIB
-#if defined(__BORLANDC__)
-template<>
-inline AnsiString str_conv<AnsiString>(const std_wstring_t& a_str_in)
-{
-  return AnsiString(a_str_in.c_str());
-}
-template<>
-inline WideString str_conv<WideString>(const std_wstring_t& a_str_in)
-{
-  return WideString(a_str_in.c_str(), a_str_in.size());
-}
-
-#if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
-template<>
-inline UnicodeString str_conv<UnicodeString>(const std_wstring_t& a_str_in)
-{
-  return UnicodeString(a_str_in.c_str(), a_str_in.size());
-}
-#endif // (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
-
-#endif // defined(__BORLANDC__)
+# endif // !QT_CORE_LIB
 
 // Из irs_string_t
-template<class T>
-inline T str_conv(const irs_string_t& a_str_in)
-{
-  // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
-}
 
-template<>
-inline std_string_t str_conv<std_string_t>(const irs_string_t& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
-{
-  return a_str_in;
-}
 
 template<>
 inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
@@ -389,260 +99,75 @@ inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
   #endif // Если меньше Builder XE
 
 }
-
-#if defined(__BORLANDC__)
-template<>
-inline AnsiString str_conv<AnsiString>(const irs_string_t& a_str_in)
-{
-  return AnsiString(a_str_in.c_str());
-}
-
-template<>
-inline WideString str_conv<WideString>(const irs_string_t& a_str_in)
-{
-  return WideString(AnsiString(a_str_in.c_str()));
-}
-
-#if (__BORLANDC__ >= IRS_CPP_BUILDER2010)
-template<>
-inline UnicodeString str_conv<UnicodeString>(const irs_string_t& a_str_in)
-{
-  return UnicodeString(AnsiString(a_str_in.c_str()));
-}
-#endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
-
-#endif // defined(__BORLANDC__)
-
-
-
-
-#ifdef NOP
-//std_wstring_t
-template<class T>
-inline T str_conv(const std::wstring& a_str_in)
-{
-  // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
-}
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const std_wstring_t& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const std_wstring_t& a_str_in)
-{
-  return irs_string_t(irs::convert_str_t<wchar_t, char>(a_str_in.c_str()).get());
-}
-
-#if defined(__BORLANDC__)
-template<>
-inline AnsiString str_conv<AnsiString>(const std_wstring_t& a_str_in)
-{
-  return AnsiString(a_str_in.c_str());
-}
-
-template<>
-inline WideString str_conv<WideString>(const std_wstring_t& a_str_in)
-{
-  return WideString(a_str_in.c_str(), a_str_in.size());
-}
-
-
-#endif // defined(__BORLANDC__)
-#endif //NOP
-
-
-
-
-#if defined(__BORLANDC__)
-template<class T>
-T str_conv(const AnsiString& a_str_in)
-{
-  if (is_equal_types<T, AnsiString>::value) {
-    return a_str_in;
-  } else {
-    // Непроверенное преобразование
-    IRS_STATIC_ASSERT(false);
-    return T(a_str_in);
-  }
-}
-
-/*template<>
-AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
-{
-  return a_str_in;
-}*/
-
-template<>
-inline AnsiString str_conv<AnsiString>(const AnsiString& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const AnsiString& a_str_in)
-{
-  return irs_string_t(a_str_in.c_str(), a_str_in.Length());
-}
-
-template<>
-inline std_string_t str_conv<std_string_t>(const AnsiString& a_str_in)
-{
-  return std_string_t(a_str_in.c_str(), a_str_in.Length());
-}
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const AnsiString& a_str_in)
-{
-  return std::wstring(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-}
-
-template<>
-inline irs_wstring_t str_conv<irs_wstring_t>(const AnsiString& a_str_in)
-{
-  return irs_wstring_t(convert_str_t<char, wchar_t>(a_str_in.c_str()).get());
-}
-
-template<>
-inline WideString str_conv<WideString>(const AnsiString& a_str_in)
-{
-  return WideString(a_str_in);
-}
-
-template<class T>
-inline T str_conv(const WideString& a_str_in)
-{
-  // Непроверенное преобразование
-  //IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
-}
-
-template<>
-inline WideString str_conv<WideString>(const WideString& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const WideString& a_str_in)
-{
-  return irs_string_t(AnsiString(a_str_in).c_str());
-}
-
-template<>
-inline std_string_t str_conv<std_string_t>(const WideString& a_str_in)
-{
-  return std_string_t(AnsiString(a_str_in).c_str());
-}
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const WideString& a_str_in)
-{
-  const irs_size_t str_size = a_str_in.Length();
-  std::wstring str_out;
-  str_out.resize(str_size);
-  for (irs_size_t ch_i = 0; ch_i < str_size; ch_i++) {
-    str_out[ch_i] = a_str_in[ch_i + 1];
-  }
-  return str_out;
-}
-
-template<>
-inline AnsiString str_conv<AnsiString>(const WideString& a_str_in)
-{
-  return AnsiString(a_str_in);
-}
-
-#if (__BORLANDC__ >= IRS_CPP_BUILDER2010)
-// UnicodeString
-template<class T>
-inline T str_conv(const UnicodeString& a_str_in)
-{
-  // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
-}
-
-template<>
-inline UnicodeString str_conv<UnicodeString>(const UnicodeString& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const UnicodeString& a_str_in)
-{
-  return irs_string_t(convert_str_t<wchar_t, char>(a_str_in.c_str()).get());
-}
-
-template<>
-inline std_string_t str_conv<std_string_t>(const UnicodeString& a_str_in)
-{
-  return std_string_t(convert_str_t<wchar_t, char>(a_str_in.c_str()).get());
-}
-
-template<>
-inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
-{
-  return irs_wstring_t(a_str_in.c_str());
-}
-#endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
-#endif // defined(__BORLANDC__)
-
-#ifdef QT_CORE_LIB
-// QString
-template<class T>
-inline T str_conv(const QString& a_str_in)
-{
-  // Непроверенное преобразование
-  IRS_STATIC_ASSERT(false);
-  return T(a_str_in);
-}
-
-template<>
-inline QString str_conv<QString>(const QString& a_str_in)
-{
-  return a_str_in;
-}
-
-template<>
-inline std_string_t str_conv<std_string_t>(const QString& a_str_in)
-{
-  return QStringToStdString(a_str_in);
-}
-
-template<>
-inline irs_string_t str_conv<irs_string_t>(const QString& a_str_in)
-{
-  return QStringToStdString(a_str_in);
-}
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const QString& a_str_in)
-{
-  return QStringToStdWString(a_str_in);
-}
-
-template<>
-inline irs_wstring_t str_conv<irs_wstring_t>(const QString& a_str_in)
-{
-  return QStringToStdWString(a_str_in);
-}
-#endif // QT_CORE_LIB
-
 #else // !IRS_FULL_STDCPPLIB_SUPPORT
 # ifdef __ICCARM__
+
+inline std::wstring cp1251_to_wstring(const std::string& a_str)
+{
+  irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
+  mbstate_t state;
+
+  const char* in_str = a_str.c_str();
+  const size_t instr_size = strlenu(in_str) + 1;
+  const char* in_str_end = in_str + instr_size;
+  const char* in_str_next = in_str;
+
+  vector<wchar_t> out_str_array(instr_size, 0);
+  wchar_t* out_str = vector_data(out_str_array);
+  wchar_t* out_str_end = out_str + instr_size;
+  wchar_t* out_str_next = out_str;
+
+  std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
+    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
+
+  if (convert_result != std::codecvt_base::ok) {
+    throw runtime_error("Не удалось преобразовать cp1251 в unicode");
+  }
+  return std::wstring(out_str);
+}
+
+inline std::string wstring_to_cp1251(const std::wstring& a_str)
+{
+  irs::codecvt_cp1251_t<char, wchar_t, std::mbstate_t> codecvt_cp1251_wchar;
+  mbstate_t state;
+  const wchar_t* in_str = a_str.c_str();
+  const size_t instr_size = strlenu(in_str) + 1;
+  const wchar_t* in_str_end = in_str + instr_size;
+  const wchar_t* in_str_next = in_str;
+
+  vector<char> out_str_array(instr_size, 0);
+  char* out_str = vector_data(out_str_array);
+  char* out_str_end = out_str + instr_size;
+  char* out_str_next = out_str;
+
+  std::codecvt_base::result convert_result = codecvt_cp1251_wchar.in(
+    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
+
+  if (convert_result != std::codecvt_base::ok) {
+    throw runtime_error("Не удалось преобразовать unicode в cp1251");
+  }
+  return std::string(out_str);
+}
+
+inline std::wstring str_conv_simple(const std::wstring&,
+  const std::string& a_str_in)
+{
+  return cp1251_to_wstring(a_str_in);
+}
+
+inline std::string str_conv_simple(const std::string&,
+  const std::wstring& a_str_in)
+{
+  return wstring_to_cp1251(a_str_in);
+}
+
 // Из irs_string_t
 template<class T>
-inline T str_conv(const irs_string_t& a_str_in)
+inline T str_conv(const irs_string_t& /*a_str_in*/)
 {
   // Непроверенное преобразование
   IRS_ASSERT(false);
-  return T(a_str_in);
+  return T();
 }
 
 template<>
@@ -656,27 +181,38 @@ inline irs_string_t str_conv<irs_string_t>(const irs_string_t& a_str_in)
 {
   return a_str_in;
 }
+
+template<>
+inline std::wstring str_conv<std::wstring>(const irs_string_t& a_str_in)
+{
+  return str_conv_simple(std::wstring(), a_str_in);
+}
+
+
+template<class T>
+inline T str_conv(const std::wstring& /*a_str_in*/)
+{
+  // Непроверенное преобразование
+  IRS_ASSERT(false);
+  return T();
+}
+
+template<>
+inline std::wstring str_conv<std::wstring>(const std::wstring& a_str_in)
+{
+  return a_str_in;
+}
+
+template<>
+inline std::string str_conv<std::string>(const std::wstring& a_str_in)
+{
+  return str_conv_simple(std::string(), a_str_in);
+}
 # endif // __ICCARM__
 #endif // !IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef IRS_WIN32
-# ifdef QT_CORE_LIB
-inline std::wstring utf_8_to_wstring(const std::string& a_str)
-{
-  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
-  QString Str = codec_utf_8->toUnicode(a_str.c_str());
-  return irs::str_conv<std::wstring>(Str);
-}
-
-inline std::string wstring_to_utf_8(const std::wstring& a_str)
-{
-  QString Str = irs::str_conv<QString>(a_str);
-  QTextCodec *codec_utf_8 = QTextCodec::codecForName("UTF-8");
-  QByteArray str_utf_8 = codec_utf_8->fromUnicode(Str);
-  return std::string(str_utf_8.data());
-}
-
-# else // !QT_CORE_LIB
+# ifndef QT_CORE_LIB
 inline std::wstring utf_8_to_wstring(const std::string& a_str)
 {
   int size =  MultiByteToWideChar(CP_UTF8 ,0 , a_str.c_str(), a_str.size(),
@@ -702,68 +238,112 @@ inline std::string wstring_to_utf_8(const std::wstring& a_str)
 
 /*inline std::string utf_8_to_cp1251(const std::string& a_str)
 {
-
 }*/
 
 # endif // !QT_CORE_LIB
-#else //
+#else // !IRS_WIN32
 # if IRS_USE_UTF8_CPP
 inline std::wstring utf_8_to_wstring(const std::string& a_str)
 {
-  vector<wchar_t> wchar_vec;
+  //vector<wchar_t> wchar_vec;
+  std::wstring wstr;
   if (sizeof(wchar_t) == 2) {
-    utf8::utf8to16(a_str.begin(), a_str.end(), back_inserter(wchar_vec));
-  } else if (sizeof(wchar_t) == 2) {
-    utf8::utf8to32(a_str.begin(), a_str.end(), back_inserter(wchar_vec));
+    utf8::utf8to16(a_str.begin(), a_str.end(), back_inserter(wstr));
+  } else if (sizeof(wchar_t) == 4) {
+    utf8::utf8to32(a_str.begin(), a_str.end(), back_inserter(wstr));
   } else {
     // Недопустимый размер
-    IRS_STATIC_ASSERT(false);
+    IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
   }
-  std::wstring wstr(wchar_vec.front(), wchar_vec.size());
+  //std::wstring wstr(wchar_vec.front(), wchar_vec.size());
   return wstr;
 }
 
 inline std::string wstring_to_utf_8(const std::wstring& a_str)
 {
-  int size = WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(),
-    a_str.size(), NULL, 0, NULL, NULL);
-  char* cstr = new wchar_t[size];
-  WideCharToMultiByte(CP_UTF8, 0, a_str.c_str(), a_str.size(), cstr,
-    size, NULL, NULL);
-  std::string str(cstr, size);
-  delete[] cstr;
-  return str;
+   std::string str_utf8;
+   if (sizeof(wchar_t) == 2) {
+    utf8::utf16to8(a_str.begin(), a_str.end(), back_inserter(str_utf8));
+  } else if (sizeof(wchar_t) == 4) {
+    utf8::utf32to8(a_str.begin(), a_str.end(), back_inserter(str_utf8));
+  } else {
+    // Недопустимый размер
+    IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
+  }
+  return str_utf8;
 }
 # endif // IRS_USE_UTF8_CPP
-#endif //
+#endif // !IRS_WIN32
 
 #if (defined(IRS_WIN32) || defined(QT_CORE_LIB))
 template <class T>
-std::string encode_utf_8(const T& a_str)
+inline std::string encode_utf_8(const T& a_str)
 {
   std::wstring wstr = irs::str_conv<std::wstring>(a_str);
   return wstring_to_utf_8(wstr);
 }
 
 template <class T>
-T decode_utf_8(const std::string& a_str)
+inline T decode_utf_8(const std::string& a_str)
 {
   std::wstring wstr = utf_8_to_wstring(a_str);
   return irs::str_conv<T>(wstr);
 }
 #elif IRS_USE_UTF8_CPP
 template <class T>
-std::string encode_utf_8(const T& a_str)
+inline std::string encode_utf_8(const T& a_str)
 {
   std::wstring wstr = irs::str_conv<std::wstring>(a_str);
   return wstring_to_utf_8(wstr);
 }
 
+inline bool all_chars_ascii(const irs::string& a_str)
+{
+  for (size_t i = 0; i < a_str.size(); i++) {
+    if (a_str[i] > 0x7f) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <>
+inline std::string encode_utf_8<std::string>(const std::string& a_str)
+{
+  if (all_chars_ascii(a_str)) { // Если все символы <=7F, то не кодируем
+    return a_str;
+  }
+  std::wstring wstr = irs::str_conv<std::wstring>(a_str);
+  return wstring_to_utf_8(wstr);
+}
+
+template <>
+inline std::string encode_utf_8<irs::string>(const irs::string& a_str)
+{
+  return encode_utf_8<std::string>(a_str);
+}
+
 template <class T>
-T decode_utf_8(const std::string& a_str)
+inline T decode_utf_8(const std::string& a_str)
 {
   std::wstring wstr = utf_8_to_wstring(a_str);
   return irs::str_conv<T>(wstr);
+}
+
+template <>
+inline std::string decode_utf_8<std::string>(const std::string& a_str)
+{
+  if (all_chars_ascii(a_str)) { // Если все символы <=7F, то не кодируем
+    return a_str;
+  }
+  std::wstring wstr = utf_8_to_wstring(a_str);
+  return irs::str_conv<std::string>(wstr);
+}
+
+template <>
+inline irs::string decode_utf_8<irs::string>(const std::string& a_str)
+{
+  return decode_utf_8<std::string>(a_str);
 }
 #endif // IRS_USE_UTF8_CPP
 

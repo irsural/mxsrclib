@@ -614,6 +614,20 @@ irs_menu_base_t::size_type irs_advanced_menu_t::add(irs_menu_base_t *ap_item,
   return m_menu_vector.size() - 1;
 }
 
+void irs_advanced_menu_t::clear()
+{
+  for (size_t i = 0; i < m_menu_vector.size(); i++) {
+    m_menu_vector[i].p_item->set_key_event(NULL);
+    m_menu_vector[i].p_item->set_creep(NULL);
+    m_menu_vector[i].p_item->set_disp_drv(NULL);
+    m_menu_vector[i].p_item->set_cursor_symbol('\0');
+    m_menu_vector[i].p_item->set_master_menu(NULL);
+  }
+  m_menu_vector.clear();
+  m_current_item = 0;
+  m_arrow_position = 0;
+}
+
 irs_menu_base_t::size_type irs_advanced_menu_t::get_dynamic_string(
   char *ap_buffer, size_type /*a_length*/)
 {
@@ -696,6 +710,7 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   f_suffix(empty_str),
   f_value_string(empty_str),
   f_num_mode(irs::num_mode_fixed),
+  f_space_count_after_prefix(1),
   f_len(0),
   f_accur(0),
   f_max(0.0f),
@@ -759,9 +774,20 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   f_prefix = a_prefix;
   f_suffix = a_suffix;
 
+  update_str_parameters();
+}
+
+void irs_menu_double_item_t::set_space_count_after_prefix(size_type a_count)
+{
+  f_space_count_after_prefix = a_count;
+  update_str_parameters();
+}
+
+void irs_menu_double_item_t::update_str_parameters()
+{
   size_type space = 1;
-  size_type full_len
-    = f_len + space + strlen(f_prefix) + space + strlen(f_suffix);
+  size_type full_len = f_len + f_space_count_after_prefix +
+    strlen(f_prefix) + space + strlen(f_suffix);
 
   delete []f_copy_parametr_string;
   f_copy_parametr_string = new char [full_len + 1];
@@ -806,8 +832,17 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
       {
         a_parametr_string[i] = f_prefix[i];
       }
-      a_parametr_string[len] = ' ';
-      len++;
+      if ((a_length > 0) && ((len + f_space_count_after_prefix) > a_length)) {
+        const size_type space_count = a_length - len;
+        vector<char> spaces(space_count, ' ');
+        memcpy(&a_parametr_string[len], irs::vector_data(spaces), space_count);
+        len = a_length;
+        a_parametr_string[len] = '\0';
+        return len;
+      }
+      vector<char> spaces(f_space_count_after_prefix, ' ') ;
+      memcpy(&a_parametr_string[len], irs::vector_data(spaces), spaces.size());
+      len += f_space_count_after_prefix;
     }
     if (f_copy_parametr != *f_parametr)
     {
@@ -1408,10 +1443,12 @@ irs_menu_spin_item_t::irs_menu_spin_item_t(
   m_precision(5),
   m_selected_digit(0),
   m_unit_selected(false),
+  m_default_step_mode(default_step_is_not_set),
   m_parameter_field_width(0),
   m_prefix(),
   m_suffix(),
   m_value_str(),
+  m_space_count_after_prefix(1),
   m_blink_cursor_timer(irs::make_cnt_s(0.2)),
   m_show_cursor(true),
   m_cursor_visible(false),
@@ -1849,11 +1886,18 @@ void irs_menu_spin_item_t::set_str(const string_type& a_prefix,
   m_updated = true;
 }
 
+void irs_menu_spin_item_t::set_space_count_after_prefix(size_type a_count)
+{
+  m_space_count_after_prefix = a_count;
+  m_updated = true;
+}
+
 void irs_menu_spin_item_t::set_min_value(double a_min_value)
 {
   m_min = a_min_value;
   m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
   normalize_selected_digit();
+  m_updated = true;
 }
 
 void irs_menu_spin_item_t::set_max_value(double a_max_value)
@@ -1861,6 +1905,7 @@ void irs_menu_spin_item_t::set_max_value(double a_max_value)
   m_max = a_max_value;
   m_copy_parametr = irs::bound(m_copy_parametr, m_min, m_max);
   normalize_selected_digit();
+  m_updated = true;
 }
 
 void irs_menu_spin_item_t::update_min_max_exponent()
@@ -1994,7 +2039,8 @@ bool irs_menu_spin_item_t::shift_cursor_right()
   return shift(shift_right);
 }
 
-void irs_menu_spin_item_t::set_edited_digit_diapason(int a_min_digit, int a_max_digit)
+void irs_menu_spin_item_t::set_edited_digit_diapason(
+  int a_min_digit, int a_max_digit)
 {
   IRS_LIB_ASSERT(a_min_digit < a_max_digit);
   if (a_min_digit < a_max_digit) {
@@ -2016,12 +2062,56 @@ void irs_menu_spin_item_t::set_edited_digit_diapason(int a_min_digit, int a_max_
       if (mp_event) mp_event->exec();
     }
     normalize_selected_digit();
+    m_updated = true;
   }
+}
+
+/*void irs_menu_spin_item_t::set_step(double a_step)
+{
+  m_step = a_step;
+  m_selected_digit = irs::round<double, int>(log10(a_step));
+  m_unit_selected = false;
+  normalize_selected_digit();
+  m_updated = true;
+}*/
+
+void irs_menu_spin_item_t::set_step_to_default()
+{
+  reset_selected_digit();
+  m_updated = true;
+}
+
+void irs_menu_spin_item_t::set_default_step(double a_step)
+{
+  m_default_selected_digit = irs::round<double, int>(log10(a_step));
+  m_default_step_mode = default_step_is_set;
+}
+
+void irs_menu_spin_item_t::reset_default_step()
+{
+  m_default_selected_digit = 0;
+  m_default_step_mode = default_step_is_not_set;
 }
 
 void irs_menu_spin_item_t::set_cursor_visible(bool a_enabled)
 {
   m_cursor_visible = a_enabled;
+}
+
+irs_menu_spin_item_t::encoder_mode_t
+irs_menu_spin_item_t::get_encoder_mode() const
+{
+  return m_encoder_mode;
+}
+
+void irs_menu_spin_item_t::set_encoder_mode(encoder_mode_t a_encoder_mode)
+{
+  m_encoder_mode = a_encoder_mode;
+  if (m_encoder_mode == encoder_mode_digit_editing) {
+    m_cursor = ' ';
+  } else {
+    m_cursor = '_';
+  }
 }
 
 irs::generator_events_t* irs_menu_spin_item_t::permitted_action_events()
@@ -2238,7 +2328,12 @@ int irs_menu_spin_item_t::get_mantissa_min_digit() const
 
 void irs_menu_spin_item_t::reset_selected_digit()
 {
-  m_selected_digit = irs::bound(m_exponent, m_min_digit, m_max_digit);
+  if (m_default_step_mode == default_step_is_not_set) {
+    m_selected_digit = irs::bound(m_exponent, m_min_digit, m_max_digit);
+  } else {
+    m_selected_digit =
+      irs::bound(m_default_selected_digit, m_min_digit, m_max_digit);
+  }
   m_unit_selected = false;
 }
 
@@ -2476,10 +2571,18 @@ void irs_menu_spin_item_t::check_key_event()
       m_permitted_actions_events.exec();
     } break;
     case irskey_up: {
-      try_shift_cursor_left();
+      if (m_encoder_mode == encoder_mode_digit_editing) {
+        try_increase_value();
+      } else {
+        try_shift_cursor_left();
+      }
     } break;
     case irskey_down: {
-      try_shift_cursor_right();
+      if (m_encoder_mode == encoder_mode_digit_editing) {
+        try_reduce_value();
+      } else {
+        try_shift_cursor_right();
+      }
     } break;
   }
 }
@@ -2487,11 +2590,9 @@ void irs_menu_spin_item_t::check_key_event()
 void irs_menu_spin_item_t::switch_mode_encoder()
 {
   if (m_encoder_mode == encoder_mode_digit_editing) {
-    m_encoder_mode = encoder_mode_digit_selection;
-    m_cursor = '_';
+    set_encoder_mode(encoder_mode_digit_selection);
   } else {
-    m_encoder_mode = encoder_mode_digit_editing;
-    m_cursor = ' ';
+    set_encoder_mode(encoder_mode_digit_editing);
   }
 }
 
@@ -2625,7 +2726,8 @@ irs_menu_spin_item_t::get_parametr_string(
     }
 
     if (a_show_mode != IMM_WITHOUT_PREFIX) {
-      parameter_str = m_prefix + irst(' ');
+      parameter_str = m_prefix +
+        string_type(m_space_count_after_prefix, irst(' '));
     }
 
     if (m_copy_parametr != *mp_parametr) {
@@ -2639,8 +2741,6 @@ irs_menu_spin_item_t::get_parametr_string(
       m_updated = true;
     }
     if (a_update == IMU_UPDATE) {
-      irs::measure_time_t t;
-      t.start();
       convert_param_to_str();
 
       // Сдвиг на единицу для пропуска разделителя
@@ -2947,6 +3047,17 @@ bool irs_advanced_tablo_t::add(irs_menu_base_t *ap_parametr,
   new_item.is_hidden = false;
   m_parametr_vector.push_back(new_item);
   return true;
+}
+
+void irs_advanced_tablo_t::clear()
+{
+  for (size_t i = 0; i < m_parametr_vector.size(); i++) {
+    m_parametr_vector[i].p_parametr->set_key_event(NULL);
+    m_parametr_vector[i].p_parametr->set_creep(NULL);
+    m_parametr_vector[i].p_parametr->set_disp_drv(NULL);
+    m_parametr_vector[i].p_parametr->set_cursor_symbol('\0');
+  }
+  m_parametr_vector.clear();
 }
 
 void irs_advanced_tablo_t::set_slave_menu(irs_menu_base_t *ap_slave_menu)

@@ -202,8 +202,8 @@ irs::chart_data::charts_t irs::chart_data::charts_json_file_t::load(
 
   Json::Reader reader;
   Json::Value mx_chart;
-  const bool collect_ñomments = false;
-  const bool parsed_success = reader.parse(ifile, mx_chart, collect_ñomments);
+  const bool collect_comments = false;
+  const bool parsed_success = reader.parse(ifile, mx_chart, collect_comments);
   if(!parsed_success) {
     std::cout << "Failed to parse JSON" <<
       std::endl << reader.getFormatedErrorMessages() <<
