@@ -1226,6 +1226,13 @@ String irs::tstlan::view_t::controls_t::var_to_bstr(int a_var_index)
 void irs::tstlan::view_t::controls_t::bstr_to_var(int a_var_index,
   const String& a_bstr_val)
 {
+  if (!mp_data) {
+    return;
+  }
+  if (!mp_data->connected()) {
+    return;
+  }
+
   string_type val = a_bstr_val.c_str();
   val.locale_style(irsstrloc_russian);
   netconn_t::item_t item = m_netconn.items[a_var_index];
