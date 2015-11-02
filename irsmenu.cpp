@@ -2584,6 +2584,9 @@ void irs_menu_spin_item_t::check_key_event()
         try_shift_cursor_right();
       }
     } break;
+    default: {
+      // Игнорируем
+    }
   }
 }
 

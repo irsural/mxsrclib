@@ -223,7 +223,7 @@ irs::variant::variant_t::variant_t(const unsigned_long_long_type a_value):
 irs::variant::variant_t::variant_t(const string_type& a_value):
   m_value(),
   m_type(var_type_unknown)
-{     
+{
   type_change(var_type_string);
   *m_value.p_val_string_type = a_value;
 }
@@ -235,7 +235,7 @@ irs::variant::variant_t::~variant_t()
     delete m_value.p_val_string_type;
   } else if (m_type == var_type_array) {
     IRS_LIB_ASSERT(m_value.p_val_vector_variant != IRS_NULL);
-    delete m_value.p_val_vector_variant;     
+    delete m_value.p_val_vector_variant;
   } else {
     // Дополнительные действия не требуются
   }
@@ -319,8 +319,8 @@ void irs::variant::variant_t::type(const var_type_t a_variant_type)
 
 void irs::variant::variant_t::swap(variant_t& a_variant)
 {
-  ::swap(m_value, a_variant.m_value);
-  ::swap(m_type, a_variant.m_type);
+  IRS_STD swap(m_value, a_variant.m_value);
+  IRS_STD swap(m_type, a_variant.m_type);
 }
 
 irs::variant::variant_t& irs::variant::variant_t::operator=(
@@ -422,7 +422,7 @@ irs::variant::variant_t::as_unsigned_long_long() const
 
 irs::variant::variant_t::string_type
 irs::variant::variant_t::as_string() const
-{ 
+{
   return as_type<string_type>();
 }
 
@@ -887,10 +887,10 @@ void irs::variant::binary_operation(
 
     } break;
     default : {
-      IRS_LIB_ASSERT_MSG("Недопустимая комбинация переменных");    
+      IRS_LIB_ASSERT_MSG("Недопустимая комбинация переменных");
     }
   }
-} 
+}
 
 void irs::variant::variant_t::prefix_operation(
   const operation_type_t a_unary_operation_type)
@@ -1402,7 +1402,7 @@ irs::variant::sizens_t get_max_depth_helper(
 } // empty namespace
 
 irs::variant::sizens_t irs::variant::get_max_depth(const variant_t& a_variant)
-{ 
+{
   return get_max_depth_helper(a_variant, 0);
 }
 
@@ -1446,7 +1446,7 @@ bool is_uniform_dimension_helper(
   }
   // Переходим на подуровень
   if (can_jump_to_sub_level) {
-    const size_type d_sub_level = d_level + 1;      
+    const size_type d_sub_level = d_level + 1;
     for (size_type elem_i = 0; elem_i < ap_size_array[d_level]; elem_i++) {
       if (!is_uniform_dimension_helper(a_variant[elem_i], ap_size_array,
         d_sub_level)) {
@@ -1485,7 +1485,7 @@ bool irs::variant::is_uniform_dimension(
   return uniform;
 }
 
-namespace {    
+namespace {
 
 bool is_uniform_type_helper(const irs::variant::variant_t& a_variant,
   const irs::variant::sizens_t a_cur_level,
@@ -1505,7 +1505,7 @@ bool is_uniform_type_helper(const irs::variant::variant_t& a_variant,
           uniform_type = false;
           break;
         } else {
-          // Продолжаем проверку 
+          // Продолжаем проверку
         }
       }
     } else {
@@ -1778,10 +1778,10 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT(var_unsigned_long_long_type ==
     var_unsigned_long_long_type_result_read);
   #endif // IRSDEFS_LONG_LONG
-  variant = var_void_ptr;  
+  variant = var_void_ptr;
   variant = var_string_type;
   variant_t::string_type var_string_type_result_read = variant;
-  
+
   IRS_LIB_ASSERT(var_string_type == var_string_type_result_read);
 
   // Тест операторов сравнения
@@ -1823,7 +1823,7 @@ void irs::variant::test_variant()
   IRS_LIB_ASSERT((first_variant /= second_variant) ==
     (first_int_var /= second_int_var));
   IRS_LIB_ASSERT((first_variant %= second_variant) ==
-    (first_int_var %= second_int_var)); 
+    (first_int_var %= second_int_var));
 
   IRS_LIB_ASSERT((first_variant + second_variant) ==
     (first_int_var + second_int_var));
@@ -1835,7 +1835,7 @@ void irs::variant::test_variant()
     (first_int_var / second_int_var));
   IRS_LIB_ASSERT((first_variant % second_variant) ==
     (first_int_var % second_int_var));
- 
+
   IRS_LIB_ASSERT(++first_variant == ++first_int_var);
   IRS_LIB_ASSERT(first_variant++ == first_int_var++);
   IRS_LIB_ASSERT(--first_variant == --first_int_var);
@@ -1862,7 +1862,7 @@ void irs::variant::test_variant()
     static_cast<int>(double_var));
   variant_t::string_type string_var = irst("test");
   first_variant = string_var;
-  first_variant.assign_no_cast(string_var);    
+  first_variant.assign_no_cast(string_var);
 
   // Проверка оператора копирования
   first_variant.type(var_type_array);

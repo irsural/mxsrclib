@@ -603,7 +603,7 @@ void irs::dcp::device_t::init_packet_send_from_configuration()
     m_config.hardware_version);
   const size_type hardware_ver_size =
     std::min<size_type>(hardware_version_max_size, hardware_ver.size());
-  std::memcpy(m_send_packet.hardware_version, hardware_ver.c_str(),
+  memcpy(m_send_packet.hardware_version, hardware_ver.c_str(),
     hardware_ver_size);
   m_send_packet.hardware_version[hardware_ver_size] = '\0';
 
@@ -611,7 +611,7 @@ void irs::dcp::device_t::init_packet_send_from_configuration()
     m_config.firmware_version);
   const size_type firmware_ver_size =
     std::min<size_type>(firmware_version_max_size, firmware_ver.size());
-  std::memcpy(m_send_packet.firmware_version, firmware_ver.c_str(),
+  memcpy(m_send_packet.firmware_version, firmware_ver.c_str(),
     firmware_ver_size);
   m_send_packet.firmware_version[firmware_ver_size] = '\0';
 

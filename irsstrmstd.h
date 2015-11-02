@@ -679,7 +679,7 @@ basic_plain_text_edit_buf_t<char_type>::basic_plain_text_edit_buf_t(
   m_end_of_line_char(static_cast<char_type>('\n')),
   m_zero_term_char(static_cast<char_type>('\0'))
 {
-  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+  this->setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
 }
 template <class char_type>
 void basic_plain_text_edit_buf_t<char_type>::connect(QPlainTextEdit *ap_edit)
@@ -717,7 +717,7 @@ basic_plain_text_edit_buf_t<char_type>::overflow(int_type a_char)
     mp_edit->setTextCursor(c);
   }
 
-  setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
+  this->setp(m_outbuf.begin(), m_outbuf.end() - zero_term_size);
   return 0;
 }
 template <class char_type>

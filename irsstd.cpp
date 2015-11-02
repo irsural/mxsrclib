@@ -182,6 +182,9 @@ void afloat_to_str(char *str, double N, size_t len, size_t accur,
 {
   ostrstream strm(str, len + 1);
   switch (a_num_mode) {
+    case irs::num_mode_invalid: {
+      // Игнорируем
+    } break;
     case irs::num_mode_general: {
     } break;
     case irs::num_mode_fixed: {

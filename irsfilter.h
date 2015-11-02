@@ -610,7 +610,7 @@ bool get_coef_iir_filter(
   value_type a = 0;
   value_type bandwidth = 0;
   if( f2 < f1 ) {
-    ::swap(f2, f1);
+    IRS_STD swap(f2, f1);
   }
   if(bandform == fb_high_pass) /* high pass */ {
     bandwidth = f2;

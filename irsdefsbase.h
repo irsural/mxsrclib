@@ -117,6 +117,12 @@
 #define NAMESPACE_STD_NOT_SUPPORT
 #endif //__embedded_cplusplus
 
+#ifdef NAMESPACE_STD_NOT_SUPPORT
+#define IRS_STD
+#else // !NAMESPACE_STD_NOT_SUPPORT
+#define IRS_STD std::
+#endif //!NAMESPACE_STD_NOT_SUPPORT
+
 // Включение 64-битного типа
 #define IRSDEFS_I64
 

@@ -568,7 +568,8 @@ raw_data_t<T>::raw_data_t(const_pointer ap_data, size_type a_size):
   m_bad_index_value(value_type()),
   #endif //IRS_LIB_CHECK
   m_size(a_size),
-  m_capacity((m_size > m_capacity_min)?m_size:m_capacity_min),
+  m_capacity((m_size > m_capacity_min) ?
+    m_size : static_cast<size_type>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memcpyex(mp_data, ap_data, m_size);
@@ -795,9 +796,9 @@ inline void raw_data_t<T>::clear()
 template <class T>
 inline void raw_data_t<T>::swap(raw_data_t<T>* ap_raw_data)
 {
-  ::swap(m_size, ap_raw_data->m_size);
-  ::swap(m_capacity, ap_raw_data->m_capacity);
-  ::swap(mp_data, ap_raw_data->mp_data);
+  IRS_STD swap(m_size, ap_raw_data->m_size);
+  IRS_STD swap(m_capacity, ap_raw_data->m_capacity);
+  IRS_STD swap(mp_data, ap_raw_data->mp_data);
 }
 #ifdef IRS_LIB_DEBUG
 bool raw_data_test();
@@ -1616,7 +1617,7 @@ inline bool handle_t<T>::is_empty() const
 template <class T>
 inline void handle_t<T>::swap(handle_t& a_handle)
 {
-  ::swap(mp_rep, a_handle.mp_rep);
+  IRS_STD swap(mp_rep, a_handle.mp_rep);
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT

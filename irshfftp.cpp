@@ -251,7 +251,11 @@ irs::hfftp::ofstream_file_t::write(const irs_u8* ap_buf, size_type a_size)
 void irs::hfftp::ofstream_file_t::write_abort()
 {
   m_ofile.close();
+  #ifdef __GNUC__
+  rmdir(irs::str_conv<irs::irs_string_t>(m_file_name).c_str());
+  #else // !__GNUC__
   _rmdir(irs::str_conv<irs::irs_string_t>(m_file_name).c_str());
+  #endif // !__GNUC__
   m_size = 0;
 }
 

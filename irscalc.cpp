@@ -1718,16 +1718,16 @@ void irs::calc::mutable_ref_t::change_type(const type_t a_type)
 
 void irs::calc::mutable_ref_t::swap(mutable_ref_t& a_mutable_ref)
 {
-  ::swap(m_type, a_mutable_ref.m_type);
-  ::swap(m_value, a_mutable_ref.m_value);
-  ::swap(m_id, a_mutable_ref.m_id);
+  IRS_STD swap(m_type, a_mutable_ref.m_type);
+  IRS_STD swap(m_value, a_mutable_ref.m_value);
+  IRS_STD swap(m_id, a_mutable_ref.m_id);
 }
 
 irs::calc::mutable_ref_t&
 irs::calc::mutable_ref_t::operator=(const mutable_ref_t& a_mutable_ref)
 {
   mutable_ref_t mutable_ref(a_mutable_ref);
-  ::swap(mutable_ref, *this);
+  IRS_STD swap(mutable_ref, *this);
   return *this;
 }
 

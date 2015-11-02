@@ -126,7 +126,7 @@ protected:
   void* mp_data_attached;
 public:
   irs_menu_base_t();
-  ~irs_menu_base_t();
+  virtual ~irs_menu_base_t();
   void set_key_event(mxkey_event_t *key_event);
   void add_change_event(mxfact_event_t *ap_event);
   virtual void set_disp_drv(mxdisplay_drv_service_t *ap_disp_drv);

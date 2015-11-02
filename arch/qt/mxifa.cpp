@@ -36,7 +36,7 @@ irs_bool mxifa_open_end(void* /*pchdata*/, bool /*abort*/)
 void *mxifa_open_ex(mxifa_ch_t /*channel*/, void* /*config*/,
   irs_bool /*is_broadcast*/)
 {
-  return irs_false;
+  return IRS_NULL;
 }
 // Неблокирующее открытие channel с конфигурированием
 void *mxifa_open_begin_ex(mxifa_ch_t /*channel*/, void* /*config*/,

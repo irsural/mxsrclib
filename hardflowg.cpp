@@ -2348,11 +2348,12 @@ irs::hardflow::com_flow_t::com_flow_t(
   const irs_u32 a_f_dtr_control,
   const irs_u32 a_f_rts_control
 ):
+  m_port_status(PS_PREFECT),
   m_max_size_write(256),
   m_com(IRS_NULL),
   mp_error_trans(irs::error_trans()),
   m_com_param(),
-  m_port_status(PS_PREFECT),
+  m_com_param_str(),
   m_on_resource_free(false)
 {
   BOOL fsuccess = TRUE;

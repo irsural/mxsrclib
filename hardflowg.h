@@ -1800,8 +1800,8 @@ struct com_param_str_t
   const string_type xon_lim;
   const string_type xoff_lim;
   const string_type byte_size;
-  const string_type parity;
   const string_type stop_bits;
+  const string_type parity;
   const string_type xon_char;
   const string_type xoff_char;
   const string_type error_char;
@@ -1845,9 +1845,9 @@ private:
   HANDLE m_com;
   irs::error_trans_base_t *mp_error_trans;
   com_param_t m_com_param;
+  const com_param_str_t m_com_param_str;
   // Освобождены ли ресурсы
   bool m_on_resource_free;
-  const com_param_str_t m_com_param_str;
   void set_and_get_param_dbc();
   void get_param_dbc();
   void resource_free();

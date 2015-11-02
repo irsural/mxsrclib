@@ -603,13 +603,13 @@ irs::string last_error_str();
 
 irs::string error_str(int a_error_code);
 
-void send_format_msg(int a_error_code, char* ap_file, int a_line);
+void send_format_msg(int a_error_code, const char* ap_file, int a_line);
 
-void send_last_message_err(char* ap_file, int a_line);
+void send_last_message_err(const char* ap_file, int a_line);
 
-void send_wsa_last_message_err(char* ap_file, int a_line);
+void send_wsa_last_message_err(const char* ap_file, int a_line);
 
-void send_message_err(int a_error_code, char* ap_file, int a_line);
+void send_message_err(int a_error_code, const char* ap_file, int a_line);
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 ostream& mlog();

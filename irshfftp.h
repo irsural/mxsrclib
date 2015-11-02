@@ -242,10 +242,10 @@ private:
   various_page_mem_file_write_only_t();
   enum process_t {
     process_erase,
-    process_wait_for_erase_operation,
+    //process_wait_for_erase_operation,
     process_write,
     process_save_size,
-    process_wait_for_write_operation,
+    //process_wait_for_write_operation,
     process_wait_command
   };
   various_page_mem_t* mp_various_page_mem;

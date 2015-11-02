@@ -46,7 +46,7 @@ explicit codecvt_cp1251_t(size_t r = 0):
     IRS_ASSERT(false);
     #else // !__ICCARM__
     IRS_STATIC_ASSERT(
-      (is_equal_types<intern_type, extern_type>::type == yes_type));
+      (is_equal_types<intern_type, extern_type>::type == yes_type()));
     #endif // !__ICCARM__
   }
   virtual result do_in(state_type& /*a_state*/,
@@ -231,12 +231,15 @@ public:
       #ifdef __ICCARM__
       #pragma diag_suppress=Pe186
       #endif // __ICCARM__
-      if ((*ap_from >= 0) && (*ap_from <= 0x7F)) {
+      IRS_STATIC_ASSERT(sizeof(intern_type) <= sizeof(unsigned int));
+      const unsigned int from = *ap_from;
+      //if ((*ap_from >= 0) && (*ap_from <= 0x7F)) {
+      if (from <= 0x7F) {
         #ifdef __ICCARM__
         #pragma diag_default=Pe186
         #endif // __ICCARM__
         *ap_to = static_cast<unsigned char>(*ap_from);
-      } else if ((*ap_from >= 0x410) && (*ap_from <=0x44F)) {
+      } else if ((from >= 0x410) && (from <=0x44F)) {
         *ap_to = static_cast<unsigned char>(*ap_from - 0x350);
       } else {
         std::map<wchar_t, unsigned char>::const_iterator it =

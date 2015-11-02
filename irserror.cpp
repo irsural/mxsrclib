@@ -108,7 +108,7 @@ void irs::error_trans_t::add_handler(mxfact_event_t *ap_handler)
 irs::error_trans_base_t *irs::error_trans()
 {
   static error_trans_t error_trans_i;
-  return &error_trans_i; 
+  return &error_trans_i;
 }
 
 // Специфические данные для утвердений в error_trans_base_t
@@ -154,7 +154,7 @@ irs::error_out_t::error_out_t(
     out_func_obj_type(this, &irs::error_out_t::out_fatal_error);
   m_out_func_obj_list[ec_new_assert] =
     out_func_obj_type(this, &irs::error_out_t::out_new_assert_error);
-  
+
   ::transform(m_out_func_obj_list.begin(), m_out_func_obj_list.end(),
     m_out_func_ptr_list.begin(), out_func_obj_extract_ptr);
   #endif //IRS_ERROR_OUT_STATIC_EVENT
@@ -320,7 +320,7 @@ irs::string irs::error_str(int a_error_code)
 
 void irs::send_format_msg(
    int a_error_code,
-   char* ap_file,
+   const char* ap_file,
    int a_line)
 {
   #if defined (IRS_WIN32) || defined (IRS_LINUX)
@@ -331,7 +331,7 @@ void irs::send_format_msg(
   #endif // defined (IRS_WIN32) || defined (IRS_LINUX)
 }
 
-void irs::send_last_message_err(char* ap_file, int a_line)
+void irs::send_last_message_err(const char* ap_file, int a_line)
 {
   int error_code = 0;
   #if defined(IRS_WIN32)
@@ -343,14 +343,14 @@ void irs::send_last_message_err(char* ap_file, int a_line)
 }
 
 #ifdef IRS_WIN32
-void irs::send_wsa_last_message_err(char* ap_file, int a_line)
+void irs::send_wsa_last_message_err(const char* ap_file, int a_line)
 {
   int error_code = WSAGetLastError();
   send_format_msg(error_code, ap_file, a_line);
 }
 #endif // IRS_WIN32
 
-void irs::send_message_err(int a_error_code, char* ap_file,
+void irs::send_message_err(int a_error_code, const char* ap_file,
   int a_line)
 {
   send_format_msg(a_error_code, ap_file, a_line);
@@ -358,7 +358,7 @@ void irs::send_message_err(int a_error_code, char* ap_file,
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 ostream& irs::mlog()
-{ 
+{
   static irs::zerobuf buf;
   static ostream mlog_obj(&buf);
   return mlog_obj;
