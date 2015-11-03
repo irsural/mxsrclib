@@ -876,7 +876,13 @@ void irs::modbus_server_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!((a_index + a_size) <= m_input_registers_end_byte)) {
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("read"));
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
   m_coils_size_byte = 0, m_coils_start_byte = 0;
@@ -894,14 +900,30 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     &m_input_registers_start_byte);
 
   if ((m_discret_inputs_size_byte != 0)) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_discret_inputs_start_byte +
+      m_discret_inputs_size_byte) <= m_discr_inputs_byte.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_discret_inputs_start_byte +
       m_discret_inputs_size_byte) <= m_discr_inputs_byte.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf, m_discr_inputs_byte.data() + m_discret_inputs_start_byte,
       m_discret_inputs_size_byte);
   }
   if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_coils_start_byte + m_coils_size_byte) <=
+      m_coils_byte.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_coils_start_byte + m_coils_size_byte) <=
       m_coils_byte.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf + m_discret_inputs_size_byte,
       m_coils_byte.data() + m_coils_start_byte, m_coils_size_byte);
   }
@@ -910,8 +932,16 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
     size_t ap_buf_start = m_discret_inputs_size_byte + m_coils_size_byte;
     irs_u8* hold_regs_data =
       reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_hold_registers_start_byte +
+      m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_hold_registers_start_byte +
       m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf + ap_buf_start, hold_regs_data +
       m_hold_registers_start_byte, m_hold_registers_size_byte);
   }
@@ -921,8 +951,16 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
       m_hold_registers_size_byte;
     irs_u8* input_regs_data =
       reinterpret_cast<irs_u8*>(m_input_regs_reg.data());
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_input_registers_start_byte +
+      m_input_registers_size_byte)/2 <= m_input_regs_reg.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_input_registers_start_byte +
       m_input_registers_size_byte)/2 <= m_input_regs_reg.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf + ap_buf_start, input_regs_data +
       m_input_registers_start_byte, m_input_registers_size_byte);
   }
@@ -941,7 +979,13 @@ void irs::modbus_server_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!((a_index + a_size) <= m_input_registers_end_byte)) {
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("write"));
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
   m_coils_size_byte = 0, m_coils_start_byte = 0;
@@ -960,14 +1004,30 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     &m_input_registers_start_byte);
 
   if ((m_discret_inputs_size_byte != 0)) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_discret_inputs_start_byte +
+      m_discret_inputs_size_byte) <= m_discr_inputs_byte.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_discret_inputs_start_byte +
       m_discret_inputs_size_byte) <= m_discr_inputs_byte.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(m_discr_inputs_byte.data() + m_discret_inputs_start_byte,
       ap_buf, m_discret_inputs_size_byte);
   }
   if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_coils_start_byte + m_coils_size_byte) <=
+      m_coils_byte.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_coils_start_byte + m_coils_size_byte) <=
       m_coils_byte.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(m_coils_byte.data() + m_coils_start_byte,
       ap_buf + m_discret_inputs_size_byte, m_coils_size_byte);
   }
@@ -975,8 +1035,16 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     size_t ap_buf_start = m_discret_inputs_size_byte + m_coils_size_byte;
     irs_u8* hold_regs_data =
       reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_hold_registers_start_byte +
+      m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_hold_registers_start_byte +
       m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(hold_regs_data + m_hold_registers_start_byte,
       ap_buf + ap_buf_start, m_hold_registers_size_byte);
   }
@@ -985,8 +1053,16 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
       m_hold_registers_size_byte;
     irs_u8* input_regs_data =
       reinterpret_cast<irs_u8*>(m_input_regs_reg.data());
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((m_input_registers_start_byte +
+      m_input_registers_size_byte)/2 <= m_input_regs_reg.size()))
+    {
+      return;
+    }
+    #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     IRS_LIB_ASSERT((m_input_registers_start_byte +
       m_input_registers_size_byte)/2 <= m_input_regs_reg.size());
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(input_regs_data + m_input_registers_start_byte,
       ap_buf + ap_buf_start, m_input_registers_size_byte);
   }
@@ -995,7 +1071,17 @@ void irs::modbus_server_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("read bit"));
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!(a_bit_index < global_limits_t::bits_in_byte)) {
+    return irs_false;
+  }
+  if (!(a_byte_index <= m_size_byte)) {
+    return irs_false;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
+  IRS_LIB_ASSERT(a_byte_index <= m_size_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
@@ -1015,6 +1101,13 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       (m_discret_inputs_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: discret inputs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_discret_inputs_start_byte +
+        m_discret_inputs_size_byte) <= m_discr_inputs_byte.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 di_byte_read_bit =
         m_discr_inputs_byte[m_discret_inputs_start_byte];
       di_byte_read_bit &= static_cast<irs_u8>(mask);
@@ -1022,6 +1115,13 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     }
     if ((m_coils_size_byte != 0) || (m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: coils"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_coils_start_byte + m_coils_size_byte) <=
+        m_coils_byte.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 coils_byte_read_bit = m_coils_byte[m_coils_start_byte];
       coils_byte_read_bit &= static_cast<irs_u8>(mask);
       return to_irs_bool(coils_byte_read_bit);
@@ -1029,6 +1129,13 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     if ((m_hold_registers_size_byte != 0) || (m_hold_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: hold regs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_hold_registers_start_byte +
+        m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 hr_byte_read_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
         hr_byte_read_bit =
@@ -1044,6 +1151,13 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
       (m_input_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: input regs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_input_registers_start_byte +
+        m_input_registers_size_byte)/2 <= m_input_regs_reg.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 ir_byte_read_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
         ir_byte_read_bit =
@@ -1070,8 +1184,17 @@ irs_bool irs::modbus_server_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("set bit"));
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!(a_bit_index < global_limits_t::bits_in_byte)) {
+    return;
+  }
+  if (!(a_byte_index <= m_size_byte)) {
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
   IRS_LIB_ASSERT(a_byte_index <= m_size_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
@@ -1100,6 +1223,13 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     if ((m_discret_inputs_size_byte != 0)||(m_discret_inputs_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: discret inputs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_discret_inputs_start_byte +
+        m_discret_inputs_size_byte) <= m_discr_inputs_byte.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       m_discr_inputs_byte[m_discret_inputs_start_byte] &=
         static_cast<irs_u8>(~mask);
       m_discr_inputs_byte[m_discret_inputs_start_byte] |=
@@ -1107,12 +1237,26 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     }
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: coils"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_coils_start_byte + m_coils_size_byte) <=
+        m_coils_byte.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       m_coils_byte[m_coils_start_byte] &= static_cast<irs_u8>(~mask);
       m_coils_byte[m_coils_start_byte] |= static_cast<irs_u8>(mask);
     }
     if ((m_hold_registers_size_byte != 0)||(m_hold_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: hold regs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_hold_registers_start_byte +
+        m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 hr_byte_set_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
         hr_byte_set_bit =
@@ -1134,6 +1278,13 @@ void irs::modbus_server_t::set_bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     if ((m_input_registers_size_byte != 0)||(m_input_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" set bit: input regs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_input_registers_start_byte +
+        m_input_registers_size_byte)/2 <= m_input_regs_reg.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 ir_byte_set_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
         ir_byte_set_bit =
@@ -1159,7 +1310,17 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
   irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear bit"));
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!(a_bit_index < global_limits_t::bits_in_byte)) {
+    return;
+  }
+  if (!(a_byte_index <= m_size_byte)) {
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
+  IRS_LIB_ASSERT(a_byte_index <= m_size_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   m_discret_inputs_size_byte = 0, m_discret_inputs_start_byte = 0;
   m_coils_size_byte = 0, m_coils_start_byte = 0;
   m_hold_registers_size_byte = 0, m_hold_registers_start_byte = 0;
@@ -1188,15 +1349,36 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
     if ((m_discret_inputs_size_byte != 0)||(m_discret_inputs_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: discret inputs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_discret_inputs_start_byte +
+        m_discret_inputs_size_byte) <= m_discr_inputs_byte.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       m_discr_inputs_byte[m_discret_inputs_start_byte] &=
         static_cast<irs_u8>(~mask);
     }
     if ((m_coils_size_byte != 0)||(m_coils_start_byte != 0)) {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: coils"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_coils_start_byte + m_coils_size_byte) <=
+        m_coils_byte.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       m_coils_byte[m_coils_start_byte] &= static_cast<irs_u8>(~mask);
     }
     if ((m_hold_registers_size_byte != 0)||(m_hold_registers_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_hold_registers_start_byte +
+        m_hold_registers_size_byte)/2 <= m_hold_regs_reg.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: hold regs"));
       irs_u8 hr_byte_clear_bit = 0;
       if (m_hold_registers_start_byte%2 == 0) {
@@ -1218,6 +1400,13 @@ void irs::modbus_server_t::clear_bit(irs_uarc a_byte_index,
     if ((m_input_registers_size_byte != 0)||(m_input_registers_start_byte != 0))
     {
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: input regs"));
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((m_input_registers_start_byte +
+        m_input_registers_size_byte)/2 <= m_input_regs_reg.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       irs_u8 ir_byte_clear_bit = 0;
       if (m_input_registers_start_byte%2 == 0) {
         ir_byte_clear_bit =
@@ -1432,8 +1621,17 @@ void irs::modbus_server_t::tick()
               }
               header.length = static_cast<irs_u16>(1 + size_of_resp_header +
                 read_di.byte_count);
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(start_addr + num_of_elem) <=
+                m_discr_inputs_byte.size()*global_limits_t::bits_in_byte))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_discr_inputs_byte.size()*global_limits_t::bits_in_byte);
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               bit_copy(m_discr_inputs_byte.data(), read_di.value,
                 start_addr, 0, num_of_elem);
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -1463,8 +1661,17 @@ void irs::modbus_server_t::tick()
               }
               header.length = static_cast<irs_u16>(1 + size_of_resp_header +
                 read_coils.byte_count);
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(start_addr + num_of_elem) <=
+                m_coils_byte.size()*global_limits_t::bits_in_byte))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_coils_byte.size()*global_limits_t::bits_in_byte);
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               bit_copy(m_coils_byte.data(), read_coils.value, start_addr, 0,
                 num_of_elem);
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
@@ -1491,14 +1698,23 @@ void irs::modbus_server_t::tick()
                 reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
               irs_u8* hr_value_data =
                 reinterpret_cast<irs_u8*>(read_hr.value);
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(start_addr + num_of_elem) <=
+                m_hold_regs_reg.size()))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_hold_regs_reg.size());
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               memcpyex(hr_value_data, hold_regs_data + start_addr*2,
                 read_hr.byte_count);
 
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
                 for(size_t hr_idx = start_addr;
-                  hr_idx < (start_addr + num_of_elem);
+                  hr_idx < size_t(start_addr + num_of_elem);
                   hr_idx++)
                 {
                   mlog() << irsm(" hold regs lo[") << hr_idx <<
@@ -1527,13 +1743,22 @@ void irs::modbus_server_t::tick()
                 reinterpret_cast<irs_u8*>(m_input_regs_reg.data());
               irs_u8* ir_value_data =
                 reinterpret_cast<irs_u8*>(read_ir.value);
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(start_addr + num_of_elem) <=
+                m_input_regs_reg.size()))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(start_addr + num_of_elem) <=
                 m_input_regs_reg.size());
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               memcpyex(ir_value_data, input_regs_data + start_addr*2,
                 read_ir.byte_count);
               IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(
                 for(size_t ir_idx = start_addr;
-                  ir_idx < (start_addr + num_of_elem);
+                  ir_idx < size_t(start_addr + num_of_elem);
                   ir_idx++)
                 {
                   mlog() << irsm(" input regs lo[") << ir_idx <<
@@ -1558,6 +1783,12 @@ void irs::modbus_server_t::tick()
               size_of_MBAP));
             irs_u8 coil_byte = static_cast<irs_u8>(
               response_write_coil.address/global_limits_t::bits_in_byte);
+            #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+            if (!(static_cast<size_t>(coil_byte) < m_coils_byte.size())) {
+              m_mode = read_header_mode;
+              return;
+            }
+            #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
             irs_u8 mask = mask_gen(global_limits_t::bits_in_byte -
               (response_write_coil.address%
               global_limits_t::bits_in_byte + 1), 1);
@@ -1575,10 +1806,21 @@ void irs::modbus_server_t::tick()
               request_multiple_write_byte_t &write_multi_coils =
                 reinterpret_cast<request_multiple_write_byte_t&>(
                 *(mp_buf.data() + size_of_MBAP));
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(
+                (write_multi_coils.starting_address +
+                write_multi_coils.quantity)) <= m_coils_byte.size()*
+                global_limits_t::bits_in_byte))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(
                 (write_multi_coils.starting_address +
                 write_multi_coils.quantity)) <= m_coils_byte.size()*
                 global_limits_t::bits_in_byte);
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               bit_copy(write_multi_coils.value, m_coils_byte.data(), 0,
                 size_t(write_multi_coils.starting_address),
                 size_t(write_multi_coils.quantity));
@@ -1594,6 +1836,14 @@ void irs::modbus_server_t::tick()
             response_single_write_t &response_write_reg =
               reinterpret_cast<response_single_write_t&>(*(mp_buf.data() +
               size_of_MBAP));
+            #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+            if (!(static_cast<size_t>(response_write_reg.address) <
+              m_hold_regs_reg.size()))
+            {
+              m_mode = read_header_mode;
+              return;
+            }
+            #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
             m_hold_regs_reg[response_write_reg.address] =
               response_write_reg.value;
           }
@@ -1608,9 +1858,19 @@ void irs::modbus_server_t::tick()
                 reinterpret_cast<irs_u8*>(m_hold_regs_reg.data());
               irs_u8* multi_hr_data =
                 reinterpret_cast<irs_u8*>(write_multi_regs.value);
+              #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+              if (!(static_cast<size_t>(
+                (write_multi_regs.starting_address +
+                write_multi_regs.byte_count/2)) <= m_hold_regs_reg.size()))
+              {
+                m_mode = read_header_mode;
+                return;
+              }
+              #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               IRS_LIB_ASSERT(static_cast<size_t>(
                 (write_multi_regs.starting_address +
                 write_multi_regs.byte_count/2)) <= m_hold_regs_reg.size());
+              #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
               memcpyex(hold_regs_data + write_multi_regs.starting_address*2,
                 multi_hr_data, write_multi_regs.byte_count);
               header.length = static_cast<irs_u16>(1 + 1 +
@@ -1704,7 +1964,14 @@ void irs::modbus_server_t::tick()
 
         } break;
       }
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((size_of_MBAP + m_size_byte_end) <= mp_buf.size())) {
+        m_mode = read_header_mode;
+        return;
+      }
+      #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_ASSERT((size_of_MBAP + m_size_byte_end) <= mp_buf.size());
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       m_fixed_flow.write(m_channel, mp_buf.data(), size_of_MBAP +
         m_size_byte_end);
       m_mode = write_end;
@@ -2289,7 +2556,14 @@ void irs::modbus_client_t::modbus_pack_response_monitor(irs_u8 *ap_buf)
 void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!((a_index + a_size) <= m_input_registers_end_byte)) {
+    m_mode = read_header_mode;
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("read"));
 
   size_t discret_inputs_size_byte = 0;
@@ -2312,15 +2586,36 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 
   if ((discret_inputs_size_byte != 0) || (discret_inputs_start_byte != 0))
   {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((discret_inputs_start_byte +
+      discret_inputs_size_byte) <= m_discr_inputs_byte_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf, m_discr_inputs_byte_read.data() +
       discret_inputs_start_byte, discret_inputs_size_byte);
   }
   if ((coils_size_byte != 0) || (coils_start_byte != 0)) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((coils_start_byte + coils_size_byte) <=
+      m_coils_byte_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     memcpyex(ap_buf + discret_inputs_size_byte,
       m_coils_byte_read.data() + coils_start_byte, coils_size_byte);
   }
   if ((hold_registers_size_byte != 0) || (hold_registers_start_byte != 0))
   {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((hold_registers_start_byte +
+      hold_registers_size_byte)/2 <= m_hold_regs_reg_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     size_t buf_start = discret_inputs_size_byte + coils_size_byte;
     irs_u8* hold_regs_data =
       reinterpret_cast<irs_u8*>(m_hold_regs_reg_read.data());
@@ -2329,6 +2624,13 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
   }
   if ((input_registers_size_byte != 0) || (input_registers_start_byte != 0))
   {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((input_registers_start_byte +
+      input_registers_size_byte)/2 <= m_input_regs_reg_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     size_t buf_start = discret_inputs_size_byte + coils_size_byte +
       hold_registers_size_byte;
     irs_u8* input_regs_data =
@@ -2341,7 +2643,14 @@ void irs::modbus_client_t::read(irs_u8 *ap_buf, irs_uarc a_index,
 void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   irs_uarc a_size)
 {
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!((a_index + a_size) <= m_input_registers_end_byte)) {
+    m_mode = read_header_mode;
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT((a_index + a_size) <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" write"));
 
   size_t discret_inputs_size_byte = 0;
@@ -2363,6 +2672,13 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     &input_registers_size_byte, &input_registers_start_byte);
 
   if (coils_size_byte != 0) {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((coils_start_byte + coils_size_byte) <=
+      m_coils_byte_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     size_t buf_start = discret_inputs_size_byte;
     c_array_view_t<const irs_u8> buf_view(ap_buf, a_size);
     mem_copy(buf_view, buf_start, m_coils_byte_write, coils_start_byte,
@@ -2378,6 +2694,13 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
   }
   if (hold_registers_size_byte != 0)
   {
+    #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+    if (!((hold_registers_start_byte +
+      hold_registers_size_byte)/2 <= m_hold_regs_reg_read.size()))
+    {
+      return;
+    }
+    #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
     // Локальные индексы в массиве hold registers
     size_t front_idx = hold_registers_start_byte/2;
     size_t back_idx = (hold_registers_start_byte +
@@ -2413,7 +2736,17 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("read bit"));
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!(a_bit_index < global_limits_t::bits_in_byte)) {
+    return irs_false;
+  }
+  if (!(a_byte_index <= m_input_registers_end_byte)) {
+    return irs_false;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
+  IRS_LIB_ASSERT(a_byte_index <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
 
   size_t discret_inputs_size_byte = 0;
   size_t discret_inputs_start_byte = 0;
@@ -2438,6 +2771,13 @@ irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
   if (a_bit_index < global_limits_t::bits_in_byte) {
     if ((discret_inputs_size_byte != 0) || (discret_inputs_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((discret_inputs_start_byte +
+        discret_inputs_size_byte) <= m_discr_inputs_byte_read.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: discret inputs"));
       irs_u8 di_byte_read_bit =
         m_discr_inputs_byte_read[discret_inputs_start_byte];
@@ -2446,6 +2786,13 @@ irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     }
     if ((coils_size_byte != 0) || (coils_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((coils_start_byte + coils_size_byte) <=
+        m_coils_byte_read.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: coils"));
       irs_u8 coils_byte_read_bit = m_coils_byte_read[coils_start_byte];
       coils_byte_read_bit &= static_cast<irs_u8>(mask);
@@ -2453,6 +2800,13 @@ irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     }
     if ((hold_registers_size_byte != 0) || (hold_registers_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((hold_registers_start_byte +
+        hold_registers_size_byte)/2 <= m_hold_regs_reg_read.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: hold regs"));
       irs_u8 hr_byte_read_bit = 0;
       if (hold_registers_start_byte%2 == 0)
@@ -2467,6 +2821,13 @@ irs_bool irs::modbus_client_t::bit(irs_uarc a_byte_index, irs_uarc a_bit_index)
     if ((input_registers_size_byte != 0) ||
       (input_registers_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((input_registers_start_byte +
+        input_registers_size_byte)/2 <= m_input_regs_reg_read.size()))
+      {
+        return irs_false;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" read bit: input regs"));
       irs_u8 ir_byte_read_bit = 0;
       if (input_registers_start_byte%2 == 0)
@@ -2494,7 +2855,17 @@ void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
   irs_bool a_bit)
 {
   IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("clear_bit"));
+  #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+  if (!(a_bit_index < global_limits_t::bits_in_byte)) {
+    return;
+  }
+  if (!(a_index <= m_input_registers_end_byte)) {
+    return;
+  }
+  #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
   IRS_LIB_ASSERT(a_bit_index < global_limits_t::bits_in_byte);
+  IRS_LIB_ASSERT(a_byte_index <= m_input_registers_end_byte);
+  #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
 
   size_t discret_inputs_size_byte = 0;
   size_t discret_inputs_start_byte = 0;
@@ -2516,6 +2887,13 @@ void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
 
   if (a_bit_index < global_limits_t::bits_in_byte) {
     if ((coils_size_byte != 0)||(coils_start_byte != 0)) {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((coils_start_byte + coils_size_byte) <=
+        m_coils_byte_read.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: coils"));
 
       size_t coil_bit_index = a_index*global_limits_t::bits_in_byte -
@@ -2537,6 +2915,13 @@ void irs::modbus_client_t::write_bit(irs_uarc a_index, irs_uarc a_bit_index,
     }
     if ((hold_registers_size_byte != 0)||(hold_registers_start_byte != 0))
     {
+      #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+      if (!((hold_registers_start_byte +
+        hold_registers_size_byte)/2 <= m_hold_regs_reg_read.size()))
+      {
+        return;
+      }
+      #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
       IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm(" clear bit: hold regs"));
       const size_t write_bit_idx =
         m_coils_size_bit + hold_registers_start_byte/2;
@@ -3158,6 +3543,15 @@ void irs::modbus_client_t::tick()
             global_limits_t::bits_in_byte));
           coils_packet.byte_count =
             static_cast<irs_u8>(m_size_of_data_write_byte);
+          #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+          if (!(reinterpret_cast<irs_u8*>((coils_packet.value) +
+            m_size_of_data_write_byte) <=
+            (m_spacket.data() + m_spacket.size())))
+          {
+            abort_operations();
+            return;
+          }
+          #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
           bit_copy(m_coils_byte_write.data(),
             reinterpret_cast<irs_u8*>(coils_packet.value),
             m_start_block, 0, m_size_of_data_write_byte*
@@ -3169,6 +3563,15 @@ void irs::modbus_client_t::tick()
             irsm(" запись не полного пакета coils"));
           if (m_write_quantity > 1) {
             make_packet(m_start_block, m_write_quantity);
+            #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+            if (!(reinterpret_cast<irs_u8*>((coils_packet.value) +
+              m_write_quantity/global_limits_t::bits_in_byte + 1) <=
+              (m_spacket.data() + m_spacket.size())))
+            {
+              abort_operations();
+              return;
+            }
+            #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
             bit_copy(m_coils_byte_write.data(),
               reinterpret_cast<irs_u8*>(coils_packet.value),
                 m_start_block, 0, m_write_quantity);
@@ -3590,8 +3993,17 @@ void irs::modbus_client_t::tick()
             response_read_reg_t &hr_packet =
               reinterpret_cast<response_read_reg_t&>(*(m_rpacket.data() +
               size_of_MBAP));
+            #ifdef IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
+            if (!(static_cast<size_t>(start_addr +
+              hr_packet.byte_count/2) <= m_hold_regs_reg_read.size()))
+            {
+              abort_operations();
+              return;
+            }
+            #else //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
             IRS_LIB_ASSERT(static_cast<size_t>(start_addr +
               hr_packet.byte_count/2) <= m_hold_regs_reg_read.size());
+            #endif //IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
             irs_u8* hold_regs_data =
               reinterpret_cast<irs_u8*>(m_hold_regs_reg_read.data());
             irs_u8* hr_packet_data =
@@ -4133,5 +4545,22 @@ void irs::modbus_client_t::tick()
     }
     break;
   }
+}
+
+void irs::modbus_client_t::abort_operations()
+{
+  m_mode = wait_command_mode;
+  m_request_type = request_start;
+  m_start = true;
+  m_fixed_flow.read_abort();
+  m_fixed_flow.write_abort();
+  IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm("\n abort \n"));
+  m_error_count++;
+  if(m_error_count >= m_error_count_max) {
+    IRS_LIB_IRSMBUS_DBG_MSG_BASE(irsm(" status error"));
+    m_operation_status = status_error;
+    reconnect();
+  }
+  view_mode();
 }
 

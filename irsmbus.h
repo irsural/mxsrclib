@@ -17,7 +17,9 @@
 
 #include <irsfinal.h>
 
-#define NEW_18092011
+// 03.11.2015
+// Крашенинников: Включение блокировки чтения/записи вместо утверждений
+#define IRS_LIB_IRSMBUS_BLOCK_WITHOUT_ASSERT
 
 #ifndef IRS_LIB_IRSMBUS_DEBUG_TYPE
 # define IRS_LIB_IRSMBUS_DEBUG_TYPE IRS_LIB_DEBUG_NONE
@@ -43,6 +45,7 @@
 # define IRS_LIB_IRSMBUS_DBG_MSG_BASE(msg)
 # define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 #endif // IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
+
 
 namespace irs {
 
@@ -523,6 +526,7 @@ private:
   static char const IRS_CSTR_NONVOLATILE       m_make_request_mode[];
   static IRS_CSTR_NONVOLATILE char const IRS_CSTR_NONVOLATILE* const
     m_ident_name_list[];
+
   //! \brief Формирование запроса от клиента серверу.
   //!
   //! \param[in] a_index – адрес начала запрашиваемой позиции;
@@ -533,6 +537,7 @@ private:
   void view_mode();
   size_t get_packet_number();
   void reconnect();
+  void abort_operations();
 };
 
 //! @}
