@@ -12,6 +12,8 @@
 #include <locale>
 #include <map>
 
+#include <irslimits.h>
+
 #include <irsfinal.h>
 
 namespace irs {

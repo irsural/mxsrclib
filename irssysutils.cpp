@@ -18,6 +18,7 @@
 #include <irsfinal.h>
 
 #if defined(IRS_FULL_STDCPPLIB_SUPPORT) && defined(IRS_WIN32)
+#if IRS_USE_SETUPAPI_WIN
 bool irs::get_wave_format(irs::string_t a_file_name,
   wave_format_t* ap_wave_format)
 {
@@ -195,6 +196,7 @@ void irs::create_wave_pcm_16_mono_file(irs::string_t a_file_name,
     throw std::runtime_error("Ошибка при закрытии блока RIFF");
   }
 }
+#endif // IRS_USE_SETUPAPI_WIN
 
 #if IRS_USE_HID_WIN_API
 // class usb_hid_info_t

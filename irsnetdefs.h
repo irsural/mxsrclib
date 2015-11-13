@@ -94,7 +94,7 @@ inline irs::string_t mxip_to_str(const mxip_t& a_ip)
 {
   char cstr[IP_STR_LEN];
   mxip_to_cstr(cstr, a_ip);
-  string str(cstr, IP_STR_LEN - 1);
+  string str(cstr, strlen(cstr));
   return irs::str_conv<irs::string_t>(str);
 }
 #endif //__ICCAVR__

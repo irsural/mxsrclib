@@ -2689,14 +2689,15 @@ void irs::hfftp::server_channel_t::set_error(
   IRS_LIB_HFFTP_DBG_MSG_BASE(irs::str_conv<std::string>(a_error_message));
 }
 
-void irs::hfftp::server_channel_t::agree_configuration(const packet_t* ap_packet)
+void irs::hfftp::server_channel_t::agree_configuration(
+  const packet_t* ap_packet)
 {
   IRS_LIB_ASSERT((ap_packet->get_type() == pt_read_request) ||
     (ap_packet->get_type() == pt_write_request));
 
-  data_size_t data_size;
-  timeout_t timeout_ms;
-  retransmit_count_t retransmit_count;
+  data_size_t data_size = 0;
+  timeout_t timeout_ms = 0;
+  retransmit_count_t retransmit_count = 0;
   if (ap_packet->get_type() == pt_read_request) {
     const packet_read_request_t* read_request =
       static_cast<const packet_read_request_t*>(ap_packet);
