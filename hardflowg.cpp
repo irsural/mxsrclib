@@ -553,7 +553,7 @@ irs::hardflow::udp_flow_t::size_type irs::hardflow::udp_flow_t::write(
   bool start_success = m_state_info.get_state_start();
   if (start_success) {
     sockaddr_in remote_host_adr;
-    memset(&remote_host_adr, sizeof(sockaddr_in), 0);
+    memset(&remote_host_adr, 0, sizeof(sockaddr_in));
     if (m_channel_list.address_get(a_channel_ident, &remote_host_adr)) {
       size_type msg_size = min(a_size, m_send_msg_max_size);
       const int ret = sendto(m_sock, reinterpret_cast<const char*>(ap_buf),

@@ -392,6 +392,7 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
         "Не включен IRS_USE_HID_WIN_API. См. mxsrclib desc");
       #endif // !IRS_USE_HID_WIN_API
 
+      #ifdef IRS_WIN32
       const string_type device =
         mp_param_box->get_param(irst("Имя устройства"));
       map<string_type, string_type>::const_iterator it =
@@ -404,6 +405,7 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
         param_box_read_number<irs::hardflow_t::size_type>(
         *mp_param_box, (irst("Номер канала")));
       hardflow_ret.reset(new hardflow::usb_hid_t(device_path, channel_id));
+      #endif // IRS_WIN32
     } break;
   }
   return hardflow_ret;

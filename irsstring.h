@@ -352,16 +352,16 @@ public:
   {
     return string_assign(*this, val, m_data.locale_style);
   }
-  #ifdef IRSDEFS_I64
-  IRS_STRING_TYPE& operator=(const irs_i64& val)
+  #if defined(IRSDEFS_LONG_LONG)
+  IRS_STRING_TYPE& operator=(const irs_ilong_long& val)
   {
     return string_assign(*this, val, m_data.locale_style);
   }
-  IRS_STRING_TYPE& operator=(const irs_u64& val)
+  IRS_STRING_TYPE& operator=(const irs_ulong_long& val)
   {
     return string_assign(*this, val, m_data.locale_style);
   }
-  #endif //IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
   template <class V>
   void assign_style(const V& val, irsstrloc_t a_locale_style)
   {
@@ -484,16 +484,16 @@ public:
   {
     *this = val;
   }
-  #ifdef IRSDEFS_I64
-  IRS_STRING_TYPE(const irs_i64& val)
+  #ifdef IRSDEFS_LONG_LONG
+  IRS_STRING_TYPE(const irs_ilong_long& val)
   {
     *this = val;
   }
-  IRS_STRING_TYPE(const irs_u64& val)
+  IRS_STRING_TYPE(const irs_ulong_long& val)
   {
     *this = val;
   }
-  #endif //IRSDEFS_I64
+  #endif // IRSDEFS_LONG_LONG
 
   template <class V>
   bool to_number(V& val) const
@@ -525,7 +525,7 @@ public:
       }
     }
     strm >> val;
-    return strm;
+    return static_cast<bool>(strm);
     #else //IRS_FULL_STDCPPLIB_SUPPORT
     auto_arr<char> buf(new char[size()]);
     copy(buf.get(), size());

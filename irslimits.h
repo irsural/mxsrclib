@@ -114,16 +114,16 @@ inline const char* type_to_string_helper(unsigned long)
 {
   return "unsigned long";
 }
-#ifdef IRSDEFS_I64
-inline const char* type_to_string_helper(irs_i64)
+#ifdef IRSDEFS_LONG_LONG
+inline const char* type_to_string_helper(irs_ilong_long)
 {
-  return "irs_i64";
+  return "signed long long";
 }
-inline const char* type_to_string_helper(irs_u64)
+inline const char* type_to_string_helper(irs_ulong_long)
 {
-  return "irs_u64";
+  return "unsigned long long";
 }
-#endif //IRSDEFS_I64
+#endif // IRSDEFS_LONG_LONG
 inline const char* type_to_string_helper(float)
 {
   return "float";

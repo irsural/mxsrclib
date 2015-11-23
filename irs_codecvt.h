@@ -275,6 +275,8 @@ private:
   std::map<wchar_t, unsigned char> m_out_map;
 };
 
+#if !(defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDER2010))
+
 //! \brief Фасет для преобразования строк, содержащих символы
 //!   в кодировке UNICODE, в cp1251
 template <>
@@ -326,6 +328,8 @@ public:
 private:
   codecvt_cp1251_t<wchar_t, char, mbstate_t> m_codecvt_wchar_char;
 };
+
+#endif // !(defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4))
 
 } // namespace irs
 

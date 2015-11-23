@@ -10,9 +10,9 @@
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 # if defined(_MSC_VER)
 #   include <direct.h>
-# else // !defined(_MSC_VER)
+# elif defined(__MINGW32__)
 #   include <dir.h>
-# endif // !defined(_MSC_VER)
+# endif // defined(__MINGW32__)
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 #include <irshfftp.h>

@@ -26,6 +26,17 @@
 #define IRS_MICROCONTROLLER
 #endif //defined(__ICCAVR__) || defined(__ICCARM__)
 
+// Определение поддержки C++11
+#ifdef __cplusplus
+# if (__cplusplus >= 201103L)
+#   define IRS_CPP11_SUPPORT 1
+# endif
+#endif
+
+#ifndef IRS_CPP11_SUPPORT
+# define IRS_CPP11_SUPPORT 0
+#endif // IRS_CPP11_SUPPORT
+
 // Определение версии Builder
 #define IRS_CPP_BUILDER4            0x0540
 #define IRS_CPP_BUILDER6            0x0560
@@ -45,7 +56,10 @@
 #   define UNICODE
 # endif
 #elif defined(__MINGW32__) && defined(UNICODE)
-// Сделано для Qt с MinGW
+// Для Qt с MinGW
+#   define IRS_UNICODE_GLOBAL
+#elif (defined(__GNUC__) && (__GNUC__ >= 4))
+// Для Qt с linux-g++
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
 # define IRS_UNICODE_GLOBAL
@@ -66,6 +80,10 @@
 #define BOOST_TR1_USE_OLD_TUPLE
 #endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
+#ifdef IRS_CPP11_SUPPORT
+// Для типов int8_t, int16_t и т.д.
+# include <stdint.h>
+#endif // IRS_CPP11_SUPPORT
 
 #ifdef IRS_WIN32
 # include <winsock2.h>
@@ -194,6 +212,24 @@
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
+
+#if IRS_CPP11_SUPPORT
+typedef int8_t              irs_i8;
+// 8-битовое целое без знака
+typedef uint8_t             irs_u8;
+// 16-битовое целое со знаком
+typedef int16_t      		 		irs_i16;
+// 16-битовое целое без знака
+typedef uint16_t            irs_u16;
+// 32-битовое целое со знаком
+typedef int32_t            	irs_i32;
+// 32-битовое целое без знака
+typedef uint32_t        		irs_u32;
+// 64-битовое целое со знаком
+typedef int64_t             irs_i64;
+// 64-битовое целое без знака
+typedef uint64_t            irs_u64;
+#else // !IRS_CPP11_SUPPORT
 // Один из типов используется в функции detect_cpu_endian, поэтому стоит выше
 // других объявлений типов
 // 8-битовое целое со знаком
@@ -208,17 +244,21 @@ typedef unsigned short 	 		irs_u16;
 typedef signed long 		 		irs_i32;
 // 32-битовое целое без знака
 typedef unsigned long 	 		irs_u32;
-#ifdef __BORLANDC__
+
+# ifdef __BORLANDC__
 // 64-битовое целое со знаком
 typedef signed __int64    irs_i64;
 // 64-битовое целое без знака
 typedef unsigned __int64  irs_u64;
-#else //__BORLANDC__
+# else //__BORLANDC__
 // 64-битовое целое со знаком
 typedef signed long long 		irs_i64;
 // 64-битовое целое без знака
 typedef unsigned long long 	irs_u64;
-#endif //__BORLANDC__
+# endif //__BORLANDC__
+
+#endif // !IRS_CPP11_SUPPORT
+
 
 #ifdef __BORLANDC__
 // Большое целое со знаком
