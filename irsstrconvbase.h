@@ -121,8 +121,17 @@ inline std_string_t str_conv<std_string_t>(const irs_string_t& a_str_in)
 }
 
 #ifdef __GNUC__
+# ifdef IRS_FULL_STDCPPLIB_SUPPORT
 inline std_string_t str_conv_simple(const std_string_t&,
   const std_wstring_t& a_str_in);
+inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
+  const std_string_t& a_str_in);
+
+inline std_wstring_t str_conv_simple(const std_wstring_t&,
+  const std_wstring_t& a_str_in);
+inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
+  const std_wstring_t& a_str_in);
+# endif // IRS_FULL_STDCPPLIB_SUPPORT
 #endif // __GNUC__
 
 template<class T>
