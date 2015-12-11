@@ -547,6 +547,7 @@ enum device_code_t {
   device_code_u5023m = 16,
   device_code_u309m = 17,
   device_code_hrm = 18,
+  device_code_gnlf = 19,
   device_code_last = device_code_hrm
 };
 
@@ -556,7 +557,8 @@ inline bool is_known_device_code(irs_size_t a_code)
     (a_code == device_code_gtch_03m) ||
     (a_code == device_code_u5023m) ||
     (a_code == device_code_u309m) ||
-    (a_code == device_code_hrm);
+    (a_code == device_code_hrm) ||
+    (a_code == device_code_gnlf);
 }
 
 

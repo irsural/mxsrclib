@@ -903,6 +903,90 @@ private:
   dac_ad8400_data_t m_dac_ad8400_data;
 };
 
+//--------------------------  AD5160  ------------------------------------------
+// Цифровой потенциометр 8 бит
+
+class dac_ad5160_t : public mxdata_t
+{
+public:
+  dac_ad5160_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u8 a_init_value);
+  ~dac_ad5160_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  void configure_spi();
+  enum status_t
+  {
+    DAC_FREE,
+    DAC_WRITE
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  static const irs_uarc m_size = 2;
+  static const irs_u8 m_packet_size = 1;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buffer[m_packet_size];
+  irs_u8 m_init_value;
+  bool m_need_write;
+  //  CS
+  gpio_pin_t *mp_cs_pin;
+};
+
+struct dac_ad5160_data_t
+{
+  irs::bit_data_t ready_bit;
+  irs::conn_data_t<irs_u8> resistance_code;
+
+  dac_ad5160_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    resistance_code()
+  {
+    connect(ap_data, a_start_index);
+  }
+
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = ready_bit.connect(ap_data, index, 0);
+    index++;
+    index = resistance_code.connect(ap_data, index);
+  }
+};
+
+class simple_dac_ad5160_t: public dac_t
+{
+public:
+  simple_dac_ad5160_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    irs_u8 a_init_value = 0);
+  virtual irs_status_t get_status() const;
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual void tick();
+private:
+  enum { 
+    m_dac_resulution = 8,
+    m_packet_size = 1
+  };
+  void configure_spi();
+  enum status_t
+  {
+    DAC_FREE,
+    DAC_WRITE
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  irs_u8 m_buf;
+  irs_u8 m_write_buf;
+  bool m_need_write;
+  gpio_pin_t *mp_cs_pin;
+};
+
 //--------------------------  AD7376  ------------------------------------------
 // Цифровой потенциометр 8 бит
 
@@ -2349,6 +2433,201 @@ private:
   mode_t m_mode;
   timer_t m_timer;
 };
+
+//----------------------------- К1316ГМ1У --------------------------------------
+// Генератор шума звукового диапазона
+class gn_k1316gm1u_t : public mxdata_t
+{
+public:
+  gn_k1316gm1u_t(
+    spi_t *ap_spi,
+    gpio_pin_t *ap_cs_pin,
+    gpio_pin_t *ap_reset_pin,
+    gpio_pin_t *ap_en_pin,
+    gpio_pin_t *ap_noise_pin);
+
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  enum status_t {
+    st_reset,
+    st_read_all,
+    st_spi_prepare,
+    st_spi_wait,
+    st_free
+  };
+  enum {
+    m_size = 29,
+    m_write_buf_size = 2,
+    m_status_pos = 0,
+    m_noise_pin_pos = 1
+  };
+  enum {
+    m_reset_interval = 1  //  ms
+  };
+  struct register_t
+  {
+    irs_u8 addr;
+    irs_u8 mask;
+    irs_u8 shift;
+    irs_u8 pos;
+    bool need_write;
+  };
+
+  status_t m_status;
+  status_t m_target_status;
+  spi_t* mp_spi;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buf[m_write_buf_size];
+  irs::timer_t m_timer;
+  gpio_pin_t* mp_cs_pin;
+  gpio_pin_t* mp_reset_pin;
+  gpio_pin_t* mp_en_pin;
+  gpio_pin_t* mp_noise_pin;
+};
+
+struct gn_k1316gm1u_data_t
+{
+  irs::conn_data_t<irs_u8> status_reg;
+  irs::bit_data_t ready_bit;
+  irs::bit_data_t noise_pin_bit;
+  irs::conn_data_t<irs_u8> freq_trim;
+  irs::conn_data_t<irs_u8> vdd_noise_trim;
+  irs::conn_data_t<irs_u8> vdd_log_trim;
+  irs::conn_data_t<irs_u8> noise_adc_gain;
+  irs::conn_data_t<irs_u8> mic_adc_gain;
+  irs::conn_data_t<irs_u8> dyn_gain;
+  irs::conn_data_t<irs_u8> dyn_reg;
+    irs::bit_data_t dyn_amp;
+    irs::bit_data_t dyn_ctrl_en;
+  irs::conn_data_t<irs_u8> dyn_lim;
+  irs::conn_data_t<irs_u8> t_detect;
+  irs::conn_data_t<irs_u32> mic_lim;
+  irs::conn_data_t<irs_u8> t_voise;
+  irs::conn_data_t<irs_u8> t_silence;
+  irs::conn_data_t<irs_u8> t_noise;
+  irs::conn_data_t<irs_u8> gain_125;
+  irs::conn_data_t<irs_u8> gain_250;
+  irs::conn_data_t<irs_u8> gain_500;
+  irs::conn_data_t<irs_u8> gain_1k;
+  irs::conn_data_t<irs_u8> gain_2k;
+  irs::conn_data_t<irs_u8> gain_4k;
+  irs::conn_data_t<irs_u8> gain_8k;
+  irs::conn_data_t<irs_u8> mode_reg;
+    irs::bit_data_t ext_noise;
+    irs::bit_data_t toggle_en;
+    irs::bit_data_t noise_spec;
+    irs::bit_data_t noise_mode;
+  irs::conn_data_t<irs_u8> test_reg;
+    irs::bit_data_t oct_test;
+    irs::bit_data_t dyn_test;
+    irs::bit_data_t voise_test;
+    irs::bit_data_t dac_test;
+    irs::bit_data_t ssi_out_sel;
+    irs::bit_data_t ssi;
+  irs::conn_data_t<irs_u8> dg_param;
+  irs::conn_data_t<irs_u8> gain_amp;
+  irs::conn_data_t<irs_u8> gain_att;
+
+  gn_k1316gm1u_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    status_reg(),
+    ready_bit(),
+    noise_pin_bit(),
+    freq_trim(),
+    vdd_noise_trim(),
+    vdd_log_trim(),
+    noise_adc_gain(),
+    mic_adc_gain(),
+    dyn_gain(),
+    dyn_reg(),
+    dyn_amp(),
+    dyn_ctrl_en(),
+    dyn_lim(),
+    t_detect(),
+    mic_lim(),
+    t_voise(),
+    gain_125(),
+    gain_250(),
+    gain_500(),
+    gain_1k(),
+    gain_2k(),
+    gain_4k(),
+    gain_8k(),
+    mode_reg(),
+    ext_noise(),
+    toggle_en(),
+    noise_spec(),
+    noise_mode(),
+    test_reg(),
+    oct_test(),
+    dyn_test(),
+    voise_test(),
+    dac_test(),
+    ssi_out_sel(),
+    ssi(),
+    dg_param(),
+    gain_amp(),
+    gain_att()
+  {
+    connect(ap_data, a_start_index);
+  }
+
+  irs_uarc connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    status_reg.connect(ap_data, a_start_index);
+      ready_bit.connect(ap_data, a_start_index, 0);
+      noise_pin_bit.connect(ap_data, a_start_index, 1);
+    a_start_index++;
+    a_start_index = freq_trim(ap_data, a_start_index);
+    a_start_index = vdd_noise_trim(ap_data, a_start_index);
+    a_start_index = vdd_log_trim_trim(ap_data, a_start_index);
+    a_start_index = noise_adc_gain(ap_data, a_start_index);
+    a_start_index = mic_adc_gain(ap_data, a_start_index);
+    a_start_index = dyn_gain(ap_data, a_start_index);
+    dyn_reg(ap_data, a_start_index);
+      dyn_amp.connect(ap_data, a_start_index, 1);
+      dyn_ctrl_en.connect(ap_data, a_start_index, 0);
+    a_start_index++;
+    a_start_index = dyn_lim(ap_data, a_start_index);
+    a_start_index = t_detect(ap_data, a_start_index);
+    a_start_index = mic_lim(ap_data, a_start_index);
+    a_start_index = t_voise(ap_data, a_start_index);
+    a_start_index = t_silence(ap_data, a_start_index);
+    a_start_index = t_noise(ap_data, a_start_index);
+    a_start_index = gain_125(ap_data, a_start_index);
+    a_start_index = gain_250(ap_data, a_start_index);
+    a_start_index = gain_500(ap_data, a_start_index);
+    a_start_index = gain_1k(ap_data, a_start_index);
+    a_start_index = gain_2k(ap_data, a_start_index);
+    a_start_index = gain_4k(ap_data, a_start_index);
+    a_start_index = gain_8k(ap_data, a_start_index);
+    mode_reg(ap_data, a_start_index);
+      ext_noise.connect(ap_data, a_start_index, 3);
+      toggle_en.connect(ap_data, a_start_index, 2);
+      noise_spec.connect(ap_data, a_start_index, 1);
+      noise_mode.connect(ap_data, a_start_index, 0);
+    a_start_index++;
+    test_reg(ap_data, a_start_index);
+      oct_test.connect(ap_data, a_start_index, 5);
+      dyn_test.connect(ap_data, a_start_index, 4);
+      voise_test.connect(ap_data, a_start_index, 3);
+      dac_test.connect(ap_data, a_start_index, 2);
+      ssi_out_sel.connect(ap_data, a_start_index, 1);
+      ssi.connect(ap_data, a_start_index, 0);
+    a_start_index++;
+    a_start_index = dg_param.connect(ap_data, a_start_index);
+    a_start_index = gain_amp.connect(ap_data, a_start_index);
+    a_start_index = gain_att.connect(ap_data, a_start_index);
+    return a_start_index;
+  }
+};
+
 
 //! @}
 

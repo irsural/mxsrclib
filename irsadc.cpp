@@ -1413,6 +1413,237 @@ void irs::simple_dac_ad8400_t::tick()
   m_dac_ad8400.tick();
 }
 
+//--------------------------  AD5160  ------------------------------------------
+
+irs::dac_ad5160_t::dac_ad5160_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
+  irs_u8 a_init_value):
+  m_status(DAC_FREE),
+  mp_spi(ap_spi),
+  m_init_value(a_init_value),
+  m_need_write(false),
+  mp_cs_pin(ap_cs_pin)
+{
+  memset(mp_write_buffer, 0, sizeof(mp_write_buffer));
+  if (mp_spi && mp_cs_pin)
+  {
+    mp_buf[0] = 0;
+    mp_buf[1] = m_init_value;
+    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
+      mp_spi->tick();
+    configure_spi();
+    mp_cs_pin->clear();
+    irs_u8 mp_write_buffer[m_packet_size];
+    mp_write_buffer[0] = m_init_value;
+    mp_spi->lock();
+    mp_spi->write(mp_write_buffer, m_packet_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    mp_spi->reset_configuration();
+    mp_spi->unlock();
+    mp_cs_pin->set();
+  }
+}
+
+irs::dac_ad5160_t::~dac_ad5160_t()
+{
+  return;
+}
+
+void irs::dac_ad5160_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+}
+
+irs_uarc irs::dac_ad5160_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::dac_ad5160_t::connected()
+{
+  if (mp_spi && mp_cs_pin) return true;
+  else return false;
+}
+
+void irs::dac_ad5160_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_size) return;
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(ap_buf),
+    reinterpret_cast<void*>(mp_buf + a_index), size);
+  return;
+}
+
+void irs::dac_ad5160_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  if (a_index >= m_size) return;
+  if (a_index == 0) return;
+  irs_u8 size = static_cast<irs_u8>(a_size);
+  if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
+  memcpy(reinterpret_cast<void*>(mp_buf + a_index),
+    reinterpret_cast<const void*>(ap_buf), size);
+  mp_buf[0] = 0;
+  m_need_write = true;
+}
+
+irs_bool irs::dac_ad5160_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return false;
+  if (a_bit_index > 7) return false;
+  return (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
+}
+
+void irs::dac_ad5160_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_index == 0) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+  mp_buf[0] = 0;
+  m_need_write = true;
+}
+
+void irs::dac_ad5160_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  if (a_index >= m_size) return;
+  if (a_index == 0) return;
+  if (a_bit_index > 7) return;
+  mp_buf[a_index] &= static_cast<irs_u8>((1 << a_bit_index)^0xFF);
+  mp_buf[0] = 0;
+  m_need_write = true;
+}
+
+void irs::dac_ad5160_t::tick()
+{
+  mp_spi->tick();
+  switch (m_status)
+  {
+  case DAC_FREE:
+    {
+      if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE))
+      {
+        if (!mp_spi->get_lock())
+        {
+          mp_spi->lock();
+          configure_spi();
+          mp_write_buffer[0] = mp_buf[1];
+          mp_cs_pin->clear();
+          mp_spi->write(mp_write_buffer, m_packet_size);
+          m_status = DAC_WRITE;
+          m_need_write = false;
+        }
+      }
+      break;
+    }
+  case DAC_WRITE:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_buf[0] = 1;
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        m_status = DAC_FREE;
+      }
+      break;
+    }
+  }
+}
+
+// class simple_dac_ad5160_t
+irs::simple_dac_ad5160_t::simple_dac_ad5160_t(spi_t* ap_spi,
+  gpio_pin_t* ap_cs_pin, irs_u8 a_init_value):
+  m_status(DAC_FREE),
+  mp_spi(ap_spi),
+  m_buf(a_init_value),
+  m_write_buf(a_init_value),
+  m_need_write(false),
+  mp_cs_pin(ap_cs_pin)
+{
+  if (mp_spi && mp_cs_pin)
+  {
+    for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
+      mp_spi->tick();
+    configure_spi();
+    mp_cs_pin->clear();
+    mp_spi->lock();
+    mp_spi->write(&m_write_buf, m_packet_size);
+    for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());
+    mp_spi->reset_configuration();
+    mp_spi->unlock();
+    mp_cs_pin->set();
+  }
+}
+
+irs_status_t irs::simple_dac_ad5160_t::get_status() const
+{
+  if ((m_status == DAC_FREE) && (m_need_write == false)) {
+    return irs_st_ready;
+  }
+  return irs_st_busy;
+}
+
+size_t irs::simple_dac_ad5160_t::get_resolution() const
+{
+  return m_dac_resulution;
+}
+
+void irs::simple_dac_ad5160_t::set_u32_data(
+  size_t a_channel, const irs_u32 a_data)
+{
+  if (a_channel > 0) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  m_buf = static_cast<irs_u8>(a_data >> (32 - m_dac_resulution));
+  m_need_write = true;
+}
+
+void irs::simple_dac_ad5160_t::configure_spi()
+{
+  mp_spi->set_order(irs::spi_t::MSB);
+  mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);//RISING_EDGE);
+  mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
+}
+
+void irs::simple_dac_ad5160_t::tick()
+{
+  mp_spi->tick();
+  switch (m_status)
+  {
+  case DAC_FREE:
+    {
+      if (m_need_write && (mp_spi->get_status() == irs::spi_t::FREE))
+      {
+        if (!mp_spi->get_lock())
+        {
+          mp_spi->lock();
+          configure_spi();
+          m_write_buf = m_buf;
+          mp_cs_pin->clear();
+          mp_spi->write(&m_write_buf, m_packet_size);
+          m_status = DAC_WRITE;
+          m_need_write = false;
+        }
+      }
+      break;
+    }
+  case DAC_WRITE:
+    {
+      if (mp_spi->get_status() == irs::spi_t::FREE)
+      {
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        m_status = DAC_FREE;
+      }
+      break;
+    }
+  }
+}
 
 //--------------------------  AD7376  ------------------------------------------
 // Цифровой потенциометр 8 бит
@@ -4460,5 +4691,217 @@ void irs::dac_ltc8043_t::tick()
         m_mode = mode_free;
       }
     } break;
+  }
+}
+
+//----------------------------- К1316ГМ1У --------------------------------------
+
+irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
+  spi_t *ap_spi,
+  gpio_pin_t *ap_cs_pin,
+  gpio_pin_t *ap_reset_pin,
+  gpio_pin_t *ap_en_pin,
+  gpio_pin_t *ap_noise_pin):
+  m_status(st_reset),
+  m_target_status(st_free),
+  mp_spi(ap_spi),
+  m_timer(irs::make_cnt_ms(m_reset_interval)),
+  mp_cs_pin(ap_cs_pin),
+  mp_reset_pin(ap_reset_pin),
+  mp_en_pin(ap_en_pin),
+  mp_noise_pin(ap_noise_pin),
+{
+  memset(mp_buf, 0, m_size);
+  memset(mp_write_buf, 0, m_write_buf_size);
+
+  mp_cs_pin->set();
+  mp_reset_pin->clear();
+  mp_en_pin->set();
+
+  m_timer.start();
+}
+
+irs_uarc irs::gn_k1316gm1u_t::size()
+{
+  return m_size;
+}
+
+irs_bool irs::gn_k1316gm1u_t::connected()
+{
+  return true;
+}
+
+void irs::gn_k1316gm1u_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && (a_index != m_status_pos) && ap_buf;
+  if (valid_data) {
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(mp_buf + index),
+      reinterpret_cast<const void*>(ap_buf),
+      size);
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index + size >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::gn_k1316gm1u_t::read(irs_u8 *ap_buf, irs_uarc a_index,
+  irs_uarc a_size)
+{
+  bool valid_data = (a_index < m_size) && ap_buf;
+  if (valid_data) {
+    irs_u8 size = static_cast<irs_u8>(a_size);
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
+    memcpy(
+      reinterpret_cast<void*>(ap_buf),
+      reinterpret_cast<void*>(mp_buf + a_index),
+      size);
+  }
+  return;
+}
+
+irs_bool irs::gn_k1316gm1u_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data = (a_index < m_size) & (a_bit_index <= 7);
+  irs_bool return_value = false;
+  if (valid_data) {
+    return_value =  (mp_buf[a_index] & static_cast<irs_u8>(1 << a_bit_index));
+  }
+  return return_value;
+}
+
+void irs::gn_k1316gm1u_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data =
+    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::gn_k1316gm1u_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
+{
+  bool valid_data =
+    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+  if (valid_data) {
+    irs_u8 index = static_cast<irs_u8>(a_index);
+    mp_buf[a_index] = static_cast<irs_u8>
+      (mp_buf[a_index] & ~static_cast<irs_u8>(1 << a_bit_index));
+    if (index == m_options_pos || index == m_lin_comp_pos) {
+      m_need_write_options = true;
+    }
+    if (index >= m_voltage_code_pos) {
+      m_need_write_voltage_code = true;
+    }
+    mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
+  }
+  return;
+}
+
+void irs::gn_k1316gm1u_t::tick()
+{
+  mp_spi->tick();
+
+  switch (m_status) {
+    case st_reset: {
+      if (m_timer.check()) {
+        mp_reset_pin->set();
+        m_status = st_prepare_options;
+      }
+      break;
+    }
+    case st_prepare_options: {
+      mp_write_buf[0] = addr_control;
+      mp_write_buf[1] =
+        static_cast<irs_u8>((mp_buf[m_lin_comp_pos] >> 2) & 0x03);
+      mp_write_buf[2] =
+        static_cast<irs_u8>(((mp_buf[m_lin_comp_pos] & 0x03) << 6)
+        | (mp_buf[m_options_pos] & 0x3E));
+      m_need_write_options = false;
+      m_status = st_spi_prepare;
+      m_target_status = st_free;
+      break;
+    }
+    case st_prepare_voltage_code: {
+      irs_u32 voltage_code =
+        *reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
+      irs_u8 master_byte =
+        static_cast<irs_u8>(voltage_code >> m_master_byte_shift);
+      irs_u8 mid_byte    =
+        static_cast<irs_u8>(voltage_code >> m_mid_byte_shift);
+      irs_u8 least_byte  =
+        static_cast<irs_u8>(voltage_code >> m_least_byte_shift);
+      mp_write_buf[0] = static_cast<irs_u8>(addr_code | master_byte);
+      mp_write_buf[1] = mid_byte;
+      mp_write_buf[2] = least_byte;
+      m_need_write_voltage_code = false;
+      m_status = st_spi_prepare;
+      m_target_status = st_ldac_clear;
+      break;
+    }
+    case st_spi_prepare: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->lock();
+        mp_cs_pin->clear();
+        mp_spi->write(mp_write_buf, m_write_buf_size);
+        m_status = st_spi_wait;
+      }
+      break;
+    }
+    case st_spi_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        m_status = m_target_status;
+      }
+      break;
+    }
+    case st_ldac_clear: {
+      mp_ldac_pin->set();
+      m_timer.set(irs::make_cnt_mcs(10));
+      m_timer.start();
+      m_status = st_ldac_set;
+      break;
+    }
+    case st_ldac_set: {
+      if (m_timer.check()) {
+        mp_ldac_pin->clear();
+        m_status = st_free;
+      }
+      break;
+    }
+    case st_free: {
+      if (m_need_write_options == true) {
+        m_status = st_prepare_options;
+      } else if (m_need_write_voltage_code == true) {
+        m_status = st_prepare_voltage_code;
+      } else {
+        mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
+      }
+      break;
+    }
   }
 }
