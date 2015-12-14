@@ -4705,6 +4705,7 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   m_status(st_reset),
   m_target_status(st_free),
   mp_spi(ap_spi),
+  m_current_reg(0),
   m_timer(irs::make_cnt_ms(m_reset_interval)),
   mp_cs_pin(ap_cs_pin),
   mp_reset_pin(ap_reset_pin),
@@ -4719,6 +4720,159 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   mp_en_pin->set();
 
   m_timer.start();
+  
+  register_t reg;
+  reg.need_write = false;
+  //  status          0 не записывается в микросхему
+  reg.addr = 0x00;
+  reg.mask = 0x00;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  freq_trim       1
+  reg.addr = 0x00;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  vdd_log_trim    2
+  reg.addr = 0x01;
+  reg.mask = 0x07;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  vdd_noise_trim  3
+  reg.addr = 0x01;
+  reg.mask = 0x70;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  mic_adc_gain    4
+  reg.addr = 0x02;
+  reg.mask = 0x03;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  noise_adc_gain  5
+  reg.addr = 0x02;
+  reg.mask = 0x03;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  dyn_reg         6
+  reg.addr = 0x03;
+  reg.mask = 0x03;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  dyn_gain        7
+  reg.addr = 0x03;
+  reg.mask = 0x7C;
+  reg.shift = 2;
+  m_registers.push_back(reg);
+  //  dyn_lim         8
+  reg.addr = 0x04;
+  reg.mask = 0x07;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  t_detect        9
+  reg.addr = 0x05;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  mic_lim_0       10
+  reg.addr = 0x06;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  mic_lim_1       11
+  reg.addr = 0x07;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  mic_lim_2       12
+  reg.addr = 0x08;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  mic_lim_3       13
+  reg.addr = 0x09;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  t_voise         14
+  reg.addr = 0x0A;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  t_noise         15
+  reg.addr = 0x0B;
+  reg.mask = 0x0F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  t_silence       16
+  reg.addr = 0x0B;
+  reg.mask = 0xF0;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  gain_125        17
+  reg.addr = 0x0C;
+  reg.mask = 0x0F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  gain_250        18
+  reg.addr = 0x0C;
+  reg.mask = 0xF0;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  gain_500        19
+  reg.addr = 0x0D;
+  reg.mask = 0x0F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  gain_1k         20
+  reg.addr = 0x0D;
+  reg.mask = 0xF0;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  gain_2k         21
+  reg.addr = 0x0E;
+  reg.mask = 0x0F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  gain_4k         22
+  reg.addr = 0x0E;
+  reg.mask = 0xF0;
+  reg.shift = 4;
+  m_registers.push_back(reg);
+  //  gain_8k         23
+  reg.addr = 0x0F;
+  reg.mask = 0x0F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  noise_mode      24
+  reg.addr = 0x12;
+  reg.mask = 0x03;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  mode_reg        25
+  reg.addr = 0x12;
+  reg.mask = 0x1C;
+  reg.shift = 2;
+  m_registers.push_back(reg);
+  //  test_reg        26
+  reg.addr = 0x17;
+  reg.mask = 0xF3;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  dg_param        27
+  reg.addr = 0x18;
+  reg.mask = 0xFF;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  gain_amp        28
+  reg.addr = 0x19;
+  reg.mask = 0x7F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
+  //  gain_att        29
+  reg.addr = 0x1A;
+  reg.mask = 0x1F;
+  reg.shift = 0;
+  m_registers.push_back(reg);
 }
 
 irs_uarc irs::gn_k1316gm1u_t::size()
@@ -4739,15 +4893,10 @@ void irs::gn_k1316gm1u_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     irs_u8 size = static_cast<irs_u8>(a_size);
     irs_u8 index = static_cast<irs_u8>(a_index);
     if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
-    memcpy(
-      reinterpret_cast<void*>(mp_buf + index),
-      reinterpret_cast<const void*>(ap_buf),
-      size);
-    if (index == m_options_pos || index == m_lin_comp_pos) {
-      m_need_write_options = true;
-    }
-    if (index + size >= m_voltage_code_pos) {
-      m_need_write_voltage_code = true;
+    for (irs_u8 i = 0; i < size; i++) {
+      irs_u8 pos = i + index;
+      mp_buf[pos] = ap_buf[pos];
+      m_registers[pos].need_write = true;
     }
     mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
   }
@@ -4784,15 +4933,10 @@ void irs::gn_k1316gm1u_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   bool valid_data =
     (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
-  if (valid_data) {
+  if (valid_data && (m_registers[i].mask & (1 << a_bit_index))) {
     irs_u8 index = static_cast<irs_u8>(a_index);
     mp_buf[a_index] |= static_cast<irs_u8>(1 << a_bit_index);
-    if (index == m_options_pos || index == m_lin_comp_pos) {
-      m_need_write_options = true;
-    }
-    if (index >= m_voltage_code_pos) {
-      m_need_write_voltage_code = true;
-    }
+    m_registers[a_index].need_write = true;
     mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
   }
   return;
@@ -4802,16 +4946,11 @@ void irs::gn_k1316gm1u_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   bool valid_data =
     (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
-  if (valid_data) {
+  if (valid_data && (m_registers[i].mask & (1 << a_bit_index))) {
     irs_u8 index = static_cast<irs_u8>(a_index);
     mp_buf[a_index] = static_cast<irs_u8>
       (mp_buf[a_index] & ~static_cast<irs_u8>(1 << a_bit_index));
-    if (index == m_options_pos || index == m_lin_comp_pos) {
-      m_need_write_options = true;
-    }
-    if (index >= m_voltage_code_pos) {
-      m_need_write_voltage_code = true;
-    }
+    m_registers[a_index].need_write = true;
     mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
   }
   return;
@@ -4825,37 +4964,31 @@ void irs::gn_k1316gm1u_t::tick()
     case st_reset: {
       if (m_timer.check()) {
         mp_reset_pin->set();
-        m_status = st_prepare_options;
+        m_status = st_prepare_read_all;
       }
       break;
     }
-    case st_prepare_options: {
-      mp_write_buf[0] = addr_control;
-      mp_write_buf[1] =
-        static_cast<irs_u8>((mp_buf[m_lin_comp_pos] >> 2) & 0x03);
-      mp_write_buf[2] =
-        static_cast<irs_u8>(((mp_buf[m_lin_comp_pos] & 0x03) << 6)
-        | (mp_buf[m_options_pos] & 0x3E));
-      m_need_write_options = false;
+    case st_prepare_read_all: {
+      m_current_reg = 1;
+      mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
+      mp_write_buf[1] = 0;
       m_status = st_spi_prepare;
-      m_target_status = st_free;
+      m_target_status = st_read_next_reg;
       break;
     }
-    case st_prepare_voltage_code: {
-      irs_u32 voltage_code =
-        *reinterpret_cast<irs_u32*>(&mp_buf[m_voltage_code_pos]);
-      irs_u8 master_byte =
-        static_cast<irs_u8>(voltage_code >> m_master_byte_shift);
-      irs_u8 mid_byte    =
-        static_cast<irs_u8>(voltage_code >> m_mid_byte_shift);
-      irs_u8 least_byte  =
-        static_cast<irs_u8>(voltage_code >> m_least_byte_shift);
-      mp_write_buf[0] = static_cast<irs_u8>(addr_code | master_byte);
-      mp_write_buf[1] = mid_byte;
-      mp_write_buf[2] = least_byte;
-      m_need_write_voltage_code = false;
-      m_status = st_spi_prepare;
-      m_target_status = st_ldac_clear;
+    case st_read_next_reg: {
+      mp_buf[m_current_reg] = mp_write_buf[1];
+      m_current_reg++;
+      if (m_current_reg < m_size) {
+        mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
+        mp_write_buf[1] = 0;
+        m_status = st_spi_prepare;
+        m_target_status = st_read_next_reg;
+      } else {
+        m_current_reg = 1;
+        mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
+        m_status = st_free;
+      }
       break;
     }
     case st_spi_prepare: {
@@ -4879,28 +5012,31 @@ void irs::gn_k1316gm1u_t::tick()
       }
       break;
     }
-    case st_ldac_clear: {
-      mp_ldac_pin->set();
-      m_timer.set(irs::make_cnt_mcs(10));
-      m_timer.start();
-      m_status = st_ldac_set;
-      break;
-    }
-    case st_ldac_set: {
-      if (m_timer.check()) {
-        mp_ldac_pin->clear();
-        m_status = st_free;
-      }
-      break;
-    }
     case st_free: {
-      if (m_need_write_options == true) {
-        m_status = st_prepare_options;
-      } else if (m_need_write_voltage_code == true) {
-        m_status = st_prepare_voltage_code;
-      } else {
-        mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
+      for (; m_current_reg < m_size; m_current_reg++) {
+        if (m_registers[m_current_reg].need_write) {
+          m_status = st_prepare_write_mask;
+          break;
+        }
       }
+      if (m_current_reg >= m_size) {
+        mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
+        m_current_reg = 1;
+      }
+      break;
+    }
+    case st_prepare_write_mask: {
+      mp_write_buf[0] = (m_mask_reg_addr << 1) | 0x01;
+      mp_write_buf[1] = m_registers[m_current_reg].mask;
+      m_status = st_spi_prepare;
+      m_target_status = st_prepare_write_reg;
+      break;
+    }
+    case st_prepare_write_reg: {
+      mp_write_buf[0] = (m_registers[m_current_reg].addr << 1) | 0x01;
+      mp_write_buf[1] = mp_buf[m_current_reg];
+      m_status = st_spi_prepare;
+      m_target_status = st_free;
       break;
     }
   }

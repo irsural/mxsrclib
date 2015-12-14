@@ -2463,20 +2463,22 @@ private:
     st_free
   };
   enum {
-    m_size = 29,
+    m_size = 30,
     m_write_buf_size = 2,
     m_status_pos = 0,
-    m_noise_pin_pos = 1
+    m_noise_pin_pos = 1,
+    m_ready_bit_pos = 0,
+    m_mask_reg_addr = 0x13
   };
   enum {
     m_reset_interval = 1  //  ms
   };
   struct register_t
   {
+    bool need_write;
     irs_u8 addr;
     irs_u8 mask;
     irs_u8 shift;
-    bool need_write;
   };
 
   status_t m_status;
@@ -2484,33 +2486,35 @@ private:
   spi_t* mp_spi;
   irs_u8 mp_buf[m_size];
   irs_u8 mp_write_buf[m_write_buf_size];
+  irs_u8 m_current_reg;
   irs::timer_t m_timer;
   gpio_pin_t* mp_cs_pin;
   gpio_pin_t* mp_reset_pin;
   gpio_pin_t* mp_en_pin;
   gpio_pin_t* mp_noise_pin;
+  vector<register_t> m_registers;
 };
 
 struct gn_k1316gm1u_data_t
 {
   irs::conn_data_t<irs_u8> status_reg;
-  irs::bit_data_t ready_bit;
-  irs::bit_data_t noise_pin_bit;
+    irs::bit_data_t ready_bit;
+    irs::bit_data_t noise_pin_bit;
   irs::conn_data_t<irs_u8> freq_trim;
-  irs::conn_data_t<irs_u8> vdd_noise_trim;
   irs::conn_data_t<irs_u8> vdd_log_trim;
-  irs::conn_data_t<irs_u8> noise_adc_gain;
+  irs::conn_data_t<irs_u8> vdd_noise_trim;
   irs::conn_data_t<irs_u8> mic_adc_gain;
-  irs::conn_data_t<irs_u8> dyn_gain;
+  irs::conn_data_t<irs_u8> noise_adc_gain;
   irs::conn_data_t<irs_u8> dyn_reg;
-    irs::bit_data_t dyn_amp;
     irs::bit_data_t dyn_ctrl_en;
+    irs::bit_data_t dyn_amp;
+  irs::conn_data_t<irs_u8> dyn_gain;
   irs::conn_data_t<irs_u8> dyn_lim;
   irs::conn_data_t<irs_u8> t_detect;
   irs::conn_data_t<irs_u32> mic_lim;
   irs::conn_data_t<irs_u8> t_voise;
-  irs::conn_data_t<irs_u8> t_silence;
   irs::conn_data_t<irs_u8> t_noise;
+  irs::conn_data_t<irs_u8> t_silence;
   irs::conn_data_t<irs_u8> gain_125;
   irs::conn_data_t<irs_u8> gain_250;
   irs::conn_data_t<irs_u8> gain_500;
@@ -2518,18 +2522,18 @@ struct gn_k1316gm1u_data_t
   irs::conn_data_t<irs_u8> gain_2k;
   irs::conn_data_t<irs_u8> gain_4k;
   irs::conn_data_t<irs_u8> gain_8k;
+  irs::conn_data_t<irs_u8> noise_mode;
   irs::conn_data_t<irs_u8> mode_reg;
-    irs::bit_data_t ext_noise;
-    irs::bit_data_t toggle_en;
     irs::bit_data_t noise_spec;
-    irs::bit_data_t noise_mode;
+    irs::bit_data_t toggle_en;
+    irs::bit_data_t ext_noise;
   irs::conn_data_t<irs_u8> test_reg;
-    irs::bit_data_t oct_test;
-    irs::bit_data_t dyn_test;
-    irs::bit_data_t voise_test;
-    irs::bit_data_t dac_test;
-    irs::bit_data_t ssi_out_sel;
     irs::bit_data_t ssi;
+    irs::bit_data_t ssi_out_sel;
+    irs::bit_data_t dac_test;
+    irs::bit_data_t voise_test;
+    irs::bit_data_t dyn_test;
+    irs::bit_data_t oct_test;
   irs::conn_data_t<irs_u8> dg_param;
   irs::conn_data_t<irs_u8> gain_amp;
   irs::conn_data_t<irs_u8> gain_att;
@@ -2539,18 +2543,20 @@ struct gn_k1316gm1u_data_t
     ready_bit(),
     noise_pin_bit(),
     freq_trim(),
-    vdd_noise_trim(),
     vdd_log_trim(),
-    noise_adc_gain(),
+    vdd_noise_trim(),
     mic_adc_gain(),
-    dyn_gain(),
+    noise_adc_gain(),
     dyn_reg(),
-    dyn_amp(),
     dyn_ctrl_en(),
+    dyn_amp(),
+    dyn_gain(),
     dyn_lim(),
     t_detect(),
     mic_lim(),
     t_voise(),
+    t_noise(),
+    t_silence(),
     gain_125(),
     gain_250(),
     gain_500(),
@@ -2558,18 +2564,18 @@ struct gn_k1316gm1u_data_t
     gain_2k(),
     gain_4k(),
     gain_8k(),
-    mode_reg(),
-    ext_noise(),
-    toggle_en(),
-    noise_spec(),
     noise_mode(),
+    mode_reg(),
+    noise_spec(),
+    toggle_en(),
+    ext_noise(),
     test_reg(),
-    oct_test(),
-    dyn_test(),
-    voise_test(),
-    dac_test(),
-    ssi_out_sel(),
     ssi(),
+    ssi_out_sel(),
+    dac_test(),
+    voise_test(),
+    dyn_test(),
+    oct_test(),
     dg_param(),
     gain_amp(),
     gain_att()
@@ -2584,21 +2590,21 @@ struct gn_k1316gm1u_data_t
       noise_pin_bit.connect(ap_data, a_start_index, 1);
     a_start_index++;
     a_start_index = freq_trim(ap_data, a_start_index);
-    a_start_index = vdd_noise_trim(ap_data, a_start_index);
     a_start_index = vdd_log_trim_trim(ap_data, a_start_index);
-    a_start_index = noise_adc_gain(ap_data, a_start_index);
+    a_start_index = vdd_noise_trim(ap_data, a_start_index);
     a_start_index = mic_adc_gain(ap_data, a_start_index);
-    a_start_index = dyn_gain(ap_data, a_start_index);
+    a_start_index = noise_adc_gain(ap_data, a_start_index);
     dyn_reg(ap_data, a_start_index);
-      dyn_amp.connect(ap_data, a_start_index, 1);
       dyn_ctrl_en.connect(ap_data, a_start_index, 0);
+      dyn_amp.connect(ap_data, a_start_index, 1);
     a_start_index++;
+    a_start_index = dyn_gain(ap_data, a_start_index);
     a_start_index = dyn_lim(ap_data, a_start_index);
     a_start_index = t_detect(ap_data, a_start_index);
     a_start_index = mic_lim(ap_data, a_start_index);
     a_start_index = t_voise(ap_data, a_start_index);
-    a_start_index = t_silence(ap_data, a_start_index);
     a_start_index = t_noise(ap_data, a_start_index);
+    a_start_index = t_silence(ap_data, a_start_index);
     a_start_index = gain_125(ap_data, a_start_index);
     a_start_index = gain_250(ap_data, a_start_index);
     a_start_index = gain_500(ap_data, a_start_index);
@@ -2606,19 +2612,19 @@ struct gn_k1316gm1u_data_t
     a_start_index = gain_2k(ap_data, a_start_index);
     a_start_index = gain_4k(ap_data, a_start_index);
     a_start_index = gain_8k(ap_data, a_start_index);
+    a_start_index = noise_mode(ap_data, a_start_index);
     mode_reg(ap_data, a_start_index);
-      ext_noise.connect(ap_data, a_start_index, 3);
-      toggle_en.connect(ap_data, a_start_index, 2);
-      noise_spec.connect(ap_data, a_start_index, 1);
-      noise_mode.connect(ap_data, a_start_index, 0);
+      noise_spec.connect(ap_data, a_start_index, 0);
+      toggle_en.connect(ap_data, a_start_index, 1);
+      ext_noise.connect(ap_data, a_start_index, 2);
     a_start_index++;
     test_reg(ap_data, a_start_index);
-      oct_test.connect(ap_data, a_start_index, 5);
-      dyn_test.connect(ap_data, a_start_index, 4);
-      voise_test.connect(ap_data, a_start_index, 3);
-      dac_test.connect(ap_data, a_start_index, 2);
-      ssi_out_sel.connect(ap_data, a_start_index, 1);
       ssi.connect(ap_data, a_start_index, 0);
+      ssi_out_sel.connect(ap_data, a_start_index, 1);
+      dac_test.connect(ap_data, a_start_index, 4);
+      voise_test.connect(ap_data, a_start_index, 5);
+      dyn_test.connect(ap_data, a_start_index, 6);
+      oct_test.connect(ap_data, a_start_index, 7);
     a_start_index++;
     a_start_index = dg_param.connect(ap_data, a_start_index);
     a_start_index = gain_amp.connect(ap_data, a_start_index);
