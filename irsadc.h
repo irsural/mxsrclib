@@ -2476,7 +2476,6 @@ private:
     irs_u8 addr;
     irs_u8 mask;
     irs_u8 shift;
-    irs_u8 pos;
     bool need_write;
   };
 
