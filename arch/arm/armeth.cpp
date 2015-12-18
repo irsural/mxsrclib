@@ -731,10 +731,10 @@ void irs::arm::st_ethernet_t::gpio_configuration()
     gpio_ospeedr_select(m_config.txd[1], IRS_GPIO_SPEED_100MHZ);
     gpio_ospeedr_select(m_config.rxd[0], IRS_GPIO_SPEED_100MHZ);
     gpio_ospeedr_select(m_config.rxd[1], IRS_GPIO_SPEED_100MHZ);
-    gpio_ospeedr_select(m_config.tx_en, IRS_GPIO_SPEED_50MHZ);
+    gpio_ospeedr_select(m_config.tx_en, IRS_GPIO_SPEED_100MHZ);
     gpio_ospeedr_select(m_config.rx_dv_or_crs_dv, IRS_GPIO_SPEED_100MHZ);
-    gpio_ospeedr_select(m_config.mdc, IRS_GPIO_SPEED_50MHZ);
-    gpio_ospeedr_select(m_config.mdio, IRS_GPIO_SPEED_50MHZ);
+    gpio_ospeedr_select(m_config.mdc, IRS_GPIO_SPEED_100MHZ);
+    gpio_ospeedr_select(m_config.mdio, IRS_GPIO_SPEED_100MHZ);
   }
 }
 

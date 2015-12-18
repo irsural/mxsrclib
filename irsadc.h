@@ -2457,15 +2457,20 @@ public:
 private:
   enum status_t {
     st_reset,
+    st_read_all_prepare,
     st_read_all,
     st_spi_prepare,
     st_spi_wait,
-    st_free
+    st_free,
+    st_prepare_write_mask,
+    st_prepare_write_reg,
+    st_wait_write_reg
   };
   enum {
     m_size = 30,
     m_write_buf_size = 2,
     m_status_pos = 0,
+    m_regs_pos = 1,
     m_noise_pin_pos = 1,
     m_ready_bit_pos = 0,
     m_mask_reg_addr = 0x13
@@ -2476,6 +2481,7 @@ private:
   struct register_t
   {
     bool need_write;
+    bool was_write;
     irs_u8 addr;
     irs_u8 mask;
     irs_u8 shift;
@@ -2589,36 +2595,36 @@ struct gn_k1316gm1u_data_t
       ready_bit.connect(ap_data, a_start_index, 0);
       noise_pin_bit.connect(ap_data, a_start_index, 1);
     a_start_index++;
-    a_start_index = freq_trim(ap_data, a_start_index);
-    a_start_index = vdd_log_trim_trim(ap_data, a_start_index);
-    a_start_index = vdd_noise_trim(ap_data, a_start_index);
-    a_start_index = mic_adc_gain(ap_data, a_start_index);
-    a_start_index = noise_adc_gain(ap_data, a_start_index);
-    dyn_reg(ap_data, a_start_index);
+    a_start_index = freq_trim.connect(ap_data, a_start_index);
+    a_start_index = vdd_log_trim.connect(ap_data, a_start_index);
+    a_start_index = vdd_noise_trim.connect(ap_data, a_start_index);
+    a_start_index = mic_adc_gain.connect(ap_data, a_start_index);
+    a_start_index = noise_adc_gain.connect(ap_data, a_start_index);
+    dyn_reg.connect(ap_data, a_start_index);
       dyn_ctrl_en.connect(ap_data, a_start_index, 0);
       dyn_amp.connect(ap_data, a_start_index, 1);
     a_start_index++;
-    a_start_index = dyn_gain(ap_data, a_start_index);
-    a_start_index = dyn_lim(ap_data, a_start_index);
-    a_start_index = t_detect(ap_data, a_start_index);
-    a_start_index = mic_lim(ap_data, a_start_index);
-    a_start_index = t_voise(ap_data, a_start_index);
-    a_start_index = t_noise(ap_data, a_start_index);
-    a_start_index = t_silence(ap_data, a_start_index);
-    a_start_index = gain_125(ap_data, a_start_index);
-    a_start_index = gain_250(ap_data, a_start_index);
-    a_start_index = gain_500(ap_data, a_start_index);
-    a_start_index = gain_1k(ap_data, a_start_index);
-    a_start_index = gain_2k(ap_data, a_start_index);
-    a_start_index = gain_4k(ap_data, a_start_index);
-    a_start_index = gain_8k(ap_data, a_start_index);
-    a_start_index = noise_mode(ap_data, a_start_index);
-    mode_reg(ap_data, a_start_index);
+    a_start_index = dyn_gain.connect(ap_data, a_start_index);
+    a_start_index = dyn_lim.connect(ap_data, a_start_index);
+    a_start_index = t_detect.connect(ap_data, a_start_index);
+    a_start_index = mic_lim.connect(ap_data, a_start_index);
+    a_start_index = t_voise.connect(ap_data, a_start_index);
+    a_start_index = t_noise.connect(ap_data, a_start_index);
+    a_start_index = t_silence.connect(ap_data, a_start_index);
+    a_start_index = gain_125.connect(ap_data, a_start_index);
+    a_start_index = gain_250.connect(ap_data, a_start_index);
+    a_start_index = gain_500.connect(ap_data, a_start_index);
+    a_start_index = gain_1k.connect(ap_data, a_start_index);
+    a_start_index = gain_2k.connect(ap_data, a_start_index);
+    a_start_index = gain_4k.connect(ap_data, a_start_index);
+    a_start_index = gain_8k.connect(ap_data, a_start_index);
+    a_start_index = noise_mode.connect(ap_data, a_start_index);
+    mode_reg.connect(ap_data, a_start_index);
       noise_spec.connect(ap_data, a_start_index, 0);
       toggle_en.connect(ap_data, a_start_index, 1);
       ext_noise.connect(ap_data, a_start_index, 2);
     a_start_index++;
-    test_reg(ap_data, a_start_index);
+    test_reg.connect(ap_data, a_start_index);
       ssi.connect(ap_data, a_start_index, 0);
       ssi_out_sel.connect(ap_data, a_start_index, 1);
       dac_test.connect(ap_data, a_start_index, 4);
