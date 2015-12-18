@@ -748,7 +748,7 @@ void irs::arm::st_ethernet_t::clock_range_configuration()
   tmpreg &= MACMIIAR_CR_MASK;
   /* Get hclk frequency value */
   RCC_GetClocksFreq(&rcc_clocks);
-  hclk = rcc_clocks.HCLK_Frequency;
+  hclk = 100000000;//rcc_clocks.HCLK_Frequency;
 
   /* Set CR bits depending on hclk value */
   if((hclk >= 20000000)&&(hclk < 35000000)) {
