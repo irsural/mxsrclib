@@ -208,6 +208,8 @@ private:
   timer_t m_delay_before_connect;
 };
 
+#if LWIP_UDP
+
 class udp_t: public hardflow_t
 {
 public:
@@ -306,6 +308,8 @@ private:
   channel_switching_mode_t m_mode;
   loop_timer_t m_check_buffer_timer;
 };
+
+#endif // LWIP_UDP
 
 } // namespace lwip
 

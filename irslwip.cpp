@@ -881,6 +881,8 @@ bool irs::hardflow::lwip::tcp_client_t::is_channel_exists(
   return m_channel_id == a_channel_ident;
 }
 
+#if LWIP_UDP
+
 // class udp_t
 irs::hardflow::lwip::udp_t::udp_t(
   const mxip_t& a_local_ip,
@@ -1077,5 +1079,7 @@ void irs::hardflow::lwip::udp_t::set_channel_switching_mode(
 {
   m_mode = a_mode;
 }
+
+#endif // LWIP_UDP
 
 #endif // USE_LWIP
