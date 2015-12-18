@@ -2470,7 +2470,7 @@ irs::mxdata_assembly_types_implementation_t::
   m_ac_list[irst("modbus udp")] = handle_t<mxdata_assembly_creator_t>(
     new modbus_udp_assembly_creator_t);
   m_ac_list[irst("modbus tcp")] = handle_t<mxdata_assembly_creator_t>(
-    new modbus_udp_assembly_creator_t);
+    new modbus_tcp_assembly_creator_t);
   m_ac_list[irst("modbus usb hid")] = handle_t<mxdata_assembly_creator_t>(
     new modbus_usb_hid_assembly_creator_t);
   m_ac_list[irst("Agilent 3458A")] = handle_t<mxdata_assembly_creator_t>(

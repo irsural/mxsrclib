@@ -170,7 +170,7 @@
 #define IRS_GNUC_VERSION_LESS_3_4
 #endif // GCC версии < 3.4
 
-#ifdef IRS_USE_SETUPAPI_WIN
+#ifndef IRS_USE_SETUPAPI_WIN
 # define IRS_USE_SETUPAPI_WIN 0
 #endif // IRS_USE_SETUPAPI_WIN
 

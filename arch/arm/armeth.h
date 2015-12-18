@@ -167,8 +167,11 @@ public:
     gpio_channel_t rx_crs;
     gpio_channel_t col;
     gpio_channel_t mdc;
-    gpio_channel_t mdio;
-    gpio_channel_t phy_reset;
+    gpio_channel_t mdio;    
+    gpio_channel_t phy_reset; 
+    //! \brief Адрес физического уровня. Для KS8721bl phy_address=1, для
+    //!   lan8720 phy_address=0
+    size_type phy_address;
     config_t():
       mii_mode(reduced_mii_mode),
       rx_clk_or_ref_clk(PA1),
@@ -182,7 +185,8 @@ public:
       col(PA3),
       mdc(PC1),
       mdio(PA2),
-      phy_reset(PE15)
+      phy_reset(PE15),
+      phy_address(1)
     {
       txd[0] = PG13;
       txd[1] = PG14;
@@ -233,7 +237,7 @@ private:
   void transmit();
   void receive();
 
-  enum { phy_address = 0x1 } ;
+  //enum { phy_address = 0x0 } ;
   enum { frame_check_sequence_size = 4 };
   enum buf_status_t {
     buf_empty,

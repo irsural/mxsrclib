@@ -594,7 +594,7 @@ irs::arm::st_ethernet_t::st_ethernet_t(
   hardware_reset_phy();
 
   mp_eth_auto_negotation.reset(
-    new eth_auto_negotation_t(ETH_InitStructure, phy_address));
+    new eth_auto_negotation_t(ETH_InitStructure, m_config.phy_address));
 
   ETH_DMATxDescChainInit(DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
   ETH_DMARxDescChainInit(DMARxDscrTab, &Rx_Buff[0][0], ETH_RXBUFNB);
@@ -1060,7 +1060,7 @@ bool irs::arm::st_ethernet_t::get_ready_status() const
 
 bool irs::arm::st_ethernet_t::get_linked_status() const
 {
-  return ETH_ReadPHYRegister(phy_address, PHY_BSR) & PHY_Linked_Status;
+  return ETH_ReadPHYRegister(m_config.phy_address, PHY_BSR) & PHY_Linked_Status;
 }
 
 void irs::arm::st_ethernet_t::tick()
