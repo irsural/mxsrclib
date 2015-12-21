@@ -477,12 +477,26 @@ public:
     int a_outbuf_size = 16,
     irs_u32 a_baud_rate = 9600
   );
+  #ifdef IRS_STM32F_2_AND_4
+  //! \brief Конструктор, позволяющий указать пин контроллера
+  //! \param[in] a_com_index - индекс ком-порта, от 1 до 6
+  //! \param[in] a_tx - пин для записи данных
+  //! \param[in] a_outbuf_size - размер буфера записи
+  //! \param[in] a_baud_rate - размер буфера записи
+  com_buf(
+    int a_com_index,
+    gpio_channel_t a_tx,
+    int a_outbuf_size = 16,
+    irs_u32 a_baud_rate = 9600
+  );
+  #endif // IRS_STM32F_2_AND_4
   //inline virtual ~com_buf();
   virtual int overflow(int c = EOF);
   virtual int sync();
   void trans (char data);
   void trans_simple (char data);
 private:
+  void set_usart_options(int a_com_index);
   enum {
     PORTA1_UART0Tx = 0x10
   };

@@ -172,6 +172,11 @@ void gpio_alternate_function_select(gpio_channel_t a_channel,
 
 void gpio_ospeedr_select(gpio_channel_t a_channel, size_t a_speed);
 
+void gpio_usart_alternate_function_select(gpio_channel_t a_channel,
+  int a_com_index);
+
+usart_regs_t* get_usart(int a_com_index);
+
 enum interrupt_type_t
 {
   interrupt_single,

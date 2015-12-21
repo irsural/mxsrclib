@@ -3363,15 +3363,13 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
     irs::clock_enable(a_rx);
   }
 
-  const int alternate_function = get_alternate_function_code(a_com_index);
-
   if (a_rx != PNONE) {
     gpio_moder_alternate_function_enable(a_rx);
-    gpio_alternate_function_select(a_rx, alternate_function);
+    gpio_usart_alternate_function_select(a_rx, a_com_index);
   }
   if (a_tx != PNONE) {
     gpio_moder_alternate_function_enable(a_tx);
-    gpio_alternate_function_select(a_tx, alternate_function);
+    gpio_usart_alternate_function_select(a_tx, a_com_index);
   }
 
   connect_event(a_com_index);
@@ -3407,78 +3405,6 @@ void irs::hardflow::arm::st_com_flow_t::set_usart_options(int a_com_index)
   m_usart->USART_BRR_bit.DIV_Mantissa = periphery_frequency/(16*m_baud_rate);
   m_usart->USART_BRR_bit.DIV_Fraction =
     16*(periphery_frequency%(16*m_baud_rate))/(16*m_baud_rate);
-}
-
-usart_regs_t* irs::hardflow::arm::st_com_flow_t::get_usart(
-  int a_com_index)
-{
-  usart_regs_t* usart = NULL;
-  switch (a_com_index) {
-    case 1: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_USART1_BASE);
-    } break;
-    case 2: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_USART2_BASE);
-    } break;
-    case 3: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_USART3_BASE);
-    } break;
-    case 4: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_UART4_BASE);
-    } break;
-    case 5: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_UART5_BASE);
-    } break;
-    case 6: {
-      usart = reinterpret_cast<usart_regs_t*>(IRS_USART6_BASE);
-    } break;
-    default: {
-      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
-    }
-  }
-  return usart;
-}
-
-int irs::hardflow::arm::st_com_flow_t::get_alternate_function_code(
-  int a_com_index)
-{
-  int alternate_function = GPIO_AF_USART1;
-  switch (a_com_index) {
-    case 1: {
-      alternate_function = GPIO_AF_USART1;
-    } break;
-    case 2: {
-      alternate_function = GPIO_AF_USART2;
-    } break;
-    case 3: {
-      alternate_function = GPIO_AF_USART3;
-    } break;
-    case 4: {
-      alternate_function = GPIO_AF_UART4;
-    } break;
-    case 5: {
-      alternate_function = GPIO_AF_UART5;
-    } break;
-    case 6: {
-      alternate_function = GPIO_AF_USART6;
-    } break;
-    #ifdef IRS_STM32F4xx
-    case 7: {
-      alternate_function = GPIO_AF_UART7;
-    } break;
-    case 8: {
-      alternate_function = GPIO_AF_UART8;
-    } break;
-    #endif // IRS_STM32F4xx
-    default: {
-      #ifdef IRS_STM32F2xx
-      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
-      #else // IRS_STM32F4xx
-      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 8");
-      #endif // IRS_STM32F4xx
-    }
-  }
-  return alternate_function;
 }
 
 void irs::hardflow::arm::st_com_flow_t::connect_event(int a_com_index)

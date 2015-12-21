@@ -2063,8 +2063,7 @@ private:
   };
   st_com_flow_t();
   void set_usart_options(int a_com_index);
-  usart_regs_t* get_usart(int a_com_index);
-  int get_alternate_function_code(int a_com_index);
+
   void connect_event(int a_com_index);
   enum { m_channel_id = 1};
   usart_event_t m_event;

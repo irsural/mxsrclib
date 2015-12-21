@@ -83,7 +83,7 @@ void pll_on()
     param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
     irs::pll_on(param_pll);
   #else
-    #error Тип контроллера не определён  
+    #error Тип контроллера не определён
   #endif //ARM_devices
 #else
   #error Тип контроллера не определён
@@ -92,7 +92,7 @@ void pll_on()
 
 void irs::pll_on()
 {
-  pll_on();    
+  pll_on();
 }
 
 #ifdef IRS_STM32F_2_AND_4
@@ -101,7 +101,7 @@ void irs::pll_on(param_pll_t a_param_pll)
   RCC_CR_bit.HSEON = 1;
   RCC_CR_bit.HSEBYP = a_param_pll.HSEBYP;
   while (!RCC_CR_bit.HSERDY);
-  
+
   #if defined(IRS_STM32F4xx)
   RCC_CFGR_bit.MCO2 = 3; //PLL clock selected
   RCC_CFGR_bit.MCO2PRE = 5; //division by 3
@@ -139,7 +139,7 @@ void irs::pll_on(param_pll_t a_param_pll)
   irs_u32 freq = static_cast<irs_u32>(a_param_pll.freq_quartz/a_param_pll.PLLM*
     a_param_pll.PLLN/pow(2.,(a_param_pll.PLLP+1)));
   irs::cpu_traits_t::frequency(static_cast<cpu_traits_t::frequency_type>(freq));
-  
+
   irs_u32 divider = 2;
   switch (a_param_pll.PPRE1) {
     case 4: {divider = 2;} break;
@@ -150,7 +150,7 @@ void irs::pll_on(param_pll_t a_param_pll)
   }
   irs::cpu_traits_t::periphery_frequency_first(
     static_cast<cpu_traits_t::frequency_type>(freq/divider));
-  
+
   switch (a_param_pll.PPRE2) {
     case 4: {divider = 2;} break;
     case 5: {divider = 4;} break;
@@ -483,6 +483,77 @@ void irs::gpio_ospeedr_select(gpio_channel_t a_channel, size_t a_speed)
   IRS_LIB_ASSERT(a_speed <= IRS_GPIO_SPEED_100MHZ);
   const int bits_count = 2;
   gpio_set_bits(a_channel, bits_count, GPIO_OSPEEDR_S, a_speed);
+}
+
+void irs::gpio_usart_alternate_function_select(gpio_channel_t a_channel,
+  int a_com_index)
+{
+  int alternate_function = GPIO_AF_USART1;
+  switch (a_com_index) {
+    case 1: {
+      alternate_function = GPIO_AF_USART1;
+    } break;
+    case 2: {
+      alternate_function = GPIO_AF_USART2;
+    } break;
+    case 3: {
+      alternate_function = GPIO_AF_USART3;
+    } break;
+    case 4: {
+      alternate_function = GPIO_AF_UART4;
+    } break;
+    case 5: {
+      alternate_function = GPIO_AF_UART5;
+    } break;
+    case 6: {
+      alternate_function = GPIO_AF_USART6;
+    } break;
+    #ifdef IRS_STM32F4xx
+    case 7: {
+      alternate_function = GPIO_AF_UART7;
+    } break;
+    case 8: {
+      alternate_function = GPIO_AF_UART8;
+    } break;
+    #endif // IRS_STM32F4xx
+    default: {
+      #ifdef IRS_STM32F2xx
+      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
+      #else // IRS_STM32F4xx
+      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 8");
+      #endif // IRS_STM32F4xx
+    }
+  }
+  gpio_alternate_function_select(a_channel, alternate_function);
+}
+
+usart_regs_t* irs::get_usart(int a_com_index)
+{
+  usart_regs_t* usart = NULL;
+  switch (a_com_index) {
+    case 1: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_USART1_BASE);
+    } break;
+    case 2: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_USART2_BASE);
+    } break;
+    case 3: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_USART3_BASE);
+    } break;
+    case 4: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_UART4_BASE);
+    } break;
+    case 5: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_UART5_BASE);
+    } break;
+    case 6: {
+      usart = reinterpret_cast<usart_regs_t*>(IRS_USART6_BASE);
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
+    }
+  }
+  return usart;
 }
 
 void irs::update_interrupt_enable(size_t a_address)

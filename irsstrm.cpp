@@ -83,35 +83,36 @@ irs::arm::com_buf::com_buf(
   #elif defined(__STM32F100RBT__)
   #elif defined(IRS_STM32F_2_AND_4)
   //typedef volatile usart_regs_t usart_regs_v_t;
+  m_usart = get_usart(a_com_index);
   switch (a_com_index) {
     case 1: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART1_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART1_BASE);
       irs::clock_enable(IRS_USART1_BASE);
       irs::clock_enable(IRS_PORTA_BASE);
     } break;
     case 2: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART2_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART2_BASE);
       irs::clock_enable(IRS_USART2_BASE);
       irs::clock_enable(IRS_PORTA_BASE);
     } break;
     case 3: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART3_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART3_BASE);
       irs::clock_enable(IRS_USART3_BASE);
       irs::clock_enable(IRS_PORTB_BASE);
     } break;
     case 4: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART4_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART4_BASE);
       irs::clock_enable(IRS_UART4_BASE);
       irs::clock_enable(IRS_PORTC_BASE);
     } break;
     case 5: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART5_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_UART5_BASE);
       irs::clock_enable(IRS_UART5_BASE);
       irs::clock_enable(IRS_PORTC_BASE);
       irs::clock_enable(IRS_PORTD_BASE);
     } break;
     case 6: {
-      m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART6_BASE);
+      //m_usart = reinterpret_cast<usart_regs_t*>(IRS_USART6_BASE);
       irs::clock_enable(IRS_USART6_BASE);
       irs::clock_enable(IRS_PORTC_BASE);
     } break;
@@ -119,7 +120,8 @@ irs::arm::com_buf::com_buf(
       IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
     }
   }
-  m_usart->USART_CR1_bit.UE = 1;
+  set_usart_options(a_com_index);
+  /*m_usart->USART_CR1_bit.UE = 1;
   m_usart->USART_CR1_bit.M = 0; // 8 Data bits
   m_usart->USART_CR1_bit.PCE = 0; // Parity control disabled
   m_usart->USART_CR1_bit.PS = 0; // Even parity
@@ -132,7 +134,7 @@ irs::arm::com_buf::com_buf(
   }
   m_usart->USART_BRR_bit.DIV_Mantissa = periphery_frequency/(16*a_baud_rate);
   m_usart->USART_BRR_bit.DIV_Fraction =
-    16*(periphery_frequency%(16*a_baud_rate))/(16*a_baud_rate);
+    16*(periphery_frequency%(16*a_baud_rate))/(16*a_baud_rate);*/
   switch (a_com_index) {
     case 1: {
       GPIOA_AFRH_bit.AFRH9 = 7; // AF7: USART1_TX
@@ -186,6 +188,58 @@ irs::arm::com_buf::com_buf(
   // Задержка необходимая для того, чтобы COM-порт успел инициализироватся
   //__delay_cycles(4000);
 }
+
+void irs::arm::com_buf::set_usart_options(int a_com_index)
+{
+  m_usart->USART_CR1_bit.UE = 1;
+  m_usart->USART_CR1_bit.M = 0; // 8 Data bits
+  m_usart->USART_CR1_bit.PCE = 0; // Parity control disabled
+  m_usart->USART_CR1_bit.PS = 0; // Even parity
+  m_usart->USART_CR2_bit.STOP = 0; // 1 stop bit
+  m_usart->USART_CR1_bit.OVER8 = 0;
+  volatile irs::cpu_traits_t::frequency_type periphery_frequency =
+    irs::cpu_traits_t::periphery_frequency_first();
+  if ((a_com_index == 1) || (a_com_index == 6)) {
+    periphery_frequency = irs::cpu_traits_t::periphery_frequency_second();
+  }
+  m_usart->USART_BRR_bit.DIV_Mantissa = periphery_frequency/(16*m_baud_rate);
+  m_usart->USART_BRR_bit.DIV_Fraction =
+    16*(periphery_frequency%(16*m_baud_rate))/(16*m_baud_rate);
+}
+
+#ifdef IRS_STM32F_2_AND_4
+irs::arm::com_buf::com_buf(
+  int a_com_index,
+  gpio_channel_t a_tx,
+  int a_outbuf_size,
+  irs_u32 a_baud_rate
+):
+  m_outbuf_size(a_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1]),
+  m_usart(0),
+  m_baud_rate(a_baud_rate)
+{
+  volatile int index_supress_warning = a_com_index;
+  IRS_LIB_ASSERT((a_tx != PNONE));
+
+  m_usart = get_usart(a_com_index);
+  irs::clock_enable(reinterpret_cast<size_t>(m_usart));
+
+  if (a_tx != PNONE) {
+    irs::clock_enable(a_tx);
+  }
+
+  if (a_tx != PNONE) {
+    gpio_moder_alternate_function_enable(a_tx);
+    gpio_usart_alternate_function_select(a_tx, a_com_index);
+  }
+  set_usart_options(a_com_index);
+  if (a_tx != PNONE) {
+    m_usart->USART_CR1_bit.TE = 1; // 1: Transmitter is enabled
+  }
+}
+
+#endif // IRS_STM32F_2_AND_4
 /*inline irs::com_buf::~com_buf()
 {
 }*/
