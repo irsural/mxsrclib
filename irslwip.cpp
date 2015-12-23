@@ -263,6 +263,12 @@ class read_buffer_t
 {
 public:
   typedef std::size_t size_type;
+  read_buffer_t():
+    mp_owner(NULL),
+    m_buf(),
+    m_channel(irs::hardflow_t::invalid_channel)    
+  {
+  }
   bool empty()
   {
     return m_buf.empty();

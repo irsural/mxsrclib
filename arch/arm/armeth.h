@@ -204,7 +204,7 @@ public:
   //! \param[in] a_mac - локальный MAC-адрес
   //! \param[in] a_config - конфигурация подключения физического уровня
   //! \param[in] a_tx_checksum_insertion_control - конфигурация расчета
-  //!   контрольной суммы. Для LwIP установливать tx_checksum_tcp_udp_icmp_full,
+  //!   контрольной суммы. Для LwIP устанавливать tx_checksum_tcp_udp_icmp_full,
   //!   для irs::hardflow::simple_udp_flow_t устанавливать
   //!   tx_checksum_bypass
   st_ethernet_t(

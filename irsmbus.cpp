@@ -1500,9 +1500,14 @@ void irs::modbus_server_t::tick()
     {
       m_channel = mp_hardflow_server->channel_next();
       if (m_channel != hardflow_t::invalid_channel) {
-        m_fixed_flow.read(m_channel, mp_buf.data(), size_of_MBAP);
-        m_mode = read_request_mode;
-        view_mode();
+        const size_t size = mp_hardflow_server->read(m_channel, mp_buf.data(),
+          size_of_MBAP);
+        if (size > 0) {
+          m_fixed_flow.read(m_channel, mp_buf.data() + size,
+            size_of_MBAP - size);
+          m_mode = read_request_mode;
+          view_mode();
+        }
       }
     }
     break;
