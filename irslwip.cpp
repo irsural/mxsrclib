@@ -14,6 +14,17 @@
 
 namespace {
 
+void copy_pbuf_to_deque_data_back(const pbuf* ap_pbuf,
+  irs::deque_data_t<irs_u8>* ap_deque_data)
+{
+  ap_deque_data->reserve(ap_deque_data->size() + ap_pbuf->tot_len);
+  for (const pbuf* q = ap_pbuf; q != NULL; q = q->next) {
+    irs_u8* end = reinterpret_cast<irs_u8*>(q->payload) +
+      static_cast<size_t>(q->len);
+    ap_deque_data->push_back(reinterpret_cast<irs_u8*>(q->payload), end);
+  }
+}
+
 void copy_pbuf_to_buffer(const pbuf* ap_pbuf, irs_u8* ap_buf)
 {
   irs_u8* buffer = ap_buf;
@@ -254,132 +265,265 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
     NETIF_FLAG_LINK_UP;
 }
 
+// class buffers_t
+irs::hardflow::lwip::buffers_t::buffers_t(size_type a_buf_max_count,
+  size_type a_buf_max_size
+):
+  m_buf_max_count(a_buf_max_count),
+  m_buf_max_size(a_buf_max_size),
+  m_buffers(),
+  m_id_buf_pos(),
+  m_free_buffers(),
+  m_channel_for_read(m_id_buf_pos.end())
+{
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::write(size_type a_channel_id,
+  const irs_u8* ap_buf, size_type a_size)
+{
+  if (a_size == 0) {
+    return 0;
+  }
+
+  if (a_size > m_buf_max_size) {
+    return 0;
+  }
+
+  irs::deque_data_t<irs_u8>* buf = create_buf(a_channel_id);
+  if (!buf) {
+    return 0;
+  }
+
+  IRS_LIB_ASSERT(buf->size() <= m_buf_max_size);
+  const size_type available_size = (m_buf_max_size - buf->size());
+  size_type size = min(available_size, a_size);
+  try {
+    buf->push_back(ap_buf, ap_buf + size);
+    return size;
+  } catch (std::bad_alloc&) {
+    return 0;
+  }
+}
+
+irs::deque_data_t<irs_u8>* irs::hardflow::lwip::buffers_t::create_buf(
+  size_type a_channel_id)
+{
+  map<size_type, size_type>::iterator it = m_id_buf_pos.find(a_channel_id);
+
+  if (it == m_id_buf_pos.end()) {
+
+    if (m_id_buf_pos.size() >= m_buf_max_count) {
+      return NULL;
+    }
+
+    try {
+
+      if (!m_free_buffers.empty()) {
+        typedef pair<map<size_type, size_type>::iterator, bool> result_t;
+        size_type pos = m_free_buffers.back();
+
+        insert_to_id_buf_pos(a_channel_id, pos);
+
+        m_free_buffers.pop_back();
+        return &m_buffers[pos];
+      } else if (m_buffers.size() < m_buf_max_count) {
+        m_buffers.push_back(irs::deque_data_t<irs_u8>());
+
+        try {
+          insert_to_id_buf_pos(a_channel_id, m_buffers.size() - 1);
+        } catch (std::bad_alloc&) {
+          m_buffers.pop_back();
+          throw;
+        }
+
+        try {
+          // Чтобы гарантированно иметь возможность освободить буфер
+          m_free_buffers.reserve(m_buffers.size());
+        } catch (std::bad_alloc&) {
+          erase_from_id_buf_pos(a_channel_id);
+          m_buffers.pop_back();
+          throw;
+        }
+        return &m_buffers[m_buffers.size() - 1];
+      }
+
+    } catch (std::bad_alloc&) {
+      return NULL;
+    }
+
+  } else {
+    return &m_buffers[it->second];
+  }
+  return NULL;
+}
+
+void irs::hardflow::lwip::buffers_t::insert_to_id_buf_pos(
+  size_type a_channel_id, size_type a_pos)
+{
+  m_id_buf_pos.insert(make_pair(a_channel_id, a_pos));
+
+  if (m_id_buf_pos.size() == 1) {
+    m_channel_for_read = m_id_buf_pos.begin();
+  }
+}
+
+void irs::hardflow::lwip::buffers_t::erase_from_id_buf_pos(
+  size_type a_channel_id)
+{
+  map<size_type, size_type>::iterator it = m_id_buf_pos.find(a_channel_id);
+  if (it == m_channel_for_read) {
+    return;
+  }
+  erase_from_id_buf_pos(it);
+}
+
+void irs::hardflow::lwip::buffers_t::erase_from_id_buf_pos(
+  map<size_type, size_type>::iterator a_it)
+{
+  if (m_channel_for_read == a_it) {
+    ++m_channel_for_read;
+    if (m_channel_for_read == m_id_buf_pos.end()) {
+      m_channel_for_read = m_id_buf_pos.begin();
+    }
+  }
+
+  m_id_buf_pos.erase(a_it);
+
+  if (m_id_buf_pos.empty()) {
+    m_channel_for_read = m_id_buf_pos.end();
+  }
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::available_for_write(
+  size_type a_channel_id) const
+{
+  map<size_type, size_type>::const_iterator it =
+    m_id_buf_pos.find(a_channel_id);
+  if (it == m_id_buf_pos.end()) {
+    return available_for_write_to_new_channel();
+  }
+  return m_buf_max_size - m_buffers[it->second].size();
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::available_for_write_to_new_channel() const
+{
+  if (m_id_buf_pos.size() < m_buf_max_count) {
+    return m_buf_max_size;
+  } else {
+    return 0;
+  }
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::read(
+  size_type a_channel_id, irs_u8* ap_buf, size_type a_size)
+{
+  map<size_type, size_type>::iterator it = m_id_buf_pos.find(a_channel_id);
+  if (it == m_id_buf_pos.end()) {
+    return 0;
+  }
+  irs::deque_data_t<irs_u8> *buf = &m_buffers[it->second];
+
+  const size_type read_byte_count = min(buf->size(), a_size);
+  if (read_byte_count > 0) {
+    buf->copy_to(0, read_byte_count, ap_buf);
+    buf->pop_front(read_byte_count);
+    if (buf->empty()) {
+      m_free_buffers.push_back(it->second);
+      erase_from_id_buf_pos(it);
+    }
+  }
+
+  return read_byte_count;
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::available_for_read(size_type a_channel_id) const
+{
+  map<size_type, size_type>::const_iterator it =
+    m_id_buf_pos.find(a_channel_id);
+  if (it == m_id_buf_pos.end()) {
+    return 0;
+  }
+  return m_buffers[it->second].size();
+}
+
+void irs::hardflow::lwip::buffers_t::free_buffer(size_type a_channel_id)
+{
+  map<size_type, size_type>::iterator it = m_id_buf_pos.find(a_channel_id);
+  if (it == m_id_buf_pos.end()) {
+    return;
+  }
+  m_buffers[it->second].clear();
+  m_free_buffers.push_back(it->second);
+  m_id_buf_pos.erase(it);
+}
+
+irs::hardflow::lwip::buffers_t::size_type
+irs::hardflow::lwip::buffers_t::channel_next_available_for_reading()
+{
+  if (m_id_buf_pos.empty()) {
+    return irs::hardflow_t::invalid_channel;
+  }
+
+  ++m_channel_for_read;
+  if (m_channel_for_read == m_id_buf_pos.end()) {
+    m_channel_for_read = m_id_buf_pos.begin();
+  }
+
+  return m_channel_for_read->first;
+}
+
+void irs::hardflow::lwip::buffers_t::reserve_buffers()
+{
+  while (m_buffers.size() < m_buf_max_count) {
+    try {
+      m_buffers.push_back(irs::deque_data_t<irs_u8>());
+      m_buffers.back().reserve(m_buf_max_size);
+    } catch (std::bad_alloc&) {
+      m_buffers.pop_back();
+      throw;
+    }
+
+    try {
+      // Чтобы гарантированно иметь возможность освободить буфер
+      m_free_buffers.reserve(m_buffers.size());
+    } catch (std::bad_alloc&) {
+      m_buffers.pop_back();
+      throw;
+    }
+    m_free_buffers.push_back(m_buffers.size() - 1);
+  }
+}
+
 // class tcp_server_t
 irs::hardflow::lwip::tcp_server_t::size_type
 irs::hardflow::lwip::tcp_server_t::m_read_channel =
   irs::hardflow::lwip::tcp_server_t::invalid_channel;
 
-class read_buffer_t
-{
-public:
-  typedef std::size_t size_type;
-  read_buffer_t():
-    mp_owner(NULL),
-    m_buf(),
-    m_channel(irs::hardflow_t::invalid_channel)    
-  {
-  }
-  bool empty()
-  {
-    return m_buf.empty();
-  }
-  bool owned(void* ap_candidate, size_type a_channel)
-  {
-    return (mp_owner == ap_candidate) && (m_channel == a_channel);
-  }
-  size_type channel(void* ap_owner)
-  {
-    if (mp_owner == ap_owner) {
-      return m_channel;
-    }
-    return irs::hardflow_t::invalid_channel;
-  }
-  bool write(void* ap_owner, size_type a_channel, const pbuf* ap_pbuf)
-  {
-    bool status = false;
-    if (ap_pbuf->tot_len == 0) {
-      return status;
-    }
-    size_type pos = 0;
-    if (m_buf.empty()) {
-      mp_owner = ap_owner;
-      m_channel = a_channel;
-    } else {
-      IRS_LIB_ASSERT(mp_owner == ap_owner);
-      IRS_LIB_ASSERT(m_channel == a_channel);
-      pos = m_buf.size();
-    }
-    try {
-      m_buf.resize(m_buf.size() + ap_pbuf->tot_len);
-      copy_pbuf_to_buffer(ap_pbuf, irs::vector_data(m_buf, pos));
-      status = true;
-    } catch (std::bad_alloc&) {
-      status = false;
-      if (m_buf.empty()) {
-        mp_owner = NULL;
-        m_channel = irs::hardflow_t::invalid_channel;
-      }
-    }
-    return status;
-  }
-  size_type read(const void* ap_owner, size_type a_channel,
-    irs_u8* ap_buf, size_type a_size)
-  {
-    size_type size = 0;
-    if ((mp_owner == ap_owner) &&
-      (m_channel == a_channel)) {
-      size = std::min(m_buf.size(), a_size);
-      irs::memcpyex(ap_buf, irs::vector_data(m_buf), size);
-      m_buf.erase(m_buf.begin(), m_buf.begin() + size);
-      if (m_buf.empty()) {
-        mp_owner = NULL;
-        m_channel = irs::hardflow_t::invalid_channel;
-      }
-    }
-    return size;
-  }
-  void clear(const void* ap_owner, size_type a_channel)
-  {
-    if ((mp_owner == ap_owner) && (m_channel == a_channel)) {
-      m_buf.clear();
-      mp_owner = NULL;
-      m_channel = irs::hardflow_t::invalid_channel;
-    }
-  }
-  void clear(const void* ap_owner)
-  {
-    if (mp_owner == ap_owner) {
-      m_buf.clear();
-      mp_owner = NULL;
-      m_channel = irs::hardflow_t::invalid_channel;
-    }
-  }
-  size_type size()
-  {
-    return m_buf.size();
-  }
-private:
-  void* mp_owner;
-  std::vector<irs_u8> m_buf;
-  irs::hardflow_t::size_type m_channel;
-};
-
-read_buffer_t* tcp_read_buffer()
-{
-  static read_buffer_t read_buffer;
-  return &read_buffer;
-}
-
-read_buffer_t* udp_read_buffer()
-{
-  static read_buffer_t read_buffer;
-  return &read_buffer;
-}
-
 irs::hardflow::lwip::tcp_server_t::tcp_server_t(
   const mxip_t& a_local_ip,
   irs_u16 a_local_port,
-  size_type a_channel_max_count
+  size_type a_channel_max_count,
+  const configuration_t& a_configuration
 ):
   mp_pcb(),
   m_channels(),
   m_channels_map(),
   m_channel_max_count(a_channel_max_count),
+  m_buffers(a_configuration.channel_buffer_max_count,
+    a_configuration.channel_buffer_max_size),
   m_current_processed_channel(0),
   m_current_channel(invalid_channel),
   m_mode(csm_any),
   m_last_id(invalid_channel + 1)
 {
+  if (a_configuration.reserve_buffers) {
+    m_buffers.reserve_buffers();
+  }
   listen(a_local_ip, a_local_port);
 }
 
@@ -388,7 +532,6 @@ irs::hardflow::lwip::tcp_server_t::~tcp_server_t()
   std::deque<irs::handle_t<channel_t> >::iterator it =
     m_channels.begin();
   while (it != m_channels.end()) {
-    tcp_read_buffer()->clear(this, (*it)->id);
     tcp_pcb* pcb = (*it)->pcb;
     tcp_arg(pcb, NULL);
     tcp_recv(pcb, NULL);
@@ -418,7 +561,7 @@ irs::hardflow::lwip::tcp_server_t::size_type
 irs::hardflow::lwip::tcp_server_t::read(size_type a_channel_ident,
   irs_u8* ap_buf, size_type a_size)
 {
-  return tcp_read_buffer()->read(this, a_channel_ident, ap_buf, a_size);
+  return m_buffers.read(a_channel_ident, ap_buf, a_size);
 }
 
 irs::hardflow::lwip::tcp_server_t::size_type
@@ -435,7 +578,7 @@ irs::hardflow::lwip::tcp_server_t::write(
       err_t err =
         tcp_write(channel->pcb, ap_buf, write_data_size, TCP_WRITE_FLAG_COPY);
       if (err == ERR_OK) {
-        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: записано " << write_data_size);
+        //IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: записано " << write_data_size);
       } else {
         write_data_size = 0;
         IRS_LIB_HARDFLOWG_DBG_MSG_BASE("write: запись не удалась");
@@ -459,7 +602,7 @@ irs::hardflow::lwip::tcp_server_t::channel_next()
       return m_channels[m_current_channel]->id;
     }
   } else if (m_mode == csm_ready_for_reading) {
-    return tcp_read_buffer()->channel(this);//m_read_channel;
+    return m_buffers.channel_next_available_for_reading();
   }
   return invalid_channel;
 }
@@ -594,7 +737,7 @@ void irs::hardflow::lwip::tcp_server_t::erase_channel(channel_t* ap_channel)
     m_channels.begin();
   while (it != m_channels.end()) {
     if (it->get() == ap_channel) {
-      tcp_read_buffer()->clear(this, (*it)->id);
+      m_buffers.free_buffer((*it)->id);
       m_channels_map.erase(ap_channel->id);
       m_channels.erase(it);
       break;
@@ -607,23 +750,20 @@ err_t irs::hardflow::lwip::tcp_server_t::recv(void *arg, tcp_pcb *pcb, pbuf *p,
   err_t err)
 {
   if ((err == ERR_OK) && (p != NULL)) {
-    if (tcp_read_buffer()->empty()) {
-      channel_t* channel = reinterpret_cast<channel_t*>(arg);
-      //irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
-      size_type len = p->tot_len;
-      if (len > 0) {
-        if (tcp_read_buffer()->write(channel->server, channel->id, p)) {
-          IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
-          tcp_recved(pcb, len);
-          pbuf_free(p);
-        } else {
-          IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные не приняты, так как не удалось "
-            "выделить память");
-          return ERR_MEM;
-        }
+    channel_t* channel = reinterpret_cast<channel_t*>(arg);
+
+    size_type len = p->tot_len;
+    if (len > 0) {
+      if (channel->server->m_buffers.available_for_write(channel->id) >= len) {
+        channel->server->m_buffers.write(channel->id, pbuf_reader_t(p));
+        IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
+        tcp_recved(pcb, len);
+        pbuf_free(p);
+      } else {
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные не приняты, так как не удалось "
+          "выделить память");
+        return ERR_MEM;
       }
-    } else {
-      return ERR_MEM;
     }
   } else if ((err == ERR_OK) && (p == NULL)) {
     IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Удаленный хост разорвал соединение");
@@ -641,7 +781,7 @@ void irs::hardflow::lwip::tcp_server_t::conn_err(void *arg, err_t /*a_err*/)
     server->m_channels.begin();
   while (it != server->m_channels.end()) {
     if (it->get() == channel) {
-      tcp_read_buffer()->clear(server, (*it)->id);
+      server->m_buffers.free_buffer((*it)->id);
       server->m_channels_map.erase(channel->id);
       server->m_channels.erase(it);
       break;
@@ -668,7 +808,8 @@ irs::hardflow::lwip::tcp_client_t::tcp_client_t(
   const mxip_t& a_local_ip,
   irs_u16 a_local_port,
   const mxip_t &a_dest_ip,
-  irs_u16 a_dest_port
+  irs_u16 a_dest_port,
+  const configuration_t &a_configuration
 ):
   m_local_ip(a_local_ip),
   m_local_port(a_local_port),
@@ -677,17 +818,21 @@ irs::hardflow::lwip::tcp_client_t::tcp_client_t(
   mp_pcb(),
   m_marked_for_erase(false),
   m_channel_id(invalid_channel + 1),
+  m_buffer(),
+  m_buffer_max_size(a_configuration.buffer_max_size),
   m_need_connect(false),
   m_connection_is_established(false),
   m_delay_before_connect(make_cnt_s(1))
 {
+  if (a_configuration.reserve_buffer) {
+    m_buffer.reserve(m_buffer_max_size);
+  }
   connect();
 }
 
 irs::hardflow::lwip::tcp_client_t::~tcp_client_t()
 {
   if (mp_pcb) {
-    tcp_read_buffer()->clear(this, m_channel_id);
     tcp_arg(mp_pcb, this);
     tcp_recv(mp_pcb, NULL);
     tcp_err(mp_pcb, NULL);
@@ -776,23 +921,27 @@ err_t irs::hardflow::lwip::tcp_client_t::recv(void *arg, tcp_pcb *pcb,
   pbuf *p, err_t err)
 {
   if ((err == ERR_OK) && (p != NULL)) {
-    if (tcp_read_buffer()->empty()) {
-      tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
-      //irs_u8* data = reinterpret_cast<irs_u8*>(p->payload);
-      size_type len = p->tot_len;
-      if (len > 0) {
-        if (tcp_read_buffer()->write(client, client->m_channel_id, p)) {
+    tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
+    size_type len = p->tot_len;
+    if (len > 0) {
+      const size_type available = client->m_buffer_max_size -
+        client->m_buffer.size();
+      if (available >= len) {
+        try {
+          copy_pbuf_to_deque_data_back(p, &client->m_buffer);
           tcp_recved(pcb, len);
           pbuf_free(p);
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
-        } else {
+        } catch (std::bad_alloc&) {
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные не приняты, так как не "
             "удалось выделить память");
           return ERR_MEM;
         }
+      } else {
+        return ERR_MEM;
+        IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные не приняты, так как "
+          "буфер заполнен");
       }
-    } else {
-      return ERR_MEM;
     }
   } else if ((err == ERR_OK) && (p == NULL)) {
     tcp_client_t* client = reinterpret_cast<tcp_client_t*>(arg);
@@ -826,9 +975,15 @@ err_t irs::hardflow::lwip::tcp_client_t::sent(
 
 irs::hardflow::lwip::tcp_client_t::size_type
 irs::hardflow::lwip::tcp_client_t::read(
-  size_type a_channel_ident, irs_u8 *ap_buf, size_type a_size)
+  size_type /*a_channel_ident*/, irs_u8 *ap_buf, size_type a_size)
 {
-  return tcp_read_buffer()->read(this, a_channel_ident, ap_buf, a_size);
+  const size_type read_byte_count = min(m_buffer.size(), a_size);
+  if (read_byte_count > 0) {
+    m_buffer.copy_to(0, read_byte_count, ap_buf);
+    m_buffer.pop_front(read_byte_count);
+  }
+
+  return read_byte_count;
 }
 
 irs::hardflow::lwip::tcp_client_t::size_type
@@ -907,15 +1062,15 @@ irs::hardflow::lwip::udp_t::udp_t(
   mp_pcb(NULL),
   m_channel_list(m_configuration.connections_mode,
     m_channel_max_count,
-    0,
+    m_configuration.channel_buffer_max_count,
+    m_configuration.channel_buffer_max_size,
+    m_configuration.reserve_buffers,
     m_configuration.limit_lifetime_enabled,
     m_configuration.max_lifetime_sec,
     m_configuration.limit_downtime_enabled,
     m_configuration.max_downtime_sec),
-  m_mode(csm_any),
-  m_check_buffer_timer(irs::make_cnt_s(0.5))
+  m_mode(csm_any)
 {
-  m_check_buffer_timer.start();
   create();
 }
 
@@ -948,37 +1103,52 @@ void irs::hardflow::lwip::udp_t::create()
 void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
   pbuf* ap_buf, ip_addr* ap_addr, u16_t a_port)
 {
-  if (udp_read_buffer()->empty()) {
-    udp_t* udp = reinterpret_cast<udp_t*>(arg);
-    //irs_u8* data = reinterpret_cast<irs_u8*>(ap_buf->payload);
-    size_type len = ap_buf->tot_len;
-    if ((len > 0) &&
+  udp_t* udp = reinterpret_cast<udp_t*>(arg);
+
+  size_type len = ap_buf->tot_len;
+  if ((len > 0) &&
       (len <= udp->m_configuration.receive_paket_data_max_size)) {
-      address_type sender_address;
-      sender_address.ip.addr = ap_addr->addr;
-      sender_address.port = a_port;
-      size_type id = 0;
-      bool insert_success = false;
-      udp->m_channel_list.insert(sender_address, &id, &insert_success);
-      if (insert_success) {
-        if (!udp_read_buffer()->write(udp, id, ap_buf)) {
-          IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные отброшены, так как не "
-          "удалось выделить память");
-        }
+    address_type sender_address;
+    sender_address.ip.addr = ap_addr->addr;
+    sender_address.port = a_port;
+
+    bool no_place = false;
+    if (udp->m_configuration.mode == mode_datagram) {
+      if (udp->m_channel_list.channel_buf_size_get(sender_address) != 0 ) {
+        no_place = true;
       }
-    } else if (len > udp->m_configuration.receive_paket_data_max_size) {
-      IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные отброшены, так как их размер "
-        "выше допустимого");
+    } else {
+      if (udp->m_channel_list.available_for_write(sender_address) < len) {
+        no_place = true;
+      }
     }
-  } else {
-    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные отброшены, так как буфер занят");
+    if (!no_place) {
+      // Оптимизировать !!!
+      /*vector<irs_u8> buf(len);
+      copy_pbuf_to_buffer(ap_buf, irs::vector_data(buf));
+      size_type size = udp->m_channel_list.write(sender_address,
+        irs::vector_data(buf), buf.size());
+      */
+      size_type size = udp->m_channel_list.write(sender_address,
+        pbuf_reader_t(ap_buf));
+
+      if (size == 0) {
+        IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные отброшены, так как нет "
+          "места");
+      }
+    } else {
+      IRS_LIB_HARDFLOWG_DBG_MSG_BASE("Данные отброшены, так как нет "
+        "места");
+    }
+  } else if (len > udp->m_configuration.receive_paket_data_max_size) {
+    IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные отброшены, так как их размер "
+      "выше допустимого");
   }
   pbuf_free(ap_buf);
 }
 
 irs::hardflow::lwip::udp_t::~udp_t()
 {
-  udp_read_buffer()->clear(this);
   if (mp_pcb) {
     udp_remove(mp_pcb);
   }
@@ -989,13 +1159,11 @@ irs::hardflow::lwip::udp_t::read(size_type a_channel_ident, irs_u8 *ap_buf,
   size_type a_size)
 {
   if (m_configuration.mode == mode_datagram) {
-    if (udp_read_buffer()->size() <= a_size) {
-      return udp_read_buffer()->read(this, a_channel_ident, ap_buf, a_size);
-    } else {
+    if (m_channel_list.channel_buf_size_get(a_channel_ident) > a_size) {
       return 0;
     }
   }
-  return udp_read_buffer()->read(this, a_channel_ident, ap_buf, a_size);
+  return m_channel_list.read(a_channel_ident, ap_buf, a_size);
 }
 
 irs::hardflow::lwip::udp_t::size_type
@@ -1041,14 +1209,6 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
 void irs::hardflow::lwip::udp_t::tick()
 {
   m_channel_list.tick();
-  if (m_check_buffer_timer.check()) {
-    size_type channel = udp_read_buffer()->channel(this);
-    if (channel != invalid_channel) {
-      if (!m_channel_list.is_channel_exists(channel)) {
-        udp_read_buffer()->clear(this, channel);
-      }
-    }
-  }
 }
 
 irs::hardflow::lwip::udp_t::string_type
@@ -1068,11 +1228,11 @@ irs::hardflow::lwip::udp_t::channel_next()
   if (m_mode == csm_any) {
     return m_channel_list.channel_next();
   } else if (m_mode == csm_ready_for_reading) {
-    return udp_read_buffer()->channel(this);
+    return m_channel_list.channel_next_available_for_reading();
+
   }
+  // Возможно не хватает условия для csm_ready_for_writing
   return invalid_channel;
-
-
 }
 
 bool irs::hardflow::lwip::udp_t::is_channel_exists(size_type a_channel_ident)
