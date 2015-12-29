@@ -9,17 +9,24 @@
 #include <irsmem.h>
 #include <irsalg.h>
 #include <irserror.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
 irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
-  eeprom_type_t a_eeprom_type):
+  eeprom_type_t a_eeprom_type, size_type a_page_size, size_type a_page_count,
+  size_type a_address_size):
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
   m_page_size(0),
   m_page_count(0),
+  m_address_size(a_address_size),
+  m_spi_size(m_address_size + 1),
+  m_initiate_size(m_address_size + 1),
   m_status(st_check_ready_prepare),
   m_target_status(st_write_protect_check),
+  mp_read_buf(m_spi_size),
+  mp_write_buf(m_spi_size),
   mp_read_user_buf(IRS_NULL),
   mp_write_user_buf(IRS_NULL),
   m_num_of_iterations(0),
@@ -34,12 +41,17 @@ irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     case at25040: m_page_size = 8;  m_page_count = 512; break;
     case at25128: m_page_size = 64; m_page_count = 256; break;
     case at25256: m_page_size = 64; m_page_count = 512; break;
+    case any_eeprom: {
+      m_page_size = a_page_size; 
+      m_page_count = a_page_count; 
+      break;
+    }
     default: m_page_size = 64; m_page_count = 256;  //  at25128
   }
   m_num_of_iterations = m_page_size / m_spi_size;
   m_modulo_size = m_page_size % m_spi_size;
-  memsetex(mp_read_buf, m_spi_size);
-  memsetex(mp_write_buf, m_spi_size);
+  memsetex(mp_read_buf.data(), m_spi_size);
+  memsetex(mp_write_buf.data(), m_spi_size);
 }
 
 void irs::eeprom_at25_t::prepare_spi()
@@ -61,9 +73,9 @@ void irs::eeprom_at25_t::clear_spi()
 void irs::eeprom_at25_t::read_status_register()
 {
   prepare_spi();
-  memsetex(mp_write_buf, m_RDSR_size);
+  memsetex(mp_write_buf.data(), m_RDSR_size);
   mp_write_buf[m_command_pos] = m_RDSR;
-  mp_spi->read_write(mp_read_buf, mp_write_buf, m_RDSR_size);
+  mp_spi->read_write(mp_read_buf.data(), mp_write_buf.data(), m_RDSR_size);
 }
 
 void irs::eeprom_at25_t::write_protect_disable()
@@ -71,14 +83,14 @@ void irs::eeprom_at25_t::write_protect_disable()
   prepare_spi();
   mp_write_buf[m_command_pos] = m_WRSR;
   mp_write_buf[m_WRSR_data_pos] = (1 << m_WEN);
-  mp_spi->write(mp_write_buf, m_WRSR_size);
+  mp_spi->write(mp_write_buf.data(), m_WRSR_size);
 }
 
 void irs::eeprom_at25_t::write_enable()
 {
   prepare_spi();
   mp_write_buf[m_command_pos] = m_WREN;
-  mp_spi->write(mp_write_buf, m_WREN_size);
+  mp_spi->write(mp_write_buf.data(), m_WREN_size);
 }
 bool irs::eeprom_at25_t::status_register_ready()
 {
@@ -93,11 +105,13 @@ bool irs::eeprom_at25_t::status_register_write_protect()
 
 void irs::eeprom_at25_t::transaction_initiate(const irs_u8 a_command)
 {
+  irs_u8* p_addr = reinterpret_cast<irs_u8*>(&m_page_addr);
   prepare_spi();
   mp_write_buf[m_command_pos] = a_command;
-  mp_write_buf[m_addr_lo_pos] = IRS_LOBYTE(m_page_addr);
-  mp_write_buf[m_addr_hi_pos] = IRS_HIBYTE(m_page_addr);
-  mp_spi->write(mp_write_buf, m_initiate_size);
+  for (irs_uarc i = 0; i < m_address_size; i++) {
+    mp_write_buf[m_addr_hi_pos + i] = p_addr[m_address_size - i - 1];
+  }
+  mp_spi->write(mp_write_buf.data(), m_initiate_size);
 }
 
 irs::eeprom_at25_t::~eeprom_at25_t()
@@ -212,10 +226,10 @@ void irs::eeprom_at25_t::tick()
       //  Команда драйверу spi на считывание первых m_spi_size байт
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_num_of_iterations == 0) {
-          mp_spi->read(mp_read_buf, m_modulo_size);
+          mp_spi->read(mp_read_buf.data(), m_modulo_size);
           m_status = st_read_modulo;
         } else {
-          mp_spi->read(mp_read_buf, m_spi_size);
+          mp_spi->read(mp_read_buf.data(), m_spi_size);
           m_status = st_read;
         }
       }
@@ -225,15 +239,16 @@ void irs::eeprom_at25_t::tick()
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_current_iteration < m_num_of_iterations) {
           irs_uarc target_index = m_current_iteration * m_spi_size;
-          memcpy(mp_read_user_buf + target_index, mp_read_buf, m_spi_size);
+          memcpy(mp_read_user_buf + target_index, 
+            mp_read_buf.data(), m_spi_size);
           m_current_iteration++;
-          mp_spi->read(mp_read_buf, m_spi_size);
+          mp_spi->read(mp_read_buf.data(), m_spi_size);
         } else {
           if (m_modulo_size == 0) {
             m_status = st_complete;
           } else {
             m_status = st_read_modulo;
-            mp_spi->read(mp_read_buf, m_modulo_size);
+            mp_spi->read(mp_read_buf.data(), m_modulo_size);
           }
         }
       }
@@ -243,7 +258,8 @@ void irs::eeprom_at25_t::tick()
       //  Чтение остатка (если необходимо)
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         irs_uarc target_index = m_current_iteration * m_spi_size;
-        memcpy(mp_read_user_buf + target_index, mp_read_buf, m_modulo_size);
+        memcpy(mp_read_user_buf + target_index, mp_read_buf.data(),
+          m_modulo_size);
         m_status = st_complete;
       }
       break;
@@ -271,12 +287,12 @@ void irs::eeprom_at25_t::tick()
       //  Команда драйверу spi на запись первых m_spi_size байт
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_num_of_iterations == 0) {
-          memcpy(mp_write_buf, mp_write_user_buf, m_modulo_size);
-          mp_spi->write(mp_write_buf, m_modulo_size);
+          memcpy(mp_write_buf.data(), mp_write_user_buf, m_modulo_size);
+          mp_spi->write(mp_write_buf.data(), m_modulo_size);
           m_status = st_write_modulo;
         } else {
-          memcpy(mp_write_buf, mp_write_user_buf, m_spi_size);
-          mp_spi->write(mp_write_buf, m_spi_size);
+          memcpy(mp_write_buf.data(), mp_write_user_buf, m_spi_size);
+          mp_spi->write(mp_write_buf.data(), m_spi_size);
           m_status = st_write;
         }
       }
@@ -287,17 +303,18 @@ void irs::eeprom_at25_t::tick()
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_current_iteration < m_num_of_iterations) {
           irs_uarc target_index = m_current_iteration * m_spi_size;
-          memcpy(mp_write_buf, mp_write_user_buf + target_index, m_spi_size);
+          memcpy(mp_write_buf.data(), mp_write_user_buf + target_index, 
+            m_spi_size);
           m_current_iteration++;
-          mp_spi->write(mp_write_buf, m_spi_size);
+          mp_spi->write(mp_write_buf.data(), m_spi_size);
         } else {
           if (m_modulo_size == 0) {
             m_status = st_complete;
           } else {
             irs_uarc target_index = m_current_iteration * m_spi_size;
-            memcpy(mp_write_buf, mp_write_user_buf + target_index,
+            memcpy(mp_write_buf.data(), mp_write_user_buf + target_index,
               m_modulo_size);
-            mp_spi->write(mp_write_buf, m_modulo_size);
+            mp_spi->write(mp_write_buf.data(), m_modulo_size);
             m_status = st_write_modulo;
           }
         }
@@ -910,6 +927,37 @@ irs::eeprom_at25128_data_t::eeprom_at25128_data_t(spi_t* ap_spi,
 }
 
 bool irs::eeprom_at25128_data_t::error()
+{
+  return m_mem_data.error();
+}
+
+size_t irs::max_eeprom_size(size_t a_page_size, size_t a_page_count, 
+  size_t a_cluster_size)
+{
+  enum {
+    checksum_size = 4
+  };
+  size_t full_size = a_page_size * a_page_count;
+  size_t cluster_count = (full_size / a_cluster_size) / 2;
+  size_t cluster_data_size = a_cluster_size - checksum_size;
+  return cluster_count * cluster_data_size;
+}
+
+irs::eeprom_spi_t::eeprom_spi_t(spi_t* ap_spi,
+  gpio_pin_t* ap_cs_pin, irs_uarc a_size, size_type a_page_size, 
+  size_type a_page_count, size_type a_address_size, 
+  size_type a_cluster_size, bool a_init_now,
+  irs_uarc a_index, counter_t a_init_timeout
+):
+  mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
+  m_page_mem(ap_spi, ap_cs_pin, any_eeprom, a_page_size, a_page_count, 
+    a_address_size),
+  m_mem_data(&m_page_mem, a_cluster_size)
+{
+  connect(&m_mem_data);
+}
+
+bool irs::eeprom_spi_t::error()
 {
   return m_mem_data.error();
 }

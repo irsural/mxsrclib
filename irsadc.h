@@ -963,7 +963,7 @@ class simple_dac_ad5160_t: public dac_t
 {
 public:
   simple_dac_ad5160_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
-    irs_u8 a_init_value = 0);
+    irs_u32 a_init_value = 0);
   virtual irs_status_t get_status() const;
   virtual size_t get_resolution() const;
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
@@ -2457,8 +2457,14 @@ public:
 private:
   enum status_t {
     st_reset,
+    st_read_all_begin,
     st_read_all_prepare,
     st_read_all,
+    st_read_one_prepare,
+    st_read_one,
+    st_read_raw_begin,
+    st_read_raw_prepare,
+    st_read_raw,
     st_spi_prepare,
     st_spi_wait,
     st_free,
@@ -2469,14 +2475,17 @@ private:
   enum {
     m_size = 30,
     m_write_buf_size = 2,
+    m_read_buf_size = 2,
     m_status_pos = 0,
     m_regs_pos = 1,
+    m_read_all_pos = 2,
     m_noise_pin_pos = 1,
     m_ready_bit_pos = 0,
-    m_mask_reg_addr = 0x13
+    m_mask_reg_addr = 0x13,
+    m_max_address = 0x1A
   };
   enum {
-    m_reset_interval = 1  //  ms
+    m_reset_interval = 1000  //  ms
   };
   struct register_t
   {
@@ -2492,7 +2501,9 @@ private:
   spi_t* mp_spi;
   irs_u8 mp_buf[m_size];
   irs_u8 mp_write_buf[m_write_buf_size];
+  irs_u8 mp_read_buf[m_read_buf_size];
   irs_u8 m_current_reg;
+  irs_u8 m_raw_address;
   irs::timer_t m_timer;
   gpio_pin_t* mp_cs_pin;
   gpio_pin_t* mp_reset_pin;
@@ -2506,6 +2517,7 @@ struct gn_k1316gm1u_data_t
   irs::conn_data_t<irs_u8> status_reg;
     irs::bit_data_t ready_bit;
     irs::bit_data_t noise_pin_bit;
+    irs::bit_data_t read_all_bit;
   irs::conn_data_t<irs_u8> freq_trim;
   irs::conn_data_t<irs_u8> vdd_log_trim;
   irs::conn_data_t<irs_u8> vdd_noise_trim;
@@ -2536,6 +2548,8 @@ struct gn_k1316gm1u_data_t
   irs::conn_data_t<irs_u8> test_reg;
     irs::bit_data_t ssi;
     irs::bit_data_t ssi_out_sel;
+    irs::bit_data_t ring_test;
+    irs::bit_data_t ring_obs;
     irs::bit_data_t dac_test;
     irs::bit_data_t voise_test;
     irs::bit_data_t dyn_test;
@@ -2548,6 +2562,7 @@ struct gn_k1316gm1u_data_t
     status_reg(),
     ready_bit(),
     noise_pin_bit(),
+    read_all_bit(),
     freq_trim(),
     vdd_log_trim(),
     vdd_noise_trim(),
@@ -2578,6 +2593,8 @@ struct gn_k1316gm1u_data_t
     test_reg(),
     ssi(),
     ssi_out_sel(),
+    ring_test(),
+    ring_obs(),
     dac_test(),
     voise_test(),
     dyn_test(),
@@ -2594,6 +2611,7 @@ struct gn_k1316gm1u_data_t
     status_reg.connect(ap_data, a_start_index);
       ready_bit.connect(ap_data, a_start_index, 0);
       noise_pin_bit.connect(ap_data, a_start_index, 1);
+      read_all_bit.connect(ap_data, a_start_index, 2);
     a_start_index++;
     a_start_index = freq_trim.connect(ap_data, a_start_index);
     a_start_index = vdd_log_trim.connect(ap_data, a_start_index);
@@ -2627,6 +2645,8 @@ struct gn_k1316gm1u_data_t
     test_reg.connect(ap_data, a_start_index);
       ssi.connect(ap_data, a_start_index, 0);
       ssi_out_sel.connect(ap_data, a_start_index, 1);
+      ring_test.connect(ap_data, a_start_index, 2);
+      ring_obs.connect(ap_data, a_start_index, 3);
       dac_test.connect(ap_data, a_start_index, 4);
       voise_test.connect(ap_data, a_start_index, 5);
       dyn_test.connect(ap_data, a_start_index, 6);

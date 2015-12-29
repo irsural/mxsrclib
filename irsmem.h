@@ -19,14 +19,30 @@ enum eeprom_type_t {
   at25020,
   at25040,
   at25128,
-  at25256
+  at25256,
+  any_eeprom
 };
+
+enum default_cluster_size_t {
+  default_cluster_size = 64
+};
+
+//  Класс рассчитан на работу с микросхемами EEPROM с интерфейсом SPI,
+//  у которых при чтении и записи адрес ячейки задаётся в целом количестве байт,
+//  следующих за байтом команды. Например, AT25128 и M9501 будут работать, 
+//  а M9504 - нет, т.к у неё 8й бит адреса расположен в байте с командой.
+//  Пример:
+//  Параметр        AT25128   M9501
+//  a_page_size     64        16
+//  a_page_count    256       8
+//  a_address_size  2         1
 
 class eeprom_at25_t: public page_mem_t
 {
 public:
   eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
-    eeprom_type_t a_eeprom_type = at25128);
+    eeprom_type_t a_eeprom_type = any_eeprom, size_type a_page_size = 0,
+    size_type a_page_count = 0, size_type a_address_size = 2);
   ~eeprom_at25_t();
   void read_page(irs_u8 *ap_buf, irs_uarc a_index);
   void write_page(const irs_u8 *ap_buf, irs_uarc a_index);
@@ -36,7 +52,6 @@ public:
   void tick();
 private:
   enum {
-    m_spi_size = 4,
     // INSTRUCTION CODES
     m_WREN = 0x06,
     m_WRDI = 0x04,
@@ -59,8 +74,7 @@ private:
     //  ASK SIZES
     m_RDSR_size = 2,
     m_WRSR_size = 2,
-    m_WREN_size = 1,
-    m_initiate_size = 3
+    m_WREN_size = 1
   };
   enum status_t {
     st_free,
@@ -87,10 +101,13 @@ private:
   gpio_pin_t* mp_cs_pin;
   size_type m_page_size;
   irs_uarc m_page_count;
+  const size_type m_address_size;
+  const size_type m_spi_size;
+  const size_type m_initiate_size;
   status_t m_status;
   status_t m_target_status;
-  irs_u8 mp_read_buf[m_spi_size];
-  irs_u8 mp_write_buf[m_spi_size];
+  raw_data_t<irs_u8> mp_read_buf;
+  raw_data_t<irs_u8> mp_write_buf;
   irs_u8* mp_read_user_buf;
   irs_u8 const* mp_write_user_buf;
   irs_uarc m_num_of_iterations;
@@ -248,6 +265,24 @@ public:
   typedef comm_data_t::size_type size_type;
   eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size,
     bool init_now = false,  irs_uarc a_index = 0, size_type a_cluster_size = 64,
+    counter_t init_timeout = irs::make_cnt_s(1));
+  bool error();
+private:
+  irs::eeprom_at25_t m_page_mem;
+  irs::mem_data_t m_mem_data;
+};
+
+size_t max_eeprom_size(size_t a_page_size, size_t a_page_count,
+  size_t a_cluster_size = default_cluster_size);
+
+class eeprom_spi_t : public mxdata_comm_t
+{
+public:
+  typedef comm_data_t::size_type size_type;
+  eeprom_spi_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size, 
+    size_type a_page_size, size_type a_page_count, size_type a_address_size,
+    size_type a_cluster_size = default_cluster_size,
+    bool init_now = false,  irs_uarc a_index = 0, 
     counter_t init_timeout = irs::make_cnt_s(1));
   bool error();
 private:

@@ -1,9 +1,9 @@
 //! \file
 //! \ingroup drivers_group
-//! \brief Аналоговый ввод-вывод
+//! \brief Aiaeiaiaue aaia-auaia
 //!
-//! Дата: 22.04.2011
-//! Дата создания: 11.09.2009
+//! Aaoa: 22.04.2011
+//! Aaoa nicaaiey: 11.09.2009
 
 #include <irspch.h>
 #ifdef __BORLANDC__
@@ -356,7 +356,7 @@ irs::cyclic_adc_ad7791_t::get_resolution() const
 bool irs::cyclic_adc_ad7791_t::new_value_exists(irs_u8 a_channel) const
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_adc_ad7791_data.new_data_bit;
 }
@@ -364,7 +364,7 @@ bool irs::cyclic_adc_ad7791_t::new_value_exists(irs_u8 a_channel) const
 irs_u32 irs::cyclic_adc_ad7791_t::get_u32_data(irs_u8 a_channel)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_adc_ad7791_data.voltage_code << (32 - adc_resolution);
 }
@@ -431,7 +431,7 @@ void irs::cyclic_adc_ads8344_t::select_channels(irs_u32 a_selected_channels)
 bool irs::cyclic_adc_ads8344_t::new_value_exists(irs_u8 a_channel) const
 {
   if (static_cast<size_type>(a_channel) >= m_channels.size()) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_channels[a_channel].new_value_exists;
 }
@@ -439,7 +439,7 @@ bool irs::cyclic_adc_ads8344_t::new_value_exists(irs_u8 a_channel) const
 irs_u32 irs::cyclic_adc_ads8344_t::get_u32_data(irs_u8 a_channel)
 {
   if (static_cast<size_type>(a_channel) >= m_channels.size()) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   m_channels[a_channel].new_value_exists = false;
   return static_cast<irs_u32>(m_channels[a_channel].value) <<
@@ -710,7 +710,7 @@ void irs::adc_ads1298_continuous_mode_t::write_regs(
   while (it != a_regs.end()) {
     if ((it->first - prev_reg_addr) > 1) {
       IRS_LIB_ASSERT_MSG(
-        "Последовательность регистров должна быть без пропусков");
+        "Iineaaiaaoaeuiinou ?aaeno?ia aie?ia auou aac i?iioneia");
     }
     irs_u8 reg_value = it->second;
     memcpy(buf, &reg_value, 1);
@@ -727,7 +727,7 @@ void irs::adc_ads1298_continuous_mode_t::read_data()
 {
   const size_type read_data_size = 27;
 
-  // Оптимизация!!!
+  // Iioeiecaoey!!!
   if (m_spi_buf.size() != read_data_size) {
     m_spi_buf.clear();
     m_spi_buf.resize(read_data_size, 0);
@@ -1056,7 +1056,7 @@ irs::cyclic_adc_ad7683_t::get_resolution() const
 bool irs::cyclic_adc_ad7683_t::new_value_exists(irs_u8 a_channel) const
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_adc_ad7683_data.new_data_bit;
 }
@@ -1064,7 +1064,7 @@ bool irs::cyclic_adc_ad7683_t::new_value_exists(irs_u8 a_channel) const
 irs_u32 irs::cyclic_adc_ad7683_t::get_u32_data(irs_u8 a_channel)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return static_cast<irs_u32>(m_adc_ad7683_data.voltage_code) <<
     (32 - adc_resolution);
@@ -1215,7 +1215,7 @@ irs::cyclic_adc_ad7686_t::get_resolution() const
 bool irs::cyclic_adc_ad7686_t::new_value_exists(irs_u8 a_channel) const
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_adc_ad7686_data.new_data_bit;
 }
@@ -1223,7 +1223,7 @@ bool irs::cyclic_adc_ad7686_t::new_value_exists(irs_u8 a_channel) const
 irs_u32 irs::cyclic_adc_ad7686_t::get_u32_data(irs_u8 a_channel)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return static_cast<irs_u32>(m_adc_ad7686_data.voltage_code) <<
     (32 - adc_resolution);
@@ -1402,7 +1402,7 @@ void irs::simple_dac_ad8400_t::set_u32_data(
   size_t a_channel, const irs_u32 a_data)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   m_dac_ad8400_data.resistance_code =
     static_cast<irs_u8>(a_data >> (32 - dac_resulution));
@@ -1556,11 +1556,11 @@ void irs::dac_ad5160_t::tick()
 
 // class simple_dac_ad5160_t
 irs::simple_dac_ad5160_t::simple_dac_ad5160_t(spi_t* ap_spi,
-  gpio_pin_t* ap_cs_pin, irs_u8 a_init_value):
+  gpio_pin_t* ap_cs_pin, irs_u32 a_init_value):
   m_status(DAC_FREE),
   mp_spi(ap_spi),
   m_buf(a_init_value),
-  m_write_buf(a_init_value),
+  m_write_buf(a_init_value >> (32 - m_dac_resulution)),
   m_need_write(false),
   mp_cs_pin(ap_cs_pin)
 {
@@ -1596,7 +1596,7 @@ void irs::simple_dac_ad5160_t::set_u32_data(
   size_t a_channel, const irs_u32 a_data)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   m_buf = static_cast<irs_u8>(a_data >> (32 - m_dac_resulution));
   m_need_write = true;
@@ -1646,7 +1646,7 @@ void irs::simple_dac_ad5160_t::tick()
 }
 
 //--------------------------  AD7376  ------------------------------------------
-// Цифровой потенциометр 8 бит
+// Oeo?iaie iioaioeiiao? 8 aeo
 
 irs::dac_ad7376_t::dac_ad7376_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     gpio_pin_t *ap_rs_pin, gpio_pin_t *ap_shdn_pin, irs_u8 a_init_value):
@@ -1970,7 +1970,7 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   init_to_cnt();
   m_refresh_time = MS_TO_CNT(20);
   memset(reinterpret_cast<void*>(mp_buf), 0, m_size);
-  //  внутренние размеры регистров DDS
+  //  aioo?aiiea ?acia?u ?aaeno?ia DDS
   mp_reg_size[ADDR_PH1] = SZ_DDS_PH1;
   mp_reg_size[ADDR_PH2] = SZ_DDS_PH2;
   mp_reg_size[ADDR_FREQ1] = SZ_DDS_FREQ1;
@@ -1983,7 +1983,7 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_reg_size[ADDR_QPATH] = SZ_DDS_QPATH;
   mp_reg_size[ADDR_SKRR] = SZ_DDS_SKRR;
   mp_reg_size[ADDR_QDAC] = SZ_DDS_QDAC;
-  //  размеры регистров в mxdate
+  //  ?acia?u ?aaeno?ia a mxdate
   mp_mxdata_reg_size[ADDR_PH1] = SZ_PH1;
   mp_mxdata_reg_size[ADDR_PH2] = SZ_PH2;
   mp_mxdata_reg_size[ADDR_FREQ1] = SZ_FREQ1;
@@ -1996,7 +1996,7 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_mxdata_reg_size[ADDR_QPATH] = SZ_QPATH;
   mp_mxdata_reg_size[ADDR_SKRR] = SZ_SKRR;
   mp_mxdata_reg_size[ADDR_QDAC] = SZ_QDAC;
-  //  смещения регистров в mxdata
+  //  niauaiey ?aaeno?ia a mxdata
   mp_reg_position[ADDR_PH1] = POS_PH1;
   mp_reg_position[ADDR_PH2] = POS_PH2;
   mp_reg_position[ADDR_FREQ1] = POS_FREQ1;
@@ -2024,7 +2024,7 @@ irs::dds_ad9854_t::dds_ad9854_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
                      (static_cast<irs_u32>(0) << PLLMUL2);
     irs_u32 *mp_buf_cr = reinterpret_cast<irs_u32*>(&mp_buf[POS_CR]);
     *mp_buf_cr = DDS_CR;
-    //  Формирование пакета, записываемого в дедеес
+    //  Oi?ie?iaaiea iaeaoa, caienuaaaiiai a aaaaan
     //  Control register
     irs_u8 spi2_buffer[5];
     spi2_buffer[0] = ADDR_CR;
@@ -2105,7 +2105,7 @@ void irs::dds_ad9854_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     reset();
     return;
   }
-  //----  Ахтунг!!!  -------  Непроверенный код  -------  Ахтунг!!!  -----------
+  //----  Aoooia!!!  -------  Iai?iaa?aiiue eia  -------  Aoooia!!!  -----------
   if ((a_index == POS_PLL_MUL) && (a_size == 1))
   {
     enum { PLL_MUL_MASK = 0xE0 };
@@ -2120,7 +2120,7 @@ void irs::dds_ad9854_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
       return;
     }
   }
-  //----  Ахтунг!!!  -------  Непроверенный код  -------  Ахтунг!!!  -----------
+  //----  Aoooia!!!  -------  Iai?iaa?aiiue eia  -------  Aoooia!!!  -----------
   irs_u8 size = static_cast<irs_u8>(a_size);
   if (size + a_index > m_size) size = static_cast<irs_u8>(m_size - a_index);
   memcpy(reinterpret_cast<void*>(mp_buf + a_index),
@@ -2255,7 +2255,7 @@ void irs::dds_ad9854_t::tick()
               mp_spi->write(m_write_buffer, size+1);
               m_status = DDS_WRITE;
             }
-            //  в 0 - статус
+            //  a 0 - noaoon
             if (m_first_byte >= m_size)
             {
               m_first_byte = 1;
@@ -2389,7 +2389,7 @@ irs::dac_ltc2622_t::dac_ltc2622_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   mp_cs_pin->set();
   mp_spi->reset_configuration();
   mp_spi->unlock();
-  //mlog() << "LTC2622 по адресу 0x" << this << " инициализирован" << endl;
+  //mlog() << "LTC2622 ii aa?ano 0x" << this << " eieoeaeece?iaai" << endl;
 }
 
 void irs::dac_ltc2622_t::configure_spi()
@@ -2855,7 +2855,7 @@ void irs::dac_ad5293_t::tick()
     }
     case RESET:
     {
-      IRS_LIB_ERROR(ec_standard, "m_status == RESET недопустимо в "
+      IRS_LIB_ERROR(ec_standard, "m_status == RESET iaaiionoeii a "
         "irs::dac_ad5293_t::tick");
     }
   }
@@ -2902,7 +2902,7 @@ bool irs::dac_ad5293_t::write_to_dac(status_t a_command)
       }
       case FREE:
       {
-        IRS_LIB_ERROR(ec_standard, "a_command == FREE недопустимо в "
+        IRS_LIB_ERROR(ec_standard, "a_command == FREE iaaiionoeii a "
           "irs::dac_ad5293_t::write_to_dac");
       }
     }
@@ -2986,7 +2986,7 @@ void irs::simple_dac_ad5293_t::set_u32_data(
   size_t a_channel, const irs_u32 a_data)
 {
   if (a_channel > 0) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   m_dac_ad5293_data.resistance_code =
     static_cast<irs_u16>(a_data >> (32 - dac_resulution));
@@ -3522,7 +3522,7 @@ void irs::adc_ad7794_t::set_param(adc_param_t a_param, const int a_value)
       set_bo(a_value);
     } break;
     default: {
-      IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
+      IRS_ASSERT_MSG("Iiiuoea onoaiiaeou ianouanoao?uee ia?aiao?");
     } break;
   }
 }
@@ -3577,7 +3577,7 @@ void irs::adc_ad7794_t::get_param(adc_param_t a_param, int* ap_value)
       m_status = meas_status_busy;
     } break;
     default: {
-      IRS_ASSERT_MSG("Попытка считать несуществующий параметр");
+      IRS_ASSERT_MSG("Iiiuoea n?eoaou ianouanoao?uee ia?aiao?");
     } break;
   }
 }
@@ -3633,8 +3633,8 @@ void irs::adc_ad7794_t::tick()
             m_get_data = true;
           } break;
           default: {
-            IRS_ASSERT_MSG("Проверка статуса в "
-              "недопустимом для этого режиме ацп");
+            IRS_ASSERT_MSG("I?iaa?ea noaoona a "
+              "iaaiionoeiii aey yoiai ?a?eia aoi");
           } break;
         }
       } else {
@@ -3651,7 +3651,7 @@ void irs::adc_ad7794_t::tick()
         m_mode = mode_read_data;
         m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq]));
       } else {
-        IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
+        IRS_ASSERT_MSG("Ia?aaioea aaiiuo a iaaiionoeiii aey yoiai ?a?eia aoi");
       }
       m_value = conversion_spi_value();
       m_status = meas_status_success;
@@ -3697,7 +3697,7 @@ void irs::adc_ad7794_t::tick()
     } break;
   }
   if (m_spi_transaction_size > m_write_buf_size) {
-    IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
+    IRS_ASSERT_MSG("?acia? ia?aaaaaaiuo aaiiuo a spi i?aaunee ?acia? aooa?a");
   }
 }
 void irs::adc_ad7794_t::spi_prepare()
@@ -3729,7 +3729,7 @@ void irs::adc_ad7794_t::creation_reg_comm(reg_t a_reg,
       mp_spi_buf[m_reg_comm_index] &= ~static_cast<irs_u8>(1 << m_rw_pos);
     } break;
     default: {
-      IRS_ASSERT_MSG("Недопустимый transaction_type");
+      IRS_ASSERT_MSG("Iaaiionoeiue transaction_type");
     } break;
   }
   m_spi_transaction_size = a_reg.size + m_reg_comm_size;
@@ -3746,7 +3746,7 @@ int irs::adc_ad7794_t::calculation_shift(reg_t a_reg)
 int irs::adc_ad7794_t::calculation_number_byte(reg_t a_reg,
   param_byte_pos_t byte_pos)
 {
-  //из за того что обратный порядок байт
+  //ec ca oiai ?oi ia?aoiue ii?yaie aaeo
   int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8;
   return number_byte;
 }
@@ -3865,7 +3865,7 @@ irs::cyclic_adc_ad7794_t::get_resolution() const
 bool irs::cyclic_adc_ad7794_t::new_value_exists(irs_u8 a_channel) const
 {
   if (static_cast<size_type>(a_channel) >= m_channels.size()) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   return m_channels[a_channel].new_value_exists;
 }
@@ -3873,7 +3873,7 @@ bool irs::cyclic_adc_ad7794_t::new_value_exists(irs_u8 a_channel) const
 irs_u32 irs::cyclic_adc_ad7794_t::get_u32_data(irs_u8 a_channel)
 {
   if (static_cast<size_type>(a_channel) >= m_channels.size()) {
-    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+    IRS_LIB_ERROR(ec_standard, "Iao eaiaea n oaeei iiia?ii");
   }
   m_channels[a_channel].new_value_exists = false;
   return m_channels[a_channel].value;
@@ -4121,7 +4121,7 @@ void irs::adc_ad7799_t::set_param(adc_param_t a_param, const int a_value)
       set_bo(a_value);
     } break;
     default: {
-      IRS_ASSERT_MSG("Попытка установить несуществующий параметр");
+      IRS_ASSERT_MSG("Iiiuoea onoaiiaeou ianouanoao?uee ia?aiao?");
     } break;
   }
 }
@@ -4178,7 +4178,7 @@ void irs::adc_ad7799_t::get_param(adc_param_t a_param, int* ap_value)
       m_status = meas_status_busy;
     } break;
     default: {
-      IRS_ASSERT_MSG("Попытка считать несуществующий параметр");
+      IRS_ASSERT_MSG("Iiiuoea n?eoaou ianouanoao?uee ia?aiao?");
     } break;
   }
 }
@@ -4234,8 +4234,8 @@ void irs::adc_ad7799_t::tick()
             m_get_data = true;
           } break;
           default: {
-            IRS_ASSERT_MSG("Проверка статуса в "
-              "недопустимом для этого режиме ацп");
+            IRS_ASSERT_MSG("I?iaa?ea noaoona a "
+              "iaaiionoeiii aey yoiai ?a?eia aoi");
           } break;
         }
       } else {
@@ -4252,7 +4252,7 @@ void irs::adc_ad7799_t::tick()
         m_mode = mode_read_data;
         m_timer.set(make_cnt_ms(m_conv_time_vector[m_freq]));
       } else {
-        IRS_ASSERT_MSG("Обработка данных в недопустимом для этого режиме ацп");
+        IRS_ASSERT_MSG("Ia?aaioea aaiiuo a iaaiionoeiii aey yoiai ?a?eia aoi");
       }
       m_value = conversion_spi_value();
       m_status = meas_status_success;
@@ -4298,7 +4298,7 @@ void irs::adc_ad7799_t::tick()
     } break;
   }
   if (m_spi_transaction_size > m_write_buf_size) {
-    IRS_ASSERT_MSG("Размер передаваемых данных в spi превысил размер буфера");
+    IRS_ASSERT_MSG("?acia? ia?aaaaaaiuo aaiiuo a spi i?aaunee ?acia? aooa?a");
   }
 }
 void irs::adc_ad7799_t::spi_prepare()
@@ -4330,7 +4330,7 @@ void irs::adc_ad7799_t::creation_reg_comm(reg_t a_reg,
       mp_spi_buf[m_reg_comm_index] &= ~static_cast<irs_u8>(1 << m_rw_pos);
     } break;
     default: {
-      IRS_ASSERT_MSG("Недопустимый transaction_type");
+      IRS_ASSERT_MSG("Iaaiionoeiue transaction_type");
     } break;
   }
   m_spi_transaction_size = a_reg.size + m_reg_comm_size;
@@ -4347,7 +4347,7 @@ int irs::adc_ad7799_t::calculation_shift(reg_t a_reg)
 int irs::adc_ad7799_t::calculation_number_byte(reg_t a_reg,
   param_byte_pos_t byte_pos)
 {
-  //из за того что обратный порядок байт
+  //ec ca oiai ?oi ia?aoiue ii?yaie aaeo
   int number_byte = (a_reg.size*8 - 1 - byte_pos*8)/8;
   return number_byte;
 }
@@ -4449,7 +4449,7 @@ float irs::dac_8531_t::get_float_maximum() const
 void irs::dac_8531_t::set_float_data(size_t a_channel, const float a_data)
 {
   if (a_data > 1.f) {
-    IRS_LIB_ERROR(ec_standard, "Значение должно быть от 0 до 1");
+    IRS_LIB_ERROR(ec_standard, "Cia?aiea aie?ii auou io 0 ai 1");
   }
   set_u16_normalized_data(a_channel,
     static_cast<irs_u16>(a_data*dac_max_value));
@@ -4459,7 +4459,7 @@ void irs::dac_8531_t::set_u16_normalized_data(size_t a_channel,
   const irs_u16 a_data)
 {
   if (a_channel != 0) {
-    IRS_LIB_ERROR(ec_standard, "Недопустимый канал");
+    IRS_LIB_ERROR(ec_standard, "Iaaiionoeiue eaiae");
   }
   m_new_data = a_data;
 }
@@ -4648,7 +4648,7 @@ float irs::dac_ltc8043_t::get_float_maximum() const
 void irs::dac_ltc8043_t::set_float_data(size_t, const float a_data)
 {
   if (a_data > 1.f) {
-    IRS_LIB_ERROR(ec_standard, "Значение должно быть от 0 до 1");
+    IRS_LIB_ERROR(ec_standard, "Cia?aiea aie?ii auou io 0 ai 1");
   }
   m_new_data = static_cast<irs_u16>(a_data*dac_max_value);
 }
@@ -4694,7 +4694,7 @@ void irs::dac_ltc8043_t::tick()
   }
 }
 
-//----------------------------- К1316ГМ1У --------------------------------------
+//----------------------------- E1316AI1O --------------------------------------
 
 irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   spi_t *ap_spi,
@@ -4706,6 +4706,7 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   m_target_status(st_free),
   mp_spi(ap_spi),
   m_current_reg(0),
+  m_raw_address(0),
   m_timer(irs::make_cnt_ms(m_reset_interval)),
   mp_cs_pin(ap_cs_pin),
   mp_reset_pin(ap_reset_pin),
@@ -4714,6 +4715,7 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
 {
   memset(mp_buf, 0, m_size);
   memset(mp_write_buf, 0, m_write_buf_size);
+  memset(mp_read_buf, 0, m_read_buf_size);
 
   mp_cs_pin->set();
   mp_reset_pin->clear();
@@ -4724,9 +4726,9 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   register_t reg;
   reg.need_write = false;
   reg.was_write = true;
-  //  status          0 не записывается в микросхему
+  //  status          0 ia caienuaaaony a iee?inoaio
   reg.addr = 0x00;
-  reg.mask = 0x00;
+  reg.mask = 0x04;
   reg.shift = 0;
   m_registers.push_back(reg);
   //  freq_trim       1
@@ -4751,7 +4753,7 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   m_registers.push_back(reg);
   //  noise_adc_gain  5
   reg.addr = 0x02;
-  reg.mask = 0x03;
+  reg.mask = 0x30;
   reg.shift = 4;
   m_registers.push_back(reg);
   //  dyn_reg         6
@@ -4856,7 +4858,7 @@ irs::gn_k1316gm1u_t::gn_k1316gm1u_t(
   m_registers.push_back(reg);
   //  test_reg        26
   reg.addr = 0x17;
-  reg.mask = 0xF3;
+  reg.mask = 0xFF;
   reg.shift = 0;
   m_registers.push_back(reg);
   //  dg_param        27
@@ -4896,9 +4898,11 @@ void irs::gn_k1316gm1u_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
     for (irs_u8 i = 0; i < size; i++) {
       irs_u8 pos = i + index;
-      mp_buf[pos] = ap_buf[pos];
+      mp_buf[pos] = ap_buf[i];
       m_registers[pos].need_write = true;
       m_registers[pos].was_write = false;
+      irs::mlog() << irsm("Write = 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)pos << endl;
     }
     mp_buf[m_status_pos] &= ~(1 << m_ready_bit_pos);
   }
@@ -4934,9 +4938,10 @@ irs_bool irs::gn_k1316gm1u_t::bit(irs_uarc a_index, irs_uarc a_bit_index)
 void irs::gn_k1316gm1u_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   bool valid_data =
-    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+    (a_index < m_size) & (a_bit_index <= 7);
   irs_u8 index = static_cast<irs_u8>(a_index);
-  if (valid_data && (m_registers[index].mask & (1 << a_bit_index))) {
+  irs_u8 test_mask = m_registers[index].mask >> m_registers[index].shift;
+  if (valid_data && (test_mask & (1 << a_bit_index))) {
     mp_buf[index] |= static_cast<irs_u8>(1 << a_bit_index);
     m_registers[index].need_write = true;
     m_registers[index].was_write = false;
@@ -4948,9 +4953,10 @@ void irs::gn_k1316gm1u_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
 void irs::gn_k1316gm1u_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
 {
   bool valid_data =
-    (a_index < m_size) & (a_index != m_status_pos) & (a_bit_index <= 7);
+    (a_index < m_size) & (a_bit_index <= 7);
   irs_u8 index = static_cast<irs_u8>(a_index);
-  if (valid_data && (m_registers[index].mask & (1 << a_bit_index))) {
+  irs_u8 test_mask = m_registers[index].mask >> m_registers[index].shift;
+  if (valid_data && (test_mask & (1 << a_bit_index))) {
     mp_buf[index] = static_cast<irs_u8>
       (mp_buf[index] & ~static_cast<irs_u8>(1 << a_bit_index));
     m_registers[index].need_write = true;
@@ -4973,43 +4979,126 @@ void irs::gn_k1316gm1u_t::tick()
     case st_reset: {
       if (m_timer.check()) {
         mp_reset_pin->set();
-        m_current_reg = m_regs_pos;
-        m_status = st_read_all_prepare;
+        m_status = st_read_all_begin;
       }
+      break;
+    }
+    case st_read_all_begin: {
+      irs::mlog() << irsm("--- Read ALL К1316ГМ1У ----") << endl;
+      irs::mlog() << irsm(" # Addr Read Mask Shif Res ") << endl;
+      m_current_reg = m_regs_pos;
+      m_status = st_read_all_prepare;
       break;
     }
     case st_read_all_prepare: {
       mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
       mp_write_buf[1] = 0;
+      irs::mlog() << dec << setw(2);
+      irs::mlog() << (irs_u32)m_current_reg;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].addr;
       m_status = st_spi_prepare;
       m_target_status = st_read_all;
       break;
     }
     case st_read_all: {
-      mp_buf[m_current_reg] = mp_write_buf[1];
+      irs_u8 reg = mp_read_buf[1] & m_registers[m_current_reg].mask;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)mp_read_buf[1];
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].mask;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].shift;
+      reg >>= m_registers[m_current_reg].shift;
+      mp_buf[m_current_reg] = reg;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)reg;
+      irs::mlog() << endl;
       m_current_reg++;
       if (m_current_reg < m_size) {
-        m_current_reg++;
         m_status = st_read_all_prepare;
       } else {
+        irs::mlog() << irsm("---------------------------") << endl;
         m_current_reg = m_regs_pos;
         m_status = st_free;
       }
+      break;
+    }
+    case st_read_raw_begin: {
+      irs::mlog() << irsm("--- Read RAW К1316ГМ1У ----") << endl;
+      irs::mlog() << irsm("Addr Read") << endl;
+      m_raw_address = 0;
+      m_status = st_read_raw_prepare;
+      break;
+    }
+    case st_read_raw_prepare: {
+      mp_write_buf[0] = m_raw_address << 1;
+      mp_write_buf[1] = 0;
+      m_status = st_spi_prepare;
+      m_target_status = st_read_raw;
+      break;
+    }
+    case st_read_raw: {
+      irs::mlog() << irsm("0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_raw_address;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)mp_read_buf[1];
+      irs::mlog() << endl;
+      m_raw_address++;
+      if (m_raw_address <= m_max_address) {
+        m_status = st_read_raw_prepare;
+      } else {
+        irs::mlog() << irsm("---------------------------") << endl;
+        m_status = st_free;
+      }
+      break;
+    }
+    case st_read_one_prepare: {
+      irs::mlog() << irsm("--- Read ONE К1316ГМ1У ----") << endl;
+      irs::mlog() << irsm(" # Addr Read Mask Shif Res ") << endl;
+      mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
+      mp_write_buf[1] = 0;
+      irs::mlog() << dec << setw(2);
+      irs::mlog() << (irs_u32)m_current_reg;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].addr;
+      m_status = st_spi_prepare;
+      m_target_status = st_read_one;
+      break;
+    }
+    case st_read_one: {
+      irs_u8 reg = mp_read_buf[1] & m_registers[m_current_reg].mask;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)mp_read_buf[1];
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].mask;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].shift;
+      reg >>= m_registers[m_current_reg].shift;
+      mp_buf[m_current_reg] = reg;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)reg;
+      irs::mlog() << endl;
+      irs::mlog() << irsm("---------------------------") << endl;
+      m_status = st_free;
       break;
     }
     case st_spi_prepare: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
         mp_spi->set_order(irs::spi_t::MSB);
         mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
-        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_spi->set_phase(irs::spi_t::LEAD_EDGE);
         mp_spi->lock();
         mp_cs_pin->clear();
-        mp_spi->write(mp_write_buf, m_write_buf_size);
+        mp_spi->read_write(mp_read_buf, mp_write_buf, m_write_buf_size);
         m_status = st_spi_wait;
       }
       break;
     }
     case st_spi_wait: {
+      for (;!mp_spi->get_status() == irs::spi_t::FREE;) {
+        mp_spi->tick();
+      }
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         mp_cs_pin->set();
         mp_spi->reset_configuration();
@@ -5027,7 +5116,7 @@ void irs::gn_k1316gm1u_t::tick()
       }
       if (m_current_reg >= m_size) {
         bool all_write = true;
-        for (irs_u8 i = 0; i < m_size; i++) {
+        for (irs_u8 i = m_regs_pos; i < m_size; i++) {
           if (m_registers[i].was_write == false) {
             all_write = false;
             break;
@@ -5036,7 +5125,12 @@ void irs::gn_k1316gm1u_t::tick()
         if (all_write) {
           mp_buf[m_status_pos] |= (1 << m_ready_bit_pos);
         }
-        m_current_reg = 1;
+        m_current_reg = m_regs_pos;
+        if (mp_buf[m_status_pos] & (1 << m_read_all_pos)) {
+          mp_buf[m_status_pos] &= 
+            ~((1 << m_ready_bit_pos) | (1 << m_read_all_pos));
+          m_status = st_read_raw_begin;
+        }
       }
       break;
     }
@@ -5049,15 +5143,32 @@ void irs::gn_k1316gm1u_t::tick()
     }
     case st_prepare_write_reg: {
       mp_write_buf[0] = (m_registers[m_current_reg].addr << 1) | 0x01;
-      mp_write_buf[1] = mp_buf[m_current_reg];
+      irs_u8 reg = mp_buf[m_current_reg] << m_registers[m_current_reg].shift;
+      mp_write_buf[1] = reg;
       m_registers[m_current_reg].need_write = false;
+      irs::mlog() << irsm("--- Write ONE К1316ГМ1У ---") << endl;
+      irs::mlog() << irsm(" # Addr Writ Mask Shif Res ") << endl;
+      irs::mlog() << dec << setw(2);
+      irs::mlog() << (irs_u32)m_current_reg;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].addr;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)mp_write_buf[1];
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].mask;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)m_registers[m_current_reg].shift;
+      irs::mlog() << irsm(" 0x") << hex << setw(2);
+      irs::mlog() << (irs_u32)reg;
+      irs::mlog() << endl;
+      irs::mlog() << irsm("---------------------------") << endl;
       m_status = st_spi_prepare;
       m_target_status = st_wait_write_reg;
       break;
     }
     case st_wait_write_reg: {
       m_registers[m_current_reg].was_write = true;
-      m_status = st_free;
+      m_status = st_read_one_prepare;
       break;
     }
   }
