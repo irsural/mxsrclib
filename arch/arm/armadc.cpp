@@ -906,7 +906,10 @@ void irs::arm::adc_stellaris_t::tick()
 irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   select_channel_type a_selected_channels,
   counter_t a_adc_interval,
-  counter_t a_adc_battery_interval
+  counter_t a_adc_battery_interval,
+  bool a_single_conversion,
+  irs_u8 a_sampling_time,
+  irs_u8 a_clock_div
 ):
   mp_adc(reinterpret_cast<adc_regs_t*>(a_adc_address)),
   m_adc_timer(a_adc_interval),
@@ -918,13 +921,38 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   m_temperature_channel_value(0),
   m_v_battery_measurement_enabled(false),
   m_v_battery_channel_value(0),
-  m_injected_channel_selected(ics_temperature_sensor)
+  m_injected_channel_selected(ics_temperature_sensor),
+  m_single_conversion(a_single_conversion)
 {
   clock_enable(a_adc_address);
-  mp_adc->ADC_SMPR1 = 0xFFFFFFFF;
-  mp_adc->ADC_SMPR2 = 0xFFFFFFFF;
-  // 3: PCLK2 divided by 8
-  ADC_CCR_bit.ADCPRE = 3;
+  //  000: 3 cycles
+  //  001: 15 cycles
+  //  010: 28 cycles
+  //  011: 56 cycles
+  //  100: 84 cycles
+  //  101: 112 cycles
+  //  110: 144 cycles
+  //  111: 480 cycles
+  enum {
+    num_of_smpr1_channels = 9,
+    num_of_smpr2_channels = 10,
+    bit_len = 3,
+    mask = 0x07
+  };
+  irs_u32 smpr = 0;
+  for (irs_u8 i = 0; i < num_of_smpr1_channels; i++) {
+    smpr |= (a_sampling_time & mask) << (i * bit_len);
+  }
+  mp_adc->ADC_SMPR1 = smpr;
+  for (irs_u8 i = 0, smpr = 0; i < num_of_smpr2_channels; i++) {
+    smpr |= (a_sampling_time & mask) << (i * bit_len);
+  }
+  mp_adc->ADC_SMPR2 = smpr;
+  //  00: PCLK2 divided by 2
+  //  01: PCLK2 divided by 4
+  //  10: PCLK2 divided by 6
+  //  11: PCLK2 divided by 8
+  ADC_CCR_bit.ADCPRE = a_clock_div;
 
   vector<pair<adc_channel_t, gpio_channel_t> > adc_gpio_pairs;
   adc_gpio_pairs.push_back(make_pair(ADC123_PA0_CH0, PA0));
@@ -989,7 +1017,9 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   if (!m_active_channels.empty()) {
     m_current_channel = 0;
     mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
-    mp_adc->ADC_CR2_bit.SWSTART = 1;
+    if (!m_single_conversion) {
+      mp_adc->ADC_CR2_bit.SWSTART = 1;
+    }
   }
   if (m_temperature_sensor_enabled) {
     ADC_CCR_bit.TSVREFE = 1;
@@ -1052,6 +1082,13 @@ irs_u16 irs::arm::st_adc_t::get_u16_data(irs_u8 a_channel)
 {
   if (a_channel >= m_regular_channels_values.size()) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  } else if (m_single_conversion) {
+    if (mp_adc->ADC_SR_bit.EOC == 1) {
+      m_regular_channels_values[a_channel] =
+        static_cast<irs_u16>(mp_adc->ADC_DR);
+    }
+    mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[a_channel];
+    mp_adc->ADC_CR2_bit.SWSTART = 1;
   }
   return m_regular_channels_values[a_channel] << (16 - adc_resolution);
 }
@@ -1070,6 +1107,13 @@ irs_u32 irs::arm::st_adc_t::get_u32_data(irs_u8 a_channel)
 {
   if (a_channel >= m_regular_channels_values.size()) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  } else if (m_single_conversion) {
+    if (mp_adc->ADC_SR_bit.EOC == 1) {
+      m_regular_channels_values[a_channel] =
+        static_cast<irs_u16>(mp_adc->ADC_DR);
+    }
+    mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[a_channel];
+    mp_adc->ADC_CR2_bit.SWSTART = 1;
   }
   return m_regular_channels_values[a_channel] << (32 - adc_resolution);
 }
@@ -1088,6 +1132,13 @@ float irs::arm::st_adc_t::get_float_data(irs_u8 a_channel)
 {
   if (a_channel >= m_regular_channels_values.size()) {
     IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  } else if (m_single_conversion) {
+    if (mp_adc->ADC_SR_bit.EOC == 1) {
+      m_regular_channels_values[a_channel] =
+        static_cast<irs_u16>(mp_adc->ADC_DR);
+    }
+    mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[a_channel];
+    mp_adc->ADC_CR2_bit.SWSTART = 1;
   }
   return static_cast<float>(m_regular_channels_values[a_channel])/adc_max_value;
 }
@@ -1124,7 +1175,7 @@ float irs::arm::st_adc_t::get_temperature_degree_celsius(
 void irs::arm::st_adc_t::tick()
 {
   const bool timer_check = m_adc_timer.check();
-  if (timer_check) {
+  if (timer_check && !m_single_conversion) {
     if (mp_adc->ADC_SR_bit.EOC == 1) {
       m_regular_channels_values[m_current_channel] =
         static_cast<irs_u16>(mp_adc->ADC_DR);

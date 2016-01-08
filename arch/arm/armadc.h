@@ -161,7 +161,10 @@ public:
   };
   st_adc_t(size_t a_adc_address, select_channel_type a_selected_channels,
     counter_t a_adc_interval = make_cnt_ms(100),
-    counter_t a_adc_battery_interval = make_cnt_ms(100));
+    counter_t a_adc_battery_interval = make_cnt_ms(100),
+    bool a_single_conversion = false,
+    irs_u8 a_sampling_time = 0x07,
+    irs_u8 a_clock_div = 0x3);
   virtual ~st_adc_t();
   virtual size_type get_resolution() const;
   virtual irs_u16 get_u16_minimum();
@@ -198,6 +201,7 @@ private:
     ics_v_battery
   };
   injected_channel_switch_t m_injected_channel_selected;
+  bool m_single_conversion;
 };
 
 //! \brief Драйвер АЦП DMA для контроллеров семейства STM32F2xx
