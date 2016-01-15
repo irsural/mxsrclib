@@ -2857,7 +2857,7 @@ struct crc16_data_t {
 //!   Максимальная длина: 4095 байт (32767 бит) - обнаружение
 //!     одинарных, двойных, тройных и всех нечетных ошибок
 //!   Потребление памяти: не менее 512 байт
-inline irs_u16 crc16_table(irs_u8* ap_buf, size_t a_size)
+inline irs_u16 crc16_table(const irs_u8* ap_buf, size_t a_size)
 {
   static handle_t<crc16_data_t> crc16_data = new crc16_data_t();
   irs_u16 crc = 0xFFFF;

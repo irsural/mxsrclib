@@ -46,7 +46,6 @@
 # define IRS_LIB_IRSMBUS_DBG_RAW_MSG_BLOCK_DETAIL(msg)
 #endif // IRS_LIB_IRSMBUS_DEBUG_TYPE == IRS_LIB_DEBUG_NONE
 
-
 namespace irs {
 
 //! \addtogroup network_in_out_group

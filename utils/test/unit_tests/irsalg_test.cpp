@@ -792,7 +792,7 @@ add(data_t a_val)
     return;
   }
   if (m_deque.size() >= m_max_count) {
-    multiset<data_t>::iterator it =
+    typename multiset<data_t>::iterator it =
       m_sort_values.find(m_deque.front());
     m_sort_values.erase(it);
     m_deque.pop_front();
@@ -809,15 +809,15 @@ update_result()
   const std::size_t size_2 = m_sort_values.size()/2;
   if (m_sort_values.size()%2 == 0) {
     const std::size_t pos = size_2 == 0 ? 0: size_2 - 1;
-    multiset<data_t>::iterator it_1 = m_sort_values.begin();
+    typename multiset<data_t>::iterator it_1 = m_sort_values.begin();
     advance(it_1, pos);
-    multiset<data_t>::iterator it_2 = it_1;
+    typename multiset<data_t>::iterator it_2 = it_1;
     ++it_2;
     m_result = (static_cast<calc_t>(*it_1) +
       static_cast<calc_t>(*it_2))/2;
   } else {
     const std::size_t pos = size_2;
-    multiset<data_t>::iterator it = m_sort_values.begin();
+    typename multiset<data_t>::iterator it = m_sort_values.begin();
     advance(it, pos);
     m_result = *it;
   }
@@ -836,7 +836,7 @@ resize(size_type a_size)
 {
   m_max_count = a_size;
   while (m_deque.size() >= m_max_count) {
-    multiset<data_t>::iterator it =
+    typename multiset<data_t>::iterator it =
       m_sort_values.find(m_deque.front());
     m_sort_values.erase(it);
     m_deque.pop_front();
@@ -1038,7 +1038,7 @@ BOOST_AUTO_TEST_SUITE(test_crc16)
 BOOST_AUTO_TEST_CASE(test_case1)
 {
   BOOST_CHECK_EQUAL(irs::crc16(
-    reinterpret_cast<irs_u8*>("123456789"), 9), 0x4B37);
+    reinterpret_cast<const irs_u8*>("123456789"), 9), 0x4B37);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -1048,7 +1048,7 @@ BOOST_AUTO_TEST_SUITE(test_crc16_table)
 BOOST_AUTO_TEST_CASE(test_case1)
 {
   BOOST_CHECK_EQUAL(irs::crc16_table(
-    reinterpret_cast<irs_u8*>("123456789"), 9), 0x4B37);
+    reinterpret_cast<const irs_u8*>("123456789"), 9), 0x4B37);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

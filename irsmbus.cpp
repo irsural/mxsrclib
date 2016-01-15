@@ -2074,7 +2074,8 @@ irs::modbus_client_t::modbus_client_t(
   m_request_quantity_discr_inputs_bit(0),
   m_request_quantity_coils_bit(0),
   m_error_count(0),
-  m_unit_id(a_unit_id)
+  m_unit_id(a_unit_id),
+  m_send_request_timer()
 {
   //m_send_request_timer.set(a_update_time/get_packet_number());
   m_send_request_timer.set(0);
@@ -2191,13 +2192,6 @@ irs_bool irs::modbus_client_t::connected()
     }
   } else if (m_refresh_mode == mode_refresh_manual) {
     connect = true;
-  }
-  if ((m_fixed_flow.write_status() ==
-    irs::hardflow::fixed_flow_t::status_error) ||
-    (m_fixed_flow.read_status() ==
-    irs::hardflow::fixed_flow_t::status_error))
-  {
-    connect = false;
   }
   return connect;
 }
@@ -4179,6 +4173,7 @@ void irs::modbus_client_t::tick()
         {
           m_spacket[send_pack_index] = 0;
         }
+        m_error_count = 0;
         if (!m_write_table) {
           m_mode = search_read_data_mode;
           IRS_LIB_IRSMBUS_DBG_RAW_MSG_DETAIL(irsm("write complete "));
