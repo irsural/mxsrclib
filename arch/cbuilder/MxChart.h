@@ -535,6 +535,9 @@ public:
     const vector<double>& a_array_value);
   virtual void delete_param(const string_type &a_name);
   virtual void clear_param();
+  size_type param_size(const string_type &a_name) const;
+  void set_value(const string_type &a_name, size_type a_pos, double a_time,
+    double a_value);
   virtual void set_value(const string_type &a_name, double a_value);
   virtual void set_value(const string_type &a_name, double a_time,
     double a_value);
@@ -547,12 +550,17 @@ public:
   virtual void erase(const string_type &a_name, size_type a_pos,
     size_type a_count);
   virtual void clear();
+  void clear(const string_type &a_name);
   virtual void set_refresh_time(irs_i32 a_refresh_time_ms);
+  //! \brief Изменение максимального размера графика
   virtual void resize(irs_u32 a_size);
+  //! \brief Максимальный размер всех графиков вместе с пустым элементом,
+  //! который не отображается, реальный максимальны размер графиков size() - 1
   virtual irs_u32 size() const;
   virtual void group_all();
   virtual void ungroup_all();
   void set_visible(const string_type &a_name, bool a_enabled);
+  void set_fixed_time_mode_enabled(bool a_enable);
   void load_from_mxchart_file(const string_type& a_file_name);
   void save_to_mxchart_file(const string_type& a_file_name);
   void load_from_csv(const string_type& a_file_name);
@@ -644,6 +652,7 @@ private:
     void chart_list_changed();
     void points_changed();
     void set_refresh_time_ms(irs_i32 a_refresh_time_ms);
+    void set_fixed_time_mode_enabled(bool a_enable);
     void set_file_name(const string_type& a_file_name);
   private:
     enum { list_box_scroll_width_additive = 20 };
@@ -731,6 +740,10 @@ private:
     string_type m_base_chart_name;
     unsort_data_t m_unsort_data;
 
+    TDblRect m_area;
+    int m_chart_area_index;
+    bool m_fixed_time_mode_enabled;
+
     void __fastcall PaintPanelResize(TObject *Sender);
 
     void __fastcall FormResize(TObject *Sender);
@@ -786,6 +799,8 @@ private:
     void check_and_create_new_row();
     //void connect_data(TMxChart *ap_chart, const data_t &a_data);
     void update_form_caption();
+    void fix_current_chart();
+    void unfix_charts();
   }; //class controls_t
 
   //chart_point_t m_time;

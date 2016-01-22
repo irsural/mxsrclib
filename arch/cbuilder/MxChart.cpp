@@ -3525,6 +3525,29 @@ clear_param()
   mp_controls->chart_list_changed();
   mp_controls->points_changed();
 }
+irs::chart::builder_chart_window_t::size_type
+irs::chart::builder_chart_window_t::param_size(const string_type &a_name) const
+{
+  data_t::const_iterator it = m_data.find(a_name);
+  if (it != m_data.end()) {
+    return (*it).second.func->size();
+  }
+  return 0;
+}
+void irs::chart::builder_chart_window_t::set_value(
+  const string_type &a_name, size_type a_pos, double a_time, double a_value)
+{
+  data_t::iterator it = m_data.find(a_name);
+  if (it != m_data.end()) {
+    if (a_pos < (*it).second.vectime.size()) {
+      (*it).second.vectime[a_pos] = a_time;
+      (*it).second.vec[a_pos] = a_value;
+      mp_controls->points_changed();
+      mp_controls->deferred_update_chart();
+      //mp_controls->invalidate();
+    }
+  }
+}
 void irs::chart::builder_chart_window_t::
 set_value(const string_type &a_name, double a_value)
 {
@@ -3563,7 +3586,7 @@ add()
     (*it).second.vectime.push_back(0.);
     (*it).second.vec.push_back(0.);
   }
-  if ((cur_size() > size()) || mp_controls->fix()) {
+  if ((cur_size() > size())/* || mp_controls->fix()*/) {
     for (data_t::iterator it = m_data.begin(); it != m_data.end(); it++) {
       (*it).second.vectime.pop_front();
       (*it).second.vec.pop_front();
@@ -3582,7 +3605,7 @@ add(const string_type &a_name, double a_time, double a_value)
     (*it).second.vec.back() = a_value;
     (*it).second.vectime.push_back(0.);
     (*it).second.vec.push_back(0.);
-    if ((*it).second.func->size() > size() || mp_controls->fix()) {
+    if ((*it).second.func->size() > size()/* || mp_controls->fix()*/) {
       (*it).second.vectime.pop_front();
       (*it).second.vec.pop_front();
     }
@@ -3621,6 +3644,7 @@ erase(const string_type &a_name, size_type a_pos,
   data_t::iterator it = m_data.find(a_name);
   if (it != m_data.end()) {
     if (a_pos < (*it).second.func->size()) {
+      // Здесь учитывается, что в массиве должен остаться пустой элемент
       const size_type max_count = (*it).second.func->size() - a_pos;
       const size_type count = std::min(max_count, a_count);
 
@@ -3658,6 +3682,22 @@ clear()
   mp_controls->points_changed();
   mp_controls->invalidate();
 }
+void irs::chart::builder_chart_window_t::clear(const string_type &a_name)
+{
+  data_t::iterator it = m_data.find(a_name);
+  if (it != m_data.end()) {
+    chart_vec_t &vectime = (*it).second.vectime;
+    vectime.clear();
+    vectime.push_back(0.);
+    chart_vec_t &vec = (*it).second.vec;
+    vec.clear();
+    vec.push_back(0.);
+    mp_controls->points_changed();
+    mp_controls->invalidate();
+  } else {
+    // Ничего если параметра нет
+  }
+}
 void irs::chart::builder_chart_window_t::
 set_refresh_time(irs_i32 a_refresh_time_ms)
 {
@@ -3667,12 +3707,14 @@ void irs::chart::builder_chart_window_t::
 resize(irs_u32 a_size)
 {
   m_size = a_size;
-  if (cur_size() > m_size) {
-    for (data_t::iterator it = m_data.begin(); it != m_data.end(); it++) {
+
+  for (data_t::iterator it = m_data.begin(); it != m_data.end(); it++) {
+    if ((*it).second.vectime.size() > m_size) {
       (*it).second.vectime.resize(m_size);
       (*it).second.vec.resize(m_size);
     }
   }
+
   mp_controls->points_changed();
   mp_controls->invalidate();
 }
@@ -3710,6 +3752,12 @@ void irs::chart::builder_chart_window_t::set_visible(const string_type &a_name,
       mp_controls->chart_list_changed();
     }
   }
+}
+
+void irs::chart::builder_chart_window_t::set_fixed_time_mode_enabled(
+  bool a_enable)
+{
+  mp_controls->set_fixed_time_mode_enabled(a_enable);
 }
 
 void irs::chart::builder_chart_window_t::
@@ -4059,7 +4107,10 @@ irs::chart::builder_chart_window_t::controls_t::
   m_is_chart_list_changed(false),
   m_is_points_changed(false),
   m_base_chart_name(irst("")),
-  m_unsort_data()
+  m_unsort_data(),
+  m_area(),
+  m_chart_area_index(0),
+  m_fixed_time_mode_enabled(false)
 {
   m_unsort_data.connect(m_data);
 
@@ -4389,7 +4440,6 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
         connect_data(m_data);
       }
     }
-
   } catch (Exception &exception) {
     mp_timer->Enabled = false;
     Application->ShowException(&exception);
@@ -4533,12 +4583,37 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
   FixBtnClick(TObject *Sender)
 {
   if (m_fix) {
-    m_fix = false;
-    mp_fix_btn->Caption = mp_fix_on_text;
+    unfix_charts();
   } else {
-    m_fix = true;
-    mp_fix_btn->Caption = mp_fix_off_text;
+    fix_current_chart();
   }
+}
+void irs::chart::builder_chart_window_t::controls_t::fix_current_chart()
+{
+  m_fix = true;
+  mp_fix_btn->Caption = mp_fix_off_text;
+
+  m_area = mp_chart->Area;
+  m_chart_area_index = m_base_item;
+
+  TMxChartItem* item = mp_chart->Items[mp_chart->BaseItem];
+  item->AutoScaleX = false;
+  item->AutoScaleY = false;
+  mp_chart->AutoScaleX = false;
+  mp_chart->AutoScaleY = false;
+  mp_chart->Area = m_area;
+}
+void irs::chart::builder_chart_window_t::controls_t::unfix_charts()
+{
+  m_fix = false;
+  mp_fix_btn->Caption = mp_fix_on_text;
+
+  for (int i = 0; i < mp_chart->Count; i++) {
+    mp_chart->Items[i]->AutoScaleX = true;
+    mp_chart->Items[i]->AutoScaleY = true;
+  }
+  mp_chart->AutoScaleX = true;
+  mp_chart->AutoScaleY = true;
 }
 void __fastcall irs::chart::builder_chart_window_t::controls_t::
   ClearBtnClick(TObject *Sender)
@@ -4962,12 +5037,20 @@ void irs::chart::builder_chart_window_t::controls_t::
   mp_timer->Enabled = false;
   mp_timer->Enabled = true;
 }
+
+void irs::chart::builder_chart_window_t::controls_t::
+set_fixed_time_mode_enabled(bool a_enable)
+{
+  m_fixed_time_mode_enabled = a_enable;
+}
+
 void irs::chart::builder_chart_window_t::controls_t::set_file_name(
   const string_type& a_file_name)
 {
   m_file_name = irs::str_conv<String>(a_file_name);
   update_form_caption();
 }
+
 void irs::chart::builder_chart_window_t::controls_t::
   update_chart_combo()
 {
@@ -5088,7 +5171,26 @@ void irs::chart::builder_chart_window_t::controls_t::update_chart()
     }
     m_unsort_data.next();
   }
-  mp_chart->BaseItem = chart_from_combo_item(m_base_item);
+  if (mp_chart->Count > 0) {
+    mp_chart->BaseItem = chart_from_combo_item(m_base_item);
+    if (m_fix) {
+      TDblRect area = m_area;
+
+      TMxChartItem* item = mp_chart->Items[mp_chart->BaseItem];
+      if (!m_fixed_time_mode_enabled) {
+        const double first = item->DataX[item->Bounds.Begin];
+        const double last = item->DataX[item->Bounds.End];
+        area.Left = last - (area.Right - area.Left);
+        area.Right = last;
+      }
+      //item->Area = area;
+      /*area = mp_chart->Area;
+      area.Left = last - (mp_chart->Area.Right - mp_chart->Area.Left);
+      area.Right = last;*/
+      mp_chart->Area = area;
+
+    }
+  }
   mp_chart->Paint();
 }
 
@@ -5238,6 +5340,9 @@ void irs::chart::builder_chart_window_t::controls_t::
   if (chart_index < (int)m_unsort_data.size()) {
     m_unsort_data.set(chart_index);
     m_base_chart_name = m_unsort_data.name();
+  }
+  if (m_base_item != m_chart_area_index) {
+    unfix_charts();
   }
 }
 
