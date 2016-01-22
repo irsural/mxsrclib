@@ -8,6 +8,8 @@
 
 BOOST_AUTO_TEST_SUITE(test_codecvt_cp1251_t)
 
+#ifndef __GNUC__
+
 BOOST_AUTO_TEST_CASE(test_case1)
 {
   irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
@@ -82,5 +84,7 @@ BOOST_AUTO_TEST_CASE(test_case2)
   BOOST_CHECK(convert_result == std::codecvt_base::ok);
   BOOST_CHECK(std::equal(out_str, out_str_end, etalon_str));
 }
+
+#endif // __GNUC__
 
 BOOST_AUTO_TEST_SUITE_END()

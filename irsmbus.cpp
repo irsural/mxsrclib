@@ -2687,7 +2687,11 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
       size_t begin_bit_idx = coils_start_byte*bits_in_byte;
       size_t end_bit_idx = begin_bit_idx + coils_size_byte*bits_in_byte;
       for (size_t i = begin_bit_idx; i < end_bit_idx; i++) {
-        m_need_writes[i] = true;
+        if (!m_need_writes[i]) {
+          m_need_writes[i] = true;
+        } else {
+          m_need_writes_reserve[i] = true;
+        }
       }
     }
   }
@@ -2708,6 +2712,7 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     // Сквозные индексы через весь сетевой массив
     size_t front_reg_idx = m_coils_size_bit + front_idx;
     size_t back_reg_idx = m_coils_size_bit + back_idx;
+
     if (!m_need_writes[front_reg_idx]) {
       m_hold_regs_reg_write[front_idx] = m_hold_regs_reg_read[front_idx];
     }
@@ -2723,7 +2728,11 @@ void irs::modbus_client_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
 
     if (m_refresh_mode == mode_refresh_auto) {
       for (size_t i = front_reg_idx; i <= back_reg_idx; i++) {
-        m_need_writes[i] = true;
+        if (!m_need_writes[i]) {
+          m_need_writes[i] = true;
+        } else {
+          m_need_writes_reserve[i] = true;
+        }
       }
     }
   }
