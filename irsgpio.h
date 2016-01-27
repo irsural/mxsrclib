@@ -55,6 +55,7 @@ public:
   virtual void set() = 0;
   virtual void clear() = 0;
   virtual void set_dir(dir_t a_dir) = 0;
+  void set_pin(bool a_pin);
   void pin(bool a_pin);
   void set_state(io_pin_value_t a_value);
 };

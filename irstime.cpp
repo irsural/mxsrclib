@@ -51,7 +51,6 @@ irs::string_t irs::ms_to_strtime(irs::millisecond_t ms, bool show_ms)
 // Счетчика ИРС в строку в формате: ЧЧ:ММ:СС.МСЕ
 irs::string_t irs::cnt_to_strtime(counter_t cnt, bool show_ms)
 {
-  const irs::millisecond_t ms_in_sec = 1000;
   irs::millisecond_t ms =
     static_cast<irs::millisecond_t>(ms_in_sec*CNT_TO_DBLTIME(cnt));
   return ms_to_strtime(ms, show_ms);

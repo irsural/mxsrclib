@@ -17,6 +17,11 @@
 #include <irsfinal.h>
 
 // class gpio_pin_t:
+void irs::gpio_pin_t::set_pin(bool a_pin)
+{
+  pin(a_pin);
+}
+
 void irs::gpio_pin_t::pin(bool a_pin)
 {
   if (a_pin) {

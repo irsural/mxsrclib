@@ -656,7 +656,7 @@ void irs::variant::binary_operation(
       (second_var_type != var_type_unknown))
     {
       if ((first_var_type == var_type_long_long) &&
-        (first_var_type == var_type_long_long)) {
+        (second_var_type == var_type_long_long)) {
         operation_vars_type = var_type_long_long;
       } else {
         operation_vars_type = var_type_unsigned_long_long;
