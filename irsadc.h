@@ -904,8 +904,8 @@ private:
 };
 
 //--------------------------  AD5160  ------------------------------------------
-// Цифровой потенциометр 8 бит
-
+//! \brief Цифровой потенциометр 8 бит
+//! \bug Возможно ошибка в конструкторе, смотри комментарий
 class dac_ad5160_t : public mxdata_t
 {
 public:
@@ -969,7 +969,7 @@ public:
   virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
   virtual void tick();
 private:
-  enum { 
+  enum {
     m_dac_resulution = 8,
     m_packet_size = 1
   };
@@ -985,6 +985,91 @@ private:
   irs_u8 m_write_buf;
   bool m_need_write;
   gpio_pin_t *mp_cs_pin;
+};
+
+//--------------------------  AD5141  ------------------------------------------
+//! \brief Цифровой потенциометр 8 бит c памятью. Запись в память 
+//!   происходит каждый раз при записи значения 
+class dac_ad5141_t : public mxdata_t
+{
+public:
+  dac_ad5141_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, irs_u8 a_init_value);
+  ~dac_ad5141_t();
+  virtual irs_uarc size();
+  virtual irs_bool connected();
+  virtual void read(irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual void write(const irs_u8 *ap_buf, irs_uarc a_index, irs_uarc a_size);
+  virtual irs_bool bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void set_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void clear_bit(irs_uarc a_index, irs_uarc a_bit_index);
+  virtual void tick();
+private:
+  void configure_spi();
+  enum status_t {
+    DAC_RESET,
+    DAC_READ,
+    DAC_WAIT_READ,
+    DAC_DELAY_AFTER_READ,
+    DAC_READ_2,
+    DAC_FREE,
+    DAC_SAVE,
+    DAC_WRITE,
+    DAC_DELAY
+  };
+  status_t m_status;
+  spi_t *mp_spi;
+  static const irs_uarc m_size = 2;
+  static const irs_u8 m_packet_size = 2;
+  irs_u8 mp_buf[m_size];
+  irs_u8 mp_write_buffer[m_packet_size];
+  irs_u8 m_init_value;
+  bool m_need_write;
+  gpio_pin_t *mp_cs_pin;
+  irs::timer_t m_delay;
+};
+
+struct dac_ad5141_data_t
+{
+  irs::bit_data_t ready_bit;
+  irs::conn_data_t<irs_u8> resistance_code;
+
+  dac_ad5141_data_t(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0):
+    ready_bit(),
+    resistance_code()
+  {
+    connect(ap_data, a_start_index);
+  }
+
+  void connect(irs::mxdata_t *ap_data, irs_uarc a_start_index = 0)
+  {
+    irs_uarc index = a_start_index;
+    index = ready_bit.connect(ap_data, index, 0);
+    index++;
+    index = resistance_code.connect(ap_data, index);
+  }
+};
+
+//! \brief Цифровой потенциометр 8 бит c памятью. Запись в память 
+//!   происходит каждый раз при записи значения 
+class simple_dac_ad5141_t: public dac_t
+{
+public:
+  simple_dac_ad5141_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
+    irs_u8 a_init_value);
+  virtual irs_status_t get_status() const;
+  virtual size_t get_resolution() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  //! \brief Позволяет получить значение, установленное в потенциометр
+  //! \details При создании объекта происходит чтение значения из
+  //!   потенциометра, которое можно получить этой функцией. В дальнейшем
+  //!   функция возвращает то значение, которое было записано через функцию
+  //!   set_u32_data без обращения к потенциометру
+  irs_u32 get_u32_data(irs_u8 a_channel);
+  virtual void tick();
+private:
+  enum { dac_resulution = 8 };
+  dac_ad5141_t m_dac_ad5141;
+  dac_ad5141_data_t m_dac_ad5141_data;
 };
 
 //--------------------------  AD7376  ------------------------------------------
