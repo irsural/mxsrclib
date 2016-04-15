@@ -952,6 +952,25 @@ void print_binary_data_to_str(
   *ap_str = irs::str_conv<T>(ostr.str());
 }
 
+template <class T>
+irs::string_t value_to_bin_str(const T& a_value)
+{
+  irs::string_t str;
+  const size_t bit_count = 8*sizeof(a_value);  
+
+  size_t bit_pos = bit_count;
+  do {
+    bit_pos--;
+    const bool bit = a_value & (1 << bit_pos);
+    str += bit ? irst("1") : irst("0");
+
+    if ((bit_pos != 0) && (bit_pos%4 == 0)) {
+      str += irst(" ");
+    }
+  } while (bit_pos > 0);
+  return str;
+}
+
 //! \brief Ищет пару в словаре, содержащую указанное значение, и возвращает
 //!   итератор для этой пары
 //! \param[in] a_begin - начальная позиция

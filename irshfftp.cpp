@@ -10,7 +10,7 @@
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 # if defined(_MSC_VER)
 #   include <direct.h>
-# elif defined(__MINGW32__)
+# elif (defined(__MINGW32__) || defined(__BORLANDC__))
 #   include <dir.h>
 # endif // defined(__MINGW32__)
 #endif // IRS_FULL_STDCPPLIB_SUPPORT

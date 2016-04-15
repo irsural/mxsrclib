@@ -5,72 +5,11 @@
 
 #include <armiomacros.h>
 
+#include <armregs_stm32f7xx.h>
+
 #include <irsfinal.h>
 
-#ifdef IRS_STM32F_2_AND_4
-
-#define IRS_RNG_BASE              0x50060800
-#define IRS_DCMI_BASE             0x50050000
-#define IRS_USB_OTG_FS_BASE       0x50000000
-#define IRS_USB_OTG_HS_BASE       0x40040000
-#define IRS_ETHERNET_BASE         0x40028000
-#define IRS_DMA2_BASE             0x40026400
-#define IRS_DMA1_BASE             0x40026000
-#define IRS_BKPSRAM_BASE          0x40024000
-#define IRS_FLASH_INTERFACE_BASE  0x40023C00
-#define IRS_RCC_BASE              0x40023800
-#define IRS_CRC_BASE              0x40023000
-#define IRS_PORTK_BASE            0x40022800
-#define IRS_PORTJ_BASE            0x40022400
-#define IRS_PORTI_BASE            0x40022000
-#define IRS_PORTH_BASE            0x40021C00
-#define IRS_PORTG_BASE            0x40021800
-#define IRS_PORTF_BASE            0x40021400
-#define IRS_PORTE_BASE            0x40021000
-#define IRS_PORTD_BASE            0x40020C00
-#define IRS_PORTC_BASE            0x40020800
-#define IRS_PORTB_BASE            0x40020400
-#define IRS_PORTA_BASE            0x40020000
-#define IRS_TIM11_BASE            0x40014800
-#define IRS_TIM10_BASE            0x40014400
-#define IRS_TIM9_BASE             0x40014000
-#define IRS_EXTI_BASE             0x40013C00
-#define IRS_SYSCFG_BASE           0x40013800
-#define IRS_SPI1_BASE             0x40013000
-#define IRS_SDIO_BASE             0x40012C00
-#define IRS_ADC1_ADC2_ADC3_BASE   0x40012000
-#define IRS_ADC1_BASE             0x40012000
-#define IRS_ADC2_BASE             0x40012100
-#define IRS_ADC3_BASE             0x40012200
-#define IRS_USART6_BASE           0x40011400
-#define IRS_USART1_BASE           0x40011000
-#define IRS_TIM8_PWM2_BASE        0x40010400
-#define IRS_TIM1_PWM1_BASE        0x40010000
-#define IRS_DAC1_DAC2_BASE        0x40007400
-#define IRS_PWR_BASE              0x40007000
-#define IRS_BxCAN2_BASE           0x40006800
-#define IRS_BxCAN1_BASE           0x40006400
-#define IRS_I2C3_BASE             0x40005C00
-#define IRS_I2C2_BASE             0x40005800
-#define IRS_I2C1_BASE             0x40005400
-#define IRS_UART5_BASE            0x40005000
-#define IRS_UART4_BASE            0x40004C00
-#define IRS_USART3_BASE           0x40004800
-#define IRS_USART2_BASE           0x40004400
-#define IRS_SPI3_I2S3_BASE        0x40003C00
-#define IRS_SPI2_I2S2_BASE        0x40003800
-#define IRS_IWDG_BASE             0x40003000
-#define IRS_WWDG_BASE             0x40002C00
-#define IRS_RTC_BKP_BASE          0x40002800
-#define IRS_TIM14_BASE            0x40002000
-#define IRS_TIM13_BASE            0x40001C00
-#define IRS_TIM12_BASE            0x40001800
-#define IRS_TIM7_BASE             0x40001400
-#define IRS_TIM6_BASE             0x40001000
-#define IRS_TIM5_BASE             0x40000C00
-#define IRS_TIM4_BASE             0x40000800
-#define IRS_TIM3_BASE             0x40000400
-#define IRS_TIM2_BASE             0x40000000
+#ifdef IRS_STM32_F2_F4_F7
 
 enum gpio_channel_t {
   PNONE = -1,
@@ -243,7 +182,7 @@ enum gpio_channel_t {
   PJ13,
   PJ14,
   PJ15,
-    
+
   PK0,
   PK1,
   PK2,
@@ -259,7 +198,7 @@ enum gpio_channel_t {
   PK12,
   PK13,
   PK14,
-  PK15  
+  PK15
 };
 
 enum st_timer_name_t {
@@ -788,6 +727,8 @@ __IO_REG32_BIT(RCC_PLLI2SCFGR,    IRS_RCC_BASE + RCC_PLLI2SCFGR_S,__READ_WRITE ,
 #define GPIO_PORTG (*((volatile irs_u32 *) IRS_PORTG_BASE))
 #define GPIO_PORTH (*((volatile irs_u32 *) IRS_PORTH_BASE))
 #define GPIO_PORTI (*((volatile irs_u32 *) IRS_PORTI_BASE))
+#define GPIO_PORTJ (*((volatile irs_u32 *) IRS_PORTJ_BASE))
+#define GPIO_PORTK (*((volatile irs_u32 *) IRS_PORTK_BASE))
 
 // GPIO
 
@@ -2605,7 +2546,7 @@ typedef struct {
   __REG32  SETENA_TIM8_BRK_TIM12: 1;
   __REG32  SETENA_TIM8_UP_TIM13 : 1;
   __REG32  SETENA45       : 1;
-  __REG32  SETENA46       : 1;
+  __REG32  SETENA_TIM8_CC : 1;
   __REG32  SETENA47       : 1;
   __REG32  SETENA48       : 1;
   __REG32  SETENA_SDIO       : 1;
@@ -2914,7 +2855,7 @@ typedef struct {
 } __active1_bits;
 
 // SPI
-
+#ifndef IRS_STM32F7xx
 #define SPI_CR1_S 0x00
 #define SPI_CR2_S 0x04
 #define SPI_SR_S 0x08
@@ -3072,6 +3013,7 @@ struct spi_regs_t
   IRS_IO_REG32_BIT(SPI_I2SCFGR, __READ_WRITE ,__spi_i2scfgr_bits);
   IRS_IO_REG32_BIT(SPI_I2SPR, __READ_WRITE ,__spi_i2spr_bits);
 };
+#endif // !IRS_STM32F7xx
 
 // SDIO
 
@@ -3267,6 +3209,7 @@ __IO_REG32(    SDIO_FIFO,         IRS_SDIO_BASE + SDIO_FIFO_S,__READ_WRITE      
 
 // USART
 
+#ifndef IRS_STM32F7xx
 #define USART_SR_S 0x00
 #define USART_DR_S 0x04
 #define USART_BRR_S 0x08
@@ -3473,6 +3416,8 @@ struct usart_regs_t
   IRS_IO_REG32_BIT(USART_CR3, __READ_WRITE ,__usart_cr3_bits);
   IRS_IO_REG32_BIT(USART_GTPR, __READ_WRITE ,__usart_gtpr_bits);
 };
+
+#endif // !IRS_STM32F7xx
 
 /* ADC status register (ADC_SR) */
 typedef struct {
@@ -5126,6 +5071,6 @@ __IO_REG16_BIT(WWDG_CR,           0x40002C00,__READ_WRITE ,__wwdg_cr_bits);
 __IO_REG16_BIT(WWDG_CFR,          0x40002C04,__READ_WRITE ,__wwdg_cfr_bits);
 __IO_REG16_BIT(WWDG_SR,           0x40002C08,__READ_WRITE ,__wwdg_sr_bits);
 
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 
 #endif // armregs_stm32f2xxH

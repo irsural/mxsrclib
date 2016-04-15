@@ -34,7 +34,7 @@ irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 60000000;
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
-#elif defined(IRS_STM32F4xx)
+#elif (defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx))
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 16000000;
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_first = 16000000;
@@ -56,7 +56,7 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::frequency()
   return m_frequency;
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::periphery_frequency_first()
 {
@@ -105,7 +105,7 @@ void irs::cpu_traits_t::flash_voltage(double a_flash_voltage)
   m_flash_voltage = a_flash_voltage;
 }
 
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 
 irs::cpu_traits_t::endian_type irs::cpu_traits_t::endian()
 {

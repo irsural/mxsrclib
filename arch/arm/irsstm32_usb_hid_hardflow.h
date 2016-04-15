@@ -1,12 +1,14 @@
 //! \file
 //! \ingroup drivers_group
-//! \brief Реализация интерфейса hardflow_t для 
-//!   USB HID контроллеров stm32f2xx/stm32f4xx
+//! \brief Реализация интерфейса hardflow_t для
+//!   USB HID в контроллерах stm32.
+//! \details Работает через библиотеку STM32 USB Device Library 
+//!   (версия V2.0.0 или выше)
 //!
-//! Дата создания: 16.10.2013
+//! Дата создания: 28.01.2016
 
-#ifndef irsstm32f2xx_usb_hid_hardflowH
-#define irsstm32f2xx_usb_hid_hardflowH
+#ifndef irsstm32_usb_hid_hardflowH
+#define irsstm32_usb_hid_hardflowH
 
 #include <irsdefs.h>
 
@@ -16,30 +18,23 @@
 #include <armregs_stm32f2xx.h>
 #include <armiomacros.h>
 
-/*#if defined(IRS_STM32F2xx)
-# include <stm32f2x7_eth.h>
-#elif defined(IRS_STM32F4xx)
-# include <stm32f4x7_eth.h>
-#endif // defined(IRS_STM32F4xx)
-*/
-#if IRS_USE_STM32F2_4_USB_HID_HARDFLOW
+#if IRS_USE_STM32_USB_HID_HARDFLOW
 extern "C" {
-# include <usb_core.h>
+//# include <usb_core.h>
 # include <usbd_core.h>
+# include <irs_usbd_hid_hardflow.h>
 }
-#endif // IRS_USE_STM32F2_4_USB_HID_HARDFLOW
+#endif // IRS_USE_STM32_USB_HID_HARDFLOW
 
 #include <irsfinal.h>
 
-#if IRS_USE_STM32F2_4_USB_HID_HARDFLOW
+#if IRS_USE_STM32_USB_HID_HARDFLOW
 
 namespace irs {
 
 namespace hardflow {
-  
-namespace arm {
 
-#if defined(IRS_STM32F_2_AND_4)
+namespace arm {
 
 class usb_hid_t: public hardflow_t
 {
@@ -57,18 +52,22 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
-  static void rx_buffer_is_empty_event(USB_OTG_CORE_HANDLE* ap_dev, 
-    irs_u8* ap_rx_buffer, size_type a_size);
+
+  static int8_t rx_buffer_is_empty_event(//USBD_HandleTypeDef* ap_dev,
+    uint8_t* ap_rx_buffer, uint32_t a_size);
+
   static void tx_buffer_is_empty_event();
+
   static usb_hid_t* reset(size_type a_channel_start_index = invalid_channel + 1,
     size_type a_channel_count = 1, size_type a_report_size = 64);
+
   static usb_hid_t* get_instance();
   enum { report_max_count = 5 };
   typedef irs_u8 channel_field_type;
   typedef irs_u16 size_field_type;
   typedef std::vector< vector<irs_u8> > buffers_type;
   typedef std::vector< vector<irs_u8> >::iterator buffers_iterator;
-  typedef std::vector< vector<irs_u8> >::const_iterator buffers_const_iterator; 
+  typedef std::vector< vector<irs_u8> >::const_iterator buffers_const_iterator;
   enum { channel_field_size = sizeof(channel_field_type) };
   enum { size_field_size = sizeof(size_field_type) };
   enum { header_size = sizeof(channel_field_type) + sizeof(size_field_type) };
@@ -78,11 +77,11 @@ public:
 private:
   #pragma pack(push, 1)
   struct packet_t
-  {    
+  {
     channel_field_type channel_id;
     size_field_type data_size;
     irs_u8 data[data_max_size];
-    packet_t():      
+    packet_t():
       channel_id(0),
       data_size(0),
       data()
@@ -120,7 +119,7 @@ private:
     size_type a_size);
   size_type write_to_buffer(vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf,
     size_type a_size);
-  void otg_fs_event();
+  void otg_event();
   //static write_report(void* ap_params);
   const size_type m_channel_start_index;
   const size_type m_channel_end_index;
@@ -129,40 +128,46 @@ private:
   //size_type m_packet_size;
   size_type m_data_max_size;
   size_type m_buffer_max_size;
+
   #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
     #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-      #pragma data_alignment=4   
+      #pragma data_alignment=4
     #endif
-  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */  
-  __ALIGN_BEGIN USB_OTG_CORE_HANDLE m_usb_otg_dev __ALIGN_END;
+  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
+  __ALIGN_BEGIN USBD_HandleTypeDef m_usb_otg_dev __ALIGN_END;
   #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
     #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-      #pragma data_alignment=4   
+      #pragma data_alignment=4
     #endif
-  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */ 
-  event_connect_t<usb_hid_t> m_otg_fs_event_connect;
+  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
+
+  USBD_CUSTOM_HID_ItfTypeDef m_usbd_custom_hid_fops;
+  /*{
+    CustomHID_ReportDesc,
+    CustomHID_Init,
+    CustomHID_DeInit,
+    CustomHID_OutEvent,
+  };*/
+
+  event_function_t<usb_hid_t> m_otg_event_connect;
   packet_t m_write_packet;
   buffers_type m_read_buffers;
   buffers_type m_write_buffers;
   size_type m_write_buf_index;
   size_type m_channel;
   bool m_packet_received;
-  USB_OTG_CORE_HANDLE* mp_dev;
+  USBD_HandleTypeDef* mp_dev;
   irs_u8* mp_rx_buffer;
-  bool m_tx_buffer_is_empty;
+  //bool m_tx_buffer_is_empty;
   static handle_t<usb_hid_t> mp_usb_hid;
 };
-  
-#else
-# error Тип контроллера не определён
-#endif // mcu type
-  
+
 } // namespace arm
 
 } // namespace hardflow
 
 } // namespace irs
-  
-#endif // IRS_USE_STM32F2_4_USB_HID_HARDFLOW
 
-#endif // irsstm32f2xx_usb_hid_hardflowH
+#endif // IRS_USE_STM32_USB_HID_HARDFLOW
+
+#endif // irsstm32_usb_hid_hardflowH

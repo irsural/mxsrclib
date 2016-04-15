@@ -28,12 +28,13 @@
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
 
-
-#if defined(IRS_STM32F2xx)
-# include <stm32f2xx_rtc.h>
-#elif defined(IRS_STM32F4xx)
-# include <stm32f4xx_rtc.h>
-#endif // defined(IRS_STM32F4xx)
+#ifdef USE_STDPERIPH_DRIVER
+# if defined(IRS_STM32F2xx)
+#   include <stm32f2xx_rtc.h>
+# elif defined(IRS_STM32F4xx)
+#   include <stm32f4xx_rtc.h>
+# endif // defined(IRS_STM32F4xx)
+#endif // USE_STDPERIPH_DRIVER
 
 #include <irsfinal.h>
 
@@ -185,7 +186,7 @@ private:
 };
 
 #elif defined(__STM32F100RBT__)
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 class timers_usage_t {
 public:
@@ -357,7 +358,7 @@ public:
     return RESC_bit.WDT;
     #elif defined(__STM32F100RBT__)
     return false;
-    #elif defined(IRS_STM32F_2_AND_4)
+    #elif defined(IRS_STM32_F2_F4_F7)
     return false;
     #else
       #error Тип контроллера не определён
@@ -371,7 +372,7 @@ public:
     RESC_bit.WDT = 0;
     #elif defined(__STM32F100RBT__)
     volatile i = 0;
-    #elif defined(IRS_STM32F_2_AND_4)
+    #elif defined(IRS_STM32_F2_F4_F7)
     volatile i = 0;
     #else
       #error Тип контроллера не определён
@@ -382,6 +383,7 @@ private:
 }; // watchdog_timer_t
 
 #elif defined(IRS_STM32F_2_AND_4)
+#ifdef USE_STDPERIPH_DRIVER
 //! \brief Драйвер независимого сторожевого таймера для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
 //! \details Работает от независимого генератора с частотой ~32 кГц
@@ -434,10 +436,10 @@ public:
 private:
   irs_u8 m_counter_start_value;
 }; // watchdog_timer_t
-#else
-  #error Тип контроллера не определён
-#endif  //  mcu type
+#endif // USE_STDPERIPH_DRIVER
+#endif  //  definde(IRS_STM32F_2_AND_4)
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 class st_rtc_t
 {
@@ -477,6 +479,7 @@ private:
   static handle_t<st_rtc_t> mp_st_rtc;
 };
 #endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
 
 //! @}
 
@@ -503,9 +506,9 @@ class decoder_t
 public:
   typedef irs_size_t size_type;
   decoder_t();
-  /*#ifdef IRS_STM32F_2_AND_4
+  /*#ifdef IRS_STM32_F2_F4_F7
   void add(gpio_channel_t a_channel);
-  #endif // IRS_STM32F_2_AND_4*/
+  #endif // IRS_STM32_F2_F4_F7*/
   void add(irs::handle_t<gpio_pin_t> ap_gpio_pin);
   void select_pin(irs_u32 a_pin_index);
   irs_u32 get_selected_pin();

@@ -151,7 +151,7 @@ void irs::arm::flash_t::flash_erase(irs_u32 a_index)
 void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
 {
 }
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
 {
 }
@@ -186,7 +186,7 @@ void irs::arm::flash_t::flash_write_block(irs_u8* /*ap_buf*/,
   irs_u32 /*a_index*/)
 {
 }
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 void irs::arm::flash_t::flash_write_block(irs_u8* /*ap_buf*/,
   irs_u32 /*a_index*/)
 {
@@ -316,6 +316,7 @@ bool irs::arm::flash_protected_t::double_error()
   return m_crc_error;
 }
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
 irs_u8* irs::arm::st_flash_page_begin(std::size_t a_page_index)
@@ -938,4 +939,5 @@ void irs::arm::st_flash_files_t::tick()
     ++it;
   }
 }
-#endif  //  IRS_STM32F_2_AND_4
+#endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER

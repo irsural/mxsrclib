@@ -185,31 +185,39 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
-#if defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4) &&\
+#if defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7) &&\
   defined(USE_STDPERIPH_DRIVER)
 _STD_BEGIN
 __time32_t (__time32)(__time32_t *t)
 { 
+  #ifdef IRS_STM32F_2_AND_4
   if (t)
   {
     *t = irs::arm::st_rtc_t::get_instance()->get_time();
   }
   return irs::arm::st_rtc_t::get_instance()->get_time();
+  #else
+  return 0;
+  #endif
 }
 
 #if _DLIB_TIME_ALLOW_64
 __time64_t (__time64)(__time64_t *t)
 {
+  #ifdef IRS_STM32F_2_AND_4
   if (t)
   {
     *t = irs::arm::st_rtc_t::get_instance()->get_time();
   }
   return irs::arm::st_rtc_t::get_instance()->get_time();
+  #else
+  return 0;
+  #endif
 }
 //CLOCKS_PER_SEC
 
 _STD_END
-#endif // defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4) && 
+#endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7) && 
 //  defined(USE_STDPERIPH_DRIVER)
 
-#endif // defined(__ICCARM__) && defined(IRS_STM32F_2_AND_4)
+#endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7)

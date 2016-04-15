@@ -347,7 +347,7 @@ void irs_arm_gpio_portj_func()
 }
 #endif // __LM3SxBxx__
 
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 //  Прерывания периферии
 
@@ -370,7 +370,7 @@ void irs_arm_exti9_5_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti9_5_int);
   if (EXTI_PR_bit.PR5) {
-    EXTI_PR_bit.PR5 = 1;
+    EXTI_PR_bit.PR5 = 1;    
   } else if (EXTI_PR_bit.PR6) {
     EXTI_PR_bit.PR6 = 1;
   } else if (EXTI_PR_bit.PR7) {
@@ -379,7 +379,9 @@ void irs_arm_exti9_5_func()
     EXTI_PR_bit.PR8 = 1;
   } else if (EXTI_PR_bit.PR9) {
     EXTI_PR_bit.PR9 = 1;
-  }
+  }  
+  // Без этой инструкции прерывание иногда вызывается повторно
+  __DSB();
 }
 
 void irs_arm_tim1_up_tim10_func()
@@ -433,6 +435,15 @@ void irs_arm_tim8_up_tim13_func()
   TIM13_SR_bit.CC1IF = 0;
 }
 
+void irs_arm_tim8_cc_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim8_cc_int);
+  TIM8_SR_bit.CC1IF = 0;
+  TIM8_SR_bit.CC2IF = 0;
+  TIM8_SR_bit.CC3IF = 0;
+  TIM8_SR_bit.CC4IF = 0;
+}
+
 void irs_arm_usart1_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::usart1_int);
@@ -478,7 +489,12 @@ void irs_arm_usart6_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::usart6_int);
 }
-#endif // defined(IRS_STM32F_2_AND_4)
+
+void irs_arm_otg_hs_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::otg_hs_int);
+}
+#endif // defined(IRS_STM32_F2_F4_F7)
 
 void irs_arm_default_int_func()
 {
@@ -600,7 +616,7 @@ __root const intfunc __int_vector_table[] =
   #endif // __LM3SxBxx__
 };
 
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 #pragma location = ".periph_intvec"
 __root const intfunc __int_vector_table[] =
@@ -651,7 +667,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_tim8_brk_tim12_func,// 43
   irs_arm_tim8_up_tim13_func,// 44
   irs_arm_default_int_func,  // 45
-  irs_arm_default_int_func,  // 46
+  irs_arm_tim8_cc_func,  // 46
   irs_arm_default_int_func,  // 47
   irs_arm_default_int_func,  // 48
   irs_arm_sdio_func,  // 49
@@ -682,11 +698,11 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 74
   irs_arm_default_int_func,  // 75
   irs_arm_default_int_func,  // 76
-  irs_arm_default_int_func,  // 77
+  irs_arm_otg_hs_func,       // 77
   irs_arm_default_int_func,  // 78
   irs_arm_default_int_func,  // 79
   irs_arm_default_int_func   // 80
 };
-#endif // defined(IRS_STM32F_2_AND_4)
+#endif // defined(IRS_STM32_F2_F4_F7)
 
 #endif // !IRS_DISABLE_EVENT_INTERRUPT

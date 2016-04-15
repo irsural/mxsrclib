@@ -18,11 +18,11 @@ extern "C" {
 #include <lwip/mem.h>
 #include <lwip/memp.h>
 #include <lwip/dhcp.h>
-#ifdef IRS_STM32F_2_AND_4
-#endif // IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
+#endif // IRS_STM32_F2_F4_F7
 #include <netif/etharp.h>
-#ifdef IRS_STM32F_2_AND_4
-#endif // IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
+#endif // IRS_STM32_F2_F4_F7
 
 } // extern "C"
 

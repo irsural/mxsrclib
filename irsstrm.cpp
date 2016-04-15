@@ -17,9 +17,9 @@
 irs::arm::com_buf::com_buf(const com_buf& a_buf):
   m_outbuf_size(a_buf.m_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   m_usart(a_buf.m_usart),
-  #endif //IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   m_baud_rate(a_buf.m_baud_rate)
 {
   memset(m_outbuf.get(), 0, m_outbuf_size);
@@ -32,9 +32,9 @@ irs::arm::com_buf::com_buf(
 ):
   m_outbuf_size(a_outbuf_size),
   m_outbuf(new char[m_outbuf_size + 1]),
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   m_usart(0),
-  #endif //IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   m_baud_rate(a_baud_rate)
 {
   volatile int index_supress_warning = a_com_index;
@@ -81,7 +81,7 @@ irs::arm::com_buf::com_buf(
   (*((volatile irs_u32*)(PORTA_BASE + GPIO_PCTL))) |= PORTA1_UART0Tx;
   #endif // __LM3SxBxx__
   #elif defined(__STM32F100RBT__)
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
   //typedef volatile usart_regs_t usart_regs_v_t;
   m_usart = get_usart(a_com_index);
   switch (a_com_index) {
@@ -192,7 +192,12 @@ irs::arm::com_buf::com_buf(
 void irs::arm::com_buf::set_usart_options(int a_com_index)
 {
   m_usart->USART_CR1_bit.UE = 1;
+  
+  #ifdef IRS_STM32F7xx
+  m_usart->USART_CR1_bit.M0 = 0; // 8 Data bits
+  #else // F2 F4
   m_usart->USART_CR1_bit.M = 0; // 8 Data bits
+  #endif // F2 F4
   m_usart->USART_CR1_bit.PCE = 0; // Parity control disabled
   m_usart->USART_CR1_bit.PS = 0; // Even parity
   m_usart->USART_CR2_bit.STOP = 0; // 1 stop bit
@@ -207,7 +212,7 @@ void irs::arm::com_buf::set_usart_options(int a_com_index)
     16*(periphery_frequency%(16*m_baud_rate))/(16*m_baud_rate);
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 irs::arm::com_buf::com_buf(
   int a_com_index,
   gpio_channel_t a_tx,
@@ -236,10 +241,10 @@ irs::arm::com_buf::com_buf(
   set_usart_options(a_com_index);
   if (a_tx != PNONE) {
     m_usart->USART_CR1_bit.TE = 1; // 1: Transmitter is enabled
-  }
+  }  
 }
 
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 /*inline irs::com_buf::~com_buf()
 {
 }*/
@@ -263,11 +268,16 @@ void irs::arm::com_buf::trans_simple (char data)
   #elif defined(__STM32F100RBT__)
     volatile char x = data;
     //data = 0;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     // 1: Transmitter is enabled
     //m_usart->USART_CR1_bit.TE = 1;
+    #ifdef IRS_STM32F7xx
+    while (m_usart->USART_ISR_bit.TC != 1);
+    m_usart->USART_TDR = data;
+    #else // F2 F4
     while (m_usart->USART_SR_bit.TC != 1);
     m_usart->USART_DR = data;
+    #endif // F2 F4
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type

@@ -900,7 +900,7 @@ void irs::arm::adc_stellaris_t::tick()
   }
 }
 
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 // class st_adc_t
 irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
@@ -944,7 +944,8 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
     smpr |= (a_sampling_time & mask) << (i * bit_len);
   }
   mp_adc->ADC_SMPR1 = smpr;
-  for (irs_u8 i = 0, smpr = 0; i < num_of_smpr2_channels; i++) {
+  smpr = 0;
+  for (irs_u8 i = 0; i < num_of_smpr2_channels; i++) {
     smpr |= (a_sampling_time & mask) << (i * bit_len);
   }
   mp_adc->ADC_SMPR2 = smpr;
@@ -980,10 +981,22 @@ irs::arm::st_adc_t::st_adc_t(size_t a_adc_address,
   adc_gpio_pairs.push_back(make_pair(ADC12_PC5_CH15, PC5));
   adc_gpio_pairs.push_back(make_pair(ADC3_PF5_CH15, PF5));
 
+  select_channel_type selected_adc_mask = ADC1_MASK;
+  switch (a_adc_address) {
+    case IRS_ADC1_BASE: {
+      selected_adc_mask = ADC1_MASK;
+    } break;
+    case IRS_ADC2_BASE: {
+      selected_adc_mask = ADC2_MASK;
+    } break;
+    case IRS_ADC3_BASE: {
+      selected_adc_mask = ADC3_MASK;
+    } break;
+  }
+
   for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
-    const select_channel_type adc_mask =
-      (ADC1_MASK | ADC2_MASK | ADC3_MASK) & adc_channel;
+    const select_channel_type adc_mask = selected_adc_mask & adc_channel;
     const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
     if ((a_selected_channels & channel_mask) &&
       (a_selected_channels & adc_mask)) {
@@ -1344,10 +1357,22 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
   adc_gpio_pairs.push_back(make_pair(ADC12_PC5_CH15, PC5));
   adc_gpio_pairs.push_back(make_pair(ADC3_PF5_CH15, PF5));
 
+  select_channel_type selected_adc_mask = ADC1_MASK;
+  switch (ap_settings->adc_address) {
+    case IRS_ADC1_BASE: {
+      selected_adc_mask = ADC1_MASK;
+    } break;
+    case IRS_ADC2_BASE: {
+      selected_adc_mask = ADC2_MASK;
+    } break;
+    case IRS_ADC3_BASE: {
+      selected_adc_mask = ADC3_MASK;
+    } break;
+  }
+  
   for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
-    const select_channel_type adc_mask = (ADC1_MASK | ADC2_MASK | ADC3_MASK) &
-      adc_channel;
+    const select_channel_type adc_mask = selected_adc_mask & adc_channel;
     const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
     if ((mp_settings->adc_selected_channels & channel_mask) &&
       (mp_settings->adc_selected_channels & adc_mask)) {
@@ -1731,4 +1756,4 @@ void irs::arm::st_dac_t::set_u16_normalized_data(size_t a_channel,
   IRS_LIB_ASSERT(a_data <= dac_max_value);
   (*m_channels[a_channel]).data = a_data;
 }
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7

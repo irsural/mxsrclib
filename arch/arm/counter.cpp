@@ -12,6 +12,14 @@
 
 #include <armioregs.h>
 
+#ifdef USE_HAL_DRIVER
+# if defined(IRS_STM32F4xx)
+#   include "stm32f4xx_hal.h"
+# elif defined(IRS_STM32F7xx)
+#   include "stm32f7xx_hal.h"
+# endif // defined(IRS_STM32F7xx)
+#endif // USE_HAL_DRIVER
+
 #include <irsfinal.h>
 
 counter_t high_dword = 0;
@@ -87,6 +95,15 @@ counter_t counter_get()
   timer_overflow_interrupt_enabled = true;
   return result;
 }
+
+#ifdef USE_HAL_DRIVER
+uint32_t HAL_GetTick(void)
+{
+  uint32_t sec = (SECONDS_PER_INTERVAL*(counter_get()/COUNTER_PER_INTERVAL));
+  return sec*1000;
+}
+#endif // USE_HAL_DRIVER
+
 
 //  Деинициализация счётчика
 void counter_deinit()

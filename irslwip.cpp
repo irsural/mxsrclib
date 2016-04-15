@@ -2,11 +2,13 @@
 
 #include <irslwip.h>
 
-#if defined(IRS_STM32F2xx)
-# include <stm32f2x7_eth.h>
-#elif defined(IRS_STM32F4xx)
-# include <stm32f4x7_eth.h>
-#endif // defined(IRS_STM32F4xx)
+#ifdef USE_STDPERIPH_DRIVER
+# if defined(IRS_STM32F2xx)
+#   include <stm32f2x7_eth.h>
+# elif defined(IRS_STM32F4xx)
+#   include <stm32f4x7_eth.h>
+# endif // defined(IRS_STM32F4xx)
+#endif // USE_STDPERIPH_DRIVER
 
 #include <irsfinal.h>
 

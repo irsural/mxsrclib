@@ -172,7 +172,7 @@ void irs::set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc)
   ap_mxkey_drv_mc->add_key(irskey_enter);
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 
 irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   gpio_channel_t a_gpio_channel_2, size_t a_timer_address):
@@ -191,16 +191,16 @@ irs::encoder_drv_mc_t::encoder_drv_mc_t(gpio_channel_t a_gpio_channel_1,
   size_t alternate_function_number = 0;
   switch (a_timer_address) {
     case IRS_TIM2_BASE: {
-      alternate_function_number = GPIO_AF_TIM2;
+      alternate_function_number = 0x01;
     } break;
     case IRS_TIM3_BASE: {
-      alternate_function_number = GPIO_AF_TIM3;
+      alternate_function_number = 0x02;
     } break;
     case IRS_TIM4_BASE: {
-      alternate_function_number = GPIO_AF_TIM4;
+      alternate_function_number = 0x02;
     } break;
     case IRS_TIM5_BASE: {
-      alternate_function_number = GPIO_AF_TIM5;
+      alternate_function_number = 0x02;
     } break;
   };
 
@@ -308,7 +308,7 @@ void irs::set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc)
   ap_encoder_drv_mc->add_key(irskey_enter);
 }
 
-#endif  // IRS_STM32F_2_AND_4
+#endif  // IRS_STM32_F2_F4_F7
 
 #endif  //  __ICCARM__ || __ICCAVR__
 

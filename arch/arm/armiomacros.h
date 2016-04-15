@@ -54,8 +54,17 @@
   #error Тип контроллера не определён
 #endif  *///  MCU_FAMILY
 
-#if defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
-  #define IRS_STM32F_2_AND_4
+#if defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)// || defined(IRS_STM32F7xx)
+# define IRS_STM32F_2_AND_4
+#endif // defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
+
+#if defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+# define IRS_STM32_F2_F4_F7
+#endif // defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
+
+
+#if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+# define IRS_STM32_F4_F7
 #endif // defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
 
 /***********************************************

@@ -12,7 +12,7 @@
 #include <irscpu.h>
 
 #include <irsfinal.h>
-
+#define F7_216Hz 1
 void pll_on()
 {
 #if defined(__LM3Sx9xx__)
@@ -52,7 +52,7 @@ void pll_on()
   while (!RCC_CR_bit.PLLRDY);
   RCC_CFGR_bit.SW = 0x2;      //  SRC = PLL
   irs::cpu_traits_t::frequency(24000000);
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
   irs::param_pll_t param_pll;
   #if defined(IRS_STM32F2xx)
     // На входе кварц 25 МГц
@@ -77,11 +77,50 @@ void pll_on()
     param_pll.PLLQ = 7; // Делитель для USB 48 МГц
     // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
     param_pll.PPRE1 = 5;
-    // APB high-speed prescaler (APB2). 101: 100: AHB clock divided by 2
+    // APB high-speed prescaler (APB2). 100: AHB clock divided by 2
     param_pll.PPRE2 = 4;
     param_pll.FLASH_STATE = 5;
     param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
     irs::pll_on(param_pll);
+  #elif defined(IRS_STM32F7xx)
+    // Это непроверенный код, скопирован из секции для IRS_STM32F4xx !!!!!!
+    // На входе кварц 25 МГц
+#if !F7_216Hz
+    param_pll.freq_quartz = 25000000;
+    param_pll.PLLM = 25; // Делитель на входе PLL
+    param_pll.PLLN = 336; // Множитель внутри PLL
+    param_pll.PLLP = 0; // 0 это деление на 2, делитель для ядра 168 МГц
+    param_pll.PLLQ = 7; // Делитель для USB 48 МГц
+    // APB Low speed prescaler (APB1). 101: AHB clock divided by 4
+    param_pll.PPRE1 = 5;
+    // APB high-speed prescaler (APB2). 100: AHB clock divided by 2
+    param_pll.PPRE2 = 4;
+    param_pll.FLASH_STATE = 5;
+    param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
+    irs::pll_on(param_pll);
+#else
+    param_pll.freq_quartz = 25000000;
+    param_pll.PLLM = 25; // Делитель на входе PLL
+    param_pll.PLLN = 432; // Множитель внутри PLL
+    param_pll.PLLP = 0; // 0 это деление на 2, делитель для ядра 216 МГц
+    param_pll.PLLQ = 9; // Делитель для USB 48 МГц
+    // APB Low speed prescaler (APB1). 110: AHB clock divided by 4
+    param_pll.PPRE1 = 5;//6;
+    // APB high-speed prescaler (APB2). 101: AHB clock divided by 2
+    param_pll.PPRE2 = 4;//5;
+    param_pll.FLASH_STATE = 7;
+    param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
+
+    // Не хватает включения overdrive режима 
+    
+    
+    // PLLI2SN[8:0] = 192 (x192)По умолчанию
+    // PLLI2SP[1:0] = 00: (/2) По умолчанию
+    // PLLI2SQ[0:3] = 0100: (/4) По умолчанию
+    // PLLI2SR[2:0]: = 010: (/2) По умолчанию
+
+    irs::pll_on(param_pll);
+#endif
   #else
     #error Тип контроллера не определён
   #endif //ARM_devices
@@ -95,7 +134,7 @@ void irs::pll_on()
   pll_on();
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 void irs::pll_on(param_pll_t a_param_pll)
 {
   RCC_CR_bit.HSEON = 1;
@@ -146,7 +185,7 @@ void irs::pll_on(param_pll_t a_param_pll)
     case 5: {divider = 4;} break;
     case 6: {divider = 8;} break;
     case 7: {divider = 16;} break;
-    default: IRS_ASSERT_MSG("Задан недопустимый делитель APB1");
+    default: IRS_LIB_ASSERT_MSG("Задан недопустимый делитель APB1");
   }
   irs::cpu_traits_t::periphery_frequency_first(
     static_cast<cpu_traits_t::frequency_type>(freq/divider));
@@ -156,7 +195,7 @@ void irs::pll_on(param_pll_t a_param_pll)
     case 5: {divider = 4;} break;
     case 6: {divider = 8;} break;
     case 7: {divider = 16;} break;
-    default: IRS_ASSERT_MSG("Задан недопустимый делитель APB1");
+    default: IRS_LIB_ASSERT_MSG("Задан недопустимый делитель APB2");
   }
   irs::cpu_traits_t::periphery_frequency_second(
     static_cast<cpu_traits_t::frequency_type>(freq/divider));
@@ -266,7 +305,7 @@ void irs::reset_peripheral(size_t a_address)
       RCC_APB1RSTR_bit.DACRST = 0;
     } break;
     default : {
-      IRS_ASSERT_MSG("Сброс для указанного устройства не определен");
+      IRS_LIB_ASSERT_MSG("Сброс для указанного устройства не определен");
     }
   }
 }
@@ -394,6 +433,9 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
     case IRS_SPI3_I2S3_BASE: {
       RCC_APB1ENR_bit.SPI3EN = value;
     } break;
+    /*case IRS_SPI6_BASE: {
+      RCC_APB2ENR_bit.SPI6EN = value;
+    } break;*/
     case IRS_ADC1_BASE: {
       RCC_APB2ENR_bit.ADC1EN = value;
     } break;
@@ -413,7 +455,7 @@ void irs::clock_enabled(size_t a_address, bool a_enabled)
       RCC_AHB1ENR_bit.DMA2EN = value;
     } break;
     default : {
-      IRS_ASSERT_MSG("Включение/отключение для указанного "
+      IRS_LIB_ASSERT_MSG("Включение/отключение для указанного "
         "устройства не определено");
     }
   }
@@ -488,40 +530,40 @@ void irs::gpio_ospeedr_select(gpio_channel_t a_channel, size_t a_speed)
 void irs::gpio_usart_alternate_function_select(gpio_channel_t a_channel,
   int a_com_index)
 {
-  int alternate_function = GPIO_AF_USART1;
+  int alternate_function = 0x07;
   switch (a_com_index) {
     case 1: {
-      alternate_function = GPIO_AF_USART1;
+      alternate_function = 0x07;
     } break;
     case 2: {
-      alternate_function = GPIO_AF_USART2;
+      alternate_function = 0x07;
     } break;
     case 3: {
-      alternate_function = GPIO_AF_USART3;
+      alternate_function = 0x07;
     } break;
     case 4: {
-      alternate_function = GPIO_AF_UART4;
+      alternate_function = 0x08;
     } break;
     case 5: {
-      alternate_function = GPIO_AF_UART5;
+      alternate_function = 0x08;
     } break;
     case 6: {
-      alternate_function = GPIO_AF_USART6;
+      alternate_function = 0x08;
     } break;
     #ifdef IRS_STM32F4xx
     case 7: {
-      alternate_function = GPIO_AF_UART7;
+      alternate_function = 0x08;
     } break;
     case 8: {
-      alternate_function = GPIO_AF_UART8;
+      alternate_function = 0x08;
     } break;
     #endif // IRS_STM32F4xx
     default: {
       #ifdef IRS_STM32F2xx
       IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 6");
-      #else // IRS_STM32F4xx
+      #else // IRS_STM32F4xx IRS_STM32F7xx
       IRS_LIB_ASSERT_MSG("Индекс ком-порта должен быть от 1 до 8");
-      #endif // IRS_STM32F4xx
+      #endif // IRS_STM32F4xx IRS_STM32F7xx
     }
   }
   gpio_alternate_function_select(a_channel, alternate_function);
@@ -608,10 +650,10 @@ void irs::update_interrupt_enabled(size_t a_address, bool a_enabled)
 
     } break;*/
     default : {
-      IRS_ASSERT_MSG("Включение/отключение прерывания для указанного "
+      IRS_LIB_ASSERT_MSG("Включение/отключение прерывания для указанного "
         "устройства не определено");
     }
   }
 }
 
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7

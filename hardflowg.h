@@ -1994,6 +1994,7 @@ private:
 
 #endif // IRS_WIN32
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 namespace arm {
 
@@ -2081,6 +2082,7 @@ private:
 
 } // namespace arm
 #endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
 
 class connector_t: public hardflow_t
 {

@@ -477,7 +477,7 @@ public:
     int a_outbuf_size = 16,
     irs_u32 a_baud_rate = 9600
   );
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   //! \brief Конструктор, позволяющий указать пин контроллера
   //! \param[in] a_com_index - индекс ком-порта, от 1 до 6
   //! \param[in] a_tx - пин для записи данных
@@ -489,7 +489,7 @@ public:
     int a_outbuf_size = 16,
     irs_u32 a_baud_rate = 9600
   );
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   //inline virtual ~com_buf();
   virtual int overflow(int c = EOF);
   virtual int sync();
@@ -503,9 +503,9 @@ private:
 
   int m_outbuf_size;
   auto_arr<char> m_outbuf;
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   volatile usart_regs_t* m_usart;
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   const irs_u32 m_baud_rate;
 };
 

@@ -112,7 +112,7 @@ enum {
   gpio_portj_int,
   #endif // __LM3SxBxx__
 
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
   //tim1_brk_tim9_int,
   exti3_int,
   exti9_5_int,
@@ -121,6 +121,7 @@ enum {
   tim3_int,
   tim8_brk_tim12_int,
   tim8_up_tim13_int,
+  tim8_cc_int,
   usart1_int,
   usart2_int,
   usart3_int,
@@ -130,6 +131,7 @@ enum {
   dma2_stream3_int,
   otg_fs_int,
   usart6_int,
+  otg_hs_int,
   #endif //Микроконтроллеры
 
   #endif // !IRS_DISABLE_EVENT_INTERRUPT

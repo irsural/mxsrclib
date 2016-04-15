@@ -35,25 +35,25 @@ public:
   // „астота процессора, √ц
   static void frequency(frequency_type a_frequency);
   static frequency_type frequency();
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   static frequency_type periphery_frequency_first();
   static void periphery_frequency_first(frequency_type a_frequency);
   static frequency_type periphery_frequency_second();
   static void periphery_frequency_second(frequency_type a_frequency);
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   static endian_t endian();
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   static frequency_type timer_frequency(size_t a_timer_base);
   static double flash_voltage();
   static void flash_voltage(double a_flash_voltage);
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
 private:
   static frequency_type m_frequency;
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   static frequency_type m_periphery_frequency_first;
   static frequency_type m_periphery_frequency_second;
   static double m_flash_voltage;
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
 };
 
 //! @}

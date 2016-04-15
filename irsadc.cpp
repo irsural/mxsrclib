@@ -603,6 +603,7 @@ irs::adc_ads1298_continuous_mode_t::adc_ads1298_continuous_mode_t(
   m_spi_buf.reserve(reg_last + 1);
 
   mp_cs_pin->set();
+  mp_power_down_pin->set();
   mp_reset_pin->set();
 
   m_t_after_power_up_delay.start();
@@ -610,6 +611,7 @@ irs::adc_ads1298_continuous_mode_t::adc_ads1298_continuous_mode_t(
 
 irs::adc_ads1298_continuous_mode_t::~adc_ads1298_continuous_mode_t()
 {
+  mp_spi->abort();
   spi_release();
 }
 
@@ -752,7 +754,7 @@ void irs::adc_ads1298_continuous_mode_t::tick()
     } break;
     case process_wait_after_power_up: {
       if (m_t_after_power_up_delay.check()) {
-        mp_power_down_pin->set();
+        mp_reset_pin->clear();
         m_t_reset_delay.start();
         m_process = process_wait_reset;
       }

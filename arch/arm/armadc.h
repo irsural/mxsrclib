@@ -115,7 +115,7 @@ private:
 
 //! @}
 
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 //! \addtogroup drivers_group
 //! @{
@@ -201,7 +201,7 @@ private:
     ics_v_battery
   };
   injected_channel_switch_t m_injected_channel_selected;
-  bool m_single_conversion;
+  const bool m_single_conversion;
 };
 
 //! \brief Драйвер АЦП DMA для контроллеров семейства STM32F2xx
@@ -354,7 +354,7 @@ private:
 
 //! @}
 
-#endif  //  IRS_STM32F_2_AND_4
+#endif  //  IRS_STM32_F2_F4_F7
 
 } // namespace arm
 

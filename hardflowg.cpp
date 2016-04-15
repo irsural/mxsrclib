@@ -3324,6 +3324,7 @@ bool irs::hardflow::usb_hid_t::check_error()
 
 #endif // IRS_WIN32
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 // class st_com_flow_t
 irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
@@ -3392,7 +3393,11 @@ irs::hardflow::arm::st_com_flow_t::st_com_flow_t(
 void irs::hardflow::arm::st_com_flow_t::set_usart_options(int a_com_index)
 {
   m_usart->USART_CR1_bit.UE = 1;
+  #ifdef IRS_STM32F7xx
+  m_usart->USART_CR1_bit.M0 = 0; // 8 Data bits
+  #else // F2 F4
   m_usart->USART_CR1_bit.M = 0; // 8 Data bits
+  #endif // F2 F4
   m_usart->USART_CR1_bit.PCE = 0; // Parity control disabled
   m_usart->USART_CR1_bit.PS = 0; // Even parity
   m_usart->USART_CR2_bit.STOP = 0; // 1 stop bit
@@ -3565,6 +3570,7 @@ void irs::hardflow::arm::st_com_flow_t::usart_event_t::exec()
   }
 }
 #endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
 
 // class echo_t
 irs::hardflow::echo_t::echo_t(size_type a_channel_count,

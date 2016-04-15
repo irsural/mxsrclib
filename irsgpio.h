@@ -13,9 +13,9 @@
 # include <armioregs.h>
 #endif //__ICCARM__
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 # include <armregs_stm32f2xx.h>
-#endif //
+#endif // IRS_STM32_F2_F4_F7
 
 #include <irsfinal.h>
 
@@ -325,10 +325,10 @@ class io_pin_t: public gpio_pin_t
 public:
   io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
     io_pin_value_t a_value = io_pin_no_change);
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
     io_pin_value_t a_value = io_pin_no_change);
-  #endif // IRS_STM32F_2_AND_4
+  #endif // IRS_STM32_F2_F4_F7
   ~io_pin_t();
   virtual bool pin();
   virtual void set();
@@ -386,7 +386,7 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case PORTC_BASE: { port_number = 2; } break;
     case PORTD_BASE: { port_number = 3; } break;
     case PORTE_BASE: { port_number = 4; } break;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     case IRS_PORTA_BASE: { port_number = 0; } break;
     case IRS_PORTB_BASE: { port_number = 1; } break;
     case IRS_PORTC_BASE: { port_number = 2; } break;
@@ -396,9 +396,14 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case IRS_PORTG_BASE: { port_number = 6; } break;
     case IRS_PORTH_BASE: { port_number = 7; } break;
     case IRS_PORTI_BASE: { port_number = 8; } break;
+    case IRS_PORTJ_BASE: { port_number = 9; } break;
+    case IRS_PORTK_BASE: { port_number = 10; } break;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
+    default: {
+      for (;;) {}; // Неизвестный порт
+    }
   }
   return port_number;
 }
@@ -411,7 +416,7 @@ inline void port_clock_on(irs_u32 a_port)
     for (irs_u32 i = 10; i; i--);
   #elif defined(__STM32F100RBT__)
     RCC_APB2ENR |= (1 << (port_number + 2));
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     RCC_AHB1ENR |= (1 << port_number);
   #else
     #error Тип контроллера не определён

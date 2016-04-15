@@ -92,6 +92,7 @@ private:
   bool m_crc_error;
 }; // flash_protected_t
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
 //! \addtogroup drivers_group
@@ -233,7 +234,8 @@ private:
 
 //! @}
 
-#endif  //  IRS_STM32F_2_AND_4
+#endif  // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
 
 } // namespace arm
 

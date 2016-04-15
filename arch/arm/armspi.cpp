@@ -603,17 +603,24 @@ void irs::arm::arm_spi_t::init_default()
   m_reg.mp_SSICR1_bit->SSE = 1;
 }
 #elif defined(__STM32F100RBT__)
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 
 bool irs::arm::st_spi_base_t::_set_bitrate(spi_regs_t* ap_spi_regs,
   irs_u32 a_bitrate)
 {
   cpu_traits_t::frequency_type frequency = 0;
   size_t spi_address = reinterpret_cast<size_t>(ap_spi_regs);
-  if (spi_address == IRS_SPI1_BASE) {
-    frequency = cpu_traits_t::periphery_frequency_second();
-  } else {
-    frequency = cpu_traits_t::periphery_frequency_first();
+  switch (spi_address) {
+    case IRS_SPI1_BASE:
+    case IRS_SPI4_BASE:
+    case IRS_SPI5_BASE:
+    case IRS_SPI6_BASE: {
+      frequency = cpu_traits_t::periphery_frequency_second();
+    } break;
+    case IRS_SPI2_I2S2_BASE:
+    case IRS_SPI3_I2S3_BASE: {
+      frequency = cpu_traits_t::periphery_frequency_first();
+    } break;
   }
   irs_u32 divider = frequency/a_bitrate;
   int power = -1;
@@ -714,6 +721,10 @@ void irs::arm::st_spi_base_t::initialize_gpio_channels(spi_regs_t* ap_spi_regs,
         GPIOB_AFRH_bit.AFRH13 = 5;
         GPIOB_OSPEEDR_bit.OSPEEDR13 = a_gpio_speed;
       } break;
+      case PI1: {
+        GPIOI_AFRL_bit.AFRL1 = 5;
+        GPIOI_OSPEEDR_bit.OSPEEDR1 = a_gpio_speed;
+      } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
       }
@@ -727,6 +738,10 @@ void irs::arm::st_spi_base_t::initialize_gpio_channels(spi_regs_t* ap_spi_regs,
         GPIOC_AFRL_bit.AFRL2 = 5;
         GPIOC_OSPEEDR_bit.OSPEEDR2 = a_gpio_speed;
       } break;
+      case PI2: {
+        GPIOI_AFRL_bit.AFRL2 = 5;
+        GPIOI_OSPEEDR_bit.OSPEEDR2 = a_gpio_speed;
+      } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
       }
@@ -739,6 +754,10 @@ void irs::arm::st_spi_base_t::initialize_gpio_channels(spi_regs_t* ap_spi_regs,
       case PC3: {
         GPIOC_AFRL_bit.AFRL3 = 5;
         GPIOC_OSPEEDR_bit.OSPEEDR3 = a_gpio_speed;
+      } break;
+      case PI3: {
+        GPIOI_AFRL_bit.AFRL3 = 5;
+        GPIOI_OSPEEDR_bit.OSPEEDR3 = a_gpio_speed;
       } break;
       default: {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
@@ -772,8 +791,36 @@ void irs::arm::st_spi_base_t::initialize_gpio_channels(spi_regs_t* ap_spi_regs,
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
       }
     }
+  } else if (spi_address == IRS_SPI6_BASE) {
+    switch (a_sck) {
+      case PG13: {
+        GPIOG_AFRH_bit.AFRH13 = 5;
+        GPIOG_OSPEEDR_bit.OSPEEDR13 = a_gpio_speed;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_miso) {
+      case PG12: {
+        GPIOG_AFRH_bit.AFRH12 = 5;
+        GPIOG_OSPEEDR_bit.OSPEEDR12 = a_gpio_speed;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
+    switch (a_mosi) {
+      case PG14: {
+        GPIOG_AFRH_bit.AFRH14 = 5;
+        GPIOG_OSPEEDR_bit.OSPEEDR14 = a_gpio_speed;
+      } break;
+      default: {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация Порта и spi");
+      }
+    }
   } else {
-    IRS_LIB_ASSERT_MSG("Недопустимый адрес таймера");
+    IRS_LIB_ASSERT_MSG("Недопустимый адрес SPI");
   }
 }
 
@@ -787,6 +834,10 @@ void irs::arm::st_spi_base_t::set_moder_alternate_function(
   IRS_SET_BITS(port_address + GPIO_MODER_S, bits_count*pin_index,
     bits_count, GPIO_MODER_ALTERNATE_FUNCTION);
 }
+
+#ifdef USE_STDPERIPH_DRIVER
+
+#if (defined(IRS_STM32F4xx) || defined(IRS_STM32F4xx))
 
 // class st_spi_dma_t
 irs::arm::st_spi_dma_t::st_spi_dma_t(
@@ -884,7 +935,7 @@ void irs::arm::st_spi_dma_t::reset_dma()
 
   // RX
   DMA_InitTypeDef DMA_Init_SPI_RX;
-  DMA_Init_SPI_RX.DMA_Channel = DMA_Channel_0;
+  DMA_Init_SPI_RX.DMA_Channel = m_settings.rx_dma_channel;
   DMA_Init_SPI_RX.DMA_PeripheralBaseAddr =
     reinterpret_cast<irs_u32>(&mp_spi_regs->SPI_DR);
   DMA_Init_SPI_RX.DMA_Memory0BaseAddr =
@@ -1143,6 +1194,457 @@ void irs::arm::st_spi_dma_t::read_write(irs_u8 *ap_read_buf,
   m_process = process_read_write;
   start_spi_dma();
 }
+#elif defined(IRS_STM32F7xx)
+
+#endif // defined(IRS_STM32F7xx)
+
+#endif // USE_STDPERIPH_DRIVER
+
+#ifdef USE_HAL_DRIVER
+
+// class st_hal_spi_dma_t
+irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
+  const settings_t& a_settings
+):
+  m_lock(false),
+  m_settings(a_settings),
+  mp_spi_regs(reinterpret_cast<spi_regs_t*>(a_settings.spi_address)),
+  mp_dma(reinterpret_cast<dma_regs_t*>(a_settings.dma_address)),
+
+  m_hdma_tx(),
+  m_hdma_rx(),
+  m_tx_status(false),
+  m_rx_status(false),
+  m_hdma_init(false),
+
+  m_rx_buffer(a_settings.rx_buffer),
+  m_tx_buffer(a_settings.tx_buffer),
+  m_bitrate_default(a_settings.bitrate),
+  m_process(process_wait_command),
+  mp_write_buf(IRS_NULL),
+  mp_read_buf(IRS_NULL),
+  m_packet_size(0),
+  m_index(0),
+  m_data_item_byte_count(1),
+  m_byte_count(0),
+  m_max_byte_count(calc_max_byte_count())
+{
+  IRS_LIB_ASSERT(a_settings.spi_address);
+  IRS_LIB_ASSERT(a_settings.dma_address);
+  IRS_LIB_ASSERT(a_settings.bitrate > 0);
+  IRS_LIB_ASSERT(a_settings.sck != PNONE);
+  IRS_LIB_ASSERT(a_settings.miso != PNONE);
+  IRS_LIB_ASSERT(a_settings.mosi != PNONE);
+
+  IRS_LIB_ASSERT(a_settings.rx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.rx_buffer.size() > 0);
+  IRS_LIB_ASSERT(IS_DMA_STREAM_ALL_INSTANCE(a_settings.rx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.rx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.rx_dma_priority));
+
+  IRS_LIB_ASSERT(a_settings.tx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.tx_buffer.size() > 0);
+  IRS_LIB_ASSERT(IS_DMA_STREAM_ALL_INSTANCE(a_settings.tx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.tx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.tx_dma_priority));
+
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  IRS_LIB_ASSERT(reinterpret_cast<size_t>(a_settings.rx_buffer.data())%32 == 0);
+  IRS_LIB_ASSERT(a_settings.rx_buffer.size()%32 == 0);
+  IRS_LIB_ASSERT(reinterpret_cast<size_t>(a_settings.tx_buffer.data())%32 == 0);
+  IRS_LIB_ASSERT(a_settings.tx_buffer.size()%32 == 0);
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+
+  // Временно!!!
+  if (a_settings.spi_address == IRS_SPI6_BASE) {
+    __HAL_RCC_SPI6_RELEASE_RESET();
+  } else {
+    reset_peripheral(a_settings.spi_address);
+  }
+  initialize_gpio_channels(a_settings.sck, a_settings.miso, a_settings.mosi,
+    a_settings.gpio_speed);
+
+  // Временно!!!
+  if (a_settings.spi_address == IRS_SPI6_BASE) {
+    __HAL_RCC_SPI6_CLK_ENABLE();
+  } else {
+    clock_enable(a_settings.spi_address);
+  }
+
+  clock_enable(a_settings.dma_address);
+
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  // 1: Master configuration
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+
+  set_default();
+  enable_spi();
+
+  reset_dma();
+}
+
+void irs::arm::st_hal_spi_dma_t::reset_dma()
+{
+  if (m_hdma_init) {
+    stop_spi_dma();
+    HAL_DMA_DeInit(&m_hdma_tx);
+    HAL_DMA_DeInit(&m_hdma_rx);
+  }
+
+  /*##-3- Configure the DMA ##################################################*/
+  /* Configure the DMA handler for Transmission process */
+  m_hdma_tx.Instance                 = m_settings.tx_dma_y_stream_x;
+  m_hdma_tx.Init.Channel             = m_settings.tx_dma_channel;
+  m_hdma_tx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  m_hdma_tx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+
+  m_hdma_tx.Init.MemBurst            = DMA_MBURST_SINGLE;
+  m_hdma_tx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  m_hdma_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+  m_hdma_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  m_hdma_tx.Init.MemInc              = DMA_MINC_ENABLE;
+  if (m_data_item_byte_count == 1) {
+    m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+  } else {
+    m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+  }
+  m_hdma_tx.Init.Mode                = DMA_NORMAL;
+  m_hdma_tx.Init.Priority            = m_settings.tx_dma_priority;
+
+  HAL_DMA_Init(&m_hdma_tx);
+
+  mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
+
+  /* Configure the DMA handler for Transmission process */
+  m_hdma_rx.Instance                 = m_settings.rx_dma_y_stream_x;
+  m_hdma_rx.Init.Channel             = m_settings.rx_dma_channel;
+  m_hdma_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  m_hdma_rx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+
+  m_hdma_rx.Init.MemBurst            = DMA_MBURST_SINGLE;
+  m_hdma_rx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  m_hdma_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+  m_hdma_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  m_hdma_rx.Init.MemInc              = DMA_MINC_ENABLE;
+  if (m_data_item_byte_count == 1) {
+    m_hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    m_hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+  } else {
+    m_hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    m_hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+  }
+  m_hdma_rx.Init.Mode                = DMA_NORMAL;
+  m_hdma_rx.Init.Priority            = m_settings.tx_dma_priority;
+
+  HAL_DMA_Init(&m_hdma_rx);
+
+  mp_spi_regs->SPI_CR2_bit.RXDMAEN = 1;
+
+  m_hdma_init = true;
+}
+
+void irs::arm::st_hal_spi_dma_t::start_spi_dma()
+{
+  if (mp_read_buf) {
+    /* Enable the Rx DMA channel */
+    HAL_DMA_Start(&m_hdma_rx, reinterpret_cast<irs_u32>(&mp_spi_regs->SPI_DR),
+      (uint32_t)m_rx_buffer.data(), m_byte_count/m_data_item_byte_count);
+  } else {
+    m_rx_status = true;
+  }
+  cleand_dcache_tx();
+  /* Enable the Tx DMA channel */
+  HAL_DMA_Start(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+    reinterpret_cast<irs_u32>(&mp_spi_regs->SPI_DR),
+    m_byte_count/m_data_item_byte_count);
+}
+
+void irs::arm::st_hal_spi_dma_t::cleand_dcache_tx()
+{
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(m_tx_buffer.data()),
+    m_byte_count);
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+}
+
+void irs::arm::st_hal_spi_dma_t::stop_spi_dma()
+{
+  HAL_DMA_Abort(&m_hdma_rx);
+  HAL_DMA_Abort(&m_hdma_tx);
+}
+
+void irs::arm::st_hal_spi_dma_t::initialize_gpio_channels(gpio_channel_t a_sck,
+  gpio_channel_t a_miso,
+  gpio_channel_t a_mosi,
+  int a_gpio_speed)
+{
+  st_spi_base_t::initialize_gpio_channels(
+    mp_spi_regs, a_sck, a_miso, a_mosi, a_gpio_speed);
+}
+
+irs::arm::st_hal_spi_dma_t::~st_hal_spi_dma_t()
+{
+  disable_spi();
+}
+
+void irs::arm::st_hal_spi_dma_t::set_default()
+{
+  set_bitrate(m_bitrate_default);
+  set_polarity(POSITIVE_POLARITY);
+  set_phase(FIRST_EDGE);
+  set_data_size(data_size_default);
+  set_order(MSB);
+}
+
+void irs::arm::st_hal_spi_dma_t::enable_spi()
+{
+  // 1: Peripheral enabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 1;
+}
+
+void irs::arm::st_hal_spi_dma_t::disable_spi()
+{
+  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
+    volatile irs_u32 data = mp_spi_regs->SPI_DR;
+  }
+  while (mp_spi_regs->SPI_SR_bit.TXE != 1);
+  while (mp_spi_regs->SPI_SR_bit.BSY != 0);
+  // 0: Peripheral disabled
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+}
+
+void irs::arm::st_hal_spi_dma_t::abort()
+{
+  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  stop_spi_dma();
+  m_process = process_wait_command;
+}
+
+irs::spi_t::status_t irs::arm::st_hal_spi_dma_t::get_status()
+{
+  if (m_process == process_wait_command) {
+    return FREE;
+  } else {
+    return BUSY;
+  }
+}
+
+bool irs::arm::st_hal_spi_dma_t::set_bitrate(irs_u32 a_bitrate)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_bitrate(mp_spi_regs, a_bitrate);
+}
+
+bool irs::arm::st_hal_spi_dma_t::set_polarity(polarity_t a_polarity)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_polarity(mp_spi_regs, a_polarity);
+}
+
+bool irs::arm::st_hal_spi_dma_t::set_phase(phase_t a_phase)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_phase(mp_spi_regs, a_phase);
+}
+
+bool irs::arm::st_hal_spi_dma_t::set_order(order_t a_order)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  return st_spi_base_t::_set_order(mp_spi_regs, a_order);
+}
+
+bool irs::arm::st_hal_spi_dma_t::set_data_size(irs_u16 a_data_size)
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя задать значение в процессе "
+      "передачи данных");
+  }
+  if ((a_data_size != 8) && (a_data_size != 16)) {
+    IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
+  }
+  stop_spi_dma();
+  disable_spi();
+
+  if (a_data_size == 8) {
+    #ifdef IRS_STM32F7xx
+    mp_spi_regs->SPI_CR2_bit.DS = 7;
+    mp_spi_regs->SPI_CR2_bit.FRXTH = 1;
+    #else // !IRS_STM32F7xx
+    mp_spi_regs->SPI_CR1_bit.DFF = 0;
+    #endif // !IRS_STM32F7xx
+    m_data_item_byte_count = 1;
+  } else {
+    #ifdef IRS_STM32F7xx
+    mp_spi_regs->SPI_CR2_bit.DS = 15;
+    mp_spi_regs->SPI_CR2_bit.FRXTH = 0;
+    #else // !IRS_STM32F7xx
+    mp_spi_regs->SPI_CR1_bit.DFF = 1;
+    #endif // !IRS_STM32F7xx
+    m_data_item_byte_count = 2;
+  }
+  m_max_byte_count = calc_max_byte_count();
+  enable_spi();
+  reset_dma();
+  return true;
+}
+
+void irs::arm::st_hal_spi_dma_t::write(const irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(IRS_NULL, ap_buf, a_size);
+}
+
+void irs::arm::st_hal_spi_dma_t::read(irs_u8* ap_buf, irs_uarc a_size)
+{
+  read_write(ap_buf, IRS_NULL, a_size);
+}
+
+void irs::arm::st_hal_spi_dma_t::lock()
+{
+  m_lock = true;
+}
+
+void irs::arm::st_hal_spi_dma_t::unlock()
+{
+  if (m_process == process_read_write) {
+    IRS_LIB_ERROR(ec_standard, "Нельзя разблокировать в процессе "
+      "передачи данных");
+  }
+  m_lock = false;
+}
+
+bool irs::arm::st_hal_spi_dma_t::get_lock()
+{
+  return m_lock;
+}
+
+void irs::arm::st_hal_spi_dma_t::tick()
+{
+  if (m_process == process_read_write) {
+
+    if (!m_tx_status) {
+      m_tx_status =
+        HAL_DMA_PollForTransfer(&m_hdma_tx, HAL_DMA_FULL_TRANSFER, 0) == HAL_OK;
+    }
+
+    if (!m_rx_status) {
+      m_rx_status =
+        HAL_DMA_PollForTransfer(&m_hdma_rx, HAL_DMA_FULL_TRANSFER, 0) == HAL_OK;
+    }
+
+    if (m_tx_status && m_rx_status) {
+      m_tx_status = false;
+      m_rx_status = false;
+      if (mp_read_buf) {
+        invalidate_dcache_rx();
+
+        memcpy(mp_read_buf, m_rx_buffer.data(), m_byte_count);
+      }
+      m_index += m_byte_count/m_data_item_byte_count;
+
+      if (m_index < m_packet_size) {
+        const size_type need_size = (m_packet_size - m_index)*
+          m_data_item_byte_count;
+        const size_type start_index = m_index/m_data_item_byte_count;
+
+        if (mp_write_buf != IRS_NULL) {
+          m_byte_count = min(m_max_byte_count, need_size);
+          memcpy(m_tx_buffer.data(), mp_write_buf + start_index, m_byte_count);
+        } else {
+          memset(m_tx_buffer.data(), 0, m_byte_count);
+        }
+        start_spi_dma();
+      } else {
+        m_process = process_wait_command;
+      }
+
+      if (m_index >= m_packet_size) {
+        m_process = process_wait_command;
+      }
+    }
+  }
+}
+
+void irs::arm::st_hal_spi_dma_t::invalidate_dcache_rx()
+{
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  SCB_InvalidateDCache_by_Addr(
+    reinterpret_cast<uint32_t*>(m_rx_buffer.data()),
+    m_byte_count);
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+}
+
+irs::arm::st_hal_spi_dma_t::size_type
+irs::arm::st_hal_spi_dma_t::calc_max_byte_count() const
+{
+  size_type byte_count = 0;
+  byte_count = min(m_rx_buffer.size(), m_tx_buffer.size());
+  byte_count = min<size_type>(byte_count, 0xFFFF);
+  // Берем четное количество, если необходимо
+  byte_count = (byte_count/m_data_item_byte_count)*m_data_item_byte_count;
+
+  return byte_count;
+}
+
+void irs::arm::st_hal_spi_dma_t::read_write(irs_u8 *ap_read_buf,
+  const irs_u8 *ap_write_buf, irs_uarc a_size)
+{
+  if (!ap_read_buf && !ap_write_buf) {
+    IRS_LIB_ERROR(ec_standard, "ap_read_buf и ap_write_buf "
+      "не могут быть одновременно равны IRS_NULL");
+  }
+  if (m_data_item_byte_count == 2) {
+    if ((a_size % 2) != 0) {
+      IRS_LIB_ERROR(ec_standard, "Количество байт должно быть четным");
+    }
+  }
+  if (!m_lock) {
+    IRS_LIB_ERROR(ec_standard, "Вызов read_write на разблокированном spi");
+  }
+  m_packet_size = a_size/m_data_item_byte_count;
+  m_byte_count = min(m_max_byte_count, a_size);///m_data_item_byte_count;
+  if (ap_write_buf) {
+    memcpy(m_tx_buffer.data(), ap_write_buf, m_byte_count);
+  } else {
+    memset(m_tx_buffer.data(), 0, m_byte_count);
+  }
+  mp_read_buf = ap_read_buf;
+  mp_write_buf = ap_write_buf;
+  m_index = 0;
+
+  m_process = process_read_write;
+  start_spi_dma();
+}
+
+#endif // USE_HAL_DRIVER
 
 irs::arm::arm_spi_t::arm_spi_t(
   size_t a_spi_address,
@@ -1172,6 +1674,10 @@ irs::arm::arm_spi_t::arm_spi_t(
   mp_spi_regs->SPI_CR1_bit.SSI = 1;
   // 1: Master configuration
   mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+
+  //mp_spi_regs->SPI_CR2_bit.NSSP = 1;
+  //mp_spi_regs->SPI_CR2_bit.SSOE = 1;
+  //mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
   set_default();
   enable_spi();
@@ -1208,7 +1714,9 @@ void irs::arm::arm_spi_t::enable_spi()
 
 void irs::arm::arm_spi_t::disable_spi()
 {
-  while (mp_spi_regs->SPI_SR_bit.RXNE != 0);
+  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
+    volatile irs_u32 data = mp_spi_regs->SPI_DR;
+  }
   while (mp_spi_regs->SPI_SR_bit.TXE != 1);
   while (mp_spi_regs->SPI_SR_bit.BSY != 0);
   // 0: Peripheral disabled
@@ -1277,10 +1785,19 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
   }
   disable_spi();
   if (a_data_size == 8) {
+    #ifdef IRS_STM32F7xx
+    mp_spi_regs->SPI_CR2_bit.DS = 7;
+    mp_spi_regs->SPI_CR2_bit.FRXTH = 1;
+    #else // !IRS_STM32F7xx
     mp_spi_regs->SPI_CR1_bit.DFF = 0;
+    #endif // !IRS_STM32F7xx
     m_data_item_byte_count = 1;
   } else {
+    #ifdef IRS_STM32F7xx
+    mp_spi_regs->SPI_CR2_bit.DS = 15;
+    #else // !IRS_STM32F7xx
     mp_spi_regs->SPI_CR1_bit.DFF = 1;
+    #endif // !IRS_STM32F7xx
     m_data_item_byte_count = 2;
   }
   enable_spi();
@@ -1316,6 +1833,31 @@ bool irs::arm::arm_spi_t::get_lock()
   return m_lock;
 }
 
+//#define ARM_SPI_OLD_VERSION
+
+#ifndef ARM_SPI_OLD_VERSION
+void irs::arm::arm_spi_t::tick()
+{
+  if (m_process == process_read_write) {
+    if ((m_write_buf_index <= (m_read_buf_index)) &&
+      (m_write_buf_index < m_packet_size)) {
+      if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
+        writeToDR();
+      }
+    }
+    if (((m_read_buf_index + 1) == m_write_buf_index) ||
+        (m_write_buf_index == m_packet_size)) {
+      if (mp_spi_regs->SPI_SR_bit.RXNE == 1) {
+        readFromDR();
+        if (m_read_buf_index >= m_packet_size) {
+          m_process = process_wait_command;
+        }
+      }
+    }
+  }
+}
+#endif // !ARM_SPI_OLD_VERSION
+#ifdef ARM_SPI_OLD_VERSION
 void irs::arm::arm_spi_t::tick()
 {
   int shift = 0;
@@ -1324,10 +1866,10 @@ void irs::arm::arm_spi_t::tick()
       (m_write_buf_index < m_packet_size)) {
       if (mp_spi_regs->SPI_SR_bit.TXE == 1) {
         if (mp_write_buf != IRS_NULL) {
-          mp_spi_regs->SPI_DR =
+          *reinterpret_cast<irs_u8*>(&mp_spi_regs->SPI_DR) =
             mp_write_buf[m_write_buf_index*m_data_item_byte_count];
         } else {
-          mp_spi_regs->SPI_DR = 0;
+          *reinterpret_cast<irs_u8*>(&mp_spi_regs->SPI_DR) = 0;
         }
         m_write_buf_index++;
       }
@@ -1337,9 +1879,9 @@ void irs::arm::arm_spi_t::tick()
       if (mp_spi_regs->SPI_SR_bit.RXNE == 1) {
         if (mp_read_buf) {
           mp_read_buf[m_read_buf_index*m_data_item_byte_count] =
-            mp_spi_regs->SPI_DR;
+            *reinterpret_cast<irs_u8*>(&mp_spi_regs->SPI_DR);
         } else {
-          volatile irs_u32 data = mp_spi_regs->SPI_DR;
+          volatile irs_u32 data = *reinterpret_cast<irs_u8*>(&mp_spi_regs->SPI_DR);
         }
         m_read_buf_index++;
         if (m_read_buf_index >= m_packet_size) {
@@ -1349,6 +1891,7 @@ void irs::arm::arm_spi_t::tick()
     }
   }
 }
+#endif // ARM_SPI_OLD_VERSION
 
 void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   const irs_u8 *ap_write_buf, irs_uarc a_size)

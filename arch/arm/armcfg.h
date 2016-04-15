@@ -125,7 +125,7 @@ namespace irs {
 
 void pll_on();
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 struct param_pll_t {
   irs_u32 freq_quartz;
   irs_u32 PLLM;
@@ -186,7 +186,7 @@ enum interrupt_type_t
 void update_interrupt_enable(size_t a_address);
 void update_interrupt_enabled(size_t a_address, bool a_enabled);
 
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 } // namespace irs
 
 //! @}

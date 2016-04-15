@@ -7,9 +7,9 @@
 
 #include <irspch.h>
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 # include <armcfg.h>
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 
 #include <irsgpio.h>
 #include <irserror.h>
@@ -244,7 +244,7 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
   init(a_dir, a_value);
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
   io_pin_value_t a_value
 ):
@@ -255,7 +255,7 @@ irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
 {
   init(a_dir, a_value);
 }
-#endif // IRS_STM32F_2_AND_4
+#endif // IRS_STM32_F2_F4_F7
 
 void irs::arm::io_pin_t::init(dir_t a_dir, io_pin_value_t a_value)
 {
@@ -274,7 +274,7 @@ void irs::arm::io_pin_t::init(dir_t a_dir, io_pin_value_t a_value)
       HWREG(m_port + GPIO_DIR) |= m_port_mask;
       HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
     }
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
     set_dir(a_dir);
   #else
     #error Тип контроллера не определён
@@ -295,7 +295,7 @@ bool irs::arm::io_pin_t::pin()
     return HWREG(m_port + GPIO_DATA + m_data_mask);
   #elif defined(__STM32F100RBT__)
     return (HWREG(m_port + IDR) & m_port_mask);
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     return (HWREG(m_port + GPIO_IDR_S) & m_port_mask);
   #else
     #error Тип контроллера не определён
@@ -308,7 +308,7 @@ void irs::arm::io_pin_t::set()
     HWREG(m_port + GPIO_DATA + m_data_mask) = 0xFF;
   #elif defined(__STM32F100RBT__)
     HWREG(m_port + ODR) |= m_port_mask;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     HWREG(m_port + GPIO_ODR_S) |= m_port_mask;
   #else
     #error Тип контроллера не определён
@@ -321,14 +321,14 @@ void irs::arm::io_pin_t::clear()
     HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
   #elif defined(__STM32F100RBT__)
     HWREG(m_port + ODR) &= ~m_port_mask;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     HWREG(m_port + GPIO_ODR_S) &= ~m_port_mask;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const irs::io_t::dir_t a_dir)
 {
@@ -413,7 +413,7 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
     } break;
   }
 }
-#endif //IRS_STM32F_2_AND_4
+#endif //IRS_STM32_F2_F4_F7
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
 {
@@ -440,7 +440,7 @@ void irs::arm::io_pin_t::set_dir(dir_t a_dir)
     set_mask <<= cfg_mask_offset;
     HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
     HWREG(m_port + cfg_reg_offset) |= set_mask;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     set_pin_dir(m_port, m_bit, a_dir);
   #else
     #error Тип контроллера не определён
@@ -456,7 +456,7 @@ irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
   port_clock_on(m_port);
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
     volatile dir_t dir = a_dir;//
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
     set_dir(a_dir);
   #else
     #error Тип контроллера не определён
@@ -473,7 +473,7 @@ irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
     return 0;
   #elif defined(__STM32F100RBT__)
     return (HWREG(m_port + IDR) & m_mask) >> m_shift;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     return (HWREG(m_port + GPIO_IDR_S) & m_mask) >> m_shift;
   #else
     #error Тип контроллера не определён
@@ -489,7 +489,7 @@ void irs::arm::io_port_t::set(data_t a_data)
     irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
     HWREG(m_port + BSRR) = set_data;
     HWREG(m_port + BSRR) = clr_data << GPIO_WIDTH;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     irs_u32 set_data = (a_data << m_shift) & m_mask;
     irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
     HWREG(m_port + GPIO_BSRR_S) = set_data;
@@ -524,7 +524,7 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
         HWREG(m_port + cfg_reg_offset) |= set_mask;
       }
     }
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
     for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
       if (m_mask & (1 << bit)) {
         set_pin_dir(m_port, bit, a_dir);

@@ -18,7 +18,7 @@
 //! @{
 
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 # include <armioregs.h>
 # include <armregs_stm32f2xx.h>
 
@@ -26,9 +26,11 @@
 #   include <stm32f2xx.h>
 # elif defined(IRS_STM32F4xx)
 #   include <stm32f4xx.h>
-# endif // defined(IRS_STM32F4xx)
+# elif defined(IRS_STM32F7xx)
+#   include <stm32f7xx.h>
+#endif // defined(IRS_STM32F7xx)
 
-#endif  // IRS_STM32F_2_AND_4
+#endif  // IRS_STM32_F2_F4_F7
 
 //! @}
 

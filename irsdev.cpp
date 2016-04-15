@@ -68,7 +68,7 @@ irs::arm::gptm_usage_t& gptm_usage() {
   return gptm_usage_obj;
 }
 
-#elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+#elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
 //  Флаги занятости таймеров общего назначения
 irs::arm::timers_usage_t& timers_usage() {
   static irs::arm::timers_usage_t timers_usage_obj;
@@ -263,7 +263,7 @@ irs::arm::arm_three_phase_pwm_t::arm_three_phase_pwm_t(freq_t a_freq,
   PWMSYNC_bit.Sync2 = 1;*/
   #elif defined(__STM32F100RBT__)
   volatile counter_t dead_time = a_dead_time;
-  #elif defined(IRS_STM32F_2_AND_4)
+  #elif defined(IRS_STM32_F2_F4_F7)
   volatile counter_t dead_time = a_dead_time;
   #else
     #error Тип контроллера не определён
@@ -275,7 +275,7 @@ irs::arm::arm_three_phase_pwm_t::~arm_three_phase_pwm_t()
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMENABLE = pwm_all_disable;
   RCGC0_bit.PWM = 0;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -286,7 +286,7 @@ void irs::arm::arm_three_phase_pwm_t::start()
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMSYNC = pwm_all_sync;
   PWMENABLE = pwm_all_enable;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -296,7 +296,7 @@ void irs::arm::arm_three_phase_pwm_t::stop()
 {
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   PWMENABLE = pwm_all_disable;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -309,7 +309,7 @@ void irs::arm::arm_three_phase_pwm_t::set_duty(irs_uarc a_duty)
   PWM1CMPA = a_duty;
   PWM2CMPA = a_duty;
   PWMCTL = pwm_all_sync;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   volatile irs_uarc duty = a_duty;
   #else
     #error Тип контроллера не определён
@@ -327,7 +327,7 @@ void irs::arm::arm_three_phase_pwm_t::set_duty(irs_uarc a_duty,
     case PHASE_C: PWM2CMPA = a_duty; break;
   }
   PWMCTL = pwm_all_sync;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   volatile irs_uarc duty = a_duty;
   volatile phase_t phase = a_phase;
   #else
@@ -340,7 +340,7 @@ void irs::arm::arm_three_phase_pwm_t::set_duty(float a_duty)
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   irs_uarc duty = irs_u16(a_duty * float(PWM0LOAD));
   set_duty(duty);
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   volatile float duty = a_duty;
   #else
     #error Тип контроллера не определён
@@ -353,7 +353,7 @@ void irs::arm::arm_three_phase_pwm_t::set_duty(float a_duty,
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   irs_uarc duty = irs_u16(a_duty * float(PWM0LOAD));
   set_duty(duty, a_phase);
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   volatile float duty = a_duty;
   volatile phase_t phase = a_phase;
   #else
@@ -372,7 +372,7 @@ irs::arm::arm_three_phase_pwm_t::set_frequency(
   PWM1LOAD = load_value;
   PWM2LOAD = load_value;
   PWMSYNC = pwm_all_sync;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   volatile irs_u16 lv = load_value;
   #else
     #error Тип контроллера не определён
@@ -389,7 +389,7 @@ irs_uarc irs::arm::arm_three_phase_pwm_t::get_max_duty()
 {
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   return PWM0LOAD;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   return 0;
   #else
     #error Тип контроллера не определён
@@ -414,7 +414,7 @@ void irs::arm::arm_three_phase_pwm_t::interrupt()
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
   //GPIOBDATA_bit.no6 = 1;
   PWM0ISC_bit.IntCntLoad = 1;
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32F_2_AND_4)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -691,7 +691,7 @@ irs_u16 irs::arm::gptm_generator_t::calc_load_value(
 }
 
 #elif defined(__STM32F100RBT__)
-#elif defined(IRS_STM32F_2_AND_4)
+#elif defined(IRS_STM32_F2_F4_F7)
 // class st_pwm_gen_t
 irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   size_t a_timer_address,
@@ -782,6 +782,14 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PB3: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 2;
+        GPIOB_AFRL_bit.AFRL3 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PB6: {
       if (timer_address == IRS_TIM4_BASE) {
         timer_channel = 1;
@@ -847,6 +855,14 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PE5: {
+      if (timer_address == IRS_TIM9_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRL_bit.AFRL5 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PE6: {
       if (timer_address == IRS_TIM9_BASE) {
         timer_channel = 2;
@@ -885,7 +901,39 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOE_AFRH_bit.AFRH11 = 1;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }
+      }      
+    } break;
+    case PH6: {
+      if (timer_address == IRS_TIM12_BASE) {
+        timer_channel = 1;
+        GPIOH_AFRL_bit.AFRL6 = 9;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }      
+    } break;
+    case PH10: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 1;
+        GPIOH_AFRH_bit.AFRH10 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }      
+    } break;
+    case PH11: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 2;
+        GPIOH_AFRH_bit.AFRH11 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }      
+    } break;
+    case PH12: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 3;
+        GPIOH_AFRH_bit.AFRH12 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }      
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
@@ -1301,8 +1349,11 @@ void irs::arm::st_pwm_gen_t::set_dead_time(float a_time)
     mp_timer->TIM_BDTR_bit.DTG = (7 << 5) | min(value, DTG_4_0_max);
   }
 }
+#endif  //  mcu type
 
-// class st_watchdog_timer_t
+#ifdef USE_STDPERIPH_DRIVER
+#if defined(IRS_STM32F_2_AND_4)
+// class st_independent_watchdog_t
 irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   double a_period_s
 ):
@@ -1426,10 +1477,10 @@ void irs::arm::st_window_watchdog_t::clear_reset_status()
 {
   RCC_CSR_bit.RMVF = 1;
 }
-#else
-  #error Тип контроллера не определён
-#endif  //  mcu type
+#endif // USE_STDPERIPH_DRIVER
+#endif // defined(IRS_STM32F_2_AND_4)
 
+#ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 // class st_rtc_t
 irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
@@ -1688,6 +1739,7 @@ void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 }
 
 #endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
 
 // class pwm_pin_t
 irs::pwm_pin_t::pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen):
@@ -1725,7 +1777,7 @@ irs::decoder_t::decoder_t():
 {
 }
 
-/*#ifdef IRS_STM32F_2_AND_4
+/*#ifdef IRS_STM32_F2_F4_F7
 void irs::decoder_t::add(gpio_channel_t a_channel)
 {
   const size_t port_address = get_port_address(a_channel);
@@ -1735,7 +1787,7 @@ void irs::decoder_t::add(gpio_channel_t a_channel)
 
   add(new irs::arm::io_pin_t(port_address, pin_index, irs::io_t::dir_out));
 }
-#endif // IRS_STM32F_2_AND_4*/
+#endif // IRS_STM32_F2_F4_F7*/
 
 void irs::decoder_t::add(irs::handle_t<gpio_pin_t> ap_gpio_pin)
 {

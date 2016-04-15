@@ -21,7 +21,7 @@ irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
   m_page_size(0),
   m_page_count(0),
   m_address_size(a_address_size),
-  m_spi_size(m_address_size + 1),
+  m_spi_size(4),
   m_initiate_size(m_address_size + 1),
   m_status(st_check_ready_prepare),
   m_target_status(st_write_protect_check),
@@ -43,11 +43,12 @@ irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     case at25256: m_page_size = 64; m_page_count = 512; break;
     case any_eeprom: {
       m_page_size = a_page_size; 
-      m_page_count = a_page_count; 
+      m_page_count = a_page_count;
       break;
     }
     default: m_page_size = 64; m_page_count = 256;  //  at25128
   }
+
   m_num_of_iterations = m_page_size / m_spi_size;
   m_modulo_size = m_page_size % m_spi_size;
   memsetex(mp_read_buf.data(), m_spi_size);
@@ -237,12 +238,13 @@ void irs::eeprom_at25_t::tick()
     case st_read: {
       //  Чтение данных по m_spi_size байт
       if (mp_spi->get_status() == irs::spi_t::FREE) {
+        irs_uarc target_index = m_current_iteration * m_spi_size;
+        memcpy(mp_read_user_buf + target_index, 
+          mp_read_buf.data(), m_spi_size);
+        m_current_iteration++;
+        
         if (m_current_iteration < m_num_of_iterations) {
-          irs_uarc target_index = m_current_iteration * m_spi_size;
-          memcpy(mp_read_user_buf + target_index, 
-            mp_read_buf.data(), m_spi_size);
-          m_current_iteration++;
-          mp_spi->read(mp_read_buf.data(), m_spi_size);
+          mp_spi->read(mp_read_buf.data(), m_spi_size);          
         } else {
           if (m_modulo_size == 0) {
             m_status = st_complete;

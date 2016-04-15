@@ -2157,7 +2157,7 @@ public:
   size_type average_max_size() const;
   //! \brief ¬озвращает статус заполнени€ окна
   //! \param[in] a_index - индекс окна
-  bool is_full(size_type a_index);
+  bool is_full(size_type a_index) const;
   void preset(size_type a_start_pos, size_type a_size);
   void preset_average(size_type a_start_pos, size_type a_size);
 private:
@@ -2304,7 +2304,7 @@ fast_multi_sko_with_single_average_as_t<data_t, calc_t>::average_max_size() cons
 
 template<class data_t, class calc_t>
 bool fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
-is_full(size_type a_index)
+is_full(size_type a_index) const
 {
   return (m_windows[a_index].size == (m_windows[a_index].max_size - 1)) &&
     m_average.is_full();

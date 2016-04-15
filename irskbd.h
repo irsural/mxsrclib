@@ -83,7 +83,7 @@ private:
 
 void set_default_keys(mxkey_drv_mc_t* ap_mxkey_drv_mc);
 
-#ifdef IRS_STM32F_2_AND_4
+#ifdef IRS_STM32_F2_F4_F7
 
 class encoder_drv_mc_t: public encoder_drv_t
 {
@@ -112,7 +112,7 @@ private:
 
 void set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc);
 
-#endif  // IRS_STM32F_2_AND_4
+#endif  // IRS_STM32_F2_F4_F7
 
 #endif  //  __ICCARM__ || __ICCAVR__
 
