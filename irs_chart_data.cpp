@@ -234,7 +234,6 @@ irs::chart_data::charts_t irs::chart_data::charts_json_file_t::load(
           str_to_num_classic(y_str, &point.y)) {
         chart.points.push_back(point);
       }
-      chart.points.push_back(point);
     }
     chart.index = index;
     chart.visible = visible;

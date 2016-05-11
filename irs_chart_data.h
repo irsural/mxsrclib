@@ -30,6 +30,10 @@ struct point_t
     y(a_y)
   {
   };
+  inline bool operator==(const point_t<T>& a_point) const
+  {
+    return (x == a_point.x) && (y == a_point.y);
+  }
 };
 
 struct chart_t

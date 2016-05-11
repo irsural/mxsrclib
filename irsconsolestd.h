@@ -403,7 +403,7 @@ inline irs_bool mxkey_event_gen_t::tick()
     }
     switch (m_encoder_mode) {
       case mode_start: {
-        f_mode = mode_wait_front;
+        m_encoder_mode = mode_wait_front;
       } break;
       case mode_wait_front: {
         if (is_key_down) {

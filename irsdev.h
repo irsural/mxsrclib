@@ -290,7 +290,7 @@ private:
   gpio_channel_t m_gpio_channel;
   tim_regs_t* mp_timer;
   cpu_traits_t::frequency_type m_frequency;
-  float m_duty;
+  //float m_duty;
   irs_u32* mp_tim_ccr;
   irs_u32 m_timer_channel;
   gpio_channel_t m_complementary_gpio_channel;

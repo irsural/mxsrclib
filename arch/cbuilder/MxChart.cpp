@@ -4040,7 +4040,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_builder_chart_window(ap_builder_chart_window),
   m_form_type(a_form_type),
   mp_form(ap_form),
-  m_version(1, 1, 1, 2),
+  m_version(1, 1, 2, 3),
   m_group_all(irs_false),
   //m_pause_time(),
   m_pause_data(),

@@ -1161,6 +1161,8 @@ public:
   void buf_resize(size_type a_size);
   void push_back(const value_type& a_value);
   void push_back(const_pointer ap_first, const_pointer ap_last);
+  void push_front(const value_type& a_value);
+  void push_front(const_pointer ap_first, const_pointer ap_last);
   void pop_back(size_type = 1);
   void pop_front(size_type = 1);
   void copy_to(size_type a_pos, size_type a_size,
@@ -1336,6 +1338,8 @@ void irs::deque_data_t<T>::push_back(
   resize(new_ring_size);
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (buf_right_part_size < old_ring_size) {
+    // Старые элементы заполняют всю правую часть
+    // Вставляем элементы в левую часть, после старых элементов
     pointer dest = mp_buf + (old_ring_size - buf_right_part_size);
     memcpyex(dest, ap_first, insert_data_size);
   } else {
@@ -1347,6 +1351,49 @@ void irs::deque_data_t<T>::push_back(
       insert_data_size - size_copy_data_to_buf_right_part;
     memcpyex(mp_buf, ap_first + size_copy_data_to_buf_right_part,
       size_copy_data_to_buf_left_part);
+  }
+}
+
+template <class T>
+void irs::deque_data_t<T>::push_front(const value_type& a_value)
+{
+  push_front(&a_value, &a_value + 1);
+}
+
+template <class T>
+void irs::deque_data_t<T>::push_front(
+  const_pointer ap_first, const_pointer ap_last)
+{
+  // Размер вставляемых данных
+  const size_type insert_data_size = (ap_last - ap_first);
+  const size_type old_ring_size = m_ring_size;
+  const size_type new_ring_size = insert_data_size + m_ring_size;
+  resize(new_ring_size);
+  const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
+
+  if (buf_right_part_size < old_ring_size) {
+    // Старые элементы заполняют всю правую часть
+    // Вставляем элементы в левую половину, перед правой частью
+    pointer dest = mp_buf + (m_ring_begin_pos - insert_data_size);
+    memcpyex(dest, ap_first, insert_data_size);
+    m_ring_begin_pos -= insert_data_size;
+  } else {
+    const size_type size_copy_data_to_buf_left_part =
+      min(insert_data_size, m_ring_begin_pos);
+    pointer dest = mp_buf +
+      (m_ring_begin_pos - size_copy_data_to_buf_left_part);
+    const_pointer source = ap_first +
+      (insert_data_size - size_copy_data_to_buf_left_part);
+    memcpyex(dest, source, size_copy_data_to_buf_left_part);
+    m_ring_begin_pos -= size_copy_data_to_buf_left_part;
+
+    const size_type size_copy_data_to_buf_right_part =
+      insert_data_size - size_copy_data_to_buf_left_part;
+    if (size_copy_data_to_buf_right_part > 0) {
+      dest = mp_buf + (m_capacity - size_copy_data_to_buf_right_part);
+      memcpyex(dest, ap_first, size_copy_data_to_buf_right_part);
+      m_ring_begin_pos = m_capacity - size_copy_data_to_buf_right_part;
+    }
   }
 }
 

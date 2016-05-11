@@ -160,6 +160,14 @@ irs::string_t num_to_str(const N& a_num, const locale& a_loc = irs::loc().get())
   return base_str;
 }
 
+template<class N>
+irs::string_t num_to_str_classic(const N& a_num)
+{
+  irs::string_t base_str;
+  num_to_str_classic(a_num, &base_str);
+  return base_str;
+}
+
 template<class T, class C>
 void number_to_string_classic(const T& a_num, basic_string<C>* ap_str)
 {
@@ -956,7 +964,7 @@ template <class T>
 irs::string_t value_to_bin_str(const T& a_value)
 {
   irs::string_t str;
-  const size_t bit_count = 8*sizeof(a_value);  
+  const size_t bit_count = 8*sizeof(a_value);
 
   size_t bit_pos = bit_count;
   do {

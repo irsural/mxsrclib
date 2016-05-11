@@ -87,7 +87,7 @@ namespace irs {
 template <class forward_iterator, class T>
 void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
   T* ap_result, T* ap_average = NULL,
-  bool a_use_sample_standatd_deviation = false)
+  bool a_use_sample_standard_deviation = false)
 {
   const size_t size = distance(ap_first, ap_last);
   if (size == 0) {
@@ -111,7 +111,7 @@ void standard_deviation(forward_iterator ap_first, forward_iterator ap_last,
     square_sum += value*value;
     ++ap_first;
   }
-  if (a_use_sample_standatd_deviation && (size > 1)) {
+  if (a_use_sample_standard_deviation && (size > 1)) {
     *ap_result = sqrt(square_sum/(size - 1));
   } else {
     *ap_result = sqrt(square_sum/size);
@@ -606,7 +606,9 @@ forward_iterator eliminating_outliers_smirnov_criterion_multiple_pass(
     } else {
       critical_value = critical_values_for_t_a_criterion(level, size);
     }
-
+    if (sko == 0) {
+      break;
+    }
     if (fabs(value - average)/sko > critical_value) {
       bad_elements.insert(end_it_map->second);
     } else {
