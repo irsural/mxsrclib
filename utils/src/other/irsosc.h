@@ -8,6 +8,7 @@
 #define irsdspH
 
 #include <stdlib.h>
+#include <math.h>
 
 template <class T>
 inline T sqr (T x)
@@ -148,14 +149,17 @@ T osc_cir_t<T>::calc_denom()
 }
 
 
-
+#define IRS_PI        3.14159265358979323846
 typedef float main_float_t;
 inline int example()
 {
   main_float_t Fd = 48000;
   main_float_t Td = 1/Fd;
   main_float_t f_center = 125;
-  main_float_t n_t_center = Fd/f_center;
+  // На вход класса следует подавать частоту пересчитанную по формуле:
+  main_float_t f_center_osc =
+    static_cast<main_float_t>(tan(2*IRS_PI*f_center)*Fd/IRS_PI);
+  main_float_t n_t_center = Fd/f_center_osc;
   main_float_t tau = 1;
   main_float_t n_tau = tau/Td;
   osc_cir_t<main_float_t> osc_cir(n_t_center, n_tau, 0);

@@ -998,6 +998,35 @@ private:
   T calc_denom();
 };
 
+// Крашенинников (14.06.2016): Не удалять!!!
+// Пример использования класса osc_cir_t
+#ifdef NOP
+typedef float main_float_t;
+inline int osc_cir_example()
+{
+  main_float_t Fd = 48000;
+  main_float_t Td = 1/Fd;
+  main_float_t f_center = 125;
+  // На вход класса следует подавать частоту пересчитанную по формуле:
+  main_float_t f_center_osc =
+    static_cast<main_float_t>(tan(2*IRS_PI*f_center)*Fd/IRS_PI);
+  main_float_t n_t_center = Fd/f_center_osc;
+  main_float_t tau = 1;
+  main_float_t n_tau = tau/Td;
+  osc_cir_t<main_float_t> osc_cir(n_t_center, n_tau, 0);
+  
+  int example_count = 100;
+  main_float_t sum = 0;
+  for (int i = 0; i < example_count; i++) {
+    main_float_t sample = rand();
+    main_float_t out = osc_cir.filt(sample);
+    sum += out;
+  }
+  
+  return static_cast<int>(sum/example_count);
+}
+#endif //NOP
+
 template <class T>
 osc_cir_t<T>::osc_cir_t(T a_n_period, T a_n_fade, T a_y1_init, T a_x1_init,
   T a_y2_init, T a_x2_init):
