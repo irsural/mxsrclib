@@ -1242,9 +1242,9 @@ inline typename irs::deque_data_t<T>::const_reference
 template <class T>
 inline typename irs::deque_data_t<T>::reference
   irs::deque_data_t<T>::operator[](size_type a_index)
-{
-  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
-
+{  
+  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");  
+  
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (a_index < buf_right_part_size) {

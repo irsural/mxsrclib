@@ -19,6 +19,15 @@
 
 #include <irsfinal.h>
 
+#ifndef IRS_USE_ST_RTC
+# if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
+#   define IRS_USE_ST_RTC 1
+# else
+#   define IRS_USE_ST_RTC 0
+# endif
+#endif // IRS_USE_ST_RTC
+
+
 namespace irs {
 
 //! \addtogroup time_processing_group
@@ -61,9 +70,11 @@ IRS_STREAMSPECDECL ostream &stime(ostream &a_stream);
 IRS_STREAMSPECDECL wostream &wstime(wostream &a_stream);
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
-double get_time_from_stm32f4xx();
-#endif // defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
+/*#if IRS_USE_ST_RTC
+double get_time_from_stm32();
+double get_time_double();
+#endif // IRS_USE_ST_RTC*/
+double get_time_double();
 
 // «апись в поток текущей даты и времени
 IRS_STRING_TEMPLATE
@@ -72,19 +83,20 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
 {
   #ifdef __ICCARM__
   time_t time_s = time(NULL);
-  double seconds_double = 0;
+  double seconds_double = get_time_double();
   int milliseconds = 0;
-  if (time_s == static_cast<time_t>(-1)) {
+  /*if (time_s == static_cast<time_t>(-1)) {
     seconds_double = CNT_TO_DBLTIME(counter_get());
     time_s = static_cast<time_t>(seconds_double);
   } else {
-    #if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
-    seconds_double = get_time_from_stm32f4xx();
-    #else // !(IRS_STM32F4xx && defined(USE_STDPERIPH_DRIVER))
+
+    #if IRS_USE_ST_RTC
+    seconds_double = get_time_from_stm32();
+    #else // !IRS_USE_ST_RTC
     seconds_double = CNT_TO_DBLTIME(counter_get());
     time_s = static_cast<time_t>(seconds_double);
-    #endif // !IRS_STM32F4xx
-  }
+    #endif // !IRS_USE_ST_RTC
+  }*/
   //time = time(NULL);
   milliseconds = static_cast<int>(
     (seconds_double - static_cast<irs_u64>(seconds_double))*1000);

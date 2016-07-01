@@ -1167,7 +1167,11 @@ float irs::arm::st_adc_t::get_temperature()
 float irs::arm::st_adc_t::get_v_battery()
 {
   if (m_v_battery_measurement_enabled) {
-    return static_cast<float>(m_v_battery_channel_value)*2./adc_max_value;
+    float k = 2;
+    #ifdef IRS_STM32F7xx
+    k = 4;
+    #endif // IRS_STM32F7xx
+    return static_cast<float>(m_v_battery_channel_value)*k/adc_max_value;
   }
   return 0;
 }

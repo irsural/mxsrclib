@@ -1398,6 +1398,9 @@ bool irs::tstlan::view_t::controls_t::is_saveable_col(int a_col)
 void irs::tstlan::view_t::controls_t::save_grid_row(int a_row)
 {
   mp_vars_ini_file->save_cx_grid_table_view_row(a_row);
+  if (!mp_data) {
+    return;
+  }
   m_netconn.connect(mp_data, mp_vars_grid, m_type_col,
     m_network_pos_col);
 }
@@ -1470,6 +1473,10 @@ cxGridTableViewColumnValuePropertiesValidate(TObject *Sender,
 {
   mp_view->DataController->PostEditingData();
   int row = mp_controller->FocusedRecordIndex;
+  Variant variant = mp_controller->Values[row][mp_value_column->Index];
+  if (variant.IsNull()) {
+    return;
+  }
   bstr_to_var(row, mp_controller->Values[row][mp_value_column->Index]);
   save_grid_row(row);
 }

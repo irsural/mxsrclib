@@ -1335,6 +1335,7 @@ template <class data_t, class calc_t>
 void fast_average_as_t<data_t, calc_t>::resize(double a_count)
 {
   double max_count = 0;
+  m_count = a_count;
   m_count_fractional = modf(a_count, &max_count);
   m_max_count = static_cast<size_type>(max_count) + 1;
   m_samples.reserve(m_max_count);
@@ -1347,7 +1348,7 @@ void fast_average_as_t<data_t, calc_t>::resize(double a_count)
       m_samples.pop_front(m_samples.size() - 1);
     }
   } else {
-    while (m_samples.size() > (m_max_count - 1)) {
+    while (m_samples.size() > m_max_count) {
       m_sum -= m_samples.front();
       m_samples.pop_front();
     }
@@ -1677,12 +1678,12 @@ void fast_multi_sko_with_single_average_t<data_t, calc_t>::resize(
   size_type a_new_size)
 {
   window_t& window = m_windows[a_index];
-  const size_type start_index = m_square_elems.size() - window.size;
+  //const size_type start_index = m_square_elems.size() - window.size;
   window.max_size = a_new_size;
   if (window.size > window.max_size) {
     const size_type count = window.size - window.max_size;
     for (size_type i = 0; i < count; i++) {
-      window.square_sum -= m_square_elems[start_index + i];
+      window.square_sum -= m_square_elems[i];
     }
     window.size = window.max_size;
   }
@@ -2118,7 +2119,7 @@ public:
   typedef size_t size_type;
   //! \brief Конструктор
   //! \param[in] a_sizes - массив размеров окон
-  //! \param[in] a_average_sizes - массив размеров окон для среднего значения
+  //! \param[in] a_average_sizes - размер окна для среднего значения
   fast_multi_sko_with_single_average_as_t(
     const vector<double>& a_sizes, double a_average_size,
     calc_t a_average_default = 0);
@@ -2221,24 +2222,19 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
   double a_new_size)
 {
   window_t& window = m_windows[a_index];
-  const size_type start_index = m_square_elems.size() - window.size;
+
 
   double max_count = 0;
   window.count = a_new_size;
   window.count_fractional = modf(a_new_size, &max_count);
   window.max_size = static_cast<size_type>(max_count) + 1;
-  if (window.size > window.max_size) {
-    const size_type count = window.size - window.max_size;
-    if (count == 0) {
-      window.square_sum = 0;
-    } else if (count == 1) {
-      window.square_sum = 0;
-    } else {
-      for (size_type i = 0; i < (count - 1); i++) {
-        window.square_sum -= m_square_elems[start_index + i];
-      }
+  if (window.size >= window.max_size) {
+    //const size_type start_index = m_square_elems.size() - window.max_size;
+    const size_type count = (window.size - window.max_size) + 1;
+    for (size_type i = 0; i < count; i++) {
+      window.square_sum -= m_square_elems[i]; //m_square_elems[start_index + i];
     }
-    window.size = window.max_size;
+    window.size -= count;
   }
 
   m_max_count = 0;
@@ -2414,19 +2410,6 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::add(data_t a_val)
     calc_t elem = a_val - m_average.get();
     elem *= elem;
     m_square_elems.push_back(elem);
-
-    /*if (!m_square_elems.empty()) {
-      for (size_type i = 0; i < m_windows.size(); i++) {
-        window_t& window = m_windows[i];
-        if (window.size == (window.max_size - 1)) {
-          calc_t square_sum = window.square_sum +
-            m_square_elems.back()*window.count_fractional;
-          double sko = sqrt(square_sum/window.count);
-          double d = (sqrt(0.5)-sko)/sqrt(0.5)*100;
-          double a = 0;
-        }
-      }
-    }*/
   }
 }
 

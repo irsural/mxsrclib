@@ -89,12 +89,26 @@ IRS_STREAMSPECDECL wostream &irs::wstime(wostream &a_stream)
 }
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#if defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
-double irs::get_time_from_stm32f4xx()
+/*#if (defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)) ||\
+  defined(USE_HAL_DRIVER)
+double irs::get_time_from_stm32()
 {
   return irs::arm::st_rtc_t::get_instance()->get_time_double();
 }
-#endif // defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)
+#endif // defined(IRS_STM32F4xx) && defined(USE_STDPERIPH_DRIVER)*/
+double irs::get_time_double()
+{
+  #if IRS_USE_ST_RTC
+  return irs::arm::st_rtc_t::get_instance()->get_time_double();
+  #else // !IRS_USE_ST_RTC
+  time_t time_s = time(NULL);
+  if (time_s == static_cast<time_t>(-1)) {
+    return CNT_TO_DBLTIME(counter_get());
+  } else {
+    return time_s;
+  }
+  #endif // !IRS_USE_ST_RTC
+}
 
 // «апись в поток текущей даты и времени
 IRS_STREAMSPECDECL irs::ostream_t &irs::sdatetimet(ostream_t &a_stream)
@@ -185,15 +199,15 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
-#if defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7) &&\
-  defined(USE_STDPERIPH_DRIVER)
+#if IRS_USE_ST_RTC
 _STD_BEGIN
 __time32_t (__time32)(__time32_t *t)
-{ 
-  #ifdef IRS_STM32F_2_AND_4
+{
+  #ifdef IRS_STM32_F2_F4_F7
   if (t)
   {
     *t = irs::arm::st_rtc_t::get_instance()->get_time();
+    return *t;
   }
   return irs::arm::st_rtc_t::get_instance()->get_time();
   #else
@@ -204,10 +218,11 @@ __time32_t (__time32)(__time32_t *t)
 #if _DLIB_TIME_ALLOW_64
 __time64_t (__time64)(__time64_t *t)
 {
-  #ifdef IRS_STM32F_2_AND_4
+  #ifdef IRS_STM32_F2_F4_F7
   if (t)
   {
     *t = irs::arm::st_rtc_t::get_instance()->get_time();
+    return *t;
   }
   return irs::arm::st_rtc_t::get_instance()->get_time();
   #else
@@ -217,7 +232,6 @@ __time64_t (__time64)(__time64_t *t)
 //CLOCKS_PER_SEC
 
 _STD_END
-#endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7) && 
-//  defined(USE_STDPERIPH_DRIVER)
+#endif // IRS_USE_ST_RTC
 
 #endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7)

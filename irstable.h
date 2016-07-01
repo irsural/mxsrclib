@@ -76,7 +76,7 @@ public:
     const cell_type_t& a_cell = cell_type_t());
   table_t(const table_t& a_table);
   inline void swap(table_t* ap_table);
-  inline table_t& operator=(table_t& a_table);
+  inline table_t& operator=(const table_t& a_table);
   inline bool operator== (const table_t& a_table) const;
   inline bool operator!= (const table_t& a_table) const;
   inline const cell_type_t& read_cell(
@@ -180,7 +180,8 @@ inline void table_t<cell_type_t, column_type_t, container_t>::swap(
 
 template<class cell_type_t, class column_type_t, class container_t>
 inline table_t<cell_type_t, column_type_t, container_t>&
-table_t<cell_type_t, column_type_t, container_t>::operator=(table_t& a_table)
+table_t<cell_type_t, column_type_t, container_t>::operator=(
+  const table_t& a_table)
 {
   table_t table(a_table);
   swap(&table);

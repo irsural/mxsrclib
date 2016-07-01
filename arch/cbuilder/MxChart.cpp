@@ -3740,6 +3740,11 @@ ungroup_all()
   mp_controls->ungroup_all();
 }
 
+bool irs::chart::builder_chart_window_t::visible() const
+{
+  return mp_form->Visible;
+}
+
 void irs::chart::builder_chart_window_t::set_visible(const string_type &a_name,
   bool a_enabled)
 {
@@ -4079,6 +4084,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_params_panel(new TPanel(mp_form)),
   mp_params_splitter(new TSplitter(mp_form)),
   mp_update_param_list_btn(new TButton(mp_form)),
+  mp_auto_update_param_list_cb(new TCheckBox(mp_form)),
   mp_param_list(new TValueListEditor(mp_form)),
   mp_paint_panel(new TPanel(mp_form)),
   mp_chart_box(new TPaintBox(mp_form)),
@@ -4110,7 +4116,8 @@ irs::chart::builder_chart_window_t::controls_t::
   m_unsort_data(),
   m_area(),
   m_chart_area_index(0),
-  m_fixed_time_mode_enabled(false)
+  m_fixed_time_mode_enabled(false),
+  m_update_param_list_timer(irs::make_cnt_s(1))
 {
   m_unsort_data.connect(m_data);
 
@@ -4301,6 +4308,14 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_update_param_list_btn->OnClick = UpdateParamListBtnClick;
   mp_update_param_list_btn->Caption = irst("Обновить");
 
+  mp_auto_update_param_list_cb->Parent = mp_params_panel;
+  mp_auto_update_param_list_cb->Left = mp_update_param_list_btn->Left +
+    mp_update_param_list_btn->Width + 8;
+  mp_auto_update_param_list_cb->Top = mp_update_param_list_btn->Top +
+    mp_update_param_list_btn->Height - mp_auto_update_param_list_cb->Height;
+  mp_auto_update_param_list_cb->Width = 200;
+  mp_auto_update_param_list_cb->Caption = irst("Обновлять автоматически");
+
   mp_param_list->Parent = mp_params_panel;
   mp_param_list->Left = 8;
   mp_param_list->Top = mp_update_param_list_btn->Top +
@@ -4440,6 +4455,12 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
         connect_data(m_data);
       }
     }
+
+    if (mp_auto_update_param_list_cb->Checked &&
+        m_update_param_list_timer.check()) {
+      update_param_list();
+    }
+
   } catch (Exception &exception) {
     mp_timer->Enabled = false;
     Application->ShowException(&exception);

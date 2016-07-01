@@ -13,6 +13,21 @@
 # include <cbsysutils.h>
 #endif // __BORLANDC__
 
+#if IRS_USE_BOOST
+
+#if defined(__BORLANDC__)
+#pragma warn -8092
+#endif // defined(__BORLANDC__)
+
+# include <boost/filesystem/path.hpp>
+# include <boost/filesystem/operations.hpp>
+
+#if defined(__BORLANDC__)
+#pragma warn .8092
+#endif // defined(__BORLANDC__)
+
+#endif // IRS_USE_BOOST
+
 #include <irssysutils.h>
 
 #include <irsfinal.h>
@@ -412,6 +427,269 @@ void irs::binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
   }
 }
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+
+#if IRS_USE_BOOST
+
+#if (BOOST_VERSION >= 106000)
+
+irs::string_t irs::absolute_path_to_relative(const irs::string_t& a_path,
+  const irs::string_t& a_base)
+{
+
+  typedef boost::filesystem::path path_type;
+  typedef boost::filesystem::path::string_type string_type;
+
+  string_type path = irs::str_conv<string_type>(a_path);
+  string_type base = irs::str_conv<string_type>(a_base);
+
+  path_type absolute_path(path);
+  path_type base_path(base);
+
+  path_type relative_path = relative(absolute_path, base_path);
+
+  //path_type relative_path =
+    //irs::absolute_path_to_relative(absolute_path, base_path);
+
+  string_type relative_str = relative_path.native();
+
+  return irs::str_conv<irs::string_t>(relative_str);
+}
+
+
+irs::string_t irs::relative_path_to_absolute(const irs::string_t& a_path,
+  const irs::string_t& a_base)
+{
+  typedef boost::filesystem::path path_type;
+  typedef boost::filesystem::path::string_type string_type;
+
+  string_type path = irs::str_conv<string_type>(a_path);
+  string_type base = irs::str_conv<string_type>(a_base);
+
+  path_type relative_path(path);
+  path_type base_path(base);
+
+  path_type absolute = boost::filesystem::absolute(relative_path, base_path);
+  absolute = absolute.lexically_normal();
+  string_type absolute_str = absolute.native();
+
+  return irs::str_conv<irs::string_t>(absolute_str);
+}
+
+#elif (BOOST_VERSION < 104600) // (Для C++BuilderXE3)
+
+namespace {
+
+boost::filesystem::wpath absolute_path_to_relative(
+  const boost::filesystem::wpath& a_path,
+  const boost::filesystem::wpath& a_base)
+{
+  namespace fs = boost::filesystem;
+
+  typedef fs::wpath path_type;
+  typedef std::wstring string_type;
+
+  if (!a_base.has_root_path()) {
+    return a_path;
+  }
+
+  // Здесь стоит проверить наличие слеша после буквы диска и добавить его, если
+  // он отсутвует
+
+  if (!a_path.has_root_path()) {
+    return a_path;
+  }
+
+  if (a_base.root_path() != a_path.root_path()) {
+    return a_path;
+  }
+
+  const string_type _dot  = string_type(1, fs::dot<fs::wpath>::value);
+  const string_type _dots = string_type(2, fs::dot<fs::wpath>::value);
+  const string_type _sep = string_type(1, fs::slash<fs::wpath>::value);
+  const string_type _dots_sep = _dots + _sep;
+
+  path_type::iterator base_it = a_base.begin();
+  path_type::iterator file_name_it = a_path.begin();
+  while ((base_it != a_base.end()) && (file_name_it != a_path.end())) {
+    if (*base_it != *file_name_it) {
+      break;
+    }
+    ++base_it;
+    ++file_name_it;
+  }
+
+  path_type relative_path;
+  for (; base_it != a_base.end(); ++base_it) {
+
+    if (*base_it == _dot) {
+      continue;
+    } else if (*base_it == _sep) {
+      continue;
+    }
+
+    relative_path /= _dots_sep;
+  }
+
+  /*fs::wpath::iterator path_it_start = file_name_it;
+  for (; file_name_it != file_name.end(); ++file_name_it) {
+    if (file_name_it != path_it_start)
+      relative_path /= irst("/");
+    if (*file_name_it == _dot)
+      continue;
+    if (*file_name_it == _sep)
+      continue;
+    relative_path /= *file_name_it;
+  }*/
+
+
+  for (; file_name_it != a_path.end(); ++file_name_it) {
+    relative_path /= *file_name_it;
+  }
+
+  return relative_path;
+}
+
+} // namespace empty
+
+irs::string_t irs::absolute_path_to_relative(const irs::string_t& a_path,
+  const irs::string_t& a_base)
+{
+  namespace fs = boost::filesystem;
+  typedef fs::wpath path_type;
+  typedef std::wstring string_type;
+  string_type path = irs::str_conv<string_type>(a_path);
+  string_type base = irs::str_conv<string_type>(a_base);
+
+  path_type absolute_path(path);
+  path_type base_path(base);
+
+  path_type relative_path =
+    absolute_path_to_relative(absolute_path, base_path);
+
+  string_type relative_str = relative_path.native_file_string();
+  return relative_str;
+}
+
+/*namespace {
+
+boost::filesystem::wpath normalize_lexically(
+  const boost::filesystem::wpath& a_path)
+{
+  namespace fs = boost::filesystem;
+  typedef wchar_t char_type;
+  typedef std::wstring string_type;
+  typedef boost::filesystem::wpath path_type;
+
+
+
+  const char_type dot = fs::dot<fs::wpath>::value;
+  const char_type separator = fs::slash<fs::wpath>::value;
+  const char_type colon = fs::colon<fs::wpath>::value;
+
+  path_type dot_path(string_type(dot, 1));
+
+  if (a_path.empty()) {
+    return a_path;
+  }
+
+  path_type temp;
+
+  path_type::iterator start(a_path.begin());
+  path_type::iterator last(a_path.end());
+  path_type::iterator stop(last--);
+  for (path_type::iterator itr(start); itr != stop; ++itr)
+  {
+    path_type elem = *itr;
+    string_type elem_str = elem.native_file_string();
+    // ignore "." except at start and last
+    if (elem_str.size() == 1
+      && (elem_str[0] == dot)
+      && itr != start
+      && itr != last) continue;
+
+    // ignore a name and following ".."
+    if (!temp.empty()
+      && elem_str.size() == 2
+      && elem_str[0] == dot
+      && elem_str[1] == dot) // dot dot
+    {
+      path_type filename = temp.leaf();
+      string_type lf(filename.native_file_string());
+      if (lf.size() > 0 &&
+        (lf.size() != 1 || (lf[0] != dot && lf[0] != separator))
+        && (lf.size() != 2 || (lf[0] != dot
+            && lf[1] != dot
+#             ifdef BOOST_WINDOWS_API
+            && lf[1] != colon
+#             endif
+             )
+           )
+        )
+      {
+        temp.remove_filename();
+        path_type filename123 = temp.leaf();
+        //// if not root directory, must also remove "/" if any
+        //if (temp.native().size() > 0
+        //  && temp.native()[temp.native().size()-1]
+        //    == separator)
+        //{
+        //  string_type::size_type rds(
+        //    root_directory_start(temp.native(), temp.native().size()));
+        //  if (rds == string_type::npos
+        //    || rds != temp.native().size()-1)
+        //  {
+        //    temp.m_pathname.erase(temp.native().size()-1);
+        //  }
+        //}
+
+
+
+
+        path_type::iterator next(itr);
+
+        if (temp.empty() && (++next != stop) &&
+          (next == last) && (*last == dot_path))
+        {
+          temp /= dot_path;
+        }
+        continue;
+      }
+    }
+
+    temp /= *itr;
+  };
+
+  if (temp.empty())
+    temp /= dot_path;
+  return temp;
+
+}
+
+} // empty namespace */
+
+irs::string_t irs::relative_path_to_absolute(const irs::string_t& a_path,
+  const irs::string_t& a_base)
+{
+  typedef boost::filesystem::wpath path_type;
+  typedef std::wstring string_type;
+
+  string_type path = irs::str_conv<string_type>(a_path);
+  string_type base = irs::str_conv<string_type>(a_base);
+
+  path_type relative_path(path);
+  path_type base_path(base);
+
+  path_type absolute = boost::filesystem::complete(relative_path, base_path);
+
+  absolute = absolute.normalize();
+
+  string_type absolute_str = absolute.native_file_string();
+
+  return irs::str_conv<irs::string_t>(absolute_str);
+}
+#endif // BOOST_VERSION < 104600 (Для C++BuilderXE3)
+
+#endif // IRS_USE_BOOST
 
 irs::string_t irs::default_ini_name()
 {

@@ -479,6 +479,11 @@ void irs_arm_dma2_stream3_func()
   irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream3_int);
 }
 
+void irs_arm_dma2_stream6_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream6_int);
+}
+
 //#ifndef USE_USB_OTG_FS
 void irs_arm_otg_fs_func()
 {
@@ -690,7 +695,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 66
   irs_arm_otg_fs_func,       // 67
   irs_arm_default_int_func,  // 68
-  irs_arm_default_int_func,  // 69
+  irs_arm_dma2_stream6_func, // 69
   irs_arm_default_int_func,  // 70
   irs_arm_usart6_func,       // 71
   irs_arm_default_int_func,  // 72

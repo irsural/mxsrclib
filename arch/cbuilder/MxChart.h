@@ -559,6 +559,7 @@ public:
   virtual irs_u32 size() const;
   virtual void group_all();
   virtual void ungroup_all();
+  bool visible() const;
   void set_visible(const string_type &a_name, bool a_enabled);
   void set_fixed_time_mode_enabled(bool a_enable);
   void load_from_mxchart_file(const string_type& a_file_name);
@@ -705,6 +706,7 @@ private:
     TPanel* mp_params_panel;
     TSplitter* mp_params_splitter;
     TButton* mp_update_param_list_btn;
+    TCheckBox* mp_auto_update_param_list_cb;
     TValueListEditor* mp_param_list;
     TPanel* mp_paint_panel;
     TPaintBox* mp_chart_box;
@@ -743,6 +745,9 @@ private:
     TDblRect m_area;
     int m_chart_area_index;
     bool m_fixed_time_mode_enabled;
+
+    irs::loop_timer_t m_update_param_list_timer;
+    bool m_update_param_list_enabled;
 
     void __fastcall PaintPanelResize(TObject *Sender);
 

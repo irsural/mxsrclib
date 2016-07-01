@@ -20,6 +20,11 @@
 #include <stdlib.h>
 #endif  // Прочие платформы
 
+#if IRS_USE_BOOST
+//#define BOOST_SYSTEM_NO_DEPRECATED
+# include <boost/version.hpp>
+#endif // IRS_USE_BOOST
+
 #include <irsstd.h>
 #include <irsstrdefs.h>
 #include <irserror.h>
@@ -999,6 +1004,18 @@ map_iterator_t find_value(map_iterator_t a_begin, map_iterator_t a_end,
 }
 
 #endif // defined(IRS_FULL_STDCPPLIB_SUPPORT) || defined(__ICCARM__)
+
+#if IRS_USE_BOOST
+#if ((BOOST_VERSION < 104600) || (BOOST_VERSION >= 106000))
+
+string_t absolute_path_to_relative(const irs::string_t& a_path,
+  const irs::string_t& a_base);
+
+string_t relative_path_to_absolute(const irs::string_t& a_path,
+  const irs::string_t& a_base);
+
+#endif // (BOOST_VERSION < 104600) || (BOOST_VERSION >= 106600)
+#endif // IRS_USE_BOOST
 
 string_t default_ini_name();
 

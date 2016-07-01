@@ -36,6 +36,12 @@
 # endif // defined(IRS_STM32F4xx)
 #endif // USE_STDPERIPH_DRIVER
 
+#ifdef USE_STDPERIPH_DRIVER
+# ifdef IRS_STM32F7xx
+#   include "stm32f7xx_hal.h"
+# endif // IRS_STM32F7xx
+#endif // 
+
 #include <irsfinal.h>
 
 namespace irs {
@@ -480,6 +486,47 @@ private:
 };
 #endif // IRS_STM32F_2_AND_4
 #endif // USE_STDPERIPH_DRIVER
+
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32_F2_F4_F7
+
+//! \brief Этот класс позволяет получать время из микроконтронтроллеров STM32
+//! \details Для его использования необходимо реализовать в проекте функции 
+//!    HAL_RTC_MspInit, HAL_RTC_MspDeIni. Их можно найти в примерах к отладочным
+//!   платам
+class st_rtc_t
+{
+public:
+  /*enum clock_source_t {
+    clock_source_lsi,
+    clock_source_lse
+  };*/
+  static st_rtc_t* reset();
+  static st_rtc_t* get_instance();
+  time_t get_time();
+  double get_time_double();
+  void set_time(const time_t a_time);
+  //! \param[in] a_koefficient - множитель, на который необходимо домножить
+  //!   частоту, чтобы получить заданную. Если a_koefficient == 1, то
+  //!   калибровка отсутствует.
+  void set_calibration(double a_koefficient);
+  double get_calibration() const;
+  double get_calibration_coefficient_min() const;
+  double get_calibration_coefficient_max() const;
+private:
+  st_rtc_t();  
+  st_rtc_t(const st_rtc_t& a_st_rtc);
+  st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
+  void rtc_config();  
+  void write_to_backup_reg(irs_u16 a_first_backup_data);
+  enum { backup_first_data = 0x32F2 };
+  enum { rtc_bkp_dr_number = 0x14 };
+  irs_u32 bkp_data_reg[rtc_bkp_dr_number];
+  RTC_HandleTypeDef RtcHandle;
+  static handle_t<st_rtc_t> mp_st_rtc;
+};
+#endif // IRS_STM32_F2_F4_F7
+#endif // USE_HAL_DRIVER
 
 //! @}
 

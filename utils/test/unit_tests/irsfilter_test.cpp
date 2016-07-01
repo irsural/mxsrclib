@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(test_butterworth_2_order_low_pass)
   BOOST_CHECK_CLOSE(denom_coef_list[2], 4.128015980961886e-01, epsilon);
 }
 
-BOOST_AUTO_TEST_CASE(test_cauer_2_order_high_pass)
+/*BOOST_AUTO_TEST_CASE(test_cauer_2_order_high_pass)
 {
   // Тест фильтра верхних частот кауэра 2 порядка
   irs::filter_settings_t filter_settings;
@@ -100,9 +100,9 @@ BOOST_AUTO_TEST_CASE(test_cauer_2_order_high_pass)
   BOOST_CHECK_CLOSE(denom_coef_list[0], 1.000000000000000e+00, epsilon);
   BOOST_CHECK_CLOSE(denom_coef_list[1], -1.531347390185103e+00, epsilon);
   BOOST_CHECK_CLOSE(denom_coef_list[2], 6.321221436620125e-01, epsilon);
-}
+}*/
 
-BOOST_AUTO_TEST_CASE(test_cauer_2_order_band_pass)
+/*BOOST_AUTO_TEST_CASE(test_cauer_2_order_band_pass)
 {
   // Тест полосового фильтра кауэра 2 порядка
   irs::filter_settings_t filter_settings;
@@ -137,6 +137,6 @@ BOOST_AUTO_TEST_CASE(test_cauer_2_order_band_pass)
   BOOST_CHECK_CLOSE(denom_coef_list[2], 1.333596081600205e+00, epsilon);
   BOOST_CHECK_CLOSE(denom_coef_list[3], -7.164698628654187e-01, epsilon);
   BOOST_CHECK_CLOSE(denom_coef_list[4], 2.730707507054483e-01, epsilon);
-}
+}*/
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1741,6 +1741,172 @@ void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 #endif // IRS_STM32F_2_AND_4
 #endif // USE_STDPERIPH_DRIVER
 
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32_F2_F4_F7
+
+#define RTC_ASYNCH_PREDIV  0x7F   /* LSE as RTC clock */
+#define RTC_SYNCH_PREDIV   0x00FF /* LSE as RTC clock */
+
+// class st_rtc_t
+irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
+
+irs::arm::st_rtc_t::st_rtc_t():
+  RtcHandle()
+{
+  mp_st_rtc = this;
+
+  irs_u32 bkp_data_reg_init[rtc_bkp_dr_number] =
+  {
+    RTC_BKP_DR0, RTC_BKP_DR1, RTC_BKP_DR2,
+    RTC_BKP_DR3, RTC_BKP_DR4, RTC_BKP_DR5,
+    RTC_BKP_DR6, RTC_BKP_DR7, RTC_BKP_DR8,
+    RTC_BKP_DR9, RTC_BKP_DR10, RTC_BKP_DR11,
+    RTC_BKP_DR12, RTC_BKP_DR13, RTC_BKP_DR14,
+    RTC_BKP_DR15, RTC_BKP_DR16, RTC_BKP_DR17,
+    RTC_BKP_DR18,  RTC_BKP_DR19
+  };
+  memcpy(bkp_data_reg, bkp_data_reg_init, sizeof(bkp_data_reg_init));
+  
+  RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
+  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
+  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV;
+  RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
+  RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
+  RtcHandle.Instance            = RTC;
+  
+  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {   
+    IRS_LIB_DBG_MSG("Initialization Error");
+  }
+    
+  /*if (HAL_RTCEx_BKUPRead(&RtcHandle, RTC_BKP_DR1) != backup_first_data) {
+    rtc_config();
+  }*/ 
+}
+
+irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset()
+{
+  mp_st_rtc.reset();
+  mp_st_rtc.reset(new st_rtc_t());
+  return mp_st_rtc.get();
+}
+
+irs::arm::st_rtc_t* irs::arm::st_rtc_t::get_instance()
+{
+  if (mp_st_rtc.is_empty()) {
+    mp_st_rtc.reset(new st_rtc_t());
+  }
+  return mp_st_rtc.get();
+}
+
+time_t irs::arm::st_rtc_t::get_time()
+{
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;
+
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&RtcHandle, &stimestructureget, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&RtcHandle, &sdatestructureget, RTC_FORMAT_BIN);  
+ 
+  tm now_tm;
+
+  now_tm.tm_hour = stimestructureget.Hours;
+  now_tm.tm_min = stimestructureget.Minutes;
+  now_tm.tm_sec = stimestructureget.Seconds;
+
+  now_tm.tm_mday = sdatestructureget.Date;
+  now_tm.tm_mon = sdatestructureget.Month - RTC_MONTH_JANUARY;
+  now_tm.tm_year = sdatestructureget.Year + 100;
+
+  now_tm.tm_isdst = 0;
+
+  now_tm.tm_wday = sdatestructureget.WeekDay - RTC_WEEKDAY_MONDAY;
+  now_tm.tm_yday = 0; // Не используется
+
+  return mktime(&now_tm);
+}
+
+double irs::arm::st_rtc_t::get_time_double()
+{
+  RTC_TimeTypeDef timestruct;  
+  HAL_RTC_GetTime(&RtcHandle, &timestruct, RTC_FORMAT_BIN);
+  
+  double ms = (1000.*timestruct.SubSeconds/59.);
+  time_t s = get_time();
+  return s + ms/1000.;  
+}
+
+void irs::arm::st_rtc_t::set_time(const time_t a_time)
+{
+  const tm time_tm = *gmtime(&a_time);
+  
+  RTC_DateTypeDef sdatestructure;
+  RTC_TimeTypeDef stimestructure;
+  
+  sdatestructure.Year = time_tm.tm_year - 100;
+  sdatestructure.Month = time_tm.tm_mon + RTC_MONTH_JANUARY;
+  sdatestructure.Date = time_tm.tm_mday;
+  sdatestructure.WeekDay = time_tm.tm_wday + RTC_WEEKDAY_MONDAY;
+  
+  if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure, RTC_FORMAT_BIN) != HAL_OK) {    
+    IRS_LIB_DBG_MSG("Initialization Error");
+  }
+ 
+  stimestructure.Hours = time_tm.tm_hour;
+  stimestructure.Minutes = time_tm.tm_min;
+  stimestructure.Seconds = time_tm.tm_sec;
+  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
+  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
+  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
+
+  if (HAL_RTC_SetTime(&RtcHandle, &stimestructure, RTC_FORMAT_BIN) != HAL_OK) {
+    IRS_LIB_DBG_MSG("Initialization Error");
+  }
+}
+#ifdef IRS_STM32F4xx
+void irs::arm::st_rtc_t::set_calibration(double /*a_koefficient*/)
+{  
+}
+#else // !IRS_STM32F4xx
+void irs::arm::st_rtc_t::set_calibration(double)
+{
+}
+#endif // !IRS_STM32F4xx
+
+double irs::arm::st_rtc_t::get_calibration() const
+{
+  return 1;
+}
+
+double irs::arm::st_rtc_t::get_calibration_coefficient_min() const
+{
+  const double max_negative_offset_ppm = 487.1;
+  return 1 - max_negative_offset_ppm/1e6; // 0.9995129
+}
+
+double irs::arm::st_rtc_t::get_calibration_coefficient_max() const
+{
+  const double max_positive_offset_ppm = 488.5;
+  return 1 + max_positive_offset_ppm/1e6; // 1.0004885
+}
+
+void irs::arm::st_rtc_t::rtc_config()
+{
+  
+}
+
+void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
+{
+  for (irs_u32 index = 0; index < rtc_bkp_dr_number; index++) {
+    HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[index], 
+      a_first_backup_data + (index * 0x5A));    
+  }
+}
+
+#endif // IRS_STM32_F2_F4_F7
+#endif // USE_HAL_DRIVER
+
 // class pwm_pin_t
 irs::pwm_pin_t::pwm_pin_t(irs::handle_t<pwm_gen_t> ap_pwm_gen):
   mp_pwm_gen(ap_pwm_gen),

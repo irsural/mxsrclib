@@ -128,8 +128,9 @@ enum {
   sdio_int,
   usart4_int,
   usart5_int,
-  dma2_stream3_int,
+  dma2_stream3_int,  
   otg_fs_int,
+  dma2_stream6_int,
   usart6_int,
   otg_hs_int,
   #endif //Микроконтроллеры
