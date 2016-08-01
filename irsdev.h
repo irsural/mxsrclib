@@ -40,7 +40,7 @@
 # ifdef IRS_STM32F7xx
 #   include "stm32f7xx_hal.h"
 # endif // IRS_STM32F7xx
-#endif // 
+#endif //
 
 #include <irsfinal.h>
 
@@ -412,7 +412,7 @@ public:
 private:
   double m_period_s;
   irs_u8 m_counter_start_value;
-}; // watchdog_timer_t
+}; // st_independent_watchdog_t
 
 //! \brief Драйвер оконного сторожевого таймера для контроллеров
 //!   семейств STM32F2xx и STM32F4xx
@@ -444,6 +444,47 @@ private:
 }; // watchdog_timer_t
 #endif // USE_STDPERIPH_DRIVER
 #endif  //  definde(IRS_STM32F_2_AND_4)
+
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32_F2_F4_F7
+//! \brief Драйвер независимого сторожевого таймера для контроллеров
+//!   семейств STM32F2xx, STM32F4xx, STM32F7xx
+//! \details Работает от независимого генератора с частотой ~32 кГц.
+//!   LSI теперь необходимо включать снаружи. Смотри пример кода "Включаем LSI"
+//!
+//! \code{.cpp}
+//!   // Включаем LSI
+//!   RCC_OscInitTypeDef RCC_OscInitStruct = {0};      
+//!   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI;  
+//!   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+//!   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;  
+//!   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+//!     IRS_LIB_ASSERT_MSG("Ошибка RCC_OscInitStruct LSI");
+//!   }
+//! \endcode
+//! \author Lyashchov Maxim
+class st_independent_watchdog_t: public watchdog_t
+{
+public:
+  typedef irs_size_t size_type;
+  //! \param[in] a_period_s Период срабатывания в секундах. Допустимо указывать
+  //!   значения [0, 100]. Однако фактически
+  //!   сторожевой таймер работает со следующим диапазоном
+  //!   (для LSI = 32 кГц) [0.000125, 32.768]
+  st_independent_watchdog_t(double a_period_s = 32);
+  virtual void start();
+  virtual void restart();
+  virtual bool watchdog_reset_cause();
+  //! \brief Сбрасывает флаги перезагрузки: LPWRRSTF, WWDGRSTF,
+  //!   IWDGRSTF, SFTRSTF
+  virtual void clear_reset_status();
+private:
+  double m_period_s;
+  irs_u8 m_counter_start_value;
+  IWDG_HandleTypeDef m_iwdg_handle;
+}; // st_independent_watchdog_t
+#endif // IRS_STM32_F2_F4_F7
+#endif // USE_HAL_DRIVER
 
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
@@ -491,7 +532,7 @@ private:
 #ifdef IRS_STM32_F2_F4_F7
 
 //! \brief Этот класс позволяет получать время из микроконтронтроллеров STM32
-//! \details Для его использования необходимо реализовать в проекте функции 
+//! \details Для его использования необходимо реализовать в проекте функции
 //!    HAL_RTC_MspInit, HAL_RTC_MspDeIni. Их можно найти в примерах к отладочным
 //!   платам
 class st_rtc_t
@@ -514,10 +555,10 @@ public:
   double get_calibration_coefficient_min() const;
   double get_calibration_coefficient_max() const;
 private:
-  st_rtc_t();  
+  st_rtc_t();
   st_rtc_t(const st_rtc_t& a_st_rtc);
   st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
-  void rtc_config();  
+  void rtc_config();
   void write_to_backup_reg(irs_u16 a_first_backup_data);
   enum { backup_first_data = 0x32F2 };
   enum { rtc_bkp_dr_number = 0x14 };

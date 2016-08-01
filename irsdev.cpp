@@ -901,7 +901,7 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOE_AFRH_bit.AFRH11 = 1;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }      
+      }
     } break;
     case PH6: {
       if (timer_address == IRS_TIM12_BASE) {
@@ -909,7 +909,7 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOH_AFRL_bit.AFRL6 = 9;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }      
+      }
     } break;
     case PH10: {
       if (timer_address == IRS_TIM5_BASE) {
@@ -917,7 +917,7 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOH_AFRH_bit.AFRH10 = 2;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }      
+      }
     } break;
     case PH11: {
       if (timer_address == IRS_TIM5_BASE) {
@@ -925,7 +925,7 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOH_AFRH_bit.AFRH11 = 2;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }      
+      }
     } break;
     case PH12: {
       if (timer_address == IRS_TIM5_BASE) {
@@ -933,7 +933,7 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         GPIOH_AFRH_bit.AFRH12 = 2;
       } else {
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
-      }      
+      }
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
@@ -1351,6 +1351,40 @@ void irs::arm::st_pwm_gen_t::set_dead_time(float a_time)
 }
 #endif  //  mcu type
 
+namespace {
+  void calc_prescaller_and_counter_start(const double a_period_s,
+    size_t* ap_prescaler_divider_key,
+    irs_u16* ap_counter_start)
+  {
+    typedef size_t size_type;
+     
+    #if (defined(IRS_STM32F2xx) || defined(IRS_STM32F7xx))
+    const double divider = 32000;
+    #elif defined(IRS_STM32F4xx)
+    const double divider = 40000;
+    #endif // defined(IRS_STM32F4xx)
+    
+    size_type prescaler_divider_key_max = 6;
+    size_type prescaler_divider_key = 0;
+    size_type prescaler_divider_value_min = 4;
+    const double counter_max = 0xFFF;
+    const double coefficient =
+      (1/(divider/prescaler_divider_value_min))*(counter_max);
+    while (prescaler_divider_key < prescaler_divider_key_max) {
+      if (coefficient*pow(2, prescaler_divider_key) >= a_period_s) {
+        break;
+      }
+      prescaler_divider_key++;
+    }
+    *ap_prescaler_divider_key = prescaler_divider_key;
+    const double prescaler_divider_value =
+      prescaler_divider_value_min*pow(2, prescaler_divider_key);
+    double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
+    counter_start = irs::bound(counter_start, 1., counter_max);
+    *ap_counter_start = static_cast<irs_u16>(counter_start);
+  }  
+}
+
 #ifdef USE_STDPERIPH_DRIVER
 #if defined(IRS_STM32F_2_AND_4)
 // class st_independent_watchdog_t
@@ -1364,28 +1398,13 @@ irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   RCC_LSICmd(ENABLE);
   while(RCC_CSR_bit.LSIRDY);
   IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-  #if defined(IRS_STM32F2xx)
-  const double divider = 32000;
-  #elif defined(IRS_STM32F4xx)
-  const double divider = 40000;
-  #endif // defined(IRS_STM32F4xx)
-  size_type prescaler_divider_key_max = 6;
+  
   size_type prescaler_divider_key = 0;
-  size_type prescaler_divider_value_min = 4;
-  const double counter_max = 0xFFF;
-  const double coefficient =
-    (1/(divider/prescaler_divider_value_min))*(counter_max);
-  while (prescaler_divider_key < prescaler_divider_key_max) {
-    if (coefficient*pow(2, prescaler_divider_key) >= a_period_s) {
-      break;
-    }
-    prescaler_divider_key++;
-  }
+  irs_u16 counter_start = 0;
+  calc_prescaller_and_counter_start(a_period_s, &prescaler_divider_key,
+    &counter_start);
+  
   IWDG_SetPrescaler(prescaler_divider_key);
-  const double prescaler_divider_value =
-    prescaler_divider_value_min*pow(2, prescaler_divider_key);
-  double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
-  counter_start = bound(counter_start, 1., counter_max);
   IWDG_SetReload(static_cast<irs_u16>(counter_start));
   IWDG_ReloadCounter();
 }
@@ -1479,6 +1498,59 @@ void irs::arm::st_window_watchdog_t::clear_reset_status()
 }
 #endif // USE_STDPERIPH_DRIVER
 #endif // defined(IRS_STM32F_2_AND_4)
+
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32_F2_F4_F7
+// class st_independent_watchdog_t
+irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
+  double a_period_s
+):
+  m_period_s(a_period_s),
+  m_counter_start_value(0)
+{
+  IRS_LIB_ASSERT((a_period_s >= 0) && (a_period_s <= 100));
+  
+  size_type prescaler_divider_key = 0;
+  irs_u16 counter_start = 0;
+  calc_prescaller_and_counter_start(a_period_s, &prescaler_divider_key,
+    &counter_start);
+  
+  m_iwdg_handle.Instance = IWDG; 
+  m_iwdg_handle.Init.Prescaler = prescaler_divider_key;
+  m_iwdg_handle.Init.Reload    = static_cast<irs_u16>(counter_start);
+  m_iwdg_handle.Init.Window    = IWDG_WINDOW_DISABLE;
+
+  if (HAL_IWDG_Init(&m_iwdg_handle) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Ошибка HAL_IWDG_Init");
+  }
+}
+
+void irs::arm::st_independent_watchdog_t::start()
+{
+  if (HAL_IWDG_Start(&m_iwdg_handle) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Ошибка HAL_IWDG_Start");
+  }  
+}
+
+void irs::arm::st_independent_watchdog_t::restart()
+{
+  if (HAL_IWDG_Refresh(&m_iwdg_handle) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Ошибка HAL_IWDG_Refresh");
+  }  
+}
+
+bool irs::arm::st_independent_watchdog_t::watchdog_reset_cause()
+{
+  return ((RCC->CSR & RCC_CSR_IWDGRSTF) == RCC_CSR_IWDGRSTF);   
+}
+
+void irs::arm::st_independent_watchdog_t::clear_reset_status()
+{
+  SET_BIT(RCC->CSR, RCC_CSR_RMVF);  
+}
+#endif // IRS_STM32_F2_F4_F7
+#endif // USE_HAL_DRIVER
+
 
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
@@ -1766,7 +1838,7 @@ irs::arm::st_rtc_t::st_rtc_t():
     RTC_BKP_DR18,  RTC_BKP_DR19
   };
   memcpy(bkp_data_reg, bkp_data_reg_init, sizeof(bkp_data_reg_init));
-  
+
   RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
   RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
   RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV;
@@ -1774,14 +1846,14 @@ irs::arm::st_rtc_t::st_rtc_t():
   RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
   RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
   RtcHandle.Instance            = RTC;
-  
-  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {   
+
+  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {
     IRS_LIB_DBG_MSG("Initialization Error");
   }
-    
+
   /*if (HAL_RTCEx_BKUPRead(&RtcHandle, RTC_BKP_DR1) != backup_first_data) {
     rtc_config();
-  }*/ 
+  }*/
 }
 
 irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset()
@@ -1807,8 +1879,8 @@ time_t irs::arm::st_rtc_t::get_time()
   /* Get the RTC current Time */
   HAL_RTC_GetTime(&RtcHandle, &stimestructureget, RTC_FORMAT_BIN);
   /* Get the RTC current Date */
-  HAL_RTC_GetDate(&RtcHandle, &sdatestructureget, RTC_FORMAT_BIN);  
- 
+  HAL_RTC_GetDate(&RtcHandle, &sdatestructureget, RTC_FORMAT_BIN);
+
   tm now_tm;
 
   now_tm.tm_hour = stimestructureget.Hours;
@@ -1829,30 +1901,30 @@ time_t irs::arm::st_rtc_t::get_time()
 
 double irs::arm::st_rtc_t::get_time_double()
 {
-  RTC_TimeTypeDef timestruct;  
+  RTC_TimeTypeDef timestruct;
   HAL_RTC_GetTime(&RtcHandle, &timestruct, RTC_FORMAT_BIN);
-  
+
   double ms = (1000.*timestruct.SubSeconds/59.);
   time_t s = get_time();
-  return s + ms/1000.;  
+  return s + ms/1000.;
 }
 
 void irs::arm::st_rtc_t::set_time(const time_t a_time)
 {
   const tm time_tm = *gmtime(&a_time);
-  
+
   RTC_DateTypeDef sdatestructure;
   RTC_TimeTypeDef stimestructure;
-  
+
   sdatestructure.Year = time_tm.tm_year - 100;
   sdatestructure.Month = time_tm.tm_mon + RTC_MONTH_JANUARY;
   sdatestructure.Date = time_tm.tm_mday;
   sdatestructure.WeekDay = time_tm.tm_wday + RTC_WEEKDAY_MONDAY;
-  
-  if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure, RTC_FORMAT_BIN) != HAL_OK) {    
+
+  if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure, RTC_FORMAT_BIN) != HAL_OK) {
     IRS_LIB_DBG_MSG("Initialization Error");
   }
- 
+
   stimestructure.Hours = time_tm.tm_hour;
   stimestructure.Minutes = time_tm.tm_min;
   stimestructure.Seconds = time_tm.tm_sec;
@@ -1866,7 +1938,7 @@ void irs::arm::st_rtc_t::set_time(const time_t a_time)
 }
 #ifdef IRS_STM32F4xx
 void irs::arm::st_rtc_t::set_calibration(double /*a_koefficient*/)
-{  
+{
 }
 #else // !IRS_STM32F4xx
 void irs::arm::st_rtc_t::set_calibration(double)
@@ -1893,14 +1965,14 @@ double irs::arm::st_rtc_t::get_calibration_coefficient_max() const
 
 void irs::arm::st_rtc_t::rtc_config()
 {
-  
+
 }
 
 void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 {
   for (irs_u32 index = 0; index < rtc_bkp_dr_number; index++) {
-    HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[index], 
-      a_first_backup_data + (index * 0x5A));    
+    HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[index],
+      a_first_backup_data + (index * 0x5A));
   }
 }
 
