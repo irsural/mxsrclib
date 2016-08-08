@@ -99,8 +99,9 @@ counter_t counter_get()
 #ifdef USE_HAL_DRIVER
 uint32_t HAL_GetTick(void)
 {
-  uint32_t sec = (SECONDS_PER_INTERVAL*(counter_get()/COUNTER_PER_INTERVAL));
-  return sec*1000;
+  const counter_t counter_per_interval = COUNTER_PER_INTERVAL/1000; 
+  uint32_t msec = (SECONDS_PER_INTERVAL*(counter_get()/counter_per_interval));
+  return msec;
 }
 #endif // USE_HAL_DRIVER
 

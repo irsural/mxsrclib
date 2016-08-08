@@ -454,10 +454,10 @@ private:
 //!
 //! \code{.cpp}
 //!   // Включаем LSI
-//!   RCC_OscInitTypeDef RCC_OscInitStruct = {0};      
-//!   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI;  
+//!   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+//!   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI;
 //!   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-//!   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;  
+//!   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
 //!   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
 //!     IRS_LIB_ASSERT_MSG("Ошибка RCC_OscInitStruct LSI");
 //!   }
@@ -550,21 +550,64 @@ public:
   //! \param[in] a_koefficient - множитель, на который необходимо домножить
   //!   частоту, чтобы получить заданную. Если a_koefficient == 1, то
   //!   калибровка отсутствует.
-  void set_calibration(double a_koefficient);
+  bool set_calibration(double a_coefficient);
   double get_calibration() const;
   double get_calibration_coefficient_min() const;
   double get_calibration_coefficient_max() const;
+
+  void tick();
+  //! \brief Запускает калибровку с указанной длительность. Чем больше интервал
+  //!   времени, в течение которого происходит калибровка, тем точнее калибровка
+  void start_calibration(const double a_interval_s = 180);
+  //! \brief Возвращает \с false, если происходит калибровка
+  bool calibration_completed() const;
+  //! \brief Задает калибровочный коэффициент для 
+  //!   глобального счетчика (irs::get_counter()).
+  //! \details Используется для коррекции интервалов времени, 
+  //!   измеренных с помощью irs::get_counter() и зависимых от нее классов
+  void set_counter_calibration(double a_coefficient);
+  double get_counter_calibration() const;
 private:
   st_rtc_t();
   st_rtc_t(const st_rtc_t& a_st_rtc);
   st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
-  void rtc_config();
-  void write_to_backup_reg(irs_u16 a_first_backup_data);
-  enum { backup_first_data = 0x32F2 };
+  void rtc_config_default();
+  void rtc_config_calibration();
+  void write_to_backup_reg(irs_u32 a_index, irs_u32 a_data);
+  irs_u32 read_from_backup_reg(irs_u32 a_index);
+  #if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+  bool set_calibration_force(double a_coefficient);
+  #endif // defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+  enum { backup_init_data = 0x32F2 };
+
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F4xx)
   enum { rtc_bkp_dr_number = 0x14 };
+  #elif defined(IRS_STM32F7xx)
+  enum { rtc_bkp_dr_number = 0x20 };
+  #endif // defined(IRS_STM32F7xx)
+
+  irs_u32 m_prediv_s;
+
   irs_u32 bkp_data_reg[rtc_bkp_dr_number];
   RTC_HandleTypeDef RtcHandle;
   static handle_t<st_rtc_t> mp_st_rtc;
+
+  // Для калибровки
+  enum calibration_process_t {
+    cp_off,
+    cp_measure_time,
+    cp_sync
+  };
+  calibration_process_t m_calibration_process;
+  irs::measure_time_t m_measure_time;
+  double m_rtc_time_start;
+
+  irs::measure_time_t m_calibration_time;
+  double m_calibration_interval;
+  double m_rtc_time_begin;
+  
+  time_t m_previous_time_s;
+  double m_counter_calibr_coeff;
 };
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER

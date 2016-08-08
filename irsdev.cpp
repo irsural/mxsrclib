@@ -1357,13 +1357,13 @@ namespace {
     irs_u16* ap_counter_start)
   {
     typedef size_t size_type;
-     
+
     #if (defined(IRS_STM32F2xx) || defined(IRS_STM32F7xx))
     const double divider = 32000;
     #elif defined(IRS_STM32F4xx)
     const double divider = 40000;
     #endif // defined(IRS_STM32F4xx)
-    
+
     size_type prescaler_divider_key_max = 6;
     size_type prescaler_divider_key = 0;
     size_type prescaler_divider_value_min = 4;
@@ -1382,7 +1382,7 @@ namespace {
     double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
     counter_start = irs::bound(counter_start, 1., counter_max);
     *ap_counter_start = static_cast<irs_u16>(counter_start);
-  }  
+  }
 }
 
 #ifdef USE_STDPERIPH_DRIVER
@@ -1398,12 +1398,12 @@ irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   RCC_LSICmd(ENABLE);
   while(RCC_CSR_bit.LSIRDY);
   IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-  
+
   size_type prescaler_divider_key = 0;
   irs_u16 counter_start = 0;
   calc_prescaller_and_counter_start(a_period_s, &prescaler_divider_key,
     &counter_start);
-  
+
   IWDG_SetPrescaler(prescaler_divider_key);
   IWDG_SetReload(static_cast<irs_u16>(counter_start));
   IWDG_ReloadCounter();
@@ -1509,13 +1509,13 @@ irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   m_counter_start_value(0)
 {
   IRS_LIB_ASSERT((a_period_s >= 0) && (a_period_s <= 100));
-  
+
   size_type prescaler_divider_key = 0;
   irs_u16 counter_start = 0;
   calc_prescaller_and_counter_start(a_period_s, &prescaler_divider_key,
     &counter_start);
-  
-  m_iwdg_handle.Instance = IWDG; 
+
+  m_iwdg_handle.Instance = IWDG;
   m_iwdg_handle.Init.Prescaler = prescaler_divider_key;
   m_iwdg_handle.Init.Reload    = static_cast<irs_u16>(counter_start);
   m_iwdg_handle.Init.Window    = IWDG_WINDOW_DISABLE;
@@ -1529,24 +1529,24 @@ void irs::arm::st_independent_watchdog_t::start()
 {
   if (HAL_IWDG_Start(&m_iwdg_handle) != HAL_OK) {
     IRS_LIB_ASSERT_MSG("Ошибка HAL_IWDG_Start");
-  }  
+  }
 }
 
 void irs::arm::st_independent_watchdog_t::restart()
 {
   if (HAL_IWDG_Refresh(&m_iwdg_handle) != HAL_OK) {
     IRS_LIB_ASSERT_MSG("Ошибка HAL_IWDG_Refresh");
-  }  
+  }
 }
 
 bool irs::arm::st_independent_watchdog_t::watchdog_reset_cause()
 {
-  return ((RCC->CSR & RCC_CSR_IWDGRSTF) == RCC_CSR_IWDGRSTF);   
+  return ((RCC->CSR & RCC_CSR_IWDGRSTF) == RCC_CSR_IWDGRSTF);
 }
 
 void irs::arm::st_independent_watchdog_t::clear_reset_status()
 {
-  SET_BIT(RCC->CSR, RCC_CSR_RMVF);  
+  SET_BIT(RCC->CSR, RCC_CSR_RMVF);
 }
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER
@@ -1654,15 +1654,19 @@ void irs::arm::st_rtc_t::set_time(const time_t a_time)
   RTC_SetDate(RTC_Format_BIN, &RTC_DateSrtruct);
 }
 #ifdef IRS_STM32F4xx
-void irs::arm::st_rtc_t::set_calibration(double a_koefficient)
+void irs::arm::st_rtc_t::set_calibration(double a_coefficient)
 {
+  // Ограничение для исключения деления на 0. Диапазон взят с запасом
+  // Реальный допустимый диапазон: [-487.1 ppm +488.5 ppm], шаг 0.954 ppm.
+  // Он реализован ниже
+  a_coefficient = range(a_coefficient, 0.9, 1.1);
   double calm_value = 0;
   irs_u32 rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Reset;
-  if (a_koefficient <= 1) {
-    calm_value = (1 << 20)*(1/a_koefficient - 1);
+  if (a_coefficient <= 1) {
+    calm_value = (1 << 20)*(1/a_coefficient - 1);
   } else {
     rtc_smooth_calib_plus_pulses = RTC_SmoothCalibPlusPulses_Set;
-    calm_value = (1 << 20)*(1/a_koefficient) - (1 << 20) + 512;
+    calm_value = (1 << 20)*(1/a_coefficient) - (1 << 20) + 512;
   }
   const double max_cycles = 511.;
   calm_value = range(calm_value, 0., max_cycles);
@@ -1677,7 +1681,7 @@ void irs::arm::st_rtc_t::set_calibration(double)
 #endif // !IRS_STM32F4xx
 
 double irs::arm::st_rtc_t::get_calibration() const
-{
+{  
   #ifdef IRS_STM32F4xx
   const int calp = RTC_CALR_bit.CALP;
   const int calm = RTC_CALR_bit.CALM;
@@ -1816,14 +1820,27 @@ void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 #ifdef USE_HAL_DRIVER
 #ifdef IRS_STM32_F2_F4_F7
 
-#define RTC_ASYNCH_PREDIV  0x7F   /* LSE as RTC clock */
-#define RTC_SYNCH_PREDIV   0x00FF /* LSE as RTC clock */
+#define RTC_ASYNCH_PREDIV_DEFAULT   0x7F   /* LSE as RTC clock */
+#define RTC_SYNCH_PREDIV_DEFAULT    0x00FF /* LSE as RTC clock */
+
+#define RTC_ASYNCH_PREDIV_MIN       0
+#define RTC_SYNCH_PREDIV_MAX        0x7FFF
 
 // class st_rtc_t
 irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
 
 irs::arm::st_rtc_t::st_rtc_t():
-  RtcHandle()
+  m_prediv_s(RTC_SYNCH_PREDIV_DEFAULT),
+  RtcHandle(),
+
+  m_calibration_process(cp_off),
+  m_measure_time(),
+  m_rtc_time_start(0),
+  m_calibration_time(),
+  m_calibration_interval(0),
+  m_rtc_time_begin(0),
+  m_previous_time_s(0),
+  m_counter_calibr_coeff(1)
 {
   mp_st_rtc = this;
 
@@ -1836,24 +1853,41 @@ irs::arm::st_rtc_t::st_rtc_t():
     RTC_BKP_DR12, RTC_BKP_DR13, RTC_BKP_DR14,
     RTC_BKP_DR15, RTC_BKP_DR16, RTC_BKP_DR17,
     RTC_BKP_DR18,  RTC_BKP_DR19
+    #ifdef IRS_STM32F7xx
+    ,
+    RTC_BKP_DR20, RTC_BKP_DR21, RTC_BKP_DR22,
+    RTC_BKP_DR23, RTC_BKP_DR24, RTC_BKP_DR25,
+    RTC_BKP_DR26, RTC_BKP_DR27, RTC_BKP_DR28,
+    RTC_BKP_DR29, RTC_BKP_DR30, RTC_BKP_DR31
+    #endif
   };
   memcpy(bkp_data_reg, bkp_data_reg_init, sizeof(bkp_data_reg_init));
 
   RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
-  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
-  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV;
+  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV_DEFAULT;
+  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV_DEFAULT;
   RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
   RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
   RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
   RtcHandle.Instance            = RTC;
 
-  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {
-    IRS_LIB_DBG_MSG("Initialization Error");
-  }
+  
+  // Если устройство было выключено до завершения калибровки, то значения
+  // делителей не было возвращено к стандартным значениям.   
+  const irs_u32 prediv_s = (RtcHandle.Instance->PRER & RTC_PRER_PREDIV_S);
+  const irs_u32 prediv_a = (RtcHandle.Instance->PRER & RTC_PRER_PREDIV_A) >> 16;   
+  const irs_u32 prediv_s_is_not_default = prediv_s != RTC_SYNCH_PREDIV_DEFAULT;
+  const irs_u32 prediv_a_is_not_default = prediv_a != RTC_ASYNCH_PREDIV_DEFAULT;
 
-  /*if (HAL_RTCEx_BKUPRead(&RtcHandle, RTC_BKP_DR1) != backup_first_data) {
-    rtc_config();
-  }*/
+  // Проверяем, инициализирован ли календарь
+  const bool calendar_has_not_been_initialized =
+    (RtcHandle.Instance->ISR & RTC_ISR_INITS) == (uint32_t)RESET;
+      
+  if (calendar_has_not_been_initialized ||
+      prediv_s_is_not_default ||
+      prediv_a_is_not_default) {
+    rtc_config_default();
+  }  
 }
 
 irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset()
@@ -1904,13 +1938,17 @@ double irs::arm::st_rtc_t::get_time_double()
   RTC_TimeTypeDef timestruct;
   HAL_RTC_GetTime(&RtcHandle, &timestruct, RTC_FORMAT_BIN);
 
-  double ms = (1000.*timestruct.SubSeconds/59.);
+  double s_fraction = ((1.f*(m_prediv_s-timestruct.SubSeconds))/(m_prediv_s+1));
+  //double ms = (1000.*timestruct.SubSeconds/59.);
+
   time_t s = get_time();
-  return s + ms/1000.;
+  return s + s_fraction;
 }
 
 void irs::arm::st_rtc_t::set_time(const time_t a_time)
 {
+  HAL_PWR_EnableBkUpAccess();
+
   const tm time_tm = *gmtime(&a_time);
 
   RTC_DateTypeDef sdatestructure;
@@ -1921,13 +1959,14 @@ void irs::arm::st_rtc_t::set_time(const time_t a_time)
   sdatestructure.Date = time_tm.tm_mday;
   sdatestructure.WeekDay = time_tm.tm_wday + RTC_WEEKDAY_MONDAY;
 
-  if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure, RTC_FORMAT_BIN) != HAL_OK) {
+  if (HAL_RTC_SetDate(&RtcHandle,&sdatestructure, RTC_FORMAT_BIN) != HAL_OK) {
     IRS_LIB_DBG_MSG("Initialization Error");
   }
 
   stimestructure.Hours = time_tm.tm_hour;
   stimestructure.Minutes = time_tm.tm_min;
   stimestructure.Seconds = time_tm.tm_sec;
+  stimestructure.SubSeconds = 0;
   stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
   stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
   stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
@@ -1935,20 +1974,62 @@ void irs::arm::st_rtc_t::set_time(const time_t a_time)
   if (HAL_RTC_SetTime(&RtcHandle, &stimestructure, RTC_FORMAT_BIN) != HAL_OK) {
     IRS_LIB_DBG_MSG("Initialization Error");
   }
+  HAL_PWR_DisableBkUpAccess();
 }
-#ifdef IRS_STM32F4xx
-void irs::arm::st_rtc_t::set_calibration(double /*a_koefficient*/)
+
+#if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+bool irs::arm::st_rtc_t::set_calibration(double a_coefficient)
 {
+  if (m_calibration_process != cp_off) {
+    return false;
+  }
+  return set_calibration_force(a_coefficient);
 }
-#else // !IRS_STM32F4xx
-void irs::arm::st_rtc_t::set_calibration(double)
+bool irs::arm::st_rtc_t::set_calibration_force(double a_coefficient)
 {
+  // Ограничение для исключения деления на 0. Диапазон взят с запасом
+  // Реальный допустимый диапазон: [-487.1 ppm +488.5 ppm], шаг 0.954 ppm.
+  // Он реализован ниже
+  a_coefficient = range(a_coefficient, 0.9, 1.1);
+  
+  double calm_value = 0;
+  irs_u32 rtc_smooth_calib_plus_pulses = RTC_SMOOTHCALIB_PLUSPULSES_RESET;
+  if (a_coefficient <= 1) {
+    calm_value = (1 << 20)*(1/a_coefficient - 1);
+  } else {
+    rtc_smooth_calib_plus_pulses = RTC_SMOOTHCALIB_PLUSPULSES_SET;
+    calm_value = (1 << 20)*(1/a_coefficient) - (1 << 20) + 512;
+  }
+  const double max_cycles = 511.;
+  calm_value = range(calm_value, 0., max_cycles);
+  uint32_t smooth_calib_minus_pulses_value = round<double, irs_u32>(calm_value);
+
+  HAL_PWR_EnableBkUpAccess();
+
+  HAL_StatusTypeDef status =
+    HAL_RTCEx_SetSmoothCalib(&RtcHandle, RTC_SMOOTHCALIB_PERIOD_32SEC,
+      rtc_smooth_calib_plus_pulses, smooth_calib_minus_pulses_value);
+
+  HAL_PWR_DisableBkUpAccess();
+
+  return (status == HAL_OK);
 }
-#endif // !IRS_STM32F4xx
+#else // !(defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx))
+bool irs::arm::st_rtc_t::set_calibration(double /*a_coefficient*/)
+{
+  return false;
+}
+#endif // !(defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx))
 
 double irs::arm::st_rtc_t::get_calibration() const
 {
+  #if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
+  const int calp = (RtcHandle.Instance->CALR & RTC_CALR_CALP) ? 1 : 0;
+  const int calm = (RtcHandle.Instance->CALR & RTC_CALR_CALM);  
+  return 1 + static_cast<double>(calp*512 - calm)/((1 << 20) + calm - calp*512);
+  #else // Other
   return 1;
+  #endif // Other
 }
 
 double irs::arm::st_rtc_t::get_calibration_coefficient_min() const
@@ -1963,18 +2044,136 @@ double irs::arm::st_rtc_t::get_calibration_coefficient_max() const
   return 1 + max_positive_offset_ppm/1e6; // 1.0004885
 }
 
-void irs::arm::st_rtc_t::rtc_config()
+void irs::arm::st_rtc_t::rtc_config_default()
 {
+  m_prediv_s = RTC_SYNCH_PREDIV_DEFAULT;
+
+  RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
+  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV_DEFAULT;
+  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV_DEFAULT;
+  RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
+  RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
+  RtcHandle.Instance            = RTC;
+
+  HAL_PWR_EnableBkUpAccess();
+  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {
+    IRS_LIB_DBG_MSG("Initialization Error");
+  }
+  HAL_PWR_DisableBkUpAccess();
 
 }
 
-void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
+void irs::arm::st_rtc_t::rtc_config_calibration()
 {
+  /*if (HAL_RTC_DeInit(&RtcHandle) != HAL_OK) {
+    IRS_LIB_DBG_MSG("Deinitialization Error");
+  }*/
+
+  m_prediv_s = RTC_SYNCH_PREDIV_MAX;
+
+  RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
+  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV_MIN;
+  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV_MAX;
+  RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
+  RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
+
+  HAL_PWR_EnableBkUpAccess();
+
+  if (HAL_RTC_Init(&RtcHandle) != HAL_OK) {
+    IRS_LIB_DBG_MSG("Initialization Error");
+  }
+
+  HAL_PWR_DisableBkUpAccess();
+}
+
+void irs::arm::st_rtc_t::write_to_backup_reg(irs_u32 a_index, irs_u32 a_data)
+{
+  HAL_PWR_EnableBkUpAccess();
+  HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[a_index], a_data);
+  HAL_PWR_DisableBkUpAccess();
+}
+
+irs_u32 irs::arm::st_rtc_t::read_from_backup_reg(irs_u32 a_index)
+{
+  irs_u32 data = HAL_RTCEx_BKUPRead(&RtcHandle, bkp_data_reg[a_index]);
+  return data;
+}
+
+void irs::arm::st_rtc_t::start_calibration(const double a_interval_s)
+{
+  m_calibration_interval = a_interval_s;
+  m_rtc_time_start = irs::get_time_double();
+  m_measure_time.start();
+
+  rtc_config_calibration();
+
+  set_calibration_force(1);
+  
+  m_rtc_time_begin = irs::get_time_double();
+  m_calibration_time.start();
+  m_calibration_process = cp_measure_time;
+}
+
+bool irs::arm::st_rtc_t::calibration_completed() const
+{
+  return m_calibration_process == cp_off;
+}
+
+void irs::arm::st_rtc_t::set_counter_calibration(double a_coefficient)
+{
+  m_counter_calibr_coeff = a_coefficient;
+}
+
+double irs::arm::st_rtc_t::get_counter_calibration() const
+{
+  return m_counter_calibr_coeff;
+}
+
+void irs::arm::st_rtc_t::tick()
+{
+  switch (m_calibration_process) {
+    case cp_off: {
+    } break;
+    case cp_measure_time: {
+      if (m_calibration_time.get() > m_calibration_interval) {
+        double rtc_time_end = irs::get_time_double();
+        double time = m_calibration_time.get()*m_counter_calibr_coeff;
+
+        double rtc_time = rtc_time_end - m_rtc_time_begin;
+        double k = time/rtc_time;
+
+        rtc_config_default();
+
+        set_calibration_force(k);
+
+        m_previous_time_s = 
+          static_cast<time_t>(m_rtc_time_start + m_measure_time.get());
+        m_calibration_process = cp_sync;
+      }
+    } break;
+    case cp_sync: {      
+      const time_t time_s = 
+        static_cast<time_t>(m_rtc_time_start + m_measure_time.get());
+      // Ловим момент, когда значение миллисекунд близко к нулю
+      if (time_s != m_previous_time_s) {
+        set_time(time_s);
+        m_calibration_process = cp_off;
+      }      
+    } break;
+  }
+}
+
+/*void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
+{
+  HAL_PWR_EnableBkUpAccess();
   for (irs_u32 index = 0; index < rtc_bkp_dr_number; index++) {
     HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[index],
       a_first_backup_data + (index * 0x5A));
   }
-}
+  HAL_PWR_DisableBkUpAccess();
+}*/
 
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER
