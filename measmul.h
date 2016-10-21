@@ -95,6 +95,8 @@ enum multimeter_param_t {
   mul_param_filter_impulse_response_type,
   // Включение расчета фильтрованных значений (bool)
   mul_param_filtered_values_enabled,
+  // Включение расчета статистических параметров: СКО, среднее и т.д. (bool)
+  mul_param_statistical_params_enabled,
   mul_param_last = mul_param_filtered_values_enabled,
   mul_param_count = (mul_param_last - mul_param_first) + 1
 };
@@ -1098,6 +1100,11 @@ private:
   bool m_new_calc_filtered_values_enabled;
   event_t m_calc_filtered_values_enabled_change_event;
   generator_events_t m_calc_filtered_values_enabled_change_gen_events;
+
+  bool m_calc_statistic_params_enabled;
+  bool m_new_calc_statistic_params_enabled;
+  event_t m_calc_statistic_params_enabled_change_event;
+  generator_events_t m_calc_statistic_params_enabled_change_gen_events;
 
   double m_tick_max_time_s;
   size_type m_need_receive_data_size;
@@ -2718,6 +2725,247 @@ inline void irs::akip_ch3_85_3r_t::set_ac()
   {m_meas_type = AC_MEAS;}
 */
 
+
+#define KEITHLEY_2015_ENABLED 0
+#if KEITHLEY_2015_ENABLED
+//! \brief Класс для работы с мультиметром Keithley 2015
+class keithley_2015_t: public mxmultimeter_t
+{
+  typedef irs_size_t size_type;
+  typedef string_t string_type;
+  typedef irs::hardflow::fixed_flow_t::status_t fixed_flow_status_type;
+  //! \brief Тип для текущего режима
+  typedef enum _ma_mode_t {
+    ma_mode_start,
+    ma_mode_macro,
+    ma_mode_commands,
+    ma_mode_commands_wait,
+    ma_mode_get_value,
+    ma_mode_get_value_wait,
+    ma_mode_auto_calibration,
+    ma_mode_auto_calibration_wait
+  } ma_mode_t;
+  //! \brief Тип для текущей команды
+  typedef enum _ma_command_t {
+    mac_free,
+    mac_get_value,
+    mac_get_voltage,
+    mac_get_resistance,
+    mac_get_current,
+    mac_get_frequency,
+    mac_auto_calibration
+  } ma_command_t;
+  typedef enum _macro_mode_t {
+    macro_mode_get_value,
+    macro_mode_get_voltage,
+    macro_mode_get_resistance,
+    macro_mode_get_current,
+    macro_mode_get_frequency,
+    macro_mode_send_commands,
+    macro_mode_stop
+  } macro_mode_t;
+
+  // Режим инициализации
+  enum init_mode_t {
+    im_start,
+    im_write_command,
+    im_next_command,
+    im_stop
+  };
+
+  enum {
+    sample_size = 16
+  };
+
+  enum {
+    read_timeout_s = 20
+  };
+
+  enum {
+    fixed_flow_read_timeout_delta_s = 2
+  };
+
+  enum meas_type_t{DC_MEAS, AC_MEAS} m_meas_type;
+  enum resistance_meas_type_t{RES_MEAS_2x, RES_MEAS_4x} m_res_meas_type;
+  //! \brief Тип для индексов
+  typedef irs_i32 index_t;
+
+
+  //static const char m_volt_ac_nplcycles = "DETector:BANDwidth 20";
+
+  irs::hardflow_t* mp_hardflow;
+  irs::hardflow::fixed_flow_t m_fixed_flow;
+  const multimeter_mode_type_t m_mul_mode_type;
+
+  //! \brief Команды при инициализации
+  vector<irs::string> m_init_commands;
+  //! \brief Индекс команды установки времени интегрирования для
+  //!  постоянного напряжения
+  index_t m_nplc_voltage_dc_index;
+  //! \brief Индекс команды установки полосы фильтра для переменного напряжения
+  index_t m_band_width_voltage_ac_index;
+  //! \brief Команды чтения значения при произвольных настройках
+  vector<irs::string> m_get_value_commands;
+  //! \brief Команды при чтении напряжения
+  vector<irs::string> m_get_voltage_dc_commands;
+  vector<irs::string> m_get_voltage_ac_commands;
+
+  //! \brief Индекс команды установки времени интегрирования для сопротивления
+  index_t m_nplc_resistance_2x_index;
+  index_t m_nplc_resistance_4x_index;
+  //! \brief Команды при чтении сопротивления
+  vector<irs::string> m_get_resistance_2x_commands;
+  vector<irs::string> m_get_resistance_4x_commands;
+
+  //! \brief Индекс команды установки времени интегрирования для тока
+  index_t m_nplc_current_dc_index;
+  index_t m_nplc_current_ac_index;
+  //! \brief Команды при чтении тока
+  vector<irs::string> m_get_current_dc_commands;
+  vector<irs::string> m_get_current_ac_commands;
+
+  //! \brief Индекс команды установки времени счета
+  index_t m_aperture_frequency_index;
+  //! \brief Команды при чтении частоты
+  vector<irs::string> m_get_frequency_commands;
+
+  //! \brief Ощибка создания
+  irs_bool m_create_error;
+  //! \brief Текущий режим работы
+  ma_mode_t m_mode;
+  //! \brief Текущий макрорежим работы
+  macro_mode_t m_macro_mode;
+  //! \brief Статус текущей операции
+  meas_status_t m_status;
+  //! \brief Текущая команда
+  ma_command_t m_command;
+  //! \brief Указатель на переменную измеряемой величины,
+  //!  при произвольном типе измерения
+  double* mp_value;
+  //! \brief Указатель на перменную напряжение пользователя
+  double* mp_voltage;
+  //! \brief Указатель на перменную сопротивление пользователя
+  double* mp_resistance;
+  //! \brief Указатель на перменную ток пользователя
+  double* mp_current;
+  //! \brief Указатель на перменную частота пользователя
+  double* mp_frequency;
+  //! \brief Запрос на прерывание операции
+  irs_bool m_abort_request;
+  //! \brief Буфер приема
+  irs_u8 m_read_buf[ma_read_buf_size];
+  //! \brief Текущая позиция в буфере приема
+  index_t m_read_pos;
+  //! \brief Текущая команда
+  irs::string m_cur_mul_command;
+  //! \brief Команды для мультиметра
+  vector<irs::string> *m_mul_commands;
+  //! \brief Индекс команд для мультиметра
+  index_t m_mul_commands_index;
+  // Предыдущая команда
+  //ma_command_t f_command_prev;
+  //! \brief Указатель на переменную в которую будет считано значение
+  double *m_value;
+  //! \brief Выполнить чтение параметра
+  irs_bool m_get_parametr_needed;
+  //! \brief Время таймаута операций
+  counter_t m_oper_time;
+  //! \brief Таймаут операций
+  counter_t m_oper_to;
+  //! \brief Время таймаута калибровки
+  counter_t m_acal_time;
+  //! \brief Таймаут калибровки
+  counter_t m_acal_to;
+
+  bool m_current_volt_dc_meas;
+
+  // Таймер записи команд инициализации
+  irs::timer_t m_init_timer;
+  // Режим инициализации
+  init_mode_t m_init_mode;
+  // Индекс команды инициализации
+  index_t m_ic_index;
+
+  // Установлен, если требуется очистка буфера hardflow перед чтением
+  // значения из мультиметра
+  bool m_is_clear_buffer_needed;
+
+  //! \brief Запрещение конструктора по умолчанию
+  keithley_2015_t();
+public:
+  //! \brief Конструктор
+  keithley_2015_t(
+    hardflow_t* ap_hardflow,
+    multimeter_mode_type_t a_mul_mode_type = mul_mode_type_active);
+  //! \brief Деструктор
+  ~keithley_2015_t();
+  //! \brief Установить режим измерения постоянного напряжения
+  virtual inline void set_dc();
+  //! \brief Установить режим измерения переменного напряжения
+  virtual inline void set_ac();
+  //! \brief Установить положителный фронт запуска
+  virtual void set_positive();
+  //! \brief Установить отрицательный фронт канала
+  virtual void set_negative();
+  //! \brief Чтение значения при текущем типа измерения
+  virtual void get_value(double *ap_value);
+  //! \brief Чтение напряжения
+  virtual void get_voltage(double *voltage);
+  //! \brief Чтения силы тока
+  virtual void get_current(double *current);
+  //! \brief Чтение сопротивления
+  virtual void get_resistance2x(double *resistance);
+  //! \brief Чтение сопротивления
+  virtual void get_resistance4x(double *resistance);
+  //! \brief Чтение частоты
+  virtual void get_frequency(double *frequency);
+  //! \brief Чтение усредненного сдвира фаз
+  virtual void get_phase_average(double *phase_average);
+  //! \brief Чтение фазового сдвига
+  virtual void get_phase(double *phase);
+  //! \brief Чтение временного интервала
+  virtual void get_time_interval(double *time_interval);
+  //! \brief Чтение усредненного временного интервала
+  virtual void get_time_interval_average(double *ap_time_interval);
+
+  //! \brief Запуск автокалибровки (команда ACAL) мультиметра
+  virtual void auto_calibration();
+  //! \brief Чтение статуса текущей операции
+  virtual meas_status_t status();
+  //! \brief Прерывание текущей операции
+  virtual void abort();
+  //! \brief Элементарное действие
+  virtual void tick();
+  //! \brief Установка времени интегрирования в периодах частоты сети (20 мс)
+  virtual void set_nplc(double nplc);
+  //! \brief Установка времени интегрирования в c
+  virtual void set_aperture(double aperture);
+  //! \brief Установка полосы фильтра
+  virtual void set_bandwidth(double bandwidth);
+  //! \brief Установка входного сопротивления канала
+  virtual void set_input_impedance(double impedance);
+  //! \brief Устсновка уровня запуска канала
+  virtual void set_start_level(double level);
+  //! \brief Установка диапазона измерений
+  virtual void set_range(type_meas_t a_type_meas, double a_range);
+  //! \brief Установка автоматического выбора диапазона измерений
+  virtual void set_range_auto();
+private:
+  //! \brief Установка временного интервала измерения
+  void set_time_interval_meas(const double a_time_interval_meas);
+  void initialize_tick();
+};
+//! \brief Установить режим измерения постоянного напряжения
+inline void irs::keithley_2015_t::set_dc()
+{
+  m_meas_type = DC_MEAS;
+}
+//! \brief Установить режим измерения переменного напряжения
+inline void irs::keithley_2015_t::set_ac()
+{
+  m_meas_type = AC_MEAS;
+}
+#endif // KEITHLEY_2015_ENABLED
 class dummy_multimeter_t: public mxmultimeter_t
 {
 public:

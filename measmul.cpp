@@ -1429,6 +1429,20 @@ irs::irs_string_t make_range_cmd(const double a_range);
 } // empty namespace
 
 // Класс для работы с мультиметром Agilent 3458A в режиме дискретизации
+#ifndef IRS_LIB_AG_3458A_DIG_DEBUG_TYPE
+# define IRS_LIB_AG_3458A_DIG_DEBUG_TYPE IRS_LIB_DEBUG_NONE
+#endif // !IRS_LIB_HARDFLOWG_DEBUG_TYPE
+
+#if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_NONE)
+# define IRS_LIB_AG_3458A_DIG_DBG_MSG(msg)
+# define IRS_LIB_AG_3458A_DIG_DBG_MSG_IF(assert_expr, msg)
+#else //
+# define IRS_LIB_AG_3458A_DIG_DBG_MSG(msg) IRS_LIB_DBG_MSG(msg)
+# define IRS_LIB_AG_3458A_DIG_DBG_MSG_IF(assert_expr, msg)\
+    IRS_LIB_DBG_MSG_IF(assert_expr, msg)
+#endif //
+
+
 irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   irs::hardflow_t* ap_hardflow,
   const filter_settings_t& a_filter_settings,
@@ -1483,6 +1497,10 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_new_calc_filtered_values_enabled(false),
   m_calc_filtered_values_enabled_change_event(),
   m_calc_filtered_values_enabled_change_gen_events(),
+  m_calc_statistic_params_enabled(false),
+  m_new_calc_statistic_params_enabled(false),
+  m_calc_statistic_params_enabled_change_event(),
+  m_calc_statistic_params_enabled_change_gen_events(),
   m_tick_max_time_s(0.005),
   m_need_receive_data_size(m_iscale_byte_count),
   m_set_settings_complete(false),
@@ -1532,6 +1550,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_calc_filtered_values_enabled_change_gen_events.push_back(
     &m_calc_filtered_values_enabled_change_event);
   m_calc_filtered_values_enabled_change_gen_events.push_back(
+    &m_settings_change_event);
+
+  m_calc_statistic_params_enabled_change_gen_events.push_back(
+    &m_calc_statistic_params_enabled_change_event);
+  m_calc_statistic_params_enabled_change_gen_events.push_back(
     &m_settings_change_event);
 
   vector<math_type> num_coef_list;
@@ -1704,6 +1727,18 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
           "Недопустимый размер параметра mul_param_filtered_values_enabled");
       }
     } break;
+
+    case mul_param_statistical_params_enabled: {
+      if (sizeof(bool) == a_value.size()) {
+        m_new_calc_statistic_params_enabled =
+          *reinterpret_cast<const bool*>(a_value.data());
+        m_calc_statistic_params_enabled_change_gen_events.exec();
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_statistical_params_enabled");
+      }
+    } break;
+
     default : {
       // Игнорируем
     }
@@ -1838,22 +1873,29 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_sko_calc_asynch.set_tick_max_time(m_tick_max_time_s);
         m_delta_calc_asynch.clear();
         m_delta_calc_asynch.set_tick_max_time(m_tick_max_time_s);
-        if (m_filter_impulse_response_type == firt_infinite) {
-          m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
-          m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
-            get_sample_count(m_sampling_time, m_interval));
-        } else {
-          m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
-          if (m_calc_filtered_values_enabled) {
-            m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+
+        if (m_calc_filtered_values_enabled) {
+          if (m_filter_impulse_response_type == firt_infinite) {
+            m_iir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+            m_iir_filter_asynch.set_filt_value_buf(&m_filtered_values,
               get_sample_count(m_sampling_time, m_interval));
           } else {
-            m_fir_filter_asynch.set_filt_value_buf(IRS_NULL, 0);
+            m_fir_filter_asynch.set_tick_max_time(m_tick_max_time_s);
+            m_fir_filter_asynch.set_filt_value_buf(&m_filtered_values,
+              get_sample_count(m_sampling_time, m_interval));
           }
+        } else {
+          m_fir_filter_asynch.set_filt_value_buf(IRS_NULL, 0);
         }
-        m_process = process_calc;
-        measure_time_calc.start();
-        IRS_LIB_DBG_MSG("Начинаем вычисления");
+
+        if (m_calc_statistic_params_enabled || m_calc_filtered_values_enabled) {
+          m_process = process_calc;
+          measure_time_calc.start();
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Начинаем вычисления");
+        } else {
+          m_status = meas_status_success;
+          m_process = process_wait;
+        }
       } else {
         // Читаем необходимое количество данных
       }
@@ -1862,7 +1904,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       if (!m_data_to_values.completed()) {
         m_data_to_values.tick();
         if (m_data_to_values.completed()) {
-          IRS_LIB_DBG_MSG("Конвертация значений завершена: " <<
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Конвертация значений завершена: " <<
             measure_time_calc.get() << " с");
           m_samples_for_user = m_samples;
           m_accumulate_asynch.add(m_samples.begin(), m_samples.end());
@@ -1872,7 +1914,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_accumulate_asynch.completed()) {
         m_accumulate_asynch.tick();
         if (m_accumulate_asynch.completed()) {
-          IRS_LIB_DBG_MSG("Вычисление суммы завершено: " <<
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисление суммы завершено: " <<
             measure_time_calc.get() << " с");
           if (m_filter_impulse_response_type == firt_finite) {
             calc_coef_fir_filter();
@@ -1899,17 +1941,26 @@ void irs::agilent_3458a_digitizer_t::tick()
         filter_tick();
         if (filter_completed()) {
           *mp_value = static_cast<double>(filter_get());
-          IRS_LIB_DBG_MSG("Фильтрация завершена: " <<
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Фильтрация завершена: " <<
             measure_time_calc.get() << " с");
+
           if (m_calc_filtered_values_enabled) {
-            m_filtered_values_for_user = m_filtered_values;
-            m_sko_calc_asynch.resize(m_filtered_values.size());
-            m_sko_calc_asynch.add(m_filtered_values.begin(),
-              m_filtered_values.end());
+
+            if (m_calc_filtered_values_enabled) {
+              m_filtered_values_for_user = m_filtered_values;
+              m_sko_calc_asynch.resize(m_filtered_values.size());
+              m_sko_calc_asynch.add(m_filtered_values.begin(),
+                m_filtered_values.end());
+            } else {
+              m_filtered_values_for_user.clear();
+              m_sko_calc_asynch.resize(m_samples.size());
+              m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
+            }
           } else {
-            m_filtered_values_for_user.clear();
-            m_sko_calc_asynch.resize(m_samples.size());
-            m_sko_calc_asynch.add(m_samples.begin(), m_samples.end());
+            m_status = meas_status_success;
+            m_process = process_wait;
+            IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
+              measure_time_calc.get() << " c");
           }
         } else {
           // Фильтрация еще не завершена
@@ -1917,7 +1968,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_sko_calc_asynch.completed()) {
         m_sko_calc_asynch.tick();
         if (m_sko_calc_asynch.completed()) {
-          IRS_LIB_DBG_MSG("Вычисление СКО завершено: " <<
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисление СКО завершено: " <<
             measure_time_calc.get() << " с");
           m_sko_for_user = m_sko_calc_asynch;
           m_sko_relative_for_user = m_sko_calc_asynch.relative();
@@ -1935,18 +1986,17 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (!m_delta_calc_asynch.completed()) {
         m_delta_calc_asynch.tick();
         if (m_delta_calc_asynch.completed()) {
-
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисление дельты завершено: " <<
+            measure_time_calc.get() << " с");
+          m_delta_absolute_for_user = m_delta_calc_asynch.absolute();
+          m_delta_relative_for_user = m_delta_calc_asynch.relative();
         } else {
           // Операция еще не завершена
         }
       } else {
-        IRS_LIB_DBG_MSG("Вычисление дельты завершено: " <<
-          measure_time_calc.get() << " с");
-        m_delta_absolute_for_user = m_delta_calc_asynch.absolute();
-        m_delta_relative_for_user = m_delta_calc_asynch.relative();
         m_status = meas_status_success;
         m_process = process_wait;
-        IRS_LIB_DBG_MSG("Вычисления завершены. " <<
+        IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
           measure_time_calc.get() << " c");
       }
     } break;
@@ -1957,6 +2007,7 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_process = process_write_data;
       } else if (m_sampling_time_s_change_event.check()) {
         set_sampling_time();
+        m_buf_receive.clear();
         m_process = process_get_coefficient;
       } else if (m_filter_settings_change_event.check()) {
         set_filter_settings();
@@ -1969,13 +2020,17 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_process = process_write_data;
       } else if (m_sample_format_change_event.check()) {
         set_sample_format();
+        m_buf_receive.clear();
         m_process = process_get_coefficient;
       } else if (m_range_change_event.check()) {
         set_range();
+        m_buf_receive.clear();
         m_process = process_get_coefficient;
       } else if (m_calc_filtered_values_enabled_change_event.check()) {
         set_filtered_values_enabled();
         m_process = process_write_data;
+      } else if (m_calc_statistic_params_enabled_change_event.check()) {
+        m_calc_statistic_params_enabled = m_new_calc_statistic_params_enabled;
       } else {
         m_settings_change_event.check();
         m_process = process_wait;
@@ -2096,13 +2151,20 @@ void irs::agilent_3458a_digitizer_t::commands_to_buf_send()
 
 void irs::agilent_3458a_digitizer_t::read_data_tick()
 {
+  IRS_LIB_ASSERT_EX(m_buf_receive.size() <= m_need_receive_data_size,
+    "Возможно забыли очистить буфер \"m_buf_receive\" перед новой "
+    "операцией чтения");
+
   const size_type buf_receive_cur_size = m_buf_receive.size();
+
   m_buf_receive.resize(static_cast<size_type>(m_need_receive_data_size));
+
   const size_type read_size = mp_hardflow->read(
     mp_hardflow->channel_next(), m_buf_receive.data() + buf_receive_cur_size,
       m_need_receive_data_size - buf_receive_cur_size);
+
   m_buf_receive.resize(buf_receive_cur_size + read_size);
-  IRS_LIB_DBG_MSG_IF(read_size > 0, "Прочитано = " << read_size);
+  IRS_LIB_AG_3458A_DIG_DBG_MSG_IF(read_size > 0, "Прочитано = " << read_size);
 }
 
 void irs::agilent_3458a_digitizer_t::write_data_tick()
@@ -2110,7 +2172,7 @@ void irs::agilent_3458a_digitizer_t::write_data_tick()
   if (!m_buf_send.empty()) {
     const size_type write_size = mp_hardflow->write(
     mp_hardflow->channel_next(), m_buf_send.data(), m_buf_send.size());
-    IRS_DBG_MSG("Записано = " << write_size);
+    IRS_LIB_AG_3458A_DIG_DBG_MSG("Записано = " << write_size);
     if (write_size > 0) {
       const size_type buf_new_size = m_buf_send.size() - write_size;
       memmoveex(m_buf_send.data(), m_buf_send.data() + write_size,
@@ -2276,12 +2338,14 @@ irs::agilent_3458a_digitizer_t::filter_get()
     value = m_fir_filter_asynch.get();
     /*if (m_filter_coef_sum_asynch.get() != 0) {
       value = m_fir_filter_asynch.get()/m_filter_coef_sum_asynch.get();
-      IRS_LIB_DBG_MSG("Чистое значение фильтра " << m_fir_filter_asynch.get());
-      IRS_LIB_DBG_MSG("Итоговое значение фильтра " << value);
+      IRS_LIB_AG_3458A_DIG_DBG_MSG("Чистое значение фильтра " <<
+        m_fir_filter_asynch.get());
+      IRS_LIB_AG_3458A_DIG_DBG_MSG("Итоговое значение фильтра " << value);
     } else {
       value = 0;
     }*/
-    IRS_LIB_DBG_MSG("Сумма коэффициентов " << m_filter_coef_sum_asynch.get());
+    IRS_LIB_AG_3458A_DIG_DBG_MSG("Сумма коэффициентов " <<
+      m_filter_coef_sum_asynch.get());
   }
   return value;
 }
@@ -5076,6 +5140,658 @@ void irs::akip_ch3_85_3r_t::set_bandwidth(double a_bandwidth)
   }else
     IRS_FATAL_ERROR("Запрещенное действие во время измерений.");
 }
+
+#if KEITHLEY_2015_ENABLED
+// Класс keithley_2015_t
+// Конструктор
+irs::keithley_2015_t::keithley_2015_t(
+  hardflow_t* ap_hardflow,
+  multimeter_mode_type_t a_mul_mode_type
+):
+  m_meas_type(DC_MEAS),
+  m_res_meas_type(RES_MEAS_2x),
+  mp_hardflow(ap_hardflow),
+  m_fixed_flow(mp_hardflow),
+  m_mul_mode_type(a_mul_mode_type),
+  m_init_commands(),
+  m_nplc_voltage_dc_index(0),
+  m_band_width_voltage_ac_index(0),
+  m_get_value_commands(0),
+  m_get_voltage_dc_commands(),
+  m_get_voltage_ac_commands(),
+  m_nplc_resistance_2x_index(0),
+  m_nplc_resistance_4x_index(0),
+  m_get_resistance_2x_commands(),
+  m_get_resistance_4x_commands(),
+  m_nplc_current_dc_index(0),
+  m_nplc_current_ac_index(0),
+  m_get_current_dc_commands(),
+  m_get_current_ac_commands(),
+  m_aperture_frequency_index(0),
+  m_get_frequency_commands(),
+  m_create_error(irs_false),
+  m_mode(ma_mode_start),
+  m_macro_mode(macro_mode_stop),
+  m_status(meas_status_success),
+  m_command(mac_free),
+  mp_value(IRS_NULL),
+  mp_voltage(IRS_NULL),
+  mp_resistance(IRS_NULL),
+  mp_current(IRS_NULL),
+  mp_frequency(IRS_NULL),
+  m_abort_request(irs_false),
+  m_read_pos(0),
+  m_cur_mul_command(),
+  m_mul_commands(IRS_NULL),
+  m_mul_commands_index(0),
+  //f_command_prev(mac_free),
+  m_value(IRS_NULL),
+  m_get_parametr_needed(irs_false),
+  m_oper_time(TIME_TO_CNT(1, 1)),
+  m_oper_to(0),
+  m_acal_time(TIME_TO_CNT(20*60, 1)),
+  m_acal_to(0),
+  m_current_volt_dc_meas(true),
+  m_init_timer(irs::make_cnt_s(1)),
+  m_init_mode(im_start),
+  m_ic_index(0),
+  m_is_clear_buffer_needed(false)
+{
+
+  IRS_LIB_ERROR_IF(!mp_hardflow, ec_standard, "Недопустимо передавать нулевой "
+    "указатель в качестве hardflow_t*");
+  irs::string_t read_timeout_str = read_timeout_s;
+  mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
+  m_fixed_flow.read_timeout(make_cnt_s(
+    read_timeout_s + fixed_flow_read_timeout_delta_s));
+
+  init_to_cnt();
+
+  //m_oper_time = TIME_TO_CNT(1, 1);
+  //f_acal_time = TIME_TO_CNT(20*60, 1);
+
+  // Команды при инициализации
+  // Очистка регистров
+
+  m_init_commands.push_back("*CLS");
+  // Програмный запуск
+  m_init_commands.push_back(":ABORt");
+  m_init_commands.push_back(":INITiate:CONTinuous OFF");
+  m_init_commands.push_back(":TRIGger:SOURce IMMediate");
+
+  // Команды чтения значения измеряемой величины, при произвольных настройках
+  m_get_value_commands.push_back(":ABORt");
+  m_get_value_commands.push_back(":INITiate:CONTinuous OFF");
+  m_get_value_commands.push_back(":TRIGger:SOURce IMMediate");
+  m_get_value_commands.push_back(":READ?");
+
+  // Команды при чтении напряжения
+  // Настраиваемся на измерение напряжения
+  // m_get_voltage_commands.push_back("MEAS:VOLT:DC?");
+  m_get_voltage_dc_commands.push_back("CONFigure:VOLTage:DC");
+  m_get_voltage_dc_commands.push_back("TRIGger:SOURce IMMediate");
+  // Установка разрешения
+  //m_get_voltage_dc_commands.push_back("VOLTage:DC:RESolution MIN");
+  // Автовыбор пределов
+  m_get_voltage_dc_commands.push_back("VOLTage:DC:RANGe:AUTO ON");
+  m_nplc_voltage_dc_index = m_get_voltage_dc_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_voltage_dc_commands.push_back("VOLTage:DC:NPLCycles 10");
+  // запускаем измерение
+  m_get_voltage_dc_commands.push_back("READ?");
+
+  m_get_voltage_ac_commands.push_back("CONFigure:VOLTage:AC");
+  m_get_voltage_ac_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_voltage_ac_commands.push_back("VOLTage:AC:RANGe:AUTO ON");
+  m_band_width_voltage_ac_index = m_get_voltage_ac_commands.size();
+  m_get_voltage_ac_commands.push_back("DETector:BANDwidth 20");
+  // запускаем измерение
+  m_get_voltage_ac_commands.push_back("READ?");
+
+  // Команды при чтении сопротивления по 2-х проводной линии
+  m_get_resistance_2x_commands.push_back("CONFigure:RESistance");
+  m_get_resistance_2x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_resistance_2x_commands.push_back("RESistance:RANGe:AUTO ON");
+  m_nplc_resistance_2x_index = m_get_resistance_2x_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_resistance_2x_commands.push_back("RESistance:NPLCycles 10");
+  // запускаем измерение
+  m_get_resistance_2x_commands.push_back("READ?");
+
+  // Команды при чтении сопротивления по 4-х проводной линии
+  m_get_resistance_4x_commands.push_back("CONFigure:FRESistance");
+  m_get_resistance_4x_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_resistance_4x_commands.push_back("FRESistance:RANGe:AUTO ON");
+  m_nplc_resistance_4x_index = m_get_resistance_4x_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_resistance_4x_commands.push_back("FRESistance:NPLCycles 10");
+  // запускаем измерение
+  m_get_resistance_4x_commands.push_back("READ?");
+
+  // Команды при чтении постоянного тока
+  m_get_current_dc_commands.push_back("CONFigure:Current:DC");
+  m_get_current_dc_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_current_dc_commands.push_back("Current:DC:RANGe:AUTO ON");
+  m_nplc_current_dc_index = m_get_current_dc_commands.size();
+  // Время интегрирования в количествах циклов сети питания
+  m_get_current_dc_commands.push_back("Current:DC:NPLCycles 10");
+  // запускаем измерение
+  m_get_current_dc_commands.push_back("READ?");
+
+  // Команды при чтении переменного тока
+  m_get_current_ac_commands.push_back("CONFigure:Current:AC");
+  m_get_current_ac_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_current_ac_commands.push_back("Current:AC:RANGe:AUTO ON");
+  m_nplc_current_ac_index = m_get_current_ac_commands.size();
+  m_get_current_ac_commands.push_back("DETector:BANDwidth 20");
+  // запускаем измерение
+  m_get_current_ac_commands.push_back("READ?");
+
+  // Команды при чтении частоты
+  m_get_frequency_commands.push_back("CONFigure:FREQuency");
+  m_get_frequency_commands.push_back("TRIGger:SOURce IMMediate");
+  // Автовыбор пределов
+  m_get_frequency_commands.push_back("FREQuency:VOLT:RANGe:AUTO ON");
+  m_aperture_frequency_index = m_get_frequency_commands.size();
+  m_get_frequency_commands.push_back("FREQuency:APERture 0.1");
+  // запускаем измерение
+  m_get_frequency_commands.push_back("READ?");
+
+  // Очистка буфера приема
+  memset(m_read_buf, 0, ma_read_buf_size);
+}
+
+// Деструктор
+irs::keithley_2015_t::~keithley_2015_t()
+{
+  deinit_to_cnt();
+}
+// Установить положителный фронт запуска
+void irs::keithley_2015_t::set_positive()
+{}
+// Установить отрицательный фронт канала
+void irs::keithley_2015_t::set_negative()
+{}
+// Чтение значения при текущем типа измерения
+void irs::keithley_2015_t::get_value(double *ap_value)
+{
+  if (m_create_error) return;
+  mp_value = ap_value;
+  m_command = mac_get_value;
+  m_status = meas_status_busy;
+}
+// Чтение напряжения
+void irs::keithley_2015_t::get_voltage(double *voltage)
+{
+  if (m_create_error) return;
+  mp_voltage = voltage;
+  m_command = mac_get_voltage;
+  m_status = meas_status_busy;
+}
+// Чтение усредненного сдвира фаз
+void irs::keithley_2015_t::get_phase_average(double * /*phase_average*/)
+{
+}
+// Чтение фазового сдвига
+void irs::keithley_2015_t::get_phase(double * /*phase*/)
+{
+}
+// Чтение временного интервала
+void irs::keithley_2015_t::get_time_interval(double * /*time_interval*/)
+{
+}
+// Чтение усредненного временного интервала
+void irs::keithley_2015_t::get_time_interval_average(double * /*ap_time_interval*/)
+{
+}
+// Чтения силы тока
+void irs::keithley_2015_t::get_current(double *current)
+{
+  if (m_create_error) return;
+  mp_current = current;
+  m_command = mac_get_current;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления по двухпроводной схеме
+void irs::keithley_2015_t::get_resistance2x(double *resistance)
+{
+  if (m_create_error) return;
+  mp_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_res_meas_type = RES_MEAS_2x;
+  m_status = meas_status_busy;
+}
+// Чтение сопротивления по четырехпроводной схеме
+void irs::keithley_2015_t::get_resistance4x(double *resistance)
+{
+  if (m_create_error) return;
+  mp_resistance = resistance;
+  m_command = mac_get_resistance;
+  m_res_meas_type = RES_MEAS_4x;
+  m_status = meas_status_busy;
+}
+// Чтение частоты
+void irs::keithley_2015_t::get_frequency(double *frequency)
+{
+  if (m_create_error) return;
+  mp_frequency = frequency;
+  m_command = mac_get_frequency;
+  m_status = meas_status_busy;
+}
+// Запуск автокалибровки мультиметра
+void irs::keithley_2015_t::auto_calibration()
+{}
+// Чтение статуса текущей операции
+meas_status_t irs::keithley_2015_t::status()
+{
+  if (m_create_error) return meas_status_busy;
+  return m_status;
+}
+// Прерывание текущей операции
+void irs::keithley_2015_t::abort()
+{
+  if (m_create_error) return;
+  m_abort_request = irs_true;
+}
+// Элементарное действие
+void irs::keithley_2015_t::tick()
+{
+  IRS_LIB_ASSERT(mp_hardflow);
+  mp_hardflow->tick();
+  m_fixed_flow.tick();
+  initialize_tick();
+  if (m_create_error) return;
+  mxifa_tick();
+  switch (m_mode) {
+    case ma_mode_start: {
+      m_abort_request = irs_false;
+      switch (m_command) {
+        case mac_get_value: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_value;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_voltage: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_voltage;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_resistance: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_resistance;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_current: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_current;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_get_frequency: {
+          m_get_parametr_needed = irs_false;
+          m_macro_mode = macro_mode_get_frequency;
+          m_mode = ma_mode_macro;
+        } break;
+        case mac_auto_calibration: {
+          m_macro_mode = macro_mode_stop;
+          m_mode = ma_mode_auto_calibration;
+        } break;
+        case mac_free: {
+        } break;
+      }
+    } break;
+    case ma_mode_macro: {
+      if (m_abort_request) {
+        m_abort_request = irs_false;
+        m_macro_mode = macro_mode_stop;
+      }
+      switch (m_macro_mode) {
+        case macro_mode_get_value:{
+          if (m_get_parametr_needed) {
+            m_value = mp_value;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            m_mul_commands = &m_get_value_commands;
+            m_mul_commands_index = 0;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_voltage: {
+          if (m_get_parametr_needed) {
+            m_value = mp_voltage;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_meas_type == DC_MEAS)
+              m_mul_commands = &m_get_voltage_dc_commands;
+            else
+              m_mul_commands = &m_get_voltage_ac_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_resistance: {
+          if (m_get_parametr_needed) {
+            m_value = mp_resistance;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_res_meas_type == RES_MEAS_2x)
+              m_mul_commands = &m_get_resistance_2x_commands;
+            else
+              m_mul_commands = &m_get_resistance_4x_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_current: {
+          if (m_get_parametr_needed) {
+            m_value = mp_current;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            if(m_meas_type == DC_MEAS)
+              m_mul_commands = &m_get_current_dc_commands;
+            else
+              m_mul_commands = &m_get_current_ac_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_get_frequency: {
+          if (m_get_parametr_needed) {
+            m_value = mp_frequency;
+            m_macro_mode = macro_mode_stop;
+            m_mode = ma_mode_get_value;
+          } else {
+            m_get_parametr_needed = irs_true;
+            m_mul_commands = &m_get_frequency_commands;
+            m_mul_commands_index = 0;
+            //f_command_prev = f_command;
+            m_mode = ma_mode_commands;
+          }
+        } break;
+        case macro_mode_stop: {
+          m_command = mac_free;
+          m_status = meas_status_success;
+          m_mode = ma_mode_start;
+        } break;
+        default : {
+        }
+      }
+    } break;
+    case ma_mode_commands: {
+      m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
+      const irs_u8* command = reinterpret_cast<const irs_u8*>(
+        m_cur_mul_command.c_str());
+      const size_type len = static_cast<size_type>(
+        strlen(reinterpret_cast<const char*>(command)));
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_oper_time);
+      m_mode = ma_mode_commands_wait;
+      set_to_cnt(m_oper_to, m_oper_time);
+    } break;
+    case ma_mode_commands_wait: {
+      if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      } else {
+        switch (m_fixed_flow.write_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_mul_commands_index++;
+            if (m_mul_commands_index >=
+                static_cast<index_t>(m_mul_commands->size())) {
+              m_mode = ma_mode_macro;
+            } else {
+              m_mode = ma_mode_commands;
+            }
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            m_mode = ma_mode_commands;
+          } break;
+          default : {
+            // Ожидаем окончания операции
+          }
+        }
+      }
+    } break;
+    case ma_mode_get_value: {
+      m_fixed_flow.read(mp_hardflow->channel_next(),
+        m_read_buf, sample_size);
+      //mlog() << "---> " << __LINE__ << endl;
+      *m_value = 0;
+      m_mode = ma_mode_get_value_wait;
+    } break;
+    case ma_mode_get_value_wait: {
+      if (m_abort_request) {
+        m_fixed_flow.read_abort();
+        // Считаем что если чтение прервано, то в буфере hardflow
+        // останется предыдущее число и необходимо очистить буфер
+        m_is_clear_buffer_needed = true;
+        m_mode = ma_mode_macro;
+      } else {
+        switch (m_fixed_flow.read_status()) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            if (!m_is_clear_buffer_needed) {
+              char* p_number_in_cstr = reinterpret_cast<char*>(m_read_buf);
+              if (!irs::cstr_to_number_classic(p_number_in_cstr, *m_value)) {
+                *m_value = 0;
+                //mlog() << "---> " << __LINE__ << endl;
+              }
+              //mlog() << *m_value << endl;
+              //mlog() << "---> " << __LINE__ << endl;
+              m_mode = ma_mode_macro;
+            } else {
+              // Если требовалась очистка буфера, то считаем что
+              // это чтение и есть очистка буфера. Идем на второй круг
+              // и считываем уже действительное значение
+              m_is_clear_buffer_needed = false;
+              //mlog() << "---> " << __LINE__ << endl;
+              m_mode = ma_mode_get_value;
+            }
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            //m_mode = ma_mode_macro;
+            m_command = mac_free;
+            m_status = meas_status_error;
+            m_mode = ma_mode_start;
+            //mlog() << "---> " << __LINE__ << endl;
+          } break;
+          default : {
+            // Ожидаем выполнения
+          }
+        }
+      }
+    } break;
+
+    case ma_mode_auto_calibration: {
+      const irs_u8* command = reinterpret_cast<const irs_u8*>("ACAL ALL");
+      size_type len = strlen(reinterpret_cast<const char*>(command));
+      m_fixed_flow.write(mp_hardflow->channel_next(), command, len);
+      m_fixed_flow.write_timeout(m_acal_time);
+      m_mode = ma_mode_auto_calibration_wait;
+    } break;
+    case ma_mode_auto_calibration_wait: {
+      if (test_to_cnt(m_acal_to)) {
+        const fixed_flow_status_type status = m_fixed_flow.write_status();
+        if (status == irs::hardflow::fixed_flow_t::status_success) {
+          m_mode = ma_mode_macro;
+        }
+      } else if (m_abort_request) {
+        m_fixed_flow.write_abort();
+        m_mode = ma_mode_macro;
+      }
+    } break;
+  }
+}
+
+void irs::keithley_2015_t::initialize_tick()
+{
+  switch (m_mul_mode_type) {
+    case mul_mode_type_active: {
+      // Запись команд инициализации
+      switch (m_init_mode) {
+        case im_start: {
+          if (m_create_error) {
+            m_init_timer.start();
+            m_ic_index = 0;
+            m_init_mode = im_write_command;
+          }
+        } break;
+        case im_write_command: {
+          //irs::string& icomm = m_init_commands[m_ic_index];
+          m_cur_mul_command = m_init_commands[m_ic_index];
+          irs::string& icomm = m_cur_mul_command;
+
+          size_t icomm_size = icomm.size();
+          const irs_u8* icomm_u8 =
+            reinterpret_cast<const irs_u8*>(icomm.c_str());
+          m_fixed_flow.write(mp_hardflow->channel_next(), icomm_u8, icomm_size);
+          m_fixed_flow.write_timeout(m_oper_time);
+          m_init_mode = im_next_command;
+        } break;
+        case im_next_command: {
+          switch (m_fixed_flow.write_status()) {
+            case irs::hardflow::fixed_flow_t::status_success: {
+              m_ic_index++;
+              if (m_ic_index < static_cast<index_t>(m_init_commands.size())) {
+                m_init_mode = im_write_command;
+              } else {
+                m_create_error = false;
+                m_init_mode = im_start;
+              }
+            } break;
+            case irs::hardflow::fixed_flow_t::status_error: {
+              m_init_mode = im_write_command;
+            } break;
+            case irs::hardflow::fixed_flow_t::status_wait: {
+              if (m_init_timer.check()) {
+                m_fixed_flow.write_abort();
+                m_init_mode = im_start;
+              }
+            } break;
+            default : {
+              IRS_LIB_ASSERT_MSG("Неучтенный статус");
+            }
+          }
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("m_init_mode не должен быть default");
+        } break;
+      } //switch (m_init_mode)
+    } break;
+    case mul_mode_type_passive: {
+      m_create_error = false;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("m_mul_mode_type не должен быть default");
+    } break;
+  } //switch (m_mul_mode_type)
+}
+
+// Установка времени интегрирования в периодах частоты сети (20 мс)
+void irs::keithley_2015_t::set_nplc(double nplc)
+{
+  if (nplc <= 0.02)
+    nplc = 0.02;
+  else if (nplc <= 0.2)
+    nplc = 0.2;
+  else if (nplc <= 1)
+    nplc = 1;
+  else if (nplc <= 10)
+    nplc = 10;
+  else
+    nplc = 100;
+  irs::string nplc_str;
+  num_to_str_classic(nplc, &nplc_str);
+  irs::string nplc_volt_dc_str =
+    static_cast<irs::string>("VOLTage:DC:NPLCycles " +  nplc_str);
+  irs::string nplc_resistance_2x_str =
+    static_cast<irs::string>("RESistance:NPLCycles " + nplc_str);
+  irs::string nplc_resistance_4x_str =
+    static_cast<irs::string>("FRESistance:NPLCycles " + nplc_str);
+  m_get_voltage_dc_commands[m_nplc_voltage_dc_index] = nplc_volt_dc_str;
+  m_get_resistance_2x_commands[m_nplc_resistance_2x_index] =
+    nplc_resistance_2x_str;
+  m_get_resistance_4x_commands[m_nplc_resistance_4x_index] =
+    nplc_resistance_4x_str;
+}
+// Установка времени интегрирования в c
+void irs::keithley_2015_t::set_aperture(double aperture)
+{
+  set_time_interval_meas(aperture);
+  if (aperture <= 0.01)
+    aperture = 0.01;
+  else if (aperture <= 0.1)
+    aperture = 0.1;
+  else
+    aperture = 1;
+  irs::string aperture_str;
+  num_to_str_classic(aperture, &aperture_str);
+  irs::string aperture_frequency_str =
+    static_cast<irs::string>("FREQuency:APERture " + aperture_str);
+  m_get_frequency_commands[m_aperture_frequency_index] =
+    aperture_frequency_str;
+}
+// Установка полосы фильтра
+void irs::keithley_2015_t::set_bandwidth(double bandwidth)
+{
+  if (bandwidth <= 3)
+    bandwidth = 3;
+  else if (bandwidth <= 20)
+    bandwidth = 20;
+  else
+    bandwidth = 200;
+  irs::string bandwidth_str;
+  num_to_str_classic(bandwidth, &bandwidth_str);
+  irs::string bandwidth_volt_ac_str =
+    static_cast<irs::string>("DETector:BANDwidth " + bandwidth_str);
+  m_get_voltage_ac_commands[m_band_width_voltage_ac_index] =
+    bandwidth_volt_ac_str;
+}
+void irs::keithley_2015_t::set_input_impedance(double /*impedance*/)
+{
+}
+void irs::keithley_2015_t::set_start_level(double /*level*/)
+{
+}
+void irs::keithley_2015_t::set_range(type_meas_t /*a_type_meas*/, double /*a_range*/)
+{
+}
+void irs::keithley_2015_t::set_range_auto()
+{
+}
+ // Установка временного интервала измерения
+void irs::keithley_2015_t::set_time_interval_meas(const double a_time_interval_meas)
+{
+  double nplc = 0.0;
+  double bandwidth = 0.0;
+  if (a_time_interval_meas != 0){
+    const double coef_time_interval_to_nplc = 50;
+    const double coef_time_interval_to_bandwidth = 1;
+    nplc = a_time_interval_meas/coef_time_interval_to_nplc;
+    bandwidth = coef_time_interval_to_bandwidth/a_time_interval_meas;
+  }else{
+    nplc = 0.0;
+    bandwidth = 0.0;
+  }
+  set_nplc(nplc);
+  set_bandwidth(bandwidth);
+}
+
+#endif // KEITHLEY_2015_ENABLED
 
 // Класс для работы с мультиметром National Instruments PXI-4071
 irs::ni_pxi_4071_t::ni_pxi_4071_t(
