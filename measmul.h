@@ -53,7 +53,8 @@ enum type_meas_t {
   tm_phase_average = 10,
   tm_time_interval = 11,
   tm_time_interval_average = 12,
-  tm_last = tm_time_interval_average,
+  tm_distortion = 13,
+  tm_last = tm_distortion,
   tm_for_set_type_size = 0xFFFFFFFF
 };
 
@@ -146,6 +147,8 @@ public:
   virtual void get_time_interval(double *time_interval) = 0;
   // Чтение усредненного временного интервала (статусная команда)
   virtual void get_time_interval_average(double *ap_time_interval) = 0;
+  // Чтение значения нелинейного искажения (статусная команда)
+  virtual void get_distortion(double * /*distortion*/) { }
   // Чтение отношения напряжений на 1-м и 2-м каналах
   virtual void get_voltage_ratio(double *voltage_ratio) { *voltage_ratio = 0.; }
   // Выбор канала для последующих измерений
@@ -1039,7 +1042,9 @@ private:
     process_read_data,
     process_write_data,
     process_get_value,
-    process_calc,
+    process_calc_samples,
+    process_calc_filter_values,
+    process_calc_statistic,
     process_set_settings,
     process_get_coefficient
   };
@@ -2726,8 +2731,212 @@ inline void irs::akip_ch3_85_3r_t::set_ac()
 */
 
 
-#define KEITHLEY_2015_ENABLED 0
-#if KEITHLEY_2015_ENABLED
+template <class T>
+class mul_commands_t
+{
+public:
+  typedef size_t size_type;
+  typedef T string_type;
+  mul_commands_t();
+  size_type add(const string_type& a_name, double a_value,
+    double a_min = std::numeric_limits<double>::min(),
+    double a_max = std::numeric_limits<double>::max());
+  size_type add(const string_type& a_name,
+    const string_type& a_value = string_type(),
+    double a_min = std::numeric_limits<double>::min(),
+    double a_max = std::numeric_limits<double>::max());
+
+  size_type add(size_type a_id, const string_type& a_name, double a_value,
+    double a_min = std::numeric_limits<double>::min(),
+    double a_max = std::numeric_limits<double>::max());
+  size_type add(size_type a_id, const string_type& a_name,
+    const string_type& a_value = string_type(),
+    double a_min = std::numeric_limits<double>::min(),
+    double a_max = std::numeric_limits<double>::max());
+  //void set_value(const string_type& a_name, double a_value);
+  void set_value(size_type a_index, double a_value);
+  void set_value(size_type a_index, const string_type& a_value);
+  const vector<string_type>& get_commands() const;
+  const string_type& get_command(size_type a_id) const;
+private:
+  //size_type get_command_index(const string_type& a_name);
+  size_type get_command_index(size_type a_id) const;
+  void make_command(size_type a_index);
+  struct description_t
+  {
+    size_type id;
+    string_type name;
+    string_type value;
+    double min;
+    double max;
+    description_t():
+      id(std::numeric_limits<size_type>::max()),
+      name(),
+      value(),
+      min(std::numeric_limits<double>::min()),
+      max(std::numeric_limits<double>::max())
+    {
+    }
+  };
+  vector<description_t> m_descriptions;
+  vector<string_type> m_commands;
+};
+
+// class commands_t
+template <class T>
+irs::mul_commands_t<T>::mul_commands_t():
+  m_descriptions(),
+  m_commands()
+{
+}
+
+/*template <class T>
+irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::get_command_index(const string_type& a_name)
+{
+  for (size_type i = 0; i < m_descriptions.size(); i++) {
+    if (m_descriptions[i].name == a_name) {
+      return i;
+    }
+  }
+  return std::numeric_limits<size_type>::max();
+}*/
+
+template <class T>
+typename irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::get_command_index(size_type a_id) const
+{
+  if (a_id == std::numeric_limits<size_type>::max()) {
+    return std::numeric_limits<size_type>::max();
+  }
+  for (size_type i = 0; i < m_descriptions.size(); i++) {
+    if (m_descriptions[i].id == a_id) {
+      return i;
+    }
+  }
+  return std::numeric_limits<size_type>::max();
+}
+
+template <class T>
+void irs::mul_commands_t<T>::make_command(size_type a_index)
+{
+  m_commands.resize(m_descriptions.size());
+  m_commands[a_index] =
+    m_descriptions[a_index].name + m_descriptions[a_index].value;
+}
+
+template <class T>
+typename irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::add(const string_type& a_name, double a_value,
+  double a_min, double a_max)
+{
+  return add(std::numeric_limits<size_type>::max(),
+    a_name, a_value, a_min, a_max);
+  /*const double v = irs::range(a_value, a_min, a_max);
+  irs::string str;
+  irs::num_to_str_classic(v, &str);
+  return add(a_name, str, a_min, a_max);*/
+}
+
+template <class T>
+typename irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::add(const string_type& a_name,
+  const string_type& a_value, double a_min, double a_max)
+{
+  return add(std::numeric_limits<size_type>::max(), a_name, a_value,
+    a_min, a_max);
+}
+
+template <class T>
+typename irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::add(size_type a_id,
+  const string_type& a_name, double a_value, double a_min, double a_max)
+{
+  const double v = irs::range(a_value, a_min, a_max);
+  irs::string str;
+  irs::num_to_str_classic(v, &str);
+  return add(a_id, a_name, str, a_min, a_max);
+}
+
+template <class T>
+typename irs::mul_commands_t<T>::size_type
+irs::mul_commands_t<T>::add(size_type a_id, const string_type& a_name,
+  const string_type& a_value, double a_min, double a_max)
+{
+  size_type index = get_command_index(a_id);
+  if (index >= m_descriptions.size()) {
+    description_t description;
+    description.id = a_id;
+    description.name = a_name;
+    description.value = a_value;
+    description.min = a_min;
+    description.max = a_max;
+    m_descriptions.push_back(description);
+    index = m_descriptions.size() - 1;
+  } else {
+    m_descriptions[index].value = a_value;
+  }
+  make_command(index);
+  return index;
+}
+
+/*template <class T>
+void irs::mul_commands_t<T>::set_value(size_type a_id, double a_value)
+{
+  size_type index = get_command_index(a_id);
+  if (index >= m_descriptions.size()) {
+    IRS_LIB_ASSERT_MSG("Недопустимый идентификатор");
+  }
+  set_value(index, a_value);
+}*/
+
+template <class T>
+void irs::mul_commands_t<T>::set_value(size_type a_id, double a_value)
+{
+  size_type index = get_command_index(a_id);
+  if (index >= m_descriptions.size()) {
+    IRS_LIB_ASSERT_MSG("Недопустимый идентификатор");
+  }
+  description_t* description = &m_descriptions[index];
+
+  const double v = irs::range(a_value, description->min, description->max);
+  irs::string str;
+  irs::num_to_str_classic(v, &str);
+  description->value = str;
+  make_command(index);
+}
+
+template <class T>
+void irs::mul_commands_t<T>::set_value(
+  size_type a_id, const string_type& a_value)
+{
+  size_type index = get_command_index(a_id);
+  if (index >= m_descriptions.size()) {
+    IRS_LIB_ASSERT_MSG("Недопустимый идентификатор");
+  }
+  description_t* description = &m_descriptions[index];
+  description->value = a_value;
+  make_command(index);
+}
+
+template <class T>
+const vector<typename irs::mul_commands_t<T>::string_type>&
+irs::mul_commands_t<T>::get_commands() const
+{
+  return m_commands;
+}
+
+template <class T>
+const typename irs::mul_commands_t<T>::string_type&
+irs::mul_commands_t<T>::get_command(size_type a_id) const
+{
+  size_type index = get_command_index(a_id);
+  if (index >= m_descriptions.size()) {
+    IRS_LIB_ASSERT_MSG("Недопустимый идентификатор");
+  }
+  return m_commands[index];
+}
+
 //! \brief Класс для работы с мультиметром Keithley 2015
 class keithley_2015_t: public mxmultimeter_t
 {
@@ -2753,7 +2962,9 @@ class keithley_2015_t: public mxmultimeter_t
     mac_get_resistance,
     mac_get_current,
     mac_get_frequency,
-    mac_auto_calibration
+    mac_get_distortion,
+    mac_auto_calibration,
+    mac_set_params
   } ma_command_t;
   typedef enum _macro_mode_t {
     macro_mode_get_value,
@@ -2761,7 +2972,8 @@ class keithley_2015_t: public mxmultimeter_t
     macro_mode_get_resistance,
     macro_mode_get_current,
     macro_mode_get_frequency,
-    macro_mode_send_commands,
+    macro_mode_get_distortion,
+    macro_mode_set_params,
     macro_mode_stop
   } macro_mode_t;
 
@@ -2790,47 +3002,44 @@ class keithley_2015_t: public mxmultimeter_t
   //! \brief Тип для индексов
   typedef irs_i32 index_t;
 
-
-  //static const char m_volt_ac_nplcycles = "DETector:BANDwidth 20";
-
   irs::hardflow_t* mp_hardflow;
   irs::hardflow::fixed_flow_t m_fixed_flow;
   const multimeter_mode_type_t m_mul_mode_type;
 
-  //! \brief Команды при инициализации
+  enum id_t{
+    id_range,
+    id_bandwidth,
+    id_nplc,
+    id_aperture
+  };
+
+   //! \brief Команды при инициализации
   vector<irs::string> m_init_commands;
-  //! \brief Индекс команды установки времени интегрирования для
-  //!  постоянного напряжения
-  index_t m_nplc_voltage_dc_index;
-  //! \brief Индекс команды установки полосы фильтра для переменного напряжения
-  index_t m_band_width_voltage_ac_index;
+
   //! \brief Команды чтения значения при произвольных настройках
   vector<irs::string> m_get_value_commands;
-  //! \brief Команды при чтении напряжения
-  vector<irs::string> m_get_voltage_dc_commands;
-  vector<irs::string> m_get_voltage_ac_commands;
 
-  //! \brief Индекс команды установки времени интегрирования для сопротивления
-  index_t m_nplc_resistance_2x_index;
-  index_t m_nplc_resistance_4x_index;
-  //! \brief Команды при чтении сопротивления
-  vector<irs::string> m_get_resistance_2x_commands;
-  vector<irs::string> m_get_resistance_4x_commands;
+  mul_commands_t<irs::string> m_dcv_commands;
 
-  //! \brief Индекс команды установки времени интегрирования для тока
-  index_t m_nplc_current_dc_index;
-  index_t m_nplc_current_ac_index;
-  //! \brief Команды при чтении тока
-  vector<irs::string> m_get_current_dc_commands;
-  vector<irs::string> m_get_current_ac_commands;
+  mul_commands_t<irs::string> m_acv_commands;
 
-  //! \brief Индекс команды установки времени счета
-  index_t m_aperture_frequency_index;
-  //! \brief Команды при чтении частоты
-  vector<irs::string> m_get_frequency_commands;
+  mul_commands_t<irs::string> m_dci_commands;
+
+  mul_commands_t<irs::string> m_aci_commands;
+
+  mul_commands_t<irs::string> m_resistance_2x_commands;
+
+  mul_commands_t<irs::string> m_resistance_4x_commands;
+
+  mul_commands_t<irs::string> m_frequency_commands;
+
+  mul_commands_t<irs::string> m_distortion_commands;
+
+  //! \brief Команды для установки параметров
+  vector<irs::string> m_set_params_commands;
 
   //! \brief Ощибка создания
-  irs_bool m_create_error;
+  bool m_create_error;
   //! \brief Текущий режим работы
   ma_mode_t m_mode;
   //! \brief Текущий макрорежим работы
@@ -2859,15 +3068,19 @@ class keithley_2015_t: public mxmultimeter_t
   //! \brief Текущая команда
   irs::string m_cur_mul_command;
   //! \brief Команды для мультиметра
-  vector<irs::string> *m_mul_commands;
+  const vector<irs::string> *mp_mul_commands;
+  vector<irs::string> m_last_config_commands;
+
+  bool m_config_commands_sended;
+
   //! \brief Индекс команд для мультиметра
   index_t m_mul_commands_index;
   // Предыдущая команда
   //ma_command_t f_command_prev;
   //! \brief Указатель на переменную в которую будет считано значение
-  double *m_value;
+  double *mp_result;
   //! \brief Выполнить чтение параметра
-  irs_bool m_get_parametr_needed;
+  bool m_get_parametr_needed;
   //! \brief Время таймаута операций
   counter_t m_oper_time;
   //! \brief Таймаут операций
@@ -2927,7 +3140,8 @@ public:
   virtual void get_time_interval(double *time_interval);
   //! \brief Чтение усредненного временного интервала
   virtual void get_time_interval_average(double *ap_time_interval);
-
+  //! \brief Чтение значения нелинейного искажения (статусная команда)
+  virtual void get_distortion(double *distortion);
   //! \brief Запуск автокалибровки (команда ACAL) мультиметра
   virtual void auto_calibration();
   //! \brief Чтение статуса текущей операции
@@ -2954,6 +3168,9 @@ private:
   //! \brief Установка временного интервала измерения
   void set_time_interval_meas(const double a_time_interval_meas);
   void initialize_tick();
+  irs::string value_to_str(double a_range, double a_min, double a_max) const;
+  void send_config_commands(
+    const vector<irs::string>* ap_mul_commands);
 };
 //! \brief Установить режим измерения постоянного напряжения
 inline void irs::keithley_2015_t::set_dc()
@@ -2965,7 +3182,7 @@ inline void irs::keithley_2015_t::set_ac()
 {
   m_meas_type = AC_MEAS;
 }
-#endif // KEITHLEY_2015_ENABLED
+
 class dummy_multimeter_t: public mxmultimeter_t
 {
 public:
