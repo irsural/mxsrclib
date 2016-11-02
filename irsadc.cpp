@@ -1561,8 +1561,8 @@ irs::simple_dac_ad5160_t::simple_dac_ad5160_t(spi_t* ap_spi,
   gpio_pin_t* ap_cs_pin, irs_u32 a_init_value):
   m_status(DAC_FREE),
   mp_spi(ap_spi),
-  m_buf(a_init_value),
-  m_write_buf(a_init_value >> (32 - m_dac_resulution)),
+  m_buf(static_cast<irs_u8>(a_init_value)),
+  m_write_buf(static_cast<irs_u8>(a_init_value >> (32 - m_dac_resulution))),
   m_need_write(false),
   mp_cs_pin(ap_cs_pin)
 {
@@ -5152,7 +5152,7 @@ void irs::gn_k1316gm1u_t::write(const irs_u8 *ap_buf, irs_uarc a_index,
     irs_u8 index = static_cast<irs_u8>(a_index);
     if (size + index > m_size) size = static_cast<irs_u8>(m_size - index);
     for (irs_u8 i = 0; i < size; i++) {
-      irs_u8 pos = i + index;
+      irs_u8 pos = static_cast<irs_u8>(i + index);
       mp_buf[pos] = ap_buf[i];
       m_registers[pos].need_write = true;
       m_registers[pos].was_write = false;
@@ -5195,7 +5195,8 @@ void irs::gn_k1316gm1u_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
   bool valid_data =
     (a_index < m_size) & (a_bit_index <= 7);
   irs_u8 index = static_cast<irs_u8>(a_index);
-  irs_u8 test_mask = m_registers[index].mask >> m_registers[index].shift;
+  irs_u8 test_mask =
+    static_cast<irs_u8>(m_registers[index].mask >> m_registers[index].shift);
   if (valid_data && (test_mask & (1 << a_bit_index))) {
     mp_buf[index] |= static_cast<irs_u8>(1 << a_bit_index);
     m_registers[index].need_write = true;
@@ -5210,7 +5211,8 @@ void irs::gn_k1316gm1u_t::clear_bit(irs_uarc a_index, irs_uarc a_bit_index)
   bool valid_data =
     (a_index < m_size) & (a_bit_index <= 7);
   irs_u8 index = static_cast<irs_u8>(a_index);
-  irs_u8 test_mask = m_registers[index].mask >> m_registers[index].shift;
+  irs_u8 test_mask =
+    static_cast<irs_u8>(m_registers[index].mask >> m_registers[index].shift);
   if (valid_data && (test_mask & (1 << a_bit_index))) {
     mp_buf[index] = static_cast<irs_u8>
       (mp_buf[index] & ~static_cast<irs_u8>(1 << a_bit_index));
@@ -5246,7 +5248,8 @@ void irs::gn_k1316gm1u_t::tick()
       break;
     }
     case st_read_all_prepare: {
-      mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
+      mp_write_buf[0] =
+        static_cast<irs_u8>(m_registers[m_current_reg].addr << 1);
       mp_write_buf[1] = 0;
       irs::mlog() << dec << setw(2);
       irs::mlog() << (irs_u32)m_current_reg;
@@ -5287,7 +5290,7 @@ void irs::gn_k1316gm1u_t::tick()
       break;
     }
     case st_read_raw_prepare: {
-      mp_write_buf[0] = m_raw_address << 1;
+      mp_write_buf[0] = static_cast<irs_u8>(m_raw_address << 1);
       mp_write_buf[1] = 0;
       m_status = st_spi_prepare;
       m_target_status = st_read_raw;
@@ -5311,7 +5314,8 @@ void irs::gn_k1316gm1u_t::tick()
     case st_read_one_prepare: {
       irs::mlog() << irsm("--- Read ONE Ê1316ÃÌ1Ó ----") << endl;
       irs::mlog() << irsm(" # Addr Read Mask Shif Res ") << endl;
-      mp_write_buf[0] = m_registers[m_current_reg].addr << 1;
+      mp_write_buf[0] =
+        static_cast<irs_u8>(m_registers[m_current_reg].addr << 1);
       mp_write_buf[1] = 0;
       irs::mlog() << dec << setw(2);
       irs::mlog() << (irs_u32)m_current_reg;
@@ -5397,8 +5401,10 @@ void irs::gn_k1316gm1u_t::tick()
       break;
     }
     case st_prepare_write_reg: {
-      mp_write_buf[0] = (m_registers[m_current_reg].addr << 1) | 0x01;
-      irs_u8 reg = mp_buf[m_current_reg] << m_registers[m_current_reg].shift;
+      mp_write_buf[0] = static_cast<irs_u8>(
+        (m_registers[m_current_reg].addr << 1) | 0x01);
+      irs_u8 reg = static_cast<irs_u8>(
+        mp_buf[m_current_reg] << m_registers[m_current_reg].shift);
       mp_write_buf[1] = reg;
       m_registers[m_current_reg].need_write = false;
       irs::mlog() << irsm("--- Write ONE Ê1316ÃÌ1Ó ---") << endl;
