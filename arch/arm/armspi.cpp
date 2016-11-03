@@ -1259,7 +1259,7 @@ irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
   #error Тип контроллера не определён
   #endif // IRS_STM32F7xx
 
-  // Временно!!!
+  // Временно, пока нет соотетствующих регистров!!!
   if (a_settings.spi_address == IRS_SPI6_BASE) {
     __HAL_RCC_SPI6_RELEASE_RESET();
   } else {
@@ -1268,7 +1268,7 @@ irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
   initialize_gpio_channels(a_settings.sck, a_settings.miso, a_settings.mosi,
     a_settings.gpio_speed);
 
-  // Временно!!!
+  // Временно, пока нет соотетствующих регистров!!!
   if (a_settings.spi_address == IRS_SPI6_BASE) {
     __HAL_RCC_SPI6_CLK_ENABLE();
   } else {
@@ -1323,7 +1323,7 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
 
   mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
-  /* Configure the DMA handler for Transmission process */
+  /* Configure the DMA handler for Reception process */
   m_hdma_rx.Instance                 = m_settings.rx_dma_y_stream_x;
   m_hdma_rx.Init.Channel             = m_settings.rx_dma_channel;
   m_hdma_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;

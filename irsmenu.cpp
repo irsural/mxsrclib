@@ -2572,16 +2572,16 @@ void irs_menu_spin_item_t::check_key_event()
     } break;
     case irskey_up: {
       if (m_encoder_mode == encoder_mode_digit_editing) {
-        try_increase_value();
-      } else {
         try_shift_cursor_left();
+      } else {
+        try_increase_value();
       }
     } break;
     case irskey_down: {
       if (m_encoder_mode == encoder_mode_digit_editing) {
-        try_reduce_value();
-      } else {
         try_shift_cursor_right();
+      } else {
+        try_reduce_value();
       }
     } break;
     default: {

@@ -128,6 +128,7 @@ enum {
   sdio_int,
   usart4_int,
   usart5_int,
+  dma2_stream1_int,
   dma2_stream3_int,  
   otg_fs_int,
   dma2_stream6_int,

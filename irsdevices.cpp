@@ -1612,6 +1612,283 @@ void irs::v7_78_1_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 #endif // defined(IRS_WIN32)
 
 #if defined(IRS_WIN32)
+
+namespace irs {
+
+class keithley_2015_mxmultimeter_creator_t:
+  public mxmultimeter_assembly_creator_t
+{
+public:
+  virtual handle_t<mxmultimeter_assembly_t> make(const string_type& a_name);
+};
+
+class keithley_2015_mxmultimeter_t: public mxmultimeter_assembly_t
+{
+public:
+  keithley_2015_mxmultimeter_t(const string_type& a_conf_file_name);
+  virtual ~keithley_2015_mxmultimeter_t();
+  virtual bool enabled() const;
+  virtual void enable(multimeter_mode_type_t a_mul_mode_type);
+  virtual void disable();
+  virtual mxmultimeter_t* mxmultimeter();
+  virtual void tick();
+  virtual void show_options();
+private:
+  void reset();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  bool m_enabled;
+  multimeter_mode_type_t m_mul_mode_type;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+irs::keithley_2015_mxmultimeter_creator_t::make(
+  const string_type& a_name)
+{
+  return handle_t<mxmultimeter_assembly_t>(
+    new keithley_2015_mxmultimeter_t(a_name));
+}
+
+irs::keithley_2015_mxmultimeter_t::keithley_2015_mxmultimeter_t(
+  const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(
+    make_assembly_param_box(irst("Keithley 2015"), m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  m_enabled(false),
+  m_mul_mode_type(mul_mode_type_passive),
+  mp_hardflow(),
+  mp_multimeter()
+{
+}
+irs::keithley_2015_mxmultimeter_t::~keithley_2015_mxmultimeter_t()
+{
+  mp_param_box->save();
+}
+irs::keithley_2015_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  add_gpib_options_to_param_box(ap_param_box);
+  mp_param_box->load();
+}
+bool irs::keithley_2015_mxmultimeter_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::keithley_2015_mxmultimeter_t::enable(
+  multimeter_mode_type_t a_mul_mode_type)
+{
+  if (m_enabled) {
+    return;
+  }
+  m_mul_mode_type = a_mul_mode_type;
+  reset();
+}
+void irs::keithley_2015_mxmultimeter_t::disable()
+{
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+  m_enabled = false;
+}
+void irs::keithley_2015_mxmultimeter_t::reset()
+{
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr;
+  const int prologix_timeout_ms = 3000;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::keithley_2015_t(mp_hardflow.get(),
+    m_mul_mode_type));
+  m_enabled = true;
+}
+mxmultimeter_t* irs::keithley_2015_mxmultimeter_t::mxmultimeter()
+{
+  return mp_multimeter.get();
+}
+void irs::keithley_2015_mxmultimeter_t::tick()
+{
+  if (!mp_multimeter.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+  }
+}
+void irs::keithley_2015_mxmultimeter_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+
+namespace irs {
+
+class keithley_2015_assembly_creator_t: public mxdata_assembly_creator_t
+{
+public:
+  virtual handle_t<mxdata_assembly_t> make(tstlan4_base_t* ap_tstlan4,
+    const string_type& a_name);
+private:
+};
+
+class keithley_2015_assembly_t: public mxdata_assembly_t
+{
+public:
+  keithley_2015_assembly_t(tstlan4_base_t* ap_tstlan4,
+    const string_type& a_conf_file_name);
+  virtual ~keithley_2015_assembly_t();
+  virtual bool enabled() const;
+  virtual void enabled(bool a_enabled);
+  virtual irs::mxdata_t* mxdata();
+  virtual void tick();
+  virtual void show_options();
+  virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
+private:
+  void reset();
+  void disable();
+  struct param_box_tune_t {
+    param_box_base_t* mp_param_box;
+
+    param_box_tune_t(param_box_base_t* ap_param_box);
+  };
+
+  string_type m_conf_file_name;
+  handle_t<param_box_base_t> mp_param_box;
+  param_box_tune_t m_param_box_tune;
+  tstlan4_base_t* mp_tstlan4;
+  bool m_enabled;
+  irs::handle_t<irs::hardflow_t> mp_hardflow;
+  handle_t<mxmultimeter_t> mp_multimeter;
+  handle_t<multimeter_mxdata_t> mp_mxdata;
+};
+
+} // namespace irs
+
+irs::handle_t<irs::mxdata_assembly_t>
+irs::keithley_2015_assembly_creator_t::make(
+  tstlan4_base_t* ap_tstlan4, const string_type& a_name)
+{
+  return handle_t<mxdata_assembly_t>(
+    new keithley_2015_assembly_t(ap_tstlan4, a_name));
+}
+
+irs::keithley_2015_assembly_t::keithley_2015_assembly_t(
+  tstlan4_base_t* ap_tstlan4, const string_type& a_conf_file_name
+):
+  m_conf_file_name(a_conf_file_name),
+  mp_param_box(
+    make_assembly_param_box(irst("Keithley 2015"), m_conf_file_name)),
+  m_param_box_tune(mp_param_box.get()),
+  mp_tstlan4(ap_tstlan4),
+  m_enabled(false),
+  mp_hardflow(),
+  mp_multimeter(),
+  mp_mxdata()
+{
+  mp_tstlan4->ini_name(m_conf_file_name);
+}
+irs::keithley_2015_assembly_t::~keithley_2015_assembly_t()
+{
+  mp_param_box->save();
+}
+irs::keithley_2015_assembly_t::param_box_tune_t::param_box_tune_t(
+  param_box_base_t* ap_param_box
+):
+  mp_param_box(ap_param_box)
+{
+  add_gpib_options_to_param_box(ap_param_box);
+  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  mp_param_box->load();
+
+  //mp_param_box->add_edit(irst("GPIB адрес"), irst("23"));
+  //mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
+  //mp_param_box->load();
+}
+bool irs::keithley_2015_assembly_t::enabled() const
+{
+  return m_enabled;
+}
+void irs::keithley_2015_assembly_t::enabled(bool a_enabled)
+{
+  if (a_enabled == m_enabled) {
+    return;
+  }
+  if (a_enabled) {
+    reset();
+  } else {
+    disable();
+  }
+  m_enabled = a_enabled;
+}
+void irs::keithley_2015_assembly_t::disable()
+{
+  mp_tstlan4->connect(NULL);
+  mp_mxdata.reset();
+  mp_multimeter.reset();
+  mp_hardflow.reset();
+}
+void irs::keithley_2015_assembly_t::reset()
+{
+  disable();
+  typedef irs::hardflow::prologix_flow_t prologix_flow_type;
+  const prologix_flow_type::end_line_t read_end_line =
+    prologix_flow_type::lf;
+  const prologix_flow_type::end_line_t write_end_line =
+    prologix_flow_type::cr;
+  const int prologix_timeout_ms = 3000;
+  mp_hardflow = make_gpib_hardflow(mp_param_box.get(), read_end_line,
+    write_end_line, prologix_timeout_ms);
+  mp_multimeter.reset(new irs::keithley_2015_t(mp_hardflow.get(),
+    mul_mode_type_passive));
+
+  const int update_time_ms =
+    param_box_read_number<int>(*mp_param_box, irst("Время обновления, мс"));
+  mp_mxdata.reset(new irs::multimeter_mxdata_t(mp_multimeter.get(),
+    update_time_ms/1000.));
+
+  mp_tstlan4->connect(mp_mxdata.get());
+}
+irs::mxdata_t* irs::keithley_2015_assembly_t::mxdata()
+{
+  return mp_mxdata.get();
+}
+void irs::keithley_2015_assembly_t::tick()
+{
+  if (!mp_mxdata.is_empty()) {
+    mp_hardflow->tick();
+    mp_multimeter->tick();
+    mp_mxdata->tick();
+  }
+}
+void irs::keithley_2015_assembly_t::show_options()
+{
+  if (mp_param_box->show() && m_enabled) {
+    reset();
+  }
+}
+void irs::keithley_2015_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
+{
+  mp_tstlan4 = ap_tstlan4;
+}
+#endif // defined(IRS_WIN32)
+
+#if defined(IRS_WIN32)
 namespace irs {
 
 class ch3_85_3r_mxmultimeter_creator_t: public mxmultimeter_assembly_creator_t
@@ -2479,6 +2756,8 @@ irs::mxdata_assembly_types_implementation_t::
     new agilent_34420a_assembly_creator_t);
   m_ac_list[irst("В7-78/1")] = handle_t<mxdata_assembly_creator_t>(
     new v7_78_1_assembly_creator_t);
+  m_ac_list[irst("Keithley 2015")] = handle_t<mxdata_assembly_creator_t>(
+    new keithley_2015_assembly_creator_t);
   m_ac_list[irst("Ч3-85/3R")] = handle_t<mxdata_assembly_creator_t>(
     new ch3_85_3r_assembly_creator_t);
   m_ac_list[irst("NI PXI 4071")] = handle_t<mxdata_assembly_creator_t>(
@@ -2556,6 +2835,8 @@ irs::mxmultimeter_assembly_types_implementation_t::
     new agilent_34420a_mxmultimeter_creator_t());
   m_ac_list[irst("В7-78/1")] = handle_t<mxmultimeter_assembly_creator_t>(
     new v7_78_1_mxmultimeter_creator_t());
+  m_ac_list[irst("Keithley 2015")] = handle_t<mxmultimeter_assembly_creator_t>(
+    new keithley_2015_mxmultimeter_creator_t());
   m_ac_list[irst("Ч3-85/3R")] = handle_t<mxmultimeter_assembly_creator_t>(
     new ch3_85_3r_mxmultimeter_creator_t());
   #endif // __BORLANDC__

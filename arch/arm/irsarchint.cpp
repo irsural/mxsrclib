@@ -474,6 +474,11 @@ void irs_arm_usart5_func()
   irs::arm::interrupt_array()->exec_event(irs::arm::usart5_int);
 }
 
+void irs_arm_dma2_stream1_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream1_int);
+}
+
 void irs_arm_dma2_stream3_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream3_int);
@@ -683,7 +688,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 54
   irs_arm_default_int_func,  // 55
   irs_arm_default_int_func,  // 56
-  irs_arm_default_int_func,  // 57
+  irs_arm_dma2_stream1_func,  // 57
   irs_arm_default_int_func,  // 58
   irs_arm_dma2_stream3_func, // 59
   irs_arm_default_int_func,  // 60

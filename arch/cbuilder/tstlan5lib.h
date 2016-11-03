@@ -583,7 +583,7 @@ private:
   chart_window_t* mp_extern_chart;
   auto_ptr<TForm> mp_form_auto;
 
-  destructor_test_t m_destructor_test;
+  //destructor_test_t m_destructor_test;
 
   //***
   TForm *mp_form;
