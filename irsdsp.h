@@ -478,8 +478,8 @@ void fft(vector<complex<T> >& signal)
 #endif //__WATCOMC__
 {
   if (signal.empty()) return;
-  int degree = 1;
-  for (int i = signal.size() - 1; i >>= 1;) degree++;
+  int degree = 0;
+  for (int i = signal.size(); i >>= 1;) degree++;
   int size = 1 << degree;
   signal.resize(size);
   for (int first_idx = 0; first_idx < size; first_idx++)
