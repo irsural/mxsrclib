@@ -394,28 +394,6 @@ void irs::arm::arm_spi_t::write(const irs_u8* ap_buf, irs_uarc a_size)
     mp_write_buf = ap_buf;
     m_cur_byte = 0;
     m_status = SPI_WRITE;
-    if (m_ssi_type == SSI1) {
-      if ((mp_write_buf[1] & (1 << 1)) == 0) {
-        if ((m_on_prev) && ((mp_write_buf[1] & (1 << 2)) == 0)) {
-          irs::time_remain_t time = irs::cur_time()->get_remain();
-          const tm* date = gmtime(&time.time);
-          irs::mlog() << setfill('0');
-          irs::mlog() << setw(4) << (date->tm_year + 1900) << ".";
-          irs::mlog() << setw(2) << (date->tm_mon + 1) << ".";
-          irs::mlog() << setw(2) << date->tm_mday << ' ';
-          irs::mlog() << setw(2) << date->tm_hour << ":";
-          irs::mlog() << setw(2) << date->tm_min << ":";
-          irs::mlog() << setw(2) << date->tm_sec << " ";
-          irs::mlog() << time.remain*1000.;
-          irs::mlog() << " בטע on סבנמרום" << endl;
-        }
-        if ((mp_write_buf[1] & (1 << 2))) {
-          m_on_prev = true;
-        } else {
-          m_on_prev = false;
-        }
-      }
-    }
   }
 }
 
