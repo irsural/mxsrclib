@@ -496,7 +496,9 @@ public:
   void trans (char data);
   void trans_simple (char data);
 private:
+  #ifdef IRS_STM32_F2_F4_F7
   void set_usart_options(int a_com_index);
+  #endif //#ifdef IRS_STM32_F2_F4_F7
   enum {
     PORTA1_UART0Tx = 0x10
   };

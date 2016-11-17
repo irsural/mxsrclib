@@ -189,6 +189,7 @@ irs::arm::com_buf::com_buf(
   //__delay_cycles(4000);
 }
 
+#ifdef IRS_STM32_F2_F4_F7
 void irs::arm::com_buf::set_usart_options(int a_com_index)
 {
   m_usart->USART_CR1_bit.UE = 1;
@@ -212,7 +213,6 @@ void irs::arm::com_buf::set_usart_options(int a_com_index)
     16*(periphery_frequency%(16*m_baud_rate))/(16*m_baud_rate);
 }
 
-#ifdef IRS_STM32_F2_F4_F7
 irs::arm::com_buf::com_buf(
   int a_com_index,
   gpio_channel_t a_tx,

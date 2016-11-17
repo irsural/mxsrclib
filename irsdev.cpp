@@ -1351,6 +1351,8 @@ void irs::arm::st_pwm_gen_t::set_dead_time(float a_time)
 }
 #endif  //  mcu type
 
+#ifdef USE_STDPERIPH_DRIVER
+#if defined(IRS_STM32F_2_AND_4)
 namespace {
   void calc_prescaller_and_counter_start(const double a_period_s,
     size_t* ap_prescaler_divider_key,
@@ -1385,8 +1387,6 @@ namespace {
   }
 }
 
-#ifdef USE_STDPERIPH_DRIVER
-#if defined(IRS_STM32F_2_AND_4)
 // class st_independent_watchdog_t
 irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   double a_period_s
