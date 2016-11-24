@@ -24,7 +24,7 @@
 #include <irsfinal.h>
 
 //#define NEW_21092011
-#define ARMETH_DBGMSG
+//#define ARMETH_DBGMSG
 
 namespace irs {
 
