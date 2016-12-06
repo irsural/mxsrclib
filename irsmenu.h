@@ -596,6 +596,8 @@ private:
   void reset_selected_digit();
   int get_mantissa_selected_digit() const;
   size_type get_mantissa_first_number_pos(const string_type& a_str_value) const;
+  //! \brief ¬озвращает относительную позицию
+  //!   (по отношению к текущей экспоненте)
   int get_mantissa_first_number() const;
   size_type get_mantissa_selected_digit_pos(const string_type& a_str_value) const;
   size_type get_start_pos(const string_type& a_str_value) const;
@@ -636,6 +638,8 @@ private:
     size_type a_pos = 0);
   bool is_graph(char_type a_ch) const;
   void processing_of_digital_key_mode_dialog(irskey_t a_key);
+  //! \brief ¬озвращает относительную позицию
+  //!   (по отношению к текущей экспоненте)
   int get_mantissa_min_digit() const;
 
   template <class T>

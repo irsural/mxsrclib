@@ -2604,7 +2604,9 @@ void irs_menu_spin_item_t::normalize_selected_digit()
   if (m_max >= m_min) {
     calc_min_max_digit();
     if (m_unit_selected) {
-      m_selected_digit = get_mantissa_min_digit();
+      // Получаем относительную позицию и приводим ее к абсолютной путем
+      // прибавления значения экспоненты числа (m_exponent)
+      m_selected_digit = get_mantissa_min_digit() + m_exponent;
     } else {
       m_selected_digit = irs::bound(m_selected_digit, m_min_digit, m_max_digit);
     }
