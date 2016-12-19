@@ -458,6 +458,91 @@ inline irs_uarc bit_data_t::bit_index() const
   return m_bit_index;
 }
 
+// Наложение бита на mxdata_t
+class bit_data_as_bool_t
+{
+public:
+  typedef bool bit_t;
+
+  inline bit_data_as_bool_t(irs::mxdata_t *a_data = 0, irs_uarc a_index = 0,
+    irs_uarc a_bit_index = 0);
+  inline irs_uarc connect(irs::mxdata_t *a_data, irs_uarc a_index,
+    irs_uarc a_bit_index);
+  inline irs::mxdata_t *data() const;
+  inline irs_uarc index() const;
+  inline irs_uarc bit_index() const;
+
+  inline const bit_data_as_bool_t& operator=(const bit_data_as_bool_t& a_elem);
+  inline bit_t operator=(bit_t a_elem);
+  inline operator bit_t() const;
+private:
+  static const irs_uarc m_max_bit_count = 8;
+
+  irs::mxdata_t *mp_data;
+  irs_uarc m_index;
+  irs_uarc m_bit_index;
+};
+inline bit_data_as_bool_t::bit_data_as_bool_t(mxdata_t *ap_data, irs_uarc a_index,
+  irs_uarc a_bit_index):
+  mp_data(ap_data),
+  m_index(a_index),
+  m_bit_index(a_bit_index)
+{
+}
+inline irs_uarc bit_data_as_bool_t::connect(mxdata_t *ap_data, irs_uarc a_index,
+  irs_uarc a_bit_index)
+{
+  //bit_t data_valid = (ap_data != 0);
+  //bit_t index_valid = a_index < ap_data->size();
+  //bit_t bit_index_valid = a_bit_index < m_max_bit_count;
+  //if (data_valid && index_valid && bit_index_valid) {
+    mp_data = ap_data;
+    m_index = a_index;
+    m_bit_index = a_bit_index;
+  //} else {
+    //throw conn_fail_e();
+  //}
+  return a_index;
+}
+inline const bit_data_as_bool_t& bit_data_as_bool_t::operator=
+  (const bit_data_as_bool_t& a_elem)
+{
+  if (a_elem) {
+    mp_data->set_bit(m_index, m_bit_index);
+  } else {
+    mp_data->clear_bit(m_index, m_bit_index);
+  }
+  return a_elem;
+}
+inline bit_data_as_bool_t::bit_t bit_data_as_bool_t::operator=
+  (bit_data_as_bool_t::bit_t a_elem)
+{
+  if (a_elem) {
+    mp_data->set_bit(m_index, m_bit_index);
+  } else {
+    mp_data->clear_bit(m_index, m_bit_index);
+  }
+  return a_elem;
+}
+inline bit_data_as_bool_t::operator bit_t() const
+{
+  bit_t ret_bit = 0;
+  if (mp_data->bit(m_index, m_bit_index)) ret_bit = 1;
+  return ret_bit;
+}
+inline irs::mxdata_t *bit_data_as_bool_t::data() const
+{
+  return mp_data;
+}
+inline irs_uarc bit_data_as_bool_t::index() const
+{
+  return m_index;
+}
+inline irs_uarc bit_data_as_bool_t::bit_index() const
+{
+  return m_bit_index;
+}
+
 //! @}
 
 } //namespace irs
