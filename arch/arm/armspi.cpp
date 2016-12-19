@@ -1321,7 +1321,7 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
     m_hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
   }
   m_hdma_rx.Init.Mode                = DMA_NORMAL;
-  m_hdma_rx.Init.Priority            = m_settings.tx_dma_priority;
+  m_hdma_rx.Init.Priority            = m_settings.rx_dma_priority;
 
   HAL_DMA_Init(&m_hdma_rx);
 

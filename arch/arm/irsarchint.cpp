@@ -370,7 +370,7 @@ void irs_arm_exti9_5_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti9_5_int);
   if (EXTI_PR_bit.PR5) {
-    EXTI_PR_bit.PR5 = 1;    
+    EXTI_PR_bit.PR5 = 1;
   } else if (EXTI_PR_bit.PR6) {
     EXTI_PR_bit.PR6 = 1;
   } else if (EXTI_PR_bit.PR7) {
@@ -379,7 +379,7 @@ void irs_arm_exti9_5_func()
     EXTI_PR_bit.PR8 = 1;
   } else if (EXTI_PR_bit.PR9) {
     EXTI_PR_bit.PR9 = 1;
-  }  
+  }
   // Без этой инструкции прерывание иногда вызывается повторно
   __DSB();
 }
@@ -474,9 +474,19 @@ void irs_arm_usart5_func()
   irs::arm::interrupt_array()->exec_event(irs::arm::usart5_int);
 }
 
+void irs_arm_dma2_stream0_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream0_int);
+}
+
 void irs_arm_dma2_stream1_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream1_int);
+}
+
+void irs_arm_dma2_stream2_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma2_stream2_int);
 }
 
 void irs_arm_dma2_stream3_func()
@@ -687,9 +697,9 @@ __root const intfunc __int_vector_table[] =
   irs_arm_usart5_func,  // 53
   irs_arm_default_int_func,  // 54
   irs_arm_default_int_func,  // 55
-  irs_arm_default_int_func,  // 56
+  irs_arm_dma2_stream0_func,  // 56
   irs_arm_dma2_stream1_func,  // 57
-  irs_arm_default_int_func,  // 58
+  irs_arm_dma2_stream2_func,  // 58
   irs_arm_dma2_stream3_func, // 59
   irs_arm_default_int_func,  // 60
   irs_arm_default_int_func,  // 61

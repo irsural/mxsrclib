@@ -565,7 +565,14 @@ public:
   //!   значение параметра равно нулю, то в автоматическом режиме минимальный
   //!   разряд будет установлен равным -15 (точность double)
   void set_edited_digit_diapason(int a_min_digit, int a_max_digit);
+  int get_selected_digit() const;
+  void select_digit(int a_digit);
+  bool is_unit_selected() const;
+  void select_unit();
   //void set_step(double a_step);
+
+  //! \brief Сбрасывает шаг и экспоненту
+  void reset_step();
   //! \brief Сбрасывает шаг в значение по умолчанию, если оно задано или в
   //!   значение, рассчитанное автоматически
   void set_step_to_default();
@@ -608,7 +615,7 @@ private:
   //!   то она же и возвращается из фукции
   int get_corrected_exponent(const string_type& a_str_value);
 
-  void extern_param_to_copy_param();
+  //void extern_param_to_copy_param();
 
   string_type conv_num_to_str_general(double a_value) const;
   void convert_param_to_str();

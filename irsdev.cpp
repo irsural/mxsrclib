@@ -708,6 +708,8 @@ irs::arm::st_pwm_gen_t::st_pwm_gen_t(gpio_channel_t a_gpio_channel,
   m_break_gpio_channel(PNONE)
 {
   clock_enable(a_timer_address);
+
+  //mp_timer->TIM_CR1_bit.CMS = 2;
   // 0: Counter used as upcounter
   mp_timer->TIM_CR1_bit.DIR = 0;
   mp_timer->TIM_ARR = timer_frequency()/a_frequency - 1;
@@ -1008,6 +1010,17 @@ irs::arm::st_pwm_gen_t::find_channel(irs_u32 a_timer_channel)
     }
   }
   return NULL;
+}
+
+const irs::arm::st_pwm_gen_t::channel_t*
+irs::arm::st_pwm_gen_t::get_channel(irs_u32 a_index) const
+{
+  return &m_channels[a_index];
+}
+
+irs::arm::st_pwm_gen_t::size_type irs::arm::st_pwm_gen_t::channel_count() const
+{
+  return m_channels.size();
 }
 
 void irs::arm::st_pwm_gen_t::
@@ -1349,10 +1362,1074 @@ void irs::arm::st_pwm_gen_t::set_dead_time(float a_time)
     mp_timer->TIM_BDTR_bit.DTG = (7 << 5) | min(value, DTG_4_0_max);
   }
 }
+
+irs::cpu_traits_t::frequency_type
+irs::arm::st_pwm_gen_t::get_auto_reload_value()
+{
+  return mp_timer->TIM_ARR;
+}
+
+irs::cpu_traits_t::frequency_type
+irs::arm::st_pwm_gen_t::set_auto_reload_value(
+  cpu_traits_t::frequency_type a_arr)
+{
+  mp_timer->TIM_ARR = a_arr;
+  m_frequency = get_frequency();
+  return mp_timer->TIM_ARR;
+}
+
+#ifdef USE_HAL_DRIVER
+#if !ST_HAL_PWM_GEN_DMA_NEW
+// class st_hal_pwm_gen_dma_t
+irs::arm::st_hal_pwm_gen_dma_t::st_hal_pwm_gen_dma_t(
+  const settings_t& a_settings
+):
+  m_settings(a_settings),
+  m_started(false),
+  m_channels(),
+  m_gpio_channel(a_settings.gpio_channel),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_settings.timer_address)),
+  m_frequency(a_settings.frequency),
+  m_timer_channel(0),
+  m_complementary_gpio_channel(PNONE),
+  m_break_gpio_channel(PNONE),
+
+  m_hdma_tx(),
+  //m_tx_status(false),
+  m_hdma_init(false),
+
+  m_tx_buffer(a_settings.tx_buffer),
+  m_dma_event(&m_hdma_tx)
+{
+  //IRS_LIB_ASSERT("Не доделан!!!");
+
+  IRS_LIB_ASSERT(a_settings.dma_address);
+  IRS_LIB_ASSERT(a_settings.frequency > 0);
+
+  IRS_LIB_ASSERT(a_settings.tx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.tx_buffer.size() > 0);
+  IRS_LIB_ASSERT(IS_DMA_STREAM_ALL_INSTANCE(a_settings.tx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.tx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.tx_dma_priority));
+
+  IRS_LIB_ASSERT((a_settings.data_item_byte_count == 1) ||
+    (a_settings.data_item_byte_count == 2) ||
+    (a_settings.data_item_byte_count == 4));
+
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  IRS_LIB_ASSERT(reinterpret_cast<size_t>(a_settings.tx_buffer.data())%32 == 0);
+  //IRS_LIB_ASSERT(a_settings.tx_buffer.size()%32 == 0);
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+
+  clock_enable(a_settings.timer_address);
+  // 0: Counter used as upcounter
+  //mp_timer->TIM_CR1_bit.CMS = 2; // Center-aligned mode 2.
+  mp_timer->TIM_CR1_bit.DIR = 0;
+  mp_timer->TIM_ARR = timer_frequency()/m_frequency - 1;
+  stop();
+  // 1: TIMx_ARR register is buffered
+  mp_timer->TIM_CR1_bit.ARPE = 1;
+  // 1: Re-initialize the counter and generates an update of the registers.
+  mp_timer->TIM_EGR_bit.UG = 1;
+  if ((a_settings.timer_address == IRS_TIM1_PWM1_BASE) ||
+    (a_settings.timer_address == IRS_TIM8_PWM2_BASE)) {
+    mp_timer->TIM_BDTR_bit.OSSI = 1;
+  }
+  mp_timer->TIM_CR1_bit.CEN = 1;
+
+  if (m_gpio_channel != PNONE) {
+    channel_enable(m_gpio_channel);
+    set_duty(m_gpio_channel, a_settings.duty);
+  }
+
+  irs::clock_enable(a_settings.dma_address);
+
+  irs::interrupt_array()->int_gen_events(irs::arm::dma2_stream1_int)->
+    push_back(&m_dma_event);
+  /* Enable the DMA STREAM global Interrupt */
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+  NVIC_SetPriority (DMA2_Stream1_IRQn, 0);
+
+  reset_dma();
+}
+
+irs_u32 irs::arm::st_hal_pwm_gen_dma_t::
+get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
+{
+  irs_u32 timer_channel = 0;
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  switch (a_gpio_channel) {
+     case PA0: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL0 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA5: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL5 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA7: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRL_bit.AFRL7 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA8: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOA_AFRH_bit.AFRH8 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PA10: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 3;
+        GPIOA_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB0: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRL_bit.AFRL0 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB3: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 2;
+        GPIOB_AFRL_bit.AFRL3 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB6: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRL_bit.AFRL6 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB8: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH8 = 2;
+      } else if (timer_address == IRS_TIM10_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH8 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB9: {
+      if (timer_address == IRS_TIM4_BASE) {
+        timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH9 = 2;
+      } else if (timer_address == IRS_TIM11_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRH_bit.AFRH9 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB10: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 3;
+        GPIOB_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PB11: {
+      if (timer_address == IRS_TIM2_BASE) {
+        timer_channel = 4;
+        GPIOB_AFRH_bit.AFRH11 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PC6: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 1;
+        GPIOC_AFRL_bit.AFRL6 = 2;
+      } else if (timer_address == IRS_TIM8_PWM2_BASE) {
+        timer_channel = 1;
+        GPIOC_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PC7: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 2;
+        GPIOC_AFRL_bit.AFRL7 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE5: {
+      if (timer_address == IRS_TIM9_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRL_bit.AFRL5 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE6: {
+      if (timer_address == IRS_TIM9_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRL_bit.AFRL6 = 3;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE8: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRH_bit.AFRH8 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE9: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 1;
+        GPIOE_AFRH_bit.AFRH9 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE10: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRH_bit.AFRH10 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PE11: {
+      if (timer_address == IRS_TIM1_PWM1_BASE) {
+        timer_channel = 2;
+        GPIOE_AFRH_bit.AFRH11 = 1;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PH6: {
+      if (timer_address == IRS_TIM12_BASE) {
+        timer_channel = 1;
+        GPIOH_AFRL_bit.AFRL6 = 9;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PH10: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 1;
+        GPIOH_AFRH_bit.AFRH10 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PH11: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 2;
+        GPIOH_AFRH_bit.AFRH11 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    case PH12: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 3;
+        GPIOH_AFRH_bit.AFRH12 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
+        "порта и таймера");
+    }
+  }
+  return timer_channel;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::
+select_alternate_function_for_break_channel()
+{
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  if (m_break_gpio_channel != PNONE) {
+    if (timer_address == IRS_TIM1_PWM1_BASE) {
+      switch (m_break_gpio_channel) {
+        case PA6: {
+          GPIOA_AFRL_bit.AFRL6 = 1;
+        } break;
+        case PE15: {
+          GPIOE_AFRH_bit.AFRH15 = 1;
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+        }
+      }
+    } else if (timer_address == IRS_TIM8_PWM2_BASE) {
+      switch (m_break_gpio_channel) {
+        case PA6: {
+          GPIOA_AFRL_bit.AFRL6 = 3;
+        } break;
+        default: {
+          IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+        }
+      }
+    } else {
+      IRS_LIB_ASSERT_MSG("Для выбранного таймера дополнительный канал не "
+        "определен");
+    }
+  }
+}
+
+irs_u32* irs::arm::st_hal_pwm_gen_dma_t::get_tim_ccr_register(irs_u32 a_timer_channel)
+{
+  irs_u32* tim_ccr;
+  switch (a_timer_channel) {
+    case 1: {
+      tim_ccr = &mp_timer->TIM_CCR1;
+    } break;
+    case 2: {
+      tim_ccr = &mp_timer->TIM_CCR2;
+    } break;
+    case 3: {
+      tim_ccr = &mp_timer->TIM_CCR3;
+    } break;
+    case 4: {
+      tim_ccr = &mp_timer->TIM_CCR4;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимый канал");
+    } break;
+  }
+  return tim_ccr;
+}
+
+irs::arm::st_hal_pwm_gen_dma_t::channel_t*
+irs::arm::st_hal_pwm_gen_dma_t::find_channel(irs_u32 a_timer_channel)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if (channel->timer_channel == a_timer_channel) {
+      return channel;
+    }
+  }
+  return NULL;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::
+set_mode_capture_compare_registers_for_all_channels(
+  output_compare_mode_t a_mode)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    set_mode_capture_compare_registers(a_mode, &m_channels[i]);
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_mode_capture_compare_registers(
+  output_compare_mode_t a_mode, channel_t* ap_channel)
+{
+  const irs_u32 OCxM_value = a_mode;
+  // Output Compare preload enable
+  const irs_u32 OCxPE_value = 1;
+  // 0: OC1 active high
+  const irs_u32 CCxP_value = ap_channel->main_channel_active_low ? 1 : 0;
+  // 1: On - OCx signal is output on the corresponding output pin
+  const irs_u32 CCxE_value = (ap_channel->main_channel == PNONE) ? 0 : 1;
+  // 0: OC1N active high.
+  const irs_u32 CCxNP_value =
+    ap_channel->complementary_channel_active_low ? 1 : 0;
+  // 0: Off - OC1N is not active
+  irs_u32 CCxNE_value = (ap_channel->complementary_channel == PNONE) ? 0 : 1;
+
+  switch (ap_channel->timer_channel) {
+    case 1: {
+      mp_timer->TIM_CCMR1_bit.OC1M = OCxM_value;
+      mp_timer->TIM_CCMR1_bit.OC1PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC1P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC1E = CCxE_value;
+      mp_timer->TIM_CCER_bit.CC1NP = CCxNP_value;
+      mp_timer->TIM_CCER_bit.CC1NE = CCxNE_value;
+    } break;
+    case 2: {
+      mp_timer->TIM_CCMR1_bit.OC2M = OCxM_value;
+      mp_timer->TIM_CCMR1_bit.OC2PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC2P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC2E = CCxE_value;
+      mp_timer->TIM_CCER_bit.CC2NP = CCxNP_value;
+      mp_timer->TIM_CCER_bit.CC2NE = CCxNE_value;
+    } break;
+    case 3: {
+      mp_timer->TIM_CCMR2_bit.OC3M = OCxM_value;
+      mp_timer->TIM_CCMR2_bit.OC3PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC3P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC3E = CCxE_value;
+      mp_timer->TIM_CCER_bit.CC3NP = CCxNP_value;
+      mp_timer->TIM_CCER_bit.CC3NE = CCxNE_value;
+    } break;
+    case 4: {
+      mp_timer->TIM_CCMR2_bit.OC4M = OCxM_value;
+      mp_timer->TIM_CCMR2_bit.OC4PE = OCxPE_value;
+      mp_timer->TIM_CCER_bit.CC4P = CCxP_value;
+      mp_timer->TIM_CCER_bit.CC4E = CCxE_value;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимый канал");
+    } break;
+  }
+}
+
+irs::cpu_traits_t::frequency_type
+irs::arm::st_hal_pwm_gen_dma_t::timer_frequency() const
+{
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  return cpu_traits_t::timer_frequency(timer_address);
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::start()
+{
+  set_mode_capture_compare_registers_for_all_channels(ocm_pwm_mode_1);
+  if ((reinterpret_cast<size_t>(mp_timer) == IRS_TIM1_PWM1_BASE) ||
+    (reinterpret_cast<size_t>(mp_timer) == IRS_TIM8_PWM2_BASE)) {
+    mp_timer->TIM_BDTR_bit.MOE = 1;
+  }
+  m_started = true;
+  start_spi_dma();
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::stop()
+{
+  if ((reinterpret_cast<size_t>(mp_timer) == IRS_TIM1_PWM1_BASE) ||
+    (reinterpret_cast<size_t>(mp_timer) == IRS_TIM8_PWM2_BASE)) {
+    mp_timer->TIM_BDTR_bit.MOE = 0;
+
+  }
+  set_mode_capture_compare_registers_for_all_channels(ocm_force_inactive_level);
+  stop_spi_dma();
+  m_started = false;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty(irs_uarc a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty);
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty(float a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty(gpio_channel_t a_gpio_channel,
+  irs_uarc a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if ((channel->main_channel == a_gpio_channel) ||
+        (channel->complementary_channel == a_gpio_channel)) {
+      set_duty_register(channel->tim_ccr, a_duty);
+      break;
+    }
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty(gpio_channel_t a_gpio_channel,
+  float a_duty)
+{
+  for (size_type i = 0; i < m_channels.size(); i++) {
+    channel_t* channel = &m_channels[i];
+    if ((channel->main_channel == a_gpio_channel) ||
+        (channel->complementary_channel == a_gpio_channel)) {
+      set_duty_register(channel->tim_ccr, a_duty);
+      break;
+    }
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty_register(irs_u32* ap_tim_ccr,
+  irs_uarc a_duty)
+{
+  *ap_tim_ccr = static_cast<irs_u32>(a_duty);
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_duty_register(irs_u32* ap_tim_ccr,
+  float a_duty)
+{
+  *ap_tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_hal_pwm_gen_dma_t::set_frequency(
+  cpu_traits_t::frequency_type a_frequency)
+{
+  m_frequency = a_frequency;
+  mp_timer->TIM_ARR = timer_frequency()/a_frequency - 1;
+  return get_frequency();
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_hal_pwm_gen_dma_t::get_frequency() const
+{
+  return timer_frequency()/(mp_timer->TIM_ARR + 1);
+}
+
+irs_uarc irs::arm::st_hal_pwm_gen_dma_t::get_max_duty()
+{
+  return timer_frequency()/m_frequency - 1;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_hal_pwm_gen_dma_t::get_max_frequency()
+{
+  return get_timer_frequency()/2;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::st_hal_pwm_gen_dma_t::get_timer_frequency()
+{
+  return timer_frequency();
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::break_enable(gpio_channel_t a_gpio_channel,
+  break_polarity_t a_polarity)
+{
+  const size_t timer_address = reinterpret_cast<size_t>(mp_timer);
+  if ((timer_address != IRS_TIM1_PWM1_BASE) &&
+    (timer_address != IRS_TIM8_PWM2_BASE)) {
+    IRS_LIB_ERROR(ec_standard, "Недопустимый таймер");
+  }
+  m_break_gpio_channel = a_gpio_channel;
+  select_alternate_function_for_break_channel();
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+  clock_enable(a_gpio_channel);
+  if (a_polarity == break_polarity_active_low) {
+    mp_timer->TIM_BDTR_bit.BKP = 0;
+  } else {
+    mp_timer->TIM_BDTR_bit.BKP = 1;
+  }
+  mp_timer->TIM_BDTR_bit.BKE = 1;
+  mp_timer->TIM_SR_bit.BIF = 0;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::channel_enable(gpio_channel_t a_gpio_channel,
+  output_polarity_t a_output_polarity)
+{
+  channel_enable_helper(a_gpio_channel, false, a_output_polarity);
+  /*
+  clock_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+  //channel.duty = 0;
+  channel.main_channel = a_gpio_channel;
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  set_duty_register(channel.tim_ccr, a_duty);
+
+  m_channels.push_back(channel);
+  if (m_started) {
+    set_mode_capture_compare_registers(ocm_pwm_mode_1, &m_channels.back());
+  } else {
+    set_mode_capture_compare_registers(ocm_force_inactive_level,
+      &m_channels.back());
+  }*/
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::complementary_channel_enable(
+  gpio_channel_t a_gpio_channel, output_polarity_t a_output_polarity)
+{
+  channel_enable_helper(a_gpio_channel, true, a_output_polarity);
+  /*clock_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+  //m_complementary_gpio_channel = a_gpio_channel;
+  //select_alternate_function_for_complementary_channel();
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+
+  channel.complementary_channel = a_gpio_channel;
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  set_duty_register(channel.tim_ccr, 0.f);
+
+  m_channels.push_back(channel);
+
+  if (m_started) {
+    set_mode_capture_compare_registers(ocm_pwm_mode_1, &m_channels.back());
+  } else {
+    set_mode_capture_compare_registers(ocm_force_inactive_level,
+      &m_channels.back());
+  }*/
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::channel_enable_helper(
+  gpio_channel_t a_gpio_channel, bool a_complementary,
+  output_polarity_t a_output_polarity)
+{
+  clock_enable(a_gpio_channel);
+  gpio_moder_alternate_function_enable(a_gpio_channel);
+
+  const irs_u32 timer_channel = get_timer_channel_and_select_alternate_function(
+    a_gpio_channel);
+
+  channel_t* existing_channel = find_channel(timer_channel);
+  channel_t channel;
+  if (existing_channel) {
+    channel = *existing_channel;
+  }
+  if (a_complementary) {
+    channel.complementary_channel = a_gpio_channel;
+    channel.complementary_channel_active_low =
+      (a_output_polarity == op_active_low);
+  } else {
+    channel.main_channel = a_gpio_channel;
+    channel.main_channel_active_low = (a_output_polarity == op_active_low);
+  }
+  channel.timer_channel = timer_channel;
+  channel.tim_ccr = get_tim_ccr_register(channel.timer_channel);
+
+  if (!existing_channel) {
+    set_duty_register(channel.tim_ccr, 0.f);
+  }
+  set_mode_capture_compare_registers(ocm_pwm_mode_1, &channel);
+
+  if (existing_channel) {
+    *existing_channel = channel;
+  } else {
+    m_channels.push_back(channel);
+  }
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::set_dead_time(float a_time)
+{
+  const double dead_time = a_time;
+
+  const double t_dtg = 1./timer_frequency();
+
+  const double step_1 = t_dtg;
+  const irs_u8 DTG_6_0_max = 127;
+  const double max_1 = DTG_6_0_max*step_1;
+
+
+  const double step_2 = t_dtg*2;
+  const irs_u8 DTG_5_0_max = 63;
+  const irs_u8 step_count_min_2 = 64;
+  const double max_2 = (step_count_min_2 + DTG_5_0_max)*step_2;
+
+
+  const irs_u8 DTG_4_0_max = 31;
+  const double step_3 = t_dtg*8;
+  const irs_u8 step_count_min_3 = 32;
+  const double max_3 = (step_count_min_3 + DTG_4_0_max)*step_3;
+
+
+  const double step_4 = t_dtg*16;
+  const irs_u8 step_count_min_4 = 32;
+
+
+  if (dead_time <= max_1) {
+    const irs_u8 value = irs::round<double, irs_u8>(dead_time/step_1);
+    mp_timer->TIM_BDTR_bit.DTG = min(value, DTG_6_0_max);
+  } else if (dead_time <= max_2) {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_2-step_count_min_2);
+    mp_timer->TIM_BDTR_bit.DTG = (4 << 5) | min(value, DTG_5_0_max);
+  } else if (dead_time <= max_3) {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_3-step_count_min_3);
+    mp_timer->TIM_BDTR_bit.DTG = (6 << 5) | min(value, DTG_4_0_max);
+  } else {
+    const irs_u8 value =
+      round<double, irs_u8>(dead_time/step_4-step_count_min_4);
+    mp_timer->TIM_BDTR_bit.DTG = (7 << 5) | min(value, DTG_4_0_max);
+  }
+}
+
+irs::cpu_traits_t::frequency_type
+irs::arm::st_hal_pwm_gen_dma_t::get_auto_reload_value()
+{
+  return mp_timer->TIM_ARR;
+}
+
+irs::cpu_traits_t::frequency_type
+irs::arm::st_hal_pwm_gen_dma_t::set_auto_reload_value(
+  cpu_traits_t::frequency_type a_arr)
+{
+  mp_timer->TIM_ARR = a_arr;
+  m_frequency = get_frequency();
+  return mp_timer->TIM_ARR;
+}
+
+/*DMA_HandleTypeDef* irs::arm::st_hal_pwm_gen_dma_t::get_hdma_handle()
+{
+  return &m_hdma_tx;
+}*/
+
+void irs::arm::st_hal_pwm_gen_dma_t::reset_dma()
+{
+  if (m_hdma_init) {
+    stop_dma();
+    HAL_DMA_DeInit(&m_hdma_tx);
+  }
+
+  /*##-3- Configure the DMA ##################################################*/
+  /* Configure the DMA handler for Transmission process */
+  m_hdma_tx.Instance                 = m_settings.tx_dma_y_stream_x;
+  m_hdma_tx.Init.Channel             = m_settings.tx_dma_channel;
+  m_hdma_tx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  m_hdma_tx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+
+  m_hdma_tx.Init.MemBurst            = DMA_MBURST_SINGLE;
+  m_hdma_tx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  m_hdma_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+  m_hdma_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  m_hdma_tx.Init.MemInc              = DMA_MINC_ENABLE;
+
+
+  m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  //m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+  switch (m_settings.data_item_byte_count) {
+    case 1: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    } break;
+    case 2: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+    } break;
+    case 4: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Неучтенное значение размера элемента");
+    }
+  }
+
+  m_hdma_tx.Init.Mode                = DMA_CIRCULAR;//DMA_NORMAL;
+  m_hdma_tx.Init.Priority            = m_settings.tx_dma_priority;
+
+  m_hdma_tx.XferCpltCallback = m_settings.XferCpltCallback;
+  m_hdma_tx.XferHalfCpltCallback = m_settings.XferHalfCpltCallback;
+  m_hdma_tx.XferErrorCallback = m_settings.XferErrorCallback;
+
+  HAL_DMA_Init(&m_hdma_tx);
+
+  //mp_timer->TIM_CR1_bit.URS = 1;
+  // Capture/Compare 1 DMA request enable. CC1 DMA request enabled
+  mp_timer->TIM_DIER_bit.CC1DE = 1; // __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC1);
+  // CCx DMA requests sent when update event occurs
+  //mp_timer->TIM_CR2_bit.CCDS = 1;
+  //mp_timer->TIM_DIER_bit.UDE = 1;
+
+
+  //mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
+
+  m_hdma_init = true;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::start_dma()
+{
+  cleand_dcache_tx();
+  /* Enable the Tx DMA channel */
+
+  /*for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+  }*/
+
+
+  /*HAL_TIM_OC_Start_DMA(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+    reinterpret_cast<irs_u32>(&mp_timer->TIM_CCR1),
+    m_settings.tx_buffer.size()/m_settings.data_item_byte_count);
+  */
+  /*HAL_DMA_Start*/HAL_DMA_Start_IT(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+    reinterpret_cast<irs_u32>(&mp_timer->TIM_CCR1),
+    m_settings.tx_buffer.size()/m_settings.data_item_byte_count);
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::cleand_dcache_tx()
+{
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(m_tx_buffer.data()),
+    m_tx_buffer.size());
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::stop_dma()
+{
+  HAL_DMA_Abort(&m_hdma_tx);
+}
+
+// class dma_event_t
+irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::dma_event_t(
+  DMA_HandleTypeDef* ap_hdma_tx
+):
+  mp_hdma_tx(ap_hdma_tx),
+  m_enabled(false)
+{
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::exec()
+{
+  //if (m_enabled) {
+    irs::event_t::exec();
+    /* Check the interrupt and clear flag */
+    HAL_DMA_IRQHandler(mp_hdma_tx);
+  //}
+}
+
+/*void irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::enable()
+{
+  m_enabled = true;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::disable()
+{
+  m_enabled = false;
+}*/
+
+#else // ST_HAL_PWM_GEN_DMA_NEW
+// class st_hal_pwm_gen_dma_lite_t
+irs::arm::st_hal_pwm_gen_dma_t::st_hal_pwm_gen_dma_t(
+  const settings_t& a_settings
+):
+  st_pwm_gen_t(a_settings.gpio_channel, a_settings.timer_address,
+    a_settings.frequency, a_settings.duty),
+  m_settings(a_settings),
+  mp_timer(reinterpret_cast<tim_regs_t*>(a_settings.timer_address)),
+  m_hdma_tx(),
+  //m_tx_status(false),
+  m_hdma_init(false),
+
+  m_tx_buffer(a_settings.tx_buffer),
+  m_dma_event(&m_hdma_tx)
+{
+
+  irs::clock_enable(a_settings.dma_address);
+
+  irs::interrupt_array()->int_gen_events(a_settings.interrupt_id
+    )->push_back(&m_dma_event);
+
+  if (a_settings.interrupt_enabled) {
+    /* Enable the DMA STREAM global Interrupt */
+    HAL_NVIC_EnableIRQ(a_settings.interrupt);
+    NVIC_SetPriority (a_settings.interrupt, a_settings.interrupt_priority);
+  }
+
+  reset_dma();
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::start()
+{
+  st_pwm_gen_t::start();
+  start_dma();
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::stop()
+{
+  st_pwm_gen_t::stop();
+  stop_dma();
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::reset_dma()
+{
+  if (m_hdma_init) {
+    stop_dma();
+    HAL_DMA_DeInit(&m_hdma_tx);
+  }
+
+  /*##-3- Configure the DMA ##################################################*/
+  /* Configure the DMA handler for Transmission process */
+  m_hdma_tx.Instance                 = m_settings.tx_dma_y_stream_x;
+  m_hdma_tx.Init.Channel             = m_settings.tx_dma_channel;
+  m_hdma_tx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  m_hdma_tx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+
+  m_hdma_tx.Init.MemBurst            = DMA_MBURST_SINGLE;
+  m_hdma_tx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  m_hdma_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+  m_hdma_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  m_hdma_tx.Init.MemInc              = DMA_MINC_ENABLE;
+
+
+  m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  //m_hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+  switch (m_settings.data_item_byte_count) {
+    case 1: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    } break;
+    case 2: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+    } break;
+    case 4: {
+      m_hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Неучтенное значение размера элемента");
+    }
+  }
+
+  m_hdma_tx.Init.Mode                = DMA_CIRCULAR;//DMA_NORMAL;
+  m_hdma_tx.Init.Priority            = m_settings.tx_dma_priority;
+
+  m_hdma_tx.XferCpltCallback = m_settings.XferCpltCallback;
+  m_hdma_tx.XferHalfCpltCallback = m_settings.XferHalfCpltCallback;
+  m_hdma_tx.XferErrorCallback = m_settings.XferErrorCallback;
+
+  HAL_DMA_Init(&m_hdma_tx);
+
+
+  if (channel_count() > 0) {
+    const channel_t* channel = get_channel(0);
+
+    switch (channel->timer_channel) {
+      case 1: {
+        // Capture/Compare 1 DMA request enable. CC1 DMA request enabled
+        mp_timer->TIM_DIER_bit.CC1DE = 1;
+      } break;
+      case 2: {
+        // Capture/Compare 1 DMA request enable. CC2 DMA request enabled
+        mp_timer->TIM_DIER_bit.CC2DE = 1;
+      } break;
+      case 3: {
+        // Capture/Compare 1 DMA request enable. CC3 DMA request enabled
+        mp_timer->TIM_DIER_bit.CC3DE = 1;
+      } break;
+      case 4: {
+        // Capture/Compare 1 DMA request enable. CC4 DMA request enabled
+        mp_timer->TIM_DIER_bit.CC4DE = 1;
+      } break;
+      default: {
+        IRS_ASSERT_MSG("Неучтенное значение номера канала");
+      }
+    }
+  } else {
+    IRS_ASSERT_MSG("Не задан канал таймера");
+  }
+  //mp_timer->TIM_CR1_bit.URS = 1;
+  // Capture/Compare 1 DMA request enable. CC1 DMA request enabled
+  //mp_timer->TIM_DIER_bit.CC1DE = 1; // __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC1);
+  // CCx DMA requests sent when update event occurs
+  //mp_timer->TIM_CR2_bit.CCDS = 1;
+  //mp_timer->TIM_DIER_bit.UDE = 1;
+
+
+  //mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
+
+  m_hdma_init = true;
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::start_dma()
+{
+  cleand_dcache_tx();
+  /* Enable the Tx DMA channel */
+
+  /*for (size_type i = 0; i < m_channels.size(); i++) {
+    *m_channels[i].tim_ccr = static_cast<irs_u32>(a_duty*get_max_duty());
+  }*/
+
+
+  /*HAL_TIM_OC_Start_DMA(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+    reinterpret_cast<irs_u32>(&mp_timer->TIM_CCR1),
+    m_settings.tx_buffer.size()/m_settings.data_item_byte_count);
+  */
+
+  //irs_u32* tim_ccr = get_tim_ccr_register(m_settings.);
+
+  const channel_t* channel = get_channel(0);
+  if (channel_count() > 0) {
+    /*HAL_DMA_Start*/HAL_DMA_Start_IT(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+      reinterpret_cast<irs_u32>(channel->tim_ccr),
+      m_settings.tx_buffer.size()/m_settings.data_item_byte_count);
+  } else {
+    IRS_ASSERT_MSG("Не задан канал таймера");
+  }
+  /*HAL_DMA_Start_IT(&m_hdma_tx, (uint32_t)m_tx_buffer.data(),
+    reinterpret_cast<irs_u32>(&mp_timer->TIM_CCR1),
+    m_settings.tx_buffer.size()/m_settings.data_item_byte_count);*/
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::cleand_dcache_tx()
+{
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(m_tx_buffer.data()),
+    m_tx_buffer.size());
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::stop_dma()
+{
+  HAL_DMA_Abort(&m_hdma_tx);
+}
+
+// class dma_event_t
+irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::dma_event_t(
+  DMA_HandleTypeDef* ap_hdma_tx
+):
+  mp_hdma_tx(ap_hdma_tx),
+  m_enabled(false)
+{
+}
+
+void irs::arm::st_hal_pwm_gen_dma_t::dma_event_t::exec()
+{
+  //if (m_enabled) {
+    irs::event_t::exec();
+    /* Check the interrupt and clear flag */
+    HAL_DMA_IRQHandler(mp_hdma_tx);
+  //}
+}
+#endif // ST_HAL_PWM_GEN_DMA_NEW
+#endif // USE_HAL_DRIVER
+
 #endif  //  mcu type
 
-#ifdef USE_STDPERIPH_DRIVER
-#if defined(IRS_STM32F_2_AND_4)
+#if defined(USE_STDPERIPH_DRIVER) || defined(USE_HAL_DRIVER)
+#ifdef IRS_STM32_F2_F4_F7
 namespace {
   void calc_prescaller_and_counter_start(const double a_period_s,
     size_t* ap_prescaler_divider_key,
@@ -1386,6 +2463,11 @@ namespace {
     *ap_counter_start = static_cast<irs_u16>(counter_start);
   }
 }
+#endif // IRS_STM32_F2_F4_F7
+#endif // defined(USE_STDPERIPH_DRIVER) || defined(USE_HAL_DRIVER)
+
+#ifdef USE_STDPERIPH_DRIVER
+#if defined(IRS_STM32F_2_AND_4)
 
 // class st_independent_watchdog_t
 irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
@@ -1681,7 +2763,7 @@ void irs::arm::st_rtc_t::set_calibration(double)
 #endif // !IRS_STM32F4xx
 
 double irs::arm::st_rtc_t::get_calibration() const
-{  
+{
   #ifdef IRS_STM32F4xx
   const int calp = RTC_CALR_bit.CALP;
   const int calm = RTC_CALR_bit.CALM;
@@ -1871,23 +2953,23 @@ irs::arm::st_rtc_t::st_rtc_t():
   RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
   RtcHandle.Instance            = RTC;
 
-  
+
   // Если устройство было выключено до завершения калибровки, то значения
-  // делителей не было возвращено к стандартным значениям.   
+  // делителей не было возвращено к стандартным значениям.
   const irs_u32 prediv_s = (RtcHandle.Instance->PRER & RTC_PRER_PREDIV_S);
-  const irs_u32 prediv_a = (RtcHandle.Instance->PRER & RTC_PRER_PREDIV_A) >> 16;   
+  const irs_u32 prediv_a = (RtcHandle.Instance->PRER & RTC_PRER_PREDIV_A) >> 16;
   const irs_u32 prediv_s_is_not_default = prediv_s != RTC_SYNCH_PREDIV_DEFAULT;
   const irs_u32 prediv_a_is_not_default = prediv_a != RTC_ASYNCH_PREDIV_DEFAULT;
 
   // Проверяем, инициализирован ли календарь
   const bool calendar_has_not_been_initialized =
     (RtcHandle.Instance->ISR & RTC_ISR_INITS) == (uint32_t)RESET;
-      
+
   if (calendar_has_not_been_initialized ||
       prediv_s_is_not_default ||
       prediv_a_is_not_default) {
     rtc_config_default();
-  }  
+  }
 }
 
 irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset()
@@ -1991,7 +3073,7 @@ bool irs::arm::st_rtc_t::set_calibration_force(double a_coefficient)
   // Реальный допустимый диапазон: [-487.1 ppm +488.5 ppm], шаг 0.954 ppm.
   // Он реализован ниже
   a_coefficient = range(a_coefficient, 0.9, 1.1);
-  
+
   double calm_value = 0;
   irs_u32 rtc_smooth_calib_plus_pulses = RTC_SMOOTHCALIB_PLUSPULSES_RESET;
   if (a_coefficient <= 1) {
@@ -2025,7 +3107,7 @@ double irs::arm::st_rtc_t::get_calibration() const
 {
   #if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
   const int calp = (RtcHandle.Instance->CALR & RTC_CALR_CALP) ? 1 : 0;
-  const int calm = (RtcHandle.Instance->CALR & RTC_CALR_CALM);  
+  const int calm = (RtcHandle.Instance->CALR & RTC_CALR_CALM);
   return 1 + static_cast<double>(calp*512 - calm)/((1 << 20) + calm - calp*512);
   #else // Other
   return 1;
@@ -2088,17 +3170,22 @@ void irs::arm::st_rtc_t::rtc_config_calibration()
   HAL_PWR_DisableBkUpAccess();
 }
 
-void irs::arm::st_rtc_t::write_to_backup_reg(irs_u32 a_index, irs_u32 a_data)
+size_t irs::arm::st_rtc_t::get_backup_reg_count() const
 {
-  HAL_PWR_EnableBkUpAccess();
-  HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[a_index], a_data);
-  HAL_PWR_DisableBkUpAccess();
+  return rtc_bkp_dr_number;
 }
 
 irs_u32 irs::arm::st_rtc_t::read_from_backup_reg(irs_u32 a_index)
 {
   irs_u32 data = HAL_RTCEx_BKUPRead(&RtcHandle, bkp_data_reg[a_index]);
   return data;
+}
+
+void irs::arm::st_rtc_t::write_to_backup_reg(irs_u32 a_index, irs_u32 a_data)
+{
+  HAL_PWR_EnableBkUpAccess();
+  HAL_RTCEx_BKUPWrite(&RtcHandle, bkp_data_reg[a_index], a_data);
+  HAL_PWR_DisableBkUpAccess();
 }
 
 void irs::arm::st_rtc_t::start_calibration(const double a_interval_s)
@@ -2110,7 +3197,7 @@ void irs::arm::st_rtc_t::start_calibration(const double a_interval_s)
   rtc_config_calibration();
 
   set_calibration_force(1);
-  
+
   m_rtc_time_begin = irs::get_time_double();
   m_calibration_time.start();
   m_calibration_process = cp_measure_time;
@@ -2148,19 +3235,19 @@ void irs::arm::st_rtc_t::tick()
 
         set_calibration_force(k);
 
-        m_previous_time_s = 
+        m_previous_time_s =
           static_cast<time_t>(m_rtc_time_start + m_measure_time.get());
         m_calibration_process = cp_sync;
       }
     } break;
-    case cp_sync: {      
-      const time_t time_s = 
+    case cp_sync: {
+      const time_t time_s =
         static_cast<time_t>(m_rtc_time_start + m_measure_time.get());
       // Ловим момент, когда значение миллисекунд близко к нулю
       if (time_s != m_previous_time_s) {
         set_time(time_s);
         m_calibration_process = cp_off;
-      }      
+      }
     } break;
   }
 }
@@ -2174,6 +3261,86 @@ void irs::arm::st_rtc_t::tick()
   }
   HAL_PWR_DisableBkUpAccess();
 }*/
+
+// class rtc_backup_reg_page_mem_t
+irs::arm::rtc_backup_reg_page_mem_t::rtc_backup_reg_page_mem_t(
+  st_rtc_t* ap_st_rtc,
+  size_type a_page_size
+):
+  mp_st_rtc(ap_st_rtc),
+  m_page_size(a_page_size),
+  m_page_count(ap_st_rtc->get_backup_reg_count()*reg_size/a_page_size)
+{
+  IRS_LIB_ASSERT(m_page_size%reg_size == 0);
+}
+
+void irs::arm::rtc_backup_reg_page_mem_t::read_page(irs_u8 *ap_buf, irs_uarc a_index)
+{
+  IRS_LIB_ASSERT(a_index < m_page_count);
+
+  const size_t reg_begin = (m_page_size*a_index)/reg_size;
+  const size_t reg_end = (m_page_size*(a_index + 1))/reg_size;
+
+  IRS_LIB_ASSERT(m_page_size%reg_size == 0);
+
+  reg_type* buf = reinterpret_cast<reg_type*>(ap_buf);
+  for (size_t i = reg_begin; i < reg_end;i++) {
+    *buf = mp_st_rtc->read_from_backup_reg(i);    
+    buf++;
+  }
+}
+
+void irs::arm::rtc_backup_reg_page_mem_t::write_page(const irs_u8 *ap_buf,
+  irs_uarc a_index)
+{
+  IRS_LIB_ASSERT(a_index < m_page_count);
+
+  const size_t reg_begin = (m_page_size*a_index)/reg_size;
+  const size_t reg_end = (m_page_size*(a_index + 1))/reg_size;
+
+  IRS_LIB_ASSERT(m_page_size%reg_size == 0);
+
+  const reg_type* buf = reinterpret_cast<const reg_type*>(ap_buf);
+  for (size_t i = reg_begin; i < reg_end ;i++) {
+    mp_st_rtc->write_to_backup_reg(i, *buf);    
+    buf++;
+  }
+}
+
+irs::arm::rtc_backup_reg_page_mem_t::size_type
+irs::arm::rtc_backup_reg_page_mem_t::page_size() const
+{
+  return m_page_size;
+}
+
+irs_uarc irs::arm::rtc_backup_reg_page_mem_t::page_count() const
+{
+  return m_page_count;
+}
+
+irs_status_t irs::arm::rtc_backup_reg_page_mem_t::status() const
+{
+  return irs_st_ready;
+}
+
+void irs::arm::rtc_backup_reg_page_mem_t::tick()
+{
+}
+
+irs::arm::rtc_backup_reg_data_t::rtc_backup_reg_data_t(st_rtc_t* ap_st_rtc,
+  irs_uarc a_index, irs_uarc a_size, size_type a_cluster_size
+):
+  mxdata_comm_t(IRS_NULL, a_index, a_size, true),
+  m_page_mem(ap_st_rtc, a_cluster_size),
+  m_mem_data(&m_page_mem, a_cluster_size)
+{
+  connect(&m_mem_data);
+}
+
+bool irs::arm::rtc_backup_reg_data_t::error()
+{
+  return m_mem_data.error();
+}
 
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER

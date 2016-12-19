@@ -1249,6 +1249,641 @@ void irs::arm::st_adc_t::read_injected_channel_value()
   }
 }
 
+#ifdef USE_HAL_DRIVER
+
+//template<float* const data, int i>
+//float* const irs::arm::LOOP<float* const data, int i>::mp_data = 0;
+
+//map<ADC_HandleTypeDef*, irs::arm::st_hal_adc_dma_t*>
+  //irs::arm::st_hal_adc_dma_t::m_adc_handle_map;
+
+//irs::arm::st_hal_adc_dma_t* irs::arm::st_hal_adc_dma_t::mp_temp;
+
+// class st_hal_adc_dma_t
+irs::arm::st_hal_adc_dma_t::st_hal_adc_dma_t(const settings_t& a_settings/*,
+  counter_t a_adc_interval,
+  counter_t a_adc_battery_interval,
+  bool a_single_conversion*/
+):
+  m_settings(a_settings),
+  mp_adc(reinterpret_cast<adc_regs_t*>(a_settings.adc_address)),
+  /*m_adc_timer(a_adc_interval),
+  m_adc_battery_timer(a_adc_battery_interval),*/
+  m_regular_channels_values(),
+  m_active_channels(),
+  m_current_channel(),
+  m_temperature_sensor_enabled(false),
+  m_temperature_channel_value(0),
+  m_v_battery_measurement_enabled(false),
+  m_v_battery_channel_value(0),
+  m_injected_channel_selected(ics_temperature_sensor),
+  //m_single_conversion(a_single_conversion),
+
+  m_adc_handle(),
+  m_hdma_rx(),
+  m_rx_status(false),
+  m_hdma_init(false),
+
+  m_rx_buffer(a_settings.rx_buffer),
+  m_dma_event(&m_hdma_rx)
+{
+  IRS_LIB_ASSERT(a_settings.adc_address);
+  IRS_LIB_ASSERT(a_settings.dma_address);
+
+
+  IRS_LIB_ASSERT(IS_DMA_STREAM_ALL_INSTANCE(a_settings.rx_dma_y_stream_x));
+  IRS_LIB_ASSERT(IS_DMA_CHANNEL(a_settings.rx_dma_channel));
+  IRS_LIB_ASSERT(IS_DMA_PRIORITY(a_settings.rx_dma_priority));
+
+  IRS_LIB_ASSERT((a_settings.data_item_byte_count == 1) ||
+    (a_settings.data_item_byte_count == 2));
+
+  IRS_LIB_ASSERT(a_settings.rx_buffer.data());
+  IRS_LIB_ASSERT(a_settings.rx_buffer.size() >=
+    a_settings.data_item_byte_count);
+  IRS_LIB_ASSERT(
+    (a_settings.rx_buffer.size()%
+    (a_settings.rx_buffer.size()/a_settings.data_item_byte_count)) == 0);
+
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  IRS_LIB_ASSERT(reinterpret_cast<size_t>(a_settings.rx_buffer.data())%32 == 0);
+  //IRS_LIB_ASSERT(a_settings.rx_buffer.size()%32 == 0);
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+
+  map<adc_channel_t, gpio_channel_t> adc_gpio_pairs;
+  adc_gpio_pairs.insert(make_pair(ADC123_PA0_CH0, PA0));
+  adc_gpio_pairs.insert(make_pair(ADC123_PA1_CH1, PA1));
+  adc_gpio_pairs.insert(make_pair(ADC123_PA2_CH2, PA2));
+  adc_gpio_pairs.insert(make_pair(ADC123_PA3_CH3, PA3));
+  adc_gpio_pairs.insert(make_pair(ADC12_PA4_CH4, PA4));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF6_CH4, PF6));
+  adc_gpio_pairs.insert(make_pair(ADC12_PA5_CH5, PA5));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF7_CH5, PF7));
+  adc_gpio_pairs.insert(make_pair(ADC12_PA6_CH6, PA6));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF8_CH6, PF8));
+  adc_gpio_pairs.insert(make_pair(ADC12_PA7_CH7, PA7));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF9_CH7, PF9));
+  adc_gpio_pairs.insert(make_pair(ADC12_PB0_CH8, PB0));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF10_CH8, PF10));
+  adc_gpio_pairs.insert(make_pair(ADC12_PB1_CH9, PB1));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF3_CH9, PF3));
+  adc_gpio_pairs.insert(make_pair(ADC123_PC0_CH10, PC0));
+  adc_gpio_pairs.insert(make_pair(ADC123_PC1_CH11, PC1));
+  adc_gpio_pairs.insert(make_pair(ADC123_PC2_CH12, PC2));
+  adc_gpio_pairs.insert(make_pair(ADC123_PC3_CH13, PC3));
+  adc_gpio_pairs.insert(make_pair(ADC12_PC4_CH14, PC4));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF4_CH14, PF4));
+  adc_gpio_pairs.insert(make_pair(ADC12_PC5_CH15, PC5));
+  adc_gpio_pairs.insert(make_pair(ADC3_PF5_CH15, PF5));
+
+  map<adc_channel_t, irs_u32> adc_channel_pairs;
+  adc_channel_pairs.insert(make_pair(ADC123_PA0_CH0, ADC_CHANNEL_0));
+  adc_channel_pairs.insert(make_pair(ADC123_PA1_CH1, ADC_CHANNEL_1));
+  adc_channel_pairs.insert(make_pair(ADC123_PA2_CH2, ADC_CHANNEL_2));
+  adc_channel_pairs.insert(make_pair(ADC123_PA3_CH3, ADC_CHANNEL_3));
+  adc_channel_pairs.insert(make_pair(ADC12_PA4_CH4, ADC_CHANNEL_4));
+  adc_channel_pairs.insert(make_pair(ADC3_PF6_CH4, ADC_CHANNEL_4));
+  adc_channel_pairs.insert(make_pair(ADC12_PA5_CH5, ADC_CHANNEL_5));
+  adc_channel_pairs.insert(make_pair(ADC3_PF7_CH5, ADC_CHANNEL_5));
+  adc_channel_pairs.insert(make_pair(ADC12_PA6_CH6, ADC_CHANNEL_6));
+  adc_channel_pairs.insert(make_pair(ADC3_PF8_CH6, ADC_CHANNEL_6));
+  adc_channel_pairs.insert(make_pair(ADC12_PA7_CH7, ADC_CHANNEL_7));
+  adc_channel_pairs.insert(make_pair(ADC3_PF9_CH7, ADC_CHANNEL_7));
+  adc_channel_pairs.insert(make_pair(ADC12_PB0_CH8, ADC_CHANNEL_8));
+  adc_channel_pairs.insert(make_pair(ADC3_PF10_CH8, ADC_CHANNEL_8));
+  adc_channel_pairs.insert(make_pair(ADC12_PB1_CH9, ADC_CHANNEL_9));
+  adc_channel_pairs.insert(make_pair(ADC3_PF3_CH9, ADC_CHANNEL_9));
+  adc_channel_pairs.insert(make_pair(ADC123_PC0_CH10, ADC_CHANNEL_10));
+  adc_channel_pairs.insert(make_pair(ADC123_PC1_CH11, ADC_CHANNEL_11));
+  adc_channel_pairs.insert(make_pair(ADC123_PC2_CH12, ADC_CHANNEL_12));
+  adc_channel_pairs.insert(make_pair(ADC123_PC3_CH13, ADC_CHANNEL_13));
+  adc_channel_pairs.insert(make_pair(ADC12_PC4_CH14, ADC_CHANNEL_14));
+  adc_channel_pairs.insert(make_pair(ADC3_PF4_CH14, ADC_CHANNEL_14));
+  adc_channel_pairs.insert(make_pair(ADC12_PC5_CH15, ADC_CHANNEL_15));
+  adc_channel_pairs.insert(make_pair(ADC3_PF5_CH15, ADC_CHANNEL_15));
+  adc_channel_pairs.insert(make_pair(ADC1_TEMPERATURE, ADC_CHANNEL_16));
+  adc_channel_pairs.insert(make_pair(ADC1_V_BATTERY, ADC_CHANNEL_VBAT));
+
+  /*select_channel_type selected_adc_mask = ADC1_MASK;
+  switch (a_settings.adc_address) {
+    case IRS_ADC1_BASE: {
+      selected_adc_mask = ADC1_MASK;
+    } break;
+    case IRS_ADC2_BASE: {
+      selected_adc_mask = ADC2_MASK;
+    } break;
+    case IRS_ADC3_BASE: {
+      selected_adc_mask = ADC3_MASK;
+    } break;
+  }*/
+
+  for (size_type i = 0; i < a_settings.channels.size(); i++) {
+    map<adc_channel_t, gpio_channel_t>::const_iterator it =
+      adc_gpio_pairs.find(a_settings.channels[i].channel_id);
+    if (it != adc_gpio_pairs.end()) {
+      //adc_channel_t adc_channel = adc_gpio_pairs[i].first;
+      //const select_channel_type adc_mask = selected_adc_mask & adc_channel;
+      //const select_channel_type channel_mask = static_cast<irs_u16>(adc_channel);
+
+      clock_enable(it->second);
+      gpio_moder_analog_enable(it->second);
+      //m_active_channels.push_back(adc_channel_to_channel_index(adc_channel));
+      m_regular_channels_values.push_back(0);
+
+    } else {
+      IRS_LIB_ASSERT_MSG("Указан недопустимый канал АЦП");
+    }
+  }
+
+  clock_enable(a_settings.adc_address);
+
+  ADC_TypeDef* adc_ptr = reinterpret_cast<ADC_TypeDef*>(a_settings.adc_address);
+
+  m_adc_handle.Instance = adc_ptr;
+  m_adc_handle.Init.ClockPrescaler = m_settings.clock_prescaller;// ADC_CLOCKPRESCALER_PCLK_DIV8;
+  m_adc_handle.Init.Resolution = ADC_RESOLUTION_12B;
+  m_adc_handle.Init.ScanConvMode = ENABLE;
+  m_adc_handle.Init.ContinuousConvMode = ENABLE;
+  m_adc_handle.Init.DiscontinuousConvMode = DISABLE;
+  m_adc_handle.Init.NbrOfDiscConversion = 0;
+  m_adc_handle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  m_adc_handle.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
+  m_adc_handle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  m_adc_handle.Init.NbrOfConversion = a_settings.channels.size();
+  m_adc_handle.Init.DMAContinuousRequests = ENABLE;
+  m_adc_handle.Init.EOCSelection = DISABLE;
+
+  if (HAL_ADC_Init(&m_adc_handle) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Не получилось инициализировать АЦП");
+  }
+
+
+  for (size_type i = 0; i < a_settings.channels.size(); i++) {
+    const channel_config_t channel_cfg = a_settings.channels[i];
+    ADC_ChannelConfTypeDef sConfig;
+    map<adc_channel_t, irs_u32>::const_iterator it =
+      adc_channel_pairs.find(channel_cfg.channel_id);
+    if (it != adc_channel_pairs.end()) {
+      sConfig.Channel = it->second;
+      sConfig.Rank = i + 1;
+      sConfig.SamplingTime = channel_cfg.sampling_time;
+      sConfig.Offset = 0;
+
+      if (HAL_ADC_ConfigChannel(&m_adc_handle, &sConfig) != HAL_OK) {
+        IRS_LIB_ASSERT_MSG("Не удалось сконфигурировать канал АЦП");
+      }
+    } else {
+      IRS_LIB_ASSERT_MSG("Указан недопустимый канал АЦП");
+    }
+  }
+
+  irs::clock_enable(a_settings.dma_address);
+
+  irs::interrupt_array()->int_gen_events(a_settings.interrupt_id)->
+    push_back(&m_dma_event);
+  /* Enable the DMA STREAM global Interrupt */
+  HAL_NVIC_EnableIRQ(a_settings.interrupt);
+  NVIC_SetPriority (a_settings.interrupt, a_settings.interrupt_priority);
+
+  reset_dma();
+
+  if (HAL_ADC_Start_DMA(&m_adc_handle,
+      (uint32_t*)m_rx_buffer.begin(),
+      m_rx_buffer.size()/a_settings.data_item_byte_count) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Не удалось запустить АЦП в ДМА режиме");
+  }
+
+  /*
+  //  000: 3 cycles
+  //  001: 15 cycles
+  //  010: 28 cycles
+  //  011: 56 cycles
+  //  100: 84 cycles
+  //  101: 112 cycles
+  //  110: 144 cycles
+  //  111: 480 cycles
+  enum {
+    num_of_smpr1_channels = 9,
+    num_of_smpr2_channels = 10,
+    bit_len = 3,
+    mask = 0x07
+  };
+  irs_u32 smpr = 0;
+  for (irs_u8 i = 0; i < num_of_smpr1_channels; i++) {
+    smpr |= (a_settings.sampling_time & mask) << (i * bit_len);
+  }
+  mp_adc->ADC_SMPR1 = smpr;
+  smpr = 0;
+  for (irs_u8 i = 0; i < num_of_smpr2_channels; i++) {
+    smpr |= (a_settings.sampling_time & mask) << (i * bit_len);
+  }
+  mp_adc->ADC_SMPR2 = smpr;
+  //  00: PCLK2 divided by 2
+  //  01: PCLK2 divided by 4
+  //  10: PCLK2 divided by 6
+  //  11: PCLK2 divided by 8
+  ADC_CCR_bit.ADCPRE = a_settings.clock_div;
+
+  const irs_u32 channel_mask = a_settings.selected_channels & 0xFFFFFF;
+  if ((a_settings.adc_address == IRS_ADC1_BASE) &&
+    (a_settings.selected_channels & ADC1_MASK) &&
+    (channel_mask & ADC1_TEMPERATURE)) {
+    m_temperature_sensor_enabled = true;
+  }
+
+  if ((a_settings.adc_address == IRS_ADC1_BASE) &&
+    (a_settings.selected_channels & ADC1_MASK) &&
+    (channel_mask & ADC1_V_BATTERY)) {
+    m_v_battery_measurement_enabled = true;
+  }
+
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled ||
+    !m_regular_channels_values.empty()) {
+    // Включаем АЦП
+    mp_adc->ADC_CR2_bit.ADON = 1;
+  }
+  // 0: Один канал
+  mp_adc->ADC_SQR1_bit.L = 0;
+  if (!m_active_channels.empty()) {
+    m_current_channel = 0;
+    mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
+    if (!m_single_conversion) {
+      mp_adc->ADC_CR2_bit.SWSTART = 1;
+    }
+  }
+  if (m_temperature_sensor_enabled) {
+    ADC_CCR_bit.TSVREFE = 1;
+  }
+  if (m_v_battery_measurement_enabled) {
+    //ADC_CCR_bit.VBATE = 1;
+  }
+  if (m_temperature_sensor_enabled) {
+    // Конфигурируем на считывание показаний внутреннего термодатчика
+    mp_adc->ADC_JSQR_bit.JSQ4 = 16;
+    m_injected_channel_selected = ics_temperature_sensor;
+  } else if (m_v_battery_measurement_enabled) {
+    // Конфигурируем на считывание показаний напряжения батарейки
+    mp_adc->ADC_JSQR_bit.JSQ4 = 18;
+    m_injected_channel_selected = ics_v_battery;
+    ADC_CCR_bit.VBATE = 1;
+  }
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {
+    // 0: Один встроенный канал
+    mp_adc->ADC_JSQR_bit.JL = 0;
+    mp_adc->ADC_CR2_bit.JSWSTART = 1;
+  }
+*/
+  //m_adc_handle_map[&m_adc_handle] = this;
+  //mp_temp = this;
+}
+
+irs_u32 irs::arm::st_hal_adc_dma_t::adc_channel_to_channel_index(
+  adc_channel_t a_adc_channel)
+{
+  irs_u16 adc_channel = static_cast<irs_u16>(a_adc_channel);
+  for (size_t i = 0; i < reqular_channel_count; i++) {
+    if (adc_channel & 0x1) {
+      return i;
+    }
+    adc_channel >>= 1;
+  }
+  IRS_LIB_ERROR(ec_standard, "Канал не выбран");
+  return 0;
+}
+
+irs::arm::st_hal_adc_dma_t::~st_hal_adc_dma_t()
+{
+  //mp_adc->ADC_CR2_bit.ADON = 0;
+  HAL_ADC_Stop_DMA(&m_adc_handle); //stop_dma();
+
+  //m_adc_handle_map.erase(&m_adc_handle);
+
+  HAL_DMA_DeInit(&m_hdma_rx);
+  HAL_ADC_DeInit(&m_adc_handle);
+}
+
+irs::arm::st_hal_adc_dma_t::size_type irs::arm::st_hal_adc_dma_t::get_resolution() const
+{
+  return adc_resolution;
+}
+
+irs_u16 irs::arm::st_hal_adc_dma_t::get_u16_minimum()
+{
+  return 0;
+}
+
+irs_u16 irs::arm::st_hal_adc_dma_t::get_u16_maximum()
+{
+  return static_cast<irs_u16>(adc_max_value) << (16 - adc_resolution);
+}
+
+irs_u16 irs::arm::st_hal_adc_dma_t::get_u16_data(irs_u8 a_channel)
+{
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_regular_channels_values[a_channel] << (16 - adc_resolution);
+}
+
+irs_u32 irs::arm::st_hal_adc_dma_t::get_u32_minimum()
+{
+  return 0;
+}
+
+irs_u32 irs::arm::st_hal_adc_dma_t::get_u32_maximum()
+{
+  return static_cast<irs_u32>(adc_max_value) << (32 - adc_resolution);
+}
+
+irs_u32 irs::arm::st_hal_adc_dma_t::get_u32_data(irs_u8 a_channel)
+{
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return m_regular_channels_values[a_channel] << (32 - adc_resolution);
+}
+
+float irs::arm::st_hal_adc_dma_t::get_float_minimum()
+{
+  return 0.f;
+}
+
+float irs::arm::st_hal_adc_dma_t::get_float_maximum()
+{
+  return 1.f;
+}
+
+float irs::arm::st_hal_adc_dma_t::get_float_data(irs_u8 a_channel)
+{
+  if (a_channel >= m_regular_channels_values.size()) {
+    IRS_LIB_ERROR(ec_standard, "Нет канала с таким номером");
+  }
+  return static_cast<float>(m_regular_channels_values[a_channel])/adc_max_value;
+}
+
+float irs::arm::st_hal_adc_dma_t::get_temperature()
+{
+  if (m_temperature_sensor_enabled) {
+    return static_cast<float>(m_temperature_channel_value)/adc_max_value;
+  }
+  return 0;
+}
+
+float irs::arm::st_hal_adc_dma_t::get_v_battery()
+{
+  if (m_v_battery_measurement_enabled) {
+    float k = 2;
+    #ifdef IRS_STM32F7xx
+    k = 4;
+    #endif // IRS_STM32F7xx
+    return static_cast<float>(m_v_battery_channel_value)*k/adc_max_value;
+  }
+  return 0;
+}
+
+float irs::arm::st_hal_adc_dma_t::get_temperature_degree_celsius(
+  const float a_vref)
+{
+  if (m_temperature_sensor_enabled) {
+    const float v25 = 0.76;
+    const float avg_slope = 0.0025;
+    const float koef = a_vref/adc_max_value;
+    const float v_sence = m_temperature_channel_value*koef;
+    return (v_sence - v25)/avg_slope + 25;
+  }
+  return 0;
+}
+
+void irs::arm::st_hal_adc_dma_t::tick()
+{
+  /*const bool timer_check = m_adc_timer.check();
+  if (timer_check && !m_single_conversion) {
+    if (mp_adc->ADC_SR_bit.EOC == 1) {
+      m_regular_channels_values[m_current_channel] =
+        static_cast<irs_u16>(mp_adc->ADC_DR);
+      m_current_channel++;
+      if (m_current_channel >= m_active_channels.size()) {
+        m_current_channel = 0;
+      }
+      mp_adc->ADC_SQR3_bit.SQ1 = m_active_channels[m_current_channel];
+      mp_adc->ADC_CR2_bit.SWSTART = 1;
+    }
+  }
+  if (m_temperature_sensor_enabled || m_v_battery_measurement_enabled) {
+    const bool adc_battery_timer_check = m_adc_battery_timer.check();
+    if (mp_adc->ADC_SR_bit.JEOC == 0) {
+      if (timer_check || adc_battery_timer_check) {
+        if (m_injected_channel_selected == ics_temperature_sensor) {
+          if (m_v_battery_measurement_enabled && adc_battery_timer_check) {
+            mp_adc->ADC_JSQR_bit.JSQ4 = 18;
+            ADC_CCR_bit.VBATE = 1;
+            m_injected_channel_selected = ics_v_battery;
+          }
+        } else {
+          if (m_temperature_sensor_enabled && timer_check) {
+            mp_adc->ADC_JSQR_bit.JSQ4 = 16;
+            ADC_CCR_bit.VBATE = 0;
+            m_injected_channel_selected = ics_temperature_sensor;
+          } else {
+            ADC_CCR_bit.VBATE = 1;
+          }
+        }
+        mp_adc->ADC_SR_bit.JEOC = 0;
+        mp_adc->ADC_CR2_bit.JSWSTART = 1;
+      }
+    }
+    if (mp_adc->ADC_SR_bit.JEOC == 1) {
+      IRS_LIB_ASSERT((m_injected_channel_selected == ics_v_battery) ==
+        (ADC_CCR_bit.VBATE == 1));
+      read_injected_channel_value();
+      // Выключаем делитель для экономии зарадя батарейки
+      ADC_CCR_bit.VBATE = 0;
+      mp_adc->ADC_SR_bit.JEOC = 0;
+    }
+  }*/
+}
+
+void irs::arm::st_hal_adc_dma_t::read_injected_channel_value()
+{
+  if (m_injected_channel_selected == ics_temperature_sensor) {
+    m_temperature_channel_value =
+      static_cast<irs_i16>(mp_adc->ADC_JDR1_bit.JDATA);
+  } else {
+    m_v_battery_channel_value =
+      static_cast<irs_u16>(mp_adc->ADC_JDR1_bit.JDATA);
+  }
+}
+
+void irs::arm::st_hal_adc_dma_t::reset_dma()
+{
+  if (m_hdma_init) {
+    //stop_dma();
+    //HAL_DMA_DeInit(&m_hdma_rx);
+  }
+
+  /*##-3- Configure the DMA ##################################################*/
+  /* Configure the DMA handler for Reception process */
+  m_hdma_rx.Instance                 = m_settings.rx_dma_y_stream_x;
+  m_hdma_rx.Init.Channel             = m_settings.rx_dma_channel;
+  m_hdma_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  m_hdma_rx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+
+  m_hdma_rx.Init.MemBurst            = DMA_MBURST_SINGLE;
+  m_hdma_rx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  m_hdma_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+  m_hdma_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  m_hdma_rx.Init.MemInc              = DMA_MINC_ENABLE;
+
+  switch (m_settings.data_item_byte_count) {
+    case 1: {
+    m_hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    m_hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    } break;
+    case 2: {
+    m_hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    m_hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+    } break;
+    default: {
+      IRS_ASSERT_MSG("Неучтенное значение размера элемента");
+    }
+  }
+
+  m_hdma_rx.Init.Mode                = DMA_CIRCULAR;//DMA_NORMAL;
+  m_hdma_rx.Init.Priority            = m_settings.rx_dma_priority;
+
+  /*m_hdma_rx.XferCpltCallback = sin_pwm_transfer_complete;//m_settings.XferCpltCallback;
+  m_hdma_rx.XferHalfCpltCallback = m_settings.XferHalfCpltCallback;
+  m_hdma_rx.XferErrorCallback = m_settings.XferErrorCallback;
+*/
+  HAL_DMA_Init(&m_hdma_rx);
+
+
+  //mp_adc->ADC_CR2_bit.DMA = 1;
+
+  __HAL_LINKDMA(&m_adc_handle, DMA_Handle, m_hdma_rx);
+
+  m_hdma_init = true;
+}
+
+void irs::arm::st_hal_adc_dma_t::start_dma()
+{
+  HAL_DMA_Start_IT(&m_hdma_rx,
+    reinterpret_cast<irs_u32>(&mp_adc->ADC_DR),
+    (uint32_t)m_rx_buffer.data(),
+    m_settings.rx_buffer.size()/m_settings.data_item_byte_count);
+}
+
+void irs::arm::st_hal_adc_dma_t::stop_dma()
+{
+  HAL_DMA_Abort(&m_hdma_rx);
+}
+
+void irs::arm::st_hal_adc_dma_t::invalidate_dcache_rx()
+{
+  #if defined(IRS_STM32F2xx) || defined(IRS_STM32F2xx)
+  // Ничего не делаем
+  #elif IRS_STM32F7xx
+  SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t*>(m_rx_buffer.data()),
+    m_rx_buffer.size());
+  #else
+  #error Тип контроллера не определён
+  #endif // IRS_STM32F7xx
+}
+
+ADC_HandleTypeDef* irs::arm::st_hal_adc_dma_t::get_adc_handle()
+{
+  return &m_adc_handle;
+}
+
+void irs::arm::st_hal_adc_dma_t::transfer_complete(ADC_HandleTypeDef *ap_adc_handle)
+{
+  process(sbp_right_part);
+
+  /*map<ADC_HandleTypeDef*, st_hal_adc_dma_t*>::const_iterator it =
+    m_adc_handle_map.find(ap_adc_handle);
+  if (it != m_adc_handle_map.end()) {
+    it->second->process(sbp_right_part);
+  }*/
+  /*if (mp_temp) {
+    mp_temp->process(sbp_right_part);
+  }*/
+}
+
+void irs::arm::st_hal_adc_dma_t::half_transfer_complete(ADC_HandleTypeDef *ap_adc_handle)
+{
+  process(sbp_left_part);
+
+  /*map<ADC_HandleTypeDef*, st_hal_adc_dma_t*>::const_iterator it =
+    m_adc_handle_map.find(ap_adc_handle);
+  if (it != m_adc_handle_map.end()) {
+    it->second->process(sbp_left_part);
+  }*/
+
+  /*if (mp_temp) {
+    mp_temp->process(sbp_left_part);
+  }*/
+}
+
+void irs::arm::st_hal_adc_dma_t::xfer_error_callback(ADC_HandleTypeDef *ap_adc_handle)
+{
+  irs_u32 error = HAL_DMA_GetError(ap_adc_handle->DMA_Handle);
+  if (error != HAL_DMA_ERROR_NONE) {
+    IRS_LIB_DBG_MSG("ADC DMA ERROR " << error);
+  }
+}
+
+void irs::arm::st_hal_adc_dma_t::process(part_t a_part)
+{
+  invalidate_dcache_rx();
+
+  //560
+  irs_u16* buf = reinterpret_cast<irs_u16*>(m_rx_buffer.begin());
+  const size_type n = m_rx_buffer.size()/sizeof(irs_u16); //data_item_byte_count
+  size_type buf_size = n/2;
+
+
+  switch (a_part) {
+    case sbp_left_part: {
+      // Указатель уже указывает на первый элемент
+    } break;
+    case sbp_right_part: {
+      buf += buf_size;
+      buf_size = n - n/2;
+    } break;
+  }
+
+  const size_type step = m_regular_channels_values.size();
+
+  for (size_type i = 0; i < m_regular_channels_values.size(); i++) {
+    m_regular_channels_values[i] = static_cast<irs_u16>(
+      average<irs_u16, float>(buf+i, buf + buf_size, step));
+  }
+}
+
+// class dma_event_t
+irs::arm::st_hal_adc_dma_t::dma_event_t::dma_event_t(
+  DMA_HandleTypeDef* ap_hdma_tx
+):
+  mp_hdma_rx(ap_hdma_tx),
+  m_enabled(false)
+{
+}
+
+void irs::arm::st_hal_adc_dma_t::dma_event_t::exec()
+{
+  irs::event_t::exec();
+  /* Check the interrupt and clear flag */
+  HAL_DMA_IRQHandler(mp_hdma_rx);
+  //HAL_DMA_IRQHandler(m_adc_handle.DMA_Handle);
+}
+
+#endif // USE_HAL_DRIVER
+
 irs::arm::st_adc_dma_t::settings_adc_dma_t::settings_adc_dma_t(
   size_t a_adc_address,
   select_channel_type a_adc_selected_channels,
@@ -1373,7 +2008,7 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
       selected_adc_mask = ADC3_MASK;
     } break;
   }
-  
+
   for (size_t i = 0; i < adc_gpio_pairs.size(); i++) {
     adc_channel_t adc_channel = adc_gpio_pairs[i].first;
     const select_channel_type adc_mask = selected_adc_mask & adc_channel;

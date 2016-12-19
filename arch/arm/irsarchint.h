@@ -19,7 +19,7 @@ namespace arm {
 
 
 // Номера прерываний
-enum {
+enum interrupt_id_t {
   //  Прерывания ядра
   nmi_int = 1,
   hard_fault_int,
@@ -128,8 +128,10 @@ enum {
   sdio_int,
   usart4_int,
   usart5_int,
+  dma2_stream0_int,
   dma2_stream1_int,
-  dma2_stream3_int,  
+  dma2_stream2_int,
+  dma2_stream3_int,
   otg_fs_int,
   dma2_stream6_int,
   usart6_int,

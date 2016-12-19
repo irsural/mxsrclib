@@ -2066,6 +2066,30 @@ void irs_menu_spin_item_t::set_edited_digit_diapason(
   }
 }
 
+int irs_menu_spin_item_t::get_selected_digit() const
+{
+  return m_selected_digit;
+}
+
+void irs_menu_spin_item_t::select_digit(int a_digit)
+{
+  m_selected_digit = irs::bound(a_digit, m_min_digit, m_max_digit);
+  m_unit_selected = false;
+  m_updated = true;
+}
+
+bool irs_menu_spin_item_t::is_unit_selected() const
+{
+  return m_unit_selected;
+}
+
+void irs_menu_spin_item_t::select_unit()
+{
+  m_selected_digit = m_min_digit;
+  m_unit_selected = true;
+  m_updated = true;
+}
+
 /*void irs_menu_spin_item_t::set_step(double a_step)
 {
   m_step = a_step;
@@ -2074,6 +2098,19 @@ void irs_menu_spin_item_t::set_edited_digit_diapason(
   normalize_selected_digit();
   m_updated = true;
 }*/
+
+void irs_menu_spin_item_t::reset_step()
+{
+  if (m_default_step_mode == default_step_is_not_set) {
+    m_reset_selected_digit = true;
+    update_mantissa_and_exponent();
+    reset_selected_digit();
+    m_reset_selected_digit = false;
+  } else {
+    reset_selected_digit();
+  }
+  m_updated = true;
+}
 
 void irs_menu_spin_item_t::set_step_to_default()
 {
@@ -2655,8 +2692,6 @@ void irs_menu_spin_item_t::calc_min_max_digit()
 
 void irs_menu_spin_item_t::set_min_selected_digit()
 {
-
-
   if (m_copy_parametr == 0) {
     m_selected_digit = m_min_digit;
   } else {

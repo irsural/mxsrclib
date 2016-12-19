@@ -18,6 +18,7 @@
 #endif // __ICCARM__
 #include <irsgpio.h>
 #include <mxdata.h>
+#include <irsmem.h>
 
 #define PWM_ZERO_PULSE 1
 
@@ -248,6 +249,38 @@ public:
   void complementary_channel_enable(gpio_channel_t a_gpio_channel,
     output_polarity_t a_output_polarity = op_active_high);
   void set_dead_time(float a_time);
+  // Временно добавлены функции для отладки
+  cpu_traits_t::frequency_type get_auto_reload_value();
+  cpu_traits_t::frequency_type set_auto_reload_value(
+    cpu_traits_t::frequency_type  a_arr);
+protected:
+  enum output_compare_mode_t {
+    ocm_force_inactive_level = 4,
+    ocm_pwm_mode_1 = 6
+  };
+  struct channel_t
+  {
+    //float duty;
+    gpio_channel_t main_channel;
+    bool main_channel_active_low;
+    gpio_channel_t complementary_channel;
+    bool complementary_channel_active_low;
+    irs_u32 timer_channel;
+    irs_u32* tim_ccr;
+    channel_t():
+      //duty(0),
+      main_channel(PNONE),
+      main_channel_active_low(false),
+      complementary_channel(PNONE),
+      complementary_channel_active_low(false),
+      timer_channel(0),
+      tim_ccr(NULL)
+    {
+    }
+  };
+
+  const channel_t* get_channel(irs_u32 a_index) const;
+  size_type channel_count() const;
 private:
   irs_u32 get_timer_channel_and_select_alternate_function(
     gpio_channel_t a_gpio_channel);
@@ -255,9 +288,135 @@ private:
   void set_duty_register(irs_u32* ap_tim_ccr, irs_uarc a_duty);
   void set_duty_register(irs_u32* ap_tim_ccr, float a_duty);
   irs_u32* get_tim_ccr_register(irs_u32 a_timer_channel);
+  channel_t* find_channel(irs_u32 a_timer_channel);
 
   void channel_enable_helper(gpio_channel_t a_gpio_channel,
     bool a_complementary, output_polarity_t a_output_polarity);
+
+
+
+  //channel_t* find_channel(irs_u32 a_timer_channel);
+  void set_mode_capture_compare_registers_for_all_channels(
+    output_compare_mode_t a_mode);
+  void set_mode_capture_compare_registers(output_compare_mode_t a_mode,
+    channel_t* ap_channel);
+  cpu_traits_t::frequency_type timer_frequency() const;
+  vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
+
+  bool m_started;
+  vector<channel_t> m_channels;
+  gpio_channel_t m_gpio_channel;
+  tim_regs_t* mp_timer;
+  cpu_traits_t::frequency_type m_frequency;
+  //float m_duty;
+  irs_u32* mp_tim_ccr;
+  irs_u32 m_timer_channel;
+  gpio_channel_t m_complementary_gpio_channel;
+  gpio_channel_t m_break_gpio_channel;
+};
+
+#ifdef USE_HAL_DRIVER
+#define ST_HAL_PWM_GEN_DMA_NEW 1
+
+#if !ST_HAL_PWM_GEN_DMA_NEW
+//! \brief Не доделан!!! Драйвер ШИМ-генератора для контроллеров
+//!   семейств STM32F2xx, STM32F4xx, STM32F7xx. DMA-версия.
+//! \author Lyashchov Maxim
+class st_hal_pwm_gen_dma_t: public pwm_gen_t
+{
+public:
+  typedef irs_size_t size_type;
+  struct settings_t
+  {
+    gpio_channel_t gpio_channel;
+    size_t timer_address;
+    cpu_traits_t::frequency_type frequency; // заменить на double
+    float duty;
+    size_type dma_address;
+    //gpio_speed_t gpio_speed;
+
+    irs::c_array_view_t<irs_u8> tx_buffer;
+    //! \brief Канал DMA TX. Использовать константы: DMA1_Stream0 - DMA2_Stream7
+    DMA_Stream_TypeDef* tx_dma_y_stream_x;
+    //! \brief Канал DMA для TX.
+    //!   Использовать константы: DMA_CHANNEL_0 - DMA_CHANNEL_7
+    uint32_t tx_dma_channel;
+    //! \brief Приоритет. Использовать константы:
+    //!   DMA_PRIORITY_LOW - DMA_PRIORITY_VERY_HIGH
+    uint32_t tx_dma_priority;
+
+    void (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);
+    void (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);
+    void (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);
+
+    irs_u32 data_item_byte_count;
+    settings_t():
+      gpio_channel(PNONE),
+      timer_address(0),
+      frequency(62500),
+      duty(0.5f),
+      dma_address(NULL),
+      //gpio_speed(gpio_speed_2mhz),
+
+      tx_buffer(NULL, 0),
+      tx_dma_y_stream_x(0),
+      tx_dma_channel(0),
+      tx_dma_priority(DMA_PRIORITY_LOW),
+
+      XferCpltCallback(NULL),
+      XferHalfCpltCallback(NULL),
+      XferErrorCallback(NULL),
+
+      data_item_byte_count(2)
+    {
+    }
+  };
+  enum output_polarity_t {
+    op_active_high,
+    op_active_low
+  };
+  st_hal_pwm_gen_dma_t(const settings_t& a_settings);
+  virtual void start();
+  virtual void stop();
+  virtual void set_duty(irs_uarc a_duty);
+  virtual void set_duty(float a_duty);
+  virtual cpu_traits_t::frequency_type set_frequency(
+    cpu_traits_t::frequency_type  a_frequency);
+  virtual irs_uarc get_max_duty();
+  virtual cpu_traits_t::frequency_type get_max_frequency();
+  virtual cpu_traits_t::frequency_type get_timer_frequency();
+  cpu_traits_t::frequency_type get_frequency() const;
+  void set_duty(gpio_channel_t a_gpio_channel, irs_uarc a_duty);
+  void set_duty(gpio_channel_t a_gpio_channel, float a_duty);
+  void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
+  void break_disable();
+  void channel_enable(gpio_channel_t a_gpio_channel,
+    output_polarity_t a_output_polarity = op_active_high);
+  void complementary_channel_enable(gpio_channel_t a_gpio_channel,
+    output_polarity_t a_output_polarity = op_active_high);
+  void set_dead_time(float a_time);
+  cpu_traits_t::frequency_type get_auto_reload_value();
+  cpu_traits_t::frequency_type set_auto_reload_value(
+    cpu_traits_t::frequency_type  a_arr);
+
+  //DMA_HandleTypeDef* get_hdma_handle();
+private:
+  irs_u32 get_timer_channel_and_select_alternate_function(
+    gpio_channel_t a_gpio_channel);
+
+  void select_alternate_function_for_break_channel();
+  void set_duty_register(irs_u32* ap_tim_ccr, irs_uarc a_duty);
+  void set_duty_register(irs_u32* ap_tim_ccr, float a_duty);
+  irs_u32* get_tim_ccr_register(irs_u32 a_timer_channel);
+
+  void channel_enable_helper(gpio_channel_t a_gpio_channel,
+    bool a_complementary, output_polarity_t a_output_polarity);
+
+  void reset_dma();
+  void start_dma();
+  void stop_dma();
+  void cleand_dcache_tx();
+
   enum output_compare_mode_t {
     ocm_force_inactive_level = 4,
     ocm_pwm_mode_1 = 6
@@ -291,6 +450,8 @@ private:
   cpu_traits_t::frequency_type timer_frequency() const;
   vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
 
+  settings_t m_settings;
+
   bool m_started;
   vector<channel_t> m_channels;
   gpio_channel_t m_gpio_channel;
@@ -301,7 +462,126 @@ private:
   irs_u32 m_timer_channel;
   gpio_channel_t m_complementary_gpio_channel;
   gpio_channel_t m_break_gpio_channel;
+
+  //dma_regs_t* mp_dma;
+  DMA_HandleTypeDef m_hdma_tx;
+  //bool m_tx_status;
+  bool m_hdma_init;
+  irs::c_array_view_t<irs_u8> m_tx_buffer;
+
+  class dma_event_t: public irs::event_t
+  {
+  public:
+    dma_event_t(DMA_HandleTypeDef* ap_hdma_tx);
+    virtual void exec();
+    /*void enable();
+    void disable();*/
+  private:
+    DMA_HandleTypeDef* mp_hdma_tx;
+    bool m_enabled;
+  };
+  dma_event_t m_dma_event;
 };
+
+#else // ST_HAL_PWM_GEN_DMA_NEW
+
+//! \brief Не доделан!!! Драйвер ШИМ-генератора для контроллеров
+//!   семейств STM32F2xx, STM32F4xx, STM32F7xx. DMA-версия.
+//! \author Lyashchov Maxim
+class st_hal_pwm_gen_dma_t: public st_pwm_gen_t
+{
+public:
+  typedef irs_size_t size_type;
+  struct settings_t
+  {
+    gpio_channel_t gpio_channel;
+    size_t timer_address;
+    cpu_traits_t::frequency_type frequency; // заменить на double
+    float duty;
+    size_type dma_address;
+    //gpio_speed_t gpio_speed;
+
+    irs::c_array_view_t<irs_u8> tx_buffer;
+    //! \brief Канал DMA TX. Использовать константы: DMA1_Stream0 - DMA2_Stream7
+    DMA_Stream_TypeDef* tx_dma_y_stream_x;
+    //! \brief Канал DMA для TX.
+    //!   Использовать константы: DMA_CHANNEL_0 - DMA_CHANNEL_7
+    uint32_t tx_dma_channel;
+    //! \brief Приоритет. Использовать константы:
+    //!   DMA_PRIORITY_LOW - DMA_PRIORITY_VERY_HIGH
+    uint32_t tx_dma_priority;
+
+    bool interrupt_enabled;
+    IRQn_Type interrupt;
+    interrupt_id_t interrupt_id;
+    irs_u32 interrupt_priority;
+    void (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);
+    void (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);
+    void (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);
+
+    irs_u32 data_item_byte_count;
+    settings_t():
+      gpio_channel(PNONE),
+      timer_address(0),
+      frequency(62500),
+      duty(0.5f),
+      dma_address(NULL),
+      //gpio_speed(gpio_speed_2mhz),
+
+      tx_buffer(NULL, 0),
+      tx_dma_y_stream_x(0),
+      tx_dma_channel(0),
+      tx_dma_priority(DMA_PRIORITY_LOW),
+
+      interrupt_enabled(false),
+      interrupt(DMA2_Stream1_IRQn),
+      interrupt_id(irs::arm::dma2_stream1_int),
+      interrupt_priority(0),
+      XferCpltCallback(NULL),
+      XferHalfCpltCallback(NULL),
+      XferErrorCallback(NULL),
+
+      data_item_byte_count(2)
+    {
+    }
+  };
+  enum output_polarity_t {
+    op_active_high,
+    op_active_low
+  };
+  st_hal_pwm_gen_dma_t(const settings_t& a_settings);
+  virtual void start();
+  virtual void stop();
+  //DMA_HandleTypeDef* get_hdma_handle();
+private:
+
+  void reset_dma();
+  void start_dma();
+  void stop_dma();
+  void cleand_dcache_tx();
+
+  settings_t m_settings;
+  tim_regs_t* mp_timer;
+  DMA_HandleTypeDef m_hdma_tx;
+  //bool m_tx_status;
+  bool m_hdma_init;
+  irs::c_array_view_t<irs_u8> m_tx_buffer;
+
+  class dma_event_t: public irs::event_t
+  {
+  public:
+    dma_event_t(DMA_HandleTypeDef* ap_hdma_tx);
+    virtual void exec();
+    /*void enable();
+    void disable();*/
+  private:
+    DMA_HandleTypeDef* mp_hdma_tx;
+    bool m_enabled;
+  };
+  dma_event_t m_dma_event;
+};
+#endif // ST_HAL_PWM_GEN_DMA_NEW
+#endif // USE_HAL_DRIVER
 
 #else
   #error Тип контроллера не определён
@@ -561,20 +841,22 @@ public:
   void start_calibration(const double a_interval_s = 180);
   //! \brief Возвращает \с false, если происходит калибровка
   bool calibration_completed() const;
-  //! \brief Задает калибровочный коэффициент для 
+  //! \brief Задает калибровочный коэффициент для
   //!   глобального счетчика (irs::get_counter()).
-  //! \details Используется для коррекции интервалов времени, 
+  //! \details Используется для коррекции интервалов времени,
   //!   измеренных с помощью irs::get_counter() и зависимых от нее классов
   void set_counter_calibration(double a_coefficient);
   double get_counter_calibration() const;
+  size_t get_backup_reg_count() const;
+  irs_u32 read_from_backup_reg(irs_u32 a_index);
+  void write_to_backup_reg(irs_u32 a_index, irs_u32 a_data);
 private:
   st_rtc_t();
   st_rtc_t(const st_rtc_t& a_st_rtc);
   st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
   void rtc_config_default();
   void rtc_config_calibration();
-  void write_to_backup_reg(irs_u32 a_index, irs_u32 a_data);
-  irs_u32 read_from_backup_reg(irs_u32 a_index);
+
   #if defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
   bool set_calibration_force(double a_coefficient);
   #endif // defined(IRS_STM32F4xx) || defined(IRS_STM32F7xx)
@@ -605,10 +887,47 @@ private:
   irs::measure_time_t m_calibration_time;
   double m_calibration_interval;
   double m_rtc_time_begin;
-  
+
   time_t m_previous_time_s;
   double m_counter_calibr_coeff;
 };
+
+//! \brief Класс для чтения/записи в backup-регистры RTC
+class rtc_backup_reg_page_mem_t: public page_mem_t
+{
+public:
+  typedef size_t size_type;
+  rtc_backup_reg_page_mem_t(st_rtc_t* ap_st_rtc, size_type a_page_size);
+  virtual void read_page(irs_u8 *ap_buf, irs_uarc a_index);
+  virtual void write_page(const irs_u8 *ap_buf, irs_uarc a_index);
+  virtual size_type page_size() const;
+  virtual irs_uarc page_count() const;
+  virtual irs_status_t status() const;
+  virtual void tick();
+private:
+  typedef irs_u32 reg_type;
+  enum {
+    reg_size = sizeof(reg_type)
+  };
+  st_rtc_t* mp_st_rtc;
+  irs_u8* mp_pos;
+  size_type m_size;
+  size_type m_page_size;
+  size_type m_page_count;
+};
+
+class rtc_backup_reg_data_t : public mxdata_comm_t
+{
+public:
+  typedef comm_data_t::size_type size_type;
+  rtc_backup_reg_data_t(st_rtc_t* ap_st_rtc, irs_uarc a_index, irs_uarc a_size,
+    size_type a_cluster_size = 64);
+  bool error();
+private:
+  rtc_backup_reg_page_mem_t m_page_mem;
+  irs::mem_data_t m_mem_data;
+};
+
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER
 
