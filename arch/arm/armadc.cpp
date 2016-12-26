@@ -1180,11 +1180,27 @@ float irs::arm::st_adc_t::get_temperature_degree_celsius(
   const float a_vref)
 {
   if (m_temperature_sensor_enabled) {
+    #if (defined (STM32F745xx) || defined (STM32F746xx))
+    // Читаем калибровочные коэффициенты микроконтроллера
+    static const float TS_CAL1 =
+      *reinterpret_cast<irs_u16*>((irs_u32)0x1FF0F44C); // 30 градусов
+    static const float TS_CAL2 =
+      *reinterpret_cast<irs_u16*>((irs_u32)0x1FF0F44E); // 110 градусов
+
+    static const float ts_cal1_k = 3.3f*TS_CAL1/adc_max_value;
+    static const float ts_cal2_k = 3.3f*TS_CAL2/adc_max_value;
+
+    const float ts_data_k = a_vref*m_temperature_channel_value/adc_max_value;
+    //float t = ((110.f-30.f)/(TS_CAL2-TS_CAL1)*(TS_DATA-TS_CAL1)+30.f);
+    float t = ((110.f-30.f)/(ts_cal2_k-ts_cal1_k)*(ts_data_k-ts_cal1_k)+30.f);
+    return t;
+    #else // !((defined (STM32F745xx) || defined (STM32F746xx)))
     const float v25 = 0.76;
     const float avg_slope = 0.0025;
     const float koef = a_vref/adc_max_value;
     const float v_sence = m_temperature_channel_value*koef;
     return (v_sence - v25)/avg_slope + 25;
+    #endif // !((defined (STM32F745xx) || defined (STM32F746xx)))
   }
   return 0;
 }
