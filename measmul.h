@@ -1046,12 +1046,13 @@ private:
   irs::hardflow_t* mp_hardflow;
   enum process_t {
     process_wait,
-    process_read_data,
+    //process_read_data,
     process_write_data,
     process_get_value,
     process_calc_samples,
     process_calc_filter_values,
     process_calc_statistic,
+    process_err_after,
     process_set_settings,
     process_get_coefficient
   };
