@@ -1456,6 +1456,11 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
 ):
   mp_hardflow(ap_hardflow),
   m_process(process_get_coefficient),
+  m_get_err_before_event(),
+  m_get_err_after_event(),
+  m_err(0),
+  m_get_err_enabled(false),
+  m_new_get_err_enabled(m_get_err_enabled),
   m_filter_impulse_response_type(firt_infinite),
   m_filter_settings(a_filter_settings),
   m_window_function_form(wff_hann),
@@ -1649,6 +1654,12 @@ void irs::agilent_3458a_digitizer_t::get_param(const multimeter_param_t a_param,
         reinterpret_cast<const irs_u8*>(&variation),
         reinterpret_cast<const irs_u8*>(&variation) + sizeof(variation));
     } break;
+    case mul_param_get_err: {
+      const irs_u8* p_src_first =
+        reinterpret_cast<const irs_u8*>(&m_err);
+      const irs_u8* p_src_last = p_src_first + sizeof(m_err);
+      ap_value->insert(ap_value->data(), p_src_first, p_src_last);
+    } break;
     default : {
       // Игнорируем
     }
@@ -1741,6 +1752,16 @@ void irs::agilent_3458a_digitizer_t::set_param(const multimeter_param_t a_param,
       } else {
         IRS_LIB_ERROR(ec_standard,
           "Недопустимый размер параметра mul_param_statistical_params_enabled");
+      }
+    } break;
+
+    case mul_param_get_err_enabled: {
+      if (sizeof(bool) == a_value.size()) {
+        m_new_get_err_enabled =
+          *reinterpret_cast<const bool*>(a_value.data());
+      } else {
+        IRS_LIB_ERROR(ec_standard,
+          "Недопустимый размер параметра mul_param_get_err_enabled");
       }
     } break;
 
@@ -1914,10 +1935,16 @@ void irs::agilent_3458a_digitizer_t::tick()
             m_process = process_calc_statistic;
           } else {
             m_fir_filter_asynch.set_filt_value_buf(IRS_NULL, 0);
-            m_status = meas_status_success;
-            m_process = process_wait;
-            IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
-              measure_time_calc.get() << " c");
+            if (m_get_err_enabled) {
+              m_commands.push_back("ERR?");
+              m_get_err_after_event.exec();
+              m_process = process_get_coefficient;
+            } else {
+              m_status = meas_status_success;
+              IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
+                measure_time_calc.get() << " c");
+              m_process = process_wait;
+            }
           }
         } else {
           // Операция еще не завершена
@@ -1966,10 +1993,16 @@ void irs::agilent_3458a_digitizer_t::tick()
               m_filtered_values.end());
             m_process = process_calc_statistic;
           } else {
-            m_status = meas_status_success;
-            m_process = process_wait;
-            IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
-              measure_time_calc.get() << " c");
+            if (m_get_err_enabled) {
+              m_commands.push_back("ERR?");
+              m_get_err_after_event.exec();
+              m_process = process_get_coefficient;
+            } else {
+              m_status = meas_status_success;
+              m_process = process_wait;
+              IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
+                measure_time_calc.get() << " c");
+            }
           }
         } else {
           // Фильтрация еще не завершена
@@ -2007,10 +2040,16 @@ void irs::agilent_3458a_digitizer_t::tick()
           // Операция еще не завершена
         }
       } else {
-        m_status = meas_status_success;
-        m_process = process_wait;
-        IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
-          measure_time_calc.get() << " c");
+        if (m_get_err_enabled) {
+          m_commands.push_back("ERR?");
+          m_get_err_after_event.exec();
+          m_process = process_get_coefficient;
+        } else {
+          m_status = meas_status_success;
+          m_process = process_wait;
+          IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
+            measure_time_calc.get() << " c");
+        }
       }
     } break;
     case process_set_settings: {
@@ -2059,17 +2098,28 @@ void irs::agilent_3458a_digitizer_t::tick()
         if (pos != irs_string_t::npos) {
           irs_string_t coefficient_str = buf.substr(0, pos);
           if (str_to_num_classic(coefficient_str, &m_coefficient)) {
-            m_buf_receive.clear();
+            if (m_get_err_before_event.check()) {
+              get_value_prepare();
+              m_process = process_get_value;
+            } else if (m_get_err_after_event.check()) {
+              m_err = static_cast<int>(m_coefficient);
+              m_status = meas_status_success;
+              IRS_LIB_AG_3458A_DIG_DBG_MSG("Вычисления завершены. " <<
+                measure_time_calc.get() << " c");
+              m_process = process_wait;
+            } else {
+              m_buf_receive.clear();
 
-            string_type read_timeout_str;
-            num_to_str(m_interval*2 + 1, &read_timeout_str);
-            mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
+              string_type read_timeout_str;
+              num_to_str(m_interval*2 + 1, &read_timeout_str);
+              mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
 
-            m_commands.push_back("TARM SYN");
-            m_commands.push_back("TRIG SYN");
-            m_need_receive_data_size =
-              get_sample_count(m_sampling_time, m_interval)*m_sample_size;
-            m_process = process_write_data;
+              m_commands.push_back("TARM SYN");
+              m_commands.push_back("TRIG SYN");
+              m_need_receive_data_size =
+                get_sample_count(m_sampling_time, m_interval)*m_sample_size;
+              m_process = process_write_data;
+            }
           } else {
             IRS_LIB_ASSERT_MSG("Значение коэффициента считать не удалось");
           }
@@ -2084,12 +2134,15 @@ void irs::agilent_3458a_digitizer_t::tick()
       if (m_settings_change_event.check()) {
         m_process = process_set_settings;
       } else if (m_status == meas_status_busy) {
-        m_samples.clear();
-        m_filtered_values.clear();
-        const size_type sample_count =
-          get_sample_count(m_sampling_time, m_interval);
-        m_samples.reserve(sample_count);
-        m_process = process_get_value;
+        m_get_err_enabled = m_new_get_err_enabled;
+        if (m_get_err_enabled) {
+          m_commands.push_back("ERR?");
+          m_get_err_before_event.exec();
+          m_process = process_get_coefficient;
+        } else {
+          get_value_prepare();
+          m_process = process_get_value;
+        }
       } else {
         // Ожидаем запрос на измерение или запрос на изменение настроек
       }
@@ -2098,6 +2151,14 @@ void irs::agilent_3458a_digitizer_t::tick()
       IRS_LIB_ASSERT("Недопустимый процесс");
     }
   }
+}
+void irs::agilent_3458a_digitizer_t::get_value_prepare()
+{
+  m_samples.clear();
+  m_filtered_values.clear();
+  const size_type sample_count =
+    get_sample_count(m_sampling_time, m_interval);
+  m_samples.reserve(sample_count);
 }
 // Установка времени интегрирования в периодах частоты сети (20 мс)
 void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)

@@ -98,7 +98,12 @@ enum multimeter_param_t {
   mul_param_filtered_values_enabled,
   // Включение расчета статистических параметров: СКО, среднее и т.д. (bool)
   mul_param_statistical_params_enabled,
-  mul_param_last = mul_param_filtered_values_enabled,
+  // Включение чтение регистра ошибок с помощью команды "ERR?" (bool)
+  mul_param_get_err_enabled,
+  // Чтение кода регистра ошибок, счтаного ранее с прибора во внутреннюю
+  // переменную класса-драйвера (int)
+  mul_param_get_err,
+  mul_param_last = mul_param_get_err,
   mul_param_count = (mul_param_last - mul_param_first) + 1
 };
 
@@ -1036,6 +1041,8 @@ private:
   bool filter_completed();
   math_type filter_get();
   //void filtered_values_normalize();
+  void get_value_prepare();
+
   irs::hardflow_t* mp_hardflow;
   enum process_t {
     process_wait,
@@ -1049,6 +1056,11 @@ private:
     process_get_coefficient
   };
   process_t m_process;
+  event_t m_get_err_before_event;
+  event_t m_get_err_after_event;
+  int m_err;
+  bool m_get_err_enabled;
+  bool m_new_get_err_enabled;
   filter_impulse_response_type_t m_filter_impulse_response_type;
   filter_settings_t m_filter_settings;
   window_function_form_t m_window_function_form;
