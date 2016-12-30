@@ -1643,9 +1643,29 @@ irs::arm::arm_spi_t::arm_spi_t(
   m_data_item_byte_count(1)
 
 {
-  reset_peripheral(a_spi_address);
+  // ¬ременно, пока нет соотетствующих регистров!!!
+  if (a_spi_address == IRS_SPI6_BASE) {
+    #ifdef USE_HAL_DRIVER
+    __HAL_RCC_SPI6_RELEASE_RESET();
+    #else
+    IRS_LIB_ASSERT_MSG("—брос дл€ указанного устройства не определен");
+    #endif 
+  } else {
+    reset_peripheral(a_spi_address);
+  } 
+  
   initialize_gpio_channels(a_sck, a_miso, a_mosi, a_gpio_speed);
-  clock_enable(a_spi_address);
+  
+  // ¬ременно, пока нет соотетствующих регистров!!!
+  if (a_spi_address == IRS_SPI6_BASE) {
+    #ifdef USE_HAL_DRIVER
+    __HAL_RCC_SPI6_CLK_ENABLE();
+    #else
+    IRS_LIB_ASSERT_MSG("—брос дл€ указанного устройства не определен");
+    #endif 
+  } else {
+    clock_enable(a_spi_address);
+  }
 
   mp_spi_regs->SPI_CR1_bit.SSM = 1;
   //mp_spi_regs->SPI_CR1_bit.SSM = 0;

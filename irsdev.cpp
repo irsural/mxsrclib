@@ -792,6 +792,14 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PB4: {
+      if (timer_address == IRS_TIM3_BASE) {
+        timer_channel = 1;
+        GPIOB_AFRL_bit.AFRL4 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     case PB6: {
       if (timer_address == IRS_TIM4_BASE) {
         timer_channel = 1;
@@ -953,6 +961,9 @@ void irs::arm::st_pwm_gen_t::select_alternate_function_for_break_channel()
       switch (m_break_gpio_channel) {
         case PA6: {
           GPIOA_AFRL_bit.AFRL6 = 1;
+        } break;
+        case PB12: {
+          GPIOB_AFRH_bit.AFRH12 = 1;
         } break;
         case PE15: {
           GPIOE_AFRH_bit.AFRH15 = 1;
