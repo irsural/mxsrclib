@@ -1041,6 +1041,7 @@ private:
   bool filter_completed();
   math_type filter_get();
   //void filtered_values_normalize();
+  void get_err_prepare();
   void get_value_prepare();
 
   irs::hardflow_t* mp_hardflow;

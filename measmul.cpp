@@ -1591,6 +1591,8 @@ irs::agilent_3458a_digitizer_t::agilent_3458a_digitizer_t(
   m_command_terminator[1] = 0x0A;
 
   m_commands.push_back("RESET");
+  m_commands.push_back("END ON");
+  m_commands.push_back("END ALWAYS");
   m_commands.push_back("PRESET DIG");
   m_commands.push_back("LFILTER ON");
   m_commands.push_back("MEM OFF");
@@ -2032,8 +2034,7 @@ void irs::agilent_3458a_digitizer_t::tick()
     } break;
     case process_err_after: {
       if (m_get_err_enabled) {
-        m_commands.push_back("TARM HOLD");
-        m_commands.push_back("ERR?");
+        get_err_prepare();
         m_get_err_after_event.exec();
         m_process = process_get_coefficient;
       } else {
@@ -2087,27 +2088,23 @@ void irs::agilent_3458a_digitizer_t::tick()
         m_buf_receive.size());
         size_type pos = buf.find("\r\n");
         if (pos != irs_string_t::npos) {
-          irs_string_t coefficient_str = buf.substr(0, pos);
-          if (str_to_num_classic(coefficient_str, &m_coefficient)) {
+          irs_string_t gpib_str = buf.substr(0, pos);
+          double m_value_from_gpib;
+          if (str_to_num_classic(gpib_str, &m_value_from_gpib)) {
             if (m_get_err_before_event.check()) {
-              // m_coefficient не используетс€, потому что результат ERR?
+              // m_value_from_gpib не используетс€, потому что результат ERR?
               // не нужен
               m_get_err_before_event.exec();
             } else if (m_get_err_after_event.check()) {
-              // m_coefficient преобразуетс€ в результат ERR? перменную m_err
-              m_err = static_cast<int>(m_coefficient);
+              // m_value_from_gpib преобразуетс€ в результат ERR?
+              // перменную m_err
+              m_err = static_cast<int>(m_value_from_gpib);
               m_status = meas_status_success;
               IRS_LIB_AG_3458A_DIG_DBG_MSG("¬ычислени€ завершены. " <<
                 measure_time_calc.get() << " c");
             } else {
-              // m_coefficient здесь это и есть результат и преобразование
-              // не требуетс€
-              m_buf_receive.clear();
-              string_type read_timeout_str;
-              num_to_str(m_interval*2 + 1, &read_timeout_str);
-              mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
-              m_need_receive_data_size =
-                get_sample_count(m_sampling_time, m_interval)*m_sample_size;
+              // m_value_from_gpib записываетс€ в m_coefficient
+              m_coefficient = m_value_from_gpib;
             }
             m_commands.push_back("TARM SYN");
             m_commands.push_back("TRIG SYN");
@@ -2128,8 +2125,7 @@ void irs::agilent_3458a_digitizer_t::tick()
       } else if (m_status == meas_status_busy) {
         m_get_err_enabled = m_new_get_err_enabled;
         if (m_get_err_enabled) {
-          m_commands.push_back("TARM HOLD");
-          m_commands.push_back("ERR?");
+          get_err_prepare();
           m_get_err_before_event.exec();
           m_process = process_get_coefficient;
         } else {
@@ -2145,13 +2141,29 @@ void irs::agilent_3458a_digitizer_t::tick()
     }
   }
 }
+void irs::agilent_3458a_digitizer_t::get_err_prepare()
+{
+  m_commands.push_back("TARM HOLD");
+  m_commands.push_back("ERR?");
+  mp_hardflow->set_param(irst("read_timeout"), irst("3"));
+  m_need_receive_data_size = m_iscale_byte_count;
+  m_buf_receive.clear();
+}
 void irs::agilent_3458a_digitizer_t::get_value_prepare()
 {
   m_samples.clear();
   m_filtered_values.clear();
+  //m_buf_receive.clear();
   const size_type sample_count =
     get_sample_count(m_sampling_time, m_interval);
   m_samples.reserve(sample_count);
+
+  m_buf_receive.clear();
+  string_type read_timeout_str;
+  num_to_str(m_interval*2 + 1, &read_timeout_str);
+  mp_hardflow->set_param(irst("read_timeout"), read_timeout_str);
+  m_need_receive_data_size =
+    get_sample_count(m_sampling_time, m_interval)*m_sample_size;
 }
 // ”становка времени интегрировани€ в периодах частоты сети (20 мс)
 void irs::agilent_3458a_digitizer_t::set_nplc(double nplc)
