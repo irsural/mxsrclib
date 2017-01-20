@@ -78,6 +78,10 @@
 
 #ifdef IRS_STM32F7xx
 
+#define UNIQUE_DEVICE_ID_BEGIN (reinterpret_cast<const irs_u8*>(0x1FF0F420))
+#define UNIQUE_DEVICE_ID_SIZE 12
+
+
 /******************************************************************************/
 /*                                                                            */
 /*      Universal Synchronous Asynchronous Receiver Transmitter (USART)       */

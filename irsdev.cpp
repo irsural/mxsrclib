@@ -1459,11 +1459,16 @@ irs::arm::st_hal_pwm_gen_dma_t::st_hal_pwm_gen_dma_t(
 
   irs::clock_enable(a_settings.dma_address);
 
-  irs::interrupt_array()->int_gen_events(irs::arm::dma2_stream1_int)->
-    push_back(&m_dma_event);
+  //irs::interrupt_array()->int_gen_events(irs::arm::dma2_stream1_int)->
+    //push_back(&m_dma_event);
   /* Enable the DMA STREAM global Interrupt */
-  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
-  NVIC_SetPriority (DMA2_Stream1_IRQn, 0);
+  //HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+  //NVIC_SetPriority (DMA2_Stream1_IRQn, 0);
+
+  irs::interrupt_array()->int_gen_events(a_settings.interrupt_id)->
+    push_back(&m_dma_event);
+  HAL_NVIC_EnableIRQ(a_settings.interrupt);
+  NVIC_SetPriority (a_settings.interrupt, a_settings.interrupt_priority);
 
   reset_dma();
 }
@@ -3296,7 +3301,7 @@ void irs::arm::rtc_backup_reg_page_mem_t::read_page(irs_u8 *ap_buf, irs_uarc a_i
 
   reg_type* buf = reinterpret_cast<reg_type*>(ap_buf);
   for (size_t i = reg_begin; i < reg_end;i++) {
-    *buf = mp_st_rtc->read_from_backup_reg(i);    
+    *buf = mp_st_rtc->read_from_backup_reg(i);
     buf++;
   }
 }
@@ -3313,7 +3318,7 @@ void irs::arm::rtc_backup_reg_page_mem_t::write_page(const irs_u8 *ap_buf,
 
   const reg_type* buf = reinterpret_cast<const reg_type*>(ap_buf);
   for (size_t i = reg_begin; i < reg_end ;i++) {
-    mp_st_rtc->write_to_backup_reg(i, *buf);    
+    mp_st_rtc->write_to_backup_reg(i, *buf);
     buf++;
   }
 }

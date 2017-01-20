@@ -583,6 +583,43 @@ void irs::arm::arm_spi_t::init_default()
 #elif defined(__STM32F100RBT__)
 #elif defined(IRS_STM32_F2_F4_F7)
 
+void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t* ap_spi_regs)
+{
+  #ifdef IRS_STM32F7xx
+  while (ap_spi_regs->SPI_SR_bit.FTLVL != 0);
+  while (ap_spi_regs->SPI_SR_bit.BSY != 0);
+
+  while (ap_spi_regs->SPI_SR_bit.FRLVL != 0) {
+    volatile irs_u16 data = ap_spi_regs->SPI_DR;
+  }
+  #else // !IRS_STM32F7xx
+  // Ничего не делаем
+  #endif // !IRS_STM32F7xx
+}
+
+void irs::arm::st_spi_base_t::_disable_spi(spi_regs_t* ap_spi_regs)
+{
+  #ifdef IRS_STM32F7xx
+  while (ap_spi_regs->SPI_SR_bit.FTLVL != 0);
+  while (ap_spi_regs->SPI_SR_bit.BSY != 0);
+
+  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+
+  while (ap_spi_regs->SPI_SR_bit.FRLVL != 0) {
+    volatile irs_u16 data = ap_spi_regs->SPI_DR;
+  }
+  #elif defined(IRS_STM32F_2_AND_4)
+  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
+    volatile irs_u32 data = mp_spi_regs->SPI_DR;
+  }
+  while (mp_spi_regs->SPI_SR_bit.TXE != 1);
+  while (mp_spi_regs->SPI_SR_bit.BSY != 0);
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+  #else // !defined(IRS_STM32F_2_AND_4)
+  #error Тип контроллера не определён
+  #endif // #ifdef IRS_STM32F7xx
+}
+
 bool irs::arm::st_spi_base_t::_set_bitrate(spi_regs_t* ap_spi_regs,
   irs_u32 a_bitrate)
 {
@@ -617,7 +654,8 @@ bool irs::arm::st_spi_base_t::_set_polarity(spi_regs_t* ap_spi_regs,
   polarity_t a_polarity)
 {
   irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
-  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  _disable_spi(ap_spi_regs);
+
   if (a_polarity == spi_t::NEGATIVE_POLARITY) {
     ap_spi_regs->SPI_CR1_bit.CPOL = 0;
   } else if (a_polarity == spi_t::POSITIVE_POLARITY) {
@@ -630,8 +668,11 @@ bool irs::arm::st_spi_base_t::_set_polarity(spi_regs_t* ap_spi_regs,
 bool irs::arm::st_spi_base_t::_set_phase(spi_regs_t* ap_spi_regs,
   phase_t a_phase)
 {
+  //irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  //ap_spi_regs->SPI_CR1_bit.SPE = 0;
   irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
-  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  _disable_spi(ap_spi_regs);
+
   ap_spi_regs->SPI_CR1_bit.CPHA = a_phase;
   ap_spi_regs->SPI_CR1_bit.SPE = spe;
   return true;
@@ -640,8 +681,11 @@ bool irs::arm::st_spi_base_t::_set_phase(spi_regs_t* ap_spi_regs,
 bool irs::arm::st_spi_base_t::_set_order(spi_regs_t* ap_spi_regs,
   order_t a_order)
 {
+  //irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  //ap_spi_regs->SPI_CR1_bit.SPE = 0;
   irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
-  ap_spi_regs->SPI_CR1_bit.SPE = 0;
+  _disable_spi(ap_spi_regs);
+
   if (a_order == spi_t::LSB) {
     ap_spi_regs->SPI_CR1_bit.LSBFIRST = 1;
   } else if (a_order == spi_t::MSB) {
@@ -984,11 +1028,12 @@ void irs::arm::st_spi_dma_t::enable_spi()
 
 void irs::arm::st_spi_dma_t::disable_spi()
 {
-  while (mp_spi_regs->SPI_SR_bit.RXNE != 0);
+  st_spi_base_t::_disable_spi(mp_spi_regs);
+  /*while (mp_spi_regs->SPI_SR_bit.RXNE != 0);
   while (mp_spi_regs->SPI_SR_bit.TXE != 1);
   while (mp_spi_regs->SPI_SR_bit.BSY != 0);
   // 0: Peripheral disabled
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;*/
 }
 
 void irs::arm::st_spi_dma_t::abort()
@@ -1052,6 +1097,8 @@ bool irs::arm::st_spi_dma_t::set_data_size(irs_u16 a_data_size)
   if ((a_data_size != 8) && (a_data_size != 16)) {
     IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
   }
+
+  irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
   disable_spi();
   if (a_data_size == 8) {
     mp_spi_regs->SPI_CR1_bit.DFF = 0;
@@ -1061,7 +1108,8 @@ bool irs::arm::st_spi_dma_t::set_data_size(irs_u16 a_data_size)
     m_data_item_byte_count = 2;
   }
   m_max_byte_count = calc_max_byte_count();
-  enable_spi();
+  //enable_spi();
+  ap_spi_regs->SPI_CR1_bit.SPE = spe;
   reset_dma();
   return true;
 }
@@ -1395,13 +1443,14 @@ void irs::arm::st_hal_spi_dma_t::enable_spi()
 
 void irs::arm::st_hal_spi_dma_t::disable_spi()
 {
-  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
+  st_spi_base_t::_disable_spi(mp_spi_regs);
+  /*while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
     volatile irs_u32 data = mp_spi_regs->SPI_DR;
   }
   while (mp_spi_regs->SPI_SR_bit.TXE != 1);
   while (mp_spi_regs->SPI_SR_bit.BSY != 0);
   // 0: Peripheral disabled
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;*/
 }
 
 void irs::arm::st_hal_spi_dma_t::abort()
@@ -1466,6 +1515,8 @@ bool irs::arm::st_hal_spi_dma_t::set_data_size(irs_u16 a_data_size)
     IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
   }
   stop_spi_dma();
+
+  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
   disable_spi();
 
   if (a_data_size == 8) {
@@ -1486,7 +1537,8 @@ bool irs::arm::st_hal_spi_dma_t::set_data_size(irs_u16 a_data_size)
     m_data_item_byte_count = 2;
   }
   m_max_byte_count = calc_max_byte_count();
-  enable_spi();
+  //enable_spi();
+  mp_spi_regs->SPI_CR1_bit.SPE = spe;
   reset_dma();
   return true;
 }
@@ -1649,20 +1701,20 @@ irs::arm::arm_spi_t::arm_spi_t(
     __HAL_RCC_SPI6_RELEASE_RESET();
     #else
     IRS_LIB_ASSERT_MSG("Сброс для указанного устройства не определен");
-    #endif 
+    #endif
   } else {
     reset_peripheral(a_spi_address);
-  } 
-  
+  }
+
   initialize_gpio_channels(a_sck, a_miso, a_mosi, a_gpio_speed);
-  
+
   // Временно, пока нет соотетствующих регистров!!!
   if (a_spi_address == IRS_SPI6_BASE) {
     #ifdef USE_HAL_DRIVER
     __HAL_RCC_SPI6_CLK_ENABLE();
     #else
     IRS_LIB_ASSERT_MSG("Сброс для указанного устройства не определен");
-    #endif 
+    #endif
   } else {
     clock_enable(a_spi_address);
   }
@@ -1712,13 +1764,14 @@ void irs::arm::arm_spi_t::enable_spi()
 
 void irs::arm::arm_spi_t::disable_spi()
 {
-  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
+  st_spi_base_t::_disable_spi(mp_spi_regs);
+  /*while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
     volatile irs_u32 data = mp_spi_regs->SPI_DR;
   }
   while (mp_spi_regs->SPI_SR_bit.TXE != 1);
   while (mp_spi_regs->SPI_SR_bit.BSY != 0);
   // 0: Peripheral disabled
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+  mp_spi_regs->SPI_CR1_bit.SPE = 0;*/
 }
 
 void irs::arm::arm_spi_t::abort()
@@ -1781,6 +1834,7 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
   if ((a_data_size != 8) && (a_data_size != 16)) {
     IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
   }
+  irs_u8 spe = mp_spi_regs->SPI_CR1_bit.SPE;
   disable_spi();
   if (a_data_size == 8) {
     #ifdef IRS_STM32F7xx
@@ -1798,7 +1852,8 @@ bool irs::arm::arm_spi_t::set_data_size(irs_u16 a_data_size)
     #endif // !IRS_STM32F7xx
     m_data_item_byte_count = 2;
   }
-  enable_spi();
+  //enable_spi();
+  mp_spi_regs->SPI_CR1_bit.SPE = spe;
   return true;
 }
 
@@ -1906,6 +1961,14 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
   if (!m_lock) {
     IRS_LIB_ERROR(ec_standard, "Вызов read_write на разблокированном spi");
   }
+
+  // В калибраторе (плата rev. R2, STM32f756, SPI6) при смене полярности в
+  // буфере иногда появлялся мусор, который приводил к ошибочному взведению
+  // статуса наличия данных для чтения. Причина ошибки до конца не выяснена.
+  // Ниже вставлена функция для очистки буфера чтения/записи от мусора, если он
+  // там есть
+  st_spi_base_t::clean_buf_from_old_data(mp_spi_regs);
+
   m_packet_size = a_size/m_data_item_byte_count;
   mp_read_buf = ap_read_buf;
   mp_write_buf = ap_write_buf;

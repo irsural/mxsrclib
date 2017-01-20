@@ -345,6 +345,10 @@ public:
     //!   DMA_PRIORITY_LOW - DMA_PRIORITY_VERY_HIGH
     uint32_t tx_dma_priority;
 
+    IRQn_Type interrupt;
+    irs::arm::interrupt_id_t interrupt_id;
+    irs_u32 interrupt_priority;
+
     void (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);
     void (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);
     void (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);
@@ -362,6 +366,10 @@ public:
       tx_dma_y_stream_x(0),
       tx_dma_channel(0),
       tx_dma_priority(DMA_PRIORITY_LOW),
+
+      interrupt(DMA2_Stream1_IRQn),
+      interrupt_id(irs::arm::dma2_stream1_int),
+      interrupt_priority(0),
 
       XferCpltCallback(NULL),
       XferHalfCpltCallback(NULL),

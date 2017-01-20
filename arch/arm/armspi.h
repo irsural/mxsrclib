@@ -132,6 +132,8 @@ public:
     gpio_speed_100mhz = IRS_GPIO_SPEED_100MHZ
   };
 protected:
+  static void clean_buf_from_old_data(spi_regs_t* ap_spi_regs);
+  static void _disable_spi(spi_regs_t* ap_spi_regs);
   static bool _set_bitrate(spi_regs_t* ap_spi_regs, irs_u32 a_bitrate);
   static bool _set_polarity(spi_regs_t* ap_spi_regs, polarity_t a_polarity);
   static bool _set_phase(spi_regs_t* ap_spi_regs, phase_t a_phase);
