@@ -583,7 +583,11 @@ void irs::arm::arm_spi_t::init_default()
 #elif defined(__STM32F100RBT__)
 #elif defined(IRS_STM32_F2_F4_F7)
 
-void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t* ap_spi_regs)
+void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t* 
+#ifdef IRS_STM32F7xx
+  ap_spi_regs
+#endif // !IRS_STM32F7xx
+)
 {
   #ifdef IRS_STM32F7xx
   while (ap_spi_regs->SPI_SR_bit.FTLVL != 0);
@@ -609,12 +613,12 @@ void irs::arm::st_spi_base_t::_disable_spi(spi_regs_t* ap_spi_regs)
     volatile irs_u16 data = ap_spi_regs->SPI_DR;
   }
   #elif defined(IRS_STM32F_2_AND_4)
-  while (mp_spi_regs->SPI_SR_bit.RXNE != 0) {
-    volatile irs_u32 data = mp_spi_regs->SPI_DR;
+  while (ap_spi_regs->SPI_SR_bit.RXNE != 0) {
+    volatile irs_u32 data = ap_spi_regs->SPI_DR;
   }
-  while (mp_spi_regs->SPI_SR_bit.TXE != 1);
-  while (mp_spi_regs->SPI_SR_bit.BSY != 0);
-  mp_spi_regs->SPI_CR1_bit.SPE = 0;
+  while (ap_spi_regs->SPI_SR_bit.TXE != 1);
+  while (ap_spi_regs->SPI_SR_bit.BSY != 0);
+  ap_spi_regs->SPI_CR1_bit.SPE = 0;
   #else // !defined(IRS_STM32F_2_AND_4)
   #error Тип контроллера не определён
   #endif // #ifdef IRS_STM32F7xx
