@@ -316,6 +316,8 @@ bool irs::arm::flash_protected_t::double_error()
   return m_crc_error;
 }
 
+#ifdef IRS_STM32_F2_F4_F7
+
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
@@ -623,6 +625,340 @@ irs_u8 irs::arm::st_flash_t::voltage_range()
   }
   return voltage_range;
 }
+
+#endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
+
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32F7xx
+
+irs_u8* irs::arm::st_flash_page_begin(std::size_t a_page_index)
+{
+  IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
+  static const std::size_t sector_sizes[] = {
+    0x08000000,
+    0x08008000,
+    0x08010000,
+    0x08018000,
+    0x08020000,
+    0x08040000,
+    0x08080000,
+    0x080C0000
+  };
+  IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
+  return reinterpret_cast<irs_u8*>(sector_sizes[a_page_index]);
+}
+
+std::size_t irs::arm::st_flash_page_index(const irs_u8* ap_pos)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  const std::size_t last_page_index = st_flash_page_count() - 1;
+  if ((ap_pos < st_flash_page_begin(0)) ||
+    (ap_pos >= st_flash_page_begin(last_page_index))) {
+    return std::numeric_limits<std::size_t>::max();
+  }
+  for (int i = st_flash_page_count() - 1; i > 0; i--) {
+    if (ap_pos >= st_flash_page_begin(i)) {
+      return i;
+    }
+  }
+  return std::numeric_limits<std::size_t>::max();
+}
+
+std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
+{
+  IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
+  static const std::size_t sector_sizes[] = {
+    1024*32,
+    1024*32,
+    1024*32,
+    1024*32,
+    1024*128,
+    1024*256,
+    1024*256,
+    1024*256
+  };
+  IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
+  return sector_sizes[a_page_index];
+}
+
+std::size_t irs::arm::st_flash_size_of_diapason_pages(
+  std::size_t a_first_page_index, std::size_t a_last_page_index)
+{
+  std::size_t size = 0;
+  std::size_t current_index = a_first_page_index;
+  while (current_index <= a_last_page_index) {
+    size += st_flash_page_size(current_index);
+    current_index++;
+  }
+  return size;
+}
+
+std::size_t irs::arm::st_flash_page_count()
+{
+  return 8;
+}
+
+// class st_flash_t
+irs::arm::st_flash_t::st_flash_t():
+  m_process(process_wait_command),
+  m_status(irs_st_ready),
+  mp_pos(IRS_NULL),
+  mp_buf(IRS_NULL),
+  m_page_index(0),
+  m_max_psize(psize()),
+  m_max_byte_count(psize_to_byte_count(m_max_psize))
+{
+}
+
+irs::arm::st_flash_t::~st_flash_t()
+{
+}
+
+void irs::arm::st_flash_t::read(irs_u8* ap_pos, irs_u8 *ap_buf,
+  size_type a_buf_size)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
+    reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+  memcpyex(ap_buf, ap_pos, a_buf_size);
+  m_status = irs_st_ready;
+}
+
+void irs::arm::st_flash_t::erase_page(size_type a_page_index)
+{
+  #pragma diag_suppress=Pe186
+  IRS_LIB_ASSERT((a_page_index >= FLASH_SECTOR_0) &&
+    (a_page_index <= FLASH_SECTOR_7));
+  #pragma diag_default=Pe186
+
+  m_page_index = a_page_index;
+  m_process = process_erase;
+  m_status = irs_st_busy;
+}
+
+void irs::arm::st_flash_t::write(irs_u8* ap_pos,
+  const irs_u8 *ap_buf, size_type a_buf_size)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
+      reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+  mp_pos = ap_pos;
+  mp_buf = ap_buf;
+  mp_end = ap_buf + a_buf_size;
+  m_process = process_write;
+  m_status = irs_st_busy;
+}
+
+irs_u8* irs::arm::st_flash_t::page_begin(size_type a_page_index)
+{
+  return st_flash_page_begin(a_page_index);
+}
+
+irs::arm::st_flash_t::size_type
+irs::arm::st_flash_t::page_index(const irs_u8* ap_pos) const
+{
+  return st_flash_page_index(ap_pos);
+}
+
+irs::arm::st_flash_t::size_type
+irs::arm::st_flash_t::page_size(size_type a_page_index) const
+{
+  return st_flash_page_size(a_page_index);
+}
+
+irs::arm::st_flash_t::size_type
+irs::arm::st_flash_t::page_count() const
+{
+  return st_flash_page_count();
+}
+
+irs_status_t irs::arm::st_flash_t::status() const
+{
+  return m_status;
+}
+
+void irs::arm::st_flash_t::tick()
+{
+  const irs_status_t flash_status = get_flash_status();
+  if (flash_status != irs_st_busy) {
+    switch (m_process) {
+      case process_erase: {
+        if (HAL_FLASH_Unlock() == HAL_OK) {
+          FLASH_Erase_Sector(m_page_index, voltage_range());
+          m_process = process_wait_for_erase_operation;
+        } else {
+          process_end(irs_st_error);
+        }
+      } break;
+      case process_wait_for_erase_operation: {
+        CLEAR_BIT(FLASH->CR, (FLASH_CR_SER | FLASH_CR_SNB));
+        process_end(flash_status);
+      } break;
+      case process_write: {
+        if (HAL_FLASH_Unlock() == HAL_OK) {
+          m_max_psize = psize();
+          m_max_byte_count = psize_to_byte_count(m_max_psize);
+          byte_count_to_psize_reg(m_max_byte_count);
+          FLASH->CR |= FLASH_CR_PG;
+          m_process = process_wait_for_write_operation;
+        } else {
+          process_end(irs_st_error);
+        }
+      } break;
+      case process_wait_for_write_operation: {
+        if (mp_buf < mp_end) {
+          write_tick(&mp_pos, &mp_buf, mp_end);
+        } else {
+          mp_pos = IRS_NULL;
+          mp_buf = IRS_NULL;
+          mp_end = IRS_NULL;
+          FLASH->CR &= (~FLASH_CR_PG);
+          process_end(flash_status);
+        }
+      } break;
+      case process_wait_command: {
+        // Ожидаем команд
+      } break;
+    }
+  }
+}
+
+irs_status_t irs::arm::st_flash_t::get_flash_status() const
+{
+  if (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY) != RESET) {
+    return irs_st_busy;
+  } else if (__HAL_FLASH_GET_FLAG((FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | \
+      FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_ERSERR )) != RESET) {
+
+    return irs_st_error;
+  }
+  return irs_st_ready;
+}
+
+void irs::arm::st_flash_t::process_end(irs_status_t a_flash_status)
+{
+  m_status = a_flash_status;
+  HAL_FLASH_Lock();
+  m_process = process_wait_command;
+}
+
+void irs::arm::st_flash_t::write_tick(
+   irs_u8** ap_pos,  const irs_u8** ap_begin, const irs_u8* ap_end)
+{
+  const size_type buf_size = ap_end - *ap_begin;
+  size_type size = m_max_byte_count;
+  if (buf_size < m_max_byte_count) {
+    size = buf_size;
+    size_type write_byte_count = m_max_byte_count;
+    while (size < write_byte_count) {
+      write_byte_count >>= 1;
+    }
+    size = write_byte_count;
+    byte_count_to_psize_reg(m_max_byte_count);
+  }
+  switch (size) {
+    case 1: {
+      *reinterpret_cast<irs_u8*>(*ap_pos) =
+        *reinterpret_cast<const irs_u8*>(*ap_begin);
+    } break;
+    case 2: {
+      *reinterpret_cast<irs_u16*>(*ap_pos) =
+        *reinterpret_cast<const irs_u16*>(*ap_begin);
+    } break;
+    case 4: {
+      *reinterpret_cast<irs_u32*>(*ap_pos) =
+        *reinterpret_cast<const irs_u32*>(*ap_begin);
+    } break;
+    case 8: {
+      *reinterpret_cast<irs_u64*>(*ap_pos) =
+        *reinterpret_cast<const irs_u64*>(*ap_begin);
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Недопустимое значение");
+    }
+  }
+  __DSB();
+  *ap_pos += size;
+  *ap_begin += size;
+}
+
+irs_u32 irs::arm::st_flash_t::psize()
+{
+  irs_u32 psize = 0;
+  const irs_u8 range = voltage_range();
+  if (range == FLASH_VOLTAGE_RANGE_1) {
+    psize = 0; // byte
+  } else if (range == FLASH_VOLTAGE_RANGE_2) {
+    psize = 1; // half word
+  } else if (range == FLASH_VOLTAGE_RANGE_3) {
+    psize = 2; // word
+  } else {
+    psize = 3; // double word
+  }
+  return psize;
+}
+
+irs::arm::st_flash_t::size_type
+irs::arm::st_flash_t::psize_to_byte_count(irs_u32 a_psize)
+{
+  IRS_LIB_ASSERT(a_psize <= 3);
+  return (1 << a_psize);
+}
+
+void irs::arm::st_flash_t::byte_count_to_psize_reg(size_type a_bype_count)
+{
+  FLASH->CR &= CR_PSIZE_MASK;
+  switch (a_bype_count) {
+    case 1: {
+      FLASH->CR |= FLASH_PSIZE_BYTE;
+    } break;
+    case 2: {
+      FLASH->CR |= FLASH_PSIZE_HALF_WORD;
+    } break;
+    case 4: {
+      FLASH->CR |= FLASH_PSIZE_WORD;
+    } break;
+    case 8: {
+      FLASH->CR |= FLASH_PSIZE_DOUBLE_WORD;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Указано недопустимое значение количества байт");
+    }
+  }
+}
+
+irs_u32 irs::arm::st_flash_t::byte_count_to_psize(size_type a_bype_count)
+{
+  IRS_LIB_ASSERT((a_bype_count == 1) || (a_bype_count == 2) ||
+    (a_bype_count == 4) || (a_bype_count == 8));
+  size_type byte_count = a_bype_count;
+  irs_u32 psize = 0;
+  while (byte_count > 1) {
+    byte_count >>= 1;
+    psize++;
+  }
+  return psize;
+}
+
+irs_u8 irs::arm::st_flash_t::voltage_range()
+{
+  const double flash_voltage = irs::cpu_traits_t::flash_voltage();
+  irs_u8 voltage_range = FLASH_VOLTAGE_RANGE_1;
+  if(flash_voltage <= 2.1) {
+    voltage_range = FLASH_VOLTAGE_RANGE_1;
+  } else if((flash_voltage > 2.1) && (flash_voltage) < 2.7) {
+    voltage_range = FLASH_VOLTAGE_RANGE_2;
+  } else if((flash_voltage > 2.7) && (flash_voltage <= 3.6)) {
+    voltage_range = FLASH_VOLTAGE_RANGE_3;
+  } else {
+    voltage_range = FLASH_VOLTAGE_RANGE_4;
+  }
+  return voltage_range;
+}
+
+#endif // IRS_STM32F7xx
+#endif // USE_HAL_DRIVER
 
 // class st_flash_files_t
 irs::arm::st_flash_files_t::st_flash_files_t(
@@ -939,5 +1275,5 @@ void irs::arm::st_flash_files_t::tick()
     ++it;
   }
 }
-#endif // IRS_STM32F_2_AND_4
-#endif // USE_STDPERIPH_DRIVER
+
+#endif  // IRS_STM32_F2_F4_F7

@@ -92,6 +92,9 @@ private:
   bool m_crc_error;
 }; // flash_protected_t
 
+
+#ifdef IRS_STM32_F2_F4_F7
+
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
@@ -153,6 +156,72 @@ private:
   size_type m_max_psize;
   size_type m_max_byte_count;
 };
+#endif // IRS_STM32F_2_AND_4
+#endif // USE_STDPERIPH_DRIVER
+
+#ifdef USE_HAL_DRIVER
+#ifdef IRS_STM32F7xx
+
+irs_u8* st_flash_page_begin(std::size_t a_page_index);
+std::size_t st_flash_page_index(const irs_u8* a_pos);
+std::size_t st_flash_page_size(std::size_t a_page_index);
+std::size_t st_flash_size_of_diapason_pages(std::size_t a_first_page_index,
+  std::size_t a_last_page_index);
+std::size_t st_flash_page_count();
+
+//! \brief Драйвер главной области флеш-памяти для контроллеров
+//!   семейств STM32F2xx и STM32F4xx
+//! \author Lyashchov Maxim
+class st_flash_t: public various_page_mem_t
+{
+public:
+  typedef std::size_t size_type;
+  st_flash_t();
+  virtual ~st_flash_t();
+  virtual void read(irs_u8* ap_pos, irs_u8 *ap_buf, size_type a_buf_size);
+  virtual void erase_page(size_type a_page_index);
+  virtual void write(irs_u8* ap_pos, const irs_u8 *ap_buf,
+    size_type a_buf_size);
+  virtual irs_u8* page_begin(size_type a_page_index);
+  virtual size_type page_index(const irs_u8* ap_pos) const;
+  virtual size_type page_size(size_type a_page_index) const;
+  virtual size_type page_count() const;
+  virtual irs_status_t status() const;
+  virtual void tick();
+private:
+  irs_status_t get_flash_status() const;
+  void process_end(irs_status_t a_flash_status);
+  void write_tick(irs_u8** ap_pos, const irs_u8** ap_begin,
+    const irs_u8* ap_end);
+  //static irs_status_t convert_status(FLASH_Status a_flash_status);
+  static irs_u32 psize();
+  static void byte_count_to_psize_reg(size_type a_bype_count);
+  static size_type psize_to_byte_count(irs_u32 a_psize);
+  static irs_u32 byte_count_to_psize(size_type a_bype_count);
+  static irs_u8 voltage_range();
+  /*enum {
+    sector_count = 12
+  };*/
+  enum process_t {
+    process_erase,
+    process_wait_for_erase_operation,
+    process_write,
+    process_wait_for_write_operation,
+    process_wait_command
+  };
+
+  process_t m_process;
+  irs_status_t m_status;
+  irs_u8* mp_pos;
+  const irs_u8* mp_buf;
+  const irs_u8* mp_end;
+  size_type m_page_index;
+  size_type m_max_psize;
+  size_type m_max_byte_count;
+};
+
+#endif // IRS_STM32F7xx
+#endif // USE_HAL_DRIVER
 
 class st_flash_files_t: public irs::hfftp::files_t
 {
@@ -234,8 +303,8 @@ private:
 
 //! @}
 
-#endif  // IRS_STM32F_2_AND_4
-#endif // USE_STDPERIPH_DRIVER
+#endif  // IRS_STM32_F2_F4_F7
+
 
 } // namespace arm
 
