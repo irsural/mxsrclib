@@ -95,6 +95,10 @@ private:
 
 #ifdef IRS_STM32_F2_F4_F7
 
+std::size_t st_flash_page_index(const irs_u8* a_pos);
+std::size_t st_flash_size_of_diapason_pages(std::size_t a_first_page_index,
+  std::size_t a_last_page_index);
+
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
@@ -102,10 +106,7 @@ private:
 //! @{
 
 irs_u8* st_flash_page_begin(std::size_t a_page_index);
-std::size_t st_flash_page_index(const irs_u8* a_pos);
 std::size_t st_flash_page_size(std::size_t a_page_index);
-std::size_t st_flash_size_of_diapason_pages(std::size_t a_first_page_index,
-  std::size_t a_last_page_index);
 std::size_t st_flash_page_count();
 
 //! \brief Драйвер главной области флеш-памяти для контроллеров
@@ -163,10 +164,7 @@ private:
 #ifdef IRS_STM32F7xx
 
 irs_u8* st_flash_page_begin(std::size_t a_page_index);
-std::size_t st_flash_page_index(const irs_u8* a_pos);
 std::size_t st_flash_page_size(std::size_t a_page_index);
-std::size_t st_flash_size_of_diapason_pages(std::size_t a_first_page_index,
-  std::size_t a_last_page_index);
 std::size_t st_flash_page_count();
 
 //! \brief Драйвер главной области флеш-памяти для контроллеров
@@ -191,6 +189,7 @@ public:
 private:
   irs_status_t get_flash_status() const;
   void process_end(irs_status_t a_flash_status);
+  void clear_status_flags();
   void write_tick(irs_u8** ap_pos, const irs_u8** ap_begin,
     const irs_u8* ap_end);
   //static irs_status_t convert_status(FLASH_Status a_flash_status);

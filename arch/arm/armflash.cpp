@@ -318,6 +318,35 @@ bool irs::arm::flash_protected_t::double_error()
 
 #ifdef IRS_STM32_F2_F4_F7
 
+std::size_t irs::arm::st_flash_page_index(const irs_u8* ap_pos)
+{
+  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
+  const std::size_t last_page_index = st_flash_page_count() - 1;
+  const irs_u8* end =
+    st_flash_page_begin(last_page_index) + st_flash_page_size(last_page_index);
+  if ((ap_pos < st_flash_page_begin(0)) || (ap_pos >= end)) {
+    return std::numeric_limits<std::size_t>::max();
+  }
+  for (int i = st_flash_page_count() - 1; i > 0; i--) {
+    if (ap_pos >= st_flash_page_begin(i)) {
+      return i;
+    }
+  }
+  return std::numeric_limits<std::size_t>::max();
+}
+
+std::size_t irs::arm::st_flash_size_of_diapason_pages(
+  std::size_t a_first_page_index, std::size_t a_last_page_index)
+{
+  std::size_t size = 0;
+  std::size_t current_index = a_first_page_index;
+  while (current_index <= a_last_page_index) {
+    size += st_flash_page_size(current_index);
+    current_index++;
+  }
+  return size;
+}
+
 #ifdef USE_STDPERIPH_DRIVER
 #ifdef IRS_STM32F_2_AND_4
 
@@ -342,22 +371,6 @@ irs_u8* irs::arm::st_flash_page_begin(std::size_t a_page_index)
   return reinterpret_cast<irs_u8*>(sector_sizes[a_page_index]);
 }
 
-std::size_t irs::arm::st_flash_page_index(const irs_u8* ap_pos)
-{
-  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
-  const std::size_t last_page_index = st_flash_page_count() - 1;
-  if ((ap_pos < st_flash_page_begin(0)) ||
-    (ap_pos >= st_flash_page_begin(last_page_index))) {
-    return std::numeric_limits<std::size_t>::max();
-  }
-  for (int i = st_flash_page_count() - 1; i > 0; i--) {
-    if (ap_pos >= st_flash_page_begin(i)) {
-      return i;
-    }
-  }
-  return std::numeric_limits<std::size_t>::max();
-}
-
 std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
 {
   IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
@@ -377,18 +390,6 @@ std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
   };
   IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
   return sector_sizes[a_page_index];
-}
-
-std::size_t irs::arm::st_flash_size_of_diapason_pages(
-  std::size_t a_first_page_index, std::size_t a_last_page_index)
-{
-  std::size_t size = 0;
-  std::size_t current_index = a_first_page_index;
-  while (current_index <= a_last_page_index) {
-    size += st_flash_page_size(current_index);
-    current_index++;
-  }
-  return size;
 }
 
 std::size_t irs::arm::st_flash_page_count()
@@ -415,9 +416,14 @@ irs::arm::st_flash_t::~st_flash_t()
 void irs::arm::st_flash_t::read(irs_u8* ap_pos, irs_u8 *ap_buf,
   size_type a_buf_size)
 {
+  if (a_buf_size == 0) {
+    m_status = irs_st_ready;
+    return;
+  }
+
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
-    reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+    reinterpret_cast<irs_u32>(ap_pos + a_buf_size - 1)));
   memcpyex(ap_buf, ap_pos, a_buf_size);
   m_status = irs_st_ready;
 }
@@ -432,9 +438,14 @@ void irs::arm::st_flash_t::erase_page(size_type a_page_index)
 void irs::arm::st_flash_t::write(irs_u8* ap_pos,
   const irs_u8 *ap_buf, size_type a_buf_size)
 {
+  if (a_buf_size == 0) {
+    m_status = irs_st_ready;
+    return;
+  }
+
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
-      reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+      reinterpret_cast<irs_u32>(ap_pos + a_buf_size - 1)));
   mp_pos = ap_pos;
   mp_buf = ap_buf;
   mp_end = ap_buf + a_buf_size;
@@ -527,15 +538,28 @@ void irs::arm::st_flash_t::write_tick(
 {
   const size_type buf_size = ap_end - *ap_begin;
   size_type size = m_max_byte_count;
+
   if (buf_size < m_max_byte_count) {
     size = buf_size;
     size_type write_byte_count = m_max_byte_count;
+
     while (size < write_byte_count) {
       write_byte_count >>= 1;
     }
+
     size = write_byte_count;
-    FLASH_CR_bit.PSIZE = byte_count_to_psize(size);
   }
+
+  // Ќельз€ пересекать границу блока 16 байт
+  // (см. описание ошибки PGAERR: Programming alignment error)
+  // ƒополнительно выравниваем на размер записи, иначе не работает
+  size_type pos_front = reinterpret_cast<size_type>(*ap_pos);
+  while (pos_front%size != 0) {
+    size >>= 1;
+  }
+
+  FLASH_CR_bit.PSIZE = byte_count_to_psize(size);
+
   switch (size) {
     case 1: {
       *reinterpret_cast<irs_u8*>(*ap_pos) =
@@ -649,22 +673,6 @@ irs_u8* irs::arm::st_flash_page_begin(std::size_t a_page_index)
   return reinterpret_cast<irs_u8*>(sector_sizes[a_page_index]);
 }
 
-std::size_t irs::arm::st_flash_page_index(const irs_u8* ap_pos)
-{
-  IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
-  const std::size_t last_page_index = st_flash_page_count() - 1;
-  if ((ap_pos < st_flash_page_begin(0)) ||
-    (ap_pos >= st_flash_page_begin(last_page_index))) {
-    return std::numeric_limits<std::size_t>::max();
-  }
-  for (int i = st_flash_page_count() - 1; i > 0; i--) {
-    if (ap_pos >= st_flash_page_begin(i)) {
-      return i;
-    }
-  }
-  return std::numeric_limits<std::size_t>::max();
-}
-
 std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
 {
   IRS_LIB_ASSERT(a_page_index < st_flash_page_count());
@@ -680,18 +688,6 @@ std::size_t irs::arm::st_flash_page_size(std::size_t a_page_index)
   };
   IRS_LIB_ASSERT(st_flash_page_count() == IRS_ARRAYSIZE(sector_sizes));
   return sector_sizes[a_page_index];
-}
-
-std::size_t irs::arm::st_flash_size_of_diapason_pages(
-  std::size_t a_first_page_index, std::size_t a_last_page_index)
-{
-  std::size_t size = 0;
-  std::size_t current_index = a_first_page_index;
-  while (current_index <= a_last_page_index) {
-    size += st_flash_page_size(current_index);
-    current_index++;
-  }
-  return size;
 }
 
 std::size_t irs::arm::st_flash_page_count()
@@ -718,9 +714,14 @@ irs::arm::st_flash_t::~st_flash_t()
 void irs::arm::st_flash_t::read(irs_u8* ap_pos, irs_u8 *ap_buf,
   size_type a_buf_size)
 {
+  if (a_buf_size == 0) {
+    m_status = irs_st_ready;
+    return;
+  }
+
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
-    reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+    reinterpret_cast<irs_u32>(ap_pos + a_buf_size - 1)));
   memcpyex(ap_buf, ap_pos, a_buf_size);
   m_status = irs_st_ready;
 }
@@ -740,9 +741,14 @@ void irs::arm::st_flash_t::erase_page(size_type a_page_index)
 void irs::arm::st_flash_t::write(irs_u8* ap_pos,
   const irs_u8 *ap_buf, size_type a_buf_size)
 {
+  if (a_buf_size == 0) {
+    m_status = irs_st_ready;
+    return;
+  }
+
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(reinterpret_cast<irs_u32>(ap_pos)));
   IRS_LIB_ASSERT(IS_FLASH_ADDRESS(
-      reinterpret_cast<irs_u32>(ap_pos + a_buf_size)));
+      reinterpret_cast<irs_u32>(ap_pos + a_buf_size - 1)));
   mp_pos = ap_pos;
   mp_buf = ap_buf;
   mp_end = ap_buf + a_buf_size;
@@ -781,30 +787,31 @@ irs_status_t irs::arm::st_flash_t::status() const
 void irs::arm::st_flash_t::tick()
 {
   const irs_status_t flash_status = get_flash_status();
-  if (flash_status != irs_st_busy) {
+
+  if ((flash_status == irs_st_error) &&
+      (m_process != process_wait_command)) {
+    process_end(flash_status);
+    m_process = process_wait_command;
+  }
+
+  if (flash_status == irs_st_ready) {
     switch (m_process) {
       case process_erase: {
-        if (HAL_FLASH_Unlock() == HAL_OK) {
-          FLASH_Erase_Sector(m_page_index, voltage_range());
-          m_process = process_wait_for_erase_operation;
-        } else {
-          process_end(irs_st_error);
-        }
+        HAL_FLASH_Unlock();
+        FLASH_Erase_Sector(m_page_index, voltage_range());
+        m_process = process_wait_for_erase_operation;
       } break;
       case process_wait_for_erase_operation: {
         CLEAR_BIT(FLASH->CR, (FLASH_CR_SER | FLASH_CR_SNB));
         process_end(flash_status);
       } break;
       case process_write: {
-        if (HAL_FLASH_Unlock() == HAL_OK) {
-          m_max_psize = psize();
-          m_max_byte_count = psize_to_byte_count(m_max_psize);
-          byte_count_to_psize_reg(m_max_byte_count);
-          FLASH->CR |= FLASH_CR_PG;
-          m_process = process_wait_for_write_operation;
-        } else {
-          process_end(irs_st_error);
-        }
+        HAL_FLASH_Unlock();
+        m_max_psize = psize();
+        m_max_byte_count = psize_to_byte_count(m_max_psize);
+        byte_count_to_psize_reg(m_max_byte_count);
+        FLASH->CR |= FLASH_CR_PG;
+        m_process = process_wait_for_write_operation;
       } break;
       case process_wait_for_write_operation: {
         if (mp_buf < mp_end) {
@@ -839,8 +846,16 @@ irs_status_t irs::arm::st_flash_t::get_flash_status() const
 void irs::arm::st_flash_t::process_end(irs_status_t a_flash_status)
 {
   m_status = a_flash_status;
+  clear_status_flags();
   HAL_FLASH_Lock();
   m_process = process_wait_command;
+}
+
+void irs::arm::st_flash_t::clear_status_flags()
+{
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |\
+    FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR|\
+    FLASH_FLAG_ERSERR);
 }
 
 void irs::arm::st_flash_t::write_tick(
@@ -848,30 +863,45 @@ void irs::arm::st_flash_t::write_tick(
 {
   const size_type buf_size = ap_end - *ap_begin;
   size_type size = m_max_byte_count;
+
+
   if (buf_size < m_max_byte_count) {
     size = buf_size;
     size_type write_byte_count = m_max_byte_count;
+
     while (size < write_byte_count) {
       write_byte_count >>= 1;
     }
+
     size = write_byte_count;
-    byte_count_to_psize_reg(m_max_byte_count);
   }
+
+  // Ќельз€ пересекать границу блока 16 байт
+  // (см. описание ошибки PGAERR: Programming alignment error)
+  // ƒополнительно выравниваем на размер записи, иначе не работает
+  size_type pos_front = reinterpret_cast<size_type>(*ap_pos);
+  while (pos_front%size != 0) {
+    size >>= 1;
+  }
+
+
+  byte_count_to_psize_reg(size);
+
   switch (size) {
     case 1: {
-      *reinterpret_cast<irs_u8*>(*ap_pos) =
+      *reinterpret_cast<__IO irs_u8*>(*ap_pos) =
         *reinterpret_cast<const irs_u8*>(*ap_begin);
     } break;
     case 2: {
-      *reinterpret_cast<irs_u16*>(*ap_pos) =
+      *reinterpret_cast<__IO irs_u16*>(*ap_pos) =
         *reinterpret_cast<const irs_u16*>(*ap_begin);
     } break;
     case 4: {
-      *reinterpret_cast<irs_u32*>(*ap_pos) =
+      *reinterpret_cast<__IO irs_u32*>(*ap_pos) =
         *reinterpret_cast<const irs_u32*>(*ap_begin);
     } break;
     case 8: {
-      *reinterpret_cast<irs_u64*>(*ap_pos) =
+      *reinterpret_cast<__IO irs_u64*>(*ap_pos) =
         *reinterpret_cast<const irs_u64*>(*ap_begin);
     } break;
     default: {
@@ -926,6 +956,7 @@ void irs::arm::st_flash_t::byte_count_to_psize_reg(size_type a_bype_count)
       IRS_LIB_ASSERT_MSG("”казано недопустимое значение количества байт");
     }
   }
+  //__DSB();
 }
 
 irs_u32 irs::arm::st_flash_t::byte_count_to_psize(size_type a_bype_count)
@@ -1200,6 +1231,10 @@ irs::arm::st_flash_files_t::find_file_iterator(
 
 void irs::arm::st_flash_files_t::close_file(files_map_type::iterator a_iterator)
 {
+  if (a_iterator->second.handle.is_empty()) {
+    return;
+  }
+
   for (size_type i = 0; i < m_various_page_mem_file_array.size(); i++) {
     if (m_various_page_mem_file_array[i] == a_iterator->second.handle.get()) {
       m_various_page_mem_file_array.erase(
