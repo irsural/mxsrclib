@@ -314,16 +314,14 @@ various_page_mem_file_write_only_t(various_page_mem_t* ap_various_page_mem,
   IRS_LIB_ASSERT(ap_various_page_mem);
   IRS_LIB_ASSERT(m_first_page_index <= m_last_page_index);
   IRS_LIB_ASSERT(m_last_page_index < mp_various_page_mem->page_count());
-  //mp_pos = mp_various_page_mem->page_begin(m_first_page_index);
+
   mp_pos = mp_begin;
   if (m_save_size_enabled) {
     mp_pos += sizeof(file_size_t);
   }
-  //mp_end = mp_various_page_mem->page_begin(m_last_page_index) +
-    //mp_various_page_mem->page_size(m_last_page_index);
-  m_max_size = mp_end - mp_pos;
-  if (m_save_size_enabled && (m_max_size >= sizeof(file_size_t))) {
-    m_max_size -= sizeof(file_size_t);
+
+  if (mp_end >= mp_pos) {
+    m_max_size = mp_end - mp_pos;
   }
 }
 
@@ -2431,7 +2429,7 @@ void irs::hfftp::server_channel_t::tick()
           set(process_send_acknowledgment);
         }
       } else {
-        const file_error_t file_error = mp_file_read_only->error();
+        const file_error_t file_error = mp_file_write_only->error();
         mp_files->close(mp_file_write_only);
         mp_file_write_only = IRS_NULL;
         m_file_transfer_status = irs_st_error;
