@@ -729,7 +729,7 @@ public:
   virtual void clear_reset_status();
 private:
   irs_u8 m_counter_start_value;
-}; // watchdog_timer_t
+}; // st_window_watchdog_t
 #endif // USE_STDPERIPH_DRIVER
 #endif  //  definde(IRS_STM32F_2_AND_4)
 
@@ -771,6 +771,38 @@ private:
   irs_u8 m_counter_start_value;
   IWDG_HandleTypeDef m_iwdg_handle;
 }; // st_independent_watchdog_t
+
+//! \brief Драйвер оконного сторожевого таймера для контроллеров
+//!   семейств STM32F2xx, STM32F4xx, STM32F7xx
+//! \details Работает от PCLK1 с тимичными значениями 30 МГц для STM32F2xx и
+//!   42 Мгц для stm32f4xx
+//! \author Lyashchov Maxim
+class st_window_watchdog_t: public watchdog_t
+{
+public:
+  typedef irs_size_t size_type;
+  //! \param[in] a_period_min_s Минимальный период сброса в секундах. Допустимо
+  //!   указывать значения [0, 1]. Однако фактически
+  //!   сторожевой таймер работает со следующими диапазономи значений
+  //!   - [0.00013653, 0.06991] (stm32f2xx с Fpclk1 = 30 MHz)
+  //!   - [0.00009752, 0.04993] (stm32f4xx с Fpclk1 = 42 MHz)
+  //!   Должно выполняться условие a_period_min_s <= a_period_max_s
+  //! \param[in] a_period_max_s Максимальный период сброса в секундах.
+  //!   Допустимые значения такие же, как у параметра a_period_min_s.
+  //!   Должно выполняться условие a_period_max_s >= a_period_min_s
+  st_window_watchdog_t(double a_period_min_s, double a_period_max_s);
+  virtual void start();
+  virtual void restart();
+  virtual bool watchdog_reset_cause();
+  //! \brief Сбрасывает флаги перезагрузки: LPWRRSTF, WWDGRSTF,
+  //!   IWDGRSTF, SFTRSTF
+  virtual void clear_reset_status();
+private:
+  irs_u32 reg_value_to_prescaller(irs_u32 a_reg_value);
+  irs_u32 m_counter_start_value;
+  WWDG_HandleTypeDef m_wwdg_handle;
+}; // st_window_watchdog_t
+
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER
 

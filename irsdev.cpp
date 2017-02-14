@@ -2604,7 +2604,8 @@ irs::arm::st_independent_watchdog_t::st_independent_watchdog_t(
   double a_period_s
 ):
   m_period_s(a_period_s),
-  m_counter_start_value(0)
+  m_counter_start_value(0),
+  m_iwdg_handle()
 {
   IRS_LIB_ASSERT((a_period_s >= 0) && (a_period_s <= 100));
 
@@ -2646,6 +2647,107 @@ void irs::arm::st_independent_watchdog_t::clear_reset_status()
 {
   SET_BIT(RCC->CSR, RCC_CSR_RMVF);
 }
+
+// class st_window_watchdog_t
+irs::arm::st_window_watchdog_t::st_window_watchdog_t(
+  double a_period_min_s,
+  double a_period_max_s
+):
+  m_counter_start_value(0),
+  m_wwdg_handle()
+{
+  IRS_LIB_ASSERT((a_period_max_s >= 0) && (a_period_max_s <= 1));
+  IRS_LIB_ASSERT((a_period_min_s >= 0) && (a_period_min_s <= 1));
+  IRS_LIB_ASSERT(a_period_min_s < a_period_max_s);
+  const double period_max_ms = a_period_max_s*1000;
+  const double period_min_ms = a_period_min_s*1000;
+
+  __HAL_RCC_WWDG_CLK_ENABLE();
+
+  const double t_pclk1_ms =
+    (1./irs::cpu_traits_t::periphery_frequency_first())*1000;
+  const double coefficient = t_pclk1_ms*4096;
+  const double counter_end = 0x3F;
+  const double counter_min = 0x40;
+  const double counter_max = 0x7F;
+  const double counter_delta = 0x40;
+  size_type wdgtb_prescaler = 0;
+  size_type wdgtb_prescaler_max = 3;
+  while (wdgtb_prescaler < wdgtb_prescaler_max) {
+    if ((coefficient*pow(2, wdgtb_prescaler)*(counter_delta)) >=
+      period_max_ms) {
+      break;
+    }
+    wdgtb_prescaler++;
+  }
+
+  double counter_start_value =
+    ceil(period_max_ms/(coefficient*pow(2, wdgtb_prescaler))) + counter_end;
+  m_counter_start_value = static_cast<irs_u8>(bound(counter_start_value,
+    counter_min, counter_max));
+  double window_value = ceil((period_max_ms - period_min_ms)/
+    (coefficient*pow(2, wdgtb_prescaler))) + counter_end;
+  if ((window_value > static_cast<double>(m_counter_start_value)) ||
+    (counter_start_value > counter_max)) {
+    window_value =  floor((m_counter_start_value - counter_end)*
+      (a_period_max_s-a_period_min_s)/a_period_max_s) + counter_end;
+  }
+  window_value = bound(window_value, counter_min,
+    static_cast<double>(m_counter_start_value));
+
+  m_wwdg_handle.Instance = WWDG;
+  m_wwdg_handle.Init.Prescaler = reg_value_to_prescaller(wdgtb_prescaler);
+  m_wwdg_handle.Init.Window    = static_cast<irs_u32>(window_value);
+  m_wwdg_handle.Init.Counter   = m_counter_start_value;
+
+  if (HAL_WWDG_Init(&m_wwdg_handle) != HAL_OK) {
+    IRS_LIB_ASSERT_MSG("Ошибка HAL_WWDG_Init");
+  }
+}
+
+irs_u32 irs::arm::st_window_watchdog_t::reg_value_to_prescaller(
+  irs_u32 a_reg_value)
+{
+  switch (a_reg_value) {
+    case 0: {
+      return WWDG_PRESCALER_1;
+    } break;
+    case 1: {
+      return WWDG_PRESCALER_2;
+    } break;
+    case 2: {
+      return WWDG_PRESCALER_4;
+    } break;
+    case 3: {
+      return WWDG_PRESCALER_8;
+    } break;
+    default : {
+      IRS_LIB_ASSERT_MSG("Недопустимое значение регистра WDGTB");
+    }
+  }
+  return WWDG_PRESCALER_1;
+}
+
+void irs::arm::st_window_watchdog_t::start()
+{
+  HAL_WWDG_Start(&m_wwdg_handle);
+}
+
+void irs::arm::st_window_watchdog_t::restart()
+{
+  HAL_WWDG_Refresh(&m_wwdg_handle, m_counter_start_value);
+}
+
+bool irs::arm::st_window_watchdog_t::watchdog_reset_cause()
+{
+  return ((RCC->CSR & RCC_CSR_WWDGRSTF) == RCC_CSR_WWDGRSTF);
+}
+
+void irs::arm::st_window_watchdog_t::clear_reset_status()
+{
+  RCC_CSR_bit.RMVF = 1;
+}
+
 #endif // IRS_STM32_F2_F4_F7
 #endif // USE_HAL_DRIVER
 
