@@ -3309,16 +3309,19 @@ DWORD WINAPI irs::hardflow::usb_hid_t::write_report(void* ap_params)
 bool irs::hardflow::usb_hid_t::check_error()
 {
   const DWORD error_code = GetLastError();
-  if (error_code != ERROR_IO_INCOMPLETE /*ERROR_DEVICE_NOT_CONNECTED*/) {
-    if (WaitForSingleObject(m_error_string_mutex, INFINITE) ==
-      WAIT_OBJECT_0) {
-      m_error_string = irs::str_conv<string_type>(
-        irs::error_str(error_code));
-      ReleaseMutex(m_error_string_mutex);
-    }
-    return true;
+
+  if ((error_code == ERROR_IO_INCOMPLETE) ||
+      (error_code == ERROR_IO_PENDING) /*ERROR_DEVICE_NOT_CONNECTED*/) {
+    return false;
   }
-  return false;
+
+  if (WaitForSingleObject(m_error_string_mutex, INFINITE) ==
+    WAIT_OBJECT_0) {
+    m_error_string = irs::str_conv<string_type>(
+      irs::error_str(error_code));
+    ReleaseMutex(m_error_string_mutex);
+  }
+  return true;
 }
 
 #endif // IRS_WIN32
