@@ -1199,14 +1199,22 @@ void fast_multi_average_t<data_t, calc_t>::resize(size_type a_index,
   size_type a_new_size)
 {
   window_t& window = m_windows[a_index];
-  const size_type start_index = m_samples.size() - window.size;
+  
   window.max_size = a_new_size;
   if (window.size > window.max_size) {
     const size_type count = window.size - window.max_size;
-    for (size_type i = 0; i < count; i++) {
+	const size_type start_index = m_samples.size() - window.size;
+    for (size_type i = 0; i < count; i++) {      
       window.sum -= m_samples[start_index + i];
     }
     window.size = window.max_size;
+  } else {
+    const size_type count = min(window.max_size - window.size, m_samples.size() - window.size);
+    const size_type start_index = m_samples.size() - window.size - count;
+    for (size_type i = 0; i < count; i++) {
+      window.sum += m_samples[start_index + i];
+    }
+    window.size += count;
   }
 
   m_count = 0;
@@ -1267,10 +1275,10 @@ class fast_average_as_t
 {
 public:
   typedef size_t size_type;
-  fast_average_as_t(double a_count, calc_t a_default = 0);
+  fast_average_as_t(calc_t a_count, calc_t a_default = 0);
   void add(data_t a_val);
   calc_t get() const;
-  void resize(double a_count);
+  void resize(calc_t a_count);
   size_type size() const;
   size_type max_size() const;
   bool is_full() const;
@@ -1278,7 +1286,7 @@ public:
   void preset(size_type a_start_pos, size_type a_count);
 private:
   fast_average_as_t();
-  double m_count;
+  calc_t m_count;
   size_type m_max_count;
   calc_t m_count_fractional;
   irs::deque_data_t<data_t> m_samples;
@@ -1287,7 +1295,7 @@ private:
 };
 
 template <class data_t, class calc_t>
-fast_average_as_t<data_t, calc_t>::fast_average_as_t(double a_count,
+fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
   calc_t a_default
 ):
   m_count(a_count),
@@ -1297,7 +1305,7 @@ fast_average_as_t<data_t, calc_t>::fast_average_as_t(double a_count,
   m_sum(0),
   m_default(a_default)
 {
-  double max_count = 0;
+  calc_t max_count = 0;
   m_count_fractional = modf(a_count, &max_count);
   m_max_count = static_cast<size_type>(max_count) + 1;
   m_samples.reserve(m_max_count);
@@ -1332,9 +1340,9 @@ calc_t fast_average_as_t<data_t, calc_t>::get() const
 }
 
 template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::resize(double a_count)
+void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
 {
-  double max_count = 0;
+  calc_t max_count = 0;
   m_count = a_count;
   m_count_fractional = modf(a_count, &max_count);
   m_max_count = static_cast<size_type>(max_count) + 1;
@@ -1405,6 +1413,227 @@ void fast_average_as_t<data_t, calc_t>::preset(
     for (size_type i = 0; i < m_samples.size(); i++) {
       m_sum += m_samples[i];
     }
+  }
+}
+
+//! \brief Расчет среднего значения сигнала, полученного
+//!   асинхронной дискретизацией
+//! \details Суффикс "as" означает "asynchronous sampling"
+template <class data_t, class calc_t>
+class fast_multi_average_as_t
+{
+public:
+  typedef size_t size_type;
+  //! \brief Конструктор
+  //! \param[in] a_sizes - массив размеров окон
+  //! \param[in] a_default - значение, возвращаемое, когда среднее значение еще не рассчитано
+  fast_multi_average_as_t(const vector<calc_t>& a_sizes, calc_t a_default = 0);
+  //! \brief Добавляет отсчет
+  //! \param[in] a_val - значение отсчета
+  void add(data_t a_val);
+  //! \brief Возвращает значение окна с индексом a_index
+  //! \param[in] a_index - индекс окна
+  calc_t get(size_type a_index) const;
+  //! \brief Изменение размера окна
+  //! \param[in] a_index - индекс окна
+  //! \param[in] a_new_size - новый размер окна
+  void resize(size_type a_index, calc_t a_new_size);
+  //! \brief Возвращает текущий размер окна
+  //! \param[in] a_index - индекс окна
+  size_type size(size_type a_index) const;
+  //! \brief Возвращает размер окона
+  //! \param[in] a_index - индекс окна
+  size_type max_size(size_type a_index) const;
+  //! \brief Возвращает статус заполения окна
+  //! \param[in] a_index - индекс окна
+  bool is_full(size_type a_index) const;
+  //! \brief Очищает окно
+  //! \param[in] a_index - индекс окна
+  void clear(size_type a_index);
+  //! \brief Очищает все окна
+  void clear();  
+private:
+  fast_multi_average_as_t();
+  calc_t m_default;
+  size_type m_max_count;
+  irs::deque_data_t<data_t> m_samples;
+  struct window_t
+  {
+    calc_t count;
+    size_type size;
+    size_type max_size;
+    calc_t count_fractional;
+    calc_t sum;
+    window_t():
+      count(0),
+      size(0),
+      max_size(0),
+      count_fractional(0),
+      sum(0)
+    {
+    }
+  };
+  vector<window_t> m_windows;
+};
+
+template <class data_t, class calc_t>
+fast_multi_average_as_t<data_t, calc_t>::fast_multi_average_as_t(
+  const vector<calc_t>& a_sizes, calc_t a_default
+):
+  m_default(a_default),
+  m_max_count(0),
+  m_samples(),
+  m_windows()
+{
+  for (size_type i = 0; i < a_sizes.size(); i++) {
+    window_t window;
+    window.count = a_sizes[i];
+    calc_t max_size = 0;
+    window.count_fractional = modf(a_sizes[i], &max_size);
+    window.max_size = static_cast<size_type>(max_size);
+    m_max_count = max(m_max_count, window.max_size + 1);
+    m_windows.push_back(window);
+  }
+  m_samples.reserve(m_max_count);
+}
+
+template <class data_t, class calc_t>
+void fast_multi_average_as_t<data_t, calc_t>::add(data_t a_val)
+{
+  if (m_max_count > 0) {
+    IRS_LIB_ASSERT(m_samples.size() <= m_max_count);
+    for (size_type i = 0; i < m_windows.size(); i++) {
+      window_t& window = m_windows[i];
+      if ((window.size > 0) && (window.size == window.max_size)) {
+        window.sum -= m_samples[m_samples.size() - (window.max_size + 1)];
+        window.size--;
+      }
+    }
+    if (!m_samples.empty()) {
+      for (size_type i = 0; i < m_windows.size(); i++) {
+        window_t& window = m_windows[i];
+        if (window.size < window.max_size) {
+          window.sum += m_samples.back();
+          window.size++;
+        }
+      }
+      if (m_samples.size() == m_max_count) {
+        m_samples.pop_front();
+      }
+    }
+    m_samples.push_back(a_val);
+  }
+}
+
+template <class data_t, class calc_t>
+calc_t fast_multi_average_as_t<data_t, calc_t>::get(size_type a_index) const
+{  
+  const window_t& window = m_windows[a_index];
+  if (window.size < window.max_size) {
+    return m_default;
+  }
+  calc_t sum = window.sum + m_samples.back()*window.count_fractional;
+  return sum/window.count;
+}
+
+template <class data_t, class calc_t>
+void fast_multi_average_as_t<data_t, calc_t>::resize(size_type a_index, calc_t a_new_size)
+{
+  window_t& window = m_windows[a_index];
+  window.count = a_new_size;
+  calc_t max_size = 0;
+  window.count_fractional = modf(a_new_size, &max_size);
+  window.max_size = static_cast<size_type>(max_size);
+  if (window.max_size == 0) {
+    window.size = 0;
+    window.sum = 0;
+  } else if (window.max_size == 1) {
+    window.size = 0;
+    window.sum = 0;
+    if (m_samples.size() >= 2) {
+      // Берем предпоследний элемент
+      window.sum = m_samples[m_samples.size() - 2];
+    }
+  } else if (window.size > window.max_size) {
+    if (window.size/window.max_size >= 2) {
+      window.sum = 0;
+      size_type start_index = 0;
+      if (m_samples.size() > (window.max_size + 1)) {
+        start_index = m_samples.size() - (window.max_size + 1);
+      }
+      for (size_type i = 0; i < window.max_size; i++) {
+        window.sum += m_samples[start_index + i];
+      }
+      window.size = window.max_size;
+    } else {
+      size_type start_index = m_samples.size() - (window.size + 1);
+      const size_type count = window.size - window.max_size;
+      for (size_type i = 0; i < count; i++) {
+        window.sum -= m_samples[start_index + i];
+      }
+      window.size = window.max_size;
+    }
+  } else if ((window.size + 1) < m_samples.size()) {
+    const size_type count = min(window.max_size - window.size, m_samples.size() - (window.size + 1));
+    size_type start_index = m_samples.size() - (window.size + 1) - count;
+    for (size_type i = 0; i < count; i++) {
+      window.sum += m_samples[start_index + i];
+    }
+    window.size += count;
+  }
+
+  m_max_count = 0;
+  for (size_type i = 0; i < m_windows.size(); i++) {
+    window_t& w = m_windows[i];
+    m_max_count = max(m_max_count, w.max_size + 1);
+  }
+
+  m_samples.reserve(m_max_count);
+
+  if (m_max_count == 0) {
+    clear();
+  } else if (m_max_count == 1) {    
+    if (!m_samples.empty()) {
+      m_samples.pop_front(m_samples.size() - 1);
+    }
+  } else if (m_samples.size() > m_max_count) {
+    m_samples.pop_front(m_samples.size() - m_max_count);
+  }
+}
+
+template <class data_t, class calc_t>
+typename fast_multi_average_as_t<data_t, calc_t>::size_type
+fast_multi_average_as_t<data_t, calc_t>::size(size_type a_index) const
+{
+  return m_windows[a_index].size;
+}
+
+template <class data_t, class calc_t>
+typename fast_multi_average_as_t<data_t, calc_t>::size_type
+fast_multi_average_as_t<data_t, calc_t>::max_size(size_type a_index) const
+{
+  return m_windows[a_index].max_size;
+}
+
+template <class data_t, class calc_t>
+bool fast_multi_average_as_t<data_t, calc_t>::is_full(size_type a_index) const
+{
+  return m_windows[a_index].size == m_windows[a_index].max_size;
+}
+
+template <class data_t, class calc_t>
+void fast_multi_average_as_t<data_t, calc_t>::clear(size_type a_index)
+{
+  m_windows[a_index].size = 0;
+  m_windows[a_index].sum = 0;
+}
+
+template <class data_t, class calc_t>
+void fast_multi_average_as_t<data_t, calc_t>::clear()
+{
+  m_samples.clear();
+  for (size_type i = 0; i < m_windows.size(); i++) {
+    clear(i);
   }
 }
 
@@ -1581,7 +1810,7 @@ public:
   fast_multi_sko_with_single_average_t(
     const vector<size_type>& a_sizes, size_type a_average_size);
   ~fast_multi_sko_with_single_average_t();
-  //! \brief Отчищает все окна
+  //! \brief Очищает все окна
   void clear();
   //! \brief Добавляет отсчет
   void add(data_t a_val);
@@ -1599,7 +1828,7 @@ public:
   //! \brief Изменяет размер окна среднего значения
   //! \param[in] a_new_size - новый размер окна
   void resize_average(size_type a_new_size);
-  //! \brief Отчищает среднее значение
+  //! \brief Очищает среднее значение
   void clear_average();
   //! \brief Возвращает размер окна sko
   //! \param[in] a_index - индекс окна
@@ -1909,7 +2138,7 @@ public:
   fast_multi_sko_t(const vector<size_type>& a_sizes,
     const vector<size_type>& a_average_sizes);
   ~fast_multi_sko_t();
-  //! \brief Отчищает все окна
+  //! \brief Очищает все окна
   void clear();
   //! \brief Добавляет отсчет
   void add(data_t a_val);
@@ -1927,7 +2156,7 @@ public:
   //! \param[in] a_index - индекс окна
   //! \param[in] a_new_size - новый размер окна
   void resize_average(size_type a_index, size_type a_new_size);
-  //! \brief Отчищает среднее значение для всех окон
+  //! \brief Очищает среднее значение для всех окон
   void clear_average();
   //! \brief Возвращает размер окна sko
   //! \param[in] a_index - индекс окна
@@ -2127,10 +2356,10 @@ public:
   //! \param[in] a_sizes - массив размеров окон
   //! \param[in] a_average_sizes - размер окна для среднего значения
   fast_multi_sko_with_single_average_as_t(
-    const vector<double>& a_sizes, double a_average_size,
+    const vector<calc_t>& a_sizes, calc_t a_average_size,
     calc_t a_average_default = 0);
   ~fast_multi_sko_with_single_average_as_t();
-  //! \brief Отчищает все окна
+  //! \brief Очищает все окна
   void clear();
   //! \brief Добавляет отсчет
   void add(data_t a_val);
@@ -2144,11 +2373,11 @@ public:
   //! \brief Изменяет размер окна
   //! \param[in] a_index - индекс окна
   //! \param[in] a_new_size - новый размер окна
-  void resize(size_type a_index, double a_new_size);
+  void resize(size_type a_index, calc_t a_new_size);
   //! \brief Изменяет размер окна среднего значения
   //! \param[in] a_new_size - новый размер окна
-  void resize_average(double a_new_size);
-  //! \brief Отчищает среднее значение
+  void resize_average(calc_t a_new_size);
+  //! \brief Очищает среднее значение
   void clear_average();
   //! \brief Возвращает размер окна sko
   //! \param[in] a_index - индекс окна
@@ -2196,9 +2425,8 @@ private:
 
 template<class data_t, class calc_t>
 fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
-fast_multi_sko_with_single_average_as_t(
-  const vector<double>& a_sizes,
-  double a_average_size, calc_t a_average_default
+fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
+  calc_t a_average_size, calc_t a_average_default
 ):
   m_max_count(0),
   m_average(a_average_size, a_average_default),
@@ -2207,7 +2435,7 @@ fast_multi_sko_with_single_average_as_t(
 {
   for (size_type i = 0; i < a_sizes.size(); i++) {
     window_t window;
-    double max_count = 0;
+    calc_t max_count = 0;
     window.count = a_sizes[i];
     window.count_fractional = modf(a_sizes[i], &max_count);
     window.max_size = static_cast<size_type>(max_count) + 1;
@@ -2228,12 +2456,11 @@ fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
 template<class data_t, class calc_t>
 void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
   size_type a_index,
-  double a_new_size)
+  calc_t a_new_size)
 {
   window_t& window = m_windows[a_index];
 
-
-  double max_count = 0;
+  calc_t max_count = 0;
   window.count = a_new_size;
   window.count_fractional = modf(a_new_size, &max_count);
   window.max_size = static_cast<size_type>(max_count) + 1;
@@ -2260,7 +2487,7 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
 
 template<class data_t, class calc_t>
 void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
-resize_average(double a_new_size)
+resize_average(calc_t a_new_size)
 {
   m_average.resize(a_new_size);
 }
@@ -2449,7 +2676,7 @@ calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t>::get(
   }
   calc_t square_sum = window.square_sum +
     m_square_elems.back()*window.count_fractional;
-  const double n = window.size + window.count_fractional;
+  const calc_t n = window.size + window.count_fractional;
   return sqrt(square_sum/n);
 }
 
@@ -2457,6 +2684,302 @@ template<class data_t, class calc_t>
 calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t>::average() const
 {
   return m_average.get();
+}
+
+//! \brief Расчет СКО сигнала, полученного
+//!   асинхронной дискретизацией
+//! \details Суффикс "as" означает "asynchronous sampling"
+template<class data_t, class calc_t>
+class fast_multi_sko_as_t
+{
+public:
+  typedef size_t size_type;
+  //! \brief Конструктор
+  //! \param[in] a_sizes - массив размеров окон
+  //! \param[in] a_average_sizes - размер окна для среднего значения
+  fast_multi_sko_as_t(const vector<calc_t>& a_sizes,
+    const vector<calc_t>& a_average_sizes,
+    calc_t a_average_default = 0);
+  ~fast_multi_sko_as_t();
+  //! \brief Очищает все окна
+  void clear();
+  //! \brief Добавляет отсчет
+  void add(data_t a_val);
+  //! \brief Добавляет отсчет в среднее значение
+  void add_to_average(data_t a_val);
+  //! \brief Возвращает значение sko
+  //! \param[in] a_index - индекс окна
+  calc_t get(size_type a_index) const;
+  //! \brief Возвращает среднее значение
+  //! \param[in] a_index - индекс окна
+  calc_t average(size_type a_index) const;
+  //! \brief Изменяет размер окна
+  //! \param[in] a_index - индекс окна
+  //! \param[in] a_new_size - новый размер окна
+  void resize(size_type a_index, calc_t a_new_size);
+  //! \brief Изменяет размер окна среднего значения
+  //! \param[in] a_index - индекс окна
+  //! \param[in] a_new_size - новый размер окна
+  void resize_average(size_type a_index, calc_t a_new_size);
+  //! \brief Очищает среднее значение
+  void clear_average();
+  //! \brief Возвращает размер окна sko
+  //! \param[in] a_index - индекс окна
+  size_type size(size_type a_index) const;
+  //! \brief Возвращает размер окна sko с наибольшим количеством элементов
+  size_type size() const;
+  //! \brief Возвращает размер окна среднего значения
+  //! \param[in] a_index - индекс окна
+  size_type average_size(size_type a_index) const;
+  //! \brief Возвращает максимальный размер окна sko
+  //! \param[in] a_index - индекс окна
+  size_type max_size(size_type a_index) const;
+  //! \brief Возвращает максимальный размер самого большого окна sko
+  size_type max_size() const;
+  //! \brief Возвращает максимальный размер окна среднего значения
+  //! \param[in] a_index - индекс окна
+  size_type average_max_size(size_type a_index) const;
+  //! \brief Возвращает статус заполнения окна
+  //! \details Для полного заполнения требуется количество отсчетов, равное
+  //!   сумме размеров, заданных через функции resize и resize_average. Вначале
+  //!   отсчеты используются только для вычисления с среднего значения
+  //! \param[in] a_index - индекс окна
+  bool is_full(size_type a_index) const;
+private:
+  fast_multi_sko_as_t();
+  size_type m_max_count;
+  fast_multi_average_as_t<data_t, calc_t> m_average;
+  vector<irs::deque_data_t<data_t> > m_square_elems;
+  struct window_t
+  {
+    calc_t count;
+    calc_t count_fractional;
+    size_type max_size;
+    size_type size;
+    calc_t square_sum;
+    window_t():
+      max_size(0),
+      size(0),
+      square_sum()
+    {
+    }
+  };
+  vector<window_t> m_windows;
+};
+
+template<class data_t, class calc_t>
+fast_multi_sko_as_t<data_t, calc_t>::
+fast_multi_sko_as_t(const vector<calc_t> &a_sizes,
+  const vector<calc_t> &a_average_sizes, calc_t a_average_default
+):
+  m_max_count(0),
+  m_average(a_average_sizes, a_average_default),
+  m_square_elems(),
+  m_windows()
+{
+  m_square_elems.resize(a_sizes.size());
+  for (size_type i = 0; i < a_sizes.size(); i++) {
+    window_t window;
+    calc_t max_count = 0;
+    window.count = a_sizes[i];
+    window.count_fractional = modf(a_sizes[i], &max_count);
+    window.max_size = static_cast<size_type>(max_count) + 1;
+    m_max_count = max(m_max_count, window.max_size);
+
+    #if IRS_USE_DEQUE_DATA
+    m_square_elems[i].reserve(window.max_size);
+    #endif // IRS_USE_DEQUE_DATA
+
+    m_windows.push_back(window);
+  }
+}
+
+template<class data_t, class calc_t>
+fast_multi_sko_as_t<data_t, calc_t>::
+~fast_multi_sko_as_t()
+{
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_as_t<data_t, calc_t>::resize(
+  size_type a_index,
+  calc_t a_new_size)
+{
+  window_t& window = m_windows[a_index];
+
+  calc_t max_count = 0;
+  window.count = a_new_size;
+  window.count_fractional = modf(a_new_size, &max_count);
+  window.max_size = static_cast<size_type>(max_count) + 1;
+
+  irs::deque_data_t<data_t>& square_elems = m_square_elems[a_index];
+
+  if ((window.size > 0) && (window.size >= window.max_size)) {
+    //const size_type start_index = square_elems.size() - window.max_size;
+    const size_type count = (window.size - window.max_size) + 1;
+    for (size_type i = 0; i < count; i++) {
+      window.square_sum -= square_elems[i]; //square_elems[start_index + i];
+    }
+    window.size -= count;
+  }
+
+  m_max_count = 0;
+  for (size_type i = 0; i < m_windows.size(); i++) {
+    m_max_count = max(m_max_count, m_windows[i].max_size);
+  }
+
+  square_elems.reserve(window.max_size);
+
+  if (square_elems.size() > window.max_size) {
+    square_elems.pop_front(square_elems.size() - window.max_size);
+  }
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_as_t<data_t, calc_t>::
+resize_average(size_type a_index, calc_t a_new_size)
+{
+  m_average.resize(a_index, a_new_size);
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::size(
+  size_type a_index) const
+{
+  return m_windows[a_index].size;
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::size() const
+{
+  size_type size = 0;
+  for (size_type i = 0; i < m_square_elems.size(); i++) {
+    size = max(size, m_square_elems[i].size());
+  }
+  return size;
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::average_size(size_type a_index) const
+{
+  return m_average.size(a_index);
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::
+max_size(size_type a_index) const
+{
+  return m_windows[a_index].max_size;
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::max_size() const
+{
+  return m_max_count;
+}
+
+template<class data_t, class calc_t>
+typename fast_multi_sko_as_t<data_t, calc_t>::size_type
+fast_multi_sko_as_t<data_t, calc_t>::average_max_size(size_type a_index) const
+{
+  return m_average.max_size(a_index);
+}
+
+template<class data_t, class calc_t>
+bool fast_multi_sko_as_t<data_t, calc_t>::
+is_full(size_type a_index) const
+{
+  return (m_windows[a_index].size == (m_windows[a_index].max_size - 1)) &&
+    m_average.is_full(a_index);
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_as_t<data_t, calc_t>::clear()
+{
+  for (size_type i = 0; i < m_windows.size(); i++) {
+    m_windows[i].size = 0;
+    m_windows[i].square_sum = 0;
+    m_square_elems[i].clear();
+  }
+  m_average.clear();
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_as_t<data_t, calc_t>::add(data_t a_val)
+{
+  m_average.add(a_val);
+
+  if (m_max_count == 0) {
+    return;
+  }
+
+  for (size_type i = 0; i < m_windows.size(); i++) {
+    if (!m_average.is_full(i)) {
+      continue;
+    }
+
+    window_t& window = m_windows[i];
+    irs::deque_data_t<data_t>& square_elems = m_square_elems[i];
+    IRS_LIB_ASSERT(m_square_elems.size() <= window.max_size);
+
+    if (window.max_size > 0) {
+      if ((window.size > 0) && (window.size == (window.max_size - 1))) {
+        window.square_sum -=
+          square_elems[square_elems.size() - window.max_size];
+        window.size--;
+      }
+    }
+
+    if (!square_elems.empty()) {
+      if (window.size < window.max_size) {
+        window.square_sum += square_elems.back();
+        window.size++;
+      }
+    }
+
+    if (window.max_size == square_elems.size()) {
+      square_elems.pop_front();
+    }
+
+    calc_t elem = a_val - m_average.get(i);
+    elem *= elem;
+    square_elems.push_back(elem);
+  }
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_as_t<data_t, calc_t>::add_to_average(
+  data_t a_val)
+{
+  m_average.add(a_val);
+}
+
+template<class data_t, class calc_t>
+calc_t fast_multi_sko_as_t<data_t, calc_t>::get(
+  size_type a_index) const
+{
+  const window_t& window = m_windows[a_index];
+  if (window.size == 0) {
+    return 0;
+  }
+  if (window.square_sum < 0) {
+    return 0;
+  }
+  calc_t square_sum = window.square_sum +
+    m_square_elems[a_index].back()*window.count_fractional;
+  const calc_t n = window.size + window.count_fractional;
+  return sqrt(square_sum/n);
+}
+
+template<class data_t, class calc_t>
+calc_t fast_multi_sko_as_t<data_t, calc_t>::average(size_type a_index) const
+{
+  return m_average.get(a_index);
 }
 
 //! \brief Реализация медианного фильтра

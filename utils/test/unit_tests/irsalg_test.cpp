@@ -610,6 +610,139 @@ BOOST_AUTO_TEST_CASE(test_case1)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(fast_multi_average_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  typedef float calc_type;
+  const calc_type f = 50;
+  const calc_type t = 1/f;
+  const calc_type f_adc = f*100;
+  const calc_type t_adc = 1/f_adc;
+  const calc_type pi = IRS_PI;
+
+  vector<calc_type> y;
+  const calc_type x_max = 200*t;
+  const std::size_t short_window_size = (10*t)/t_adc;
+  const std::size_t long_window_size = (48*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<std::size_t> sizes;
+  sizes.push_back(short_window_size);
+  sizes.push_back(long_window_size);
+
+  irs::fast_multi_average_t<calc_type, calc_type> fast_average(sizes);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    fast_average.add(y[i]);
+  }
+
+  const calc_type short_window_result = fast_average.get(0);
+  const calc_type long_window_result = fast_average.get(1);
+
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001); //0.0001
+  BOOST_CHECK_CLOSE(long_window_result, 1., 0.0003); //0.0001
+}
+
+BOOST_AUTO_TEST_CASE(test_case2)
+{
+  typedef float calc_type;
+
+  const calc_type f = 50;
+  const calc_type t = 1/f;
+  const calc_type f_adc = f*100;
+  const calc_type t_adc = 1/f_adc;
+  const calc_type pi = IRS_PI;
+
+  vector<calc_type> y;
+  const calc_type x_max = 50*t;
+  std::size_t short_window_size = (10*t)/t_adc;
+  std::size_t long_window_size = (48*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<std::size_t> sizes;
+  sizes.push_back(short_window_size);
+  sizes.push_back(long_window_size);
+  irs::fast_multi_average_t<calc_type, calc_type> fast_average(sizes);
+
+  for (std::size_t i = 0; i < y.size(); i++) {
+    fast_average.add(y[i]);
+  }
+
+  calc_type short_window_result = fast_average.get(0);
+  calc_type long_window_result = fast_average.get(1);
+
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+  BOOST_CHECK_CLOSE(long_window_result, 1., 0.0001);
+
+  short_window_size = (11*t)/t_adc;
+  long_window_size = (49*t)/t_adc;
+
+  fast_average.resize(0, short_window_size);
+  fast_average.resize(1, long_window_size);
+
+  BOOST_CHECK_EQUAL(fast_average.is_full(0), true);
+  BOOST_CHECK_EQUAL(fast_average.is_full(1), false);
+  short_window_result = fast_average.get(0);
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+
+  {
+    const calc_type f = 60;
+    const calc_type t = 1/f;
+    const calc_type f_adc = f*100;
+    const calc_type t_adc = 1/f_adc;
+    const calc_type pi = IRS_PI;
+
+    vector<double> y;
+    const double x_max = 200*t;
+    short_window_size = (11*t)/t_adc;
+    long_window_size = (49*t)/t_adc;
+    y.reserve(static_cast<std::size_t>(x_max/t_adc));
+    double x = 0;
+    while (x <= x_max) {
+      y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+      x += t_adc;
+    }
+
+    fast_average.resize(0, short_window_size);
+    fast_average.resize(1, long_window_size);
+
+    fast_average.clear();
+    for (std::size_t i = 0; i < y.size(); i++) {
+      fast_average.add(y[i]);
+    }
+
+    short_window_result = fast_average.get(0);
+    long_window_result = fast_average.get(1);
+
+    BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+    BOOST_CHECK_CLOSE(long_window_result, 1., 0.0002);
+    short_window_size = (9*t)/t_adc;
+    long_window_size = (47*t)/t_adc;
+
+    short_window_result = fast_average.get(0);
+    long_window_result = fast_average.get(1);
+
+    fast_average.resize(0, short_window_size);
+    fast_average.resize(1, long_window_size);
+
+    BOOST_CHECK_EQUAL(fast_average.is_full(0), true);
+    BOOST_CHECK_EQUAL(fast_average.is_full(1), true);
+    BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+    BOOST_CHECK_CLOSE(long_window_result, 1., 0.0002);
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(fast_average_as_t)
 
@@ -638,7 +771,7 @@ BOOST_AUTO_TEST_CASE(test_case1)
 
   const double result = fast_average.get();
 
-  BOOST_CHECK_CLOSE(result, 1., 0.0001);
+  BOOST_CHECK_CLOSE(result, 1., 0.000001); //0.0001
 }
 
 BOOST_AUTO_TEST_CASE(test_case2)
@@ -694,6 +827,145 @@ BOOST_AUTO_TEST_CASE(test_case2)
     const double result = fast_average.get();
 
     BOOST_CHECK_CLOSE(result, 1., 0.0001);
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(fast_multi_average_as_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  typedef float calc_type;
+  const calc_type f = 50.5;//17;
+  const calc_type t = 1/f;
+  const calc_type f_adc = 8203.125;
+  const calc_type t_adc = 1/f_adc;
+  const calc_type pi = IRS_PI;
+
+  vector<calc_type> y;
+  const calc_type x_max = 200*t;
+  const calc_type short_window_size = (10*t)/t_adc;
+  const calc_type long_window_size = (48*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<calc_type> sizes;
+  sizes.push_back(short_window_size);
+  sizes.push_back(long_window_size);
+
+  irs::fast_multi_average_as_t<calc_type, calc_type> fast_average(sizes);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    fast_average.add(y[i]);
+  }
+
+  const calc_type short_window_result = fast_average.get(0);
+  const calc_type long_window_result = fast_average.get(1);
+
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001); //0.0001
+  BOOST_CHECK_CLOSE(long_window_result, 1., 0.0003); //0.0001
+}
+
+BOOST_AUTO_TEST_CASE(test_case2)
+{
+  typedef float calc_type;
+
+  const calc_type f = 50.17;
+  const calc_type t = 1/f;
+  const calc_type f_adc = 8203.125;
+  const calc_type t_adc = 1/f_adc;
+  const calc_type pi = IRS_PI;
+
+  vector<calc_type> y;
+  const calc_type x_max = 50*t;
+  calc_type short_window_size = (10*t)/t_adc;
+  calc_type long_window_size = (48*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<calc_type> sizes;
+  sizes.push_back(short_window_size);
+  sizes.push_back(long_window_size);
+  irs::fast_multi_average_as_t<calc_type, calc_type> fast_average(sizes);
+
+  for (std::size_t i = 0; i < y.size(); i++) {
+    fast_average.add(y[i]);
+  }
+
+  calc_type short_window_result = fast_average.get(0);
+  calc_type long_window_result = fast_average.get(1);
+
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+  BOOST_CHECK_CLOSE(long_window_result, 1., 0.0001);
+
+  short_window_size = (11*t)/t_adc;
+  long_window_size = (49*t)/t_adc;
+
+  fast_average.resize(0, short_window_size);
+  fast_average.resize(1, long_window_size);
+
+  BOOST_CHECK_EQUAL(fast_average.is_full(0), true);
+  BOOST_CHECK_EQUAL(fast_average.is_full(1), false);
+  short_window_result = fast_average.get(0);
+  BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+
+  {
+    const calc_type f = 50.5;
+    const calc_type t = 1/f;
+    const calc_type f_adc = 8203.125;
+    const calc_type t_adc = 1/f_adc;
+    const calc_type pi = IRS_PI;
+
+    vector<double> y;
+    const double x_max = 200*t;
+    short_window_size = (11*t)/t_adc;
+    long_window_size = (49*t)/t_adc;
+    y.reserve(static_cast<std::size_t>(x_max/t_adc));
+    double x = 0;
+    while (x <= x_max) {
+      y.push_back(1 + sin(pi/2 + 2*pi*f*x));
+      x += t_adc;
+    }
+
+    fast_average.resize(0, short_window_size);
+    fast_average.resize(1, long_window_size);
+
+    /*BOOST_CHECK_EQUAL(fast_average.is_full(0), true);
+    BOOST_CHECK_EQUAL(fast_average.is_full(1), false);
+    calc_type short_window_result = fast_average.get(0);
+    BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);*/
+
+    fast_average.clear();
+    for (std::size_t i = 0; i < y.size(); i++) {
+      fast_average.add(y[i]);
+    }
+
+    short_window_result = fast_average.get(0);
+    calc_type long_window_result = fast_average.get(1);
+
+    BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+    BOOST_CHECK_CLOSE(long_window_result, 1., 0.0002);
+    short_window_size = (9*t)/t_adc;
+    long_window_size = (47*t)/t_adc;
+
+    short_window_result = fast_average.get(0);
+    long_window_result = fast_average.get(1);
+
+    fast_average.resize(0, short_window_size);
+    fast_average.resize(1, long_window_size);
+
+    BOOST_CHECK_EQUAL(fast_average.is_full(0), true);
+    BOOST_CHECK_EQUAL(fast_average.is_full(1), true);
+    BOOST_CHECK_CLOSE(short_window_result, 1., 0.001);
+    BOOST_CHECK_CLOSE(long_window_result, 1., 0.0002);
   }
 }
 
@@ -847,6 +1119,163 @@ BOOST_AUTO_TEST_CASE(test_case3)
         const double result = sko.get(0);
         if (i > (y.size(  ) - 10)) {
           BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+        }
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(fast_multi_sko_as_t)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  //const double f = 50.1752;
+  const double f = 50;
+  const double t = 1/f;
+  const double f_adc = 8203.125;
+  const double t_adc = 1/f_adc;
+  const double pi = IRS_PI;
+
+  vector<double> y;
+  const double x_max = 200*t;
+  const double window_size = (48*t)/t_adc;
+  const double short_window_size = (5*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(3 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<double> sizes;
+  sizes.push_back(window_size);
+  sizes.push_back(short_window_size);
+
+  irs::fast_multi_sko_as_t<double, double> sko(sizes, sizes);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko.add(y[i]);
+    if (i > y.size()/2) {
+      const double result = sko.get(0);
+      const double result_short = sko.get(1);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+      BOOST_CHECK_CLOSE(result_short, 0.7071067811865, 0.0007);
+    }
+  }
+
+  /*irs::fast_multi_sko_with_single_average_as_t<float, float> sko_float(sizes,
+    window_size);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko_float.add(y[i]);
+    if (sko_float.is_full(0)) {
+      const double result = sko_float.get(0);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00015);
+    }
+  }*/
+}
+
+BOOST_AUTO_TEST_CASE(test_case2)
+{
+  //const double f = 50.1752;
+  const double f = 50.25;
+  const double t = 1/f;
+  const double f_adc = 8203.125;
+  const double t_adc = 1/f_adc;
+  const double pi = IRS_PI;
+
+  vector<double> y;
+  const double x_max = 200*t;
+  const double window_size = (48*t)/t_adc;
+  const double short_window_size = (5*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(3 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<double> sizes;
+  sizes.push_back(window_size);
+  sizes.push_back(short_window_size);
+
+  irs::fast_multi_sko_as_t<double, double> sko(sizes, sizes);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko.add(y[i]);
+    if (i > y.size()/2) {
+      const double result = sko.get(0);
+      const double result_short = sko.get(1);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+      BOOST_CHECK_CLOSE(result_short, 0.7071067811865, 0.0007);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_case3)
+{
+  const double f = 50;
+  const double t = 1/f;
+  const double f_adc = 8203.125;
+  const double t_adc = 1/f_adc;
+  const double pi = IRS_PI;
+
+  vector<double> y;
+  const double x_max = 200*t;
+  const double window_size = (48*t)/t_adc;
+  const double short_window_size = (5*t)/t_adc;
+  y.reserve(static_cast<std::size_t>(x_max/t_adc));
+  double x = 0;
+  while (x <= x_max) {
+    y.push_back(3 + sin(pi/2 + 2*pi*f*x));
+    x += t_adc;
+  }
+
+  vector<double> sizes;
+  sizes.push_back(window_size);
+  sizes.push_back(short_window_size);
+
+  irs::fast_multi_sko_as_t<double, double> sko(sizes, sizes);
+  for (std::size_t i = 0; i < y.size(); i++) {
+    sko.add(y[i]);
+    if (i > y.size()/2) {
+      const double result = sko.get(0);
+      const double result_short = sko.get(1);
+      BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+      BOOST_CHECK_CLOSE(result_short, 0.7071067811865, 0.0007);
+    }
+  }
+
+  {
+    const double f = 50.25;
+    const double t = 1/f;
+    const double f_adc = 8203.125;
+    const double t_adc = 1/f_adc;
+    const double pi = IRS_PI;
+
+    vector<double> y;
+    const double x_max = 200*t;
+    const double window_size = (20*t)/t_adc;
+    const double short_window_size = (5*t)/t_adc;
+    y.reserve(static_cast<std::size_t>(x_max/t_adc));
+    double x = 0;
+    while (x <= x_max) {
+      y.push_back(3 + sin(pi/2 + 2*pi*f*x));
+      x += t_adc;
+    }
+
+    sko.resize(0, window_size);
+    sko.resize(1, short_window_size);
+    sko.resize_average(0, window_size);
+    sko.resize_average(1, short_window_size);
+
+    for (std::size_t i = 0; i < y.size(); i++) {
+      sko.add(y[i]);
+      if (i > y.size()/2) {
+        const double result = sko.get(0);
+        const double result_short = sko.get(1);
+        if (i > (y.size() - 10)) {
+          BOOST_CHECK_CLOSE(result, 0.7071067811865, 0.00007);
+          BOOST_CHECK_CLOSE(result_short, 0.7071067811865, 0.0007);
         }
       }
     }
