@@ -245,7 +245,7 @@ irs::arm::arm_spi_t::~arm_spi_t()
 
 void irs::arm::arm_spi_t::abort()
 {
-  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  //IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
   m_status = SPI_FREE;
   m_cur_byte = 0;
   m_packet_size = 0;
@@ -583,7 +583,7 @@ void irs::arm::arm_spi_t::init_default()
 #elif defined(__STM32F100RBT__)
 #elif defined(IRS_STM32_F2_F4_F7)
 
-void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t* 
+void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t*
 #ifdef IRS_STM32F7xx
   ap_spi_regs
 #endif // !IRS_STM32F7xx
@@ -1042,7 +1042,7 @@ void irs::arm::st_spi_dma_t::disable_spi()
 
 void irs::arm::st_spi_dma_t::abort()
 {
-  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  //IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
   stop_spi_dma();
   m_process = process_wait_command;
 }
@@ -1459,7 +1459,7 @@ void irs::arm::st_hal_spi_dma_t::disable_spi()
 
 void irs::arm::st_hal_spi_dma_t::abort()
 {
-  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  //IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
   stop_spi_dma();
   m_process = process_wait_command;
 }
@@ -1780,7 +1780,7 @@ void irs::arm::arm_spi_t::disable_spi()
 
 void irs::arm::arm_spi_t::abort()
 {
-  IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
+  //IRS_DBG_RAW_MSG("SPI_ABORT" << endl);
   m_process = process_wait_command;
 }
 

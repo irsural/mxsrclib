@@ -316,186 +316,12 @@ private:
 };
 
 #ifdef USE_HAL_DRIVER
-#define ST_HAL_PWM_GEN_DMA_NEW 1
 
-#if !ST_HAL_PWM_GEN_DMA_NEW
-//! \brief Не доделан!!! Драйвер ШИМ-генератора для контроллеров
+//! \brief Драйвер ШИМ-генератора для контроллеров
 //!   семейств STM32F2xx, STM32F4xx, STM32F7xx. DMA-версия.
+//! \details Работает только для одного канала (+ комплементарный)
 //! \author Lyashchov Maxim
-class st_hal_pwm_gen_dma_t: public pwm_gen_t
-{
-public:
-  typedef irs_size_t size_type;
-  struct settings_t
-  {
-    gpio_channel_t gpio_channel;
-    size_t timer_address;
-    cpu_traits_t::frequency_type frequency; // заменить на double
-    float duty;
-    size_type dma_address;
-    //gpio_speed_t gpio_speed;
-
-    irs::c_array_view_t<irs_u8> tx_buffer;
-    //! \brief Канал DMA TX. Использовать константы: DMA1_Stream0 - DMA2_Stream7
-    DMA_Stream_TypeDef* tx_dma_y_stream_x;
-    //! \brief Канал DMA для TX.
-    //!   Использовать константы: DMA_CHANNEL_0 - DMA_CHANNEL_7
-    uint32_t tx_dma_channel;
-    //! \brief Приоритет. Использовать константы:
-    //!   DMA_PRIORITY_LOW - DMA_PRIORITY_VERY_HIGH
-    uint32_t tx_dma_priority;
-
-    IRQn_Type interrupt;
-    irs::arm::interrupt_id_t interrupt_id;
-    irs_u32 interrupt_priority;
-
-    void (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);
-    void (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);
-    void (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);
-
-    irs_u32 data_item_byte_count;
-    settings_t():
-      gpio_channel(PNONE),
-      timer_address(0),
-      frequency(62500),
-      duty(0.5f),
-      dma_address(NULL),
-      //gpio_speed(gpio_speed_2mhz),
-
-      tx_buffer(NULL, 0),
-      tx_dma_y_stream_x(0),
-      tx_dma_channel(0),
-      tx_dma_priority(DMA_PRIORITY_LOW),
-
-      interrupt(DMA2_Stream1_IRQn),
-      interrupt_id(irs::arm::dma2_stream1_int),
-      interrupt_priority(0),
-
-      XferCpltCallback(NULL),
-      XferHalfCpltCallback(NULL),
-      XferErrorCallback(NULL),
-
-      data_item_byte_count(2)
-    {
-    }
-  };
-  enum output_polarity_t {
-    op_active_high,
-    op_active_low
-  };
-  st_hal_pwm_gen_dma_t(const settings_t& a_settings);
-  virtual void start();
-  virtual void stop();
-  virtual void set_duty(irs_uarc a_duty);
-  virtual void set_duty(float a_duty);
-  virtual cpu_traits_t::frequency_type set_frequency(
-    cpu_traits_t::frequency_type  a_frequency);
-  virtual irs_uarc get_max_duty();
-  virtual cpu_traits_t::frequency_type get_max_frequency();
-  virtual cpu_traits_t::frequency_type get_timer_frequency();
-  cpu_traits_t::frequency_type get_frequency() const;
-  void set_duty(gpio_channel_t a_gpio_channel, irs_uarc a_duty);
-  void set_duty(gpio_channel_t a_gpio_channel, float a_duty);
-  void break_enable(gpio_channel_t a_gpio_channel, break_polarity_t a_polarity);
-  void break_disable();
-  void channel_enable(gpio_channel_t a_gpio_channel,
-    output_polarity_t a_output_polarity = op_active_high);
-  void complementary_channel_enable(gpio_channel_t a_gpio_channel,
-    output_polarity_t a_output_polarity = op_active_high);
-  void set_dead_time(float a_time);
-  cpu_traits_t::frequency_type get_auto_reload_value();
-  cpu_traits_t::frequency_type set_auto_reload_value(
-    cpu_traits_t::frequency_type  a_arr);
-
-  //DMA_HandleTypeDef* get_hdma_handle();
-private:
-  irs_u32 get_timer_channel_and_select_alternate_function(
-    gpio_channel_t a_gpio_channel);
-
-  void select_alternate_function_for_break_channel();
-  void set_duty_register(irs_u32* ap_tim_ccr, irs_uarc a_duty);
-  void set_duty_register(irs_u32* ap_tim_ccr, float a_duty);
-  irs_u32* get_tim_ccr_register(irs_u32 a_timer_channel);
-
-  void channel_enable_helper(gpio_channel_t a_gpio_channel,
-    bool a_complementary, output_polarity_t a_output_polarity);
-
-  void reset_dma();
-  void start_dma();
-  void stop_dma();
-  void cleand_dcache_tx();
-
-  enum output_compare_mode_t {
-    ocm_force_inactive_level = 4,
-    ocm_pwm_mode_1 = 6
-  };
-  struct channel_t
-  {
-    //float duty;
-    gpio_channel_t main_channel;
-    bool main_channel_active_low;
-    gpio_channel_t complementary_channel;
-    bool complementary_channel_active_low;
-    irs_u32 timer_channel;
-    irs_u32* tim_ccr;
-    channel_t():
-      //duty(0),
-      main_channel(PNONE),
-      main_channel_active_low(false),
-      complementary_channel(PNONE),
-      complementary_channel_active_low(false),
-      timer_channel(0),
-      tim_ccr(NULL)
-    {
-    }
-  };
-
-  channel_t* find_channel(irs_u32 a_timer_channel);
-  void set_mode_capture_compare_registers_for_all_channels(
-    output_compare_mode_t a_mode);
-  void set_mode_capture_compare_registers(output_compare_mode_t a_mode,
-    channel_t* ap_channel);
-  cpu_traits_t::frequency_type timer_frequency() const;
-  vector<st_timer_name_t> get_available_timers(gpio_channel_t a_gpio_channel);
-
-  settings_t m_settings;
-
-  bool m_started;
-  vector<channel_t> m_channels;
-  gpio_channel_t m_gpio_channel;
-  tim_regs_t* mp_timer;
-  cpu_traits_t::frequency_type m_frequency;
-  //float m_duty;
-  irs_u32* mp_tim_ccr;
-  irs_u32 m_timer_channel;
-  gpio_channel_t m_complementary_gpio_channel;
-  gpio_channel_t m_break_gpio_channel;
-
-  //dma_regs_t* mp_dma;
-  DMA_HandleTypeDef m_hdma_tx;
-  //bool m_tx_status;
-  bool m_hdma_init;
-  irs::c_array_view_t<irs_u8> m_tx_buffer;
-
-  class dma_event_t: public irs::event_t
-  {
-  public:
-    dma_event_t(DMA_HandleTypeDef* ap_hdma_tx);
-    virtual void exec();
-    /*void enable();
-    void disable();*/
-  private:
-    DMA_HandleTypeDef* mp_hdma_tx;
-    bool m_enabled;
-  };
-  dma_event_t m_dma_event;
-};
-
-#else // ST_HAL_PWM_GEN_DMA_NEW
-
-//! \brief Не доделан!!! Драйвер ШИМ-генератора для контроллеров
-//!   семейств STM32F2xx, STM32F4xx, STM32F7xx. DMA-версия.
-//! \author Lyashchov Maxim
+//! \warning Не доделан. Некоторые функции могут не работать.
 class st_hal_pwm_gen_dma_t: public st_pwm_gen_t
 {
 public:
@@ -588,7 +414,6 @@ private:
   };
   dma_event_t m_dma_event;
 };
-#endif // ST_HAL_PWM_GEN_DMA_NEW
 #endif // USE_HAL_DRIVER
 
 #else
