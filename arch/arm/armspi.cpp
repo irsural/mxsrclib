@@ -1102,7 +1102,9 @@ bool irs::arm::st_spi_dma_t::set_data_size(irs_u16 a_data_size)
     IRS_LIB_ERROR(ec_standard, "Размер данных может быть только 8 или 16");
   }
 
+  #ifdef IRS_STM32F7xx
   irs_u8 spe = ap_spi_regs->SPI_CR1_bit.SPE;
+  #endif //IRS_STM32F7xx
   disable_spi();
   if (a_data_size == 8) {
     mp_spi_regs->SPI_CR1_bit.DFF = 0;
@@ -1112,8 +1114,11 @@ bool irs::arm::st_spi_dma_t::set_data_size(irs_u16 a_data_size)
     m_data_item_byte_count = 2;
   }
   m_max_byte_count = calc_max_byte_count();
-  //enable_spi();
+  #ifdef IRS_STM32F7xx
   ap_spi_regs->SPI_CR1_bit.SPE = spe;
+  #else //IRS_STM32F7xx
+  enable_spi();
+  #endif //IRS_STM32F7xx
   reset_dma();
   return true;
 }
