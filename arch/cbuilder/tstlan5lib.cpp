@@ -606,6 +606,8 @@ irs::tstlan::view_t::controls_t::controls_t(
   m_minus_shift_time(0),
   m_refresh_table(true),
   m_is_lock(true),
+  val_prev(),
+  is_saved(false),
   m_chart_row(0),
   m_chart_names(),
   m_csv_names(),
@@ -1080,9 +1082,20 @@ void irs::tstlan::view_t::controls_t::tick()
       const int row_count = mp_controller->RecordCount;
       if (!m_is_lock) {
         mp_view->BeginUpdate();
+        val_prev.resize(row_count);
         for (int row = 0; row < row_count; row++) {
-          mp_controller->Values[row][mp_value_column->Index] =
-            var_to_bstr(row);
+          if (is_saved) {
+            String val_cur = var_to_bstr(row);
+            if (val_prev[row] != val_cur) {
+              mp_controller->Values[row][mp_value_column->Index] = val_cur;
+            }
+            val_prev[row] = val_cur;
+          } else {
+            is_saved = true;
+            mp_controller->Values[row][mp_value_column->Index] =
+              var_to_bstr(row);
+            val_prev[row] = mp_controller->Values[row][mp_value_column->Index];
+          }
         }
         mp_view->EndUpdate();
       }

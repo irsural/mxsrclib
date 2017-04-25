@@ -517,6 +517,8 @@ private:
     double m_minus_shift_time;
     bool m_refresh_table;
     bool m_is_lock;
+    vector<String> val_prev;
+    bool is_saved;
     int m_chart_row;
 
     map<string_type, bool> m_chart_names;
