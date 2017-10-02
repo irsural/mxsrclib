@@ -945,6 +945,14 @@ get_timer_channel_and_select_alternate_function(gpio_channel_t a_gpio_channel)
         IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
       }
     } break;
+    case PI0: {
+      if (timer_address == IRS_TIM5_BASE) {
+        timer_channel = 4;
+        GPIOI_AFRL_bit.AFRL0 = 2;
+      } else {
+        IRS_LIB_ASSERT_MSG("Недопустимая комбинация порта и таймера");
+      }
+    } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимая или неопределенная комбинация "
         "порта и таймера");
