@@ -1,3 +1,7 @@
+# mxsrclib ignore
+/tmpPrst.tgz
+/.directory
+
 # irs global ignore
 *.*~
 *.SchDocPreview
@@ -23,9 +27,5 @@ sysprs7.*
 tmpprst.*
 ~$*.*
 ~W*.tmp
-
-# mxsrclib ignore
-/tmpPrst.tgz
-/.directory
 /__history
 /Desktop.ini
