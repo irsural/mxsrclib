@@ -29,3 +29,4 @@ tmpprst.*
 ~W*.tmp
 /__history
 /Desktop.ini
+*.orig
