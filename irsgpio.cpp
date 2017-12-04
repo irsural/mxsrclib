@@ -6,6 +6,9 @@
 //! Дата создания: 10.11.2010
 
 #include <irspch.h>
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif // __BORLANDC__
 
 #ifdef IRS_STM32_F2_F4_F7
 # include <armcfg.h>
