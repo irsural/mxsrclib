@@ -12,6 +12,8 @@
 
 #ifdef __BORLANDC__
 #include <SysUtils.hpp>
+#include <System.hpp>
+#include <vcl.h>
 #endif //__BORLANDC__
 
 #include <irscpp.h>
@@ -82,6 +84,7 @@ struct irs_string_other_char_t<wchar_t>
   typedef char char_type;
 };
 #define IRS_STRING_BASE basic_string<T>
+#define IRS_STRING_BASE_NO_SPEC basic_string
 #define IRS_STRING_TYPE basic_irs_string_t
 #define IRS_STRING_TYPE_SPEC basic_irs_string_t<T>
 #define IRS_STRING_OSTREAM basic_ostream<T>
@@ -288,9 +291,74 @@ public:
     base = cstr;
     return *this;
   }
-  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE*)
+
+  #if __BORLANDC__ >= IRS_CPP_BUILDER2010
+  string char_conv_borlandc(const wchar_t* cstr)
   {
+    return AnsiString(cstr).c_str();
+  }
+  wstring char_conv_borlandc(const char* cstr)
+  {
+    return UnicodeString(cstr).c_str();
+  }
+  string char_conv_borlandc(char, const UnicodeString& str)
+  {
+    return AnsiString(str).c_str();
+  }
+  wstring char_conv_borlandc(wchar_t, const UnicodeString& str)
+  {
+    return str.c_str();
+  }
+  IRS_STRING_TYPE& operator=(
+    const IRS_STRING_TYPE<IRS_STRING_OTHER_CHAR_TYPE>& str)
+  {
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = char_conv_borlandc(str.c_str());
+  }
+  IRS_STRING_TYPE& operator=(
+    const IRS_STRING_BASE_NO_SPEC<IRS_STRING_OTHER_CHAR_TYPE>& str)
+  {
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = char_conv_borlandc(str.c_str());
+  }
+  IRS_STRING_TYPE& operator=(const UnicodeString& str)
+  {
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = char_conv_borlandc(T(), str);
+  }
+  /*
+  IRS_STRING_TYPE(const IRS_STRING_TYPE<IRS_STRING_OTHER_CHAR_TYPE>& strg)
+  {
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = strg;
+  }*/
+  IRS_STRING_TYPE(
+    const IRS_STRING_TYPE<IRS_STRING_OTHER_CHAR_TYPE>& str)
+  {
+    *this = str;
+  }
+  IRS_STRING_TYPE(
+    const IRS_STRING_BASE_NO_SPEC<IRS_STRING_OTHER_CHAR_TYPE>& str)
+  {
+    *this = str;
+  }
+  IRS_STRING_TYPE(const UnicodeString& str)
+  {
+    *this = str;
+  }
+  #define IRS_STRING_ARG arg
+  #else //__BORLANDC__ >= IRS_CPP_BUILDER2010
+  #define IRS_STRING_ARG
+  #endif //__BORLANDC__ >= IRS_CPP_BUILDER2010
+
+  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE* IRS_STRING_ARG)
+  {
+    #if __BORLANDC__ >= IRS_CPP_BUILDER2010
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = char_conv_borlandc(IRS_STRING_ARG);
+    #else //__BORLANDC__ >= IRS_CPP_BUILDER2010
     other_char_error();
+    #endif //__BORLANDC__ >= IRS_CPP_BUILDER2010
     return *this;
   }
   IRS_STRING_TYPE& operator=(const bool& val)
@@ -303,9 +371,17 @@ public:
     base = val;
     return *this;
   }
-  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE& /*val*/)
+  IRS_STRING_TYPE& operator=(const IRS_STRING_OTHER_CHAR_TYPE& IRS_STRING_ARG)
   {
+    #if __BORLANDC__ >= IRS_CPP_BUILDER2010
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    IRS_STRING_OTHER_CHAR_TYPE cstr[2];
+    cstr[0] = IRS_STRING_ARG;
+    cstr[1] = 0;
+    base = char_conv_borlandc(cstr);
+    #else //__BORLANDC__ >= IRS_CPP_BUILDER2010
     other_char_error();
+    #endif //__BORLANDC__ >= IRS_CPP_BUILDER2010
     return *this;
   }
   IRS_STRING_TYPE& operator=(const signed char& val)
@@ -535,7 +611,7 @@ public:
     return strm;
     #endif //IRS_FULL_STDCPPLIB_SUPPORT
   }
-  bool to_number(IRS_STRING_OTHER_CHAR_TYPE& /*val*/) const
+  bool to_number(IRS_STRING_OTHER_CHAR_TYPE&) const
   {
     IRS_SPEC_CSTR_DECLARE(error_message,
       "{Неправильный тип char в to_number}");
@@ -868,6 +944,16 @@ namespace irs_shift_operator_irsstr {
 //! \addtogroup string_processing_group
 //! @{
 
+#if __BORLANDC__ >= IRS_CPP_BUILDER2010
+inline ostream& operator<<(ostream& strm, const wchar_t* strg)
+{
+  return strm << AnsiString(strg).c_str();
+}
+inline wostream& operator<<(wostream& strm, const char* strg)
+{
+  return strm << UnicodeString(strg).c_str();
+}
+#endif //__BORLANDC__ >= IRS_CPP_BUILDER2010
 IRS_STRING_TEMPLATE
 inline IRS_STRING_OSTREAM& operator<<(IRS_STRING_OSTREAM& strm,
   const irs::IRS_STRING_TYPE_SPEC& strg)
