@@ -5200,9 +5200,11 @@ void irs::chart::builder_chart_window_t::controls_t::update_chart()
       TMxChartItem* item = mp_chart->Items[mp_chart->BaseItem];
       if (!m_fixed_time_mode_enabled) {
         #pragma warn -8071
-        const double first = item->DataX[item->Bounds.Begin];
-        const double last = item->DataX[item->Bounds.End];
-        #pragma warn .8071
+        const double first = static_cast<double>(item->DataX[
+          static_cast<int>(item->Bounds.Begin)]);
+        const double last = static_cast<double>(item->DataX[
+          static_cast<int>(item->Bounds.End)]);
+		#pragma warn .8071
         area.Left = last - (area.Right - area.Left);
         area.Right = last;
       }

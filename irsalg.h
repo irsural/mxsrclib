@@ -767,13 +767,13 @@ irs::sko_calc_t<data_t, calc_t>:: operator data_t()const {
       square_sum += val * val;
     }
     calc_t calced_sko = sqrt(square_sum / size);
-    return calced_sko;
+    return static_cast<data_t>(calced_sko);
   }
-  return 0.;
+  return 0;
 }
 
 template<class data_t, class calc_t>
-data_t irs::sko_calc_t<data_t, calc_t>::relative()const {
+data_t irs::sko_calc_t<data_t, calc_t>::relative() const {
   const size_t size = m_val_array.size();
   if (size) {
     calc_t average = sum() / size;
