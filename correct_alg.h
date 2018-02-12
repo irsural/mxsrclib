@@ -335,6 +335,8 @@ public:
   OUT_Z apply_dac(IN_X a_x_value, IN_Y a_y_value);
   K triple_line(triple_line_data_t a_data);
   irs::correct_map_t<IN_X, IN_Y, OUT_Z, K>* map();
+  K k(irs_uarc a_x_index, irs_uarc a_y_index);
+  OUT_Z level(irs_uarc a_x_index, irs_uarc a_y_index);
 private:
   irs_uarc m_start_index;
   mxdata_t *mp_data;
@@ -363,6 +365,27 @@ template <class IN_X, class IN_Y, class OUT_Z, class K>
 irs::correct_t<IN_X, IN_Y, OUT_Z, K>::~correct_t()
 {
   //
+}
+
+// Считывание коэффициентов коррекции
+// Обычно
+// a_x_index - индекс по частоте для переменного тока
+// a_y_index - индекс по уровню силы тока или напряжению
+template <class IN_X, class IN_Y, class OUT_Z, class K>
+K irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
+k(irs_uarc a_x_index, irs_uarc a_y_index)
+{
+  return mp_map->mp_k_array[a_x_index + a_y_index*mp_map->m_x_count];
+}
+
+// Считывание уровня значений коррекции (напряжение или сила тока)
+// См. также комментарий к функции k
+template <class IN_X, class IN_Y, class OUT_Z, class K>
+OUT_Z irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
+level(irs_uarc a_x_index, irs_uarc a_y_index)
+{
+  return mp_map->mp_y_points[a_y_index]*static_cast<OUT_Z>(
+    mp_map->mp_k_array[a_x_index + a_y_index*mp_map->m_x_count]);
 }
 
 template <class IN_X, class IN_Y, class OUT_Z, class K>
