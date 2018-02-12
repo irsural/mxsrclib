@@ -384,6 +384,8 @@ template <class IN_X, class IN_Y, class OUT_Z, class K>
 OUT_Z irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
 level(irs_uarc a_x_index, irs_uarc a_y_index)
 {
+  IRS_LIB_ERROR_IF(m_use_b, ec_standard, "Функцию irs::correct_t::level "
+    "нельзя вызывать когда включен параметр m_use_b");
   return mp_map->mp_y_points[a_y_index]*static_cast<OUT_Z>(
     mp_map->mp_k_array[a_x_index + a_y_index*mp_map->m_x_count]);
 }
@@ -521,8 +523,8 @@ OUT_Z irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
 apply_dac(IN_X a_x_value, IN_Y a_y_value)
 {
   // a_in_value убрано, так как a_y_value == a_in_value
-  IRS_LIB_DBG_MSG_IF(m_use_b, "Функцию OUT_Z irs::correct_t<IN_X, IN_Y, "
-    "OUT_Z, K>::apply_dac нельзя вызывать когда включен параметр m_use_b");
+  IRS_LIB_ERROR_IF(m_use_b, ec_standard, "Функцию irs::correct_t::apply_dac "
+    "нельзя вызывать когда включен параметр m_use_b");
 
   OUT_Z out_value = static_cast<OUT_Z>(a_y_value);
 
