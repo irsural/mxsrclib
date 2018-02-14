@@ -403,7 +403,7 @@ void irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
 preapre_data(IN_X a_x_value, IN_Y a_y_value, OUT_Z a_in_value,
   triple_line_data_t* ap_tl_data)
 {
-  memsetex(ap_tl_data, sizeof(*ap_tl_data));
+  memsetex(ap_tl_data, 1);
   if (mp_data->connected())
   {
     triple_line_data_t& tl_data = *ap_tl_data;
