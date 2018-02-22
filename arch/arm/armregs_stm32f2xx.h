@@ -2504,7 +2504,7 @@ typedef struct {
   __REG32  SETENA3        : 1;
   __REG32  SETENA4        : 1;
   __REG32  SETENA5        : 1;
-  __REG32  SETENA6        : 1;
+  __REG32  SETENA_EXTI0   : 1;
   __REG32  SETENA7        : 1;
   __REG32  SETENA8        : 1;
   __REG32  SETENA_EXTI3   : 1;

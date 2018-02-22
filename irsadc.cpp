@@ -3275,9 +3275,9 @@ irs::dac_ad5791_t::dac_ad5791_t(
   memset(mp_write_buf, 0, m_write_buf_size);
 
   mp_cs_pin->set();
-  mp_ldac_pin->clear();
-  mp_clr_pin->clear();
-  mp_reset_pin->set();
+  mp_ldac_pin->set();
+  mp_clr_pin->set();
+  mp_reset_pin->clear();
 
   m_timer.start();
 
@@ -3396,7 +3396,7 @@ void irs::dac_ad5791_t::tick()
   switch (m_status) {
     case st_reset: {
       if (m_timer.check()) {
-        mp_reset_pin->clear();
+        mp_reset_pin->set();
         m_status = st_prepare_options;
       }
       break;

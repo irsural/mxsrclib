@@ -329,7 +329,7 @@ public:
 
   correct_t(mxdata_t *ap_data, irs_uarc a_start_index, bool a_use_b);
   ~correct_t();
-  void preapre_data(IN_X a_x_value, IN_Y a_y_value, OUT_Z a_in_value,
+  void preapre_data(IN_X a_x_value, IN_Y a_y_value,
     triple_line_data_t* ap_tl_data);
   OUT_Z apply(IN_X a_x_value, IN_Y a_y_value, OUT_Z a_in_value);
   OUT_Z apply_dac(IN_X a_x_value, IN_Y a_y_value);
@@ -400,7 +400,7 @@ map()
 
 template <class IN_X, class IN_Y, class OUT_Z, class K>
 void irs::correct_t<IN_X, IN_Y, OUT_Z, K>::
-preapre_data(IN_X a_x_value, IN_Y a_y_value, OUT_Z a_in_value,
+preapre_data(IN_X a_x_value, IN_Y a_y_value,
   triple_line_data_t* ap_tl_data)
 {
   memsetex(ap_tl_data, 1);
@@ -466,7 +466,7 @@ apply(IN_X a_x_value, IN_Y a_y_value, OUT_Z a_in_value)
   if (mp_data->connected())
   {
     triple_line_data_t tl_data;
-    preapre_data(a_x_value, a_y_value, a_in_value, &tl_data);
+    preapre_data(a_x_value, a_y_value, &tl_data);
 
     if (!m_error)
     {
@@ -531,7 +531,7 @@ apply_dac(IN_X a_x_value, IN_Y a_y_value)
   if (mp_data->connected())
   {
     triple_line_data_t tl_data;
-    preapre_data(a_x_value, a_y_value, a_y_value, &tl_data);
+    preapre_data(a_x_value, a_y_value, &tl_data);
 
     if (!m_error)
     {
