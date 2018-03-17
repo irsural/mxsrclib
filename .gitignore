@@ -9,6 +9,7 @@
 *.csv
 *.dcu
 *.dep
+*.ewt
 *.il?
 *.map
 *.obj
