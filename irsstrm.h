@@ -25,6 +25,7 @@
 
 #ifdef __ICCARM__
 #include <armioregs.h>
+//#include <irslwip.h>
 #endif //__ICCARM__
 
 #ifdef IRS_LINUX
@@ -510,6 +511,24 @@ private:
   #endif // IRS_STM32_F2_F4_F7
   const irs_u32 m_baud_rate;
 };
+
+// Буфер потоков для Telnet ARM (lwIP)
+//class telnet_buf: public streambuf
+//{
+//public:
+//  telnet_buf(int a_outbuf_size);
+//  virtual int overflow(int c = EOF);
+//  virtual int sync();
+//  void trans (char data);
+//  void trans_simple (char data);
+//private:
+//  int m_outbuf_size;
+//  auto_arr<char> m_outbuf;
+//  /struct tcp_pcb* mp_tcp_socket;
+//  bool m_start_connection;
+//  bool m_connected;
+//  bool m_sending_frame;
+//};
 
 // Поток COM-порта ARM
 class com_ostream: public ostream

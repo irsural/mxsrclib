@@ -304,4 +304,79 @@ int irs::arm::com_buf::sync()
   return overflow();
 }
 
+// class telnet_buf
+
+//irs::arm::telnet_buf::telnet_buf(int a_outbuf_size):
+//  m_outbuf_size(a_outbuf_size),
+//  m_outbuf(new char[m_outbuf_size + 1]),
+//  mp_tcp_socket(0),
+//  m_start_connection(true),
+//  m_connected(true),
+//  m_sending_frame(false)
+//{
+//  memset(m_outbuf.get(), 0, m_outbuf_size);
+//  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+//  mp_tcp_socket = tcp_new();
+//  tcp_bind(mp_tcp_socket, IP_ADDR_ANY, 23);
+//  mp_tcp_socket = tcp_listen(mp_tcp_socket);
+//  tcp_accept(mp_tcp_socket, DebugSockAccept);
+//}
+//
+//void irs::arm::telnet_buf::trans (char data)
+//{
+//  if (data == '\n'){
+//    trans_simple('\r');
+//    trans_simple('\n');
+//  } else {
+//    trans_simple(data);
+//  }
+//}
+//void irs::arm::telnet_buf::trans_simple (char /*data*/)
+//{
+////  #if defined(__LM3Sx9xx__)
+////    UART0DR = data;
+////    while (UART0FR_bit.TXFF);
+////  #elif defined(__LM3SxBxx__)
+////    UART0DR_bit.DATA = data;
+////    while (UART0FR_bit.TXFF);
+////  #elif defined(__STM32F100RBT__)
+////    volatile char x = data;
+////    //data = 0;
+////  #elif defined(IRS_STM32_F2_F4_F7)
+////    // 1: Transmitter is enabled
+////    //m_usart->USART_CR1_bit.TE = 1;
+////    #ifdef IRS_STM32F7xx
+////    while (m_usart->USART_ISR_bit.TC != 1);
+////    m_usart->USART_TDR = data;
+////    #else // F2 F4
+////    while (m_usart->USART_SR_bit.TC != 1);
+////    m_usart->USART_DR = data;
+////    #endif // F2 F4
+////  #else
+////    #error Тип контроллера не определён
+////  #endif  //  mcu type
+//}
+//
+//int irs::arm::telnet_buf::overflow(int c)
+//{
+//  int len_s = pptr() - pbase();
+//  if (len_s > 0) {
+//    *pptr() = 0;
+//    char* pend = pptr();
+//    for(char *message = pbase(); message<pend; message++ ) {
+//      trans(*message);
+//    }
+//  }
+//  if (c != EOF) {
+//    trans(c);
+//  }
+//  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+//  return 0;
+//}
+//
+//int irs::arm::telnet_buf::sync()
+//{
+//  return overflow();
+//}
+
 #endif // __ICCARM__

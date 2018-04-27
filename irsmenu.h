@@ -457,6 +457,7 @@ class irs_menu_double_item_t: public irs_menu_base_t
   char *f_prefix;
   char *f_suffix;
   char *f_value_string;
+  char *f_hint;
   irs::num_mode_t f_num_mode;
   size_type f_space_count_after_prefix;
   size_type f_len;
@@ -494,6 +495,7 @@ public:
   void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
     size_type a_len, size_type a_accur,
     irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  void set_hint(char *a_hint);
   void set_space_count_after_prefix(size_type a_count);
   void reset_str();
   void set_min_value(float a_min_value);

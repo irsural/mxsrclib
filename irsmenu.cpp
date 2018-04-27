@@ -709,6 +709,7 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   f_prefix(empty_str),
   f_suffix(empty_str),
   f_value_string(empty_str),
+  f_hint(empty_str),
   f_num_mode(irs::num_mode_fixed),
   f_space_count_after_prefix(1),
   f_len(0),
@@ -775,6 +776,11 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   f_suffix = a_suffix;
 
   update_str_parameters();
+}
+
+void irs_menu_double_item_t::set_hint(char *a_hint)
+{
+  f_hint = a_hint;
 }
 
 void irs_menu_double_item_t::set_space_count_after_prefix(size_type a_count)
@@ -1104,7 +1110,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
               mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
             }
-            else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            else 
+            {
+              mxdisp_pos_t x_pos = 0;
+              mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+              mp_disp_drv->clear_line(y_pos);
+              mp_disp_drv->outtextpos(x_pos, y_pos, f_hint);
+            }
             break;
           }
         }
@@ -1160,6 +1172,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             mxdisp_pos_t x_pos = 0;
             mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
             mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+          }          
+          else 
+          {
+            mxdisp_pos_t x_pos = 0;
+            mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+            mp_disp_drv->clear_line(y_pos);
+            mp_disp_drv->outtextpos(x_pos, y_pos, f_hint);
           }
           if (f_cur_symbol < f_len)
           {
