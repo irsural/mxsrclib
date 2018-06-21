@@ -1255,7 +1255,6 @@ irs::dac_ad8400_t::dac_ad8400_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
       mp_spi->tick();
     configure_spi();
     mp_cs_pin->clear();
-    irs_u8 mp_write_buffer[m_packet_size];
     mp_write_buffer[0] = 0;
     mp_write_buffer[1] = m_init_value;
     mp_spi->lock();
@@ -1434,7 +1433,6 @@ irs::dac_ad5160_t::dac_ad5160_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
       mp_spi->tick();
     configure_spi();
     mp_cs_pin->clear();
-    irs_u8 mp_write_buffer[m_packet_size];
     mp_write_buffer[0] = m_init_value;
     mp_spi->lock();
     mp_spi->write(mp_write_buffer, m_packet_size);
@@ -1926,7 +1924,6 @@ irs::dac_ad7376_t::dac_ad7376_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
     for (; (mp_spi->get_status() != irs::spi_t::FREE) && (mp_spi->get_lock()); )
       mp_spi->tick();
     mp_cs_pin->clear();
-    irs_u8 mp_write_buffer[m_packet_size];
     mp_write_buffer[0] = m_init_value;
     mp_spi->write(mp_write_buffer, m_packet_size);
     for (; mp_spi->get_status() != irs::spi_t::FREE; mp_spi->tick());

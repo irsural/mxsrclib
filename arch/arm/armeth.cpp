@@ -520,7 +520,7 @@ void irs::arm::st_ethernet_t::eth_auto_negotation_t::read_speed_and_mode_phy()
   const irs_u32 prev_mode = m_mode;
   const irs_u32 prev_speed = m_speed;
   irs_u32 RegValue = ETH_ReadPHYRegister(m_phy_address, PHY_SR);
-  if((RegValue & PHY_DUPLEX_STATUS) != (uint32_t)RESET) {
+  if((RegValue & PHY_DUPLEX_STATUS) != static_cast<uint32_t>(RESET)) {
     m_mode = ETH_Mode_FullDuplex;
   } else {
     m_mode = ETH_Mode_HalfDuplex;
@@ -537,7 +537,7 @@ void irs::arm::st_ethernet_t::eth_auto_negotation_t::read_speed_and_mode_phy()
 bool irs::arm::st_ethernet_t::eth_auto_negotation_t::set_speed_and_mode_phy()
 {
   return ETH_WritePHYRegister(m_phy_address, PHY_BCR, (
-    (uint16_t)(m_mode >> 3) | (uint16_t)(m_speed >> 1)));
+  static_cast<uint16_t>(m_mode >> 3) | static_cast<uint16_t>(m_speed >> 1)));
 }
 
 void irs::arm::st_ethernet_t::eth_auto_negotation_t::set_speed_and_mode_mac()
@@ -753,26 +753,26 @@ void irs::arm::st_ethernet_t::clock_range_configuration()
   /* Set CR bits depending on hclk value */
   if((hclk >= 20000000)&&(hclk < 35000000)) {
     /* CSR Clock Range between 20-35 MHz */
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div16;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div16);
   } else if((hclk >= 35000000)&&(hclk < 60000000)) {
     /* CSR Clock Range between 35-60 MHz */
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div26;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div26);
   } else if((hclk >= 60000000)&&(hclk < 100000000)) {
     /* CSR Clock Range between 60-100 MHz */
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div42;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div42);
   } else if((hclk >= 100000000)&&(hclk < 150000000)) {
     /* CSR Clock Range between 100-150 MHz */
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div62;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div62);
   } else /* ((hclk >= 150000000)&&(hclk <= 168000000)) */ {
     #ifdef IRS_STM32F2xx
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div62;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div62);
     #else // IRS_STM32F4xx
     /* CSR Clock Range between 150-168 MHz */
-    tmpreg |= (uint32_t)ETH_MACMIIAR_CR_Div102;
+    tmpreg |= static_cast<uint32_t>(ETH_MACMIIAR_CR_Div102);
     #endif // IRS_STM32F4xx
   }
   /* Write to ETHERNET MAC MIIAR: Configure the ETHERNET CSR Clock Range */
-  ETH->MACMIIAR = (uint32_t)tmpreg;
+  ETH->MACMIIAR = static_cast<uint32_t>(tmpreg);
 }
 
 void irs::arm::st_ethernet_t::mac_configuration(
@@ -867,7 +867,7 @@ void irs::arm::st_ethernet_t::mac_configuration(
   /* Set the ACS bit according to ETH_AutomaticPadCRCStrip value */
   /* Set the BL bit according to ETH_BackOffLimit value */
   /* Set the DC bit according to ETH_DeferralCheck value */
-  tmpreg |= (uint32_t)(ETH_InitStruct->ETH_Watchdog |
+  tmpreg |= static_cast<uint32_t>(ETH_InitStruct->ETH_Watchdog |
     ETH_InitStruct->ETH_Jabber |
     ETH_InitStruct->ETH_InterFrameGap |
     ETH_InitStruct->ETH_CarrierSense |
@@ -881,7 +881,7 @@ void irs::arm::st_ethernet_t::mac_configuration(
     ETH_InitStruct->ETH_BackOffLimit |
     ETH_InitStruct->ETH_DeferralCheck);
   /* Write to ETHERNET MACCR */
-  ETH->MACCR = (uint32_t)tmpreg;
+  ETH->MACCR = tmpreg;
 
   /*----------------------- ETHERNET MACFFR Configuration --------------------*/
   /* Set the RA bit according to ETH_ReceiveAll value */
@@ -893,7 +893,7 @@ void irs::arm::st_ethernet_t::mac_configuration(
   /* Set the PM, HMC and HPF bits according to ETH_MulticastFramesFilter value*/
   /* Set the HUC and HPF bits according to ETH_UnicastFramesFilter value */
   /* Write to ETHERNET MACFFR */
-  ETH->MACFFR = (uint32_t)(ETH_InitStruct->ETH_ReceiveAll |
+  ETH->MACFFR = static_cast<uint32_t>(ETH_InitStruct->ETH_ReceiveAll |
     ETH_InitStruct->ETH_SourceAddrFilter |
     ETH_InitStruct->ETH_PassControlFrames |
     ETH_InitStruct->ETH_BroadcastFramesReception |
@@ -903,9 +903,9 @@ void irs::arm::st_ethernet_t::mac_configuration(
     ETH_InitStruct->ETH_UnicastFramesFilter);
   /*--------------- ETHERNET MACHTHR and MACHTLR Configuration ---------------*/
   /* Write to ETHERNET MACHTHR */
-  ETH->MACHTHR = (uint32_t)ETH_InitStruct->ETH_HashTableHigh;
+  ETH->MACHTHR = static_cast<uint32_t>(ETH_InitStruct->ETH_HashTableHigh);
   /* Write to ETHERNET MACHTLR */
-  ETH->MACHTLR = (uint32_t)ETH_InitStruct->ETH_HashTableLow;
+  ETH->MACHTLR = static_cast<uint32_t>(ETH_InitStruct->ETH_HashTableLow);
   /*----------------------- ETHERNET MACFCR Configuration --------------------*/
   /* Get the ETHERNET MACFCR value */
   tmpreg = ETH->MACFCR;
@@ -918,19 +918,20 @@ void irs::arm::st_ethernet_t::mac_configuration(
   /* Set the UP bit according to ETH_UnicastPauseFrameDetect value */
   /* Set the RFE bit according to ETH_ReceiveFlowControl value */
   /* Set the TFE bit according to ETH_TransmitFlowControl value */
-  tmpreg |= (uint32_t)((ETH_InitStruct->ETH_PauseTime << 16) |
+  tmpreg |= static_cast<uint32_t>((ETH_InitStruct->ETH_PauseTime << 16) |
     ETH_InitStruct->ETH_ZeroQuantaPause |
     ETH_InitStruct->ETH_PauseLowThreshold |
     ETH_InitStruct->ETH_UnicastPauseFrameDetect |
     ETH_InitStruct->ETH_ReceiveFlowControl |
     ETH_InitStruct->ETH_TransmitFlowControl);
   /* Write to ETHERNET MACFCR */
-  ETH->MACFCR = (uint32_t)tmpreg;
+  ETH->MACFCR = tmpreg;
   /*----------------------- ETHERNET MACVLANTR Configuration -----------------*/
   /* Set the ETV bit according to ETH_VLANTagComparison value */
   /* Set the VL bit according to ETH_VLANTagIdentifier value */
-  ETH->MACVLANTR = (uint32_t)(ETH_InitStruct->ETH_VLANTagComparison |
-                             ETH_InitStruct->ETH_VLANTagIdentifier);
+  ETH->MACVLANTR = 
+    static_cast<uint32_t>(ETH_InitStruct->ETH_VLANTagComparison |
+    ETH_InitStruct->ETH_VLANTagIdentifier);
 
   /*-------------------------------- DMA Config ------------------------------*/
   /*----------------------- ETHERNET DMAOMR Configuration --------------------*/
@@ -948,7 +949,8 @@ void irs::arm::st_ethernet_t::mac_configuration(
   /* Set the FUF bit according to ETH_ForwardUndersizedGoodFrames value */
   /* Set the RTC bit according to ETH_ReceiveThresholdControl value */
   /* Set the OSF bit according to ETH_SecondFrameOperate value */
-  tmpreg |= (uint32_t)(ETH_InitStruct->ETH_DropTCPIPChecksumErrorFrame |
+  tmpreg |= 
+    static_cast<uint32_t>(ETH_InitStruct->ETH_DropTCPIPChecksumErrorFrame |
     ETH_InitStruct->ETH_ReceiveStoreForward |
     ETH_InitStruct->ETH_FlushReceivedFrame |
     ETH_InitStruct->ETH_TransmitStoreForward |
@@ -958,7 +960,7 @@ void irs::arm::st_ethernet_t::mac_configuration(
     ETH_InitStruct->ETH_ReceiveThresholdControl |
     ETH_InitStruct->ETH_SecondFrameOperate);
   /* Write to ETHERNET DMAOMR */
-  ETH->DMAOMR = (uint32_t)tmpreg;
+  ETH->DMAOMR = tmpreg;
 
   /*----------------------- ETHERNET DMABMR Configuration --------------------*/
   /* Set the AAL bit according to ETH_AddressAlignedBeats value */
@@ -967,7 +969,7 @@ void irs::arm::st_ethernet_t::mac_configuration(
   /* Set the PBL and 4*PBL bits according to ETH_TxDMABurstLength value */
   /* Set the DSL bit according to ETH_DesciptorSkipLength value */
   /* Set the PR and DA bits according to ETH_DMAArbitration value */
-  ETH->DMABMR = (uint32_t)(ETH_InitStruct->ETH_AddressAlignedBeats |
+  ETH->DMABMR = static_cast<uint32_t>(ETH_InitStruct->ETH_AddressAlignedBeats |
     ETH_InitStruct->ETH_FixedBurst |
     /* !! if 4xPBL is selected for Tx or Rx it is applied for the other */
     ETH_InitStruct->ETH_RxDMABurstLength |

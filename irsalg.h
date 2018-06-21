@@ -3473,7 +3473,7 @@ irs_u32 crc32(T * a_buf, irs_uarc a_start, irs_uarc a_cnt) {
   for (irs_uarc i = a_start; i < top; i++) {
     crc = crc ^ a_buf[i];
     for (irs_uarc j = 1; j <= 32; j++) {
-      flag = IRS_LOBYTE(crc) & irs_u8(1);
+      flag = IRS_LOBYTE(crc) & static_cast<irs_u8>(1);
       crc >>= 1; /* —двиг регистра на 1 позицию */
       if (flag)
         crc ^= 0xEDB88320; // 0xEDB88320 - примитивный полином

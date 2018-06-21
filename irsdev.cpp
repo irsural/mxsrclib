@@ -1009,16 +1009,16 @@ irs_u32* irs::arm::st_pwm_gen_t::get_tim_ccr_register(irs_u32 a_timer_channel)
   irs_u32* tim_ccr;
   switch (a_timer_channel) {
     case 1: {
-      tim_ccr = &mp_timer->TIM_CCR1;
+      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR1);
     } break;
     case 2: {
-      tim_ccr = &mp_timer->TIM_CCR2;
+      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR2);
     } break;
     case 3: {
-      tim_ccr = &mp_timer->TIM_CCR3;
+      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR3);
     } break;
     case 4: {
-      tim_ccr = &mp_timer->TIM_CCR4;
+      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR4);
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимый канал");
@@ -1629,14 +1629,16 @@ namespace {
     const double coefficient =
       (1/(divider/prescaler_divider_value_min))*(counter_max);
     while (prescaler_divider_key < prescaler_divider_key_max) {
-      if (coefficient*pow(2, prescaler_divider_key) >= a_period_s) {
+      if (coefficient * pow(2.0, static_cast<double>(prescaler_divider_key)) 
+          >= a_period_s) {
         break;
       }
       prescaler_divider_key++;
     }
     *ap_prescaler_divider_key = prescaler_divider_key;
     const double prescaler_divider_value =
-      prescaler_divider_value_min*pow(2, prescaler_divider_key);
+      prescaler_divider_value_min * pow(2.0, 
+      static_cast<double>(prescaler_divider_key));
     double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
     counter_start = irs::bound(counter_start, 1., counter_max);
     *ap_counter_start = static_cast<irs_u16>(counter_start);
@@ -1714,8 +1716,8 @@ irs::arm::st_window_watchdog_t::st_window_watchdog_t(
   size_type wdgtb_prescaler = 0;
   size_type wdgtb_prescaler_max = 3;
   while (wdgtb_prescaler < wdgtb_prescaler_max) {
-    if ((coefficient*pow(2, wdgtb_prescaler)*(counter_delta)) >=
-      period_max_ms) {
+    if ((coefficient*pow(2.0, static_cast<double>(wdgtb_prescaler))
+         *(counter_delta)) >= period_max_ms) {
       break;
     }
     wdgtb_prescaler++;
@@ -1723,11 +1725,14 @@ irs::arm::st_window_watchdog_t::st_window_watchdog_t(
 
   WWDG_CFR_bit.WDGTB = wdgtb_prescaler;
   double counter_start_value =
-    ceil(period_max_ms/(coefficient*pow(2, wdgtb_prescaler))) + counter_end;
+    ceil(period_max_ms / 
+    (coefficient * pow(2.0, static_cast<double>(wdgtb_prescaler))))
+    + counter_end;
   m_counter_start_value = static_cast<irs_u8>(bound(counter_start_value,
     counter_min, counter_max));
   double window_value = ceil((period_max_ms - period_min_ms)/
-    (coefficient*pow(2, wdgtb_prescaler))) + counter_end;
+    (coefficient * pow(2.0, static_cast<double>(wdgtb_prescaler)))) 
+    + counter_end;
   if ((window_value > static_cast<double>(m_counter_start_value)) ||
     (counter_start_value > counter_max)) {
     window_value =  floor((m_counter_start_value - counter_end)*

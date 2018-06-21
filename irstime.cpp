@@ -199,8 +199,7 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
-#if IRS_USE_ST_RTC
-_STD_BEGIN
+#if IRS_USE_ST_RTC_STD_BEGIN
 __time32_t (__time32)(__time32_t *t)
 {
   #ifdef IRS_STM32_F2_F4_F7

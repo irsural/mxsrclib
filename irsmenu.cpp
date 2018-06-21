@@ -82,11 +82,11 @@ void irs_menu_base_t::set_master_menu(irs_menu_base_t *a_master_menu)
   f_master_menu = a_master_menu;
 }
 
-void irs_menu_base_t::set_header(char *a_header)
+void irs_menu_base_t::set_header(const char *a_header)
 {
   f_header = a_header;
 }
-char *irs_menu_base_t::get_header()
+const char *irs_menu_base_t::get_header()
 {
   return f_header;
 }
@@ -106,11 +106,11 @@ void irs_menu_base_t::set_data_attached(void* ap_data)
   mp_data_attached = ap_data;
 }
 
-void irs_menu_base_t::set_message(char *a_message)
+void irs_menu_base_t::set_message(const char *a_message)
 {
   f_message = a_message;
 }
-char *irs_menu_base_t::get_message()
+const char *irs_menu_base_t::get_message()
 {
   return f_message;
 }
@@ -764,11 +764,11 @@ void irs_menu_double_item_t::set_min_value(float a_min_value)
   update_progressive_change_parameters();
 }
 
-void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
-  char *a_suffix, size_type a_len, size_type a_accur,
-  irs::num_mode_t a_num_mode)
+void irs_menu_double_item_t::set_str(const char *a_value_string, 
+  const char *a_prefix, const char *a_suffix, size_type a_len, 
+  size_type a_accur, irs::num_mode_t a_num_mode)
 {
-  f_value_string = a_value_string;
+  strcpy(f_value_string, a_value_string);
   f_num_mode = a_num_mode;
   f_len = a_len;
   f_accur = a_accur;
@@ -4210,10 +4210,11 @@ void irs_menu_bool_item_t::set_trans_function(bool_trans_t a_bool_trans)
   f_bool_trans = a_bool_trans;
 }
 
-void irs_menu_bool_item_t::set_str(char *a_true_string, char *a_false_string)
+void irs_menu_bool_item_t::set_str(const char *a_true_string,
+  const char *a_false_string)
 {
-  f_true_string = a_true_string;
-  f_false_string = a_false_string;
+  strcpy(f_true_string, a_true_string);
+  strcpy(f_false_string, a_false_string);
 }
 
 irs_bool *irs_menu_bool_item_t::get_parametr()
@@ -4430,7 +4431,8 @@ irs_menu_string_item_t::irs_menu_string_item_t():
 irs_menu_string_item_t::~irs_menu_string_item_t()
 {
 }
-void irs_menu_string_item_t::set_parametr_string(char *ap_parametr_string)
+void irs_menu_string_item_t::set_parametr_string(
+  const char *ap_parametr_string)
 {
   m_updated = true;
   mp_string = ap_parametr_string;
@@ -5105,7 +5107,7 @@ irs_menu_creep_t::~irs_menu_creep_t()
   deinit_to_cnt();
 }
 
-void irs_menu_creep_t::change_static(char *a_static)
+void irs_menu_creep_t::change_static(const char *a_static)
 {
   if (a_static)
   {
@@ -5126,7 +5128,7 @@ void irs_menu_creep_t::change_static(char *a_static)
   }
 }
 
-void irs_menu_creep_t::change_message(char *a_message)
+void irs_menu_creep_t::change_message(const char *a_message)
 {
   if (a_message != IRS_NULL)
   {

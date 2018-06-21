@@ -11,6 +11,7 @@
 
 extern "C" {
 
+#pragma diag_suppress=Pa181
 #include <lwip/ip_addr.h>
 #include <lwip/timers.h>
 #include <lwip/tcp.h>
@@ -23,6 +24,7 @@ extern "C" {
 #include <netif/etharp.h>
 #ifdef IRS_STM32_F2_F4_F7
 #endif // IRS_STM32_F2_F4_F7
+#pragma diag_default=Pa181
 
 } // extern "C"
 

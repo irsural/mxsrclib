@@ -175,8 +175,9 @@ void irs::pll_on(param_pll_t a_param_pll)
   RCC_CFGR_bit.HPRE = 0;
   while (RCC_CFGR_bit.SWS != 2);
   while (RCC_CFGR_bit.HPRE != 0);
-  irs_u32 freq = static_cast<irs_u32>(a_param_pll.freq_quartz/a_param_pll.PLLM*
-    a_param_pll.PLLN/pow(2.,(a_param_pll.PLLP+1)));
+  irs_u32 freq = 
+    static_cast<irs_u32>(a_param_pll.freq_quartz / a_param_pll.PLLM *
+    a_param_pll.PLLN / pow(2.0, static_cast<int>(a_param_pll.PLLP + 1)));
   irs::cpu_traits_t::frequency(static_cast<cpu_traits_t::frequency_type>(freq));
 
   irs_u32 divider = 2;

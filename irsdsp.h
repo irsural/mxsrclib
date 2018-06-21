@@ -693,7 +693,7 @@ void fft_process_t<T, N>
 {
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
-  if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
+  if (size + a_index > m_size) size = static_cast<irs_uarc>(m_size - a_index);
   memcpy(reinterpret_cast<void*>(ap_buf),
     reinterpret_cast<void*>(mp_buf + a_index), size);
 }
@@ -704,7 +704,7 @@ void fft_process_t<T, N>
 {
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
-  if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
+  if (size + a_index > m_size) size = static_cast<irs_uarc>(m_size - a_index);
   memcpy(reinterpret_cast<void*>(mp_buf + a_index),
     reinterpret_cast<const void*>(ap_buf), size);
 }

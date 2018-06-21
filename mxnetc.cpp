@@ -1243,7 +1243,7 @@ void irs::mxdata_to_mxnet_t::set_bit(irs_uarc a_index, irs_uarc a_bit_index)
     if (index >= m_mxnet_size_byte) index = m_mxnet_size_byte - 1;
     if (bit_index > m_high_bit) bit_index = m_high_bit;
     #endif //MXDATA_TO_MXNET_CHECKED
-    mp_buf[index] |= irs_u8(1 << bit_index);
+    mp_buf[index] |= static_cast<irs_u8>(1 << bit_index);
     m_write_vector[index] = true;
   }
 }
@@ -1259,7 +1259,7 @@ void irs::mxdata_to_mxnet_t::clear_bit(irs_uarc a_index,irs_uarc a_bit_index)
     if (index >= m_mxnet_size_byte) index = m_mxnet_size_byte - 1;
     if (bit_index > m_high_bit) bit_index = m_high_bit;
     #endif //MXDATA_TO_MXNET_CHECKED
-    mp_buf[index] &= irs_u8((1 << bit_index)^0xFF);
+    mp_buf[index] &= static_cast<irs_u8>((1 << bit_index)^0xFF);
     m_write_vector[index] = true;
   }
 }
