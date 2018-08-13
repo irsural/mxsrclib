@@ -501,7 +501,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::channel_buf_max_size_set(
   size_type a_channel_buf_max_size)
 {
   m_buf_max_size = a_channel_buf_max_size;
-  map_id_channel_iterator it_channel = m_map_id_channel.begin();
+  //map_id_channel_iterator it_channel = m_map_id_channel.begin();
   /*while (it_channel != m_map_id_channel.end()) {
     it_channel->second.buffer.reserve(m_buf_max_size);
   }*/
