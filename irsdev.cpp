@@ -1009,16 +1009,16 @@ irs_u32* irs::arm::st_pwm_gen_t::get_tim_ccr_register(irs_u32 a_timer_channel)
   irs_u32* tim_ccr;
   switch (a_timer_channel) {
     case 1: {
-      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR1);
+      tim_ccr = reinterpret_cast<irs_u32*>(&mp_timer->TIM_CCR1);
     } break;
     case 2: {
-      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR2);
+      tim_ccr = reinterpret_cast<irs_u32*>(&mp_timer->TIM_CCR2);
     } break;
     case 3: {
-      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR3);
+      tim_ccr = reinterpret_cast<irs_u32*>(&mp_timer->TIM_CCR3);
     } break;
     case 4: {
-      tim_ccr = reinterpret_cast<irs_u32*>(mp_timer->TIM_CCR4);
+      tim_ccr = reinterpret_cast<irs_u32*>(&mp_timer->TIM_CCR4);
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Недопустимый канал");
