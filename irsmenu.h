@@ -793,8 +793,8 @@ T irs_menu_spin_item_t::round_precision(T a_value, int a_precision)
 template <class T>
 class irs_menu_simply_item_t: public irs_menu_base_t
 {
-  char *mp_prefix;
-  char *mp_suffix;
+  char const *mp_prefix;
+  char const *mp_suffix;
   char *mp_value_string;
   char *mp_copy_parametr_string;
   size_type m_len;
@@ -804,7 +804,7 @@ class irs_menu_simply_item_t: public irs_menu_base_t
 public:
   irs_menu_simply_item_t(T *ap_parametr);
   ~irs_menu_simply_item_t();
-  void set_str(const char *ap_value_string, const char *ap_prefix, 
+  void set_str(char *ap_value_string, const char *ap_prefix, 
     const char *ap_suffix, size_type a_len, size_type a_accur);
   void set_length(size_type a_len);
   void set_accuracy(size_type a_accuracy);
@@ -839,15 +839,15 @@ irs_menu_simply_item_t<T>::~irs_menu_simply_item_t()
 }
 
 template <class T>
-void irs_menu_simply_item_t<T>::set_str(const char *ap_value_string, 
+void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, 
   const char *ap_prefix, const char *ap_suffix, size_type a_len, 
   size_type a_accur)
 {
-  strcpy(mp_value_string, ap_value_string);
+  mp_value_string = ap_value_string;
   m_len = a_len;
   m_accur = a_accur;
-  strcpy(mp_prefix, ap_prefix);
-  strcpy(mp_suffix, ap_suffix);
+  mp_prefix = ap_prefix;
+  mp_suffix = ap_suffix;
   size_type space = 1;
   size_type full_len
     = m_len + space + strlen(mp_prefix) + space + strlen(mp_suffix);
