@@ -347,10 +347,10 @@ bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
 {
   bool adress_convert_success = false;
   if (a_adress_str != irst("")) {
-    irs_u32 adress = inet_addr(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
+    const std::string addr = str_conv<std::string>(a_adress_str);
+    irs_u32 adress = inet_addr(addr.c_str());
     if (adress == INADDR_NONE) {
-      hostent* p_host =
-        gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
+      hostent* p_host = gethostbyname(addr.c_str());
       if (p_host != NULL) {
         // Берем первый адрес в списке
         memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);

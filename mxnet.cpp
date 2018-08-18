@@ -158,7 +158,7 @@ mxip_t mxn_get_ip(mxn_data_t &data)
     mxifa_get_config(data.data_ch, &chan_cfg);
     return *chan_cfg.ip;
   }
-  mxip_t error_ip = {{0, 0, 0, 0}};
+  mxip_t error_ip = {{{0, 0, 0, 0}}};
   return error_ip;
 }
 // Установка локальной маски
@@ -179,7 +179,7 @@ mxip_t mxn_get_mask(mxn_data_t &data)
     mxifa_get_config(data.data_ch, &chan_cfg);
     return *chan_cfg.mask;
   }
-  mxip_t error_mask = {{0, 0, 0, 0}};
+  mxip_t error_mask = {{{0, 0, 0, 0}}};
   return error_mask;
 }
 // Установка MAC(Ethernet)-адреса

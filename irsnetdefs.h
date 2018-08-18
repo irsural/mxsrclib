@@ -47,7 +47,7 @@ struct mxip_t
   };
   static mxip_t zero_ip()
   {
-    mxip_t ip = {{0, 0, 0, 0}};
+    mxip_t ip = {{{0, 0, 0, 0}}};
     return ip;
   }
   static mxip_t any_ip()
@@ -56,12 +56,12 @@ struct mxip_t
   }
   static mxip_t loopback_ip()
   {
-    mxip_t ip = {{127, 0, 0, 1}};
+    mxip_t ip = {{{127, 0, 0, 1}}};
     return ip;
   }
   static mxip_t broadcast_ip()
   {
-    mxip_t ip = {{0xFF, 0xFF, 0xFF, 0xFF}};
+    mxip_t ip = {{{0xFF, 0xFF, 0xFF, 0xFF}}};
     return ip;
   }
 };
@@ -428,12 +428,12 @@ namespace irs {
 inline mxip_t make_mxip(int a_first_octet, int a_second_octet,
   int a_third_octet, int a_fourth_octet)
 {
-  mxip_t ip = {{
+  mxip_t ip = {{{
     static_cast<irs_u8>(a_first_octet),
     static_cast<irs_u8>(a_second_octet),
     static_cast<irs_u8>(a_third_octet),
     static_cast<irs_u8>(a_fourth_octet)
-  }};
+  }}};
   return ip;
 }
 

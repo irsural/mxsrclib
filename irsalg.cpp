@@ -214,17 +214,17 @@ double irs::critical_values_for_t_a_criterion(
   level_of_significance_t a_level_of_significance,
   size_t a_sample_size)
 {
-  const int n_min = 3;
-  const int n_max = 25;
+  const size_t n_min = 3;
+  const size_t n_max = 25;
   #ifdef IRS_LIB_DEBUG
-  const int array_size = n_max - n_min + 1;
+  const size_t array_size = n_max - n_min + 1;
   #endif //IRS_LIB_DEBUG
   const size_t n = a_sample_size;
   size_t index = 0;
   if ((n > 0) && (n <= n_min)) {
-    index = 0 ;
+    index = 0;
   } else if (n <= n_max) {
-    index = n - n_min ;
+    index = n - n_min;
   } else {
     index = 0;
   }
@@ -284,15 +284,15 @@ double irs::critical_values_for_smirnov_criterion(
   level_of_significance_t a_level_of_significance,
   size_t a_sample_size)
 {
-  const int n_min = 3;
-  const int n_max = 25;
-  const int array_size = n_max - n_min + 1;
+  const size_t n_min = 3;
+  const size_t n_max = 25;
+  const size_t array_size = n_max - n_min + 1;
   const size_t n = a_sample_size;
   size_t index = 0;
   if ((n > 0) && (n <= n_min)) {
-    index = 0 ;
+    index = 0;
   } else if (n <= n_max) {
-    index = n - n_min ;
+    index = n - n_min;
   } else {
     index = array_size - 1;
   }
