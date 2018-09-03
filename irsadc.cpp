@@ -613,6 +613,7 @@ irs::adc_ads1298_continuous_mode_t::~adc_ads1298_continuous_mode_t()
 {
   mp_spi->abort();
   spi_release();
+  mp_power_down_pin->clear();
 }
 
 irs::adc_ads1298_continuous_mode_t::size_type
