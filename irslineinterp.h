@@ -237,7 +237,7 @@ T line_interp_t<T>::calc_inv(T x)
 
 } //namespace irs
 
-void line_interp_example(ostream& a_out)
+inline void line_interp_example(ostream& a_out)
 {
 	typedef double number_t;
 	
