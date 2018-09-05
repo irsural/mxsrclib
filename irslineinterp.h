@@ -32,7 +32,7 @@ public:
 	line_interp_t();
 	void add(T a_x, T a_y);
 	void clear();
-	void assign(T* ap_x_carray, T* ap_y_carray, size_t a_size);
+	void assign(const T* ap_x_carray, const T* ap_y_carray, size_t a_size);
 	void prepare();
 	void prepare_inv();
 	T calc(T x);
@@ -106,11 +106,12 @@ void line_interp_t<T>::clear()
 }
 
 template <class T>
-void line_interp_t<T>::assign(T* ap_x_carray, T* ap_y_carray, size_t a_size)
+void line_interp_t<T>::assign(const T* ap_x_carray,
+  const T* ap_y_carray, size_t a_size)
 {
-  T* p_y_el = ap_y_carray;
-  T* p_x_el_last = ap_x_carray + a_size;
-  for (T* p_x_el = ap_x_carray; p_x_el != p_x_el_last; ++p_x_el) {
+  const T* p_y_el = ap_y_carray;
+  const T* p_x_el_last = ap_x_carray + a_size;
+  for (const T* p_x_el = ap_x_carray; p_x_el != p_x_el_last; ++p_x_el) {
     m_point_list.insert(m_point_list.end(), make_point(*p_x_el, *p_y_el));
     ++p_y_el;
   }
