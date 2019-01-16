@@ -604,7 +604,7 @@ class interrupt_array_t: public interrupt_array_base_t
 public:
   typedef interrupt_array_base_t base_type;
   typedef base_type::size_type size_type;
-  typedef irs_u8 gen_index_type;
+  typedef irs_u32 gen_index_type;
 
   interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type
     a_reserve_interrupt_count);

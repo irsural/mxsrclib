@@ -421,7 +421,6 @@ private:
     return result;
   }
 };
-
 #endif // USE_HAL_DRIVER
 
 //! \brief Драйвер АЦП DMA для контроллеров семейства STM32F2xx
