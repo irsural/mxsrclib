@@ -330,7 +330,9 @@ irs::hfftp::various_page_mem_file_write_only_t::write(
   const irs_u8* ap_buf, size_type a_size)
 {
   if (m_size_saved) {
+    #ifndef IRS_NOEXCEPTION
     throw std::logic_error("Размер файла уже сохранен.");
+    #endif //IRS_NOEXCEPTION
   }
   if ((m_process != process_wait_command) ||
     (m_last_error != irs::hfftp::file_error_no_error)) {

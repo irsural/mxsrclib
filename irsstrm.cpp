@@ -12,6 +12,9 @@
 #include <irsfinal.h>
 
 #ifdef __ICCARM__
+
+#ifndef IRS_STM32H7xx
+
 // class com_buf
 
 irs::arm::com_buf::com_buf(const com_buf& a_buf):
@@ -378,5 +381,5 @@ int irs::arm::com_buf::sync()
 //{
 //  return overflow();
 //}
-
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__

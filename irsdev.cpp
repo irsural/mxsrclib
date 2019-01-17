@@ -61,6 +61,8 @@ irs::cpu_traits_t::frequency_type irs::pwm_gen_t::get_timer_frequency()
 
 #ifdef __ICCARM__
 
+#ifndef IRS_STM32H7xx
+
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 //  Флаги занятости таймеров общего назначения
 irs::arm::gptm_usage_t& gptm_usage() {
@@ -2704,4 +2706,5 @@ irs_u32 irs::decoder_t::get_selected_pin()
   return m_pin_index;
 }
 
+#endif // IRS_STM32H7xx
 #endif  //  __ICCARM__

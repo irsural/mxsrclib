@@ -101,6 +101,8 @@ public:
 
 #ifdef __ICCARM__
 
+#ifndef IRS_STM32H7xx
+
 namespace arm
 {
 
@@ -799,6 +801,8 @@ private:
 //! @}
 
 } //  arm
+
+#endif // IRS_STM32H7xx
 
 #endif  //  __ICCARM__
 
