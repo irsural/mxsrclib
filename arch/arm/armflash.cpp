@@ -156,7 +156,7 @@ void irs::arm::flash_t::flash_erase(irs_u32 /*a_index*/)
 {
 }
 #else
-  #error Тип контроллера не определён
+  //#error Тип контроллера не определён
 #endif  //  mcu type
 
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)

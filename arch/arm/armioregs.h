@@ -16,7 +16,7 @@
 #elif defined(IRS_STM32_F2_F4_F7)
   #include <armregs_stm32f2xx.h>
 #else
-  #error Тип контроллера не определён
+  //#error Тип контроллера не определён
 #endif  // Микроконтроллеры
 
 #if defined(__LM3SxBxx__) || \
@@ -26,7 +26,7 @@
   #define CORTEX_M3_CORE
   #include <armregs_cortex_m3.h>
 #else
-  #error Тип контроллера не определён
+  //#error Тип контроллера не определён
 #endif  //  Микроконтроллеры
 
 #endif  //  armioregsH

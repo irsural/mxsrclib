@@ -85,7 +85,7 @@ void pll_on()
   #elif defined(IRS_STM32F7xx)
     // Это непроверенный код, скопирован из секции для IRS_STM32F4xx !!!!!!
     // На входе кварц 25 МГц
-#if !F7_216Hz
+    #if !F7_216Hz
     param_pll.freq_quartz = 25000000;
     param_pll.PLLM = 25; // Делитель на входе PLL
     param_pll.PLLN = 336; // Множитель внутри PLL
@@ -98,7 +98,7 @@ void pll_on()
     param_pll.FLASH_STATE = 5;
     param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
     irs::pll_on(param_pll);
-#else
+    #else
     param_pll.freq_quartz = 25000000;
     param_pll.PLLM = 25; // Делитель на входе PLL
     param_pll.PLLN = 432; // Множитель внутри PLL
@@ -120,12 +120,20 @@ void pll_on()
     // PLLI2SR[2:0]: = 010: (/2) По умолчанию
 
     irs::pll_on(param_pll);
-#endif
+    #endif
   #else
-    #error Тип контроллера не определён
+    // Тип контроллера не определён
+    #pragma diag_suppress=Pe128
+    for (;;);
+    #pragma diag_default=Pe128
+    
   #endif //ARM_devices
 #else
-  #error Тип контроллера не определён
+  // Тип контроллера не определён
+  #pragma diag_suppress=Pe128
+  for (;;);
+  #pragma diag_default=Pe128 
+    
 #endif // ARM_devices
 }
 

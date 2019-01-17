@@ -1987,5 +1987,5 @@ void irs::arm::arm_spi_t::read_write(irs_u8 *ap_read_buf,
 }
 
 #else // Микроконтроллеры
-  #error Тип контроллера не определён
+  //#error Тип контроллера не определён
 #endif  // Микроконтроллеры

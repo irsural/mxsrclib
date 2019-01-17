@@ -399,13 +399,23 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case IRS_PORTJ_BASE: { port_number = 9; } break;
     case IRS_PORTK_BASE: { port_number = 10; } break;
   #else
-    #error Тип контроллера не определён
+    // Тип контроллера не определён
+    #define IRS_MC_NOT_DEFINED
   #endif  //  mcu type
     default: {
       for (;;) {}; // Неизвестный порт
     }
   }
+  
+  #pragma diag_suppress=Pe128
+  #ifdef IRS_MC_NOT_DEFINED
+  for (;;);
+  #endif //IRS_MC_NOT_DEFINED
+  #pragma diag_default=Pe128
+  
+  #pragma diag_suppress=Pe111
   return port_number;
+  #pragma diag_default=Pe111
 }
 
 inline void port_clock_on(irs_u32 a_port)
@@ -419,7 +429,10 @@ inline void port_clock_on(irs_u32 a_port)
   #elif defined(IRS_STM32_F2_F4_F7)
     RCC_AHB1ENR |= (1 << port_number);
   #else
-    #error Тип контроллера не определён
+    // Тип контроллера не определён
+    #pragma diag_suppress=Pe128
+    for (;;);
+    #pragma diag_default=Pe128
   #endif  //  mcu type
 }
 

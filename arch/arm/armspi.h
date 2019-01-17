@@ -551,7 +551,7 @@ inline void arm_spi_t::readFromDR()
 }
 
 #else
-  #error Тип контроллера не определён
+  // #error Тип контроллера не определён
 #endif  //  mcu type
 
 //! @}
