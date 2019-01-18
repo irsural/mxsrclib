@@ -11,11 +11,12 @@
 #endif // __BORLANDC__
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armioregs.h>
 #include <armcfg.h>
 #include <irsdsp.h>
 
-
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE

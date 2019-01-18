@@ -71,6 +71,7 @@ char irs::gcc_linux::keyboard_t::key()
 #endif //IRS_LINUX
 
 #if defined(__ICCARM__) || defined(__ICCAVR__)
+#ifndef IRS_STM32H7xx
 // class mxkey_drv_mc_t
 irs::mxkey_drv_mc_t::mxkey_drv_mc_t():
   m_keys(),
@@ -309,7 +310,7 @@ void irs::set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc)
 }
 
 #endif  // IRS_STM32_F2_F4_F7
-
+#endif // IRS_STM32H7xx
 #endif  //  __ICCARM__ || __ICCAVR__
 
 #ifdef __BORLANDC__

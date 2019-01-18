@@ -11,7 +11,9 @@
 #include <irsdefsbase.h>
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armiomacros.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 
 //! \addtogroup configuration_group

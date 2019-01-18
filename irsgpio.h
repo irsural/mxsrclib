@@ -10,7 +10,9 @@
 #include <irsdefs.h>
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 # include <armioregs.h>
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 #ifdef IRS_STM32_F2_F4_F7
@@ -314,6 +316,7 @@ inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
 
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 
 namespace irs
 {
@@ -439,6 +442,7 @@ inline void port_clock_on(irs_u32 a_port)
 } // namespace arm
 } // namespace irs
 
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 //! @}

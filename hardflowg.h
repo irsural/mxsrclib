@@ -27,10 +27,10 @@
 #include <arpa/inet.h>
 #endif // IRS_WINDOWS IRS_LINUX
 
-#ifdef __ICCARM__
+#ifdef IRS_STM32F_2_AND_4
 # include <armioregs.h>
 # include <armcfg.h>
-#endif //__ICCARM__
+#endif //IRS_STM32F_2_AND_4
 
 // Standart C++ headers
 #include <string.h>

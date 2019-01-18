@@ -101,7 +101,11 @@
 #include <stddef.h>
 
 #include <irsconfig.h>
+    
+#ifndef IRS_STM32H7xx
 #include <irsdefsarch.h>
+#endif // IRS_STM32H7xx
+    
 
 // Деректива throw
 #ifdef __ICCAVR__

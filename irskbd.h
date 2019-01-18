@@ -11,9 +11,9 @@
 #include <irsdefs.h>
 
 #ifdef __ICCARM__
-
+#ifndef IRS_STM32H7xx
 #include <armcfg.h>
-
+#endif // IRS_STM32H7xx
 #endif  // __ICCARM__
 
 #include <irsstd.h>
@@ -59,6 +59,7 @@ private:
 namespace irs {
 
 #if defined(__ICCARM__) || defined(__ICCAVR__)
+#ifndef IRS_STM32H7xx
 // Класс драйвера клавиатуры микроконтроллера
 class mxkey_drv_mc_t: public mxkey_drv_t
 {
@@ -113,7 +114,7 @@ private:
 void set_default_keys(encoder_drv_mc_t* ap_encoder_drv_mc);
 
 #endif  // IRS_STM32_F2_F4_F7
-
+#endif //IRS_STM32H7xx
 #endif  //  __ICCARM__ || __ICCAVR__
 
 #ifdef __BORLANDC__

@@ -4,7 +4,9 @@
 #endif // __BORLANDC__
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armcfg.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 
 #include <irsstrm.h>
@@ -381,5 +383,77 @@ int irs::arm::com_buf::sync()
 //{
 //  return overflow();
 //}
+
+#else // ->if defined(IRS_STM32H7xx)
+
+// class st_hal_com_buf
+
+irs::arm::st_hal_com_buf::st_hal_com_buf(const st_hal_com_buf& a_buf):
+  m_gpio_handle(a_buf.m_gpio_handle),
+  mp_uart_handle(a_buf.mp_uart_handle),
+  m_outbuf_size(a_buf.m_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1])
+{
+  memset(m_outbuf.get(), 0, m_outbuf_size);
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+}
+
+
+irs::arm::st_hal_com_buf::st_hal_com_buf(GPIO_TypeDef* ap_uart_port, 
+    const GPIO_InitTypeDef& a_gpio_handle, UART_HandleTypeDef* ap_uart_handle, 
+    int a_outbuf_size) :
+  m_gpio_handle(a_gpio_handle),
+  mp_uart_handle(ap_uart_handle),
+  m_outbuf_size(a_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1])
+{
+  //---Âñå êëîêè èíèöèàëèçèðóþòñÿ äî îáúÿâëåíèÿ êëàññà---//
+  HAL_GPIO_Init(ap_uart_port, &m_gpio_handle);
+  HAL_UART_Init(mp_uart_handle);
+}
+
+
+void irs::arm::st_hal_com_buf::trans (char data)
+{
+  if (data == '\n'){
+    trans_simple('\r');
+    trans_simple('\n');
+  } else {
+    trans_simple(data);
+  }
+}
+void irs::arm::st_hal_com_buf::trans_simple (char data)
+{
+  HAL_UART_Transmit(mp_uart_handle, (uint8_t *)&data, 1, 0xFFFF);
+}
+
+int irs::arm::st_hal_com_buf::overflow(int c)
+{
+  int len_s = pptr() - pbase();
+  if (len_s > 0) {
+    *pptr() = 0;
+    char* pend = pptr();
+    for(char *message = pbase(); message<pend; message++ ) {
+      trans(*message);
+    }
+  }
+  if (c != EOF) {
+    trans(c);
+  }
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+  return 0;
+}
+int irs::arm::st_hal_com_buf::sync()
+{
+  return overflow();
+}
+
+//--ÔÓÍÊÖÈß ÇÀÒÛ×ÊÀ ÄËß ÕÀËÀ, ÍÅ ÓÄÀËßÒÜ--//
+void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+{
+  //--ÏÈÍÛ ÈÍÈÖÈÀËÈÇÈÐÓÞÒÑß ÑÍÀÐÓÆÈ ÊÀËÑÑÀ--//
+}
+
+
 #endif // IRS_STM32H7xx
 #endif // __ICCARM__

@@ -13,7 +13,9 @@
 #include <irsint.h>
 #include <irserror.h>
 #if defined(__ICCAVR__) || defined(__ICCARM__)
+#ifndef IRS_STM32H7xx
 #include <irsarchint.h>
+#endif // IRS_STM32H7xx
 #endif //__ICCAVR__ || __ICCARM__
 
 #include <irsfinal.h>
@@ -210,7 +212,7 @@ irs::interrupt_array_base_t* irs::interrupt_array()
 {
   #if defined(__ICCAVR__)
   return irs::avr::interrupt_array();
-  #elif defined(__ICCARM__)
+  #elif defined(__ICCARM__) && !defined(IRS_STM32H7xx)
   return irs::arm::interrupt_array();
   #else //__ICCAVR__
   static interrupt_array_empty_t interrupt_array;

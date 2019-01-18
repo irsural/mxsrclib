@@ -10,9 +10,9 @@
 
 #include <irsdefs.h>
 
-#ifdef __ICCARM__
+#ifdef IRS_STM32_F2_F4_F7
 #include <armioregs.h>
-#endif // __ICCARM__
+#endif // IRS_STM32_F2_F4_F7
 
 #include <irsfinal.h>
 
