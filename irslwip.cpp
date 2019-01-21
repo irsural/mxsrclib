@@ -50,6 +50,9 @@ void copy_buffer_to_pbuf(const irs_u8* ap_buf, pbuf* ap_pbuf)
 
 } // unnamed namespace
 
+// Используется simple_ethernet_t, который не реализован для h7
+#ifndef IRS_STM32H7xx
+
 // class ethernet_t
 irs::simple_ethernet_t* irs::lwip::ethernet_t::mp_simple_ethernet = NULL;
 
@@ -269,6 +272,8 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
   ap_netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP |
     NETIF_FLAG_LINK_UP;
 }
+
+#endif // IRS_STM32H7xx
 
 // class buffers_t
 irs::hardflow::lwip::buffers_t::buffers_t(size_type a_buf_max_count,
@@ -504,6 +509,7 @@ void irs::hardflow::lwip::buffers_t::reserve_buffers()
   }
 }
 
+#ifndef IRS_STM32H7xx
 // class tcp_server_t
 irs::hardflow::lwip::tcp_server_t::size_type
 irs::hardflow::lwip::tcp_server_t::m_read_channel =
@@ -1047,6 +1053,8 @@ bool irs::hardflow::lwip::tcp_client_t::is_channel_exists(
   return m_channel_id == a_channel_ident;
 }
 
+#endif // IRS_STM32H7xx
+
 #if LWIP_UDP
 
 // class udp_t
@@ -1086,7 +1094,12 @@ void irs::hardflow::lwip::udp_t::create()
     return;
   }
 
+  #ifndef IRS_STM32H7xx
   ip_addr local_ip;
+  #else 
+  ip_addr_t local_ip;
+  #endif // IRS_STM32H7xx
+  
   local_ip.addr = m_local_ip.addr;
   err_t err = udp_bind(mp_pcb, &local_ip, m_local_port);
   if (err == ERR_USE) {
@@ -1105,8 +1118,13 @@ void irs::hardflow::lwip::udp_t::create()
   }
 }
 
+#ifndef IRS_STM32H7xx
 void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
-  pbuf* ap_buf, ip_addr* ap_addr, u16_t a_port)
+  pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port)
+#else 
+void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
+  pbuf *ap_buf, const ip_addr_t *ap_addr, u16_t a_port)
+#endif
 {
   udp_t* udp = reinterpret_cast<udp_t*>(arg);
 
@@ -1186,7 +1204,13 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
     return 0;
   }
   address_type remote_host_address;
+  
+  #ifndef IRS_STM32H7xx
   ip_addr dst_ip;
+  #else 
+  ip_addr_t dst_ip;
+  #endif // IRS_STM32H7xx
+  
   if (m_channel_list.address_get(a_channel_ident, &remote_host_address)) {
     dst_ip.addr = remote_host_address.ip.addr;
   } else {
@@ -1254,3 +1278,4 @@ void irs::hardflow::lwip::udp_t::set_channel_switching_mode(
 #endif // LWIP_UDP
 
 #endif // USE_LWIP
+

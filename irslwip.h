@@ -5,26 +5,30 @@
 
 #include <hardflowg.h>
 
+
 #define USE_DHCP
 
-#ifdef USE_LWIP
+#ifdef USE_LWIP 
 
 extern "C" {
 
 #pragma diag_suppress=Pa181
 #include <lwip/ip_addr.h>
-#include <lwip/timers.h>
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
 #include <lwip/mem.h>
 #include <lwip/memp.h>
 #include <lwip/dhcp.h>
-#ifdef IRS_STM32_F2_F4_F7
-#endif // IRS_STM32_F2_F4_F7
 #include <netif/etharp.h>
-#ifdef IRS_STM32_F2_F4_F7
-#endif // IRS_STM32_F2_F4_F7
-#pragma diag_default=Pa181
+
+#ifndef IRS_STM32H7xx
+#include <lwip/timers.h>
+#else // defined(IRS_STM32H7xx)
+#include <lwip/timeouts.h>
+#endif // IRS_STM32H7xx
+  
+#pragma diag_default=Pa181  
+
 
 } // extern "C"
 
@@ -169,7 +173,9 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
   const size_type available_size = (m_buf_max_size - buf->size());
   size_type size = min(available_size, a_data.size());
 
+  #ifndef IRS_NOEXCEPTION
   try {
+  #endif // IRS_NOEXCEPTION
     buf->reserve(buf->size() + a_data.size());
     for (const irs_u8* start = a_data.data(); start != NULL;
         start = a_data.next()) {
@@ -177,9 +183,11 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
       buf->push_back(start, end);
     }
     return size;
+  #ifndef IRS_NOEXCEPTION
   } catch (std::bad_alloc&) {
     return 0;
   }
+  #endif // IRS_NOEXCEPTION
 }
 
 class pbuf_reader_t
@@ -547,7 +555,9 @@ void udp_channels_t<address_t>::insert(
       const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
+      #ifndef IRS_NOEXCEPTION
       try {
+      #endif // IRS_NOEXCEPTION
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =
@@ -565,6 +575,7 @@ void udp_channels_t<address_t>::insert(
           // Текущий канал для проверки уже установлен
         }
         *ap_insert_success = true;
+      #ifndef IRS_NOEXCEPTION
       } catch (...) {
         if (m_map_id_channel.size() > channel_prev_count) {
           m_map_id_channel.erase(map_id_channel_res.first);
@@ -574,6 +585,7 @@ void udp_channels_t<address_t>::insert(
         }
         m_id_list.resize(channel_prev_count);
       }
+      #endif // IRS_NOEXCEPTION
     } else {
       // Добавление не разрешено
     }
@@ -1299,8 +1311,14 @@ private:
   };
   typedef address_t address_type;
   void create();
-  static void recv(void *arg, udp_pcb *ap_upcb,
-    pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port);
+  #ifndef IRS_STM32H7xx
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+    ip_addr *ap_addr, u16_t a_port);
+  #else 
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+    const ip_addr_t *ap_addr, u16_t a_port);
+  #endif // IRS_STM32H7xx
+    
   const mxip_t m_local_ip;
   const irs_u16 m_local_port;
   const mxip_t m_dest_ip;
