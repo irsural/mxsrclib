@@ -401,17 +401,6 @@ void irs::lwip::lwip_control_t::lwip_tick()
   if (m_dhcp_coarse_tmr_loop_timer.check()) {
     dhcp_coarse_tmr();
   }
-  /*
-  if (dhcp_supplied_address(&m_netif)) {
-    uint8_t iptxt[20];
-    sprintf((char *)iptxt, "%s", ip4addr_ntoa(netif_ip4_addr(&m_netif)));
-    irs::mlog() << "IP address assigned by a DHCP server: \n" << iptxt << endl;
-  } else {
-    struct dhcp *dhcp;
-    dhcp = (struct dhcp *)netif_get_client_data(&m_netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP);
-  }
-  */
-  
   #endif // LWIP_DHCP
 }
 
@@ -425,6 +414,13 @@ mxmac_t irs::lwip::lwip_control_t::st_generate_mac(irs::device_code_t a_device_c
 mxmac_t irs::lwip::lwip_control_t::get_mac()
 {
   return m_mac;
+}
+
+void irs::lwip::lwip_control_t::get_dhcp_ip(uint8_t* a_iptxt)
+{
+  if (dhcp_supplied_address(&m_netif)) {
+    sprintf((char *)a_iptxt, "%s", ip4addr_ntoa(netif_ip4_addr(&m_netif)));
+  }
 }
 
 

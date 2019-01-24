@@ -157,6 +157,7 @@ public:
   lwip_control_t(const config_t& a_configuration);
   ~lwip_control_t();
   mxip_t get_ip();
+  void get_dhcp_ip(uint8_t* a_iptxt);
   mxip_t get_netmask();
   mxip_t get_gateway();
   netif* get_netif();
