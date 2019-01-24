@@ -560,6 +560,7 @@ enum device_code_t {
   device_code_u309m = 17,
   device_code_hrm = 18,
   device_code_gnlf = 19,
+  device_code_upms_1v = 20,
   device_code_last = device_code_hrm
 };
 

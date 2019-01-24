@@ -4,6 +4,7 @@
 #endif // __BORLANDC__
 
 #include <irslwip.h>
+#include <irsalg.h>
 
 #ifdef USE_STDPERIPH_DRIVER
 # if defined(IRS_STM32F2xx)
@@ -14,6 +15,7 @@
 #endif // USE_STDPERIPH_DRIVER
 
 #include <irsfinal.h>
+
 
 #ifdef USE_LWIP
 
@@ -50,7 +52,7 @@ void copy_buffer_to_pbuf(const irs_u8* ap_buf, pbuf* ap_pbuf)
 
 } // unnamed namespace
 
-// Используется simple_ethernet_t, который не реализован для h7
+// Вместо него lwip_control_t
 #ifndef IRS_STM32H7xx
 
 // class ethernet_t
@@ -274,6 +276,266 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
 }
 
 #endif // IRS_STM32H7xx
+
+
+#ifdef IRSLIB_USE_LWIP_CONTROL
+
+// class lwip_control_t
+irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
+  m_mac(st_generate_mac(irs::device_code_upms_1v)),
+  m_netif(irs::zero_struct_t<netif>::get()),
+  m_sys_check_timeouts_loop_timer(make_cnt_ms(10)),
+  m_etharp_tmr_loop_timer(make_cnt_ms(ARP_TMR_INTERVAL))
+  #if LWIP_DHCP
+  ,
+  m_dhcp_fine_tmr_loop_timer(make_cnt_ms(DHCP_FINE_TIMER_MSECS)),
+  m_dhcp_coarse_tmr_loop_timer(make_cnt_ms(DHCP_COARSE_TIMER_MSECS))
+  #endif // LWIP_DHCP
+{
+  mem_init();
+  memp_init();
+
+  ip_addr_t ipaddr;
+  ip_addr_t netmask;
+  ip_addr_t gateway;
+
+  IP4_ADDR(&ipaddr, a_config.ip.val[0], a_config.ip.val[1],
+    a_config.ip.val[2], a_config.ip.val[3]);
+  IP4_ADDR(&netmask, a_config.netmask.val[0],
+    a_config.netmask.val[1], a_config.netmask.val[2],
+    a_config.netmask.val[3]);
+  IP4_ADDR(&gateway, a_config.gateway.val[0],
+    a_config.gateway.val[1], a_config.gateway.val[2],
+    a_config.gateway.val[3]);
+  
+  u8_t mac_to_eth[NETIF_MAX_HWADDR_LEN];
+  mac_to_eth[0] = m_mac.val[0];
+  mac_to_eth[1] = m_mac.val[1];
+  mac_to_eth[2] = m_mac.val[2];
+  mac_to_eth[3] = m_mac.val[3];
+  mac_to_eth[4] = m_mac.val[4];
+  mac_to_eth[5] = m_mac.val[5];
+  
+  eth_set_mac(mac_to_eth);
+
+  netif_add(&m_netif, &ipaddr, &netmask, &gateway, NULL,
+    &ethernetif_init, &ethernet_input);
+  netif_set_default(&m_netif);
+  netif_set_up(&m_netif);
+  
+  if (netif_is_up(&m_netif)) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("netif is up");
+  } else {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("netif start failed");
+  }
+
+  //set_lwip_accept_udp_port_fun(accept_udp_port);
+
+  if (a_config.dhcp_enabled) {
+    start_dhcp();
+  }
+}
+
+irs::lwip::lwip_control_t::~lwip_control_t()
+{
+  netif_remove(&m_netif);
+}
+
+mxip_t irs::lwip::lwip_control_t::get_ip()
+{
+  mxip_t ip;
+  ip.addr = m_netif.ip_addr.addr;
+  return ip;
+}
+
+mxip_t irs::lwip::lwip_control_t::get_netmask()
+{
+  mxip_t netmask;
+  netmask.addr = m_netif.netmask.addr;
+  return netmask;
+}
+
+mxip_t irs::lwip::lwip_control_t::get_gateway()
+{
+  mxip_t gw;
+  gw.addr = m_netif.gw.addr;
+  return gw;
+}
+
+netif* irs::lwip::lwip_control_t::get_netif()
+{
+  return &m_netif;
+}
+
+void irs::lwip::lwip_control_t::tick()
+{
+  ethernetif_input(&m_netif);
+  lwip_tick();
+}
+
+void irs::lwip::lwip_control_t::start_dhcp()
+{
+  #if LWIP_DHCP
+  const err_t err = dhcp_start(&m_netif);
+  if (err == ERR_MEM) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Не хватает памяти для запуска DHCP-клиента");
+  } else if (err != ERR_OK) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Не удалось запустить DHCP-клиента. "
+      "Код ошибки " << static_cast<int>(err));
+  }
+  #endif // LWIP_DHCP
+}
+
+void irs::lwip::lwip_control_t::lwip_tick()
+{
+  if (m_sys_check_timeouts_loop_timer.check()) {
+    sys_check_timeouts();
+  }
+  if (m_etharp_tmr_loop_timer.check()) {
+    etharp_tmr();
+  }
+  #if LWIP_DHCP
+  if (m_dhcp_fine_tmr_loop_timer.check()) {
+    dhcp_fine_tmr();
+  }
+  if (m_dhcp_coarse_tmr_loop_timer.check()) {
+    dhcp_coarse_tmr();
+  }
+  /*
+  if (dhcp_supplied_address(&m_netif)) {
+    uint8_t iptxt[20];
+    sprintf((char *)iptxt, "%s", ip4addr_ntoa(netif_ip4_addr(&m_netif)));
+    irs::mlog() << "IP address assigned by a DHCP server: \n" << iptxt << endl;
+  } else {
+    struct dhcp *dhcp;
+    dhcp = (struct dhcp *)netif_get_client_data(&m_netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP);
+  }
+  */
+  
+  #endif // LWIP_DHCP
+}
+
+mxmac_t irs::lwip::lwip_control_t::st_generate_mac(irs::device_code_t a_device_code)
+{
+  IRS_STATIC_ASSERT(sizeof(irs::device_code_t) == 1);
+  const irs_u16 device_id = irs::crc16(UID_H7_BEGIN, UID_H7_SIZE);
+  return generate_mac(a_device_code, device_id);
+}
+
+mxmac_t irs::lwip::lwip_control_t::get_mac()
+{
+  return m_mac;
+}
+
+
+/*
+err_t irs::lwip::ethernet_t::low_level_output(
+  struct netif* ap_netif, struct pbuf *p)
+{
+  if (!mp_simple_ethernet) {
+    IRS_LIB_ASSERT_MSG("Драйвер Ethernet не задан");
+    return ERR_MEM;
+  }
+  if (!mp_simple_ethernet->is_send_buf_empty()) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("Нет места в очереди отправляемых пакетов");
+    return ERR_MEM;
+  }
+
+  int framelength = 0;
+  irs_u8* buf = mp_simple_ethernet->get_send_buf();
+  for(pbuf* q = p; q != NULL; q = q->next) {
+    if (q->len <= (mp_simple_ethernet->send_buf_max_size() - framelength)) {
+      memcpy(buf, q->payload, q->len);
+      buf += q->len;
+      framelength += q->len;
+    } else {
+      IRS_LIB_LWIP_ETH_DBG_MSG_BASE("Попытка послать слишком большой пакет");
+      return ERR_MEM;
+    }
+  }
+  if (framelength > 0) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("low_level_output: length = " <<
+      framelength);
+    mp_simple_ethernet->send_packet(framelength);
+  }
+  return ERR_OK;
+}
+
+err_t irs::lwip::ethernet_t::ethernetif_input()
+{
+  err_t err = ERR_MEM;
+  pbuf* p = low_level_input();
+  if (p == NULL) {
+    return ERR_MEM;
+  }
+  err = m_netif.input(p, &m_netif);
+  if (err != ERR_OK) {
+    IRS_LIB_LWIP_ETH_DBG_MSG_BASE("ethernetif_input: IP input error\n");
+    pbuf_free(p);
+    p = NULL;
+  }
+  return err;
+}
+
+struct pbuf* irs::lwip::ethernet_t::low_level_input()
+{
+  if (!mp_simple_ethernet->is_recv_buf_filled()) {
+    return NULL;
+  }
+
+  irs_u16 len = static_cast<irs_u16>(mp_simple_ethernet->recv_buf_size());
+  irs_u8* buffer = mp_simple_ethernet->get_recv_buf();
+  pbuf* p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+
+  if (p != NULL) {
+    copy_buffer_to_pbuf(buffer, p);
+    mp_simple_ethernet->set_recv_handled();
+    IRS_LIB_LWIP_ETH_DBG_MSG_DETAIL("low_level_input: length = " << len);
+  }
+  return p;
+}
+
+err_t irs::lwip::ethernet_t::ethernetif_init(struct netif* ap_netif)
+{
+  IRS_LIB_ASSERT(ap_netif);
+
+  #if LWIP_NETIF_HOSTNAME
+  ap_netif->hostname = "lwip";
+  #endif // LWIP_NETIF_HOSTNAME
+
+  ap_netif->name[0] = 's';
+  ap_netif->name[1] = 't';
+  ap_netif->output = etharp_output;
+  ap_netif->linkoutput = low_level_output;
+
+  low_level_init(ap_netif);
+
+  return ERR_OK;
+}
+
+void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
+{
+  IRS_LIB_ASSERT(mp_simple_ethernet);
+
+  IRS_LIB_ASSERT(mac_length <= NETIF_MAX_HWADDR_LEN);
+  ap_netif->hwaddr_len = mac_length;
+  const mxmac_t mac = mp_simple_ethernet->get_local_mac();
+  ap_netif->hwaddr[0] =  mac.val[0];
+  ap_netif->hwaddr[1] =  mac.val[1];
+  ap_netif->hwaddr[2] =  mac.val[2];
+  ap_netif->hwaddr[3] =  mac.val[3];
+  ap_netif->hwaddr[4] =  mac.val[4];
+  ap_netif->hwaddr[5] =  mac.val[5];
+
+  ap_netif->mtu = mp_simple_ethernet->send_buf_max_size() -
+    irs::simple_ethernet_t::ethernet_header_size;
+
+  ap_netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP |
+    NETIF_FLAG_LINK_UP;
+}
+*/
+#endif // IRSLIB_USE_LWIP_CONTROL
+
 
 // class buffers_t
 irs::hardflow::lwip::buffers_t::buffers_t(size_type a_buf_max_count,
@@ -1054,6 +1316,7 @@ bool irs::hardflow::lwip::tcp_client_t::is_channel_exists(
 }
 
 #endif // IRS_STM32H7xx
+
 
 #if LWIP_UDP
 
