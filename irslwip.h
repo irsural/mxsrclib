@@ -1389,8 +1389,8 @@ private:
   #endif // IRS_STM32H7xx
     
   const mxip_t m_local_ip;
-  const irs_u16 m_local_port;
   const mxip_t m_dest_ip;
+  const irs_u16 m_local_port;
   const irs_u16 m_dest_port;
   configuration_t m_configuration;
   const size_type m_channel_max_count;

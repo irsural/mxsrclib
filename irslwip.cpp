@@ -1326,8 +1326,8 @@ irs::hardflow::lwip::udp_t::udp_t(
   configuration_t a_configuration
 ):
   m_local_ip(a_local_ip),
-  m_local_port(a_local_port),
   m_dest_ip(a_dest_ip),
+  m_local_port(a_local_port),
   m_dest_port(a_dest_port),
   m_configuration(a_configuration),
   m_channel_max_count(a_channel_max_count),
