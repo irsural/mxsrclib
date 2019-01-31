@@ -150,9 +150,9 @@ void irs::event_t::reset()
 //#endif // NOP
 
 // Класс событий
-mxfact_event_t::mxfact_event_t():
+mxfact_event_t::mxfact_event_t(irs_bool a_start_state):
   fp_prev_event(IRS_NULL),
-  f_occurred(irs_false),
+  f_occurred(a_start_state),
   fp_action(IRS_NULL)
 {
 }

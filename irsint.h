@@ -39,7 +39,7 @@ class mxfact_event_t
   irs_bool f_occurred;
   irs_action_t *fp_action;
 public:
-  mxfact_event_t();
+  mxfact_event_t(irs_bool a_start_state = irs_false);
   virtual ~mxfact_event_t();
   virtual void exec();
   virtual irs_bool check();
