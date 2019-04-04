@@ -89,7 +89,7 @@ void counter_init()
     SECONDS_PER_INTERVAL = 1;
     
     HAL_SYSTICK_Config(0x01000000);
-    HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0U);
+    HAL_NVIC_SetPriority(SysTick_IRQn, 2, 0U);
 
 
 //    SYSTICKRVR = 0x00FFFFFF;
