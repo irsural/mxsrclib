@@ -239,6 +239,12 @@ inline irs_wstring_t str_conv<irs_wstring_t>(const UnicodeString& a_str_in)
 {
   return irs_wstring_t(a_str_in.c_str());
 }
+
+template<>
+inline std_wstring_t str_conv<std_wstring_t>(const UnicodeString& a_str_in)
+{
+  return std_wstring_t(a_str_in.c_str());
+}
 #endif // (__BORLANDC__ >= IRS_CPP_BUILDER2010)
 //----------
 
