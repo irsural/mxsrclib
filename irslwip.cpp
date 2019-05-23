@@ -285,7 +285,8 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
   m_mac(st_generate_mac(irs::device_code_upms_1v)),
   m_netif(irs::zero_struct_t<netif>::get()),
   m_sys_check_timeouts_loop_timer(make_cnt_ms(10)),
-  m_etharp_tmr_loop_timer(make_cnt_ms(ARP_TMR_INTERVAL))
+  m_etharp_tmr_loop_timer(make_cnt_ms(ARP_TMR_INTERVAL)),
+  m_check_link_timer(irs::make_cnt_ms(100))
   #if LWIP_DHCP
   ,
   m_dhcp_fine_tmr_loop_timer(make_cnt_ms(DHCP_FINE_TIMER_MSECS)),
@@ -371,6 +372,10 @@ void irs::lwip::lwip_control_t::tick()
 {
   ethernetif_input(&m_netif);
   lwip_tick();
+  
+  if (m_check_link_timer.check()) {
+    ethernet_link_check_state(&m_netif);
+  }
 }
 
 void irs::lwip::lwip_control_t::start_dhcp()

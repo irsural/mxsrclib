@@ -177,6 +177,7 @@ private:
   netif m_netif;
   loop_timer_t m_sys_check_timeouts_loop_timer;
   loop_timer_t m_etharp_tmr_loop_timer;
+  loop_timer_t m_check_link_timer;
   #ifdef USE_DHCP
   loop_timer_t m_dhcp_fine_tmr_loop_timer;
   loop_timer_t m_dhcp_coarse_tmr_loop_timer;
