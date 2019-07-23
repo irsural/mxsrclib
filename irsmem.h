@@ -113,7 +113,7 @@ private:
   irs_uarc m_num_of_iterations;
   irs_uarc m_current_iteration;
   size_type m_modulo_size;
-  irs_uarc m_page_addr;
+  irs_u32 m_page_addr;
 
   void prepare_spi();
   void clear_spi();
