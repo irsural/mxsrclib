@@ -125,7 +125,7 @@ void irs::eeprom_at25_t::read_page(irs_u8 *ap_buf, irs_uarc a_index)
     m_status = st_check_ready_prepare;
     m_target_status = st_read_prepare;
     mp_read_user_buf = ap_buf;
-    m_page_addr = a_index * m_page_size;
+    m_page_addr = static_cast<irs_u32>(a_index * m_page_size);
     m_current_iteration = 0;
   }
 }
@@ -136,7 +136,7 @@ void irs::eeprom_at25_t::write_page(const irs_u8 *ap_buf, irs_uarc a_index)
     m_status = st_check_ready_prepare;
     m_target_status = st_write_enable;
     mp_write_user_buf = ap_buf;
-    m_page_addr = a_index * m_page_size;
+    m_page_addr = static_cast<irs_u32>(a_index * m_page_size);
     m_current_iteration = 1;
   }
 }
