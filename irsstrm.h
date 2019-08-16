@@ -430,9 +430,9 @@ void out_hex(ostream *ap_strm, const T& a_value)
   (*ap_strm) << hex << setw(hex_chars_in_byte*sizeof(T));
   (*ap_strm) << uppercase << setfill('0');
   if (sizeof(T) != sizeof(char)) {
-    (*ap_strm) << a_value;
+    (*ap_strm) << right << a_value;
   } else {
-    (*ap_strm) << static_cast<int>(a_value);
+    (*ap_strm) << right << static_cast<int>(a_value);
   }
 }
 
