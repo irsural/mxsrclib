@@ -6,6 +6,8 @@
 
 #include <irsarchint.h>
 #include <irsconfig.h>
+#include <irserror.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -47,20 +49,106 @@ void NMI_Handler()
   irs::arm::interrupt_array()->exec_event(irs::arm::nmi_int);
 }
 
+void fault_show(unsigned long a_LR, unsigned long a_MSP,
+  unsigned long a_PSP)
+{
+  volatile unsigned long SP = 0;
+  volatile unsigned long LR = a_LR;
+  volatile unsigned long bit_mask = 1 << 2;
+  volatile unsigned long LR_bit = LR&bit_mask;
+  if (LR_bit == 0) {
+    SP = a_MSP;
+  } else {
+    SP = a_PSP;
+  }
+
+  irs::mlog() << endl << endl;
+
+  irs::mlog() << "Fault information" << endl << endl;
+
+  volatile unsigned long FP_state_info_mask = 1 << 4;
+  volatile unsigned long FP_state_info = LR&FP_state_info_mask;
+  if (FP_state_info == 0) {
+    irs::mlog() << "FP state information is present but not displayed" << endl;
+  } else {
+    irs::mlog() << "FP state information is absent" << endl;
+  }
+  irs::mlog() << "(Extended frame; " <<
+    "ARM v7-M Architecture Reference Manual)" << endl;
+
+  // IAR выполняет PUSH {R7, LR}
+  const unsigned long push_size = 8;
+
+  irs_u32* stack = reinterpret_cast<irs_u32*>(SP + push_size);
+  enum { r0, r1, r2, r3, r12, lr, pc, psr };
+
+  irs::mlog() << "R0 = "; irs::out_hex_0x(&irs::mlog(), stack[r0]);
+  irs::mlog() << endl;
+  irs::mlog() << "R1 = "; irs::out_hex_0x(&irs::mlog(), stack[r1]);
+  irs::mlog() << endl;
+  irs::mlog() << "R2 = "; irs::out_hex_0x(&irs::mlog(), stack[r2]);
+  irs::mlog() << endl;
+  irs::mlog() << "R3 = "; irs::out_hex_0x(&irs::mlog(), stack[r3]);
+  irs::mlog() << endl;
+  irs::mlog() << "R12 = "; irs::out_hex_0x(&irs::mlog(), stack[r12]);
+  irs::mlog() << endl;
+  irs::mlog() << "LR = "; irs::out_hex_0x(&irs::mlog(), stack[lr]);
+  irs::mlog() << endl;
+  irs::mlog() << "PC = "; irs::out_hex_0x(&irs::mlog(), stack[pc]);
+  irs::mlog() << endl;
+  irs::mlog() << "PSR = "; irs::out_hex_0x(&irs::mlog(), stack[psr]);
+  irs::mlog() << endl;
+
+  irs::mlog() << irsm("BFAR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED38))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("MMFAR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED34))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("CFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED28))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("HFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED2C))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("DFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED30))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("AFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED3C))));
+  irs::mlog() << endl;
+
+  irs::mlog() << endl << endl;
+}
+
 void HardFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::hard_fault_int);
 }
 void MemManage_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::mem_manage_int);
 }
 void BusFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::bus_fault_int);
 }
 void UsageFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::usage_fault_int);
 }
 #if !IRS_USE_FREE_RTOS
