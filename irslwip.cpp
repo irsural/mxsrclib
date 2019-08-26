@@ -339,6 +339,9 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
 
 irs::lwip::lwip_control_t::~lwip_control_t()
 {
+#if LWIP_DHCP
+  dhcp_stop(&m_netif);
+#endif // LWIP_DHCP
   netif_remove(&m_netif);
 }
 
@@ -421,10 +424,12 @@ mxmac_t irs::lwip::lwip_control_t::get_mac()
   return m_mac;
 }
 
-void irs::lwip::lwip_control_t::get_dhcp_ip(uint8_t* a_iptxt)
+bool irs::lwip::lwip_control_t::is_dhcp_ready()
 {
   if (dhcp_supplied_address(&m_netif)) {
-    sprintf((char *)a_iptxt, "%s", ip4addr_ntoa(netif_ip4_addr(&m_netif)));
+    return true;
+  } else {
+    return false;
   }
 }
 

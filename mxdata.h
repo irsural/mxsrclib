@@ -1298,7 +1298,7 @@ inline bool irs::deque_data_t<T>::empty() const
 {
   return m_ring_size == 0;
 }
-
+ 
 template <class T>
 void irs::deque_data_t<T>::reserve(size_type a_capacity)
 {
