@@ -52,11 +52,10 @@ void NMI_Handler()
 void fault_show(unsigned long a_LR, unsigned long a_MSP,
   unsigned long a_PSP)
 {
-  volatile unsigned long SP = 0;
-  volatile unsigned long LR = a_LR;
-  volatile unsigned long bit_mask = 1 << 2;
-  volatile unsigned long LR_bit = LR&bit_mask;
-  if (LR_bit == 0) {
+  unsigned long SP = 0;
+
+  const uint32_t stack_type_bit = 2;
+  if ((a_LR&(1 << stack_type_bit)) == 0) {
     SP = a_MSP;
   } else {
     SP = a_PSP;
@@ -65,10 +64,9 @@ void fault_show(unsigned long a_LR, unsigned long a_MSP,
   irs::mlog() << endl << endl;
 
   irs::mlog() << "Fault information" << endl << endl;
-
-  volatile unsigned long FP_state_info_mask = 1 << 4;
-  volatile unsigned long FP_state_info = LR&FP_state_info_mask;
-  if (FP_state_info == 0) {
+  
+  const uint32_t FP_state_info_bit = 4;
+  if ((a_LR&(1 << FP_state_info_bit)) == 0) {
     irs::mlog() << "FP state information is present but not displayed" << endl;
   } else {
     irs::mlog() << "FP state information is absent" << endl;
@@ -100,7 +98,7 @@ void fault_show(unsigned long a_LR, unsigned long a_MSP,
   irs::mlog() << endl;
 
   irs::mlog() << irsm("BFAR = ");
-  irs::out_hex_0x(&irs::mlog(),
+  irs::out_hex_0x(&irs::mlog(), 
     (*((volatile unsigned long *)(0xE000ED38))));
   irs::mlog() << endl;
   irs::mlog() << irsm("MMFAR = ");
