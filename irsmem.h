@@ -157,6 +157,7 @@ private:
     st_write_process,
     st_write_begin_2_half
   };
+  enum { log_message_limit = 10 };
 
   page_mem_t* mp_page_mem;
   status_t m_status;
@@ -172,6 +173,7 @@ private:
   raw_data_t<irs_u8> m_cluster_data;
   raw_data_view_t<irs_u32, irs_u8> m_cluster_data_32;
   irs_u8* mp_read_buf;
+  irs_uarc m_log_message_count;
 };
 
 class mem_data_t : public comm_data_t
