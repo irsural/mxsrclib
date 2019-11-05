@@ -1323,6 +1323,24 @@ irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
   reset_dma();
 }
 
+void irs::arm::st_hal_spi_dma_t::reset_spi()
+{
+  abort();
+  m_tx_status = false;
+  m_rx_status = false;
+  
+  disable_spi();
+  
+  reset_peripheral(m_settings.spi_address);
+  
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+  
+  set_default();
+  enable_spi();
+}
+
 void irs::arm::st_hal_spi_dma_t::reset_dma()
 {
   if (m_hdma_init) {
@@ -1356,7 +1374,6 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
 
   HAL_DMA_Init(&m_hdma_tx);
 
-  mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
   /* Configure the DMA handler for Reception process */
   m_hdma_rx.Instance                 = m_settings.rx_dma_y_stream_x;
@@ -1383,6 +1400,7 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
   HAL_DMA_Init(&m_hdma_rx);
 
   mp_spi_regs->SPI_CR2_bit.RXDMAEN = 1;
+  mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
   m_hdma_init = true;
 }
