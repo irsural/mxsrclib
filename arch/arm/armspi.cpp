@@ -1323,7 +1323,7 @@ irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
   reset_dma();
 }
 
-void irs::arm::st_hal_spi_dma_t::reset_spi()
+void irs::arm::st_hal_spi_dma_t::reset()
 {
   abort();
   m_tx_status = false;
