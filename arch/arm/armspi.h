@@ -384,7 +384,7 @@ public:
   virtual void tick();
   virtual void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf,
     irs_uarc a_size);
-  void reset_spi();
+  void reset();
 private:
   void initialize_gpio_channels(gpio_channel_t a_sck,
     gpio_channel_t a_miso,
