@@ -22,7 +22,6 @@
 *.tmp
 *.~*
 irsconfig.h
-irsconfig.h
 lsprst7.*
 sysprs7.*
 tmpprst.*
