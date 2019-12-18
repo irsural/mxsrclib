@@ -14,7 +14,7 @@
 #include <stdctrls.hpp>
 #include <comctrls.hpp>
 #include <cspin.h>
-#include <Spin.hpp>
+#include <Vcl.Samples.Spin.hpp>
 #include <grids.hpp>
 #include <ValEdit.hpp>
 # if (defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDERXE))

@@ -99,35 +99,36 @@ bool irs::cbuilder::get_file_version(
   LPVOID pBlock = IRS_NULL;
   UINT len;
   // размер информации о версии файла
-  DWORD info_size = GetFileVersionInfoSize(file_name, NULL);
+  DWORD info_size = GetFileVersionInfoSizeW(file_name, NULL);
   if(info_size == 0) {
     fsuccess = false;
     IRS_DBG_MSG(last_error_str());
   }
   if (fsuccess) {
     // буфер для информации о версии файла
-    pBlock = new char[info_size];
+	pBlock = new BYTE[info_size];
     memcpy(file_name, a_file_name.c_str(), file_name_size);
-    GetFileVersionInfo(file_name, IRS_NULL, info_size, pBlock);
+	GetFileVersionInfoW(file_name, IRS_NULL, info_size, pBlock);
 
 
-    if (!VerQueryValue(pBlock, irst("\\"),&MS,&len)) {
+	if (!VerQueryValueW(pBlock, irst("\\"),&MS,&len)) {
       fsuccess = false;
-    }
+	}
   }
+
   if(fsuccess) {
-    // структура с информацией о версии файла
-    VS_FIXEDFILEINFO FixedFileInfo;
-    // приводим информацию к структуре
-    memmove(&FixedFileInfo, MS, len);
+	// структура с информацией о версии файла
+	VS_FIXEDFILEINFO FixedFileInfo;
+	// приводим информацию к структуре
+	memmove(&FixedFileInfo, MS, len);
 
-    DWORD FileVersionMS = FixedFileInfo.dwFileVersionMS;
-    DWORD FileVersionLS = FixedFileInfo.dwFileVersionLS;
+	DWORD FileVersionMS = FixedFileInfo.dwFileVersionMS;
+	DWORD FileVersionLS = FixedFileInfo.dwFileVersionLS;
 
-    a_version.major = HIWORD(FileVersionMS);
-    a_version.minor = LOWORD(FileVersionMS);
-    a_version.release = HIWORD(FileVersionLS);
-    a_version.build = LOWORD(FileVersionLS);
+	a_version.major = HIWORD(FileVersionMS);
+	a_version.minor = LOWORD(FileVersionMS);
+	a_version.release = HIWORD(FileVersionLS);
+	a_version.build = LOWORD(FileVersionLS);
   }
 
   delete[] pBlock;
