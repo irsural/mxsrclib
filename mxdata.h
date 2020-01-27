@@ -1448,10 +1448,10 @@ inline void irs::deque_data_t<T>::clear()
 template <class T>
 inline void irs::deque_data_t<T>::swap(deque_data_t<T>* ap_deque_data_src)
 {
-  ::swap(m_ring_size, ap_deque_data_src->m_ring_size);
-  ::swap(m_capacity, ap_deque_data_src->m_capacity);
-  ::swap(mp_buf, ap_deque_data_src->mp_buf);
-  ::swap(m_ring_begin_pos, ap_deque_data_src->m_ring_begin_pos);
+  std::swap(m_ring_size, ap_deque_data_src->m_ring_size);
+  std::swap(m_capacity, ap_deque_data_src->m_capacity);
+  std::swap(mp_buf, ap_deque_data_src->mp_buf);
+  std::swap(m_ring_begin_pos, ap_deque_data_src->m_ring_begin_pos);
 }
 
 template <class T>
