@@ -601,6 +601,9 @@ void irs::arm::st_spi_base_t::clean_buf_from_old_data(spi_regs_t*
   #endif // !IRS_STM32F7xx
 }
 
+//Не смотря на volatile у переменной data, с максимальной оптимизацией IAR
+//все равно оптимизирует data, и программа висит в бесконечном цикле
+#pragma optimize=none
 void irs::arm::st_spi_base_t::_disable_spi(spi_regs_t* ap_spi_regs)
 {
   #ifdef IRS_STM32F7xx
@@ -608,7 +611,7 @@ void irs::arm::st_spi_base_t::_disable_spi(spi_regs_t* ap_spi_regs)
   while (ap_spi_regs->SPI_SR_bit.BSY != 0);
 
   ap_spi_regs->SPI_CR1_bit.SPE = 0;
-
+  
   while (ap_spi_regs->SPI_SR_bit.FRLVL != 0) {
     volatile irs_u16 data = ap_spi_regs->SPI_DR;
   }
@@ -1323,6 +1326,24 @@ irs::arm::st_hal_spi_dma_t::st_hal_spi_dma_t(
   reset_dma();
 }
 
+void irs::arm::st_hal_spi_dma_t::reset()
+{
+  abort();
+  m_tx_status = false;
+  m_rx_status = false;
+  
+  disable_spi();
+  
+  reset_peripheral(m_settings.spi_address);
+  
+  mp_spi_regs->SPI_CR1_bit.SSM = 1;
+  mp_spi_regs->SPI_CR1_bit.SSI = 1;
+  mp_spi_regs->SPI_CR1_bit.MSTR = 1;
+  
+  set_default();
+  enable_spi();
+}
+
 void irs::arm::st_hal_spi_dma_t::reset_dma()
 {
   if (m_hdma_init) {
@@ -1356,7 +1377,6 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
 
   HAL_DMA_Init(&m_hdma_tx);
 
-  mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
   /* Configure the DMA handler for Reception process */
   m_hdma_rx.Instance                 = m_settings.rx_dma_y_stream_x;
@@ -1383,6 +1403,7 @@ void irs::arm::st_hal_spi_dma_t::reset_dma()
   HAL_DMA_Init(&m_hdma_rx);
 
   mp_spi_regs->SPI_CR2_bit.RXDMAEN = 1;
+  mp_spi_regs->SPI_CR2_bit.TXDMAEN = 1;
 
   m_hdma_init = true;
 }

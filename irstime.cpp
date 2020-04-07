@@ -200,20 +200,7 @@ irs::cur_time_t* irs::cur_time()
 }
 
 #if IRS_USE_ST_RTC
-_STD_BEGIN
-__time32_t (__time32)(__time32_t *t)
-{
-  #ifdef IRS_STM32_F2_F4_F7
-  if (t)
-  {
-    *t = irs::arm::st_rtc_t::get_instance()->get_time();
-    return *t;
-  }
-  return irs::arm::st_rtc_t::get_instance()->get_time();
-  #else
-  return 0;
-  #endif
-}
+//_STD_BEGIN
 
 #if _DLIB_TIME_ALLOW_64
 __time64_t (__time64)(__time64_t *t)
@@ -231,7 +218,24 @@ __time64_t (__time64)(__time64_t *t)
 }
 //CLOCKS_PER_SEC
 
-_STD_END
+#else // _DLIB_TIME_ALLOW_64
+
+__time32_t (__time32)(__time32_t *t)
+{
+  #ifdef IRS_STM32_F2_F4_F7
+  if (t)
+  {
+    *t = irs::arm::st_rtc_t::get_instance()->get_time();
+    return *t;
+  }
+  return irs::arm::st_rtc_t::get_instance()->get_time();
+  #else
+  return 0;
+  #endif
+}
+
+//_STD_END
+#endif // _DLIB_TIME_ALLOW_64
+
 #endif // IRS_USE_ST_RTC
 
-#endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7)

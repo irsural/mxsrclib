@@ -357,7 +357,8 @@ irs::mem_cluster_t::mem_cluster_t(page_mem_t* ap_page_mem,
   m_cluster_data_index(0),
   m_cluster_data(m_cluster_size * 2), //  2 полукластера
   m_cluster_data_32(&m_cluster_data),
-  mp_read_buf(IRS_NULL)
+  mp_read_buf(IRS_NULL),
+  m_log_message_count(0)
 {
 }
 
@@ -494,7 +495,15 @@ void irs::mem_cluster_t::tick()
           m_target_status = st_free;
         } else {
           //  error
-          IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " Ошибка CRC");
+          if (m_log_message_count < log_message_limit) {
+            IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " Ошибка CRC");
+            IRS_LIB_DBG_MSG("Индекс кластера " << m_cluster_index);
+            m_log_message_count++;
+            if (m_log_message_count == log_message_limit) {
+              IRS_LIB_DBG_MSG("Ошибки CRC больше не будут выводиться "
+                "во избежание долгой инициализации устройства");
+            }
+          }
           #ifdef NOP
           for (int i = 0; i < m_cluster_size; i++) {
             if (m_cluster_data[i] != m_cluster_data[m_cluster_size+i]) {
@@ -507,7 +516,6 @@ void irs::mem_cluster_t::tick()
           mem_copy(m_cluster_data, 0, user_buf, 0, m_data_size);
           m_status = st_write_begin;
           m_error_status = true;
-          IRS_LIB_DBG_MSG("Индекс кластера " << m_cluster_index);
         }
       }
       break;
