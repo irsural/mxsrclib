@@ -384,7 +384,7 @@ MEMORY_MODIFIER irs_u32 irs::crc32_data_t::table[size] =
 #else //__ICCAVR__
 irs::crc32_data_t::crc32_data_t()
 {
-  const irs_u32 table_src[size] =
+  static const irs_u32 table_src[size] =
 #endif //__ICCAVR__
 {
   0x00000000L, 0x77073096L, 0xEE0E612CL, 0x990951BAL,
@@ -457,9 +457,11 @@ irs::crc32_data_t::crc32_data_t()
 }
 #endif //__ICCAVR__
 
+#ifdef NOP
 // class crc32_table_stream_t
 irs::handle_t<irs::crc32_data_t> irs::crc32_table_stream_t::mp_crc32_data =
   new irs::crc32_data_t();
+#endif //NOP
 
 irs::crc32_table_stream_t::crc32_table_stream_t():
   m_crc(0xFFFFFFFF)

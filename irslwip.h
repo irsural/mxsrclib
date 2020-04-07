@@ -7,26 +7,47 @@
 
 #define USE_DHCP
 
-#ifdef USE_LWIP
+#ifdef USE_LWIP 
 
 extern "C" {
 
+#pragma diag_suppress=Pa181
+#include <lwip/init.h>
 #include <lwip/ip_addr.h>
+  
+#ifndef IRS_STM32H7xx
 #include <lwip/timers.h>
+#else // defined(IRS_STM32H7xx)
+#include <lwip/timeouts.h>
+#endif // IRS_STM32H7xx
+  
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
 #include <lwip/mem.h>
 #include <lwip/memp.h>
 #include <lwip/dhcp.h>
-#ifdef IRS_STM32_F2_F4_F7
-#endif // IRS_STM32_F2_F4_F7
 #include <netif/etharp.h>
-#ifdef IRS_STM32_F2_F4_F7
-#endif // IRS_STM32_F2_F4_F7
+#pragma diag_default=Pa181  
 
 } // extern "C"
 
 #endif // USE_LWIP
+
+#if defined(IRS_STM32H7xx)// || defined(ARMxxx)
+#define IRSLIB_USE_LWIP_CONTROL
+#endif
+
+#ifdef IRSLIB_USE_LWIP_CONTROL
+
+#ifdef IRS_STM32H7xx
+extern "C" {
+#include "ethernet_h7.h"
+}
+#else
+#error "Не подключен файл ethernet для текущего микроконтроллера"
+#endif // include ethernet
+
+#endif // IRSLIB_USE_LWIP_CONTROL
 
 #include <irsfinal.h>
 
@@ -111,6 +132,61 @@ private:
   #endif // USE_DHCP
 };
 
+
+#ifdef IRSLIB_USE_LWIP_CONTROL
+
+//Переписанный из ethernet_t класс, который использует подключенный файл
+//с реализацией ethernet
+class lwip_control_t
+{
+public:
+  struct config_t
+  {
+    mxip_t ip;
+    mxip_t netmask;
+    mxip_t gateway;
+    bool dhcp_enabled;
+    config_t():
+      ip(mxip_t::any_ip()),
+      netmask(mxip_t::any_ip()),
+      gateway(mxip_t::any_ip()),
+      dhcp_enabled(false)
+    {
+    }
+  };
+  lwip_control_t(const config_t& a_configuration);
+  ~lwip_control_t();
+  mxip_t get_ip();
+  bool is_dhcp_ready();
+  mxip_t get_netmask();
+  mxip_t get_gateway();
+  netif* get_netif();
+  void tick();
+  mxmac_t get_mac();
+private:
+  void start_dhcp();
+  void lwip_tick();
+  
+  mxmac_t st_generate_mac(device_code_t a_device_code);
+  //static err_t low_level_output(struct netif *ap_netif, struct pbuf *p);
+  //err_t ethernetif_input();
+  //static struct pbuf * low_level_input();
+  //static err_t ethernetif_init(struct netif *ap_netif);
+  //static void low_level_init(struct netif *ap_netif);
+  mxmac_t m_mac;
+  netif m_netif;
+  loop_timer_t m_sys_check_timeouts_loop_timer;
+  loop_timer_t m_etharp_tmr_loop_timer;
+  loop_timer_t m_check_link_timer;
+  #ifdef USE_DHCP
+  loop_timer_t m_dhcp_fine_tmr_loop_timer;
+  loop_timer_t m_dhcp_coarse_tmr_loop_timer;
+  #endif // USE_DHCP
+};
+
+#endif // IRSLIB_USE_LWIP_CONTROL
+
+
 } // namespace lwip
 
 namespace hardflow {
@@ -167,7 +243,9 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
   const size_type available_size = (m_buf_max_size - buf->size());
   size_type size = min(available_size, a_data.size());
 
+  #ifndef IRS_NOEXCEPTION
   try {
+  #endif // IRS_NOEXCEPTION
     buf->reserve(buf->size() + a_data.size());
     for (const irs_u8* start = a_data.data(); start != NULL;
         start = a_data.next()) {
@@ -175,9 +253,11 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
       buf->push_back(start, end);
     }
     return size;
+  #ifndef IRS_NOEXCEPTION
   } catch (std::bad_alloc&) {
     return 0;
   }
+  #endif // IRS_NOEXCEPTION
 }
 
 class pbuf_reader_t
@@ -545,7 +625,9 @@ void udp_channels_t<address_t>::insert(
       const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
+      #ifndef IRS_NOEXCEPTION
       try {
+      #endif // IRS_NOEXCEPTION
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =
@@ -563,6 +645,7 @@ void udp_channels_t<address_t>::insert(
           // Текущий канал для проверки уже установлен
         }
         *ap_insert_success = true;
+      #ifndef IRS_NOEXCEPTION
       } catch (...) {
         if (m_map_id_channel.size() > channel_prev_count) {
           m_map_id_channel.erase(map_id_channel_res.first);
@@ -572,6 +655,7 @@ void udp_channels_t<address_t>::insert(
         }
         m_id_list.resize(channel_prev_count);
       }
+      #endif // IRS_NOEXCEPTION
     } else {
       // Добавление не разрешено
     }
@@ -1297,11 +1381,17 @@ private:
   };
   typedef address_t address_type;
   void create();
-  static void recv(void *arg, udp_pcb *ap_upcb,
-    pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port);
+  #ifndef IRS_STM32H7xx
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+    ip_addr *ap_addr, u16_t a_port);
+  #else 
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+    const ip_addr_t *ap_addr, u16_t a_port);
+  #endif // IRS_STM32H7xx
+    
   const mxip_t m_local_ip;
-  const irs_u16 m_local_port;
   const mxip_t m_dest_ip;
+  const irs_u16 m_local_port;
   const irs_u16 m_dest_port;
   configuration_t m_configuration;
   const size_type m_channel_max_count;

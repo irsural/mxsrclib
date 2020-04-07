@@ -39,7 +39,7 @@ class mxfact_event_t
   irs_bool f_occurred;
   irs_action_t *fp_action;
 public:
-  mxfact_event_t();
+  mxfact_event_t(irs_bool a_start_state = irs_false);
   virtual ~mxfact_event_t();
   virtual void exec();
   virtual irs_bool check();
@@ -604,7 +604,7 @@ class interrupt_array_t: public interrupt_array_base_t
 public:
   typedef interrupt_array_base_t base_type;
   typedef base_type::size_type size_type;
-  typedef irs_u8 gen_index_type;
+  typedef irs_u32 gen_index_type;
 
   interrupt_array_t(gen_index_type a_interrupt_count, gen_index_type
     a_reserve_interrupt_count);

@@ -2066,7 +2066,8 @@ irs::arm::st_adc_dma_t::st_adc_dma_t(settings_adc_dma_t* ap_settings,
 
   m_psc = 0;
   m_set_freq = timer_frequency()/m_frequency;
-  mp_timer->TIM_ARR = static_cast<irs_u16>((m_set_freq/float(m_psc+1))-1+0.5);
+  mp_timer->TIM_ARR = 
+    static_cast<irs_u16>((m_set_freq/static_cast<float>(m_psc+1))-1+0.5);
   mp_timer->TIM_PSC = m_psc;
 
   mp_timer->TIM_RCR = 0;

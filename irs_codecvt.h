@@ -73,12 +73,12 @@ explicit codecvt_cp1251_t(size_t r = 0):
     return noconv;
   }
 
-  virtual int do_encoding() const throw()
+  virtual int do_encoding() const
   {
     return 1;
   }
 
-  virtual bool do_always_noconv() const throw()
+  virtual bool do_always_noconv() const
   {
     return false;
   }
@@ -261,12 +261,12 @@ public:
     return ok;
   }
 
-  virtual int do_encoding() const throw()
+  virtual int do_encoding() const noexcept
   {
     return 1;
   }
 
-  virtual bool do_always_noconv() const throw()
+  virtual bool do_always_noconv() const noexcept
   {
     return false;
   }
@@ -315,12 +315,12 @@ public:
       ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
   }
 
-  virtual int do_encoding() const throw()
+  virtual int do_encoding() const noexcept
   {
     return 1;
   }
 
-  virtual bool do_always_noconv() const throw()
+  virtual bool do_always_noconv() const noexcept
   {
     return false;
   }

@@ -14,7 +14,9 @@
 #include <irsdefs.h>
 
 #include <mxnetd.h>
+#ifndef IRS_STM32H7xx
 #include <mxnetda.h>
+#endif // IRS_STM32H7xx
 #include <timer.h>
 #include <irsstd.h>
 #include <mxnetr.h>

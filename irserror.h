@@ -26,7 +26,9 @@
 #include <irsavrutil.h>
 #endif //__ICCAVR__
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <irsarmutil.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 #include <irsconfig.h>
 #include <irsdefs.h>
@@ -487,6 +489,7 @@ public:
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
 #ifdef IRS_MICROCONTROLLER
+#ifndef IRS_STM32H7xx
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
@@ -527,6 +530,49 @@ public:
   }
 };
 typedef mc_error_handler_t avr_error_handler_t;
+#endif // IRS_STM32H7xx
+
+class mc_error_handler_ex_t: public mxfact_event_t
+{
+private:
+  ostream* mp_out;
+  event_t* mp_error_event;
+  error_out_t m_error_out;
+
+  void exec()
+  {
+    mxfact_event_t::exec();
+
+    if (mp_out) {
+      m_error_out.out_info(*mp_out);
+    }
+    if (mp_error_event) {
+      mp_error_event->exec();
+    }
+    for (;;);
+  }
+public:
+  mc_error_handler_ex_t(
+    ostream* ap_out,
+    event_t* ap_error_event = IRS_NULL,                      
+    error_trans_base_t* ap_error_trans = error_trans()
+  ):
+    mp_out(ap_out),
+    mp_error_event(ap_error_event),
+    m_error_out(ap_error_trans)
+  {
+    ap_error_trans->add_handler(this);
+  }
+  void out(ostream* ap_out)
+  {
+    mp_out = ap_out;
+  }
+  void add_blink_event(event_t* ap_event)
+  {
+    mp_error_event = ap_event;
+  }
+};
+
 #endif //IRS_MICROCONTROLLER
 
 // Обработчик ошибок для вывода ошибок в виде исключения

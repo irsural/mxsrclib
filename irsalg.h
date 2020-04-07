@@ -3444,7 +3444,7 @@ public:
   irs_u32 get_crc();
   void reset();
 private:
-  static handle_t<crc32_data_t> mp_crc32_data;
+  //static handle_t<crc32_data_t> mp_crc32_data;
   irs_u32 m_crc;
 };
 
@@ -3452,9 +3452,10 @@ template<class T>
 inline void crc32_table_stream_t::put(const T* ap_buf, size_type a_size)
 {
   IRS_STATIC_ASSERT(sizeof(T) == 1);
+  static handle_t<crc32_data_t> crc32_data = new crc32_data_t();
   for (size_t i = 0; i < a_size; i++) {
     m_crc = ((m_crc >> 8) & 0x00FFFFFF) ^
-      mp_crc32_data->table[(m_crc ^ *(ap_buf++)) & 0xFF];
+      crc32_data->table[(m_crc ^ *(ap_buf++)) & 0xFF];
   }
 }
 
@@ -3473,7 +3474,7 @@ irs_u32 crc32(T * a_buf, irs_uarc a_start, irs_uarc a_cnt) {
   for (irs_uarc i = a_start; i < top; i++) {
     crc = crc ^ a_buf[i];
     for (irs_uarc j = 1; j <= 32; j++) {
-      flag = IRS_LOBYTE(crc) & irs_u8(1);
+      flag = IRS_LOBYTE(crc) & static_cast<irs_u8>(1);
       crc >>= 1; /* —двиг регистра на 1 позицию */
       if (flag)
         crc ^= 0xEDB88320; // 0xEDB88320 - примитивный полином

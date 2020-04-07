@@ -54,7 +54,7 @@ public:
     } else {
       asm ("MRS R0, MSP");
     }*/
-    asm (
+    asm volatile (
       "TST LR, #4 \n"
       "ITE EQ \n"
       "MRSEQ R0, MSP \n"

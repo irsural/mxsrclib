@@ -51,8 +51,8 @@ public:
   bool shift();
   void clear_dynamic();
   void soft_clear_dynamic();
-  void change_static(char *a_static);
-  void change_message(char *a_message);
+  void change_static(const char *a_static);
+  void change_message(const char *a_message);
   char *get_creep_buffer();
   char *get_line();
   irs_bool eol();
@@ -103,8 +103,8 @@ protected:
   static const int zero_str_size = 2;
   static char zero_str[zero_str_size];
 
-  char *f_header;
-  char *f_message;
+  const char *f_header;
+  const char *f_message;
   irs_menu_creep_t *f_creep;
   char *f_creep_buffer;
   char f_cursor[2];
@@ -134,11 +134,11 @@ public:
   //! \brief «адает родительское меню, переход к которому осуществл€етс€ по
   //!   нажатию клавиши irskey_escape
   void set_master_menu(irs_menu_base_t *a_master_menu);
-  void set_header(char *a_header);
-  char *get_header();
+  void set_header(const char *a_header);
+  const char *get_header();
   //! \brief „асть бегущей строки
-  void set_message(char *a_message);
-  char *get_message();
+  void set_message(const char *a_message);
+  const char *get_message();
   void set_creep(irs_menu_creep_t *a_creep);
   irs_menu_state_t get_state();
   void show();
@@ -454,9 +454,10 @@ void progressive_change_value_polyakov_t<T>::set_max(const T a_max)
 class irs_menu_double_item_t: public irs_menu_base_t
 {
   typedef progressive_change_value_t<double> progressive_change_value_type;
-  char *f_prefix;
-  char *f_suffix;
-  char *f_value_string;
+  const char *f_prefix;
+  const char *f_suffix;
+  irs::raw_data_t<char> f_value_string;
+  const char *f_hint;
   irs::num_mode_t f_num_mode;
   size_type f_space_count_after_prefix;
   size_type f_len;
@@ -491,9 +492,11 @@ public:
   //! \param[in] a_len длина пол€ числа, без суффикса и префикса
   //! \param[in] a_accur точность вывода числа
   //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
-  void set_str(char *a_value_string, char *a_prefix, char *a_suffix,
+  void set_str(const char */*a_value_string*/, const char *a_prefix, 
+    const char *a_suffix,
     size_type a_len, size_type a_accur,
     irs::num_mode_t a_num_mode = irs::num_mode_fixed);
+  void set_hint(char *a_hint);
   void set_space_count_after_prefix(size_type a_count);
   void reset_str();
   void set_min_value(float a_min_value);
@@ -790,8 +793,8 @@ T irs_menu_spin_item_t::round_precision(T a_value, int a_precision)
 template <class T>
 class irs_menu_simply_item_t: public irs_menu_base_t
 {
-  char *mp_prefix;
-  char *mp_suffix;
+  char const *mp_prefix;
+  char const *mp_suffix;
   char *mp_value_string;
   char *mp_copy_parametr_string;
   size_type m_len;
@@ -801,8 +804,8 @@ class irs_menu_simply_item_t: public irs_menu_base_t
 public:
   irs_menu_simply_item_t(T *ap_parametr);
   ~irs_menu_simply_item_t();
-  void set_str(char *ap_value_string, char *ap_prefix, char *ap_suffix,
-    size_type a_len, size_type a_accur);
+  void set_str(char *ap_value_string, const char *ap_prefix, 
+    const char *ap_suffix, size_type a_len, size_type a_accur);
   void set_length(size_type a_len);
   void set_accuracy(size_type a_accuracy);
   virtual void draw(irs_menu_base_t **a_cur_menu);
@@ -836,8 +839,9 @@ irs_menu_simply_item_t<T>::~irs_menu_simply_item_t()
 }
 
 template <class T>
-void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, char *ap_prefix,
-  char *ap_suffix, size_type a_len, size_type a_accur)
+void irs_menu_simply_item_t<T>::set_str(char *ap_value_string, 
+  const char *ap_prefix, const char *ap_suffix, size_type a_len, 
+  size_type a_accur)
 {
   mp_value_string = ap_value_string;
   m_len = a_len;
@@ -1022,14 +1026,14 @@ bool irs_menu_simply_item_t<T>::is_updated()
 
 class irs_menu_bool_item_t: public irs_menu_base_t
 {
-  char *f_true_string;
-  char *f_false_string;
+  const char *f_true_string;
+  const char *f_false_string;
   irs_bool *f_parametr;
   irs_bool f_temp_parametr;
   bool_trans_t f_bool_trans;
 public:
   irs_menu_bool_item_t(irs_bool *a_parametr, irs_bool a_can_edit);
-  void set_str(char *a_true_string, char *a_false_string);
+  void set_str(const char *a_true_string, const char *a_false_string);
   virtual void draw(irs_menu_base_t **a_cur_menu);
   irs_bool *get_parametr();
   virtual void set_trans_function(bool_trans_t a_bool_trans);
@@ -1226,11 +1230,11 @@ public:
 //  ласс строкового пункта меню предназначеный только дл€ irs_menu_tablo_t
 class irs_menu_string_item_t: public irs_menu_base_t
 {
-  char *mp_string;
+  const char *mp_string;
 public:
   irs_menu_string_item_t();
   ~irs_menu_string_item_t();
-  void set_parametr_string(char *ap_parametr_string);
+  void set_parametr_string(const char *ap_parametr_string);
   virtual size_type get_parametr_string(
     char *a_parametr_string,
     size_type a_length = 0,
