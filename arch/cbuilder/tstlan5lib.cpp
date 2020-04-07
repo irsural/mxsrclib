@@ -624,7 +624,8 @@ irs::tstlan::view_t::controls_t::controls_t(
   mp_param_box(new param_box_t(irst("Внутренние настройки tstlan5"),
     irst("inner_options"), string_type(), string_type(), mp_encoding)),
   m_param_box_tune(mp_param_box.get(), !ap_extern_chart),
-  m_is_csv_on(false)
+  m_is_csv_on(false),
+  m_periodic_load_timer(irs::make_cnt_s(10))
 {
 
   m_buf.connect(mp_log_memo);
@@ -845,6 +846,8 @@ void irs::tstlan::view_t::controls_t::create_grid()
   mp_category_column->Width = m_name_col_width;
   mp_category_column->PropertiesClass = __classid(TcxTextEditProperties);
   mp_category_column->Name = irst("CategoryColumn");
+  dynamic_cast<TcxTextEditProperties*>(mp_category_column->Properties)->
+    OnValidate = cxGridTableViewColumnCategoryPropertiesValidate;
 
   mp_vars_grid->ActiveView->DataController->RecordCount = m_grid_size;
 
@@ -1037,6 +1040,11 @@ void irs::tstlan::view_t::controls_t::tick()
     mp_param_box->save();
   }
 
+  if (m_periodic_load_timer.check()) {
+    irs::mlog() << "load" << endl;
+    mp_vars_ini_file->load();
+  }
+  
   if (mp_data)
   if (mp_data->connected()) {
     if (m_refresh_grid) {
@@ -1463,6 +1471,7 @@ cxGridTableViewColumnNamePropertiesValidate(TObject *Sender,
   mp_view->DataController->PostEditingData();
   const int row = mp_controller->FocusedRecordIndex;
   refresh_chart_items();
+  irs::mlog() << "name validate save" << endl;
   save_grid_row(row);
 }
 
@@ -1471,6 +1480,7 @@ void __fastcall irs::tstlan::view_t::controls_t::
 {
   mp_view->DataController->PostEditingData();
   const int row = mp_controller->FocusedRecordIndex;
+  irs::mlog() << "type change save" << endl;
   save_grid_row(row);
 }
 
@@ -1491,7 +1501,8 @@ cxGridTableViewColumnValuePropertiesValidate(TObject *Sender,
     return;
   }
   bstr_to_var(row, mp_controller->Values[row][mp_value_column->Index]);
-  save_grid_row(row);
+  irs::mlog() << "value validate save" << endl;
+//  save_grid_row(row);
 }
 
 void __fastcall irs::tstlan::view_t::controls_t::
@@ -1500,8 +1511,21 @@ cxGridTableViewColumnChartPropertiesChange(TObject *Sender)
   mp_view->DataController->PostEditingData();
   const int row = mp_controller->FocusedRecordIndex;
   refresh_chart_items();
+  irs::mlog() << "chart change save" << endl;
   save_grid_row(row);
 }
+
+void __fastcall irs::tstlan::view_t::controls_t::
+cxGridTableViewColumnCategoryPropertiesValidate(TObject *Sender,
+Variant &DisplayValue, TCaption &ErrorText, bool &Error)
+{
+  mp_view->DataController->PostEditingData();
+  const int row = mp_controller->FocusedRecordIndex;
+  refresh_chart_items();
+  irs::mlog() << "category validate save" << endl;
+  save_grid_row(row);
+}
+
 
 void __fastcall irs::tstlan::view_t::controls_t::VarsGridKeyDown(
   TObject *Sender, WORD &Key, TShiftState Shift)
@@ -1691,7 +1715,7 @@ irs::event_t* irs::tstlan::view_t::controls_t::inner_options_event()
 void irs::tstlan::view_t::controls_t::save_conf()
 {
   m_ini_file.save();
-  mp_vars_ini_file->save();
+//  mp_vars_ini_file->save();
   mp_param_box->save();
   save_grid_options();
 }

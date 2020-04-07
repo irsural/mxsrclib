@@ -534,6 +534,7 @@ private:
     handle_t<param_box_base_t> mp_param_box;
     param_box_tune_t m_param_box_tune;
     bool m_is_csv_on;
+    irs::loop_timer_t m_periodic_load_timer;
 
     template <class T>
     void out_number(ostream_t& a_stream, const T& a_value);
@@ -555,7 +556,8 @@ private:
     void __fastcall cxGridTableViewColumnValuePropertiesValidate(TObject *Sender,
       Variant &DisplayValue, TCaption &ErrorText, bool &Error);
     void __fastcall cxGridTableViewColumnChartPropertiesChange(TObject *Sender);
-
+    void __fastcall cxGridTableViewColumnCategoryPropertiesValidate(
+      TObject *Sender, Variant &DisplayValue, TCaption &ErrorText, bool &Error);
     void __fastcall VarsGridKeyDown(
       TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall ChartBtnClick(TObject *Sender);
