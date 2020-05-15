@@ -342,19 +342,24 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
       #ifdef IRS_WIN32
       const string_type device =
         mp_param_box->get_param(irst("Имя устройства"));
-      map<string_type, string_type>::const_iterator it =
-        m_usb_hid_device_path_map.find(device);
+	  map<string_type, device_open_data_t>::const_iterator it =
+		m_usb_hid_device_path_map.find(device);
       string_type device_path;
-      if (it != m_usb_hid_device_path_map.end()) {
-        device_path = it->second;
+	  if (it != m_usb_hid_device_path_map.end()) {
+		device_path = it->second.path;
       }
       const irs::hardflow_t::size_type channel_id =
         param_box_read_number<irs::hardflow_t::size_type>(
 		*mp_param_box, (irst("Номер канала")));
+	  if (mp_hardflow_create_foo == NULL) {
+		hardflow_ret.reset(new irs::hardflow::usb_hid_t(device_path, channel_id));
+	  } else {
+		hardflow_ret.reset(mp_hardflow_create_foo(
+		  it->second.pid, it->second.vid));
+	  }
 
-	  hardflow_ret.reset(mp_hardflow_create_foo(device_path, channel_id));
       #endif // IRS_WIN32
-    } break;
+	} break;
   }
   return hardflow_ret;
 }
@@ -377,14 +382,6 @@ irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
   return protocol_name_ret;
 }
 
-
-static irs::hardflow_t* default_create_hardflow_foo(
-  irs::modbus_assembly_t::string_type a_device_path,
-  irs::modbus_assembly_t::size_type a_channel_id)
-{
-  return new irs::hardflow::usb_hid_t(a_device_path, a_channel_id);
-}
-
 irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   const string_type& a_conf_file_name, protocol_t a_protocol
 ):
@@ -400,7 +397,7 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_modbus_client(NULL),
   m_activated(false),
   m_activation_timer(irs::make_cnt_s(1)),
-  mp_hardflow_create_foo(&default_create_hardflow_foo)
+  mp_hardflow_create_foo(NULL)
 {
   tune_param_box();
   mp_tstlan4->ini_name(m_conf_file_name);
@@ -444,9 +441,9 @@ irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
   if (a_protocol == usb_hid_protocol) {
     ap_modbus_assembly->update_usb_hid_device_path_map();
     vector<string_type> devices_items;
-    map<string_type, string_type>::const_iterator it =
+	map<string_type, device_open_data_t>::const_iterator it =
       ap_modbus_assembly->m_usb_hid_device_path_map.begin();
-    while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
+	while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
       devices_items.push_back(it->first);
       ++it;
     }
@@ -494,11 +491,14 @@ void irs::modbus_assembly_t::update_usb_hid_device_path_map()
     }
     device += devs[i].path;
 
-    m_usb_hid_device_path_map.insert(make_pair(device, devs[i].path));
+	m_usb_hid_device_path_map.insert(make_pair(device, device_open_data_t(
+	  devs[i].path, devs[i].attributes.product_id,
+	  devs[i].attributes.vendor_id)));
   }
   #else //IRS_USE_HID_WIN_API
   m_usb_hid_device_path_map.insert(
-    make_pair(irst("define IRS_USE_HID_WIN_API выключен!"), irst("")));
+	make_pair(irst("define IRS_USE_HID_WIN_API выключен!"),
+	device_open_data_t(irst(""), 0, 0)));
   #endif //IRS_USE_HID_WIN_API
 }
 
@@ -509,8 +509,8 @@ void irs::modbus_assembly_t::update_param_box_devices_field()
 
   update_usb_hid_device_path_map();
   vector<string_type> devices_items;
-  map<string_type, string_type>::const_iterator it =
-    m_usb_hid_device_path_map.begin();
+  map<string_type, device_open_data_t>::const_iterator it =
+	m_usb_hid_device_path_map.begin();
   while (it != m_usb_hid_device_path_map.end()) {
     devices_items.push_back(it->first);
     ++it;

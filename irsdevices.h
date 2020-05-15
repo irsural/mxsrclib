@@ -114,7 +114,7 @@ class modbus_assembly_t: public mxdata_assembly_t
 public:
   typedef irs_size_t size_type;
   typedef irs::string_t string_type;
-  typedef hardflow_t* (*hardflow_create_foo_t)(string_type, size_type);
+  typedef hardflow_t* (*hardflow_create_foo_t)(uint16_t, uint16_t);
   enum protocol_t { udp_protocol, tcp_protocol, usb_hid_protocol };
 
   modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
@@ -131,6 +131,19 @@ public:
   virtual error_string_list_type get_last_error_string_list();
   void set_hardwlof_create_foo(hardflow_create_foo_t ap_hardflow_create_foo);
 private:
+  struct device_open_data_t
+  {
+	string_type path;
+	uint16_t pid;
+	uint16_t vid;
+
+	device_open_data_t(string_type a_path, uint16_t a_pid, uint16_t a_vid) :
+	  path(a_path),
+	  pid(a_pid),
+	  vid(a_vid)
+    {}
+  };
+
   void tune_param_box();
   void update_usb_hid_device_path_map();
   void update_param_box_devices_field();
@@ -144,7 +157,7 @@ private:
   string_type m_conf_file_name;
   protocol_t m_protocol;
   handle_t<param_box_base_t> mp_param_box;
-  map<string_type, string_type> m_usb_hid_device_path_map;
+  map<string_type, device_open_data_t> m_usb_hid_device_path_map;
   //param_box_tune_t m_param_box_tune;
   tstlan4_base_t* mp_tstlan4;
   bool m_enabled;
