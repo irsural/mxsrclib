@@ -276,59 +276,6 @@ public:
 private:
 };
 
-class modbus_assembly_t: public mxdata_assembly_t
-{
-public:
-  typedef irs_size_t size_type;
-  typedef irs::string_t string_type;
-  enum protocol_t { udp_protocol, tcp_protocol, usb_hid_protocol };
-
-  modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
-    const string_type& a_conf_file_name,
-    protocol_t a_protocol);
-  virtual ~modbus_assembly_t();
-  virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
-  virtual irs::mxdata_t* mxdata();
-  virtual void tick();
-  virtual void show_options();
-  virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
-  virtual status_t get_status();
-  virtual error_string_list_type get_last_error_string_list();
-private:
-  void tune_param_box();
-  void update_usb_hid_device_path_map();
-  void update_param_box_devices_field();
-  void add_error(const string_type& a_error);
-  struct param_box_tune_t {
-    param_box_base_t* mp_param_box;
-    param_box_tune_t(modbus_assembly_t* ap_modbus_assembly,
-      param_box_base_t* ap_param_box, protocol_t a_protocol);
-  };
-  friend struct param_box_tune_t;
-  string_type m_conf_file_name;
-  protocol_t m_protocol;
-  handle_t<param_box_base_t> mp_param_box;
-  map<string_type, string_type> m_usb_hid_device_path_map;
-  //param_box_tune_t m_param_box_tune;
-  tstlan4_base_t* mp_tstlan4;
-  bool m_enabled;
-  handle_t<hardflow_t> mp_modbus_client_hardflow;
-  handle_t<mxdata_t> mp_modbus_client;
-  bool m_activated;
-  irs::loop_timer_t m_activation_timer;
-  enum { error_list_max_size = 100 };
-  error_string_list_type m_error_list;
-
-  static handle_t<mxdata_t> make_client(handle_t<hardflow_t> ap_hardflow,
-    handle_t<param_box_base_t> ap_param_box);
-  handle_t<hardflow_t> make_hardflow();
-  void try_create_modbus();
-  void create_modbus();
-  void destroy_modbus();
-  static string_type protocol_name(protocol_t a_protocol);
-};
-
 } // namespace irs
 
 irs::handle_t<irs::mxdata_assembly_t> irs::modbus_udp_assembly_creator_t::make(
@@ -403,13 +350,15 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
       }
       const irs::hardflow_t::size_type channel_id =
         param_box_read_number<irs::hardflow_t::size_type>(
-        *mp_param_box, (irst("Номер канала")));
-      hardflow_ret.reset(new hardflow::usb_hid_t(device_path, channel_id));
+		*mp_param_box, (irst("Номер канала")));
+
+	  hardflow_ret.reset(mp_hardflow_create_foo(device_path, channel_id));
       #endif // IRS_WIN32
     } break;
   }
   return hardflow_ret;
 }
+
 irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
   protocol_t a_protocol)
 {
@@ -427,6 +376,15 @@ irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
   }
   return protocol_name_ret;
 }
+
+
+static irs::hardflow_t* default_create_hardflow_foo(
+  irs::modbus_assembly_t::string_type a_device_path,
+  irs::modbus_assembly_t::size_type a_channel_id)
+{
+  return new irs::hardflow::usb_hid_t(a_device_path, a_channel_id);
+}
+
 irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   const string_type& a_conf_file_name, protocol_t a_protocol
 ):
@@ -441,7 +399,8 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_modbus_client_hardflow(NULL),
   mp_modbus_client(NULL),
   m_activated(false),
-  m_activation_timer(irs::make_cnt_s(1))
+  m_activation_timer(irs::make_cnt_s(1)),
+  mp_hardflow_create_foo(&default_create_hardflow_foo)
 {
   tune_param_box();
   mp_tstlan4->ini_name(m_conf_file_name);
@@ -656,7 +615,7 @@ void irs::modbus_assembly_t::show_options()
   update_param_box_devices_field();
   if (mp_param_box->show() && m_enabled) {
     if (m_protocol == usb_hid_protocol) {
-      mp_modbus_client_hardflow = make_hardflow();
+	  mp_modbus_client_hardflow = make_hardflow();
     } else {
       mp_modbus_client_hardflow->set_param(irst("remote_address"),
         mp_param_box->get_param(irst("IP")));
@@ -690,6 +649,13 @@ irs::modbus_assembly_t::get_last_error_string_list()
   m_error_list.clear();
   return error_list;
 }
+
+void irs::modbus_assembly_t::set_hardwlof_create_foo(
+  irs::modbus_assembly_t::hardflow_create_foo_t ap_hardflow_create_foo)
+{
+  mp_hardflow_create_foo = ap_hardflow_create_foo;
+}
+
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 #if defined(IRS_WIN32)
@@ -2718,7 +2684,8 @@ public:
   virtual void enum_types(vector<string_type>* ap_types) const;
   virtual handle_t<mxdata_assembly_t> make_assembly(
     const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
-    const string_type& a_name);
+	const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
+	a_modbus_hid_create_foo);
 private:
   typedef map<string_type, handle_t<mxdata_assembly_creator_t> > ac_list_type;
   typedef ac_list_type::iterator ac_list_it_type;
@@ -2728,13 +2695,6 @@ private:
 };
 
 } //namespace irs
-
-irs::mxdata_assembly_types_t* irs::mxdata_assembly_types()
-{
-  static mxdata_assembly_types_implementation_t
-    mxdata_assembly_types_implementation;
-  return &mxdata_assembly_types_implementation;
-}
 
 irs::mxdata_assembly_types_implementation_t::
   mxdata_assembly_types_implementation_t(
@@ -2749,7 +2709,7 @@ irs::mxdata_assembly_types_implementation_t::
   m_ac_list[irst("modbus tcp")] = handle_t<mxdata_assembly_creator_t>(
     new modbus_tcp_assembly_creator_t);
   m_ac_list[irst("modbus usb hid")] = handle_t<mxdata_assembly_creator_t>(
-    new modbus_usb_hid_assembly_creator_t);
+	new modbus_usb_hid_assembly_creator_t);
   m_ac_list[irst("Agilent 3458A")] = handle_t<mxdata_assembly_creator_t>(
     new agilent_3458a_assembly_creator_t);
   m_ac_list[irst("Agilent 34420A")] = handle_t<mxdata_assembly_creator_t>(
@@ -2782,17 +2742,32 @@ irs::handle_t<irs::mxdata_assembly_t>
   irs::mxdata_assembly_types_implementation_t::make_assembly
 (
   const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
-  const string_type& a_name)
+  const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
+  a_modbus_hid_create_foo)
 {
   handle_t<mxdata_assembly_t> result_assembly(IRS_NULL);
   ac_list_it_type it = m_ac_list.find(a_assembly_type);
   if (it != m_ac_list.end()) {
-    result_assembly = IRS_NULL;
-    result_assembly = it->second->make(ap_tstlan4, a_name);
+	result_assembly = IRS_NULL;
+	result_assembly = it->second->make(ap_tstlan4, a_name);
+  }
+  if (a_assembly_type == irst("modbus usb hid")) {
+	if (modbus_assembly_t* modbus_assembly = dynamic_cast<modbus_assembly_t*>(result_assembly.get())) {
+	  if (a_modbus_hid_create_foo != NULL) {
+		modbus_assembly->set_hardwlof_create_foo(a_modbus_hid_create_foo);
+	  }
+	}
+
   }
   return result_assembly;
 }
 
+irs::mxdata_assembly_types_t* irs::mxdata_assembly_types()
+{
+  static mxdata_assembly_types_implementation_t
+	mxdata_assembly_types_implementation;
+  return &mxdata_assembly_types_implementation;
+}
 ///
 
 namespace irs {
