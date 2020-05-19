@@ -285,6 +285,7 @@ irs::agilent_3458a_t::agilent_3458a_t(
   // Компенсация наведенного напряжения смещения (Время счета * 2
   // для сопротивления)
   m_init_commands.push_back("LFREQ LINE");
+  m_init_commands.push_back("END ALWAYS");
   //m_init_commands.push_back("LFILTER ON");
   //m_init_commands.push_back("RANGE 1000");
   //m_init_commands.push_back("RES 1E-6");
@@ -932,6 +933,7 @@ mx_agilent_3458a_t::mx_agilent_3458a_t(
   // для сопротивления)
   m_init_commands.push_back("OCOMP ON");
   m_init_commands.push_back("LFILTER ON");
+  m_init_commands.push_back("END ALWAYS");
   //m_init_commands.push_back("RANGE 1000");
   //m_init_commands.push_back("RES 1E-6");
   // Входное сопротивление фиксируется на 10 МОм для всех пределов
