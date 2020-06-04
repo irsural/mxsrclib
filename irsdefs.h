@@ -11,7 +11,7 @@
 #include <irsdefsbase.h>
 
 #ifdef __ICCARM__
-#ifndef IRS_STM32H7xx
+#if !defined (IRS_STM32H7xx) && !defined (STM32F4xx_HAL)
 #include <armiomacros.h>
 #endif // IRS_STM32H7xx
 #endif // __ICCARM__

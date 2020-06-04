@@ -29,4 +29,10 @@ counter_t counter_get();
 // Деинициализация счетчика
 void counter_deinit();
 
+#if IRS_USE_FREE_RTOS
+extern "C" { 
+void SysTick_Hook(void);
+}
+#endif
+
 #endif //COUNTERH

@@ -8,8 +8,15 @@
 #include <irscpu.h>
 #include <irserror.h>
 
+#ifdef IRS_STM32H7xx
 #include <stm32h743xx.h>
 #include <stm32h7xx_hal.h>
+#endif
+
+#ifdef STM32F407xx
+#include <stm32f407xx.h>
+#include <stm32f4xx_hal.h>
+#endif
 
 #include <irsfinal.h>
 
@@ -53,8 +60,12 @@ bool timer_overflow_interrupt_enabled = true;
 
 extern "C" {
   
+#if IRS_USE_FREE_RTOS
+void SysTick_Hook(void)
+#else
 //Прерывание SysTick
 void SysTick_Handler(void)
+#endif
 {
   if (!timer_overflow_interrupt_enabled) {
     return;
@@ -89,7 +100,11 @@ void counter_init()
     SECONDS_PER_INTERVAL = 1;
     
     HAL_SYSTICK_Config(0x01000000);
-    HAL_NVIC_SetPriority(SysTick_IRQn, 2, 0U);
+    #if IRS_USE_FREE_RTOS
+    HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0U);
+    #else
+    HAL_NVIC_SetPriority(SysTick_IRQn, 2, 0U);    
+    #endif
 
 
 //    SYSTICKRVR = 0x00FFFFFF;

@@ -26,7 +26,7 @@
 #include <irsavrutil.h>
 #endif //__ICCAVR__
 #ifdef __ICCARM__
-#ifndef IRS_STM32H7xx
+#if !defined (IRS_STM32H7xx) && !defined (STM32F4xx_HAL)
 #include <irsarmutil.h>
 #endif // IRS_STM32H7xx
 #endif // __ICCARM__
@@ -489,7 +489,7 @@ public:
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
 #ifdef IRS_MICROCONTROLLER
-#ifndef IRS_STM32H7xx
+#if !defined (IRS_STM32H7xx) && !defined (STM32F4xx_HAL)
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
