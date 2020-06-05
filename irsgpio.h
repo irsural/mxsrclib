@@ -10,7 +10,7 @@
 #include <irsdefs.h>
 
 #ifdef __ICCARM__
-#ifndef IRS_STM32H7xx
+#if !defined (IRS_STM32H7xx) && !defined (STM32F4xx_HAL)
 # include <armioregs.h>
 #endif // IRS_STM32H7xx
 #endif //__ICCARM__
@@ -316,7 +316,7 @@ inline avr_port_t& avr_pin_t<PORT, DIR, BIT, PULL_UP>::
 
 
 #ifdef __ICCARM__
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(STM32F4xx_HAL)
 
 namespace irs
 {

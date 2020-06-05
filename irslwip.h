@@ -15,7 +15,7 @@ extern "C" {
 #include <lwip/init.h>
 #include <lwip/ip_addr.h>
   
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(STM32F4xx_HAL)
 #include <lwip/timers.h>
 #else // defined(IRS_STM32H7xx)
 #include <lwip/timeouts.h>
@@ -33,19 +33,23 @@ extern "C" {
 
 #endif // USE_LWIP
 
-#if defined(IRS_STM32H7xx)// || defined(ARMxxx)
+#if defined(IRS_STM32H7xx) || defined(STM32F4xx_HAL)
 #define IRSLIB_USE_LWIP_CONTROL
 #endif
 
 #ifdef IRSLIB_USE_LWIP_CONTROL
 
-#ifdef IRS_STM32H7xx
+
+
 extern "C" {
+#if defined(IRS_STM32H7xx)
 #include "ethernet_h7.h"
-}
+#elif defined(STM32F4xx_HAL)
+#include "ethernet_f4.h"
 #else
 #error "Не подключен файл ethernet для текущего микроконтроллера"
 #endif // include ethernet
+}
 
 #endif // IRSLIB_USE_LWIP_CONTROL
 
@@ -135,6 +139,54 @@ private:
 
 #ifdef IRSLIB_USE_LWIP_CONTROL
 
+#if IRS_USE_FREE_RTOS
+
+class lwip_threaded_t
+{
+public:
+  struct config_t
+  {
+    mxip_t ip;
+    mxip_t netmask;
+    mxip_t gateway;
+    bool dhcp_enabled;
+    config_t():
+      ip(mxip_t::any_ip()),
+      netmask(mxip_t::any_ip()),
+      gateway(mxip_t::any_ip()),
+      dhcp_enabled(false)
+    {
+    }
+  };
+  lwip_threaded_t(const config_t& a_configuration);
+  ~lwip_threaded_t();
+  mxip_t get_ip();
+  bool is_dhcp_ready();
+  mxip_t get_netmask();
+  mxip_t get_gateway();
+  netif* get_netif();
+  void tick();
+  mxmac_t get_mac();
+private:
+  void start_dhcp();
+  void lwip_tick();
+  
+  mxmac_t st_generate_mac(device_code_t a_device_code);
+  mxmac_t m_mac;
+  netif m_netif;
+  loop_timer_t m_sys_check_timeouts_loop_timer;
+  loop_timer_t m_etharp_tmr_loop_timer;
+  loop_timer_t m_check_link_timer;
+  #ifdef USE_DHCP
+  loop_timer_t m_dhcp_fine_tmr_loop_timer;
+  loop_timer_t m_dhcp_coarse_tmr_loop_timer;
+  #endif // USE_DHCP
+};
+
+
+
+
+#else
 //Переписанный из ethernet_t класс, который использует подключенный файл
 //с реализацией ethernet
 class lwip_control_t
@@ -183,6 +235,8 @@ private:
   loop_timer_t m_dhcp_coarse_tmr_loop_timer;
   #endif // USE_DHCP
 };
+
+#endif // IRS_USE_FREE_RTOS
 
 #endif // IRSLIB_USE_LWIP_CONTROL
 
@@ -1381,7 +1435,7 @@ private:
   };
   typedef address_t address_type;
   void create();
-  #ifndef IRS_STM32H7xx
+  #if !defined(IRS_STM32H7xx) && !defined(STM32F4xx_HAL)
   static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
     ip_addr *ap_addr, u16_t a_port);
   #else 

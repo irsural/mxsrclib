@@ -12,9 +12,9 @@
 
 #include <irsstd.h>
 #include <irsstrdefs.h>
-#include <irsstrm.h>
 #include <irscpp.h>
 #include <ctype.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -439,7 +439,7 @@ inline mxip_t make_mxip(int a_first_octet, int a_second_octet,
   return ip;
 }
 
-inline mxip_t make_mxip(const irs::char_t* a_ip)
+inline mxip_t make_mxip(const ::irs::char_t* a_ip)
 {
   mxip_t ip = mxip_t::zero_ip();
   if (!cstr_to_mxip(ip, IRS_SIMPLE_FROM_TYPE_STR(a_ip))) {

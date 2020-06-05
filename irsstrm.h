@@ -24,11 +24,13 @@
 #endif //__ICCAVR__
 
 #ifdef __ICCARM__
-#ifndef IRS_STM32H7xx
+#if !defined (IRS_STM32H7xx) && !defined (STM32F4xx_HAL)
 #include <armioregs.h>
 //#include <irslwip.h>
-#else
+#elif defined(IRS_STM32H7xx)
 #include "stm32h7xx_hal.h"
+#elif defined(STM32F4xx_HAL)
+
 #endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
@@ -471,8 +473,8 @@ void out_data_hex(T* ap_container)
 
 namespace arm {
   
-#ifndef IRS_STM32H7xx
-
+#if !defined(IRS_STM32H7xx) || !defined(STM32F4xx_HAL)
+  
 // Буфер потоков для COM-порта ARM (LM3S8971)
 class com_buf: public streambuf
 {
@@ -577,9 +579,10 @@ private:
 };
 
 
+#endif // IRS_STM32H7xx
+
 } //namespace arm
 
-#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 } //namespace irs
