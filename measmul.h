@@ -302,6 +302,8 @@ class agilent_3458a_t: public mxmultimeter_t
   // Команды при чтении сопротивления
   vector<irs::string> m_get_resistance_commands;
 
+  //Команды, которые устанавливаются перед любым измерением
+  vector<irs::string> m_config_commands;
   // Команда для установки диапазона измерений
   irs::string m_set_range_command;
   // Интерфейс передачи
@@ -425,6 +427,8 @@ public:
   virtual void set_start_level(double level);
   // Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
+  // Задание произвольных команд
+  void set_string_commands(const vector<irs::string> &m_commands);
   // Установка автоматического выбора диапазона измерений
   virtual void set_range_auto();
 

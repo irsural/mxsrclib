@@ -190,6 +190,8 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_resistance_type_2x("OHM AUTO"),
   m_resistance_type_4x("OHMF AUTO"),
   m_get_resistance_commands(),
+  m_config_commands(),
+  m_set_range_command(),
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
   m_create_error(true),
@@ -303,6 +305,12 @@ irs::agilent_3458a_t::agilent_3458a_t(
 void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
 {
   m_get_measure_commands.clear();
+
+  if (a_measure != meas_value) {
+    std::copy(m_config_commands.begin(), m_config_commands.end(),
+      std::back_inserter(m_get_measure_commands));
+  }
+
   switch (a_measure) {
     case meas_value: {
       // Команды чтения значения при произвольном типе измерения
@@ -323,7 +331,7 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
         } break;
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
-      m_get_measure_commands.push_back(m_time_int_measure_command);
+//      m_get_measure_commands.push_back(m_time_int_measure_command);
       m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_current: {
@@ -645,6 +653,7 @@ void irs::agilent_3458a_t::tick()
     } break;
     case ma_mode_commands: {
       m_cur_mul_command = (*m_mul_commands)[m_mul_commands_index];
+
       const irs_u8* command = reinterpret_cast<const irs_u8*>(
         m_cur_mul_command.c_str());
       size_type len = strlen(reinterpret_cast<const char*>(command));
@@ -801,6 +810,12 @@ void irs::agilent_3458a_t::set_range(
   measure_create_commands(meas_set_range);
   m_command = mac_send_commands;
   m_status = meas_status_busy;
+}
+
+void irs::agilent_3458a_t::set_string_commands(const vector<irs::string> &a_commands)
+{
+  m_config_commands.clear();
+  std::copy(a_commands.begin(), a_commands.end(), std::back_inserter(m_config_commands));
 }
 
 void irs::agilent_3458a_t::set_range_auto()
