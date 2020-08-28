@@ -306,11 +306,6 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
 {
   m_get_measure_commands.clear();
 
-  if (a_measure != meas_value) {
-    std::copy(m_config_commands.begin(), m_config_commands.end(),
-      std::back_inserter(m_get_measure_commands));
-  }
-
   switch (a_measure) {
     case meas_value: {
       // Команды чтения значения при произвольном типе измерения
@@ -331,7 +326,11 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
         } break;
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
-//      m_get_measure_commands.push_back(m_time_int_measure_command);
+      m_get_measure_commands.push_back(m_time_int_measure_command);
+
+      std::copy(m_config_commands.begin(), m_config_commands.end(),
+        std::back_inserter(m_get_measure_commands));
+
       m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_current: {
@@ -347,12 +346,20 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       }
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
+
+      std::copy(m_config_commands.begin(), m_config_commands.end(),
+        std::back_inserter(m_get_measure_commands));
+
       m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_frequency: {
       m_get_measure_commands.push_back("FREQ");
       m_get_measure_commands.push_back("FSOURCE ACV");
       m_get_measure_commands.push_back(m_time_int_measure_command);
+
+      std::copy(m_config_commands.begin(), m_config_commands.end(),
+        std::back_inserter(m_get_measure_commands));
+
       m_get_measure_commands.push_back("TRIG SGL");
    } break;
    case meas_set_range: {
