@@ -113,12 +113,19 @@ private:
   map<string_type, bool> m_button_list;
   std::map<string_type, param_box_base_t*> m_param_box_base_map;
 
+  vector<string_type> m_combo_values;
+
   void save_form_params();
   void load_form_params();
   void __fastcall ok_btn_click(TObject *Sender);
   void __fastcall cancel_btn_click(TObject *Sender);
   void __fastcall on_close_event(TObject *Sender, TCloseAction &Action);
   void __fastcall on_edit_btn_click(TObject *Sender);
+
+  void __fastcall on_get_pick_list(TObject *Sender,
+    const System::UnicodeString KeyName, System::Classes::TStrings* Values);
+  void __fastcall on_set_edit_text(TObject *Sender, int ACol, int ARow,
+    const System::UnicodeString Value);
 }; // param_box_t
 
 //! @}
