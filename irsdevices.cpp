@@ -375,7 +375,15 @@ irs::ip_collector_t::ip_collector_t() :
   WSADATA wsa;
   if (WSAStartup(MAKEWORD(2,2), &wsa) == 0) {
     get_interfaces_ip();
-    create_sockets();
+    if (!m_if_addresses.empty()) {
+      create_sockets();
+      for (size_t i = 0; i < m_if_addresses.size(); ++i) {
+        irs::mlog() << "Сетевой интерфейс №" << i << ": " <<
+          m_if_addresses[i].first << "; " << m_if_addresses[i].second << endl;
+      }
+    } else {
+      irs::mlog() << "Не найдено ни одного сетевого интерфейса" << endl;
+    }
   } else {
     irs::mlog() << "Не удалось инициализировать Winsock" << endl;
   }
