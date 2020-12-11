@@ -453,31 +453,36 @@ void irs::ip_collector_t::get_interfaces_ip()
 
   ULONG info_buffer_size = sizeof (IP_ADAPTER_INFO);
   PIP_ADAPTER_INFO p_adapter_info = (IP_ADAPTER_INFO *) malloc(sizeof (IP_ADAPTER_INFO));
+  DWORD res;
 
   if (p_adapter_info != NULL) {
-    if (GetAdaptersInfo(p_adapter_info, &info_buffer_size) ==
-      ERROR_BUFFER_OVERFLOW)
-    {
+    res = GetAdaptersInfo(p_adapter_info, &info_buffer_size);
+    if (res == ERROR_BUFFER_OVERFLOW) {
       free(p_adapter_info);
       p_adapter_info = (IP_ADAPTER_INFO *) malloc(info_buffer_size);
 
       if (p_adapter_info != NULL) {
-
-        if (GetAdaptersInfo(p_adapter_info, &info_buffer_size) == NO_ERROR) {
-          while (p_adapter_info) {
-            if (p_adapter_info->Type == MIB_IF_TYPE_ETHERNET) {
-              mxip_t ip = {0};
-              cstr_to_mxip(ip, p_adapter_info->IpAddressList.IpAddress.String);
-              mxip_t mask = {0};
-              cstr_to_mxip(mask, p_adapter_info->IpAddressList.IpMask.String);
-
-              m_if_addresses.push_back(make_pair(ip, mask));
-            }
-            p_adapter_info = p_adapter_info->Next;
-          }
-        }
+        res = GetAdaptersInfo(p_adapter_info, &info_buffer_size);
       }
     }
+  }
+
+  if (res == NO_ERROR) {
+    while (p_adapter_info) {
+      mxip_t ip = {0};
+      cstr_to_mxip(ip, p_adapter_info->IpAddressList.IpAddress.String);
+      mxip_t mask = {0};
+      cstr_to_mxip(mask, p_adapter_info->IpAddressList.IpMask.String);
+
+      if (p_adapter_info->Type == MIB_IF_TYPE_ETHERNET) {
+        m_if_addresses.push_back(make_pair(ip, mask));
+      } else {
+        irs::mlog() << "other if: " << ip << "; " << mask << endl;
+      }
+      p_adapter_info = p_adapter_info->Next;
+    }
+  } else {
+    irs::mlog() << "GetAdaptersInfo error code " << res << endl;
   }
 }
 
