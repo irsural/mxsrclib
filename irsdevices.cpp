@@ -154,6 +154,12 @@ private:
   bool m_enabled;
   handle_t<hardflow_t> mp_mxnet_client_hardflow;
   handle_t<mxdata_t> mp_mxnet_client;
+
+  #ifdef __BORLANDC__
+  ip_collector_t* mp_ip_collector;
+  bool m_wait_response;
+  void add_collected_ip();
+  #endif // __BORLANDC__
 };
 
 } // namespace irs
@@ -175,6 +181,11 @@ irs::mxnet_assembly_t::mxnet_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_enabled(false),
   mp_mxnet_client_hardflow(),
   mp_mxnet_client()
+  #ifdef __BORLANDC__
+  ,
+  m_wait_response(false),
+  mp_ip_collector(ip_collector_t::get_instance())
+  #endif // __BORLANDC__
 {
   mp_tstlan4->ini_name(m_conf_file_name);
 }
@@ -188,7 +199,10 @@ irs::mxnet_assembly_t::param_box_tune_t::param_box_tune_t(
   mp_param_box(ap_param_box)
 {
   mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
+  vector<string_type> devices_items;
+  mp_param_box->add_combo(irst("IP"), &devices_items);
   mp_param_box->add_edit(irst("Порт"), irst("5005"));
+  mp_param_box->add_edit(irst("Запрос на получение IP"), irst("upms_1v_get_ip"));
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->load();
 }
@@ -225,9 +239,27 @@ void irs::mxnet_assembly_t::tick()
   if (!mp_mxnet_client.is_empty()) {
     mp_mxnet_client->tick();
   }
+
+  mp_ip_collector->tick();
+
+  if (mp_ip_collector->are_ip_collected() && m_wait_response) {
+    m_wait_response = false;
+    add_collected_ip();
+  }
 }
+
 void irs::mxnet_assembly_t::show_options()
 {
+  string_type request_wstring =
+    mp_param_box->get_param(irst("Запрос на получение IP"));
+  std::string request_string =
+    std::string(request_wstring.begin(), request_wstring.end());
+
+  mp_ip_collector->send_request(request_string, 5007);
+  // Одновременно в тике крутятся несколько экземпляров modbus_assembly_t,
+  // ответы должен принимать только тот, который послал запрос
+  m_wait_response = true;
+
   if (mp_param_box->show() && m_enabled) {
     mp_mxnet_client_hardflow->set_param(irst("remote_address"),
       mp_param_box->get_param(irst("IP")));
@@ -240,6 +272,7 @@ void irs::mxnet_assembly_t::show_options()
       irst("Время обновления, мс"))));
   }
 }
+
 void irs::mxnet_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 {
   mp_tstlan4 = ap_tstlan4;
@@ -249,6 +282,36 @@ irs::mxnet_assembly_t::options_type* irs::mxnet_assembly_t::options()
 {
   return &m_param_box_base_options;
 }
+
+#ifdef __BORLANDC__
+void irs::mxnet_assembly_t::add_collected_ip()
+{
+  vector<string_type> collected_ips;
+
+  irs::ip_collector_t::answer_type_t answers = mp_ip_collector->get_answers();
+  irs::ip_collector_t::answer_type_t::iterator it;
+  for (it = answers.begin(); it != answers.end(); ++it) {
+    // Формат ответа: ip;factory_number
+    irs::ip_collector_t::string_t::size_type n = it->find(';');
+    if (n != irs::ip_collector_t::string_t::npos) {
+      *it = irs::ip_collector_t::string_t(it->begin(), it->begin() + n);
+    }
+
+    // Приходить должно только в ASCII
+    wstringstream wide_answer;
+    wide_answer << it->c_str();
+    collected_ips.push_back(wide_answer.str());
+  }
+
+  string_type default_ip = mp_param_box->get_param(irst("IP"));
+  if (default_ip.empty() && !collected_ips.empty()) {
+    default_ip = collected_ips.front();
+  }
+
+  mp_param_box->clear_combo(irst("IP"));
+  mp_param_box->add_combo(irst("IP"), &collected_ips);
+}
+#endif // __BORLANDC__
 
 namespace irs {
 
@@ -589,6 +652,7 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
     mp_param_box->add_combo(irst("IP"), &devices_items);
     mp_param_box->add_edit(irst("Порт"), irst("5005"));
+    mp_param_box->add_edit(irst("Запрос на получение IP"), irst("pokrov_get_ip"));
   }
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
@@ -709,8 +773,6 @@ void irs::modbus_assembly_t::add_collected_ip()
     wstringstream wide_answer;
     wide_answer << it->c_str();
     collected_ips.push_back(wide_answer.str());
-
-    irs::mlog() << it->c_str() << endl;
   }
 
   string_type default_ip = mp_param_box->get_param(irst("IP"));
@@ -827,11 +889,16 @@ void irs::modbus_assembly_t::show_options()
 {
   #ifdef __BORLANDC__
   if (m_protocol != usb_hid_protocol) {
-    mp_ip_collector->send_request("pokrov_get_ip", 5007);
+    string_type request_wstring =
+      mp_param_box->get_param(irst("Запрос на получение IP"));
+    std::string request_string =
+      std::string(request_wstring.begin(), request_wstring.end());
+
+    mp_ip_collector->send_request(request_string, 5007);
     // Одновременно в тике крутятся несколько экземпляров modbus_assembly_t,
     // ответы должен принимать только тот, который послал запрос
     m_wait_response = true;
-  }
+  } 
   #endif // __BORLANDC__
 
   update_param_box_devices_field();
