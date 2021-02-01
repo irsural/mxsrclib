@@ -1251,9 +1251,11 @@ irs::arm::st_flash_files_t::get_file_status(
   const string_type& a_name) const
 {
   const files_map_type::const_iterator it = m_files.find(a_name);
-  if (it == m_files.end()) {
-    throw std::logic_error("Файл не найден");
-  }
+
+  IRS_LIB_ASSERT(it != m_files.end());
+//  if (it == m_files.end()) {
+//    throw std::logic_error("Файл не найден");
+//  }
   if (it->second.handle.is_empty()) {
     return file_status_closed;
   } else if (
@@ -1269,18 +1271,20 @@ irs::arm::st_flash_files_t::get_file_size(
   const string_type& a_name) const
 {
   const files_map_type::const_iterator it = m_files.find(a_name);
-  if (it == m_files.end()) {
-    throw std::logic_error("Файл не найден");
-  }
+  IRS_LIB_ASSERT(it != m_files.end());
+//  if (it == m_files.end()) {
+//    throw std::logic_error("Файл не найден");
+//  }
   return it->second.size;
 }
 
 irs_u8* irs::arm::st_flash_files_t::get_file_data_begin(const string_type& a_name)
 {
   const files_map_type::const_iterator it = m_files.find(a_name);
-  if (it == m_files.end()) {
-    throw std::logic_error("Файл не найден");
-  }
+  IRS_LIB_ASSERT(it != m_files.end());
+//  if (it == m_files.end()) {
+//    throw std::logic_error("Файл не найден");
+//  }
   irs_u8* begin = st_flash_page_begin(it->second.first_page_index);
   if (it->second.save_load_size_enabled) {
     begin += sizeof(file_size_type);

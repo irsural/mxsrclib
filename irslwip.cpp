@@ -303,12 +303,16 @@ irs::hardflow::lwip::buffers_t::write(size_type a_channel_id,
   IRS_LIB_ASSERT(buf->size() <= m_buf_max_size);
   const size_type available_size = (m_buf_max_size - buf->size());
   size_type size = min(available_size, a_size);
+  #ifndef IRS_NO_EXCEPTIONS
   try {
+  #endif // IRS_NO_EXCEPTIONS
     buf->push_back(ap_buf, ap_buf + size);
     return size;
+  #ifndef IRS_NO_EXCEPTIONS
   } catch (std::bad_alloc&) {
     return 0;
   }
+  #endif // IRS_NO_EXCEPTIONS
 }
 
 irs::deque_data_t<irs_u8>* irs::hardflow::lwip::buffers_t::create_buf(
@@ -321,8 +325,9 @@ irs::deque_data_t<irs_u8>* irs::hardflow::lwip::buffers_t::create_buf(
     if (m_id_buf_pos.size() >= m_buf_max_count) {
       return NULL;
     }
-
+    #ifndef IRS_NO_EXCEPTIONS
     try {
+    #endif // IRS_NO_EXCEPTIONS
 
       if (!m_free_buffers.empty()) {
         typedef pair<map<size_type, size_type>::iterator, bool> result_t;
@@ -334,28 +339,35 @@ irs::deque_data_t<irs_u8>* irs::hardflow::lwip::buffers_t::create_buf(
         return &m_buffers[pos];
       } else if (m_buffers.size() < m_buf_max_count) {
         m_buffers.push_back(irs::deque_data_t<irs_u8>());
-
+        #ifndef IRS_NO_EXCEPTIONS
         try {
+        #endif // IRS_NO_EXCEPTIONS
           insert_to_id_buf_pos(a_channel_id, m_buffers.size() - 1);
+        #ifndef IRS_NO_EXCEPTIONS
         } catch (std::bad_alloc&) {
           m_buffers.pop_back();
           throw;
         }
-
         try {
+        #endif // IRS_NO_EXCEPTIONS
           // Чтобы гарантированно иметь возможность освободить буфер
           m_free_buffers.reserve(m_buffers.size());
+
+        #ifndef IRS_NO_EXCEPTIONS
         } catch (std::bad_alloc&) {
           erase_from_id_buf_pos(a_channel_id);
           m_buffers.pop_back();
           throw;
         }
+        #endif // IRS_NO_EXCEPTIONS
         return &m_buffers[m_buffers.size() - 1];
       }
 
+    #ifndef IRS_NO_EXCEPTIONS
     } catch (std::bad_alloc&) {
       return NULL;
     }
+    #endif // IRS_NO_EXCEPTIONS
 
   } else {
     return &m_buffers[it->second];
@@ -485,21 +497,26 @@ irs::hardflow::lwip::buffers_t::channel_next_available_for_reading()
 void irs::hardflow::lwip::buffers_t::reserve_buffers()
 {
   while (m_buffers.size() < m_buf_max_count) {
+    #ifndef IRS_NO_EXCEPTIONS
     try {
+    #endif // IRS_NO_EXCEPTIONS
       m_buffers.push_back(irs::deque_data_t<irs_u8>());
       m_buffers.back().reserve(m_buf_max_size);
+    #ifndef IRS_NO_EXCEPTIONS
     } catch (std::bad_alloc&) {
       m_buffers.pop_back();
       throw;
     }
-
     try {
+    #endif // IRS_NO_EXCEPTIONS
       // Чтобы гарантированно иметь возможность освободить буфер
       m_free_buffers.reserve(m_buffers.size());
+    #ifndef IRS_NO_EXCEPTIONS
     } catch (std::bad_alloc&) {
       m_buffers.pop_back();
       throw;
     }
+    #endif // IRS_NO_EXCEPTIONS
     m_free_buffers.push_back(m_buffers.size() - 1);
   }
 }
@@ -709,8 +726,10 @@ irs::hardflow::lwip::tcp_server_t::create_channel(
   tcp_pcb *ap_pcb)
 {
   irs::handle_t<channel_t> channel;
+  #ifndef IRS_NO_EXCEPTIONS
   const size_type prev_channel_count = m_channels.size();
   try {
+  #endif // IRS_NO_EXCEPTIONS
     channel.reset(new channel_t());
     if (m_last_id == invalid_channel) {
       m_last_id++;
@@ -727,11 +746,13 @@ irs::hardflow::lwip::tcp_server_t::create_channel(
     tcp_sent(ap_pcb, tcp_server_t::sent);
     m_last_id++;
     IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Добавлен канал " << channel->id);
+  #ifndef IRS_NO_EXCEPTIONS
   } catch (...) {
     channel.reset();
     m_channels.resize(prev_channel_count);
     IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Создать канал не удалось");
   }
+  #endif // IRS_NO_EXCEPTIONS
   return channel.get();
 }
 
@@ -932,16 +953,20 @@ err_t irs::hardflow::lwip::tcp_client_t::recv(void *arg, tcp_pcb *pcb,
       const size_type available = client->m_buffer_max_size -
         client->m_buffer.size();
       if (available >= len) {
+        #ifndef IRS_NO_EXCEPTIONS
         try {
+        #endif // IRS_NO_EXCEPTIONS
           copy_pbuf_to_deque_data_back(p, &client->m_buffer);
           tcp_recved(pcb, len);
           pbuf_free(p);
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Получено: " << len << " байт");
+        #ifndef IRS_NO_EXCEPTIONS
         } catch (std::bad_alloc&) {
           IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные не приняты, так как не "
             "удалось выделить память");
           return ERR_MEM;
         }
+        #endif // IRS_NO_EXCEPTIONS
       } else {
         return ERR_MEM;
         IRS_LIB_HARDFLOWG_DBG_MSG_DETAIL("Данные не приняты, так как "

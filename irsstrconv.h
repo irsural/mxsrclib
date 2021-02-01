@@ -120,9 +120,13 @@ inline std::wstring cp1251_to_wstring(const std::string& a_str)
   std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
+  #ifdef IRS_NO_EXCEPTIONS
+  IRS_LIB_ASSERT(convert_result == std::codecvt_base::ok);
+  #else
   if (convert_result != std::codecvt_base::ok) {
     throw runtime_error("Не удалось преобразовать cp1251 в unicode");
   }
+  #endif // IRS_NO_EXCEPTIONS
   return std::wstring(out_str);
 }
 
@@ -143,9 +147,14 @@ inline std::string wstring_to_cp1251(const std::wstring& a_str)
   std::codecvt_base::result convert_result = codecvt_cp1251_wchar.in(
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
+  #ifdef IRS_NO_EXCEPTIONS
+  IRS_LIB_ASSERT(convert_result == std::codecvt_base::ok);
+  #else
   if (convert_result != std::codecvt_base::ok) {
     throw runtime_error("Не удалось преобразовать unicode в cp1251");
   }
+  #endif // IRS_NO_EXCEPTIONS
+
   return std::string(out_str);
 }
 

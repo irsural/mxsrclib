@@ -167,7 +167,9 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
   const size_type available_size = (m_buf_max_size - buf->size());
   size_type size = min(available_size, a_data.size());
 
+  #ifndef IRS_NO_EXCEPTIONS
   try {
+  #endif // IRS_NO_EXCEPTIONS
     buf->reserve(buf->size() + a_data.size());
     for (const irs_u8* start = a_data.data(); start != NULL;
         start = a_data.next()) {
@@ -175,9 +177,11 @@ buffers_t::write(size_type a_channel_id, DataReader a_data)
       buf->push_back(start, end);
     }
     return size;
+  #ifndef IRS_NO_EXCEPTIONS
   } catch (std::bad_alloc&) {
     return 0;
   }
+  #endif // IRS_NO_EXCEPTIONS
 }
 
 class pbuf_reader_t
@@ -542,10 +546,12 @@ void udp_channels_t<address_t>::insert(
       channel.address = a_address;
       channel.lifetime.start();
       channel.downtime.start();
-      const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
+      #ifndef IRS_NO_EXCEPTIONS
+      const size_type channel_prev_count = m_id_list.size();
       try {
+      #endif // IRS_NO_EXCEPTIONS
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =
@@ -563,6 +569,7 @@ void udp_channels_t<address_t>::insert(
           // Текущий канал для проверки уже установлен
         }
         *ap_insert_success = true;
+      #ifndef IRS_NO_EXCEPTIONS
       } catch (...) {
         if (m_map_id_channel.size() > channel_prev_count) {
           m_map_id_channel.erase(map_id_channel_res.first);
@@ -572,6 +579,7 @@ void udp_channels_t<address_t>::insert(
         }
         m_id_list.resize(channel_prev_count);
       }
+      #endif // IRS_NO_EXCEPTIONS
     } else {
       // Добавление не разрешено
     }
