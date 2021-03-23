@@ -1242,9 +1242,9 @@ inline typename irs::deque_data_t<T>::const_reference
 template <class T>
 inline typename irs::deque_data_t<T>::reference
   irs::deque_data_t<T>::operator[](size_type a_index)
-{  
-  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");  
-  
+{
+  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
+
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (a_index < buf_right_part_size) {
@@ -1518,10 +1518,11 @@ class handle_t
 public:
   handle_t(T* ap_object = IRS_NULL);
   handle_t(const handle_t& a_handle);
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  #if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
+    (defined(__ICCARM__) && __VER__ >= 7000000)
   template <class T2>
   handle_t(const handle_t<T2>& a_handle);
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
   ~handle_t();
   void operator=(const handle_t& a_handle);
   #ifdef IRS_FULL_STDCPPLIB_SUPPORT
@@ -1578,7 +1579,8 @@ handle_t<T>::handle_t(const handle_t& a_handle):
     mp_rep->counter++;
   }
 }
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
+  (defined(__ICCARM__) && __VER__ >= 7000000)
 template <class T>
 template <class T2>
 handle_t<T>::handle_t(const handle_t<T2>& a_handle):
@@ -1596,7 +1598,7 @@ handle_t<T>::handle_t(const handle_t<T2>& a_handle):
   }
   #endif //IRS_LIB_DEBUG
 }
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+#endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
 template <class T>
 handle_t<T>::~handle_t()
 {
