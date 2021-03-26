@@ -333,7 +333,7 @@ irs::hfftp::various_page_mem_file_write_only_t::write(
   if (m_size_saved) {
     throw std::logic_error("Размер файла уже сохранен.");
   }
-  #endif IRS_NO_EXCEPTIONS
+  #endif // IRS_NO_EXCEPTIONS
 
   if ((m_process != process_wait_command) ||
     (m_last_error != irs::hfftp::file_error_no_error)) {
