@@ -2190,8 +2190,6 @@ void irs::arm::st_rtc_t::write_to_backup_reg(irs_u16 a_first_backup_data)
 #define RTC_SYNCH_PREDIV_MAX        0x7FFF
 
 // class st_rtc_t
-irs::handle_t<irs::arm::st_rtc_t> irs::arm::st_rtc_t::mp_st_rtc;
-
 irs::arm::st_rtc_t::st_rtc_t():
   m_prediv_s(RTC_SYNCH_PREDIV_DEFAULT),
   RtcHandle(),
@@ -2205,8 +2203,6 @@ irs::arm::st_rtc_t::st_rtc_t():
   m_previous_time_s(0),
   m_counter_calibr_coeff(1)
 {
-  mp_st_rtc = this;
-
   irs_u32 bkp_data_reg_init[rtc_bkp_dr_number] =
   {
     RTC_BKP_DR0, RTC_BKP_DR1, RTC_BKP_DR2,
@@ -2253,16 +2249,11 @@ irs::arm::st_rtc_t::st_rtc_t():
   }
 }
 
-irs::arm::st_rtc_t* irs::arm::st_rtc_t::reset()
+irs::arm::st_rtc_t* irs::arm::st_rtc_t::get_instance(bool a_reset)
 {
-  mp_st_rtc.reset();
-  mp_st_rtc.reset(new st_rtc_t());
-  return mp_st_rtc.get();
-}
-
-irs::arm::st_rtc_t* irs::arm::st_rtc_t::get_instance()
-{
-  if (mp_st_rtc.is_empty()) {
+  static irs::handle_t<st_rtc_t> mp_st_rtc;
+  if (mp_st_rtc.is_empty() || a_reset) {
+    mp_st_rtc.reset();
     mp_st_rtc.reset(new st_rtc_t());
   }
   return mp_st_rtc.get();

@@ -687,8 +687,7 @@ public:
     clock_source_lsi,
     clock_source_lse
   };*/
-  static st_rtc_t* reset();
-  static st_rtc_t* get_instance();
+  static st_rtc_t* get_instance(bool a_reset = false);
   time_t get_time();
   double get_time_double();
   void set_time(const time_t a_time);
@@ -717,8 +716,6 @@ public:
   void write_to_backup_reg(irs_u32 a_index, irs_u32 a_data);
 private:
   st_rtc_t();
-  st_rtc_t(const st_rtc_t& a_st_rtc);
-  st_rtc_t& operator=(const st_rtc_t& a_st_rtc);
   void rtc_config_default();
   void rtc_config_calibration();
 
@@ -737,7 +734,6 @@ private:
 
   irs_u32 bkp_data_reg[rtc_bkp_dr_number];
   RTC_HandleTypeDef RtcHandle;
-  static handle_t<st_rtc_t> mp_st_rtc;
 
   // Для калибровки
   enum calibration_process_t {
