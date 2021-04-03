@@ -5,8 +5,6 @@
 
 #define USE_LCD
 
-#include <codecvt>
-
 #include <irsdefs.h>
 #include <irscpp.h>
 #include <irsnetdefs.h>
@@ -51,6 +49,8 @@ namespace irs
 
 #define IRSLIB_LWIPBUF_SIZE 128
     
+inline void cp1251_to_utf8(char *out, const char *in);
+  
 template<typename char_type, typename traits_type = char_traits<char_type>>
 class lwipbuf : public basic_streambuf<char_type, traits_type>
 {
@@ -78,40 +78,13 @@ private:
   /* Functions */
   int init();
   
-  /**
-  * @brief  This function is the implementation of tcp_accept LwIP callback
-  * @param  arg: not used
-  * @param  newpcb: pointer on tcp_pcb struct for the newly created tcp connection
-  * @param  err: not used 
-  * @retval err_t: error status
-  */
+  int_type overflow(int_type c, const char* buffer, size_t sz);
+  
+  /* LWIP callback functions */
   static err_t c_tcp_accept(void* arg, struct tcp_pcb* newpcb, err_t err);
- 
-  /**
-  * @brief  This function is the implementation for tcp_recv LwIP callback
-  * @param  arg: pointer on a argument for the tcp_pcb connection
-  * @param  tpcb: pointer on the tcp_pcb connection
-  * @param  pbuf: pointer on the received pbuf
-  * @param  err: error information regarding the reveived pbuf
-  * @retval err_t: error code
-  */
   static err_t c_tcp_recv(void* arg, struct tcp_pcb* tpcb, struct pbuf* p, 
                           err_t err);
-  
-  /**
-  * @brief  This function implements the tcp_poll LwIP callback function
-  * @param  arg: pointer on argument passed to callback
-  * @param  tpcb: pointer on the tcp_pcb for the current tcp connection
-  * @retval err_t: error code
-  */
   static err_t c_tcp_poll(void* arg, struct tcp_pcb* tpcb);
-  
-  /**
-  * @brief  This functions closes the tcp connection
-  * @param  tcp_pcb: pointer on the tcp connection
-  * @param  es: pointer on echo_state structure
-  * @retval None
-  */
   static void c_tcp_connection_close(struct tcp_pcb* tpcb);
   
   /* Fields */
@@ -129,11 +102,13 @@ template<typename char_type, typename traits_type>
 lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
   : m_sizebuf(sizebuf)
   , m_port(port)
-  , m_buffer(m_sizebuf)
-  , m_temp_buffer(m_sizebuf*2)
 {
-  m_convert_buffer = typeid(char_type) != typeid(char) 
-    ? new char[m_sizebuf]() : nullptr;
+  m_buffer.resize(m_sizebuf);
+  m_temp_buffer.resize(m_sizebuf*2);
+  
+  m_convert_buffer = new char[m_sizebuf*2]();
+//  m_convert_buffer = typeid(char_type) != typeid(char) 
+//    ? new char[m_sizebuf]() : nullptr;
 
   char_type* buf = m_buffer.data();
   this->setp(buf, buf + m_buffer.size());
@@ -239,9 +214,32 @@ template<typename char_type, typename traits_type>
 size_t lwipbuf<char_type, traits_type>::get_count_connected() const
 { return m_connections.size(); }
 
+
 template<typename char_type, typename traits_type>
 lwipbuf<char_type, traits_type>::int_type
-lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
+lwipbuf<char_type, traits_type>::overflow(int_type c,
+                                          const char* buffer,
+                                          size_t sz)
+{
+  size_t j = 0;
+  for (size_t i = 0; i < sz; i++) {
+    if (buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
+    m_temp_buffer[j++] = buffer[i];
+  }
+  
+  send(&m_temp_buffer.front(), j);
+  
+  this->pbump(-sz);
+  m_temp_buffer.clear();
+  m_buffer.clear();
+
+  if (c != traits_type::eof()) { m_buffer[0] = char(c); }
+  
+  return c == traits_type::eof();
+}
+
+template<>
+lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
 {
   ptrdiff_t sz = this->pptr() - this->pbase();
 
@@ -249,44 +247,18 @@ lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
     wcstombs(m_convert_buffer, m_buffer.data(), sz); 
   }
   
-  for (size_t i = 0; i < sz; i++) {
-    if (typeid(char_type) == typeid(char)) {
-      if (m_buffer[i] == '\n') { m_temp_buffer.push_back('\r'); }
-      m_temp_buffer.push_back(m_buffer[i]);
-    } else {
-      if (m_convert_buffer[i] == '\n') { m_temp_buffer.push_back('\r'); }
-      m_temp_buffer.push_back(m_convert_buffer[i]);
-    }
-  }    
-  
-  send(&m_temp_buffer.front(), m_temp_buffer.size());
-
-  this->pbump(-sz);
-  m_temp_buffer.clear();
-  
-  if (c != traits_type::eof()) { m_buffer.push_back(char(c)); }
-  
-  return c == traits_type::eof();
+  return this->overflow(c, m_convert_buffer, sz);
 }
 
-template<>
-lwipbuf<char>::int_type lwipbuf<char>::overflow(int_type c) _OVERRIDE_
+template<typename char_type, typename traits_type>
+lwipbuf<char_type, traits_type>::int_type 
+lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
 {
   ptrdiff_t sz = this->pptr() - this->pbase();
-
-  for (size_t i = 0; i < sz; i++) {
-      if (m_buffer[i] == '\n') { m_temp_buffer.push_back('\r'); }
-      m_temp_buffer.push_back(m_buffer[i]);
-  }    
   
-  send(&m_temp_buffer.front(), m_temp_buffer.size());
-
-  this->pbump(-sz);
-  m_temp_buffer.clear();
+  cp1251_to_utf8(m_convert_buffer, &m_buffer.front());
   
-  if (c != traits_type::eof()) { m_buffer.push_back(char(c)); }
-  
-  return c == traits_type::eof();
+  return this->overflow(c, m_convert_buffer, sz*2);
 }
 
 template<typename char_type, typename traits_type>
@@ -372,6 +344,43 @@ void lwipbuf<char_type, traits_type>::c_tcp_connection_close(struct tcp_pcb* tpc
 #ifdef USE_LCD
     LCD_UsrTrace("  State: A connection is closed!\n");
 #endif // USE_LCD
+}
+
+inline void cp1251_to_utf8(char *out, const char *in) {
+    static const char table[128*3 + 1] = {                 
+        "\320\202 \320\203 \342\200\232\321\223 \342\200\236\342\200\246\342\200\240\342\200\241"
+        "\342\202\254\342\200\260\320\211 \342\200\271\320\212 \320\214 \320\213 \320\217 "      
+        "\321\222 \342\200\230\342\200\231\342\200\234\342\200\235\342\200\242\342\200\223\342\200\224"
+        "   \342\204\242\321\231 \342\200\272\321\232 \321\234 \321\233 \321\237 "                     
+        "\302\240 \320\216 \321\236 \320\210 \302\244 \322\220 \302\246 \302\247 "                     
+        "\320\201 \302\251 \320\204 \302\253 \302\254 \302\255 \302\256 \320\207 "                     
+        "\302\260 \302\261 \320\206 \321\226 \322\221 \302\265 \302\266 \302\267 "
+        "\321\221 \342\204\226\321\224 \302\273 \321\230 \320\205 \321\225 \321\227 "
+        "\320\220 \320\221 \320\222 \320\223 \320\224 \320\225 \320\226 \320\227 "
+        "\320\230 \320\231 \320\232 \320\233 \320\234 \320\235 \320\236 \320\237 "
+        "\320\240 \320\241 \320\242 \320\243 \320\244 \320\245 \320\246 \320\247 "
+        "\320\250 \320\251 \320\252 \320\253 \320\254 \320\255 \320\256 \320\257 "
+        "\320\260 \320\261 \320\262 \320\263 \320\264 \320\265 \320\266 \320\267 "
+        "\320\270 \320\271 \320\272 \320\273 \320\274 \320\275 \320\276 \320\277 "
+        "\321\200 \321\201 \321\202 \321\203 \321\204 \321\205 \321\206 \321\207 "
+        "\321\210 \321\211 \321\212 \321\213 \321\214 \321\215 \321\216 \321\217 "
+    };
+    
+    while (*in) {
+        if (*in & 0x80) {
+            const char *p = &table[3 * (0x7f & *in++)];
+            if (*p == ' ') { continue; }
+            *out++ = *p++;
+            *out++ = *p++;
+            if (*p == ' ') { continue; }
+            *out++ = *p++;
+        }
+        else {
+            *out++ = *in++;
+        }
+    }
+
+    *out = 0;
 }
 
 } // namespace irs
