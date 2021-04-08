@@ -308,7 +308,7 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
   IP4_ADDR(&gateway, a_config.gateway.val[0],
     a_config.gateway.val[1], a_config.gateway.val[2],
     a_config.gateway.val[3]);
-  
+
   u8_t mac_to_eth[NETIF_MAX_HWADDR_LEN];
   mac_to_eth[0] = m_mac.val[0];
   mac_to_eth[1] = m_mac.val[1];
@@ -316,14 +316,14 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
   mac_to_eth[3] = m_mac.val[3];
   mac_to_eth[4] = m_mac.val[4];
   mac_to_eth[5] = m_mac.val[5];
-  
+
   eth_set_mac(mac_to_eth);
 
   netif_add(&m_netif, &ipaddr, &netmask, &gateway, NULL,
     &ethernetif_init, &ethernet_input);
   netif_set_default(&m_netif);
   netif_set_up(&m_netif);
-  
+
   if (netif_is_up(&m_netif)) {
     IRS_LIB_LWIP_ETH_DBG_MSG_BASE("netif is up");
   } else {
@@ -375,7 +375,7 @@ void irs::lwip::lwip_control_t::tick()
 {
   ethernetif_input(&m_netif);
   lwip_tick();
-  
+
   if (m_check_link_timer.check()) {
     ethernet_link_check_state(&m_netif);
   }
@@ -1326,6 +1326,7 @@ bool irs::hardflow::lwip::tcp_client_t::is_channel_exists(
 
 #if LWIP_UDP
 
+
 // class udp_t
 irs::hardflow::lwip::udp_t::udp_t(
   const mxip_t& a_local_ip,
@@ -1365,10 +1366,10 @@ void irs::hardflow::lwip::udp_t::create()
 
   #ifndef IRS_STM32H7xx
   ip_addr local_ip;
-  #else 
+  #else
   ip_addr_t local_ip;
   #endif // IRS_STM32H7xx
-  
+
   local_ip.addr = m_local_ip.addr;
   err_t err = udp_bind(mp_pcb, &local_ip, m_local_port);
   if (err == ERR_USE) {
@@ -1390,7 +1391,7 @@ void irs::hardflow::lwip::udp_t::create()
 #ifndef IRS_STM32H7xx
 void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
   pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port)
-#else 
+#else
 void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
   pbuf *ap_buf, const ip_addr_t *ap_addr, u16_t a_port)
 #endif
@@ -1473,13 +1474,13 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
     return 0;
   }
   address_type remote_host_address;
-  
+
   #ifndef IRS_STM32H7xx
   ip_addr dst_ip;
-  #else 
+  #else
   ip_addr_t dst_ip;
   #endif // IRS_STM32H7xx
-  
+
   if (m_channel_list.address_get(a_channel_ident, &remote_host_address)) {
     dst_ip.addr = remote_host_address.ip.addr;
   } else {
@@ -1510,9 +1511,13 @@ void irs::hardflow::lwip::udp_t::tick()
 }
 
 irs::hardflow::lwip::udp_t::string_type
-irs::hardflow::lwip::udp_t::param(const string_type& /*a_param_name*/)
+irs::hardflow::lwip::udp_t::param(const string_type& a_name)
 {
-  return string_type();
+  string_type param_value = "";
+  if (a_name == irst("local_address")) {
+    param_value = mxip_to_str(m_local_ip);
+  }
+  return param_value;
 }
 
 void irs::hardflow::lwip::udp_t::set_param(const string_type& /*a_param_name*/,
