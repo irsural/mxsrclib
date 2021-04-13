@@ -8,20 +8,10 @@
 #include <irsdefs.h>
 #include <irscpp.h>
 #include <irsnetdefs.h>
+#include <irsencode.h>
 
 #include <ethernet_h7.h>
 #include <lwipopts_conf.h>
-
-#include "netif/etharp.h"
-
-#include "lwip/opt.h"
-#include "lwip/init.h"
-#include "lwip/netif.h"
-#include "lwip/timeouts.h"
-#include "lwip/err.h"
-
-#include "lwip/stats.h"
-#include "lwip/tcp.h"
 
 #if LWIP_DHCP
 #include "app_ethernet.h"
@@ -42,14 +32,24 @@ extern "C" {
   
 #endif
 
+#include "netif/etharp.h"
+
+#include "lwip/opt.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/timeouts.h"
+#include "lwip/err.h"
+
+#include "lwip/stats.h"
+#include "lwip/tcp.h"
+
 #define _OVERRIDE_
 
 namespace irs
 {
 
+/* Размер LWIP буфера по умолчанию */
 #define IRSLIB_LWIPBUF_SIZE 128
-    
-inline void cp1251_to_utf8(char *out, const char *in);
   
 template<typename char_type, typename traits_type = char_traits<char_type>>
 class lwipbuf : public basic_streambuf<char_type, traits_type>
@@ -57,44 +57,179 @@ class lwipbuf : public basic_streambuf<char_type, traits_type>
 public:
   typedef typename traits_type::int_type int_type;
   
-  /* Functions */
+  /* @brief конструктор по умолчанию. Выделяет динамическую память под буферы,
+   * вместе с этим проводит инициализацию сервера и его запуск.
+   * 
+   * @param sizebuf - размер буфера. По умолчанию - IRSLIB_LWIPBUF_SIZE (128)
+   * @param port - порт, на который будем отправлять сообщения. По умолчанию -
+   * IRSLIB_LOG_PORT (5008)
+   */
   lwipbuf(size_t sizebuf = IRSLIB_LWIPBUF_SIZE, 
           u16_t port = IRSLIB_LOG_PORT);
+  
+  /* @brief деструктор по умолчанию. Высвобождает динамическую память, 
+   * выделенную под буферы.
+   */
   virtual ~lwipbuf();
  
+  /* @brief функция "тик". Ее необходимо вызывать в вашем цикле на каждой
+   * итерации. Она осуществляет обработку принятие пакетов на сервер через ethernet.
+   *
+   * @param ap_netif - ссылка на структуру сервера.
+   */
   virtual void tick(struct netif* ap_netif);
+  
+  /* @brief функция отправки сообщения клиентам. Вместе с этим функция проверят
+   * корректное отправление клиенту сообщения; в плохом случае удаляет сессию
+   * клиента из общего массива сессий.
+   *
+   * @param ap_msg - отправляемое сообщение.
+   * @param size_msg - размерность сообщения.
+   */
   virtual void send(const void* ap_msg, size_t size_msg);
 
+  /* @brief функция получения порта сооединения. 
+   *
+   * @return u16_t - текущий порт сооединения, по которому происходит отправка
+   * сообещний.
+   */
   u16_t get_port() const;
+  
+  /* @brief функция проверки наличия клиентов, подключенных к северу.
+   *
+   * @return true - в случае, если есть активные соединения, false - в ином случае.
+   */
   bool is_any_connected() const;
+  
+  /* @brief функция, возвращающая количество активных соединений.
+   *
+   * @return size_t - количество активных соединений.
+   */
   size_t get_count_connected() const;
 
+  /* @brief функция, вызываемая при переполнении буфера в случае, когда мы
+   * используем потоки ввода/вывода. Данная Ф-я очищает буфер, предварительно
+   * осуществив отправку сообщения клиентам, которое было на текущий момент в
+   * буфере; затем добавляет остаточный символ в буфер, который не влез.
+   * 
+   * @param c - символ, который не влез в буфер. По умолчанию - traits_type::eof()
+   * - означает символ окончания строки (в случае потоков ввода/вывода).
+   *
+   * @return 1 - в случае, если параметр c = traits_type::eof(), 0 - в ином случае.
+   *
+   * @note данная функция наследуется от basic_streambuf<char_type, traits_type>.
+   * При реализации вызывает приватную функцию overflow(), которая осуществляет
+   * выше сказанный функционал.
+   */
   virtual int_type overflow(int_type c = traits_type::eof()) _OVERRIDE_;
+  
+  /* @brief функция синхронизации потоков. В данном случае может вызываться
+   * специально пользователем. В случае, если в буфере есть данные вызывает
+   * overflow(), в ином случае возвращает 0.
+   *
+   * @return overflow() - в случае, если в буфере есть данные, в ином случае - 0.
+   *
+   * @note данная функция наследуется от basic_streambuf<char_type, traits_type>.
+   */
   virtual int sync() _OVERRIDE_;
  
 private:
   typedef vector<struct tcp_pcb*> arr_conn_type; 
   
-  /* Functions */
+  /* @brief функция инициализации сервера. Функция задает tcp слушателя, а также
+   * callback-функции приема текущего соединения (accept-func). В случае, если
+   * определен #define USE_LCD и инициализация произошла неудачно, выведет на
+   * дисплей платы соответствующее сообщение.
+   */
   int init();
   
+  /* @brief кастоманая функция overflow(), созданная для упрощения специализации
+   * текущего класса. Данная функция вызывается при переполнении буфера в случае, 
+   * в случае использования потоков ввода/вывода. Данная Ф-я очищает буфер, 
+   * предварительно осуществив отправку сообщения клиентам, которое было на 
+   * текущий момент в буфере; затем добавляет остаточный символ в буфер, который 
+   * не влез.
+   *
+   * @param c - символ, который не влез в буфер.
+   * @param buffer - буфер, хранящий передаваемое сообщение.
+   * @param sz - размер передаваемого буфера.
+   *
+   * @return 1 - в случае, если параметр c = traits_type::eof(), 0 - в ином случае.
+   */
   int_type overflow(int_type c, const char* buffer, size_t sz);
   
-  /* LWIP callback functions */
+  /* @brief callback-функция получения дескриптора нового соединения. 
+   * Устанавливает приоритет, а также специальные callback-функции для текущего 
+   * соединения. В случае, если определен #define USE_LCD, выведет 
+   * соответствующее сообщение на дисплей платы.
+   *
+   * @param arg - некоторые данные, задаваемые пользователем, которые будут 
+   * передаваться во все callback-функции текущего соединения.
+   * @param newpcb - дескриптор нового соединения.
+   * @param err - не используется.
+   */
   static err_t c_tcp_accept(void* arg, struct tcp_pcb* newpcb, err_t err);
+  
+  /* @brief callback-функция получения пакетов данных от клиента. 
+   * Проверяет, получили ли мы какие-либо пакеты от клиента. В отрицательном случае
+   * удаляет дескриптор текущего соединения, т.е. отключает клиента от себя.
+   *
+   * @param arg - некоторые данные, задаваемые пользователем, которые будут 
+   * передаваться во все callback-функции текущего соединения.
+   * @param tpcb - дескриптор текущего соединения.
+   * @param p - буфер, в котором находятся полученные данные от клиента.
+   * @param err - не используется.
+   */
   static err_t c_tcp_recv(void* arg, struct tcp_pcb* tpcb, struct pbuf* p, 
                           err_t err);
+  
+  /* @brief callback-функция, вызываемая с определенным периодом. В данный момент
+   * не используется.
+   *
+   * @param arg - некоторые данные, задаваемые пользователем, которые будут 
+   * передаваться во все callback-функции текущего соединения.
+   * @param tpcb - дескриптор текущего соединения.
+   */
   static err_t c_tcp_poll(void* arg, struct tcp_pcb* tpcb);
+  
+  /* @brief callback-функция, удаляющая дескриптор соединения, т.е. отключающая
+   * клиента от сервера.
+   *
+   * @param tpcb - дескриптор соединения, к-ый необходимо удалить.
+   */
   static void c_tcp_connection_close(struct tcp_pcb* tpcb);
   
-  /* Fields */
+  /* Порт, по к-ому осуществляется отправка сообщений. */
   u16_t m_port;
+  
+  /* Начальный дескриптор соединения. */
   struct tcp_pcb* mp_tcp_pcb;
 
+  /* Размерность глваного буфера, в который происходит заполнение данных в случае
+   * использования потоков ввода/вывода. 
+   */
   size_t m_sizebuf;
+  
+  /* Буфер, используемый для перевода данных из одного кодировки в другую.
+   * По умолчанию размерность данного буфера равняется m_sizebuf*2. В случае
+   * использования > UTF-8 размерность задается m_sizebuf * sizeof(char_type).
+   */
   char* m_convert_buffer;
+  
+  /* Глваного буфера, в который происходит заполнение данных в случае
+   * использования потоков ввода/вывода. 
+   */
   vector<char_type> m_buffer;
+  
+  /* Промежуточный буфер, в который происходит копирование данных из главного
+   * буфера, заменяя символы '\n' на "\r\n" для корректного перехода курсора
+   * дисплея на новую строку.
+   * По умолчанию размерность данного буфера равняется m_sizebuf*2. В случае
+   * использования > UTF-8 размерность задается m_sizebuf * sizeof(char_type).
+   */
   vector<char> m_temp_buffer;
+  
+  /* Массив, хранящий все дескрипторы активных соединений. */
   arr_conn_type m_connections;
 };
 
@@ -104,16 +239,19 @@ lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
   , m_port(port)
 {
   m_buffer.resize(m_sizebuf);
-  m_temp_buffer.resize(m_sizebuf*2);
+  m_temp_buffer.resize(m_sizebuf * sizeof(char_type));
   
-  m_convert_buffer = new char[m_sizebuf*2]();
+  m_convert_buffer = new char[m_sizebuf * sizeof(char_type)]();
 //  m_convert_buffer = typeid(char_type) != typeid(char) 
 //    ? new char[m_sizebuf]() : nullptr;
 
+  /* Задаем буфер, в к-ые будут сохранятся данные, передаваемые через
+   * потоки ввода/вывода. */
   char_type* buf = m_buffer.data();
   this->setp(buf, buf + m_buffer.size());
   
-  if (init() < 0) { throw "Cannot init lwipbuf!"; } 
+  /* Инициализация сервера. */
+  init();
 }
 
 template<typename char_type, typename traits_type>
@@ -126,21 +264,23 @@ lwipbuf<char_type, traits_type>::~lwipbuf()
 template<typename char_type, typename traits_type>
 int lwipbuf<char_type, traits_type>::init()
 {
-    /* Create new tcp pcb */
+  /* Создаем новый дескриптор соединения. */
   mp_tcp_pcb = tcp_new();
   
   if (mp_tcp_pcb != NULL) {
-    /* Bind echo_pcb to port (ECHO protocol) */
+    /* Биндим дескриптор на определенный порт. */
     err_t err = tcp_bind(mp_tcp_pcb, IP_ADDR_ANY, m_port);
     
     if (err == ERR_OK) {
-      /* Start tcp listening for echo_pcb */
+      /* Начинаем слушать текущий порт на новые соединения. */
       mp_tcp_pcb = tcp_listen(mp_tcp_pcb);
       
-      /* Set buffer up as arg in order to use it in callback functions */
+      /* Задаем пользовательские данные, к-ые необходимо передавать при вызове
+       * callback-функций.
+       */
       tcp_arg(mp_tcp_pcb, reinterpret_cast<void*>(&m_connections));
         
-      /* Initialize LwIP tcp_accept callback function */
+      /* Задаем callback-функцию получения дескриптора нового соединения. */
       tcp_accept(mp_tcp_pcb, c_tcp_accept);
       
       return 0;
@@ -149,7 +289,7 @@ int lwipbuf<char_type, traits_type>::init()
       LCD_UsrTrace("  Error [tcpInit]: tcp_bind was failed\n");
 #endif // USE_LCD
       
-      /* deallocate the pcb */
+      /* Высвобождаем память, выделенную под дескриптор нового соединения. */
       memp_free(MEMP_TCP_PCB, mp_tcp_pcb);
       
       return -1;
@@ -162,17 +302,18 @@ int lwipbuf<char_type, traits_type>::init()
 template<typename char_type, typename traits_type>
 void lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
 {
-    ethernetif_input(ap_netif);
-    
-    /* Handle timeouts */
-    sys_check_timeouts();
+  /* Получаем пакеты, полученные от клиентов на уровне ethernet. */
+  ethernetif_input(ap_netif);
+  
+  /* Таймаут-функция. */
+  sys_check_timeouts();
     
 #if LWIP_NETIF_LINK_CALLBACK
-    Ethernet_Link_Periodic_Handle(ap_netif);
+  Ethernet_Link_Periodic_Handle(ap_netif);
 #endif
 
 #if LWIP_DHCP
-    DHCP_Periodic_Handle(ap_netif, m_port);
+  DHCP_Periodic_Handle(ap_netif, m_port);
 #endif
 }
 
@@ -185,16 +326,22 @@ void lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
   }
 #endif // USE_LCD
   
+  /* Осуществляем отправку сообщений для всех клиентов, подключенных серверу. */
   for (int i = m_connections.size() - 1; i >= 0; i--) {
+    /* Осуществляем запись данных в буфер LWIP. */
     err_t err = tcp_write(m_connections[i], 
                     ap_msg,
                     size_msg,
                     TCP_WRITE_FLAG_COPY);
     
+    /* Если данные успешно записались в буфер LWIP, осуществляем их отправку. */
     if (err == ERR_OK) { 
       err = tcp_output(m_connections[i]);
     }
     
+    /* Если произошла ошибка записи/отправки данных, не связанная с нехваткой
+     * памяти буфера LWIP, то закрываем данное соединение с клиентом.
+     */
     if (err != ERR_OK && err != ERR_MEM) {
       c_tcp_connection_close(m_connections[i]);
       m_connections.erase(m_connections.begin() + i);
@@ -217,47 +364,58 @@ size_t lwipbuf<char_type, traits_type>::get_count_connected() const
 
 template<typename char_type, typename traits_type>
 lwipbuf<char_type, traits_type>::int_type
-lwipbuf<char_type, traits_type>::overflow(int_type c,
-                                          const char* buffer,
-                                          size_t sz)
+lwipbuf<char_type, traits_type>::overflow(int_type a_c,
+                                          const char* ap_buffer,
+                                          size_t a_sz)
 {
   size_t j = 0;
-  for (size_t i = 0; i < sz; i++) {
-    if (buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
-    m_temp_buffer[j++] = buffer[i];
+  for (size_t i = 0; i < a_sz; i++) {
+    if (ap_buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
+    m_temp_buffer[j++] = ap_buffer[i];
   }
   
+  /* Отправляем данные клиентам. */
   send(&m_temp_buffer.front(), j);
   
-  this->pbump(-sz);
+  /* Устанавлием позицию каретки заполнения данных для корректной записи данных
+   * в главный буфер при использовании потоков ввода/вывода. 
+   */
+  this->pbump(-a_sz);
+  
+  /* Очищаем данные, к-ые ранее были в буфере. */
   m_temp_buffer.clear();
   m_buffer.clear();
 
-  if (c != traits_type::eof()) { m_buffer[0] = char(c); }
+  if (a_c != traits_type::eof()) { m_buffer[0] = char(a_c); }
   
-  return c == traits_type::eof();
+  return a_c == traits_type::eof();
 }
 
 template<>
 lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
 {
+  /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
-
-  if (typeid(char_type) != typeid(char)) {
-    wcstombs(m_convert_buffer, m_buffer.data(), sz); 
-  }
   
-  return this->overflow(c, m_convert_buffer, sz);
+  /* TODO: Не работает. Дописать перевод кодировки из UTF-32 to UTF-8. */
+  /* Осуществляем перевод кодировок. */
+//  test::utf32_to_utf8((char*)&m_buffer.front(), m_convert_buffer);
+  
+  /* Отправляем данные клиентам. */
+  return this->overflow(c, m_convert_buffer, sz * sizeof(wchar_t));
 }
 
 template<typename char_type, typename traits_type>
 lwipbuf<char_type, traits_type>::int_type 
 lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
 {
+  /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
   
+  /* Осуществляем перевод кодировок. */
   cp1251_to_utf8(m_convert_buffer, &m_buffer.front());
   
+  /* Отправляем данные клиентам. */
   return this->overflow(c, m_convert_buffer, sz*2);
 }
 
@@ -275,18 +433,21 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg,
   
   LWIP_UNUSED_ARG(err);
 
-  /* Set priority for the newly accepted tcp connection newpcb */
+  /* Устанавливаем приоритет для нового соединения. */
   tcp_setprio(newpcb, TCP_PRIO_MIN);
 
-  /* Pass newly allocated es structure as argument to newpcb */
+  /* Задаем пользовательские данные, к-ые необходимо передавать во все callback-
+   * -функции для данного соединения. 
+   */
   tcp_arg(newpcb, arg);
   
-   /* initialize lwip tcp_recv callback function for newpcb  */ 
+   /* Задаем callback-функцию, вызываемую при получении новых пакетов от клиента. */ 
   tcp_recv(newpcb, c_tcp_recv);
     
-  /* Initialize lwip tcp_poll callback function for newpcb */
+  /* Задаем callback-функцию, вызываемую с опеределенным периодом. */
 //  tcp_poll(newpcb, c_tcp_poll, 0);
   
+  /* Добавляем новый дескриптор в общий массив дескрипторов. */
   conns->push_back(newpcb);
     
 #ifdef USE_LCD
@@ -306,9 +467,8 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_recv(void* arg,
 {
   arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
   
-  /* If a received package is NULL then the client disconnected.
-   * So close connection session
-   */
+  /* Если никаких пакетов не было получено от клиента, значит он отключился.
+   * В этом случае осуществляем удаление дескриптора данного соединения. */
   if (p == NULL) {
     c_tcp_connection_close(tpcb);
     
@@ -323,7 +483,7 @@ template<typename char_type, typename traits_type>
 err_t lwipbuf<char_type, traits_type>::c_tcp_poll(void* arg, 
                                                   struct tcp_pcb* tpcb)
 {
-  arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
+//  arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
   err_t ret_err = ERR_OK;
   
   return ret_err;
@@ -332,55 +492,18 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_poll(void* arg,
 template<typename char_type, typename traits_type>
 void lwipbuf<char_type, traits_type>::c_tcp_connection_close(struct tcp_pcb* tpcb)
 {
-  /* Remove all callbacks */
+  /* Удаляем все callback-функции для данного дескриптора. */
   tcp_arg(tpcb, NULL);
   tcp_sent(tpcb, NULL);
   tcp_recv(tpcb, NULL);
   tcp_poll(tpcb, NULL, 0);
   
-  /* Close tcp connection */
+  /* Закрываем TCP соединение. */
   tcp_close(tpcb);
   
 #ifdef USE_LCD
     LCD_UsrTrace("  State: A connection is closed!\n");
 #endif // USE_LCD
-}
-
-inline void cp1251_to_utf8(char *out, const char *in) {
-    static const char table[128*3 + 1] = {                 
-        "\320\202 \320\203 \342\200\232\321\223 \342\200\236\342\200\246\342\200\240\342\200\241"
-        "\342\202\254\342\200\260\320\211 \342\200\271\320\212 \320\214 \320\213 \320\217 "      
-        "\321\222 \342\200\230\342\200\231\342\200\234\342\200\235\342\200\242\342\200\223\342\200\224"
-        "   \342\204\242\321\231 \342\200\272\321\232 \321\234 \321\233 \321\237 "                     
-        "\302\240 \320\216 \321\236 \320\210 \302\244 \322\220 \302\246 \302\247 "                     
-        "\320\201 \302\251 \320\204 \302\253 \302\254 \302\255 \302\256 \320\207 "                     
-        "\302\260 \302\261 \320\206 \321\226 \322\221 \302\265 \302\266 \302\267 "
-        "\321\221 \342\204\226\321\224 \302\273 \321\230 \320\205 \321\225 \321\227 "
-        "\320\220 \320\221 \320\222 \320\223 \320\224 \320\225 \320\226 \320\227 "
-        "\320\230 \320\231 \320\232 \320\233 \320\234 \320\235 \320\236 \320\237 "
-        "\320\240 \320\241 \320\242 \320\243 \320\244 \320\245 \320\246 \320\247 "
-        "\320\250 \320\251 \320\252 \320\253 \320\254 \320\255 \320\256 \320\257 "
-        "\320\260 \320\261 \320\262 \320\263 \320\264 \320\265 \320\266 \320\267 "
-        "\320\270 \320\271 \320\272 \320\273 \320\274 \320\275 \320\276 \320\277 "
-        "\321\200 \321\201 \321\202 \321\203 \321\204 \321\205 \321\206 \321\207 "
-        "\321\210 \321\211 \321\212 \321\213 \321\214 \321\215 \321\216 \321\217 "
-    };
-    
-    while (*in) {
-        if (*in & 0x80) {
-            const char *p = &table[3 * (0x7f & *in++)];
-            if (*p == ' ') { continue; }
-            *out++ = *p++;
-            *out++ = *p++;
-            if (*p == ' ') { continue; }
-            *out++ = *p++;
-        }
-        else {
-            *out++ = *in++;
-        }
-    }
-
-    *out = 0;
 }
 
 } // namespace irs
