@@ -1,3 +1,9 @@
+// @brief класс lwipbuf представляющий собой буфер, использующий ethernet в
+// в качестве передачи данных.
+//
+// Дата: 18.04.2021
+// Дата создания: 12.04.2021
+
 #pragma once
 
 #ifndef TCP_SERVER_H
@@ -9,6 +15,7 @@
 #include <irscpp.h>
 #include <irsnetdefs.h>
 #include <irsencode.h>
+#include <irsstrconv.h>
 
 #include <ethernet_h7.h>
 #include <lwipopts_conf.h>
@@ -16,21 +23,21 @@
 #if LWIP_DHCP
 #include "app_ethernet.h"
 #include "lwip/dhcp.h"
-#endif
+#endif // LWIP_DHCP
 
 #ifdef USE_LCD
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 #include "lcd_trace.h"
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
   
-#endif
+#endif // USE_LCD
 
 #include "netif/etharp.h"
 
@@ -134,14 +141,14 @@ public:
   virtual int sync() _OVERRIDE_;
  
 private:
-  typedef vector<struct tcp_pcb*> arr_conn_type; 
+  typedef vector<struct tcp_pcb*> arr_conn_type;
   
   /* @brief функция инициализации сервера. Функция задает tcp слушателя, а также
    * callback-функции приема текущего соединения (accept-func). В случае, если
    * определен #define USE_LCD и инициализация произошла неудачно, выведет на
    * дисплей платы соответствующее сообщение.
    */
-  int init();
+  int tcp_init();
   
   /* @brief кастоманая функция overflow(), созданная для упрощения специализации
    * текущего класса. Данная функция вызывается при переполнении буфера в случае, 
@@ -240,18 +247,16 @@ lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
 {
   m_buffer.resize(m_sizebuf);
   m_temp_buffer.resize(m_sizebuf * sizeof(char_type));
-  
-  m_convert_buffer = new char[m_sizebuf * sizeof(char_type)]();
-//  m_convert_buffer = typeid(char_type) != typeid(char) 
-//    ? new char[m_sizebuf]() : nullptr;
 
-  /* Задаем буфер, в к-ые будут сохранятся данные, передаваемые через
+  m_convert_buffer = new char[m_sizebuf * sizeof(char_type)]();
+
+  /* Задаем буфер, в к-ые будут сохраняться данные, передаваемые через
    * потоки ввода/вывода. */
   char_type* buf = m_buffer.data();
   this->setp(buf, buf + m_buffer.size());
   
   /* Инициализация сервера. */
-  init();
+  IRS_ASSERT(tcp_init() < 0);
 }
 
 template<typename char_type, typename traits_type>
@@ -262,7 +267,7 @@ lwipbuf<char_type, traits_type>::~lwipbuf()
 }
 
 template<typename char_type, typename traits_type>
-int lwipbuf<char_type, traits_type>::init()
+int lwipbuf<char_type, traits_type>::tcp_init()
 {
   /* Создаем новый дескриптор соединения. */
   mp_tcp_pcb = tcp_new();
@@ -278,7 +283,7 @@ int lwipbuf<char_type, traits_type>::init()
       /* Задаем пользовательские данные, к-ые необходимо передавать при вызове
        * callback-функций.
        */
-      tcp_arg(mp_tcp_pcb, reinterpret_cast<void*>(&m_connections));
+      tcp_arg(mp_tcp_pcb, static_cast<void*>(&m_connections));
         
       /* Задаем callback-функцию получения дескриптора нового соединения. */
       tcp_accept(mp_tcp_pcb, c_tcp_accept);
@@ -310,11 +315,11 @@ void lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
     
 #if LWIP_NETIF_LINK_CALLBACK
   Ethernet_Link_Periodic_Handle(ap_netif);
-#endif
+#endif // LWIP_NETIF_LINK_CALLBACK
 
 #if LWIP_DHCP
   DHCP_Periodic_Handle(ap_netif, m_port);
-#endif
+#endif // LWIP_DHCP
 }
 
 template<typename char_type, typename traits_type>
@@ -361,13 +366,14 @@ template<typename char_type, typename traits_type>
 size_t lwipbuf<char_type, traits_type>::get_count_connected() const
 { return m_connections.size(); }
 
-
 template<typename char_type, typename traits_type>
 lwipbuf<char_type, traits_type>::int_type
 lwipbuf<char_type, traits_type>::overflow(int_type a_c,
                                           const char* ap_buffer,
                                           size_t a_sz)
 {
+  // TODO: Переписать добавление дополнительных символов без дополнительного
+  // буфера.
   size_t j = 0;
   for (size_t i = 0; i < a_sz; i++) {
     if (ap_buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
@@ -381,11 +387,10 @@ lwipbuf<char_type, traits_type>::overflow(int_type a_c,
    * в главный буфер при использовании потоков ввода/вывода. 
    */
   this->pbump(-a_sz);
-  
-  /* Очищаем данные, к-ые ранее были в буфере. */
-  m_temp_buffer.clear();
-  m_buffer.clear();
 
+  /* Очищаем данные, к-ые ранее были в буфере. */
+  m_buffer.clear();
+  
   if (a_c != traits_type::eof()) { m_buffer[0] = char(a_c); }
   
   return a_c == traits_type::eof();
@@ -397,12 +402,13 @@ lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
   /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
   
-  /* TODO: Не работает. Дописать перевод кодировки из UTF-32 to UTF-8. */
   /* Осуществляем перевод кодировок. */
-//  test::utf32_to_utf8((char*)&m_buffer.front(), m_convert_buffer);
-  
+  wstring temp(L"", sz);
+  for (size_t i = 0; i < sz; i++) { temp[i] = m_buffer[i]; }
+  string converted_str = wstring_to_utf8(temp);
+
   /* Отправляем данные клиентам. */
-  return this->overflow(c, m_convert_buffer, sz * sizeof(wchar_t));
+  return this->overflow(c, &converted_str.front(), converted_str.size());
 }
 
 template<typename char_type, typename traits_type>
@@ -428,7 +434,7 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg,
                                                     struct tcp_pcb* newpcb, 
                                                     err_t err)
 {
-  arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
+  arr_conn_type* conns = static_cast<arr_conn_type*>(arg);
   err_t ret_err;
   
   LWIP_UNUSED_ARG(err);
@@ -465,7 +471,7 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_recv(void* arg,
                                                   struct pbuf* p, 
                                                   err_t err)
 {
-  arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
+  arr_conn_type* conns = static_cast<arr_conn_type*>(arg);
   
   /* Если никаких пакетов не было получено от клиента, значит он отключился.
    * В этом случае осуществляем удаление дескриптора данного соединения. */
