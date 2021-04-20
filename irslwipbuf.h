@@ -253,7 +253,7 @@ lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
   /* Задаем буфер, в к-ые будут сохраняться данные, передаваемые через
    * потоки ввода/вывода. */
   char_type* buf = m_buffer.data();
-  this->setp(buf, buf + m_buffer.size());
+  this->setp(buf, buf + m_buffer.size() - 1);
   
   /* Инициализация сервера. */
   IRS_ASSERT(tcp_init() < 0);
@@ -335,9 +335,9 @@ void lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
   for (int i = m_connections.size() - 1; i >= 0; i--) {
     /* Осуществляем запись данных в буфер LWIP. */
     err_t err = tcp_write(m_connections[i], 
-                    ap_msg,
-                    size_msg,
-                    TCP_WRITE_FLAG_COPY);
+                          ap_msg,
+                          size_msg,
+                          TCP_WRITE_FLAG_COPY);
     
     /* Если данные успешно записались в буфер LWIP, осуществляем их отправку. */
     if (err == ERR_OK) { 
@@ -379,6 +379,7 @@ lwipbuf<char_type, traits_type>::overflow(int_type a_c,
     if (ap_buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
     m_temp_buffer[j++] = ap_buffer[i];
   }
+  m_temp_buffer[a_sz + 1] = '\0';
   
   /* Отправляем данные клиентам. */
   send(&m_temp_buffer.front(), j);
@@ -386,14 +387,13 @@ lwipbuf<char_type, traits_type>::overflow(int_type a_c,
   /* Устанавлием позицию каретки заполнения данных для корректной записи данных
    * в главный буфер при использовании потоков ввода/вывода. 
    */
-  this->pbump(-a_sz);
+  this->pbump(-a_sz + 1);
 
-  /* Очищаем данные, к-ые ранее были в буфере. */
-  m_buffer.clear();
+  m_temp_buffer.clear();
   
   if (a_c != traits_type::eof()) { m_buffer[0] = char(a_c); }
   
-  return a_c == traits_type::eof();
+  return 0;
 }
 
 template<>
@@ -419,7 +419,7 @@ lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
   ptrdiff_t sz = this->pptr() - this->pbase();
   
   /* Осуществляем перевод кодировок. */
-  cp1251_to_utf8(m_convert_buffer, &m_buffer.front());
+  cp1251_to_utf8(m_convert_buffer, sz, &m_buffer.front());
   
   /* Отправляем данные клиентам. */
   return this->overflow(c, m_convert_buffer, sz*2);

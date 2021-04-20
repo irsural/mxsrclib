@@ -25,7 +25,7 @@ namespace irs
    * перекодированные данные.
    * @param ap_in - указатель на строку в кодировке cp1251.
    */
-  inline void cp1251_to_utf8(char* ap_out, const char* ap_in)
+  inline void cp1251_to_utf8(char* ap_out, size_t a_out_size, const char* ap_in)
   {
     IRS_ASSERT(ap_out == NULL || ap_in == NULL);
     
@@ -48,7 +48,7 @@ namespace irs
       "\321\210 \321\211 \321\212 \321\213 \321\214 \321\215 \321\216 \321\217 "
     };
 
-    while (*ap_in) {
+    while (*ap_in && (a_out_size--) > 0) {
       if (*ap_in & 0x80) {
         const char *p = &table[3 * (0x7f & *ap_in++)];
         if (*p == ' ') { continue; }
@@ -73,7 +73,7 @@ namespace irs
    *
    * @return string - перекодированная строка в UTF-8.
    */
-  inline std::string wstring_to_utf8(const std::wstring& a_str)
+  inline string wstring_to_utf8(const wstring& a_str)
   {
      string str_utf8;
      
