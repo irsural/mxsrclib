@@ -290,7 +290,8 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
   #if LWIP_DHCP
   ,
   m_dhcp_fine_tmr_loop_timer(make_cnt_ms(DHCP_FINE_TIMER_MSECS)),
-  m_dhcp_coarse_tmr_loop_timer(make_cnt_ms(DHCP_COARSE_TIMER_MSECS))
+  m_dhcp_coarse_tmr_loop_timer(make_cnt_ms(DHCP_COARSE_TIMER_MSECS)),
+  m_dhcp_enabled(a_config.dhcp_enabled)
   #endif // LWIP_DHCP
 {
   mem_init();
@@ -340,7 +341,10 @@ irs::lwip::lwip_control_t::lwip_control_t(const config_t& a_config):
 irs::lwip::lwip_control_t::~lwip_control_t()
 {
 #if LWIP_DHCP
-  dhcp_stop(&m_netif);
+  if (m_dhcp_enabled) {
+    dhcp_release(&m_netif);
+    dhcp_stop(&m_netif);
+  }
 #endif // LWIP_DHCP
   netif_remove(&m_netif);
 }

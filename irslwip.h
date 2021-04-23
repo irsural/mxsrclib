@@ -7,27 +7,27 @@
 
 #define USE_DHCP
 
-#ifdef USE_LWIP 
+#ifdef USE_LWIP
 
 extern "C" {
 
 #pragma diag_suppress=Pa181
 #include <lwip/init.h>
 #include <lwip/ip_addr.h>
-  
+
 #ifndef IRS_STM32H7xx
 #include <lwip/timers.h>
 #else // defined(IRS_STM32H7xx)
 #include <lwip/timeouts.h>
 #endif // IRS_STM32H7xx
-  
+
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
 #include <lwip/mem.h>
 #include <lwip/memp.h>
 #include <lwip/dhcp.h>
 #include <netif/etharp.h>
-#pragma diag_default=Pa181  
+#pragma diag_default=Pa181
 
 } // extern "C"
 
@@ -166,7 +166,7 @@ public:
 private:
   void start_dhcp();
   void lwip_tick();
-  
+
   mxmac_t st_generate_mac(device_code_t a_device_code);
   //static err_t low_level_output(struct netif *ap_netif, struct pbuf *p);
   //err_t ethernetif_input();
@@ -181,6 +181,7 @@ private:
   #ifdef USE_DHCP
   loop_timer_t m_dhcp_fine_tmr_loop_timer;
   loop_timer_t m_dhcp_coarse_tmr_loop_timer;
+  bool m_dhcp_enabled;
   #endif // USE_DHCP
 };
 
@@ -1382,13 +1383,13 @@ private:
   typedef address_t address_type;
   void create();
   #ifndef IRS_STM32H7xx
-  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf,
     ip_addr *ap_addr, u16_t a_port);
-  #else 
-  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf, 
+  #else
+  static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf,
     const ip_addr_t *ap_addr, u16_t a_port);
   #endif // IRS_STM32H7xx
-    
+
   const mxip_t m_local_ip;
   const mxip_t m_dest_ip;
   const irs_u16 m_local_port;
