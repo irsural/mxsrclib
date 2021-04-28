@@ -20,6 +20,8 @@
 #include <ethernet_h7.h>
 #include <lwipopts_conf.h>
 
+#include <stm32h7xx_hal.h>
+
 #if LWIP_DHCP
 #include "app_ethernet.h"
 #include "lwip/dhcp.h"
@@ -56,7 +58,7 @@ namespace irs
 {
 
 /* Размер LWIP буфера по умолчанию */
-#define IRSLIB_LWIPBUF_SIZE 128
+#define IRSLIB_LWIPBUF_SIZE 15
   
 template<typename char_type, typename traits_type = char_traits<char_type>>
 class lwipbuf : public basic_streambuf<char_type, traits_type>
@@ -149,6 +151,15 @@ private:
    * дисплей платы соответствующее сообщение.
    */
   int tcp_init();
+  
+  /* @brief функция копирования строки в m_temp_buffer с корректными '\n', а 
+   * именно функция добавляет перед каждым '\n' символ '\r'.
+   *
+   * @param ap_str - строка, которую необходимо скопировать.
+   *
+   * @return size_t - получившийся размер строки вместе с добавленными символами.
+   */
+  size_t copy_str_to_buffer_with_correct_endls(const char* ap_str);
   
   /* @brief кастоманая функция overflow(), созданная для упрощения специализации
    * текущего класса. Данная функция вызывается при переполнении буфера в случае, 
@@ -253,7 +264,7 @@ lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
   /* Задаем буфер, в к-ые будут сохраняться данные, передаваемые через
    * потоки ввода/вывода. */
   char_type* buf = m_buffer.data();
-  this->setp(buf, buf + m_buffer.size() - 1);
+  this->setp(buf, buf + m_buffer.size());
   
   /* Инициализация сервера. */
   IRS_ASSERT(tcp_init() < 0);
@@ -367,31 +378,19 @@ size_t lwipbuf<char_type, traits_type>::get_count_connected() const
 { return m_connections.size(); }
 
 template<typename char_type, typename traits_type>
-lwipbuf<char_type, traits_type>::int_type
-lwipbuf<char_type, traits_type>::overflow(int_type a_c,
-                                          const char* ap_buffer,
-                                          size_t a_sz)
+size_t 
+lwipbuf<char_type, traits_type>::copy_str_to_buffer_with_correct_endls(const char* ap_str)
 {
-  // TODO: Переписать добавление дополнительных символов без дополнительного
-  // буфера.
-  size_t j = 0;
-  for (size_t i = 0; i < a_sz; i++) {
-    if (ap_buffer[i] == '\n') { m_temp_buffer[j++] = '\r'; }
-    m_temp_buffer[j++] = ap_buffer[i];
+  if (ap_str) {
+    size_t j = 0;
+    
+    for (size_t i = 0; i < strlen(ap_str); i++) {
+      if (ap_str[i] == '\n') { m_temp_buffer[j++] = '\r'; }
+      m_temp_buffer[j++] = ap_str[i];
+    }
+    
+    return j;
   }
-  m_temp_buffer[a_sz + 1] = '\0';
-  
-  /* Отправляем данные клиентам. */
-  send(&m_temp_buffer.front(), j);
-  
-  /* Устанавлием позицию каретки заполнения данных для корректной записи данных
-   * в главный буфер при использовании потоков ввода/вывода. 
-   */
-  this->pbump(-a_sz + 1);
-
-  m_temp_buffer.clear();
-  
-  if (a_c != traits_type::eof()) { m_buffer[0] = char(a_c); }
   
   return 0;
 }
@@ -407,8 +406,22 @@ lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
   for (size_t i = 0; i < sz; i++) { temp[i] = m_buffer[i]; }
   string converted_str = wstring_to_utf8(temp);
 
+  size_t msg_size = copy_str_to_buffer_with_correct_endls(converted_str.c_str());
+  
   /* Отправляем данные клиентам. */
-  return this->overflow(c, &converted_str.front(), converted_str.size());
+  send(&m_temp_buffer.front(), msg_size);
+  
+  /* Устанавлием позицию каретки заполнения данных для корректной записи данных
+   * в главный буфер при использовании потоков ввода/вывода. 
+   */
+  this->pbump(-sz);
+  
+  if (c != traits_type::eof()) {
+    m_buffer[0] = static_cast<wchar_t>(c);
+    this->pbump(1);
+  }
+  
+  return 0;
 }
 
 template<typename char_type, typename traits_type>
@@ -421,8 +434,23 @@ lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
   /* Осуществляем перевод кодировок. */
   cp1251_to_utf8(m_convert_buffer, sz, &m_buffer.front());
   
+  size_t msg_size = copy_str_to_buffer_with_correct_endls(m_convert_buffer);
+  
   /* Отправляем данные клиентам. */
-  return this->overflow(c, m_convert_buffer, sz*2);
+  send(&m_temp_buffer.front(), msg_size);
+  
+  /* Устанавлием позицию каретки заполнения данных для корректной записи данных
+   * в главный буфер при использовании потоков ввода/вывода. 
+   */
+  this->pbump(-sz);
+  
+  if (c != traits_type::eof()) {
+    m_buffer[0] = static_cast<char>(c);
+    this->pbump(1);
+  }
+  
+  /* Отправляем данные клиентам. */
+  return 0;
 }
 
 template<typename char_type, typename traits_type>
