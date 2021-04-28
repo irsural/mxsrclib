@@ -58,7 +58,7 @@ namespace irs
 {
 
 /* Размер LWIP буфера по умолчанию */
-#define IRSLIB_LWIPBUF_SIZE 15
+#define IRSLIB_LWIPBUF_SIZE 128
   
 template<typename char_type, typename traits_type = char_traits<char_type>>
 class lwipbuf : public basic_streambuf<char_type, traits_type>
