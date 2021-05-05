@@ -395,6 +395,16 @@ lwipbuf<char_type, traits_type>::copy_str_to_buffer_with_correct_endls(const cha
   return 0;
 }
 
+template<typename char_type, typename traits_type>
+lwipbuf<char_type, traits_type>::int_type 
+lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
+{
+#ifndef IRS_NOEXCEPTION
+  throw runtime_error("Не существует перегруженная функция overflow для типа " + 
+                      typeid(char_type).name());
+#endif // IRS_NOEXCEPTION
+}
+
 template<>
 lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
 {
