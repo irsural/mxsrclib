@@ -630,6 +630,23 @@ public:
   }
 };
 
+class wzerobuf: public wstreambuf
+{
+public:
+  virtual int overflow(int = EOF)
+  {
+    return 0;
+  }
+  virtual wint_t underflow()
+  {
+    return 0;
+  }
+  virtual int sync()
+  {
+    return overflow();
+  }
+};
+
 #ifndef __WATCOMC__
 // Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf
 class ostream_buf_init_t
@@ -658,7 +675,11 @@ void send_wsa_last_message_err(const char* ap_file, int a_line);
 void send_message_err(int a_error_code, const char* ap_file, int a_line);
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
+template<typename stream_type, typename buffer_type>
+stream_type& basic_mlog();
+
 ostream& mlog();
+wostream& wmlog();
 
 #ifdef IRS_LIB_FLASH_ASSERT
 template <class T>

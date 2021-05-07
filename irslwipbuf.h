@@ -1,4 +1,4 @@
-// @brief класс lwipbuf представляющий собой буфер, использующий ethernet в
+// @brief класс basic_lwipbuf представляющий собой буфер, использующий ethernet в
 // в качестве передачи данных.
 //
 // Дата: 18.04.2021
@@ -57,11 +57,13 @@ extern "C" {
 namespace irs
 {
 
+// IRS_FULL_STDCPPLIB_SUPPORT  
+  
 /* Размер LWIP буфера по умолчанию */
 #define IRSLIB_LWIPBUF_SIZE 128
   
 template<typename char_type, typename traits_type = char_traits<char_type>>
-class lwipbuf : public basic_streambuf<char_type, traits_type>
+class basic_lwipbuf : public basic_streambuf<char_type, traits_type>
 {
 public:
   typedef typename traits_type::int_type int_type;
@@ -73,13 +75,13 @@ public:
    * @param port - порт, на который будем отправлять сообщения. По умолчанию -
    * IRSLIB_LOG_PORT (5008)
    */
-  lwipbuf(size_t sizebuf = IRSLIB_LWIPBUF_SIZE, 
+  basic_lwipbuf(size_t sizebuf = IRSLIB_LWIPBUF_SIZE, 
           u16_t port = IRSLIB_LOG_PORT);
   
   /* @brief деструктор по умолчанию. Высвобождает динамическую память, 
    * выделенную под буферы.
    */
-  virtual ~lwipbuf();
+  virtual ~basic_lwipbuf();
  
   /* @brief функция "тик". Ее необходимо вызывать в вашем цикле на каждой
    * итерации. Она осуществляет обработку принятие пакетов на сервер через ethernet.
@@ -95,7 +97,7 @@ public:
    * @param ap_msg - отправляемое сообщение.
    * @param size_msg - размерность сообщения.
    */
-  virtual void send(const void* ap_msg, size_t size_msg);
+  virtual void send(const void* ap_msg, size_t a_size_msg);
 
   /* @brief функция получения порта сооединения. 
    *
@@ -237,7 +239,7 @@ private:
 };
 
 template<typename char_type, typename traits_type>
-lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
+basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t sizebuf, u16_t port)
   : m_sizebuf(sizebuf)
   , m_port(port)
 {
@@ -256,14 +258,14 @@ lwipbuf<char_type, traits_type>::lwipbuf(size_t sizebuf, u16_t port)
 }
 
 template<typename char_type, typename traits_type>
-lwipbuf<char_type, traits_type>::~lwipbuf()
+basic_lwipbuf<char_type, traits_type>::~basic_lwipbuf()
 {
   if (m_convert_buffer) { delete[] m_convert_buffer; } 
   if (mp_tcp_pcb) { memp_free(MEMP_TCP_PCB, mp_tcp_pcb); }
 }
 
 template<typename char_type, typename traits_type>
-int lwipbuf<char_type, traits_type>::tcp_init()
+int basic_lwipbuf<char_type, traits_type>::tcp_init()
 {
   /* Создаем новый дескриптор соединения. */
   mp_tcp_pcb = tcp_new();
@@ -301,7 +303,7 @@ int lwipbuf<char_type, traits_type>::tcp_init()
 }
 
 template<typename char_type, typename traits_type>
-void lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
+void basic_lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
 {
   /* Получаем пакеты, полученные от клиентов на уровне ethernet. */
   ethernetif_input(ap_netif);
@@ -319,7 +321,8 @@ void lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
 }
 
 template<typename char_type, typename traits_type>
-void lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
+void 
+basic_lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
 {
 #ifdef USE_LCD
   if (m_connections.size() == 0) {
@@ -351,20 +354,20 @@ void lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
 }  
 
 template<typename char_type, typename traits_type>
-u16_t lwipbuf<char_type, traits_type>::get_port() const
+u16_t basic_lwipbuf<char_type, traits_type>::get_port() const
 { return m_port; }
 
 template<typename char_type, typename traits_type>
-bool lwipbuf<char_type, traits_type>::is_any_connected() const
+bool basic_lwipbuf<char_type, traits_type>::is_any_connected() const
 { return m_connections.size() > 0; }
 
 template<typename char_type, typename traits_type>
-size_t lwipbuf<char_type, traits_type>::get_count_connected() const
+size_t basic_lwipbuf<char_type, traits_type>::get_count_connected() const
 { return m_connections.size(); }
 
 template<typename char_type, typename traits_type>
 size_t 
-lwipbuf<char_type, traits_type>::copy_str_to_buffer_with_correct_endls(const char* ap_str)
+basic_lwipbuf<char_type, traits_type>::copy_str_to_buffer_with_correct_endls(const char* ap_str)
 {
   if (ap_str) {
     size_t j = 0;
@@ -381,17 +384,16 @@ lwipbuf<char_type, traits_type>::copy_str_to_buffer_with_correct_endls(const cha
 }
 
 template<typename char_type, typename traits_type>
-lwipbuf<char_type, traits_type>::int_type 
-lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
+basic_lwipbuf<char_type, traits_type>::int_type 
+basic_lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
 {
 #ifndef IRS_NOEXCEPTION
-  throw runtime_error("Не существует перегруженная функция overflow для типа " + 
-                      typeid(char_type).name());
+  throw runtime_error("Не существует перегруженная функция overflow для используемого типа");
 #endif // IRS_NOEXCEPTION
 }
 
 template<>
-lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
+basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
 {
   /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
@@ -419,9 +421,8 @@ lwipbuf<wchar_t>::int_type lwipbuf<wchar_t>::overflow(int_type c) _OVERRIDE_
   return 0;
 }
 
-template<typename char_type, typename traits_type>
-lwipbuf<char_type, traits_type>::int_type 
-lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
+template<>
+basic_lwipbuf<char>::int_type basic_lwipbuf<char>::overflow(int_type c) _OVERRIDE_
 {
   /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
@@ -449,11 +450,11 @@ lwipbuf<char_type, traits_type>::overflow(int_type c) _OVERRIDE_
 }
 
 template<typename char_type, typename traits_type>
-int lwipbuf<char_type, traits_type>::sync() _OVERRIDE_
+int basic_lwipbuf<char_type, traits_type>::sync() _OVERRIDE_
 { return this->pptr() == this->pbase() ? 0 : overflow(); }
 
 template<typename char_type, typename traits_type>
-err_t lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg, 
+err_t basic_lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg, 
                                                     struct tcp_pcb* newpcb, 
                                                     err_t err)
 {
@@ -489,7 +490,7 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg,
 }
 
 template<typename char_type, typename traits_type>
-err_t lwipbuf<char_type, traits_type>::c_tcp_recv(void* arg, 
+err_t basic_lwipbuf<char_type, traits_type>::c_tcp_recv(void* arg, 
                                                   struct tcp_pcb* tpcb, 
                                                   struct pbuf* p, 
                                                   err_t err)
@@ -509,7 +510,7 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_recv(void* arg,
 }
 
 template<typename char_type, typename traits_type>
-err_t lwipbuf<char_type, traits_type>::c_tcp_poll(void* arg, 
+err_t basic_lwipbuf<char_type, traits_type>::c_tcp_poll(void* arg, 
                                                   struct tcp_pcb* tpcb)
 {
 //  arr_conn_type* conns = reinterpret_cast<arr_conn_type*>(arg);
@@ -519,7 +520,8 @@ err_t lwipbuf<char_type, traits_type>::c_tcp_poll(void* arg,
 }
 
 template<typename char_type, typename traits_type>
-void lwipbuf<char_type, traits_type>::c_tcp_connection_close(struct tcp_pcb* tpcb)
+void 
+basic_lwipbuf<char_type, traits_type>::c_tcp_connection_close(struct tcp_pcb* tpcb)
 {
   /* Удаляем все callback-функции для данного дескриптора. */
   tcp_arg(tpcb, NULL);
@@ -534,6 +536,10 @@ void lwipbuf<char_type, traits_type>::c_tcp_connection_close(struct tcp_pcb* tpc
     LCD_UsrTrace("  State: A connection is closed!\n");
 #endif // USE_LCD
 }
+
+typedef basic_lwipbuf<char, char_traits<char>> lwipbuf;
+
+typedef basic_lwipbuf<wchar_t, char_traits<wchar_t>> wlwipbuf;
 
 } // namespace irs
 
