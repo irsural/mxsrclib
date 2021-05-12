@@ -365,8 +365,13 @@ stream_type& irs::basic_mlog<stream_type, buffer_type>()
   return mlog_obj;
 }
 
-ostream& irs::mlog() { return irs::basic_mlog<ostream, irs::zerobuf>(); }
-wostream& irs::wmlog() { return irs::basic_mlog<wostream, irs::wzerobuf>(); }
+ostream& irs::mlog() { 
+  return irs::basic_mlog<ostream, irs::zerobuf>(); 
+}
+
+wostream& irs::wmlog() { 
+  return irs::basic_mlog<wostream, irs::wzerobuf>(); 
+}
 
 namespace irs {
 

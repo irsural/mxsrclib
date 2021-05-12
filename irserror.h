@@ -613,6 +613,26 @@ public:
 };
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+#if __IAR_SYSTEMS_ICC__ >= 9
+template<typename char_type, typename traits_type = char_traits<char_type>>
+class basic_zerobuf : public basic_streambuf<char_type, traits_type>
+{
+public:
+  typedef typename traits_type::int_type int_type;
+  
+  virtual int_type overflow(int_type = EOF)
+  { return 0; }
+  
+  virtual int_type underflow()
+  { return 0; }
+  
+  virtual int sync()
+  { return this->overflow(); }
+};
+
+typedef basic_zerobuf<char> zerobuf;
+typedef basic_zerobuf<wchar_t> wzerobuf;
+#else
 class zerobuf: public streambuf
 {
 public:
@@ -646,6 +666,8 @@ public:
     return overflow();
   }
 };
+#endif // __IAR_SYSTEMS_ICC__ >= 9
+
 
 #ifndef __WATCOMC__
 // Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf
