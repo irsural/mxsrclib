@@ -6,8 +6,8 @@
 
 #pragma once
 
-#ifndef TCP_SERVER_H
-#define TCP_SERVER_H
+#ifndef LWIP_BUF_H
+#define LWIP_BUF_H
 
 #define USE_LCD
 
@@ -204,9 +204,6 @@ private:
    */
   static void c_tcp_connection_close(struct tcp_pcb* tpcb);
   
-  /* Порт, по к-ому осуществляется отправка сообщений. */
-  u16_t m_port;
-  
   /* Начальный дескриптор соединения. */
   struct tcp_pcb* mp_tcp_pcb;
 
@@ -214,6 +211,9 @@ private:
    * использования потоков ввода/вывода. 
    */
   size_t m_sizebuf;
+  
+  /* Порт, по к-ому осуществляется отправка сообщений. */
+  u16_t m_port;
   
   /* Буфер, используемый для перевода данных из одного кодировки в другую.
    * По умолчанию размерность данного буфера равняется m_sizebuf*2. В случае
@@ -543,4 +543,4 @@ typedef basic_lwipbuf<wchar_t, char_traits<wchar_t>> wlwipbuf;
 
 } // namespace irs
 
-#endif // TCP_SERVER_H
+#endif // LWIP_BUF_H
