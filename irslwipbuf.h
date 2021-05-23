@@ -1,7 +1,7 @@
 // @brief класс basic_lwipbuf представляющий собой буфер, использующий ethernet в
 // в качестве передачи данных.
 //
-// Дата: 18.04.2021
+// Дата: 23.05.2021
 // Дата создания: 12.04.2021
 
 #pragma once
@@ -71,12 +71,12 @@ public:
   /* @brief конструктор по умолчанию. Выделяет динамическую память под буферы,
    * вместе с этим проводит инициализацию сервера и его запуск.
    * 
-   * @param sizebuf - размер буфера. По умолчанию - IRSLIB_LWIPBUF_SIZE (128)
-   * @param port - порт, на который будем отправлять сообщения. По умолчанию -
+   * @param a_sizebuf - размер буфера. По умолчанию - IRSLIB_LWIPBUF_SIZE (128)
+   * @param a_port - порт, на который будем отправлять сообщения. По умолчанию -
    * IRSLIB_LOG_PORT (5008)
    */
-  basic_lwipbuf(size_t sizebuf = IRSLIB_LWIPBUF_SIZE, 
-          u16_t port = IRSLIB_LOG_PORT);
+  basic_lwipbuf(size_t a_sizebuf = IRSLIB_LWIPBUF_SIZE, 
+          u16_t a_port = IRSLIB_LOG_PORT);
   
   /* @brief деструктор по умолчанию. Высвобождает динамическую память, 
    * выделенную под буферы.
@@ -219,7 +219,7 @@ private:
    * По умолчанию размерность данного буфера равняется m_sizebuf*2. В случае
    * использования > UTF-8 размерность задается m_sizebuf * sizeof(char_type).
    */
-  char* m_convert_buffer;
+  char* mp_convert_buffer;
   
   /* Глваного буфера, в который происходит заполнение данных в случае
    * использования потоков ввода/вывода. 
@@ -239,14 +239,15 @@ private:
 };
 
 template<typename char_type, typename traits_type>
-basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t sizebuf, u16_t port)
-  : m_sizebuf(sizebuf)
-  , m_port(port)
+basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t a_sizebuf, 
+                                                     u16_t a_port)
+  : m_sizebuf(a_sizebuf)
+  , m_port(a_port)
 {
   m_buffer.resize(m_sizebuf);
   m_temp_buffer.resize(m_sizebuf * sizeof(char_type));
 
-  m_convert_buffer = new char[m_sizebuf * sizeof(char_type)]();
+  mp_convert_buffer = new char[m_sizebuf * sizeof(char_type)]();
 
   /* Задаем буфер, в к-ые будут сохраняться данные, передаваемые через
    * потоки ввода/вывода. */
@@ -260,7 +261,7 @@ basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t sizebuf, u16_t port)
 template<typename char_type, typename traits_type>
 basic_lwipbuf<char_type, traits_type>::~basic_lwipbuf()
 {
-  if (m_convert_buffer) { delete[] m_convert_buffer; } 
+  if (mp_convert_buffer) { delete[] mp_convert_buffer; } 
   if (mp_tcp_pcb) { memp_free(MEMP_TCP_PCB, mp_tcp_pcb); }
 }
 
@@ -322,7 +323,8 @@ void basic_lwipbuf<char_type, traits_type>::tick(struct netif* ap_netif)
 
 template<typename char_type, typename traits_type>
 void 
-basic_lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
+basic_lwipbuf<char_type, traits_type>::send(const void* ap_msg, 
+                                            size_t a_size_msg)
 {
 #ifdef USE_LCD
   if (m_connections.size() == 0) {
@@ -335,7 +337,7 @@ basic_lwipbuf<char_type, traits_type>::send(const void* ap_msg, size_t size_msg)
     /* Осуществляем запись данных в буфер LWIP. */
     err_t err = tcp_write(m_connections[i], 
                           ap_msg,
-                          size_msg,
+                          a_size_msg,
                           TCP_WRITE_FLAG_COPY);
     
     /* Если данные успешно записались в буфер LWIP, осуществляем их отправку. */
@@ -428,9 +430,9 @@ basic_lwipbuf<char>::int_type basic_lwipbuf<char>::overflow(int_type c) _OVERRID
   ptrdiff_t sz = this->pptr() - this->pbase();
   
   /* Осуществляем перевод кодировок. */
-  cp1251_to_utf8(m_convert_buffer, sz, &m_buffer.front());
+  cp1251_to_utf8(mp_convert_buffer, sz, &m_buffer.front());
   
-  size_t msg_size = copy_str_to_buffer_with_correct_endls(m_convert_buffer);
+  size_t msg_size = copy_str_to_buffer_with_correct_endls(mp_convert_buffer);
   
   /* Отправляем данные клиентам. */
   send(&m_temp_buffer.front(), msg_size);
