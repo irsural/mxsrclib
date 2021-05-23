@@ -31,8 +31,6 @@ extern "C" {
 
 } // extern "C"
 
-#endif // USE_LWIP
-
 #if defined(IRS_STM32H7xx)// || defined(ARMxxx)
 #define IRSLIB_USE_LWIP_CONTROL
 #endif
@@ -48,6 +46,8 @@ extern "C" {
 #endif // include ethernet
 
 #endif // IRSLIB_USE_LWIP_CONTROL
+
+#endif // USE_LWIP
 
 #include <irsfinal.h>
 
