@@ -241,6 +241,8 @@ typedef uint32_t        		irs_u32;
 typedef int64_t             irs_i64;
 // 64-битовое целое без знака
 typedef uint64_t            irs_u64;
+
+#define override _OVERRIDE_
 #else // !IRS_CPP11_SUPPORT
 // ќдин из типов используетс€ в функции detect_cpu_endian, поэтому стоит выше
 // других объ€влений типов
@@ -257,6 +259,7 @@ typedef signed long 		 		irs_i32;
 // 32-битовое целое без знака
 typedef unsigned long 	 		irs_u32;
 
+#define _OVERRIDE_
 # ifdef __BORLANDC__
 // 64-битовое целое со знаком
 typedef signed __int64    irs_i64;

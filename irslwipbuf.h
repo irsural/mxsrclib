@@ -52,8 +52,6 @@ extern "C" {
 #include "lwip/stats.h"
 #include "lwip/tcp.h"
 
-#define _OVERRIDE_
-
 namespace irs
 {
 
