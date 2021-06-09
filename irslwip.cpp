@@ -426,11 +426,15 @@ mxmac_t irs::lwip::lwip_control_t::get_mac()
 
 bool irs::lwip::lwip_control_t::is_dhcp_ready()
 {
+#if LWIP_DHCP
   if (dhcp_supplied_address(&m_netif)) {
     return true;
   } else {
     return false;
   }
+#else
+  return false;
+#endif // LWIP_DCHP
 }
 
 
