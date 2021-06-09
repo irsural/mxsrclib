@@ -244,10 +244,6 @@ inline std::string wstring_to_utf_8(const std::wstring& a_str)
   return str;
 }
 
-/*inline std::string utf_8_to_cp1251(const std::string& a_str)
-{
-}*/
-
 # endif // !QT_CORE_LIB
 #else // !IRS_WIN32
 # if IRS_USE_UTF8_CPP

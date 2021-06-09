@@ -357,11 +357,20 @@ void irs::send_message_err(int a_error_code, const char* ap_file,
 }
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
-ostream& irs::mlog()
+template<typename stream_type, typename buffer_type>
+stream_type& irs::basic_mlog<stream_type, buffer_type>()
 {
-  static irs::zerobuf buf;
-  static ostream mlog_obj(&buf);
+  static buffer_type buf;
+  static stream_type mlog_obj(&buf);
   return mlog_obj;
+}
+
+ostream& irs::mlog() { 
+  return irs::basic_mlog<ostream, irs::zerobuf>(); 
+}
+
+wostream& irs::wmlog() { 
+  return irs::basic_mlog<wostream, irs::wzerobuf>(); 
 }
 
 namespace irs {
