@@ -2475,7 +2475,12 @@ irs_menu_spin_item_t::string_type irs_menu_spin_item_t::param_to_str() const
   string_type str_value;
 
   ostrstream ostr;
-  ostr << fixed << setprecision(str_precision) << m_mantissa << ends;
+  if (m_prefixes.empty()) {
+    ostr << defaultfloat << uppercase;
+  } else {
+    ostr << fixed;
+  }
+  ostr << setprecision(str_precision) << m_mantissa << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
   ostr.rdbuf()->freeze(false);
@@ -2522,7 +2527,12 @@ int irs_menu_spin_item_t::get_precision_fixed() const
 
   IRS_LIB_ASSERT(int_part_digit_count > 0);
 
-  int precision = m_precision - (int_part_digit_count/* - 1*/);
+  int precision = m_precision;
+  if (m_prefixes.empty()) {
+    precision -= (int_part_digit_count - 1);
+  } else {
+    precision -= int_part_digit_count;
+  }
   if (precision < 0) {
     precision = 0;
   }
@@ -2594,7 +2604,11 @@ irs_menu_spin_item_t::string_type irs_menu_spin_item_t::conv_num_to_str_general(
   }
 
   ostrstream ostr;
-  ostr << setprecision(m_precision) << a_value << ends;
+  ostr << setprecision(m_precision);
+  if (m_prefixes.empty()) {
+    ostr << uppercase;
+  }
+  ostr << a_value << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
   ostr.rdbuf()->freeze(false);
@@ -2871,7 +2885,8 @@ irs_menu_spin_item_t::get_parametr_string(
       }
     }
 
-    const size_type size = min(m_result_str.size(), a_length - 1);
+    //const size_type size = min(m_result_str.size(), a_length - 1);
+    const size_type size = min(m_result_str.size(), a_length);
 
     if (size > 0) {
       memcpy(reinterpret_cast<void*>(a_parametr_string),
