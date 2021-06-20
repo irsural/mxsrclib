@@ -61,7 +61,7 @@ namespace irs
  *       VID/PID одинаковы.
  *   - irs_u8 max_configuration_size - максимальное количество конфигураций
  *
- * - Дескриптор конфигурации (Последовательность описания: конфигурация, интерфейсы, 
+ * - Дескриптор конфигурации (Последовательность описания: конфигурация, интерфейсы,
  *                            конечные точки (endpoints), классы, производитель (vendor)):
  *   - irs_u8 length - общая длина дескрипора конфигурации
  *   - irs_u8 configuration_type - тип дескриптора - конфигурация
@@ -71,7 +71,7 @@ namespace irs
  *   - irs_u8 configuration_value - индекс данной конфигурации
  *   - irs_u8 index_configuration - индекс строки, которая описывает данную конфигурацию
  *   - irs_u8 bm_attributes - признак того, что устройство будет питаться от шины USB
- *   - irs_u8 max_power - максимальное количество ампер
+ *   - irs_u8 max_power - максимальное число ампер
  *   ---- Затем идет описание дескриптора интерфейса ----
  *   - irs_u8 interface_length - общая длина дескриптора интерфейса
  *   - irs_u8 interface_type - тип дескриптора – интерфейс
@@ -101,15 +101,15 @@ namespace irs
  *   - irs_u8 endpoint_attributes - тип конечной точки
  *   - irs_u8 lb_max_packet_size - младший байт максимального размера пакета
  *   - irs_u8 hb_max_packet_size - старший байт максимального размера пакета
- * NOTE: по стандарту больше 0x40 указывать для размера пакета не стоит. 
+ * NOTE: по стандарту больше 0x40 указывать для размера пакета не стоит.
  *       Если передаваемый пакет будет отличаться по размеру, то будут проблемы!
  *   - irs_u8 endpoint_interval_polling - интервал опроса
  *   ---- Затем продолжается описание конечных точек также, как было определено описание предыдущей конечной точки ----
  *   - ...
- * 
- * - Дескриптор репорта (далее для простоты понимания вместо названий переменных 
- *                       будут указываться пары чисел с их описанием. 
- *                       Числа для примера взяты из проекта по написанию custrom-hid 
+ *
+ * - Дескриптор репорта (далее для простоты понимания вместо названий переменных
+ *                       будут указываться пары чисел с их описанием.
+ *                       Числа для примера взяты из проекта по написанию custrom-hid
  *                       и их можно менять под свои задачи):
  *   - 0x06, 0x00, 0xff - usage_page (generic desktop)
  *   - 0x09, 0x01 - usage (vendor usage 1)
@@ -124,7 +124,7 @@ namespace irs
  *   - 0x85, 0x01 - report_id (1)
  *   - 0x09, 0x01 - usage (vendor usage 1)
  *   - 0x91, 0x82 - output (data, var, abs, vol)
- *  
+ *
  *   - 0x85, 0x02 - report_id (2)
  *   - 0x09, 0x02 - usage (vendor usage 2)
  *   - 0x15, 0x00 - logical_minimum (0)
@@ -135,7 +135,7 @@ namespace irs
  *   - 0x85, 0x02 - report_id (2)
  *   - 0x09, 0x02 - usage (vendor usage 2)
  *   - 0x91, 0x82 - output (data, var, abs, vol)
- * 
+ *
  *   - 0x85, 0x03 - report_id (3)
  *   - 0x09, 0x03 - usage (vendor usage 3)
  *   - 0x15, 0x00 - logical_minimum (0)
@@ -146,7 +146,7 @@ namespace irs
  *   - 0x85, 0x03 - report_id (3)
  *   - 0x09, 0x03 - usage (vendor usage 3)
  *   - 0x91, 0x82 - output (data, var, abs, vol)
- * 
+ *
  *   - 0x85, 0x04 - report_id (4)
  *   - 0x09, 0x04 - usage (vendor usage 4)
  *   - 0x75, 0x08 - report_size (8)
@@ -155,18 +155,82 @@ namespace irs
  *   - 0xc0 - end_collection
  */
 
-typedef struct end_point
+ /* TODO: Упростить работу с парами переменных старший/младший байты
+  *       посредству написания приватной функции деления числа на старшую часть и младшую
+  */
+
+typedef struct
 {
-  void (*callback)(void);
-  void* pma;
-  uint16 pmaSize;
-  uint8 address;
-  uint8 type : 2;
-  uint8 doubleBuffer : 1;
-  uint8 tx : 1; // 1 if TX, 0 if RX
-  uint8 exclusive : 1; // 1 if cannot use the same endpoint number for both rx and tx
-  uint8 align : 1; // 1 if next endpoint of the opposite type shares the same endpoint number as this 
-} end_point;
+  irs_u8 length; // общая длина дескриптора
+  irs_u8 desc_type; // показывает, что за дескриптор – определяет его тип
+} basic_desc;
+
+typedef struct : public basic_desc
+{
+  irs_u8 number; // порядковый номер интерфейса
+  irs_u8 alternate_setting; // признак альтернативного интерфейса
+  irs_u8 count_endpoints; // количество конечных точек
+  irs_u8 iclass; // класс интерфейса (например, HID)
+  irs_u8 subclass; // сабкласс интерфейса
+  irs_u8 protocol; // протокол интерфейса
+  irs_u8 index; // иднекс строки, описывающей интерфейс
+} desc_interface;
+
+typedef struct : public basic_desc
+{
+  irs_u8 lb_bcd; // младший байт версии класса
+  irs_u8 hb_bcd; // страший байт версии класса
+  irs_u8 contry_code; // код страны
+  irs_u8 count_reports; // сколько будет дескрипторов report
+} desc_class;
+
+typedef struct : public basic_desc
+{
+  /* TODO: Описатб структуру для report дескриптора */
+} desc_report;
+
+typedef struct : public basic_desc
+{
+  irs_u8 address; // адрес конечной точки и направление 1 (IN) (be like 0x81)
+  irs_u8 attributes; // тип конечной точки. Не путать с desc_type!
+  irs_u8 lb_max_packet_size; // младший байт максимального размера пакета
+  irs_u8 hb_max_packet_size; // старший байт максимального размера пакета
+  irs_u8 interval_polling; // интервал опроса
+} desc_endpoint;
+
+typedef struct : public basic_desc
+{
+  irs_u8 lobyte_bcd_usb; // младший байт версии usb, к-ую поддерживает устройство
+  irs_u8 hibyte_bcd_usb; // страший байт версии usb, к-ую поддерживает устройство
+  irs_u8 device_class; // класс по стандарту usb. Если указан 0x00, то класс отвечает сам за себя
+  irs_u8 device_subclass; // сабкласс по стандарту usb. Если указан 0x00, то сабкласс отвечает сам за себя
+  irs_u8 device_protocol; // протокол по стандарту usb. Если указан 0x00, то протокол отвечает сам за себя
+  irs_u8 max_packet_size; // максимальный размер пакета для endpoint 0 (при конфигурировании)
+  irs_u8 lobyte_vid; // младший байт vendor id
+  irs_u8 hibyte_vid; // старший байт vendor id
+  irs_u8 lobyte_product_id; // младший байт product id
+  irs_u8 hibyte_product_id; // старший байт product id
+  irs_u8 lobyte_version; // младший байт версии устройства (определяется программистом, как обычная версия программы)
+  irs_u8 hibyte_version; // старший байт версии устройства (определяется программистом, как обычная версия программы)
+  irs_u8 index_manufacturer; // индекс строки, описывающей производителя
+  irs_u8 index_product; // индекс строки, описывающей продукт
+  irs_u8 index_serial; // идекс строки, описывающей серию (продукта)
+  irs_u8 max_configuration_size; // максимальное количество конфигураций
+} desc_device;
+
+typedef struct : public basic_desc
+{
+  irs_u8 lb_total_length; // младший байт общего размера всего дерева под данной конфигурацией
+  irs_u8 hb_total_length; // старший байт общего размера всего дерева под данной конфигурацией
+  irs_u8 count_interfaces; // количество интерфейсов у данной конфигурации
+  irs_u8 index; // индекс данной конфигурации
+  irs_u8 index_str; // индекс строки, которая описывает данную конфигурацию
+  irs_u8* bm_attributes; // признак того, что устройство будет питаться от шины USB
+  irs_u8* max_power; // питание в амперах
+  desc_interface* interfaces; // дескрипторы интерфейсов
+  desc_class* classes; // дескрипторы классов
+  desc_endpoint* endpoints; // дескрипторы конечных точек
+} desc_configuration;
 
 class usb_module
 {
