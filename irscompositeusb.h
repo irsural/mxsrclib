@@ -19,6 +19,11 @@
 
 #include <usbd_core.h>
 
+/* Выравнивание структур данных для IAR */
+#if defined ( __ICCARM__ )      /* !< IAR Compiler */
+#pragma data_alignment=4
+#endif
+
 namespace irs
 {
 
@@ -27,6 +32,8 @@ namespace irs
 // TODO: Определить значения по умолчанию для нижних дефайнов
 #define IRS_VENDOR_ID
 #define IRS_PRODUCT_ID
+
+/* <---------ДЕСКРИПТОРЫ--------->  */
 
 /*
  * Для работы USB устройства необходимо реализовать три дескриптора:
@@ -37,137 +44,32 @@ namespace irs
  * Описание всех дескрипторов производиться в 16-ричной системе c типом данных irs_u8 (uint8).
  * Описание дескрипторов производится с помощью массива irs_u8, но для удобности программирования
  * было принято решение использовать структуры и классы.
- *
- * Описание дескрипторов:
- * - Дескриптор устройства:
- *   - irs_u8 length - общая длина дескриптора
- *   - irs_u8 descriptor_type - показывает, что за дескриптор – определяет его тип
- *   - irs_u8 lobyte_bcd_usb - младший байт версии usb, к-ую поддерживает устройство
- *   - irs_u8 hibyte_bcd_usb - страший байт версии usb, к-ую поддерживает устройство
- *   - irs_u8 device_class - класс по стандарту usb. Если указан 0x00, то класс отвечает сам за себя
- *   - irs_u8 device_subclass - сабкласс по стандарту usb. Если указан 0x00, то сабкласс отвечает сам за себя
- *   - irs_u8 device_protocol - протокол по стандарту usb. Если указан 0x00, то протокол отвечает сам за себя
- *   - irs_u8 max_packet_size - максимальный размер пакета для endpoint 0 (при конфигурировании)
- *   - irs_u8 lobyte_vid - младший байт vendor id
- *   - irs_u8 hibyte_vid - старший байт vendor id
- *   - irs_u8 lobyte_product_id - младший байт product id
- *   - irs_u8 hibyte_product_id - старший байт product id
- *   - irs_u8 lobyte_version - младший байт версии устройства (определяется программистом, как обычная версия программы)
- *   - irs_u8 hibyte_version - старший байт версии устройства (определяется программистом, как обычная версия программы)
- *   - irs_u8 index_manufacturer - индекс строки, описывающей производителя
- *   - irs_u8 index_product - индекс строки, описывающей продукт
- *   - irs_u8 index_serial - идекс строки, описывающей серию (продукта)
- * NOTE: индексы нужны для того, чтобы корректно работать с подключенными устройствами, у которых
- *       VID/PID одинаковы.
- *   - irs_u8 max_configuration_size - максимальное количество конфигураций
- *
- * - Дескриптор конфигурации (Последовательность описания: конфигурация, интерфейсы,
- *                            конечные точки (endpoints), классы, производитель (vendor)):
- *   - irs_u8 length - общая длина дескрипора конфигурации
- *   - irs_u8 configuration_type - тип дескриптора - конфигурация
- *   - irs_u8 lb_total_length - младший байт общего размера всего дерева под данной конфигурацией
- *   - irs_u8 hb_total_length - старший байт общего размера всего деерва под данной конфигурацией
- *   - irs_u8 count_interface - количество интерфейсов у данной конфигурации
- *   - irs_u8 configuration_value - индекс данной конфигурации
- *   - irs_u8 index_configuration - индекс строки, которая описывает данную конфигурацию
- *   - irs_u8 bm_attributes - признак того, что устройство будет питаться от шины USB
- *   - irs_u8 max_power - максимальное число ампер
- *   ---- Затем идет описание дескриптора интерфейса ----
- *   - irs_u8 interface_length - общая длина дескриптора интерфейса
- *   - irs_u8 interface_type - тип дескриптора – интерфейс
- *   - irs_u8 interface_number - порядковый номер интерфейса
- *   - irs_u8 interface_alternate_setting - признак альтернативного интерфейса
- *   - irs_u8 interface_num_endpoints - количество конечных точек
- *   - irs_u8 interface_class - класс интерфейса (например, HID)
- *   - irs_u8 interface_sublcass - сабкласс интерфейса
- *   - irs_u8 interface_protocol - протокол интерфейса
- * NOTE: если нужно показать, что данное устройство, к примеру, является мышкой, то необходимо указывать
- *       правильные класс и сабкласс.
- *   - irs_u8 interface_index - индекс строки, описывающей интерфейс
- *   ---- Затем идет описание дескриптора класса (если необходимо). В качестве примера, будет дескриптор HID ----
- *   - irs_u8 hid_length - общая длина дескриптора hid
- *   - irs_u8 hid_type - тип дескриптора - hid
- *   - irs_u8 lb_bcd_hid - младший байт версии hid
- *   - irs_u8 hb_bcd_hid - старший байт версии hid
- *   - irs_u8 hid_contry_code - код страны (если нужен)
- *   - irs_u8 hid_num_descriptors - сколько дальше будет report дескрипторов
- *   ---- Затем идет описание report дескрипторов, если необходимо ----
- *   - irs_u8 report_type - тип дескриптора - report
- *   - irs_u8 report_length - длина report дескриптора
- *   ---- Затем идет описание дескриптора конечных точек (endpoints) ----
- *   - irs_u8 endpoint_length - длина дескриптора конечных точек
- *   - irs_u8 endpoint_type - тип дескриптора - endpoint
- *   - irs_u8 endpoint_address - адрес конечной точки и направление 1 (IN) (be like 0x81)
- *   - irs_u8 endpoint_attributes - тип конечной точки
- *   - irs_u8 lb_max_packet_size - младший байт максимального размера пакета
- *   - irs_u8 hb_max_packet_size - старший байт максимального размера пакета
- * NOTE: по стандарту больше 0x40 указывать для размера пакета не стоит.
- *       Если передаваемый пакет будет отличаться по размеру, то будут проблемы!
- *   - irs_u8 endpoint_interval_polling - интервал опроса
- *   ---- Затем продолжается описание конечных точек также, как было определено описание предыдущей конечной точки ----
- *   - ...
- *
- * - Дескриптор репорта (далее для простоты понимания вместо названий переменных
- *                       будут указываться пары чисел с их описанием.
- *                       Числа для примера взяты из проекта по написанию custrom-hid
- *                       и их можно менять под свои задачи):
- *   - 0x06, 0x00, 0xff - usage_page (generic desktop)
- *   - 0x09, 0x01 - usage (vendor usage 1)
- *   - 0xa1, 0x01 - collection (application)
- *   - 0x85, 0x01 - report_id (1)
- *   - 0x09, 0x01 - usage (vendor usage 1)
- *   - 0x15, 0x00 - logical_minimum (0)
- *   - 0x25, 0x01 - logical_maximum (1)
- *   - 0x75, 0x08 - report_size (8)
- *   - 0x95, 0x01 - report_count (1)
- *   - 0xb1, 0x82 - feature (data, var, abs, vol)
- *   - 0x85, 0x01 - report_id (1)
- *   - 0x09, 0x01 - usage (vendor usage 1)
- *   - 0x91, 0x82 - output (data, var, abs, vol)
- *
- *   - 0x85, 0x02 - report_id (2)
- *   - 0x09, 0x02 - usage (vendor usage 2)
- *   - 0x15, 0x00 - logical_minimum (0)
- *   - 0x25, 0x01 - logical_maximum (1)
- *   - 0x75, 0x08 - report_size (8)
- *   - 0x95, 0x01 - report_count (1)
- *   - 0xb1, 0x82 - feature (data, var, abs, vol)
- *   - 0x85, 0x02 - report_id (2)
- *   - 0x09, 0x02 - usage (vendor usage 2)
- *   - 0x91, 0x82 - output (data, var, abs, vol)
- *
- *   - 0x85, 0x03 - report_id (3)
- *   - 0x09, 0x03 - usage (vendor usage 3)
- *   - 0x15, 0x00 - logical_minimum (0)
- *   - 0x26, 0xff, 0x00 - logical_maximum (255)
- *   - 0x75, 0x08 - report_size (8)
- *   - 0x95, RPT3_COUNT - report_count (N, RPT3_COUNT - некоторая константа)
- *   - 0xb1, 0x82 - feature (data, var, abs, vol)
- *   - 0x85, 0x03 - report_id (3)
- *   - 0x09, 0x03 - usage (vendor usage 3)
- *   - 0x91, 0x82 - output (data, var, abs, vol)
- *
- *   - 0x85, 0x04 - report_id (4)
- *   - 0x09, 0x04 - usage (vendor usage 4)
- *   - 0x75, 0x08 - report_size (8)
- *   - 0x95, RPT4_COUNT - report_count (N, RPT4_COUNT - некоторая константа)
- *   - 0x81, 0x82 - input (data, var, abs, vol)
- *   - 0xc0 - end_collection
  */
 
-/* TODO: Упростить работу с парами переменных старший/младший байты
-*       посредству написания приватной функции деления числа на старшую часть и младшую
-*/
+ /* Размерности дескрипторов:
+  * #define  USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
+  * #define  USB_LEN_DEV_DESC                               0x12U
+  * #define  USB_LEN_CFG_DESC                               0x09U
+  * #define  USB_LEN_IF_DESC                                0x09U
+  * #define  USB_LEN_EP_DESC                                0x07U
+  * #define  USB_LEN_OTG_DESC                               0x03U
+  * #define  USB_LEN_LANGID_STR_DESC                        0x04U
+  * #define  USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09U
+  */
 
 struct basic_desc
 {
-  irs_u8 length; // общая длина дескриптора
-  irs_u8 desc_type; // показывает, что за дескриптор – определяет его тип
+  /* Общая длина дескриптора */
+  irs_u8 length;
+
+  /* Тип дескриптора */
+  irs_u8 desc_type;
 };
 
 struct desc_string_handshake : public basic_desc
 {
   /* Значения по умолчанию. */
+  length = USB_LEN_LANGID_STR_DESC;
   desc_type = USB_DESC_TYPE_STRING;
 
   /* Кодs поддерживаемых языков. */
@@ -177,7 +79,7 @@ struct desc_string_handshake : public basic_desc
 struct desc_string : public basic_desc
 {
   /* Значения по умолчанию. */
-  desc_type = USB_DESC_TYPE_STRING;  
+  desc_type = USB_DESC_TYPE_STRING;
 
   /* Строка, закодированная в Unicode. */
   string str;
@@ -185,21 +87,25 @@ struct desc_string : public basic_desc
 
 struct desc_class : public basic_desc
 {
-  irs_u8 lb_bcd; // младший байт версии класса
-  irs_u8 hb_bcd; // страший байт версии класса
-  irs_u8 contry_code; // код страны
-  irs_u8 count_reports; // сколько будет дескрипторов report
+  /* Версия класса */
+  irs_u16 bcd;
+
+  /* Код страны */
+  irs_u8 contry_code;
+
+  /* Количество дескрипторов типа report */
+  irs_u8 count_reports;
 };
 
 struct desc_report : public basic_desc
 {
-  /* TODO: Описатб структуру для report дескриптора */
+  /* TODO: Описать структуру для report дескриптора */
 };
 
 struct desc_endpoint : public basic_desc
 {
   /* Значения по умолчанию */
-  length = 7;
+  length = USB_LEN_EP_DESC;
   desc_type = USB_DESC_TYPE_ENDPOINT;
 
   /* Адрес конечной точки.
@@ -229,16 +135,11 @@ struct desc_endpoint : public basic_desc
    */
   irs_u8 attributes;
 
-  /* Младший байт максимального размера пакета этой конечной точки,
+  /* Максимальный размер пакета этой конечной точки,
    * подходящий для отправки или приема.
    */
-  irs_u8 lb_max_packet_size;
+  irs_u16 max_packet_size;
 
-  /* Старший байт максимального размера пакета этой конечной точки,
-   * подходящий для отправки или приема.
-   */
-  irs_u8 hb_max_packet_size;
-  
   /* Интервал для того, чтобы опросить передачи данных конечной точки.
    * Указывается в количестве фейрмов. Поле игнорируется для конечных точек
    * Bulk и Control. Для конечных точек Isochronous должно быть равно 1 и
@@ -249,7 +150,7 @@ struct desc_endpoint : public basic_desc
 struct desc_interface : public basic_desc
 {
   /* Значения по умолчанию */
-  length = 9;
+  length = USB_LEN_IF_DESC;
   desc_type = USB_DESC_TYPE_INTERFACE;
 
   /* Индекс (порядковый номер) интерфейса. */
@@ -286,15 +187,15 @@ struct desc_interface : public basic_desc
 
 struct desc_device : public basic_desc
 {
-  /* Значения по умолчанию. */
-  length = 18;
+  /* Значения по умолчанию.
+   * Из length вычитается 3, поскольку вместо разделения bcd_usb, vendor_id, product_id
+   * на младшие и старшие биты посредству использования irs_u8 используется irs_u16.
+   */
+  length = USB_LEN_DEV_DESC - 3;
   desc_type = USB_DESC_TYPE_DEVICE;
 
-  /* Младший байт номера спецификации USB, с к-ой совместимо устройство. */
-  irs_u8 lobyte_bcd_usb;
-
-  /* Старший байт номера спецификации USB, с к-ой совместимо устройство. */
-  irs_u8 hibyte_bcd_usb;
+  /* Номер спецификации USB, с к-ой совместимо устройство. */
+  irs_u16 bcd_usb;
 
   /* Код класса (назначается организацией USB Org).
    * Если равно 0, то каждый интерфейс указывает свой собственный код класса.
@@ -314,31 +215,18 @@ struct desc_device : public basic_desc
    */
   irs_u8 max_packet_size;
 
-  /* Младший байт идентификатора вендора (VID)
+  /* Идентификатор вендора (VID)
    * (назначается организацией USB Org).
    */
-  irs_u8 lobyte_vid;
+  irs_u16 vendor_id;
 
-  /* Старший байт идентификатора вендора (VID)
-   * (назначается организацией USB Org).
-   */
-  irs_u8 hibyte_vid;
-
-  /* Младший байт идентификатора продукта (PID)
+  /* Идентификатор  продукта (PID)
    * (назначается организацией - производителем)
    */
-  irs_u8 lobyte_product_id;
+  irs_u16 product_id;
 
-  /* Старший байт идентификатора продукта (PID)
-   * (назначается организацией - производителем)
-   */
-  irs_u8 hibyte_product_id;
-
-  /* Младший байт номера версии устройства (задается разработчиком устройства). */
-  irs_u8 lobyte_version;
-
-  /* Страший байт номера версии устройства (задается разработчиком устройства). */
-  irs_u8 hibyte_version;
+  /* Номер версии устройства (задается разработчиком устройства). */
+  irs_u16 version;
 
   /* Индекс строки, описывающей прозиводителя
    * (необязательное поле, можно указать 0)
@@ -362,17 +250,13 @@ struct desc_device : public basic_desc
 struct desc_configuration : public basic_desc
 {
   /* Значения по умолчанию */
+  length = USB_LEN_CFG_DESC;
   desc_type = USB_DESC_TYPE_CONFIGURATION;
 
-  /* Младший байт полной длины возвращаемых данных в байтах.
+  /* Полная длина возвращаемых данных в байтах.
    * (общий размер всего деерва под данной конфигурацией)
    */
-  irs_u8 lb_total_length;
-
-  /* Старший байт полной длины возвращаемых данных в байтах.
-   * (общий размер всего деерва под данной конфигурацией)
-   */
-  irs_u8 hb_total_length;
+  irs_u16 total_length;
 
   /* Количество интерфейсов. */
   irs_u8 count_interfaces;
@@ -401,46 +285,39 @@ struct desc_configuration : public basic_desc
   list<desc_class> classes;
 };
 
+/* <---------МОДУЛЬ--------->  */
+
 class basic_usb_module
 {
 public:
-  basic_usb_module(desc_configuration desc_conf);
+  friend class usb_composite_device;
+
+  basic_usb_module(desc_configuration* desc_conf = nullptr);
   ~basic_usb_module();
 
-  desc_configuration get_desc_conf() const;
+  desc_configuration& get_desc_conf();
 
 private:
   /* TODO: Конфигурация определяется модулем или девайсом? */
   desc_configuration m_desc_conf;
 };
 
-basic_usb_module::basic_usb_module(desc_configuration desc_conf)
-  : m_desc_conf(desc_conf)
-{}
+basic_usb_module::basic_usb_module(desc_configuration* desc_conf)
+{
+  if (desc_conf) { m_desc_conf = *desc_conf; }
+}
 
 basic_usb_module::~basic_usb_module()
 {}
 
-desc_configuration basic_usb_module::get_desc_conf() const
+desc_configuration basic_usb_module::get_desc_conf()
 { return m_desc_conf; }
+
+/* <---------КОМПОЗИТНОЕ УСТРОЙСТВО--------->  */
 
 class usb_composite_device
 {
   static usb_composite_device* get_instance();
-
-  void set_manufacturer(const string a_manufacturer);
-  void set_product(const string a_product);
-  void set_serial_number(const string a_serial_number);
-
-  void set_vendor_id(const irs_u16 a_vendor_id);
-  void set_product_id(const irs_u16 a_product_id);
-
-  string get_manufacturer() const;
-  string get_product() const;
-  string get_serial_number() const;
-
-  irs_u16 get_vendor_id() const;
-  irs_u16 get_product_id() const;
 
   bool start();
   void stop();
@@ -448,42 +325,65 @@ class usb_composite_device
   /* Функция очистки подключенных модулей */
   void clear();
 
-  // В миллисекундах
+  desc_device& get_desc_device();
+  desc_configuration& get_desc_conf();
+
+  string get_manufacturer() const;
+  string get_product() const;
+  string get_serial_number() const;
+
+  void set_manufacturer(string manufacturer);
+  void set_product(string product);
+  void set_serial_number(string serial_number);
+
+  /* Delay в миллисекундах */
   void set_disconnect_delay(irs_u32 delay = 500);
 
+  /* Проверка на готовность работы устройства */
   bool is_ready() const;
 
+  /* Функция добавления нового модуля */
   bool add_module(usb_module* module);
 
 private:
   usb_composite_device();
   ~usb_composite_device();
 
+  irs_u8 serialise_desc_device(desc_device* device);
+  irs_u8 serialise_desc_conf(desc_configuration* conf);
+
   static usb_composite_device* mp_instance;
+
+  list<basic_usb_module*> m_modules_list;
+  
+  desc_device m_desc_device;
+  desc_configuration m_desc_conf;
 
   string m_manufacturer;
   string m_product;
   string m_serial_number;
 
-  irs_u16 m_vendor_id;
-  irs_u16 m_product_id;
-
   bool m_is_enabled;
-
-  list<basic_usb_module*> m_modules_list;
-  desc_device m_desc_device;
 };
 
 usb_composite_device::usb_composite_device()
-  : m_vendor_id(IRS_VENDOR_ID)
-  , m_product_id(IRS_PRODUCT_ID)
+  : m_desc_device.vendor_id(IRS_VENDOR_ID)
+  , m_desc_device.product_id(IRS_PRODUCT_ID)
 {
   // TODO: Нужна ли здесь инициализация модуля USB?
 }
 
 usb_composite_device::~usb_composite_device()
+{ if (mp_instance) { delete mp_instance; } }
+
+void usb_composite_device::start()
 {
-  if (mp_instance) { delete mp_instance; }
+  /* TODO: Реализовать функцию запуска модулей */
+}
+
+void usb_composite_device::stop()
+{
+  /* TODO: Реализовать функцию оставноки модулей */
 }
 
 usb_composite_device* usb_composite_device::get_instance()
@@ -492,23 +392,79 @@ usb_composite_device* usb_composite_device::get_instance()
   return mp_instance;
 }
 
-void usb_composite_device::set_manufacturer(const string a_manufacturer)
-{ m_manufacturer = a_manufacturer; }
+desc_device& usb_composite_device::get_desc_device()
+{ return m_desc_device; }
 
-void usb_composite_device::set_product(const string a_product)
-{ m_product = a_product; }
+desc_configuration& usb_composite_device::get_desc_conf()
+{ return m_desc_conf; }
 
-void usb_composite_device::set_serial_number(const string a_serial_number)
-{ m_serial_number = a_serial_number; }
+string usb_composite_device::get_manufacturer() const
+{ return m_manufacturer; }
 
-void usb_composite_device::set_vendor_id(const string a_vendor_id)
-{ m_vendor_id = a_vendor_id; }
+string usb_composite_device::get_product() const
+{ return m_product; }
 
-void usb_composite_device::set_product_id(const string a_product_id)
-{ m_product_id = a_product_id; }
+string usb_composite_device::get_serial_number() const
+{ return serial_number; }
+
+void usb_composite_device::set_manufacturer(string manufacturer)
+{ m_manufacturer = manufacturer; }
+
+void usb_composite_device::set_product(string product)
+{ m_product = product; }
+
+void usb_composite_device::set_serial_number(string serial_number)
+{ m_serial_number = serial_number; }
+
+irs_u8* usb_composite_device::serialise_desc_device(desc_device* device)
+{
+  if (device) {
+    __ALIGN_BEGIN irs_u8* usbd_device_desc __ALIGN_END = new irs_u8[device->length];
+
+    usbd_device_desc[0] = device->length;
+    usbd_device_desc[1] = device->type;
+    usbd_device_desc[2] = device->bcd_usb;
+    usbd_device_desc[3] = device->iclass;
+    usbd_device_desc[4] = device->subclass;
+    usbd_device_desc[5] = device->protocol;
+    usbd_device_desc[6] = device->vendor_id;
+    usbd_device_desc[7] = device->product_id;
+    usbd_device_desc[8] = device->bcd;
+    usbd_device_desc[9] = device->index_manufacturer;
+    usbd_device_desc[10] = device->index_product;
+    usbd_device_desc[11] = device->index_serial;
+    usbd_device_desc[12] = device->max_configuration_size;
+
+    return usbd_device_desc;
+  }
+
+  return nullptr;
+}
+
+irs_u8* usb_composite_device::serialise_desc_conf(desc_configuration* conf)
+{
+  if(conf) {
+    /* TODO: Решить, каким образом проводить сериализацию конфигурации,
+     * поскольку необходимо в один массив запихнуть данные о конфиге,
+     * данные об интерфейсах, о конечных точках интерфейсов. 
+     */
+  }
+
+  return nullptr;
+};
 
 void usb_composite_device::clear()
 { m_modules_list.clear(); }
+
+void usb_composite_device::add_module(usb_module* module)
+{
+  if (m_modules_list.size() < IRS_MAX_MODULES) {
+    if (m_is_enabled) { this->stop(); }
+    m_modules_list.add(module);
+  }
+
+  /* TODO: Добавить инициализацию модуля */
+}
 
 } // namespace irs
 
