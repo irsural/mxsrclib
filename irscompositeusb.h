@@ -1,6 +1,6 @@
 // @brief описание классов для работы с композиционным usb.
 //
-// Дата: 21.06.2021
+// Дата: 05.07.2021
 // Дата создания: 23.05.2021
 
 #pragma once
@@ -18,9 +18,10 @@
 #include <stm32h7xx_hal_conf.h>
 
 #include <usbd_core.h>
+#include <usbd_def.h>
 
 /* Выравнивание структур данных для IAR */
-#if defined ( __ICCARM__ )      /* !< IAR Compiler */
+#if defined ( __ICCARM__ ) /* !< IAR Compiler */
 #pragma data_alignment=4
 #endif
 
@@ -30,10 +31,10 @@ namespace irs
 #define IRS_MAX_MODULES 6
 
 // TODO: Определить значения по умолчанию для нижних дефайнов
-#define IRS_VENDOR_ID
-#define IRS_PRODUCT_ID
+#define IRS_VENDOR_ID 0x0
+#define IRS_PRODUCT_ID 0x1
 
-/* <---------ДЕСКРИПТОРЫ--------->  */
+/* <---------ДЕСКРИПТОРЫ---------> */
 
 /*
  * Для работы USB устройства необходимо реализовать три дескриптора:
@@ -46,16 +47,16 @@ namespace irs
  * было принято решение использовать структуры и классы.
  */
 
- /* Размерности дескрипторов:
-  * #define  USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
-  * #define  USB_LEN_DEV_DESC                               0x12U
-  * #define  USB_LEN_CFG_DESC                               0x09U
-  * #define  USB_LEN_IF_DESC                                0x09U
-  * #define  USB_LEN_EP_DESC                                0x07U
-  * #define  USB_LEN_OTG_DESC                               0x03U
-  * #define  USB_LEN_LANGID_STR_DESC                        0x04U
-  * #define  USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09U
-  */
+/* Размерности дескрипторов:
+ * #define  USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
+ * #define  USB_LEN_DEV_DESC                               0x12U
+ * #define  USB_LEN_CFG_DESC                               0x09U
+ * #define  USB_LEN_IF_DESC                                0x09U
+ * #define  USB_LEN_EP_DESC                                0x07U
+ * #define  USB_LEN_OTG_DESC                               0x03U
+ * #define  USB_LEN_LANGID_STR_DESC                        0x04U
+ * #define  USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09U
+ */
 
 struct basic_desc
 {
@@ -285,42 +286,111 @@ struct desc_configuration : public basic_desc
   list<desc_class> classes;
 };
 
-/* <---------МОДУЛЬ--------->  */
+/* <---------МОДУЛЬ---------> */
 
 class basic_usb_module
 {
 public:
-  friend class usb_composite_device;
-
-  basic_usb_module(desc_configuration* desc_conf = nullptr);
+  /* Публичные методы  */
+  /* Функции, которые определены USBD_ClassTypeDef */
+  basic_usb_module();
   ~basic_usb_module();
 
-  desc_configuration& get_desc_conf();
+  irs_u8 setup();
+  irs_u8 ep0_tx_sent();
+  irs_u8 ep0_rx_ready();
 
-private:
-  /* TODO: Конфигурация определяется модулем или девайсом? */
-  desc_configuration m_desc_conf;
+  irs_u8 data_in();
+  irs_u8 data_out();
+
+  irs_u8 sof();
+  irs_u8 iso_in_incomplete();
+  irs_u8 iso_out_incomplete;
+
+  irs_u8* get_hs_config_desc();
+  irs_u8* get_fs_config_desc();
+
+  irs_u8* get_other_speed_config_desc();
+  irs_u8* get_device_qualifier_desc();
+
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+  irs_u8* get_usr_str_desc();
+#endif
+
+  /* Кастомные функции */
+  virtual void tick();
+
+  USBD_HandleTypeDef& get_handle();
+
+protected:
+  /* Защищенные поля */
+  USBD_HandleTypeDef m_handle;
 };
 
-basic_usb_module::basic_usb_module(desc_configuration* desc_conf)
-{
-  if (desc_conf) { m_desc_conf = *desc_conf; }
-}
+basic_usb_module::basic_usb_module()
+{}
 
 basic_usb_module::~basic_usb_module()
 {}
 
-desc_configuration basic_usb_module::get_desc_conf()
-{ return m_desc_conf; }
+irs_u8 basic_usb_module::setup()
+{}
 
-/* <---------КОМПОЗИТНОЕ УСТРОЙСТВО--------->  */
+irs_u8 basic_usb_module::ep0_tx_sent()
+{}
+
+irs_u8 basic_usb_module::ep0_rx_ready()
+{}
+
+irs_u8 basic_usb_module::data_in()
+{}
+
+irs_u8 basic_usb_module::data_out()
+{}
+
+irs_u8 basic_usb_module::sof()
+{}
+
+irs_u8 basic_usb_module::iso_in_incomplete()
+{}
+
+irs_u8 basic_usb_module::iso_out_incomplete()
+{}
+
+irs_u8* basic_usb_module::get_hs_config_desc()
+{ return nullptr; }
+
+irs_u8* basic_usb_module::get_fs_config_desc()
+{ return nullptr; }
+
+irs_u8* basic_usb_module::get_other_speed_config_desc()
+{ return nullptr; }
+
+irs_u8* basic_usb_module::get_device_qualifier_desc()
+{ return nullptr; }
+
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+irs_u8* basic_usb_module::get_usr_str_desc()
+{ return nullptr; }
+#endif
+
+void basic_usb_module::tick()
+{}
+
+USBD_HandleTypeDef& basic_usb_module::get_handle()
+{ return m_handle; }
+
+/* <---------КОМПОЗИТНОЕ УСТРОЙСТВО---------> */
 
 class usb_composite_device
 {
+public:
+  /* Публичные методы */
   static usb_composite_device* get_instance();
 
   bool start();
   void stop();
+  void tick();
 
   /* Функция очистки подключенных модулей */
   void clear();
@@ -332,12 +402,21 @@ class usb_composite_device
   string get_product() const;
   string get_serial_number() const;
 
+  void get_device_desc(irs_u16* length);
+  void get_lang_id_str_desc(irs_u16* length);
+  void get_manufacturer_str_desc(irs_u8* buf, irs_u16* length);
+  void get_product_str_desc(irs_u8* buf, irs_u16* length);
+  void get_serial_str_desc(irs_u8* buf, irs_u16* length);
+  void get_config_str_desc(irs_u8* buf, irs_u16* length);
+  void get_interface_str_desc(irs_u8* buf, irs_u16* length);
+
+#ifdef USB_SUPPORT_USER_STRING_DESC
+  irs_u8* get_usr_str_desc(irs_u16* length);
+#endif // USB_SUPPORT_USER_STRING_DESC
+
   void set_manufacturer(string manufacturer);
   void set_product(string product);
   void set_serial_number(string serial_number);
-
-  /* Delay в миллисекундах */
-  void set_disconnect_delay(irs_u32 delay = 500);
 
   /* Проверка на готовность работы устройства */
   bool is_ready() const;
@@ -346,18 +425,22 @@ class usb_composite_device
   bool add_module(usb_module* module);
 
 private:
+  /* Приватные методы */
   usb_composite_device();
   ~usb_composite_device();
 
-  irs_u8 serialise_desc_device(desc_device* device);
-  irs_u8 serialise_desc_conf(desc_configuration* conf);
+  irs_u8 serialise_device_desc();
+  irs_u8 serialise_conf_desc();
+  irs_u8 serialise_lang_id_desc();
 
+  /* Приватные поля */
+  /* Статичный экземпляр класса */
   static usb_composite_device* mp_instance;
 
+  /* Список всех подключаемых модулей, которые вместе создают композитное
+   * устройство
+   */
   list<basic_usb_module*> m_modules_list;
-  
-  desc_device m_desc_device;
-  desc_configuration m_desc_conf;
 
   string m_manufacturer;
   string m_product;
@@ -378,12 +461,39 @@ usb_composite_device::~usb_composite_device()
 
 void usb_composite_device::start()
 {
-  /* TODO: Реализовать функцию запуска модулей */
+  if (!m_is_enabled) {
+    for (list<usb_modules*>::iterator iter = m_modules_list.begin();
+         iter != m_modules_list.end();
+         iter++)
+    {
+      iter->init();
+    }
+
+    m_is_enabled = true;
+  }
+
+  return m_is_enabled;
 }
 
 void usb_composite_device::stop()
 {
-  /* TODO: Реализовать функцию оставноки модулей */
+  if (m_is_enabled) {
+    /* TODO: Нужно ли добавлять функцию stop() для модулей? */
+
+    m_is_enabled = false;
+  }
+}
+
+void usb_composite_usb::tick()
+{
+  if (m_is_enabled) {
+    for (list<usb_modules*>::iterator iter = m_modules_list.begin();
+         iter != m_modules_list.end();
+         iter++)
+    {
+      iter->tick();
+    }
+  }
 }
 
 usb_composite_device* usb_composite_device::get_instance()
@@ -407,6 +517,26 @@ string usb_composite_device::get_product() const
 string usb_composite_device::get_serial_number() const
 { return serial_number; }
 
+irs_u8* usb_composite_device::get_device_desc(irs_u16* length)
+{
+  irs_u8* desc = this->serialise_device_desc();
+  *length = sizeof(*desc);
+  return desc;
+}
+
+irs_u8* usb_composite_device::get_lang_id_str_desc(irs_u16* length)
+{
+  irs_u8* desc = this->serialise_lang_id_desc();
+  *length = sizeof(*desc);
+  return desc;
+}
+
+irs_u8* usb_composite_device::get_manufacturer_str_desc(irs_u8* buf, irs_u16* length)
+{
+  USBD_GetString(static_cast<irs_u8*>(&m_manufacturer, buf, length);
+  return 
+}
+
 void usb_composite_device::set_manufacturer(string manufacturer)
 { m_manufacturer = manufacturer; }
 
@@ -416,8 +546,9 @@ void usb_composite_device::set_product(string product)
 void usb_composite_device::set_serial_number(string serial_number)
 { m_serial_number = serial_number; }
 
-irs_u8* usb_composite_device::serialise_desc_device(desc_device* device)
+irs_u8* usb_composite_device::serialise_device_desc()
 {
+  /* TODO: Переписать сериализацию дескриптора девайса */
   if (device) {
     __ALIGN_BEGIN irs_u8* usbd_device_desc __ALIGN_END = new irs_u8[device->length];
 
@@ -441,12 +572,12 @@ irs_u8* usb_composite_device::serialise_desc_device(desc_device* device)
   return nullptr;
 }
 
-irs_u8* usb_composite_device::serialise_desc_conf(desc_configuration* conf)
+irs_u8* usb_composite_device::serialise_conf_desc(desc_configuration* conf)
 {
   if(conf) {
     /* TODO: Решить, каким образом проводить сериализацию конфигурации,
      * поскольку необходимо в один массив запихнуть данные о конфиге,
-     * данные об интерфейсах, о конечных точках интерфейсов. 
+     * данные об интерфейсах, о конечных точках интерфейсов.
      */
   }
 
@@ -462,9 +593,9 @@ void usb_composite_device::add_module(usb_module* module)
     if (m_is_enabled) { this->stop(); }
     m_modules_list.add(module);
   }
-
-  /* TODO: Добавить инициализацию модуля */
 }
+
+
 
 } // namespace irs
 
