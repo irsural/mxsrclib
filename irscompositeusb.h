@@ -1,6 +1,6 @@
 // @brief описание классов для работы с композиционным usb.
 //
-// Дата: 05.07.2021
+// Дата: 12.07.2021
 // Дата создания: 23.05.2021
 
 #pragma once
@@ -19,6 +19,9 @@
 
 #include <usbd_core.h>
 #include <usbd_def.h>
+
+/* Тег для объектов, у которых нет реализации */
+#define _NO_IMPL_
 
 /* Выравнивание структур данных для IAR */
 #if defined ( __ICCARM__ ) /* !< IAR Compiler */
@@ -294,37 +297,55 @@ public:
   /* Публичные методы  */
   /* Функции, которые определены USBD_ClassTypeDef */
   basic_usb_module();
-  ~basic_usb_module();
+  virtual ~basic_usb_module();
 
-  irs_u8 setup();
-  irs_u8 ep0_tx_sent();
-  irs_u8 ep0_rx_ready();
+  _NO_IMPL_ virtual irs_u8 setup();
+  _NO_IMPL_ virtual irs_u8 ep0_tx_sent();
+  _NO_IMPL_ virtual irs_u8 ep0_rx_ready();
 
-  irs_u8 data_in();
-  irs_u8 data_out();
+  _NO_IMPL_ virtual irs_u8 data_in();
+  _NO_IMPL_ virtual irs_u8 data_out();
 
-  irs_u8 sof();
-  irs_u8 iso_in_incomplete();
-  irs_u8 iso_out_incomplete;
+  _NO_IMPL_ virtual irs_u8 sof();
+  _NO_IMPL_ virtual irs_u8 iso_in_incomplete();
+  _NO_IMPL_ virtual irs_u8 iso_out_incomplete();
 
-  irs_u8* get_hs_config_desc();
-  irs_u8* get_fs_config_desc();
+  _NO_IMPL_ virtual irs_u8* get_hs_config_desc();
+  _NO_IMPL_ virtual irs_u8* get_fs_config_desc();
 
-  irs_u8* get_other_speed_config_desc();
-  irs_u8* get_device_qualifier_desc();
+  _NO_IMPL_ virtual irs_u8* get_other_speed_config_desc();
+  _NO_IMPL_ virtual irs_u8* get_device_qualifier_desc();
 
 #if (USBD_SUPPORT_USER_STRING_DESC == 1U)
-  irs_u8* get_usr_str_desc();
+  _NO_IMPL_ irs_u8* get_usr_str_desc();
 #endif
 
   /* Кастомные функции */
-  virtual void tick();
+  _NO_IMPL_ virtual void tick();
 
   USBD_HandleTypeDef& get_handle();
+
+  string get_interface() const;
+  string get_configuration() const;
+  string get_product() const;
+
+  void get_interface_str_desc(irs_u8* buf, irs_u16* length);
+  void get_confiration_str_desc(irs_u8* buf, irs_u16* length);
+  void get_product_str_desc(irs_u8* buf, irs_u16* length);
+
+  void set_interface(string interface);
+  void set_configuration(string configuration);
+  void set_product(string product);
 
 protected:
   /* Защищенные поля */
   USBD_HandleTypeDef m_handle;
+
+private:
+  /* Приватные поля */
+  string m_interface;
+  string m_configuration;
+  string m_product;
 };
 
 basic_usb_module::basic_usb_module()
@@ -380,6 +401,39 @@ void basic_usb_module::tick()
 USBD_HandleTypeDef& basic_usb_module::get_handle()
 { return m_handle; }
 
+string basic_usb_module::get_interface() const
+{ return m_interface; }
+
+string basic_usb_module::get_configuration() const
+{ return m_configuration; }
+
+string basic_usb_module::get_product() const
+{ return m_product; }
+
+void basic_usb_module::get_interface_str_desc(irs_u8* buf, irs_u16* length)
+{
+  USBD_GetString(static_cast<irs_u8*>(&m_interface), buf, length);
+}
+
+void basic_usb_module::get_confiration_str_desc(irs_u8* buf, irs_u16* length)
+{
+  USBD_GetString(static_cast<irs_u8*>(&m_configuration), buf, length);
+}
+
+void basic_usb_module::get_product_str_desc(irs_u8* buf, irs_u16* length)
+{
+  USBD_GetString(static_cast<irs_u8*>(&m_product), buf, length);
+}
+
+void basic_usb_module::set_interface(string interface)
+{ m_interface = interface; }
+
+void basic_usb_module::set_configuration(string configuration)
+{ m_configuration = configuration; }
+
+void basic_usb_module::set_product(string product)
+{ m_product = product; }
+
 /* <---------КОМПОЗИТНОЕ УСТРОЙСТВО---------> */
 
 class usb_composite_device
@@ -388,9 +442,9 @@ public:
   /* Публичные методы */
   static usb_composite_device* get_instance();
 
-  bool start();
-  void stop();
-  void tick();
+  _NO_IMPL_ bool start();
+  _NO_IMPL_ void stop();
+  _NO_IMPL_ void tick();
 
   /* Функция очистки подключенных модулей */
   void clear();
@@ -399,27 +453,23 @@ public:
   desc_configuration& get_desc_conf();
 
   string get_manufacturer() const;
-  string get_product() const;
   string get_serial_number() const;
 
-  void get_device_desc(irs_u16* length);
-  void get_lang_id_str_desc(irs_u16* length);
+  irs_u8* get_device_desc(irs_u16* length);
+  irs_u8* get_lang_id_str_desc(irs_u16* length);
   void get_manufacturer_str_desc(irs_u8* buf, irs_u16* length);
-  void get_product_str_desc(irs_u8* buf, irs_u16* length);
-  void get_serial_str_desc(irs_u8* buf, irs_u16* length);
-  void get_config_str_desc(irs_u8* buf, irs_u16* length);
-  void get_interface_str_desc(irs_u8* buf, irs_u16* length);
+
+  _NO_IMPL_ void get_serial_str_desc(irs_u8* buf, irs_u16* length);
 
 #ifdef USB_SUPPORT_USER_STRING_DESC
   irs_u8* get_usr_str_desc(irs_u16* length);
 #endif // USB_SUPPORT_USER_STRING_DESC
 
   void set_manufacturer(string manufacturer);
-  void set_product(string product);
   void set_serial_number(string serial_number);
 
   /* Проверка на готовность работы устройства */
-  bool is_ready() const;
+  _NO_IMPL_ bool is_ready() const;
 
   /* Функция добавления нового модуля */
   bool add_module(usb_module* module);
@@ -430,8 +480,8 @@ private:
   ~usb_composite_device();
 
   irs_u8 serialise_device_desc();
-  irs_u8 serialise_conf_desc();
-  irs_u8 serialise_lang_id_desc();
+  _NO_IMPL_ irs_u8 serialise_conf_desc();
+  _NO_IMPL_ irs_u8 serialise_lang_id_desc();
 
   /* Приватные поля */
   /* Статичный экземпляр класса */
@@ -441,9 +491,9 @@ private:
    * устройство
    */
   list<basic_usb_module*> m_modules_list;
+  /* TODO: Должен ли быть список дескрипторов? */
 
   string m_manufacturer;
-  string m_product;
   string m_serial_number;
 
   bool m_is_enabled;
@@ -511,9 +561,6 @@ desc_configuration& usb_composite_device::get_desc_conf()
 string usb_composite_device::get_manufacturer() const
 { return m_manufacturer; }
 
-string usb_composite_device::get_product() const
-{ return m_product; }
-
 string usb_composite_device::get_serial_number() const
 { return serial_number; }
 
@@ -531,17 +578,18 @@ irs_u8* usb_composite_device::get_lang_id_str_desc(irs_u16* length)
   return desc;
 }
 
-irs_u8* usb_composite_device::get_manufacturer_str_desc(irs_u8* buf, irs_u16* length)
+void usb_composite_device::get_manufacturer_str_desc(irs_u8* buf, irs_u16* length)
 {
-  USBD_GetString(static_cast<irs_u8*>(&m_manufacturer, buf, length);
-  return 
+  USBD_GetString(static_cast<irs_u8*>(&m_manufacturer), buf, length);
+}
+
+void usb_composite_device::get_config_str_desc(irs_u8* buf, irs_u16* length)
+{
+  USBD_GetString(static_cast<irs_u8*>(&m_config))
 }
 
 void usb_composite_device::set_manufacturer(string manufacturer)
 { m_manufacturer = manufacturer; }
-
-void usb_composite_device::set_product(string product)
-{ m_product = product; }
 
 void usb_composite_device::set_serial_number(string serial_number)
 { m_serial_number = serial_number; }
@@ -594,8 +642,6 @@ void usb_composite_device::add_module(usb_module* module)
     m_modules_list.add(module);
   }
 }
-
-
 
 } // namespace irs
 
