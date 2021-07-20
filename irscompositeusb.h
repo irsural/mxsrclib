@@ -31,22 +31,64 @@ namespace irs
 
 typedef struct
 {
-/* Главная структура, объединяющая все модули */
-USBD_HandleTypeDef device;
+  irs_u8* endpoints;
+  size_t count_endpoints;
+  size_t index_interface;
+  USBD_HandleTypeDef handle;
+} usb_module_t;
 
-USBD_HandleTypeDef** modules;
-size_t count_modules;
+typedef struct
+{
+  /* Главная структура, объединяющая все модули */
+  USBD_HandleTypeDef device;
+
+  usb_module_t** modules;
+  size_t count_modules;
+
+  irs_u16 vid;
+  irs_u16 pid;
+  irs_u16 langid;
+
+  string manufacturer_str;
+  string product_str;
+  string config_str;
+  string interface_str;
 
 } composite_usb_t;
 
 composite_usb_t composite_usb;
 
+/* Прототипы функций */
+_NO_TESTED_ static irs_u8 init(USBD_HandleTypeDef* pdev, irs_u8 cfgidx);
+_NO_TESTED_ static irs_u8 deinit(USBD_HandleTypeDef* pdev, irs_u8 cfgidx);
+
+_NO_TESTED_ static irs_u8 setup(USBD_HandleTypeDef* pdev, USBD_SetupReqTypedef* req);
+_NO_IMPL_ static irs_u8 ep0_tx_sent(USBD_HandleTypeDef* pdev);
+_NO_IMPL_ static irs_u8 ep0_rx_ready(USBD_HandleTypeDef* pdev);
+
+_NO_TESTED_ static irs_u8 data_in(USBD_HandleTypeDef* pdev, irs_u8 epnum);
+_NO_TESTED_ static irs_u8 data_out(USBD_HandleTypeDef* pdev, irs_u8 epnum);
+_NO_IMPL_ static irs_u8 sof(USBD_HandleTypeDef* pdev);
+_NO_IMPL_ static irs_u8 iso_in_incomplete(USBD_HandleTypeDef* pdev, irs_u8 epnum);
+_NO_IMPL_ static irs_u8 iso_out_incomplete(USBD_HandleTypeDef* pdev, irs_u8 epnum);
+
+_NO_IMPL_ static irs_u8* get_hs_config_desc(irs_u16* length);
+_NO_IMPL_ static irs_u8* get_fs_config_desc(irs_u16* length);
+_NO_IMPL_ static irs_u8* get_other_speed_config_desc(irs_u16* length);
+_NO_IMPL_ static irs_u8* get_device_qualifier_desc(irs_u16* length);
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+_NO_IMPL_ static irs_u8* get_usr_str_desc(USBD_HandleTypeDef* pdev, irs_u8 idx, irs_u16* length);
+#endif
+
+_NO_TESTED_ void init_composite_usb(USBD_HandleTypeDef** ap_handles, size_t a_count_handles);
+
+/* Реализации функций */
 _NO_TESTED_ static irs_u8 init(USBD_HandleTypeDef* pdev, irs_u8 cfgidx)
 {
-  irs_u8 ret = USBD_OK; 
+  irs_u8 ret = USBD_OK;
 
   for (size_t i = 0; i < composite_usb.count_modules; i++) {
-    ret = composite_usb.modules[i]->pClass->Init(pdev, cfgidx);
+    ret = composite_usb.modules[i]->handle->pClass->Init(pdev, cfgidx);
     if (ret != USBD_OK) { return ret; }
   }
 
@@ -56,19 +98,51 @@ _NO_TESTED_ static irs_u8 init(USBD_HandleTypeDef* pdev, irs_u8 cfgidx)
 _NO_TESTED_ static irs_u8 deinit(USBD_HandleTypeDef* pdev, irs_u8 cfgidx)
 {
   for (size_t i = 0; i < composite_usb.count_modules; i++) {
-    composite_usb.modules[i]->pClass->DeInit(pdev, cfgidx);
+    composite_usb.modules[i]->handle->pClass->DeInit(pdev, cfgidx);
   }
 
   if (composite_usb.device.pClass) {
     delete composite_usb.device.pClass;
   }
 
+  static irs_u8* desc = get_hs_config_desc(pdev, nullptr);
+  if (desc) { delete desc; }
+
+  desc = get_fs_config_desc(pdev, nullptr);
+  if (desc) { delete desc; }
+
+  desc = get_other_speed_config_desc(pdev, nullptr);
+  if (desc) { delete desc; }
+
+  desc = get_device_qualifier_desc(pdev, nullptr);
+  if (desc) { delete desc; }
+
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+  /* TODO: Какой именно должен быть второй параметр? */
+  desc = get_usr_str_desc(pdev, 0, nullptr);
+  if (desc) { delete desc; }
+#endif
+
   return USBD_OK;
 }
 
-_NO_IMPL_ static irs_u8 setup(USBD_HandleTypeDef* pdev, USBD_SetupReqTypedef  *req)
+_NO_TESTED_ static irs_u8 setup(USBD_HandleTypeDef* pdev, USBD_SetupReqTypedef* req)
 {
-  return USBD_OK;
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+    if ((req->bmRequest & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_INTERFACE &&
+         req->wIndex == composite_usb.modules[i]->index_interface) {
+      return composite_usb.modules[i]->handle->pClass->Setup(pdev, req);
+    }
+
+    for (size_t j = 0; j < composite_usb.modules[i]->count_endpoints; j++) {
+      if ((req->bmRequest & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_ENDPOINT &&
+          (req->wIndex & 0x7F) == composite_usb.modules[i]->endpoint[j]) {
+        return composite_usb.modules[i]->handle->pClass->Setup(pdev, req);
+      }
+    }
+  }
+
+  return USBD_FAIL;
 }
 
 _NO_IMPL_ static irs_u8 ep0_tx_sent(USBD_HandleTypeDef* pdev)
@@ -81,14 +155,30 @@ _NO_IMPL_ static irs_u8 ep0_rx_ready(USBD_HandleTypeDef* pdev)
   return USBD_OK;
 }
 
-_NO_IMPL_ static irs_u8 data_in(USBD_HandleTypeDef* pdev, irs_u8 epnum)
+_NO_TESTED_ static irs_u8 data_in(USBD_HandleTypeDef* pdev, irs_u8 epnum)
 {
-  return USBD_OK;
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+    for (size_t j = 0; j < composite_usb.modules[i]->count_endpoints; j++) {
+      if (epnum == composite_usb.modules[i]->endpoints[j]) {
+        return composite_usb.modules[i]->handle->DataIn(pdev, epnum);
+      }
+    }
+  }
+
+  return USBD_FAIL;
 }
 
-_NO_IMPL_ static irs_u8 data_out(USBD_HandleTypeDef* pdev, irs_u8 epnum)
+_NO_TESTED_ static irs_u8 data_out(USBD_HandleTypeDef* pdev, irs_u8 epnum)
 {
-  return USBD_OK;
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+    for (size_t j = 0; j < composite_usb.modules[i]->count_endpoints; j++) {
+      if (epnum == composite_usb.modules[i]->endpoints[j]) {
+        return composite_usb.modules[i]->handle->DataOut(pdev, epnum);
+      }
+    }
+  }
+
+  return USBD_FAIL;
 }
 
 _NO_IMPL_ static irs_u8 sof(USBD_HandleTypeDef* pdev)
@@ -108,33 +198,87 @@ _NO_IMPL_ static irs_u8 iso_out_incomplete(USBD_HandleTypeDef* pdev, irs_u8 epnu
 
 _NO_IMPL_ static irs_u8* get_hs_config_desc(irs_u16* length)
 {
-  return NULL;
+  static irs_u8* desc = nullptr;
+  irs_u16 size = 0;
+
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+
+  }
+
+  if (length) {
+
+  }
+
+  return desc;
 }
 
 _NO_IMPL_ static irs_u8* get_fs_config_desc(irs_u16* length)
 {
-  return NULL;
+  static irs_u8* desc = nullptr;
+  irs_u16 size = 0;
+
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+
+  }
+
+  if (length) {
+
+  }
+
+  return desc;
 }
 
 _NO_IMPL_ static irs_u8* get_other_speed_config_desc(irs_u16* length)
 {
-  return NULL;
+  static irs_u8* desc = nullptr;
+  irs_u16 size = 0;
+
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+
+  }
+
+  if (length) {
+
+  }
+
+  return desc;
 }
 
 _NO_IMPL_ static irs_u8* get_device_qualifier_desc(irs_u16* length)
 {
-  return NULL;
+  static irs_u8* desc = nullptr;
+  irs_u16 size = 0;
+
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+
+  }
+
+  if (length) {
+
+  }
+
+  return desc;
 }
 
 #if (USBD_SUPPORT_USER_STRING_DESC == 1U)
 _NO_IMPL_ static irs_u8* get_usr_str_desc(USBD_HandleTypeDef* pdev, irs_u8 idx, irs_u16* length)
 {
-  return NULL;
+  static irs_u8* desc = nullptr;
+  irs_u16 size = 0;
+
+  for (size_t i = 0; i < composite_usb.count_modules; i++) {
+
+  }
+
+  if (length) {
+
+  }
+
+  return desc;
 }
 #endif
 
-_NO_TESTED_ void setup_handle(USBD_HandleTypeDef** ap_handles,
-                  size_t a_count_handles)
+_NO_TESTED_ void init_composite_usb(USBD_HandleTypeDef** ap_handles, size_t a_count_handles)
 {
   USBD_ClassTypeDef* pclass = new USBD_ClassTypeDef {
     init,
