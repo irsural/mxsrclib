@@ -554,7 +554,7 @@ private:
 public:
   mc_error_handler_ex_t(
     ostream* ap_out,
-    event_t* ap_error_event = IRS_NULL,                      
+    event_t* ap_error_event = IRS_NULL,
     error_trans_base_t* ap_error_trans = error_trans()
   ):
     mp_out(ap_out),
@@ -613,26 +613,39 @@ public:
 };
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-#if __IAR_SYSTEMS_ICC__ >= 9
+#if (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
 template<typename char_type, typename traits_type = char_traits<char_type>>
 class basic_zerobuf : public basic_streambuf<char_type, traits_type>
 {
 public:
   typedef typename traits_type::int_type int_type;
-  
+
   virtual int_type overflow(int_type = EOF)
   { return 0; }
-  
+
   virtual int_type underflow()
   { return 0; }
-  
+
   virtual int sync()
   { return this->overflow(); }
 };
 
 typedef basic_zerobuf<char> zerobuf;
 typedef basic_zerobuf<wchar_t> wzerobuf;
-#else
+
+template<class T>
+basic_ostream<T>& basic_mlog()
+{
+  static basic_zerobuf<T> buf;
+  static basic_ostream<T> mlog_obj(&buf);
+  return mlog_obj;
+}
+
+wostream& wmlog();
+
+#else //(__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
 class zerobuf: public streambuf
 {
 public:
@@ -650,24 +663,9 @@ public:
   }
 };
 
-class wzerobuf: public wstreambuf
-{
-public:
-  virtual int overflow(int = EOF)
-  {
-    return 0;
-  }
-  virtual wint_t underflow()
-  {
-    return 0;
-  }
-  virtual int sync()
-  {
-    return overflow();
-  }
-};
-#endif // __IAR_SYSTEMS_ICC__ >= 9
+#endif // (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
 
+ostream& mlog();
 
 #ifndef __WATCOMC__
 // Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf
@@ -696,12 +694,6 @@ void send_wsa_last_message_err(const char* ap_file, int a_line);
 
 void send_message_err(int a_error_code, const char* ap_file, int a_line);
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
-
-template<typename stream_type, typename buffer_type>
-stream_type& basic_mlog();
-
-ostream& mlog();
-wostream& wmlog();
 
 #ifdef IRS_LIB_FLASH_ASSERT
 template <class T>
