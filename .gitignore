@@ -9,6 +9,7 @@
 *.csv
 *.dcu
 *.dep
+*.ewt
 *.il?
 *.map
 *.obj
@@ -20,7 +21,6 @@
 *.tds
 *.tmp
 *.~*
-irsconfig.h
 irsconfig.h
 lsprst7.*
 sysprs7.*

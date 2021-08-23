@@ -24,8 +24,12 @@
 #endif //__ICCAVR__
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armioregs.h>
 //#include <irslwip.h>
+#else
+#include "stm32h7xx_hal.h"
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 #ifdef IRS_LINUX
@@ -431,9 +435,9 @@ void out_hex(ostream *ap_strm, const T& a_value)
   (*ap_strm) << hex << setw(hex_chars_in_byte*sizeof(T));
   (*ap_strm) << uppercase << setfill('0');
   if (sizeof(T) != sizeof(char)) {
-    (*ap_strm) << a_value;
+    (*ap_strm) << right << a_value;
   } else {
-    (*ap_strm) << static_cast<int>(a_value);
+    (*ap_strm) << right << static_cast<int>(a_value);
   }
 }
 
@@ -466,6 +470,8 @@ void out_data_hex(T* ap_container)
 #ifdef __ICCARM__
 
 namespace arm {
+  
+#ifndef IRS_STM32H7xx
 
 // Буфер потоков для COM-порта ARM (LM3S8971)
 class com_buf: public streambuf
@@ -546,8 +552,34 @@ inline com_ostream::com_ostream(int a_com_index, int a_outbuf_size):
   init(&m_buf);
 }
 
+
+
+#else // ->if defined(IRS_STM32H7xx)
+
+// Буфер потоков для COM-порта ARM (STM32H7)
+class st_hal_com_buf: public streambuf
+{
+public:
+  st_hal_com_buf(const st_hal_com_buf& a_buf);
+  st_hal_com_buf(GPIO_TypeDef* ap_uart_port, 
+    const GPIO_InitTypeDef& a_gpio_handle, UART_HandleTypeDef* ap_uart_handle, 
+    int a_outbuf_size = 16);
+  virtual int overflow(int c = EOF);
+  virtual int sync();
+  void trans (char data);
+  void trans_simple (char data);
+private:
+  //GPIO_TypeDef* m_uart_port;
+  GPIO_InitTypeDef m_gpio_handle;
+  UART_HandleTypeDef* mp_uart_handle;
+  int m_outbuf_size;
+  auto_arr<char> m_outbuf;
+};
+
+
 } //namespace arm
 
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 } //namespace irs

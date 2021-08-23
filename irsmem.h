@@ -113,7 +113,7 @@ private:
   irs_uarc m_num_of_iterations;
   irs_uarc m_current_iteration;
   size_type m_modulo_size;
-  irs_uarc m_page_addr;
+  irs_u32 m_page_addr;
 
   void prepare_spi();
   void clear_spi();
@@ -157,6 +157,7 @@ private:
     st_write_process,
     st_write_begin_2_half
   };
+  enum { log_message_limit = 10 };
 
   page_mem_t* mp_page_mem;
   status_t m_status;
@@ -172,6 +173,7 @@ private:
   raw_data_t<irs_u8> m_cluster_data;
   raw_data_view_t<irs_u32, irs_u8> m_cluster_data_32;
   irs_u8* mp_read_buf;
+  irs_uarc m_log_message_count;
 };
 
 class mem_data_t : public comm_data_t
@@ -263,6 +265,13 @@ class eeprom_at25128_data_t : public mxdata_comm_t
 {
 public:
   typedef comm_data_t::size_type size_type;
+  // a_size - виртуальный размер (с учетом кластерной структуры) в байтах
+  //   той части EEPROM, которую будет обслуживать этот класс. Реальный
+  //   размер, который будет отведен под виртуальный размер a_size,
+  //   более чем в два раза больше виртального.
+  // a_index - смещение в виртуальном адресном пространстве
+  // Функция этого класса mem_data()->size() позволяет узнать полный
+  //   виртуальный размер всего EEPROM
   eeprom_at25128_data_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin, irs_uarc a_size,
     bool init_now = false,  irs_uarc a_index = 0, size_type a_cluster_size = 64,
     counter_t init_timeout = irs::make_cnt_s(1));
@@ -272,6 +281,7 @@ private:
   irs::mem_data_t m_mem_data;
 };
 
+// Вычисление виртуального размера на основе параметров
 size_t max_eeprom_size(size_t a_page_size, size_t a_page_count,
   size_t a_cluster_size = default_cluster_size);
 

@@ -121,7 +121,11 @@ inline std::wstring cp1251_to_wstring(const std::string& a_str)
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
   if (convert_result != std::codecvt_base::ok) {
+    #ifndef IRS_NOEXCEPTION
     throw runtime_error("Не удалось преобразовать cp1251 в unicode");
+    #else
+    for(;;);
+    #endif // IRS_NOEXCEPTION
   }
   return std::wstring(out_str);
 }
@@ -144,7 +148,11 @@ inline std::string wstring_to_cp1251(const std::wstring& a_str)
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
   if (convert_result != std::codecvt_base::ok) {
+    #ifndef IRS_NOEXCEPTION
     throw runtime_error("Не удалось преобразовать unicode в cp1251");
+    #else
+    for(;;);
+    #endif // IRS_NOEXCEPTION
   }
   return std::string(out_str);
 }
@@ -235,10 +243,6 @@ inline std::string wstring_to_utf_8(const std::wstring& a_str)
   delete[] cstr;
   return str;
 }
-
-/*inline std::string utf_8_to_cp1251(const std::string& a_str)
-{
-}*/
 
 # endif // !QT_CORE_LIB
 #else // !IRS_WIN32

@@ -26,7 +26,9 @@
 #include <irsavrutil.h>
 #endif //__ICCAVR__
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <irsarmutil.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 #include <irsconfig.h>
 #include <irsdefs.h>
@@ -487,6 +489,7 @@ public:
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
 #ifdef IRS_MICROCONTROLLER
+#ifndef IRS_STM32H7xx
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
@@ -527,6 +530,49 @@ public:
   }
 };
 typedef mc_error_handler_t avr_error_handler_t;
+#endif // IRS_STM32H7xx
+
+class mc_error_handler_ex_t: public mxfact_event_t
+{
+private:
+  ostream* mp_out;
+  event_t* mp_error_event;
+  error_out_t m_error_out;
+
+  void exec()
+  {
+    mxfact_event_t::exec();
+
+    if (mp_out) {
+      m_error_out.out_info(*mp_out);
+    }
+    if (mp_error_event) {
+      mp_error_event->exec();
+    }
+    for (;;);
+  }
+public:
+  mc_error_handler_ex_t(
+    ostream* ap_out,
+    event_t* ap_error_event = IRS_NULL,
+    error_trans_base_t* ap_error_trans = error_trans()
+  ):
+    mp_out(ap_out),
+    mp_error_event(ap_error_event),
+    m_error_out(ap_error_trans)
+  {
+    ap_error_trans->add_handler(this);
+  }
+  void out(ostream* ap_out)
+  {
+    mp_out = ap_out;
+  }
+  void add_blink_event(event_t* ap_event)
+  {
+    mp_error_event = ap_event;
+  }
+};
+
 #endif //IRS_MICROCONTROLLER
 
 // Обработчик ошибок для вывода ошибок в виде исключения
@@ -567,6 +613,39 @@ public:
 };
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
+#if (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
+template<typename char_type, typename traits_type = char_traits<char_type>>
+class basic_zerobuf : public basic_streambuf<char_type, traits_type>
+{
+public:
+  typedef typename traits_type::int_type int_type;
+
+  virtual int_type overflow(int_type = EOF)
+  { return 0; }
+
+  virtual int_type underflow()
+  { return 0; }
+
+  virtual int sync()
+  { return this->overflow(); }
+};
+
+typedef basic_zerobuf<char> zerobuf;
+typedef basic_zerobuf<wchar_t> wzerobuf;
+
+template<class T>
+basic_ostream<T>& basic_mlog()
+{
+  static basic_zerobuf<T> buf;
+  static basic_ostream<T> mlog_obj(&buf);
+  return mlog_obj;
+}
+
+wostream& wmlog();
+
+#else //(__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
 class zerobuf: public streambuf
 {
 public:
@@ -583,6 +662,10 @@ public:
     return overflow();
   }
 };
+
+#endif // (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
+ostream& mlog();
 
 #ifndef __WATCOMC__
 // Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf
@@ -611,8 +694,6 @@ void send_wsa_last_message_err(const char* ap_file, int a_line);
 
 void send_message_err(int a_error_code, const char* ap_file, int a_line);
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
-
-ostream& mlog();
 
 #ifdef IRS_LIB_FLASH_ASSERT
 template <class T>

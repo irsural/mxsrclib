@@ -445,6 +445,7 @@ public:
 
   adc_ads1298_continuous_mode_t(const settings_t& a_settings);
   ~adc_ads1298_continuous_mode_t();
+  void reset();
   virtual size_type get_resolution() const;
   virtual void select_channels(irs_u32 a_selected_channels);
   virtual inline bool new_value_exists(irs_u8 a_channel) const;

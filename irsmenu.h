@@ -456,7 +456,7 @@ class irs_menu_double_item_t: public irs_menu_base_t
   typedef progressive_change_value_t<double> progressive_change_value_type;
   const char *f_prefix;
   const char *f_suffix;
-  char *f_value_string;
+  irs::raw_data_t<char> f_value_string;
   const char *f_hint;
   irs::num_mode_t f_num_mode;
   size_type f_space_count_after_prefix;
@@ -492,7 +492,7 @@ public:
   //! \param[in] a_len длина поля числа, без суффикса и префикса
   //! \param[in] a_accur точность вывода числа
   //! \param[in] a_num_mode режим вывода числа, фиксированный по умолчанию
-  void set_str(const char *a_value_string, const char *a_prefix, 
+  void set_str(const char */*a_value_string*/, const char *a_prefix, 
     const char *a_suffix,
     size_type a_len, size_type a_accur,
     irs::num_mode_t a_num_mode = irs::num_mode_fixed);
@@ -1026,8 +1026,8 @@ bool irs_menu_simply_item_t<T>::is_updated()
 
 class irs_menu_bool_item_t: public irs_menu_base_t
 {
-  char *f_true_string;
-  char *f_false_string;
+  const char *f_true_string;
+  const char *f_false_string;
   irs_bool *f_parametr;
   irs_bool f_temp_parametr;
   bool_trans_t f_bool_trans;

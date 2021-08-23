@@ -6,6 +6,8 @@
 
 #include <irsarchint.h>
 #include <irsconfig.h>
+#include <irserror.h>
+#include <irsstrm.h>
 
 #include <irsfinal.h>
 
@@ -47,20 +49,104 @@ void NMI_Handler()
   irs::arm::interrupt_array()->exec_event(irs::arm::nmi_int);
 }
 
+void fault_show(unsigned long a_LR, unsigned long a_MSP,
+  unsigned long a_PSP)
+{
+  unsigned long SP = 0;
+
+  const uint32_t stack_type_bit = 2;
+  if ((a_LR&(1 << stack_type_bit)) == 0) {
+    SP = a_MSP;
+  } else {
+    SP = a_PSP;
+  }
+
+  irs::mlog() << endl << endl;
+
+  irs::mlog() << "Fault information" << endl << endl;
+  
+  const uint32_t FP_state_info_bit = 4;
+  if ((a_LR&(1 << FP_state_info_bit)) == 0) {
+    irs::mlog() << "FP state information is present but not displayed" << endl;
+  } else {
+    irs::mlog() << "FP state information is absent" << endl;
+  }
+  irs::mlog() << "(Extended frame; " <<
+    "ARM v7-M Architecture Reference Manual)" << endl;
+
+  // IAR выполняет PUSH {R7, LR}
+  const unsigned long push_size = 8;
+
+  irs_u32* stack = reinterpret_cast<irs_u32*>(SP + push_size);
+  enum { r0, r1, r2, r3, r12, lr, pc, psr };
+
+  irs::mlog() << "R0 = "; irs::out_hex_0x(&irs::mlog(), stack[r0]);
+  irs::mlog() << endl;
+  irs::mlog() << "R1 = "; irs::out_hex_0x(&irs::mlog(), stack[r1]);
+  irs::mlog() << endl;
+  irs::mlog() << "R2 = "; irs::out_hex_0x(&irs::mlog(), stack[r2]);
+  irs::mlog() << endl;
+  irs::mlog() << "R3 = "; irs::out_hex_0x(&irs::mlog(), stack[r3]);
+  irs::mlog() << endl;
+  irs::mlog() << "R12 = "; irs::out_hex_0x(&irs::mlog(), stack[r12]);
+  irs::mlog() << endl;
+  irs::mlog() << "LR = "; irs::out_hex_0x(&irs::mlog(), stack[lr]);
+  irs::mlog() << endl;
+  irs::mlog() << "PC = "; irs::out_hex_0x(&irs::mlog(), stack[pc]);
+  irs::mlog() << endl;
+  irs::mlog() << "PSR = "; irs::out_hex_0x(&irs::mlog(), stack[psr]);
+  irs::mlog() << endl;
+
+  irs::mlog() << irsm("BFAR = ");
+  irs::out_hex_0x(&irs::mlog(), 
+    (*((volatile unsigned long *)(0xE000ED38))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("MMFAR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED34))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("CFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED28))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("HFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED2C))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("DFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED30))));
+  irs::mlog() << endl;
+  irs::mlog() << irsm("AFSR = ");
+  irs::out_hex_0x(&irs::mlog(),
+    (*((volatile unsigned long *)(0xE000ED3C))));
+  irs::mlog() << endl;
+
+  irs::mlog() << endl << endl;
+}
+
 void HardFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::hard_fault_int);
 }
 void MemManage_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::mem_manage_int);
 }
 void BusFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::bus_fault_int);
 }
 void UsageFault_Handler()
 {
+  fault_show(__get_LR(), __get_MSP(), __get_PSP());
+
   irs::arm::interrupt_array()->exec_event(irs::arm::usage_fault_int);
 }
 #if !IRS_USE_FREE_RTOS
@@ -372,6 +458,11 @@ void irs_arm_exti3_func()
   EXTI_PR_bit.PR9 = 1;
 }
 
+void irs_arm_dma1_stream5()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma1_stream5_int);
+} 
+
 void irs_arm_exti9_5_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti9_5_int);
@@ -399,9 +490,19 @@ void irs_arm_tim1_up_tim10_func()
   TIM10_SR_bit.CC1IF = 0;
 }
 
+void irs_arm_tim2_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim2_int);
+}
+
 void irs_arm_tim3_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim3_int);
+}
+
+void irs_arm_tim5_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim5_int);
 }
 
 void irs_arm_exti15_10_func()
@@ -663,7 +764,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 13
   irs_arm_default_int_func,  // 14
   irs_arm_default_int_func,  // 15
-  irs_arm_default_int_func,  // 16
+  irs_arm_dma1_stream5,      // 16
   irs_arm_default_int_func,  // 17
   irs_arm_default_int_func,  // 18
   irs_arm_default_int_func,  // 19
@@ -675,7 +776,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_tim1_up_tim10_func,// 25
   irs_arm_default_int_func,  // 26
   irs_arm_default_int_func,  // 27
-  irs_arm_default_int_func,  // 28
+  irs_arm_tim2_func,  // 28
   irs_arm_tim3_func,         // 29
   irs_arm_default_int_func,  // 30
   irs_arm_default_int_func,  // 31
@@ -697,7 +798,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 47
   irs_arm_default_int_func,  // 48
   irs_arm_sdio_func,  // 49
-  irs_arm_default_int_func,  // 50
+  irs_arm_tim5_func,  // 50
   irs_arm_default_int_func,  // 51
   irs_arm_usart4_func,  // 52
   irs_arm_usart5_func,  // 53

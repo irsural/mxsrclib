@@ -3444,7 +3444,7 @@ public:
   irs_u32 get_crc();
   void reset();
 private:
-  static handle_t<crc32_data_t> mp_crc32_data;
+  //static handle_t<crc32_data_t> mp_crc32_data;
   irs_u32 m_crc;
 };
 
@@ -3452,9 +3452,10 @@ template<class T>
 inline void crc32_table_stream_t::put(const T* ap_buf, size_type a_size)
 {
   IRS_STATIC_ASSERT(sizeof(T) == 1);
+  static handle_t<crc32_data_t> crc32_data = new crc32_data_t();
   for (size_t i = 0; i < a_size; i++) {
     m_crc = ((m_crc >> 8) & 0x00FFFFFF) ^
-      mp_crc32_data->table[(m_crc ^ *(ap_buf++)) & 0xFF];
+      crc32_data->table[(m_crc ^ *(ap_buf++)) & 0xFF];
   }
 }
 

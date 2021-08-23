@@ -12,9 +12,9 @@
 
 #include <irscpu.h>
 
-#ifdef __ICCARM__
+#ifdef IRS_STM32_F2_F4_F7
 #include <armioregs.h>
-#endif // __ICCARM__
+#endif // IRS_STM32_F2_F4_F7
 
 #include <irsfinal.h>
 
@@ -41,8 +41,8 @@ irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 16000000;
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
-#else
-  #error Тип контроллера не определён
+#else // Другой __ICCARM__
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 100000000;
 #endif // ARM_device
 #else //__ICCAVR
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;

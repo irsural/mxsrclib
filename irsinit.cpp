@@ -17,7 +17,9 @@
 #include <irslocale.h>
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armcfg.h>
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 #include <irsfinal.h>

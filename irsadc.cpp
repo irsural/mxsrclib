@@ -613,6 +613,21 @@ irs::adc_ads1298_continuous_mode_t::~adc_ads1298_continuous_mode_t()
 {
   mp_spi->abort();
   spi_release();
+  mp_power_down_pin->clear();
+}
+
+void irs::adc_ads1298_continuous_mode_t::reset()
+{
+  mp_spi->abort();
+  spi_release();
+  mp_power_down_pin->clear();
+  
+  m_process = process_wait_after_power_up;
+  
+  mp_cs_pin->set();
+  mp_power_down_pin->set();
+  mp_reset_pin->set();
+  m_t_after_power_up_delay.start();
 }
 
 irs::adc_ads1298_continuous_mode_t::size_type

@@ -33,6 +33,11 @@
 // Максимальное число сегмента mac-адреса
 #define MAC_NUM_MAX 255
 
+#define IRSLIB_MXNET_PORT 5005
+#define IRSLIB_MODBUS_PORT 5006
+#define IRSLIB_GET_IP_LIST_PORT 5007
+#define IRSLIB_LOG_PORT 5008
+
 enum {
   ip_length = 4,
   mac_length = 6

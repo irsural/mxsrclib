@@ -11,11 +11,12 @@
 #endif // __BORLANDC__
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armioregs.h>
 #include <armcfg.h>
 #include <irsdsp.h>
 
-
+#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 #ifdef PWM_ZERO_PULSE
@@ -60,6 +61,8 @@ irs::cpu_traits_t::frequency_type irs::pwm_gen_t::get_timer_frequency()
 }
 
 #ifdef __ICCARM__
+
+#ifndef IRS_STM32H7xx
 
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 //  Флаги занятости таймеров общего назначения
@@ -2704,4 +2707,5 @@ irs_u32 irs::decoder_t::get_selected_pin()
   return m_pin_index;
 }
 
+#endif // IRS_STM32H7xx
 #endif  //  __ICCARM__

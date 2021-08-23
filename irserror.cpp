@@ -357,12 +357,38 @@ void irs::send_message_err(int a_error_code, const char* ap_file,
 }
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
+
+#if (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
+/*template<typename stream_type, typename buffer_type>
+stream_type& irs::basic_mlog<stream_type, buffer_type>()
+{
+  static buffer_type buf;
+  static stream_type mlog_obj(&buf);
+  return mlog_obj;
+}*/
+
 ostream& irs::mlog()
 {
-  static irs::zerobuf buf;
+  return irs::basic_mlog<char>();
+}
+
+wostream& irs::wmlog()
+{
+  return irs::basic_mlog<wchar_t>();
+}
+
+#else //(__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
+ostream& irs::mlog()
+{
+  static zerobuf buf;
   static ostream mlog_obj(&buf);
   return mlog_obj;
 }
+
+#endif // (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
+
 
 namespace irs {
 

@@ -27,10 +27,10 @@
 #include <arpa/inet.h>
 #endif // IRS_WINDOWS IRS_LINUX
 
-#ifdef __ICCARM__
+#ifdef IRS_STM32F_2_AND_4
 # include <armioregs.h>
 # include <armcfg.h>
-#endif //__ICCARM__
+#endif //IRS_STM32F_2_AND_4
 
 // Standart C++ headers
 #include <string.h>
@@ -367,7 +367,9 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
       const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
+      #ifndef IRS_NOEXCEPTION
       try {
+      #endif // IRS_NOEXCEPTION 
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =
@@ -385,6 +387,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
           // Текущий канал для проверки уже установлен
         }
         *ap_insert_success = true;
+      #ifndef IRS_NOEXCEPTION
       } catch (...) {
         if (m_map_id_channel.size() > channel_prev_count) {
           m_map_id_channel.erase(map_id_channel_res.first);
@@ -394,6 +397,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
         }
         m_id_list.resize(channel_prev_count);
       }
+      #endif // IRS_NOEXCEPTION
     } else {
       // Добавление не разрешено
     }
@@ -501,7 +505,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::channel_buf_max_size_set(
   size_type a_channel_buf_max_size)
 {
   m_buf_max_size = a_channel_buf_max_size;
-  map_id_channel_iterator it_channel = m_map_id_channel.begin();
+  //map_id_channel_iterator it_channel = m_map_id_channel.begin();
   /*while (it_channel != m_map_id_channel.end()) {
     it_channel->second.buffer.reserve(m_buf_max_size);
   }*/
