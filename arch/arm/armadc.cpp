@@ -2212,6 +2212,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH3: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   } else if (a_timer_address == IRS_TIM2_BASE) {
     adc_shift = 3 - TIM_CH2;
@@ -2221,6 +2224,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH4: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   } else if (a_timer_address == IRS_TIM3_BASE) {
     adc_shift = 7;
@@ -2228,6 +2234,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH1: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   } else if (a_timer_address == IRS_TIM4_BASE) {
     adc_shift = 9 - TIM_CH4;
@@ -2235,6 +2244,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH4: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   } else if (a_timer_address == IRS_TIM5_BASE) {
     adc_shift = 10;
@@ -2244,6 +2256,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH3: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   } else if (a_timer_address == IRS_TIM8_PWM2_BASE) {
     adc_shift = 13;
@@ -2251,6 +2266,9 @@ void irs::arm::st_adc_dma_t::set_adc_timer_channel(size_t a_timer_address,
       case TIM_CH1: {
         mp_adc->ADC_CR2_bit.EXTSEL = adc_shift + a_timer_channel;
       } break;
+      default: {
+        IRS_LIB_ERROR(ec_standard, "Недопустимый номер канала таймера");
+      };
     };
   }
 }

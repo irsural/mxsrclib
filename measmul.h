@@ -9,13 +9,6 @@
 #ifndef measmulH
 #define measmulH
 
-// Отключил measmul для проекта u5023m_arm из-за ошибки:
-// Error[Ta066]: Cannot call function "std::numeric_limits<double>::min"
-// with vfp calling convention from thumb mode
-// S:/Data/Users/KrasheninnikovMaxim/Development/U5023/prjs/arm/
-// mxsrclib\measmul.h 2742 
-#ifndef STM32F40_41xxx
-
 // Версия модуля measmul
 #define MEASMUL_VERSION 0x0001
 
@@ -3661,7 +3654,5 @@ private:
 //! @}
 
 } //namespace irs
-
-#endif //STM32F40_41xxx
 
 #endif //measmulH
