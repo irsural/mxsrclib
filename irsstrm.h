@@ -576,10 +576,10 @@ private:
   auto_arr<char> m_outbuf;
 };
 
+#endif // IRS_STM32H7xx
 
 } //namespace arm
 
-#endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
 } //namespace irs
