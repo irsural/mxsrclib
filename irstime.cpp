@@ -202,7 +202,7 @@ irs::cur_time_t* irs::cur_time()
 #if IRS_USE_ST_RTC
 //_STD_BEGIN
 
-#if _DLIB_TIME_ALLOW_64
+#if _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
 __time64_t (__time64)(__time64_t *t)
 {
   #ifdef IRS_STM32_F2_F4_F7
@@ -218,7 +218,7 @@ __time64_t (__time64)(__time64_t *t)
 }
 //CLOCKS_PER_SEC
 
-#else // _DLIB_TIME_ALLOW_64
+#else // _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
 
 __time32_t (__time32)(__time32_t *t)
 {
@@ -235,7 +235,7 @@ __time32_t (__time32)(__time32_t *t)
 }
 
 //_STD_END
-#endif // _DLIB_TIME_ALLOW_64
+#endif // _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
 
 #endif // IRS_USE_ST_RTC
 
