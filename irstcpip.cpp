@@ -1963,7 +1963,12 @@ bool irs::simple_tcpip_t::tcp_connect(irs_size_t a_socket,
   return true;
 }
 
+#ifdef USE_LWIP
+bool irs::simple_tcpip_t::tcp_listen_simple(irs_size_t a_socket,
+  irs_u16 a_port)
+#else //USE_LWIP
 bool irs::simple_tcpip_t::tcp_listen(irs_size_t a_socket, irs_u16 a_port)
+#endif //USE_LWIP
 {
   if ((m_tcp_socket_list[a_socket - 1].state != CLOSED) &&
     (m_tcp_socket_list[a_socket - 1].state != LISTEN) &&

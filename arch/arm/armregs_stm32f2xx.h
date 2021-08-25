@@ -236,8 +236,8 @@ inline size_t get_timer_address(st_timer_name_t a_st_timer_name)
     case stn_tim12: return IRS_TIM12_BASE;
     case stn_tim13: return IRS_TIM13_BASE;
     case stn_tim14: return IRS_TIM14_BASE;
+    default: return 0;
   }
-  return 0;
 }
 
 // Device ID

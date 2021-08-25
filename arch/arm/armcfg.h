@@ -12,7 +12,7 @@
 
 #include <irsgpio.h>
 #include <irsarchint.h>
-#include <irsstrm.h>
+#include <irserror.h>
 #include <armioregs.h>
 
 #include <intrinsics.h>

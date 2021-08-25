@@ -533,21 +533,22 @@ public:
 
   bool operator< (const id_t& a_id) const
   {
-    bool less_than_value = true;
+    bool less_than_value_result = true;
     if (m_identifier.size() != a_id.m_identifier.size()) {
-      less_than_value = (m_identifier.size() < a_id.m_identifier.size());
+      less_than_value_result = (m_identifier.size() < a_id.m_identifier.size());
     } else {
-      less_than_value = false;
+      less_than_value_result = false;
       for (size_type elem_i = 0; elem_i < m_identifier.size(); elem_i++) {
         if (m_identifier[elem_i] != a_id.m_identifier[elem_i]) {
-          less_than_value = (m_identifier[elem_i] < a_id.m_identifier[elem_i]);
+          less_than_value_result = 
+            (m_identifier[elem_i] < a_id.m_identifier[elem_i]);
           break;
         } else {
           // Продолжаем сравнение
         }
       }
     }
-    return less_than_value;
+    return less_than_value_result;
   }
 
 private:

@@ -9,20 +9,19 @@
 #ifndef LWIP_BUF_H
 #define LWIP_BUF_H
 
-#define USE_LCD
+// Крашенинников 25.08.2021
+// В настройки проекта следует добавить define-константу IRS_USE_UTF8_CPP=1
+
+// Крашенинников Галимзянову: Напиши в описании класса в документе Word
+// обо всех define-константах, которые нужно добавить в проект для правильного
+// функционирования lwipbuf. Также это написать здесь.
 
 #include <irsdefs.h>
 #include <irscpp.h>
 #include <irsnetdefs.h>
 #include <irsencode.h>
 #include <irsstrconv.h>
-
-#include <ethernet_h7.h>
 #include <lwipopts_conf.h>
-
-#include <stm32h7xx_hal.h>
-
-#include "app_ethernet.h"
 
 #ifdef USE_LCD
 #ifdef __cplusplus
@@ -36,16 +35,22 @@ extern "C" {
 #endif // __cplusplus
 #endif // USE_LCD
 
+#pragma diag_suppress=Pa181
 #include "netif/etharp.h"
 
 #include "lwip/opt.h"
 #include "lwip/init.h"
 #include "lwip/netif.h"
+#ifdef IRS_STM32F4xx
+#include "lwip/timers.h"
+#else //IRS_STM32F4xx
 #include "lwip/timeouts.h"
+#endif //IRS_STM32F4xx
 #include "lwip/err.h"
 
 #include "lwip/stats.h"
 #include "lwip/tcp.h"
+#pragma diag_default=Pa181  
 
 #define _OVERRIDE_
 
@@ -319,11 +324,12 @@ int basic_lwipbuf<char_type, traits_type>::tcp_init()
     if (!mp_ip) {
 #ifndef IRS_NOEXCEPTION
       throw runtime_error("mp_ip cannot be nullptr");
-#endif // IRS_NOEXCEPTION
+#else // IRS_NOEXCEPTION
       return -1;
+#endif // IRS_NOEXCEPTION
     }
 
-    err_t err = tcp_bind(mp_tcp_pcb, mp_ip, m_port);
+    err_t err = tcp_bind(mp_tcp_pcb, const_cast<ip_addr*>(mp_ip), m_port);
     if (err == ERR_OK) {
       /* Начинаем слушать текущий порт на новые соединения. */
       mp_tcp_pcb = tcp_listen(mp_tcp_pcb);
