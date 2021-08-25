@@ -329,7 +329,7 @@ int basic_lwipbuf<char_type, traits_type>::tcp_init()
 #endif // IRS_NOEXCEPTION
     }
 
-    err_t err = tcp_bind(mp_tcp_pcb, const_cast<ip_addr*>(mp_ip), m_port);
+    err_t err = tcp_bind(mp_tcp_pcb, const_cast<ip_addr_t*>(mp_ip), m_port);
     if (err == ERR_OK) {
       /* Ќачинаем слушать текущий порт на новые соединени€. */
       mp_tcp_pcb = tcp_listen(mp_tcp_pcb);
