@@ -335,7 +335,11 @@ public:
   void tcp_init();
   bool tcp_connect(irs_size_t a_socket, irs_u16 a_local_port,
     mxip_t a_dest_ip, irs_u16 a_dest_port);
+  #ifdef USE_LWIP
+  bool tcp_listen_simple(irs_size_t a_socket, irs_u16 a_port);
+  #else //USE_LWIP
   bool tcp_listen(irs_size_t a_socket, irs_u16 a_port);
+  #endif //USE_LWIP
 
   bool is_write_complete();
   void write(mxip_t a_dest_ip, irs_u16 a_dest_port,
