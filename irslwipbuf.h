@@ -283,9 +283,9 @@ basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t a_sizebuf,
   : m_sizebuf(a_sizebuf)
   , m_port(a_port)
   , mp_ip(ap_ip)
-  , mp_convert_buffer(new char[m_sizebuf * sizeof(char_type)]())
+  , mp_convert_buffer(new char[m_sizebuf * sizeof(char_type) * 2 + 10]())
   , m_buffer(m_sizebuf)
-  , m_temp_buffer(m_sizebuf * sizeof(char_type))
+  , m_temp_buffer(m_sizebuf * sizeof(char_type) * 2)
   , m_connected(false)
 {
   /**
