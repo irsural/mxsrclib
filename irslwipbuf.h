@@ -1,7 +1,7 @@
 // @brief класс basic_lwipbuf представляющий собой буфер, использующий ethernet
 // в качестве передачи данных.
 //
-// Дата: 30.08.2021
+// Дата: 31.08.2021
 // Дата создания: 12.04.2021
 
 #ifndef LWIP_BUF_H
@@ -442,7 +442,7 @@ basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c)
   msg_start_index = wsymbols_to_utf8(m_unified_buffer, msg_start_index);
 
   /* Отправляем данные клиентам. */
-  send(&m_unified_buffer.front(), msg_start_index);
+  send(m_unified_buffer.data(), msg_start_index);
 
   /**
    * Устанавлием позицию каретки заполнения данных для корректной записи данных
@@ -451,7 +451,20 @@ basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c)
   this->pbump(-sz);
 
   if (c != traits_type::eof()) {
-    m_unified_buffer[0] = static_cast<wchar_t>(c);
+    irs_u32 cp = static_cast<irs_u32>(c);    
+    
+    if (sizeof(wchar_t) == 2) {
+      m_unified_buffer[0] = cp;
+      m_unified_buffer[1] = cp >> 8;
+    } else if (sizeof(wchar_t) == 4) {
+      m_unified_buffer[0] = cp;
+      m_unified_buffer[1] = cp >> 8;
+      m_unified_buffer[2] = cp >> 16;
+      m_unified_buffer[3] = cp >> 24;
+    } else {
+      IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
+    }
+    
     this->pbump(1);
   }
 
