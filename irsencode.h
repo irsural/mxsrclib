@@ -1,6 +1,6 @@
 // @brief функции перевода строк в различнык кодировки
 //
-// Дата: 30.08.2021
+// Дата: 31.08.2021
 // Дата создания: 12.04.2021
 
 #ifndef ENCODE_H
@@ -163,7 +163,8 @@ inline size_t wsymbols_to_utf8(vector<char>& a_buffer,
         character = (character | octet_2) << 8;
         character |= octet_1;
       } else {
-        character = character | static_cast<irs_u8>(a_buffer.at(i));
+        *(iter++) = static_cast<irs_u8>(a_buffer.at(i));
+        continue;
       }
 
       irs_u32 u32_character = mask16(character);
@@ -200,11 +201,11 @@ inline size_t wsymbols_to_utf8(vector<char>& a_buffer,
         character = (character | octet_3) << 8;
         character = (character | octet_2) << 8;
         character |= octet_1;
+        
+        iter = wchar_to_utf8(character, iter);
       } else {
-        character = character | static_cast<irs_u8>(a_buffer.at(i));
+        *(iter++) = static_cast<irs_u8>(a_buffer.at(i));
       }
-
-      iter = wchar_to_utf8(character, iter);
     }
   } else {
     IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));

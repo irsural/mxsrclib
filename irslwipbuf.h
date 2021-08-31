@@ -451,20 +451,7 @@ basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c)
   this->pbump(-sz);
 
   if (c != traits_type::eof()) {
-    irs_u32 cp = static_cast<irs_u32>(c);    
-    
-    if (sizeof(wchar_t) == 2) {
-      m_unified_buffer[0] = cp;
-      m_unified_buffer[1] = cp >> 8;
-    } else if (sizeof(wchar_t) == 4) {
-      m_unified_buffer[0] = cp;
-      m_unified_buffer[1] = cp >> 8;
-      m_unified_buffer[2] = cp >> 16;
-      m_unified_buffer[3] = cp >> 24;
-    } else {
-      IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
-    }
-    
+    *reinterpret_cast<char_type*>(m_unified_buffer.data()) = static_cast<wchar_t>(c);
     this->pbump(1);
   }
 
