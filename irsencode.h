@@ -29,7 +29,6 @@ namespace irs
  * @return size_t: размерность перекодированных данных.
  */
 inline size_t cp1251_to_utf8(const char* start, const char* end, char* result)
-// vector<char> &a_buffer, const size_t a_msg_start_index)
 {
   static const char table[128 * 3 + 1] = {
       "\320\202 \320\203 \342\200\232\321\223 \342\200\236\342\200\246\342\200\240\342\200\241"
@@ -86,11 +85,12 @@ inline size_t cp1251_to_utf8(const char* start, const char* end, char* result)
 inline size_t wsymbols_to_utf8(const wchar_t* start, const wchar_t* end,
   char* result)
 {
-  char* result_end = result;
+  char* result_end = NULL;
+  
   if (sizeof(wchar_t) == 2) { // utf16
-    utf8::unchecked::utf16to8(start, end, result_end);
+    result_end = utf8::unchecked::utf16to8(start, end, result);
   } else if (sizeof(wchar_t) == 4) { // utf32
-    utf8::unchecked::utf32to8(start, end, result_end);
+    result_end = utf8::unchecked::utf32to8(start, end, result);
   } else {
     IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
   }
