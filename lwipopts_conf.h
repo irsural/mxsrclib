@@ -55,6 +55,9 @@
 a lot of data that needs to be copied, this should be set high. */
 #define MEM_SIZE                (10*1024)
 
+/* Relocate the LwIP RAM heap pointer */
+#define LWIP_RAM_HEAP_POINTER    (0x30044000)
+
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
@@ -73,7 +76,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_TCP_SEG        12
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
-//#define MEMP_NUM_SYS_TIMEOUT    3
+#define MEMP_NUM_SYS_TIMEOUT    10
 
 
 /* ---------- Pbuf options ---------- */
@@ -115,7 +118,7 @@ a lot of data that needs to be copied, this should be set high. */
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of
    interfaces. DHCP is not implemented in lwIP 0.5.1, however, so
    turning this on does currently not work. */
-#define LWIP_DHCP               0
+#define LWIP_DHCP                       0
 
 
 /* ---------- UDP options ---------- */
