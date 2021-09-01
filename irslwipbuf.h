@@ -1,18 +1,15 @@
 // @brief класс basic_lwipbuf представляющий собой буфер, использующий ethernet
 // в качестве передачи данных.
 //
-// Дата: 31.08.2021
 // Дата создания: 12.04.2021
+// Реализация: Галимзянов
+// Некоторые исправления: Крашенинников
 
 #ifndef LWIP_BUF_H
 #define LWIP_BUF_H
 
 // Крашенинников 25.08.2021
 // В настройки проекта следует добавить define-константу IRS_USE_UTF8_CPP=1
-
-// Крашенинников Галимзянову: Напиши в описании класса в документе Word
-// обо всех define-константах, которые нужно добавить в проект для правильного
-// функционирования lwipbuf. Также это написать здесь.
 
 #include <irsdefs.h>
 #include <irscpp.h>
@@ -61,7 +58,6 @@ class basic_lwipbuf: public basic_streambuf<char_type, traits_type>
 {
 public:
   typedef typename traits_type::int_type int_type;
-
   typedef vector<char> buffer_type;
 
   /**
@@ -274,7 +270,9 @@ basic_lwipbuf<char_type, traits_type>::basic_lwipbuf(size_t a_sizebuf,
    * потоки ввода/вывода.
    */
   char_type* ref_buffer = reinterpret_cast<char_type*>(m_unified_buffer.data());
-  this->setp(ref_buffer, ref_buffer + m_sizebuf);
+  char_type* buf_end = ref_buffer + m_unified_buffer.size()/sizeof(char_type);
+  char_type* buf_begin = buf_end - m_sizebuf;
+  this->setp(buf_begin, buf_end);
 
   /* Инициализация сервера. */
   if (tcp_init() < 0) {
@@ -378,19 +376,27 @@ basic_lwipbuf<char_type, traits_type>::send(
 
 template<typename char_type, typename traits_type>
 u16_t basic_lwipbuf<char_type, traits_type>::get_port() const
-{ return m_port; }
+{ 
+  return m_port; 
+}
 
 template<typename char_type, typename traits_type>
 ip_addr_t basic_lwipbuf<char_type, traits_type>::get_ip() const
-{ return *mp_ip; }
+{ 
+  return *mp_ip; 
+}
 
 template<typename char_type, typename traits_type>
 bool basic_lwipbuf<char_type, traits_type>::is_any_connected() const
-{ return m_connected; }
+{ 
+  return m_connected; 
+}
 
 template<typename char_type, typename traits_type>
 size_t basic_lwipbuf<char_type, traits_type>::get_count_connected() const
-{ return m_connections.size(); }
+{ 
+  return m_connections.size(); 
+}
 
 template<typename char_type, typename traits_type>
 size_t
@@ -414,35 +420,27 @@ template<typename char_type, typename traits_type>
 _OVERRIDE_ basic_lwipbuf<char_type, traits_type>::int_type
 basic_lwipbuf<char_type, traits_type>::overflow(int_type c)
 {
-#ifndef IRS_NOEXCEPTION
-  throw runtime_error("There is no overloaded overflow function for the type used");
-#else
-  return -1
-#endif // // IRS_NOEXCEPTION
-}
-
-template<>
-_OVERRIDE_
-basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c)
-{
   /* Вычисляем размер сообщения в буфере. */
   ptrdiff_t sz = this->pptr() - this->pbase();
-
-  /**
-   * Добавляем к каждому символу '/n' символ '/r'.
-   * На выходе получаем индекс, с которого начинается преобразованное сообщение.
-   */
-  size_t msg_start_index = copy_with_r_symbols(m_unified_buffer,
-    sz * sizeof(wchar_t));
 
   /**
    * Осуществляем перекодировку сообщения.
    * На выходе получаем размерность полученного сообщения.
    */
-  msg_start_index = wsymbols_to_utf8(m_unified_buffer, msg_start_index);
+  size_t utf8_size =
+    lwipbuf_to_utf8(this->pbase(), this->pptr(), m_unified_buffer.data());
+
+  /**
+   * Добавляем к каждому символу '/n' символ '/r'.
+   * На выходе получаем индекс, с которого начинается преобразованное сообщение.
+   */
+  size_t msg_start_index = copy_with_r_symbols(m_unified_buffer, utf8_size);
 
   /* Отправляем данные клиентам. */
-  send(m_unified_buffer.data(), msg_start_index);
+  char* data_rn = m_unified_buffer.data() + msg_start_index;
+  size_t size_rn = m_unified_buffer.size() - msg_start_index;
+
+  send(data_rn, size_rn);
 
   /**
    * Устанавлием позицию каретки заполнения данных для корректной записи данных
@@ -451,66 +449,18 @@ basic_lwipbuf<wchar_t>::int_type basic_lwipbuf<wchar_t>::overflow(int_type c)
   this->pbump(-sz);
 
   if (c != traits_type::eof()) {
-    irs_u32 cp = static_cast<irs_u32>(c);    
-    
-    if (sizeof(wchar_t) == 2) {
-      m_unified_buffer[0] = cp;
-      m_unified_buffer[1] = cp >> 8;
-    } else if (sizeof(wchar_t) == 4) {
-      m_unified_buffer[0] = cp;
-      m_unified_buffer[1] = cp >> 8;
-      m_unified_buffer[2] = cp >> 16;
-      m_unified_buffer[3] = cp >> 24;
-    } else {
-      IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
-    }
-    
+    *this->pptr() = static_cast<char_type>(c);
     this->pbump(1);
   }
 
-  return 0;
-}
-
-template<>
-_OVERRIDE_
-basic_lwipbuf<char>::int_type basic_lwipbuf<char>::overflow(int_type c)
-{
-  /* Вычисляем размер сообщения в буфере. */
-  ptrdiff_t sz = this->pptr() - this->pbase();
-
-  /**
-   * Добавляем к каждому символу '/n' символ '/r'.
-   * На выходе получаем индекс, с которого начинается преобразованное сообщение.
-   */
-  size_t msg_start_index = copy_with_r_symbols(m_unified_buffer, sz);
-
-  /**
-   * Осуществляем перекодировку сообщения.
-   * На выходе получаем размерность полученного сообщения.
-   */
-  msg_start_index = cp1251_to_utf8(m_unified_buffer, msg_start_index);
-
-  /* Отправляем данные клиентам. */
-  send(&m_unified_buffer.front(), msg_start_index);
-
-  /**
-   * Устанавлием позицию каретки заполнения данных для корректной записи данных
-   * в главный буфер при использовании потоков ввода/вывода.
-   */
-  this->pbump(-sz);
-
-  if (c != traits_type::eof()) {
-    m_unified_buffer[0] = static_cast<char>(c);
-    this->pbump(1);
-  }
-
-  /* Отправляем данные клиентам. */
   return 0;
 }
 
 template<typename char_type, typename traits_type>
 _OVERRIDE_ int basic_lwipbuf<char_type, traits_type>::sync()
-{ return this->pptr() == this->pbase() ? 0 : overflow(); }
+{
+  return overflow();
+}
 
 template<typename char_type, typename traits_type>
 err_t basic_lwipbuf<char_type, traits_type>::c_tcp_accept(void* arg,
