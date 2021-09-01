@@ -12,13 +12,9 @@
 #include <irsnetdefs.h>
 #include <irserror.h>
 
-#define IRS_LEAD_SURROGATE_MIN 0xd800u
-#define IRS_LEAD_SURROGATE_MAX 0xdbffu
-#define IRS_TRAIL_SURROGATE_MIN 0xdc00u
-#define TRAIL_SURROGATE_MAX 0xdfffu
-#define IRS_LEAD_OFFSET (IRS_LEAD_SURROGATE_MIN - (0x10000 >> 10))
-#define IRS_SURROGATE_OFFSET 0x10000u - (IRS_LEAD_SURROGATE_MIN << 10) - \
-        IRS_TRAIL_SURROGATE_MIN
+#if IRS_USE_UTF8_CPP
+#include <utf8.h>
+#endif // IRS_USE_UTF8_CPP
 
 namespace irs
 {
@@ -26,9 +22,9 @@ namespace irs
 /**
  * @brief функци€ перевода строки из кодировки cp1251 в utf8.
  *
- * @param a_buffer: ссылка на буфер.
- * @param a_msg_start_index: индекс, с которого начинаетс€ сообщение. —читывание
- * осуществл€етс€ до конца буфера (to a_buffer.size()).
+ * @param start: указатель на начало сообщени€.
+ * @param end: указатель на конец сообщени€.
+ * @param result: указатель на выходные данные.
  *
  * @return size_t: размерность перекодированных данных.
  */
@@ -56,7 +52,7 @@ inline size_t cp1251_to_utf8(const char* start, const char* end, char* result)
   char* result_end = result;
 
   for (; start < end; start++) {
-    if (a_buffer.at(i) & 0x80) {
+    if (*start & 0x80) {
       const char *p = &table[3 * (0x7f & *start)];
 
       if (*p == ' ') { continue; }
@@ -75,104 +71,63 @@ inline size_t cp1251_to_utf8(const char* start, const char* end, char* result)
   return result_end - result;
 }
 
-template<typename octet_iterator>
-inline octet_iterator wchar_to_utf8(irs_u32 cp, octet_iterator& iter)
-{
-  if (cp < 0x80) { // one octet
-    *(iter++) = static_cast<irs_u8>(cp);
-  } else if (cp < 0x800) { // two octets
-    *(iter++) = static_cast<irs_u8>((cp >> 6) | 0xc0);
-    *(iter++) = static_cast<irs_u8>((cp & 0x3f) | 0x80);
-  } else if (cp < 0x10000) { // three octets
-    *(iter++) = static_cast<irs_u8>((cp >> 12) | 0xe0);
-    *(iter++) = static_cast<irs_u8>(((cp >> 6) & 0x3f) | 0x80);
-    *(iter++) = static_cast<irs_u8>((cp & 0x3f) | 0x80);
-  } else { // four octets
-    *(iter++) = static_cast<irs_u8>((cp >> 18) | 0xf0);
-    *(iter++) = static_cast<irs_u8>(((cp >> 12) & 0x3f) | 0x80);
-    *(iter++) = static_cast<irs_u8>(((cp >> 6) & 0x3f) | 0x80);
-    *(iter++) = static_cast<irs_u8>((cp & 0x3f) | 0x80);
-  }
-
-  return iter;
-}
-
-template<typename u16_type>
-inline irs_u16 mask16(u16_type oc)
-{ return static_cast<irs_u16>(0xffff & oc); }
-
-template<typename u16_type>
-inline bool is_lead_surrogate(u16_type cp)
-{ return (cp >= IRS_LEAD_SURROGATE_MIN && cp <= IRS_LEAD_SURROGATE_MAX); }
-
-template<typename u16bit_iterator, typename octet_iterator>
-inline octet_iterator utf16to8(u16bit_iterator start, u16bit_iterator end,
-  octet_iterator& result
-)
-{
-  while (start != end) {
-    uint32_t cp = mask16(*start++);
-    // Take care of surrogate pairs first
-    if (is_lead_surrogate(cp)) {
-      uint32_t trail_surrogate = mask16(*start++);
-      cp = (cp << 10) + trail_surrogate + IRS_SURROGATE_OFFSET;
-    }
-    result = wchar_to_utf8(cp, result);
-  }
-  return result;
-}
-
-template<typename octet_iterator, typename u32bit_iterator>
-inline octet_iterator utf32to8(u32bit_iterator start, u32bit_iterator end,
-  octet_iterator& result
-)
-{
-  while (start != end) {
-    result = wchar_to_utf8(*(start++), result);
-  }
-
-  return result;
-}
-
+#if IRS_USE_UTF8_CPP
 /**
  * @brief функци€ перевода строки из кодировки UTF-16 (UTF-32) в UTF-8. ‘ункци€
  * определ€ет размерность wchat_t и в зависимости от этого определ€ет начальную
  * кодировку. ¬ случае, если размерность не равна ни 2, ни 4 - выдает ошибку.
  * 
- * @param a_buffer: буфер в кодировке UTF-16(32).
- * @param a_msg_start_index: индекс начала сообщени€ в буфере.
+ * @param start: указатель на начало сообщени€.
+ * @param end: указатель на конец сообщени€.
+ * @param result: указатель на выходные данные.
  * 
  * @return size_t: размерность перекодированного сообщени€.
  */
-
 inline size_t wsymbols_to_utf8(const wchar_t* start, const wchar_t* end,
   char* result)
 {
-  char* result_end = NULL;
+  char* result_end = result;
   if (sizeof(wchar_t) == 2) { // utf16
-    result_end = utf16to8(start, end, result);
+    utf8::unchecked::utf16to8(start, end, result_end);
   } else if (sizeof(wchar_t) == 4) { // utf32
-    result_end = utf32to8(start, end, result);
+    utf8::unchecked::utf32to8(start, end, result_end);
   } else {
-    //  рашенинников: ќставил здесь, т. к. здесь пон€тно дл€ чего ASSERT
-    // ћожно ставить в любом месте функции
     IRS_STATIC_ASSERT((sizeof(wchar_t) == 2) || (sizeof(wchar_t) == 4));
   }
 
   return result_end - result;
 }
 
+/**
+ * @brief функци€ перегрузки дл€ перекодировки из CP1251 в UTF-8.
+ * 
+ * @param start: указатель на начало сообщени€.
+ * @param end: указатель на конец сообщени€.
+ * @param result: указатель на выходные данные.
+ * 
+ * @return size_t: размерность перекодированного сообщени€.
+ */
 inline size_t lwipbuf_to_utf8(const char* start, const char* end,
   char* result)
 {
   return cp1251_to_utf8(start, end, result);
 }
 
+/**
+ * @brief функци€ перегрузки дл€ перекодировки из UTF-16(UTF-32) в UTF-8.
+ * 
+ * @param start: указатель на начало сообщени€.
+ * @param end: указатель на конец сообщени€.
+ * @param result: указатель на выходные данные.
+ * 
+ * @return size_t: размерность перекодированного сообщени€.
+ */
 inline size_t lwipbuf_to_utf8(const wchar_t* start, const wchar_t* end,
   char* result)
 {
   return wsymbols_to_utf8(start, end, result);
 }
+#endif // IRS_USE_UTF8_CPP
 
 } // namespace irs
 

@@ -11,10 +11,6 @@
 // Крашенинников 25.08.2021
 // В настройки проекта следует добавить define-константу IRS_USE_UTF8_CPP=1
 
-// Крашенинников Галимзянову: Напиши в описании класса в документе Word
-// обо всех define-константах, которые нужно добавить в проект для правильного
-// функционирования lwipbuf. Также это написать здесь.
-
 #include <irsdefs.h>
 #include <irscpp.h>
 #include <irsnetdefs.h>
@@ -62,7 +58,6 @@ class basic_lwipbuf: public basic_streambuf<char_type, traits_type>
 {
 public:
   typedef typename traits_type::int_type int_type;
-
   typedef vector<char> buffer_type;
 
   /**
@@ -381,19 +376,27 @@ basic_lwipbuf<char_type, traits_type>::send(
 
 template<typename char_type, typename traits_type>
 u16_t basic_lwipbuf<char_type, traits_type>::get_port() const
-{ return m_port; }
+{ 
+  return m_port; 
+}
 
 template<typename char_type, typename traits_type>
 ip_addr_t basic_lwipbuf<char_type, traits_type>::get_ip() const
-{ return *mp_ip; }
+{ 
+  return *mp_ip; 
+}
 
 template<typename char_type, typename traits_type>
 bool basic_lwipbuf<char_type, traits_type>::is_any_connected() const
-{ return m_connected; }
+{ 
+  return m_connected; 
+}
 
 template<typename char_type, typename traits_type>
 size_t basic_lwipbuf<char_type, traits_type>::get_count_connected() const
-{ return m_connections.size(); }
+{ 
+  return m_connections.size(); 
+}
 
 template<typename char_type, typename traits_type>
 size_t
@@ -418,14 +421,14 @@ _OVERRIDE_ basic_lwipbuf<char_type, traits_type>::int_type
 basic_lwipbuf<char_type, traits_type>::overflow(int_type c)
 {
   /* Вычисляем размер сообщения в буфере. */
-  ptrdiff_t sz = pptr() - pbase();
+  ptrdiff_t sz = this->pptr() - this->pbase();
 
   /**
    * Осуществляем перекодировку сообщения.
    * На выходе получаем размерность полученного сообщения.
    */
   size_t utf8_size =
-    lwipbuf_to_utf8(pbase(), pptr(), m_unified_buffer.begin());
+    lwipbuf_to_utf8(this->pbase(), this->pptr(), m_unified_buffer.data());
 
   /**
    * Добавляем к каждому символу '/n' символ '/r'.
@@ -434,8 +437,9 @@ basic_lwipbuf<char_type, traits_type>::overflow(int_type c)
   size_t msg_start_index = copy_with_r_symbols(m_unified_buffer, utf8_size);
 
   /* Отправляем данные клиентам. */
-  char_type* data_rn = m_unified_buffer.data() + msg_start_index;
+  char* data_rn = m_unified_buffer.data() + msg_start_index;
   size_t size_rn = m_unified_buffer.size() - msg_start_index;
+
   send(data_rn, size_rn);
 
   /**
@@ -445,7 +449,7 @@ basic_lwipbuf<char_type, traits_type>::overflow(int_type c)
   this->pbump(-sz);
 
   if (c != traits_type::eof()) {
-    pptr() = static_cast<char_type>(c);
+    *this->pptr() = static_cast<char_type>(c);
     this->pbump(1);
   }
 
