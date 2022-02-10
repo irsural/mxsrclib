@@ -198,7 +198,7 @@ irs::arm::com_buf::com_buf(
 void irs::arm::com_buf::set_usart_options(int a_com_index)
 {
   m_usart->USART_CR1_bit.UE = 1;
-  
+
   #ifdef IRS_STM32F7xx
   m_usart->USART_CR1_bit.M0 = 0; // 8 Data bits
   #else // F2 F4
@@ -246,7 +246,7 @@ irs::arm::com_buf::com_buf(
   set_usart_options(a_com_index);
   if (a_tx != PNONE) {
     m_usart->USART_CR1_bit.TE = 1; // 1: Transmitter is enabled
-  }  
+  }
 }
 
 #endif // IRS_STM32_F2_F4_F7
@@ -399,8 +399,8 @@ irs::arm::st_hal_com_buf::st_hal_com_buf(const st_hal_com_buf& a_buf):
 }
 
 
-irs::arm::st_hal_com_buf::st_hal_com_buf(GPIO_TypeDef* ap_uart_port, 
-    const GPIO_InitTypeDef& a_gpio_handle, UART_HandleTypeDef* ap_uart_handle, 
+irs::arm::st_hal_com_buf::st_hal_com_buf(GPIO_TypeDef* ap_uart_port,
+    const GPIO_InitTypeDef& a_gpio_handle, UART_HandleTypeDef* ap_uart_handle,
     int a_outbuf_size) :
   m_gpio_handle(a_gpio_handle),
   mp_uart_handle(ap_uart_handle),
@@ -449,7 +449,7 @@ int irs::arm::st_hal_com_buf::sync()
 }
 
 //--‘”Õ ÷»ﬂ «¿“€◊ ¿ ƒÀﬂ ’¿À¿, Õ≈ ”ƒ¿Àﬂ“‹--//
-void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+void HAL_UART_MspInit(UART_HandleTypeDef */*huart*/)
 {
   //--œ»Õ€ »Õ»÷»¿À»«»–”ﬁ“—ﬂ —Õ¿–”∆»  ¿À——¿--//
 }

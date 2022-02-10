@@ -554,7 +554,7 @@ private:
 public:
   mc_error_handler_ex_t(
     ostream* ap_out,
-    event_t* ap_error_event = IRS_NULL,                      
+    event_t* ap_error_event = IRS_NULL,
     error_trans_base_t* ap_error_trans = error_trans()
   ):
     mp_out(ap_out),
