@@ -3,6 +3,7 @@
 // Используем встроенный счетчик процессора
 // Дата: 14.09.2009
 
+#include <WinSock2.h>
 #include <windows.h>
 #include <time.h>
 #include <counter.h>
