@@ -46,62 +46,6 @@ namespace irs {
 //! \addtogroup string_processing_group
 //! @{
 
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
-
-// Из std_string_t
-
-// Из std_wstring_t
-inline std_wstring_t str_conv_simple(const std_wstring_t&,
-  const std_wstring_t& a_str_in)
-{
-  return a_str_in;
-}
-inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
-  const std_wstring_t& a_str_in)
-{
-  return a_str_in;
-}
-# ifndef QT_CORE_LIB
-inline std_string_t str_conv_simple(const std_string_t&,
-  const std_wstring_t& a_str_in)
-{
-  return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
-}
-inline irs_string_t str_conv_simple(const irs_string_t&,
-  const std_wstring_t& a_str_in)
-{
-  return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
-}
-# endif // !QT_CORE_LIB
-
-// Из irs_string_t
-
-
-template<>
-inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
-{
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
-  String str(a_str_in.c_str(), a_str_in.size());
-  return std_wstring_t(str.c_str(), str.Length());
-  #else // Если меньше Builder XE
-  return str_conv_simple(std_wstring_t(), a_str_in);
-  #endif // Если меньше Builder XE
-}
-
-template<>
-inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
-{
-  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
-  String str(a_str_in.c_str(), a_str_in.size());
-  return irs_wstring_t(str.c_str(), str.Length());
-  #else // Если меньше Builder XE
-  return str_conv_simple(irs_wstring_t(), a_str_in);
-  #endif // Если меньше Builder XE
-
-}
-#else // !IRS_FULL_STDCPPLIB_SUPPORT
-# ifdef __ICCARM__
-
 inline std::wstring cp1251_to_wstring(const std::string& a_str)
 {
   irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
@@ -157,6 +101,63 @@ inline std::string wstring_to_cp1251(const std::wstring& a_str)
 
   return std::string(out_str);
 }
+
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+
+// Из std_string_t
+
+// Из std_wstring_t
+inline std_wstring_t str_conv_simple(const std_wstring_t&,
+  const std_wstring_t& a_str_in)
+{
+  return a_str_in;
+}
+inline irs_wstring_t str_conv_simple(const irs_wstring_t&,
+  const std_wstring_t& a_str_in)
+{
+  return a_str_in;
+}
+# ifndef QT_CORE_LIB
+inline std_string_t str_conv_simple(const std_string_t&,
+  const std_wstring_t& a_str_in)
+{
+  return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
+}
+inline irs_string_t str_conv_simple(const irs_string_t&,
+  const std_wstring_t& a_str_in)
+{
+  return convert_str_t<wchar_t, char>(a_str_in.c_str()).get();
+}
+# endif // !QT_CORE_LIB
+
+// Из irs_string_t
+
+
+template<>
+inline std_wstring_t str_conv<std_wstring_t>(const irs_string_t& a_str_in)
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return std_wstring_t(str.c_str(), str.Length());
+  #else // Если меньше Builder XE
+  return str_conv_simple(std_wstring_t(), a_str_in);
+  #endif // Если меньше Builder XE
+}
+
+template<>
+inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
+{
+  #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDERXE))
+  String str(a_str_in.c_str(), a_str_in.size());
+  return irs_wstring_t(str.c_str(), str.Length());
+  #else // Если меньше Builder XE
+  return str_conv_simple(irs_wstring_t(), a_str_in);
+  #endif // Если меньше Builder XE
+
+}
+
+#else // !IRS_FULL_STDCPPLIB_SUPPORT
+# ifdef __ICCARM__
 
 inline std::wstring str_conv_simple(const std::wstring&,
   const std::string& a_str_in)
