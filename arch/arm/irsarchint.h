@@ -16,8 +16,6 @@ namespace irs {
 
 namespace arm {
 
-
-
 // Номера прерываний
 enum interrupt_id_t {
   //  Прерывания ядра
@@ -140,6 +138,15 @@ enum interrupt_id_t {
   dma2_stream6_int,
   usart6_int,
   otg_hs_int,
+  
+  #elif defined(IRS_NIIET_1921)
+  gpioa_int,
+  gpiob_int,
+  tmr0_int,
+  tmr1_int,
+  tmr2_int,
+  tmr3_int,
+  
   #endif //Микроконтроллеры
 
   #endif // !IRS_DISABLE_EVENT_INTERRUPT

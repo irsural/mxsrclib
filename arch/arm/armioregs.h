@@ -15,6 +15,8 @@
   #include <armregs_stm32.h>
 #elif defined(IRS_STM32_F2_F4_F7)
   #include <armregs_stm32f2xx.h>
+#elif defined(IRS_NIIET_1921) 
+  #include <K1921VK035.h>
 #else
   #error Тип контроллера не определён
 #endif  // Микроконтроллеры
@@ -25,6 +27,7 @@
     defined(IRS_STM32_F2_F4_F7)
   #define CORTEX_M3_CORE
   #include <armregs_cortex_m3.h>
+  #elif defined(IRS_NIIET_1921) 
 #else
   #error Тип контроллера не определён
 #endif  //  Микроконтроллеры
