@@ -19,6 +19,10 @@
 # include <armregs_stm32f2xx.h>
 #endif // IRS_STM32_F2_F4_F7
 
+#ifdef IRS_NIIET_1921
+#include <K1921VK035.h>
+#endif
+
 #include <irsfinal.h>
 
 //*****************************************************************************
@@ -401,6 +405,9 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
     case IRS_PORTI_BASE: { port_number = 8; } break;
     case IRS_PORTJ_BASE: { port_number = 9; } break;
     case IRS_PORTK_BASE: { port_number = 10; } break;
+  #elif (defined IRS_NIIET_1921)
+    case GPIOA_BASE: { port_number = 0; } break;
+    case GPIOB_BASE: { port_number = 1; } break;
   #else
     // Тип контроллера не определён
     #define IRS_MC_NOT_DEFINED
@@ -431,6 +438,9 @@ inline void port_clock_on(irs_u32 a_port)
     RCC_APB2ENR |= (1 << (port_number + 2));
   #elif defined(IRS_STM32_F2_F4_F7)
     RCC_AHB1ENR |= (1 << port_number);
+  #elif defined(IRS_NIIET_1921)
+    RCU->HCLKCFG |= (1 << port_number);
+    RCU->HRSTCFG |= (1 << port_number);
   #else
     // Тип контроллера не определён
     #pragma diag_suppress=Pe128
