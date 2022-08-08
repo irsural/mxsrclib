@@ -20,7 +20,7 @@
 #endif // IRS_STM32_F2_F4_F7
 
 #ifdef IRS_NIIET_1921
-#include <K1921VK035.h>
+#include <armregs_niietk1921vk0xx.h>
 #endif
 
 #include <irsfinal.h>
