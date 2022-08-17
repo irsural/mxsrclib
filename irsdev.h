@@ -422,6 +422,66 @@ private:
 };
 #endif // USE_HAL_DRIVER
 
+#elif defined(IRS_NIIET_1921)
+
+//! \brief Драйвер ШИМ-генератора для контроллеров
+//!   семейств NIIET K1921
+//! \author Kravchuk Andrey
+
+class PWMx_pwm_gen_t : public pwm_gen_t
+{
+public:
+  enum pwm_number_t {
+    pwm_block_1 = 0,
+    pwm_block_2 = 1,
+    pwm_block_3 = 2
+  };
+
+  enum pwm_out_t {
+    pwm_out_a = 0,
+    pwm_out_b = 1
+  };
+
+  PWMx_pwm_gen_t(pwm_number_t a_pwm_number, pwm_out_t a_pwm_out,
+    cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty);
+  ~PWMx_pwm_gen_t();
+
+  void start();
+  void stop();
+  void set_duty(irs_uarc a_duty);
+  void set_duty(float a_duty);
+  cpu_traits_t::frequency_type set_frequency(
+    cpu_traits_t::frequency_type a_frequency);
+  irs_uarc get_max_duty();
+  cpu_traits_t::frequency_type get_max_frequency();
+
+private:
+  enum pmw_bit_position_t {
+    pwm_bit_position_out_a = 8,
+    pwm_bit_position_out_b = 9
+  };
+
+  enum other_contants_t {
+    min_hspclkdiv_divider = 2,
+    max_hspclkdiv_divider = 14,
+    hspclkdiv_divider_12 = 12,
+    max_clkdiv_divider = 128,
+    max_duty = 100,
+    min_fpclk_to_freq_coeff = 1000
+  };
+
+  void init(PWM_TypeDef* ap_pwm_address, pwm_out_t a_pwm_out,
+    cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty);
+  void _set_frequency(cpu_traits_t::frequency_type  a_frequency);
+  pwm_number_t m_pwm_number;
+  pwm_out_t m_pwm_out;
+  PWM_TypeDef* mp_pwm_address;
+  float m_duty;
+  irs_uarc m_frequency;
+  const irs_uarc m_max_duty;
+  const cpu_traits_t::frequency_type m_max_frequency;
+};
+
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type

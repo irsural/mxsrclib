@@ -19,6 +19,10 @@
 #endif // IRS_STM32H7xx
 #endif //__ICCARM__
 
+#ifdef IRS_NIIET_1921
+#include <math.h>
+#endif
+
 #ifdef PWM_ZERO_PULSE
 #include <irserror.h>
 #endif  //  PWM_ZERO_PULSE
@@ -62,7 +66,7 @@ irs::cpu_traits_t::frequency_type irs::pwm_gen_t::get_timer_frequency()
 
 #ifdef __ICCARM__
 
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(IRS_NIIET_1921)
 
 #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
 //  Флаги занятости таймеров общего назначения
@@ -76,7 +80,6 @@ irs::arm::gptm_usage_t& gptm_usage() {
 irs::arm::timers_usage_t& timers_usage() {
   static irs::arm::timers_usage_t timers_usage_obj;
   return timers_usage_obj;
-}
 #else
   #error Тип контроллера не определён
 #endif  //  mcu type
@@ -1632,7 +1635,7 @@ namespace {
     const double coefficient =
       (1/(divider/prescaler_divider_value_min))*(counter_max);
     while (prescaler_divider_key < prescaler_divider_key_max) {
-      if (coefficient * pow(2.0, static_cast<double>(prescaler_divider_key)) 
+      if (coefficient * pow(2.0, static_cast<double>(prescaler_divider_key))
           >= a_period_s) {
         break;
       }
@@ -1640,7 +1643,7 @@ namespace {
     }
     *ap_prescaler_divider_key = prescaler_divider_key;
     const double prescaler_divider_value =
-      prescaler_divider_value_min * pow(2.0, 
+      prescaler_divider_value_min * pow(2.0,
       static_cast<double>(prescaler_divider_key));
     double counter_start = a_period_s/(1/(divider/prescaler_divider_value));
     counter_start = irs::bound(counter_start, 1., counter_max);
@@ -1728,13 +1731,13 @@ irs::arm::st_window_watchdog_t::st_window_watchdog_t(
 
   WWDG_CFR_bit.WDGTB = wdgtb_prescaler;
   double counter_start_value =
-    ceil(period_max_ms / 
+    ceil(period_max_ms /
     (coefficient * pow(2.0, static_cast<double>(wdgtb_prescaler))))
     + counter_end;
   m_counter_start_value = static_cast<irs_u8>(bound(counter_start_value,
     counter_min, counter_max));
   double window_value = ceil((period_max_ms - period_min_ms)/
-    (coefficient * pow(2.0, static_cast<double>(wdgtb_prescaler)))) 
+    (coefficient * pow(2.0, static_cast<double>(wdgtb_prescaler))))
     + counter_end;
   if ((window_value > static_cast<double>(m_counter_start_value)) ||
     (counter_start_value > counter_max)) {
@@ -2707,5 +2710,199 @@ irs_u32 irs::decoder_t::get_selected_pin()
   return m_pin_index;
 }
 
-#endif // IRS_STM32H7xx
+#endif // !defined(IRS_STM32H7xx) && !defined(IRS_NIIET_1921)
+
+//class PWMx_pwm_gen_t
+
+irs::arm::PWMx_pwm_gen_t::PWMx_pwm_gen_t(pwm_number_t a_pwm_number,
+  pwm_out_t a_pwm_out, cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty):
+m_pwm_number(a_pwm_number),
+m_pwm_out(a_pwm_out),
+mp_pwm_address(NULL),
+m_duty(a_duty),
+m_frequency(a_frequency),
+m_max_duty(0),
+m_max_frequency(0)
+{
+  switch (a_pwm_number){
+    case pwm_block_1: {
+      mp_pwm_address = PWM0;
+    } break;
+    case pwm_block_2: {
+      mp_pwm_address = PWM1;
+    } break;
+    case pwm_block_3: {
+      mp_pwm_address = PWM2;
+    } break;
+  }
+  init(mp_pwm_address, m_pwm_out, a_frequency, a_duty);
+}
+
+irs::arm::PWMx_pwm_gen_t::~PWMx_pwm_gen_t()
+{
+  this->stop();
+
+  switch (m_pwm_out){
+    case pwm_out_a: {
+      GPIOA->DENCLR |= 1 << (pwm_bit_position_out_a + 2 * m_pwm_number);
+      GPIOA->ALTFUNCCLR |= 1 << (pwm_bit_position_out_a + 2 * m_pwm_number);
+    } break;
+    case pwm_out_b: {
+      GPIOA->DENCLR |= 1 << (pwm_bit_position_out_b + 2 * m_pwm_number);
+      GPIOA->ALTFUNCCLR |= 1 << (pwm_bit_position_out_b + 2 * m_pwm_number);
+    } break;
+  }
+
+  mp_pwm_address->TBCTL = 0;
+  mp_pwm_address->TBPRD = 0;
+  mp_pwm_address->CMPCTL = 0;
+  mp_pwm_address->CMPA = 0;
+  mp_pwm_address->CMPB = 0;
+  mp_pwm_address->AQCTLA = 0;
+  mp_pwm_address->AQCTLB = 0;
+}
+
+void irs::arm::PWMx_pwm_gen_t::init(PWM_TypeDef* ap_pwm_address,
+pwm_out_t a_pwm_out, cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty)
+{
+  RCU->HCLKCFG |= RCU_HCLKCFG_GPIOAEN_Msk;
+  RCU->HRSTCFG |= RCU_HRSTCFG_GPIOAEN_Msk;
+  RCU->PCLKCFG |= 1 << (4 + m_pwm_number);
+  RCU->PRSTCFG |= 1 << (4 + m_pwm_number);
+
+  ap_pwm_address->TBCTL |= PWM_TBCTL_PRDLD_Msk;
+
+  _set_frequency(a_frequency);
+
+  switch (m_pwm_out){
+    case pwm_out_a: {
+      GPIOA->DENSET |= 1 << (pwm_bit_position_out_a + 2 * m_pwm_number);
+      GPIOA->ALTFUNCSET |= 1 << (pwm_bit_position_out_a + 2 * m_pwm_number);
+      ap_pwm_address->CMPCTL |= PWM_CMPCTL_SHDWAMODE_Msk;
+      ap_pwm_address->CMPA = (ap_pwm_address->TBPRD * a_duty / max_duty) <<
+        PWM_CMPA_CMPA_Pos;
+      ap_pwm_address->AQCTLA |= PWM_AQCTLA_PRD_Clear << PWM_AQCTLA_PRD_Pos;
+      ap_pwm_address->AQCTLA |= PWM_AQCTLA_CAU_Set << PWM_AQCTLA_CAU_Pos;
+    } break;
+    case pwm_out_b: {
+      GPIOA->DENSET |= 1 << (pwm_bit_position_out_b + 2 * m_pwm_number);
+      GPIOA->ALTFUNCSET |= 1 << (pwm_bit_position_out_b + 2 * m_pwm_number);
+      ap_pwm_address->CMPCTL |= PWM_CMPCTL_SHDWBMODE_Msk;
+      ap_pwm_address->CMPB = (ap_pwm_address->TBPRD * a_duty / max_duty) <<
+        PWM_CMPB_CMPB_Pos;
+      ap_pwm_address->AQCTLB |= PWM_AQCTLB_PRD_Clear << PWM_AQCTLB_PRD_Pos;
+      ap_pwm_address->AQCTLB |= PWM_AQCTLB_CBU_Set << PWM_AQCTLB_CBU_Pos;
+    } break;
+  }
+
+  SIU->PWMSYNC |= 1 << m_pwm_number + SIU_PWMSYNC_PRESCRST_Pos;
+}
+
+void irs::arm::PWMx_pwm_gen_t::_set_frequency(
+cpu_traits_t::frequency_type  a_frequency)
+{
+  float fpclk_to_freq_coeff = irs::cpu_traits_t::frequency() / a_frequency;
+  mp_pwm_address->TBCTL &= ~(PWM_TBCTL_HSPCLKDIV_Msk); // set hspclk_to zero
+  mp_pwm_address->TBCTL &= ~(PWM_TBCTL_CLKDIV_Msk); //set clkdiv to zero
+
+  IRS_LIB_ASSERT(fpclk_to_freq_coeff > min_fpclk_to_freq_coeff);
+  fpclk_to_freq_coeff = ceilf(fpclk_to_freq_coeff/PWM_TBPRD_VAL_Msk);
+  IRS_LIB_ASSERT(fpclk_to_freq_coeff <= max_clkdiv_divider * max_hspclkdiv_divider);
+
+  if (fpclk_to_freq_coeff <= 1){
+      mp_pwm_address->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;
+      mp_pwm_address->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1;
+  } else if (fpclk_to_freq_coeff <= max_hspclkdiv_divider) {
+      if (fpclk_to_freq_coeff == min_hspclkdiv_divider){
+        mp_pwm_address->TBCTL |= PWM_TBCTL_HSPCLKDIV_Div2 << PWM_TBCTL_HSPCLKDIV_Pos;
+      } else if (fpclk_to_freq_coeff > hspclkdiv_divider_12) {
+        mp_pwm_address->TBCTL |= PWM_TBCTL_HSPCLKDIV_Div14 << PWM_TBCTL_HSPCLKDIV_Pos;
+      } else {
+        mp_pwm_address->TBCTL |= static_cast<irs_u32>(
+        (ceilf(fpclk_to_freq_coeff / 2))) << PWM_TBCTL_HSPCLKDIV_Pos;
+      }
+  } else if (fpclk_to_freq_coeff <= max_clkdiv_divider) {
+    mp_pwm_address->TBCTL |= static_cast<irs_u32>(
+    ceilf(log2(fpclk_to_freq_coeff))) << PWM_TBCTL_CLKDIV_Pos;
+  } else if (fpclk_to_freq_coeff <= (max_clkdiv_divider * max_hspclkdiv_divider)){
+    mp_pwm_address->TBCTL |= PWM_TBCTL_CLKDIV_Div128 << PWM_TBCTL_CLKDIV_Pos;
+    fpclk_to_freq_coeff = ceilf (fpclk_to_freq_coeff / max_clkdiv_divider);
+    mp_pwm_address->TBCTL |= static_cast<irs_u32>(
+    ceilf(fpclk_to_freq_coeff / 2)) << PWM_TBCTL_HSPCLKDIV_Pos;
+  }
+
+  //  edit frequency params
+  irs_u32 temp_clkdiv = (mp_pwm_address->TBCTL & PWM_TBCTL_CLKDIV_Msk) >>
+    PWM_TBCTL_CLKDIV_Pos;
+  irs_u32 temp_hspclkdiv = (mp_pwm_address->TBCTL & PWM_TBCTL_HSPCLKDIV_Msk) >>
+    PWM_TBCTL_HSPCLKDIV_Pos;
+  if (!(temp_clkdiv || temp_hspclkdiv)) {
+    mp_pwm_address->TBPRD = irs::cpu_traits_t::frequency() / a_frequency - 1;
+  } else if (temp_clkdiv && !temp_hspclkdiv) {
+    mp_pwm_address->TBPRD = static_cast<irs_u32>(
+    (irs::cpu_traits_t::frequency() / pow(2, temp_clkdiv) / a_frequency) - 1);
+  } else {
+    mp_pwm_address->TBPRD = static_cast<irs_u32>(
+    (irs::cpu_traits_t::frequency() / (pow(2, temp_clkdiv) * 2 * temp_hspclkdiv) /
+     a_frequency) - 1);
+  }
+}
+
+void irs::arm::PWMx_pwm_gen_t::start()
+{
+  mp_pwm_address->TBCTL &= ~(PWM_TBCTL_CTRMODE_Msk << PWM_TBCTL_CTRMODE_Pos);
+}
+
+void irs::arm::PWMx_pwm_gen_t::stop()
+{
+  mp_pwm_address->TBCTL |= PWM_TBCTL_CTRMODE_Msk << PWM_TBCTL_CTRMODE_Pos;
+}
+
+void irs::arm::PWMx_pwm_gen_t::set_duty(irs_uarc a_duty)
+{
+  m_duty = a_duty;
+
+  switch (m_pwm_out){
+    case pwm_out_a: {
+      mp_pwm_address->CMPA = static_cast<irs_u32>(
+      (this->get_max_duty() * a_duty / max_duty) << PWM_CMPA_CMPA_Pos);
+    } break;
+    case pwm_out_b: {
+      mp_pwm_address->CMPB = static_cast<irs_u32>(
+      (this->get_max_duty() * a_duty / max_duty) << PWM_CMPB_CMPB_Pos);
+    } break;
+  }
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::set_frequency(
+  irs::cpu_traits_t::frequency_type a_frequency)
+{
+  m_frequency = a_frequency;
+
+  _set_frequency(a_frequency);
+
+  irs_u32 temp_cmp = static_cast<irs_u32>(
+  mp_pwm_address->TBPRD * m_duty / max_duty);
+
+  switch (m_pwm_out){
+    case pwm_out_a: {
+      mp_pwm_address->CMPA = temp_cmp << PWM_CMPA_CMPA_Pos;
+    } break;
+    case pwm_out_b: {
+      mp_pwm_address->CMPB = temp_cmp << PWM_CMPB_CMPB_Pos;
+    } break;
+  }
+  return m_frequency;
+}
+
+irs_uarc irs::arm::PWMx_pwm_gen_t::get_max_duty()
+{
+  return mp_pwm_address->TBPRD;
+}
+
+irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::get_max_frequency()
+{
+  return irs::cpu_traits_t::frequency() / min_fpclk_to_freq_coeff;
+}
+
 #endif  //  __ICCARM__
