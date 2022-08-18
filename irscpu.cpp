@@ -41,8 +41,10 @@ irs::cpu_traits_t::frequency_type
 irs::cpu_traits_t::frequency_type
   irs::cpu_traits_t::m_periphery_frequency_second = 16000000;
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
+#elif (defined(IRS_NIIET_1921))
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 100000000;
 #else // Другой __ICCARM__
-irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 75000000;
+irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 100000000;
 #endif // ARM_device
 #else //__ICCAVR
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;

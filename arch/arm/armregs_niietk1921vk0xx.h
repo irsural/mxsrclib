@@ -52,7 +52,7 @@
 #elif defined (__CSMC__)
   /* anonymous unions are enabled by default */
 #elif defined (__CMCPPARM__)
-  /* anonymous unions are enabled by default */  
+  /* anonymous unions are enabled by default */
 #else
   #warning Not supported compiler type
 #endif
@@ -1135,7 +1135,7 @@ typedef struct {
 
 //Cluster UARTCFG:
 typedef struct {
-  union { 
+  union {
   /*!< UART clock and reset configuration register */
     __IO uint32_t UARTCFG;                                           /*!< UARTCFG : type used for word access */
     __IO _RCU_UARTCFG_UARTCFG_bits UARTCFG_bit;                      /*!< UARTCFG_bit: structure used for bit access */
@@ -2119,53 +2119,53 @@ typedef struct {
 
 //Cluster SEQ:
 typedef struct {
-  union { 
+  union {
   /*!< Sequencer request ADC channels selection register */
     __IO uint32_t SRQSEL;                                            /*!< SRQSEL : type used for word access */
     __IO _ADC_SEQ_SRQSEL_bits SRQSEL_bit;                            /*!< SRQSEL_bit: structure used for bit access */
   };
     __IO uint32_t Reserved0[3];
-  union { 
+  union {
   /*!< Sequencer request control register */
     __IO uint32_t SRQCTL;                                            /*!< SRQCTL : type used for word access */
     __IO _ADC_SEQ_SRQCTL_bits SRQCTL_bit;                            /*!< SRQCTL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer request status register */
     __I uint32_t SRQSTAT;                                            /*!< SRQSTAT : type used for word access */
     __I _ADC_SEQ_SRQSTAT_bits SRQSTAT_bit;                           /*!< SRQSTAT_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer DMA control register */
     __IO uint32_t SDMACTL;                                           /*!< SDMACTL : type used for word access */
     __IO _ADC_SEQ_SDMACTL_bits SDMACTL_bit;                          /*!< SDMACTL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer ADC interrupt and restart counter control register */
     __IO uint32_t SCCTL;                                             /*!< SCCTL : type used for word access */
     __IO _ADC_SEQ_SCCTL_bits SCCTL_bit;                              /*!< SCCTL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer ADC interrupt and restart counter current value register */
     __O uint32_t SCVAL;                                              /*!< SCVAL : type used for word access */
     __O _ADC_SEQ_SCVAL_bits SCVAL_bit;                               /*!< SCVAL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer digital comparator selection register */
     __IO uint32_t SDC;                                               /*!< SDC : type used for word access */
     __IO _ADC_SEQ_SDC_bits SDC_bit;                                  /*!< SDC_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer ADC restart timer register */
     __IO uint32_t SRTMR;                                             /*!< SRTMR : type used for word access */
     __IO _ADC_SEQ_SRTMR_bits SRTMR_bit;                              /*!< SRTMR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer FIFO load status register */
     __I uint32_t SFLOAD;                                             /*!< SFLOAD : type used for word access */
     __I _ADC_SEQ_SFLOAD_bits SFLOAD_bit;                             /*!< SFLOAD_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Sequencer FIFO register */
     __I uint32_t SFIFO;                                              /*!< SFIFO : type used for word access */
     __I _ADC_SEQ_SFIFO_bits SFIFO_bit;                               /*!< SFIFO_bit: structure used for bit access */
@@ -2173,17 +2173,17 @@ typedef struct {
 } _ADC_SEQ_TypeDef;
 //Cluster DC:
 typedef struct {
-  union { 
+  union {
   /*!< Digital comparator control register */
     __IO uint32_t DCTL;                                              /*!< DCTL : type used for word access */
     __IO _ADC_DC_DCTL_bits DCTL_bit;                                 /*!< DCTL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Digital comparator range register */
     __IO uint32_t DCMP;                                              /*!< DCMP : type used for word access */
     __IO _ADC_DC_DCMP_bits DCMP_bit;                                 /*!< DCMP_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Digital comparator last compared data register */
     __I uint32_t DDATA;                                              /*!< DDATA : type used for word access */
     __I _ADC_DC_DDATA_bits DDATA_bit;                                /*!< DDATA_bit: structure used for bit access */
@@ -2191,7 +2191,7 @@ typedef struct {
 } _ADC_DC_TypeDef;
 //Cluster CHCTL:
 typedef struct {
-  union { 
+  union {
   /*!< ADC channel control register */
     __IO uint32_t CHCTL;                                             /*!< CHCTL : type used for word access */
     __IO _ADC_CHCTL_CHCTL_bits CHCTL_bit;                            /*!< CHCTL_bit: structure used for bit access */
@@ -4766,7 +4766,7 @@ typedef struct {
 
 //Cluster MASKLB:
 typedef struct {
-  union { 
+  union {
   /*!< Mask register low byte of port */
     __IO uint32_t MASKLB;                                            /*!< MASKLB : type used for word access */
     __IO _GPIO_MASKLB_MASKLB_bits MASKLB_bit;                        /*!< MASKLB_bit: structure used for bit access */
@@ -4774,7 +4774,7 @@ typedef struct {
 } _GPIO_MASKLB_TypeDef;
 //Cluster MASKHB:
 typedef struct {
-  union { 
+  union {
   /*!< Mask register High byte of port */
     __IO uint32_t MASKHB;                                            /*!< MASKHB : type used for word access */
     __IO _GPIO_MASKHB_MASKHB_bits MASKHB_bit;                        /*!< MASKHB_bit: structure used for bit access */
@@ -6313,7 +6313,7 @@ typedef struct {
 
 //Cluster DATA:
 typedef struct {
-  union { 
+  union {
   /*!< Data Register */
     __IO uint32_t DATA;                                              /*!< DATA : type used for word access */
     __IO _MFLASH_DATA_DATA_bits DATA_bit;                            /*!< DATA_bit: structure used for bit access */
@@ -9531,7 +9531,7 @@ typedef struct {
 
 //Cluster LIST:
 typedef struct {
-  union { 
+  union {
   /*!< List Register0 */
     __I uint32_t LIST;                                               /*!< LIST : type used for word access */
     __I _CAN_LIST_LIST_bits LIST_bit;                                /*!< LIST_bit: structure used for bit access */
@@ -9539,7 +9539,7 @@ typedef struct {
 } _CAN_LIST_TypeDef;
 //Cluster MSPND:
 typedef struct {
-  union { 
+  union {
   /*!< Message Pending Register0 */
     __IO uint32_t MSPND;                                             /*!< MSPND : type used for word access */
     __IO _CAN_MSPND_MSPND_bits MSPND_bit;                            /*!< MSPND_bit: structure used for bit access */
@@ -9547,7 +9547,7 @@ typedef struct {
 } _CAN_MSPND_TypeDef;
 //Cluster MSID:
 typedef struct {
-  union { 
+  union {
   /*!< Message Index Register0 */
     __I uint32_t MSID;                                               /*!< MSID : type used for word access */
     __I _CAN_MSID_MSID_bits MSID_bit;                                /*!< MSID_bit: structure used for bit access */
@@ -9555,37 +9555,37 @@ typedef struct {
 } _CAN_MSID_TypeDef;
 //Cluster Node:
 typedef struct {
-  union { 
+  union {
   /*!< Node control register0 */
     __IO uint32_t NCR;                                               /*!< NCR : type used for word access */
     __IO _CAN_Node_NCR_bits NCR_bit;                                 /*!< NCR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Status Register0 */
     __IO uint32_t NSR;                                               /*!< NSR : type used for word access */
     __IO _CAN_Node_NSR_bits NSR_bit;                                 /*!< NSR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Interrupt Pointer Register0 */
     __IO uint32_t NIPR;                                              /*!< NIPR : type used for word access */
     __IO _CAN_Node_NIPR_bits NIPR_bit;                               /*!< NIPR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Port Control Register0 */
     __IO uint32_t NPCR;                                              /*!< NPCR : type used for word access */
     __IO _CAN_Node_NPCR_bits NPCR_bit;                               /*!< NPCR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Bit Timing Register0 */
     __IO uint32_t NBTR;                                              /*!< NBTR : type used for word access */
     __IO _CAN_Node_NBTR_bits NBTR_bit;                               /*!< NBTR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Error Counter Register0 */
     __IO uint32_t NECNT;                                             /*!< NECNT : type used for word access */
     __IO _CAN_Node_NECNT_bits NECNT_bit;                             /*!< NECNT_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Node Frame Counter Register0 */
     __IO uint32_t NFCR;                                              /*!< NFCR : type used for word access */
     __IO _CAN_Node_NFCR_bits NFCR_bit;                               /*!< NFCR_bit: structure used for bit access */
@@ -9944,48 +9944,48 @@ typedef struct {
 
 //Cluster Msg:
 typedef struct {
-  union { 
+  union {
   /*!< Message Object Function Control Register0 */
     __IO uint32_t MOFCR;                                             /*!< MOFCR : type used for word access */
     __IO _CANMSG_Msg_MOFCR_bits MOFCR_bit;                           /*!< MOFCR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object FIFO/Gateway Pointer Register0 */
     __IO uint32_t MOFGPR;                                            /*!< MOFGPR : type used for word access */
     __IO _CANMSG_Msg_MOFGPR_bits MOFGPR_bit;                         /*!< MOFGPR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object Interrupt Pointer Register0 */
     __IO uint32_t MOIPR;                                             /*!< MOIPR : type used for word access */
     __IO _CANMSG_Msg_MOIPR_bits MOIPR_bit;                           /*!< MOIPR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object Acceptance Mask Register0 */
     __IO uint32_t MOAMR;                                             /*!< MOAMR : type used for word access */
     __IO _CANMSG_Msg_MOAMR_bits MOAMR_bit;                           /*!< MOAMR_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object Data Register Low0 */
     __IO uint32_t MODATAL;                                           /*!< MODATAL : type used for word access */
     __IO _CANMSG_Msg_MODATAL_bits MODATAL_bit;                       /*!< MODATAL_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object Data Register High0 */
     __IO uint32_t MODATAH;                                           /*!< MODATAH : type used for word access */
     __IO _CANMSG_Msg_MODATAH_bits MODATAH_bit;                       /*!< MODATAH_bit: structure used for bit access */
   };
-  union { 
+  union {
   /*!< Message Object Arbitration Register0 */
     __IO uint32_t MOAR;                                              /*!< MOAR : type used for word access */
     __IO _CANMSG_Msg_MOAR_bits MOAR_bit;                             /*!< MOAR_bit: structure used for bit access */
   };
   union {
-      union { 
+      union {
                                                                      /*!< Message Object Control Register0 */
         __O uint32_t MOCTR;                                           /*!< MOCTR : type used for word access */
         __O _CANMSG_Msg_MOCTR_bits MOCTR_bit;                        /*!< MOCTR_bit: structure used for bit access */
       };
-      union { 
+      union {
                                                                      /*!< Message Object Status Register 0 */
         __I uint32_t MOSTAT;                                           /*!< MOSTAT : type used for word access */
         __I _CANMSG_Msg_MOSTAT_bits MOSTAT_bit;                      /*!< MOSTAT_bit: structure used for bit access */
@@ -10009,7 +10009,7 @@ typedef struct {
 #elif defined(__TASKING__)
   #pragma warning restore
 #elif defined (__CMCPPARM__)
-  /* anonymous unions are enabled by default */   
+  /* anonymous unions are enabled by default */
 #else
   #warning Not supported compiler type
 #endif
@@ -10269,7 +10269,7 @@ typedef enum {
 #define GPIO_LOCKKEY_S                     0x9C
 #define GPIO_LOCKSTAT_S                    0x9C
 #define GPIO_LOCKSET_S                     0xA0
-#define GPIO_LOCKCLR_S                     0xA4         
+#define GPIO_LOCKCLR_S                     0xA4
 
 #define GPIO_DRIVEMODE_HIGHSPEED_HIGHLOAD  0x00
 #define GPIO_DRIVEMODE_LOWSPEED_HIGHLOAD   0x01
@@ -10279,9 +10279,9 @@ typedef enum {
 #define GPIO_DENCLR_CLEAR                  0x01
 #define GPIO_DENSET_SET                    0x01
 
-#define GPIO_INMODE_SCHMITT_BUFFER         0x00                
-#define GPIO_INMODE_CMOS_BUFFER            0x01                
-#define GPIO_INMODE_DISABLE                0x03    
+#define GPIO_INMODE_SCHMITT_BUFFER         0x00
+#define GPIO_INMODE_CMOS_BUFFER            0x01
+#define GPIO_INMODE_DISABLE                0x03
 
 #define GPIO_PULLMODE_FLOATING             0x00
 #define GPIO_PULLMODE_PULLUP               0x01
@@ -10293,6 +10293,8 @@ typedef enum {
 #define GPIO_OUTMODE_PUSHPULL              0x00
 #define GPIO_OUTMODE_OPEN_DRAIN            0x01
 #define GPIO_OUTMODE_OPEN_SOURCE           0x02
+
+#define WDT_DIVIDER_MULTIPLIER             0x04
 
 
 

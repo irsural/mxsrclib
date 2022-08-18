@@ -480,7 +480,26 @@ private:
   irs_uarc m_frequency;
   const irs_uarc m_max_duty;
   const cpu_traits_t::frequency_type m_max_frequency;
-};
+}; //class PWMx_pwm_gen_t
+
+
+//! \brief Драйвер сторожевого таймера для контроллеров
+//!   семейств NIIET K1921
+//! \author Kravchuk Andrey
+
+class watchdog_timer_t: public watchdog_t
+{
+public:
+  watchdog_timer_t(size_t a_period_s, irs_u8 a_wdg_clock_divider);
+  ~watchdog_timer_t();
+  void start();
+  void restart();
+  bool watchdog_reset_cause();
+  void clear_reset_status();
+
+private:
+  size_t m_period_s;
+}; //class watchdog_timer_t
 
 #else
   #error Тип контроллера не определён

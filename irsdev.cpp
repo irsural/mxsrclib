@@ -21,6 +21,7 @@
 
 #ifdef IRS_NIIET_1921
 #include <math.h>
+#include "plib035_wdt.h"
 #endif
 
 #ifdef PWM_ZERO_PULSE
@@ -2903,6 +2904,53 @@ irs_uarc irs::arm::PWMx_pwm_gen_t::get_max_duty()
 irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::get_max_frequency()
 {
   return irs::cpu_traits_t::frequency() / min_fpclk_to_freq_coeff;
+}
+
+
+//class watchdog_timer_t
+
+irs::arm::watchdog_timer_t::watchdog_timer_t(size_t a_period_s,
+  irs_u8 a_wdg_clock_divider):
+
+  m_period_s(a_period_s)
+  {
+   IRS_LIB_ASSERT (a_wdg_clock_divider >= 0 && a_wdg_clock_divider < 64);
+   irs_u32 ticks_in_1sec = OSECLK_VAL /
+     ((a_wdg_clock_divider + 1) * WDT_DIVIDER_MULTIPLIER);
+   RCU_WDTClkConfig(RCU_SysPeriphClk_OSEClk, a_wdg_clock_divider, ENABLE);
+   RCU_WDTClkCmd(ENABLE);
+   RCU_WDTRstCmd(ENABLE);
+   WDT_SetLoad(ticks_in_1sec * a_period_s);
+  }
+
+irs::arm::watchdog_timer_t::~watchdog_timer_t()
+{
+  WDT_SetLoad(0);
+  RCU_WDTClkCmd(DISABLE);
+  RCU_WDTRstCmd(DISABLE);
+  WDT_RstCmd(DISABLE);
+  WDT_Cmd(DISABLE);
+}
+
+void irs::arm::watchdog_timer_t::start()
+{
+  WDT_RstCmd(ENABLE);
+  WDT_Cmd(ENABLE);
+}
+
+void irs::arm::watchdog_timer_t::restart()
+{
+  WDT_ITStatusClear();
+}
+
+bool irs::arm::watchdog_timer_t::watchdog_reset_cause()
+{
+  return WDT_ITRawStatus();
+}
+
+void irs::arm::watchdog_timer_t::clear_reset_status()
+{
+  WDT_ITStatusClear();
 }
 
 #endif  //  __ICCARM__
