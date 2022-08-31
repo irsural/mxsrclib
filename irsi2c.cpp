@@ -95,7 +95,6 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
   m_status = BUSY_READ;
   I2C_Cmd(ENABLE);
   I2C_StartCmd();
-
   irs_u16 temp_variable = 0;
   while (a_size)
   {
@@ -104,7 +103,8 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
     switch (I2C->ST & I2C_ST_MODE_Msk) {
 
       case I2C_ST_MODE_STDONE: { // start condition generated
-      I2C_SetData (m_device_address | 0x01);
+//    I2C_SetData (m_device_address | 0x01);
+      I2C_SetData (m_device_address);
       I2C_ITStatusClear();
       }  break;
 
@@ -115,19 +115,51 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
       I2C_ITStatusClear();
       }  break;
 
-      case I2C_ST_MODE_MRADPA:
-        I2C_SetData (0x02);
-        I2C_ITStatusClear();
-      case I2C_ST_MODE_MRDAPA:  {
+      case I2C_ST_MODE_MTADPA: {
+      I2C_SetData (0x02);
+      I2C_ITStatusClear();
+      I2C_StartCmd();
+      I2C_ITStatusClear();
+      break;
+      }
+
+      case I2C_ST_MODE_RSDONE: {
+      I2C_SetData (m_device_address | 0x01);
+      I2C_ITStatusClear();
+      } break;
+
+      case I2C_ST_MODE_MTDAPA: {
       reinterpret_cast <irs_u32&>(*(ap_buf+temp_variable)) = I2C_GetData();
       I2C_ITStatusClear();
+      } break;
+
+      case I2C_ST_MODE_MRADPA:
+      I2C_ITStatusClear();
+      reinterpret_cast <irs_u32&>(*(ap_buf+temp_variable)) = I2C_GetData();
+      a_size--;
+      temp_variable++;
+      a_size == 1 ? (I2C_NACKCmd(),1) :1;
+      break;
+
+      case I2C_ST_MODE_MRDAPA:  {
+      I2C_ITStatusClear();
+      *(ap_buf+temp_variable) = I2C_GetData();
+      temp_variable++;
+      a_size == 1 ? (I2C_NACKCmd(),1) :1;
+
       a_size--;
       temp_variable++;
       }  break;
+
+      case I2C_ST_MODE_MRDANA: {
+      *(ap_buf+temp_variable) = I2C_GetData();
+      temp_variable++;
+      I2C_ITStatusClear();
+      } break;
+
       default:
       for (;;){}
       break;
-
     }
   }
   for (int i=0; i<500; i++) { asm ("nop"); } // bus free time. 407 is min for 400kHz
