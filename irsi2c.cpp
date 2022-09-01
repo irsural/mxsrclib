@@ -36,39 +36,6 @@ irs::arm::arm_i2c_t::~arm_i2c_t()
   I2C_Cmd(DISABLE);
 }
 
-//void irs::arm::arm_i2c_t::i2c_init()
-//{
-//
-//  while (I2C_BusBusyStatus()) asm ("nop");
-//
-//  if(I2C->CST_bit.TSDA)
-//    I2C->CST |= I2C_CST_TGSCL_Msk;
-//
-//
-//
-//  for (int i=0; i<100000;i++) asm ("nop");
-//
-//  do {
-//  RCU_APBRstCmd(RCU_APBRst_I2C, DISABLE);
-//  RCU_APBClkCmd(RCU_APBClk_I2C, DISABLE);
-//  I2C_Cmd(DISABLE);
-//
-//  RCU_APBRstCmd(RCU_APBRst_I2C, ENABLE);
-//  RCU_APBClkCmd(RCU_APBClk_I2C, ENABLE);
-//  I2C_FSFreqConfig(50000, RCU_GetSysClkFreq());
-//  I2C_Cmd(ENABLE);
-//
-//  while (I2C_BusBusyStatus()) asm ("nop");
-//
-//  if(I2C->CST_bit.TSDA)
-//    I2C->CST |= I2C_CST_TGSCL_Msk;
-//
-//  I2C_StartCmd();
-//
-//  for (int i=0; i<100000;i++) {asm ("nop");}
-//  } while (I2C_GetState() != I2C_ST_MODE_STDONE);
-//}
-
 void irs::arm::arm_i2c_t::lock()
 {
   m_lock = true;
@@ -95,70 +62,37 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
   m_status = BUSY_READ;
   I2C_Cmd(ENABLE);
   I2C_StartCmd();
-  irs_u16 temp_variable = 0;
+  irs_u16 temp_variable = 0; //used for ap_buf offset
+
   while (a_size)
   {
     while (!(I2C->ST_bit.INT)) { asm ("nop"); }
 
     switch (I2C->ST & I2C_ST_MODE_Msk) {
-
       case I2C_ST_MODE_STDONE: { // start condition generated
-//    I2C_SetData (m_device_address | 0x01);
-      I2C_SetData (m_device_address);
-      I2C_ITStatusClear();
-      }  break;
-
-      case I2C_ST_MODE_MTADNA:  { // //mt slave ad sent NACK
-      I2C_StopCmd();
       I2C_SetData (m_device_address | 0x01);
-      I2C_StartCmd();
-      I2C_ITStatusClear();
-      }  break;
-
-      case I2C_ST_MODE_MTADPA: {
-      I2C_SetData (0x02);
-      I2C_ITStatusClear();
-      I2C_StartCmd();
-      I2C_ITStatusClear();
-      break;
-      }
-
-      case I2C_ST_MODE_RSDONE: {
-      I2C_SetData (m_device_address | 0x01);
-      I2C_ITStatusClear();
-      } break;
-
-      case I2C_ST_MODE_MTDAPA: {
-      reinterpret_cast <irs_u32&>(*(ap_buf+temp_variable)) = I2C_GetData();
+      if (a_size == 1) { I2C_NACKCmd(); }
       I2C_ITStatusClear();
       } break;
 
       case I2C_ST_MODE_MRADPA:
-      I2C_ITStatusClear();
-      reinterpret_cast <irs_u32&>(*(ap_buf+temp_variable)) = I2C_GetData();
-      a_size--;
-      temp_variable++;
-      a_size == 1 ? (I2C_NACKCmd(),1) :1;
-      break;
-
-      case I2C_ST_MODE_MRDAPA:  {
-      I2C_ITStatusClear();
+      case I2C_ST_MODE_MRDAPA: {
       *(ap_buf+temp_variable) = I2C_GetData();
       temp_variable++;
-      a_size == 1 ? (I2C_NACKCmd(),1) :1;
-
       a_size--;
-      temp_variable++;
-      }  break;
+      if (a_size == 1) { I2C_NACKCmd(); }
+      I2C_ITStatusClear();
+      } break;
 
       case I2C_ST_MODE_MRDANA: {
       *(ap_buf+temp_variable) = I2C_GetData();
-      temp_variable++;
+//      temp_variable++;
+      a_size--;
       I2C_ITStatusClear();
       } break;
 
       default:
-      for (;;){}
+      for (;;){ asm ("nop"); }
       break;
     }
   }
