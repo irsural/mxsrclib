@@ -33,6 +33,10 @@
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
 
+#ifdef IRS_NIIET_1921
+  #include "armi2c.h"
+#endif
+
 #ifdef USE_STDPERIPH_DRIVER
 # if defined(IRS_STM32F2xx)
 #   include <stm32f2xx_rtc.h>
@@ -500,6 +504,60 @@ public:
 private:
   size_t m_period_s;
 }; //class watchdog_timer_t
+
+
+//! \brief Драйвер port-extender'a для контроллеров
+//!   семейств NIIET K1921
+//! \author Kravchuk Andrey
+
+class port_extender_i2c_t //common class for r/w to pca9539 port extender chip.
+{
+public:
+  enum {
+    input_port_0 = 0,
+    input_port_1 = 1,
+    output_port_0 = 2,
+    output_port_1 = 3,
+    polarity_inversion_port_0 = 4,
+    polarity_inversion_port_1 = 5,
+    configuration_port_0 = 6,
+    configuration_port_1 = 7
+  };
+
+  port_extender_i2c_t(arm_i2c_t* ap_arm_i2c_t);
+  ~port_extender_i2c_t();
+
+  irs_u8 read_register (irs_u8 a_reg);
+  irs_u16 read_registers_group (irs_u8 a_first_reg);
+  void write_to_register(irs_u8 a_reg, irs_u8 a_data);
+  void write_to_registers_group(irs_u8 a_reg, irs_u16 a_data);
+private:
+  arm_i2c_t* mp_arm_i2c_t;
+};
+
+class port_extender_io_t
+{
+public:
+  enum {
+  port_0 = 0,
+  port_1 = 1
+  };
+
+  port_extender_io_t();
+  ~port_extender_io_t();
+
+  void write_pin(irs_u8 a_port, irs_u8 a_pin_number, irs_u8 a_state);
+  bool read_pin(irs_u8 a_port, irs_u8 a_pin_number);
+  bool read_actual_logic_level_pin(irs_u8 a_port, irs_u8 a_pin_number);
+  void set_pin_dir(irs_u8 a_port, irs_u8 a_pin_number, bool a_dir);
+  void write_port(irs_u8 a_port, irs_u8 a_port_data);
+  irs_u8 read_port(irs_u8 a_port);
+  irs_u8 read_actual_logic_level_port(irs_u8 a_port);
+  void set_port_dir(irs_u8 a_port, irs_u8 a_dir);
+private:
+  irs_u16 m_port_io_state;
+  irs_u16 m_port_io_actual_state;
+};
 
 #else
   #error Тип контроллера не определён
