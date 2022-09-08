@@ -20,7 +20,8 @@
 #endif // IRS_STM32_F2_F4_F7
 
 #ifdef IRS_NIIET_1921
-#include <armregs_niietk1921vk0xx.h>
+  #include <armregs_niietk1921vk0xx.h>
+  #include <armi2c.h>
 #endif
 
 #include <irsfinal.h>
@@ -352,7 +353,7 @@ private:
 class io_port_t: public gpio_port_t
 {
 public:
-  io_port_t(arm_port_t &a_port, data_t a_mask, dir_t a_dir,
+  io_port_t (arm_port_t &a_port, data_t a_mask, dir_t a_dir,
     irs_u8 a_shift = 0);
   ~io_port_t();
   virtual data_t get();
@@ -416,13 +417,13 @@ inline irs_u8 port_base_to_port_number(irs_u32 a_port)
       for (;;) {}; // Неизвестный порт
     }
   }
-  
+
   #pragma diag_suppress=Pe128
   #ifdef IRS_MC_NOT_DEFINED
   for (;;);
   #endif //IRS_MC_NOT_DEFINED
   #pragma diag_default=Pe128
-  
+
   #pragma diag_suppress=Pe111
   return port_number;
   #pragma diag_default=Pe111
@@ -448,6 +449,26 @@ inline void port_clock_on(irs_u32 a_port)
     #pragma diag_default=Pe128
   #endif  //  mcu type
 }
+
+#if defined (IRS_NIIET_1921)
+class port_extender_gpio_pin_t: public gpio_pin_t
+{
+public:
+
+  port_extender_gpio_pin_t
+    (port_extender_i2c_t* ap_port_extender_i2c_t, irs_u8 a_pin_number, dir_t a_dir);
+  ~port_extender_gpio_pin_t();
+  bool pin();
+  void set();
+  void clear();
+  void set_dir(dir_t a_dir);
+  void set_pin(bool a_pin);
+  void pin(bool a_pin);
+private:
+  irs_u8 m_pin_number;
+  port_extender_i2c_t* mp_port_extender_i2c_t;
+};
+#endif //defined (IRS_NIIET_1921)
 
 } // namespace arm
 } // namespace irs

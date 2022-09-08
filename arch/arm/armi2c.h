@@ -31,7 +31,36 @@ private:
   irs_u16 m_device_address;
 };
 
+class port_extender_i2c_t //common class for r/w to pca9539 port extender chip.
+{
+public:
+  enum {
+    input_port_0 = 0,
+    input_port_1 = 1,
+    output_port_0 = 2,
+    output_port_1 = 3,
+    polarity_inversion_port_0 = 4,
+    polarity_inversion_port_1 = 5,
+    configuration_port_0 = 6,
+    configuration_port_1 = 7
+  };
 
+  port_extender_i2c_t(arm_i2c_t* ap_arm_i2c_t);
+  ~port_extender_i2c_t();
+
+  irs_u8 read_register (irs_u8 a_reg);
+  irs_u16 read_registers_group (irs_u8 a_first_reg);
+  void write_to_register(irs_u8 a_reg, irs_u8 a_data);
+  void write_to_registers_group(irs_u8 a_reg, irs_u16 a_data);
+  void set_logic_level_data (irs_u16 a_logic_level_data);
+  irs_u16 get_logic_level_data();
+  void set_input_output_direction(irs_u16 a_input_output_direction);
+  irs_u16 get_input_output_direction();
+private:
+  arm_i2c_t* mp_arm_i2c_t;
+  irs_u16 m_logic_level_data;
+  irs_u16 m_input_output_direction;
+};
 
 #else
   #error Тип контроллера не определён

@@ -14,6 +14,10 @@
 # include <armcfg.h>
 #endif // IRS_STM32_F2_F4_F7
 
+#ifdef IRS_NIIET_1921
+#include "plib035_i2c.h"
+#endif
+
 #include <irsgpio.h>
 #include <irserror.h>
 
@@ -235,8 +239,10 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 #endif //__ICCAVR__
 
 #ifdef __ICCARM__
-
 #ifndef IRS_STM32H7xx
+
+
+
 irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
   io_pin_value_t a_value
 ):
@@ -434,9 +440,9 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
         GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;*/
     } break;
   }
-  
+
 #elif defined(IRS_NIIET_1921)
- 
+
   const int gpio_inmode_bit_count = 2;
   const int gpio_pullmode_bit_count = 2;
   const int gpio_outenclr_outenset_bit_count = 1;
@@ -479,11 +485,11 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
         gpio_outmode_bit_count, GPIO_OUTMODE_OPEN_DRAIN);
       IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count*a_bit,
         gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
-      }  break; 
+      }  break;
   }
 #else
   #error Тип контроллера не определён
-#endif //IRS_STM32_F2_F4_F7  
+#endif //IRS_STM32_F2_F4_F7
 }
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
@@ -609,6 +615,103 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
+
+#if defined (IRS_NIIET_1921)
+//class port_extender_gpio_pin_t
+irs::arm::port_extender_gpio_pin_t::port_extender_gpio_pin_t
+  (port_extender_i2c_t* ap_port_extender_i2c_t, irs_u8 a_pin_number, dir_t a_dir)
+{
+  m_pin_number = a_pin_number;
+  mp_port_extender_i2c_t = ap_port_extender_i2c_t;
+
+  mp_port_extender_i2c_t->set_logic_level_data
+    (mp_port_extender_i2c_t->read_registers_group(mp_port_extender_i2c_t->output_port_0));
+
+  mp_port_extender_i2c_t->set_input_output_direction
+    (mp_port_extender_i2c_t->read_registers_group(mp_port_extender_i2c_t->configuration_port_0));
+
+    this->set_dir(a_dir);
+    this->clear();
+}
+
+irs::arm::port_extender_gpio_pin_t::~port_extender_gpio_pin_t()
+{
+}
+
+bool irs::arm::port_extender_gpio_pin_t::pin()
+{
+//  return m_logic_level_data & (1 << m_pin_number);
+  return mp_port_extender_i2c_t->get_logic_level_data() & (1 << m_pin_number);
+}
+
+void irs::arm::port_extender_gpio_pin_t::set()
+{
+//  m_input_output_direction &= ~(1 << m_pin_number);
+  mp_port_extender_i2c_t->set_input_output_direction
+    (mp_port_extender_i2c_t->get_input_output_direction() & ~(1 << m_pin_number));
+
+//  this->write_regs(0x06, m_input_output_direction);
+  mp_port_extender_i2c_t->write_to_registers_group
+    (mp_port_extender_i2c_t->configuration_port_0,
+     mp_port_extender_i2c_t->get_input_output_direction());
+
+//  m_logic_level_data |= 1 << m_pin_number;
+  mp_port_extender_i2c_t->set_logic_level_data
+    (mp_port_extender_i2c_t->get_logic_level_data() | (1 << m_pin_number));
+
+//  this->write_regs(0x02, m_logic_level_data);
+  mp_port_extender_i2c_t->write_to_registers_group
+    (mp_port_extender_i2c_t->output_port_0,
+     mp_port_extender_i2c_t->get_logic_level_data());
+}
+
+void irs::arm::port_extender_gpio_pin_t::clear()
+{
+  mp_port_extender_i2c_t->set_logic_level_data
+    (mp_port_extender_i2c_t->get_logic_level_data() & ~(1 << m_pin_number));
+
+  mp_port_extender_i2c_t->write_to_registers_group
+    (mp_port_extender_i2c_t->output_port_0,
+     mp_port_extender_i2c_t->get_logic_level_data());
+
+  mp_port_extender_i2c_t->set_input_output_direction
+    (mp_port_extender_i2c_t->get_input_output_direction() | (1 << m_pin_number));
+
+  mp_port_extender_i2c_t->write_to_registers_group
+    (mp_port_extender_i2c_t->configuration_port_0,
+     mp_port_extender_i2c_t->get_input_output_direction());
+}
+
+void irs::arm::port_extender_gpio_pin_t::set_dir(dir_t a_dir)
+{
+  switch (a_dir) {
+    case dir_in: {
+    mp_port_extender_i2c_t->set_input_output_direction
+    (mp_port_extender_i2c_t->get_input_output_direction() | 1 << m_pin_number);
+    } break;
+
+    case dir_out: {
+    mp_port_extender_i2c_t->set_input_output_direction
+    (mp_port_extender_i2c_t->get_input_output_direction() & ~(1 << m_pin_number));
+    } break;
+  }
+
+  mp_port_extender_i2c_t->write_to_registers_group
+    (mp_port_extender_i2c_t->configuration_port_0,
+    mp_port_extender_i2c_t->get_input_output_direction());
+}
+
+void irs::arm::port_extender_gpio_pin_t::set_pin(bool a_pin)
+{
+  a_pin ? this->set() : this->clear();
+}
+
+void irs::arm::port_extender_gpio_pin_t::pin(bool a_pin)
+{
+  a_pin ? this->set() : this->clear();
+}
+//end of class port_extender_gpio_pin_t
+#endif //defined (IRS_NIIET_1921)
 
 #endif //IRS_STM32H7xx
 
