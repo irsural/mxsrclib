@@ -62,6 +62,22 @@ private:
   irs_u16 m_input_output_direction;
 };
 
+class eeprom_i2c_t : public arm_i2c_t
+{
+public:
+  eeprom_i2c_t(arm_i2c_t* ap_arm_i2c_t);
+  ~eeprom_i2c_t();
+  void read_byte(irs_u16 a_address, irs_u8* ap_buf);
+  void read_page(irs_u16 a_address, irs_u8* ap_buf, irs_u16 a_size);
+  void write_byte(irs_u16 a_address, irs_u8* ap_buf);
+  void write_page(irs_u16 a_address, irs_u8* ap_buf, irs_u16 a_size);
+  void set_page_size(irs_u8 a_page_size);
+  irs_u8 get_page_size(void);
+private:
+  arm_i2c_t* mp_arm_i2c_t;
+  irs_u8 m_page_size;
+};
+
 #else
   #error Тип контроллера не определён
 #endif //defined (IRS_NIIET_1921)
