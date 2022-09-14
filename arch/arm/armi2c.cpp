@@ -74,12 +74,12 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
   m_status = BUSY_READ;
   I2C_Cmd(ENABLE);
   I2C_StartCmd();
-  irs_u16 temp_variable = 0; //used for ap_buf offset
+  irs_u16 buffer_offset = 0;
 
   while (a_size)
   {
     switch (I2C->ST & I2C_ST_MODE_Msk) {
-      case I2C_ST_MODE_STDONE: { // start condition generated
+      case I2C_ST_MODE_STDONE: {
       I2C_SetData (m_device_address | 0x01);
       if (a_size == 1) { I2C_NACKCmd(); }
       I2C_ITStatusClear();
@@ -87,16 +87,15 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
 
       case I2C_ST_MODE_MRADPA:
       case I2C_ST_MODE_MRDAPA: {
-      *(ap_buf+temp_variable) = I2C_GetData();
-      temp_variable++;
+      *(ap_buf+buffer_offset) = I2C_GetData();
+      buffer_offset++;
       a_size--;
       if (a_size == 1) { I2C_NACKCmd(); }
       I2C_ITStatusClear();
       } break;
 
       case I2C_ST_MODE_MRDANA: {
-      *(ap_buf+temp_variable) = I2C_GetData();
-//      temp_variable++;
+      *(ap_buf+buffer_offset) = I2C_GetData();
       a_size--;
       I2C_ITStatusClear();
       } break;
@@ -107,7 +106,7 @@ void irs::arm::arm_i2c_t::read(uint8_t *ap_buf, irs_u16 a_size)
     }
   }
   for (int i=0; i<500; i++) {asm ("nop");} // bus free time parameter. i<407 is min for 400kHz
-                                    // for more information read datasheet of i2c slave
+                                           // for more information read datasheet of i2c slave
   I2C_StopCmd();
   I2C_ITStatusClear();
 
@@ -125,7 +124,7 @@ void irs::arm::arm_i2c_t::write(irs_u8 *ap_buf, irs_u16 a_size)
   I2C_Cmd(ENABLE);
   I2C_StartCmd();
 
-  irs_u16 temp_variable = 0;
+  irs_u16 buffer_offset = 0;
   while (a_size)
   {
     switch (I2C->ST & I2C_ST_MODE_Msk) {
@@ -143,10 +142,10 @@ void irs::arm::arm_i2c_t::write(irs_u8 *ap_buf, irs_u16 a_size)
 
       case I2C_ST_MODE_MTADPA:
       case I2C_ST_MODE_MTDAPA: {
-      I2C_SetData (reinterpret_cast <irs_u32&>(*(ap_buf+temp_variable)));
+      I2C_SetData (reinterpret_cast <irs_u32&>(*(ap_buf+buffer_offset)));
       I2C_ITStatusClear();
       a_size--;
-      temp_variable++;
+      buffer_offset++;
       }  break;
       default: {
       asm ("nop");
@@ -172,7 +171,6 @@ irs::arm::arm_i2c_t::status_t irs::arm::arm_i2c_t::get_status()
 
 void irs::arm::arm_i2c_t::tick()
 {
-  //check i2c bus for pending conditions
 }
 // end of class arm_i2c_t
 
@@ -181,7 +179,6 @@ void irs::arm::arm_i2c_t::tick()
 irs::arm::port_extender_i2c_t::port_extender_i2c_t(arm_i2c_t* ap_arm_i2c_t)
 {
   mp_arm_i2c_t = ap_arm_i2c_t;
-//  mp_arm_i2c_t->set_device_addr(0xE8);
 }
 
 irs::arm::port_extender_i2c_t::~port_extender_i2c_t()
@@ -197,20 +194,20 @@ irs_u8 irs::arm::port_extender_i2c_t::read_register(irs_u8 a_reg)
   mp_arm_i2c_t->set_status(mp_arm_i2c_t->BUSY_READ);
   I2C_Cmd(ENABLE);
   I2C_StartCmd();
-  irs_u16 temp_variable = 0;
+  irs_u16 buffer_offset = 0;
 
   irs_u8* read_buf = new irs_u8;
 
   while (a_size)
   {
     switch (I2C->ST & I2C_ST_MODE_Msk) {
-      case I2C_ST_MODE_STDONE: { // start condition generated
+      case I2C_ST_MODE_STDONE: {
       I2C_SetData (mp_arm_i2c_t->get_device_addr());
       I2C_ITStatusClear();
       } break;
 
       case I2C_ST_MODE_MTADPA: {
-      I2C_SetData (a_reg); //a_reg
+      I2C_SetData (a_reg);
       I2C_ITStatusClear();
       I2C_StartCmd();
       I2C_ITStatusClear();
@@ -227,20 +224,20 @@ irs_u8 irs::arm::port_extender_i2c_t::read_register(irs_u8 a_reg)
       } break;
 
       case I2C_ST_MODE_MRADPA:
-      a_size == 1 ? (I2C_NACKCmd(),1) : 1;
+      if (a_size == 1) { I2C_NACKCmd();}
       I2C_ITStatusClear();
       break;
 
       case I2C_ST_MODE_MRDAPA:  {
-      *(read_buf+temp_variable) = I2C_GetData();
-      temp_variable++;
+      *(read_buf+buffer_offset) = I2C_GetData();
+      buffer_offset++;
       a_size--;
-      a_size == 1 ? (I2C_NACKCmd(),1) : 1;
+      if (a_size == 1) { I2C_NACKCmd();}
       I2C_ITStatusClear();
       }  break;
 
       case I2C_ST_MODE_MRDANA: {
-      *(read_buf+temp_variable) = I2C_GetData();
+      *(read_buf+buffer_offset) = I2C_GetData();
       a_size--;
       I2C_ITStatusClear();
       } break;
@@ -253,8 +250,8 @@ irs_u8 irs::arm::port_extender_i2c_t::read_register(irs_u8 a_reg)
                             // for more information read datasheet of i2c slave
   I2C_StopCmd();
   I2C_ITStatusClear();
-  for (int i=0; i<50; i++) { asm ("nop"); } // bus free time. 407 is min for 400kHz
-                            // for more information read datasheet of i2c slave
+  for (int i=0; i<50; i++) { asm ("nop"); }
+
   I2C_Cmd(DISABLE);
 
   mp_arm_i2c_t->unlock();
@@ -280,18 +277,17 @@ irs_u16 irs::arm::port_extender_i2c_t::read_registers_group(irs_u8 a_first_reg)
   while (a_size)
   {
     switch (I2C->ST & I2C_ST_MODE_Msk) {
-      case I2C_ST_MODE_STDONE: { // start condition generated
+      case I2C_ST_MODE_STDONE: {
       I2C_SetData (mp_arm_i2c_t->get_device_addr());
       I2C_ITStatusClear();
       } break;
 
       case I2C_ST_MODE_MTADPA: {
-      I2C_SetData (a_first_reg); //a_reg
+      I2C_SetData (a_first_reg);
       I2C_ITStatusClear();
       I2C_StartCmd();
       I2C_ITStatusClear();
       } break;
-
 
       case I2C_ST_MODE_RSDONE: {
       I2C_SetData (mp_arm_i2c_t->get_device_addr() | 0x01);
@@ -303,14 +299,14 @@ irs_u16 irs::arm::port_extender_i2c_t::read_registers_group(irs_u8 a_first_reg)
       } break;
 
       case I2C_ST_MODE_MRADPA: {
-      a_size == 1 ? (I2C_NACKCmd(),1) : 1;
+      if (a_size == 1) { I2C_NACKCmd();}
       I2C_ITStatusClear();
       } break;
 
       case I2C_ST_MODE_MRDAPA: {
       *(read_buf+a_size-1) = I2C_GetData();
       a_size--;
-      a_size == 1 ? (I2C_NACKCmd(),1) : 1;
+      if (a_size == 1) { I2C_NACKCmd();}
       I2C_ITStatusClear();
       }  break;
 
@@ -327,8 +323,8 @@ irs_u16 irs::arm::port_extender_i2c_t::read_registers_group(irs_u8 a_first_reg)
                             // for more information read datasheet of i2c slave
   I2C_StopCmd();
   I2C_ITStatusClear();
-  for (int i=0; i<50; i++) { asm ("nop"); } // bus free time. 407 is min for 400kHz
-                            // for more information read datasheet of i2c slave
+  for (int i=0; i<50; i++) { asm ("nop"); }
+
   I2C_Cmd(DISABLE);
 
   mp_arm_i2c_t->unlock();
@@ -346,11 +342,11 @@ void irs::arm::port_extender_i2c_t::write_to_register(irs_u8 a_reg, irs_u8 a_dat
   write_buf[0] = a_reg;
   write_buf[1] = a_data;
   if(!(mp_arm_i2c_t->get_lock())) {
-    //mp_arm_i2c_t->lock();
-    //mp_arm_i2c_t->set_device_addr(0xE8);
+    mp_arm_i2c_t->lock();
+    mp_arm_i2c_t->set_device_addr(0xE8);
+    mp_arm_i2c_t->write(write_buf,2);
+    mp_arm_i2c_t->unlock();
   }
-  mp_arm_i2c_t->write(write_buf,2);
-    //mp_arm_i2c_t->unlock();
   delete[] write_buf;
 }
 
@@ -361,10 +357,11 @@ void irs::arm::port_extender_i2c_t::write_to_registers_group(irs_u8 a_reg, irs_u
   write_buf[1] = (a_data & 0x00FF);
   write_buf[2] = (a_data & 0xFF00) >> 8;
   if(!(mp_arm_i2c_t->get_lock())) {
-    //mp_arm_i2c_t->lock();
-    //mp_arm_i2c_t->set_device_addr(0xE8);
+    mp_arm_i2c_t->lock();
+    mp_arm_i2c_t->set_device_addr(0xE8);
+    mp_arm_i2c_t->write(write_buf,3);
+    mp_arm_i2c_t->unlock();
   }
-  mp_arm_i2c_t->write(write_buf,3);
   delete[] write_buf;
 }
 
@@ -384,6 +381,7 @@ void irs::arm::port_extender_i2c_t::set_input_output_direction
 {
   m_input_output_direction = a_input_output_direction;
 }
+
 irs_u16 irs::arm::port_extender_i2c_t::get_input_output_direction()
 {
   return m_input_output_direction;
@@ -411,9 +409,9 @@ void irs::arm::eeprom_i2c_t::read_byte(irs_u16 a_address, irs_u8* ap_buf)
 
     I2C_Cmd(ENABLE);
     I2C_StartCmd();
-    irs_u8 temp_variable = 1; //num of bytes to read
+    irs_u8 bytes_to_read = 1;
 
-    while (temp_variable) {
+    while (bytes_to_read) {
       switch (I2C->ST & I2C_ST_MODE_Msk) {
 
         case I2C_ST_MODE_STDONE: {
@@ -439,12 +437,12 @@ void irs::arm::eeprom_i2c_t::read_byte(irs_u16 a_address, irs_u8* ap_buf)
         } break;
 
       case I2C_ST_MODE_MRADPA: {
-          if (temp_variable == 1) { I2C_NACKCmd();}
+          if (bytes_to_read == 1) { I2C_NACKCmd();}
           I2C_ITStatusClear();
       }
         break;
         case I2C_ST_MODE_MRDANA: {
-        temp_variable--;
+        bytes_to_read--;
         *(ap_buf) = I2C_GetData();
         I2C_ITStatusClear();
         } break;
@@ -474,7 +472,7 @@ void irs::arm::eeprom_i2c_t::read_page(irs_u16 a_address, irs_u8* ap_buf, irs_u1
 
     I2C_Cmd(ENABLE);
     I2C_StartCmd();
-    irs_u8 bytes_to_read = a_size; //num of bytes to read
+    irs_u8 bytes_to_read = a_size;
     while (bytes_to_read) {
       switch (I2C->ST & I2C_ST_MODE_Msk) {
 
@@ -522,13 +520,11 @@ void irs::arm::eeprom_i2c_t::read_page(irs_u16 a_address, irs_u8* ap_buf, irs_u1
         break;
       }
     }
-//     while (!(I2C->ST_bit.INT)) {asm ("nop");} // dont delete, need for transmit last byte to eeprom
     I2C_StopCmd();
     I2C_ITStatusClear();
     for (int i=0; i<50; i++) { asm ("nop"); } // bus free time. 407 is min for 400kHz
                             // for more information read datasheet of i2c slave
     I2C_Cmd(DISABLE);
-
     mp_arm_i2c_t->set_status(mp_arm_i2c_t ->READY);
     mp_arm_i2c_t->unlock();
   }

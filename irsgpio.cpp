@@ -640,26 +640,21 @@ irs::arm::port_extender_gpio_pin_t::~port_extender_gpio_pin_t()
 
 bool irs::arm::port_extender_gpio_pin_t::pin()
 {
-//  return m_logic_level_data & (1 << m_pin_number);
   return mp_port_extender_i2c_t->get_logic_level_data() & (1 << m_pin_number);
 }
 
 void irs::arm::port_extender_gpio_pin_t::set()
 {
-//  m_input_output_direction &= ~(1 << m_pin_number);
   mp_port_extender_i2c_t->set_input_output_direction
     (mp_port_extender_i2c_t->get_input_output_direction() & ~(1 << m_pin_number));
 
-//  this->write_regs(0x06, m_input_output_direction);
   mp_port_extender_i2c_t->write_to_registers_group
     (mp_port_extender_i2c_t->configuration_port_0,
      mp_port_extender_i2c_t->get_input_output_direction());
 
-//  m_logic_level_data |= 1 << m_pin_number;
   mp_port_extender_i2c_t->set_logic_level_data
     (mp_port_extender_i2c_t->get_logic_level_data() | (1 << m_pin_number));
 
-//  this->write_regs(0x02, m_logic_level_data);
   mp_port_extender_i2c_t->write_to_registers_group
     (mp_port_extender_i2c_t->output_port_0,
      mp_port_extender_i2c_t->get_logic_level_data());
@@ -711,6 +706,7 @@ void irs::arm::port_extender_gpio_pin_t::pin(bool a_pin)
   a_pin ? this->set() : this->clear();
 }
 //end of class port_extender_gpio_pin_t
+
 #endif //defined (IRS_NIIET_1921)
 
 #endif //IRS_STM32H7xx
