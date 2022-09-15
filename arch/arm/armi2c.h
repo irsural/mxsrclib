@@ -73,6 +73,7 @@ public:
   void write_page(irs_u16 a_address, irs_u8* ap_buf, irs_u16 a_size);
   void set_page_size(irs_u8 a_page_size);
   irs_u8 get_page_size(void);
+  bool is_write_finished(void);
 private:
   arm_i2c_t* mp_arm_i2c_t;
   irs_u8 m_page_size;
