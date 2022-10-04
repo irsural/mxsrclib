@@ -2414,6 +2414,8 @@ private:
     size_type size;
     calc_t square_sum;
     window_t():
+      count(0.),
+      count_fractional(0.),
       max_size(0),
       size(0),
       square_sum()
@@ -2433,6 +2435,7 @@ fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
   m_square_elems(),
   m_windows()
 {
+  m_windows.reserve(a_sizes.size());
   for (size_type i = 0; i < a_sizes.size(); i++) {
     window_t window;
     calc_t max_count = 0;
