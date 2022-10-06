@@ -1270,7 +1270,7 @@ void fast_multi_average_t<data_t, calc_t>::clear()
 //! \brief Расчет среднего значения сигнала, полученного
 //!   асинхронной дискретизацией
 //! \details Суффикс "as" означает "asynchronous sampling"
-template <class data_t, class calc_t>
+template <class data_t, class calc_t, class Al = allocator<data_t> >
 class fast_average_as_t
 {
 public:
@@ -1289,13 +1289,13 @@ private:
   calc_t m_count;
   size_type m_max_count;
   calc_t m_count_fractional;
-  irs::deque_data_t<data_t> m_samples;
+  irs::deque_data_t<data_t, Al> m_samples;
   calc_t m_sum;
   calc_t m_default;
 };
 
-template <class data_t, class calc_t>
-fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
+template <class data_t, class calc_t, class Al>
+fast_average_as_t<data_t, calc_t, Al>::fast_average_as_t(calc_t a_count,
   calc_t a_default
 ):
   m_count(a_count),
@@ -1311,8 +1311,8 @@ fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
   m_samples.reserve(m_max_count);
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::add(data_t a_val)
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::add(data_t a_val)
 {
   if (m_max_count > 0) {
     IRS_LIB_ASSERT(m_samples.size() <= m_max_count);
@@ -1329,8 +1329,8 @@ void fast_average_as_t<data_t, calc_t>::add(data_t a_val)
   }
 }
 
-template <class data_t, class calc_t>
-calc_t fast_average_as_t<data_t, calc_t>::get() const
+template <class data_t, class calc_t, class Al>
+calc_t fast_average_as_t<data_t, calc_t, Al>::get() const
 {
   if ((m_samples.size() < m_max_count) || m_samples.empty()) {
     return m_default;
@@ -1339,8 +1339,8 @@ calc_t fast_average_as_t<data_t, calc_t>::get() const
   return sum/m_count;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::resize(calc_t a_count)
 {
   calc_t max_count = 0;
   m_count = a_count;
@@ -1363,35 +1363,35 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
   }
 }
 
-template <class data_t, class calc_t>
-typename fast_average_as_t<data_t, calc_t>::size_type
-fast_average_as_t<data_t, calc_t>::size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_as_t<data_t, calc_t, Al>::size_type
+fast_average_as_t<data_t, calc_t, Al>::size() const
 {
   return m_samples.size();
 }
 
-template <class data_t, class calc_t>
-typename fast_average_as_t<data_t, calc_t>::size_type
-fast_average_as_t<data_t, calc_t>::max_size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_as_t<data_t, calc_t, Al>::size_type
+fast_average_as_t<data_t, calc_t, Al>::max_size() const
 {
   return m_max_count;
 }
 
-template <class data_t, class calc_t>
-bool fast_average_as_t<data_t, calc_t>::is_full() const
+template <class data_t, class calc_t, class Al>
+bool fast_average_as_t<data_t, calc_t, Al>::is_full() const
 {
   return m_samples.size() == m_max_count;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::clear()
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::clear()
 {
   m_samples.clear();
   m_sum = 0;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::preset(
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::preset(
   size_type a_start_pos, size_type a_count)
 {
   const size_type erase_front_count = min(m_samples.size(), a_start_pos);
