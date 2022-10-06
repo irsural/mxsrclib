@@ -1499,7 +1499,123 @@ inline void swap(deque_data_t<T, Al>& a_deque_data_first,
 }
 
 #ifdef IRS_LIB_DEBUG
-bool deque_data_test();
+template<class T = int, class Al = allocator<T> >
+bool deque_data_test()
+{
+  typedef size_t size_type;
+  typedef T testing_type;
+  bool test_success = true;
+  irs::deque_data_t<testing_type, Al> deque_data;
+  // Создаем и заполняем буфер тестовыми данными
+  const size_type buf_size = 100;
+  testing_type test_data_buf[buf_size];
+  for (size_type i = 0; i < buf_size; i++) {
+    test_data_buf[i] = i;
+  }
+  // Тест на вставку, копирование и удаление данных
+  deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+  test_success = (buf_size == deque_data.size());
+  IRS_LIB_ASSERT(test_success);
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    const size_type pop_data_size = buf_size/2;
+    deque_data.pop_front(pop_data_size);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    deque_data.pop_front(buf_size - pop_data_size);
+    deque_data.pop_back(buf_size);
+    test_success = (deque_data.size() == buf_size);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.reserve(buf_size * 10);
+    deque_data.resize(buf_size);
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.clear();
+    test_success = (deque_data.size() == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.reserve(0);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    test_success = (buf_size == deque_data.size());
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    for (size_type i = 0; i < buf_size; i++) {
+      if (deque_data[i] != test_data_buf[i]) {
+        test_success = false;
+        break;
+      } else {
+        // Продолжаем проверку
+      }
+    }
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    irs::deque_data_t<testing_type, Al> deque_data_second;
+    deque_data_second = deque_data;
+    if (deque_data_second.size() == deque_data.size()) {
+      for (size_type i = 0; i < buf_size; i++) {
+        if (deque_data[i] != deque_data_second[i]) {
+          test_success = false;
+          break;
+        } else {
+          // Продолжаем проверку
+        }
+      }
+    } else {
+      test_success = false;
+    }
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  return test_success;
+}
+
 #endif // IRS_LIB_DEBUG
 
 // Дескриптор объекта с автоматическим уничтожением объекта по счетчику ссылок
