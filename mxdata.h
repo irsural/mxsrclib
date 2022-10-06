@@ -1146,7 +1146,7 @@ public:
   typedef const T& const_reference;
 
   deque_data_t(size_type a_size = 0);
-  deque_data_t(const deque_data_t<T>& a_deque_data);
+  deque_data_t(const deque_data_t<T, Al>& a_deque_data);
   ~deque_data_t();
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
@@ -1154,7 +1154,7 @@ public:
   inline const value_type& front() const;
   inline value_type& back();
   inline const value_type& back() const;
-  const deque_data_t& operator=(const deque_data_t<T>& a_raw_data);
+  const deque_data_t& operator=(const deque_data_t<T, Al>& a_raw_data);
   inline size_type size() const;
   inline size_type capacity() const;
   inline bool empty() const;
@@ -1171,7 +1171,7 @@ public:
   void copy_to(size_type a_pos, size_type a_size,
     pointer ap_dest_first);
   inline void clear();
-  inline void swap(deque_data_t<T>* ap_deque_data_src);
+  inline void swap(deque_data_t<T, Al>* ap_deque_data_src);
 private:
   void reserve_buf(size_type a_capacity);
   enum {
@@ -1202,8 +1202,8 @@ irs::deque_data_t<T, Al>::deque_data_t(size_type a_size):
 }
 
 template <class T, class Al>
-irs::deque_data_t<T, Al>::deque_data_t(const deque_data_t<T>& a_deque_data):
-  m_alloc(Al()),
+irs::deque_data_t<T, Al>::deque_data_t(const deque_data_t<T, Al>& a_deque_data):
+  m_alloc(a_deque_data.m_alloc),
   m_ring_size(a_deque_data.m_ring_size),
   m_capacity(a_deque_data.m_capacity),
   mp_buf(new value_type[m_capacity]),
@@ -1279,9 +1279,9 @@ inline typename irs::deque_data_t<T, Al>::const_reference
 
 template <class T, class Al>
 const typename irs::deque_data_t<T, Al>&
-  irs::deque_data_t<T, Al>::operator=(const deque_data_t<T>& a_deque_data)
+  irs::deque_data_t<T, Al>::operator=(const deque_data_t<T, Al>& a_deque_data)
 {
-  deque_data_t<T> deque_data(a_deque_data);
+  deque_data_t<T, Al> deque_data(a_deque_data);
   swap(&deque_data);
   return *this;
 }
@@ -1453,7 +1453,7 @@ inline void irs::deque_data_t<T, Al>::clear()
 }
 
 template <class T, class Al>
-inline void irs::deque_data_t<T, Al>::swap(deque_data_t<T>* ap_deque_data_src)
+inline void irs::deque_data_t<T, Al>::swap(deque_data_t<T, Al>* ap_deque_data_src)
 {
   ::swap(m_ring_size, ap_deque_data_src->m_ring_size);
   ::swap(m_capacity, ap_deque_data_src->m_capacity);
@@ -1491,8 +1491,8 @@ void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
 }
 
 template <class T, class Al>
-inline void swap(deque_data_t<T>& a_deque_data_first,
-  deque_data_t<T>& a_deque_data_second)
+inline void swap(deque_data_t<T, Al>& a_deque_data_first,
+  deque_data_t<T, Al>& a_deque_data_second)
 {
   a_deque_data_first->swap(&a_deque_data_second);
 }
