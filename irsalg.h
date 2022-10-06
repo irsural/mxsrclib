@@ -952,7 +952,7 @@ namespace irs {
 
 #define IRS_USE_DEQUE_DATA 1
 
-template <class data_t, class calc_t>
+template <class data_t, class calc_t, class Al = allocator<data_t> >
 class fast_average_t
 {
 public:
@@ -970,15 +970,15 @@ private:
   fast_average_t();
   size_type m_max_count;
   #if IRS_USE_DEQUE_DATA
-  irs::deque_data_t<data_t> m_samples;
+  irs::deque_data_t<data_t, Al> m_samples;
   #else
-  std::deque<data_t> m_samples;
+  std::deque<data_t, Al> m_samples;
   #endif // IRS_USE_DEQUE_DATA
   calc_t m_sum;
 };
 
-template <class data_t, class calc_t>
-fast_average_t<data_t, calc_t>::fast_average_t(size_type a_count):
+template <class data_t, class calc_t, class Al>
+fast_average_t<data_t, calc_t, Al>::fast_average_t(size_type a_count):
   m_max_count(a_count),
   m_samples(),
   m_sum(0)
@@ -988,8 +988,8 @@ fast_average_t<data_t, calc_t>::fast_average_t(size_type a_count):
   #endif // IRS_USE_DEQUE_DATA
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::add(data_t a_val)
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::add(data_t a_val)
 {
   if (m_max_count > 0) {
     IRS_LIB_ASSERT(m_samples.size() <= m_max_count);
@@ -1002,8 +1002,8 @@ void fast_average_t<data_t, calc_t>::add(data_t a_val)
   }
 }
 
-template <class data_t, class calc_t>
-calc_t fast_average_t<data_t, calc_t>::get() const
+template <class data_t, class calc_t, class Al>
+calc_t fast_average_t<data_t, calc_t, Al>::get() const
 {
   if (m_samples.empty()) {
     return 0;
@@ -1011,8 +1011,8 @@ calc_t fast_average_t<data_t, calc_t>::get() const
   return m_sum/m_samples.size();
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::resize(size_type a_count)
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::resize(size_type a_count)
 {
   #if IRS_USE_DEQUE_DATA
   m_samples.reserve(a_count);
@@ -1024,35 +1024,35 @@ void fast_average_t<data_t, calc_t>::resize(size_type a_count)
   }
 }
 
-template <class data_t, class calc_t>
-typename fast_average_t<data_t, calc_t>::size_type
-fast_average_t<data_t, calc_t>::size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_t<data_t, calc_t, Al>::size_type
+fast_average_t<data_t, calc_t, Al>::size() const
 {
   return m_samples.size();
 }
 
-template <class data_t, class calc_t>
-typename fast_average_t<data_t, calc_t>::size_type
-fast_average_t<data_t, calc_t>::max_size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_t<data_t, calc_t, Al>::size_type
+fast_average_t<data_t, calc_t, Al>::max_size() const
 {
   return m_max_count;
 }
 
-template <class data_t, class calc_t>
-bool fast_average_t<data_t, calc_t>::is_full() const
+template <class data_t, class calc_t, class Al>
+bool fast_average_t<data_t, calc_t, Al>::is_full() const
 {
   return m_samples.size() == m_max_count;
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::clear()
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::clear()
 {
   m_samples.clear();
   m_sum = 0;
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::preset(
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::preset(
   size_type a_start_pos, size_type a_count)
 {
   const size_type erase_front_count = min(m_samples.size(), a_start_pos);
@@ -1199,12 +1199,12 @@ void fast_multi_average_t<data_t, calc_t>::resize(size_type a_index,
   size_type a_new_size)
 {
   window_t& window = m_windows[a_index];
-  
+
   window.max_size = a_new_size;
   if (window.size > window.max_size) {
     const size_type count = window.size - window.max_size;
 	const size_type start_index = m_samples.size() - window.size;
-    for (size_type i = 0; i < count; i++) {      
+    for (size_type i = 0; i < count; i++) {
       window.sum -= m_samples[start_index + i];
     }
     window.size = window.max_size;
@@ -1451,7 +1451,7 @@ public:
   //! \param[in] a_index - индекс окна
   void clear(size_type a_index);
   //! \brief Очищает все окна
-  void clear();  
+  void clear();
 private:
   fast_multi_average_as_t();
   calc_t m_default;
@@ -1527,7 +1527,7 @@ void fast_multi_average_as_t<data_t, calc_t>::add(data_t a_val)
 
 template <class data_t, class calc_t>
 calc_t fast_multi_average_as_t<data_t, calc_t>::get(size_type a_index) const
-{  
+{
   const window_t& window = m_windows[a_index];
   if (window.size < window.max_size) {
     return m_default;
@@ -1592,7 +1592,7 @@ void fast_multi_average_as_t<data_t, calc_t>::resize(size_type a_index, calc_t a
 
   if (m_max_count == 0) {
     clear();
-  } else if (m_max_count == 1) {    
+  } else if (m_max_count == 1) {
     if (!m_samples.empty()) {
       m_samples.pop_front(m_samples.size() - 1);
     }
