@@ -1130,10 +1130,13 @@ inline void mem_copy(const src_type& a_src_data, size_t a_src_index,
 }
 
 // Очередь сырых данных
-template <class T>
+template <class T, class Al = allocator<T> >
 class deque_data_t
 {
 public:
+  typedef typename Al::template rebind<T>::other _Alloc;
+  typedef _Alloc allocator_type;
+
   typedef T value_type;
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
@@ -1143,7 +1146,7 @@ public:
   typedef const T& const_reference;
 
   deque_data_t(size_type a_size = 0);
-  deque_data_t(const deque_data_t<T>& a_deque_data);
+  deque_data_t(const deque_data_t<T, Al>& a_deque_data);
   ~deque_data_t();
   inline reference operator[](size_type a_index);
   inline const_reference operator[](size_type a_index) const;
@@ -1151,7 +1154,7 @@ public:
   inline const value_type& front() const;
   inline value_type& back();
   inline const value_type& back() const;
-  const deque_data_t& operator=(const deque_data_t<T>& a_raw_data);
+  const deque_data_t& operator=(const deque_data_t<T, Al>& a_raw_data);
   inline size_type size() const;
   inline size_type capacity() const;
   inline bool empty() const;
@@ -1168,7 +1171,7 @@ public:
   void copy_to(size_type a_pos, size_type a_size,
     pointer ap_dest_first);
   inline void clear();
-  inline void swap(deque_data_t<T>* ap_deque_data_src);
+  inline void swap(deque_data_t<T, Al>* ap_deque_data_src);
 private:
   void reserve_buf(size_type a_capacity);
   enum {
@@ -1178,70 +1181,74 @@ private:
     m_capacity_min = 16
     #endif //__ICCAVR__
   };
+  _Alloc m_alloc;
+
   size_type m_ring_size;
   size_type m_capacity;
   pointer mp_buf;
   size_type m_ring_begin_pos;
 };
 
-template <class T>
-irs::deque_data_t<T>::deque_data_t(size_type a_size):
+template <class T, class Al>
+irs::deque_data_t<T, Al>::deque_data_t(size_type a_size):
+  m_alloc(Al()),
   m_ring_size(a_size),
   m_capacity((m_ring_size > m_capacity_min) ? m_ring_size :
     static_cast<size_t>(m_capacity_min)),
-  mp_buf(new value_type[m_capacity]),
+  mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(0)
 {
   memsetex(mp_buf, m_ring_size);
 }
 
-template <class T>
-irs::deque_data_t<T>::deque_data_t(const deque_data_t<T>& a_deque_data):
+template <class T, class Al>
+irs::deque_data_t<T, Al>::deque_data_t(const deque_data_t<T, Al>& a_deque_data):
+  m_alloc(a_deque_data.m_alloc),
   m_ring_size(a_deque_data.m_ring_size),
   m_capacity(a_deque_data.m_capacity),
-  mp_buf(new value_type[m_capacity]),
+  mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(a_deque_data.m_ring_begin_pos)
 {
   memcpyex(mp_buf, a_deque_data.mp_buf, m_capacity);
 }
 
-template <class T>
-irs::deque_data_t<T>::~deque_data_t()
+template <class T, class Al>
+irs::deque_data_t<T, Al>::~deque_data_t()
 {
-  delete []mp_buf;
+  m_alloc.deallocate(mp_buf, m_capacity);
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::reference
-  irs::deque_data_t<T>::front()
-{
-  return operator[](0);
-}
-
-template <class T>
-inline typename irs::deque_data_t<T>::const_reference
-  irs::deque_data_t<T>::front() const
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::reference
+  irs::deque_data_t<T, Al>::front()
 {
   return operator[](0);
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::reference
-  irs::deque_data_t<T>::back()
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::const_reference
+  irs::deque_data_t<T, Al>::front() const
+{
+  return operator[](0);
+}
+
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::reference
+  irs::deque_data_t<T, Al>::back()
 {
   return operator[](size() - 1);
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::const_reference
-  irs::deque_data_t<T>::back() const
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::const_reference
+  irs::deque_data_t<T, Al>::back() const
 {
   return operator[](size() - 1);
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::reference
-  irs::deque_data_t<T>::operator[](size_type a_index)
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::reference
+  irs::deque_data_t<T, Al>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
 
@@ -1255,9 +1262,9 @@ inline typename irs::deque_data_t<T>::reference
   return *p_elem;
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::const_reference
-  irs::deque_data_t<T>::operator[](size_type a_index) const
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::const_reference
+  irs::deque_data_t<T, Al>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
   pointer p_elem = IRS_NULL;
@@ -1270,37 +1277,37 @@ inline typename irs::deque_data_t<T>::const_reference
   return *p_elem;
 }
 
-template <class T>
-const typename irs::deque_data_t<T>&
-  irs::deque_data_t<T>::operator=(const deque_data_t<T>& a_deque_data)
+template <class T, class Al>
+const typename irs::deque_data_t<T, Al>&
+  irs::deque_data_t<T, Al>::operator=(const deque_data_t<T, Al>& a_deque_data)
 {
-  deque_data_t<T> deque_data(a_deque_data);
+  deque_data_t<T, Al> deque_data(a_deque_data);
   swap(&deque_data);
   return *this;
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::size_type
-  irs::deque_data_t<T>::size() const
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::size_type
+  irs::deque_data_t<T, Al>::size() const
 {
   return m_ring_size;
 }
 
-template <class T>
-inline typename irs::deque_data_t<T>::size_type
-  irs::deque_data_t<T>::capacity() const
+template <class T, class Al>
+inline typename irs::deque_data_t<T, Al>::size_type
+  irs::deque_data_t<T, Al>::capacity() const
 {
   return m_capacity;
 }
 
-template <class T>
-inline bool irs::deque_data_t<T>::empty() const
+template <class T, class Al>
+inline bool irs::deque_data_t<T, Al>::empty() const
 {
   return m_ring_size == 0;
 }
 
-template <class T>
-void irs::deque_data_t<T>::reserve(size_type a_capacity)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::reserve(size_type a_capacity)
 {
   size_type capacity_norm = max(a_capacity,
     static_cast<size_type>(m_capacity_min));
@@ -1308,8 +1315,8 @@ void irs::deque_data_t<T>::reserve(size_type a_capacity)
   reserve_buf(capacity_new);
 }
 
-template <class T>
-void irs::deque_data_t<T>::resize(size_type a_size)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
@@ -1321,14 +1328,14 @@ void irs::deque_data_t<T>::resize(size_type a_size)
   m_ring_size = new_size;
 }
 
-template <class T>
-void irs::deque_data_t<T>::push_back(const value_type& a_value)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::push_back(const value_type& a_value)
 {
   push_back(&a_value, &a_value + 1);
 }
 
-template <class T>
-void irs::deque_data_t<T>::push_back(
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::push_back(
   const_pointer ap_first, const_pointer ap_last)
 {
   // Размер вставляемых данных
@@ -1354,14 +1361,14 @@ void irs::deque_data_t<T>::push_back(
   }
 }
 
-template <class T>
-void irs::deque_data_t<T>::push_front(const value_type& a_value)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::push_front(const value_type& a_value)
 {
   push_front(&a_value, &a_value + 1);
 }
 
-template <class T>
-void irs::deque_data_t<T>::push_front(
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::push_front(
   const_pointer ap_first, const_pointer ap_last)
 {
   // Размер вставляемых данных
@@ -1397,16 +1404,16 @@ void irs::deque_data_t<T>::push_front(
   }
 }
 
-template <class T>
-void irs::deque_data_t<T>::pop_back(size_type a_size)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::pop_back(size_type a_size)
 {
   IRS_LIB_ASSERT(a_size <= m_ring_size);
   const size_type erase_data_size = min(a_size, m_ring_size);
   m_ring_size -= erase_data_size;
 }
 
-template <class T>
-void irs::deque_data_t<T>::pop_front(size_type a_size)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::pop_front(size_type a_size)
 {
   IRS_LIB_ASSERT(a_size <= m_ring_size);
   const size_type erase_data_size = min(a_size, m_ring_size);
@@ -1419,8 +1426,8 @@ void irs::deque_data_t<T>::pop_front(size_type a_size)
   m_ring_size -= erase_data_size;
 }
 
-template <class T>
-void irs::deque_data_t<T>::copy_to(size_type a_pos, size_type a_size,
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::copy_to(size_type a_pos, size_type a_size,
   pointer ap_dest_first)
 {
   IRS_LIB_ASSERT(a_size <= (m_ring_size - a_pos));
@@ -1438,29 +1445,30 @@ void irs::deque_data_t<T>::copy_to(size_type a_pos, size_type a_size,
   }
 }
 
-template <class T>
-inline void irs::deque_data_t<T>::clear()
+template <class T, class Al>
+inline void irs::deque_data_t<T, Al>::clear()
 {
   m_ring_size = 0;
   m_ring_begin_pos = 0;
 }
 
-template <class T>
-inline void irs::deque_data_t<T>::swap(deque_data_t<T>* ap_deque_data_src)
+template <class T, class Al>
+inline void irs::deque_data_t<T, Al>::swap(deque_data_t<T, Al>* ap_deque_data_src)
 {
+  ::swap(m_alloc, ap_deque_data_src->m_alloc);
   ::swap(m_ring_size, ap_deque_data_src->m_ring_size);
   ::swap(m_capacity, ap_deque_data_src->m_capacity);
   ::swap(mp_buf, ap_deque_data_src->mp_buf);
   ::swap(m_ring_begin_pos, ap_deque_data_src->m_ring_begin_pos);
 }
 
-template <class T>
-void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
+template <class T, class Al>
+void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
   if (a_capacity > m_capacity) {
     size_type new_capacity = a_capacity;
-    pointer p_new_buf = new value_type[new_capacity];
+    pointer p_new_buf = m_alloc.allocate(new_capacity);
     size_type new_ring_size = min(new_capacity, m_ring_size);
     const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
     size_type size_copy_data_from_buf_right_part =
@@ -1473,7 +1481,7 @@ void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
     } else {
       // Дополнительное копирование из левой части буфера не требуется
     }
-    delete []mp_buf;
+    m_alloc.deallocate(mp_buf, m_capacity);
     mp_buf = p_new_buf;
     m_capacity = new_capacity;
     m_ring_size = new_ring_size;
@@ -1483,15 +1491,131 @@ void irs::deque_data_t<T>::reserve_buf(size_type a_capacity)
   }
 }
 
-template <class T>
-inline void swap(deque_data_t<T>& a_deque_data_first,
-  deque_data_t<T>& a_deque_data_second)
+template <class T, class Al>
+inline void swap(deque_data_t<T, Al>& a_deque_data_first,
+  deque_data_t<T, Al>& a_deque_data_second)
 {
   a_deque_data_first->swap(&a_deque_data_second);
 }
 
 #ifdef IRS_LIB_DEBUG
-bool deque_data_test();
+template<class T = int, class Al = allocator<T> >
+bool deque_data_test()
+{
+  typedef size_t size_type;
+  typedef T testing_type;
+  bool test_success = true;
+  irs::deque_data_t<testing_type, Al> deque_data;
+  // Создаем и заполняем буфер тестовыми данными
+  const size_type buf_size = 100;
+  testing_type test_data_buf[buf_size];
+  for (size_type i = 0; i < buf_size; i++) {
+    test_data_buf[i] = i;
+  }
+  // Тест на вставку, копирование и удаление данных
+  deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+  test_success = (buf_size == deque_data.size());
+  IRS_LIB_ASSERT(test_success);
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    const size_type pop_data_size = buf_size/2;
+    deque_data.pop_front(pop_data_size);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    deque_data.pop_front(buf_size - pop_data_size);
+    deque_data.pop_back(buf_size);
+    test_success = (deque_data.size() == buf_size);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.reserve(buf_size * 10);
+    deque_data.resize(buf_size);
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.clear();
+    test_success = (deque_data.size() == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    deque_data.reserve(0);
+    deque_data.push_back(test_data_buf, test_data_buf + buf_size);
+    test_success = (buf_size == deque_data.size());
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    testing_type buf[buf_size];
+    memset(buf, 0, buf_size);
+    deque_data.copy_to(0, buf_size, buf);
+    test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    for (size_type i = 0; i < buf_size; i++) {
+      if (deque_data[i] != test_data_buf[i]) {
+        test_success = false;
+        break;
+      } else {
+        // Продолжаем проверку
+      }
+    }
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  if (test_success) {
+    irs::deque_data_t<testing_type, Al> deque_data_second;
+    deque_data_second = deque_data;
+    if (deque_data_second.size() == deque_data.size()) {
+      for (size_type i = 0; i < buf_size; i++) {
+        if (deque_data[i] != deque_data_second[i]) {
+          test_success = false;
+          break;
+        } else {
+          // Продолжаем проверку
+        }
+      }
+    } else {
+      test_success = false;
+    }
+    IRS_LIB_ASSERT(test_success);
+  } else {
+    // Произошла ошибка
+  }
+  return test_success;
+}
+
 #endif // IRS_LIB_DEBUG
 
 // Дескриптор объекта с автоматическим уничтожением объекта по счетчику ссылок
