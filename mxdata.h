@@ -1195,7 +1195,7 @@ irs::deque_data_t<T, Al>::deque_data_t(size_type a_size):
   m_ring_size(a_size),
   m_capacity((m_ring_size > m_capacity_min) ? m_ring_size :
     static_cast<size_t>(m_capacity_min)),
-  mp_buf(new value_type[m_capacity]),
+  mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(0)
 {
   memsetex(mp_buf, m_ring_size);
@@ -1206,7 +1206,7 @@ irs::deque_data_t<T, Al>::deque_data_t(const deque_data_t<T, Al>& a_deque_data):
   m_alloc(a_deque_data.m_alloc),
   m_ring_size(a_deque_data.m_ring_size),
   m_capacity(a_deque_data.m_capacity),
-  mp_buf(new value_type[m_capacity]),
+  mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(a_deque_data.m_ring_begin_pos)
 {
   memcpyex(mp_buf, a_deque_data.mp_buf, m_capacity);
@@ -1215,7 +1215,7 @@ irs::deque_data_t<T, Al>::deque_data_t(const deque_data_t<T, Al>& a_deque_data):
 template <class T, class Al>
 irs::deque_data_t<T, Al>::~deque_data_t()
 {
-  delete []mp_buf;
+  m_alloc.deallocate(mp_buf, m_capacity);
 }
 
 template <class T, class Al>
@@ -1455,6 +1455,7 @@ inline void irs::deque_data_t<T, Al>::clear()
 template <class T, class Al>
 inline void irs::deque_data_t<T, Al>::swap(deque_data_t<T, Al>* ap_deque_data_src)
 {
+  ::swap(m_alloc, ap_deque_data_src->m_alloc);
   ::swap(m_ring_size, ap_deque_data_src->m_ring_size);
   ::swap(m_capacity, ap_deque_data_src->m_capacity);
   ::swap(mp_buf, ap_deque_data_src->mp_buf);
@@ -1467,7 +1468,7 @@ void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
   if (a_capacity > m_capacity) {
     size_type new_capacity = a_capacity;
-    pointer p_new_buf = new value_type[new_capacity];
+    pointer p_new_buf = m_alloc.allocate(new_capacity);
     size_type new_ring_size = min(new_capacity, m_ring_size);
     const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
     size_type size_copy_data_from_buf_right_part =
@@ -1480,7 +1481,7 @@ void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
     } else {
       // Дополнительное копирование из левой части буфера не требуется
     }
-    delete []mp_buf;
+    m_alloc.deallocate(mp_buf, m_capacity);
     mp_buf = p_new_buf;
     m_capacity = new_capacity;
     m_ring_size = new_ring_size;
