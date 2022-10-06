@@ -2374,6 +2374,12 @@ public:
   //! \param[in] a_index - индекс окна
   //! \param[in] a_new_size - новый размер окна
   void resize(size_type a_index, calc_t a_new_size);
+  //! \brief Изменяет размер окна для периодического сигнала с
+  //!   предустановкой из первоначального окна
+  //! \param[in] a_index - индекс окна
+  //! \param[in] a_new_size - новый размер окна
+  //! \param[in] a_period - период сигнала
+  void resize_preset(size_type a_index, calc_t a_new_size, double a_period);
   //! \brief Изменяет размер окна среднего значения
   //! \param[in] a_new_size - новый размер окна
   void resize_average(calc_t a_new_size);
@@ -2403,26 +2409,62 @@ public:
   void preset_average(size_type a_start_pos, size_type a_size);
 private:
   fast_multi_sko_with_single_average_as_t();
+  
   size_type m_max_count;
   fast_average_as_t<data_t, calc_t> m_average;
   irs::deque_data_t<data_t> m_square_elems;
   struct window_t
   {
+    //! \brief Полный дробный размер окна
     double count;
+    //! \brief Дробная часть размера окна
     double count_fractional;
+    //! \brief Целая часть размера окна + 1
     size_type max_size;
+    //! \brief Текущий размер окна
     size_type size;
+    //! \brief Сумма квадратов
     calc_t square_sum;
+    
+    // Переменные для предустановки
+    //! \brief Текущий предустановленный остаток суммы
+    calc_t square_sum_preset_part;
+    //! \brief Полный дробный размер окна ближайшего расширения
+    double count_expand;
+    //! \brief Целая часть размера окна + 1 ближайшего расширения
+    size_type max_size_expand;
+    //! \brief Сумма квадратов постоянно расширяемая
+    calc_t square_sum_expand;
+    //! \brief Полный дробный размер окна после предустановки
+    double count_preset;
+    //! \brief Размер окна после предустановки
+    size_type max_size_preset;
+    //! \brief Режим предустановки
+    bool is_preset_mode;
+    
     window_t():
       count(0.),
       count_fractional(0.),
       max_size(0),
       size(0),
-      square_sum()
+      square_sum(),
+      
+      // Переменные для предустановки
+      square_sum_preset_part(),
+      count_expand(0.),
+      max_size_expand(0),
+      square_sum_expand(),
+      count_preset(0.),
+      max_size_preset(0),
+      is_preset_mode(false)
     {
     }
   };
   vector<window_t> m_windows;
+  //! \brief Период (Нужен только при sko_resize_preset)
+  double m_period;
+  //! \brief Сумма квадратов на периоде
+  calc_t m_square_sum_period;
 };
 
 template<class data_t, class calc_t>
@@ -2433,15 +2475,17 @@ fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
   m_max_count(0),
   m_average(a_average_size, a_average_default),
   m_square_elems(),
-  m_windows()
+  m_windows(),
+  m_period(0.),
+  m_square_sum_period()
 {
   m_windows.reserve(a_sizes.size());
   for (size_type i = 0; i < a_sizes.size(); i++) {
     window_t window;
-    calc_t max_count = 0;
     window.count = a_sizes[i];
-    window.count_fractional = modf(a_sizes[i], &max_count);
-    window.max_size = static_cast<size_type>(max_count) + 1;
+    window.max_size = static_cast<size_type>(a_sizes[i]);
+    window.count_fractional = a_sizes[i] - window.max_size;
+    window.max_size++;
     m_max_count = max(m_max_count, window.max_size);
     m_windows.push_back(window);
   }
@@ -2463,10 +2507,13 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
 {
   window_t& window = m_windows[a_index];
 
-  calc_t max_count = 0;
   window.count = a_new_size;
-  window.count_fractional = modf(a_new_size, &max_count);
-  window.max_size = static_cast<size_type>(max_count) + 1;
+  window.max_size = static_cast<size_type>(a_new_size);
+  window.count_fractional = a_new_size - window.max_size;
+  
+  // Нужен дополнительный отсчет для работы с дробной частью
+  window.max_size++;
+  
   if (window.size >= window.max_size) {
     //const size_type start_index = m_square_elems.size() - window.max_size;
     const size_type count = (window.size - window.max_size) + 1;
@@ -2478,13 +2525,58 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
 
   m_max_count = 0;
   for (size_type i = 0; i < m_windows.size(); i++) {
-    m_max_count = max(m_max_count, m_windows[i].max_size);
+    if (m_windows[i].is_preset_mode) {
+      m_max_count = max(m_max_count, m_windows[i].max_size_preset);
+    } else {
+      m_max_count = max(m_max_count, m_windows[i].max_size);
+    }
   }
 
   m_square_elems.reserve(m_max_count);
 
   if (m_square_elems.size() > m_max_count) {
     m_square_elems.pop_front(m_square_elems.size() - m_max_count);
+  }
+}
+
+template<class data_t, class calc_t>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize_preset(
+  size_type a_index, calc_t a_new_size, double a_period)
+{
+  window_t& window = m_windows[a_index];
+  
+  window.count_preset = a_new_size;
+  window.max_size_preset = static_cast<size_type>(a_new_size) + 1;
+  
+  if (window.size >= window.max_size_preset) {
+    resize(a_index, a_new_size);
+  } else {
+    window.is_preset_mode = true;
+    m_period = a_period;
+    
+    double periods_in_window = window.count/m_period;
+    calc_t square_sum = window.square_sum +
+      m_square_elems.back()*window.count_fractional;
+    m_square_sum_period = square_sum/periods_in_window;
+    
+    double periods_in_preset_part =
+      (window.count_preset - window.count)/m_period;
+    window.square_sum_preset_part = periods_in_preset_part*m_square_sum_period;
+    
+    window.count_expand = window.count + m_period;
+    window.max_size_expand = static_cast<size_type>(window.count_expand) + 1;
+    window.square_sum_expand = window.square_sum;
+
+    m_max_count = 0;
+    for (size_type i = 0; i < m_windows.size(); i++) {
+      if (m_windows[i].is_preset_mode) {
+        m_max_count = max(m_max_count, m_windows[i].max_size_preset);
+      } else {
+        m_max_count = max(m_max_count, m_windows[i].max_size);
+      }
+    }
+
+    m_square_elems.reserve(m_max_count);
   }
 }
 
