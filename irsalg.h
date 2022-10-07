@@ -1352,24 +1352,26 @@ template <class data_t, class calc_t>
 void fast_average_as_t<data_t, calc_t>::add(data_t a_val)
 {
   if (m_max_count > 0) {
-    IRS_LIB_ASSERT(m_samples.size() <= m_max_count);
-    if (m_samples.size() == m_max_count) {
+    IRS_LIB_ASSERT(m_size <= m_max_count);
+    if (m_size == m_max_count) {
       m_sum -= m_samples.front();
     }
     if (!m_samples.empty()) {
       m_sum += m_samples.back();
-      if (m_samples.size() == m_max_count) {
+      if (m_size == m_max_count) {
         m_samples.pop_front();
+        m_size--;
       }
     }
     m_samples.push_back(a_val);
+    m_size++;
   }
 }
 
 template <class data_t, class calc_t>
 calc_t fast_average_as_t<data_t, calc_t>::get() const
 {
-  if ((m_samples.size() < m_max_count) || m_samples.empty()) {
+  if ((m_size < m_max_count) || m_samples.empty()) {
     return m_default;
   }
   calc_t sum = m_sum + m_samples.back()*m_count_fractional;
@@ -1390,12 +1392,14 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
   } else if (m_max_count == 1) {
     m_sum = 0;
     if (!m_samples.empty()) {
-      m_samples.pop_front(m_samples.size() - 1);
+      m_samples.pop_front(m_size - 1);
+      m_size = 1;
     }
   } else {
-    while (m_samples.size() > m_max_count) {
+    while (m_size > m_max_count) {
       m_sum -= m_samples.front();
       m_samples.pop_front();
+      m_size--;
     }
   }
 }
@@ -1435,7 +1439,7 @@ template <class data_t, class calc_t>
 typename fast_average_as_t<data_t, calc_t>::size_type
 fast_average_as_t<data_t, calc_t>::size() const
 {
-  return m_samples.size();
+  return m_size;
 }
 
 template <class data_t, class calc_t>
@@ -1448,7 +1452,7 @@ fast_average_as_t<data_t, calc_t>::max_size() const
 template <class data_t, class calc_t>
 bool fast_average_as_t<data_t, calc_t>::is_full() const
 {
-  return m_samples.size() == m_max_count;
+  return m_size == m_max_count;
 }
 
 template <class data_t, class calc_t>
@@ -1456,29 +1460,33 @@ void fast_average_as_t<data_t, calc_t>::clear()
 {
   m_samples.clear();
   m_sum = 0;
+  m_is_preset_mode = false;
+  m_size = 0;
 }
 
 template <class data_t, class calc_t>
 void fast_average_as_t<data_t, calc_t>::preset(
   size_type a_start_pos, size_type a_count)
 {
-  const size_type erase_front_count = min(m_samples.size(), a_start_pos);
+  const size_type erase_front_count = min(m_size, a_start_pos);
   m_samples.pop_front(erase_front_count);
-  const size_type erase_back_count = min(m_samples.size(),
-    m_samples.size() - a_count);
+  m_size -= erase_front_count;
+  const size_type erase_back_count = min(m_size, m_size - a_count);
   m_samples.pop_back(erase_back_count);
+  m_size -= erase_back_count;
   m_sum = 0;
-  const size_type size = min(m_samples.size(), a_count);
+  const size_type size = min(m_size, a_count);
   if (size > 0) {
-    while (m_samples.size() < m_max_count) {
+    while (m_size < m_max_count) {
       for (size_type i = 0; i < size; i++) {
         m_samples.push_back(m_samples[i]);
-        if (m_samples.size() == m_max_count) {
+        m_size++;
+        if (m_size == m_max_count) {
           break;
         }
       }
     }
-    for (size_type i = 0; i < m_samples.size(); i++) {
+    for (size_type i = 0; i < m_size; i++) {
       m_sum += m_samples[i];
     }
   }
