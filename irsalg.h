@@ -1279,6 +1279,7 @@ public:
   void add(data_t a_val);
   calc_t get() const;
   void resize(calc_t a_count);
+  void resize_preset(calc_t a_count, calc_t a_period);
   size_type size() const;
   size_type max_size() const;
   bool is_full() const;
@@ -1286,12 +1287,37 @@ public:
   void preset(size_type a_start_pos, size_type a_count);
 private:
   fast_average_as_t();
+  //! \brief Полный дробный размер окна
   calc_t m_count;
+  //! \brief Целая часть размера окна + 1
   size_type m_max_count;
+  //! \brief Дробная часть размера окна
   calc_t m_count_fractional;
   irs::deque_data_t<data_t> m_samples;
   calc_t m_sum;
   calc_t m_default;
+  
+  // Переменные для предустановки resize_preset
+  //! \brief Текущий целый размер окна
+  size_type m_size;
+  //! \brief Текущий предустановленный остаток суммы
+  calc_t m_sum_preset_part;
+  //! \brief Полный дробный размер окна ближайшего расширения
+  calc_t m_count_expand;
+  //! \brief Целая часть размера окна + 1 ближайшего расширения
+  size_type m_max_count_expand;
+  //! \brief Сумма постоянно расширяемая
+  calc_t m_sum_expand;
+  //! \brief Полный дробный размер окна после предустановки
+  calc_t m_count_preset;
+  //! \brief Размер окна после предустановки
+  size_type m_max_count_preset;
+  //! \brief Период
+  calc_t m_period;
+  //! \brief Сумма на периоде
+  calc_t m_sum_period;
+  //! \brief Режим предустановки
+  bool m_is_preset_mode;
 };
 
 template <class data_t, class calc_t>
@@ -1300,14 +1326,25 @@ fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
 ):
   m_count(a_count),
   m_max_count(0),
-  m_count_fractional(0),
+  m_count_fractional(),
   m_samples(),
-  m_sum(0),
-  m_default(a_default)
+  m_sum(),
+  m_default(a_default),
+  
+  m_size(0),
+  m_sum_preset_part(),
+  m_count_expand(),
+  m_max_count_expand(0),
+  m_sum_expand(),
+  m_count_preset(),
+  m_max_count_preset(0),
+  m_period(),
+  m_sum_period(),
+  m_is_preset_mode(false)
 {
-  calc_t max_count = 0;
-  m_count_fractional = modf(a_count, &max_count);
-  m_max_count = static_cast<size_type>(max_count) + 1;
+  m_max_count = static_cast<size_type>(a_count);
+  m_count_fractional = a_count - m_max_count;
+  m_max_count++;
   m_samples.reserve(m_max_count);
 }
 
@@ -1342,10 +1379,10 @@ calc_t fast_average_as_t<data_t, calc_t>::get() const
 template <class data_t, class calc_t>
 void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
 {
-  calc_t max_count = 0;
   m_count = a_count;
-  m_count_fractional = modf(a_count, &max_count);
-  m_max_count = static_cast<size_type>(max_count) + 1;
+  m_max_count = static_cast<size_type>(a_count);
+  m_count_fractional = a_count - m_max_count;
+  m_max_count++;
   m_samples.reserve(m_max_count);
 
   if (m_max_count == 0) {
@@ -1360,6 +1397,37 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
       m_sum -= m_samples.front();
       m_samples.pop_front();
     }
+  }
+}
+
+template <class data_t, class calc_t>
+void fast_average_as_t<data_t, calc_t>::resize_preset(calc_t a_count,
+  calc_t a_period)
+{
+  m_count_preset = a_count;
+  m_max_count_preset = static_cast<size_type>(a_count) + 1;
+
+  if (m_samples.size() >= m_max_count_preset) {
+    resize(a_count);
+  } else {
+    m_is_preset_mode = true;
+    m_period = a_period;
+    m_size = m_samples.size();
+    
+    calc_t periods_in_window = m_count/m_period;
+    calc_t sum = m_sum + m_samples.back()*m_count_fractional;
+    m_sum_period = sum/periods_in_window;
+    
+    double periods_in_preset_part =
+      (m_count_preset - m_count)/m_period;
+    m_sum_preset_part =
+      periods_in_preset_part*m_sum_period;
+    
+    m_count_expand = m_count + m_period;
+    m_max_count_expand = static_cast<size_type>(m_count_expand) + 1;
+    m_sum_expand = m_sum;
+
+    m_samples.reserve(m_max_count);
   }
 }
 
@@ -2441,6 +2509,8 @@ private:
     double count_preset;
     //! \brief Размер окна после предустановки
     size_type max_size_preset;
+    //! \brief Период
+    double period;
     //! \brief Сумма квадратов на периоде
     calc_t square_sum_period;
     //! \brief Режим предустановки
@@ -2461,14 +2531,13 @@ private:
       square_sum_expand(),
       count_preset(0.),
       max_size_preset(0),
+      period(0.),
       square_sum_period(),
       is_preset_mode(false)
     {
     }
   };
   vector<window_t> m_windows;
-  //! \brief Период (Нужен только при sko_resize_preset)
-  double m_period;
 };
 
 template<class data_t, class calc_t>
@@ -2479,8 +2548,7 @@ fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
   m_max_count(0),
   m_average(a_average_size, a_average_default),
   m_square_elems(),
-  m_windows(),
-  m_period(0.)
+  m_windows()
 {
   m_windows.reserve(a_sizes.size());
   for (size_type i = 0; i < a_sizes.size(); i++) {
@@ -2555,19 +2623,19 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize_preset(
     resize(a_index, a_new_size);
   } else {
     window.is_preset_mode = true;
-    m_period = a_period;
+    window.period = a_period;
     
-    double periods_in_window = window.count/m_period;
+    double periods_in_window = window.count/window.period;
     calc_t square_sum = window.square_sum +
       m_square_elems.back()*window.count_fractional;
     window.square_sum_period = square_sum/periods_in_window;
     
     double periods_in_preset_part =
-      (window.count_preset - window.count)/m_period;
+      (window.count_preset - window.count)/window.period;
     window.square_sum_preset_part =
       periods_in_preset_part*window.square_sum_period;
     
-    window.count_expand = window.count + m_period;
+    window.count_expand = window.count + window.period;
     window.max_size_expand = static_cast<size_type>(window.count_expand) + 1;
     window.size_expand = window.size;
     window.square_sum_expand = window.square_sum;
@@ -2774,7 +2842,7 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::add(data_t a_val)
             window.square_sum_preset_part -= window.square_sum_period;
             
             // Подготавливаем следующее расширение окна
-            window.count_expand += m_period;
+            window.count_expand += window.period;
             window.max_size_expand =
               static_cast<size_type>(window.count_expand) + 1;
           }
