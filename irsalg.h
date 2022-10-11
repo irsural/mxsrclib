@@ -1279,6 +1279,11 @@ public:
   void add(data_t a_val);
   calc_t get() const;
   void resize(calc_t a_count);
+  //! \brief Изменяет размер окна для периодического сигнала
+  //!   c предустановкой из первоначального окна.
+  //!   Если окно не заполнено или уменьшается, то эта функция вызывает resize.
+  //! \param[in] a_count - новый размер окна в отсчетах
+  //! \param[in] a_period - период сигнала в отсчетах
   void resize_preset(calc_t a_count, calc_t a_period);
   size_type size() const;
   size_type max_size() const;
@@ -2508,10 +2513,11 @@ public:
   //! \param[in] a_new_size - новый размер окна
   void resize(size_type a_index, calc_t a_new_size);
   //! \brief Изменяет размер окна для периодического сигнала
-  //!   c предустановкой из первоначального окна
+  //!   c предустановкой из первоначального окна.
+  //!   Если окно не заполнено или уменьшается, то эта функция вызывает resize.
   //! \param[in] a_index - индекс окна
-  //! \param[in] a_new_size - новый размер окна
-  //! \param[in] a_period - период сигнала
+  //! \param[in] a_new_size - новый размер окна в отсчетах
+  //! \param[in] a_period - период сигнала в отсчетах
   void resize_preset(size_type a_index, calc_t a_new_size, double a_period);
   //! \brief Изменяет размер окна среднего значения
   //! \param[in] a_new_size - новый размер окна
