@@ -1462,7 +1462,12 @@ void fast_average_as_t<data_t, calc_t>::resize_preset(calc_t a_count,
   m_count_preset = a_count;
   m_max_count_preset = static_cast<size_type>(a_count) + 1;
 
-  if (m_samples.size() >= m_max_count_preset) {
+  // Окно уменьшается
+  bool is_window_reduce = (m_max_count_preset <= m_samples.size());
+  // Окно заполнено
+  bool is_window_full = (m_size >= m_max_count - 1);
+  
+  if (is_window_reduce || !is_window_full) {
     resize(a_count);
   } else {
     m_is_preset_mode = true;
