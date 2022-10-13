@@ -2695,7 +2695,7 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize_preset(
   window.max_size_preset = static_cast<size_type>(a_new_size) + 1;
   
   // Окно уменьшается
-  bool is_window_reduce = (window.max_size_preset <= window.size);
+  bool is_window_reduce = (window.max_size_preset <= window.max_size);
   // Окно заполнено
   bool is_window_full = (window.size >= window.max_size - 1);
   
