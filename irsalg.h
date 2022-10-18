@@ -1448,12 +1448,35 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
   if (m_max_count == 0) {
     clear();
   } else {
-    size_t i = m_samples.size() - m_size - 1;
-    while (m_size >= m_max_count) {
-      m_sum -= m_samples[i];
-      m_size--;
-      i++;
+    if (m_size >= m_max_count) {
+      const size_type shift = m_size + 1;
+      const size_type count = shift - m_max_count;
+      
+      // Если окно больше количества удаляемых элементов,
+      // то удаляем элементы из суммы
+      if (m_size > count) {
+        const size_type start_index = m_samples.size() - shift;
+        const size_type stop_index = start_index + count;
+        for (size_type i = start_index; i < stop_index; i++) {
+          m_sum -= m_samples[i];
+        }
+        
+      // Если окно меньше или равно количеству удаляемых элементов,
+      // то рассчитываем сумму заново
+      // Два варианта работы с уменьшением окна сделаны для оптимизации
+      // по времени процессора
+      } else {
+        const size_type start_index = m_samples.size() - m_max_count;
+        const size_type stop_index = m_samples.size() - 1;
+        m_sum = 0;
+        for (size_type i = start_index; i < stop_index; i++) {
+          m_sum += m_samples[i];
+        }
+      }
+      
+      m_size -= count;
     }
+    
     if (m_samples.size() > m_max_count) {
       m_samples.pop_front(m_samples.size() - m_max_count);
     }
@@ -2677,6 +2700,8 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
       
     // Если окно меньше или равно количеству удаляемых элементов,
     // то рассчитываем сумму заново
+    // Два варианта работы с уменьшением окна сделаны для оптимизации
+    // по времени процессора
     } else {
       const size_type start_index = m_square_elems.size() - window.max_size;
       const size_type stop_index = m_square_elems.size() - 1;
