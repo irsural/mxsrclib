@@ -1442,20 +1442,20 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
   m_max_count++;
   m_max_count_preset = m_max_count;
   m_samples.reserve(m_max_count_preset);
+  
+  m_is_preset_mode = false;
 
   if (m_max_count == 0) {
     clear();
-  } else if (m_max_count == 1) {
-    m_sum = 0;
-    if (!m_samples.empty()) {
-      m_samples.pop_front(m_size);
-      m_size = 0;
-    }
   } else {
-    while (m_size + 1 > m_max_count) {
-      m_sum -= m_samples.front();
-      m_samples.pop_front();
+    size_t i = m_samples.size() - m_size - 1;
+    while (m_size >= m_max_count) {
+      m_sum -= m_samples[i];
       m_size--;
+      i++;
+    }
+    if (m_samples.size() > m_max_count) {
+      m_samples.pop_front(m_samples.size() - m_max_count);
     }
   }
 }
@@ -2660,12 +2660,32 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
   // Нужен дополнительный отсчет для работы с дробной частью
   window.max_size++;
   
+  window.is_preset_mode = false;
+  
   if (window.size >= window.max_size) {
-    //const size_type start_index = m_square_elems.size() - window.max_size;
-    const size_type count = (window.size - window.max_size) + 1;
-    for (size_type i = 0; i < count; i++) {
-      window.square_sum -= m_square_elems[i]; //m_square_elems[start_index + i];
+    const size_type shift = window.size + 1;
+    const size_type count = shift - window.max_size;
+    
+    // Если окно больше количества удаляемых элементов,
+    // то удаляем элементы из суммы
+    if (window.size > count) {
+      const size_type start_index = m_square_elems.size() - shift;
+      const size_type stop_index = start_index + count;
+      for (size_type i = start_index; i < stop_index; i++) {
+        window.square_sum -= m_square_elems[i];
+      }
+      
+    // Если окно меньше или равно количеству удаляемых элементов,
+    // то рассчитываем сумму заново
+    } else {
+      const size_type start_index = m_square_elems.size() - window.max_size;
+      const size_type stop_index = m_square_elems.size() - 1;
+      window.square_sum = 0;
+      for (size_type i = start_index; i < stop_index; i++) {
+        window.square_sum += m_square_elems[i];
+      }
     }
+    
     window.size -= count;
   }
 
