@@ -1468,7 +1468,7 @@ void fast_average_as_t<data_t, calc_t>::resize_preset(calc_t a_count,
   m_max_count_preset = static_cast<size_type>(a_count) + 1;
 
   // Окно уменьшается
-  bool is_window_reduce = (m_max_count_preset <= m_samples.size());
+  bool is_window_reduce = (m_max_count_preset <= m_max_count);
   // Окно заполнено
   bool is_window_full = (m_size >= m_max_count - 1);
   
