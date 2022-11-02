@@ -952,7 +952,7 @@ namespace irs {
 
 #define IRS_USE_DEQUE_DATA 1
 
-template <class data_t, class calc_t>
+template <class data_t, class calc_t, class Al = allocator<data_t> >
 class fast_average_t
 {
 public:
@@ -970,15 +970,15 @@ private:
   fast_average_t();
   size_type m_max_count;
   #if IRS_USE_DEQUE_DATA
-  irs::deque_data_t<data_t> m_samples;
+  irs::deque_data_t<data_t, Al> m_samples;
   #else
-  std::deque<data_t> m_samples;
+  std::deque<data_t, Al> m_samples;
   #endif // IRS_USE_DEQUE_DATA
   calc_t m_sum;
 };
 
-template <class data_t, class calc_t>
-fast_average_t<data_t, calc_t>::fast_average_t(size_type a_count):
+template <class data_t, class calc_t, class Al>
+fast_average_t<data_t, calc_t, Al>::fast_average_t(size_type a_count):
   m_max_count(a_count),
   m_samples(),
   m_sum(0)
@@ -988,8 +988,8 @@ fast_average_t<data_t, calc_t>::fast_average_t(size_type a_count):
   #endif // IRS_USE_DEQUE_DATA
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::add(data_t a_val)
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::add(data_t a_val)
 {
   if (m_max_count > 0) {
     IRS_LIB_ASSERT(m_samples.size() <= m_max_count);
@@ -1002,8 +1002,8 @@ void fast_average_t<data_t, calc_t>::add(data_t a_val)
   }
 }
 
-template <class data_t, class calc_t>
-calc_t fast_average_t<data_t, calc_t>::get() const
+template <class data_t, class calc_t, class Al>
+calc_t fast_average_t<data_t, calc_t, Al>::get() const
 {
   if (m_samples.empty()) {
     return 0;
@@ -1011,8 +1011,8 @@ calc_t fast_average_t<data_t, calc_t>::get() const
   return m_sum/m_samples.size();
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::resize(size_type a_count)
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::resize(size_type a_count)
 {
   #if IRS_USE_DEQUE_DATA
   m_samples.reserve(a_count);
@@ -1024,35 +1024,35 @@ void fast_average_t<data_t, calc_t>::resize(size_type a_count)
   }
 }
 
-template <class data_t, class calc_t>
-typename fast_average_t<data_t, calc_t>::size_type
-fast_average_t<data_t, calc_t>::size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_t<data_t, calc_t, Al>::size_type
+fast_average_t<data_t, calc_t, Al>::size() const
 {
   return m_samples.size();
 }
 
-template <class data_t, class calc_t>
-typename fast_average_t<data_t, calc_t>::size_type
-fast_average_t<data_t, calc_t>::max_size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_t<data_t, calc_t, Al>::size_type
+fast_average_t<data_t, calc_t, Al>::max_size() const
 {
   return m_max_count;
 }
 
-template <class data_t, class calc_t>
-bool fast_average_t<data_t, calc_t>::is_full() const
+template <class data_t, class calc_t, class Al>
+bool fast_average_t<data_t, calc_t, Al>::is_full() const
 {
   return m_samples.size() == m_max_count;
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::clear()
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::clear()
 {
   m_samples.clear();
   m_sum = 0;
 }
 
-template <class data_t, class calc_t>
-void fast_average_t<data_t, calc_t>::preset(
+template <class data_t, class calc_t, class Al>
+void fast_average_t<data_t, calc_t, Al>::preset(
   size_type a_start_pos, size_type a_count)
 {
   const size_type erase_front_count = min(m_samples.size(), a_start_pos);
@@ -1199,12 +1199,12 @@ void fast_multi_average_t<data_t, calc_t>::resize(size_type a_index,
   size_type a_new_size)
 {
   window_t& window = m_windows[a_index];
-  
+
   window.max_size = a_new_size;
   if (window.size > window.max_size) {
     const size_type count = window.size - window.max_size;
 	const size_type start_index = m_samples.size() - window.size;
-    for (size_type i = 0; i < count; i++) {      
+    for (size_type i = 0; i < count; i++) {
       window.sum -= m_samples[start_index + i];
     }
     window.size = window.max_size;
@@ -1270,7 +1270,7 @@ void fast_multi_average_t<data_t, calc_t>::clear()
 //! \brief Расчет среднего значения сигнала, полученного
 //!   асинхронной дискретизацией
 //! \details Суффикс "as" означает "asynchronous sampling"
-template <class data_t, class calc_t>
+template <class data_t, class calc_t, class Al = allocator<data_t> >
 class fast_average_as_t
 {
 public:
@@ -1298,7 +1298,7 @@ private:
   size_type m_max_count;
   //! \brief Дробная часть размера окна
   calc_t m_count_fractional;
-  irs::deque_data_t<data_t> m_samples;
+  irs::deque_data_t<data_t, Al> m_samples;
   calc_t m_sum;
   calc_t m_default;
   
@@ -1326,8 +1326,8 @@ private:
   bool m_is_preset_mode;
 };
 
-template <class data_t, class calc_t>
-fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
+template <class data_t, class calc_t, class Al>
+fast_average_as_t<data_t, calc_t, Al>::fast_average_as_t(calc_t a_count,
   calc_t a_default
 ):
   m_count(a_count),
@@ -1355,8 +1355,8 @@ fast_average_as_t<data_t, calc_t>::fast_average_as_t(calc_t a_count,
   m_samples.reserve(m_max_count_preset);
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::add(data_t a_val)
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::add(data_t a_val)
 {
   if (m_max_count > 0) {
     IRS_LIB_ASSERT(m_samples.size() <= m_max_count_preset);
@@ -1415,8 +1415,8 @@ void fast_average_as_t<data_t, calc_t>::add(data_t a_val)
   }
 }
 
-template <class data_t, class calc_t>
-calc_t fast_average_as_t<data_t, calc_t>::get() const
+template <class data_t, class calc_t, class Al>
+calc_t fast_average_as_t<data_t, calc_t, Al>::get() const
 {
   if ((m_size + 1 < m_max_count) || m_samples.empty()) {
     return m_default;
@@ -1433,8 +1433,8 @@ calc_t fast_average_as_t<data_t, calc_t>::get() const
   return sum/n;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::resize(calc_t a_count)
 {
   m_count = a_count;
   m_max_count = static_cast<size_type>(a_count);
@@ -1483,8 +1483,8 @@ void fast_average_as_t<data_t, calc_t>::resize(calc_t a_count)
   }
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::resize_preset(calc_t a_count,
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::resize_preset(calc_t a_count,
   calc_t a_period)
 {
   m_count_preset = a_count;
@@ -1518,30 +1518,30 @@ void fast_average_as_t<data_t, calc_t>::resize_preset(calc_t a_count,
   }
 }
 
-template <class data_t, class calc_t>
-typename fast_average_as_t<data_t, calc_t>::size_type
-fast_average_as_t<data_t, calc_t>::size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_as_t<data_t, calc_t, Al>::size_type
+fast_average_as_t<data_t, calc_t, Al>::size() const
 {
   return m_size + 1;
 }
 
-template <class data_t, class calc_t>
-typename fast_average_as_t<data_t, calc_t>::size_type
-fast_average_as_t<data_t, calc_t>::max_size() const
+template <class data_t, class calc_t, class Al>
+typename fast_average_as_t<data_t, calc_t, Al>::size_type
+fast_average_as_t<data_t, calc_t, Al>::max_size() const
 {
   return m_max_count_preset;
 }
 
-template <class data_t, class calc_t>
-bool fast_average_as_t<data_t, calc_t>::is_full() const
+template <class data_t, class calc_t, class Al>
+bool fast_average_as_t<data_t, calc_t, Al>::is_full() const
 {
   // Во время предустановки это услувие всегда будет возвращать true.
   // И это правильно. Поэтому здесь m_max_count, а не m_max_count_preset.
   return m_size + 1 == m_max_count;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::clear()
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::clear()
 {
   m_samples.clear();
   m_sum = 0;
@@ -1549,8 +1549,8 @@ void fast_average_as_t<data_t, calc_t>::clear()
   m_size = 0;
 }
 
-template <class data_t, class calc_t>
-void fast_average_as_t<data_t, calc_t>::preset(
+template <class data_t, class calc_t, class Al>
+void fast_average_as_t<data_t, calc_t, Al>::preset(
   size_type a_start_pos, size_type a_count)
 {
   const size_type erase_front_count = min(m_size + 1, a_start_pos);
@@ -1612,7 +1612,7 @@ public:
   //! \param[in] a_index - индекс окна
   void clear(size_type a_index);
   //! \brief Очищает все окна
-  void clear();  
+  void clear();
 private:
   fast_multi_average_as_t();
   calc_t m_default;
@@ -1688,7 +1688,7 @@ void fast_multi_average_as_t<data_t, calc_t>::add(data_t a_val)
 
 template <class data_t, class calc_t>
 calc_t fast_multi_average_as_t<data_t, calc_t>::get(size_type a_index) const
-{  
+{
   const window_t& window = m_windows[a_index];
   if (window.size < window.max_size) {
     return m_default;
@@ -1753,7 +1753,7 @@ void fast_multi_average_as_t<data_t, calc_t>::resize(size_type a_index, calc_t a
 
   if (m_max_count == 0) {
     clear();
-  } else if (m_max_count == 1) {    
+  } else if (m_max_count == 1) {
     if (!m_samples.empty()) {
       m_samples.pop_front(m_samples.size() - 1);
     }
@@ -2508,7 +2508,7 @@ calc_t fast_multi_sko_t<data_t, calc_t>::average(size_type a_index) const
 //! \brief Расчет СКО сигнала, полученного
 //!   асинхронной дискретизацией
 //! \details Суффикс "as" означает "asynchronous sampling"
-template<class data_t, class calc_t>
+template<class data_t, class calc_t, class Al = allocator<data_t> >
 class fast_multi_sko_with_single_average_as_t
 {
 public:
@@ -2574,11 +2574,6 @@ public:
   void preset(size_type a_start_pos, size_type a_size);
   void preset_average(size_type a_start_pos, size_type a_size);
 private:
-  fast_multi_sko_with_single_average_as_t();
-  
-  size_type m_max_count;
-  fast_average_as_t<data_t, calc_t> m_average;
-  irs::deque_data_t<data_t> m_square_elems;
   struct window_t
   {
     //! \brief Полный дробный размер окна
@@ -2635,11 +2630,20 @@ private:
     {
     }
   };
-  vector<window_t> m_windows;
+
+  typedef typename Al::template rebind<data_t>::other data_alloc;
+  typedef typename Al::template rebind<window_t>::other win_alloc;
+
+  fast_multi_sko_with_single_average_as_t();
+  size_type m_max_count;
+  fast_average_as_t<data_t, calc_t, data_alloc> m_average;
+  irs::deque_data_t<data_t, data_alloc> m_square_elems;
+
+  vector<window_t, win_alloc> m_windows;
 };
 
-template<class data_t, class calc_t>
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
   calc_t a_average_size, calc_t a_average_default
 ):
@@ -2663,14 +2667,14 @@ fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
   #endif // IRS_USE_DEQUE_DATA
 }
 
-template<class data_t, class calc_t>
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 ~fast_multi_sko_with_single_average_as_t()
 {
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::resize(
   size_type a_index,
   calc_t a_new_size)
 {
@@ -2730,9 +2734,9 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize(
   }
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize_preset(
-  size_type a_index, calc_t a_new_size, double a_period)
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
+resize_preset(size_type a_index, calc_t a_new_size, double a_period)
 {
   window_t& window = m_windows[a_index];
   
@@ -2778,74 +2782,74 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::resize_preset(
   }
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 resize_average(calc_t a_new_size)
 {
   m_average.resize(a_new_size);
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 resize_preset_average(calc_t a_new_size, double a_period)
 {
   m_average.resize_preset(a_new_size, a_period);
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size(
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size(
   size_type a_index) const
 {
   return m_windows[a_index].size;
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size() const
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size() const
 {
   return m_square_elems.size();
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::average_size() const
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::average_size() const
 {
   return m_average.size();
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 max_size(size_type a_index) const
 {
   return m_windows[a_index].max_size;
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::max_size() const
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::max_size() const
 {
   return m_max_count;
 }
 
-template<class data_t, class calc_t>
-typename fast_multi_sko_with_single_average_as_t<data_t, calc_t>::size_type
-fast_multi_sko_with_single_average_as_t<data_t, calc_t>::average_max_size() const
+template<class data_t, class calc_t, class Al>
+typename fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::size_type
+fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::average_max_size() const
 {
   return m_average.max_size();
 }
 
-template<class data_t, class calc_t>
-bool fast_multi_sko_with_single_average_as_t<data_t, calc_t>::
+template<class data_t, class calc_t, class Al>
+bool fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::
 is_full(size_type a_index) const
 {
   return (m_windows[a_index].size == (m_windows[a_index].max_size - 1)) &&
     m_average.is_full();
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::preset(
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::preset(
   size_type a_start_pos, size_type a_size)
 {
   preset_average(a_start_pos, a_size);
@@ -2878,8 +2882,8 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::preset(
   }
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::preset_average(
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::preset_average(
   size_type a_start_pos, size_type a_size)
 {
   const size_type average_start_pos =
@@ -2901,8 +2905,8 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::preset_average(
   }
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::clear()
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::clear()
 {
   m_square_elems.clear();
   for (size_type i = 0; i < m_windows.size(); i++) {
@@ -2913,8 +2917,8 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::clear()
   m_average.clear();
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::add(data_t a_val)
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::add(data_t a_val)
 {
   m_average.add(a_val);
   
@@ -2993,15 +2997,15 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::add(data_t a_val)
   m_square_elems.push_back(elem);
 }
 
-template<class data_t, class calc_t>
-void fast_multi_sko_with_single_average_as_t<data_t, calc_t>::add_to_average(
+template<class data_t, class calc_t, class Al>
+void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::add_to_average(
   data_t a_val)
 {
   m_average.add(a_val);
 }
 
-template<class data_t, class calc_t>
-calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t>::get(
+template<class data_t, class calc_t, class Al>
+calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::get(
   size_type a_index) const
 {
   const window_t& window = m_windows[a_index];
@@ -3023,8 +3027,8 @@ calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t>::get(
   return sqrt(square_sum/n);
 }
 
-template<class data_t, class calc_t>
-calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t>::average() const
+template<class data_t, class calc_t, class Al>
+calc_t fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::average() const
 {
   return m_average.get();
 }
