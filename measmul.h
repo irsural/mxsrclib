@@ -207,6 +207,7 @@ class agilent_3458a_t: public mxmultimeter_t
     ma_mode_macro,
     ma_mode_commands,
     ma_mode_commands_wait,
+    ma_mode_commands_settle_down,
     ma_mode_get_value,
     ma_mode_get_value_wait,
     ma_mode_auto_calibration,
@@ -239,7 +240,8 @@ class agilent_3458a_t: public mxmultimeter_t
     meas_voltage,
     meas_current,
     meas_frequency,
-    meas_set_range
+    meas_set_range,
+    meas_set_config
   };
   // Режим инициализации
   enum init_mode_t {
@@ -255,6 +257,10 @@ class agilent_3458a_t: public mxmultimeter_t
 
   enum {
     read_timeout_s = 200
+  };
+
+  enum {
+    config_settle_down_delay_s = 2
   };
 
   enum {
@@ -302,8 +308,12 @@ class agilent_3458a_t: public mxmultimeter_t
   // Команды при чтении сопротивления
   vector<irs::string> m_get_resistance_commands;
 
-  //Команды, которые устанавливаются перед любым измерением
+  //Команды для set_string_commands
   vector<irs::string> m_config_commands;
+  // Некоторые настройки (например, SETACV SYNC) портят измерения, сли не
+  // ждать какое-то время после их установки и сразу посылать TRIG SGL
+  double m_config_commands_settle_down_delay_s;
+  irs::timer_t m_config_commands_settle_down_timer;
   // Команда для установки диапазона измерений
   irs::string m_set_range_command;
   // Интерфейс передачи
@@ -428,7 +438,8 @@ public:
   // Установка диапазона измерений
   virtual void set_range(type_meas_t a_type_meas, double a_range);
   // Задание произвольных команд
-  void set_string_commands(const vector<irs::string> &m_commands);
+  void set_string_commands(const vector<irs::string> &m_commands,
+    double a_settle_down_delay_s = config_settle_down_delay_s);
   // Установка автоматического выбора диапазона измерений
   virtual void set_range_auto();
 

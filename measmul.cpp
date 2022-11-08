@@ -191,6 +191,8 @@ irs::agilent_3458a_t::agilent_3458a_t(
   m_resistance_type_4x("OHMF AUTO"),
   m_get_resistance_commands(),
   m_config_commands(),
+  m_config_commands_settle_down_delay_s(0),
+  m_config_commands_settle_down_timer(),
   m_set_range_command(),
   mp_hardflow(ap_hardflow),
   m_fixed_flow(mp_hardflow),
@@ -328,9 +330,6 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
 
-      std::copy(m_config_commands.begin(), m_config_commands.end(),
-        std::back_inserter(m_get_measure_commands));
-
       m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_current: {
@@ -347,9 +346,6 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       //m_time_int_voltage_index = m_get_measure_commands.size();
       m_get_measure_commands.push_back(m_time_int_measure_command);
 
-      std::copy(m_config_commands.begin(), m_config_commands.end(),
-        std::back_inserter(m_get_measure_commands));
-
       m_get_measure_commands.push_back("TRIG SGL");
     } break;
     case meas_frequency: {
@@ -357,14 +353,15 @@ void irs::agilent_3458a_t::measure_create_commands(measure_t a_measure)
       m_get_measure_commands.push_back("FSOURCE ACV");
       m_get_measure_commands.push_back(m_time_int_measure_command);
 
+      m_get_measure_commands.push_back("TRIG SGL");
+    } break;
+    case meas_set_range: {
+      m_get_measure_commands.push_back(m_set_range_command);
+    } break;
+    case meas_set_config: {
       std::copy(m_config_commands.begin(), m_config_commands.end(),
         std::back_inserter(m_get_measure_commands));
-
-      m_get_measure_commands.push_back("TRIG SGL");
-   } break;
-   case meas_set_range: {
-      m_get_measure_commands.push_back(m_set_range_command);
-   } break;
+    }
   }
   //m_get_measure_commands.push_back(m_range_measute_command);
 }
@@ -679,7 +676,10 @@ void irs::agilent_3458a_t::tick()
             if (m_mul_commands_index >=
               static_cast<index_t>(m_mul_commands->size()))
             {
-              m_mode = ma_mode_macro;
+              m_config_commands_settle_down_timer.set(
+                irs::make_cnt_s(m_config_commands_settle_down_delay_s));
+
+              m_mode = ma_mode_commands_settle_down;
             } else {
               m_mode = ma_mode_commands;
             }
@@ -691,6 +691,14 @@ void irs::agilent_3458a_t::tick()
             // Ожидаем окончания операции
           }
         }
+      }
+    } break;
+    case ma_mode_commands_settle_down: {
+      if (m_config_commands_settle_down_timer.check()) {
+        // m_config_commands_settle_down_delay_s выставляется только
+        // через set_string_commands()
+        m_config_commands_settle_down_delay_s = 0;
+        m_mode = ma_mode_macro;
       }
     } break;
     case ma_mode_get_value: {
@@ -819,10 +827,16 @@ void irs::agilent_3458a_t::set_range(
   m_status = meas_status_busy;
 }
 
-void irs::agilent_3458a_t::set_string_commands(const vector<irs::string> &a_commands)
+void irs::agilent_3458a_t::set_string_commands(const vector<irs::string> &a_commands,
+  double a_settle_down_delay_s)
 {
   m_config_commands.clear();
   std::copy(a_commands.begin(), a_commands.end(), std::back_inserter(m_config_commands));
+
+  measure_create_commands(meas_set_config);
+  m_config_commands_settle_down_delay_s = a_settle_down_delay_s;
+  m_command = mac_send_commands;
+  m_status = meas_status_busy;
 }
 
 void irs::agilent_3458a_t::set_range_auto()
