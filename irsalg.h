@@ -2659,6 +2659,7 @@ fast_multi_sko_with_single_average_as_t(const vector<calc_t> &a_sizes,
     window.max_size = static_cast<size_type>(a_sizes[i]);
     window.count_fractional = a_sizes[i] - window.max_size;
     window.max_size++;
+    window.max_size_preset = window.max_size;
     m_max_count = max(m_max_count, window.max_size);
     m_windows.push_back(window);
   }
@@ -2686,6 +2687,7 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::resize(
   
   // Нужен дополнительный отсчет для работы с дробной частью
   window.max_size++;
+  window.max_size_preset = window.max_size;
   
   window.is_preset_mode = false;
   
@@ -2720,11 +2722,7 @@ void fast_multi_sko_with_single_average_as_t<data_t, calc_t, Al>::resize(
 
   m_max_count = 0;
   for (size_type i = 0; i < m_windows.size(); i++) {
-    if (m_windows[i].is_preset_mode) {
-      m_max_count = max(m_max_count, m_windows[i].max_size_preset);
-    } else {
-      m_max_count = max(m_max_count, m_windows[i].max_size);
-    }
+    m_max_count = max(m_max_count, m_windows[i].max_size_preset);
   }
 
   m_square_elems.reserve(m_max_count);
@@ -2740,6 +2738,8 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
 {
   window_t& window = m_windows[a_index];
   
+  if (window.count == a_new_size) return;
+
   window.count_preset = a_new_size;
   window.max_size_preset = static_cast<size_type>(a_new_size) + 1;
   
@@ -2749,7 +2749,37 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
   bool is_window_full = (window.size >= window.max_size - 1);
   
   if (is_window_reduce || !is_window_full) {
-    resize(a_index, a_new_size);
+    
+    bool is_switch_size = false;
+    if (is_window_reduce) {
+      for (size_type i = 0; i < m_windows.size(); i++) {
+        if ((i != a_index) && (is_full(i))) {
+          if (m_windows[i].count == a_new_size) {
+            
+            // Эта переменная означает что происходит переключение
+            // размера большего окна на размер меньшего окна
+            // Если большое окно уменьшается до размера не равного
+            // меньшему, то сюда программа не попадает
+            is_switch_size = true;
+            
+            window.count = m_windows[i].count;
+            window.count_fractional = m_windows[i].count_fractional;
+            
+            // Ранее установленный max_size_preset перезаписывается
+            // старым размером окна, который больше нового
+            window.max_size_preset = window.max_size;
+            
+            window.max_size = m_windows[i].max_size;
+            window.size = m_windows[i].size;
+            window.square_sum = m_windows[i].square_sum;
+          }
+        }
+      }
+    }
+    
+    if (!is_switch_size) {
+      resize(a_index, a_new_size);
+    }
   } else {
     window.is_preset_mode = true;
     window.period = a_period;
@@ -2773,8 +2803,6 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
     for (size_type i = 0; i < m_windows.size(); i++) {
       if (m_windows[i].is_preset_mode) {
         m_max_count = max(m_max_count, m_windows[i].max_size_preset);
-      } else {
-        m_max_count = max(m_max_count, m_windows[i].max_size);
       }
     }
 
