@@ -2772,6 +2772,7 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
             window.max_size = m_windows[i].max_size;
             window.size = m_windows[i].size;
             window.square_sum = m_windows[i].square_sum;
+            window.is_preset_mode = false;
           }
         }
       }
