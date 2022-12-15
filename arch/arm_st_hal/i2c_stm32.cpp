@@ -1,6 +1,9 @@
 #include "i2c_stm32.h"
-
+#include "stdio.h"
 using namespace irs;
+
+void printf_write_buf(irs_u8 *buffer, size_t size);
+void printf_read_buf(irs_u8 *buffer, size_t size);
 
 i2c_stm32_t::gpio_init_t::gpio_init_t(GPIO_TypeDef *a_port, uint16_t a_pin, uint8_t a_alt_func):
   m_pin(a_pin),
@@ -52,11 +55,15 @@ void i2c_stm32_t::tick()
     case in_write: {
       HAL_I2C_Master_Transmit(&m_i2c_setting, m_device_addr, mp_buffer, m_buffer_size, HAL_MAX_DELAY);
       m_status = in_free;
+
+      printf_write_buf(mp_buffer, m_buffer_size);
     } break;
 
     case in_read: {
       HAL_I2C_Master_Receive(&m_i2c_setting, m_device_addr, mp_buffer, m_buffer_size, HAL_MAX_DELAY);
       m_status = in_free;
+
+      printf_read_buf(mp_buffer, m_buffer_size);
     } break;
   }
 }
@@ -117,4 +124,28 @@ void i2c_stm32_t::set_device_address(irs_u16 a_addr_device)
 bool i2c_stm32_t::is_free()
 {
   return m_status == in_free;
+}
+
+void printf_write_buf(irs_u8 *buffer, size_t size)
+{
+  printf("W: ");
+  for (int i = 0; i < size; i++)
+    printf("%c",(char)buffer[i]);
+  printf(" (");
+  for (int i = 0; i < size; i++)
+    printf("%u ", buffer[i]);
+  printf(")");
+  printf("\n");
+}
+
+void printf_read_buf(irs_u8 *buffer, size_t size)
+{
+  printf("R: ");
+  for (int i = 0; i < size; i++)
+    printf("%c", (char)buffer[i]);
+  printf(" (");
+  for (int i = 0; i < size; i++)
+    printf("%u ", buffer[i]);
+  printf(")");
+  printf("\n");
 }
