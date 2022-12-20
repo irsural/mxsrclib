@@ -964,6 +964,7 @@ irs::eeprom_spi_t::eeprom_spi_t(spi_t* ap_spi,
     a_address_size),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
+  IRS_ASSERT(m_mem_data.size() >= a_size);
   connect(&m_mem_data);
 }
 

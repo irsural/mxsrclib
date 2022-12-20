@@ -4,12 +4,12 @@
 #ifdef STM32H743xx
 #include "stm32h7xx_hal.h"
 #else
-#error No such MK
+#error Тип контроллера не определён
 #endif
 
 #include <string.h>
 #include <irsdefs.h>
-#include "i2c.h"
+#include <i2c.h>
 
 namespace irs
 {
@@ -69,4 +69,4 @@ private:
 }
 
 
-#endif /*I2C_STM32_T_H*/
+#endif // I2C_STM32_T_H
