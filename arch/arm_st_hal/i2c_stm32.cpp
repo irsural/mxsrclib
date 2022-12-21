@@ -138,10 +138,10 @@ void printf_write_buf(irs_u8 *buffer, size_t size)
 {
   irs::mlog() << "W: ";
   for (int i = 0; i < size; i++)
-    irs::mlog() << (char)buffer[i];
+    irs::mlog() << static_cast<char>(buffer[i]);
   irs::mlog() << " (";
   for (int i = 0; i < size; i++)
-    irs::mlog() << (int)buffer[i] << " ";
+    irs::mlog() << static_cast<int>(buffer[i]) << " ";
   irs::mlog() << ")" << endl;
 }
 
@@ -149,10 +149,10 @@ void printf_read_buf(irs_u8 *buffer, size_t size)
 {
   irs::mlog() << "R: ";
   for (int i = 0; i < size; i++)
-    irs::mlog() << (char)buffer[i];
+    irs::mlog() << static_cast<char>(buffer[i]);
   irs::mlog() << " (";
   for (int i = 0; i < size; i++)
-    irs::mlog() <<  (int)buffer[i] << " ";
+    irs::mlog() <<  static_cast<int>(buffer[i]) << " ";
   irs::mlog() << ")" << endl;
 }
 #endif // I2C_STM32_DEBUG

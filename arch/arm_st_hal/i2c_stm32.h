@@ -1,5 +1,5 @@
-#ifndef I2C_STM32_T_H
-#define I2C_STM32_T_H
+#ifndef I2C_STM32_H
+#define I2C_STM32_H
 
 #ifdef STM32H743xx
 #include "stm32h7xx_hal.h"
@@ -69,4 +69,4 @@ private:
 }
 
 
-#endif // I2C_STM32_T_H
+#endif // I2C_STM32_H

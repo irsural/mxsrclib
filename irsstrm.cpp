@@ -449,10 +449,10 @@ int irs::arm::st_hal_com_buf::sync()
 }
 
 //--‘”Õ ÷»ﬂ «¿“€◊ ¿ ƒÀﬂ ’¿À¿, Õ≈ ”ƒ¿Àﬂ“‹--//
-//void HAL_UART_MspInit(UART_HandleTypeDef *huart)
-//{
-//  //--œ»Õ€ »Õ»÷»¿À»«»–”ﬁ“—ﬂ —Õ¿–”∆»  ¿À——¿--//
-//}
+void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+{
+ //--œ»Õ€ »Õ»÷»¿À»«»–”ﬁ“—ﬂ —Õ¿–”∆»  ¿À——¿--//
+}
 
 
 #endif // IRS_STM32H7xx

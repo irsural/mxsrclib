@@ -3,20 +3,20 @@
 
 using namespace irs;
 
-eeprom_m24_page_t::eeprom_m24_page_t(irs_u16 a_eeprom_address, i2c_t* ap_i2c,
-  size_type a_page_size,size_type a_page_count, size_t a_address_size
+eeprom_m24_page_t::eeprom_m24_page_t(irs_u16 a_i2c_address, i2c_t* ap_i2c,
+  size_type a_page_size, size_type a_page_count, size_t a_address_size
 ):
-  m_eeprom_address(a_eeprom_address),
+  m_i2c_address(a_i2c_address),
   m_page_size(a_page_size),
   m_page_count(a_page_count),
   mp_i2c(ap_i2c),
-  m_byte_seek(0x0),
+  m_mem_addr(0x0),
   m_status(m24_free),
   mp_buffer(0),
   m_max_seek(m_page_size * m_page_count - 1),
   m_address_size(a_address_size),
-  mp_next_page(new irs_u8[m_page_size + m_address_size]{0}),
-  mp_byte_seek(new irs_u8[m_address_size]{0})
+  mp_next_page(new irs_u8[m_page_size + m_address_size]()),
+  mp_mem_addr_buf(new irs_u8[m_address_size]())
 {
 
 }
@@ -24,7 +24,7 @@ eeprom_m24_page_t::eeprom_m24_page_t(irs_u16 a_eeprom_address, i2c_t* ap_i2c,
 eeprom_m24_page_t::~eeprom_m24_page_t()
 {
   delete [] mp_next_page;
-  delete [] mp_byte_seek;
+  delete [] mp_mem_addr_buf;
 }
 
 void eeprom_m24_page_t::read_page(irs_u8 *ap_buf, irs_uarc a_index)
@@ -100,32 +100,33 @@ void eeprom_m24_page_t::write_buf()
 {
   memcpy(mp_next_page + m_address_size, mp_buffer, m_page_size);
 
-  mp_next_page[0] = static_cast<irs_u8>((m_byte_seek & 0xFF00) >> 8);
-  mp_next_page[1] = static_cast<irs_u8>(m_byte_seek & 0xFF);
+  mp_next_page[0] = static_cast<irs_u8>((m_mem_addr & 0xFF00) >> 8);
+  mp_next_page[1] = static_cast<irs_u8>(m_mem_addr & 0xFF);
 
   mp_i2c->write(mp_next_page, m_page_size + m_address_size);
 }
 
 void eeprom_m24_page_t::send_seek()
 {
-  mp_byte_seek[0] = static_cast<irs_u8>((m_byte_seek & 0xFF00) >> 8);
-  mp_byte_seek[1] = static_cast<irs_u8>(m_byte_seek & 0xFF);
+  mp_mem_addr_buf[0] = static_cast<irs_u8>((m_mem_addr & 0xFF00) >> 8);
+  mp_mem_addr_buf[1] = static_cast<irs_u8>(m_mem_addr & 0xFF);
 
-  mp_i2c->write(mp_byte_seek, 2);
+  mp_i2c->write(mp_mem_addr_buf, 2);
 }
 
-void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_page_seek, m24_status_t a_status)
+void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_index, 
+  m24_status_t a_status)
 {
   IRS_ASSERT(ap_data != nullptr);
   IRS_ASSERT(!mp_i2c->get_lock());
   IRS_ASSERT(is_free());
 
   mp_i2c->lock();
-  mp_i2c->set_device_address(m_eeprom_address);
+  mp_i2c->set_device_address(m_i2c_address);
   mp_buffer = ap_data;
   m_status = a_status;
 
-  m_byte_seek = (a_page_seek * m_page_size > m_max_seek) ? m_max_seek : (a_page_seek * m_page_size);
+  m_mem_addr = (a_index * m_page_size > m_max_seek) ? m_max_seek : (a_index * m_page_size);
 }
 
 bool eeprom_m24_page_t::is_free()
@@ -137,13 +138,13 @@ bool eeprom_m24_page_t::is_free()
 // *****************************************************************************
 
 
-eeprom_i2c_t::eeprom_i2c_t(irs_u16 a_eeprom_address, i2c_t* ap_i2c, irs_uarc a_size,
+eeprom_i2c_t::eeprom_i2c_t(irs_u16 a_i2c_address, i2c_t* ap_i2c, irs_uarc a_size,
   size_t a_page_size, size_t a_page_count, size_t a_address_size,
   size_t a_cluster_size, bool a_init_now, irs_uarc a_index,
   counter_t a_init_timeout
 ):
   mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
-  m_page_mem(a_eeprom_address, ap_i2c, a_page_size, a_page_count, a_address_size),
+  m_page_mem(a_i2c_address, ap_i2c, a_page_size, a_page_count, a_address_size),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
   IRS_ASSERT(m_mem_data.size() >= a_size);

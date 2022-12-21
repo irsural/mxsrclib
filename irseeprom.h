@@ -1,5 +1,5 @@
-#ifndef EEPROM_H
-#define EEPROM_H
+#ifndef IRSEEPROM_H
+#define IRSEEPROM_H
 
 #include <i2c.h>
 #include <irsstd.h>
@@ -13,7 +13,7 @@ namespace irs
 class eeprom_m24_page_t: public page_mem_t
 {
 public:
-  eeprom_m24_page_t(irs_u16 a_eeprom_address, i2c_t* ap_i2c, size_type a_page_size,
+  eeprom_m24_page_t(irs_u16 a_i2c_address, i2c_t* ap_i2c, size_type a_page_size,
     size_type a_page_count, size_type a_address_size = 2);
   virtual ~eeprom_m24_page_t();
   virtual void read_page(irs_u8 *ap_buf, irs_uarc a_index);
@@ -36,19 +36,19 @@ private:
   bool is_free();
   void write_buf();
   void send_seek();
-  void initialize_io_operation(irs_u8* ap_data, irs_u16 a_page_seek, \
+  void initialize_io_operation(irs_u8* ap_data, irs_u16 a_index, \
   m24_status_t a_status);
 
   m24_status_t m_status;
   irs_u8 m_page_size;
   irs_u8 m_page_count;
-  irs_u16 m_eeprom_address;
+  irs_u16 m_i2c_address;
   i2c_t *mp_i2c;
-  irs_u16 m_byte_seek;
+  irs_u16 m_mem_addr;
   irs_u32 m_max_seek;
   irs_u8 *mp_buffer;
   irs_u8 *mp_next_page;
-  irs_u8 *mp_byte_seek;
+  irs_u8 *mp_mem_addr_buf;
   irs_u8 m_address_size;
 };
 
@@ -59,7 +59,7 @@ private:
 class eeprom_i2c_t: public mxdata_comm_t
 {
 public:
-  eeprom_i2c_t(irs_u16 a_eeprom_address, i2c_t* ap_i2c, irs_uarc a_size,
+  eeprom_i2c_t(irs_u16 a_i2c_address, i2c_t* ap_i2c, irs_uarc a_size,
     size_t a_page_size, size_t a_page_count, size_t a_address_size,
     size_t a_cluster_size = 64, bool a_init_now = false,
     irs_uarc a_index = 0,
@@ -72,4 +72,4 @@ private:
 
 } //namespace irs
 
-#endif //EEPROM_H
+#endif //IRSEEPROM_H
