@@ -50,6 +50,12 @@ public:
     if (!timer_overflow_interrupt_enabled) {
       return;
     }
+    #if defined(IRS_NIIET_1921)
+    if (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)) {
+       return;
+    }
+     high_dword += (SysTick->LOAD & SysTick_LOAD_RELOAD_Msk) + 1;// low_dword_cnt;
+    #else
     // При чтении флага COUNTFLAG происходит его сброс
     if (!SYSTICKCSR_bit.COUNTFLAG) {
       // SYSTICKCSR_bit.COUNTFLAG здесь никогда не должен быть равен 0, 
@@ -57,7 +63,8 @@ public:
       return;
     }
     high_dword += SYSTICKRVR_bit.RELOAD + 1;// low_dword_cnt;
-  }
+    #endif
+    }
 };
 
 //  Инициализация счетчика
@@ -70,12 +77,19 @@ void counter_init()
     COUNTER_PER_INTERVAL = irs::cpu_traits_t::frequency();
     // Число секунд в интервале
     SECONDS_PER_INTERVAL = 1;
-
+    
+    #if defined(IRS_NIIET_1921)
+    SysTick->LOAD = 0x00FFFFFF;
+    SysTick->CTRL |= SysTick_CTRL_CLKSOURCE_Msk;
+    SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+    #else
     SYSTICKRVR = 0x00FFFFFF;
     SYSTICKCSR_bit.CLKSOURCE = 1;
     SYSTICKCSR_bit.TICKINT = 1;
     SYSTICKCSR_bit.ENABLE = 1;
-
+    
+    #endif
     static timer_overflow_event_t timer_overflow_event;
     irs::arm::interrupt_array()->int_event_gen(irs::arm::sys_tick_int)->
       add(&timer_overflow_event);
@@ -86,11 +100,21 @@ void counter_init()
 counter_t counter_get()
 {
   timer_overflow_interrupt_enabled = false;
+  
+  #if defined(IRS_NIIET_1921)
+  counter_t SYSTICKCVR_buf = SysTick->VAL;
+  if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+    SYSTICKCVR_buf = SysTick->VAL;
+    high_dword += (SysTick->LOAD & SysTick_LOAD_RELOAD_Msk) + 1;//low_dword_cnt;
+  } 
+  #else
   counter_t SYSTICKCVR_buf = SYSTICKCVR;
   if (SYSTICKCSR_bit.COUNTFLAG) {
     SYSTICKCVR_buf = SYSTICKCVR;
     high_dword += SYSTICKRVR_bit.RELOAD + 1;//low_dword_cnt;
-  }
+  } 
+  #endif
+
   const counter_t result = high_dword + (low_dword_top - SYSTICKCVR_buf);
   timer_overflow_interrupt_enabled = true;
   return result;
@@ -112,8 +136,14 @@ void counter_deinit()
   init_cnt--;
   if (init_cnt == 0)
   {
+    #if defined(IRS_NIIET_1921)
+    SysTick->CTRL &= ~SysTick_CTRL_CLKSOURCE_Msk;
+    SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+    #else
     SYSTICKCSR_bit.CLKSOURCE = 0;
     SYSTICKCSR_bit.TICKINT = 0;
     SYSTICKCSR_bit.ENABLE = 0;
+    #endif
   }
 }

@@ -14,6 +14,10 @@
 # include <armcfg.h>
 #endif // IRS_STM32_F2_F4_F7
 
+#ifdef IRS_NIIET_1921
+#include "plib035_i2c.h"
+#endif
+
 #include <irsgpio.h>
 #include <irserror.h>
 
@@ -235,8 +239,9 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 #endif //__ICCAVR__
 
 #ifdef __ICCARM__
-
 #ifndef IRS_STM32H7xx
+
+
 
 irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
   io_pin_value_t a_value
@@ -248,8 +253,8 @@ irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
 {
   init(a_dir, a_value);
 }
-
 #ifdef IRS_STM32_F2_F4_F7
+
 irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
   io_pin_value_t a_value
 ):
@@ -261,6 +266,7 @@ irs::arm::io_pin_t::io_pin_t(gpio_channel_t a_channel, dir_t a_dir,
   init(a_dir, a_value);
 }
 #endif // IRS_STM32_F2_F4_F7
+
 
 void irs::arm::io_pin_t::init(dir_t a_dir, io_pin_value_t a_value)
 {
@@ -280,6 +286,16 @@ void irs::arm::io_pin_t::init(dir_t a_dir, io_pin_value_t a_value)
       HWREG(m_port + GPIO_DATA + m_data_mask) = 0;
     }
   #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
+    set_dir(a_dir);
+  #elif defined(IRS_NIIET_1921)
+    const int gpio_drivemode_bit_count = 2;
+    const int gpio_denset__denclr_bit_count = 1;
+    IRS_SET_BITS(m_port + GPIO_DRIVEMODE_S, gpio_drivemode_bit_count*m_bit,
+      gpio_drivemode_bit_count, GPIO_DRIVEMODE_HIGHSPEED_HIGHLOAD);
+    IRS_SET_BITS(m_port + GPIO_DENCLR_S, gpio_denset__denclr_bit_count*m_bit,
+      gpio_denset__denclr_bit_count, GPIO_DENCLR_CLEAR);
+    IRS_SET_BITS(m_port + GPIO_DENSET_S, gpio_denset__denclr_bit_count*m_bit,
+      gpio_denset__denclr_bit_count, GPIO_DENSET_SET);
     set_dir(a_dir);
   #else
     #error Тип контроллера не определён
@@ -302,6 +318,8 @@ bool irs::arm::io_pin_t::pin()
     return (HWREG(m_port + IDR) & m_port_mask);
   #elif defined(IRS_STM32_F2_F4_F7)
     return (HWREG(m_port + GPIO_IDR_S) & m_port_mask);
+  #elif defined(IRS_NIIET_1921)
+    return (HWREG(m_port + GPIO_DATA_S) & m_port_mask);
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -315,6 +333,8 @@ void irs::arm::io_pin_t::set()
     HWREG(m_port + ODR) |= m_port_mask;
   #elif defined(IRS_STM32_F2_F4_F7)
     HWREG(m_port + GPIO_ODR_S) |= m_port_mask;
+  #elif defined(IRS_NIIET_1921)
+    HWREG(m_port + GPIO_DATAOUTSET_S) |= m_port_mask;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -328,15 +348,18 @@ void irs::arm::io_pin_t::clear()
     HWREG(m_port + ODR) &= ~m_port_mask;
   #elif defined(IRS_STM32_F2_F4_F7)
     HWREG(m_port + GPIO_ODR_S) &= ~m_port_mask;
+  #elif defined(IRS_NIIET_1921)
+     HWREG(m_port + GPIO_DATAOUTCLR_S) |= m_port_mask;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
 
-#ifdef IRS_STM32_F2_F4_F7
+
 void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const irs::io_t::dir_t a_dir)
 {
+#ifdef IRS_STM32_F2_F4_F7
   const int gpio_pupdr_bit_count = 2;
   const int gpio_moder_bit_count = 2;
   const int gpio_otyper_bit_count = 1;
@@ -344,81 +367,100 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
     case irs::io_t::dir_in: {
       IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
         gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      /*HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;*/
       IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
         gpio_moder_bit_count, GPIO_MODER_INPUT);
-      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
         gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_in_pull_up: {
       IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
         gpio_pupdr_bit_count, GPIO_PUPDR_PULL_UP);
-      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_UP << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
         gpio_moder_bit_count, GPIO_MODER_INPUT);
-      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
         gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_in_pull_down: {
       IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
         gpio_pupdr_bit_count, GPIO_PUPDR_PULL_DOWN);
-      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_PULL_DOWN << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
         gpio_moder_bit_count, GPIO_MODER_INPUT);
-      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_INPUT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
         gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_out: {
       IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
         gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
         gpio_moder_bit_count, GPIO_MODER_OUTPUT);
-      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
         gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_PUSH_PULL << 2*a_bit;*/
     } break;
     case irs::io_t::dir_open_drain: {
       IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
         gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      //HWREG(a_port + GPIO_PUPDR_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_PUPDR_S) |= GPIO_PUPDR_FLOAT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
         gpio_moder_bit_count, GPIO_MODER_OUTPUT);
-      //HWREG(a_port + GPIO_MODER_S) &= ~(3 << 2*a_bit);
-      //HWREG(a_port + GPIO_MODER_S) |= GPIO_MODER_OUTPUT << 2*a_bit;
       IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
         gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
-      /*HWREG(a_port + GPIO_OTYPER_S) &= ~(3 << 2*a_bit);
-      HWREG(a_port + GPIO_OTYPER_S) |=
-        GPIO_OTYPER_OUTPUT_OPEN_DRAIN << 2*a_bit;*/
     } break;
   }
-}
+
+#elif defined(IRS_NIIET_1921)
+
+  const int gpio_inmode_bit_count = 2;
+  const int gpio_pullmode_bit_count = 2;
+  const int gpio_outenclr_outenset_bit_count = 1;
+  const int gpio_outmode_bit_count = 2;
+  switch (a_dir) {
+
+    case irs::io_t::dir_in:  {
+      IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      } break;
+
+    case irs::io_t::dir_in_pull_up: {
+     IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+     IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+        gpio_pullmode_bit_count, GPIO_PULLMODE_PULLUP);
+      } break;
+
+    case irs::io_t::dir_in_pull_down: {
+        IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+        gpio_pullmode_bit_count, GPIO_PULLMODE_PULLDOWN);
+      } break;
+
+    case irs::io_t::dir_out: {
+      IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
+        gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
+      IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
+        gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
+      IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
+        gpio_outmode_bit_count, GPIO_OUTMODE_PUSHPULL);
+      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      } break;
+
+    case irs::io_t::dir_open_drain: {
+      IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
+        gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
+      IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
+        gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
+      IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
+        gpio_outmode_bit_count, GPIO_OUTMODE_OPEN_DRAIN);
+      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      }  break;
+  }
+#else
+  #error Тип контроллера не определён
 #endif //IRS_STM32_F2_F4_F7
+}
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
 {
@@ -445,7 +487,7 @@ void irs::arm::io_pin_t::set_dir(dir_t a_dir)
     set_mask <<= cfg_mask_offset;
     HWREG(m_port + cfg_reg_offset) &= ~clr_mask;
     HWREG(m_port + cfg_reg_offset) |= set_mask;
-  #elif defined(IRS_STM32_F2_F4_F7)
+  #elif defined(IRS_STM32_F2_F4_F7) ||  defined(IRS_NIIET_1921)
     set_pin_dir(m_port, m_bit, a_dir);
   #else
     #error Тип контроллера не определён
@@ -463,6 +505,7 @@ irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
     volatile dir_t dir = a_dir;//
   #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
     set_dir(a_dir);
+  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -480,6 +523,7 @@ irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
     return (HWREG(m_port + IDR) & m_mask) >> m_shift;
   #elif defined(IRS_STM32_F2_F4_F7)
     return (HWREG(m_port + GPIO_IDR_S) & m_mask) >> m_shift;
+  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -499,6 +543,7 @@ void irs::arm::io_port_t::set(data_t a_data)
     irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
     HWREG(m_port + GPIO_BSRR_S) = set_data;
     HWREG(m_port + GPIO_BSRR_S) = clr_data << GPIO_WIDTH;
+  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -535,10 +580,13 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
         set_pin_dir(m_port, bit, a_dir);
       }
     }
+  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
+
+//#endif //defined (IRS_NIIET_1921)
 
 #endif //IRS_STM32H7xx
 
