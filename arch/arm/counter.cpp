@@ -38,6 +38,7 @@ extern counter_t SECONDS_PER_INTERVAL = 1;
 namespace {
 
 bool timer_overflow_interrupt_enabled = true;
+bool interrupt_handle_overflow = true;
 
 } // empty namespace
 
@@ -48,6 +49,7 @@ public:
   {
     mxfact_event_t::exec();
     if (!timer_overflow_interrupt_enabled) {
+      interrupt_handle_overflow = false;
       return;
     }
     // При чтении флага COUNTFLAG происходит его сброс
@@ -86,13 +88,19 @@ void counter_init()
 counter_t counter_get()
 {
   timer_overflow_interrupt_enabled = false;
+  interrupt_handle_overflow = true;
+  bool function_handle_overflow = false;
   counter_t SYSTICKCVR_buf = SYSTICKCVR;
   if (SYSTICKCSR_bit.COUNTFLAG) {
     SYSTICKCVR_buf = SYSTICKCVR;
     high_dword += SYSTICKRVR_bit.RELOAD + 1;//low_dword_cnt;
+    function_handle_overflow = true;
   }
   const counter_t result = high_dword + (low_dword_top - SYSTICKCVR_buf);
   timer_overflow_interrupt_enabled = true;
+  if (!function_handle_overflow && !interrupt_handle_overflow) {
+    high_dword += SYSTICKRVR_bit.RELOAD + 1;
+  }
   return result;
 }
 
