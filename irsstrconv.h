@@ -46,6 +46,62 @@ namespace irs {
 //! \addtogroup string_processing_group
 //! @{
 
+inline std::wstring cp1251_to_wstring(const std::string& a_str)
+{
+  irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
+  mbstate_t state;
+
+  const char* in_str = a_str.c_str();
+  const size_t instr_size = strlenu(in_str) + 1;
+  const char* in_str_end = in_str + instr_size;
+  const char* in_str_next = in_str;
+
+  vector<wchar_t> out_str_array(instr_size, 0);
+  wchar_t* out_str = vector_data(out_str_array);
+  wchar_t* out_str_end = out_str + instr_size;
+  wchar_t* out_str_next = out_str;
+
+  std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
+    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
+
+  #ifdef IRS_NO_EXCEPTIONS
+  IRS_LIB_ASSERT(convert_result == std::codecvt_base::ok);
+  #else
+  if (convert_result != std::codecvt_base::ok) {
+    throw runtime_error("Не удалось преобразовать cp1251 в unicode");
+  }
+  #endif // IRS_NO_EXCEPTIONS
+  return std::wstring(out_str);
+}
+
+inline std::string wstring_to_cp1251(const std::wstring& a_str)
+{
+  irs::codecvt_cp1251_t<char, wchar_t, std::mbstate_t> codecvt_cp1251_wchar;
+  mbstate_t state;
+  const wchar_t* in_str = a_str.c_str();
+  const size_t instr_size = strlenu(in_str) + 1;
+  const wchar_t* in_str_end = in_str + instr_size;
+  const wchar_t* in_str_next = in_str;
+
+  vector<char> out_str_array(instr_size, 0);
+  char* out_str = vector_data(out_str_array);
+  char* out_str_end = out_str + instr_size;
+  char* out_str_next = out_str;
+
+  std::codecvt_base::result convert_result = codecvt_cp1251_wchar.in(
+    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
+
+  #ifdef IRS_NO_EXCEPTIONS
+  IRS_LIB_ASSERT(convert_result == std::codecvt_base::ok);
+  #else
+  if (convert_result != std::codecvt_base::ok) {
+    throw runtime_error("Не удалось преобразовать unicode в cp1251");
+  }
+  #endif // IRS_NO_EXCEPTIONS
+
+  return std::string(out_str);
+}
+
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
 
 // Из std_string_t
@@ -99,63 +155,9 @@ inline irs_wstring_t str_conv<irs_wstring_t>(const irs_string_t& a_str_in)
   #endif // Если меньше Builder XE
 
 }
+
 #else // !IRS_FULL_STDCPPLIB_SUPPORT
 # ifdef __ICCARM__
-
-inline std::wstring cp1251_to_wstring(const std::string& a_str)
-{
-  irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
-  mbstate_t state;
-
-  const char* in_str = a_str.c_str();
-  const size_t instr_size = strlenu(in_str) + 1;
-  const char* in_str_end = in_str + instr_size;
-  const char* in_str_next = in_str;
-
-  vector<wchar_t> out_str_array(instr_size, 0);
-  wchar_t* out_str = vector_data(out_str_array);
-  wchar_t* out_str_end = out_str + instr_size;
-  wchar_t* out_str_next = out_str;
-
-  std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
-    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
-
-  if (convert_result != std::codecvt_base::ok) {
-    #ifndef IRS_NOEXCEPTION
-    throw runtime_error("Не удалось преобразовать cp1251 в unicode");
-    #else
-    for(;;);
-    #endif // IRS_NOEXCEPTION
-  }
-  return std::wstring(out_str);
-}
-
-inline std::string wstring_to_cp1251(const std::wstring& a_str)
-{
-  irs::codecvt_cp1251_t<char, wchar_t, std::mbstate_t> codecvt_cp1251_wchar;
-  mbstate_t state;
-  const wchar_t* in_str = a_str.c_str();
-  const size_t instr_size = strlenu(in_str) + 1;
-  const wchar_t* in_str_end = in_str + instr_size;
-  const wchar_t* in_str_next = in_str;
-
-  vector<char> out_str_array(instr_size, 0);
-  char* out_str = vector_data(out_str_array);
-  char* out_str_end = out_str + instr_size;
-  char* out_str_next = out_str;
-
-  std::codecvt_base::result convert_result = codecvt_cp1251_wchar.in(
-    state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
-
-  if (convert_result != std::codecvt_base::ok) {
-    #ifndef IRS_NOEXCEPTION
-    throw runtime_error("Не удалось преобразовать unicode в cp1251");
-    #else
-    for(;;);
-    #endif // IRS_NOEXCEPTION
-  }
-  return std::string(out_str);
-}
 
 inline std::wstring str_conv_simple(const std::wstring&,
   const std::string& a_str_in)

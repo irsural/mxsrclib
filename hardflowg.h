@@ -364,12 +364,13 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
       channel.address = a_address;
       channel.lifetime.start();
       channel.downtime.start();
-      const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
-      #ifndef IRS_NOEXCEPTION
+
+      #ifndef IRS_NO_EXCEPTIONS
+      const size_type channel_prev_count = m_id_list.size();
       try {
-      #endif // IRS_NOEXCEPTION 
+      #endif // IRS_NO_EXCEPTIONS
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =
@@ -387,7 +388,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
           // Текущий канал для проверки уже установлен
         }
         *ap_insert_success = true;
-      #ifndef IRS_NOEXCEPTION
+      #ifndef IRS_NO_EXCEPTIONS
       } catch (...) {
         if (m_map_id_channel.size() > channel_prev_count) {
           m_map_id_channel.erase(map_id_channel_res.first);
@@ -397,7 +398,7 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
         }
         m_id_list.resize(channel_prev_count);
       }
-      #endif // IRS_NOEXCEPTION
+      #endif // IRS_NO_EXCEPTIONS
     } else {
       // Добавление не разрешено
     }

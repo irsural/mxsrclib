@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Реализация интерфейса hardflow_t для
 //!   USB HID в контроллерах stm32.
-//! \details Работает через библиотеку STM32 USB Device Library 
+//! \details Работает через библиотеку STM32 USB Device Library
 //!   (версия V2.0.0 или выше)
 //!
 //! Дата создания: 28.01.2016
@@ -75,16 +75,28 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   if ((m_channel_start_index < 1) ||
     (m_channel_start_index > static_cast<size_type>(
     std::numeric_limits<channel_field_type>::max() + 1))) {
+    #ifdef IRS_NO_EXCEPTIONS
+    IRS_LIB_ASSERT(false);
+    #else
     throw std::logic_error("Стартовый индекс должен быть от 1 до 256");
+    #endif // IRS_NO_EXCEPTIONS
   }
   if ((a_channel_count < 1) || (a_channel_count > static_cast<size_type>(
     std::numeric_limits<channel_field_type>::max()))) {
+    #ifdef IRS_NO_EXCEPTIONS
+    IRS_LIB_ASSERT(false);
+    #else
     throw std::logic_error("Количество каналов должно быть от 1 до 255");
+    #endif // IRS_NO_EXCEPTIONS
   }
   if ((a_report_size < 1) || (a_report_size > report_max_size)) {
+    #ifdef IRS_NO_EXCEPTIONS
+    IRS_LIB_ASSERT(false);
+    #else
     std::ostringstream msg;
     msg << "Значение a_report_size должно быть от 1 до " << report_max_size;
     throw std::logic_error(msg.str());
+    #endif // IRS_NO_EXCEPTIONS
   }
   //mp_usb_hid = this;
 
@@ -289,9 +301,9 @@ irs::hardflow::arm::usb_hid_t::write_to_buffer(
 }
 
 void irs::hardflow::arm::usb_hid_t::otg_event()
-{  
+{
   //USBD_OTG_ISR_Handler(&m_usb_otg_dev);
-  HAL_PCD_IRQHandler(&hpcd);   
+  HAL_PCD_IRQHandler(&hpcd);
 }
 
 void irs::hardflow::arm::usb_hid_t::tx_buffer_is_empty_event()
