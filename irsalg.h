@@ -2802,9 +2802,7 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
 
     m_max_count = 0;
     for (size_type i = 0; i < m_windows.size(); i++) {
-      if (m_windows[i].is_preset_mode) {
-        m_max_count = max(m_max_count, m_windows[i].max_size_preset);
-      }
+      m_max_count = max(m_max_count, m_windows[i].max_size_preset);
     }
 
     m_square_elems.reserve(m_max_count);
