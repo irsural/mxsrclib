@@ -1495,7 +1495,9 @@ void fast_average_as_t<data_t, calc_t, Al>::resize_preset(calc_t a_count,
   // Окно заполнено
   bool is_window_full = (m_size >= m_max_count - 1);
   
-  if (is_window_reduce || !is_window_full) {
+  if (is_window_reduce || !is_window_full ||
+    ((m_period != a_period) && (m_period != 0.)) )
+  {
     resize(a_count);
   } else {
     m_is_preset_mode = true;
@@ -2748,7 +2750,9 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
   // Окно заполнено
   bool is_window_full = (window.size >= window.max_size - 1);
   
-  if (is_window_reduce || !is_window_full) {
+  if ((window.period != a_period) && (window.period != 0.)) {
+    resize(a_index, a_new_size);
+  } else if (is_window_reduce || !is_window_full) {
     
     bool is_switch_size = false;
     if (is_window_reduce) {
@@ -2802,9 +2806,7 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
 
     m_max_count = 0;
     for (size_type i = 0; i < m_windows.size(); i++) {
-      if (m_windows[i].is_preset_mode) {
-        m_max_count = max(m_max_count, m_windows[i].max_size_preset);
-      }
+      m_max_count = max(m_max_count, m_windows[i].max_size_preset);
     }
 
     m_square_elems.reserve(m_max_count);
