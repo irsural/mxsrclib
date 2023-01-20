@@ -1518,6 +1518,9 @@ void fast_average_as_t<data_t, calc_t, Al>::resize_preset(calc_t a_count,
 
     m_samples.reserve(m_max_count_preset);
   }
+  
+  // Повтороное присвоение необходимо для проверки изменения периода
+  m_period = a_period;
 }
 
 template <class data_t, class calc_t, class Al>
@@ -2811,6 +2814,9 @@ resize_preset(size_type a_index, calc_t a_new_size, double a_period)
 
     m_square_elems.reserve(m_max_count);
   }
+  
+  // Повтороное присвоение необходимо для проверки изменения периода
+  window.period = a_period;
 }
 
 template<class data_t, class calc_t, class Al>
