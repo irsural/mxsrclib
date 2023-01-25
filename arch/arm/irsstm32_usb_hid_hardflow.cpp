@@ -69,7 +69,8 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   m_channel(invalid_channel + 1),
   m_packet_received(false),
   mp_dev(NULL),
-  mp_rx_buffer(NULL)/*,
+  mp_rx_buffer(NULL),
+  m_disconnect_timer(irs::make_cnt_s(1))/*,
   m_tx_buffer_is_empty(true)*/
 {
   if ((m_channel_start_index < 1) ||
@@ -240,7 +241,8 @@ void irs::hardflow::arm::usb_hid_t::tick()
     (USBD_CUSTOM_HID_HandleTypeDef*)m_usb_otg_dev.pClassData;
 
   if ((hhid->state == CUSTOM_HID_IDLE) &&
-      (m_usb_otg_dev.dev_state == USBD_STATE_CONFIGURED)) {
+      (m_usb_otg_dev.dev_state == USBD_STATE_CONFIGURED))
+  {
     size_type start_index = m_write_buf_index;
     do {
       if (!m_write_buffers[m_write_buf_index].empty()) {
@@ -274,7 +276,14 @@ void irs::hardflow::arm::usb_hid_t::tick()
     if (m_write_buf_index >= m_channel_count) {
       m_write_buf_index = 0;
     }
+    m_disconnect_timer.start();
   }
+}
+
+bool irs::hardflow::arm::usb_hid_t::is_connected()
+{
+  m_disconnect_timer.check();
+  return !m_disconnect_timer.stopped();
 }
 
 irs::hardflow::arm::usb_hid_t::size_type

@@ -2,7 +2,7 @@
 //! \ingroup drivers_group
 //! \brief Реализация интерфейса hardflow_t для
 //!   USB HID в контроллерах stm32.
-//! \details Работает через библиотеку STM32 USB Device Library 
+//! \details Работает через библиотеку STM32 USB Device Library
 //!   (версия V2.0.0 или выше)
 //!
 //! Дата создания: 28.01.2016
@@ -52,6 +52,7 @@ public:
   virtual size_type channel_next();
   virtual bool is_channel_exists(size_type a_channel_ident);
   virtual void tick();
+  bool is_connected();
 
   static int8_t rx_buffer_is_empty_event(//USBD_HandleTypeDef* ap_dev,
     uint8_t* ap_rx_buffer, uint32_t a_size);
@@ -160,6 +161,7 @@ private:
   irs_u8* mp_rx_buffer;
   //bool m_tx_buffer_is_empty;
   static handle_t<usb_hid_t> mp_usb_hid;
+  irs::timer_t m_disconnect_timer;
 };
 
 } // namespace arm
