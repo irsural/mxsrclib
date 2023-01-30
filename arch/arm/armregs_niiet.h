@@ -7,6 +7,8 @@
 
 #include <irsfinal.h>
 
+#define GPIO_WIDTH                         16
+
 #define GPIO_DATA_S                        0x00
 #define GPIO_DATAOUT_S                     0x04
 #define GPIO_DATAOUTSET_S                  0x08
@@ -47,7 +49,7 @@
 #define GPIO_LOCKKEY_S                     0x9C
 #define GPIO_LOCKSTAT_S                    0x9C
 #define GPIO_LOCKSET_S                     0xA0
-#define GPIO_LOCKCLR_S                     0xA4         
+#define GPIO_LOCKCLR_S                     0xA4
 
 #define GPIO_DRIVEMODE_HIGHSPEED_HIGHLOAD  0x00
 #define GPIO_DRIVEMODE_LOWSPEED_HIGHLOAD   0x01
@@ -57,9 +59,9 @@
 #define GPIO_DENCLR_CLEAR                  0x01
 #define GPIO_DENSET_SET                    0x01
 
-#define GPIO_INMODE_SCHMITT_BUFFER         0x00                
-#define GPIO_INMODE_CMOS_BUFFER            0x01                
-#define GPIO_INMODE_DISABLE                0x03    
+#define GPIO_INMODE_SCHMITT_BUFFER         0x00
+#define GPIO_INMODE_CMOS_BUFFER            0x01
+#define GPIO_INMODE_DISABLE                0x03
 
 #define GPIO_PULLMODE_FLOATING             0x00
 #define GPIO_PULLMODE_PULLUP               0x01
@@ -71,5 +73,8 @@
 #define GPIO_OUTMODE_PUSHPULL              0x00
 #define GPIO_OUTMODE_OPEN_DRAIN            0x01
 #define GPIO_OUTMODE_OPEN_SOURCE           0x02
+
+#define WDT_DIVIDER_MULTIPLIER             0x04
+
 
 #endif // armregs_stm32f2xxH

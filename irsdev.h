@@ -428,7 +428,7 @@ private:
 //!   семейств NIIET K1921
 //! \author Kravchuk Andrey
 
-class PWMx_pwm_gen_t : public pwm_gen_t
+class niiet_pwm_gen_t : public pwm_gen_t
 {
 public:
   enum pwm_number_t {
@@ -442,9 +442,9 @@ public:
     pwm_out_b = 1
   };
 
-  PWMx_pwm_gen_t(pwm_number_t a_pwm_number, pwm_out_t a_pwm_out,
+  niiet_pwm_gen_t(pwm_number_t a_pwm_number, pwm_out_t a_pwm_out,
     cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty);
-  ~PWMx_pwm_gen_t();
+  ~niiet_pwm_gen_t();
 
   void start();
   void stop();
@@ -480,7 +480,7 @@ private:
   irs_uarc m_frequency;
   const irs_uarc m_max_duty;
   const cpu_traits_t::frequency_type m_max_frequency;
-}; //class PWMx_pwm_gen_t
+}; //class niiet_pwm_gen_t
 
 
 //! \brief Драйвер сторожевого таймера для контроллеров

@@ -20,8 +20,8 @@
 #endif //__ICCARM__
 
 #ifdef IRS_NIIET_1921
-#include <math.h>
 #include "plib035_wdt.h"
+#include <armregs_stm32f2xx.h>
 #endif
 
 #ifdef PWM_ZERO_PULSE
@@ -2713,9 +2713,8 @@ irs_u32 irs::decoder_t::get_selected_pin()
 
 #endif // !defined(IRS_STM32H7xx) && !defined(IRS_NIIET_1921)
 
-//class PWMx_pwm_gen_t
-
-irs::arm::PWMx_pwm_gen_t::PWMx_pwm_gen_t(pwm_number_t a_pwm_number,
+//class niiet_pwm_gen_t
+irs::arm::niiet_pwm_gen_t::niiet_pwm_gen_t(pwm_number_t a_pwm_number,
   pwm_out_t a_pwm_out, cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty):
 m_pwm_number(a_pwm_number),
 m_pwm_out(a_pwm_out),
@@ -2739,7 +2738,7 @@ m_max_frequency(0)
   init(mp_pwm_address, m_pwm_out, a_frequency, a_duty);
 }
 
-irs::arm::PWMx_pwm_gen_t::~PWMx_pwm_gen_t()
+irs::arm::niiet_pwm_gen_t::~niiet_pwm_gen_t()
 {
   this->stop();
 
@@ -2763,7 +2762,7 @@ irs::arm::PWMx_pwm_gen_t::~PWMx_pwm_gen_t()
   mp_pwm_address->AQCTLB = 0;
 }
 
-void irs::arm::PWMx_pwm_gen_t::init(PWM_TypeDef* ap_pwm_address,
+void irs::arm::niiet_pwm_gen_t::init(PWM_TypeDef* ap_pwm_address,
 pwm_out_t a_pwm_out, cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty)
 {
   RCU->HCLKCFG |= RCU_HCLKCFG_GPIOAEN_Msk;
@@ -2799,7 +2798,7 @@ pwm_out_t a_pwm_out, cpu_traits_t::frequency_type a_frequency, irs_uarc a_duty)
   SIU->PWMSYNC |= 1 << m_pwm_number + SIU_PWMSYNC_PRESCRST_Pos;
 }
 
-void irs::arm::PWMx_pwm_gen_t::_set_frequency(
+void irs::arm::niiet_pwm_gen_t::_set_frequency(
 cpu_traits_t::frequency_type  a_frequency)
 {
   float fpclk_to_freq_coeff = irs::cpu_traits_t::frequency() / a_frequency;
@@ -2849,17 +2848,17 @@ cpu_traits_t::frequency_type  a_frequency)
   }
 }
 
-void irs::arm::PWMx_pwm_gen_t::start()
+void irs::arm::niiet_pwm_gen_t::start()
 {
   mp_pwm_address->TBCTL &= ~(PWM_TBCTL_CTRMODE_Msk << PWM_TBCTL_CTRMODE_Pos);
 }
 
-void irs::arm::PWMx_pwm_gen_t::stop()
+void irs::arm::niiet_pwm_gen_t::stop()
 {
   mp_pwm_address->TBCTL |= PWM_TBCTL_CTRMODE_Msk << PWM_TBCTL_CTRMODE_Pos;
 }
 
-void irs::arm::PWMx_pwm_gen_t::set_duty(irs_uarc a_duty)
+void irs::arm::niiet_pwm_gen_t::set_duty(irs_uarc a_duty)
 {
   m_duty = a_duty;
 
@@ -2875,7 +2874,7 @@ void irs::arm::PWMx_pwm_gen_t::set_duty(irs_uarc a_duty)
   }
 }
 
-irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::set_frequency(
+irs::cpu_traits_t::frequency_type irs::arm::niiet_pwm_gen_t::set_frequency(
   irs::cpu_traits_t::frequency_type a_frequency)
 {
   m_frequency = a_frequency;
@@ -2896,15 +2895,60 @@ irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::set_frequency(
   return m_frequency;
 }
 
-irs_uarc irs::arm::PWMx_pwm_gen_t::get_max_duty()
+irs_uarc irs::arm::niiet_pwm_gen_t::get_max_duty()
 {
   return mp_pwm_address->TBPRD;
 }
 
-irs::cpu_traits_t::frequency_type irs::arm::PWMx_pwm_gen_t::get_max_frequency()
+irs::cpu_traits_t::frequency_type irs::arm::niiet_pwm_gen_t::get_max_frequency()
 {
   return irs::cpu_traits_t::frequency() / min_fpclk_to_freq_coeff;
 }
 
+
+//class watchdog_timer_t
+irs::arm::watchdog_timer_t::watchdog_timer_t(size_t a_period_s,
+  irs_u8 a_wdg_clock_divider):
+
+  m_period_s(a_period_s)
+  {
+   IRS_LIB_ASSERT (a_wdg_clock_divider >= 0 && a_wdg_clock_divider < 64);
+   irs_u32 ticks_in_1sec = OSECLK_VAL /
+     ((a_wdg_clock_divider + 1) * WDT_DIVIDER_MULTIPLIER);
+   RCU_WDTClkConfig(RCU_SysPeriphClk_OSEClk, a_wdg_clock_divider, ENABLE);
+   RCU_WDTClkCmd(ENABLE);
+   RCU_WDTRstCmd(ENABLE);
+   WDT_SetLoad(ticks_in_1sec * a_period_s);
+  }
+
+irs::arm::watchdog_timer_t::~watchdog_timer_t()
+{
+  WDT_SetLoad(0);
+  RCU_WDTClkCmd(DISABLE);
+  RCU_WDTRstCmd(DISABLE);
+  WDT_RstCmd(DISABLE);
+  WDT_Cmd(DISABLE);
+}
+
+void irs::arm::watchdog_timer_t::start()
+{
+  WDT_RstCmd(ENABLE);
+  WDT_Cmd(ENABLE);
+}
+
+void irs::arm::watchdog_timer_t::restart()
+{
+  WDT_ITStatusClear();
+}
+
+bool irs::arm::watchdog_timer_t::watchdog_reset_cause()
+{
+  return WDT_ITRawStatus();
+}
+
+void irs::arm::watchdog_timer_t::clear_reset_status()
+{
+  WDT_ITStatusClear();
+}
 
 #endif  //  __ICCARM__

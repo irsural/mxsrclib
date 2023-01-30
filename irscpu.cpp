@@ -43,13 +43,7 @@ irs::cpu_traits_t::frequency_type
 double irs::cpu_traits_t::m_flash_voltage = 3.3;
 
 #elif defined (IRS_NIIET_1921)
-  #if defined (SYSCLK_OSI)
   irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 8000000;
-  #elif defined (SYSCLK_PLL)
-  irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 100000000;
-  #else
-  #error "Please define SYSCLK source (SYSCLK_PLL | SYSCLK_OSI | SYSCLK_OSE)!"
-#endif
 
 #else // Другой __ICCARM__
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 100000000;

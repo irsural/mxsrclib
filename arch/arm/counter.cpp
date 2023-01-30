@@ -50,7 +50,7 @@ public:
     if (!timer_overflow_interrupt_enabled) {
       return;
     }
-    #if defined(IRS_NIIET_1921)
+    #if defined(IRS_SYSTICK_CMSIS)
     if (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)) {
        return;
     }
@@ -78,7 +78,7 @@ void counter_init()
     // Число секунд в интервале
     SECONDS_PER_INTERVAL = 1;
     
-    #if defined(IRS_NIIET_1921)
+    #if defined(IRS_SYSTICK_CMSIS)
     SysTick->LOAD = 0x00FFFFFF;
     SysTick->CTRL |= SysTick_CTRL_CLKSOURCE_Msk;
     SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
@@ -101,7 +101,7 @@ counter_t counter_get()
 {
   timer_overflow_interrupt_enabled = false;
   
-  #if defined(IRS_NIIET_1921)
+  #if defined(IRS_SYSTICK_CMSIS)
   counter_t SYSTICKCVR_buf = SysTick->VAL;
   if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
     SYSTICKCVR_buf = SysTick->VAL;
@@ -136,7 +136,7 @@ void counter_deinit()
   init_cnt--;
   if (init_cnt == 0)
   {
-    #if defined(IRS_NIIET_1921)
+    #if defined(IRS_SYSTICK_CMSIS)
     SysTick->CTRL &= ~SysTick_CTRL_CLKSOURCE_Msk;
     SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;

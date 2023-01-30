@@ -363,103 +363,104 @@ void set_pin_dir(const irs_u32 a_port,  const irs_u8 a_bit,
   const int gpio_pupdr_bit_count = 2;
   const int gpio_moder_bit_count = 2;
   const int gpio_otyper_bit_count = 1;
-  switch (a_dir) {
-    case irs::io_t::dir_in: {
-      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
-        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
-        gpio_moder_bit_count, GPIO_MODER_INPUT);
-      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
-        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-    } break;
-    case irs::io_t::dir_in_pull_up: {
-      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
-        gpio_pupdr_bit_count, GPIO_PUPDR_PULL_UP);
-      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
-        gpio_moder_bit_count, GPIO_MODER_INPUT);
-      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
-        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-    } break;
-    case irs::io_t::dir_in_pull_down: {
-      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
-        gpio_pupdr_bit_count, GPIO_PUPDR_PULL_DOWN);
-      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
-        gpio_moder_bit_count, GPIO_MODER_INPUT);
-      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
-        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-    } break;
-    case irs::io_t::dir_out: {
-      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
-        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
-        gpio_moder_bit_count, GPIO_MODER_OUTPUT);
-      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
-        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
-    } break;
-    case irs::io_t::dir_open_drain: {
-      IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
-        gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
-      IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
-        gpio_moder_bit_count, GPIO_MODER_OUTPUT);
-      IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
-        gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
-    } break;
-  }
-
 #elif defined(IRS_NIIET_1921)
-
   const int gpio_inmode_bit_count = 2;
   const int gpio_pullmode_bit_count = 2;
   const int gpio_outenclr_outenset_bit_count = 1;
   const int gpio_outmode_bit_count = 2;
-  switch (a_dir) {
-
-    case irs::io_t::dir_in:  {
-      IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
-        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
-      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
-        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
-      } break;
-
-    case irs::io_t::dir_in_pull_up: {
-     IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
-        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
-     IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
-        gpio_pullmode_bit_count, GPIO_PULLMODE_PULLUP);
-      } break;
-
-    case irs::io_t::dir_in_pull_down: {
-        IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
-        gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
-        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
-        gpio_pullmode_bit_count, GPIO_PULLMODE_PULLDOWN);
-      } break;
-
-    case irs::io_t::dir_out: {
-      IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
-        gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
-      IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
-        gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
-      IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
-        gpio_outmode_bit_count, GPIO_OUTMODE_PUSHPULL);
-      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
-        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
-      } break;
-
-    case irs::io_t::dir_open_drain: {
-      IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
-        gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
-      IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
-        gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
-      IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
-        gpio_outmode_bit_count, GPIO_OUTMODE_OPEN_DRAIN);
-      IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
-        gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
-      }  break;
-  }
 #else
   #error Тип контроллера не определён
-#endif //IRS_STM32_F2_F4_F7
+#endif
+
+  switch (a_dir) {
+    case irs::io_t::dir_in: {
+      #ifdef IRS_STM32_F2_F4_F7
+        IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+          gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+        IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+          gpio_moder_bit_count, GPIO_MODER_INPUT);
+        IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+          gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      #elif defined(IRS_NIIET_1921)
+        IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+          gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+          gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      #endif
+    } break;
+
+    case irs::io_t::dir_in_pull_up: {
+      #ifdef IRS_STM32_F2_F4_F7
+        IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+          gpio_pupdr_bit_count, GPIO_PUPDR_PULL_UP);
+        IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+          gpio_moder_bit_count, GPIO_MODER_INPUT);
+        IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+          gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      #elif defined(IRS_NIIET_1921)
+        IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+          gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+          gpio_pullmode_bit_count, GPIO_PULLMODE_PULLUP);
+      #endif
+    } break;
+
+    case irs::io_t::dir_in_pull_down: {
+      #ifdef IRS_STM32_F2_F4_F7
+        IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+          gpio_pupdr_bit_count, GPIO_PUPDR_PULL_DOWN);
+        IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+          gpio_moder_bit_count, GPIO_MODER_INPUT);
+        IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+          gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      #elif defined(IRS_NIIET_1921)
+        IRS_SET_BITS(a_port + GPIO_INMODE_S, gpio_inmode_bit_count * a_bit,
+          gpio_inmode_bit_count, GPIO_INMODE_SCHMITT_BUFFER);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+          gpio_pullmode_bit_count, GPIO_PULLMODE_PULLDOWN);
+      #endif
+    } break;
+
+    case irs::io_t::dir_out: {
+      #ifdef IRS_STM32_F2_F4_F7
+        IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+          gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+        IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+          gpio_moder_bit_count, GPIO_MODER_OUTPUT);
+        IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+          gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_PUSH_PULL);
+      #elif defined(IRS_NIIET_1921)
+        IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
+          gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
+        IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
+          gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
+        IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
+          gpio_outmode_bit_count, GPIO_OUTMODE_PUSHPULL);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+          gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      #endif
+    } break;
+
+    case irs::io_t::dir_open_drain: {
+      #ifdef IRS_STM32_F2_F4_F7
+        IRS_SET_BITS(a_port + GPIO_PUPDR_S, gpio_pupdr_bit_count*a_bit,
+          gpio_pupdr_bit_count, GPIO_PUPDR_FLOAT);
+        IRS_SET_BITS(a_port + GPIO_MODER_S, gpio_moder_bit_count*a_bit,
+          gpio_moder_bit_count, GPIO_MODER_OUTPUT);
+        IRS_SET_BITS(a_port + GPIO_OTYPER_S, gpio_otyper_bit_count*a_bit,
+          gpio_otyper_bit_count, GPIO_OTYPER_OUTPUT_OPEN_DRAIN);
+      #elif defined(IRS_NIIET_1921)
+        IRS_SET_BITS(a_port + GPIO_OUTENCLR_S, gpio_outenclr_outenset_bit_count * a_bit,
+          gpio_outenclr_outenset_bit_count, GPIO_OUTENCLR_CLEAR);
+        IRS_SET_BITS(a_port + GPIO_OUTENSET_S, gpio_outenclr_outenset_bit_count * a_bit,
+          gpio_outenclr_outenset_bit_count, GPIO_OUTENSET_SET);
+        IRS_SET_BITS(a_port + GPIO_OUTMODE_S, gpio_outmode_bit_count * a_bit,
+          gpio_outmode_bit_count, GPIO_OUTMODE_OPEN_DRAIN);
+        IRS_SET_BITS(a_port + GPIO_PULLMODE_S, gpio_pullmode_bit_count * a_bit,
+          gpio_pullmode_bit_count, GPIO_PULLMODE_FLOATING);
+      #endif
+    } break;
+  }
 }
 
 void irs::arm::io_pin_t::set_dir(dir_t a_dir)
@@ -503,12 +504,11 @@ irs::arm::io_port_t::io_port_t(arm_port_t &a_port, data_t a_mask,
   port_clock_on(m_port);
   #if defined(__LM3SxBxx__) || defined(__LM3Sx9xx__)
     volatile dir_t dir = a_dir;//
-  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7)
+  #elif defined(__STM32F100RBT__) || defined(IRS_STM32_F2_F4_F7) || defined(IRS_NIIET_1921)
     set_dir(a_dir);
-  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
-  #endif  //  mcu type
+  #endif  //MCU type
 }
 
 irs::arm::io_port_t::~io_port_t()
@@ -524,6 +524,7 @@ irs::arm::io_port_t::data_t irs::arm::io_port_t::get()
   #elif defined(IRS_STM32_F2_F4_F7)
     return (HWREG(m_port + GPIO_IDR_S) & m_mask) >> m_shift;
   #elif defined(IRS_NIIET_1921)
+    return (HWREG(m_port + GPIO_DATA_S) & m_mask) >> m_shift;
   #else
     #error Тип контроллера не определён
   #endif  //  mcu type
@@ -544,7 +545,12 @@ void irs::arm::io_port_t::set(data_t a_data)
     HWREG(m_port + GPIO_BSRR_S) = set_data;
     HWREG(m_port + GPIO_BSRR_S) = clr_data << GPIO_WIDTH;
   #elif defined(IRS_NIIET_1921)
+    irs_u32 set_data = (a_data << m_shift) & m_mask;
+    irs_u32 clr_data = ~(a_data << m_shift) & m_mask;
+    HWREG(m_port + GPIO_DATAOUTSET_S) = set_data;
+    HWREG(m_port + GPIO_DATAOUTSET_S) = clr_data << GPIO_WIDTH;
   #else
+
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
@@ -574,19 +580,16 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
         HWREG(m_port + cfg_reg_offset) |= set_mask;
       }
     }
-  #elif defined(IRS_STM32_F2_F4_F7)
+  #elif defined(IRS_STM32_F2_F4_F7) || defined(IRS_NIIET_1921)
     for (irs_u8 bit = 0; bit < GPIO_WIDTH; bit++) {
       if (m_mask & (1 << bit)) {
         set_pin_dir(m_port, bit, a_dir);
       }
     }
-  #elif defined(IRS_NIIET_1921)
   #else
     #error Тип контроллера не определён
-  #endif  //  mcu type
+  #endif  //MCU type
 }
-
-//#endif //defined (IRS_NIIET_1921)
 
 #endif //IRS_STM32H7xx
 

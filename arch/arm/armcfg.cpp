@@ -111,9 +111,9 @@ void pll_on()
     param_pll.FLASH_STATE = 7;
     param_pll.HSEBYP = 0; //HSE clock bypass External crystal/ceramic resonator
 
-    // Не хватает включения overdrive режима 
-    
-    
+    // Не хватает включения overdrive режима
+
+
     // PLLI2SN[8:0] = 192 (x192)По умолчанию
     // PLLI2SP[1:0] = 00: (/2) По умолчанию
     // PLLI2SQ[0:3] = 0100: (/4) По умолчанию
@@ -125,6 +125,9 @@ void pll_on()
     #error Тип контроллера не определён
   #endif //ARM_devices
 #elif defined(IRS_NIIET_1921)
+  IRS_LIB_ASSERT_MSG("При включении PLL очень плохо работает дебаггер "
+    "(подключение к контроллеру отпадает через какое то время)."
+    "С этой проблемой нужно разобраться");
   //init clock system
 #else
   #error Тип контроллера не определён
