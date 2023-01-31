@@ -14,7 +14,6 @@
 
 #include <irsstring.h>
 #include <irsstrdefs.h>
-//#include <irsstrconv.h>
 #include <timer.h>
 
 #include <irsfinal.h>
@@ -103,8 +102,13 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   #else // !__ICCARM__
   time_t time_s = time(NULL);
   #endif // !__ICCARM__
+  
+  ios::fmtflags flags = a_stream.flags();
+  streamsize precision = a_stream.precision();
+  
   const tm* date = localtime(&time_s);
   a_stream << setfill(static_cast<IRS_STRING_CHAR_TYPE>('0'));
+  a_stream << right << dec;
   a_stream << setw(2) << date->tm_mday;
   a_stream << static_cast<IRS_STRING_CHAR_TYPE>('.');
   a_stream << setw(2) << (date->tm_mon + 1);
@@ -121,6 +125,10 @@ inline IRS_STREAMSPECDECL IRS_STRING_OSTREAM &
   a_stream << setw(3) << milliseconds;
   #endif // __ICCARM__
   a_stream << static_cast<IRS_STRING_CHAR_TYPE>(' ');
+  
+  a_stream.precision(precision);
+  a_stream.flags(flags);
+  
   return a_stream;
 }
 IRS_STREAMSPECDECL ostream_t &sdatetimet(ostream_t &a_stream);
