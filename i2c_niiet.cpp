@@ -92,9 +92,9 @@ void i2c_niiet_t::abort()
   m_device_addr = 0;
 }
 
-i2c_niiet_t::status_t i2c_niiet_t::get_status()
+irs_status_t i2c_niiet_t::get_status()
 {
-  return (m_status == in_free) ? i2c_ready : i2c_busy;
+  return (m_status == in_free) ? irs_st_ready : irs_st_busy;
 }
 
 void i2c_niiet_t::lock()

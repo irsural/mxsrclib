@@ -49,10 +49,7 @@ irs_uarc eeprom_m24_page_t::page_count() const
 
 irs_status_t eeprom_m24_page_t::status() const
 {
-  if(m_status == m24_free)
-    return irs_st_ready;
-  else
-    return irs_st_busy;
+  return (m_status == m24_free) ? irs_st_ready : irs_st_busy;
 }
 
 void eeprom_m24_page_t::tick()
@@ -64,7 +61,7 @@ void eeprom_m24_page_t::tick()
     } break;
 
     case m24_read: {
-      if(mp_i2c->get_status() == spi_to_i2c_t::FREE)
+      if(mp_i2c->get_status() == irs_st_ready)
       {
         send_seek();
         m_status = m24_send_addr;
@@ -72,7 +69,7 @@ void eeprom_m24_page_t::tick()
     } break;
 
     case m24_send_addr: {
-      if(mp_i2c->get_status() == spi_to_i2c_t::FREE)
+      if(mp_i2c->get_status() == irs_st_ready)
       {
         mp_i2c->read(mp_buffer, m_page_size);
         m_status = m24_wait;
@@ -80,7 +77,7 @@ void eeprom_m24_page_t::tick()
     } break;
 
     case m24_write: {
-      if(mp_i2c->get_status() == spi_to_i2c_t::FREE)
+      if(mp_i2c->get_status() == irs_st_ready)
       {
           write_buf();
           m_status = m24_wait;
@@ -88,7 +85,7 @@ void eeprom_m24_page_t::tick()
     } break;
 
     case m24_wait: {
-      if (mp_i2c->get_status() == spi_to_i2c_t::FREE) {
+      if (mp_i2c->get_status() == irs_st_ready) {
         mp_i2c->unlock();
         m_status = m24_free;
       }
@@ -114,7 +111,7 @@ void eeprom_m24_page_t::send_seek()
   mp_i2c->write(mp_mem_addr_buf, 2);
 }
 
-void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_index, 
+void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_index,
   m24_status_t a_status)
 {
   IRS_ASSERT(ap_data != nullptr);

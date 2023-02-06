@@ -11,15 +11,9 @@ namespace irs
 class i2c_t
 {
 public:
-  enum status_t
-  {
-    i2c_ready,
-    i2c_busy
-  };
-
   virtual ~i2c_t() {}
   virtual bool is_free() = 0;
-  virtual status_t get_status() = 0;
+  virtual irs_status_t get_status() = 0;
   virtual void lock() = 0;
   virtual bool get_lock() = 0;
   virtual void unlock() = 0;

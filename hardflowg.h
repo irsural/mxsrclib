@@ -364,12 +364,12 @@ void irs::hardflow::udp_channel_list_t<address_t>::insert(address_type a_address
       channel.address = a_address;
       channel.lifetime.start();
       channel.downtime.start();
-      const size_type channel_prev_count = m_id_list.size();
       std::pair<map_id_channel_iterator, bool> map_id_channel_res;
       std::pair<map_address_id_iterator, bool> map_address_id_res;
       #ifndef IRS_NOEXCEPTION
+      const size_type channel_prev_count = m_id_list.size();
       try {
-      #endif // IRS_NOEXCEPTION 
+      #endif // IRS_NOEXCEPTION
         map_id_channel_res =
           m_map_id_channel.insert(make_pair(m_channel_id, channel));
         map_address_id_res =

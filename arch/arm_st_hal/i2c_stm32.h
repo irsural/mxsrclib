@@ -4,7 +4,7 @@
 #ifdef STM32H743xx
 #include "stm32h7xx_hal.h"
 #else
-#error РўРёРї РєРѕРЅС‚СЂРѕР»Р»РµСЂР° РЅРµ РѕРїСЂРµРґРµР»С‘РЅ
+#error Тип контроллера не определён
 #endif
 
 #include <string.h>

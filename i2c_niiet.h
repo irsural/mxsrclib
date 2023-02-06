@@ -5,7 +5,7 @@
 #include "K1921VK035.h"
 #include "plib035.h"
 #else
-#error РўРёРї РєРѕРЅС‚СЂРѕР»Р»РµСЂР° РЅРµ РѕРїСЂРµРґРµР»С‘РЅ
+#error Тип контроллера не определён
 #endif
 
 #include <string.h>
@@ -21,7 +21,7 @@ public:
   i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl, GPIO_TypeDef* port_sda, uint32_t pin_sda);
   virtual ~i2c_niiet_t() {}
   virtual bool is_free();
-  virtual status_t get_status();
+  virtual irs_status_t get_status();
   virtual void lock();
   virtual bool get_lock();
   virtual void unlock();

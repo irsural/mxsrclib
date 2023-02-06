@@ -22,6 +22,7 @@
 #ifdef IRS_NIIET_1921
 #include "plib035_wdt.h"
 #include <armregs_stm32f2xx.h>
+#include <irscpu.h>
 #endif
 
 #ifdef PWM_ZERO_PULSE
@@ -2913,9 +2914,17 @@ irs::arm::watchdog_timer_t::watchdog_timer_t(size_t a_period_s,
   m_period_s(a_period_s)
   {
    IRS_LIB_ASSERT (a_wdg_clock_divider >= 0 && a_wdg_clock_divider < 64);
-   irs_u32 ticks_in_1sec = OSECLK_VAL /
+   irs_u32 ticks_in_1sec = irs::cpu_traits_t::frequency() /
      ((a_wdg_clock_divider + 1) * WDT_DIVIDER_MULTIPLIER);
-   RCU_WDTClkConfig(RCU_SysPeriphClk_OSEClk, a_wdg_clock_divider, ENABLE);
+
+   #if defined(CKO_OSI)
+     RCU_WDTClkConfig(RCU_SysPeriphClk_OSIClk, a_wdg_clock_divider, ENABLE);
+   #elif defined(CKO_PLL)
+     RCU_WDTClkConfig(RCU_SysPeriphClk_PLLClk, a_wdg_clock_divider, ENABLE);
+   #elif defined(CKO_OSE)
+     RCU_WDTClkConfig(RCU_SysPeriphClk_OSEClk, a_wdg_clock_divider, ENABLE);
+   #endif
+
    RCU_WDTClkCmd(ENABLE);
    RCU_WDTRstCmd(ENABLE);
    WDT_SetLoad(ticks_in_1sec * a_period_s);
