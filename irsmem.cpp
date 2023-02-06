@@ -42,7 +42,7 @@ irs::eeprom_at25_t::eeprom_at25_t(spi_t* ap_spi, gpio_pin_t* ap_cs_pin,
     case at25128: m_page_size = 64; m_page_count = 256; break;
     case at25256: m_page_size = 64; m_page_count = 512; break;
     case any_eeprom: {
-      m_page_size = a_page_size; 
+      m_page_size = a_page_size;
       m_page_count = a_page_count;
       break;
     }
@@ -164,7 +164,7 @@ void irs::eeprom_at25_t::tick()
 {
   mp_spi->tick();
   switch (m_status) {
-    //  Ïğîâåğêà ãîòîâíîñòè
+    //  ˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜
     case st_check_ready_prepare: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
         read_status_register();
@@ -183,7 +183,7 @@ void irs::eeprom_at25_t::tick()
       }
       break;
     }
-    //  Ïğîâåğêà çàùèòû îò çàïèñè
+    //  ˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜
     case st_write_protect_check: {
       if (status_register_write_protect()) {
         m_status = st_write_protect_disable_wait;
@@ -214,9 +214,9 @@ void irs::eeprom_at25_t::tick()
       }
       break;
     }
-    //  ×òåíèå
+    //  ˜˜˜˜˜˜
     case st_read_prepare: {
-      //  Ïîñûëêà êîìàíäû íà ÷òåíèå è íà÷àëüíîãî àäğåñà
+      //  ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE && !mp_spi->get_lock()) {
         transaction_initiate(m_READ);
         m_status = st_read_initiate;
@@ -224,7 +224,7 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_read_initiate: {
-      //  Êîìàíäà äğàéâåğó spi íà ñ÷èòûâàíèå ïåğâûõ m_spi_size áàéò
+      //  ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜ spi ˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ m_spi_size ˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_num_of_iterations == 0) {
           mp_spi->read(mp_read_buf.data(), m_modulo_size);
@@ -236,15 +236,15 @@ void irs::eeprom_at25_t::tick()
       }
     } break;
     case st_read: {
-      //  ×òåíèå äàííûõ ïî m_spi_size áàéò
+      //  ˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜˜ m_spi_size ˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         irs_uarc target_index = m_current_iteration * m_spi_size;
-        memcpy(mp_read_user_buf + target_index, 
+        memcpy(mp_read_user_buf + target_index,
           mp_read_buf.data(), m_spi_size);
         m_current_iteration++;
-        
+
         if (m_current_iteration < m_num_of_iterations) {
-          mp_spi->read(mp_read_buf.data(), m_spi_size);          
+          mp_spi->read(mp_read_buf.data(), m_spi_size);
         } else {
           if (m_modulo_size == 0) {
             m_status = st_complete;
@@ -257,7 +257,7 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_read_modulo: {
-      //  ×òåíèå îñòàòêà (åñëè íåîáõîäèìî)
+      //  ˜˜˜˜˜˜ ˜˜˜˜˜˜˜ (˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜)
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         irs_uarc target_index = m_current_iteration * m_spi_size;
         memcpy(mp_read_user_buf + target_index, mp_read_buf.data(),
@@ -266,9 +266,9 @@ void irs::eeprom_at25_t::tick()
       }
       break;
     }
-    //  Çàïèñü
+    //  ˜˜˜˜˜˜
     case st_write_enable: {
-      //  Ïîñûëêà êîìàíäû ğàçğåøåíèÿ çàïèñè
+      //  ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE && !mp_spi->get_lock()) {
         write_enable();
         m_status = st_write_prepare;
@@ -276,7 +276,7 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_write_prepare: {
-      //  Ïîñûëêà êîìàíäû íà çàïèñü è íà÷àëüíîãî àäğåñà
+      //  ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         clear_spi();
         for (irs_u8 i = 10; i; i--);
@@ -286,7 +286,7 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_write_initiate: {
-      //  Êîìàíäà äğàéâåğó spi íà çàïèñü ïåğâûõ m_spi_size áàéò
+      //  ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜ spi ˜˜ ˜˜˜˜˜˜ ˜˜˜˜˜˜ m_spi_size ˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_num_of_iterations == 0) {
           memcpy(mp_write_buf.data(), mp_write_user_buf, m_modulo_size);
@@ -301,11 +301,11 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_write: {
-      //  Çàïèñü äàííûõ ïî m_spi_size áàéò
+      //  ˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜˜ m_spi_size ˜˜˜˜
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         if (m_current_iteration < m_num_of_iterations) {
           irs_uarc target_index = m_current_iteration * m_spi_size;
-          memcpy(mp_write_buf.data(), mp_write_user_buf + target_index, 
+          memcpy(mp_write_buf.data(), mp_write_user_buf + target_index,
             m_spi_size);
           m_current_iteration++;
           mp_spi->write(mp_write_buf.data(), m_spi_size);
@@ -324,14 +324,14 @@ void irs::eeprom_at25_t::tick()
       break;
     }
     case st_write_modulo: {
-      //  Çàïèñü îñòàòêà (åñëè íåîáõîäèìî)
+      //  ˜˜˜˜˜˜ ˜˜˜˜˜˜˜ (˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜)
       if (mp_spi->get_status() == irs::spi_t::FREE) {
         m_status = st_complete;
       }
       break;
     }
     case st_complete: {
-      //  Çàâåğøåíèå îïåğàöèè
+      //  ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜
       clear_spi();
       m_status = st_free;
       break;
@@ -355,7 +355,7 @@ irs::mem_cluster_t::mem_cluster_t(page_mem_t* ap_page_mem,
   m_page_index(0),
   m_cluster_index(0),
   m_cluster_data_index(0),
-  m_cluster_data(m_cluster_size * 2), //  2 ïîëóêëàñòåğà
+  m_cluster_data(m_cluster_size * 2), //  2 ˜˜˜˜˜˜˜˜˜˜˜˜
   m_cluster_data_32(&m_cluster_data),
   mp_read_buf(IRS_NULL),
   m_log_message_count(0)
@@ -496,12 +496,12 @@ void irs::mem_cluster_t::tick()
         } else {
           //  error
           if (m_log_message_count < log_message_limit) {
-            IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " Îøèáêà CRC");
-            IRS_LIB_DBG_MSG("Èíäåêñ êëàñòåğà " << m_cluster_index);
+            IRS_LIB_DBG_MSG(CNT_TO_DBLTIME(counter_get()) << " ˜˜˜˜˜˜ CRC");
+            IRS_LIB_DBG_MSG("˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜ " << m_cluster_index);
             m_log_message_count++;
             if (m_log_message_count == log_message_limit) {
-              IRS_LIB_DBG_MSG("Îøèáêè CRC áîëüøå íå áóäóò âûâîäèòüñÿ "
-                "âî èçáåæàíèå äîëãîé èíèöèàëèçàöèè óñòğîéñòâà");
+              IRS_LIB_DBG_MSG("˜˜˜˜˜˜ CRC ˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ "
+                "˜˜ ˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜");
             }
           }
           #ifdef NOP
@@ -861,7 +861,7 @@ void irs::mxdata_comm_t::tick()
     case mode_initialization: {
       if (mp_mem_data->status() != irs_st_busy) {
         IRS_LIB_ERROR_IF(!((m_mem_data_start_index + m_data_buf.size()) <=
-          mp_mem_data->size()), ec_standard, "Ïğåâûøåí ğàçìåğ eeprom");
+          mp_mem_data->size()), ec_standard, "˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ eeprom");
         mp_mem_data->read(m_data_buf.data(),
           m_mem_data_start_index, m_data_buf.size());
         m_mode = mode_initialization_wait;
@@ -877,7 +877,7 @@ void irs::mxdata_comm_t::tick()
       if (mp_mem_data->status() != irs_st_busy) {
         IRS_LIB_ERROR_IF(!check_index(m_data_buf, m_start_index, m_data_size),
           ec_standard,
-          "Èòåğàòîğû âíå êîíòåéíåğà èëè begin > end.");
+          "˜˜˜˜˜˜˜˜˜ ˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜ begin > end.");
         #ifdef IRS_LIB_CHECK
         if (!check_index(m_data_buf, m_start_index, m_data_size)) {
           break;
@@ -913,7 +913,7 @@ void irs::mxdata_comm_t::connect(irs::mem_data_t* ap_mem_data)
     while (!m_connected) {
       tick();
       if (m_timer.check()) {
-        IRS_LIB_ERROR(ec_standard, "Èñòåê òàéìàóò èíèöèàëèçàöèè eeprom!");
+        IRS_LIB_ERROR(ec_standard, "˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜˜˜˜ eeprom!");
         break;
       }
     }
@@ -941,7 +941,7 @@ bool irs::eeprom_at25128_data_t::error()
   return m_mem_data.error();
 }
 
-size_t irs::max_eeprom_size(size_t a_page_size, size_t a_page_count, 
+size_t irs::max_eeprom_size(size_t a_page_size, size_t a_page_count,
   size_t a_cluster_size)
 {
   enum {
@@ -954,13 +954,13 @@ size_t irs::max_eeprom_size(size_t a_page_size, size_t a_page_count,
 }
 
 irs::eeprom_spi_t::eeprom_spi_t(spi_t* ap_spi,
-  gpio_pin_t* ap_cs_pin, irs_uarc a_size, size_type a_page_size, 
-  size_type a_page_count, size_type a_address_size, 
+  gpio_pin_t* ap_cs_pin, irs_uarc a_size, size_type a_page_size,
+  size_type a_page_count, size_type a_address_size,
   size_type a_cluster_size, bool a_init_now,
   irs_uarc a_index, counter_t a_init_timeout
 ):
   mxdata_comm_t(IRS_NULL, a_index, a_size, a_init_now, a_init_timeout),
-  m_page_mem(ap_spi, ap_cs_pin, any_eeprom, a_page_size, a_page_count, 
+  m_page_mem(ap_spi, ap_cs_pin, any_eeprom, a_page_size, a_page_count,
     a_address_size),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
