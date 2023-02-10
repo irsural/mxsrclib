@@ -165,7 +165,6 @@ void pll_niiet_on()
   };
   // additional waitstates
   MFLASH->CTRL = (3 << MFLASH_CTRL_LAT_Pos);
-  //select PLL as source system clock
 
   //switch sysclk
   RCU->SYSCLKCFG = (RCU_SYSCLKCFG_SYSSEL_PLLCLK << RCU_SYSCLKCFG_SYSSEL_Pos);

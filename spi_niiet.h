@@ -38,16 +38,15 @@ private:
     st_read_write
   };
 
+  inner_state m_status;
   irs_u8 *mp_buf;
   irs_uarc m_buf_size;
-
-  inner_state m_status;
   bool m_lock;
-  irs_u32 m_frequency;
   irs_u32 m_bitrate;
   polarity_t m_polarity;
   phase_t m_phase;
   order_t m_order;
+  irs_u32 m_frequency;
 
   void init_io_oper(irs_u8 *ap_buf, irs_uarc a_size, inner_state a_status);
   void setCS();

@@ -50,10 +50,10 @@ public:
   void init_default() { }
 
 private:
-  irs_u8 *mp_buffer;
-  irs_u16 m_buffer_size;
   i2c_t *mp_i2c;
   irs_u16 m_address_device;
+  irs_u16 m_buffer_size;
+  irs_u8 *mp_buffer;
 };
 
 
