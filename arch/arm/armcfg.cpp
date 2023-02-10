@@ -13,6 +13,13 @@
 
 #include <irsfinal.h>
 #define F7_216Hz 1
+
+#if defined(IRS_NIIET_1921)
+  #include "system_K1921VK035.h"
+  #include <plib035.h>
+  #include "K1921VK035.h"
+#endif // IRS_NIIET_1921
+
 void pll_on()
 {
 #if defined(__LM3Sx9xx__)
@@ -124,19 +131,69 @@ void pll_on()
   #else
     #error Тип контроллера не определён
   #endif //ARM_devices
+
 #elif defined(IRS_NIIET_1921)
-  IRS_LIB_ASSERT_MSG("При включении PLL очень плохо работает дебаггер "
-    "(подключение к контроллеру отпадает через какое то время)."
-    "С этой проблемой нужно разобраться");
-  //init clock system
+    // см. pll_niiet_on()
+
 #else
   #error Тип контроллера не определён
 #endif // ARM_devices
 }
 
+//Установка частоты 100 MGz
+void pll_niiet_on()
+{
+  uint32_t timeout_counter = 0;
+  const uint32_t sysclk_switch_timeout = 0x100000;
+
+  //clockout control
+  SIU->CLKOUTCTL = SIU_CLKOUTCTL_CLKOUTEN_Msk;
+  RCU->CLKOUTCFG = (RCU_CLKOUTCFG_CLKSEL_PLLCLK << RCU_CLKOUTCFG_CLKSEL_Pos) |
+                   (1 << RCU_CLKOUTCFG_DIVN_Pos) |
+                   (RCU_CLKOUTCFG_DIVEN_Msk) |
+                   (RCU_CLKOUTCFG_CLKEN_Msk); //CKO = PLLCLK/4
+
+  //select system clock
+  RCU->PLLCFG = (RCU_PLLCFG_REFSRC_OSICLK << RCU_PLLCFG_REFSRC_Pos) |
+                  (1 << RCU_PLLCFG_N_Pos) |
+                  (25 << RCU_PLLCFG_M_Pos);
+
+  RCU->PLLCFG |= (1 << RCU_PLLCFG_OD_Pos) |
+                   (RCU_PLLCFG_OUTEN_Msk);
+
+  while (!RCU->PLLCFG_bit.LOCK) {
+  };
+  // additional waitstates
+  MFLASH->CTRL = (3 << MFLASH_CTRL_LAT_Pos);
+  //select PLL as source system clock
+
+  //switch sysclk
+  RCU->SYSCLKCFG = (RCU_SYSCLKCFG_SYSSEL_PLLCLK << RCU_SYSCLKCFG_SYSSEL_Pos);
+
+  // Wait switching done
+  while ((RCU->SYSCLKSTAT_bit.SYSSTAT != RCU->SYSCLKCFG_bit.SYSSEL) &&
+         (timeout_counter < sysclk_switch_timeout))
+    timeout_counter++;
+
+  IRS_ERROR_IF((timeout_counter == sysclk_switch_timeout), 1 , "SYSCLK failed to switch PLL");
+
+  //flush and enable cache
+  MFLASH->CTRL_bit.IFLUSH = 1;
+  while (MFLASH->ICSTAT_bit.BUSY) {
+  };
+  MFLASH->CTRL_bit.DFLUSH = 1;
+  while (MFLASH->DCSTAT_bit.BUSY) {
+  };
+  MFLASH->CTRL |= (MFLASH_CTRL_DCEN_Msk) | (MFLASH_CTRL_ICEN_Msk) | (MFLASH_CTRL_PEN_Msk);
+}
+
 void irs::pll_on()
 {
+#if defined(IRS_NIIET_1921)
+  pll_niiet_on();
+#else
   pll_on();
+#endif
 }
 
 #ifdef IRS_STM32_F2_F4_F7
