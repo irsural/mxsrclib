@@ -32,8 +32,10 @@ i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl, GPIO_TypeDef*
   RCU->PRSTCFG_bit.I2CEN = 1;
 
   I2C->CTL1_bit.ENABLE = 1;
-  I2C->CTL1_bit.SCLFRQ = 0x4;
-  I2C->CTL3_bit.SCLFRQ = 0x4;
+  // SCL = 2 * (2 * CTL1_bit.SCLFRQ * (1 / system_clock))
+  // Äëÿ CTL1_bit.SCLFRQ = 0x05, system_clock = 100 ÌÃö => SCL = 400 kHz
+  I2C->CTL1_bit.SCLFRQ = 0x5;
+  I2C->CTL3_bit.SCLFRQ = 0x0;
 
   I2C->CTL0_bit.INTEN = 1;
 }
@@ -46,10 +48,10 @@ void i2c_niiet_t::tick()
     } break;
 
     case in_check_dev: {
-      if(is_device_ready()) {
+//      if(is_device_ready()) {
         m_status = (m_operation == op_read) ? in_read : in_write;
         m_operation = op_none;
-      }
+//      }
     } break;
 
     case in_write: {
