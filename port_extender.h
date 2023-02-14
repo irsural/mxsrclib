@@ -4,6 +4,7 @@
 #include <irsstd.h>
 #include <irsdefs.h>
 #include <i2c.h>
+#include <irsgpio.h>
 
 namespace irs
 {
@@ -113,6 +114,23 @@ private:
   void initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd);
   void send_i2c();
   void check_arg(irs_u8 a_port, irs_u8 a_pin);
+};
+
+class gpio_pin_pe_t : public gpio_pin_t
+{
+public:
+  gpio_pin_pe_t(port_extender_t* ap_port_extender, irs_u8 a_port, irs_u8 a_pin);
+  virtual ~gpio_pin_pe_t() {}
+  virtual bool pin(){}
+  virtual void set();
+  virtual void clear();
+  virtual void set_dir(dir_t a_dir) {}
+  void toggle();
+
+private:
+  port_extender_t* mp_port_extender;
+  irs_u8 m_port;
+  irs_u8 m_pin;
 };
 
 } // namespace irs

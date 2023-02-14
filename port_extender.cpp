@@ -23,7 +23,7 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
 {
   if(do_reset)
   {
-    irs::loop_timer_t wait_reset(irs::make_cnt_us(5));
+    irs::loop_timer_t wait_reset(irs::make_cnt_us(1));
 
     RCU->HCLKCFG_bit.GPIOAEN = 1;
     RCU->HRSTCFG_bit.GPIOAEN = 1;
@@ -212,4 +212,29 @@ void port_extender_pca9539_t::check_arg(irs_u8 a_port, irs_u8 a_pin)
     m_status = in_error;
     return;
   }
+}
+
+// -----------------------------------------------------------------------------
+gpio_pin_pe_t::gpio_pin_pe_t(port_extender_t* ap_port_extender,
+                             irs_u8 a_port, irs_u8 a_pin) :
+  mp_port_extender(ap_port_extender),
+  m_port(a_port),
+  m_pin(a_pin)
+{
+
+}
+
+void gpio_pin_pe_t::set()
+{
+  mp_port_extender->write_pin(m_port, m_pin);
+}
+
+void gpio_pin_pe_t::clear()
+{
+  mp_port_extender->clear_pin(m_port, m_pin);
+}
+
+void gpio_pin_pe_t::toggle()
+{
+  mp_port_extender->toggle_pin(m_port, m_pin);
 }
