@@ -46,8 +46,10 @@ void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
   check_arg(a_port, a_pin);
   if(m_status == in_error)
     return;
+  initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
-  initialize_io_operation(a_port, a_pin, in_write_pin, cmd_output_port_0);
+  *mp_inner_port |= (1 << m_pin);
+  m_status = in_change;
 }
 
 void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin)
@@ -55,9 +57,16 @@ void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_us
   check_arg(a_port, a_pin);
   if(m_status == in_error)
     return;
-
   mp_user_pin = a_user_pin;
-  initialize_io_operation(a_port, a_pin, in_read_pin, cmd_input_port_0);
+  initialize_io_operation(a_port, a_pin, cmd_input_port_0);
+
+  if(*mp_inner_port & (1 << m_pin)) {
+    *mp_user_pin = 1;
+  }
+  else {
+    *mp_user_pin = 0;
+  }
+  m_status = in_free;
 }
 
 void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
@@ -65,8 +74,10 @@ void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
   check_arg(a_port, a_pin);
   if(m_status == in_error)
     return;
+  initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
-  initialize_io_operation(a_port, a_pin, in_clear_pin, cmd_output_port_0);
+  *mp_inner_port &= ~(1 << m_pin);
+  m_status = in_change;
 }
 
 void port_extender_pca9539_t::toggle_pin(irs_u8 a_port, irs_u8 a_pin)
@@ -74,8 +85,14 @@ void port_extender_pca9539_t::toggle_pin(irs_u8 a_port, irs_u8 a_pin)
   check_arg(a_port, a_pin);
   if(m_status == in_error)
     return;
+  initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
-  initialize_io_operation(a_port, a_pin, in_toggle_pin, cmd_output_port_0);
+  if(*mp_inner_port & (1 << m_pin)) {
+    clear_pin(m_port, m_pin);
+  }
+  else {
+    write_pin(m_port, m_pin);
+  }
 }
 
 void port_extender_pca9539_t::tick()
@@ -98,48 +115,15 @@ void port_extender_pca9539_t::tick()
           m_status = in_wait;
         } break;
 
-        case in_write_pin: {
-          *mp_inner_port |= (1 << m_pin);
+        case in_change: {
           send_i2c();
-
           m_status = in_wait;
-        } break;
-
-        case in_read_pin: {
-          if(*mp_inner_port & (1 << m_pin))
-          {
-            *mp_user_pin = 1;
-          }
-          else
-          {
-            *mp_user_pin = 0;
-          }
-
-          m_status = in_wait;
-        } break;
-
-        case in_clear_pin: {
-          *mp_inner_port &= ~(1 << m_pin);
-          send_i2c();
-
-          m_status = in_wait;
-        } break;
-
-        case in_toggle_pin: {
-          if(*mp_inner_port & (1 << m_pin))
-          {
-            clear_pin(m_port, m_pin);
-          }
-          else
-          {
-            write_pin(m_port, m_pin);
-          }
         } break;
 
         case in_wait: {
           if (!is_ready())
             return;
-            
+
           abort();
           m_status = in_free;
         }
@@ -167,6 +151,7 @@ void port_extender_pca9539_t::abort()
   mp_user_pin = nullptr;
   mp_i2c->unlock();
   m_error = err_none;
+  m_port = port_none;
 }
 
 irs_status_t port_extender_pca9539_t::get_status()
@@ -185,15 +170,11 @@ void port_extender_pca9539_t::initialize_port_extender()
   mp_i2c->write(m_buffer, 3);
 }
 
-void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, status_t a_status, command_t a_cmd)
+void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd)
 {
-  IRS_ASSERT(!mp_i2c->get_lock());
-  IRS_ASSERT(m_status == in_free);
-
   mp_i2c->lock();
   mp_i2c->set_device_address(m_i2c_addr);
   m_pin = a_pin;
-  m_status = a_status;
   m_port = a_port;
 
   switch(a_port) {
@@ -211,8 +192,6 @@ void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, irs_u8 a_pi
 
 void port_extender_pca9539_t::send_i2c()
 {
-  mp_i2c->lock();
-
   m_buffer[0] = m_cmd;
   m_buffer[1] = *mp_inner_port;
 

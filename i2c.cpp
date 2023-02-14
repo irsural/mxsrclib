@@ -4,7 +4,8 @@
 
 using namespace irs;
 
-spi_to_i2c_t::spi_to_i2c_t(i2c_t *a_i2c, irs_u16 a_addr_device, irs_u16 a_buffer_size):
+spi_to_i2c_t::spi_to_i2c_t(i2c_t *a_i2c, irs_u16 a_addr_device,
+                           irs_u16 a_buffer_size):
   mp_i2c(a_i2c),
   m_address_device(a_addr_device),
   m_buffer_size(a_buffer_size),
@@ -57,27 +58,27 @@ void spi_to_i2c_t::abort()
   mp_i2c->abort();
 }
 
-bool spi_to_i2c_t::set_data_size(irs_u16 a_data_size)  
-{ 
-  return true; 
+bool spi_to_i2c_t::set_data_size(irs_u16 a_data_size)
+{
+  return true;
 }
 
-bool spi_to_i2c_t::set_bitrate(irs_u32 a_bitrate)  
-{ 
-  return true; 
+bool spi_to_i2c_t::set_bitrate(irs_u32 a_bitrate)
+{
+  return true;
 }
 
-bool spi_to_i2c_t::set_polarity(polarity_t a_polarity)  
-{ 
-  return true; 
+bool spi_to_i2c_t::set_polarity(polarity_t a_polarity)
+{
+  return true;
 }
 
-bool spi_to_i2c_t::set_phase(phase_t a_phase)  
-{ 
-  return true; 
+bool spi_to_i2c_t::set_phase(phase_t a_phase)
+{
+  return true;
 }
 
-bool spi_to_i2c_t::set_order(order_t a_order)  
-{ 
-  return true; 
+bool spi_to_i2c_t::set_order(order_t a_order)
+{
+  return true;
 }

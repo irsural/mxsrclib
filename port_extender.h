@@ -52,7 +52,10 @@ public:
     pin_none = 255
   };
 
-  port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2c, irs_u8 a_default_port_0 = 0x00, irs_u8 a_default_port_1 = 0x00, bool do_reset = true);
+  port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2c,
+                          irs_u8 a_default_port_0 = 0x00,
+                          irs_u8 a_default_port_1 = 0x00,
+                          bool do_reset = true);
   virtual void write_pin(irs_u8 a_port, irs_u8 a_pin);
   virtual void read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin);
   virtual void clear_pin(irs_u8 a_port, irs_u8 a_pin);
@@ -69,10 +72,7 @@ private:
   {
     in_initialize,
     in_free,
-    in_write_pin,
-    in_read_pin,
-    in_clear_pin,
-    in_toggle_pin,
+    in_change,
     in_wait,
     in_error
   };
@@ -109,9 +109,8 @@ private:
   error_t m_error;
   irs_u8 m_port;
 
-
   void initialize_port_extender();
-  void initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, status_t a_status, command_t a_cmd);
+  void initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd);
   void send_i2c();
   void check_arg(irs_u8 a_port, irs_u8 a_pin);
 };

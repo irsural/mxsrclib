@@ -3,7 +3,8 @@
 
 using namespace irs;
 
-i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl, GPIO_TypeDef* port_sda, uint32_t pin_sda):
+i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl,
+                         GPIO_TypeDef* port_sda, uint32_t pin_sda):
   m_status(in_free),
   m_operation(op_none),
   m_lock(false),
@@ -74,7 +75,8 @@ void i2c_niiet_t::write(irs_u8* ap_buffer, size_t a_size)
   initialize_io_operation(ap_buffer, a_size, op_write);
 }
 
-void i2c_niiet_t::initialize_io_operation(irs_u8* ap_buffer, size_t a_size, operation_t a_oper)
+void i2c_niiet_t::initialize_io_operation(irs_u8* ap_buffer,
+                                          size_t a_size, operation_t a_oper)
 {
   m_operation = a_oper;
   m_status = in_check_dev;
@@ -156,7 +158,8 @@ void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
     if(i == buf_size - 1)
       I2C->CTL0_bit.ACK = 1;
     I2C->CTL0_bit.CLRST = 1;
-    while((I2C->ST_bit.MODE != I2C_ST_MODE_MRDAPA) && (I2C->ST_bit.MODE != I2C_ST_MODE_MRDANA));
+    while((I2C->ST_bit.MODE != I2C_ST_MODE_MRDAPA) &&
+          (I2C->ST_bit.MODE != I2C_ST_MODE_MRDANA));
     buf[i] = I2C->SDA_bit.DATA;
   }
 
@@ -172,7 +175,8 @@ bool i2c_niiet_t::is_device_ready()
   I2C->SDA_bit.DATA = m_device_addr;
   I2C->CTL0_bit.CLRST = 1;
 
-  while((I2C->ST_bit.MODE != I2C_ST_MODE_MTADPA) && (I2C->ST_bit.MODE != I2C_ST_MODE_MTADNA));
+  while((I2C->ST_bit.MODE != I2C_ST_MODE_MTADPA) &&
+        (I2C->ST_bit.MODE != I2C_ST_MODE_MTADNA));
   uint32_t mode = I2C->ST_bit.MODE;
 
   I2C->CTL0_bit.STOP = 1;

@@ -1,0 +1,4 @@
+{
+    "ewp": "${workspaceFolder}\\utils\\templates\\avr2561\\libtst.ewp",
+    "configuration": "Debug"
+}

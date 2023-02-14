@@ -123,7 +123,9 @@ void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_index
   mp_buffer = ap_data;
   m_status = a_status;
 
-  m_mem_addr = (a_index * m_page_size > m_max_seek) ? m_max_seek : (a_index * m_page_size);
+  m_mem_addr = (a_index * m_page_size > m_max_seek)
+             ? m_max_seek
+             : (a_index * m_page_size);
 }
 
 bool eeprom_m24_page_t::is_free()

@@ -18,7 +18,8 @@ namespace irs
 class i2c_niiet_t : public i2c_t
 {
 public:
-  i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl, GPIO_TypeDef* port_sda, uint32_t pin_sda);
+  i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl, GPIO_TypeDef* port_sda,
+              uint32_t pin_sda);
   virtual ~i2c_niiet_t() {}
   virtual bool is_free();
   virtual irs_status_t get_status();
