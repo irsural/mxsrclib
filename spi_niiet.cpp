@@ -94,13 +94,13 @@ void spi_niiet_t::tick()
 
     case st_read: {
       read_buf();
-      setCS();
+      // setCS();
       m_status = inner_state::st_free;
     } break;
 
     case st_write: {
       write_buf();
-      setCS();
+      // setCS();
       m_status = inner_state::st_free;
     } break;
 
@@ -203,8 +203,8 @@ void spi_niiet_t::read_buf()
   {
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    setCS();
-    clearCS();
+    // setCS();
+    // clearCS();
     mp_buf[i] = SPI_RecieveData();
   }
 }
@@ -215,8 +215,8 @@ void spi_niiet_t::write_buf()
   {
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    setCS();
-    clearCS();
+    // setCS();
+    // clearCS();
     SPI_SendData(mp_buf[i]);
   }
 }

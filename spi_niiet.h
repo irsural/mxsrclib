@@ -7,7 +7,7 @@
 namespace irs
 {
 
-class spi_niiet_t : spi_t
+class spi_niiet_t : public spi_t
 {
 public:
   spi_niiet_t();

@@ -121,7 +121,7 @@ class gpio_pin_pe_t : public gpio_pin_t
 public:
   gpio_pin_pe_t(port_extender_t* ap_port_extender, irs_u8 a_port, irs_u8 a_pin);
   virtual ~gpio_pin_pe_t() {}
-  virtual bool pin(){}
+  virtual bool pin() {}
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir) {}
@@ -134,5 +134,8 @@ private:
 };
 
 } // namespace irs
+
+typedef irs::port_extender_pca9539_t::port_t pe_port;
+typedef irs::port_extender_pca9539_t::pin_t  pe_pin;
 
 #endif // PORT_EXTENDER_H

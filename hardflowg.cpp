@@ -1900,10 +1900,10 @@ void irs::hardflow::simple_udp_flow_t::set_param(const string_type &a_name,
   if (a_name == irst("local_addr")) {
     if(a_value != irst("")) {
       mxip_t new_ip = mxip_t::zero_ip();
-#if defined(WIN32) || defined(_WIN32)
-      cstr_to_mxip(new_ip, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
-#else
+#if defined(IRS_LINUX)
       cstr_to_mxip(new_ip, narrow(a_value).c_str());
+#else
+      cstr_to_mxip(new_ip, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
 #endif
       mp_simple_udp->set_ip(new_ip);
       mxmac_t new_mac = make_mxmac(0, 0, new_ip.val[0], new_ip.val[1],
