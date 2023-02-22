@@ -218,10 +218,11 @@ void port_extender_pca9539_t::check_arg(irs_u8 a_port, irs_u8 a_pin)
 
 // -----------------------------------------------------------------------------
 gpio_pin_pe_t::gpio_pin_pe_t(port_extender_t* ap_port_extender,
-                             irs_u8 a_port, irs_u8 a_pin /*, async=true*/) :
+                             irs_u8 a_port, irs_u8 a_pin, bool a_async) :
   mp_port_extender(ap_port_extender),
   m_port(a_port),
-  m_pin(a_pin)
+  m_pin(a_pin),
+  m_async(a_async)
 {
 
 }
@@ -229,19 +230,36 @@ gpio_pin_pe_t::gpio_pin_pe_t(port_extender_t* ap_port_extender,
 void gpio_pin_pe_t::set()
 {
   mp_port_extender->write_pin(m_port, m_pin);
-//  if (!async) {
-//    while (!ready) {
-//      tick()
-//    }
-//  }
+  if (!m_async) {
+    while (mp_port_extender->get_status() != irs_st_ready) {
+      mp_port_extender->tick();
+    }
+  }
 }
 
 void gpio_pin_pe_t::clear()
 {
   mp_port_extender->clear_pin(m_port, m_pin);
+  if (!m_async) {
+    while (mp_port_extender->get_status() != irs_st_ready) {
+      mp_port_extender->tick();
+    }
+  }
 }
 
 void gpio_pin_pe_t::toggle()
 {
   mp_port_extender->toggle_pin(m_port, m_pin);
+  if (!m_async) {
+    while (mp_port_extender->get_status() != irs_st_ready) {
+      mp_port_extender->tick();
+    }
+  }
+}
+
+bool gpio_pin_pe_t::pin()
+{
+  uint8_t pin;
+  mp_port_extender->read_pin(m_port, m_pin, &pin);
+  return (pin == 1);
 }

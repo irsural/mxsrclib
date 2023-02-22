@@ -119,9 +119,9 @@ private:
 class gpio_pin_pe_t : public gpio_pin_t
 {
 public:
-  gpio_pin_pe_t(port_extender_t* ap_port_extender, irs_u8 a_port, irs_u8 a_pin);
+  gpio_pin_pe_t(port_extender_t* ap_port_extender, irs_u8 a_port, irs_u8 a_pin, bool a_async = true);
   virtual ~gpio_pin_pe_t() {}
-  virtual bool pin() {}
+  virtual bool pin();
   virtual void set();
   virtual void clear();
   virtual void set_dir(dir_t a_dir) {}
@@ -131,6 +131,7 @@ private:
   port_extender_t* mp_port_extender;
   irs_u8 m_port;
   irs_u8 m_pin;
+  bool m_async;
 };
 
 } // namespace irs

@@ -3,6 +3,7 @@
 #include <irscpu.h>
 #include <plib035_spi.h>
 #include <plib035_gpio.h>
+#include <logging.h>
 
 using namespace irs;
 
@@ -20,14 +21,24 @@ spi_niiet_t::spi_niiet_t() :
   SPI_Init_TypeDef SPI_InitStruct;
   GPIO_Init_TypeDef GPIO_InitStruct;
 
-  RCU_SPIClkConfig(RCU_PeriphClk_OSIClk, 0, DISABLE);
+  RCU_SPIClkConfig(RCU_PeriphClk_PLLClk, 0, DISABLE);
   RCU_SPIClkCmd(ENABLE);
   RCU_SPIRstCmd(ENABLE);
   SPI_StructInit(&SPI_InitStruct);
   SPI_InitStruct.SCKDiv = 9;
-  SPI_InitStruct.SCKDivExtra = 50;
+  SPI_InitStruct.SCKDivExtra = 1;
   SPI_InitStruct.FrameFormat = SPI_FrameFormat_SPI;
-  SPI_InitStruct.DataWidth = SPI_DataWidth_16;
+  SPI_InitStruct.DataWidth = SPI_DataWidth_8;
+
+  SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyLow);
+
+//  SPI_ITFIFOLevelRxConfig(3);
+//  SPI_ITFIFOLevelTxConfig(3);
+//  SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyLow);
+//  SPI_SCKConfig(SPI_SCKPhase_CaptureFall, SPI_SCKPolarity_SteadyHigh);
+//  SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyHigh);
+//  SPI_SCKConfig(SPI_SCKPhase_CaptureFall, SPI_SCKPolarity_SteadyLow);
+
 
   SPI_Init(&SPI_InitStruct);
   SPI_Cmd(ENABLE);
@@ -77,12 +88,12 @@ void spi_niiet_t::init_io_oper(irs_u8 *ap_buf, irs_uarc a_size,
 
 void spi_niiet_t::setCS()
 {
-  GPIO_SetBits(GPIOB, GPIO_Pin_4);
+  GPIO_ClearBits(GPIOB, GPIO_Pin_4);
 }
 
 void spi_niiet_t::clearCS()
 {
-  GPIO_ClearBits(GPIOB, GPIO_Pin_4);
+  GPIO_SetBits(GPIOB, GPIO_Pin_4);
 }
 
 void spi_niiet_t::tick()
@@ -93,20 +104,28 @@ void spi_niiet_t::tick()
     } break;
 
     case st_read: {
+      while(SPI_FlagStatus(SPI_Flag_RxFIFONotEmpty))
+      {
+        SPI_RecieveData();
+        SPI_SendData(0);
+      }
+
       read_buf();
-      // setCS();
       m_status = inner_state::st_free;
     } break;
 
     case st_write: {
+      while(SPI_FlagStatus(SPI_Flag_RxFIFONotEmpty))
+      {
+        SPI_RecieveData();
+        SPI_SendData(0);
+      }
+
       write_buf();
-      // setCS();
       m_status = inner_state::st_free;
     } break;
 
     case st_read_write: {
-//      read_write_buf();
-//      m_status = inner_state::st_free;
     } break;
   }
 }
@@ -203,10 +222,14 @@ void spi_niiet_t::read_buf()
   {
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    // setCS();
-    // clearCS();
+    SPI_SendData(i+1);
+    while (SPI_FlagStatus(SPI_Flag_Busy));
+
     mp_buf[i] = SPI_RecieveData();
+    INFO("re: check %d = 0x%x", i, mp_buf[i]);
+    INFO("re: send 0x%x", i + 1);
   }
+  INFO("\n");
 }
 
 void spi_niiet_t::write_buf()
@@ -215,13 +238,18 @@ void spi_niiet_t::write_buf()
   {
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    // setCS();
-    // clearCS();
+    INFO("wr: send 0x%x", mp_buf[i]);
     SPI_SendData(mp_buf[i]);
+    while (SPI_FlagStatus(SPI_Flag_Busy));
+
+    int check = SPI_RecieveData();
+    INFO("wr: check_%d = 0x%x", i, check);
   }
+  INFO("\n");
 }
 
 void spi_niiet_t::read_write_buf()
 {
 
 }
+
