@@ -32,14 +32,6 @@ spi_niiet_t::spi_niiet_t() :
 
   SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyLow);
 
-//  SPI_ITFIFOLevelRxConfig(3);
-//  SPI_ITFIFOLevelTxConfig(3);
-//  SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyLow);
-//  SPI_SCKConfig(SPI_SCKPhase_CaptureFall, SPI_SCKPolarity_SteadyHigh);
-//  SPI_SCKConfig(SPI_SCKPhase_CaptureRise, SPI_SCKPolarity_SteadyHigh);
-//  SPI_SCKConfig(SPI_SCKPhase_CaptureFall, SPI_SCKPolarity_SteadyLow);
-
-
   SPI_Init(&SPI_InitStruct);
   SPI_Cmd(ENABLE);
 
@@ -226,10 +218,7 @@ void spi_niiet_t::read_buf()
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
     mp_buf[i] = SPI_RecieveData();
-    INFO("re: check %d = 0x%x", i, mp_buf[i]);
-    INFO("re: send 0x%x", i + 1);
   }
-  INFO("\n");
 }
 
 void spi_niiet_t::write_buf()
@@ -238,18 +227,14 @@ void spi_niiet_t::write_buf()
   {
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    INFO("wr: send 0x%x", mp_buf[i]);
     SPI_SendData(mp_buf[i]);
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
     int check = SPI_RecieveData();
-    INFO("wr: check_%d = 0x%x", i, check);
   }
-  INFO("\n");
 }
 
 void spi_niiet_t::read_write_buf()
 {
 
 }
-

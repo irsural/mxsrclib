@@ -2,6 +2,8 @@
 #include <irserror.h>
 #include <string.h>
 
+#include "logging.h"
+
 using namespace irs;
 
 spi_to_i2c_t::spi_to_i2c_t(i2c_t *a_i2c, irs_u16 a_addr_device,
@@ -11,12 +13,12 @@ spi_to_i2c_t::spi_to_i2c_t(i2c_t *a_i2c, irs_u16 a_addr_device,
   m_buffer_size(a_buffer_size),
   mp_buffer(new irs_u8 [a_buffer_size]())
 {
-  IRS_ASSERT((m_buffer_size != 0) && (mp_buffer != nullptr));
+  ASSERT((m_buffer_size != 0) && (mp_buffer != nullptr));
 }
 
 void spi_to_i2c_t::write(const irs_u8 *ap_buf, irs_uarc a_size)
 {
-  IRS_ASSERT((a_size != 0) && (ap_buf != nullptr));
+  ASSERT((a_size != 0) && (ap_buf != nullptr));
   memcpy(mp_buffer, ap_buf, a_size);
   mp_i2c->set_device_address(m_address_device);
   mp_i2c->write(const_cast<irs_u8*>(mp_buffer), a_size);

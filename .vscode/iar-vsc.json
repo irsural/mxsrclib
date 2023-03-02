@@ -1,4 +1,5 @@
 {
     "ewp": "${workspaceFolder}\\utils\\templates\\avr2561\\libtst.ewp",
-    "configuration": "Debug"
+    "configuration": "Debug",
+    "toolchain": "C:\\Program Files (x86)\\IAR Systems\\Embedded Workbench 6.0"
 }
