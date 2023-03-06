@@ -1,7 +1,9 @@
-#include <port_extender.h>
 #include <irserror.h>
 #include <plib035.h>
 #include <timer.h>
+
+#include "logging.h"
+#include "port_extender.h"
 
 using namespace irs;
 
@@ -18,34 +20,33 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
   m_inner_port_1(0),
   mp_inner_port(nullptr),
   mp_user_pin(nullptr),
-  m_error(err_none),
   m_port(0)
 {
   if(do_reset) {
-    irs::loop_timer_t wait_reset(irs::make_cnt_us(1));
-
     RCU->HCLKCFG_bit.GPIOAEN = 1;
     RCU->HRSTCFG_bit.GPIOAEN = 1;
-
     RCU->HCLKCFG_bit.GPIOBEN = 1;
     RCU->HRSTCFG_bit.GPIOBEN = 1;
 
+    // Сброс
     SET_BIT(GPIOB->DENSET, GPIO_Pin_15);
     SET_BIT(GPIOB->OUTENSET, GPIO_Pin_15);
-
     SET_BIT(GPIOB->DATAOUTCLR, GPIO_Pin_15);
-    wait_reset.start();
-    while(!wait_reset.check());
+    irs::pause(irs::make_cnt_us(1));
     SET_BIT(GPIOB->DATAOUTSET, GPIO_Pin_15);
   }
+
+    // Инициализация
+    while(m_status != in_free) {
+      tick();
+    }
 }
 
 void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  check_arg(a_port, a_pin);
-  if(m_status == in_error) {
-    return;
-  }
+  ASSERT(a_port < m_port_count);
+  ASSERT(a_pin < m_port_size);
+
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   *mp_inner_port |= (1 << m_pin);
@@ -54,10 +55,9 @@ void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
 
 void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin)
 {
-  check_arg(a_port, a_pin);
-  if(m_status == in_error) {
-    return;
-  }
+  ASSERT(a_port < m_port_count);
+  ASSERT(a_pin < m_port_size);
+
   mp_user_pin = a_user_pin;
   initialize_io_operation(a_port, a_pin, cmd_input_port_0);
 
@@ -72,10 +72,9 @@ void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_us
 
 void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  check_arg(a_port, a_pin);
-  if(m_status == in_error) {
-    return;
-  }
+  ASSERT(a_port < m_port_count);
+  ASSERT(a_pin < m_port_size);
+
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   *mp_inner_port &= ~(1 << m_pin);
@@ -84,10 +83,9 @@ void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
 
 void port_extender_pca9539_t::toggle_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  check_arg(a_port, a_pin);
-  if(m_status == in_error) {
-    return;
-  }
+  ASSERT(a_port < m_port_count);
+  ASSERT(a_pin < m_port_size);
+
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   if(*mp_inner_port & (1 << m_pin)) {
@@ -104,9 +102,6 @@ void port_extender_pca9539_t::tick()
 
     switch(m_status) {
         case in_free: {
-        } break;
-
-        case in_error: {
         } break;
 
         case in_initialize: {
@@ -138,15 +133,10 @@ bool port_extender_pca9539_t::is_ready()
   return (mp_i2c->get_status() == irs_st_ready);
 }
 
-port_extender_pca9539_t::error_t port_extender_pca9539_t::get_error()
-{
-  return m_error;
-}
-
 void port_extender_pca9539_t::abort()
 {
   m_status = in_free;
-  for(int i = 0; i < buffer_size; i++) {
+  for(int i = 0; i < m_buffer_size; i++) {
     m_buffer[i] = 0;
   }
   m_pin = pin_none;
@@ -154,7 +144,6 @@ void port_extender_pca9539_t::abort()
   mp_inner_port = nullptr;
   mp_user_pin = nullptr;
   mp_i2c->unlock();
-  m_error = err_none;
   m_port = port_none;
 }
 
@@ -200,20 +189,6 @@ void port_extender_pca9539_t::send_i2c()
   m_buffer[1] = *mp_inner_port;
 
   mp_i2c->write(m_buffer, 2);
-}
-
-void port_extender_pca9539_t::check_arg(irs_u8 a_port, irs_u8 a_pin)
-{
-  if(a_port > port_count) {
-    m_error =  err_invalid_arg;
-    m_status = in_error;
-    return;
-  }
-  if(a_pin > port_size) {
-    m_error =  err_invalid_arg;
-    m_status = in_error;
-    return;
-  }
 }
 
 // -----------------------------------------------------------------------------

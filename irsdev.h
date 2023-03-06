@@ -482,7 +482,6 @@ private:
   const cpu_traits_t::frequency_type m_max_frequency;
 }; //class niiet_pwm_gen_t
 
-
 //! \brief Драйвер сторожевого таймера для контроллеров
 //!   семейств NIIET K1921
 //! \author Kravchuk Andrey

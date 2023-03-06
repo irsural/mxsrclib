@@ -12,12 +12,6 @@ namespace irs
 class port_extender_t
 {
 public:
-  enum error_t
-  {
-    err_invalid_arg,
-    err_none
-  };
-
   virtual void write_pin(irs_u8 a_port, irs_u8 a_pin) = 0;
   virtual void read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin) = 0;
   virtual void clear_pin(irs_u8 a_port, irs_u8 a_pin) = 0;
@@ -26,7 +20,6 @@ public:
   virtual bool is_free() = 0;
   virtual irs_status_t get_status() = 0;
   virtual void abort() = 0;
-  virtual error_t get_error() = 0;
   virtual bool is_ready() = 0;
 };
 
@@ -65,7 +58,6 @@ public:
   virtual bool is_free();
   virtual irs_status_t get_status();
   virtual void abort();
-  virtual error_t get_error();
   virtual bool is_ready();
 
 private:
@@ -74,8 +66,7 @@ private:
     in_initialize,
     in_free,
     in_change,
-    in_wait,
-    in_error
+    in_wait
   };
 
   enum command_t
@@ -91,14 +82,16 @@ private:
     cmd_none
   };
 
-  static const irs_u8 buffer_size = 3;
-  static const irs_u8 port_size = 8;
-  static const irs_u8 port_count = 2;
+  enum {
+    m_buffer_size = 3,
+    m_port_size = 8,
+    m_port_count = 2
+  };
 
   status_t m_status;
   i2c_t* mp_i2c;
   irs_u8 m_i2c_addr;
-  irs_u8 m_buffer[buffer_size];
+  irs_u8 m_buffer[m_buffer_size];
   irs_u8 m_default_port_0;
   irs_u8 m_default_port_1;
   irs_u8 m_pin;
@@ -107,13 +100,11 @@ private:
   irs_u8 m_inner_port_1;
   irs_u8* mp_inner_port;
   irs_u8* mp_user_pin;
-  error_t m_error;
   irs_u8 m_port;
 
   void initialize_port_extender();
   void initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd);
   void send_i2c();
-  void check_arg(irs_u8 a_port, irs_u8 a_pin);
 };
 
 class gpio_pin_pe_t : public gpio_pin_t

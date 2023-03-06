@@ -230,7 +230,7 @@ void spi_niiet_t::write_buf()
     SPI_SendData(mp_buf[i]);
     while (SPI_FlagStatus(SPI_Flag_Busy));
 
-    int check = SPI_RecieveData();
+    SPI_RecieveData();
   }
 }
 
