@@ -199,8 +199,16 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
+#ifdef __ICCARM__
+
 #if IRS_USE_ST_RTC
+
+#if __VER__ < 8000000
 _STD_BEGIN
+#endif // __VER__
+
+#if !_DLIB_TIME_ALLOW_64
+
 __time32_t (__time32)(__time32_t *t)
 {
   #ifdef IRS_STM32_F2_F4_F7
@@ -215,7 +223,8 @@ __time32_t (__time32)(__time32_t *t)
   #endif
 }
 
-#if _DLIB_TIME_ALLOW_64
+#else
+
 __time64_t (__time64)(__time64_t *t)
 {
   #ifdef IRS_STM32_F2_F4_F7
@@ -231,7 +240,13 @@ __time64_t (__time64)(__time64_t *t)
 }
 //CLOCKS_PER_SEC
 
+
+#endif // _DLIB_TIME_ALLOW_64
+
+#if __VER__ < 8000000
 _STD_END
+#endif // __VER__
+
 #endif // IRS_USE_ST_RTC
 
-#endif // defined(__ICCARM__) && defined(IRS_STM32_F2_F4_F7)
+#endif // __ICCARM__
