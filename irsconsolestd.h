@@ -50,10 +50,22 @@ enum irskey_t {
   irskey_9        = 10,
   irskey_point    = 11,
   irskey_enter    = 12,
+  irskey_ok       = 12,
   irskey_up       = 13,
   irskey_down     = 14,
   irskey_backspace= 15,
-  irskey_escape   = 16
+  irskey_escape   = 16,
+  irskey_exp      = 17,
+  irskey_left     = 18,
+  irskey_right    = 19,
+  irskey_menu     = 20,
+  irskey_start    = 21,
+  irskey_stop     = 22,
+  irskey_plus_minus = 23,
+  irskey_f1       = 24,
+  irskey_f2       = 25,
+  irskey_f3       = 26,
+  irskey_f4       = 27
 };
 
 // Абстрактный базовый класс драйвера клавиатуры
