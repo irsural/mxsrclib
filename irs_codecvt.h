@@ -275,7 +275,10 @@ public:
     intern_type*& ap_to_next) const
   {
     return m_converter.cp1251_to_unicode(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      reinterpret_cast<const unsigned char*>(ap_from),
+      reinterpret_cast<const unsigned char*>(ap_from_end),
+      reinterpret_cast<const unsigned char*&>(ap_from_next),
+      ap_to, ap_to_end, ap_to_next);
   }
 
   virtual result do_out(state_type& a_state,
@@ -287,7 +290,10 @@ public:
    extern_type*& ap_to_next) const
   {
     return m_converter.unicode_to_cp1251(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      ap_from, ap_from_end, ap_from_next,
+      reinterpret_cast<unsigned char*>(ap_to),
+      reinterpret_cast<unsigned char*>(ap_to_end),
+      reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
   virtual int do_encoding() const throw()
@@ -301,7 +307,7 @@ public:
   }
 
 private:
-  cp1251_unicode_converter_t<char, uint16_t> m_converter;
+  cp1251_unicode_converter_t<unsigned char, uint16_t> m_converter;
 };
 
 
@@ -313,8 +319,8 @@ public:
   typedef std::codecvt_base::result result;
 
   explicit codecvt_cp1251_t(size_t r=0):
-    std::codecvt<char, uint16_t, mbstate_t>(r),
-    m_converter()
+    std::codecvt<char, uint16_t, mbstate_t>(r)
+    //m_converter()
   {
   }
   virtual result do_in(state_type& a_state,
@@ -326,7 +332,10 @@ public:
     intern_type*& ap_to_next) const
   {
     return m_converter.unicode_to_cp1251(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      ap_from, ap_from_end, ap_from_next,
+      reinterpret_cast<unsigned char*>(ap_to),
+      reinterpret_cast<unsigned char*>(ap_to_end),
+      reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
   virtual result do_out(state_type& a_state,
@@ -338,7 +347,10 @@ public:
    extern_type*& ap_to_next) const
   {
     return m_converter.cp1251_to_unicode(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      reinterpret_cast<const unsigned char*>(ap_from),
+      reinterpret_cast<const unsigned char*>(ap_from_end),
+      reinterpret_cast<const unsigned char*&>(ap_from_next),
+      ap_to, ap_to_end, ap_to_next);
   }
 
   virtual int do_encoding() const throw()
@@ -352,7 +364,7 @@ public:
   }
 
 private:
-  cp1251_unicode_converter_t<char, uint16_t> m_converter;
+  cp1251_unicode_converter_t<unsigned char, uint16_t> m_converter;
 };
 
 
@@ -379,7 +391,10 @@ public:
     intern_type*& ap_to_next) const
   {
     return m_converter.cp1251_to_unicode(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      reinterpret_cast<const unsigned char*>(ap_from),
+      reinterpret_cast<const unsigned char*>(ap_from_end),
+      reinterpret_cast<const unsigned char*&>(ap_from_next),
+      ap_to, ap_to_end, ap_to_next);
   }
 
   virtual result do_out(state_type& a_state,
@@ -391,7 +406,10 @@ public:
    extern_type*& ap_to_next) const
   {
     return m_converter.unicode_to_cp1251(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      ap_from, ap_from_end, ap_from_next,
+      reinterpret_cast<unsigned char*>(ap_to),
+      reinterpret_cast<unsigned char*>(ap_to_end),
+      reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
   virtual int do_encoding() const throw()
@@ -405,7 +423,7 @@ public:
   }
 
 private:
-  cp1251_unicode_converter_t<char, wchar_t> m_converter;
+  cp1251_unicode_converter_t<unsigned char, wchar_t> m_converter;
 };
 
 #if !(defined(__BORLANDC__) && (__BORLANDC__ < IRS_CPP_BUILDER2010))
@@ -424,6 +442,7 @@ public:
     m_converter()
   {
   }
+
   virtual result do_in(state_type& a_state,
     const extern_type* ap_from,
     const extern_type* ap_from_end,
@@ -433,20 +452,27 @@ public:
     intern_type*& ap_to_next) const
   {
     return m_converter.unicode_to_cp1251(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      ap_from, ap_from_end, ap_from_next,
+      reinterpret_cast<unsigned char*>(ap_to),
+      reinterpret_cast<unsigned char*>(ap_to_end),
+      reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
   virtual result do_out(state_type& a_state,
-   const intern_type* ap_from,
-   const intern_type* ap_from_end,
-   const intern_type*& ap_from_next,
-   extern_type* ap_to,
-   extern_type* ap_to_end,
-   extern_type*& ap_to_next) const
+    const intern_type* ap_from,
+    const intern_type* ap_from_end,
+    const intern_type*& ap_from_next,
+    extern_type* ap_to,
+    extern_type* ap_to_end,
+    extern_type*& ap_to_next) const
   {
     return m_converter.cp1251_to_unicode(
-      ap_from, ap_from_end, ap_from_next, ap_to, ap_to_end, ap_to_next);
+      reinterpret_cast<const unsigned char*>(ap_from),
+      reinterpret_cast<const unsigned char*>(ap_from_end),
+      reinterpret_cast<const unsigned char*&>(ap_from_next),
+      ap_to, ap_to_end, ap_to_next);
   }
+
 
   virtual int do_encoding() const throw()
   {
@@ -459,7 +485,7 @@ public:
   }
 
 private:
-  cp1251_unicode_converter_t<char, wchar_t> m_converter;
+  cp1251_unicode_converter_t<unsigned char, wchar_t> m_converter;
 };
 
 #endif // !(defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4))
