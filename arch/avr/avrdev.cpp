@@ -7,6 +7,147 @@
 
 //------------------------------------------------------------------------------
 
+irs::avr::OC0A_pwm_t::OC0A_pwm_t(irs_uarc a_init_duty):
+  m_max_duty(255),
+  m_max_frequency(cpu_traits_t::frequency()/(m_max_duty + 1)),
+  m_frequency(m_max_frequency)
+{
+  //  output pin = OC0A = PB7
+  DDRB_DDB7 = 1;
+  PORTB_PORTB7 = 0;
+  //
+  TCCR0A_COM0A1 = 0;
+  TCCR0A_COM0A0 = 0;
+  //  Fast PWM, TOP = 0xFF
+  TCCR0B_WGM02 = 0;
+  TCCR0A_WGM01 = 1;
+  TCCR0A_WGM00 = 1;
+  
+  // Clock source = fin / 1
+  set_freq_divider(0);
+  //  Timer/Counter register
+  TCNT0 = 0;
+  //  Output compare registers
+  if (a_init_duty > m_max_duty) a_init_duty = m_max_duty;
+  OCR0A = a_init_duty;
+}
+
+irs_uarc irs::avr::OC0A_pwm_t::set_freq_divider(irs_uarc a_divider)
+{
+  if (a_divider >= 1024)
+  {
+    TCCR0B_CS02 = 1;
+    TCCR0B_CS01 = 0;
+    TCCR0B_CS00 = 1;
+    return 1024;
+  }
+  if (a_divider >= 256)
+  {
+    TCCR0B_CS02 = 1;
+    TCCR0B_CS01 = 0;
+    TCCR0B_CS00 = 0;
+    return 256;
+  }
+  if (a_divider >= 64)
+  {
+    TCCR0B_CS02 = 0;
+    TCCR0B_CS01 = 1;
+    TCCR0B_CS00 = 1;
+    return 64;
+  }
+  if (a_divider >= 8)
+  {
+    TCCR0B_CS02 = 0;
+    TCCR0B_CS01 = 1;
+    TCCR0B_CS00 = 0;
+    return 8;
+  }
+  if (a_divider >= 1)
+  {
+    TCCR0B_CS02 = 0;
+    TCCR0B_CS01 = 0;
+    TCCR0B_CS00 = 1;
+    return 1;
+  }
+  TCCR0B_CS02 = 0;
+  TCCR0B_CS01 = 0;
+  TCCR0B_CS00 = 0;
+  return 0;
+}
+
+irs::avr::OC0A_pwm_t::~OC0A_pwm_t()
+{
+  //  output pin = OC0A = PG5
+  DDRB_DDB7 = 0;
+  PORTB_PORTB7 = 0;
+  //  Clear OC0A on compare match, set on TOP
+  TCCR0A_COM0A1 = 0;
+  TCCR0A_COM0A0 = 0;
+  // Clock source = fin / 1
+  set_freq_divider(0);
+  //  Output compare registers
+  OCR0A = 0;
+}
+
+void irs::avr::OC0A_pwm_t::start()
+{
+  //  output pin = OC0A = PG5
+  DDRB_DDB7 = 1;
+  PORTB_PORTB7 = 0;
+  //  Clear OC0A on compare match, set on TOP
+  TCCR0A_COM0A1 = 1;
+  TCCR0A_COM0A0 = 0;
+  //
+  set_freq_divider(m_max_frequency / m_frequency);
+}
+
+void irs::avr::OC0A_pwm_t::stop()
+{
+  //  output pin = OC0A = PG5
+  DDRB_DDB7 = 1;
+  PORTB_PORTB7 = 0;
+  //
+  TCCR0A_COM0A1 = 0;
+  TCCR0A_COM0A0 = 0;
+  //
+  set_freq_divider(0);
+}
+
+void irs::avr::OC0A_pwm_t::set_duty(irs_uarc a_duty)
+{
+  if (a_duty > m_max_duty) a_duty = m_max_duty;
+  OCR0A = a_duty;
+}
+
+void irs::avr::OC0A_pwm_t::set_duty(float a_duty)
+{
+  if (a_duty > 1.f) a_duty = 1.f;
+  if (a_duty < 0.f) a_duty = 0.f;
+  OCR0A = irs_uarc(a_duty * float(m_max_duty));
+}
+
+irs::cpu_traits_t::frequency_type irs::avr::OC0A_pwm_t::set_frequency(
+  irs::cpu_traits_t::frequency_type a_frequency)
+{
+  irs_uarc div = 1;
+  if (a_frequency < m_max_frequency) div = m_max_frequency / a_frequency;
+  div = set_freq_divider(div);
+  m_frequency = m_max_frequency / div;
+  return m_frequency;
+}
+
+irs_uarc irs::avr::OC0A_pwm_t::get_max_duty()
+{
+  return m_max_duty;
+}
+
+irs::cpu_traits_t::frequency_type irs::avr::OC0A_pwm_t::get_max_frequency()
+{
+  return m_max_frequency;
+}
+
+//------------------------------------------------------------------------------
+
 irs::avr::OC0B_pwm_t::OC0B_pwm_t(irs_uarc a_init_duty):
   m_max_duty(255),
   m_max_frequency(cpu_traits_t::frequency()/(m_max_duty + 1)),
