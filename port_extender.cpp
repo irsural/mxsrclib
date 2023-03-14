@@ -22,6 +22,8 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
   mp_user_pin(nullptr),
   m_port(0)
 {
+  ASSERT(mp_i2c != nullptr);
+
   if(do_reset) {
     RCU->HCLKCFG_bit.GPIOAEN = 1;
     RCU->HRSTCFG_bit.GPIOAEN = 1;
@@ -36,17 +38,21 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
     SET_BIT(GPIOB->DATAOUTSET, GPIO_Pin_15);
   }
 
-    // Инициализация
-    while(m_status != in_free) {
-      tick();
-    }
+  // Инициализация
+  ASSERT(!mp_i2c->get_lock());
+  ASSERT(mp_i2c->get_status() == irs_st_ready);
+  while(m_status != in_free) {
+    tick();
+  }
+}
+
+bool port_extender_pca9539_t::is_synch_ready()
+{
+  return !mp_i2c->get_lock();
 }
 
 void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  ASSERT(a_port < m_port_count);
-  ASSERT(a_pin < m_port_size);
-
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   *mp_inner_port |= (1 << m_pin);
@@ -55,12 +61,7 @@ void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
 
 void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin)
 {
-  ASSERT(a_port < m_port_count);
-  ASSERT(a_pin < m_port_size);
-
   mp_user_pin = a_user_pin;
-  initialize_io_operation(a_port, a_pin, cmd_input_port_0);
-
   if(*mp_inner_port & (1 << m_pin)) {
     *mp_user_pin = 1;
   }
@@ -72,9 +73,6 @@ void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_us
 
 void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  ASSERT(a_port < m_port_count);
-  ASSERT(a_pin < m_port_size);
-
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   *mp_inner_port &= ~(1 << m_pin);
@@ -83,9 +81,6 @@ void port_extender_pca9539_t::clear_pin(irs_u8 a_port, irs_u8 a_pin)
 
 void port_extender_pca9539_t::toggle_pin(irs_u8 a_port, irs_u8 a_pin)
 {
-  ASSERT(a_port < m_port_count);
-  ASSERT(a_pin < m_port_size);
-
   initialize_io_operation(a_port, a_pin, cmd_output_port_0);
 
   if(*mp_inner_port & (1 << m_pin)) {
@@ -108,29 +103,34 @@ void port_extender_pca9539_t::tick()
           if(mp_i2c->get_lock()) {
             break;
           }
-          initialize_port_extender();
+          ASSERT(mp_i2c->get_status() == irs_st_ready);
 
+          mp_i2c->lock();
+          initialize_port_extender();
           m_status = in_wait;
         } break;
 
         case in_change: {
+          if(mp_i2c->get_lock()) {
+            break;
+          }
+          ASSERT(mp_i2c->get_status() == irs_st_ready);
+
+          mp_i2c->lock();
           send_i2c();
           m_status = in_wait;
         } break;
 
         case in_wait: {
-          if (!is_ready()) {
-            return;
+          if(mp_i2c->get_status() != irs_st_ready) {
+            break;
           }
+
           abort();
+          mp_i2c->unlock();
           m_status = in_free;
         }
     }
-}
-
-bool port_extender_pca9539_t::is_ready()
-{
-  return (mp_i2c->get_status() == irs_st_ready);
 }
 
 void port_extender_pca9539_t::abort()
@@ -143,7 +143,6 @@ void port_extender_pca9539_t::abort()
   m_cmd = cmd_none;
   mp_inner_port = nullptr;
   mp_user_pin = nullptr;
-  mp_i2c->unlock();
   m_port = port_none;
 }
 
@@ -154,7 +153,6 @@ irs_status_t port_extender_pca9539_t::get_status()
 
 void port_extender_pca9539_t::initialize_port_extender()
 {
-  mp_i2c->lock();
   mp_i2c->set_device_address(m_i2c_addr);
   m_buffer[0] = cmd_config_port_0;
   m_buffer[1] = m_default_port_0;
@@ -165,7 +163,10 @@ void port_extender_pca9539_t::initialize_port_extender()
 
 void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd)
 {
-  mp_i2c->lock();
+  ASSERT(a_port < m_port_count);
+  ASSERT(a_pin < m_port_size);
+  ASSERT(m_status == in_free);
+
   mp_i2c->set_device_address(m_i2c_addr);
   m_pin = a_pin;
   m_port = a_port;
@@ -195,6 +196,8 @@ void port_extender_pca9539_t::send_i2c()
 gpio_pin_pe_t::gpio_pin_pe_t(port_extender_t* ap_port_extender,
                              irs_u8 a_port, irs_u8 a_pin, bool a_async) :
   mp_port_extender(ap_port_extender),
+  m_status(st_free),
+  m_action(act_none),
   m_port(a_port),
   m_pin(a_pin),
   m_async(a_async)
@@ -204,32 +207,30 @@ gpio_pin_pe_t::gpio_pin_pe_t(port_extender_t* ap_port_extender,
 
 void gpio_pin_pe_t::set()
 {
-  mp_port_extender->write_pin(m_port, m_pin);
-  if (!m_async) {
-    while (mp_port_extender->get_status() != irs_st_ready) {
-      mp_port_extender->tick();
-    }
-  }
+  m_status = st_send_pe;
+  m_action = act_set;
+  if (!m_async && mp_port_extender->is_synch_ready()) {
+    tick();
+}
 }
 
 void gpio_pin_pe_t::clear()
 {
-  mp_port_extender->clear_pin(m_port, m_pin);
-  if (!m_async) {
-    while (mp_port_extender->get_status() != irs_st_ready) {
-      mp_port_extender->tick();
-    }
+  m_status = st_send_pe;
+  m_action = act_clear;
+  if (!m_async && mp_port_extender->is_synch_ready()) {
+    tick();
   }
 }
 
 void gpio_pin_pe_t::toggle()
 {
-  mp_port_extender->toggle_pin(m_port, m_pin);
-  if (!m_async) {
-    while (mp_port_extender->get_status() != irs_st_ready) {
-      mp_port_extender->tick();
-    }
-  }
+  m_status = st_send_pe;
+  m_action = act_toggle;
+  if (!m_async && mp_port_extender->is_synch_ready()) {
+    tick();
+
+}
 }
 
 bool gpio_pin_pe_t::pin()
@@ -237,4 +238,42 @@ bool gpio_pin_pe_t::pin()
   uint8_t pin;
   mp_port_extender->read_pin(m_port, m_pin, &pin);
   return (pin == 1);
+}
+
+void gpio_pin_pe_t::tick()
+{
+  switch(m_status) {
+    case st_free: {
+    } break;
+
+    case st_send_pe: {
+      if(mp_port_extender->get_status() != irs_st_ready) {
+        break;
+      }
+
+      ASSERT(m_action != act_none);
+      switch(m_action) {
+        case act_set: {
+          mp_port_extender->write_pin(m_port, m_pin);
+        } break;
+
+        case act_clear: {
+          mp_port_extender->clear_pin(m_port, m_pin);
+        } break;
+
+        case act_toggle: {
+          mp_port_extender->toggle_pin(m_port, m_pin);
+        } break;
+      }
+
+      if (!m_async && mp_port_extender->is_synch_ready()) {
+        while (mp_port_extender->get_status() != irs_st_ready) {
+          mp_port_extender->tick();
+        }
+      }
+
+      m_status = st_free;
+      m_action = act_none;
+    } break;
+  }
 }

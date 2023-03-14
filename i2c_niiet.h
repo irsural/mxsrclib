@@ -26,7 +26,8 @@ public:
   virtual void lock();
   virtual bool get_lock();
   virtual void unlock();
-  virtual void set_device_address(irs_u16 a_addr_device);
+  virtual void set_device_address(irs_u8 a_addr_device);
+  virtual irs_u8 get_device_address();
   virtual void tick();
   virtual void read(irs_u8* ap_buf, size_t a_size);
   virtual void write(irs_u8* ap_buf, size_t a_size);
@@ -59,7 +60,7 @@ private:
   bool m_lock;
   irs_u8 *mp_buffer;
   size_t m_buffer_size;
-  irs_u16 m_device_addr;
+  irs_u8 m_device_addr;
 };
 
 }

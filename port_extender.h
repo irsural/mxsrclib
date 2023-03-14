@@ -20,9 +20,11 @@ public:
   virtual bool is_free() = 0;
   virtual irs_status_t get_status() = 0;
   virtual void abort() = 0;
-  virtual bool is_ready() = 0;
+  virtual bool is_synch_ready() = 0;
 };
 
+// При работе в синхронном режиме следует учитывать возможную
+// блокировку шины i2c другим устройством
 class port_extender_pca9539_t : public port_extender_t
 {
 public:
@@ -58,7 +60,7 @@ public:
   virtual bool is_free();
   virtual irs_status_t get_status();
   virtual void abort();
-  virtual bool is_ready();
+  virtual bool is_synch_ready();
 
 private:
   enum status_t
@@ -117,9 +119,24 @@ public:
   virtual void clear();
   virtual void set_dir(dir_t a_dir) {}
   void toggle();
+  void tick();
 
 private:
+  enum status_t {
+    st_free,
+    st_send_pe
+  };
+
+  enum action_t {
+    act_none,
+    act_set,
+    act_clear,
+    act_toggle
+  };
+
   port_extender_t* mp_port_extender;
+  status_t m_status;
+  action_t m_action;
   irs_u8 m_port;
   irs_u8 m_pin;
   bool m_async;

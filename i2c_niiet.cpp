@@ -1,5 +1,5 @@
 #include <i2c_niiet.h>
-#include <irserror.h>
+#include "logging.h"
 
 using namespace irs;
 
@@ -114,9 +114,14 @@ void i2c_niiet_t::unlock()
   m_lock = false;
 }
 
-void i2c_niiet_t::set_device_address(irs_u16 a_addr_device)
+void i2c_niiet_t::set_device_address(irs_u8 a_device_addr)
 {
-  m_device_addr = a_addr_device;
+  m_device_addr = a_device_addr;
+}
+
+irs_u8 i2c_niiet_t::get_device_address()
+{
+  return m_device_addr;
 }
 
 bool i2c_niiet_t::is_free()
@@ -126,6 +131,15 @@ bool i2c_niiet_t::is_free()
 
 void i2c_niiet_t::write_buffer(uint8_t* buf, size_t buf_size)
 {
+  if(m_device_addr != 0xE8) {
+    DBG("write");
+    DBG("addr = %d", m_device_addr);
+    for(int i = 0; i < buf_size; i++) {
+      printf("%d ", buf[i]);
+    }
+    DBG("\n");
+  }
+
   I2C->CTL0_bit.START = 1;
   while(I2C->ST_bit.MODE != I2C_ST_MODE_STDONE);
 
@@ -165,6 +179,15 @@ void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
 
   I2C->CTL0_bit.STOP = 1;
   I2C->CTL0_bit.CLRST = 1;
+
+//  if(m_device_addr == 0xE8)
+//    return;
+  DBG("read");
+  DBG("addr = %d", m_device_addr);
+  for(int i = 0; i < buf_size; i++) {
+    printf("%d ", buf[i]);
+  }
+  DBG("\n");
 }
 
 bool i2c_niiet_t::is_device_ready()

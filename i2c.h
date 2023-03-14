@@ -17,7 +17,8 @@ public:
   virtual void lock() = 0;
   virtual bool get_lock() = 0;
   virtual void unlock() = 0;
-  virtual void set_device_address(irs_u16 a_addr_device) = 0;
+  virtual void set_device_address(irs_u8 a_addr_device) = 0;
+  virtual irs_u8 get_device_address() = 0;
   virtual void tick() = 0;
   virtual void read(irs_u8* ap_buf, size_t a_size) = 0;
   virtual void write(irs_u8* ap_buf, size_t a_size) = 0;
