@@ -1855,6 +1855,40 @@ private:
   mode_t m_mode;
 };
 
+//-------------------------- DAC121S101 ----------------------------------------
+// 12-bit DAC
+
+class dac_121s101_t: public dac_t
+{
+public:
+  dac_121s101_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin, float a_init_data);
+  virtual size_t get_resolution() const;
+  virtual irs_u32 get_u32_maximum() const;
+  virtual void set_u32_data(size_t a_channel, const irs_u32 a_data);
+  virtual float get_float_maximum() const;
+  virtual void set_float_data(size_t a_channel, const float a_data);
+  virtual void tick();
+
+private:
+  void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
+  enum {
+    dac_resolution = 12,
+    write_buf_size = 2
+  };
+  enum { dac_max_value = 4095 };
+  enum mode_t {
+    mode_free,
+    mode_write,
+    mode_write_wait
+  };
+  spi_t *mp_spi;
+  gpio_pin_t *mp_cs_pin;
+  irs_u16 m_data;
+  irs_u16 m_new_data;
+  irs_u8 mp_spi_buf[write_buf_size];
+  mode_t m_mode;
+};
+
 //-------------------------- DAC1220 -------------------------------------------
 // 20-bit sigma-delta DAC
 

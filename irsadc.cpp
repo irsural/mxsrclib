@@ -3829,6 +3829,7 @@ irs_i32 irs::adc_ad7799_t::conversion_spi_value()
   return value;
 }
 
+//------------------------------------------------------------------------------
 
 irs::dac_8531_t::dac_8531_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
   float a_init_data):
@@ -3891,6 +3892,96 @@ void irs::dac_8531_t::tick()
         mp_spi_buf[0] = 0;
         mp_spi_buf[1] = IRS_HIBYTE(m_data);
         mp_spi_buf[2] = IRS_LOBYTE(m_data);
+        m_mode = mode_write;
+      }
+    } break;
+    case mode_write: {
+      if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
+        mp_spi->lock();
+        mp_spi->set_order(irs::spi_t::MSB);
+        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+        mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
+        mp_cs_pin->clear();
+        mp_spi->write(mp_spi_buf, write_buf_size);
+        m_mode = mode_write_wait;
+      }
+    } break;
+    case mode_write_wait: {
+      if (mp_spi->get_status() == irs::spi_t::FREE) {
+        mp_cs_pin->set();
+        mp_spi->reset_configuration();
+        mp_spi->unlock();
+        memset(mp_spi_buf, 0, write_buf_size);
+        m_mode = mode_free;
+      }
+    } break;
+  }
+}
+
+//------------------------------------------------------------------------------
+
+irs::dac_121s101_t::dac_121s101_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
+  float a_init_data
+):
+  mp_spi(ap_spi),
+  mp_cs_pin(ap_cs_pin),
+  m_data(0),
+  m_new_data(0),
+  m_mode(mode_free)
+{
+  memset(mp_spi_buf, 0, write_buf_size);
+  mp_cs_pin->set();
+  set_float_data(0, a_init_data);
+  // SPI SCLK Frequency <= 30 MHz
+}
+
+size_t irs::dac_121s101_t::get_resolution() const
+{
+  return dac_resolution;
+}
+
+irs_u32 irs::dac_121s101_t::get_u32_maximum() const
+{
+  return static_cast<irs_u32>(dac_max_value) << (32 - dac_resolution);
+}
+
+void irs::dac_121s101_t::set_u32_data(size_t a_channel, const irs_u32 a_data)
+{
+  set_u16_normalized_data(a_channel,
+    static_cast<irs_u16>(a_data >> (32 - dac_resolution)));
+}
+
+float irs::dac_121s101_t::get_float_maximum() const
+{
+  return 1.f;
+}
+
+void irs::dac_121s101_t::set_float_data(size_t a_channel, const float a_data)
+{
+  if (a_data > 1.f) {
+    IRS_LIB_ERROR(ec_standard, "Значение должно быть от 0 до 1");
+  }
+  set_u16_normalized_data(a_channel,
+    static_cast<irs_u16>(a_data*dac_max_value));
+}
+
+void irs::dac_121s101_t::set_u16_normalized_data(size_t a_channel,
+  const irs_u16 a_data)
+{
+  if (a_channel != 0) {
+    IRS_LIB_ERROR(ec_standard, "Недопустимый канал");
+  }
+  m_new_data = a_data;
+}
+
+void irs::dac_121s101_t::tick()
+{
+  switch (m_mode) {
+    case mode_free: {
+      if (m_new_data != m_data) {
+        m_data = m_new_data;
+        mp_spi_buf[0] = IRS_HIBYTE(m_data);
+        mp_spi_buf[1] = IRS_LOBYTE(m_data);
         m_mode = mode_write;
       }
     } break;
