@@ -23,8 +23,6 @@ public:
   virtual bool is_synch_ready() = 0;
 };
 
-// При работе в синхронном режиме следует учитывать возможную
-// блокировку шины i2c другим устройством
 class port_extender_pca9539_t : public port_extender_t
 {
 public:
@@ -49,9 +47,8 @@ public:
   };
 
   port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2c,
-                          irs_u8 a_default_port_0 = 0x00,
-                          irs_u8 a_default_port_1 = 0x00,
-                          bool do_reset = true);
+    irs_u8 a_default_port_0 = 0x00, irs_u8 a_default_port_1 = 0x00,
+    bool do_reset = true);
   virtual void write_pin(irs_u8 a_port, irs_u8 a_pin);
   virtual void read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin);
   virtual void clear_pin(irs_u8 a_port, irs_u8 a_pin);

@@ -4,7 +4,7 @@
 using namespace irs;
 
 i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl,
-                         GPIO_TypeDef* port_sda, uint32_t pin_sda):
+  GPIO_TypeDef* port_sda, uint32_t pin_sda):
   m_status(in_free),
   m_operation(op_none),
   m_lock(false),
@@ -76,7 +76,7 @@ void i2c_niiet_t::write(irs_u8* ap_buffer, size_t a_size)
 }
 
 void i2c_niiet_t::initialize_io_operation(irs_u8* ap_buffer,
-                                          size_t a_size, operation_t a_oper)
+  size_t a_size, operation_t a_oper)
 {
   m_operation = a_oper;
   m_status = in_check_dev;
@@ -131,15 +131,6 @@ bool i2c_niiet_t::is_free()
 
 void i2c_niiet_t::write_buffer(uint8_t* buf, size_t buf_size)
 {
-  if(m_device_addr != 0xE8) {
-    DBG("write");
-    DBG("addr = %d", m_device_addr);
-    for(int i = 0; i < buf_size; i++) {
-      printf("%d ", buf[i]);
-    }
-    DBG("\n");
-  }
-
   I2C->CTL0_bit.START = 1;
   while(I2C->ST_bit.MODE != I2C_ST_MODE_STDONE);
 
@@ -179,15 +170,6 @@ void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
 
   I2C->CTL0_bit.STOP = 1;
   I2C->CTL0_bit.CLRST = 1;
-
-//  if(m_device_addr == 0xE8)
-//    return;
-  DBG("read");
-  DBG("addr = %d", m_device_addr);
-  for(int i = 0; i < buf_size; i++) {
-    printf("%d ", buf[i]);
-  }
-  DBG("\n");
 }
 
 bool i2c_niiet_t::is_device_ready()

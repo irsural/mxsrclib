@@ -7,7 +7,9 @@
 
 using namespace irs;
 
-port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2c, irs_u8 a_default_port_0, irs_u8 a_default_port_1, bool do_reset) :
+port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr,
+  i2c_t* ap_i2c, irs_u8 a_default_port_0, irs_u8 a_default_port_1,
+  bool do_reset) :
   m_status(in_initialize),
   mp_i2c(ap_i2c),
   m_i2c_addr(a_i2c_addr),
@@ -30,7 +32,6 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
     RCU->HCLKCFG_bit.GPIOBEN = 1;
     RCU->HRSTCFG_bit.GPIOBEN = 1;
 
-    // Сброс
     SET_BIT(GPIOB->DENSET, GPIO_Pin_15);
     SET_BIT(GPIOB->OUTENSET, GPIO_Pin_15);
     SET_BIT(GPIOB->DATAOUTCLR, GPIO_Pin_15);
@@ -38,7 +39,6 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr, i2c_t* ap_i2
     SET_BIT(GPIOB->DATAOUTSET, GPIO_Pin_15);
   }
 
-  // Инициализация
   ASSERT(!mp_i2c->get_lock());
   ASSERT(mp_i2c->get_status() == irs_st_ready);
   while(m_status != in_free) {
@@ -59,13 +59,13 @@ void port_extender_pca9539_t::write_pin(irs_u8 a_port, irs_u8 a_pin)
   m_status = in_change;
 }
 
-void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, irs_u8* a_user_pin)
+void port_extender_pca9539_t::read_pin(irs_u8 a_port, irs_u8 a_pin, 
+  irs_u8* a_user_pin)
 {
   mp_user_pin = a_user_pin;
   if(*mp_inner_port & (1 << m_pin)) {
     *mp_user_pin = 1;
-  }
-  else {
+  } else {
     *mp_user_pin = 0;
   }
   m_status = in_free;
@@ -85,8 +85,7 @@ void port_extender_pca9539_t::toggle_pin(irs_u8 a_port, irs_u8 a_pin)
 
   if(*mp_inner_port & (1 << m_pin)) {
     clear_pin(m_port, m_pin);
-  }
-  else {
+  } else {
     write_pin(m_port, m_pin);
   }
 }
@@ -161,7 +160,8 @@ void port_extender_pca9539_t::initialize_port_extender()
   mp_i2c->write(m_buffer, 3);
 }
 
-void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, irs_u8 a_pin, command_t a_cmd)
+void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, 
+  irs_u8 a_pin, command_t a_cmd)
 {
   ASSERT(a_port < m_port_count);
   ASSERT(a_pin < m_port_size);
@@ -211,7 +211,7 @@ void gpio_pin_pe_t::set()
   m_action = act_set;
   if (!m_async && mp_port_extender->is_synch_ready()) {
     tick();
-}
+  }
 }
 
 void gpio_pin_pe_t::clear()
@@ -229,8 +229,7 @@ void gpio_pin_pe_t::toggle()
   m_action = act_toggle;
   if (!m_async && mp_port_extender->is_synch_ready()) {
     tick();
-
-}
+  }
 }
 
 bool gpio_pin_pe_t::pin()

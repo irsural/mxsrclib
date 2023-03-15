@@ -71,7 +71,7 @@ void spi_niiet_t::read_write(irs_u8 *ap_buf, const irs_u8 *ap_write_buf,
 }
 
 void spi_niiet_t::init_io_oper(irs_u8 *ap_buf, irs_uarc a_size,
-                               inner_state a_status)
+  inner_state a_status)
 {
   m_status = a_status;
   mp_buf = ap_buf;

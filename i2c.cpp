@@ -7,7 +7,7 @@
 using namespace irs;
 
 spi_to_i2c_t::spi_to_i2c_t(i2c_t *a_i2c, irs_u16 a_addr_device,
-                           irs_u16 a_buffer_size):
+  irs_u16 a_buffer_size):
   mp_i2c(a_i2c),
   m_address_device(a_addr_device),
   m_buffer_size(a_buffer_size),
