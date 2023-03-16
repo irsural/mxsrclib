@@ -2,7 +2,7 @@
 #include <plib035.h>
 #include <timer.h>
 
-#include "logging.h"
+
 #include "port_extender.h"
 
 using namespace irs;
@@ -24,7 +24,7 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr,
   mp_user_pin(nullptr),
   m_port(0)
 {
-  ASSERT(mp_i2c != nullptr);
+  IRS_ASSERT(mp_i2c != nullptr);
 
   if(do_reset) {
     RCU->HCLKCFG_bit.GPIOAEN = 1;
@@ -39,8 +39,8 @@ port_extender_pca9539_t::port_extender_pca9539_t(irs_u8 a_i2c_addr,
     SET_BIT(GPIOB->DATAOUTSET, GPIO_Pin_15);
   }
 
-  ASSERT(!mp_i2c->get_lock());
-  ASSERT(mp_i2c->get_status() == irs_st_ready);
+  IRS_ASSERT(!mp_i2c->get_lock());
+  IRS_ASSERT(mp_i2c->get_status() == irs_st_ready);
   while(m_status != in_free) {
     tick();
   }
@@ -102,7 +102,7 @@ void port_extender_pca9539_t::tick()
           if(mp_i2c->get_lock()) {
             break;
           }
-          ASSERT(mp_i2c->get_status() == irs_st_ready);
+          IRS_ASSERT(mp_i2c->get_status() == irs_st_ready);
 
           mp_i2c->lock();
           initialize_port_extender();
@@ -113,7 +113,7 @@ void port_extender_pca9539_t::tick()
           if(mp_i2c->get_lock()) {
             break;
           }
-          ASSERT(mp_i2c->get_status() == irs_st_ready);
+          IRS_ASSERT(mp_i2c->get_status() == irs_st_ready);
 
           mp_i2c->lock();
           send_i2c();
@@ -163,9 +163,9 @@ void port_extender_pca9539_t::initialize_port_extender()
 void port_extender_pca9539_t::initialize_io_operation(irs_u8 a_port, 
   irs_u8 a_pin, command_t a_cmd)
 {
-  ASSERT(a_port < m_port_count);
-  ASSERT(a_pin < m_port_size);
-  ASSERT(m_status == in_free);
+  IRS_ASSERT(a_port < m_port_count);
+  IRS_ASSERT(a_pin < m_port_size);
+  IRS_ASSERT(m_status == in_free);
 
   mp_i2c->set_device_address(m_i2c_addr);
   m_pin = a_pin;
@@ -250,7 +250,7 @@ void gpio_pin_pe_t::tick()
         break;
       }
 
-      ASSERT(m_action != act_none);
+      IRS_ASSERT(m_action != act_none);
       switch(m_action) {
         case act_set: {
           mp_port_extender->write_pin(m_port, m_pin);

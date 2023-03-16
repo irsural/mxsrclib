@@ -953,7 +953,7 @@ size_t irs::max_eeprom_size(size_t a_page_size, size_t a_page_count,
   return cluster_count * cluster_data_size;
 }
 
-#include "logging.h"
+
 
 irs::eeprom_spi_t::eeprom_spi_t(spi_t* ap_spi,
   gpio_pin_t* ap_cs_pin, irs_uarc a_size, size_type a_page_size,
@@ -966,7 +966,7 @@ irs::eeprom_spi_t::eeprom_spi_t(spi_t* ap_spi,
     a_address_size),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
-  ASSERT(m_mem_data.size() >= a_size);
+  IRS_ASSERT(m_mem_data.size() >= a_size);
   connect(&m_mem_data);
 }
 

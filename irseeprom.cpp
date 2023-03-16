@@ -1,7 +1,7 @@
 #include <irseeprom.h>
 #include <irserror.h>
 
-#include "logging.h"
+
 
 using namespace irs;
 
@@ -116,9 +116,9 @@ void eeprom_m24_page_t::send_seek()
 void eeprom_m24_page_t::initialize_io_operation(irs_u8* ap_data, irs_u16 a_index,
   m24_status_t a_status)
 {
-  ASSERT(ap_data != nullptr);
-  ASSERT(!mp_i2c->get_lock());
-  ASSERT(is_free());
+  IRS_ASSERT(ap_data != nullptr);
+  IRS_ASSERT(!mp_i2c->get_lock());
+  IRS_ASSERT(is_free());
 
   mp_i2c->lock();
   mp_i2c->set_device_address(m_i2c_address);
@@ -148,6 +148,6 @@ eeprom_i2c_t::eeprom_i2c_t(irs_u16 a_i2c_address, i2c_t* ap_i2c, irs_uarc a_size
   m_page_mem(a_i2c_address, ap_i2c, a_page_size, a_page_count, a_address_size),
   m_mem_data(&m_page_mem, a_cluster_size)
 {
-  ASSERT(m_mem_data.size() >= a_size);
+  IRS_ASSERT(m_mem_data.size() >= a_size);
   connect(&m_mem_data);
 }
