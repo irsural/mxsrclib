@@ -3989,7 +3989,7 @@ void irs::dac_121s101_t::tick()
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
         mp_spi->lock();
         mp_spi->set_order(irs::spi_t::MSB);
-        mp_spi->set_polarity(irs::spi_t::POSITIVE_POLARITY);
+        mp_spi->set_polarity(irs::spi_t::NEGATIVE_POLARITY);
         mp_spi->set_phase(irs::spi_t::TRAIL_EDGE);
         mp_cs_pin->clear();
         mp_spi->write(mp_spi_buf, write_buf_size);
