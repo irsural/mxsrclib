@@ -1870,7 +1870,7 @@ public:
   virtual void tick();
 
 private:
-  void set_u16_normalized_data(size_t a_channel, const irs_u16 a_data);
+  void set_u16_normalized_data(size_t a_channel, irs_u16 a_data);
   enum {
     dac_resolution = 12,
     write_buf_size = 2
@@ -1883,8 +1883,6 @@ private:
   };
   spi_t *mp_spi;
   gpio_pin_t *mp_cs_pin;
-  irs_u16 m_data;
-  irs_u16 m_new_data;
   irs_u8 mp_spi_buf[write_buf_size];
   mode_t m_mode;
 };

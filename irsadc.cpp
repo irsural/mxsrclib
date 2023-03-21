@@ -3925,8 +3925,6 @@ irs::dac_121s101_t::dac_121s101_t(spi_t *ap_spi, gpio_pin_t *ap_cs_pin,
 ):
   mp_spi(ap_spi),
   mp_cs_pin(ap_cs_pin),
-  m_data(0),
-  m_new_data(0),
   m_mode(mode_free)
 {
   memset(mp_spi_buf, 0, write_buf_size);
@@ -3966,24 +3964,20 @@ void irs::dac_121s101_t::set_float_data(size_t a_channel, const float a_data)
 }
 
 void irs::dac_121s101_t::set_u16_normalized_data(size_t a_channel,
-  const irs_u16 a_data)
+  irs_u16 a_data)
 {
   if (a_channel != 0) {
     IRS_LIB_ERROR(ec_standard, "Недопустимый канал");
   }
-  m_new_data = a_data;
+  mp_spi_buf[0] = IRS_HIBYTE(a_data);
+  mp_spi_buf[1] = IRS_LOBYTE(a_data);
+  m_mode = mode_write;
 }
 
 void irs::dac_121s101_t::tick()
 {
   switch (m_mode) {
     case mode_free: {
-      if (m_new_data != m_data) {
-        m_data = m_new_data;
-        mp_spi_buf[0] = IRS_HIBYTE(m_data);
-        mp_spi_buf[1] = IRS_LOBYTE(m_data);
-        m_mode = mode_write;
-      }
     } break;
     case mode_write: {
       if ((mp_spi->get_status() == irs::spi_t::FREE) && !mp_spi->get_lock()) {
