@@ -54,7 +54,7 @@ irs::avr::avr_spi_t::avr_spi_t(irs_u8 a_buffer_size, irs_u32 a_f_osc,
 
       UCSR0C_UMSEL01 = 1;   //  master SPI
       UCSR0C_UMSEL00 = 1;   //  master SPI
-      UCSR0C &= 0x20^0xFF;  //  leading edge sample,через UCSR0C_UCPHA0=0 нельзя
+      UCSR0C &= 0x02^0xFF;  //  leading edge sample,через UCSR0C_UCPHA0=0 нельзя
       UCSR0C_UCPOL0 = 1;    //  clock falling edge first
 
       UCSR0B_RXCIE0 = 0;    //  recieve interrupt disable
@@ -136,7 +136,7 @@ irs::avr::avr_spi_t::~avr_spi_t()
 
       UCSR0C_UMSEL01 = 0;   //  asynchronus USART
       UCSR0C_UMSEL00 = 0;   //  asynchronus USART
-      UCSR0C &= 0x20^0xFF;  //  leading edge sample;
+      UCSR0C &= 0x02^0xFF;  //  leading edge sample;
       UCSR0C_UCPOL0 = 0;    //  clock rising edge first
 
       UCSR0B_RXCIE0 = 0;    //  recieve interrupt disable
@@ -156,7 +156,7 @@ irs::avr::avr_spi_t::~avr_spi_t()
 
       UCSR1C_UMSEL11 = 0;   //  asynchronus USART
       UCSR1C_UMSEL10 = 0;   //  asynchronus USART
-      UCSR1C &= 0x20^0xFF;  //  leading edge sample;
+      UCSR1C &= 0x02^0xFF;  //  leading edge sample;
       UCSR1C_UCPOL1 = 0;    //  clock rising edge first
 
       UCSR1B_RXCIE1 = 0;    //  recieve interrupt disable
@@ -419,38 +419,22 @@ void irs::avr::avr_spi_t::read(irs_u8 *ap_buf,irs_uarc a_size)
 
 void irs::avr::avr_spi_t::tick()
 {
-  /*
-  static counter_t cnt = 0;
-  static counter_t time = MS_TO_CNT(0);
-  static bool first = true;
-  if (first)
-  {
-    init_to_cnt();
-    first = false;
-    counter_t time = MS_TO_CNT(0);
-    set_to_cnt(cnt, time);
-  }
-  */
   switch (m_status)
   {
   case SPI_WRITE:
     {
-      //if (test_to_cnt(cnt))
+      if (transfer_complete())
       {
-        if (transfer_complete())
+        if (m_current_byte >= m_packet_size)
         {
-          //set_to_cnt(cnt, time);
-          if (m_current_byte >= m_packet_size)
-          {
-            memset((void*)mp_buf, 0, m_buffer_size);
-            m_buf_empty = true;
-            m_status = SPI_FREE;
-          }
-          else
-          {
-            write_data_register(mp_buf[m_current_byte]);
-            m_current_byte++;
-          }
+          memset((void*)mp_buf, 0, m_buffer_size);
+          m_buf_empty = true;
+          m_status = SPI_FREE;
+        }
+        else
+        {
+          write_data_register(mp_buf[m_current_byte]);
+          m_current_byte++;
         }
       }
       break;
@@ -556,7 +540,7 @@ void irs::avr::avr_spi_t::init_default()
       UCSR0C_UDORD0 = 0;    //  MSB first
       UBRR0 = 0;            //  Baudrate = Fosc / 2
 
-      UCSR0C &= 0x20^0xFF;  //  leading edge sample,через UCSR0C_UCPHA0=0 нельзя
+      UCSR0C &= 0x02^0xFF;  //  leading edge sample,через UCSR0C_UCPHA0=0 нельзя
       UCSR0C_UCPOL0 = 1;    //  clock falling edge first
 
       UCSR0B_TXEN0 = 1;     //  reciever enable
