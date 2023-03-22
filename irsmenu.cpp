@@ -95,6 +95,11 @@ irs_bool irs_menu_base_t::can_edit()
   return f_can_edit;
 }
 
+void irs_menu_base_t::can_edit(irs_bool a_can_edit)
+{
+  f_can_edit = a_can_edit;
+}
+
 void* irs_menu_base_t::get_data_attached()
 {
   return mp_data_attached;

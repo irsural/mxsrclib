@@ -143,6 +143,7 @@ public:
   void hide();
   void edit();
   irs_bool can_edit();
+  void can_edit(irs_bool a_can_edit);
   void* get_data_attached();
   void set_data_attached(void* ap_data);
 
