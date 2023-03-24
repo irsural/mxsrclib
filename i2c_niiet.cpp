@@ -1,12 +1,11 @@
 #include <i2c_niiet.h>
-
+#include <irscpu.h>
 
 using namespace irs;
 
 i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl,
   GPIO_TypeDef* port_sda, uint32_t pin_sda):
   m_status(in_free),
-  m_operation(op_none),
   m_lock(false),
   mp_buffer(nullptr),
   m_buffer_size(0),
@@ -33,8 +32,7 @@ i2c_niiet_t::i2c_niiet_t(GPIO_TypeDef* port_scl, uint32_t pin_scl,
   RCU->PRSTCFG_bit.I2CEN = 1;
 
   I2C->CTL1_bit.ENABLE = 1;
-  I2C->CTL1_bit.SCLFRQ = 0x4;
-  I2C->CTL3_bit.SCLFRQ = 0x4;
+  I2C_FSFreqConfig(100000, );
 
   I2C->CTL0_bit.INTEN = 1;
 }
@@ -44,13 +42,6 @@ void i2c_niiet_t::tick()
   switch(m_status)
   {
     case in_free: {
-    } break;
-
-    case in_check_dev: {
-      if(is_device_ready()) {
-        m_status = (m_operation == op_read) ? in_read : in_write;
-        m_operation = op_none;
-      }
     } break;
 
     case in_write: {
@@ -67,19 +58,18 @@ void i2c_niiet_t::tick()
 
 void i2c_niiet_t::read(irs_u8* ap_buffer, size_t a_size)
 {
-  initialize_io_operation(ap_buffer, a_size, op_read);
+  initialize_io_operation(ap_buffer, a_size, in_read);
 }
 
 void i2c_niiet_t::write(irs_u8* ap_buffer, size_t a_size)
 {
-  initialize_io_operation(ap_buffer, a_size, op_write);
+  initialize_io_operation(ap_buffer, a_size, in_write);
 }
 
 void i2c_niiet_t::initialize_io_operation(irs_u8* ap_buffer,
-  size_t a_size, operation_t a_oper)
+  size_t a_size, internal_status_t a_status)
 {
-  m_operation = a_oper;
-  m_status = in_check_dev;
+  m_status = a_status;
   mp_buffer = ap_buffer;
   m_buffer_size = a_size;
 }
@@ -87,7 +77,6 @@ void i2c_niiet_t::initialize_io_operation(irs_u8* ap_buffer,
 void i2c_niiet_t::abort()
 {
   m_status = in_free;
-  m_operation = op_none;
   m_lock = false;
   mp_buffer = 0;
   m_buffer_size = 0;
@@ -147,6 +136,19 @@ void i2c_niiet_t::write_buffer(uint8_t* buf, size_t buf_size)
 
   I2C->CTL0_bit.STOP = 1;
   I2C->CTL0_bit.CLRST = 1;
+
+
+  // ---------------------------------------------------------------------------
+  if(m_device_addr == 0xA0) {
+    DBG("wr: ");
+    for(int i = 0; i < buf_size; i++) {
+      if((i % 66 == 0) && (i > 0))
+        DBG("\n");
+
+      DBG("%d ", buf[i]);
+    }
+    DBG("\n");
+  }
 }
 
 void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
@@ -157,7 +159,7 @@ void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
   I2C->SDA_bit.DATA = m_device_addr + 1;
   I2C->CTL0_bit.CLRST = 1;
   while(I2C->ST_bit.MODE != I2C_ST_MODE_MRADPA);
-
+  DBG("rd:\n");
   for(int i = 0; i < buf_size; i++)
   {
     if(i == buf_size - 1)
@@ -167,9 +169,20 @@ void i2c_niiet_t::read_buffer(uint8_t* buf, size_t buf_size)
           (I2C->ST_bit.MODE != I2C_ST_MODE_MRDANA));
     buf[i] = I2C->SDA_bit.DATA;
   }
-
   I2C->CTL0_bit.STOP = 1;
   I2C->CTL0_bit.CLRST = 1;
+
+
+  // ---------------------------------------------------------------------------
+  if(m_device_addr == 0xA0) {
+    DBG("rd:\n");
+    for(int i = 0; i < buf_size; i++) {
+      if((i % 64 == 0) && (i > 0))
+        DBG("\n");
+      DBG("%d ", buf[i]);
+    }
+    DBG("\n");
+  }
 }
 
 bool i2c_niiet_t::is_device_ready()

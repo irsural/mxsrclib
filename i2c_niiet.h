@@ -32,6 +32,7 @@ public:
   virtual void read(irs_u8* ap_buf, size_t a_size);
   virtual void write(irs_u8* ap_buf, size_t a_size);
   virtual void abort();
+  virtual bool is_device_ready();
 
 private:
   enum internal_status_t
@@ -42,21 +43,12 @@ private:
     in_check_dev
   };
 
-  enum operation_t
-  {
-    op_read,
-    op_write,
-    op_none
-  };
-
   void initialize_io_operation(irs_u8* ap_buffer, size_t a_size,
-    operation_t a_oper);
+    internal_status_t a_status);
   void write_buffer(irs_u8* buffer, size_t buffer_size);
   void read_buffer(irs_u8* buffer, size_t buffer_size);
-  bool is_device_ready();
 
   internal_status_t m_status;
-  operation_t m_operation;
   bool m_lock;
   irs_u8 *mp_buffer;
   size_t m_buffer_size;
