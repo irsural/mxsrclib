@@ -415,11 +415,11 @@ public:
         irs::char_idx))
     );
     //IRSSTRDEFS_ASSERT(ap_instr != IRS_NULL);
-    IRSSTRDEFS_LOG(cout << "\nconvert_str_t(const in_char_type* ap_instr,");
-    IRSSTRDEFS_LOG(cout << "size_t a_instr_size = m_size_default)\n");
-    IRSSTRDEFS_LOG(cout << type_to_string<in_char_type>() << " ap_instr = \"");
-    IRSSTRDEFS_LOG(tcout(in_char_type()) << ap_instr);
-    IRSSTRDEFS_LOG(cout << "\"" << endl);
+    // IRSSTRDEFS_LOG(cout << "\nconvert_str_t(const in_char_type* ap_instr,");
+    // IRSSTRDEFS_LOG(cout << "size_t a_instr_size = m_size_default)\n");
+    // IRSSTRDEFS_LOG(cout << type_to_string<in_char_type>() << " ap_instr = \"");
+    // IRSSTRDEFS_LOG(tcout(in_char_type()) << ap_instr);
+    // IRSSTRDEFS_LOG(cout << "\"" << endl);
 
     if (a_instr_size == m_size_default) {
       a_instr_size = strlenu(ap_instr) + 1;
@@ -433,6 +433,8 @@ public:
     out_char_type* p_outstr_next = mp_outstr;
 
     mbstate_t state;
+    memset(&state, 0, sizeof(mbstate_t));
+
     codecvt_base::result convert_result =
       code_convert(
         state,
