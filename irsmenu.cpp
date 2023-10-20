@@ -1149,6 +1149,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
                 }
                 break;
               }
+            case irskey_exp:
+              {
+                f_value_string[f_cur_symbol] = 'E';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "E");
+                f_cur_symbol++;
+                break;
+              }
             default :
               {
                 // Остальные клавиши игнорируем
