@@ -1156,6 +1156,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
                 f_cur_symbol++;
                 break;
               }
+            case irskey_change_sign:
+              {
+                f_value_string[f_cur_symbol] = '-';
+                mp_disp_drv->outtextpos(f_cur_symbol, EDIT_LINE, "-");
+                f_cur_symbol++;
+                break;
+              }
             default :
               {
                 // Остальные клавиши игнорируем
