@@ -2252,7 +2252,7 @@ void irs::hardflow::prologix_flow_t::tick()
       switch (m_fixed_flow.write_status()) {
         case irs::hardflow::fixed_flow_t::status_success: {
           m_init_count++;
-        }
+        } [[fallthrough]]; // TODO: Не уверен нужно ли ставить break
         case irs::hardflow::fixed_flow_t::status_error: {
           m_init_mode = mode_start;
         } break;

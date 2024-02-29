@@ -1,4 +1,4 @@
-﻿//! \file
+//! \file
 //! \ingroup container_group
 //! \ingroup in_out_group
 //! \brief ������� ��� ������ � mxdata_t

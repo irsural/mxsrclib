@@ -43,9 +43,12 @@ class ni_usb_gpib_t
 private:
   // Макросы для подключения функций и переменных gpib-32.dll
   #define DEF_DLL_PROC(_LIB_, _PROC_)\
-  {\
+  {                                  \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wcast-function-type\"") \
     f_##_PROC_ = reinterpret_cast<_PROC_##_t>(\
-    GetProcAddress(_LIB_, #_PROC_));\
+    GetProcAddress(_LIB_, #_PROC_)); \
+    _Pragma("GCC diagnostic pop") \
     if (!f_##_PROC_) goto def_dll_err;\
   }
   #define DEF_DLL_VAR(_LIB_, _TYPE_, _VAR_)\

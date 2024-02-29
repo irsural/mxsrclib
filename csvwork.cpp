@@ -48,7 +48,7 @@ void csv_file::assign_elem(list_type &a_elem_array,
   list_it_type it = find_if(a_elem_array.begin(), a_elem_array.end(),
     pair_first_equal(name_str));
   if (it == a_elem_array.end()) {
-    a_elem_array.push_back(make_pair(name_str, a_elem));
+    a_elem_array.emplace_back(name_str, a_elem);
   } else {
     it->second = a_elem;
   }
