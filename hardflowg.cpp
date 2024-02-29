@@ -359,7 +359,10 @@ string narrow( const wstring& str )
                   stm << ctfacet.narrow( str[i], 0 ) ;
     return stm.str() ;
 }
-
+string narrow( const string& str )
+{
+  return string(str);
+}
 bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
