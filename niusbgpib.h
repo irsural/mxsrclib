@@ -151,7 +151,7 @@ public:
       }
       #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
     } else {
-      f_Gpib32Lib = LoadLibraryW(a_dll_file_name.c_str());
+      f_Gpib32Lib = LoadLibrary(a_dll_file_name.c_str());
       if (f_Gpib32Lib) {
         IRS_LIB_DBG_MSG(irs::str_conv<irs::irs_string_t>(irst("Загружена ") +
           a_dll_file_name).c_str());
