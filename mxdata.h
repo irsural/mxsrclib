@@ -1,15 +1,15 @@
 //! \file
 //! \ingroup container_group
 //! \ingroup in_out_group
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ mxdata_t
+//! \brief Утилиты для работы с mxdata_t
 //!
-//! пїЅпїЅпїЅпїЅ: 24.04.2011
-//! пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ: 21.09.2009
+//! Дата: 24.04.2011
+//! Ранняя дата: 21.09.2009
 
 #ifndef mxdataH
 #define mxdataH
 
-// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+// Номер файла
 #define MXDATAH_IDX 2
 
 #include <irsdefs.h>
@@ -48,7 +48,7 @@ public:
   virtual void abort() = 0;
 };
 
-//! \brief пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Класс упрощённого доступа к памяти
 
 class comm_data_t
 {
@@ -63,7 +63,7 @@ public:
   virtual void tick() = 0;
 };
 
-//! \brief пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Класс доступа к памяти со страничной организацией
 class page_mem_t
 {
 public:
@@ -77,8 +77,8 @@ public:
   virtual void tick() = 0;
 };
 
-//! \brief пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//!   пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Класс доступа к памяти со страничной организацией и разными размерами
+//!   страниц
 class various_page_mem_t
 {
 public:
@@ -97,11 +97,11 @@ public:
   virtual void tick() = 0;
 };
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ end() пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка итератора с произвольным доступом на попадание внутрь
+//! контейнера, равенство end() является допустимым
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ raw_data_t
+//! Возвращает true, если итератор внутри контейнера
+//! Работает также на указателях и контейнерах типа raw_data_t
 template <class C, class I>
 bool check_iterator(C& a_container, I a_iterator)
 {
@@ -109,11 +109,11 @@ bool check_iterator(C& a_container, I a_iterator)
     (a_iterator <= a_container.end());
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ end() пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка итератора с произвольным доступом на попадание внутрь
+//! контейнера, равенство end() не допускается
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ raw_data_t
+//! Возвращает true, если итератор внутри контейнера
+//! Работает также на указателях и контейнерах типа raw_data_t
 template <class C, class I>
 bool check_iterator_strict(C& a_container, I a_iterator)
 {
@@ -121,12 +121,12 @@ bool check_iterator_strict(C& a_container, I a_iterator)
     (a_iterator < a_container.end());
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка двух итератора с произвольным доступом на попадание внутрь
+//! контейнера
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ begin <= end
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ end() пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ raw_data_t
+//! Возвращает true, если оба итератора внутри контейнера и begin <= end
+//! Равенство итератора end() является допустимым
+//! Работает также на указателях и контейнерах типа raw_data_t
 template <class C, class I>
 bool check_iterator(C& a_container, I a_iterator_begin, I a_iterator_end)
 {
@@ -135,12 +135,12 @@ bool check_iterator(C& a_container, I a_iterator_begin, I a_iterator_end)
     check_iterator(a_container, a_iterator_end);
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка двух итератора с произвольным доступом на попадание внутрь
+//! контейнера
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ begin <= end
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ end() пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ a_iterator_end
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ raw_data_t
+//! Возвращает true, если оба итератора внутри контейнера и begin <= end
+//! Допускается равенство end() только параметра a_iterator_end
+//! Работает также на указателях и контейнерах типа raw_data_t
 template <class C, class I>
 bool check_iterator_strict(C& a_container, I a_iterator_begin, I a_iterator_end)
 {
@@ -149,20 +149,20 @@ bool check_iterator_strict(C& a_container, I a_iterator_begin, I a_iterator_end)
     check_iterator(a_container, a_iterator_end);
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка индекса в контейнере с произвольным доступом на попадание
+//! внутрь контейнера
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! Возвращает true, если индекс внутри контейнера
 template <class C, class S>
 bool check_index(C& a_container, S a_index)
 {
   return check_iterator_strict(a_container, a_container.begin() + a_index);
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-//! пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Проверка диапазона в контейнере с произвольным доступом на попадание
+//! внутрь контейнера
 //!
-//! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! Возвращает true, если индекс внутри контейнера
 template <class C, class S>
 bool check_index(C& a_container, S a_index, S a_size)
 {
@@ -170,23 +170,23 @@ bool check_index(C& a_container, S a_index, S a_size)
     a_container.begin() + a_index + a_size);
 }
 
-// пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Тип для параметра - изменение при первом соединении
 enum change_data_first_connect_t {
   change_on_first_connect,
   not_change_on_first_connect
 };
 
-// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ conn_data_t
+// Класс проверки изменения для conn_data_t
 template <class T, int size = sizeof(T)>
 class change_data_t
 {
 public:
   change_data_t(const irs::conn_data_t<T, size, false> *ap_conn_data = IRS_NULL,
     change_data_first_connect_t a_first_connect_change =
-    not_change_on_first_connect);
+      not_change_on_first_connect);
   void connect(const irs::conn_data_t<T, size, false> *ap_conn_data,
     change_data_first_connect_t a_first_connect_change =
-    not_change_on_first_connect);
+      not_change_on_first_connect);
   bool changed();
 private:
   irs_uarc m_index;
@@ -245,16 +245,16 @@ bool change_data_t<T, size>::changed()
   return result;
 }
 
-// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ bit_data_t
+// Класс проверки изменения для bit_data_t
 class change_bit_t
 {
 public:
   change_bit_t(const bit_data_t *ap_bit_data = 0,
     change_data_first_connect_t a_first_connect_change =
-    not_change_on_first_connect);
+      not_change_on_first_connect);
   void connect(const bit_data_t *ap_bit_data,
     change_data_first_connect_t a_first_connect_change =
-    not_change_on_first_connect);
+      not_change_on_first_connect);
   bool changed();
 private:
   //static const irs_uarc m_bit_size = 1;
@@ -267,7 +267,7 @@ private:
   change_data_first_connect_t m_first_connect_change;
 };
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ mxdata_t пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+// Объединение нескольких разнородных классов mxdata_t в один класс
 class collect_data_t: public mxdata_t
 {
 public:
@@ -314,12 +314,12 @@ private:
     irs_uarc a_bit_index);
 };
 
-// пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Тип для параметра - изменение при соединении объекта
 enum change_on_connect_t {
   change_on_connect,
   not_change_on_connect
 };
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Equal пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ change_obj_t
+// Дефолтовый предикат Equal для класса change_obj_t
 template <class T, class Prev>
 struct change_obj_pred_def_t {
   static inline bool equal(const T& obj_first, const T& obj_second)
@@ -331,7 +331,7 @@ struct change_obj_pred_def_t {
     return obj;
   }
 };
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Проверка объекта на изменение
 template <class T, class Prev = T,
   class Pred = change_obj_pred_def_t<T, Prev> >
 class change_obj_t
@@ -339,7 +339,7 @@ class change_obj_t
 public:
   change_obj_t(T* ap_obj = IRS_NULL,
     change_on_connect_t a_change_on_connect =
-    not_change_on_connect);
+      not_change_on_connect);
   void connect(T* ap_obj);
   bool changed();
   void add_event(mxfact_event_t *ap_event);
@@ -404,7 +404,7 @@ void change_obj_t<T, Prev, Pred>::change_on_connect_off()
   m_change_on_connect = not_change_on_connect;
 }
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
+// Возвращает входное значение и сбрасывает его
 template <class T>
 inline T reset_val(T* p_val, T zero_val = T())
 {
@@ -413,7 +413,7 @@ inline T reset_val(T* p_val, T zero_val = T())
   return val_save;
 }
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ C-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+// Приведение некоторых C-функций к шаблонному типу
 template <class T>
 inline void memsetex(T* ap_data, const T& a_fill_elem, size_t a_size)
 {
@@ -435,7 +435,7 @@ inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
-  ));
+      ));
 }
 template <class T>
 inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
@@ -446,7 +446,7 @@ inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
-  ));
+      ));
 }
 
 template <class T>
@@ -462,30 +462,30 @@ inline int memcmpex(
   );
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ std::vector
+//! \brief Возвращает указатель на данные, хранящиеся в std::vector
 template <class T>
 T* vector_data(vector<T>& a_v, size_t a_pos = 0)
 {
   return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ std::vector
+//! \brief Возвращает указатель на данные, хранящиеся в std::vector
 template <class T>
 const T* vector_data(const vector<T>& a_v, size_t a_pos = 0)
 {
   return (a_pos < a_v.size()) ? &a_v[a_pos] : IRS_NULL;
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ std::vector<T>
+//! \brief Контейнер сырых данных с элементами интерфейса std::vector<T>
 //! \authors
 //! - Krasheninnikov Maxim\n
-//!     пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//!     Первоначальная реализация
 //! - Lyashchov Maksim\n
-//!     пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ std::vector<T>
+//!     Добавление методов, подобных тем, что имеются у std::vector<T>
 //!
-//! пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ std::vector<T>,
-//!   пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ
-//!   пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+//! Этот контейнер реализован в рамках альтернативы контейнеру std::vector<T>,
+//!   для тех случаев, когда необходимо записывать и читать данные из
+//!   контейнера в виде массива данных.
 template <class T>
 class raw_data_t
 {
@@ -523,16 +523,16 @@ public:
   inline void swap(raw_data_t<T>* ap_raw_data);
 private:
   enum {
-    #ifdef __ICCAVR__
+#ifdef __ICCAVR__
     m_capacity_min = 1
-    #else //__ICCAVR__
+#else //__ICCAVR__
     m_capacity_min = 16
-    #endif //__ICCAVR__
+#endif //__ICCAVR__
   };
 
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   size_type m_size;
   size_type m_capacity;
   pointer mp_data;
@@ -541,21 +541,21 @@ private:
 };
 template <class T>
 raw_data_t<T>::raw_data_t(size_type a_size):
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   m_size(a_size),
   m_capacity((m_size > m_capacity_min)?m_size:
-    static_cast<size_t>(m_capacity_min)),
+                                       static_cast<size_t>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memsetex(mp_data, m_size);
 }
 template <class T>
 raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(a_raw_data.m_bad_index_value),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   m_size(a_raw_data.m_size),
   m_capacity(a_raw_data.m_capacity),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
@@ -564,12 +564,12 @@ raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
 }
 template <class T>
 raw_data_t<T>::raw_data_t(const_pointer ap_data, size_type a_size):
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   m_size(a_size),
   m_capacity((m_size > m_capacity_min) ?
-    m_size : static_cast<size_type>(m_capacity_min)),
+                                       m_size : static_cast<size_type>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memcpyex(mp_data, ap_data, m_size);
@@ -584,11 +584,11 @@ inline typename raw_data_t<T>::reference
   raw_data_t<T>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
@@ -596,11 +596,11 @@ inline typename raw_data_t<T>::const_reference
   raw_data_t<T>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
@@ -615,11 +615,11 @@ template <class T>
 inline typename raw_data_t<T>::pointer
   raw_data_t<T>::data()
 {
-  #ifdef IRS_LIB_DEBUG
+#ifdef IRS_LIB_DEBUG
   return size() ? mp_data : IRS_NULL;
-  #else // !IRS_DEBUG
+#else // !IRS_DEBUG
   return mp_data;
-  #endif // !IRS_DEBUG
+#endif // !IRS_DEBUG
 }
 template <class T>
 inline typename raw_data_t<T>::const_pointer
@@ -676,7 +676,7 @@ template <class T>
 void raw_data_t<T>::reserve_raw(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (a_capacity < m_capacity_min) return;
   #endif //IRS_LIB_CHECK
   if (a_capacity == m_capacity) return;
@@ -698,11 +698,11 @@ void raw_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
-    #ifdef __ICCAVR__
+#ifdef __ICCAVR__
     size_type new_capacity = new_size;
-    #else //__ICCAVR__
+#else //__ICCAVR__
     size_type new_capacity = max(m_capacity*2, new_size);
-    #endif //__ICCAVR__
+#endif //__ICCAVR__
     reserve_raw(new_capacity);
     size_type delta = new_size - m_size;
     memsetex(mp_data + m_size, delta);
@@ -722,22 +722,22 @@ void raw_data_t<T>::insert(pointer ap_pos, const_pointer ap_first,
   const size_type insert_bloc_size = ap_last - ap_first;
   const size_type new_size = m_size + insert_bloc_size;
 
-  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ memmoveex,
-  // пїЅпїЅпїЅпїЅпїЅ size() == 0, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ap_first, new_size пїЅпїЅпїЅпїЅпїЅ
-  // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ IRS_NULL, пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ memmoveex пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  // Это условие нужно, чтобы исключить вызов функции memmoveex,
+  // когда size() == 0, ибо тогда параметры ap_first, new_size могут
+  // быть равны IRS_NULL, и функция memmoveex поднимет исключение
   if (new_size > m_size) {
     IRS_LIB_ERROR_IF_NOT((ap_last < data()) || (ap_first >= (data() + size())),
       ec_standard,
-      "пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+      "Блок памяти должен быть внешним по отношению к приемному контейнеру");
     const size_type pos = ap_pos - data();
     const size_type move_bloc_size = (data()+size()) - ap_pos;
 
     resize(new_size);
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Смещаем данные на размер вставляемого блока вправо
     pointer p_pos = data() + pos;
     pointer dest = p_pos + insert_bloc_size;
     memmoveex(dest, p_pos, move_bloc_size);
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+    // Вставляем блок
     memcpyex(p_pos, ap_first, insert_bloc_size);
   }
 }
@@ -746,8 +746,8 @@ typename raw_data_t<T>::pointer raw_data_t<T>::insert(pointer ap_pos,
   const_reference a_value)
 {
   IRS_LIB_ERROR_IF_NOT((ap_pos >= data()) && (ap_pos <= data()+size()),
-    ec_standard, "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
-  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
+    ec_standard, "Выход за пределы диапазона");
+  // Позиция от нуля
   const size_type pos = ap_pos - data();
   const size_type old_size = m_size;
   resize(size() + 1);
@@ -755,7 +755,7 @@ typename raw_data_t<T>::pointer raw_data_t<T>::insert(pointer ap_pos,
   if ((old_size != 0) && (pos != old_size)) {
     pointer dest = p_pos + 1;
     const size_type move_bloc_size = old_size - pos;
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Смещаем данные на одну позицию вправо
     memmoveex(dest, p_pos, move_bloc_size);
   }
   *p_pos = a_value;
@@ -766,13 +766,13 @@ typename raw_data_t<T>::pointer raw_data_t<T>::erase(
   pointer ap_first, pointer ap_last)
 {
   IRS_LIB_ERROR_IF_NOT((ap_first >= data()) && (ap_first <= (data()+size())),
-    ec_standard, "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+    ec_standard, "Выход за пределы диапазона");
   IRS_LIB_ERROR_IF_NOT((ap_last >= data()) && (ap_last <= (data()+size())),
-    ec_standard, "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+    ec_standard, "Выход за пределы диапазона");
   size_type new_size = size() - (ap_last - ap_first);
-  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ memmoveex,
-  // пїЅпїЅпїЅпїЅпїЅ size() == 0, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ap_first, new_size пїЅпїЅпїЅпїЅпїЅ
-  // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ IRS_NULL, пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ memmoveex пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  // Это условие нужно, чтобы исключить вызов функции memmoveex,
+  // когда size() == 0, ибо тогда параметры ap_first, new_size могут
+  // быть равны IRS_NULL, и функция memmoveex поднимет исключение
   if (size() > 0) {
     const size_type move_bloc_size = (data()+size()) - ap_last;
     memmoveex(ap_first, ap_last, move_bloc_size);
@@ -783,9 +783,9 @@ typename raw_data_t<T>::pointer raw_data_t<T>::erase(
 template <class T>
 typename raw_data_t<T>::pointer raw_data_t<T>::erase(pointer ap_pos)
 {
-  IRS_LIB_ERROR_IF(empty(), ec_standard, "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ");
+  IRS_LIB_ERROR_IF(empty(), ec_standard, "Контейнер уже пустой");
   IRS_LIB_ERROR_IF_NOT((ap_pos >= data()) && (ap_pos <end()), ec_standard,
-    "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+    "Выход за пределы диапазона");
   return erase(ap_pos, ap_pos + 1);
 }
 template <class T>
@@ -810,7 +810,7 @@ inline void swap(irs::raw_data_t<T>& a_raw_data_first,
   a_raw_data_first.swap(&a_raw_data_second);
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Контейнер представления сырых данных одного типа в виде другого
 template <class T, class VT>
 class raw_data_view_t
 {
@@ -845,26 +845,26 @@ public:
   inline void clear();
   inline void swap(raw_data_view_t* ap_raw_data_view);
 private:
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   viewed_type* mp_viewed_data;
 };
 template <class T, class VT>
 raw_data_view_t<T, VT>::raw_data_view_t(
   const raw_data_view_t<T, VT>& a_raw_data_view
-):
-  #ifdef IRS_LIB_CHECK
+  ):
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   mp_viewed_data(a_raw_data_view.mp_viewed_data)
 {
 }
 template <class T, class VT>
 raw_data_view_t<T, VT>::raw_data_view_t(viewed_type* ap_viewed_data):
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   mp_viewed_data(ap_viewed_data)
 {
 }
@@ -873,11 +873,11 @@ inline typename raw_data_view_t<T, VT>::reference
   raw_data_view_t<T, VT>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   pointer this_data = reinterpret_cast<pointer>(mp_viewed_data->data());
   return this_data[a_index];
 }
@@ -886,11 +886,11 @@ inline typename raw_data_view_t<T, VT>::const_reference
   raw_data_view_t<T, VT>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   const_pointer this_data =
     reinterpret_cast<const_pointer>(mp_viewed_data->data());
   return this_data[a_index];
@@ -995,7 +995,7 @@ inline void swap(irs::raw_data_view_t<T, VT>& a_raw_data_view_first,
   a_raw_data_view_first.swap(&a_raw_data_view_second);
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ C-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Класс контейнер для стандартного C-массива
 template <class T>
 class c_array_view_t
 {
@@ -1020,29 +1020,29 @@ public:
   inline const_reference operator[](size_type a_index) const;
 private:
   pointer mp_data;
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   size_type m_size;
 };
 template <class T>
 inline c_array_view_t<T>::c_array_view_t(pointer ap_data,
   size_type a_size
-):
+  ):
   mp_data(ap_data),
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   m_size(a_size)
 {
 }
 template <class T>
 inline c_array_view_t<T>::c_array_view_t(const c_array_view_t<T> &a_c_array_view
-):
+  ):
   mp_data(a_c_array_view.mp_data),
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   m_bad_index_value(a_c_array_view.m_bad_index_value),
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   m_size(a_c_array_view.m_size)
 {
 }
@@ -1088,48 +1088,48 @@ inline typename c_array_view_t<T>::reference c_array_view_t<T>::operator[](
   size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
 inline typename c_array_view_t<T>::const_reference
-c_array_view_t<T>::operator[](size_type a_index) const
+  c_array_view_t<T>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-  #ifdef IRS_LIB_CHECK
+#ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 
-//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//! \brief Копирование с проверкой
 template <class src_type, class dest_type>
 inline void mem_copy(const src_type& a_src_data, size_t a_src_index,
   dest_type& a_dest_data, size_t a_dest_index, size_t a_size)
 {
-  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
+#if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
   bool is_out_of_range = !check_index(a_src_data, a_src_index, a_size) ||
     !check_index(a_dest_data, a_dest_index, a_size);
-  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
+#endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
   IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
-    "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ mem_copy");
-  #ifdef IRS_LIB_CHECK
+    "Выход за диапазон в функции mem_copy");
+#ifdef IRS_LIB_CHECK
   if (is_out_of_range) {
     return;
   }
-  #endif //IRS_LIB_CHECK
+#endif //IRS_LIB_CHECK
 
   memcpyex(a_dest_data.data() + a_dest_index,
     a_src_data.data() + a_src_index, a_size);
 }
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+// Очередь сырых данных
 template <class T, class Al = allocator<T> >
 class deque_data_t
 {
@@ -1179,11 +1179,11 @@ public:
 private:
   void reserve_buf(size_type a_capacity);
   enum {
-    #ifdef __ICCAVR__
+#ifdef __ICCAVR__
     m_capacity_min = 1
-    #else //__ICCAVR__
+#else //__ICCAVR__
     m_capacity_min = 16
-    #endif //__ICCAVR__
+#endif //__ICCAVR__
   };
   _Alloc m_alloc;
 
@@ -1198,7 +1198,7 @@ irs::deque_data_t<T, Al>::deque_data_t(size_type a_size):
   m_alloc(Al()),
   m_ring_size(a_size),
   m_capacity((m_ring_size > m_capacity_min) ? m_ring_size :
-    static_cast<size_t>(m_capacity_min)),
+                                            static_cast<size_t>(m_capacity_min)),
   mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(0)
 {
@@ -1254,7 +1254,7 @@ template <class T, class Al>
 inline typename irs::deque_data_t<T, Al>::reference
   irs::deque_data_t<T, Al>::operator[](size_type a_index)
 {
-  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
 
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
@@ -1270,7 +1270,7 @@ template <class T, class Al>
 inline typename irs::deque_data_t<T, Al>::const_reference
   irs::deque_data_t<T, Al>::operator[](size_type a_index) const
 {
-  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
+  IRS_LIB_ERROR_IF_NOT(a_index < m_ring_size, ec_standard, "Выход за пределы");
   pointer p_elem = IRS_NULL;
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (a_index < buf_right_part_size) {
@@ -1342,15 +1342,15 @@ template <class T, class Al>
 void irs::deque_data_t<T, Al>::push_back(
   const_pointer ap_first, const_pointer ap_last)
 {
-  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+  // Размер вставляемых данных
   const size_type insert_data_size = (ap_last - ap_first);
   const size_type old_ring_size = m_ring_size;
   const size_type new_ring_size = insert_data_size + m_ring_size;
   resize(new_ring_size);
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
   if (buf_right_part_size < old_ring_size) {
-    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    // Старые элементы заполняют всю правую часть
+    // Вставляем элементы в левую часть, после старых элементов
     pointer dest = mp_buf + (old_ring_size - buf_right_part_size);
     memcpyex(dest, ap_first, insert_data_size);
   } else {
@@ -1375,7 +1375,7 @@ template <class T, class Al>
 void irs::deque_data_t<T, Al>::push_front(
   const_pointer ap_first, const_pointer ap_last)
 {
-  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+  // Размер вставляемых данных
   const size_type insert_data_size = (ap_last - ap_first);
   const size_type old_ring_size = m_ring_size;
   const size_type new_ring_size = insert_data_size + m_ring_size;
@@ -1383,8 +1383,8 @@ void irs::deque_data_t<T, Al>::push_front(
   const size_type buf_right_part_size = m_capacity - m_ring_begin_pos;
 
   if (buf_right_part_size < old_ring_size) {
-    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Старые элементы заполняют всю правую часть
+    // Вставляем элементы в левую половину, перед правой частью
     pointer dest = mp_buf + (m_ring_begin_pos - insert_data_size);
     memcpyex(dest, ap_first, insert_data_size);
     m_ring_begin_pos -= insert_data_size;
@@ -1445,7 +1445,7 @@ void irs::deque_data_t<T, Al>::copy_to(size_type a_pos, size_type a_size,
     memcpyex(ap_dest_first + size_copy_data_from_buf_right_part, mp_buf,
       copy_data_size - size_copy_data_from_buf_right_part);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    // Дополнительное копирование из левой части буфера не требуется
   }
 }
 
@@ -1483,7 +1483,7 @@ void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
       memcpyex(p_new_buf + size_copy_data_from_buf_right_part, mp_buf,
         new_ring_size - size_copy_data_from_buf_right_part);
     } else {
-      // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+      // Дополнительное копирование из левой части буфера не требуется
     }
     m_alloc.deallocate(mp_buf, m_capacity);
     mp_buf = p_new_buf;
@@ -1491,7 +1491,7 @@ void irs::deque_data_t<T, Al>::reserve_buf(size_type a_capacity)
     m_ring_size = new_ring_size;
     m_ring_begin_pos = 0;
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    // Запрашиваемое количество памяти уже выделено
   }
 }
 
@@ -1510,13 +1510,13 @@ bool deque_data_test()
   typedef T testing_type;
   bool test_success = true;
   irs::deque_data_t<testing_type, Al> deque_data;
-  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  // Создаем и заполняем буфер тестовыми данными
   const size_type buf_size = 100;
   testing_type test_data_buf[buf_size];
   for (size_type i = 0; i < buf_size; i++) {
     test_data_buf[i] = i;
   }
-  // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+  // Тест на вставку, копирование и удаление данных
   deque_data.push_back(test_data_buf, test_data_buf + buf_size);
   test_success = (buf_size == deque_data.size());
   IRS_LIB_ASSERT(test_success);
@@ -1527,7 +1527,7 @@ bool deque_data_test()
     test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     const size_type pop_data_size = buf_size/2;
@@ -1539,7 +1539,7 @@ bool deque_data_test()
     test_success = (deque_data.size() == buf_size);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     testing_type buf[buf_size];
@@ -1548,7 +1548,7 @@ bool deque_data_test()
     test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     deque_data.reserve(buf_size * 10);
@@ -1559,14 +1559,14 @@ bool deque_data_test()
     test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     deque_data.clear();
     test_success = (deque_data.size() == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     deque_data.reserve(0);
@@ -1574,7 +1574,7 @@ bool deque_data_test()
     test_success = (buf_size == deque_data.size());
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     testing_type buf[buf_size];
@@ -1583,7 +1583,7 @@ bool deque_data_test()
     test_success = (memcmpex(buf, test_data_buf, buf_size) == 0);
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     for (size_type i = 0; i < buf_size; i++) {
@@ -1591,12 +1591,12 @@ bool deque_data_test()
         test_success = false;
         break;
       } else {
-        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        // Продолжаем проверку
       }
     }
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   if (test_success) {
     irs::deque_data_t<testing_type, Al> deque_data_second;
@@ -1607,7 +1607,7 @@ bool deque_data_test()
           test_success = false;
           break;
         } else {
-          // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+          // Продолжаем проверку
         }
       }
     } else {
@@ -1615,14 +1615,14 @@ bool deque_data_test()
     }
     IRS_LIB_ASSERT(test_success);
   } else {
-    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Произошла ошибка
   }
   return test_success;
 }
 
 #endif // IRS_LIB_DEBUG
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+// Дескриптор объекта с автоматическим уничтожением объекта по счетчику ссылок
 template <class T>
 struct handle_rep_t
 {
@@ -1646,17 +1646,17 @@ class handle_t
 public:
   handle_t(T* ap_object = IRS_NULL);
   handle_t(const handle_t& a_handle);
-  #if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
+#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
     (defined(__ICCARM__) && __VER__ >= 7000000)
   template <class T2>
   handle_t(const handle_t<T2>& a_handle);
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
+#endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
   ~handle_t();
   void operator=(const handle_t& a_handle);
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
   template <class T2>
   void operator=(const handle_t<T2>& a_handle);
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
   T& operator*() const;
   T* operator->() const;
   T* get() const;
@@ -1664,10 +1664,10 @@ public:
   inline bool is_equal(const handle_t& a_handle) const;
   inline bool is_empty() const;
   inline void swap(handle_t& a_handle);
-  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
+#ifdef IRS_FULL_STDCPPLIB_SUPPORT
   template <class T2>
   inline void swap(handle_t<T2>& a_handle);
-  #endif // IRS_FULL_STDCPPLIB_SUPPORT
+#endif // IRS_FULL_STDCPPLIB_SUPPORT
 private:
   handle_rep_t<T>* mp_rep;
 };
@@ -1696,7 +1696,7 @@ inline bool operator!=(const handle_t<T>& a_first_handle,
 template <class T>
 handle_t<T>::handle_t(T* ap_object):
   mp_rep((ap_object == IRS_NULL)?IRS_NULL:
-    IRS_LIB_NEW_ASSERT(handle_rep_t<T>(1, ap_object), MXDATAH_IDX))
+                                 IRS_LIB_NEW_ASSERT(handle_rep_t<T>(1, ap_object), MXDATAH_IDX))
 {
 }
 template <class T>
@@ -1715,7 +1715,7 @@ handle_t<T>::handle_t(const handle_t<T2>& a_handle):
   mp_rep(reinterpret_cast<const handle_t<T>&>(a_handle).mp_rep)
 {
   #ifdef IRS_LIB_DEBUG
-  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ T2 пїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  // Проверяем, что преобразование из T2 в Т является допустимым
   T* p_other = static_cast<T*>(a_handle.get());
   if (get() == p_other) {
   #endif // IRS_LIB_DEBUG
@@ -1778,7 +1778,7 @@ void handle_t<T>::reset(T* ap_object)
     handle_t handle_copy(ap_object);
     swap(handle_copy);
   } else {
-    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    // Если дескриптор уже подключен к этому объекту, то ничего не делаем
   }
 }
 template <class T>
@@ -1825,7 +1825,7 @@ inline void handle_test()
 }
 #endif //NOP
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Зануление структур
 template <class T>
 struct zero_struct_t
 {
