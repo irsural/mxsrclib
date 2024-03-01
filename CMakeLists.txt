@@ -155,7 +155,7 @@ set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME libmxsrclib)
 if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(mxsrclib -lpsapi -lws2_32 -static)
 endif ()
-target_compile_options(mxsrclib PUBLIC
+target_compile_options(mxsrclib PRIVATE
         -finput-charset=CP1251
         -fPIC # Нужно для включения в dll
         -Wno-deprecated
