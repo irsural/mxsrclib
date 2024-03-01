@@ -596,6 +596,7 @@ irs::calc::stringns_t remove_not_digit(irs::calc::stringns_t a_str,
 }
 
 //! \brief Возвращает строку с удаленными символами, не являющимися буквами
+[[maybe_unused]]
 irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
   locale a_loc = irs::loc().get())
 {
