@@ -6,7 +6,7 @@ set(SOURCES
 )
 add_library(mxsrclib STATIC ${SOURCES})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
-target_link_libraries(mxsrclib STM32CubeF7)
+target_link_libraries(mxsrclib stm32cubef7)
 target_compile_options(mxsrclib PRIVATE
         -finput-charset=CP1251
         -Wno-deprecated
