@@ -1,6 +1,9 @@
 # mxsrclib ignore
 /tmpPrst.tgz
 /.directory
+.idea
+cmake*
+mxsrclib_utf-8
 
 # irs global ignore
 *.*~
