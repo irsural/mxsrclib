@@ -28,7 +28,6 @@ target_include_directories(mxsrclib PUBLIC ${INCLUDE_DIRS})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 target_link_libraries(mxsrclib stm32cubef7)
 target_compile_options(mxsrclib PRIVATE
-        -finput-charset=CP1251
         -Wno-deprecated
 )
 target_include_directories(mxsrclib PUBLIC
