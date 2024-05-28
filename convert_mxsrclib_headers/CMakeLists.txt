@@ -31,7 +31,7 @@ if(NOT DEFINED VERBOSE)
 endif()
 set(VERBOSE True)
 if(NOT DEFINED DEST)
-    set(DEST ${SOURCE_DIR})
+    set(DEST "${SOURCE_DIR}/mxsrclib_utf-8")
 endif()
 
 foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADER_PATH_LIST})
@@ -54,7 +54,7 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADER_PATH_LIST})
         message(STATUS "Путь внутри mxsrclib: ${SHORT_HEADER_PATH}")
     endif()
 
-    set(CONVERT_HEADER_PATH "${DEST}/mxsrclib_utf-8/${SHORT_HEADER_PATH}")
+    set(CONVERT_HEADER_PATH "${DEST}/${SHORT_HEADER_PATH}")
 
     if(${VERBOSE})
         message(STATUS "Путь сохранения сконвертированного файла: ${CONVERT_HEADER_PATH}")
