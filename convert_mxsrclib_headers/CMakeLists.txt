@@ -27,10 +27,10 @@ set(CONVERT_HEADER_PATH_LIST "")
 
 # Если небыли переданы аргументы, то задаются стандартные значения
 if(NOT DEFINED VERBOSE)
-    set(VERBOSE False})
+    set(VERBOSE False)
 endif()
-if(NOT DEFINED DEST)
-    set(DEST "${SOURCE_DIR}/mxsrclib_utf-8")
+if(NOT DEFINED UTF8_MXSRCLIB_HEADERS_DIR)
+    set(UTF8_MXSRCLIB_HEADERS_DIR "${SOURCE_DIR}/mxsrclib_utf-8")
 endif()
 
 foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADER_PATH_LIST})
@@ -53,7 +53,7 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADER_PATH_LIST})
         message(STATUS "Путь внутри mxsrclib: ${SHORT_HEADER_PATH}")
     endif()
 
-    set(CONVERT_HEADER_PATH "${DEST}/${SHORT_HEADER_PATH}")
+    set(CONVERT_HEADER_PATH "${UTF8_MXSRCLIB_HEADERS_DIR}/${SHORT_HEADER_PATH}")
 
     if(${VERBOSE})
         message(STATUS "Путь сохранения сконвертированного файла: ${CONVERT_HEADER_PATH}")
@@ -80,4 +80,4 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADER_PATH_LIST})
 endforeach ()
 
 add_custom_target(convert_mxsrclib_headers ALL DEPENDS "${CONVERT_HEADER_PATH_LIST}")
-set_target_properties(convert_mxsrclib_headers PROPERTIES CONVERTED_HEADERS_DIR "${DEST}")
+set_target_properties(convert_mxsrclib_headers PROPERTIES CONVERTED_HEADERS_DIR "${UTF8_MXSRCLIB_HEADERS_DIR}")
