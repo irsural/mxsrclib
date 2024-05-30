@@ -24,3 +24,4 @@ target_compile_options(mxsrclib PRIVATE
         -finput-charset=CP1251
         -Wno-deprecated
 )
+add_subdirectory(convert_mxsrclib_headers)
