@@ -101,13 +101,13 @@ if(NOT (MXSRCLIB_CONVERT_SYMBOL_ENCODING STREQUAL "CP1251"))
     add_subdirectory(convert_mxsrclib_headers)
     get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR convert_mxsrclib_headers CONVERTED_HEADERS_DIR)
     set(CONVERTED_MXSRCLIB_HEADERS
-            .
+            ${CONVERTED_MXSRCLIB_HEADERS_DIR}
             "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
     )
     if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
         list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
     endif()
 else()
-    set(CONVERTED_MXSRCLIB_HEADERS_DIR ${MXSRCLIB_HEADERS_DIR})
+    set(CONVERTED_MXSRCLIB_HEADERS ${MXSRCLIB_HEADERS_DIR})
 endif()
-target_include_directories(mxsrclib INTERFACE ${CONVERTED_MXSRCLIB_HEADERS_DIR})
+target_include_directories(mxsrclib INTERFACE ${CONVERTED_MXSRCLIB_HEADERS})
