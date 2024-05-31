@@ -13,6 +13,9 @@ endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "Compiler must be selected.")
 endif()
+if(NOT DEFINED IRSCONFIG_DIR)
+    message(FATAL_ERROR "Unable to find irsconfig file.")
+endif()
 
 set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -48,16 +51,16 @@ if(${VERBOSE})
 endif()
 
 # Подключение архитектурных директорий (если переменная MXSRCLIB_ARCH не равна "none")
-set(ORIGIN_HEADERS_FILE_LIST_arch "")
-set(ORIGIN_HEADERS_PATH_LIST_arch "")
+set(ORIGIN_HEADERS_FILES_LIST_arch "")
+set(ORIGIN_HEADERS_DIR_LIST_arch "")
 if(NOT (MXSRCLIB_ARCH STREQUAL "none"))
-    set(ORIGIN_HEADERS_PATH_LIST_arch "${MXSRCLIB_DIR}/arch/${MXSRCLIB_ARCH}")
-    file(GLOB_RECURSE ORIGIN_HEADERS_FILE_LIST_arch "${ORIGIN_HEADERS_PATH_LIST_arch}/*.h")
+    set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/arch/${MXSRCLIB_ARCH}")
+    file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
     # Для корректной работы архитектуры srm_st_hal необходимо подключить arm архитектуру
     if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
-        file(GLOB_RECURSE ORIGIN_HEADERS_FILE_LIST_arch_arm "${MXSRCLIB_DIR}/arch/arm/*.h")
-        list(APPEND ORIGIN_HEADERS_FILE_LIST_arch ORIGIN_HEADERS_FILE_LIST_arch_arm)
-        list(APPEND ORIGIN_HEADERS_PATH_LIST_arch "${MXSRCLIB_DIR}/arch/arm")
+        file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch_arm "${MXSRCLIB_DIR}/arch/arm/*.h")
+        list(APPEND ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_FILES_LIST_arch_arm}")
+        list(APPEND ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/arch/arm")
     endif()
 endif()
 
@@ -68,7 +71,8 @@ set(MXSRCLIB_SOURCES
 )
 set(MXSRCLIB_HEADERS_DIR
         .
-        ${ORIGIN_HEADERS_PATH_LIST_arch}
+        ${IRSCONFIG_DIR}
+        ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
 # Если выбран кросс-компилятор, то попытаться сконвертировать как статическую библиотеку,
@@ -81,10 +85,11 @@ project(mxsrclib)
 add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
 target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
-#target_link_libraries(mxsrclib stm32cubef7)
 
 # Выбор флагов компиляции в соответствии с компилятором
 if(CXX_COMPILER STREQUAL "g++" OR CXX_COMPILER STREQUAL "arm-none-eabi-g++")
+    # При кросс-компиляции на arm необходимо достать библиотеки из stm32cube
+    target_link_libraries(mxsrclib stm32cubef7)
     set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
 else()
     message(FATAL_ERROR "Unsupported compiler.")
