@@ -66,7 +66,7 @@ set(MXSRCLIB_SOURCES
         irscpu.cpp
         arch/arm_st_hal/counter.cpp
 )
-set(MXSRCLIB_HEADERS
+set(MXSRCLIB_HEADERS_DIR
         .
         ${ORIGIN_HEADERS_PATH_LIST_arch}
 )
@@ -79,7 +79,7 @@ endif()
 project(mxsrclib)
 
 add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
-target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS})
+target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 #target_link_libraries(mxsrclib stm32cubef7)
 
@@ -95,7 +95,14 @@ target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 if(NOT (MXSRCLIB_CONVERT_SYMBOL_ENCODING STREQUAL "CP1251"))
     add_subdirectory(convert_mxsrclib_headers)
     get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR convert_mxsrclib_headers CONVERTED_HEADERS_DIR)
+    set(CONVERTED_MXSRCLIB_HEADERS
+            .
+            "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
+    )
+    if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
+        list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
+    endif()
 else()
-    set(CONVERTED_MXSRCLIB_HEADERS_DIR ${MXSRCLIB_HEADERS})
+    set(CONVERTED_MXSRCLIB_HEADERS_DIR ${MXSRCLIB_HEADERS_DIR})
 endif()
 target_include_directories(mxsrclib INTERFACE ${CONVERTED_MXSRCLIB_HEADERS_DIR})

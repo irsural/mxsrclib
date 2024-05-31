@@ -54,4 +54,4 @@ endforeach ()
 
 # Создание таргета для подключения
 add_custom_target(convert_mxsrclib_headers ALL DEPENDS "${CONVERT_HEADER_PATH_LIST}")
-set_target_properties(convert_mxsrclib_headers PROPERTIES CONVERTED_HEADERS_DIR ${CONVERT_HEADER_PATH_LIST})
+set_target_properties(convert_mxsrclib_headers PROPERTIES CONVERTED_HEADERS_DIR ${CONVERTED_MXSRCLIB_HEADERS_DIR})
