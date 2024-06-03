@@ -91,6 +91,16 @@ target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 # Подключение сконвертированных (если выбран режим конвертации) заголовков
 if(${CONVERT_HEADERS})
     add_subdirectory(converted_headers)
+    add_dependencies(mxsrclib converted_headers)
+    get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR converted_headers CONVERTED_HEADERS_DIR)
+    set(CONVERTED_MXSRCLIB_HEADERS
+            ${CONVERTED_MXSRCLIB_HEADERS_DIR}
+            "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
+    )
+    if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
+        list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
+    endif()
+    target_include_directories(mxsrclib INTERFACE ${CONVERTED_MXSRCLIB_HEADERS})
 else()
     target_include_directories(mxsrclib INTERFACE ${MXSRCLIB_HEADERS_DIR})
 endif()
