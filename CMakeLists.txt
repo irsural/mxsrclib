@@ -7,8 +7,8 @@ endif()
 if(NOT DEFINED MXSRCLIB_ARCH)
     set(MXSRCLIB_ARCH "none")
 endif()
-if(NOT DEFINED MXSRCLIB_CONVERT_SYMBOL_ENCODING)
-    message(FATAL_ERROR "Uninitialized MXSRCLIB_CONVERT_SYMBOL_ENCODING variable.")
+if(NOT DEFINED CONVERT_HEADERS)
+    set(CONVERT_HEADERS False)
 endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "Compiler must be selected.")
@@ -28,14 +28,6 @@ if(NOT (MXSRCLIB_ARCH STREQUAL "none") AND NOT (MXSRCLIB_ARCH STREQUAL "arm") AN
     message(FATAL_ERROR "Invalid mxsrclib arch. For valid values refer to documentation.")
 else()
     message(STATUS "MXSRCLIB_ARCH: ${MXSRCLIB_ARCH}")
-endif()
-
-# Проверка на допустимое значение переменной MXSRCLIB_CONVERT_SYMBOL_ENCODING
-if(NOT (MXSRCLIB_CONVERT_SYMBOL_ENCODING STREQUAL "CP1251") AND
-        NOT (MXSRCLIB_CONVERT_SYMBOL_ENCODING STREQUAL "UTF-8"))
-    message(FATAL_ERROR "Invalid mxsrclib symbol encoding. For valid values refer to documentation.")
-else()
-    message(STATUS "MXSRCLIB_CONVERT_SYMBOL_ENCODING: ${MXSRCLIB_CONVERT_SYMBOL_ENCODING}")
 endif()
 
 # Получение компилятора без абсолютного пути
@@ -97,17 +89,8 @@ endif()
 target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 
 # Подключение сконвертированных (если выбран режим конвертации) заголовков
-if(NOT (MXSRCLIB_CONVERT_SYMBOL_ENCODING STREQUAL "CP1251"))
-    add_subdirectory(convert_mxsrclib_headers)
-    get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR convert_mxsrclib_headers CONVERTED_HEADERS_DIR)
-    set(CONVERTED_MXSRCLIB_HEADERS
-            ${CONVERTED_MXSRCLIB_HEADERS_DIR}
-            "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
-    )
-    if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
-        list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
-    endif()
+if(${CONVERT_HEADERS})
+    add_subdirectory(converted_headers)
 else()
-    set(CONVERTED_MXSRCLIB_HEADERS ${MXSRCLIB_HEADERS_DIR})
+    target_include_directories(mxsrclib INTERFACE ${MXSRCLIB_HEADERS_DIR})
 endif()
-target_include_directories(mxsrclib INTERFACE ${CONVERTED_MXSRCLIB_HEADERS})

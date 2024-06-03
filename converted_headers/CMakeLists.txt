@@ -4,7 +4,7 @@ if (NOT Iconv_FOUND)
 endif ()
 
 file(GLOB ORIGIN_HEADERS_FILES_LIST "${MXSRCLIB_DIR}/*.h")
-set(CONVERTED_MXSRCLIB_HEADERS_DIR "${MXSRCLIB_DIR}/mxsrclib_${MXSRCLIB_CONVERT_SYMBOL_ENCODING}")
+set(CONVERTED_MXSRCLIB_HEADERS_DIR "${MXSRCLIB_DIR}/mxsrclib_utf8")
 
 list(APPEND ORIGIN_HEADERS_FILES_LIST "${ORIGIN_HEADERS_FILES_LIST_arch}")
 
@@ -12,9 +12,6 @@ set(CONVERT_HEADER_PATH_LIST "")
 # Цикл конвертации каждого файла
 foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADERS_FILES_LIST})
     set(CONVERT_HEADER_PATH "")
-    if(${VERBOSE})
-        message(STATUS "Конвертация из CP1251 в ${MXSRCLIB_CONVERT_SYMBOL_ENCODING}")
-    endif()
     # Расчет пути сконвертированного файла на основе переменной CONVERTED_MXSRCLIB_HEADERS_DIR и пути внутри директории mxsrclib
     string(FIND "${ORIGIN_HEADER_PATH}" "mxsrclib" INDEX_START REVERSE)
     if(${VERBOSE})
@@ -52,6 +49,14 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADERS_FILES_LIST})
     endif ()
 endforeach ()
 
+set(CONVERTED_MXSRCLIB_HEADERS
+        ${CONVERTED_MXSRCLIB_HEADERS_DIR}
+        "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
+)
+if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
+    list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
+endif()
+
 # Создание таргета для подключения
-add_custom_target(convert_mxsrclib_headers ALL DEPENDS "${CONVERT_HEADER_PATH_LIST}")
-set_target_properties(convert_mxsrclib_headers PROPERTIES CONVERTED_HEADERS_DIR ${CONVERTED_MXSRCLIB_HEADERS_DIR})
+add_library(converted_headers INTERFACE)
+target_include_directories(converted_headers INTERFACE ${CONVERTED_MXSRCLIB_HEADERS})
