@@ -93,10 +93,10 @@ if(${CONVERT_HEADERS})
     add_subdirectory(converted_headers)
     add_dependencies(mxsrclib converted_headers)
     get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR converted_headers CONVERTED_HEADERS_DIR)
-    set(CONVERTED_MXSRCLIB_HEADERS
-            ${CONVERTED_MXSRCLIB_HEADERS_DIR}
-            "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}"
-    )
+    set(CONVERTED_MXSRCLIB_HEADERS ${CONVERTED_MXSRCLIB_HEADERS_DIR})
+    if(NOT (MXSRCLIB_ARCH STREQUAL "none"))
+        list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}")
+    endif()
     if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
         list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/arm")
     endif()
