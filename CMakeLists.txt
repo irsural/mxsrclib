@@ -7,14 +7,14 @@ endif()
 if(NOT DEFINED MXSRCLIB_ARCH)
     set(MXSRCLIB_ARCH "none")
 endif()
-if(NOT DEFINED CONVERT_HEADERS)
-    set(CONVERT_HEADERS False)
+if(NOT DEFINED MXSRCLIB_UTF8)
+    set(MXSRCLIB_UTF8 False)
 endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
-    message(FATAL_ERROR "Compiler must be selected.")
+    message(FATAL_ERROR "Необходимо выбрать компилятор.")
 endif()
 if(NOT DEFINED IRSCONFIG_DIR)
-    message(FATAL_ERROR "Unable to find irsconfig file.")
+    message(FATAL_ERROR "Не указан путь до irsconfig.h файла")
 endif()
 
 set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -25,9 +25,11 @@ if(NOT (MXSRCLIB_ARCH STREQUAL "none") AND NOT (MXSRCLIB_ARCH STREQUAL "arm") AN
         NOT (MXSRCLIB_ARCH STREQUAL "cbuilder") AND NOT (MXSRCLIB_ARCH STREQUAL "dos32") AND
         NOT (MXSRCLIB_ARCH STREQUAL "linux") AND NOT (MXSRCLIB_ARCH STREQUAL "qt") AND
         NOT (MXSRCLIB_ARCH STREQUAL "visualcpp"))
-    message(FATAL_ERROR "Invalid mxsrclib arch. For valid values refer to documentation.")
+    message(FATAL_ERROR "Недопустимое значение переменной MXSRCLIB_ARCH")
 else()
-    message(STATUS "MXSRCLIB_ARCH: ${MXSRCLIB_ARCH}")
+    if(${VERBOSE})
+        message(STATUS "MXSRCLIB_ARCH: ${MXSRCLIB_ARCH}")
+    endif ()
 endif()
 
 # Получение компилятора без абсолютного пути
@@ -39,7 +41,7 @@ if(NOT (INDEX EQUAL -1))
 endif()
 
 if(${VERBOSE})
-    message(STATUS "Using compiler: ${CXX_COMPILER}")
+    message(STATUS "Используемый компилятор: ${CXX_COMPILER}")
 endif()
 
 # Подключение архитектурных директорий (если переменная MXSRCLIB_ARCH не равна "none")
@@ -48,7 +50,7 @@ set(ORIGIN_HEADERS_DIR_LIST_arch "")
 if(NOT (MXSRCLIB_ARCH STREQUAL "none"))
     set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/arch/${MXSRCLIB_ARCH}")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
-    # Для корректной работы архитектуры srm_st_hal необходимо подключить arm архитектуру
+    # Для корректной работы архитектуры stm_st_hal необходимо подключить arm архитектуру
     if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
         file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch_arm "${MXSRCLIB_DIR}/arch/arm/*.h")
         list(APPEND ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_FILES_LIST_arch_arm}")
@@ -67,7 +69,7 @@ set(MXSRCLIB_HEADERS_DIR
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
-# Если выбран кросс-компилятор, то попытаться сконвертировать как статическую библиотеку,
+# Если выбран кросс-компилятор, то попытаться скомпилировать как статическую библиотеку,
 # чтобы Clion не использовал тесты для ПК компиляторов
 if(CXX_COMPILER STREQUAL "arm-none-eabi-g++")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
@@ -84,15 +86,15 @@ if(CXX_COMPILER STREQUAL "g++" OR CXX_COMPILER STREQUAL "arm-none-eabi-g++")
     target_link_libraries(mxsrclib stm32cubef7)
     set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
 else()
-    message(FATAL_ERROR "Unsupported compiler.")
+    message(FATAL_ERROR "Компилятор не поддерживается.")
 endif()
 target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 
 # Подключение сконвертированных (если выбран режим конвертации) заголовков
-if(${CONVERT_HEADERS})
-    add_subdirectory(converted_headers)
-    add_dependencies(mxsrclib converted_headers)
-    get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR converted_headers CONVERTED_HEADERS_DIR)
+if(${MXSRCLIB_UTF8})
+    add_subdirectory(utf8_headers)
+    add_dependencies(mxsrclib utf8_headers)
+    get_target_property(CONVERTED_MXSRCLIB_HEADERS_DIR utf8_headers CONVERTED_HEADERS_DIR)
     set(CONVERTED_MXSRCLIB_HEADERS ${CONVERTED_MXSRCLIB_HEADERS_DIR})
     if(NOT (MXSRCLIB_ARCH STREQUAL "none"))
         list(APPEND CONVERTED_MXSRCLIB_HEADERS "${CONVERTED_MXSRCLIB_HEADERS_DIR}/arch/${MXSRCLIB_ARCH}")

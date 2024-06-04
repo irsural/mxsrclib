@@ -1,10 +1,10 @@
 include(FindIconv)
 if (NOT Iconv_FOUND)
-    message("Error iconv not found")
+    message("Не найден iconv")
 endif ()
 
 file(GLOB ORIGIN_HEADERS_FILES_LIST "${MXSRCLIB_DIR}/*.h")
-set(CONVERTED_MXSRCLIB_HEADERS_DIR "${MXSRCLIB_DIR}/converted_headers")
+set(CONVERTED_MXSRCLIB_HEADERS_DIR "${MXSRCLIB_DIR}/utf8_headers")
 
 list(APPEND ORIGIN_HEADERS_FILES_LIST "${ORIGIN_HEADERS_FILES_LIST_arch}")
 
@@ -47,10 +47,10 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADERS_FILES_LIST})
                 DEPENDS ${ORIGIN_HEADER_PATH}
         )
     else ()
-        error("Unexpected platform")
+        error("Неподдерживаемая платформа")
     endif ()
 endforeach ()
 
 # Создание таргета для подключения
-add_custom_target(converted_headers ALL DEPENDS "${CONVERT_HEADER_PATH_LIST}")
-set_target_properties(converted_headers PROPERTIES CONVERTED_HEADERS_DIR ${CONVERTED_MXSRCLIB_HEADERS_DIR})
+add_custom_target(utf8_headers ALL DEPENDS "${CONVERT_HEADER_PATH_LIST}")
+set_target_properties(utf8_headers PROPERTIES CONVERTED_HEADERS_DIR ${CONVERTED_MXSRCLIB_HEADERS_DIR})
