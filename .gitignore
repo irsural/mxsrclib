@@ -3,7 +3,7 @@
 /.directory
 .idea
 cmake*
-converted_headers/mxsrclib_utf8
+converted_headers/*.h
 
 # irs global ignore
 *.*~
