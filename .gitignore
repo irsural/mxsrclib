@@ -3,15 +3,7 @@
 /.directory
 .idea
 cmake*
-converted_headers/*.h
-converted_headers/arch/arm/*.h
-converted_headers/arch/arm_st_hal/*.h
-converted_headers/arch/avr/*.h
-converted_headers/arch/cbuilder/*.h
-converted_headers/arch/dos32/*.h
-converted_headers/arch/linux/*.h
-converted_headers/arch/qt/*.h
-converted_headers/arch/visualcpp/*.h
+utf8_headers/*.h
 
 # irs global ignore
 *.*~
