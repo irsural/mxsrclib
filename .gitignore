@@ -3,8 +3,8 @@
 /.directory
 .idea
 cmake*
-utf8_headers/*.h
-utf8_headers/arch
+utf8_headers/*
+!utf8_headers/CMakeLists.txt
 
 # irs global ignore
 *.*~
