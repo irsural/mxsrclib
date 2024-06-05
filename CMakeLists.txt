@@ -77,14 +77,6 @@ else()
     message(FATAL_ERROR "Недопустимое значение переменной MXSRCLIB_ARCH")
 endif()
 
-# Получение компилятора без абсолютного пути
-set(CXX_COMPILER ${CMAKE_CXX_COMPILER})
-string(FIND ${CMAKE_CXX_COMPILER} "/" INDEX_START REVERSE)
-if(NOT (INDEX EQUAL -1))
-    math(EXPR INDEX_START "${INDEX_START}+1")
-    string(SUBSTRING ${CMAKE_CXX_COMPILER} ${INDEX_START} -1 CXX_COMPILER)
-endif()
-
 if(${VERBOSE})
     message(STATUS "Используемый компилятор: ${CXX_COMPILER}")
 endif()
@@ -102,7 +94,7 @@ set(MXSRCLIB_HEADERS_DIR
 
 # Если выбран кросс-компилятор, то попытаться скомпилировать как статическую библиотеку,
 # чтобы Clion не использовал тесты для ПК компиляторов
-if(CXX_COMPILER STREQUAL "arm-none-eabi-g++")
+if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 endif()
 project(mxsrclib)
@@ -112,7 +104,7 @@ target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
 # Выбор флагов компиляции в соответствии с компилятором
-if(CXX_COMPILER STREQUAL "g++" OR CXX_COMPILER STREQUAL "arm-none-eabi-g++")
+if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+$")
     set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
 else()
     message(FATAL_ERROR "Компилятор не поддерживается.")
