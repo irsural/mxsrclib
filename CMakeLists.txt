@@ -113,10 +113,10 @@ target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 
 # Добавление зависимостей
 if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
-    if(TARGET ${ST_LIB_TARGET})
-        target_link_libraries(mxsrclib ${ST_LIB_TARGET})
+    if(TARGET ${MXSRCLIB_STM32CUBE_TARGET})
+        target_link_libraries(mxsrclib ${MXSRCLIB_STM32CUBE_TARGET})
     else()
-        message(FATAL_ERROR "Необходимо указать таргет с библиотеками архитектуры.")
+        message(FATAL_ERROR "Не указан таргет с библиотекой STM32Cube.")
     endif()
 endif()
 
