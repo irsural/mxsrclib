@@ -2815,7 +2815,7 @@ void irs::dac_ltc2622_t::tick()
         m_status = DAC_WRITE_REGB;
       }
 
-    } [[fallthrough]]; // TODO: Не уверен нужно ли ставить break
+    } // fall through
   case DAC_WRITE_REGB:
     {
       if (mp_spi->get_status() == irs::spi_t::FREE){

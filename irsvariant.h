@@ -549,7 +549,7 @@ inline variant_t& variant_t::assign_no_cast<variant_t>(
     } break;
     case var_type_unknown:
       IRS_LIB_ERROR(ec_standard, "Недопустимая операция для данного типа");
-      [[fallthrough]]; // TODO: Не уверен нужно ли ставить break
+      // fall through
     case var_type_array: {
       if (a_variant.type() == var_type_array) {
         *m_value.p_val_string_type = *a_variant.m_value.p_val_string_type;
