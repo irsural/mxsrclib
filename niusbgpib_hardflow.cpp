@@ -513,7 +513,6 @@ int time_s_to_timecode(const double a_time_s)
   return timecode;
 }
 
-[[maybe_unused]]
 irs::irs_string_t data_to_string_for_mlog(const irs::raw_data_t<irs_u8>& a_data)
 {
   strstream ostr;

@@ -161,10 +161,11 @@ target_compile_options(mxsrclib PRIVATE
         -Wno-deprecated
         -Wextra
         -Woverloaded-virtual
+        -Wimplicit-fallthrough
         -Wno-unused-parameter
         -Wno-unused-local-typedefs
         -Wno-misleading-indentation
         -Wno-unused-variable
-        -Wimplicit-fallthrough
+        -Wno-unused-function
 )
 target_include_directories(mxsrclib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/arch/qt)
