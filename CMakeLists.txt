@@ -113,10 +113,10 @@ target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
 
 # Добавление зависимостей
 if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
-    if(TARGET stm32cubef7)
-        target_link_libraries(mxsrclib stm32cubef7)
+    if(TARGET ${ST_LIB_TARGET})
+        target_link_libraries(mxsrclib ${ST_LIB_TARGET})
     else()
-        message(FATAL_ERROR "Необходимо наличие таргета 'stm32cubef7'.")
+        message(FATAL_ERROR "Необходимо указать таргет с библиотеками архитектуры.")
     endif()
 endif()
 
