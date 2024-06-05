@@ -899,8 +899,8 @@ bool hex_str_to_binary_data(const irs::string_t& a_str,
         convert_success = false;
         break;
       }
-      const int first_part = hex_data_map[static_cast<unsigned int>(a_str[elem_i])];
-      const int second_part = hex_data_map[static_cast<unsigned int>(a_str[elem_i + 1])];
+      const int first_part = hex_data_map[static_cast<unsigned char>(a_str[elem_i])];
+      const int second_part = hex_data_map[static_cast<unsigned char>(a_str[elem_i + 1])];
       if ((first_part == -1) || (second_part == -1)) {
         convert_success = false;
         break;
