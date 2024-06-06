@@ -287,6 +287,8 @@ public:
   }
   IRS_STRING_TYPE& operator=(const IRS_STRING_TYPE& strg)
   {
+    IRS_STRING_BASE& base = static_cast< IRS_STRING_BASE & >(*this);
+    base = strg;
     return *this;
   }
   IRS_STRING_TYPE& operator=(const IRS_STRING_CHAR_TYPE* cstr)
