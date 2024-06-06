@@ -183,10 +183,10 @@ class change_data_t
 public:
   change_data_t(const irs::conn_data_t<T, size, false> *ap_conn_data = IRS_NULL,
     change_data_first_connect_t a_first_connect_change =
-      not_change_on_first_connect);
+    not_change_on_first_connect);
   void connect(const irs::conn_data_t<T, size, false> *ap_conn_data,
     change_data_first_connect_t a_first_connect_change =
-      not_change_on_first_connect);
+    not_change_on_first_connect);
   bool changed();
 private:
   irs_uarc m_index;
@@ -251,10 +251,10 @@ class change_bit_t
 public:
   change_bit_t(const bit_data_t *ap_bit_data = 0,
     change_data_first_connect_t a_first_connect_change =
-      not_change_on_first_connect);
+    not_change_on_first_connect);
   void connect(const bit_data_t *ap_bit_data,
     change_data_first_connect_t a_first_connect_change =
-      not_change_on_first_connect);
+    not_change_on_first_connect);
   bool changed();
 private:
   //static const irs_uarc m_bit_size = 1;
@@ -339,7 +339,7 @@ class change_obj_t
 public:
   change_obj_t(T* ap_obj = IRS_NULL,
     change_on_connect_t a_change_on_connect =
-      not_change_on_connect);
+    not_change_on_connect);
   void connect(T* ap_obj);
   bool changed();
   void add_event(mxfact_event_t *ap_event);
@@ -435,7 +435,7 @@ inline T* memcpyex(T* ap_dest, const T* ap_src, size_t a_size)
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
-      ));
+  ));
 }
 template <class T>
 inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
@@ -446,7 +446,7 @@ inline T* memmoveex(T* ap_dest, const T* ap_src, size_t a_size)
     reinterpret_cast<void*>(ap_dest),
     reinterpret_cast<const void*>(ap_src),
     a_size*sizeof(T)
-      ));
+  ));
 }
 
 template <class T>
@@ -523,16 +523,16 @@ public:
   inline void swap(raw_data_t<T>* ap_raw_data);
 private:
   enum {
-#ifdef __ICCAVR__
+    #ifdef __ICCAVR__
     m_capacity_min = 1
-#else //__ICCAVR__
+    #else //__ICCAVR__
     m_capacity_min = 16
-#endif //__ICCAVR__
+    #endif //__ICCAVR__
   };
 
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   size_type m_size;
   size_type m_capacity;
   pointer mp_data;
@@ -541,21 +541,21 @@ private:
 };
 template <class T>
 raw_data_t<T>::raw_data_t(size_type a_size):
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   m_size(a_size),
   m_capacity((m_size > m_capacity_min)?m_size:
-                                       static_cast<size_t>(m_capacity_min)),
+    static_cast<size_t>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memsetex(mp_data, m_size);
 }
 template <class T>
 raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(a_raw_data.m_bad_index_value),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   m_size(a_raw_data.m_size),
   m_capacity(a_raw_data.m_capacity),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
@@ -564,12 +564,12 @@ raw_data_t<T>::raw_data_t(const raw_data_t<T>& a_raw_data):
 }
 template <class T>
 raw_data_t<T>::raw_data_t(const_pointer ap_data, size_type a_size):
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   m_size(a_size),
   m_capacity((m_size > m_capacity_min) ?
-                                       m_size : static_cast<size_type>(m_capacity_min)),
+    m_size : static_cast<size_type>(m_capacity_min)),
   mp_data(IRS_LIB_NEW_ASSERT(value_type[m_capacity], MXDATAH_IDX))
 {
   memcpyex(mp_data, ap_data, m_size);
@@ -584,11 +584,11 @@ inline typename raw_data_t<T>::reference
   raw_data_t<T>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
@@ -596,11 +596,11 @@ inline typename raw_data_t<T>::const_reference
   raw_data_t<T>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
@@ -615,11 +615,11 @@ template <class T>
 inline typename raw_data_t<T>::pointer
   raw_data_t<T>::data()
 {
-#ifdef IRS_LIB_DEBUG
+  #ifdef IRS_LIB_DEBUG
   return size() ? mp_data : IRS_NULL;
-#else // !IRS_DEBUG
+  #else // !IRS_DEBUG
   return mp_data;
-#endif // !IRS_DEBUG
+  #endif // !IRS_DEBUG
 }
 template <class T>
 inline typename raw_data_t<T>::const_pointer
@@ -676,7 +676,7 @@ template <class T>
 void raw_data_t<T>::reserve_raw(size_type a_capacity)
 {
   IRS_LIB_ASSERT(a_capacity >= m_capacity_min);
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (a_capacity < m_capacity_min) return;
   #endif //IRS_LIB_CHECK
   if (a_capacity == m_capacity) return;
@@ -698,11 +698,11 @@ void raw_data_t<T>::resize(size_type a_size)
 {
   size_type new_size = a_size;
   if (new_size > m_capacity) {
-#ifdef __ICCAVR__
+    #ifdef __ICCAVR__
     size_type new_capacity = new_size;
-#else //__ICCAVR__
+    #else //__ICCAVR__
     size_type new_capacity = max(m_capacity*2, new_size);
-#endif //__ICCAVR__
+    #endif //__ICCAVR__
     reserve_raw(new_capacity);
     size_type delta = new_size - m_size;
     memsetex(mp_data + m_size, delta);
@@ -845,26 +845,26 @@ public:
   inline void clear();
   inline void swap(raw_data_view_t* ap_raw_data_view);
 private:
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   viewed_type* mp_viewed_data;
 };
 template <class T, class VT>
 raw_data_view_t<T, VT>::raw_data_view_t(
   const raw_data_view_t<T, VT>& a_raw_data_view
-  ):
-#ifdef IRS_LIB_CHECK
+):
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   mp_viewed_data(a_raw_data_view.mp_viewed_data)
 {
 }
 template <class T, class VT>
 raw_data_view_t<T, VT>::raw_data_view_t(viewed_type* ap_viewed_data):
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   mp_viewed_data(ap_viewed_data)
 {
 }
@@ -873,11 +873,11 @@ inline typename raw_data_view_t<T, VT>::reference
   raw_data_view_t<T, VT>::operator[](size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   pointer this_data = reinterpret_cast<pointer>(mp_viewed_data->data());
   return this_data[a_index];
 }
@@ -886,11 +886,11 @@ inline typename raw_data_view_t<T, VT>::const_reference
   raw_data_view_t<T, VT>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   const_pointer this_data =
     reinterpret_cast<const_pointer>(mp_viewed_data->data());
   return this_data[a_index];
@@ -1020,29 +1020,29 @@ public:
   inline const_reference operator[](size_type a_index) const;
 private:
   pointer mp_data;
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   value_type m_bad_index_value;
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   size_type m_size;
 };
 template <class T>
 inline c_array_view_t<T>::c_array_view_t(pointer ap_data,
   size_type a_size
-  ):
+):
   mp_data(ap_data),
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(value_type()),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   m_size(a_size)
 {
 }
 template <class T>
 inline c_array_view_t<T>::c_array_view_t(const c_array_view_t<T> &a_c_array_view
-  ):
+):
   mp_data(a_c_array_view.mp_data),
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   m_bad_index_value(a_c_array_view.m_bad_index_value),
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   m_size(a_c_array_view.m_size)
 {
 }
@@ -1088,23 +1088,23 @@ inline typename c_array_view_t<T>::reference c_array_view_t<T>::operator[](
   size_type a_index)
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 template <class T>
 inline typename c_array_view_t<T>::const_reference
-  c_array_view_t<T>::operator[](size_type a_index) const
+c_array_view_t<T>::operator[](size_type a_index) const
 {
   IRS_LIB_ERROR_IF(!check_index(*this, a_index), ec_standard, "");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (!check_index(*this, a_index)) {
     return m_bad_index_value;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
   return mp_data[a_index];
 }
 
@@ -1113,17 +1113,17 @@ template <class src_type, class dest_type>
 inline void mem_copy(const src_type& a_src_data, size_t a_src_index,
   dest_type& a_dest_data, size_t a_dest_index, size_t a_size)
 {
-#if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
+  #if defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
   bool is_out_of_range = !check_index(a_src_data, a_src_index, a_size) ||
     !check_index(a_dest_data, a_dest_index, a_size);
-#endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
+  #endif //defined(IRS_LIB_CHECK) || defined(IRS_LIB_DEBUG)
   IRS_LIB_ERROR_IF(is_out_of_range, ec_standard,
     "Выход за диапазон в функции mem_copy");
-#ifdef IRS_LIB_CHECK
+  #ifdef IRS_LIB_CHECK
   if (is_out_of_range) {
     return;
   }
-#endif //IRS_LIB_CHECK
+  #endif //IRS_LIB_CHECK
 
   memcpyex(a_dest_data.data() + a_dest_index,
     a_src_data.data() + a_src_index, a_size);
@@ -1179,11 +1179,11 @@ public:
 private:
   void reserve_buf(size_type a_capacity);
   enum {
-#ifdef __ICCAVR__
+    #ifdef __ICCAVR__
     m_capacity_min = 1
-#else //__ICCAVR__
+    #else //__ICCAVR__
     m_capacity_min = 16
-#endif //__ICCAVR__
+    #endif //__ICCAVR__
   };
   _Alloc m_alloc;
 
@@ -1198,7 +1198,7 @@ irs::deque_data_t<T, Al>::deque_data_t(size_type a_size):
   m_alloc(Al()),
   m_ring_size(a_size),
   m_capacity((m_ring_size > m_capacity_min) ? m_ring_size :
-                                            static_cast<size_t>(m_capacity_min)),
+    static_cast<size_t>(m_capacity_min)),
   mp_buf(m_alloc.allocate(m_capacity)),
   m_ring_begin_pos(0)
 {
@@ -1646,17 +1646,17 @@ class handle_t
 public:
   handle_t(T* ap_object = IRS_NULL);
   handle_t(const handle_t& a_handle);
-#if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
+  #if defined(IRS_FULL_STDCPPLIB_SUPPORT) || \
     (defined(__ICCARM__) && __VER__ >= 7000000)
   template <class T2>
   handle_t(const handle_t<T2>& a_handle);
-#endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT || ICCARM ver. >= 7.0
   ~handle_t();
   void operator=(const handle_t& a_handle);
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   template <class T2>
   void operator=(const handle_t<T2>& a_handle);
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
   T& operator*() const;
   T* operator->() const;
   T* get() const;
@@ -1664,10 +1664,10 @@ public:
   inline bool is_equal(const handle_t& a_handle) const;
   inline bool is_empty() const;
   inline void swap(handle_t& a_handle);
-#ifdef IRS_FULL_STDCPPLIB_SUPPORT
+  #ifdef IRS_FULL_STDCPPLIB_SUPPORT
   template <class T2>
   inline void swap(handle_t<T2>& a_handle);
-#endif // IRS_FULL_STDCPPLIB_SUPPORT
+  #endif // IRS_FULL_STDCPPLIB_SUPPORT
 private:
   handle_rep_t<T>* mp_rep;
 };
@@ -1696,7 +1696,7 @@ inline bool operator!=(const handle_t<T>& a_first_handle,
 template <class T>
 handle_t<T>::handle_t(T* ap_object):
   mp_rep((ap_object == IRS_NULL)?IRS_NULL:
-                                 IRS_LIB_NEW_ASSERT(handle_rep_t<T>(1, ap_object), MXDATAH_IDX))
+    IRS_LIB_NEW_ASSERT(handle_rep_t<T>(1, ap_object), MXDATAH_IDX))
 {
 }
 template <class T>
