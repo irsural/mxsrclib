@@ -3,60 +3,6 @@
 В проекте [mxsrclib](https://okr.irsural.ru/git/okr/mxsrclib) находится cmake
 файл для сборки.
 
-## Подключение
-
-Для использования mxsrclib проекта необходимо:
-
-- Скопировать файл **irsconfig0.h**
-  в клиентский проект, переименовать в **irsconfig.h**, при необходимости редактировать.
-
-- Подключить поддиректорию с mxsrclib.
-  Сделать это можно с помощью
-  ```add_subdirectory(${Путь до директории mxsrclib})```.
-
-- Подключить библиотеку **mxsrclib** к клиентскому проекту с помощью
-```target_link_libraries(${Имя клиентского таргета} mxsrclib)```.
-
-- Добавить зависимость клиентского проекта от **mxsrclib**, чтобы убедиться, что
-  **mxsrclib** соберется раньше, чем основной проект.
-
-  Сделать это можно с помощью
-  ```add_dependencies(${Имя клиентского таргета} mxsrclib)```.
-
-- При сборке для микроконтроллеров добавить необходимые define'ы с помощью
-  ```add_definitions```.
-
-- Установить необходимые переменные для cmake.
-
-### Пример подключения
-
-CMake файл клиентского проекта:
-
-```cmake
-  # Подключение таргета cube для архитектурно зависимого кода mxsrclib
-  add_subdirectory(stm32cubef7)
-  # Подключение таргета mxsrclib
-  add_subdirectory(mxsrclib)
-
-  # Создание клиентского таргета
-  add_executable(noise_generator ${SOURCES})
-  # Подключение таргета mxsrclib к клиентскому таргету
-  target_link_libraries(noise_generator PUBLIC mxsrclib)
-  # Добавление зависимости клиентского таргета от таргета mxsrclib
-  add_dependencies(noise_generator mxsrclib)
-```
-
-Команда сборки cmake:
-
-```console
-  /opt/clion-2023.3.4/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_MAKE_PROGRAM=/opt/clion-2023.3.4/bin/ninja/linux/x64/ninja \
-  -DCMAKE_C_COMPILER=arm-none-eabi-gcc -DCMAKE_CXX_COMPILER=arm-none-eabi-g++ \
-  -G Ninja -DMXSRCLIB_UTF8=True -DMXSRCLIB_ARCH=arm_st_hal \
-  -DMXSRCLIB_STM32CUBE_TARGET=stm32cubef7 -S /home/u516/repos/noise_generator \
-  -B /home/u516/repos/noise_generator/cmake-build-release-cortex-m7-gcc
-```
-
 ## Переменные
 
 ### Обязательные
@@ -73,8 +19,8 @@ CMake файл клиентского проекта:
 
   Имя директории с архитектурно зависимым кодом.
 
-  Может принимать значение имени директории, находящейся в [этой директории
-  ](https://okr.irsural.ru/git/okr/mxsrclib/src/branch/master/arch).
+  Может принимать значение имени директории, находящейся в
+  [этой директории](https://okr.irsural.ru/git/okr/mxsrclib/src/branch/master/arch).
 
 - **MXSRCLIB_STM32CUBE_TARGET**
 
@@ -93,7 +39,7 @@ CMake файл клиентского проекта:
 
   Значение по умолчанию: **True**
 
-- **CONVERT_HEADERS**
+- **MXSRCLIB_UTF8**
 
   Конвертировать cp1251 заголовки mxsrclib в utf-8 (про конвертацию написано далее).
 
@@ -101,20 +47,72 @@ CMake файл клиентского проекта:
 
   Значение по умолчанию: **False**
 
-## Конвертация
 
-В директории **utf8_headers** находится cmake файл с конвертацией заголовков
-проекта [mxsrclib](https://okr.irsural.ru/git/okr/mxsrclib).
+## Подключение
 
-Изначально **mxsrclib** собирается в кодировке cp1251.
+Для использования mxsrclib проекта необходимо:
 
-Если клиентский проект собирается в utf-8, то необходимо сконвертировать библиотеку
-**mxsrclib** в utf-8.
+- Скопировать файл **irsconfig0.h** в клиентский проект, переименовать в **irsconfig.h**.
 
-Сделать это можно задав переменной **CONVERT_HEADERS** значение **True**.
+- Подключить поддиректорию с mxsrclib:
 
-Сконвертированные заголовки сохраняются в директории **utf8_headers**.
+  ```add_subdirectory(${Путь до директории mxsrclib})```.
 
-При конвертации архитектурно зависимого кода, сконвертированные заголовки
-сохранятся в директории **utf8_headers**, где
-будет создана папка **arch** с выбранной директорией внутри.
+- Подключить библиотеку **mxsrclib** к клиентскому проекту с помощью
+```target_link_libraries(${Имя клиентского таргета} mxsrclib)```.
+
+- Добавить зависимость клиентского проекта от **mxsrclib**, чтобы убедиться, что
+  **mxsrclib** соберется раньше, чем основной проект:
+
+  ```add_dependencies(${Имя клиентского таргета} mxsrclib)```.
+
+- Установить необходимые переменные для cmake.
+
+
+### Пример подключения
+
+CMake файл клиентского проекта:
+
+```cmake
+  # Подключение таргета cube для архитектурно зависимого кода mxsrclib
+  add_subdirectory(stm32cubef7)
+  # Подключение таргета mxsrclib
+  add_subdirectory(mxsrclib)
+
+  # Создание клиентского таргета
+  add_executable(project_name ${SOURCES})
+  # Подключение таргета mxsrclib к клиентскому таргету
+  target_link_libraries(project_name PUBLIC mxsrclib)
+  # Добавление зависимости клиентского таргета от таргета mxsrclib
+  add_dependencies(project_name mxsrclib)
+```
+
+Команда сборки cmake:
+
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_MAKE_PROGRAM=ninja \
+  -DCMAKE_C_COMPILER=arm-none-eabi-gcc \
+  -DCMAKE_CXX_COMPILER=arm-none-eabi-g++ \
+  -DMXSRCLIB_UTF8=True \
+  -DMXSRCLIB_ARCH=arm_st_hal \
+  -DMXSRCLIB_STM32CUBE_TARGET=stm32cubef7 \
+  -G Ninja \
+  -S ./project_folder \
+  -B ./project_folder/cmake-build-release-cortex-m7-gcc
+```
+
+
+## Подключение к проектам с исходным кодом в кодировке utf-8
+
+Все файлы **mxsrclib** имеют кодировку cp1251, поэтому **mxsrclib** нельзя подключать к
+проектам в utf-8 без дополнительных действий.
+
+Подключение к проектам в utf-8 выполняется так:
+
+- перед сборкой исходники **mxsrclib** конвертируются в utf-8 с помощью iconv
+- все сконвертированные header-ы помещаются в папку **utf8_headers**. Этим занимается
+  **utf8_headers/CmakeLists.txt**.
+- header-ы **utf8_headers** пробрасываются в клиентский проект с помощью ``target_include_directories(INTERFACE)``
+
+Конвертирование выполняется автоматически при установке опции **MXSRCLIB_UTF8** в ``True``.
