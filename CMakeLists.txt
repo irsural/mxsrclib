@@ -81,53 +81,22 @@ if(${VERBOSE})
 endif()
 
 set(MXSRCLIB_SOURCES
-#        correct_alg.cpp
-#        csvwork.cpp
-#        dbgprn.cpp
         hardflowg.cpp
-#        i2c.cpp
-#        imp_filt.cpp
-#        irs_chart_data.cpp
-#        irsadc.cpp
         irsalg.cpp
-#        irscalc.cpp
         irscpu.cpp
-#        irsdbgutil.cpp
-#        irsdcp.cpp
-#        irsdev.cpp
         irsdevices.cpp
-#        irsdsp.cpp
-#        irseeprom.cpp
         irserror.cpp
-#        irsexcept.cpp
         irsfilter.cpp
-#        irsfunnel.cpp
-#        irsgpio.cpp
-#        irshfftp.cpp
-#        irsinit.cpp
         irsint.cpp
-#        irskbd.cpp
         irslocale.cpp
-#        irslwip.cpp
-#        irsmath.cpp
-#        irsmatrix.cpp
         irsmbus.cpp
-#        irsmcutil.cpp
-#        irsmem.cpp
-#        irsmenu.cpp
-#        irsprop.cpp
-#        irsstd.cpp
         irsstring.cpp
-#        irsstrm.cpp
-#        irssysutils.cpp
         irstcpip.cpp
         irstime.cpp
         irsvariant.cpp
         measmul.cpp
         meassup.cpp
         mxdata.cpp
-#        mxextbase.cpp
-#        mxextchart.cpp
         mxifar.cpp
         mxnet.cpp
         mxnetc.cpp
