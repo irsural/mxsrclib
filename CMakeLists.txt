@@ -62,7 +62,6 @@ elseif(MXSRCLIB_ARCH STREQUAL "linux")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
 
 elseif(MXSRCLIB_ARCH STREQUAL "qt")
-    message(WARNING "Архитектура ${MXSRCLIB_ARCH} в библиотеке mxsrclib не была протестирована")
     set(RELATIVE_PATH_LIST_arch "${RELATIVE_PATH_LIST_arch}/${MXSRCLIB_ARCH}")
     set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/${RELATIVE_PATH_LIST_arch}")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
@@ -78,7 +77,7 @@ else()
 endif()
 
 if(${VERBOSE})
-    message(STATUS "Используемый компилятор: ${CXX_COMPILER}")
+    message(STATUS "Используемый компилятор: ${CMAKE_CXX_COMPILER}")
 endif()
 
 set(MXSRCLIB_SOURCES
@@ -157,7 +156,7 @@ target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
 # Выбор флагов компиляции в соответствии с компилятором
-if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+$")
+if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+")
     set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
 else()
     message(FATAL_ERROR "Компилятор не поддерживается.")
