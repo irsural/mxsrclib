@@ -62,7 +62,6 @@ elseif(MXSRCLIB_ARCH STREQUAL "linux")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
 
 elseif(MXSRCLIB_ARCH STREQUAL "qt")
-    message(WARNING "Архитектура ${MXSRCLIB_ARCH} в библиотеке mxsrclib не была протестирована")
     set(RELATIVE_PATH_LIST_arch "${RELATIVE_PATH_LIST_arch}/${MXSRCLIB_ARCH}")
     set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/${RELATIVE_PATH_LIST_arch}")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
@@ -78,13 +77,35 @@ else()
 endif()
 
 if(${VERBOSE})
-    message(STATUS "Используемый компилятор: ${CXX_COMPILER}")
+    message(STATUS "Используемый компилятор: ${CMAKE_CXX_COMPILER}")
 endif()
 
 set(MXSRCLIB_SOURCES
-        timer.cpp
+        hardflowg.cpp
+        irsalg.cpp
         irscpu.cpp
-        arch/arm_st_hal/counter.cpp
+        irsdevices.cpp
+        irserror.cpp
+        irsfilter.cpp
+        irsint.cpp
+        irslocale.cpp
+        irsmbus.cpp
+        irsstring.cpp
+        irstcpip.cpp
+        irstime.cpp
+        irsvariant.cpp
+        measmul.cpp
+        meassup.cpp
+        mxdata.cpp
+        mxifar.cpp
+        mxnet.cpp
+        mxnetc.cpp
+        mxnetr.cpp
+        niusbgpib.cpp
+        niusbgpib_hardflow.cpp
+        timer.cpp
+        arch/${MXSRCLIB_ARCH}/counter.cpp
+        arch/${MXSRCLIB_ARCH}/mxifa.cpp
 )
 set(MXSRCLIB_HEADERS_DIR
         .
@@ -104,12 +125,23 @@ target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
 # Выбор флагов компиляции в соответствии с компилятором
-if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+$")
+if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+")
     set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
 else()
     message(FATAL_ERROR "Компилятор не поддерживается.")
 endif()
-target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS})
+set(WARNING_FLAGS
+        -Wno-deprecated
+        -Wextra
+        -Woverloaded-virtual
+        -Wimplicit-fallthrough
+        -Wno-unused-parameter
+        -Wno-unused-local-typedefs
+        -Wno-misleading-indentation
+        -Wno-unused-variable
+        -Wno-unused-function
+)
+target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS} ${WARNING_FLAGS})
 
 # Добавление зависимостей
 if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
@@ -118,6 +150,10 @@ if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
     else()
         message(FATAL_ERROR "Не указан таргет с библиотекой STM32Cube.")
     endif()
+elseif (MXSRCLIB_ARCH STREQUAL "qt")
+    if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_link_libraries(mxsrclib -lpsapi -lws2_32 -static)
+    endif ()
 endif()
 
 # Подключение сконвертированных (если выбран режим конвертации) заголовков

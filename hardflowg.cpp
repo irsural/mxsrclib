@@ -359,7 +359,10 @@ string narrow( const wstring& str )
                   stm << ctfacet.narrow( str[i], 0 ) ;
     return stm.str() ;
 }
-
+string narrow( const string& str )
+{
+  return string(str);
+}
 bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
@@ -2249,7 +2252,7 @@ void irs::hardflow::prologix_flow_t::tick()
       switch (m_fixed_flow.write_status()) {
         case irs::hardflow::fixed_flow_t::status_success: {
           m_init_count++;
-        }
+        } // fall through
         case irs::hardflow::fixed_flow_t::status_error: {
           m_init_mode = mode_start;
         } break;

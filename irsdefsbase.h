@@ -58,7 +58,7 @@
 #elif defined(__MINGW32__) && defined(UNICODE)
 // Äëÿ Qt ñ MinGW
 #   define IRS_UNICODE_GLOBAL
-#elif (defined(__GNUC__) && (__GNUC__ >= 4))
+#elif (defined(__GNUC__) && (__GNUC__ >= 4) && __LINUX__ && defined(UNICODE))
 // Äëÿ Qt ñ linux-g++
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(_MSC_VER) && (_MSC_VER >= 1400))

@@ -39,17 +39,17 @@ private:
   void initialize_io_operation(irs_u8* ap_data, irs_u16 a_index, \
   m24_status_t a_status);
 
-  m24_status_t m_status;
+  irs_u16 m_i2c_address;
   irs_u8 m_page_size;
   irs_u8 m_page_count;
-  irs_u16 m_i2c_address;
   i2c_t *mp_i2c;
   irs_u16 m_mem_addr;
-  irs_u32 m_max_seek;
+  m24_status_t m_status;
   irs_u8 *mp_buffer;
+  irs_u32 m_max_seek;
+  irs_u8 m_address_size;
   irs_u8 *mp_next_page;
   irs_u8 *mp_mem_addr_buf;
-  irs_u8 m_address_size;
 };
 
 

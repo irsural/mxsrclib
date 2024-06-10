@@ -1134,7 +1134,11 @@ template <class T, class Al = allocator<T> >
 class deque_data_t
 {
 public:
+#if __cplusplus < 201703L
   typedef typename Al::template rebind<T>::other _Alloc;
+#else
+  typedef typename std::allocator_traits<Al>::template rebind_alloc<T> _Alloc;
+#endif
   typedef _Alloc allocator_type;
 
   typedef T value_type;
