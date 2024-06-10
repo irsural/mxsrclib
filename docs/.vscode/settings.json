@@ -1,0 +1,10 @@
+{
+    "esbonio.sphinx.buildDir" : "${workspaceFolder}/_build",
+    "esbonio.sphinx.confDir"  : "${workspaceFolder}",
+    "esbonio.sphinx.srcDir": "${workspaceFolder}",
+    "cSpell.words": [
+        "полукластер",
+        "полукластера",
+        "полукластеров"
+    ]
+}

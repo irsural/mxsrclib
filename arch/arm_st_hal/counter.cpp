@@ -8,8 +8,13 @@
 #include <irscpu.h>
 #include <irserror.h>
 
+#ifdef IRS_STM32H7xx
 #include <stm32h743xx.h>
 #include <stm32h7xx_hal.h>
+#elif IRS_STM32F7xx
+#include <stm32f746xx.h>
+#include <stm32f7xx_hal.h>
+#endif
 
 #include <irsfinal.h>
 
