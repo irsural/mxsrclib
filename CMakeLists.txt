@@ -170,6 +170,10 @@ if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
     else()
         message(FATAL_ERROR "Не указан таргет с библиотекой STM32Cube.")
     endif()
+elseif (MXSRCLIB_ARCH STREQUAL "qt")
+    if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_link_libraries(mxsrclib -lpsapi -lws2_32 -static)
+    endif ()
 endif()
 
 # Подключение сконвертированных (если выбран режим конвертации) заголовков
