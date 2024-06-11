@@ -19,7 +19,9 @@
   (defined(_MSC_VER) && defined(_WIN32))
 #define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
+#ifndef __ARM_EABI__
 #define IRS_LINUX // Платформа Linux
+#endif // __ARM_EABI__
 #endif // Определения платформы
 
 #if defined(__ICCAVR__) || defined(__ICCARM__)

@@ -1903,7 +1903,7 @@ void irs::hardflow::simple_udp_flow_t::set_param(const string_type &a_name,
   if (a_name == irst("local_addr")) {
     if(a_value != irst("")) {
       mxip_t new_ip = mxip_t::zero_ip();
-#if defined(WIN32) || defined(_WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__ARM_EABI__)
       cstr_to_mxip(new_ip, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
 #else
       cstr_to_mxip(new_ip, narrow(a_value).c_str());
