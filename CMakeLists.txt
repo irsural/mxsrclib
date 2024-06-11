@@ -144,6 +144,12 @@ set(MXSRCLIB_HEADERS_DIR
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
+# Создание irsconfig.h файла в случае его отсутствия
+add_custom_command(
+        OUTPUT "${MXSRCLIB_DIR}/irsconfig.h"
+        COMMAND cp "${MXSRCLIB_DIR}/irsconfig0.h" "${MXSRCLIB_DIR}/irsconfig.h"
+)
+
 # Если выбран кросс-компилятор, то попытаться скомпилировать как статическую библиотеку,
 # чтобы Clion не использовал тесты для ПК компиляторов
 if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
