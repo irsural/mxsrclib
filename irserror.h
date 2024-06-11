@@ -489,7 +489,7 @@ public:
 // Обработчик ошибок для вывода в ostream специально для AVR
 // c остановкой по ошибке и миганием светодиода
 #ifdef IRS_MICROCONTROLLER
-#ifndef IRS_STM32H7xx
+#if not defined(IRS_STM32H7xx) && not defined(IRS_GCC_CORTEX_M)
 class mc_error_handler_t: public mxfact_event_t
 {
 private:
