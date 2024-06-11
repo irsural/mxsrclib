@@ -13,9 +13,6 @@ endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "Необходимо выбрать компилятор.")
 endif()
-if(NOT DEFINED IRSCONFIG_DIR)
-    message(FATAL_ERROR "Не указан путь до директории irsconfig.h файла")
-endif()
 
 set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -140,7 +137,6 @@ set(MXSRCLIB_SOURCES
 )
 set(MXSRCLIB_HEADERS_DIR
         .
-        ${IRSCONFIG_DIR}
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
