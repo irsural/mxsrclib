@@ -20,7 +20,7 @@
 //*****************************************************************************
 
 #ifdef IRS_MICROCONTROLLER
-#ifndef IRS_STM32H7xx
+#if not defined(IRS_STM32H7xx) && not defined(IRS_GCC_CORTEX_M)
 namespace irs {
 
 //! \addtogroup drivers_group
