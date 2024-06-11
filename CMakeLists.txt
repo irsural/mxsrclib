@@ -65,7 +65,6 @@ elseif(MXSRCLIB_ARCH STREQUAL "qt")
     set(RELATIVE_PATH_LIST_arch "${RELATIVE_PATH_LIST_arch}/${MXSRCLIB_ARCH}")
     set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/${RELATIVE_PATH_LIST_arch}")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
-    set(ARCH_SOURSES arch/${MXSRCLIB_ARCH}/mxifa.cpp)
 
 elseif(MXSRCLIB_ARCH STREQUAL "visualcpp")
     message(WARNING "Архитектура ${MXSRCLIB_ARCH} в библиотеке mxsrclib не была протестирована")
@@ -105,8 +104,8 @@ set(MXSRCLIB_SOURCES
         niusbgpib.cpp
         niusbgpib_hardflow.cpp
         timer.cpp
+        arch/${MXSRCLIB_ARCH}/mxifa.cpp
         arch/${MXSRCLIB_ARCH}/counter.cpp
-        ${ARCH_SOURSES}
 )
 set(MXSRCLIB_HEADERS_DIR
         .
