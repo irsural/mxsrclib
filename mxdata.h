@@ -1675,8 +1675,6 @@ private:
 template<class T>
 void handle_t<T>::clear()
 {
-  mp_rep->counter = 0;
-  mp_rep->object = IRS_NULL;
   mp_rep = IRS_NULL;
 }
 template <class T>
