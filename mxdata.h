@@ -1661,6 +1661,7 @@ public:
   T* operator->() const;
   T* get() const;
   void reset(T* ap_object = IRS_NULL);
+  void clear();
   inline bool is_equal(const handle_t& a_handle) const;
   inline bool is_empty() const;
   inline void swap(handle_t& a_handle);
@@ -1671,6 +1672,13 @@ public:
 private:
   handle_rep_t<T>* mp_rep;
 };
+template<class T>
+void handle_t<T>::clear()
+{
+  mp_rep->counter = 0;
+  mp_rep->object = IRS_NULL;
+  mp_rep = IRS_NULL;
+}
 template <class T>
 inline void swap(handle_t<T>& a_first_handle, handle_t<T>& a_second_handle)
 {
