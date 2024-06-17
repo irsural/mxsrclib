@@ -1675,7 +1675,13 @@ private:
 template<class T>
 void handle_t<T>::clear()
 {
-  mp_rep = IRS_NULL;
+  if (mp_rep) {
+    IRS_LIB_ASSERT(mp_rep->counter > 0);
+    mp_rep->counter--;
+    if (mp_rep->counter == 0) {
+      IRS_LIB_DELETE_ASSERT(mp_rep);
+    }
+  }
 }
 template <class T>
 inline void swap(handle_t<T>& a_first_handle, handle_t<T>& a_second_handle)
