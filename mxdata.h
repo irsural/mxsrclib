@@ -1680,6 +1680,8 @@ void handle_t<T>::clear()
     mp_rep->counter--;
     if (mp_rep->counter == 0) {
       IRS_LIB_DELETE_ASSERT(mp_rep);
+    } else {
+      mp_rep = IRS_NULL;
     }
   }
 }
