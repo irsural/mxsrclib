@@ -20,15 +20,14 @@
 #endif //__ARM_ARCH_PROFILE
 #endif //__ARM_EABI__
 
-#if defined(__GNUC__) && defined(IRS_CORTEX_M)
-#define IRS_GCC_CORTEX_M
-#endif
-
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
   (defined(_MSC_VER) && defined(_WIN32))
 #define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
+#ifdef IRS_CORTEX_M
+#define IRS_GCC_CORTEX_M
+#endif // IRS_CORTEX_M
 #ifndef IRS_GCC_CORTEX_M
 #define IRS_LINUX // Платформа Linux
 #endif // IRS_GCC_CORTEX_M
@@ -76,7 +75,7 @@
 #elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
 # define IRS_UNICODE_GLOBAL
 #else
-//#define IRS_UNICODE_GLOBAL
+  //#define IRS_UNICODE_GLOBAL
 #endif //__BORLANDC__
 
 #ifdef IRS_UNICODE_GLOBAL
@@ -227,12 +226,12 @@
 // Перенесено из irserror.h для того, чтобы была возможность применить
 // в irsstrdefs.h
 #ifdef IRS_GNUC_VERSION_LESS_3_4
-// Эта константа у меня пока отсутствует
+    // Эта константа у меня пока отсутствует
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : -1]; } while(0)
 #else /* ? compiler */
-#define IRS_STATIC_ASSERT(ex)\
+  #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : 0]; } while(0)
 #endif /* compiler */
 
