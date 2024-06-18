@@ -1661,11 +1661,12 @@ public:
   T* operator->() const;
   T* get() const;
   void reset(T* ap_object = IRS_NULL);
-  /// \brief Привести экземпляр в состояние, при котором он не будет освобождать память в деструкторе.
-  /// \details Декрементирует счетчик ссылок дескриптора и зануляет указатель на него.
+  /// \brief Привести экземпляр в состояние, при котором он не будет освобождать память в деструкторе
+  /// \return Указатель на ресурс или nullptr
+  /// \details Декрементирует счетчик ссылок дескриптора и зануляет указатель на него
   /// Таким образом, для других экземпляром с тем же дескриптором данный дескриптор будет как бы удален.
   /// Если экземпляр хранил последнюю ссылку, освобождает дескриптор.
-  void clear();
+  T* extract();
   inline bool is_equal(const handle_t& a_handle) const;
   inline bool is_empty() const;
   inline void swap(handle_t& a_handle);
@@ -1677,9 +1678,11 @@ private:
   handle_rep_t<T>* mp_rep;
 };
 template<class T>
-void handle_t<T>::clear()
+T* handle_t<T>::extract()
 {
+  T* p_obj = nullptr;
   if (mp_rep) {
+    p_obj = mp_rep->object;
     IRS_LIB_ASSERT(mp_rep->counter > 0);
     mp_rep->counter--;
     if (mp_rep->counter == 0) {
@@ -1688,6 +1691,7 @@ void handle_t<T>::clear()
       mp_rep = IRS_NULL;
     }
   }
+  return p_obj;
 }
 template <class T>
 inline void swap(handle_t<T>& a_first_handle, handle_t<T>& a_second_handle)
