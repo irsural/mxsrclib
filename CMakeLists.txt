@@ -153,7 +153,7 @@ if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
 endif()
 project(mxsrclib)
 
-add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
+add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES} "${MXSRCLIB_DIR}/irsconfig.h")
 target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
