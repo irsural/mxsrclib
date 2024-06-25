@@ -16,6 +16,11 @@ endif()
 
 set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Проверка наличия файла irsconfig.h
+if (NOT EXISTS "${MXSRCLIB_DIR}/irsconfig.h")
+    message(FATAL_ERROR "Необходимо добавить файл irsconfig.h в корне проекта mxsrclib")
+endif()
+
 # Подключение необходимых архитектур
 set(RELATIVE_PATH_LIST_arch "arch")
 if(MXSRCLIB_ARCH STREQUAL "arm")
@@ -140,12 +145,6 @@ set(MXSRCLIB_HEADERS_DIR
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
-# Создание irsconfig.h файла в случае его отсутствия
-add_custom_command(
-        OUTPUT "${MXSRCLIB_DIR}/irsconfig.h"
-        COMMAND cp "${MXSRCLIB_DIR}/irsconfig0.h" "${MXSRCLIB_DIR}/irsconfig.h"
-)
-
 # Если выбран кросс-компилятор, то попытаться скомпилировать как статическую библиотеку,
 # чтобы Clion не использовал тесты для ПК компиляторов
 if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
@@ -153,7 +152,7 @@ if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
 endif()
 project(mxsrclib)
 
-add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES} "${MXSRCLIB_DIR}/irsconfig.h")
+add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
 target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
