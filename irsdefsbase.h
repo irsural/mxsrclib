@@ -14,15 +14,27 @@
 
 #define IRS_LIB_VERSION_SUPPORT_GREATER(ver) (IRS_LIB_VERSION_SUPPORT > ver)
 
+#ifdef __ARM_EABI__
+#if __ARM_ARCH_PROFILE == 'M'
+#define IRS_CORTEX_M
+#endif //__ARM_ARCH_PROFILE
+#endif //__ARM_EABI__
+
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
   (defined(_MSC_VER) && defined(_WIN32))
 #define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
+#ifdef IRS_CORTEX_M
+#define IRS_GCC_CORTEX_M
+#elif defined(__x86_64__)
 #define IRS_LINUX // Платформа Linux
+#else
+#error "Платформа не определена"
+#endif
 #endif // Определения платформы
 
-#if defined(__ICCAVR__) || defined(__ICCARM__)
+#if defined(__ICCAVR__) || defined(__ICCARM__) || defined(IRS_GCC_CORTEX_M)
 #define IRS_MICROCONTROLLER
 #endif //defined(__ICCAVR__) || defined(__ICCARM__)
 
@@ -101,11 +113,11 @@
 #include <stddef.h>
 
 #include <irsconfig.h>
-    
+
 #ifndef IRS_STM32H7xx
 #include <irsdefsarch.h>
 #endif // IRS_STM32H7xx
-    
+
 
 // Деректива throw
 #ifdef __ICCAVR__

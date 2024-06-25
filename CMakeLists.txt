@@ -13,11 +13,13 @@ endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "Необходимо выбрать компилятор.")
 endif()
-if(NOT DEFINED IRSCONFIG_DIR)
-    message(FATAL_ERROR "Не указан путь до директории irsconfig.h файла")
-endif()
 
 set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Проверка наличия файла irsconfig.h
+if (NOT EXISTS "${MXSRCLIB_DIR}/irsconfig.h")
+    message(FATAL_ERROR "Необходимо добавить файл irsconfig.h в корне проекта mxsrclib")
+endif()
 
 # Подключение необходимых архитектур
 set(RELATIVE_PATH_LIST_arch "arch")
@@ -81,22 +83,53 @@ if(${VERBOSE})
 endif()
 
 set(MXSRCLIB_SOURCES
+        correct_alg.cpp
+        csvwork.cpp
+        dbgprn.cpp
         hardflowg.cpp
+        i2c.cpp
+        imp_filt.cpp
+        irs_chart_data.cpp
+        irsadc.cpp
         irsalg.cpp
+        irscalc.cpp
         irscpu.cpp
+        irsdbgutil.cpp
+        irsdcp.cpp
+        irsdev.cpp
         irsdevices.cpp
+        irsdsp.cpp
+        irseeprom.cpp
         irserror.cpp
+        irsexcept.cpp
         irsfilter.cpp
+        irsfunnel.cpp
+        irsgpio.cpp
+        irshfftp.cpp
+        irsinit.cpp
         irsint.cpp
+        irskbd.cpp
         irslocale.cpp
+        irslwip.cpp
+        irsmath.cpp
+        irsmatrix.cpp
         irsmbus.cpp
+        irsmcutil.cpp
+        irsmem.cpp
+        irsmenu.cpp
+        irsprop.cpp
+        irsstd.cpp
         irsstring.cpp
+        irsstrm.cpp
+        irssysutils.cpp
         irstcpip.cpp
         irstime.cpp
         irsvariant.cpp
         measmul.cpp
         meassup.cpp
         mxdata.cpp
+        mxextbase.cpp
+        mxextchart.cpp
         mxifar.cpp
         mxnet.cpp
         mxnetc.cpp
@@ -104,12 +137,11 @@ set(MXSRCLIB_SOURCES
         niusbgpib.cpp
         niusbgpib_hardflow.cpp
         timer.cpp
-        arch/${MXSRCLIB_ARCH}/counter.cpp
         arch/${MXSRCLIB_ARCH}/mxifa.cpp
+        arch/${MXSRCLIB_ARCH}/counter.cpp
 )
 set(MXSRCLIB_HEADERS_DIR
         .
-        ${IRSCONFIG_DIR}
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
