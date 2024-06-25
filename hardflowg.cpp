@@ -350,39 +350,16 @@ void irs::hardflow::udp_flow_t::addr_init(
  *
  * TODO: Разрешить проблему, связанную с IRS_SIMPLE_FROM_TYPE_STR на Linux Ubuntu 20.04 LTS.
  */
-string narrow( const wstring& str )
-{
-    ostringstream stm ;
-    const ctype<char>& ctfacet =
-                         use_facet< ctype<char> >( stm.getloc() ) ;
-    for( size_t i=0 ; i<str.size() ; ++i )
-                  stm << ctfacet.narrow( str[i], 0 ) ;
-    return stm.str() ;
-}
-string narrow( const string& str )
-{
-  return string(str);
-}
 bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
   bool adress_convert_success = false;
   if (a_adress_str != irst("")) {
-
-#if defined(WIN32) || defined(_WIN32)
     irs_u32 adress = inet_addr(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
-#else
-    irs_u32 adress = inet_addr(narrow(a_adress_str).c_str());
-#endif
-
     if (adress == INADDR_NONE) {
-#if defined(WIN32) || defined(_WIN32)
       hostent* p_host =
-        gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
-#else
-      hostent* p_host =
-        gethostbyname(narrow(a_adress_str).c_str());
-#endif
+      gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
+
       if (p_host != NULL) {
         // Берем первый адрес в списке
         memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);
@@ -1903,11 +1880,7 @@ void irs::hardflow::simple_udp_flow_t::set_param(const string_type &a_name,
   if (a_name == irst("local_addr")) {
     if(a_value != irst("")) {
       mxip_t new_ip = mxip_t::zero_ip();
-#if defined(WIN32) || defined(_WIN32) || defined(IRS_GCC_CORTEX_M)
       cstr_to_mxip(new_ip, IRS_SIMPLE_FROM_TYPE_STR(a_value.c_str()));
-#else
-      cstr_to_mxip(new_ip, narrow(a_value).c_str());
-#endif
       mp_simple_udp->set_ip(new_ip);
       mxmac_t new_mac = make_mxmac(0, 0, new_ip.val[0], new_ip.val[1],
         new_ip.val[2], new_ip.val[3]);
