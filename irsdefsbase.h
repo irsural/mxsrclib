@@ -27,11 +27,11 @@
 #elif defined(__GNUC__)
 #ifdef IRS_CORTEX_M
 #define IRS_GCC_CORTEX_M
-#else
+#elif defined(__x86_64__)
 #define IRS_LINUX // Платформа Linux
-#endif // IRS_CORTEX_M
 #else
 #error "Платформа не определена"
+#endif
 #endif // Определения платформы
 
 #if defined(__ICCAVR__) || defined(__ICCARM__) || defined(IRS_GCC_CORTEX_M)
