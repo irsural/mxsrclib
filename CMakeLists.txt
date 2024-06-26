@@ -18,7 +18,7 @@ set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Проверка наличия файла irsconfig.h
 if (NOT EXISTS "${MXSRCLIB_DIR}/irsconfig.h")
-    message(FATAL_ERROR "Необходимо добавить файл irsconfig.h в корне проекта mxsrclib")
+    file(COPY_FILE "${MXSRCLIB_DIR}/irsconfig0.h" "${MXSRCLIB_DIR}/irsconfig.h")
 endif()
 
 # Подключение необходимых архитектур
