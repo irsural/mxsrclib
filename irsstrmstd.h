@@ -392,7 +392,7 @@ inline void irs_strm_buf::outputbuf(irs_i32 a_ich)      //вывод в экранный буфер
             m_left_activecursor_buf]=ChTime[0];
         else
           m_BufTextDisplay[m_left_activecursor_buf]=ChTime[0];
-          m_display_drv_service.outtextpos(
+        m_display_drv_service.outtextpos(
           m_left_activecursor_buf,
           m_top_activecursor_buf,
           ChTime);

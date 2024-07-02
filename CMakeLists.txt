@@ -170,7 +170,6 @@ set(WARNING_FLAGS
         -Wno-unused-parameter
         -Wno-unused-local-typedefs
         -Wno-misleading-indentation
-        -Wno-unused-variable
         -Wno-unused-function
 )
 target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS} ${WARNING_FLAGS})
