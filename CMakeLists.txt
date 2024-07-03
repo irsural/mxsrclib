@@ -163,11 +163,14 @@ else()
     message(FATAL_ERROR "Компилятор не поддерживается.")
 endif()
 set(WARNING_FLAGS
-        -Wno-deprecated
+        -Werror
         -Wextra
+        -Wall
+        # Только потому что баг с GCC diagnostics ignored "-Wdeprecated" пофиксили только в gcc 13
+        # Проблемный варнинг возникает при подключении <strstream>
+        -Wno-deprecated
         -Woverloaded-virtual
         -Wimplicit-fallthrough
-        -Wno-unused-parameter
         -Wno-unused-local-typedefs
         -Wno-unused-function
 )

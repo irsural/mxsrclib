@@ -57,27 +57,33 @@ void spi_to_i2c_t::abort()
   mp_i2c->abort();
 }
 
-bool spi_to_i2c_t::set_data_size(irs_u16 a_data_size)  
+bool spi_to_i2c_t::set_data_size(irs_u16 /* a_data_size */)
 { 
   return true; 
 }
 
-bool spi_to_i2c_t::set_bitrate(irs_u32 a_bitrate)  
+bool spi_to_i2c_t::set_bitrate(irs_u32 /* a_bitrate */)
 { 
   return true; 
 }
 
-bool spi_to_i2c_t::set_polarity(polarity_t a_polarity)  
+bool spi_to_i2c_t::set_polarity(polarity_t /* a_polarity */)
 { 
   return true; 
 }
 
-bool spi_to_i2c_t::set_phase(phase_t a_phase)  
+bool spi_to_i2c_t::set_phase(phase_t /* a_phase */)
 { 
   return true; 
 }
 
-bool spi_to_i2c_t::set_order(order_t a_order)  
+bool spi_to_i2c_t::set_order(order_t /* a_order */)
 { 
   return true; 
+}
+void read_write(irs_u8 *ap_read_buf, const irs_u8 *ap_write_buf, irs_uarc a_size)
+{
+  (void)ap_read_buf;
+  (void)ap_write_buf;
+  (void)a_size;
 }

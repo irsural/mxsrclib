@@ -51,7 +51,7 @@ public:
   virtual bool set_phase(phase_t a_phase);
   virtual bool set_order(order_t a_order);
   virtual void read_write(irs_u8 *ap_read_buf,
-    const irs_u8 *ap_write_buf, irs_uarc a_size) { }
+    const irs_u8 *ap_write_buf, irs_uarc a_size);
   virtual inline void reset_configuration() { }
   void init_default() { }
 
