@@ -172,7 +172,6 @@ set(WARNING_FLAGS
         -Woverloaded-virtual
         -Wimplicit-fallthrough
         -Wno-unused-local-typedefs
-        -Wno-unused-function
 )
 target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS} ${WARNING_FLAGS})
 
