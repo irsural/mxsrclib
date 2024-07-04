@@ -876,7 +876,6 @@ bool hex_str_to_binary_data(const irs::string_t& a_str,
   ARRAY* ap_vector)
 {
   typedef irs_size_t size_type;
-  typedef irs::string_t string_type;
   const int hex_data_map[] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
