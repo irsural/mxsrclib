@@ -162,16 +162,19 @@ if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+")
 else()
     message(FATAL_ERROR "Компилятор не поддерживается.")
 endif()
-set(WARNING_FLAGS
-        -Werror
-        -Wextra
-        -Wall
-        # Только потому что баг с GCC diagnostics ignored "-Wdeprecated" пофиксили только в gcc 13
-        # Проблемный варнинг возникает при подключении <strstream>
-        -Wno-deprecated
-        -Woverloaded-virtual
-        -Wimplicit-fallthrough
-)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(WARNING_FLAGS
+            -Werror
+            -Wextra
+            -Wall
+            # Только потому что баг с GCC diagnostics ignored "-Wdeprecated" пофиксили только в gcc 13
+            # Проблемный варнинг возникает при подключении <strstream>
+            -Wno-deprecated
+    )
+else()
+    message(FATAL_ERROR "Нужно дописать опции предупреждений для компилятора")
+endif()
 target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS} ${WARNING_FLAGS})
 
 # Добавление зависимостей
