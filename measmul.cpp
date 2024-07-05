@@ -2697,7 +2697,6 @@ void irs::data_to_values_t::set_tick_max_time(
 
 bool irs::data_to_values_test()
 {
-  typedef irs_size_t size_type;
   typedef double math_type;
   const irs_size_t sample_count = 100000;
   raw_data_t<irs_u8> data(sample_count*sizeof(irs_i16));
@@ -2720,7 +2719,6 @@ bool irs::data_to_values_test()
 
 bool irs::accumulate_asynch_test()
 {
-  typedef irs_size_t size_type;
   typedef double math_type;
   const irs_size_t sample_count = 100000;
   vector<math_type> samples(sample_count, 0);
@@ -2740,7 +2738,6 @@ bool irs::accumulate_asynch_test()
 
 bool irs::sko_calc_asynch_test()
 {
-  typedef irs_size_t size_type;
   typedef double math_type;
   bool success = true;
   const irs_size_t sample_count = 100000;
@@ -2765,7 +2762,6 @@ bool irs::sko_calc_asynch_test()
 
 bool irs::delta_calc_asynch_test()
 {
-  typedef irs_size_t size_type;
   typedef double math_type;
   bool success = true;
   const irs_size_t sample_count = 100000;
@@ -2790,7 +2786,6 @@ bool irs::delta_calc_asynch_test()
 
 bool irs::iir_filter_asynch_test()
 {
-  typedef irs_size_t size_type;
   typedef long double math_type;
   const irs_size_t sample_count = 100000;
   vector<math_type> samples(sample_count, 0);

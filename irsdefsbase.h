@@ -186,6 +186,24 @@
 #define IRS_GNUC_VERSION_LESS_3_4
 #endif // GCC версии < 3.4
 
+#ifdef __GNUC__
+
+#define DO_PRAGMA_(x) _Pragma (#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+
+#define IGNORE_DIAGNOSTIC_ENTER(diag) \
+  _Pragma("GCC diagnostic push") \
+  DO_PRAGMA(GCC diagnostic ignored diag)
+
+#define IGNORE_DIAGNOSTIC_EXIT() _Pragma("GCC diagnostic pop")
+
+#else // __GNUC__
+
+#define IGNORE_DIAGNOSTIC_ENTER(diag)
+#define GCC_IGNORE_DIAGNOSTIC_EXIT()
+
+#endif // __GNUC__
+
 #ifndef IRS_USE_SETUPAPI_WIN
 # define IRS_USE_SETUPAPI_WIN 0
 #endif // IRS_USE_SETUPAPI_WIN
@@ -232,8 +250,15 @@
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : -1]; } while(0)
 #else /* ? compiler */
+
+
   #define IRS_STATIC_ASSERT(ex)\
-    do { typedef int ai[(ex) ? 1 : 0]; } while(0)
+    do { \
+      IGNORE_DIAGNOSTIC_ENTER("-Wunused-local-typedefs") \
+        typedef int ai[(ex) ? 1 : 0]; \
+      IGNORE_DIAGNOSTIC_EXIT() \
+    } while(0)
+
 #endif /* compiler */
 
 

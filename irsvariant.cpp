@@ -591,7 +591,6 @@ void irs::variant::binary_operation(
   variant_t* ap_result_variant,
   bool* ap_result_bool)
 {
-  typedef variant_t::size_type size_type;
   typedef variant_t::string_type string_type;
   typedef variant_t::vector_variant_type vector_variant_type;
   #ifdef IRSDEFS_LONG_LONG
