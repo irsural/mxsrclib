@@ -156,26 +156,23 @@ add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
 target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
-# Выбор флагов компиляции в соответствии с компилятором
-if(CMAKE_CXX_COMPILER MATCHES "^.*g\\+\\+")
-    set(CXX_COMPILER_FLAGS "-finput-charset=CP1251")
-else()
-    message(FATAL_ERROR "Компилятор не поддерживается.")
-endif()
-
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(WARNING_FLAGS
-            -Werror
-            -Wextra
-            -Wall
+    set(COMPILER_OPTIONS
+            "-finput-charset=CP1251"
+    )
+
+    set(WARNING_OPTIONS
+            "-Werror"
+            "-Wextra"
+            "-Wall"
             # Только потому что баг с GCC diagnostics ignored "-Wdeprecated" пофиксили только в gcc 13
             # Проблемный варнинг возникает при подключении <strstream>
-            -Wno-deprecated
+            "-Wno-deprecated"
     )
 else()
     message(FATAL_ERROR "Нужно дописать опции предупреждений для компилятора")
 endif()
-target_compile_options(mxsrclib PRIVATE ${CXX_COMPILER_FLAGS} ${WARNING_FLAGS})
+target_compile_options(mxsrclib PRIVATE "${COMPILER_OPTIONS}" "${WARNING_OPTIONS}")
 
 # Добавление зависимостей
 if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
