@@ -27,9 +27,9 @@ enum
 irs_uarc init_cnt = 0;
 
 // Количество отсчетов в интервале
-extern counter_t COUNTER_PER_INTERVAL = irs::cpu_traits_t::frequency();
+counter_t COUNTER_PER_INTERVAL = static_cast<counter_t>(irs::cpu_traits_t::frequency());
 // Число секунд в интервале
-extern counter_t SECONDS_PER_INTERVAL = 1;
+counter_t SECONDS_PER_INTERVAL = 1;
 
 namespace {
 
