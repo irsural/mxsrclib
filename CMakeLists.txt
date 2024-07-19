@@ -145,13 +145,7 @@ set(MXSRCLIB_HEADERS_DIR
         ${ORIGIN_HEADERS_DIR_LIST_arch}
 )
 
-# Если выбран кросс-компилятор, то попытаться скомпилировать как статическую библиотеку,
-# чтобы Clion не использовал тесты для ПК компиляторов
-if(CMAKE_CXX_COMPILER MATCHES "^.*arm-none-eabi-g\\+\\+$")
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-endif()
 project(mxsrclib)
-
 add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
 target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
