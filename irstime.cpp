@@ -199,26 +199,15 @@ irs::cur_time_t* irs::cur_time()
   return &cur_time_sys;
 }
 
+#ifdef __ICCARM__
+
 #if IRS_USE_ST_RTC
-//_STD_BEGIN
 
-#if _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
-__time64_t (__time64)(__time64_t *t)
-{
-  #ifdef IRS_STM32_F2_F4_F7
-  if (t)
-  {
-    *t = irs::arm::st_rtc_t::get_instance()->get_time();
-    return *t;
-  }
-  return irs::arm::st_rtc_t::get_instance()->get_time();
-  #else
-  return 0;
-  #endif
-}
-//CLOCKS_PER_SEC
+#if __VER__ < 8000000
+_STD_BEGIN
+#endif // __VER__
 
-#else // _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
+#if !_DLIB_TIME_ALLOW_64
 
 __time32_t (__time32)(__time32_t *t)
 {
@@ -234,8 +223,30 @@ __time32_t (__time32)(__time32_t *t)
   #endif
 }
 
-//_STD_END
-#endif // _DLIB_TIME_ALLOW_64 && _DLIB_TIME_USES_64
+#else
+
+__time64_t (__time64)(__time64_t *t)
+{
+  #ifdef IRS_STM32_F2_F4_F7
+  if (t)
+  {
+    *t = irs::arm::st_rtc_t::get_instance()->get_time();
+    return *t;
+  }
+  return irs::arm::st_rtc_t::get_instance()->get_time();
+  #else
+  return 0;
+  #endif
+}
+//CLOCKS_PER_SEC
+
+
+#endif // _DLIB_TIME_ALLOW_64
+
+#if __VER__ < 8000000
+_STD_END
+#endif // __VER__
 
 #endif // IRS_USE_ST_RTC
 
+#endif // __ICCARM__

@@ -27,6 +27,12 @@ irs::locale_manager_t::locale_manager_t():
 {
   m_loc = locale(m_loc, new irs_numpunct_t<char>);
   m_loc = locale(m_loc, new irs_numpunct_t<wchar_t>);
+  #if (defined(__ICCARM__))
+  // Добавлено для совместимости с библиотекой TouchGFX,
+  // там используются 2-байтные символы, а в IAR 8+
+  // sizeof(wchar_t) == 4
+  m_loc = locale(m_loc, new irs_numpunct_t<uint16_t>);
+  #endif
   locale::global(m_loc);
   setlocale(LC_ALL, m_locale_name_def);
 }

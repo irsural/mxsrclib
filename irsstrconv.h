@@ -46,9 +46,10 @@ namespace irs {
 //! \addtogroup string_processing_group
 //! @{
 
-inline std::wstring cp1251_to_wstring(const std::string& a_str)
+template <class wcharT = wchar_t>
+inline std::basic_string<wcharT> cp1251_to_unicode(const std::string& a_str)
 {
-  irs::codecvt_cp1251_t<wchar_t, char, std::mbstate_t> codecvt_wchar_cp1251;
+  irs::codecvt_cp1251_t<wcharT, char, std::mbstate_t> codecvt_wchar_cp1251;
   mbstate_t state;
 
   const char* in_str = a_str.c_str();
@@ -56,10 +57,10 @@ inline std::wstring cp1251_to_wstring(const std::string& a_str)
   const char* in_str_end = in_str + instr_size;
   const char* in_str_next = in_str;
 
-  vector<wchar_t> out_str_array(instr_size, 0);
-  wchar_t* out_str = vector_data(out_str_array);
-  wchar_t* out_str_end = out_str + instr_size;
-  wchar_t* out_str_next = out_str;
+  vector<wcharT> out_str_array(instr_size, 0);
+  wcharT* out_str = vector_data(out_str_array);
+  wcharT* out_str_end = out_str + instr_size;
+  wcharT* out_str_next = out_str;
 
   std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
@@ -71,17 +72,19 @@ inline std::wstring cp1251_to_wstring(const std::string& a_str)
     throw runtime_error("Не удалось преобразовать cp1251 в unicode");
   }
   #endif // IRS_NO_EXCEPTIONS
-  return std::wstring(out_str);
+  return std::basic_string<wcharT>(out_str);
 }
 
-inline std::string wstring_to_cp1251(const std::wstring& a_str)
+
+template <class wcharT = wchar_t>
+inline std::string unicode_to_cp1251(const std::basic_string<wcharT>& a_str)
 {
-  irs::codecvt_cp1251_t<char, wchar_t, std::mbstate_t> codecvt_cp1251_wchar;
+  irs::codecvt_cp1251_t<char, wcharT, std::mbstate_t> codecvt_cp1251_wchar;
   mbstate_t state;
-  const wchar_t* in_str = a_str.c_str();
-  const size_t instr_size = strlenu(in_str) + 1;
-  const wchar_t* in_str_end = in_str + instr_size;
-  const wchar_t* in_str_next = in_str;
+  const wcharT* in_str = a_str.c_str();
+  const size_t instr_size = a_str.size() + 1;
+  const wcharT* in_str_end = in_str + instr_size;
+  const wcharT* in_str_next = in_str;
 
   vector<char> out_str_array(instr_size, 0);
   char* out_str = vector_data(out_str_array);
@@ -100,6 +103,17 @@ inline std::string wstring_to_cp1251(const std::wstring& a_str)
   #endif // IRS_NO_EXCEPTIONS
 
   return std::string(out_str);
+}
+
+
+inline std::wstring cp1251_to_wstring(const std::string& a_str)
+{
+  return cp1251_to_unicode(a_str);
+}
+
+inline std::string wstring_to_cp1251(const std::wstring& a_str)
+{
+  return unicode_to_cp1251(a_str);
 }
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT
