@@ -15,11 +15,11 @@ extern "C" {
 #include <lwip/init.h>
 #include <lwip/ip_addr.h>
 
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 #include <lwip/timers.h>
-#else // defined(IRS_STM32H7xx)
+#else // defined(IRS_STM32H7xx) || defined(IRS_STM32F7xx)
 #include <lwip/timeouts.h>
-#endif // IRS_STM32H7xx
+#endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
@@ -33,7 +33,7 @@ extern "C" {
 
 #endif // USE_LWIP
 
-#if defined(IRS_STM32H7xx)// || defined(ARMxxx)
+#if defined(IRS_STM32H7xx) || defined(IRS_STM32F7xx)// || defined(ARMxxx)
 #define IRSLIB_USE_LWIP_CONTROL
 #endif
 
@@ -42,6 +42,10 @@ extern "C" {
 #ifdef IRS_STM32H7xx
 extern "C" {
 #include "ethernet_h7.h"
+}
+#elif defined(IRS_STM32F7xx)
+extern "C" {
+#include "ethernet_f7.h"
 }
 #else
 #error "Не подключен файл ethernet для текущего микроконтроллера"
@@ -1070,7 +1074,7 @@ udp_channels_t<address_t>::write(const address_type& a_address,
 }
 
 template <class address_t>
-udp_channels_t<address_t>::size_type
+typename udp_channels_t<address_t>::size_type
 udp_channels_t<address_t>::available_for_write(
   const address_type& a_address) const
 {
@@ -1381,13 +1385,13 @@ private:
   };
   typedef address_t address_type;
   void create();
-  #ifndef IRS_STM32H7xx
+  #if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
   static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf,
     ip_addr *ap_addr, u16_t a_port);
   #else
   static void recv(void *arg, udp_pcb *ap_upcb, pbuf *ap_buf,
     const ip_addr_t *ap_addr, u16_t a_port);
-  #endif // IRS_STM32H7xx
+  #endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 
   const mxip_t m_local_ip;
   const mxip_t m_dest_ip;

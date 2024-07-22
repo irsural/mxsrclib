@@ -53,7 +53,7 @@ void copy_buffer_to_pbuf(const irs_u8* ap_buf, pbuf* ap_pbuf)
 } // unnamed namespace
 
 // Вместо него lwip_control_t
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 
 // class ethernet_t
 irs::simple_ethernet_t* irs::lwip::ethernet_t::mp_simple_ethernet = NULL;
@@ -275,7 +275,7 @@ void irs::lwip::ethernet_t::low_level_init(struct netif *ap_netif)
     NETIF_FLAG_LINK_UP;
 }
 
-#endif // IRS_STM32H7xx
+#endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 
 
 #ifdef IRSLIB_USE_LWIP_CONTROL
@@ -415,7 +415,7 @@ void irs::lwip::lwip_control_t::lwip_tick()
 mxmac_t irs::lwip::lwip_control_t::st_generate_mac(irs::device_code_t a_device_code)
 {
   IRS_STATIC_ASSERT(sizeof(irs::device_code_t) == 1);
-  const irs_u16 device_id = irs::crc16(UID_H7_BEGIN, UID_H7_SIZE);
+  const irs_u16 device_id = irs::crc16(reinterpret_cast<uint8_t*>(UID_H7_BEGIN), UID_H7_SIZE);
   return generate_mac(a_device_code, device_id);
 }
 
@@ -798,7 +798,7 @@ void irs::hardflow::lwip::buffers_t::reserve_buffers()
   }
 }
 
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 // class tcp_server_t
 irs::hardflow::lwip::tcp_server_t::size_type
 irs::hardflow::lwip::tcp_server_t::m_read_channel =
@@ -1350,7 +1350,7 @@ bool irs::hardflow::lwip::tcp_client_t::is_channel_exists(
   return m_channel_id == a_channel_ident;
 }
 
-#endif // IRS_STM32H7xx
+#endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 
 
 #if LWIP_UDP
@@ -1392,11 +1392,11 @@ void irs::hardflow::lwip::udp_t::create()
     return;
   }
 
-  #ifndef IRS_STM32H7xx
+  #if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
   ip_addr local_ip;
   #else 
   ip_addr_t local_ip;
-  #endif // IRS_STM32H7xx
+  #endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
   
   local_ip.addr = m_local_ip.addr;
   err_t err = udp_bind(mp_pcb, &local_ip, m_local_port);
@@ -1416,7 +1416,7 @@ void irs::hardflow::lwip::udp_t::create()
   }
 }
 
-#ifndef IRS_STM32H7xx
+#if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
 void irs::hardflow::lwip::udp_t::recv(void *arg, udp_pcb* /*ap_upcb*/,
   pbuf *ap_buf, ip_addr *ap_addr, u16_t a_port)
 #else 
@@ -1503,11 +1503,11 @@ irs::hardflow::lwip::udp_t::write(size_type a_channel_ident,
   }
   address_type remote_host_address;
   
-  #ifndef IRS_STM32H7xx
+  #if !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
   ip_addr dst_ip;
   #else 
   ip_addr_t dst_ip;
-  #endif // IRS_STM32H7xx
+  #endif // !defined(IRS_STM32H7xx) && !defined(IRS_STM32F7xx)
   
   if (m_channel_list.address_get(a_channel_ident, &remote_host_address)) {
     dst_ip.addr = remote_host_address.ip.addr;
