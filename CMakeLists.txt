@@ -27,6 +27,13 @@ if(MXSRCLIB_ARCH STREQUAL "arm")
     set(RELATIVE_PATH_LIST_arch "${RELATIVE_PATH_LIST_arch}/${MXSRCLIB_ARCH}")
     set(ORIGIN_HEADERS_DIR_LIST_arch "${MXSRCLIB_DIR}/${RELATIVE_PATH_LIST_arch}")
     file(GLOB_RECURSE ORIGIN_HEADERS_FILES_LIST_arch "${ORIGIN_HEADERS_DIR_LIST_arch}/*.h")
+    set(ARCH_SOURCES
+            arch/${MXSRCLIB_ARCH}/armadc.cpp
+            arch/${MXSRCLIB_ARCH}/armcfg.cpp
+            arch/${MXSRCLIB_ARCH}/armspi.cpp
+            arch/${MXSRCLIB_ARCH}/irsarchint.cpp
+            arch/${MXSRCLIB_ARCH}/irsstm32_usb_hid_hardflow.cpp
+    )
 
 elseif(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
     set(RELATIVE_PATH_LIST_arch "${RELATIVE_PATH_LIST_arch}/${MXSRCLIB_ARCH}")
@@ -139,6 +146,7 @@ set(MXSRCLIB_SOURCES
         timer.cpp
         arch/${MXSRCLIB_ARCH}/mxifa.cpp
         arch/${MXSRCLIB_ARCH}/counter.cpp
+        ${ARCH_SOURCES}
 )
 set(MXSRCLIB_HEADERS_DIR
         .
