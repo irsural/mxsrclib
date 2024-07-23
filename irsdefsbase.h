@@ -1,8 +1,8 @@
 //! \file
 //! \ingroup configuration_group
-//! \brief Глобальные объявления типов
+//! \brief пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 //!
-//! Дата создания: 17.10.2012
+//! пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: 17.10.2012
 
 #ifndef IRSDEFSBASEH
 #define IRSDEFSBASEH
@@ -20,25 +20,25 @@
 #endif //__ARM_ARCH_PROFILE
 #endif //__ARM_EABI__
 
-// Определения платформы
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
   (defined(_MSC_VER) && defined(_WIN32))
-#define IRS_WIN32 // Платформа Win32 API
+#define IRS_WIN32 // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Win32 API
 #elif defined(__GNUC__)
 #ifdef IRS_CORTEX_M
 #define IRS_GCC_CORTEX_M
 #elif defined(__x86_64__)
-#define IRS_LINUX // Платформа Linux
+#define IRS_LINUX // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Linux
 #else
-#error "Платформа не определена"
+#error "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
 #endif
-#endif // Определения платформы
+#endif // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 #if defined(__ICCAVR__) || defined(__ICCARM__) || defined(IRS_GCC_CORTEX_M)
 #define IRS_MICROCONTROLLER
 #endif //defined(__ICCAVR__) || defined(__ICCARM__)
 
-// Определение поддержки C++11
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ C++11
 #ifdef __cplusplus
 # if (__cplusplus >= 201103L)
 #   define IRS_CPP11_SUPPORT 1
@@ -49,7 +49,7 @@
 # define IRS_CPP11_SUPPORT 0
 #endif // IRS_CPP11_SUPPORT
 
-// Определение версии Builder
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ Builder
 #define IRS_CPP_BUILDER4            0x0540
 #define IRS_CPP_BUILDER6            0x0560
 #define IRS_CPP_BUILDER2006         0x0580
@@ -59,21 +59,21 @@
 #define IRS_CPP_BUILDERXE_UPDATE1   0x0631
 #define IRS_CPP_BUILDERXE3          0x0650
 
-// Включение Unicode
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Unicode
 #ifdef __BORLANDC__
 // _DELPHI_STRING_UNICODE
 # if __BORLANDC__ >= IRS_CPP_BUILDER2010
 #   define IRS_UNICODE_GLOBAL
-    // Для заголовочных файлов Windows
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ Windows
 #   define UNICODE
 # endif
 #elif defined(__MINGW32__) && defined(UNICODE)
-// Для Qt с MinGW
+// пїЅпїЅпїЅ Qt пїЅ MinGW
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(__GNUC__) && (__GNUC__ >= 4) && __LINUX__ && defined(UNICODE))
-// Для Qt с linux-g++
+// пїЅпїЅпїЅ Qt пїЅ linux-g++
 #   define IRS_UNICODE_GLOBAL
-#elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
+#elif (defined(_MSC_VER) && (_MSC_VER >= 1400) && defined(UNICODE))
 # define IRS_UNICODE_GLOBAL
 #else
   //#define IRS_UNICODE_GLOBAL
@@ -87,13 +87,13 @@
 # endif //compilers
 #endif //IRS_UNICODE_GLOBAL
 
-// Для исправления ошибки в C++Builder XE Update 1
+// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ C++Builder XE Update 1
 # if (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 #define BOOST_TR1_USE_OLD_TUPLE
 #endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
 #ifdef IRS_CPP11_SUPPORT
-// Для типов int8_t, int16_t и т.д.
+// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ int8_t, int16_t пїЅ пїЅ.пїЅ.
 # include <stdint.h>
 #endif // IRS_CPP11_SUPPORT
 
@@ -119,34 +119,34 @@
 #endif // IRS_STM32H7xx
 
 
-// Деректива throw
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ throw
 #ifdef __ICCAVR__
 #define IRS_THROW(_THROW_LIST_)
 #else //__ICCAVR__
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
 #endif //__ICCAVR__
 
-// Возможности компиляторов
-// __ICCAVR__ - Компилятор IAR для AVR
-// __WATCOMC__ - Компилятор Open Watcom
-// __GNUC__ - Компилятор GNU
-// __BORLANDC__ - Компилятор Borland
-// _MSC_VER - Компилятор Microsoft Visual C++
-// __AVR32__ - Компилятор GCC для AVR32
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// __ICCAVR__ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IAR пїЅпїЅпїЅ AVR
+// __WATCOMC__ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Open Watcom
+// __GNUC__ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ GNU
+// __BORLANDC__ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Borland
+// _MSC_VER - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Microsoft Visual C++
+// __AVR32__ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ GCC пїЅпїЅпїЅ AVR32
 
-// Поддержка частичной специализации для функций
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #if !defined(__WATCOMC__)
 #define IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
-// Полная поддержка библиотеки C++
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ C++
 #if (defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__CYGWIN__)) || \
   (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) || \
   (defined(_MSC_VER) && (_MSC_VER >= 1400))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-// Опции для файла irscpp.h
+// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ irscpp.h
 #ifdef __embedded_cplusplus
 #define NAMESPACE_STD_NOT_SUPPORT
 #endif //__embedded_cplusplus
@@ -157,19 +157,19 @@
 #define IRS_STD std::
 #endif //!NAMESPACE_STD_NOT_SUPPORT
 
-// Включение 64-битного типа
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 #define IRSDEFS_I64
 
-// Включение большого целого типа
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 #define IRSDEFS_LONG_LONG
 
-// Специальные описатели для манипуляторов в различных компиляторах
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #if defined(__WATCOMC__)
 #define IRS_STREAMSPECDECL _WPRTLINK
 #else //compilers
 #define IRS_STREAMSPECDECL
 #endif //compilers
-// Определение модификатора flash для компилятора IAR AVR
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ flash пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IAR AVR
 #define IRS_ICCAVR_FLASH __flash
 #ifdef __ICCAVR__
 #define IRS_CSTR_NONVOLATILE IRS_ICCAVR_FLASH
@@ -177,14 +177,14 @@
 #define IRS_CSTR_NONVOLATILE
 #endif //__ICCAVR__
 
-// GCC версии < 3.4
+// GCC пїЅпїЅпїЅпїЅпїЅпїЅ < 3.4
 #if (defined(__GNUC__) && \
       (\
         ( (__GNUC__ < 3) || (__GNUC__ == 3) && (__GNUC_MINOR__ < 4) )\
       )\
     )
 #define IRS_GNUC_VERSION_LESS_3_4
-#endif // GCC версии < 3.4
+#endif // GCC пїЅпїЅпїЅпїЅпїЅпїЅ < 3.4
 
 #ifdef __GNUC__
 
@@ -200,7 +200,7 @@
 #else // __GNUC__
 
 #define IGNORE_DIAGNOSTIC_ENTER(diag)
-#define GCC_IGNORE_DIAGNOSTIC_EXIT()
+#define IGNORE_DIAGNOSTIC_EXIT()
 
 #endif // __GNUC__
 
@@ -240,12 +240,12 @@
 # define IRS_USE_STM32_USB_HID_HARDFLOW 0
 #endif // IRS_USE_STM32_USB_HID_HARDFLOW
 
-// Статические утверждения
-// Взято из STLSoft
-// Перенесено из irserror.h для того, чтобы была возможность применить
-// в irsstrdefs.h
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ STLSoft
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ irserror.h пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// пїЅ irsstrdefs.h
 #ifdef IRS_GNUC_VERSION_LESS_3_4
-    // Эта константа у меня пока отсутствует
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : -1]; } while(0)
@@ -264,45 +264,45 @@
 
 #if IRS_CPP11_SUPPORT
 typedef int8_t              irs_i8;
-// 8-битовое целое без знака
+// 8-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef uint8_t             irs_u8;
-// 16-битовое целое со знаком
+// 16-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef int16_t      		 		irs_i16;
-// 16-битовое целое без знака
+// 16-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef uint16_t            irs_u16;
-// 32-битовое целое со знаком
+// 32-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef int32_t            	irs_i32;
-// 32-битовое целое без знака
+// 32-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef uint32_t        		irs_u32;
-// 64-битовое целое со знаком
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef int64_t             irs_i64;
-// 64-битовое целое без знака
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef uint64_t            irs_u64;
 #else // !IRS_CPP11_SUPPORT
-// Один из типов используется в функции detect_cpu_endian, поэтому стоит выше
-// других объявлений типов
-// 8-битовое целое со знаком
+// пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ detect_cpu_endian, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+// 8-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed char 		 		irs_i8;
-// 8-битовое целое без знака
+// 8-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned char 	 		irs_u8;
-// 16-битовое целое со знаком
+// 16-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed short 		 		irs_i16;
-// 16-битовое целое без знака
+// 16-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned short 	 		irs_u16;
-// 32-битовое целое со знаком
+// 32-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed long 		 		irs_i32;
-// 32-битовое целое без знака
+// 32-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned long 	 		irs_u32;
 
 # ifdef __BORLANDC__
-// 64-битовое целое со знаком
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed __int64    irs_i64;
-// 64-битовое целое без знака
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned __int64  irs_u64;
 # else //__BORLANDC__
-// 64-битовое целое со знаком
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed long long 		irs_i64;
-// 64-битовое целое без знака
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned long long 	irs_u64;
 # endif //__BORLANDC__
 
@@ -310,23 +310,23 @@ typedef unsigned long long 	irs_u64;
 
 
 #ifdef __BORLANDC__
-// Большое целое со знаком
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed __int64 irs_ilong_long;
-// Большое целое без знака
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned __int64 irs_ulong_long;
 #else // !__BORLANDC__
-// Большое целое со знаком
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef signed long long irs_ilong_long;
-// Большое целое без знака
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned long long irs_ulong_long;
 #endif // !__BORLANDC__
-// 32-битовое плавающее
+// 32-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 typedef float irs_float32;
-// 64-битовое плавающее
+// 64-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 typedef double irs_float64;
 
-// Используется в функции detect_cpu_endian, поэтому стоит выше
-// макросов IRS_HIBYTE, ...
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ detect_cpu_endian, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IRS_HIBYTE, ...
 #define IRS_FIRSTDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_)))))
 #define IRS_SECONDDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1))
 #define IRS_FIRSTWORD(_NUM_) (*((reinterpret_cast<irs_u16*>(&(_NUM_)))))
@@ -341,7 +341,7 @@ namespace irs {
 //! \addtogroup configuration_group
 //! @{
 
-// Определение порядка байтов во время выполнения
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 enum endian_t {
   little_endian = 0,
   big_endian = 1
@@ -362,7 +362,7 @@ inline endian_t detect_cpu_endian()
 //! \addtogroup configuration_group
 //! @{
 
-// Определение порядка байтов во время компиляции
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_LITTLE_ENDIAN 0
 #define IRS_BIG_ENDIAN 1
 #ifdef __AVR32__
@@ -371,13 +371,13 @@ inline endian_t detect_cpu_endian()
 #define IRS_CPU_ENDIAN IRS_LITTLE_ENDIAN
 #endif //__AVR32__
 
-// Вычисление размера статического массива
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
 #define IRS_ARRAYOFSIZE(_ARRAY_) IRS_ARRAYSIZE(_ARRAY_)
-// Определение для нулевого указателя
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_NULL 0
-// Макросы выделения из переменных их частей
-// BYTE - байты, WORD - 2 байта, DWORD - 4 байта
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+// BYTE - пїЅпїЅпїЅпїЅпїЅ, WORD - 2 пїЅпїЅпїЅпїЅпїЅ, DWORD - 4 пїЅпїЅпїЅпїЅпїЅ
 #define IRS_HIDWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1):\
   *((reinterpret_cast<irs_u32*>(&(_NUM_)))))
@@ -397,7 +397,7 @@ inline endian_t detect_cpu_endian()
   *((reinterpret_cast<irs_u8*>(&(_NUM_)))):\
   *((reinterpret_cast<irs_u8*>(&(_NUM_))) + 1))
 
-// Макросы выделения из переменных их частей для констант
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_CONST_HIDWORD(_NUM_)\
   (static_cast<irs_u32>(((_NUM_) >> 32)&0xFFFFFFFF))
 #define IRS_CONST_LODWORD(_NUM_)\
@@ -411,43 +411,43 @@ inline endian_t detect_cpu_endian()
 #define IRS_CONST_LOBYTE(_NUM_)\
   (static_cast<irs_u8>((_NUM_)&0xFF))
 
-// Макросы для нахождения максимального и минимального значения
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))
-// Макросы удаления
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
-// Макрос __FUNC__
+// пїЅпїЅпїЅпїЅпїЅпїЅ __FUNC__
 #if defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__) ||\
   defined(_MSC_VER)
 #define __FUNC__ __FUNCTION__
 #endif //defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
 
 #ifdef __ICCAVR__
-// Разрешение прерываний
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define irs_enable_interrupt() { __enable_interrupt(); }
-// Запрещение прерываний
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define irs_disable_interrupt() { __disable_interrupt(); }
 #endif //__ICCAVR__
 
-// Макросы для работы c DLL
-// Объявление внешней функции
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ c DLL
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_DLL_FUNC_DECL(_RETURN_, _FUNC_NAME_, _ARGS_)\
   extern "C" __declspec(dllexport) _RETURN_ _FUNC_NAME_ _ARGS_;
-// Определение типа для функции
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_DLL_FUNC_TYPE_DEF(_RETURN_, _FUNC_NAME_, _ARGS_)\
   typedef _RETURN_ (*_FUNC_NAME_##_t)_ARGS_;
-// Объявление указателя на функции
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_DLL_FUNC_DECL_VAR(_FUNC_)\
   _FUNC_##_t _FUNC_ = IRS_NULL;
-// Подключение укзателя на функцию к функции DLL
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ DLL
 #define IRS_DLL_FUNC_ATTACH(_FUNC_)\
 {\
   _FUNC_ = (_FUNC_##_t)GetProcAddress(LibHandle, "_" #_FUNC_);\
   if (!_FUNC_) { NumErrFunc++; goto err_func; }\
 }
 
-// Математические константы
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define IRS_E         2.71828182845904523536
 #define IRS_LOG2E     1.44269504088896340736
 #define IRS_LOG10E    0.434294481903251827651
@@ -463,7 +463,7 @@ inline endian_t detect_cpu_endian()
 #define IRS_SQRT2     1.41421356237309504880
 #define IRS_SQRT_2    0.707106781186547524401
 
-// Максимальные и минимальные значения по типам
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 #define IRS_I8_MIN (-128)
 #define IRS_I8_MAX 127
 #define IRS_U8_MIN 0
@@ -481,9 +481,9 @@ inline endian_t detect_cpu_endian()
 #define IRS_UARC_MIN 0U
 #define IRS_UARC_MAX UINT_MAX
 
-// Тип с разрядностью процессора (ОС) со знаком
+// пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ) пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef int           irs_iarc;
-// Тип с разрядностью процессора (ОС) без знака
+// пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ) пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef unsigned int  irs_uarc;
 
 #ifdef IRSDEFS_I64
@@ -497,9 +497,9 @@ typedef unsigned int  irs_uarc;
 #define IRS_IMAX_MAX IRS_I64_MAX
 #define IRS_UMAX_MIN IRS_U64_MIN
 #define IRS_UMAX_MAX IRS_U64_MAX
-// Максимальное целое со знаком
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef irs_i64 irs_imax;
-// Максимальное целое без знака
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef irs_u64 irs_umax;
 
 #else //IRSDEFS_I64
@@ -508,14 +508,14 @@ typedef irs_u64 irs_umax;
 #define IRS_IMAX_MAX IRS_I32_MAX
 #define IRS_UMAX_MIN IRS_U32_MIN
 #define IRS_UMAX_MAX IRS_U32_MAX
-// Максимальное целое со знаком
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 typedef irs_i32 irs_imax;
-// Максимальное целое без знака
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef irs_u32 irs_umax;
 
 #endif //IRSDEFS_I64
 
-// Булевый тип
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
 typedef irs_u8   irs_bool;
 
 const irs_bool   irs_true = 1;
@@ -531,13 +531,13 @@ typedef void (*irs_vfunc)();
 # define IRS_SOCKET_ERROR -1
 #endif // IRS_LINUX
 
-// Тип для пина
+// пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 enum irs_pin_t {
   irs_on = 0,
   irs_off = 1
 };
 
-// Абстрактный тип для портов AVR
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ AVR
 enum irs_avr_port_t {
   irs_avr_porta = 0,
   irs_avr_portb = 1,
@@ -549,7 +549,7 @@ enum irs_avr_port_t {
 };
 
 #ifdef __ICCARM__
-// Указатель на порт ARM
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ ARM
 typedef volatile irs_u32 arm_port_t;
 typedef arm_port_t* p_arm_port_t;
 typedef volatile irs_u32 mc_port_t;
@@ -558,7 +558,7 @@ typedef arm_port_t* p_mc_port_t;
 #endif // __ICCARM__
 
 #ifdef __ICCAVR__
-// Указатель на порт AVR
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ AVR
 typedef irs_u8 volatile __tiny avr_port_t;
 typedef avr_port_t* p_avr_port_t;
 typedef irs_u8 volatile __tiny mc_port_t;
@@ -566,7 +566,7 @@ typedef avr_port_t* p_mc_port_t;
 #define mc avr
 #endif //__ICCAVR__
 
-// Класс для функций обработки
+// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 class mx_proc_t {
 public:
   virtual ~mx_proc_t() {}
@@ -574,7 +574,7 @@ public:
   virtual void abort() = 0;
 };
 
-// Переопределение станартных типов
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 typedef size_t irs_size_t;
 typedef ptrdiff_t irs_ptrdiff_t;
 
@@ -587,7 +587,7 @@ enum switch_t {
   sw_on = 1
 };
 
-//! \brief Код устройства
+//! \brief пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 enum device_code_t {
   device_code_unknown = 0,
   device_code_first = 1,
@@ -614,14 +614,14 @@ inline bool is_known_device_code(irs_size_t a_code)
 
 }//namespace irs
 
-//  Статус всего
+//  пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 enum irs_status_t {
   irs_st_busy,
   irs_st_ready,
   irs_st_error
 };
 
-// Гасим ненужные предупреждения C++ Builder
+// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ C++ Builder
 #ifdef __BCPLUSPLUS__
 // Condition is always true OR Condition is always false (Default ON)
 #pragma warn -8008
