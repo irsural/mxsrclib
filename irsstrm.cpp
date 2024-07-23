@@ -4,7 +4,9 @@
 #endif // __BORLANDC__
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armcfg.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 
 #include <irsstrm.h>
@@ -12,6 +14,9 @@
 #include <irsfinal.h>
 
 #ifdef __ICCARM__
+
+#ifndef IRS_STM32H7xx
+
 // class com_buf
 
 irs::arm::com_buf::com_buf(const com_buf& a_buf):
@@ -193,7 +198,7 @@ irs::arm::com_buf::com_buf(
 void irs::arm::com_buf::set_usart_options(int a_com_index)
 {
   m_usart->USART_CR1_bit.UE = 1;
-  
+
   #ifdef IRS_STM32F7xx
   m_usart->USART_CR1_bit.M0 = 0; // 8 Data bits
   #else // F2 F4
@@ -241,7 +246,7 @@ irs::arm::com_buf::com_buf(
   set_usart_options(a_com_index);
   if (a_tx != PNONE) {
     m_usart->USART_CR1_bit.TE = 1; // 1: Transmitter is enabled
-  }  
+  }
 }
 
 #endif // IRS_STM32_F2_F4_F7
@@ -304,4 +309,151 @@ int irs::arm::com_buf::sync()
   return overflow();
 }
 
+// class telnet_buf
+
+//irs::arm::telnet_buf::telnet_buf(int a_outbuf_size):
+//  m_outbuf_size(a_outbuf_size),
+//  m_outbuf(new char[m_outbuf_size + 1]),
+//  mp_tcp_socket(0),
+//  m_start_connection(true),
+//  m_connected(true),
+//  m_sending_frame(false)
+//{
+//  memset(m_outbuf.get(), 0, m_outbuf_size);
+//  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+//  mp_tcp_socket = tcp_new();
+//  tcp_bind(mp_tcp_socket, IP_ADDR_ANY, 23);
+//  mp_tcp_socket = tcp_listen(mp_tcp_socket);
+//  tcp_accept(mp_tcp_socket, DebugSockAccept);
+//}
+//
+//void irs::arm::telnet_buf::trans (char data)
+//{
+//  if (data == '\n'){
+//    trans_simple('\r');
+//    trans_simple('\n');
+//  } else {
+//    trans_simple(data);
+//  }
+//}
+//void irs::arm::telnet_buf::trans_simple (char /*data*/)
+//{
+////  #if defined(__LM3Sx9xx__)
+////    UART0DR = data;
+////    while (UART0FR_bit.TXFF);
+////  #elif defined(__LM3SxBxx__)
+////    UART0DR_bit.DATA = data;
+////    while (UART0FR_bit.TXFF);
+////  #elif defined(__STM32F100RBT__)
+////    volatile char x = data;
+////    //data = 0;
+////  #elif defined(IRS_STM32_F2_F4_F7)
+////    // 1: Transmitter is enabled
+////    //m_usart->USART_CR1_bit.TE = 1;
+////    #ifdef IRS_STM32F7xx
+////    while (m_usart->USART_ISR_bit.TC != 1);
+////    m_usart->USART_TDR = data;
+////    #else // F2 F4
+////    while (m_usart->USART_SR_bit.TC != 1);
+////    m_usart->USART_DR = data;
+////    #endif // F2 F4
+////  #else
+////    #error Òèï êîíòðîëëåðà íå îïðåäåë¸í
+////  #endif  //  mcu type
+//}
+//
+//int irs::arm::telnet_buf::overflow(int c)
+//{
+//  int len_s = pptr() - pbase();
+//  if (len_s > 0) {
+//    *pptr() = 0;
+//    char* pend = pptr();
+//    for(char *message = pbase(); message<pend; message++ ) {
+//      trans(*message);
+//    }
+//  }
+//  if (c != EOF) {
+//    trans(c);
+//  }
+//  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+//  return 0;
+//}
+//
+//int irs::arm::telnet_buf::sync()
+//{
+//  return overflow();
+//}
+
+#else // ->if defined(IRS_STM32H7xx)
+
+// class st_hal_com_buf
+
+irs::arm::st_hal_com_buf::st_hal_com_buf(const st_hal_com_buf& a_buf):
+  m_gpio_handle(a_buf.m_gpio_handle),
+  mp_uart_handle(a_buf.mp_uart_handle),
+  m_outbuf_size(a_buf.m_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1])
+{
+  memset(m_outbuf.get(), 0, m_outbuf_size);
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+}
+
+
+irs::arm::st_hal_com_buf::st_hal_com_buf(GPIO_TypeDef* ap_uart_port,
+    const GPIO_InitTypeDef& a_gpio_handle, UART_HandleTypeDef* ap_uart_handle,
+    int a_outbuf_size) :
+  m_gpio_handle(a_gpio_handle),
+  mp_uart_handle(ap_uart_handle),
+  m_outbuf_size(a_outbuf_size),
+  m_outbuf(new char[m_outbuf_size + 1])
+{
+  //---Âñå êëîêè èíèöèàëèçèðóþòñÿ äî îáúÿâëåíèÿ êëàññà---//
+  HAL_GPIO_Init(ap_uart_port, &m_gpio_handle);
+  HAL_UART_Init(mp_uart_handle);
+}
+
+
+void irs::arm::st_hal_com_buf::trans (char data)
+{
+  if (data == '\n'){
+    trans_simple('\r');
+    trans_simple('\n');
+  } else {
+    trans_simple(data);
+  }
+}
+void irs::arm::st_hal_com_buf::trans_simple (char data)
+{
+  HAL_UART_Transmit(mp_uart_handle, (uint8_t *)&data, 1, 0xFFFF);
+}
+
+int irs::arm::st_hal_com_buf::overflow(int c)
+{
+  int len_s = pptr() - pbase();
+  if (len_s > 0) {
+    *pptr() = 0;
+    char* pend = pptr();
+    for(char *message = pbase(); message<pend; message++ ) {
+      trans(*message);
+    }
+  }
+  if (c != EOF) {
+    trans(c);
+  }
+  setp(m_outbuf.get(), m_outbuf.get() + m_outbuf_size);
+  return 0;
+}
+int irs::arm::st_hal_com_buf::sync()
+{
+  return overflow();
+}
+
+//--ÔÓÍÊÖÈß ÇÀÒÛ×ÊÀ ÄËß ÕÀËÀ, ÍÅ ÓÄÀËßÒÜ--//
+void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+{
+ //--ÏÈÍÛ ÈÍÈÖÈÀËÈÇÈÐÓÞÒÑß ÑÍÀÐÓÆÈ ÊÀËÑÑÀ--//
+}
+
+
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__

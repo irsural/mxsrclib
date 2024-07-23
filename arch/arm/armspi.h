@@ -513,7 +513,7 @@ void arm_spi_t::writeToDR(const irs_u8* ap_buf, size_t a_pos)
     *reinterpret_cast<T*>(&mp_spi_regs->SPI_DR) =
       *reinterpret_cast<const T*>(&ap_buf[a_pos]);
   } else {
-    *reinterpret_cast<T*>(&mp_spi_regs->SPI_DR) = T(0);
+    *reinterpret_cast<T*>(&mp_spi_regs->SPI_DR) = static_cast<T>(0);
   }
 }
 

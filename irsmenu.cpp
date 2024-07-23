@@ -82,11 +82,11 @@ void irs_menu_base_t::set_master_menu(irs_menu_base_t *a_master_menu)
   f_master_menu = a_master_menu;
 }
 
-void irs_menu_base_t::set_header(char *a_header)
+void irs_menu_base_t::set_header(const char *a_header)
 {
   f_header = a_header;
 }
-char *irs_menu_base_t::get_header()
+const char *irs_menu_base_t::get_header()
 {
   return f_header;
 }
@@ -106,11 +106,11 @@ void irs_menu_base_t::set_data_attached(void* ap_data)
   mp_data_attached = ap_data;
 }
 
-void irs_menu_base_t::set_message(char *a_message)
+void irs_menu_base_t::set_message(const char *a_message)
 {
   f_message = a_message;
 }
-char *irs_menu_base_t::get_message()
+const char *irs_menu_base_t::get_message()
 {
   return f_message;
 }
@@ -708,7 +708,8 @@ irs_menu_double_item_t::irs_menu_double_item_t(double *a_parametr,
   irs_bool a_can_edit):
   f_prefix(empty_str),
   f_suffix(empty_str),
-  f_value_string(empty_str),
+  f_value_string(empty_str, IRS_ARRAYSIZE(empty_str)),
+  f_hint(empty_str),
   f_num_mode(irs::num_mode_fixed),
   f_space_count_after_prefix(1),
   f_len(0),
@@ -763,11 +764,12 @@ void irs_menu_double_item_t::set_min_value(float a_min_value)
   update_progressive_change_parameters();
 }
 
-void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
-  char *a_suffix, size_type a_len, size_type a_accur,
-  irs::num_mode_t a_num_mode)
+//a_value_string реально не используется
+void irs_menu_double_item_t::set_str(const char */*a_value_string*/, 
+  const char *a_prefix, const char *a_suffix, size_type a_len, 
+  size_type a_accur, irs::num_mode_t a_num_mode)
 {
-  f_value_string = a_value_string;
+  //strcpy(f_value_string, a_value_string);
   f_num_mode = a_num_mode;
   f_len = a_len;
   f_accur = a_accur;
@@ -775,6 +777,11 @@ void irs_menu_double_item_t::set_str(char *a_value_string, char *a_prefix,
   f_suffix = a_suffix;
 
   update_str_parameters();
+}
+
+void irs_menu_double_item_t::set_hint(char *a_hint)
+{
+  f_hint = a_hint;
 }
 
 void irs_menu_double_item_t::set_space_count_after_prefix(size_type a_count)
@@ -785,22 +792,26 @@ void irs_menu_double_item_t::set_space_count_after_prefix(size_type a_count)
 
 void irs_menu_double_item_t::update_str_parameters()
 {
+  #ifdef NOP
   size_type space = 1;
   size_type full_len = f_len + f_space_count_after_prefix +
-    strlen(f_prefix) + space + strlen(f_suffix);
+    strlen(f_prefix) + space + strlen(f_suffix) + 1;
+  #endif //NOP
 
   delete []f_copy_parametr_string;
-  f_copy_parametr_string = new char [full_len + 1];
+  f_copy_parametr_string = new char [f_len + 1];
   f_copy_parametr = *f_parametr;
-  afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur, f_num_mode);
-  strcpy(f_copy_parametr_string, f_value_string);
+  f_value_string.resize(f_len + 1);
+  afloat_to_str(f_value_string.data(), f_copy_parametr, f_len, f_accur, 
+    f_num_mode);
+  strcpy(f_copy_parametr_string, f_value_string.data());
   m_updated = true;
 }
 
 void irs_menu_double_item_t::reset_str()
 {
   //for (irs_u8 i = 0; i < f_len; f_value_string[i++] = ' ');
-  memset(f_value_string, ' ', f_len);
+  memset(f_value_string.data(), ' ', f_len);
   f_value_string[f_len] = '\0';
 }
 
@@ -851,26 +862,26 @@ irs_menu_base_t::size_type irs_menu_double_item_t::get_parametr_string(
       if (a_update == IMU_UPDATE)
       {
         f_copy_parametr = *f_parametr;
-        afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
+        afloat_to_str(f_value_string.data(), f_copy_parametr, f_len, f_accur,
           f_num_mode);
-        strcpy(f_copy_parametr_string, f_value_string);
+        strcpy(f_copy_parametr_string, f_value_string.data());
       }
       else
       {
-        strcpy(f_value_string, f_copy_parametr_string);
+        strcpy(f_value_string.data(), f_copy_parametr_string);
       }
     }
     else
     {
-      strcpy(f_value_string, f_copy_parametr_string);
+      strcpy(f_value_string.data(), f_copy_parametr_string);
     }
-    size_type len2 = strlen(f_value_string);
+    size_type len2 = strlen(f_value_string.data());
 
     if ((a_length > 0) && ((len + len2) > a_length))
     {
       len2 = a_length - len;
       memcpy(reinterpret_cast<void*>(&a_parametr_string[len]),
-        f_value_string, len2);
+        f_value_string.data(), len2);
       size_type real_len = len + len2;
       a_parametr_string[real_len] = '\0';
       return real_len;
@@ -1031,16 +1042,16 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
         f_cur_symbol = 0;
         //mp_disp_drv->clear_line(EDIT_LINE);
         mp_disp_drv->outtextpos(0, 0, f_header);
-        afloat_to_str(f_value_string, *f_parametr, f_len, f_accur, f_num_mode);
+        afloat_to_str(f_value_string.data(), *f_parametr, f_len, f_accur, f_num_mode);
 
         const size_type space = 1;
         size_type prf_x_pos = 0;
         size_type val_x_pos = strlen(f_prefix) + space;
-        size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+        size_type suf_x_pos = val_x_pos + space + strlen(f_value_string.data());
         size_type y_pos = 1;
 
         mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
-        mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+        mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string.data());
         mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);
         f_cursor[0] = ' ';
         f_copy_parametr = *f_parametr;
@@ -1083,17 +1094,18 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             {
               mp_disp_drv->clear();
               mp_disp_drv->outtextpos(0, 0, f_header);
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+              afloat_to_str(f_value_string.data(), *f_parametr, f_len, f_accur,
                 f_num_mode);
 
               const size_type space = 1;
               size_type prf_x_pos = 0;
               size_type val_x_pos = strlen(f_prefix) + space;
-              size_type suf_x_pos = val_x_pos + space + strlen(f_value_string);
+              size_type suf_x_pos = val_x_pos + space + 
+                strlen(f_value_string.data());
               size_type y_pos = 1;
 
               mp_disp_drv->outtextpos(prf_x_pos, y_pos, f_prefix);
-              mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string);
+              mp_disp_drv->outtextpos(val_x_pos, y_pos, f_value_string.data());
               mp_disp_drv->outtextpos(suf_x_pos, y_pos, f_suffix);
               f_want_redraw = irs_false;
             }
@@ -1104,7 +1116,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
               mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
             }
-            else mp_disp_drv->clear_line(mp_disp_drv->get_height() - 1);
+            else 
+            {
+              mxdisp_pos_t x_pos = 0;
+              mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+              mp_disp_drv->clear_line(y_pos);
+              mp_disp_drv->outtextpos(x_pos, y_pos, f_hint);
+            }
             break;
           }
         }
@@ -1144,7 +1162,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             f_value_string[f_cur_symbol] = '\0';
             if (f_cur_symbol > 0)
             {
-              *f_parametr = atof(f_value_string);
+              *f_parametr = atof(f_value_string.data());
               if (*f_parametr > f_max) *f_parametr = f_max;
               if (*f_parametr < f_min) *f_parametr = f_min;
               if (f_double_trans) f_double_trans(f_parametr);
@@ -1160,6 +1178,13 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
             mxdisp_pos_t x_pos = 0;
             mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
             mp_disp_drv->outtextpos(x_pos, y_pos, f_creep->get_line());
+          }          
+          else 
+          {
+            mxdisp_pos_t x_pos = 0;
+            mxdisp_pos_t y_pos = mp_disp_drv->get_height() - 1;
+            mp_disp_drv->clear_line(y_pos);
+            mp_disp_drv->outtextpos(x_pos, y_pos, f_hint);
           }
           if (f_cur_symbol < f_len)
           {
@@ -1294,9 +1319,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               {
                 f_copy_parametr = *f_parametr;
               }
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+              afloat_to_str(f_value_string.data(), *f_parametr, f_len, f_accur,
                 f_num_mode);
-              strcpy(f_copy_parametr_string, f_value_string);
+              strcpy(f_copy_parametr_string, f_value_string.data());
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
               m_updated = true;
@@ -1317,9 +1342,9 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
               {
                 *f_parametr = f_copy_parametr;
               }
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+              afloat_to_str(f_value_string.data(), *f_parametr, f_len, f_accur,
                 f_num_mode);
-              strcpy(f_copy_parametr_string, f_value_string);
+              strcpy(f_copy_parametr_string, f_value_string.data());
               if (f_double_trans) f_double_trans(f_parametr);
               if (mp_event) mp_event->exec();
               m_updated = true;
@@ -1387,17 +1412,17 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
 
             if (f_apply_immediately)
             {
-              afloat_to_str(f_value_string, *f_parametr, f_len, f_accur,
+              afloat_to_str(f_value_string.data(), *f_parametr, f_len, f_accur,
                 f_num_mode);
             }
             else
             {
-              afloat_to_str(f_value_string, f_copy_parametr, f_len, f_accur,
-                f_num_mode);
+              afloat_to_str(f_value_string.data(), f_copy_parametr, f_len,
+                f_accur, f_num_mode);
             }
 
             mxdisp_pos_t pref_len = mxdisp_pos_t(strlen(f_prefix));
-            mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string));
+            mxdisp_pos_t val_len = mxdisp_pos_t(strlen(f_value_string.data()));
             mxdisp_pos_t space = 1;
             mxdisp_pos_t val_pos_x =
               static_cast<mxdisp_pos_t>(pref_len + space);
@@ -1407,7 +1432,7 @@ void irs_menu_double_item_t::draw(irs_menu_base_t **a_cur_menu)
 
             mp_disp_drv->clear_line(1);
             mp_disp_drv->outtextpos(0, 1, f_prefix);
-            mp_disp_drv->outtextpos(val_pos_x, line_num, f_value_string);
+            mp_disp_drv->outtextpos(val_pos_x, line_num, f_value_string.data());
             mp_disp_drv->outtextpos(suff_pos_x, line_num, f_suffix);
           }
           break;
@@ -2456,7 +2481,12 @@ irs_menu_spin_item_t::string_type irs_menu_spin_item_t::param_to_str() const
   string_type str_value;
 
   ostrstream ostr;
-  ostr << fixed << setprecision(str_precision) << m_mantissa << ends;
+  if (m_prefixes.empty()) {
+    ostr << defaultfloat << uppercase;
+  } else {
+    ostr << fixed;
+  }
+  ostr << setprecision(str_precision) << m_mantissa << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
   ostr.rdbuf()->freeze(false);
@@ -2503,7 +2533,12 @@ int irs_menu_spin_item_t::get_precision_fixed() const
 
   IRS_LIB_ASSERT(int_part_digit_count > 0);
 
-  int precision = m_precision - (int_part_digit_count/* - 1*/);
+  int precision = m_precision;
+  if (m_prefixes.empty()) {
+    precision -= (int_part_digit_count - 1);
+  } else {
+    precision -= int_part_digit_count;
+  }
   if (precision < 0) {
     precision = 0;
   }
@@ -2575,7 +2610,11 @@ irs_menu_spin_item_t::string_type irs_menu_spin_item_t::conv_num_to_str_general(
   }
 
   ostrstream ostr;
-  ostr << setprecision(m_precision) << a_value << ends;
+  ostr << setprecision(m_precision);
+  if (m_prefixes.empty()) {
+    ostr << uppercase;
+  }
+  ostr << a_value << ends;
   str_value = irs::str_conv<string_type>(string(ostr.str()));
   // Для совместимости с различными компиляторами
   ostr.rdbuf()->freeze(false);
@@ -2852,7 +2891,8 @@ irs_menu_spin_item_t::get_parametr_string(
       }
     }
 
-    const size_type size = min(m_result_str.size(), a_length - 1);
+    //const size_type size = min(m_result_str.size(), a_length - 1);
+    const size_type size = min(m_result_str.size(), a_length);
 
     if (size > 0) {
       memcpy(reinterpret_cast<void*>(a_parametr_string),
@@ -4191,7 +4231,8 @@ void irs_menu_bool_item_t::set_trans_function(bool_trans_t a_bool_trans)
   f_bool_trans = a_bool_trans;
 }
 
-void irs_menu_bool_item_t::set_str(char *a_true_string, char *a_false_string)
+void irs_menu_bool_item_t::set_str(const char *a_true_string,
+  const char *a_false_string)
 {
   f_true_string = a_true_string;
   f_false_string = a_false_string;
@@ -4411,7 +4452,8 @@ irs_menu_string_item_t::irs_menu_string_item_t():
 irs_menu_string_item_t::~irs_menu_string_item_t()
 {
 }
-void irs_menu_string_item_t::set_parametr_string(char *ap_parametr_string)
+void irs_menu_string_item_t::set_parametr_string(
+  const char *ap_parametr_string)
 {
   m_updated = true;
   mp_string = ap_parametr_string;
@@ -5086,7 +5128,7 @@ irs_menu_creep_t::~irs_menu_creep_t()
   deinit_to_cnt();
 }
 
-void irs_menu_creep_t::change_static(char *a_static)
+void irs_menu_creep_t::change_static(const char *a_static)
 {
   if (a_static)
   {
@@ -5107,7 +5149,7 @@ void irs_menu_creep_t::change_static(char *a_static)
   }
 }
 
-void irs_menu_creep_t::change_message(char *a_message)
+void irs_menu_creep_t::change_message(const char *a_message)
 {
   if (a_message != IRS_NULL)
   {

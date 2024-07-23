@@ -410,7 +410,6 @@ void irs::binary_data_to_hex_str(const irs_u8* ap_buf, std::size_t a_buf_size,
   irs::string_t* ap_str)
 {
   typedef irs_size_t size_type;
-  typedef irs::string_t string_type;
   const irs::char_t data_hex_map[] = {irst('0'),  irst('1'), irst('2'),
     irst('3'), irst('4'), irst('5'), irst('6'), irst('7'), irst('8'),
     irst('9'), irst('A'), irst('B'), irst('C'), irst('D'), irst('E'),

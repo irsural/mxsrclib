@@ -701,7 +701,7 @@ struct integer_signed_detect_base_t<false>
 };
 template <class T>
 struct integer_sign_detect_t:
-  integer_signed_detect_base_t<T(-1) < 0>
+  integer_signed_detect_base_t<static_cast<T>(-1) < 0>
 {
 };
 template <class T>

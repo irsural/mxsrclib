@@ -458,6 +458,11 @@ void irs_arm_exti3_func()
   EXTI_PR_bit.PR9 = 1;
 }
 
+void irs_arm_dma1_stream5()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::dma1_stream5_int);
+} 
+
 void irs_arm_exti9_5_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti9_5_int);
@@ -485,9 +490,19 @@ void irs_arm_tim1_up_tim10_func()
   TIM10_SR_bit.CC1IF = 0;
 }
 
+void irs_arm_tim2_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim2_int);
+}
+
 void irs_arm_tim3_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::tim3_int);
+}
+
+void irs_arm_tim5_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::tim5_int);
 }
 
 void irs_arm_exti15_10_func()
@@ -749,7 +764,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 13
   irs_arm_default_int_func,  // 14
   irs_arm_default_int_func,  // 15
-  irs_arm_default_int_func,  // 16
+  irs_arm_dma1_stream5,      // 16
   irs_arm_default_int_func,  // 17
   irs_arm_default_int_func,  // 18
   irs_arm_default_int_func,  // 19
@@ -761,7 +776,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_tim1_up_tim10_func,// 25
   irs_arm_default_int_func,  // 26
   irs_arm_default_int_func,  // 27
-  irs_arm_default_int_func,  // 28
+  irs_arm_tim2_func,  // 28
   irs_arm_tim3_func,         // 29
   irs_arm_default_int_func,  // 30
   irs_arm_default_int_func,  // 31
@@ -783,7 +798,7 @@ __root const intfunc __int_vector_table[] =
   irs_arm_default_int_func,  // 47
   irs_arm_default_int_func,  // 48
   irs_arm_sdio_func,  // 49
-  irs_arm_default_int_func,  // 50
+  irs_arm_tim5_func,  // 50
   irs_arm_default_int_func,  // 51
   irs_arm_usart4_func,  // 52
   irs_arm_usart5_func,  // 53

@@ -14,15 +14,27 @@
 
 #define IRS_LIB_VERSION_SUPPORT_GREATER(ver) (IRS_LIB_VERSION_SUPPORT > ver)
 
+#ifdef __ARM_EABI__
+#if __ARM_ARCH_PROFILE == 'M'
+#define IRS_CORTEX_M
+#endif //__ARM_ARCH_PROFILE
+#endif //__ARM_EABI__
+
 // Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
   (defined(_MSC_VER) && defined(_WIN32))
 #define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
+#ifdef IRS_CORTEX_M
+#define IRS_GCC_CORTEX_M
+#elif defined(__x86_64__)
 #define IRS_LINUX // Платформа Linux
+#else
+#error "Платформа не определена"
+#endif
 #endif // Определения платформы
 
-#if defined(__ICCAVR__) || defined(__ICCARM__)
+#if defined(__ICCAVR__) || defined(__ICCARM__) || defined(IRS_GCC_CORTEX_M)
 #define IRS_MICROCONTROLLER
 #endif //defined(__ICCAVR__) || defined(__ICCARM__)
 
@@ -58,7 +70,7 @@
 #elif defined(__MINGW32__) && defined(UNICODE)
 // Для Qt с MinGW
 #   define IRS_UNICODE_GLOBAL
-#elif (defined(__GNUC__) && (__GNUC__ >= 4))
+#elif (defined(__GNUC__) && (__GNUC__ >= 4) && __LINUX__ && defined(UNICODE))
 // Для Qt с linux-g++
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
@@ -101,7 +113,11 @@
 #include <stddef.h>
 
 #include <irsconfig.h>
+
+#ifndef IRS_STM32H7xx
 #include <irsdefsarch.h>
+#endif // IRS_STM32H7xx
+
 
 // Деректива throw
 #ifdef __ICCAVR__
@@ -170,6 +186,24 @@
 #define IRS_GNUC_VERSION_LESS_3_4
 #endif // GCC версии < 3.4
 
+#ifdef __GNUC__
+
+#define DO_PRAGMA_(x) _Pragma (#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+
+#define IGNORE_DIAGNOSTIC_ENTER(diag) \
+  _Pragma("GCC diagnostic push") \
+  DO_PRAGMA(GCC diagnostic ignored diag)
+
+#define IGNORE_DIAGNOSTIC_EXIT() _Pragma("GCC diagnostic pop")
+
+#else // __GNUC__
+
+#define IGNORE_DIAGNOSTIC_ENTER(diag)
+#define GCC_IGNORE_DIAGNOSTIC_EXIT()
+
+#endif // __GNUC__
+
 #ifndef IRS_USE_SETUPAPI_WIN
 # define IRS_USE_SETUPAPI_WIN 0
 #endif // IRS_USE_SETUPAPI_WIN
@@ -216,8 +250,15 @@
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : -1]; } while(0)
 #else /* ? compiler */
+
+
   #define IRS_STATIC_ASSERT(ex)\
-    do { typedef int ai[(ex) ? 1 : 0]; } while(0)
+    do { \
+      IGNORE_DIAGNOSTIC_ENTER("-Wunused-local-typedefs") \
+        typedef int ai[(ex) ? 1 : 0]; \
+      IGNORE_DIAGNOSTIC_EXIT() \
+    } while(0)
+
 #endif /* compiler */
 
 
@@ -556,6 +597,7 @@ enum device_code_t {
   device_code_u309m = 17,
   device_code_hrm = 18,
   device_code_gnlf = 19,
+  device_code_upms_1v = 20,
   device_code_last = device_code_hrm
 };
 

@@ -693,7 +693,7 @@ void fft_process_t<T, N>
 {
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
-  if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
+  if (size + a_index > m_size) size = static_cast<irs_uarc>(m_size - a_index);
   memcpy(reinterpret_cast<void*>(ap_buf),
     reinterpret_cast<void*>(mp_buf + a_index), size);
 }
@@ -704,7 +704,7 @@ void fft_process_t<T, N>
 {
   if (a_index >= m_size) return;
   irs_u8 size = a_size;
-  if (size + a_index > m_size) size = irs_uarc(m_size - a_index);
+  if (size + a_index > m_size) size = static_cast<irs_uarc>(m_size - a_index);
   memcpy(reinterpret_cast<void*>(mp_buf + a_index),
     reinterpret_cast<const void*>(ap_buf), size);
 }
@@ -1008,13 +1008,12 @@ inline int osc_cir_example()
   main_float_t Td = 1/Fd;
   main_float_t f_center = 125;
   // На вход класса следует подавать частоту пересчитанную по формуле:
-  main_float_t f_center_osc =
-    static_cast<main_float_t>(tan(2*IRS_PI*f_center)*Fd/IRS_PI);
+  main_float_t f_center_osc = 2 / Td * tan(f_center * Td / 2);
   main_float_t n_t_center = Fd/f_center_osc;
   main_float_t tau = 1;
   main_float_t n_tau = tau/Td;
   osc_cir_t<main_float_t> osc_cir(n_t_center, n_tau, 0);
-  
+
   int example_count = 100;
   main_float_t sum = 0;
   for (int i = 0; i < example_count; i++) {
@@ -1022,7 +1021,7 @@ inline int osc_cir_example()
     main_float_t out = osc_cir.filt(sample);
     sum += out;
   }
-  
+
   return static_cast<int>(sum/example_count);
 }
 #endif //NOP

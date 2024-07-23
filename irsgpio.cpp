@@ -236,6 +236,8 @@ inline void irs::avr::mem_out_register_t::set_value(irs_u8 a_value)
 
 #ifdef __ICCARM__
 
+#ifndef IRS_STM32H7xx
+
 irs::arm::io_pin_t::io_pin_t(arm_port_t &a_port, irs_u8 a_bit, dir_t a_dir,
   io_pin_value_t a_value
 ):
@@ -537,5 +539,7 @@ void irs::arm::io_port_t::set_dir(dir_t a_dir)
     #error Тип контроллера не определён
   #endif  //  mcu type
 }
+
+#endif //IRS_STM32H7xx
 
 #endif //__ICCARM__

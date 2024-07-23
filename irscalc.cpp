@@ -595,20 +595,6 @@ irs::calc::stringns_t remove_not_digit(irs::calc::stringns_t a_str,
   return str;
 }
 
-//! \brief Возвращает строку с удаленными символами, не являющимися буквами
-irs::calc::stringns_t remove_not_alpha(irs::calc::stringns_t a_str,
-  locale a_loc = irs::loc().get())
-{
-  irs::calc::stringns_t str = a_str;
-  std::size_t i = a_str.size();
-  while (i > 0) {
-    i--;
-    if (!irs::isalphat(str[i], a_loc)) {
-      str.erase(i, 1);
-    }
-  }
-  return str;
-}
 #endif // IRS_FULL_STDCPPLIB_SUPPORT
 
 #ifdef IRS_FULL_STDCPPLIB_SUPPORT

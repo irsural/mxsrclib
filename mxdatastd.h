@@ -121,6 +121,7 @@ template <class T, int size = sizeof(T), bool check = false>
 class conn_data_t
 {
 public:
+  typedef T value_type;
   conn_data_t();
   conn_data_t(irs::mxdata_t *a_data, irs_uarc a_index);
   conn_data_t(irs::mxdata_t *a_data, irs_uarc a_index, irs_uarc &a_ret_index);
@@ -137,7 +138,7 @@ public:
   const T &operator=(const T &a_elem);
   const conn_data_t& operator=(const conn_data_t& a_conn_data);
   operator T() const;
-private:
+public:
   irs_uarc m_index;
   irs::mxdata_t *m_data;
   //T m_elem;

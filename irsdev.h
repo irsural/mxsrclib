@@ -14,7 +14,9 @@
 #include <timer.h>
 
 #ifdef __ICCARM__
+#ifndef IRS_STM32H7xx
 #include <armioregs.h>
+#endif // IRS_STM32H7xx
 #endif // __ICCARM__
 #include <irsgpio.h>
 #include <mxdata.h>
@@ -25,7 +27,9 @@
 #ifdef PWM_ZERO_PULSE
   #include <irsint.h>
   #if defined(__ICCAVR__) || defined(__ICCARM__)
-    #include <irsarchint.h>
+    #ifndef IRS_STM32H7xx
+      #include <irsarchint.h>
+    #endif // IRS_STM32H7xx
   #endif // IRS_LINUX
 #endif  //  PWM_ZERO_PULSE
 
@@ -100,6 +104,8 @@ public:
 #endif //__WATCOMC__
 
 #ifdef __ICCARM__
+
+#ifndef IRS_STM32H7xx
 
 namespace arm
 {
@@ -795,6 +801,8 @@ private:
 //! @}
 
 } //  arm
+
+#endif // IRS_STM32H7xx
 
 #endif  //  __ICCARM__
 

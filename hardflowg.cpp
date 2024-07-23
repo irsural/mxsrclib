@@ -342,6 +342,14 @@ void irs::hardflow::udp_flow_t::addr_init(
   }
 }
 
+/**
+ * @brief Скопированная реализация перевода из wchar_t в char.
+ *
+ * Реализация с помощью IRS_SIMPLE_FROM_TYPE_STR вызывает ошибки на Linux Ubuntu 20.04 LTS,
+ * поэтому было принято решение устранения ошибки по средству использования другой функции.
+ *
+ * TODO: Разрешить проблему, связанную с IRS_SIMPLE_FROM_TYPE_STR на Linux Ubuntu 20.04 LTS.
+ */
 bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   const string_type& a_adress_str, in_addr_type* ap_adress_binary)
 {
@@ -349,8 +357,7 @@ bool irs::hardflow::udp_flow_t::adress_str_to_adress_binary(
   if (a_adress_str != irst("")) {
     irs_u32 adress = inet_addr(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
     if (adress == INADDR_NONE) {
-      hostent* p_host =
-        gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
+      hostent* p_host = gethostbyname(IRS_SIMPLE_FROM_TYPE_STR(a_adress_str.c_str()));
       if (p_host != NULL) {
         // Берем первый адрес в списке
         memcpy(ap_adress_binary, p_host->h_addr_list[0], p_host->h_length);
@@ -2216,7 +2223,7 @@ void irs::hardflow::prologix_flow_t::tick()
       switch (m_fixed_flow.write_status()) {
         case irs::hardflow::fixed_flow_t::status_success: {
           m_init_count++;
-        }
+        } // fall through
         case irs::hardflow::fixed_flow_t::status_error: {
           m_init_mode = mode_start;
         } break;

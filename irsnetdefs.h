@@ -33,6 +33,11 @@
 // Максимальное число сегмента mac-адреса
 #define MAC_NUM_MAX 255
 
+#define IRSLIB_MXNET_PORT 5005
+#define IRSLIB_MODBUS_PORT 5006
+#define IRSLIB_GET_IP_LIST_PORT 5007
+#define IRSLIB_LOG_PORT 5008
+
 enum {
   ip_length = 4,
   mac_length = 6
@@ -398,8 +403,10 @@ bool str_to_mxmac(const S& a_str, mxmac_t* a_mac)
 
 inline ostream& operator<<(ostream& a_stream, const mxip_t& a_ip)
 {
-  a_stream << int(a_ip.val[0]) << "." << int(a_ip.val[1]) << ".";
-  a_stream << int(a_ip.val[2]) << "." << int(a_ip.val[3]);
+  a_stream << static_cast<int>(a_ip.val[0]) << ".";
+  a_stream << static_cast<int>(a_ip.val[1]) << ".";
+  a_stream << static_cast<int>(a_ip.val[2]) << ".";
+  a_stream << static_cast<int>(a_ip.val[3]);
   return a_stream;
 }
 
@@ -408,9 +415,9 @@ inline ostream& operator<<(ostream& a_stream, const mxmac_t& a_mac)
   irs::ostream_format_save_t format_save(&a_stream);
   a_stream << hex << setfill('0');
   for (int mac_index = 0; mac_index < (mac_length - 1); mac_index++) {
-    a_stream << setw(2) << int(a_mac.val[mac_index]) << "-";
+    a_stream << setw(2) << static_cast<int>(a_mac.val[mac_index]) << "-";
   }
-  a_stream << setw(2) << int(a_mac.val[5]);
+  a_stream << setw(2) << static_cast<int>(a_mac.val[5]);
   return a_stream;
 }
 

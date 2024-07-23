@@ -687,6 +687,7 @@ bool get_coef_iir_filter(
         if((f3 > f2) || (f3 < f1))
           break;
         fsuccess = false;
+        // fall through
       case fb_high_pass:
         if(f3 >= f2 )
           fsuccess = false;
@@ -1475,6 +1476,7 @@ int zplnb(
   switch(a_bandform) {
     case fb_high_pass:
       a = -1.0;
+      // fall through
     case fb_low_pass:
     case fb_band_stop:
 

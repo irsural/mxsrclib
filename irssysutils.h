@@ -533,21 +533,22 @@ public:
 
   bool operator< (const id_t& a_id) const
   {
-    bool less_than_value = true;
+    bool less_than_value_result = true;
     if (m_identifier.size() != a_id.m_identifier.size()) {
-      less_than_value = (m_identifier.size() < a_id.m_identifier.size());
+      less_than_value_result = (m_identifier.size() < a_id.m_identifier.size());
     } else {
-      less_than_value = false;
+      less_than_value_result = false;
       for (size_type elem_i = 0; elem_i < m_identifier.size(); elem_i++) {
         if (m_identifier[elem_i] != a_id.m_identifier[elem_i]) {
-          less_than_value = (m_identifier[elem_i] < a_id.m_identifier[elem_i]);
+          less_than_value_result = 
+            (m_identifier[elem_i] < a_id.m_identifier[elem_i]);
           break;
         } else {
           // Продолжаем сравнение
         }
       }
     }
-    return less_than_value;
+    return less_than_value_result;
   }
 
 private:
@@ -875,7 +876,6 @@ bool hex_str_to_binary_data(const irs::string_t& a_str,
   ARRAY* ap_vector)
 {
   typedef irs_size_t size_type;
-  typedef irs::string_t string_type;
   const int hex_data_map[] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -898,8 +898,8 @@ bool hex_str_to_binary_data(const irs::string_t& a_str,
         convert_success = false;
         break;
       }
-      const int first_part = hex_data_map[a_str[elem_i]];
-      const int second_part = hex_data_map[a_str[elem_i + 1]];
+      const int first_part = hex_data_map[static_cast<unsigned char>(a_str[elem_i])];
+      const int second_part = hex_data_map[static_cast<unsigned char>(a_str[elem_i + 1])];
       if ((first_part == -1) || (second_part == -1)) {
         convert_success = false;
         break;
