@@ -90,61 +90,25 @@ if(${VERBOSE})
 endif()
 
 set(MXSRCLIB_SOURCES
-        correct_alg.cpp
-        csvwork.cpp
-        dbgprn.cpp
         hardflowg.cpp
-        i2c.cpp
-        imp_filt.cpp
-        irs_chart_data.cpp
         irsadc.cpp
         irsalg.cpp
-        irscalc.cpp
         irscpu.cpp
-        irsdbgutil.cpp
-        irsdcp.cpp
         irsdev.cpp
-        irsdevices.cpp
         irsdsp.cpp
-        irseeprom.cpp
         irserror.cpp
-        irsexcept.cpp
-        irsfilter.cpp
         irsfunnel.cpp
         irsgpio.cpp
-        irshfftp.cpp
-        irsinit.cpp
         irsint.cpp
         irskbd.cpp
         irslocale.cpp
-        irslwip.cpp
         irsmath.cpp
-        irsmatrix.cpp
         irsmbus.cpp
-        irsmcutil.cpp
         irsmem.cpp
-        irsmenu.cpp
-        irsprop.cpp
-        irsstd.cpp
         irsstring.cpp
         irsstrm.cpp
-        irssysutils.cpp
-        irstcpip.cpp
         irstime.cpp
-        irsvariant.cpp
-        measmul.cpp
-        meassup.cpp
-        mxdata.cpp
-        mxextbase.cpp
-        mxextchart.cpp
-        mxifar.cpp
-        mxnet.cpp
-        mxnetc.cpp
-        mxnetr.cpp
-        niusbgpib.cpp
-        niusbgpib_hardflow.cpp
         timer.cpp
-        arch/${MXSRCLIB_ARCH}/mxifa.cpp
         arch/${MXSRCLIB_ARCH}/counter.cpp
         ${ARCH_SOURCES}
 )
@@ -164,13 +128,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     )
 
     set(WARNING_OPTIONS
-            "-Werror"
+#            "-Werror"
             "-Wextra"
             "-Wall"
             # Только потому что баг с GCC diagnostics ignored "-Wdeprecated" пофиксили только в gcc 13
             # Проблемный варнинг возникает при подключении <strstream>
             "-Wno-deprecated"
     )
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "IAR")
 else()
     message(FATAL_ERROR "Нужно дописать опции предупреждений для компилятора")
 endif()
@@ -185,7 +151,10 @@ if(MXSRCLIB_ARCH STREQUAL "arm_st_hal")
     endif()
 elseif (MXSRCLIB_ARCH STREQUAL "qt")
     if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        target_link_libraries(mxsrclib -lpsapi -lws2_32 -static)
+        target_link_libraries(mxsrclib INTERFACE
+                psapi
+                ws2_32
+        )
     endif ()
 endif()
 
