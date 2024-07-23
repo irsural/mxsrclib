@@ -6,8 +6,8 @@
 #define IRSCONSOLESTDH
 
 #include <irsdefs.h>
-
-//#include <irsstrmstd.h>
+#include <irsstrdefs.h>
+// #include <irsstrmstd.h>
 #include <timer.h>
 
 #include <irsfinal.h>
