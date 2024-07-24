@@ -2463,6 +2463,12 @@ irs_menu_spin_item_t::get_start_pos(const string_type& a_str_value) const
   return start_pos;
 }
 
+#if __cplusplus < 201103
+std::ios_base& defaultfloat(std::ios_base& str) {
+  str.unsetf(std::ios_base::floatfield);
+  return str;
+}
+#endif
 irs_menu_spin_item_t::string_type irs_menu_spin_item_t::param_to_str() const
 {
   const int precision = get_precision_fixed();
