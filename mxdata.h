@@ -1680,7 +1680,7 @@ private:
 template<class T>
 T* handle_t<T>::extract()
 {
-  T* p_obj = nullptr;
+  T* p_obj = IRS_NULL;
   if (mp_rep) {
     p_obj = mp_rep->object;
     IRS_LIB_ASSERT(mp_rep->counter > 0);
