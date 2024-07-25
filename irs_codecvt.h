@@ -266,7 +266,7 @@ public:
     m_converter()
   {
   }
-  virtual result do_in(state_type& a_state,
+  virtual result do_in(state_type& /*a_state*/,
     const extern_type* ap_from,
     const extern_type* ap_from_end,
     const extern_type*& ap_from_next,
@@ -281,7 +281,7 @@ public:
       ap_to, ap_to_end, ap_to_next);
   }
 
-  virtual result do_out(state_type& a_state,
+  virtual result do_out(state_type& /*a_state*/,
    const intern_type* ap_from,
    const intern_type* ap_from_end,
    const intern_type*& ap_from_next,
@@ -323,7 +323,7 @@ public:
     //m_converter()
   {
   }
-  virtual result do_in(state_type& a_state,
+  virtual result do_in(state_type& /*a_state*/,
     const extern_type* ap_from,
     const extern_type* ap_from_end,
     const extern_type*& ap_from_next,
@@ -338,7 +338,7 @@ public:
       reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
-  virtual result do_out(state_type& a_state,
+  virtual result do_out(state_type& /*a_state*/,
    const intern_type* ap_from,
    const intern_type* ap_from_end,
    const intern_type*& ap_from_next,
@@ -382,7 +382,7 @@ public:
     m_converter()
   {
   }
-  virtual result do_in(state_type& a_state,
+  virtual result do_in(state_type& /*a_state*/,
     const extern_type* ap_from,
     const extern_type* ap_from_end,
     const extern_type*& ap_from_next,
@@ -397,7 +397,7 @@ public:
       ap_to, ap_to_end, ap_to_next);
   }
 
-  virtual result do_out(state_type& a_state,
+  virtual result do_out(state_type& /*a_state*/,
    const intern_type* ap_from,
    const intern_type* ap_from_end,
    const intern_type*& ap_from_next,
@@ -443,7 +443,7 @@ public:
   {
   }
 
-  virtual result do_in(state_type& a_state,
+  virtual result do_in(state_type& /*a_state*/,
     const extern_type* ap_from,
     const extern_type* ap_from_end,
     const extern_type*& ap_from_next,
@@ -458,7 +458,7 @@ public:
       reinterpret_cast<unsigned char*&>(ap_to_next));
   }
 
-  virtual result do_out(state_type& a_state,
+  virtual result do_out(state_type& /*a_state*/,
     const intern_type* ap_from,
     const intern_type* ap_from_end,
     const intern_type*& ap_from_next,
