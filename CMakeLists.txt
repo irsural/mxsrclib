@@ -118,13 +118,16 @@ set(MXSRCLIB_SOURCES
         ${ARCH_SOURCES}
 )
 set(MXSRCLIB_HEADERS_DIR
-        .
-        ${ORIGIN_HEADERS_DIR_LIST_arch}
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/libconfig"
+        "${ORIGIN_HEADERS_DIR_LIST_arch}"
 )
 
 project(mxsrclib)
 add_library(mxsrclib STATIC ${MXSRCLIB_SOURCES})
-target_include_directories(mxsrclib PRIVATE ${MXSRCLIB_HEADERS_DIR})
+target_include_directories(mxsrclib PRIVATE
+        ${MXSRCLIB_HEADERS_DIR}
+)
 set_target_properties(mxsrclib PROPERTIES OUTPUT_NAME mxsrclib)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
