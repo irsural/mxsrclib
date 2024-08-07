@@ -200,7 +200,7 @@
 #else // __GNUC__
 
 #define IGNORE_DIAGNOSTIC_ENTER(diag)
-#define GCC_IGNORE_DIAGNOSTIC_EXIT()
+#define IGNORE_DIAGNOSTIC_EXIT()
 
 #endif // __GNUC__
 
