@@ -44,7 +44,7 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADERS_FILES_LIST})
                 DEPENDS ${ORIGIN_HEADER_PATH}
         )
     else ()
-        error("Неподдерживаемая платформа")
+        message(FATAL_ERROR "Неподдерживаемая платформа")
     endif ()
 endforeach ()
 
