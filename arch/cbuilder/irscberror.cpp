@@ -127,10 +127,7 @@ void irs::cbuilder::error_handler_t::show_msg(String &Msg,
         // В этом случае ничего не делаем
       } break;
       default: {
-        throw Exception("Неправильный параметр handler_type установлен "
-          "в классе irs::cbuilder::error_handler_t\n"
-          "Файл: " + String(__FILE__) + "\n"
-          "Строка: " + String(__LINE__));
+        throw Exception("Неправильный параметр handler_type установлен в классе irs::cbuilder::error_handler_t\nФайл: " + String(__FILE__) + "\nСтрока: " + String(__LINE__));
       }
     }
   }
