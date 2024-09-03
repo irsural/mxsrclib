@@ -3211,16 +3211,16 @@ irs::chart::color_gen_t::color_gen_t():
   m_colors.push_back(clLime);
   m_colors.push_back(clNavy);
 
-  m_names.push_back(irst("Красный"));
-  m_names.push_back(irst("Синий"));
-  m_names.push_back(irst("Зеленый"));
-  m_names.push_back(irst("Сиреневый"));
-  m_names.push_back(irst("Коричневый"));
-  m_names.push_back(irst("Розовый"));
-  m_names.push_back(irst("Оливковый"));
-  m_names.push_back(irst("Голубой"));
-  m_names.push_back(irst("Светло-зеленый"));
-  m_names.push_back(irst("Темно-синий"));
+  m_names.push_back(irst("Rojo"));
+  m_names.push_back(irst("Azul"));
+  m_names.push_back(irst("Verde"));
+  m_names.push_back(irst("Violeta"));
+  m_names.push_back(irst("Marrуn"));
+  m_names.push_back(irst("Rosa"));
+  m_names.push_back(irst("Oliva"));
+  m_names.push_back(irst("Cyan"));
+  m_names.push_back(irst("Verde claro"));
+  m_names.push_back(irst("Azul oscuro"));
 }
 void irs::chart::color_gen_t::start()
 {
@@ -3277,7 +3277,7 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
 {
   using namespace chart_data;
   if (!FileExists(a_file_name.c_str())) {
-    throw runtime_error("Указан несуществующий файл");
+    throw runtime_error("Archivo inexistente especificado.");
   }
   _di_IXMLNode root_elem_node = IRS_NULL;
   mp_xmldoc->Active = false;
@@ -3286,13 +3286,13 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
   root_elem_node = mp_xmldoc->DocumentElement;
   const String root_elem_name = root_elem_node->NodeName;
   if (root_elem_name != m_root_element_name) {
-    throw runtime_error("Указанный файл не является файлом программы MXСhart");
+    throw runtime_error("El archivo especificado no es un archivo del programa MXChart.");
   }
 
   _di_IXMLNodeList root_children =  root_elem_node->GetChildNodes();
   _di_IXMLNode charts_node = root_children->FindNode(m_charts_node_name);
   if (!charts_node) {
-    const std::string msg = std::string("Не найден узел ") +
+    const std::string msg = std::string("Nodo no encontrado. ") +
       irs::str_conv<std::string>(
       irs::str_conv<string_type>(m_charts_node_name));
     throw runtime_error(msg);
@@ -3314,7 +3314,7 @@ irs::chart::charts_xml_file_t::load(const string_type& a_file_name) const
       chart_node->GetAttribute(m_chart_index_attribute_name);
     string_type chart_index_str = irs::str_conv<string_type>(chart_name_bstr);
     if (str_to_num(chart_index_str, &chart.index)) {
-      throw runtime_error("Неправильно указан индекс графика");
+      throw runtime_error("Нndice de grбfico incorrecto especificado.");
     }
 
     _di_IXMLNodeList points_node_list = chart_node->GetChildNodes();
@@ -3413,7 +3413,7 @@ builder_chart_window_t(irs_u32 a_size,
   mp_form->Width = 500;
   mp_form->Height = 800;
   mp_form->Position = poDesigned;
-  mp_form->Caption = irst("Тест сети 4");
+  mp_form->Caption = irst("Prueba de red 4");
   init(mp_form);
 }
 
@@ -3786,7 +3786,7 @@ load_from_mxchart_file(const string_type& a_file_name)
     ++it;
   }
   #else // !IRS_USE_JSON_CPP
-  throw logic_error("Не подключена библиотека JSONCPP");
+  throw logic_error("Biblioteca JSONCPP no conectada.");
   #endif // !IRS_USE_JSON_CPP
 }
 
@@ -3799,7 +3799,7 @@ save_to_mxchart_file(const string_type& a_file_name)
   charts_json_file_t charts_json_file;
   charts_json_file.save(charts, a_file_name);
   #else // !IRS_USE_JSON_CPP
-  throw logic_error("Не подключена библиотека JSONCPP");
+  throw logic_error("Biblioteca JSONCPP no conectada.");
   #endif // !IRS_USE_JSON_CPP
 }
 
@@ -4098,10 +4098,10 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_base_chart_combo(new TComboBox(mp_form)),
   m_base_chart_combo_index_map(),
   m_unsort_data_chart_item_map(),
-  mp_pause_on_text("Пауза"),
-  mp_pause_off_text("Продолжить"),
-  mp_fix_on_text("Фиксация"),
-  mp_fix_off_text("Разфиксация"),
+  mp_pause_on_text("Pausa"),
+  mp_pause_off_text("Continuar"),
+  mp_fix_on_text("Fijar"),
+  mp_fix_off_text("Desfijar"),
   m_refresh_time_ms(a_refresh_time_ms),
   m_invalidate(irs_false),
   m_deferred_update_chart(false),
@@ -4142,12 +4142,12 @@ irs::chart::builder_chart_window_t::controls_t::
 
 
   const String open_dialog_filter =
-    irst("Все (*.mxchart; *.mxchartcsv; *.csv)|*.mxchart;*.mxchartcsv;*.csv|")
-    irst("Файлы MXChart (*.mxchart)|*.mxchart|")
+    irst("Todo (*.mxchart; *.mxchartcsv; *.csv)|*.mxchart;*.mxchartcsv;*.csv|")
+    irst("Archivos MXChart (*.mxchart)|*.mxchart|")
     irst("MXChart CSV (*.mxchartcsv)|*.mxchartcsv|")
     irst("CSV (*.csv)|*.csv");
 
-  const String save_dialog_filter = irst("Файлы MXChart (*.mxchart)|*.mxchart|")
+  const String save_dialog_filter = irst("Archivos MXChart (*.mxchart)|*.mxchart|")
     irst("MXChart CSV (*.mxchartcsv)|*.mxchartcsv|")
     irst("CSV (*.csv)|*.csv");
 
@@ -4156,36 +4156,36 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_file_save_dialog->DefaultExt = irst("csv");
   mp_file_save_dialog->Filter = save_dialog_filter;
   //mp_file_menu_item->
-  mp_file_menu_item->Caption = irst("Файл");
+  mp_file_menu_item->Caption = irst("Archivo");
   mp_main_menu->Items->Add(mp_file_menu_item);
 
-  mp_file_open_menu_item->Caption = irst("Открыть");
+  mp_file_open_menu_item->Caption = irst("Abrir");
   mp_file_open_menu_item->OnClick = FileOpenMenuItemClick;
   mp_file_menu_item->Add(mp_file_open_menu_item);
 
-  mp_file_save_menu_item->Caption = irst("Сохранить");
+  mp_file_save_menu_item->Caption = irst("Guardar");
   mp_file_save_menu_item->OnClick = FileSaveMenuItemClick;
   mp_file_menu_item->Add(mp_file_save_menu_item);
 
-  mp_file_save_as_menu_item->Caption = irst("Сохранить Как...");
+  mp_file_save_as_menu_item->Caption = irst("Guardar Como...");
   mp_file_save_as_menu_item->OnClick = FileSaveAsMenuItemClick;
   mp_file_menu_item->Add(mp_file_save_as_menu_item);
 
-  mp_tools_menu_item->Caption = irst("Инструменты");
+  mp_tools_menu_item->Caption = irst("Herramientas");
   mp_main_menu->Items->Add(mp_tools_menu_item);
 
-  mp_chart_params_menu_item->Caption = irst("Параметры графика");
+  mp_chart_params_menu_item->Caption = irst("Parбmetros del grбfico");
   mp_chart_params_menu_item->OnClick = ChartParamsMenuItemClick;
   mp_tools_menu_item->Add(mp_chart_params_menu_item);
 
-  mp_chart_options_menu_item->Caption = irst("Настройки графика");
+  mp_chart_options_menu_item->Caption = irst("Configuraciones del grбfico");
   mp_chart_options_menu_item->OnClick = ChartOptionsMenuItemClick;
   mp_tools_menu_item->Add(mp_chart_options_menu_item);
 
-  mp_help_menu_item->Caption = irst("Справка");
+  mp_help_menu_item->Caption = irst("Ayuda");
   mp_main_menu->Items->Add(mp_help_menu_item);
 
-  mp_about_menu_item->Caption = irst("О программе");
+  mp_about_menu_item->Caption = irst("Acerca del programa");
   mp_about_menu_item->OnClick = HelpMenuItemClick;
   mp_help_menu_item->Add(mp_about_menu_item);
 
@@ -4215,14 +4215,14 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_add_chart_btn->Left = mp_chart_list->Left;
   mp_add_chart_btn->Top = mp_chart_list->Top + mp_chart_list->Height + 8;
   mp_add_chart_btn->OnClick = AddChartBtnClick;
-  mp_add_chart_btn->Caption = irst("Добавить");
+  mp_add_chart_btn->Caption = irst("Agregar");
 
   mp_delete_chart_btn->Parent = mp_options_panel;
   mp_delete_chart_btn->Left = mp_add_chart_btn->Left + mp_add_chart_btn->Width +
     8;
   mp_delete_chart_btn->Top = mp_add_chart_btn->Top;
   mp_delete_chart_btn->OnClick = DeleteChartBtnClick;
-  mp_delete_chart_btn->Caption = irst("Удалить");
+  mp_delete_chart_btn->Caption = irst("Eliminar");
 
 
   mp_apply_points_btn->Parent = mp_options_panel;
@@ -4230,7 +4230,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_apply_points_btn->Top = mp_delete_chart_btn->Top +
     mp_delete_chart_btn->Height + 8;
   mp_apply_points_btn->OnClick = ApplyPointsBtnClick;
-  mp_apply_points_btn->Caption = irst("Применить");
+  mp_apply_points_btn->Caption = irst("Aplicar");
   //mp_apply_points_btn->Enabled = false;
 
   mp_cancel_points_btn->Parent = mp_options_panel;
@@ -4238,7 +4238,7 @@ irs::chart::builder_chart_window_t::controls_t::
     mp_apply_points_btn->Width + 8;
   mp_cancel_points_btn->Top = mp_apply_points_btn->Top;
   mp_cancel_points_btn->OnClick = CancelPointsBtnClick;
-  mp_cancel_points_btn->Caption = irst("Отмена");
+  mp_cancel_points_btn->Caption = irst("Cancelar");
   //mp_cancel_points_btn->Enabled = false;
 
   mp_points_grid->Parent = mp_options_panel;
@@ -4269,19 +4269,19 @@ irs::chart::builder_chart_window_t::controls_t::
 
   mp_points_grid_menu->OnPopup = PointsMenuPopup;
 
-  mp_insert_point_before_menu_item->Caption = irst("Вставить выше");
+  mp_insert_point_before_menu_item->Caption = irst("Insertar arriba");
   mp_insert_point_before_menu_item->ShortCut = ShortCut(VK_INSERT,
     TShiftState());
   mp_insert_point_before_menu_item->OnClick = InsertPointBeforeMenuItemClick;
   mp_points_grid_menu->Items->Add(mp_insert_point_before_menu_item);
 
-  mp_insert_point_after_menu_item->Caption = irst("Вставить ниже");
+  mp_insert_point_after_menu_item->Caption = irst("Insertar abajo");
   mp_insert_point_after_menu_item->ShortCut = ShortCut(VK_INSERT,
     TShiftState() << ssCtrl);
   mp_insert_point_after_menu_item->OnClick = InsertPointAfterMenuItemClick;
   mp_points_grid_menu->Items->Add(mp_insert_point_after_menu_item);
 
-  mp_delete_point_menu_item->Caption = irst("Удалить");
+  mp_delete_point_menu_item->Caption = irst("Eliminar");
   mp_delete_point_menu_item->ShortCut = ShortCut(
     VK_DELETE, TShiftState() << ssCtrl);
   mp_delete_point_menu_item->OnClick = DeletePointMenuItemClick;
@@ -4306,7 +4306,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_update_param_list_btn->Left = 8;
   mp_update_param_list_btn->Top = 8;
   mp_update_param_list_btn->OnClick = UpdateParamListBtnClick;
-  mp_update_param_list_btn->Caption = irst("Обновить");
+  mp_update_param_list_btn->Caption = irst("Actualizar");
 
   mp_auto_update_param_list_cb->Parent = mp_params_panel;
   mp_auto_update_param_list_cb->Left = mp_update_param_list_btn->Left +
@@ -4314,7 +4314,7 @@ irs::chart::builder_chart_window_t::controls_t::
   mp_auto_update_param_list_cb->Top = mp_update_param_list_btn->Top +
     mp_update_param_list_btn->Height - mp_auto_update_param_list_cb->Height;
   mp_auto_update_param_list_cb->Width = 200;
-  mp_auto_update_param_list_cb->Caption = irst("Обновлять автоматически");
+  mp_auto_update_param_list_cb->Caption = irst("Actualizar automбticamente");
 
   mp_param_list->Parent = mp_params_panel;
   mp_param_list->Left = 8;
@@ -4330,10 +4330,10 @@ irs::chart::builder_chart_window_t::controls_t::
   const int row_height = mp_param_list->Canvas->TextHeight(
     irst("+1.7976931348623157e+308")) + 3;
   mp_param_list->DefaultRowHeight = row_height;
-  mp_param_list->TitleCaptions->Strings[header_col] = irst("Параметр");
-  mp_param_list->TitleCaptions->Strings[option_col] = irst("Значение");
+  mp_param_list->TitleCaptions->Strings[header_col] = irst("Parбmetro");
+  mp_param_list->TitleCaptions->Strings[option_col] = irst("Valor");
 
-  mp_param_list->InsertRow(irst("Количество точек"), irst(""), true);
+  mp_param_list->InsertRow(irst("Nъmero de puntos"), irst(""), true);
   mp_param_list->InsertRow(irst("Xmin"), irst(""), true);
   mp_param_list->InsertRow(irst("Xmax"), irst(""), true);
   mp_param_list->InsertRow(irst("Ymin"), irst(""), true);
@@ -4346,14 +4346,14 @@ irs::chart::builder_chart_window_t::controls_t::
     irst(""), true);
   //mp_param_list->InsertRow(irst("СКО/|Ymin|*100, %"),
     //irst(""), true);
-  mp_param_list->InsertRow(irst("СКО"), irst(""), true);
-  mp_param_list->InsertRow(irst("СКО/|Yaverage|*100, %"),
+  mp_param_list->InsertRow(irst("CKO"), irst(""), true);
+  mp_param_list->InsertRow(irst("CKO/|Yaverage|*100, %"),
     irst(""), true);
-  mp_param_list->InsertRow(irst("Доверительный интервал (95 %), %"),
+  mp_param_list->InsertRow(irst("Intervalo de confianza (95 %), %"),
     irst(""), true);
-  mp_param_list->InsertRow(irst("Доверительный интервал (99 %), %"),
+  mp_param_list->InsertRow(irst("Intervalo de confianza (99 %), %"),
     irst(""), true);
-  mp_param_list->InsertRow(irst("Доверительный интервал (99.9 %), %"),
+  mp_param_list->InsertRow(irst("Intervalo de confianza (99.9 %), %"),
     irst(""), true);
 
   //mp_param_list->ColWidths[header_col] = mp_param_list->Canvas->TextWidth(
@@ -4398,7 +4398,7 @@ irs::chart::builder_chart_window_t::controls_t::
   //InsertControl(mp_fix_btn.get());
   mp_clear_btn->Left = mp_fix_btn->Left + mp_fix_btn->Width + btn_gap;
   mp_clear_btn->Top = mp_panel->Height/2 - mp_clear_btn->Height/2;
-  mp_clear_btn->Caption = "Очистить";
+  mp_clear_btn->Caption = "Limpiar";
   mp_clear_btn->OnClick = ClearBtnClick;
   mp_clear_btn->Parent = mp_form;
   //InsertControl(mp_clear_btn.get());
@@ -4421,9 +4421,9 @@ __fastcall irs::chart::builder_chart_window_t::controls_t::
 void irs::chart::builder_chart_window_t::controls_t::update_form_caption()
 {
   if (m_file_name.IsEmpty()) {
-    mp_form->Caption = irst("График");
+    mp_form->Caption = irst("Grбfico");
   } else {
-    mp_form->Caption = String(irst("График - ")) + m_file_name;
+    mp_form->Caption = String(irst("Grбfico - ")) + m_file_name;
   }
 }
 
@@ -4568,19 +4568,19 @@ HelpMenuItemClick(TObject *Sender)
     file_version_str =
       irs::cbuilder::file_version_to_str(file_version);
   }
-  message += String(irst("Версия программы: ")) +
+  message += String(irst("Versiуn del programa: ")) +
     irs::str_conv<String>(file_version_str);
   message += irst("\n");
   string_type version_str = irs::cbuilder::file_version_to_str(m_version);
-  message += String(irst("Версия компонента: ")) +
+  message += String(irst("Versiуn del componente: ")) +
     irs::str_conv<String>(version_str);
   message += irst("\n");
-  message += String(irst("Сборка компонента: ")) +
+  message += String(irst("Compilaciуn del componente: ")) +
     String(__TIME__) +
     String(irst(" ")) +
     String(__DATE__);
 
-  Application->MessageBox(message.c_str(), irst("О программе"),
+  Application->MessageBox(message.c_str(), irst("Acerca del programa"),
     MB_OK + MB_ICONINFORMATION);
 }
 
@@ -4693,12 +4693,12 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
 {
   String name_bstr;
   string_type name;
-  while (InputQuery(irst("Введите имя"), irst("Имя графика"), name_bstr)) {
+  while (InputQuery(irst("Ingrese el nombre"), irst("Nombre del grбfico"), name_bstr)) {
     name = irs::str_conv<string_type>(name_bstr);
     if (m_unsort_data.exists(name)) {
       Application->MessageBox(
-        irst("График с указанным именем уже существует, введите другое имя"),
-        irst("Имя графика"),
+        irst("El grбfico con el nombre especificado ya existe, ingrese otro nombre."),
+        irst("Nombre del grбfico"),
         MB_OK + MB_ICONINFORMATION);
     } else {
       break;
@@ -4718,7 +4718,7 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
   const int selected = mp_chart_list->ItemIndex;
   if (selected >= 0) {
     const int result = Application->MessageBox(
-      irst("Вы уверены, что хотите безвозвратно удалить выбранный график?"),
+      irst("їEstб seguro de que desea eliminar el grбfico seleccionado de manera irreversible?"),
       irst("MxChart"),
       MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON2);
     switch (result) {
@@ -4733,7 +4733,7 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
         // Пользователь решил не сохранять данные
       } break;
       default: {
-        IRS_LIB_ASSERT_MSG("Недопустимый результат диалога");
+        IRS_LIB_ASSERT_MSG("Resultado de diбlogo no permitido.");
       }
     }
   }
@@ -4761,9 +4761,9 @@ void __fastcall irs::chart::builder_chart_window_t::controls_t::
     String value_bstr = mp_points_grid->Cells[y_col][i];
     if (!str_to_num(time_bstr, &time) || !str_to_num(value_bstr, &value)) {
       String message;
-      message = String(irst("В точке №")) + IntToStr(i - 1) +
-        irst(" указано недопустимое значение");
-      Application->MessageBox(message.c_str(), irst("Ошибка"),
+      message = String(irst("En el punto Nє")) + IntToStr(i - 1) +
+        irst(" se especificу un valor no permitido.");
+      Application->MessageBox(message.c_str(), irst("Error"),
         MB_OK + MB_ICONERROR);
       return;
     }
@@ -5130,7 +5130,7 @@ void irs::chart::builder_chart_window_t::controls_t::update_points_grid()
 {
   mp_points_grid->ColCount = 3;
   mp_points_grid->RowCount = 2;
-  mp_points_grid->Cells[0][0] = irst("№");
+  mp_points_grid->Cells[0][0] = irst("Nє");
   mp_points_grid->Cells[1][0] = irst("x");
   mp_points_grid->Cells[2][0] = irst("y");
 
@@ -5327,7 +5327,7 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
       student_t_99_9_str = FloatToStr(confidence_interval_99_9);
     }
 
-    mp_param_list->Values[irst("Количество точек")] = points.size();
+    mp_param_list->Values[irst("Nъmero de puntos")] = points.size();
     mp_param_list->Values[irst("Xmin")] = x_min;
     mp_param_list->Values[irst("Xmax")] = x_max;
     mp_param_list->Values[irst("Ymin")] = y_min;
@@ -5338,14 +5338,14 @@ void irs::chart::builder_chart_window_t::controls_t::update_param_list()
     mp_param_list->Values[irst("|Ymax-Ymin|/|Yaverage|*100/2, %")] =
       delta_2_str;
     //mp_param_list->Values[irst("СКО/|Ymin|*100, %")] = sko_str;
-    mp_param_list->Values[irst("СКО")] = sko_str;
-    mp_param_list->Values[irst("СКО/|Yaverage|*100, %")] = sko_percent_str;
+    mp_param_list->Values[irst("CKO")] = sko_str;
+    mp_param_list->Values[irst("CKO/|Yaverage|*100, %")] = sko_percent_str;
 
-    mp_param_list->Values[irst("Доверительный интервал (95 %), %")] =
+    mp_param_list->Values[irst("Intervalo de confianza (95 %), %")] =
       student_t_95_str;
-    mp_param_list->Values[irst("Доверительный интервал (99 %), %")] =
+    mp_param_list->Values[irst("Intervalo de confianza (99 %), %")] =
       student_t_99_str;
-    mp_param_list->Values[irst("Доверительный интервал (99.9 %), %")] =
+    mp_param_list->Values[irst("Intervalo de confianza (99.9 %), %")] =
       student_t_99_9_str;
   }
 }

@@ -71,7 +71,7 @@ irs::param_box_t::param_box_t(
   mp_cansel_btn->Anchors << akRight;
   mp_cansel_btn->Left = mp_ok_btn->Left + mp_ok_btn->Width + btn_gap;
   mp_cansel_btn->Top = mp_panel->Height/2 - mp_cansel_btn->Height/2;
-  mp_cansel_btn->Caption = irst("Отмена");
+  mp_cansel_btn->Caption = irst("Cancelar");
   mp_cansel_btn->Cancel = true;
   mp_cansel_btn->ModalResult = mrCancel;
   mp_cansel_btn->OnClick = cancel_btn_click;
@@ -79,8 +79,8 @@ irs::param_box_t::param_box_t(
   mp_value_list_editor->Parent = mp_form.get();
   mp_value_list_editor->Align = alClient;
   mp_value_list_editor->DefaultRowHeight = 17;
-  mp_value_list_editor->TitleCaptions->Strings[header_col] = irst("Параметр");
-  mp_value_list_editor->TitleCaptions->Strings[option_col] = irst("Значение");
+  mp_value_list_editor->TitleCaptions->Strings[header_col] = irst("Parбmetro");
+  mp_value_list_editor->TitleCaptions->Strings[option_col] = irst("Valor");
   mp_value_list_editor->OnEditButtonClick = on_edit_btn_click;
 
   if (a_ini_name == irst("")) {
@@ -195,7 +195,7 @@ irs::param_box_t::~param_box_t()
 
 const irs::param_box_t::char_type* irs::param_box_t::def_param_box_name()
 {
-  return irst("Настройки");
+  return irst("Configuraciones");
 }
 
 const irs::param_box_t::char_type* irs::param_box_t::def_ini_section()

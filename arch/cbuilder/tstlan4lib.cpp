@@ -63,7 +63,7 @@ irs::tstlan4_t::tstlan4_t(
     mp_form->Width = 500;
     mp_form->Height = 800;
     mp_form->Position = poDesigned;
-    mp_form->Caption = irst("Тест сети 4");
+    mp_form->Caption = irst("Prueba de red 4");
     init(mp_form_auto.get());
   }
 }
@@ -184,15 +184,15 @@ irs::tstlan4_t::controls_t::param_box_tune_t::param_box_tune_t(
 ):
   mp_param_box(ap_param_box)
 {
-  mp_param_box->add_bool(irst("Отображать лог"), false);
-  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
-  mp_param_box->add_edit(irst("Количество точек в графике"), irst("1000"));
-  mp_param_box->add_bool(irst("Сбросить время"), false);
-  mp_param_box->add_bool(irst("Запись CSV включена"), false);
+  mp_param_box->add_bool(irst("Mostrar log"), false);
+  mp_param_box->add_edit(irst("Tiempo de actualizaciуn, ms"), irst("200"));
+  mp_param_box->add_edit(irst("Nъmero de puntos en el grбfico"), irst("1000"));
+  mp_param_box->add_bool(irst("Restablecer tiempo"), false);
+  mp_param_box->add_bool(irst("Grabaciуn de CSV activada"), false);
 }
 void irs::tstlan4_t::controls_t::inner_options_apply()
 {
-  if (mp_param_box->get_param(irst("Отображать лог")) == irst("true")) {
+  if (mp_param_box->get_param(irst("Mostrar log")) == irst("true")) {
     // Отобразить лог
     mp_splitter->Show();
     mp_log_memo->Show();
@@ -203,11 +203,11 @@ void irs::tstlan4_t::controls_t::inner_options_apply()
     mp_splitter->Hide();
   }
   update_time(param_box_read_number<irs_i32>(*mp_param_box,
-    irst("Время обновления, мс")));
+    irst("Tiempo de actualizaciуn, ms")));
   resize_chart(param_box_read_number<irs_u32>(*mp_param_box,
-    irst("Количество точек в графике")));
+    irst("Nъmero de puntos en el grбfico")));
   m_refresh_csv_state_event.exec();
-  if (mp_param_box->get_param(irst("Запись CSV включена")) == irst("true")) {
+  if (mp_param_box->get_param(irst("Grabaciуn de CSV activada")) == irst("true")) {
     m_is_csv_on = true;
   } else {
     m_is_csv_on = false;
@@ -238,8 +238,8 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_grid_popup(new TPopupMenu(mp_form)),
   mp_vars_grid(new TStringGrid(mp_form)),
 
-  mp_read_on_text(irst("Пуск")),
-  mp_read_off_text(irst("Стоп")),
+  mp_read_on_text(irst("Inicio")),
+  mp_read_off_text(irst("Detener")),
 
   m_read_loop_timer(a_update_time_cnt),
   m_buf(),
@@ -281,7 +281,7 @@ irs::tstlan4_t::controls_t::controls_t(
   m_is_csv_opened(false),
   mp_event(IRS_NULL),
   m_inner_options_event(),
-  mp_param_box(new param_box_t(irst("Внутренние настройки tstlan4"),
+  mp_param_box(new param_box_t(irst("Configuraciones internas de tstlan4"),
     irst("inner_options"))),
   m_param_box_tune(mp_param_box.get()),
   m_is_csv_on(false)
@@ -310,19 +310,19 @@ irs::tstlan4_t::controls_t::controls_t(
 
   mp_chart_btn->Left = mp_start_btn->Left + mp_start_btn->Width + btn_gap;
   mp_chart_btn->Top = mp_top_panel->Height/2 - mp_chart_btn->Height/2;
-  mp_chart_btn->Caption = irst("График");
+  mp_chart_btn->Caption = irst("Grбfico");
   mp_chart_btn->Parent = mp_top_panel;
   mp_chart_btn->OnClick = ChartBtnClick;
 
   mp_load_btn->Left = mp_chart_btn->Left + mp_chart_btn->Width + btn_gap;
   mp_load_btn->Top = mp_top_panel->Height/2 - mp_load_btn->Height/2;
-  mp_load_btn->Caption = irst("Загрузить");
+  mp_load_btn->Caption = irst("Cargar");
   mp_load_btn->Parent = mp_top_panel;
   mp_load_btn->OnClick = CsvLoadBtnClick;
 
   mp_options_btn->Left = mp_load_btn->Left + mp_load_btn->Width + btn_gap;
   mp_options_btn->Top = mp_top_panel->Height/2 - mp_options_btn->Height/2;
-  mp_options_btn->Caption = irst("Настройки");
+  mp_options_btn->Caption = irst("Configuraciones");
   mp_options_btn->Parent = mp_top_panel;
   mp_options_btn->OnClick = OptionsBtnClick;
 
@@ -330,7 +330,7 @@ irs::tstlan4_t::controls_t::controls_t(
     mp_options_btn->Width + btn_gap;
   mp_load_table_values_btn->Top = mp_top_panel->Height/2 -
     mp_options_btn->Height/2;
-  mp_load_table_values_btn->Caption = irst("Загр. знач.");
+  mp_load_table_values_btn->Caption = irst("Cargar val.");
   mp_load_table_values_btn->Parent = mp_top_panel;
   mp_load_table_values_btn->OnClick = LoadTableValuesBtnClick;
 
@@ -338,7 +338,7 @@ irs::tstlan4_t::controls_t::controls_t(
     mp_load_table_values_btn->Width + btn_gap;
   mp_save_table_values_btn->Top = mp_top_panel->Height/2 -
     mp_load_table_values_btn->Height/2;
-  mp_save_table_values_btn->Caption = irst("Сохр. знач.");
+  mp_save_table_values_btn->Caption = irst("Guardar val.");
   mp_save_table_values_btn->Parent = mp_top_panel;
   mp_save_table_values_btn->OnClick = SaveTableValuesBtnClick;
 
@@ -353,11 +353,11 @@ irs::tstlan4_t::controls_t::controls_t(
   //mp_splitter->Height = 10;
   mp_splitter->Parent = mp_form;
 
-  mp_grid_popup_insert_item->Caption = irst("Добавить строку");
+  mp_grid_popup_insert_item->Caption = irst("Agregar fila");
   mp_grid_popup_insert_item->OnClick = GridInsertClick;
   //mp_grid_popup_insert_item->ShortCut =
     //ShortCut(VK_INSERT, TShiftState() << ssCtrl);
-  mp_grid_popup_delete_item->Caption = irst("Удалить строку");
+  mp_grid_popup_delete_item->Caption = irst("Eliminar fila");
   mp_grid_popup_delete_item->OnClick = GridDeleteClick;
   mp_grid_popup->Items->Add(mp_grid_popup_insert_item);
   mp_grid_popup->Items->Add(mp_grid_popup_delete_item);
@@ -371,15 +371,15 @@ irs::tstlan4_t::controls_t::controls_t(
   mp_vars_grid->Options = mp_vars_grid->Options << goColSizing;
   mp_vars_grid->OnGetEditText = VarsGridGetEditText;
   mp_vars_grid->OnKeyDown = VarsGridKeyDown;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_index_col] = irst("№");
+  mp_vars_grid->Rows[m_header_row]->Strings[m_index_col] = irst("Nє");
   mp_vars_grid->ColWidths[m_index_col] = m_index_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_name_col] = irst("Имя");
+  mp_vars_grid->Rows[m_header_row]->Strings[m_name_col] = irst("Nombre");
   mp_vars_grid->ColWidths[m_name_col] = m_name_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_type_col] = irst("Тип");
+  mp_vars_grid->Rows[m_header_row]->Strings[m_type_col] = irst("Tipo");
   mp_vars_grid->ColWidths[m_type_col] = m_type_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_value_col] = irst("Значение");
+  mp_vars_grid->Rows[m_header_row]->Strings[m_value_col] = irst("Valor");
   mp_vars_grid->ColWidths[m_value_col] = m_value_col_width;
-  mp_vars_grid->Rows[m_header_row]->Strings[m_chart_col] = irst("Граф.");
+  mp_vars_grid->Rows[m_header_row]->Strings[m_chart_col] = irst("Grбfico.");
   mp_vars_grid->ColWidths[m_chart_col] = m_chart_col_width;
   mp_vars_grid->PopupMenu = mp_grid_popup;
   mp_vars_grid->Parent = mp_form;
@@ -428,8 +428,8 @@ void irs::tstlan4_t::controls_t::tick()
   if (m_inner_options_event.check()) {
     if (mp_param_box->show()) {
       inner_options_apply();
-      if (mp_param_box->get_param(irst("Сбросить время")) == irst("true")) {
-        mp_param_box->set_param(irst("Сбросить время"), irst("false"));
+      if (mp_param_box->get_param(irst("Restablecer tiempo")) == irst("true")) {
+        mp_param_box->set_param(irst("Restablecer tiempo"), irst("false"));
         m_time.start();
         m_shift_time = 0;
         m_minus_shift_time = 0;
@@ -895,7 +895,7 @@ void irs::tstlan4_t::controls_t::open_csv()
       }
     }
   } else {
-    MessageBox(NULL, irst("CSV Файл не создан!!"), irst("Error"), MB_OK);
+    MessageBox(NULL, irst("ЎArchivo CSV no creado!"), irst("Error"), MB_OK);
   }
 }
 void irs::tstlan4_t::controls_t::close_csv()
@@ -1171,8 +1171,8 @@ void irs::tstlan4_t::controls_t::save_table_values(
   if (static_cast<std::size_t>((mp_vars_grid->RowCount - m_header_size)) >
     m_netconn.items.size()) {
     Application->MessageBox(
-      irst("Для сохранения значений необходимо, чтобы произошло подключение"),
-      irst("Ошибка"),
+      irst("Para guardar los valores es necesario que se establezca la conexiуn."),
+      irst("Error"),
       MB_OK + MB_ICONERROR);
     return;
   }
@@ -1208,8 +1208,8 @@ void irs::tstlan4_t::controls_t::load_table_values(
 {
   if (!mp_data->connected()) {
     Application->MessageBox(
-      irst("Для загрузки значений необходимо подключение"),
-      irst("Ошибка"),
+      irst("Para cargar valores es necesario establecer la conexiуn."),
+      irst("Error"),
       MB_OK + MB_ICONERROR);
     return;
   }
@@ -1219,8 +1219,8 @@ void irs::tstlan4_t::controls_t::load_table_values(
 
   if (table.get_col_count() < m_csv_table_col_count) {
     Application->MessageBox(
-      irst("В загруженной таблице мало столбцов"),
-      irst("Ошибка"),
+      irst("La tabla cargada tiene pocas columnas."),
+      irst("Error"),
       MB_OK + MB_ICONERROR);
     return;
   }
@@ -1272,7 +1272,7 @@ void irs::tstlan4_t::controls_t::load_table_values(
   if (!rows_with_errors.empty()) {
     irs::ostringstream_t error_msg_ostr;
     error_msg_ostr <<
-      irst("При загрузке возникли ошибки в следующих строках: ");
+      irst("Se produjeron errores en las siguientes filas al cargar: ");
     for (std::size_t i = 0; i < rows_with_errors.size(); i++) {
       if (i > 0) {
         error_msg_ostr << irst(", ");
@@ -1282,7 +1282,7 @@ void irs::tstlan4_t::controls_t::load_table_values(
     error_msg_ostr << irst(".");
     Application->MessageBox(
       error_msg_ostr.str().c_str(),
-      irst("Ошибка"),
+      irst("Error"),
       MB_OK + MB_ICONWARNING);
   }
 }
