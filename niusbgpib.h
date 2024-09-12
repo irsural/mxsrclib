@@ -134,26 +134,26 @@ public:
       if (!f_Gpib32Lib) {
         f_Gpib32Lib = LoadLibrary(irst("agtgpib32.dll"));
         if (f_Gpib32Lib) {
-          IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
+          IRS_LIB_DBG_MSG("Cargado con agtgpib32.dll");
         }
       } else {
-        IRS_LIB_DBG_MSG("Загружена gpib-32.dll");
+        IRS_LIB_DBG_MSG("Cargado con gpib-32.dll");
       }
       #else // !TRY_LOAD_FIRST_GPIB_32_DLL
       f_Gpib32Lib = LoadLibrary(irst("agtgpib32.dll"));
       if (!f_Gpib32Lib) {
         f_Gpib32Lib = LoadLibrary(irst("GPIB-32.DLL"));
         if (f_Gpib32Lib) {
-          IRS_LIB_DBG_MSG("Загружена gpib-32.dll");
+          IRS_LIB_DBG_MSG("Cargado con gpib-32.dll");
         }
       } else {
-        IRS_LIB_DBG_MSG("Загружена agtgpib32.dll");
+        IRS_LIB_DBG_MSG("Cargado con agtgpib32.dll");
       }
       #endif // !TRY_LOAD_FIRST_GPIB_32_DLL
     } else {
       f_Gpib32Lib = LoadLibrary(a_dll_file_name.c_str());
       if (f_Gpib32Lib) {
-        IRS_LIB_DBG_MSG(irs::str_conv<irs::irs_string_t>(irst("Загружена ") +
+        IRS_LIB_DBG_MSG(irs::str_conv<irs::irs_string_t>(irst("Cargado con ") +
           a_dll_file_name).c_str());
       }
     }
@@ -181,9 +181,9 @@ public:
     } else {
       f_init_fail = irs_true;
       #ifdef __BORLANDC__
-      ShowMessage("Библиотеки GPIB-32.DLL и agtgpib32.dll не найдена");
+      ShowMessage("Bibliotecas GPIB-32.DLL y agtgpib32.dll no encontrado");
       #else
-      IRS_LIB_ERROR(irs::ec_standard, "Библиотека GPIB-32.DLL не найдена");
+      IRS_LIB_ERROR(irs::ec_standard, "Biblioteca GPIB-32.DLL no encontrado");
       #endif //__BORLANDC__
       return;
     }
