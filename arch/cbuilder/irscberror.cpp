@@ -98,13 +98,13 @@ irs::cbuilder::error_handler_t::error_handler_t(
 void irs::cbuilder::error_handler_t::error_out(ostrstream &msg_strm,
   irs::error_code_t error_code, const char *error_type) const
 {
-  msg_strm << endl << "Îøèáêà ÈĞÑ" << endl;
-  msg_strm << "Êîä îøèáêè: " << (int)error_code << endl;
-  msg_strm << "Òèï îøèáêè: " << error_type << endl;
+  msg_strm << endl << "Error de IRS" << endl;
+  msg_strm << "Código de error: " << (int)error_code << endl;
+  msg_strm << "Tipo de error: " << error_type << endl;
   const char *file_name = mp_error_trans->file_name();
   if (file_name)
-    msg_strm << "Ôàéë: " << mp_error_trans->file_name() << endl;
-  msg_strm << "Íîìåğ ñòğîêè: " << mp_error_trans->line_number() << endl;
+    msg_strm << "Archivo: " << mp_error_trans->file_name() << endl;
+  msg_strm << "Número de línea: " << mp_error_trans->line_number() << endl;
 }
 void irs::cbuilder::error_handler_t::show_msg(String &Msg,
   handler_type_t a_handler_type)
@@ -127,7 +127,7 @@ void irs::cbuilder::error_handler_t::show_msg(String &Msg,
         // Â ıòîì ñëó÷àå íè÷åãî íå äåëàåì
       } break;
       default: {
-        throw Exception("Íåïğàâèëüíûé ïàğàìåòğ handler_type óñòàíîâëåí â êëàññå irs::cbuilder::error_handler_t\nÔàéë: " + String(__FILE__) + "\nÑòğîêà: " + String(__LINE__));
+        throw Exception("Parámetro handler_type incorrecto configurado en la clase irs::cbuilder::error_handler_t\nArchivo: " + String(__FILE__) + "\nLinea: " + String(__LINE__));
       }
     }
   }
@@ -141,10 +141,10 @@ void irs::cbuilder::error_handler_t::exec()
     switch (error_code) {
       case irs::ec_standard: {
         ostrstream msg_strm;
-        error_out(msg_strm, error_code, "Ñòàíäàğòíàÿ îøèáêà");
+        error_out(msg_strm, error_code, "Error estándar");
         const char* msg =
           static_cast<const char*>(mp_error_trans->spec_data());
-        msg_strm << "Ñîîáùåíèå: " << msg;
+        msg_strm << "Mensaje: " << msg;
         msg_strm << '\0';
         m_msg = msg_strm.str();
         msg_strm.freeze(false);
@@ -155,18 +155,18 @@ void irs::cbuilder::error_handler_t::exec()
       } break;
       case irs::ec_assert: {
         ostrstream msg_strm;
-        error_out(msg_strm, error_code, "Óòâåğæäåíèå");
+        error_out(msg_strm, error_code, "Afirmación");
         const irs::et_spec_assert_t *spec_data =
           static_cast<const irs::et_spec_assert_t *>(
             mp_error_trans->spec_data()
           );
         if (spec_data) {
           if (spec_data->assert_str) {
-            msg_strm << "Âûğàæåíèå óòâåğæäåíèÿ: " << spec_data->assert_str;
+            msg_strm << "Expresión de afirmación: " << spec_data->assert_str;
             msg_strm << endl;
           }
           if (spec_data->message) {
-            msg_strm << "Ñîîáùåíèå óòâåğæäåíèÿ: " << spec_data->message;
+            msg_strm << "Mensaje de afirmación: " << spec_data->message;
             msg_strm << endl;
           }
         }
@@ -180,11 +180,11 @@ void irs::cbuilder::error_handler_t::exec()
       } break;
       case irs::ec_fatal_error: {
         ostrstream msg_strm;
-        error_out(msg_strm, error_code, "Ôàòàëüíàÿ îøèáêà");
+        error_out(msg_strm, error_code, "Error fatal");
         const char *spec_data = static_cast<const char *>(
           mp_error_trans->spec_data());
         if (spec_data) {
-          msg_strm << "Ñîîáùåíèå: " << spec_data;
+          msg_strm << "Mensaje: " << spec_data;
           msg_strm << endl;
         }
         msg_strm << '\0';
@@ -197,7 +197,7 @@ void irs::cbuilder::error_handler_t::exec()
       } break;
       default: {
         ostrstream msg_strm;
-        error_out(msg_strm, error_code, "Íåèçâåñòíûé");
+        error_out(msg_strm, error_code, "Desconocido");
         msg_strm << '\0';
         m_msg = msg_strm.str();
         msg_strm.freeze(false);

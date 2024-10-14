@@ -38,7 +38,7 @@ irs::named_pipe_server_t::named_pipe_server_t(
   BOOL fsuccess = TRUE;
   if (m_count_instances == 0){
     fsuccess = FALSE;
-    IRS_FATAL_ERROR("Неверное значение входного параметра");
+    IRS_FATAL_ERROR("Valor de parбmetro de entrada no permitido.");
   }
   if(fsuccess){
     add_named_pipe(m_count_instances);
@@ -69,7 +69,7 @@ irs_uarc irs::named_pipe_server_t::read(
 {
   irs_u32 size_rd = 0;
   if (a_channel_ident >= m_count_instances){
-    IRS_FATAL_ERROR("Неверное значение входного параметра");
+    IRS_FATAL_ERROR("Valor de parбmetro de entrada no permitido.");
   }else if(a_channel_ident < mv_named_pipe.size()){
     irs_uarc size_bytes_not_free =
       mv_named_pipe[a_channel_ident].count_inf_bytes_inbuf;
@@ -102,7 +102,7 @@ irs_uarc irs::named_pipe_server_t::write(
 {
   irs_u32 size_wr = 0;
   if (a_channel_ident >= m_count_instances){
-    IRS_FATAL_ERROR("Неверное значение входного параметра");
+    IRS_FATAL_ERROR("Valor de parбmetro de entrada no permitido.");
   }else{
     irs_uarc size_bytes_not_free =
       mv_named_pipe[a_channel_ident].count_inf_bytes_outbuf;
@@ -116,7 +116,7 @@ irs_uarc irs::named_pipe_server_t::write(
   }
 
   if (a_channel_ident >= m_count_instances){
-    IRS_FATAL_ERROR("Неверное значение входного параметра");
+    IRS_FATAL_ERROR("Valor de parбmetro de entrada no permitido.");
   }else if (a_channel_ident < mv_named_pipe.size()){
     HANDLE handl_named_pipe = mv_named_pipe[a_channel_ident].handle;
     OVERLAPPED* p_ovl = &(mv_named_pipe[a_channel_ident].ovl);

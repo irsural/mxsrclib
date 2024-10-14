@@ -245,7 +245,7 @@ void irs::cbuilder::file_xls_table_read(const string_t& a_book_name,
   } catch (...) {
     ap_table_string->clear();
     *ap_read_success = false;
-    IRS_LIB_ASSERT_MSG("Системная ошибка");
+    IRS_LIB_ASSERT_MSG("Error del sistema");
   }
   if (!WorkBook.IsEmpty()) {
     WorkBook.OleFunction("Close");
@@ -315,7 +315,7 @@ void irs::cbuilder::file_xls_table_write(const string_t& a_book_name,
     IRS_LIB_ASSERT_MSG(e.what());
   } catch (...) {
     *ap_read_success = false;
-    IRS_LIB_ASSERT_MSG("Системная ошибка");
+    IRS_LIB_ASSERT_MSG("Error del sistema");
   }
   if (!WorkBook.IsEmpty()) {
     if (file_create) {
