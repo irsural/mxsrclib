@@ -7,9 +7,12 @@
 
 //------------------------------------------------------------------------------
 
-irs::avr::OC0A_pwm_t::OC0A_pwm_t(irs_uarc a_init_duty):
+irs::avr::OC0A_pwm_t::OC0A_pwm_t(irs_uarc a_init_duty, CTC_mode_t a_CTC_mode):
   m_max_duty(255),
-  m_max_frequency(cpu_traits_t::frequency()/(m_max_duty + 1)),
+  m_CTC_mode(a_CTC_mode),
+  m_max_frequency((m_CTC_mode == CTC_mode_off)?
+    cpu_traits_t::frequency()/(m_max_duty + 1):
+    cpu_traits_t::frequency()/(m_max_duty + 1)/2),
   m_frequency(m_max_frequency)
 {
   //  output pin = OC0A = PB7
@@ -18,10 +21,25 @@ irs::avr::OC0A_pwm_t::OC0A_pwm_t(irs_uarc a_init_duty):
   //
   TCCR0A_COM0A1 = 0;
   TCCR0A_COM0A0 = 0;
-  //  Fast PWM, TOP = 0xFF
-  TCCR0B_WGM02 = 0;
-  TCCR0A_WGM01 = 1;
-  TCCR0A_WGM00 = 1;
+  
+  switch (m_CTC_mode) {
+    case CTC_mode_off: {
+      //  Fast PWM, TOP = 0xFF
+      TCCR0B_WGM02 = 0;
+      TCCR0A_WGM01 = 1;
+      TCCR0A_WGM00 = 1;
+    } break;
+    case CTC_mode_on: {
+      // Добавил Крашенинников 19.11.2024 для изменения частоты "пищалки"
+      // УПМС-2
+      // CTC, TOP = OCR0A
+      // В этом режиме set_duty задает период импульсов,
+      // а сигнал всегда "меандр"
+      TCCR0B_WGM02 = 0;
+      TCCR0A_WGM01 = 1;
+      TCCR0A_WGM00 = 0;
+    } break;
+  }
   
   // Clock source = fin / 1
   set_freq_divider(0);
@@ -34,34 +52,40 @@ irs::avr::OC0A_pwm_t::OC0A_pwm_t(irs_uarc a_init_duty):
 
 irs_uarc irs::avr::OC0A_pwm_t::set_freq_divider(irs_uarc a_divider)
 {
-  if (a_divider >= 1024)
+  if ((m_CTC_mode == CTC_mode_off) && (a_divider >= 1024) ||
+    (m_CTC_mode == CTC_mode_on) && (a_divider > 256))
   {
     TCCR0B_CS02 = 1;
     TCCR0B_CS01 = 0;
     TCCR0B_CS00 = 1;
     return 1024;
   }
-  if (a_divider >= 256)
+  if ((m_CTC_mode == CTC_mode_off) && (a_divider >= 256) ||
+    (m_CTC_mode == CTC_mode_on) && (a_divider > 64))
   {
     TCCR0B_CS02 = 1;
     TCCR0B_CS01 = 0;
     TCCR0B_CS00 = 0;
     return 256;
   }
-  if (a_divider >= 64)
+  if ((m_CTC_mode == CTC_mode_off) && (a_divider >= 64) ||
+    (m_CTC_mode == CTC_mode_on) && (a_divider > 8))
   {
     TCCR0B_CS02 = 0;
     TCCR0B_CS01 = 1;
     TCCR0B_CS00 = 1;
     return 64;
   }
-  if (a_divider >= 8)
+  if ((m_CTC_mode == CTC_mode_off) && (a_divider >= 8) ||
+    (m_CTC_mode == CTC_mode_on) && (a_divider > 1))
   {
     TCCR0B_CS02 = 0;
     TCCR0B_CS01 = 1;
     TCCR0B_CS00 = 0;
     return 8;
   }
+  if ((m_CTC_mode == CTC_mode_off) && (a_divider >= 1) ||
+    (m_CTC_mode == CTC_mode_on) && (a_divider == 1))
   if (a_divider >= 1)
   {
     TCCR0B_CS02 = 0;
@@ -94,11 +118,20 @@ void irs::avr::OC0A_pwm_t::start()
   //  output pin = OC0A = PG5
   DDRB_DDB7 = 1;
   PORTB_PORTB7 = 0;
-  //  Clear OC0A on compare match, set on TOP
-  TCCR0A_COM0A1 = 1;
-  TCCR0A_COM0A0 = 0;
+  switch (m_CTC_mode) {
+    case CTC_mode_off: {
+      //  Clear OC0A on compare match, set on TOP
+      TCCR0A_COM0A1 = 1;
+      TCCR0A_COM0A0 = 0;
+    } break;
+    case CTC_mode_on: {
+      //  Toggle OC0A on compare match for CTC mode
+      TCCR0A_COM0A1 = 0;
+      TCCR0A_COM0A0 = 1;
+    } break;
+  }
   //
-  set_freq_divider(m_max_frequency / m_frequency);
+  set_freq_divider(m_max_frequency/m_frequency);
 }
 
 void irs::avr::OC0A_pwm_t::stop()
@@ -129,11 +162,49 @@ void irs::avr::OC0A_pwm_t::set_duty(float a_duty)
 irs::cpu_traits_t::frequency_type irs::avr::OC0A_pwm_t::set_frequency(
   irs::cpu_traits_t::frequency_type a_frequency)
 {
-  irs_uarc div = 1;
-  if (a_frequency < m_max_frequency) div = m_max_frequency / a_frequency;
-  div = set_freq_divider(div);
-  m_frequency = m_max_frequency / div;
-  return m_frequency;
+  switch (m_CTC_mode) {
+    case CTC_mode_off: {
+      irs_uarc div = 1;
+      if (a_frequency < m_max_frequency) div = m_max_frequency/a_frequency;
+      div = set_freq_divider(div);
+      m_frequency = m_max_frequency/div;
+      return m_frequency;
+    }
+    case CTC_mode_on: {
+      //mlog() << "set_frequency(" << a_frequency << ")" << endl;
+      if (a_frequency <= 0) {
+        a_frequency = 1;
+      }
+      irs_uarc div = m_max_frequency/a_frequency + 1;
+      div = set_freq_divider(div);
+      //mlog() << "div = " << div << endl;
+      // m_frequency нужна только для делителя
+      // Она не отражает реальной частоты
+      m_frequency = m_max_frequency/div;
+      // Крашенинников 20.11.2024: Перенебрегаю вычитанием единицы из duty
+      // и частота всегда будет ниже или близка к заданной,
+      // иначе была бы выше или равна
+      // Дле округления к ближайшей требуется вычисления с плавающей точкой
+      // или более сложные в целых, чего я хотел избежать
+      // На данный момент режим CTC используется только в УПМС-2
+      irs::cpu_traits_t::frequency_type duty =
+        cpu_traits_t::frequency()/(2*a_frequency*div);
+      if (duty > 255) {
+        duty = 255;
+      }
+      set_duty(static_cast<irs_uarc>(duty));
+      mlog() << "duty = " << duty << endl;
+      
+      // Пересчет в реально выставляемую частоту
+      irs::cpu_traits_t::frequency_type frequency =
+        cpu_traits_t::frequency()/(2*div*(1 + duty));
+      //mlog() << "Реально выставляемая частота: " << frequency << endl;
+      return frequency;
+    }
+    default: {
+      return 0;
+    }
+  }
 }
 
 irs_uarc irs::avr::OC0A_pwm_t::get_max_duty()
