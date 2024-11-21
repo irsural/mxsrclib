@@ -193,7 +193,7 @@ irs::cpu_traits_t::frequency_type irs::avr::OC0A_pwm_t::set_frequency(
         duty = 255;
       }
       set_duty(static_cast<irs_uarc>(duty));
-      mlog() << "duty = " << duty << endl;
+      //mlog() << "duty = " << duty << endl;
       
       // Пересчет в реально выставляемую частоту
       irs::cpu_traits_t::frequency_type frequency =
