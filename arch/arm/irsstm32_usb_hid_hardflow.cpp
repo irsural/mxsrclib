@@ -34,7 +34,7 @@ extern "C" {
 //# include "usbd_usr.h"
 //# include <usbd_core.h>
 //# include <usb_dcd_int.h>
-#include <usbd_desc.h>
+#include <usbd_hid_desc.h>
 
 extern PCD_HandleTypeDef hpcd;
 }
