@@ -49,6 +49,7 @@ irs::handle_t<irs::hardflow::arm::usb_hid_t>
 irs::hardflow::arm::usb_hid_t::mp_usb_hid = NULL;
 
 irs::hardflow::arm::usb_hid_t::usb_hid_t(
+  USBD_HandleTypeDef* ap_usb_otg_dev,
   size_type a_channel_start_index,
   size_type a_channel_count,
   size_type a_report_size
@@ -56,22 +57,17 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   m_channel_start_index(a_channel_start_index),
   m_channel_end_index(a_channel_start_index + a_channel_count),
   m_channel_count(a_channel_count),
-  //m_report_size(a_report_size),
-  //m_packet_size(m_report_size),
   m_data_max_size(a_report_size - header_size),
   m_buffer_max_size(a_report_size*report_max_count),
-  m_usb_otg_dev(),
-  m_otg_event_connect(this, &irs::hardflow::arm::usb_hid_t::otg_event),
+  mp_usb_otg_dev(ap_usb_otg_dev),
   m_write_packet(),
   m_read_buffers(m_channel_count),
   m_write_buffers(m_channel_count),
   m_write_buf_index(0),
   m_channel(invalid_channel + 1),
   m_packet_received(false),
-  mp_dev(NULL),
   mp_rx_buffer(NULL),
-  m_disconnect_timer(irs::make_cnt_s(1))/*,
-  m_tx_buffer_is_empty(true)*/
+  m_disconnect_timer(irs::make_cnt_s(1))
 {
   if ((m_channel_start_index < 1) ||
     (m_channel_start_index > static_cast<size_type>(
@@ -101,46 +97,14 @@ irs::hardflow::arm::usb_hid_t::usb_hid_t(
   }
   //mp_usb_hid = this;
 
-
-
-  #ifdef USE_USB_HS
-  const int USB_OTG_HS_CORE_ID = 0;
-  const int core_id = USB_OTG_HS_CORE_ID;
-
-  irs::interrupt_array()->int_gen_events(irs::arm::otg_hs_int)->push_back(
-    &m_otg_event_connect);
-  #else
-  const int USB_OTG_FS_CORE_ID = 0; //1
-  const int core_id = USB_OTG_FS_CORE_ID;
-
-  irs::interrupt_array()->int_gen_events(irs::arm::otg_fs_int)->push_back(
-    &m_otg_event_connect);
-  #endif
-
-  USBD_Init(&m_usb_otg_dev, &HID_Desc, core_id);
-
-   /* Add Supported Class */
-  USBD_RegisterClass(&m_usb_otg_dev, &USBD_CUSTOM_HID);
-
   USBD_CustomHID_fops.OutEvent = &irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event;
 
   /* Add Custom HID callbacks */
-  USBD_CUSTOM_HID_RegisterInterface(&m_usb_otg_dev, &USBD_CustomHID_fops);
-
-  /* Start Device Process */
-  USBD_Start(&m_usb_otg_dev);
+  USBD_CUSTOM_HID_RegisterInterface(mp_usb_otg_dev, &USBD_CustomHID_fops);
 }
 
 irs::hardflow::arm::usb_hid_t::~usb_hid_t()
 {
-  USBD_Stop(&m_usb_otg_dev);
-  #ifdef USE_USB_HS
-  irs::interrupt_array()->int_gen_events(irs::arm::otg_hs_int)->erase(
-    &m_otg_event_connect);
-  #else
-  irs::interrupt_array()->int_gen_events(irs::arm::otg_fs_int)->erase(
-    &m_otg_event_connect);
-  #endif
 }
 
 void irs::hardflow::arm::usb_hid_t::release_resources()
@@ -227,21 +191,19 @@ void irs::hardflow::arm::usb_hid_t::tick()
       prepare_buffer = true;
     }
     if (prepare_buffer) {
-      //DCD_EP_PrepareRx(mp_dev, CUSTOM_HID_EPOUT_ADDR, mp_rx_buffer, CUSTOM_HID_EPOUT_SIZE);
-
       USBD_CUSTOM_HID_HandleTypeDef *hhid =
-        (USBD_CUSTOM_HID_HandleTypeDef*)m_usb_otg_dev.pClassData;
-      USBD_LL_PrepareReceive(&m_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
+        reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData);
+      USBD_LL_PrepareReceive(mp_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
         USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 
       m_packet_received = false;
     }
   }
   USBD_CUSTOM_HID_HandleTypeDef *hhid =
-    (USBD_CUSTOM_HID_HandleTypeDef*)m_usb_otg_dev.pClassData;
+    reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData);
 
   if ((hhid->state == CUSTOM_HID_IDLE) &&
-      (m_usb_otg_dev.dev_state == USBD_STATE_CONFIGURED))
+      (mp_usb_otg_dev->dev_state == USBD_STATE_CONFIGURED))
   {
     size_type start_index = m_write_buf_index;
     do {
@@ -265,11 +227,8 @@ void irs::hardflow::arm::usb_hid_t::tick()
         &m_write_buffers[m_write_buf_index],
         m_write_packet.data, size);
       IRS_LIB_ASSERT(read_count == size);
-      //m_tx_buffer_is_empty = false;
-      //usbd_hid_hardflow_send_report(&m_usb_otg_dev,
-        //reinterpret_cast<irs_u8*>(&m_write_packet), packet_max_size);
 
-      USBD_CUSTOM_HID_SendReport(&m_usb_otg_dev,
+      USBD_CUSTOM_HID_SendReport(mp_usb_otg_dev,
         reinterpret_cast<irs_u8*>(&m_write_packet), packet_max_size);
     }
     m_write_buf_index++;
@@ -309,16 +268,9 @@ irs::hardflow::arm::usb_hid_t::write_to_buffer(
   return size;
 }
 
-void irs::hardflow::arm::usb_hid_t::otg_event()
-{
-  //USBD_OTG_ISR_Handler(&m_usb_otg_dev);
-  HAL_PCD_IRQHandler(&hpcd);
-}
-
 void irs::hardflow::arm::usb_hid_t::tx_buffer_is_empty_event()
 {
   IRS_LIB_ASSERT(!mp_usb_hid.is_empty());
-  //mp_usb_hid->m_tx_buffer_is_empty = true;
 }
 
 int8_t irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
@@ -330,26 +282,23 @@ int8_t irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
     //DCD_EP_PrepareRx(ap_dev, CUSTOM_HID_EPOUT_ADDR, ap_rx_buffer, HID_OUT_PACKET);
 
     USBD_CUSTOM_HID_HandleTypeDef *hhid =
-      (USBD_CUSTOM_HID_HandleTypeDef*)mp_usb_hid->m_usb_otg_dev.pClassData;
-    USBD_LL_PrepareReceive(&mp_usb_hid->m_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
+      (USBD_CUSTOM_HID_HandleTypeDef*)mp_usb_hid->mp_usb_otg_dev->pClassData;
+    USBD_LL_PrepareReceive(mp_usb_hid->mp_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
       USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
     return USBD_OK;
   }
-  //IRS_LIB_ASSERT(ap_dev == &mp_usb_hid->m_usb_otg_dev);
-  //mp_usb_hid->mp_dev = ap_dev;
   mp_usb_hid->mp_rx_buffer = ap_rx_buffer;
   mp_usb_hid->m_packet_received = true;
   return USBD_OK;
 }
 
-irs::hardflow::arm::usb_hid_t*
-irs::hardflow::arm::usb_hid_t::reset(
-  size_type a_channel_start_index,
-  size_type a_channel_count, size_type a_report_size)
+irs::hardflow::arm::usb_hid_t* irs::hardflow::arm::usb_hid_t::reset(
+  USBD_HandleTypeDef* ap_usb_otg_dev, size_type a_channel_start_index, size_type a_channel_count,
+  size_type a_report_size)
 {
   mp_usb_hid.reset();
-  mp_usb_hid.reset(new usb_hid_t(a_channel_start_index, a_channel_count,
-    a_report_size));
+  mp_usb_hid.reset(new usb_hid_t(ap_usb_otg_dev, a_channel_start_index,
+    a_channel_count, a_report_size));
   return mp_usb_hid.get();
 }
 

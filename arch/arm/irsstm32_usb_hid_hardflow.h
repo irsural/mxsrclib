@@ -59,8 +59,9 @@ public:
 
   static void tx_buffer_is_empty_event();
 
-  static usb_hid_t* reset(size_type a_channel_start_index = invalid_channel + 1,
-    size_type a_channel_count = 1, size_type a_report_size = 64);
+  static usb_hid_t* reset(USBD_HandleTypeDef* ap_usb_otg_dev,
+    size_type a_channel_start_index = invalid_channel + 1, size_type a_channel_count = 1,
+    size_type a_report_size = 64);
 
   static usb_hid_t* get_instance();
   enum { report_max_count = 5 };
@@ -92,8 +93,9 @@ private:
   };
   #pragma pack(pop)
   usb_hid_t();
-  usb_hid_t(size_type a_channel_start_index = invalid_channel + 1,
-    size_type a_channel_count = 1, size_type a_report_size = 64);
+  usb_hid_t(USBD_HandleTypeDef* ap_usb_otg_dev,
+    size_type a_channel_start_index = invalid_channel + 1, size_type a_channel_count = 1,
+    size_type a_report_size = 64);
   usb_hid_t(const usb_hid_t& a_usb_hid);
   usb_hid_t& operator=(const usb_hid_t& a_usb_hid);
   void release_resources();
@@ -120,46 +122,20 @@ private:
     size_type a_size);
   size_type write_to_buffer(vector<irs_u8>* ap_buffer, const irs_u8 *ap_buf,
     size_type a_size);
-  void otg_event();
-  //static write_report(void* ap_params);
   const size_type m_channel_start_index;
   const size_type m_channel_end_index;
   const size_type m_channel_count;
-  //size_type m_report_size;
-  //size_type m_packet_size;
   size_type m_data_max_size;
   size_type m_buffer_max_size;
 
-  #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-    #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-      #pragma data_alignment=4
-    #endif
-  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
-  __ALIGN_BEGIN USBD_HandleTypeDef m_usb_otg_dev __ALIGN_END;
-  #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-    #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-      #pragma data_alignment=4
-    #endif
-  #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
-
-  USBD_CUSTOM_HID_ItfTypeDef m_usbd_custom_hid_fops;
-  /*{
-    CustomHID_ReportDesc,
-    CustomHID_Init,
-    CustomHID_DeInit,
-    CustomHID_OutEvent,
-  };*/
-
-  event_function_t<usb_hid_t> m_otg_event_connect;
+  USBD_HandleTypeDef* mp_usb_otg_dev;
   packet_t m_write_packet;
   buffers_type m_read_buffers;
   buffers_type m_write_buffers;
   size_type m_write_buf_index;
   size_type m_channel;
   bool m_packet_received;
-  USBD_HandleTypeDef* mp_dev;
   irs_u8* mp_rx_buffer;
-  //bool m_tx_buffer_is_empty;
   static handle_t<usb_hid_t> mp_usb_hid;
   irs::timer_t m_disconnect_timer;
 };
