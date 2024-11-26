@@ -192,7 +192,7 @@ void irs::hardflow::arm::usb_hid_t::tick()
     }
     if (prepare_buffer) {
       USBD_CUSTOM_HID_HandleTypeDef *hhid =
-        reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData);
+        reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData_HID_Custom);
       USBD_LL_PrepareReceive(mp_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
         USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
 
@@ -200,7 +200,7 @@ void irs::hardflow::arm::usb_hid_t::tick()
     }
   }
   USBD_CUSTOM_HID_HandleTypeDef *hhid =
-    reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData);
+    reinterpret_cast<USBD_CUSTOM_HID_HandleTypeDef*>(mp_usb_otg_dev->pClassData_HID_Custom);
 
   if ((hhid->state == CUSTOM_HID_IDLE) &&
       (mp_usb_otg_dev->dev_state == USBD_STATE_CONFIGURED))
@@ -282,7 +282,7 @@ int8_t irs::hardflow::arm::usb_hid_t::rx_buffer_is_empty_event(
     //DCD_EP_PrepareRx(ap_dev, CUSTOM_HID_EPOUT_ADDR, ap_rx_buffer, HID_OUT_PACKET);
 
     USBD_CUSTOM_HID_HandleTypeDef *hhid =
-      (USBD_CUSTOM_HID_HandleTypeDef*)mp_usb_hid->mp_usb_otg_dev->pClassData;
+      (USBD_CUSTOM_HID_HandleTypeDef*)mp_usb_hid->mp_usb_otg_dev->pClassData_HID_Custom;
     USBD_LL_PrepareReceive(mp_usb_hid->mp_usb_otg_dev, CUSTOM_HID_EPOUT_ADDR , hhid->Report_buf,
       USBD_CUSTOMHID_OUTREPORT_BUF_SIZE);
     return USBD_OK;
