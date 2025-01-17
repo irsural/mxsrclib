@@ -114,6 +114,7 @@ enum interrupt_id_t {
 
   #elif defined(IRS_STM32_F2_F4_F7)
   //tim1_brk_tim9_int,
+  pvd_int,
   exti0_int,
   exti3_int,
   dma1_stream5_int,
