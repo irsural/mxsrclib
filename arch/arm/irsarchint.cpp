@@ -446,6 +446,12 @@ void irs_arm_gpio_portj_func()
   TIM9_SR_bit.CC2IF = 0;
 }*/
 
+void irs_arm_pvd_func()
+{
+  irs::arm::interrupt_array()->exec_event(irs::arm::pvd_int);
+  EXTI_PR_bit.PR16 = 1;
+}
+
 void irs_arm_exti0_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::exti0_int);
@@ -761,7 +767,7 @@ __root const intfunc __int_vector_table[] =
 __root const intfunc __int_vector_table[] =
 {
   irs_arm_default_int_func,  // 0
-  irs_arm_default_int_func,  // 1
+  irs_arm_pvd_func,          // 1
   irs_arm_default_int_func,  // 2
   irs_arm_default_int_func,  // 3
   irs_arm_default_int_func,  // 4
