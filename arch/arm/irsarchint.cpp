@@ -446,7 +446,7 @@ void irs_arm_gpio_portj_func()
   TIM9_SR_bit.CC2IF = 0;
 }*/
 
-void irs_arm_pvd_func()
+__weak void irs_arm_pvd_func()
 {
   irs::arm::interrupt_array()->exec_event(irs::arm::pvd_int);
   EXTI_PR_bit.PR16 = 1;
