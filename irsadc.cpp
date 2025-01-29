@@ -473,7 +473,8 @@ void irs::cyclic_adc_ads8344_t::tick()
     } break;
     case process_read_write: {
       m_delay_timer.check();
-      if (m_delay_timer.stopped() && !mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
+      if (m_delay_timer.stopped() && !mp_spi->get_lock() &&
+          (mp_spi->get_status() == irs::spi_t::FREE))
       {
         mp_spi->lock();
         configure_spi();
@@ -994,7 +995,8 @@ void irs::adc_ad7683_t::tick()
   */
   switch (m_status) {
     case ADC_FREE: {
-      if (test_to_cnt(m_read_counter) && !mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
+      if (test_to_cnt(m_read_counter) && !mp_spi->get_lock() &&
+          (mp_spi->get_status() == irs::spi_t::FREE))
       {
         set_to_cnt(m_read_counter, m_read_delay);
         mp_spi->set_order(irs::spi_t::MSB);
@@ -1163,7 +1165,8 @@ void irs::adc_ad7686_t::tick()
   mp_spi->tick();
   switch (m_status) {
     case ADC_FREE: {
-      if (test_to_cnt(m_read_counter) && !mp_spi->get_lock() && (mp_spi->get_status() == irs::spi_t::FREE))
+      if (test_to_cnt(m_read_counter) && !mp_spi->get_lock() &&
+          (mp_spi->get_status() == irs::spi_t::FREE))
       {
         set_to_cnt(m_read_counter, m_read_delay);
         mp_spi->set_order(irs::spi_t::MSB);
@@ -3855,8 +3858,7 @@ void irs::adc_ad7794_t::tick()
             m_get_data = true;
           } break;
           default: {
-            IRS_ASSERT_MSG("Проверка статуса в "
-                           "недопустимом для этого режиме ацп");
+            IRS_ASSERT_MSG("Проверка статуса в недопустимом для этого режиме ацп");
           } break;
         }
       } else {
@@ -4448,8 +4450,7 @@ void irs::adc_ad7799_t::tick()
             m_get_data = true;
           } break;
           default: {
-            IRS_ASSERT_MSG("Проверка статуса в "
-                           "недопустимом для этого режиме ацп");
+            IRS_ASSERT_MSG("Проверка статуса в недопустимом для этого режиме ацп");
           } break;
         }
       } else {
