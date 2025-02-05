@@ -10,6 +10,7 @@
 #pragma hdrstop
 #endif // __BORLANDC__
 
+#include <counter.h>
 #include <irscpu.h>
 
 #ifdef IRS_STM32_F2_F4_F7
@@ -46,6 +47,8 @@ irs::cpu_traits_t::frequency_type irs::cpu_traits_t::m_frequency = 1;
 void irs::cpu_traits_t::frequency(frequency_type a_frequency)
 {
   m_frequency = a_frequency;
+  COUNTER_PER_INTERVAL = static_cast<counter_t>(m_frequency);
+  SECONDS_PER_INTERVAL = 1;
 }
 
 irs::cpu_traits_t::frequency_type irs::cpu_traits_t::frequency()
