@@ -180,14 +180,14 @@ public:
 private:
   struct device_open_data_t
   {
-	string_type path;
-	uint16_t pid;
-	uint16_t vid;
+    string_type path;
+    uint16_t pid;
+    uint16_t vid;
 
-	device_open_data_t(string_type a_path, uint16_t a_pid, uint16_t a_vid) :
-	  path(a_path),
-	  pid(a_pid),
-	  vid(a_vid)
+    device_open_data_t(string_type a_path, uint16_t a_pid, uint16_t a_vid) :
+      path(a_path),
+      pid(a_pid),
+      vid(a_vid)
     {}
   };
 
@@ -242,7 +242,7 @@ public:
   virtual handle_t<mxdata_assembly_t> make_assembly(
     const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
     const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
-	a_modbus_hid_create_foo=NULL) = 0;
+    a_modbus_hid_create_foo = NULL) = 0;
 };
 
 //mxdata_assembly_names_base_t* mxdata_assembly_names();

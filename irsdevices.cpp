@@ -412,16 +412,15 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
       }
       const irs::hardflow_t::size_type channel_id =
         param_box_read_number<irs::hardflow_t::size_type>(
-		*mp_param_box, (irst("Номер канала")));
-	  if (mp_hardflow_create_foo == NULL) {
-		hardflow_ret.reset(new irs::hardflow::usb_hid_t(device_path, channel_id));
-	  } else {
-		hardflow_ret.reset(mp_hardflow_create_foo(
-		  it->second.pid, it->second.vid));
-	  }
-
+        *mp_param_box, (irst("Номер канала")));
+      if (mp_hardflow_create_foo == NULL) {
+        hardflow_ret.reset(new irs::hardflow::usb_hid_t(device_path, channel_id));
+      } else {
+        hardflow_ret.reset(mp_hardflow_create_foo(
+        it->second.pid, it->second.vid));
+      }
       #endif // IRS_WIN32
-	} break;
+    } break;
   }
   return hardflow_ret;
 }
@@ -675,9 +674,9 @@ irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
   if (a_protocol == usb_hid_protocol) {
     ap_modbus_assembly->update_usb_hid_device_path_map();
     vector<string_type> devices_items;
-	map<string_type, device_open_data_t>::const_iterator it =
+    map<string_type, device_open_data_t>::const_iterator it =
       ap_modbus_assembly->m_usb_hid_device_path_map.begin();
-	while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
+    while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
       devices_items.push_back(it->first);
       ++it;
     }
@@ -725,14 +724,14 @@ void irs::modbus_assembly_t::update_usb_hid_device_path_map()
     }
     device += devs[i].path;
 
-	m_usb_hid_device_path_map.insert(make_pair(device, device_open_data_t(
-	  devs[i].path, devs[i].attributes.product_id,
-	  devs[i].attributes.vendor_id)));
+    m_usb_hid_device_path_map.insert(make_pair(device, device_open_data_t(
+      devs[i].path, devs[i].attributes.product_id,
+      devs[i].attributes.vendor_id)));
   }
   #else //IRS_USE_HID_WIN_API
   m_usb_hid_device_path_map.insert(
-	make_pair(irst("define IRS_USE_HID_WIN_API выключен!"),
-	device_open_data_t(irst(""), 0, 0)));
+  make_pair(irst("define IRS_USE_HID_WIN_API выключен!"),
+  device_open_data_t(irst(""), 0, 0)));
   #endif //IRS_USE_HID_WIN_API
 }
 
@@ -744,7 +743,7 @@ void irs::modbus_assembly_t::update_param_box_devices_field()
   update_usb_hid_device_path_map();
   vector<string_type> devices_items;
   map<string_type, device_open_data_t>::const_iterator it =
-	m_usb_hid_device_path_map.begin();
+  m_usb_hid_device_path_map.begin();
   while (it != m_usb_hid_device_path_map.end()) {
     devices_items.push_back(it->first);
     ++it;
@@ -2973,8 +2972,8 @@ public:
   virtual void enum_types(vector<string_type>* ap_types) const;
   virtual handle_t<mxdata_assembly_t> make_assembly(
     const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
-	const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
-	a_modbus_hid_create_foo);
+    const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
+    a_modbus_hid_create_foo);
 private:
   typedef map<string_type, handle_t<mxdata_assembly_creator_t> > ac_list_type;
   typedef ac_list_type::iterator ac_list_it_type;
@@ -3037,16 +3036,17 @@ irs::handle_t<irs::mxdata_assembly_t>
   handle_t<mxdata_assembly_t> result_assembly(IRS_NULL);
   ac_list_it_type it = m_ac_list.find(a_assembly_type);
   if (it != m_ac_list.end()) {
-	result_assembly = IRS_NULL;
-	result_assembly = it->second->make(ap_tstlan4, a_name);
+    result_assembly = IRS_NULL;
+    result_assembly = it->second->make(ap_tstlan4, a_name);
   }
   if (a_assembly_type == irst("modbus usb hid")) {
-	if (modbus_assembly_t* modbus_assembly = dynamic_cast<modbus_assembly_t*>(result_assembly.get())) {
-	  if (a_modbus_hid_create_foo != NULL) {
-		modbus_assembly->set_hardwlof_create_foo(a_modbus_hid_create_foo);
-	  }
-	}
-
+    if (modbus_assembly_t* modbus_assembly =
+      dynamic_cast<modbus_assembly_t*>(result_assembly.get()))
+    {
+      if (a_modbus_hid_create_foo != NULL) {
+        modbus_assembly->set_hardwlof_create_foo(a_modbus_hid_create_foo);
+      }
+    }
   }
   return result_assembly;
 }
