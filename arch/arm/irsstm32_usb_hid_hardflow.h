@@ -142,7 +142,7 @@ private:
     #endif
   #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
-  USBD_CUSTOM_HID_ItfTypeDef m_usbd_custom_hid_fops;
+  // USBD_CUSTOM_HID_ItfTypeDef m_usbd_custom_hid_fops;
   /*{
     CustomHID_ReportDesc,
     CustomHID_Init,
