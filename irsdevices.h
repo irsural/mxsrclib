@@ -196,17 +196,10 @@ private:
   void update_param_box_devices_field();
   void add_error(const string_type& a_error);
 
-  struct param_box_tune_t {
-    param_box_base_t* mp_param_box;
-    param_box_tune_t(modbus_assembly_t* ap_modbus_assembly,
-      param_box_base_t* ap_param_box, protocol_t a_protocol);
-  };
-  friend struct param_box_tune_t;
   string_type m_conf_file_name;
   protocol_t m_protocol;
   handle_t<param_box_base_t> mp_param_box;
   map<string_type, device_open_data_t> m_usb_hid_device_path_map;
-  //param_box_tune_t m_param_box_tune;
   tstlan4_base_t* mp_tstlan4;
   bool m_enabled;
   handle_t<hardflow_t> mp_modbus_client_hardflow;

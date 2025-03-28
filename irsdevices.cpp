@@ -665,43 +665,6 @@ void irs::modbus_assembly_t::tune_param_box()
   mp_param_box->load();
 }
 
-irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
-  modbus_assembly_t* ap_modbus_assembly,
-  param_box_base_t* ap_param_box, protocol_t a_protocol
-):
-  mp_param_box(ap_param_box)
-{
-  if (a_protocol == usb_hid_protocol) {
-    ap_modbus_assembly->update_usb_hid_device_path_map();
-    vector<string_type> devices_items;
-    map<string_type, device_open_data_t>::const_iterator it =
-      ap_modbus_assembly->m_usb_hid_device_path_map.begin();
-    while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
-      devices_items.push_back(it->first);
-      ++it;
-    }
-    string_type default_device;
-    if (!devices_items.empty()) {
-      default_device = devices_items.front();
-    }
-    mp_param_box->add_edit(irst("Имя устройства"), default_device);
-    mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
-    mp_param_box->add_edit(irst("Номер канала"), irst("1"));
-  } else {
-    mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
-    mp_param_box->add_edit(irst("Порт"), irst("5005"));
-  }
-  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
-  mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
-    irst("0"));
-  mp_param_box->add_edit(irst("Биты, чтение/запись (Coils), байт"),
-    irst("0"));
-  mp_param_box->add_edit(irst("Регистры, чтение/запись ")
-    irst("(Holding Registers), кол-во"), irst("10"));
-  mp_param_box->add_edit(irst("Регистры, только чтение ")
-    irst("(Input Registers), кол-во"), irst("0"));
-  mp_param_box->load();
-}
 void irs::modbus_assembly_t::update_usb_hid_device_path_map()
 {
   #if IRS_USE_HID_WIN_API
