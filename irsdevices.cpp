@@ -417,7 +417,7 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
         hardflow_ret.reset(new irs::hardflow::usb_hid_t(device_path, channel_id));
       } else {
         hardflow_ret.reset(mp_hardflow_create_foo(
-        it->second.pid, it->second.vid));
+          it->second.pid, it->second.vid));
       }
       #endif // IRS_WIN32
     } break;
