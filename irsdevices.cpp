@@ -807,9 +807,11 @@ public:
   explicit simple_ftp_client_t(irs::hardflow_t *ap_hardflow, irs::param_box_base_t* ap_param_box):
     mp_hardflow(ap_hardflow),
     mp_param_box(ap_param_box),
-    m_status(st_wait_start),
+    m_status(st_start_wait),
     m_fixed_flow(mp_hardflow),
-    m_packet()
+    m_packet(),
+    m_packet_id(0),
+    m_read_packet_return(st_start_wait)
   {
   }
   void tick()
@@ -817,29 +819,30 @@ public:
     m_fixed_flow.tick();
 
     switch (m_status) {
-      case st_wait_start: {
+      case st_start_wait: {
         if (mp_param_box->read_bool(irst("Получить файл"))) {
           mp_param_box->set_param(irst("Получить файл"), irst("false"));
           irs::mlog() << "Получить файл Запуск" << endl;
-          m_status = st_write;
+          m_status = st_read_command;
         }
       } break;
 
-      case st_write: {
+      case st_read_command: {
         m_packet.command = read_command;
         m_fixed_flow.write(channel, reinterpret_cast<irs_u8*>(&m_packet),
           sizeof(m_packet.command));
-        m_status = st_wait_write;
+        m_status = st_read_command_wait;
       } break;
-      case st_wait_write: {
+      case st_read_command_wait: {
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.write_status();
         switch(status) {
           case irs::hardflow::fixed_flow_t::status_success: {
             m_status = st_read_header;
+            m_read_packet_return = st_start_wait;
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             irs::mlog() << "USB Ошибка записи команды" << endl;
-            m_status = st_wait_start;
+            m_status = st_start_wait;
           } break;
         }
       } break;
@@ -847,9 +850,9 @@ public:
       case st_read_header: {
         size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
         m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(&m_packet), header_size);
-        m_status = st_wait_read_header;
+        m_status = st_read_header_wait;
       } break;
-      case st_wait_read_header: {
+      case st_read_header_wait: {
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
         switch(status) {
           case irs::hardflow::fixed_flow_t::status_success: {
@@ -857,16 +860,16 @@ public:
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             irs::mlog() << "USB Ошибка чтения заголовка" << endl;
-            m_status = st_wait_start;
+            m_status = st_start_wait;
           } break;
         }
       } break;
 
       case st_read_data: {
         m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(m_packet.data), m_packet.data_size);
-        m_status = st_wait_read_data;
+        m_status = st_read_data_wait;
       } break;
-      case st_wait_read_data: {
+      case st_read_data_wait: {
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
         switch(status) {
           case irs::hardflow::fixed_flow_t::status_success: {
@@ -875,11 +878,11 @@ public:
               irs::mlog() << static_cast<int>(m_packet.data[i]) << ' ';
             }
             irs::mlog() << endl;
-            m_status = st_wait_start;
+            m_status = m_read_packet_return;
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             irs::mlog() << "USB Ошибка чтения данных" << endl;
-            m_status = st_wait_start;
+            m_status = st_start_wait;
           } break;
         }
       } break;
@@ -898,31 +901,37 @@ private:
   };
 
   enum status_t {
-    st_wait_start,
-    st_write,
-    st_wait_write,
+    st_start_wait,
+    st_read_command,
+    st_read_command_wait,
     st_read_header,
-    st_wait_read_header,
+    st_read_header_wait,
     st_read_data,
-    st_wait_read_data
+    st_read_data_wait
   };
 
   #pragma pack(push, 1)
   struct packet_t
   {
-    enum { packet_data_max_size = 100 };
+    enum {
+      packet_data_max_size = 100
+    };
 
     uint8_t command;
     uint8_t packet_id;
     uint8_t data_size;
+    uint8_t header_checksum;
+    uint8_t data_checksum;
     uint8_t data[packet_data_max_size];
+
     packet_t():
       command(0),
       packet_id(0),
       data_size(0),
+      header_checksum(0),
+      data_checksum(0),
       data()
     {
-      memset(data, 0, sizeof(data));
     }
   };
   #pragma pack(pop)
@@ -932,6 +941,8 @@ private:
   status_t m_status;
   irs::hardflow::fixed_flow_t m_fixed_flow;
   packet_t m_packet;
+  uint8_t m_packet_id;
+  status_t m_read_packet_return;
 };
 
 irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
