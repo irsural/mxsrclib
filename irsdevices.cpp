@@ -646,6 +646,7 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
     update_param_box_devices_field();
     mp_param_box->add_edit(irst("Номер канала"), irst("1"));
+    mp_param_box->add_bool(irst("Получить файл"), false);
   } else {
     vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
@@ -800,9 +801,151 @@ void irs::modbus_assembly_t::try_create_modbus()
   }
 }
 
+class simple_ftp_client_t
+{
+public:
+  explicit simple_ftp_client_t(irs::hardflow_t *ap_hardflow, irs::param_box_base_t* ap_param_box):
+    mp_hardflow(ap_hardflow),
+    mp_param_box(ap_param_box),
+    m_status(st_wait_start),
+    m_fixed_flow(mp_hardflow),
+    m_packet()
+  {
+  }
+  void tick()
+  {
+    m_fixed_flow.tick();
+
+    switch (m_status) {
+      case st_wait_start: {
+        if (mp_param_box->read_bool(irst("Получить файл"))) {
+          mp_param_box->set_param(irst("Получить файл"), irst("false"));
+          irs::mlog() << "Получить файл Запуск" << endl;
+          m_status = st_write;
+        }
+      } break;
+
+      case st_write: {
+        m_packet.command = read_command;
+        m_fixed_flow.write(channel, reinterpret_cast<irs_u8*>(&m_packet),
+          sizeof(m_packet.command));
+        m_status = st_wait_write;
+      } break;
+      case st_wait_write: {
+        irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.write_status();
+        switch(status) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_status = st_read_header;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            irs::mlog() << "USB Ошибка записи команды" << endl;
+            m_status = st_wait_start;
+          } break;
+        }
+      } break;
+
+      case st_read_header: {
+        size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+        m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(&m_packet), header_size);
+        m_status = st_wait_read_header;
+      } break;
+      case st_wait_read_header: {
+        irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
+        switch(status) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            m_status = st_read_data;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            irs::mlog() << "USB Ошибка чтения заголовка" << endl;
+            m_status = st_wait_start;
+          } break;
+        }
+      } break;
+
+      case st_read_data: {
+        m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(m_packet.data), m_packet.data_size);
+        m_status = st_wait_read_data;
+      } break;
+      case st_wait_read_data: {
+        irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
+        switch(status) {
+          case irs::hardflow::fixed_flow_t::status_success: {
+            uint8_t size = m_packet.data_size;
+            for (uint8_t i = 0; i < size; i++) {
+              irs::mlog() << static_cast<int>(m_packet.data[i]) << ' ';
+            }
+            irs::mlog() << endl;
+            m_status = st_wait_start;
+          } break;
+          case irs::hardflow::fixed_flow_t::status_error: {
+            irs::mlog() << "USB Ошибка чтения данных" << endl;
+            m_status = st_wait_start;
+          } break;
+        }
+      } break;
+    }
+  }
+private:
+  enum {
+    channel = 2,
+  };
+
+  enum {
+    set_file_path_command = 1,
+    read_size_command = 2,
+    read_command = 3,
+    abort_command = 4,
+  };
+
+  enum status_t {
+    st_wait_start,
+    st_write,
+    st_wait_write,
+    st_read_header,
+    st_wait_read_header,
+    st_read_data,
+    st_wait_read_data
+  };
+
+  #pragma pack(push, 1)
+  struct packet_t
+  {
+    enum { packet_data_max_size = 100 };
+
+    uint8_t command;
+    uint8_t packet_id;
+    uint8_t data_size;
+    uint8_t data[packet_data_max_size];
+    packet_t():
+      command(0),
+      packet_id(0),
+      data_size(0),
+      data()
+    {
+      memset(data, 0, sizeof(data));
+    }
+  };
+  #pragma pack(pop)
+
+  irs::hardflow_t *mp_hardflow;
+  irs::param_box_base_t* mp_param_box;
+  status_t m_status;
+  irs::hardflow::fixed_flow_t m_fixed_flow;
+  packet_t m_packet;
+};
+
+irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
+{
+  static irs::handle_t<simple_ftp_client_t> simple_ftp_client_i;
+  return simple_ftp_client_i;
+}
+
 void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
+
+  simple_ftp_client().reset(new simple_ftp_client_t(mp_modbus_client_hardflow.get(), mp_param_box.get()));
+
   mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
   mp_tstlan4->connect(mp_modbus_client.get());
   m_activated = true;
@@ -810,6 +953,8 @@ void irs::modbus_assembly_t::create_modbus()
 
 void irs::modbus_assembly_t::destroy_modbus()
 {
+  simple_ftp_client().reset();
+
   mp_tstlan4->connect(NULL);
   mp_modbus_client.reset();
   mp_modbus_client_hardflow.reset();
@@ -822,6 +967,10 @@ irs::mxdata_t* irs::modbus_assembly_t::mxdata()
 }
 void irs::modbus_assembly_t::tick()
 {
+  if (!simple_ftp_client().is_empty()) {
+    simple_ftp_client()->tick();
+  }
+
   if (!mp_modbus_client.is_empty()) {
     mp_modbus_client->tick();
     const string_type error_string =
