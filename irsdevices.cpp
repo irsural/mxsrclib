@@ -16,6 +16,7 @@
 #include <measmul.h>
 #include <niusbgpib.h>
 #include <niusbgpib_hardflow.h>
+#include <irsalg.h>
 #ifdef __BORLANDC__
 #include <cbsysutils.h>
 #include <mxini.h>
@@ -829,6 +830,7 @@ public:
 
       case st_read_command: {
         m_packet.command = read_command;
+        m_packet.data_size = 0;
         m_status = st_write_packet;
         m_oper_return = st_read_file;
       } break;
@@ -846,7 +848,16 @@ public:
       } break;
 
       case st_write_packet: {
+        m_packet_id++;
+        m_packet.packet_id = m_packet_id;
         size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+        m_packet.header_checksum = irs::crc8(reinterpret_cast<irs_u8*>(&m_packet), 0,
+          header_size - packet_t::checksum_size);
+        m_packet.data_checksum = 0;
+        if (m_packet.data_size) {
+          m_packet.data_checksum = irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0,
+            m_packet.data_size);
+        }
         size_t packet_size = header_size + m_packet.data_size;
         m_fixed_flow.write(channel, reinterpret_cast<irs_u8*>(&m_packet), packet_size);
         m_status = st_write_packet_wait;
@@ -873,7 +884,20 @@ public:
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
         switch (status) {
           case irs::hardflow::fixed_flow_t::status_success: {
-            m_status = st_read_data;
+            size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+            uint8_t checksum_calculated = irs::crc8(
+              reinterpret_cast<irs_u8*>(&m_packet), 0, header_size - packet_t::checksum_size
+            );
+            if (m_packet.header_checksum == checksum_calculated) {
+              if (m_packet.data_size) {
+                m_status = st_read_data;
+              } else {
+                m_status = m_oper_return;
+              }
+            } else {
+              IRS_LIB_DBG_MSG("simple_ftp Ошибка контрольной суммы заголовка");
+              m_status = st_start_wait;
+            }
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения заголовка");
@@ -889,7 +913,14 @@ public:
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
         switch (status) {
           case irs::hardflow::fixed_flow_t::status_success: {
-            m_status = m_oper_return;
+            uint8_t checksum_calculated =
+              irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0, m_packet.data_size);
+            if (m_packet.data_checksum == checksum_calculated) {
+              m_status = m_oper_return;
+            } else {
+              IRS_LIB_DBG_MSG("simple_ftp Ошибка контрольной суммы данных");
+              m_status = st_start_wait;
+            }
           } break;
           case irs::hardflow::fixed_flow_t::status_error: {
             IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения данных");
@@ -928,7 +959,9 @@ private:
   struct packet_t
   {
     enum {
-      packet_data_max_size = 100
+      packet_data_max_size = 100,
+      checksum_size = 2,
+      ack_error_tag = 0xDE,
     };
 
     uint8_t command;
