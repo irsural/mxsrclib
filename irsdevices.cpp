@@ -923,16 +923,18 @@ public:
         }
       } break;
       case st_read_processing: {
-        if (m_file_offset == 100) {
-          int i = 0;
-          i++;
-        }
-        /*static int read_cnt = 0;
-        read_cnt++;
-        if (read_cnt > 10) {
-          read_cnt = 0;
-          m_status = st_start_wait;
-        }*/
+//        if (m_file_offset == 100) {
+//          int i = 0;
+//          i++;
+//        }
+//        static int read_cnt = 0;
+//        read_cnt++;
+//        IRS_LIB_DBG_MSG("simple_ftp read_cnt = " << read_cnt);
+//        if (read_cnt > 10) {
+//          read_cnt = 0;
+//          m_status = st_start_wait;
+//          break;
+//        }
         
         if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
           (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
@@ -951,8 +953,21 @@ public:
           m_packed_id_prev = m_packet.packet_id;
           m_is_packed_id_prev_exist = true;
         } else {
+
+          if (m_is_checksum_error) {
+            IRS_LIB_DBG_MSG("simple_ftp m_is_checksum_error");
+          }
+          if (m_packet.command != read_command_response) {
+            IRS_LIB_DBG_MSG("simple_ftp m_packet.command != read_command_response");
+            IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
+          }
+          if (!((m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size)))
+          {
+            IRS_LIB_DBG_MSG("simple_ftp Размер пакета не в допуске: " << (int)m_packet.data_size);
+          }
+
           m_packet.command = error_command;
-            IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet error");
+          IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet error");
         }
 
         IRS_LIB_DBG_MSG("simple_ftp Отправка пакета");
