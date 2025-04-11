@@ -1053,6 +1053,7 @@ public:
       } break;
       case st_read_trash_data_wait: {
         if (m_trash_data_timer.check()) {
+          m_fixed_flow.read_abort();
           m_status = m_oper_return;
         }
       } break;
