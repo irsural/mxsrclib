@@ -923,10 +923,6 @@ public:
         }
       } break;
       case st_read_processing: {
-//        if (m_file_offset == 100) {
-//          int i = 0;
-//          i++;
-//        }
 //        static int read_cnt = 0;
 //        read_cnt++;
 //        IRS_LIB_DBG_MSG("simple_ftp read_cnt = " << read_cnt);
@@ -970,7 +966,6 @@ public:
           IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet error");
         }
 
-        IRS_LIB_DBG_MSG("simple_ftp Отправка пакета");
         m_packet.data_size = 0;
         m_status = st_write_packet;
         m_oper_return = st_send_ack_wait;
@@ -981,7 +976,6 @@ public:
         if (m_file_offset >= m_file_size) {
           m_status = st_show_data;
         } else {
-          IRS_LIB_DBG_MSG("simple_ftp Прием пакета");
           m_status = st_read_header;
           m_oper_return = st_read_processing;
         }
@@ -999,7 +993,7 @@ public:
         m_packet.packet_id = m_packet_id;
         m_packet_id++;
 
-        IRS_LIB_DBG_MSG("Отправка");
+        IRS_LIB_DBG_MSG("simple_ftp Отправка");
         IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
         IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
         IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
@@ -1039,7 +1033,7 @@ public:
         switch (status) {
           case irs::hardflow::fixed_flow_t::status_success: {
 
-            IRS_LIB_DBG_MSG("Прием");
+            IRS_LIB_DBG_MSG("simple_ftp Прием");
             IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
             IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
             IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
