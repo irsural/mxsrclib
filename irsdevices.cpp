@@ -857,6 +857,14 @@ public:
       }
     }
   }
+  static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32)
+  {
+    *ap_u32 =
+      (static_cast<irs_u32>(ap_data[0]) << 24) |
+      (static_cast<irs_u32>(ap_data[1]) << 16) |
+      (static_cast<irs_u32>(ap_data[2]) << 8)  |
+       static_cast<irs_u32>(ap_data[3]);
+  }
   void tick()
   {
     m_fixed_flow.tick();
@@ -888,11 +896,12 @@ public:
           // m_file_size = *reinterpret_cast<uint32_t*>(m_packet.data);
           // дл€ того, чтобы работало как на Big, так и на Little Endian
           // ¬ m_packet.data используетс€ Big Endian
-          m_file_size =
-            (static_cast<irs_u32>(m_packet.data[0]) << 24) |
-            (static_cast<irs_u32>(m_packet.data[1]) << 16) |
-            (static_cast<irs_u32>(m_packet.data[2]) << 8)  |
-             static_cast<irs_u32>(m_packet.data[3]);
+//          m_file_size =
+//            (static_cast<irs_u32>(m_packet.data[0]) << 24) |
+//            (static_cast<irs_u32>(m_packet.data[1]) << 16) |
+//            (static_cast<irs_u32>(m_packet.data[2]) << 8)  |
+//             static_cast<irs_u32>(m_packet.data[3]);
+          net_to_u32(m_packet.data, &m_file_size);
 
           IRS_LIB_DBG_MSG("simple_ftp m_file_size = " << m_file_size);
           m_status = st_read_command;
