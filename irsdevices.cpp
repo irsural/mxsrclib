@@ -821,7 +821,8 @@ public:
     m_is_packed_id_prev_exist(false),
     m_file_offset(0), // Указатель на текущую позицию в файле
     m_file(),
-    m_trash_data_timer(make_cnt_ms(100))
+    m_trash_data_timer(make_cnt_ms(100)),
+    m_server_version(0)
   {
   }
   void show_status() const
@@ -837,6 +838,9 @@ public:
       status_prev = m_status;
       switch (m_status) {
         SHOW_STATUS(st_start_wait);
+        SHOW_STATUS(st_read_version_command);
+        SHOW_STATUS(st_read_version_command_wait);
+        SHOW_STATUS(st_read_version_command_response);
         SHOW_STATUS(st_read_size_command);
         SHOW_STATUS(st_read_size_command_wait);
         SHOW_STATUS(st_read_size_command_response);
@@ -865,6 +869,10 @@ public:
       (static_cast<irs_u32>(ap_data[2]) << 8)  |
        static_cast<irs_u32>(ap_data[3]);
   }
+  irs_u32 server_version() const
+  {
+    return m_server_version;
+  }
   void tick()
   {
     m_fixed_flow.tick();
@@ -876,7 +884,28 @@ public:
         if (mp_param_box->read_bool(irst("Получить файл"))) {
           mp_param_box->set_param(irst("Получить файл"), irst("false"));
           irs::mlog() << "Получить файл Запуск" << endl;
+          m_status = st_read_version_command;
+        }
+      } break;
+      case st_read_version_command: {
+        m_packet.command = read_version_command;
+        m_packet.data_size = 0;
+        m_status = st_write_packet;
+        m_oper_return = st_read_version_command_wait;
+      } break;
+      case st_read_version_command_wait: {
+        m_status = st_read_header;
+        m_oper_return = st_read_version_command_response;
+      } break;
+      case st_read_version_command_response: {
+        if (!m_is_checksum_error && (m_packet.command == read_version_command) &&
+          m_packet.data_size)
+        {
+          net_to_u32(m_packet.data, &m_server_version);
+          IRS_LIB_DBG_MSG("simple_ftp m_server_version = " << m_server_version);
           m_status = st_read_size_command;
+        } else {
+          m_status = st_read_version_command;
         }
       } break;
       case st_read_size_command: {
@@ -891,18 +920,7 @@ public:
       } break;
       case st_read_size_command_response: {
         if (!m_is_checksum_error && (m_packet.command == read_size_command) && m_packet.data_size) {
-
-          // Сделано не так:
-          // m_file_size = *reinterpret_cast<uint32_t*>(m_packet.data);
-          // для того, чтобы работало как на Big, так и на Little Endian
-          // В m_packet.data используется Big Endian
-//          m_file_size =
-//            (static_cast<irs_u32>(m_packet.data[0]) << 24) |
-//            (static_cast<irs_u32>(m_packet.data[1]) << 16) |
-//            (static_cast<irs_u32>(m_packet.data[2]) << 8)  |
-//             static_cast<irs_u32>(m_packet.data[3]);
           net_to_u32(m_packet.data, &m_file_size);
-
           IRS_LIB_DBG_MSG("simple_ftp m_file_size = " << m_file_size);
           m_status = st_read_command;
         } else {
@@ -1120,10 +1138,14 @@ private:
     read_command_response = 4,
     abort_command = 5,
     error_command = 6,
+    read_version_command = 7,
   };
 
   enum status_t {
     st_start_wait,
+    st_read_version_command,
+    st_read_version_command_wait,
+    st_read_version_command_response,
     st_read_size_command,
     st_read_size_command_wait,
     st_read_size_command_response,
@@ -1187,6 +1209,7 @@ private:
   size_t m_file_offset; // Указатель на текущую позицию в файле
   vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
+  irs_u32 m_server_version;
 };
 
 irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
