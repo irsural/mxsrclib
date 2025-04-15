@@ -935,7 +935,7 @@ public:
 //          m_status = st_start_wait;
 //          break;
 //        }
-        
+
         if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
           (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
         {
@@ -999,7 +999,10 @@ public:
         m_packet.packet_id = m_packet_id;
         m_packet_id++;
 
+        IRS_LIB_DBG_MSG("Отправка");
         IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
+        IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
+        IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
 
         size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
         m_packet.header_checksum = irs::crc8(reinterpret_cast<irs_u8*>(&m_packet), 0,
@@ -1035,7 +1038,11 @@ public:
         irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
         switch (status) {
           case irs::hardflow::fixed_flow_t::status_success: {
+
+            IRS_LIB_DBG_MSG("Прием");
             IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
+            IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
+            IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
 
             size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
             irs_u8 checksum_calculated = irs::crc8(
