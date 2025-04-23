@@ -817,13 +817,21 @@ public:
     m_oper_return(st_start_wait),
     m_file_size(0),
     m_is_checksum_error(false),
-    m_packed_id_prev(0),
+    m_packet_id_prev(0),
     m_is_packed_id_prev_exist(false),
-    m_file_offset(0), // Указатель на текущую позицию в файле
+    m_data_offset(0), // Указатель на текущую позицию в файле
     m_file(),
     m_trash_data_timer(make_cnt_ms(100)),
-    m_server_version(0)
+    m_server_version(0),
+    m_file_path(2000, '\0')
   {
+    char value = 32;
+    for (size_t i = 0; i < m_file_path.size(); i++) {
+      m_file_path[i] = value++;
+      if (static_cast<irs_u8>(value) >= 128) {
+        value = 32;
+      }
+    }
   }
   void show_status() const
   {
@@ -841,6 +849,11 @@ public:
         SHOW_STATUS(st_read_version_command);
         SHOW_STATUS(st_read_version_command_wait);
         SHOW_STATUS(st_read_version_command_response);
+        SHOW_STATUS(st_set_file_path_command);
+        SHOW_STATUS(st_set_file_path_command_wait);
+        SHOW_STATUS(st_set_file_path_command_response);
+        SHOW_STATUS(st_set_file_path_ack_wait);
+        SHOW_STATUS(st_set_file_path_ack_read);
         SHOW_STATUS(st_read_size_command);
         SHOW_STATUS(st_read_size_command_wait);
         SHOW_STATUS(st_read_size_command_response);
@@ -858,6 +871,9 @@ public:
         SHOW_STATUS(st_read_trash_data_wait);
         SHOW_STATUS(st_read_data);
         SHOW_STATUS(st_read_data_wait);
+        default: {
+          IRS_LIB_DBG_MSG("Неизвестный статус. Возможно забыли добавить этот статус.");
+        }
       }
     }
   }
@@ -869,6 +885,13 @@ public:
       (static_cast<irs_u32>(ap_data[2]) << 8)  |
        static_cast<irs_u32>(ap_data[3]);
   }
+  static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data)
+  {
+    ap_data[0] = static_cast<irs_u8>((a_u32 >> 24) & 0xFF);
+    ap_data[1] = static_cast<irs_u8>((a_u32 >> 16) & 0xFF);
+    ap_data[2] = static_cast<irs_u8>((a_u32 >> 8) & 0xFF);
+    ap_data[3] = static_cast<irs_u8>(a_u32 & 0xFF);
+  }
   irs_u32 server_version() const
   {
     return m_server_version;
@@ -877,7 +900,7 @@ public:
   {
     m_fixed_flow.tick();
 
-//    show_status();
+    show_status();
 
     switch (m_status) {
       case st_start_wait: {
@@ -903,11 +926,96 @@ public:
         {
           net_to_u32(m_packet.data, &m_server_version);
           IRS_LIB_DBG_MSG("simple_ftp m_server_version = " << m_server_version);
-          m_status = st_read_size_command;
+          m_status = st_set_file_path_command;
         } else {
           m_status = st_read_version_command;
         }
       } break;
+
+      case st_set_file_path_command: {
+        u32_to_net(m_file_path.size(), m_packet.data);
+        m_data_offset = 0;
+        const size_t remaining_size = m_file_path.size() - m_data_offset;
+        const irs_u8 file_path_chunk_size = static_cast<irs_u8>(std::min<size_t>(
+          packet_t::packet_data_max_size - sizeof(irs_u32), remaining_size));
+        m_packet.data_size = file_path_chunk_size + sizeof(irs_u32);
+        copy(
+            m_file_path.begin() + m_data_offset,
+            m_file_path.begin() + m_data_offset + file_path_chunk_size,
+            m_packet.data + sizeof(irs_u32)
+        );
+        m_data_offset += m_packet.data_size;
+        m_packet_id_prev = m_packet_id;
+        IRS_LIB_DBG_MSG("simple_ftp m_packed_id_prev = " << (int)m_packet_id_prev);
+
+        m_packet.command = set_file_path_command;
+        m_status = st_write_packet;
+        m_oper_return = st_set_file_path_command_wait;
+      } break;
+      case st_set_file_path_command_wait: {
+        m_status = st_read_header;
+        m_oper_return = st_set_file_path_command_response;
+//        m_oper_return = st_start_wait;
+      } break;
+      case st_set_file_path_command_response: {
+        IRS_LIB_DBG_MSG("simple_ftp m_packet_id_prev = " << (int)m_packet_id_prev);
+        IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
+        if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
+          !m_packet.data_size && (m_packet_id_prev == m_packet.packet_id))
+        {
+          m_status = st_set_file_path_ack_wait;
+        } else {
+//          m_status = st_start_wait;
+          m_status = st_set_file_path_command;
+        }
+      } break;
+      case st_set_file_path_ack_wait: {
+//        static int loop_cnt = 0;
+//        loop_cnt++;
+//        IRS_LIB_DBG_MSG("simple_ftp loop_cnt = " << loop_cnt);
+//        if (loop_cnt > 10) {
+//          loop_cnt = 0;
+//          m_status = st_start_wait;
+//          break;
+//        }
+
+        if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
+          !m_packet.data_size && (m_packet_id_prev == m_packet.packet_id))
+        {
+//          const size_t size = m_file_path.size();
+//          if (m_data_offset >= size) {
+          if (m_data_offset >= m_file_path.size()) {
+            m_status = st_start_wait;
+//            m_status = st_read_size_command;
+          } else {
+            size_t remaining_size = m_file_path.size() - m_data_offset;
+            m_packet.data_size = static_cast<irs_u8>(std::min<size_t>(
+              packet_t::packet_data_max_size, remaining_size));
+            copy(
+                m_file_path.begin() + m_data_offset,
+                m_file_path.begin() + m_data_offset + m_packet.data_size,
+                m_packet.data
+            );
+            m_data_offset += m_packet.data_size;
+            m_packet_id_prev = m_packet_id;
+
+            m_packet.command = file_path_response;
+            m_status = st_write_packet;
+            m_oper_return = st_set_file_path_ack_read;
+          }
+        } else {
+          m_packet.command = error_command;
+          m_packet.data_size = 0;
+          m_packet_id--;
+          m_status = st_write_packet;
+          m_oper_return = st_set_file_path_ack_read;
+        }
+      } break;
+      case st_set_file_path_ack_read: {
+        m_status = st_read_header;
+        m_oper_return = st_set_file_path_ack_wait;
+      } break;
+
       case st_read_size_command: {
         m_packet.command = read_size_command;
         m_packet.data_size = 0;
@@ -944,7 +1052,7 @@ public:
         {
           m_status = st_read_processing;
           m_is_packed_id_prev_exist = false;
-          m_file_offset = 0;
+          m_data_offset = 0;
         } else {
           m_status = st_read_command;
         }
@@ -962,10 +1070,10 @@ public:
         if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
           (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
         {
-          if (!m_is_packed_id_prev_exist || (m_packed_id_prev == m_packet.packet_id - 1)) {
+          if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
             std::copy(m_packet.data, m_packet.data + m_packet.data_size,
               std::back_inserter(m_file));
-            m_file_offset += m_packet.data_size;
+            m_data_offset += m_packet.data_size;
             m_packet.command = read_command_response;
             IRS_LIB_DBG_MSG("simple_ftp st_read_processing ok");
           } else {
@@ -973,7 +1081,7 @@ public:
             IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet_id error");
           }
           m_packet_id = m_packet.packet_id;
-          m_packed_id_prev = m_packet.packet_id;
+          m_packet_id_prev = m_packet.packet_id;
           m_is_packed_id_prev_exist = true;
         } else {
 
@@ -1000,7 +1108,7 @@ public:
       case st_send_ack_wait: {
         // Если весь файл принят, переходим в состояние ожидания
         // В отладочном коде переходим к отображению принятого файла
-        if (m_file_offset >= m_file_size) {
+        if (m_data_offset >= m_file_size) {
           m_status = st_show_data;
         } else {
           m_status = st_read_header;
@@ -1139,6 +1247,7 @@ private:
     abort_command = 5,
     error_command = 6,
     read_version_command = 7,
+    file_path_response = 8,
   };
 
   enum status_t {
@@ -1146,6 +1255,11 @@ private:
     st_read_version_command,
     st_read_version_command_wait,
     st_read_version_command_response,
+    st_set_file_path_command,
+    st_set_file_path_command_wait,
+    st_set_file_path_command_response,
+    st_set_file_path_ack_wait,
+    st_set_file_path_ack_read,
     st_read_size_command,
     st_read_size_command_wait,
     st_read_size_command_response,
@@ -1204,12 +1318,13 @@ private:
   status_t m_oper_return;
   irs_u32 m_file_size;
   bool m_is_checksum_error;
-  irs_u8 m_packed_id_prev;
+  irs_u8 m_packet_id_prev;
   bool m_is_packed_id_prev_exist;
-  size_t m_file_offset; // Указатель на текущую позицию в файле
+  size_t m_data_offset; // Указатель на текущую позицию в файле
   vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
+  irs_string_t m_file_path;
 };
 
 irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
