@@ -932,7 +932,6 @@ public:
           m_status = st_read_version_command;
         }
       } break;
-
       case st_set_file_path_command: {
         u32_to_net(m_file_path.size(), m_packet.data);
         m_data_offset = 0;
@@ -956,7 +955,6 @@ public:
       case st_set_file_path_command_wait: {
         m_status = st_read_header;
         m_oper_return = st_set_file_path_command_response;
-//        m_oper_return = st_start_wait;
       } break;
       case st_set_file_path_command_response: {
         IRS_LIB_DBG_MSG("simple_ftp m_packet_id_prev = " << (int)m_packet_id_prev);
@@ -966,26 +964,15 @@ public:
         {
           m_status = st_set_file_path_ack_wait;
         } else {
-//          m_status = st_start_wait;
           m_status = st_set_file_path_command;
         }
       } break;
       case st_set_file_path_ack_wait: {
-//        static int loop_cnt = 0;
-//        loop_cnt++;
-//        IRS_LIB_DBG_MSG("simple_ftp loop_cnt = " << loop_cnt);
-//        if (loop_cnt > 10) {
-//          loop_cnt = 0;
-//          m_status = st_start_wait;
-//          break;
-//        }
-
         bool is_send_packet_needed = false;
         if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
           !m_packet.data_size && (m_packet_id_prev == m_packet.packet_id))
         {
           if (m_data_offset >= m_file_path.size()) {
-//            m_status = st_start_wait;
             m_status = st_read_size_command;
           } else {
             is_send_packet_needed = true;
@@ -1018,7 +1005,6 @@ public:
         m_status = st_read_header;
         m_oper_return = st_set_file_path_ack_wait;
       } break;
-
       case st_read_size_command: {
         m_packet.command = read_size_command;
         m_packet.data_size = 0;
