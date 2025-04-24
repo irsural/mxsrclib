@@ -823,13 +823,14 @@ public:
     m_file(),
     m_trash_data_timer(make_cnt_ms(100)),
     m_server_version(0),
-    m_file_path(2000, '\0')
+    m_file_path(2000, '\0'),
+    m_data_offset_prev(0)
   {
-    char value = 32;
+    char value = 35;
     for (size_t i = 0; i < m_file_path.size(); i++) {
       m_file_path[i] = value++;
-      if (static_cast<irs_u8>(value) >= 128) {
-        value = 32;
+      if (static_cast<irs_u8>(value) >= 127) {
+        value = 35;
       }
     }
   }
@@ -944,7 +945,7 @@ public:
             m_file_path.begin() + m_data_offset + file_path_chunk_size,
             m_packet.data + sizeof(irs_u32)
         );
-        m_data_offset += m_packet.data_size;
+        m_data_offset += file_path_chunk_size;
         m_packet_id_prev = m_packet_id;
         IRS_LIB_DBG_MSG("simple_ftp m_packed_id_prev = " << (int)m_packet_id_prev);
 
@@ -979,34 +980,36 @@ public:
 //          break;
 //        }
 
+        bool is_send_packet_needed = false;
         if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
           !m_packet.data_size && (m_packet_id_prev == m_packet.packet_id))
         {
-//          const size_t size = m_file_path.size();
-//          if (m_data_offset >= size) {
           if (m_data_offset >= m_file_path.size()) {
-            m_status = st_start_wait;
-//            m_status = st_read_size_command;
+//            m_status = st_start_wait;
+            m_status = st_read_size_command;
           } else {
-            size_t remaining_size = m_file_path.size() - m_data_offset;
-            m_packet.data_size = static_cast<irs_u8>(std::min<size_t>(
-              packet_t::packet_data_max_size, remaining_size));
-            copy(
-                m_file_path.begin() + m_data_offset,
-                m_file_path.begin() + m_data_offset + m_packet.data_size,
-                m_packet.data
-            );
-            m_data_offset += m_packet.data_size;
-            m_packet_id_prev = m_packet_id;
-
-            m_packet.command = file_path_response;
-            m_status = st_write_packet;
-            m_oper_return = st_set_file_path_ack_read;
+            is_send_packet_needed = true;
           }
         } else {
-          m_packet.command = error_command;
-          m_packet.data_size = 0;
-          m_packet_id--;
+          is_send_packet_needed = true;
+          m_packet_id = m_data_offset_prev;
+          m_data_offset = m_data_offset_prev;
+        }
+        if (is_send_packet_needed) {
+          size_t remaining_size = m_file_path.size() - m_data_offset;
+          m_packet.data_size = static_cast<irs_u8>(std::min<size_t>(
+            packet_t::packet_data_max_size, remaining_size));
+          copy(
+              m_file_path.begin() + m_data_offset,
+              m_file_path.begin() + m_data_offset + m_packet.data_size,
+              m_packet.data
+          );
+          m_data_offset_prev = m_data_offset;
+          m_data_offset += m_packet.data_size;
+          m_packet_id_prev = m_packet_id;
+          IRS_LIB_DBG_MSG("simple_ftp Передано " << m_data_offset << " из " << m_file_path.size());
+
+          m_packet.command = file_path_response;
           m_status = st_write_packet;
           m_oper_return = st_set_file_path_ack_read;
         }
@@ -1325,6 +1328,7 @@ private:
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
   irs_string_t m_file_path;
+  size_t m_data_offset_prev;
 };
 
 irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
