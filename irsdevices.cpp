@@ -838,7 +838,7 @@ public:
   {
     static status_t status_prev = st_write_packet;
 
-#define SHOW_STATUS(status) \
+#define IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(status) \
   case status: { \
     IRS_LIB_DBG_MSG(#status); \
   } break;
@@ -846,32 +846,32 @@ public:
     if (m_status != status_prev) {
       status_prev = m_status;
       switch (m_status) {
-        SHOW_STATUS(st_start_wait);
-        SHOW_STATUS(st_read_version_command);
-        SHOW_STATUS(st_read_version_command_wait);
-        SHOW_STATUS(st_read_version_command_response);
-        SHOW_STATUS(st_set_file_path_command);
-        SHOW_STATUS(st_set_file_path_command_wait);
-        SHOW_STATUS(st_set_file_path_command_response);
-        SHOW_STATUS(st_set_file_path_ack_wait);
-        SHOW_STATUS(st_set_file_path_ack_read);
-        SHOW_STATUS(st_read_size_command);
-        SHOW_STATUS(st_read_size_command_wait);
-        SHOW_STATUS(st_read_size_command_response);
-        SHOW_STATUS(st_read_command);
-        SHOW_STATUS(st_read_command_wait);
-        SHOW_STATUS(st_read_command_response);
-        SHOW_STATUS(st_read_processing);
-        SHOW_STATUS(st_send_ack_wait);
-        SHOW_STATUS(st_show_data);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_start_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_version_command);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_version_command_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_version_command_response);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_set_file_path_command);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_set_file_path_command_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_set_file_path_command_response);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_set_file_path_ack_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_set_file_path_ack_read);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_size_command);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_size_command_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_size_command_response);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_command);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_command_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_command_response);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_processing);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_send_ack_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_show_data);
 
-        SHOW_STATUS(st_write_packet);
-        SHOW_STATUS(st_write_packet_wait);
-        SHOW_STATUS(st_read_header);
-        SHOW_STATUS(st_read_header_wait);
-        SHOW_STATUS(st_read_trash_data_wait);
-        SHOW_STATUS(st_read_data);
-        SHOW_STATUS(st_read_data_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_write_packet);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_write_packet_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_header);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_header_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_trash_data_wait);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_data);
+        IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_data_wait);
         default: {
           IRS_LIB_DBG_MSG("Неизвестный статус. Возможно забыли добавить этот статус.");
         }
