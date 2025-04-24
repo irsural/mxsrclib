@@ -1073,19 +1073,26 @@ public:
         if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
           (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
         {
+          // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
+          // иначе последний else будет некорректен
           if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
             std::copy(m_packet.data, m_packet.data + m_packet.data_size,
               std::back_inserter(m_file));
             m_data_offset += m_packet.data_size;
             m_packet.command = read_command_response;
+            m_packet_id = m_packet.packet_id;
+            m_packet_id_prev = m_packet.packet_id;
+            m_is_packed_id_prev_exist = true;
             IRS_LIB_DBG_MSG("simple_ftp st_read_processing ok");
+          } else if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id)) {
+            // Сюда попадаем только если мы приняли ранее пакет успешно, а сервер получил
+            // неудачное подтверждение. Это повтор пакета от сервера ранее принятого нами
+            // успешно. Поэтому ничего не копируем и отправляем подтверждение успеха.
+            m_packet.command = read_command_response;
           } else {
             m_packet.command = error_command;
             IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet_id error");
           }
-          m_packet_id = m_packet.packet_id;
-          m_packet_id_prev = m_packet.packet_id;
-          m_is_packed_id_prev_exist = true;
         } else {
 
           if (m_is_checksum_error) {
@@ -1119,11 +1126,14 @@ public:
         }
       } break;
       case st_show_data: {
+        #ifdef IRS_LIB_DEBUG
         size_t size = m_file.size();
+        irs::mlog() << "m_file.size() = " << size << endl;
         for (size_t i = 0; i < size; i++) {
           irs::mlog() << static_cast<int>(m_file[i]) << ' ';
         }
         irs::mlog() << endl;
+        #endif //IRS_LIB_DEBUG
         m_status = st_start_wait;
       } break;
 
