@@ -114,6 +114,7 @@ set(MXSRCLIB_SOURCES
         irsmenu.h
         irstime.cpp
         irstime.h
+        irsfs.h
         arch/${MXSRCLIB_ARCH}/counter.cpp
         ${ARCH_SOURCES}
 )
