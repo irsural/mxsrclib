@@ -1,14 +1,10 @@
-#ifndef CLB_FS_H
-#define CLB_FS_H
+#ifndef IRS_FS_H
+#define IRS_FS_H
 
 #include <cstdint>
 #include <cstdio>
 #include <mxdata.h>
 #include <string>
-
-#ifndef SIMULATOR
-#include "ff.h"
-#endif // SIMULATOR
 
 namespace irs {
 
@@ -75,6 +71,6 @@ public:
   virtual fs_result_t unlink(const std::string& a_file_name) = 0;
 };
 
-} // namespace clb
+} // namespace irs
 
-#endif // CLB_FS_H
+#endif // IRS_FS_H
