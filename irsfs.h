@@ -52,7 +52,7 @@ public:
   virtual size_t read(
     file_t* a_file, uint8_t* a_buffer, size_t a_count, fs_result_t* ap_result
   ) = 0;
-  virtual fs_result_t write(file_t* a_file, uint8_t* a_buffer, size_t a_count) = 0;
+  virtual fs_result_t write(file_t* a_file, const uint8_t* a_buffer, size_t a_count) = 0;
 
   virtual fs_result_t rename(const std::string& a_old_name, const std::string& a_new_name) = 0;
   virtual size_t get_file_size(file_t* a_file, fs_result_t* ap_result) = 0;
