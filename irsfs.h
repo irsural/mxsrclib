@@ -1,6 +1,8 @@
 #ifndef IRS_FS_H
 #define IRS_FS_H
 
+// Все реализации должны использовать для путей к папкам и файлам кодировку utf-8
+
 #include <cstdint>
 #include <cstdio>
 #include <mxdata.h>
