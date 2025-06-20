@@ -28,6 +28,13 @@ struct file_info_t
   std::string name;
   uint64_t size;
   bool is_dir;
+
+  file_info_t():
+    name(),
+    size(),
+    is_dir(false)
+  {
+  }
 };
 
 class dir_iterator_t
