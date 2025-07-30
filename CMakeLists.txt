@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.18)
 
 # Если не были переданы аргументы, то задаются стандартные значения
 if(NOT DEFINED VERBOSE)
@@ -18,7 +18,7 @@ set(MXSRCLIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Проверка наличия файла irsconfig.h
 if (NOT EXISTS "${MXSRCLIB_DIR}/irsconfig.h")
-    file(COPY_FILE "${MXSRCLIB_DIR}/irsconfig0.h" "${MXSRCLIB_DIR}/irsconfig.h")
+    configure_file("${MXSRCLIB_DIR}/irsconfig0.h" "${MXSRCLIB_DIR}/irsconfig.h" COPYONLY)
 endif()
 
 # Подключение необходимых архитектур
