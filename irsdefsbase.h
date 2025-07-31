@@ -1,8 +1,8 @@
 //! \file
 //! \ingroup configuration_group
-//! \brief ГѓГ«Г®ГЎГ Г«ГјГ­Г»ГҐ Г®ГЎГєГїГўГ«ГҐГ­ГЁГї ГІГЁГЇГ®Гў
+//! \brief Глобальные объявления типов
 //!
-//! Г„Г ГІГ  Г±Г®Г§Г¤Г Г­ГЁГї: 17.10.2012
+//! Дата создания: 17.10.2012
 
 #ifndef IRSDEFSBASEH
 #define IRSDEFSBASEH
@@ -20,25 +20,25 @@
 #endif //__ARM_ARCH_PROFILE
 #endif //__ARM_EABI__
 
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГї ГЇГ«Г ГІГґГ®Г°Г¬Г»
+// Определения платформы
 #if (defined(__BCPLUSPLUS__) && defined(__WIN32__)) || defined(__MINGW32__) ||\
   (defined(_MSC_VER) && defined(_WIN32))
-#define IRS_WIN32 // ГЏГ«Г ГІГґГ®Г°Г¬Г  Win32 API
+#define IRS_WIN32 // Платформа Win32 API
 #elif defined(__GNUC__)
 #ifdef IRS_CORTEX_M
 #define IRS_GCC_CORTEX_M
 #elif defined(__x86_64__)
-#define IRS_LINUX // ГЏГ«Г ГІГґГ®Г°Г¬Г  Linux
+#define IRS_LINUX // Платформа Linux
 #else
-#error "ГЏГ«Г ГІГґГ®Г°Г¬Г  Г­ГҐ Г®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­Г "
+#error "Платформа не определена"
 #endif
-#endif // ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГї ГЇГ«Г ГІГґГ®Г°Г¬Г»
+#endif // Определения платформы
 
 #if defined(__ICCAVR__) || defined(__ICCARM__) || defined(IRS_GCC_CORTEX_M)
 #define IRS_MICROCONTROLLER
 #endif //defined(__ICCAVR__) || defined(__ICCARM__)
 
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГЇГ®Г¤Г¤ГҐГ°Г¦ГЄГЁ C++11
+// Определение поддержки C++11
 #ifdef __cplusplus
 # if (__cplusplus >= 201103L)
 #   define IRS_CPP11_SUPPORT 1
@@ -49,7 +49,7 @@
 # define IRS_CPP11_SUPPORT 0
 #endif // IRS_CPP11_SUPPORT
 
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГўГҐГ°Г±ГЁГЁ Builder
+// Определение версии Builder
 #define IRS_CPP_BUILDER4            0x0540
 #define IRS_CPP_BUILDER6            0x0560
 #define IRS_CPP_BUILDER2006         0x0580
@@ -59,19 +59,19 @@
 #define IRS_CPP_BUILDERXE_UPDATE1   0x0631
 #define IRS_CPP_BUILDERXE3          0x0650
 
-// Г‚ГЄГ«ГѕГ·ГҐГ­ГЁГҐ Unicode
+// Включение Unicode
 #ifdef __BORLANDC__
 // _DELPHI_STRING_UNICODE
 # if __BORLANDC__ >= IRS_CPP_BUILDER2010
 #   define IRS_UNICODE_GLOBAL
-    // Г„Г«Гї Г§Г ГЈГ®Г«Г®ГўГ®Г·Г­Г»Гµ ГґГ Г©Г«Г®Гў Windows
+    // Для заголовочных файлов Windows
 #   define UNICODE
 # endif
 #elif defined(__MINGW32__) && defined(UNICODE)
-// Г„Г«Гї Qt Г± MinGW
+// Для Qt с MinGW
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(__GNUC__) && (__GNUC__ >= 4) && __LINUX__ && defined(UNICODE))
-// Г„Г«Гї Qt Г± linux-g++
+// Для Qt с linux-g++
 #   define IRS_UNICODE_GLOBAL
 #elif (defined(_MSC_VER) && (_MSC_VER >= 1400))
 # define IRS_UNICODE_GLOBAL
@@ -87,13 +87,13 @@
 # endif //compilers
 #endif //IRS_UNICODE_GLOBAL
 
-// Г„Г«Гї ГЁГ±ГЇГ°Г ГўГ«ГҐГ­ГЁГї Г®ГёГЁГЎГЄГЁ Гў C++Builder XE Update 1
+// Для исправления ошибки в C++Builder XE Update 1
 # if (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 #define BOOST_TR1_USE_OLD_TUPLE
 #endif // (defined(__BORLANDC__) && (__BORLANDC__ <= IRS_CPP_BUILDERXE_UPDATE1))
 
 #ifdef IRS_CPP11_SUPPORT
-// Г„Г«Гї ГІГЁГЇГ®Гў int8_t, int16_t ГЁ ГІ.Г¤.
+// Для типов int8_t, int16_t и т.д.
 # include <stdint.h>
 #endif // IRS_CPP11_SUPPORT
 
@@ -119,34 +119,34 @@
 #endif // IRS_STM32H7xx
 
 
-// Г„ГҐГ°ГҐГЄГІГЁГўГ  throw
+// Деректива throw
 #ifdef __ICCAVR__
 #define IRS_THROW(_THROW_LIST_)
 #else //__ICCAVR__
 #define IRS_THROW(_THROW_LIST_) throw _THROW_LIST_
 #endif //__ICCAVR__
 
-// Г‚Г®Г§Г¬Г®Г¦Г­Г®Г±ГІГЁ ГЄГ®Г¬ГЇГЁГ«ГїГІГ®Г°Г®Гў
-// __ICCAVR__ - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° IAR Г¤Г«Гї AVR
-// __WATCOMC__ - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° Open Watcom
-// __GNUC__ - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° GNU
-// __BORLANDC__ - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° Borland
-// _MSC_VER - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° Microsoft Visual C++
-// __AVR32__ - ГЉГ®Г¬ГЇГЁГ«ГїГІГ®Г° GCC Г¤Г«Гї AVR32
+// Возможности компиляторов
+// __ICCAVR__ - Компилятор IAR для AVR
+// __WATCOMC__ - Компилятор Open Watcom
+// __GNUC__ - Компилятор GNU
+// __BORLANDC__ - Компилятор Borland
+// _MSC_VER - Компилятор Microsoft Visual C++
+// __AVR32__ - Компилятор GCC для AVR32
 
-// ГЏГ®Г¤Г¤ГҐГ°Г¦ГЄГ  Г·Г Г±ГІГЁГ·Г­Г®Г© Г±ГЇГҐГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГЁ Г¤Г«Гї ГґГіГ­ГЄГ¶ГЁГ©
+// Поддержка частичной специализации для функций
 #if !defined(__WATCOMC__)
 #define IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 #endif //IRS_COMPILERS_PARTIAL_SPECIALIZATION_SUPPORTED
 
-// ГЏГ®Г«Г­Г Гї ГЇГ®Г¤Г¤ГҐГ°Г¦ГЄГ  ГЎГЁГЎГ«ГЁГ®ГІГҐГЄГЁ C++
+// Полная поддержка библиотеки C++
 #if (defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__CYGWIN__)) || \
   (defined(__BORLANDC__) && (__BORLANDC__>= IRS_CPP_BUILDER4)) || \
   (defined(_MSC_VER) && (_MSC_VER >= 1400))
 #define IRS_FULL_STDCPPLIB_SUPPORT
 #endif //IRS_FULL_STDCPPLIB_SUPPORT
 
-// ГЋГЇГ¶ГЁГЁ Г¤Г«Гї ГґГ Г©Г«Г  irscpp.h
+// Опции для файла irscpp.h
 #ifdef __embedded_cplusplus
 #define NAMESPACE_STD_NOT_SUPPORT
 #endif //__embedded_cplusplus
@@ -157,19 +157,19 @@
 #define IRS_STD std::
 #endif //!NAMESPACE_STD_NOT_SUPPORT
 
-// Г‚ГЄГ«ГѕГ·ГҐГ­ГЁГҐ 64-ГЎГЁГІГ­Г®ГЈГ® ГІГЁГЇГ 
+// Включение 64-битного типа
 #define IRSDEFS_I64
 
-// Г‚ГЄГ«ГѕГ·ГҐГ­ГЁГҐ ГЎГ®Г«ГјГёГ®ГЈГ® Г¶ГҐГ«Г®ГЈГ® ГІГЁГЇГ 
+// Включение большого целого типа
 #define IRSDEFS_LONG_LONG
 
-// Г‘ГЇГҐГ¶ГЁГ Г«ГјГ­Г»ГҐ Г®ГЇГЁГ±Г ГІГҐГ«ГЁ Г¤Г«Гї Г¬Г Г­ГЁГЇГіГ«ГїГІГ®Г°Г®Гў Гў Г°Г Г§Г«ГЁГ·Г­Г»Гµ ГЄГ®Г¬ГЇГЁГ«ГїГІГ®Г°Г Гµ
+// Специальные описатели для манипуляторов в различных компиляторах
 #if defined(__WATCOMC__)
 #define IRS_STREAMSPECDECL _WPRTLINK
 #else //compilers
 #define IRS_STREAMSPECDECL
 #endif //compilers
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ Г¬Г®Г¤ГЁГґГЁГЄГ ГІГ®Г°Г  flash Г¤Г«Гї ГЄГ®Г¬ГЇГЁГ«ГїГІГ®Г°Г  IAR AVR
+// Определение модификатора flash для компилятора IAR AVR
 #define IRS_ICCAVR_FLASH __flash
 #ifdef __ICCAVR__
 #define IRS_CSTR_NONVOLATILE IRS_ICCAVR_FLASH
@@ -177,14 +177,14 @@
 #define IRS_CSTR_NONVOLATILE
 #endif //__ICCAVR__
 
-// GCC ГўГҐГ°Г±ГЁГЁ < 3.4
+// GCC версии < 3.4
 #if (defined(__GNUC__) && \
       (\
         ( (__GNUC__ < 3) || (__GNUC__ == 3) && (__GNUC_MINOR__ < 4) )\
       )\
     )
 #define IRS_GNUC_VERSION_LESS_3_4
-#endif // GCC ГўГҐГ°Г±ГЁГЁ < 3.4
+#endif // GCC версии < 3.4
 
 #ifdef __GNUC__
 
@@ -240,21 +240,23 @@
 # define IRS_USE_STM32_USB_HID_HARDFLOW 0
 #endif // IRS_USE_STM32_USB_HID_HARDFLOW
 
-// Г‘ГІГ ГІГЁГ·ГҐГ±ГЄГЁГҐ ГіГІГўГҐГ°Г¦Г¤ГҐГ­ГЁГї
-// Г‚Г§ГїГІГ® ГЁГ§ STLSoft
-// ГЏГҐГ°ГҐГ­ГҐГ±ГҐГ­Г® ГЁГ§ irserror.h Г¤Г«Гї ГІГ®ГЈГ®, Г·ГІГ®ГЎГ» ГЎГ»Г«Г  ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГј ГЇГ°ГЁГ¬ГҐГ­ГЁГІГј
-// Гў irsstrdefs.h
+// Статические утверждения
+// Взято из STLSoft
+// Перенесено из irserror.h для того, чтобы была возможность применить
+// в irsstrdefs.h
 #ifdef IRS_GNUC_VERSION_LESS_3_4
-    // ГќГІГ  ГЄГ®Г­Г±ГІГ Г­ГІГ  Гі Г¬ГҐГ­Гї ГЇГ®ГЄГ  Г®ГІГ±ГіГІГ±ГІГўГіГҐГІ
+    // Эта константа у меня пока отсутствует
     // || defined(STLSOFT_COMPILER_IS_INTEL)
   #define IRS_STATIC_ASSERT(ex)\
     do { typedef int ai[(ex) ? 1 : -1]; } while(0)
 #else /* ? compiler */
 
 
-    #define IRS_STATIC_ASSERT(ex)\
+  #define IRS_STATIC_ASSERT(ex)\
     do { \
-        typedef int ai[(ex) ? 1 : 0] __attribute__((unused)); \
+      IGNORE_DIAGNOSTIC_ENTER("-Wunused-local-typedefs") \
+        typedef int ai[(ex) ? 1 : 0]; \
+      IGNORE_DIAGNOSTIC_EXIT() \
     } while(0)
 
 #endif /* compiler */
@@ -262,45 +264,45 @@
 
 #if IRS_CPP11_SUPPORT
 typedef int8_t              irs_i8;
-// 8-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 8-битовое целое без знака
 typedef uint8_t             irs_u8;
-// 16-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 16-битовое целое со знаком
 typedef int16_t      		 		irs_i16;
-// 16-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 16-битовое целое без знака
 typedef uint16_t            irs_u16;
-// 32-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 32-битовое целое со знаком
 typedef int32_t            	irs_i32;
-// 32-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 32-битовое целое без знака
 typedef uint32_t        		irs_u32;
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 64-битовое целое со знаком
 typedef int64_t             irs_i64;
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 64-битовое целое без знака
 typedef uint64_t            irs_u64;
 #else // !IRS_CPP11_SUPPORT
-// ГЋГ¤ГЁГ­ ГЁГ§ ГІГЁГЇГ®Гў ГЁГ±ГЇГ®Г«ГјГ§ГіГҐГІГ±Гї Гў ГґГіГ­ГЄГ¶ГЁГЁ detect_cpu_endian, ГЇГ®ГЅГІГ®Г¬Гі Г±ГІГ®ГЁГІ ГўГ»ГёГҐ
-// Г¤Г°ГіГЈГЁГµ Г®ГЎГєГїГўГ«ГҐГ­ГЁГ© ГІГЁГЇГ®Гў
-// 8-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// Один из типов используется в функции detect_cpu_endian, поэтому стоит выше
+// других объявлений типов
+// 8-битовое целое со знаком
 typedef signed char 		 		irs_i8;
-// 8-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 8-битовое целое без знака
 typedef unsigned char 	 		irs_u8;
-// 16-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 16-битовое целое со знаком
 typedef signed short 		 		irs_i16;
-// 16-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 16-битовое целое без знака
 typedef unsigned short 	 		irs_u16;
-// 32-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 32-битовое целое со знаком
 typedef signed long 		 		irs_i32;
-// 32-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 32-битовое целое без знака
 typedef unsigned long 	 		irs_u32;
 
 # ifdef __BORLANDC__
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 64-битовое целое со знаком
 typedef signed __int64    irs_i64;
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 64-битовое целое без знака
 typedef unsigned __int64  irs_u64;
 # else //__BORLANDC__
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// 64-битовое целое со знаком
 typedef signed long long 		irs_i64;
-// 64-ГЎГЁГІГ®ГўГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// 64-битовое целое без знака
 typedef unsigned long long 	irs_u64;
 # endif //__BORLANDC__
 
@@ -308,23 +310,23 @@ typedef unsigned long long 	irs_u64;
 
 
 #ifdef __BORLANDC__
-// ГЃГ®Г«ГјГёГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// Большое целое со знаком
 typedef signed __int64 irs_ilong_long;
-// ГЃГ®Г«ГјГёГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// Большое целое без знака
 typedef unsigned __int64 irs_ulong_long;
 #else // !__BORLANDC__
-// ГЃГ®Г«ГјГёГ®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// Большое целое со знаком
 typedef signed long long irs_ilong_long;
-// ГЃГ®Г«ГјГёГ®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// Большое целое без знака
 typedef unsigned long long irs_ulong_long;
 #endif // !__BORLANDC__
-// 32-ГЎГЁГІГ®ГўГ®ГҐ ГЇГ«Г ГўГ ГѕГ№ГҐГҐ
+// 32-битовое плавающее
 typedef float irs_float32;
-// 64-ГЎГЁГІГ®ГўГ®ГҐ ГЇГ«Г ГўГ ГѕГ№ГҐГҐ
+// 64-битовое плавающее
 typedef double irs_float64;
 
-// Г€Г±ГЇГ®Г«ГјГ§ГіГҐГІГ±Гї Гў ГґГіГ­ГЄГ¶ГЁГЁ detect_cpu_endian, ГЇГ®ГЅГІГ®Г¬Гі Г±ГІГ®ГЁГІ ГўГ»ГёГҐ
-// Г¬Г ГЄГ°Г®Г±Г®Гў IRS_HIBYTE, ...
+// Используется в функции detect_cpu_endian, поэтому стоит выше
+// макросов IRS_HIBYTE, ...
 #define IRS_FIRSTDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_)))))
 #define IRS_SECONDDWORD(_NUM_) (*((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1))
 #define IRS_FIRSTWORD(_NUM_) (*((reinterpret_cast<irs_u16*>(&(_NUM_)))))
@@ -339,7 +341,7 @@ namespace irs {
 //! \addtogroup configuration_group
 //! @{
 
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГЇГ®Г°ГїГ¤ГЄГ  ГЎГ Г©ГІГ®Гў ГўГ® ГўГ°ГҐГ¬Гї ГўГ»ГЇГ®Г«Г­ГҐГ­ГЁГї
+// Определение порядка байтов во время выполнения
 enum endian_t {
   little_endian = 0,
   big_endian = 1
@@ -360,7 +362,7 @@ inline endian_t detect_cpu_endian()
 //! \addtogroup configuration_group
 //! @{
 
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГЇГ®Г°ГїГ¤ГЄГ  ГЎГ Г©ГІГ®Гў ГўГ® ГўГ°ГҐГ¬Гї ГЄГ®Г¬ГЇГЁГ«ГїГ¶ГЁГЁ
+// Определение порядка байтов во время компиляции
 #define IRS_LITTLE_ENDIAN 0
 #define IRS_BIG_ENDIAN 1
 #ifdef __AVR32__
@@ -369,13 +371,13 @@ inline endian_t detect_cpu_endian()
 #define IRS_CPU_ENDIAN IRS_LITTLE_ENDIAN
 #endif //__AVR32__
 
-// Г‚Г»Г·ГЁГ±Г«ГҐГ­ГЁГҐ Г°Г Г§Г¬ГҐГ°Г  Г±ГІГ ГІГЁГ·ГҐГ±ГЄГ®ГЈГ® Г¬Г Г±Г±ГЁГўГ 
+// Вычисление размера статического массива
 #define IRS_ARRAYSIZE(_ARRAY_) (sizeof(_ARRAY_)/sizeof(*(_ARRAY_)))
 #define IRS_ARRAYOFSIZE(_ARRAY_) IRS_ARRAYSIZE(_ARRAY_)
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ Г¤Г«Гї Г­ГіГ«ГҐГўГ®ГЈГ® ГіГЄГ Г§Г ГІГҐГ«Гї
+// Определение для нулевого указателя
 #define IRS_NULL 0
-// ГЊГ ГЄГ°Г®Г±Г» ГўГ»Г¤ГҐГ«ГҐГ­ГЁГї ГЁГ§ ГЇГҐГ°ГҐГ¬ГҐГ­Г­Г»Гµ ГЁГµ Г·Г Г±ГІГҐГ©
-// BYTE - ГЎГ Г©ГІГ», WORD - 2 ГЎГ Г©ГІГ , DWORD - 4 ГЎГ Г©ГІГ 
+// Макросы выделения из переменных их частей
+// BYTE - байты, WORD - 2 байта, DWORD - 4 байта
 #define IRS_HIDWORD(_NUM_) ((IRS_CPU_ENDIAN==IRS_LITTLE_ENDIAN)?\
   *((reinterpret_cast<irs_u32*>(&(_NUM_))) + 1):\
   *((reinterpret_cast<irs_u32*>(&(_NUM_)))))
@@ -395,7 +397,7 @@ inline endian_t detect_cpu_endian()
   *((reinterpret_cast<irs_u8*>(&(_NUM_)))):\
   *((reinterpret_cast<irs_u8*>(&(_NUM_))) + 1))
 
-// ГЊГ ГЄГ°Г®Г±Г» ГўГ»Г¤ГҐГ«ГҐГ­ГЁГї ГЁГ§ ГЇГҐГ°ГҐГ¬ГҐГ­Г­Г»Гµ ГЁГµ Г·Г Г±ГІГҐГ© Г¤Г«Гї ГЄГ®Г­Г±ГІГ Г­ГІ
+// Макросы выделения из переменных их частей для констант
 #define IRS_CONST_HIDWORD(_NUM_)\
   (static_cast<irs_u32>(((_NUM_) >> 32)&0xFFFFFFFF))
 #define IRS_CONST_LODWORD(_NUM_)\
@@ -409,43 +411,43 @@ inline endian_t detect_cpu_endian()
 #define IRS_CONST_LOBYTE(_NUM_)\
   (static_cast<irs_u8>((_NUM_)&0xFF))
 
-// ГЊГ ГЄГ°Г®Г±Г» Г¤Г«Гї Г­Г ГµГ®Г¦Г¤ГҐГ­ГЁГї Г¬Г ГЄГ±ГЁГ¬Г Г«ГјГ­Г®ГЈГ® ГЁ Г¬ГЁГ­ГЁГ¬Г Г«ГјГ­Г®ГЈГ® Г§Г­Г Г·ГҐГ­ГЁГї
+// Макросы для нахождения максимального и минимального значения
 #define irs_max(_A_, _B_) (((_A_) > (_B_))?(_A_):(_B_))
 #define irs_min(_A_, _B_) (((_A_) < (_B_))?(_A_):(_B_))
-// ГЊГ ГЄГ°Г®Г±Г» ГіГ¤Г Г«ГҐГ­ГЁГї
+// Макросы удаления
 #define IRS_DELETE(_VAR_) { if (_VAR_) delete _VAR_; _VAR_ = IRS_NULL; }
 #define IRS_ARDELETE(_VAR_) { if (_VAR_) delete []_VAR_; _VAR_ = IRS_NULL; }
-// ГЊГ ГЄГ°Г®Г± __FUNC__
+// Макрос __FUNC__
 #if defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__) ||\
   defined(_MSC_VER)
 #define __FUNC__ __FUNCTION__
 #endif //defined(__GNUC__) || defined(__WATCOMC__) || defined(__ICCAVR__)
 
 #ifdef __ICCAVR__
-// ГђГ Г§Г°ГҐГёГҐГ­ГЁГҐ ГЇГ°ГҐГ°Г»ГўГ Г­ГЁГ©
+// Разрешение прерываний
 #define irs_enable_interrupt() { __enable_interrupt(); }
-// Г‡Г ГЇГ°ГҐГ№ГҐГ­ГЁГҐ ГЇГ°ГҐГ°Г»ГўГ Г­ГЁГ©
+// Запрещение прерываний
 #define irs_disable_interrupt() { __disable_interrupt(); }
 #endif //__ICCAVR__
 
-// ГЊГ ГЄГ°Г®Г±Г» Г¤Г«Гї Г°Г ГЎГ®ГІГ» c DLL
-// ГЋГЎГєГїГўГ«ГҐГ­ГЁГҐ ГўГ­ГҐГёГ­ГҐГ© ГґГіГ­ГЄГ¶ГЁГЁ
+// Макросы для работы c DLL
+// Объявление внешней функции
 #define IRS_DLL_FUNC_DECL(_RETURN_, _FUNC_NAME_, _ARGS_)\
   extern "C" __declspec(dllexport) _RETURN_ _FUNC_NAME_ _ARGS_;
-// ГЋГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ ГІГЁГЇГ  Г¤Г«Гї ГґГіГ­ГЄГ¶ГЁГЁ
+// Определение типа для функции
 #define IRS_DLL_FUNC_TYPE_DEF(_RETURN_, _FUNC_NAME_, _ARGS_)\
   typedef _RETURN_ (*_FUNC_NAME_##_t)_ARGS_;
-// ГЋГЎГєГїГўГ«ГҐГ­ГЁГҐ ГіГЄГ Г§Г ГІГҐГ«Гї Г­Г  ГґГіГ­ГЄГ¶ГЁГЁ
+// Объявление указателя на функции
 #define IRS_DLL_FUNC_DECL_VAR(_FUNC_)\
   _FUNC_##_t _FUNC_ = IRS_NULL;
-// ГЏГ®Г¤ГЄГ«ГѕГ·ГҐГ­ГЁГҐ ГіГЄГ§Г ГІГҐГ«Гї Г­Г  ГґГіГ­ГЄГ¶ГЁГѕ ГЄ ГґГіГ­ГЄГ¶ГЁГЁ DLL
+// Подключение укзателя на функцию к функции DLL
 #define IRS_DLL_FUNC_ATTACH(_FUNC_)\
 {\
   _FUNC_ = (_FUNC_##_t)GetProcAddress(LibHandle, "_" #_FUNC_);\
   if (!_FUNC_) { NumErrFunc++; goto err_func; }\
 }
 
-// ГЊГ ГІГҐГ¬Г ГІГЁГ·ГҐГ±ГЄГЁГҐ ГЄГ®Г­Г±ГІГ Г­ГІГ»
+// Математические константы
 #define IRS_E         2.71828182845904523536
 #define IRS_LOG2E     1.44269504088896340736
 #define IRS_LOG10E    0.434294481903251827651
@@ -461,7 +463,7 @@ inline endian_t detect_cpu_endian()
 #define IRS_SQRT2     1.41421356237309504880
 #define IRS_SQRT_2    0.707106781186547524401
 
-// ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г»ГҐ ГЁ Г¬ГЁГ­ГЁГ¬Г Г«ГјГ­Г»ГҐ Г§Г­Г Г·ГҐГ­ГЁГї ГЇГ® ГІГЁГЇГ Г¬
+// Максимальные и минимальные значения по типам
 #define IRS_I8_MIN (-128)
 #define IRS_I8_MAX 127
 #define IRS_U8_MIN 0
@@ -479,9 +481,9 @@ inline endian_t detect_cpu_endian()
 #define IRS_UARC_MIN 0U
 #define IRS_UARC_MAX UINT_MAX
 
-// Г’ГЁГЇ Г± Г°Г Г§Г°ГїГ¤Г­Г®Г±ГІГјГѕ ГЇГ°Г®Г¶ГҐГ±Г±Г®Г°Г  (ГЋГ‘) Г±Г® Г§Г­Г ГЄГ®Г¬
+// Тип с разрядностью процессора (ОС) со знаком
 typedef int           irs_iarc;
-// Г’ГЁГЇ Г± Г°Г Г§Г°ГїГ¤Г­Г®Г±ГІГјГѕ ГЇГ°Г®Г¶ГҐГ±Г±Г®Г°Г  (ГЋГ‘) ГЎГҐГ§ Г§Г­Г ГЄГ 
+// Тип с разрядностью процессора (ОС) без знака
 typedef unsigned int  irs_uarc;
 
 #ifdef IRSDEFS_I64
@@ -495,9 +497,9 @@ typedef unsigned int  irs_uarc;
 #define IRS_IMAX_MAX IRS_I64_MAX
 #define IRS_UMAX_MIN IRS_U64_MIN
 #define IRS_UMAX_MAX IRS_U64_MAX
-// ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// Максимальное целое со знаком
 typedef irs_i64 irs_imax;
-// ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// Максимальное целое без знака
 typedef irs_u64 irs_umax;
 
 #else //IRSDEFS_I64
@@ -506,14 +508,14 @@ typedef irs_u64 irs_umax;
 #define IRS_IMAX_MAX IRS_I32_MAX
 #define IRS_UMAX_MIN IRS_U32_MIN
 #define IRS_UMAX_MAX IRS_U32_MAX
-// ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г®ГҐ Г¶ГҐГ«Г®ГҐ Г±Г® Г§Г­Г ГЄГ®Г¬
+// Максимальное целое со знаком
 typedef irs_i32 irs_imax;
-// ГЊГ ГЄГ±ГЁГ¬Г Г«ГјГ­Г®ГҐ Г¶ГҐГ«Г®ГҐ ГЎГҐГ§ Г§Г­Г ГЄГ 
+// Максимальное целое без знака
 typedef irs_u32 irs_umax;
 
 #endif //IRSDEFS_I64
 
-// ГЃГіГ«ГҐГўГ»Г© ГІГЁГЇ
+// Булевый тип
 typedef irs_u8   irs_bool;
 
 const irs_bool   irs_true = 1;
@@ -529,13 +531,13 @@ typedef void (*irs_vfunc)();
 # define IRS_SOCKET_ERROR -1
 #endif // IRS_LINUX
 
-// Г’ГЁГЇ Г¤Г«Гї ГЇГЁГ­Г 
+// Тип для пина
 enum irs_pin_t {
   irs_on = 0,
   irs_off = 1
 };
 
-// ГЂГЎГ±ГІГ°Г ГЄГІГ­Г»Г© ГІГЁГЇ Г¤Г«Гї ГЇГ®Г°ГІГ®Гў AVR
+// Абстрактный тип для портов AVR
 enum irs_avr_port_t {
   irs_avr_porta = 0,
   irs_avr_portb = 1,
@@ -547,7 +549,7 @@ enum irs_avr_port_t {
 };
 
 #ifdef __ICCARM__
-// Г“ГЄГ Г§Г ГІГҐГ«Гј Г­Г  ГЇГ®Г°ГІ ARM
+// Указатель на порт ARM
 typedef volatile irs_u32 arm_port_t;
 typedef arm_port_t* p_arm_port_t;
 typedef volatile irs_u32 mc_port_t;
@@ -556,7 +558,7 @@ typedef arm_port_t* p_mc_port_t;
 #endif // __ICCARM__
 
 #ifdef __ICCAVR__
-// Г“ГЄГ Г§Г ГІГҐГ«Гј Г­Г  ГЇГ®Г°ГІ AVR
+// Указатель на порт AVR
 typedef irs_u8 volatile __tiny avr_port_t;
 typedef avr_port_t* p_avr_port_t;
 typedef irs_u8 volatile __tiny mc_port_t;
@@ -564,7 +566,7 @@ typedef avr_port_t* p_mc_port_t;
 #define mc avr
 #endif //__ICCAVR__
 
-// ГЉГ«Г Г±Г± Г¤Г«Гї ГґГіГ­ГЄГ¶ГЁГ© Г®ГЎГ°Г ГЎГ®ГІГЄГЁ
+// Класс для функций обработки
 class mx_proc_t {
 public:
   virtual ~mx_proc_t() {}
@@ -572,7 +574,7 @@ public:
   virtual void abort() = 0;
 };
 
-// ГЏГҐГ°ГҐГ®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐ Г±ГІГ Г­Г Г°ГІГ­Г»Гµ ГІГЁГЇГ®Гў
+// Переопределение станартных типов
 typedef size_t irs_size_t;
 typedef ptrdiff_t irs_ptrdiff_t;
 
@@ -585,7 +587,7 @@ enum switch_t {
   sw_on = 1
 };
 
-//! \brief ГЉГ®Г¤ ГіГ±ГІГ°Г®Г©Г±ГІГўГ 
+//! \brief Код устройства
 enum device_code_t {
   device_code_unknown = 0,
   device_code_first = 1,
@@ -612,14 +614,14 @@ inline bool is_known_device_code(irs_size_t a_code)
 
 }//namespace irs
 
-//  Г‘ГІГ ГІГіГ± ГўГ±ГҐГЈГ®
+//  Статус всего
 enum irs_status_t {
   irs_st_busy,
   irs_st_ready,
   irs_st_error
 };
 
-// ГѓГ Г±ГЁГ¬ Г­ГҐГ­ГіГ¦Г­Г»ГҐ ГЇГ°ГҐГ¤ГіГЇГ°ГҐГ¦Г¤ГҐГ­ГЁГї C++ Builder
+// Гасим ненужные предупреждения C++ Builder
 #ifdef __BCPLUSPLUS__
 // Condition is always true OR Condition is always false (Default ON)
 #pragma warn -8008
