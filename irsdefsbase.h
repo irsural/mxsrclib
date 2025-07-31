@@ -254,9 +254,7 @@
 
   #define IRS_STATIC_ASSERT(ex)\
     do { \
-      IGNORE_DIAGNOSTIC_ENTER("-Wunused-local-typedefs") \
-        typedef int ai[(ex) ? 1 : 0]; \
-      IGNORE_DIAGNOSTIC_EXIT() \
+        typedef int ai[(ex) ? 1 : 0] __attribute__((unused)); \
     } while(0)
 
 #endif /* compiler */
