@@ -197,10 +197,13 @@
 
 #define IGNORE_DIAGNOSTIC_EXIT() _Pragma("GCC diagnostic pop")
 
+#define UNUSED_ATTRIBUTE __attribute__((unused))
+
 #else // __GNUC__
 
 #define IGNORE_DIAGNOSTIC_ENTER(diag)
 #define GCC_IGNORE_DIAGNOSTIC_EXIT()
+#define UNUSED_ATTRIBUTE
 
 #endif // __GNUC__
 
@@ -254,7 +257,7 @@
 
   #define IRS_STATIC_ASSERT(ex)\
     do { \
-        typedef int ai[(ex) ? 1 : 0] __attribute__((unused)); \
+        typedef int UNUSED_ATTRIBUTE ai[(ex) ? 1 : 0]; \
     } while(0)
 
 #endif /* compiler */
