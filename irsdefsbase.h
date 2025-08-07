@@ -197,10 +197,15 @@
 
 #define IGNORE_DIAGNOSTIC_EXIT() _Pragma("GCC diagnostic pop")
 
+// Ќа некоторых верси€х компил€торов не работает GCC diagnostic push дл€ некоторых
+// предупреждений, поэтому дл€ таких предупреждений объ€вл€ютс€ отдельные макросы
+#define ATTRIBUTE_UNUSED __attribute__((unused))
+
 #else // __GNUC__
 
 #define IGNORE_DIAGNOSTIC_ENTER(diag)
 #define GCC_IGNORE_DIAGNOSTIC_EXIT()
+#define ATTRIBUTE_UNUSED
 
 #endif // __GNUC__
 
@@ -254,9 +259,7 @@
 
   #define IRS_STATIC_ASSERT(ex)\
     do { \
-      IGNORE_DIAGNOSTIC_ENTER("-Wunused-local-typedefs") \
-        typedef int ai[(ex) ? 1 : 0]; \
-      IGNORE_DIAGNOSTIC_EXIT() \
+        typedef int ATTRIBUTE_UNUSED ai[(ex) ? 1 : 0]; \
     } while(0)
 
 #endif /* compiler */
