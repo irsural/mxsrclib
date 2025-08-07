@@ -197,9 +197,8 @@
 
 #define IGNORE_DIAGNOSTIC_EXIT() _Pragma("GCC diagnostic pop")
 
-// Подавление -Wunused-local-typedefs для IRS_STATIC_ASSERT.
-// Некоторые версии GCC не обрабатывают _Pragma внутри макросов,
-// поэтому требуется явное отключение предупреждения.
+// На некоторых версиях компиляторов не работает GCC diagnostic push для некоторых
+// предупреждений, поэтому для таких предупреждений объявляются отдельные макросы
 #define ATTRIBUTE_UNUSED __attribute__((unused))
 
 #else // __GNUC__
