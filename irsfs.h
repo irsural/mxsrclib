@@ -4,7 +4,6 @@
 // Все реализации должны использовать для путей к папкам и файлам кодировку utf-8
 
 #include <cstdint>
-#include <cstdio>
 #include <mxdata.h>
 #include <string>
 
