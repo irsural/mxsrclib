@@ -807,7 +807,7 @@ namespace irs {
 class simple_ftp_client_t
 {
 public:
-  explicit simple_ftp_client_t(irs::hardflow_t *ap_hardflow, irs::param_box_base_t* ap_param_box):
+  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, param_box_base_t* ap_param_box):
     mp_hardflow(ap_hardflow),
     mp_param_box(ap_param_box),
     m_status(st_start_wait),
