@@ -103,6 +103,8 @@ public:
   void clear_control();
 private:
   TCustomIniFile* create_ini_file(const string_t& a_file_name) const;
+  TRect bound_window_position(int a_top, int a_left, int a_height, int a_width);
+
   struct control_t {
     string_t section;
     string_t name;
@@ -246,7 +248,7 @@ private:
     bool operator!=(const value_list_editor_t& a_edit) const
     {
       return !(*this == a_edit);
-    }
+	}
   };
   enum load_save_t { ls_load, ls_save };
 

@@ -7,6 +7,7 @@
 #include <irspch.h>
 #ifdef __BORLANDC__
 #pragma hdrstop
+#pragma warn -8061
 #endif // __BORLANDC__
 
 #include <irsparamabs.h>
@@ -15,10 +16,13 @@
 #include <measmul.h>
 #include <niusbgpib.h>
 #include <niusbgpib_hardflow.h>
+#include <irsalg.h>
+#include <fs_cppbuilder.h>
 #ifdef __BORLANDC__
-# include <cbsysutils.h>
-# include <mxini.h>
-# include <irsparam.h>
+#include <cbsysutils.h>
+#include <mxini.h>
+#include <irsparam.h>
+#include <ws2tcpip.h>
 #endif // __BORLANDC__
 
 #include <irsdevices.h>
@@ -111,8 +115,6 @@ mxdata_assembly_params_t::mxdata_assembly_params_t(
 
 } // namespace irs {
 
-#ifdef __BORLANDC__
-#endif // __BORLANDC__
 
 #if defined(IRS_WIN32) || defined(IRS_LINUX)
 
@@ -154,6 +156,12 @@ private:
   bool m_enabled;
   handle_t<hardflow_t> mp_mxnet_client_hardflow;
   handle_t<mxdata_t> mp_mxnet_client;
+
+  #ifdef __BORLANDC__
+  ip_collector_t* mp_ip_collector;
+  bool m_wait_response;
+  void add_collected_ip();
+  #endif // __BORLANDC__
 };
 
 } // namespace irs
@@ -175,6 +183,11 @@ irs::mxnet_assembly_t::mxnet_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_enabled(false),
   mp_mxnet_client_hardflow(),
   mp_mxnet_client()
+  #ifdef __BORLANDC__
+  ,
+  m_wait_response(false),
+  mp_ip_collector(ip_collector_t::get_instance())
+  #endif // __BORLANDC__
 {
   mp_tstlan4->ini_name(m_conf_file_name);
 }
@@ -188,7 +201,10 @@ irs::mxnet_assembly_t::param_box_tune_t::param_box_tune_t(
   mp_param_box(ap_param_box)
 {
   mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
+  vector<string_type> devices_items;
+  mp_param_box->add_combo(irst("IP"), &devices_items);
   mp_param_box->add_edit(irst("Порт"), irst("5005"));
+  mp_param_box->add_edit(irst("Запрос на получение IP"), irst("upms_1v_get_ip"));
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->load();
 }
@@ -225,9 +241,27 @@ void irs::mxnet_assembly_t::tick()
   if (!mp_mxnet_client.is_empty()) {
     mp_mxnet_client->tick();
   }
+
+  mp_ip_collector->tick();
+
+  if (mp_ip_collector->are_ip_collected() && m_wait_response) {
+    m_wait_response = false;
+    add_collected_ip();
+  }
 }
+
 void irs::mxnet_assembly_t::show_options()
 {
+  string_type request_wstring =
+    mp_param_box->get_param(irst("Запрос на получение IP"));
+  std::string request_string =
+    std::string(request_wstring.begin(), request_wstring.end());
+
+  mp_ip_collector->send_request(request_string, 5007);
+  // Одновременно в тике крутятся несколько экземпляров modbus_assembly_t,
+  // ответы должен принимать только тот, который послал запрос
+  m_wait_response = true;
+
   if (mp_param_box->show() && m_enabled) {
     mp_mxnet_client_hardflow->set_param(irst("remote_address"),
       mp_param_box->get_param(irst("IP")));
@@ -240,6 +274,7 @@ void irs::mxnet_assembly_t::show_options()
       irst("Время обновления, мс"))));
   }
 }
+
 void irs::mxnet_assembly_t::tstlan4(tstlan4_base_t* ap_tstlan4)
 {
   mp_tstlan4 = ap_tstlan4;
@@ -249,6 +284,36 @@ irs::mxnet_assembly_t::options_type* irs::mxnet_assembly_t::options()
 {
   return &m_param_box_base_options;
 }
+
+#ifdef __BORLANDC__
+void irs::mxnet_assembly_t::add_collected_ip()
+{
+  vector<string_type> collected_ips;
+
+  irs::ip_collector_t::answer_type_t answers = mp_ip_collector->get_answers();
+  irs::ip_collector_t::answer_type_t::iterator it;
+  for (it = answers.begin(); it != answers.end(); ++it) {
+    // Формат ответа: ip;factory_number
+    irs::ip_collector_t::string_t::size_type n = it->find(';');
+    if (n != irs::ip_collector_t::string_t::npos) {
+      *it = irs::ip_collector_t::string_t(it->begin(), it->begin() + n);
+    }
+
+    // Приходить должно только в ASCII
+    wstringstream wide_answer;
+    wide_answer << it->c_str();
+    collected_ips.push_back(wide_answer.str());
+  }
+
+  string_type default_ip = mp_param_box->get_param(irst("IP"));
+  if (default_ip.empty() && !collected_ips.empty()) {
+    default_ip = collected_ips.front();
+  }
+
+  mp_param_box->clear_combo(irst("IP"));
+  mp_param_box->add_combo(irst("IP"), &collected_ips);
+}
+#endif // __BORLANDC__
 
 namespace irs {
 
@@ -274,59 +339,6 @@ public:
   virtual handle_t<mxdata_assembly_t> make(tstlan4_base_t* ap_tstlan4,
     const string_type& a_name);
 private:
-};
-
-class modbus_assembly_t: public mxdata_assembly_t
-{
-public:
-  typedef irs_size_t size_type;
-  typedef irs::string_t string_type;
-  enum protocol_t { udp_protocol, tcp_protocol, usb_hid_protocol };
-
-  modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
-    const string_type& a_conf_file_name,
-    protocol_t a_protocol);
-  virtual ~modbus_assembly_t();
-  virtual bool enabled() const;
-  virtual void enabled(bool a_enabled);
-  virtual irs::mxdata_t* mxdata();
-  virtual void tick();
-  virtual void show_options();
-  virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
-  virtual status_t get_status();
-  virtual error_string_list_type get_last_error_string_list();
-private:
-  void tune_param_box();
-  void update_usb_hid_device_path_map();
-  void update_param_box_devices_field();
-  void add_error(const string_type& a_error);
-  struct param_box_tune_t {
-    param_box_base_t* mp_param_box;
-    param_box_tune_t(modbus_assembly_t* ap_modbus_assembly,
-      param_box_base_t* ap_param_box, protocol_t a_protocol);
-  };
-  friend struct param_box_tune_t;
-  string_type m_conf_file_name;
-  protocol_t m_protocol;
-  handle_t<param_box_base_t> mp_param_box;
-  map<string_type, string_type> m_usb_hid_device_path_map;
-  //param_box_tune_t m_param_box_tune;
-  tstlan4_base_t* mp_tstlan4;
-  bool m_enabled;
-  handle_t<hardflow_t> mp_modbus_client_hardflow;
-  handle_t<mxdata_t> mp_modbus_client;
-  bool m_activated;
-  irs::loop_timer_t m_activation_timer;
-  enum { error_list_max_size = 100 };
-  error_string_list_type m_error_list;
-
-  static handle_t<mxdata_t> make_client(handle_t<hardflow_t> ap_hardflow,
-    handle_t<param_box_base_t> ap_param_box);
-  handle_t<hardflow_t> make_hardflow();
-  void try_create_modbus();
-  void create_modbus();
-  void destroy_modbus();
-  static string_type protocol_name(protocol_t a_protocol);
 };
 
 } // namespace irs
@@ -393,23 +405,192 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
       #endif // !IRS_USE_HID_WIN_API
 
       #ifdef IRS_WIN32
-      const string_type device =
-        mp_param_box->get_param(irst("Имя устройства"));
-      map<string_type, string_type>::const_iterator it =
-        m_usb_hid_device_path_map.find(device);
+      const string_type device = mp_param_box->get_param(irst("Имя устройства"));
+      map<string_type, device_open_data_t>::const_iterator it =
+      m_usb_hid_device_path_map.find(device);
       string_type device_path;
       if (it != m_usb_hid_device_path_map.end()) {
-        device_path = it->second;
+        device_path = it->second.path;
       }
       const irs::hardflow_t::size_type channel_id =
         param_box_read_number<irs::hardflow_t::size_type>(
         *mp_param_box, (irst("Номер канала")));
-      hardflow_ret.reset(new hardflow::usb_hid_t(device_path, channel_id));
+      if (mp_hardflow_create_foo == NULL) {
+        hardflow_ret.reset(new irs::hardflow::usb_hid_t(device_path, channel_id));
+      } else {
+        hardflow_ret.reset(mp_hardflow_create_foo(
+          it->second.pid, it->second.vid));
+      }
       #endif // IRS_WIN32
     } break;
   }
   return hardflow_ret;
 }
+
+#ifdef __BORLANDC__
+
+irs::ip_collector_t::ip_collector_t() :
+  m_if_addresses(),
+  m_sockets(),
+  m_answers(),
+  m_recv_socket_timer(irs::make_cnt_ms(200)),
+  m_collect_ip_timer(irs::make_cnt_ms(1200))
+{
+  WSADATA wsa;
+  if (WSAStartup(MAKEWORD(2,2), &wsa) == 0) {
+    get_interfaces_ip();
+    if (!m_if_addresses.empty()) {
+      create_sockets();
+      for (size_t i = 0; i < m_if_addresses.size(); ++i) {
+        irs::mlog() << "Сетевой интерфейс №" << i << ": " <<
+          m_if_addresses[i].first << "; " << m_if_addresses[i].second << endl;
+      }
+    } else {
+      irs::mlog() << "Не найдено ни одного сетевого интерфейса" << endl;
+    }
+  } else {
+    irs::mlog() << "Не удалось инициализировать Winsock" << endl;
+  }
+
+}
+
+irs::ip_collector_t::~ip_collector_t()        
+{
+  socket_t::iterator it;
+  for (it = m_sockets.begin(); it != m_sockets.end(); ++it) {
+    closesocket(it->second);
+  }
+	WSACleanup();
+}
+
+void irs::ip_collector_t::send_request(string_t a_request_string, uint16_t a_port)
+{
+  for (socket_t::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it) {
+    string_t& ip_str = it->first;
+    int sock = it->second;
+
+    sockaddr_in sa_in = {0};
+	  sa_in.sin_family = AF_INET;
+    sa_in.sin_addr.s_addr = inet_addr(ip_str.c_str());
+    sa_in.sin_port = htons(a_port);
+
+    if (sendto(sock, a_request_string.c_str(), a_request_string.size(), 0,
+      reinterpret_cast<sockaddr*>(&sa_in), sizeof(sa_in)) == SOCKET_ERROR)
+    {
+      irs::mlog() << "Не удалось отправить с сокета на адрес ip: " << ip_str << endl;
+    }
+  }
+  m_answers.clear();
+  m_collect_ip_timer.start();
+}
+
+void irs::ip_collector_t::tick()
+{
+  if (m_recv_socket_timer.check()) {
+    for (socket_t::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it) {
+      int sock = it->second;
+
+      char buf[50];
+      int bytes_read = recv(sock, buf, sizeof(buf), 0);
+
+      if (bytes_read > 0) {
+        m_answers.push_back(string_t(buf, buf + bytes_read));
+      }
+    }
+  }
+}
+
+bool irs::ip_collector_t::are_ip_collected()
+{
+  m_collect_ip_timer.check();
+  return m_collect_ip_timer.stopped();
+}
+
+const irs::ip_collector_t::answer_type_t& irs::ip_collector_t::get_answers()
+{
+  return m_answers;
+}
+
+void irs::ip_collector_t::get_interfaces_ip()
+{
+  m_if_addresses.clear();
+
+  ULONG info_buffer_size = sizeof (IP_ADAPTER_INFO);
+  PIP_ADAPTER_INFO p_adapter_info = (IP_ADAPTER_INFO *) malloc(sizeof (IP_ADAPTER_INFO));
+  DWORD res;
+
+  if (p_adapter_info != NULL) {
+    res = GetAdaptersInfo(p_adapter_info, &info_buffer_size);
+    if (res == ERROR_BUFFER_OVERFLOW) {
+      free(p_adapter_info);
+      p_adapter_info = (IP_ADAPTER_INFO *) malloc(info_buffer_size);
+
+      if (p_adapter_info != NULL) {
+        res = GetAdaptersInfo(p_adapter_info, &info_buffer_size);
+      }
+    }
+  }
+
+  if (res == NO_ERROR) {
+    while (p_adapter_info) {
+      mxip_t ip = {0};
+      cstr_to_mxip(ip, p_adapter_info->IpAddressList.IpAddress.String);
+      mxip_t mask = {0};
+      cstr_to_mxip(mask, p_adapter_info->IpAddressList.IpMask.String);
+
+      if (p_adapter_info->Type == MIB_IF_TYPE_ETHERNET) {
+        m_if_addresses.push_back(make_pair(ip, mask));
+      } else {
+        irs::mlog() << "other if: " << ip << "; " << mask << endl;
+      }
+      p_adapter_info = p_adapter_info->Next;
+    }
+  } else {
+    irs::mlog() << "GetAdaptersInfo error code " << res << endl;
+  }
+}
+
+void irs::ip_collector_t::create_sockets()
+{
+  if_address_t::iterator it;
+  for (it = m_if_addresses.begin(); it != m_if_addresses.end(); ++it) {
+
+    const mxip_t& ip = it->first;
+    const mxip_t& mask = it->second;
+
+    mxip_t bcast_ip = {0};
+    bcast_ip.addr = ip.addr | ~(mask.addr);
+    char bcast_ip_str[IP_STR_LEN] = {0};
+    mxip_to_cstr(bcast_ip_str, bcast_ip);
+
+    char str_ip[IP_STR_LEN] = {0};
+    mxip_to_cstr(str_ip, ip);
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock != SOCKET_ERROR) {
+      sockaddr_in server = {0};
+      server.sin_family = AF_INET;
+      server.sin_addr.s_addr = inet_addr(str_ip);
+      server.sin_port = htons(0);
+
+      if (bind(sock, reinterpret_cast<sockaddr*>(&server), sizeof(server)) !=
+        SOCKET_ERROR)
+      {
+        unsigned long non_blocking_mode = 1;
+        ioctlsocket(sock, FIONBIO, &non_blocking_mode);
+
+        m_sockets.push_back(make_pair(bcast_ip_str, sock));
+      } else {
+        irs::mlog() << "Не удалось забиндить socket, ip: " << str_ip << endl;
+      }
+    } else {
+      irs::mlog() << "Не удалось создать socket :" << str_ip << endl;
+    }
+  }
+}
+
+#endif // __BORLANDC__
+
 irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
   protocol_t a_protocol)
 {
@@ -427,6 +608,7 @@ irs::modbus_assembly_t::string_type irs::modbus_assembly_t::protocol_name(
   }
   return protocol_name_ret;
 }
+
 irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   const string_type& a_conf_file_name, protocol_t a_protocol
 ):
@@ -441,7 +623,14 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_modbus_client_hardflow(NULL),
   mp_modbus_client(NULL),
   m_activated(false),
-  m_activation_timer(irs::make_cnt_s(1))
+  m_activation_timer(irs::make_cnt_s(1)),
+  mp_hardflow_create_foo(NULL),
+  mp_simple_ftp_client(NULL)
+  #ifdef __BORLANDC__
+  ,
+  m_wait_response(false),
+  mp_ip_collector(ip_collector_t::get_instance())
+  #endif // __BORLANDC__
 {
   tune_param_box();
   mp_tstlan4->ini_name(m_conf_file_name);
@@ -460,9 +649,13 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
     update_param_box_devices_field();
     mp_param_box->add_edit(irst("Номер канала"), irst("1"));
+    mp_param_box->add_bool(irst("Получить файл"), false);
   } else {
+    vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
+    mp_param_box->add_combo(irst("IP"), &devices_items);
     mp_param_box->add_edit(irst("Порт"), irst("5005"));
+    mp_param_box->add_edit(irst("Запрос на получение IP"), irst("pokrov_get_ip"));
   }
   mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
   mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
@@ -476,43 +669,6 @@ void irs::modbus_assembly_t::tune_param_box()
   mp_param_box->load();
 }
 
-irs::modbus_assembly_t::param_box_tune_t::param_box_tune_t(
-  modbus_assembly_t* ap_modbus_assembly,
-  param_box_base_t* ap_param_box, protocol_t a_protocol
-):
-  mp_param_box(ap_param_box)
-{
-  if (a_protocol == usb_hid_protocol) {
-    ap_modbus_assembly->update_usb_hid_device_path_map();
-    vector<string_type> devices_items;
-    map<string_type, string_type>::const_iterator it =
-      ap_modbus_assembly->m_usb_hid_device_path_map.begin();
-    while (it != ap_modbus_assembly->m_usb_hid_device_path_map.end()) {
-      devices_items.push_back(it->first);
-      ++it;
-    }
-    string_type default_device;
-    if (!devices_items.empty()) {
-      default_device = devices_items.front();
-    }
-    mp_param_box->add_edit(irst("Имя устройства"), default_device);
-    mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
-    mp_param_box->add_edit(irst("Номер канала"), irst("1"));
-  } else {
-    mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
-    mp_param_box->add_edit(irst("Порт"), irst("5005"));
-  }
-  mp_param_box->add_edit(irst("Время обновления, мс"), irst("200"));
-  mp_param_box->add_edit(irst("Биты, только чтение (Discret inputs), байт"),
-    irst("0"));
-  mp_param_box->add_edit(irst("Биты, чтение/запись (Coils), байт"),
-    irst("0"));
-  mp_param_box->add_edit(irst("Регистры, чтение/запись ")
-    irst("(Holding Registers), кол-во"), irst("10"));
-  mp_param_box->add_edit(irst("Регистры, только чтение ")
-    irst("(Input Registers), кол-во"), irst("0"));
-  mp_param_box->load();
-}
 void irs::modbus_assembly_t::update_usb_hid_device_path_map()
 {
   #if IRS_USE_HID_WIN_API
@@ -535,11 +691,14 @@ void irs::modbus_assembly_t::update_usb_hid_device_path_map()
     }
     device += devs[i].path;
 
-    m_usb_hid_device_path_map.insert(make_pair(device, devs[i].path));
+    m_usb_hid_device_path_map.insert(make_pair(device, device_open_data_t(
+      devs[i].path, devs[i].attributes.product_id,
+      devs[i].attributes.vendor_id)));
   }
   #else //IRS_USE_HID_WIN_API
   m_usb_hid_device_path_map.insert(
-    make_pair(irst("define IRS_USE_HID_WIN_API выключен!"), irst("")));
+  make_pair(irst("define IRS_USE_HID_WIN_API выключен!"),
+  device_open_data_t(irst(""), 0, 0)));
   #endif //IRS_USE_HID_WIN_API
 }
 
@@ -550,8 +709,8 @@ void irs::modbus_assembly_t::update_param_box_devices_field()
 
   update_usb_hid_device_path_map();
   vector<string_type> devices_items;
-  map<string_type, string_type>::const_iterator it =
-    m_usb_hid_device_path_map.begin();
+  map<string_type, device_open_data_t>::const_iterator it =
+  m_usb_hid_device_path_map.begin();
   while (it != m_usb_hid_device_path_map.end()) {
     devices_items.push_back(it->first);
     ++it;
@@ -561,6 +720,36 @@ void irs::modbus_assembly_t::update_param_box_devices_field()
   }
   mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
 }
+
+#ifdef __BORLANDC__
+void irs::modbus_assembly_t::add_collected_ip()
+{
+  vector<string_type> collected_ips;
+
+  irs::ip_collector_t::answer_type_t answers = mp_ip_collector->get_answers();
+  irs::ip_collector_t::answer_type_t::iterator it;
+  for (it = answers.begin(); it != answers.end(); ++it) {
+    // Формат ответа: ip;factory_number
+    irs::ip_collector_t::string_t::size_type n = it->find(';');
+    if (n != irs::ip_collector_t::string_t::npos) {
+      *it = irs::ip_collector_t::string_t(it->begin(), it->begin() + n);
+    }
+
+    // Приходить должно только в ASCII
+    wstringstream wide_answer;
+    wide_answer << it->c_str();
+    collected_ips.push_back(wide_answer.str());
+  }
+
+  string_type default_ip = mp_param_box->get_param(irst("IP"));
+  if (default_ip.empty() && !collected_ips.empty()) {
+    default_ip = collected_ips.front();
+  }
+
+  mp_param_box->clear_combo(irst("IP"));
+  mp_param_box->add_combo(irst("IP"), &collected_ips);
+}
+#endif // __BORLANDC__
 
 void irs::modbus_assembly_t::add_error(const string_type& a_error)
 {
@@ -619,6 +808,8 @@ void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
   mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
+  mp_simple_ftp_client.reset(new simple_ftp_client_t(mp_modbus_client_hardflow.get(),
+    fs_cppbuilder()));
   mp_tstlan4->connect(mp_modbus_client.get());
   m_activated = true;
 }
@@ -626,6 +817,7 @@ void irs::modbus_assembly_t::create_modbus()
 void irs::modbus_assembly_t::destroy_modbus()
 {
   mp_tstlan4->connect(NULL);
+  mp_simple_ftp_client.reset();
   mp_modbus_client.reset();
   mp_modbus_client_hardflow.reset();
   m_activated = false;
@@ -637,6 +829,14 @@ irs::mxdata_t* irs::modbus_assembly_t::mxdata()
 }
 void irs::modbus_assembly_t::tick()
 {
+  if (!mp_simple_ftp_client.is_empty()) {
+    mp_simple_ftp_client->tick();
+    if (mp_param_box->read_bool(irst("Получить файл"))) {
+      mp_param_box->set_param(irst("Получить файл"), irst("false"));
+      mp_simple_ftp_client->start_read();
+    }
+  }
+
   if (!mp_modbus_client.is_empty()) {
     mp_modbus_client->tick();
     const string_type error_string =
@@ -650,13 +850,38 @@ void irs::modbus_assembly_t::tick()
       m_enabled && !m_activated && m_activation_timer.check()) {
     try_create_modbus();
   }
+
+  #ifdef __BORLANDC__
+  if (m_protocol != usb_hid_protocol) {
+    mp_ip_collector->tick();
+
+    if (mp_ip_collector->are_ip_collected() && m_wait_response) {
+      m_wait_response = false;
+      add_collected_ip();
+    }
+  }
+  #endif // __BORLANDC__
 }
 void irs::modbus_assembly_t::show_options()
 {
+  #ifdef __BORLANDC__
+  if (m_protocol != usb_hid_protocol) {
+    string_type request_wstring =
+      mp_param_box->get_param(irst("Запрос на получение IP"));
+    std::string request_string =
+      std::string(request_wstring.begin(), request_wstring.end());
+
+    mp_ip_collector->send_request(request_string, 5007);
+    // Одновременно в тике крутятся несколько экземпляров modbus_assembly_t,
+    // ответы должен принимать только тот, который послал запрос
+    m_wait_response = true;
+  } 
+  #endif // __BORLANDC__
+
   update_param_box_devices_field();
   if (mp_param_box->show() && m_enabled) {
     if (m_protocol == usb_hid_protocol) {
-      mp_modbus_client_hardflow = make_hardflow();
+	    mp_modbus_client_hardflow = make_hardflow();
     } else {
       mp_modbus_client_hardflow->set_param(irst("remote_address"),
         mp_param_box->get_param(irst("IP")));
@@ -690,6 +915,13 @@ irs::modbus_assembly_t::get_last_error_string_list()
   m_error_list.clear();
   return error_list;
 }
+
+void irs::modbus_assembly_t::set_hardwlof_create_foo(
+  irs::modbus_assembly_t::hardflow_create_foo_t ap_hardflow_create_foo)
+{
+  mp_hardflow_create_foo = ap_hardflow_create_foo;
+}
+
 #endif // defined(IRS_WIN32) || defined(IRS_LINUX)
 
 #if defined(IRS_WIN32)
@@ -2718,7 +2950,8 @@ public:
   virtual void enum_types(vector<string_type>* ap_types) const;
   virtual handle_t<mxdata_assembly_t> make_assembly(
     const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
-    const string_type& a_name);
+    const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
+    a_modbus_hid_create_foo);
 private:
   typedef map<string_type, handle_t<mxdata_assembly_creator_t> > ac_list_type;
   typedef ac_list_type::iterator ac_list_it_type;
@@ -2728,13 +2961,6 @@ private:
 };
 
 } //namespace irs
-
-irs::mxdata_assembly_types_t* irs::mxdata_assembly_types()
-{
-  static mxdata_assembly_types_implementation_t
-    mxdata_assembly_types_implementation;
-  return &mxdata_assembly_types_implementation;
-}
 
 irs::mxdata_assembly_types_implementation_t::
   mxdata_assembly_types_implementation_t(
@@ -2749,7 +2975,7 @@ irs::mxdata_assembly_types_implementation_t::
   m_ac_list[irst("modbus tcp")] = handle_t<mxdata_assembly_creator_t>(
     new modbus_tcp_assembly_creator_t);
   m_ac_list[irst("modbus usb hid")] = handle_t<mxdata_assembly_creator_t>(
-    new modbus_usb_hid_assembly_creator_t);
+	new modbus_usb_hid_assembly_creator_t);
   m_ac_list[irst("Agilent 3458A")] = handle_t<mxdata_assembly_creator_t>(
     new agilent_3458a_assembly_creator_t);
   m_ac_list[irst("Agilent 34420A")] = handle_t<mxdata_assembly_creator_t>(
@@ -2782,7 +3008,8 @@ irs::handle_t<irs::mxdata_assembly_t>
   irs::mxdata_assembly_types_implementation_t::make_assembly
 (
   const string_type& a_assembly_type, tstlan4_base_t* ap_tstlan4,
-  const string_type& a_name)
+  const string_type& a_name, modbus_assembly_t::hardflow_create_foo_t
+  a_modbus_hid_create_foo)
 {
   handle_t<mxdata_assembly_t> result_assembly(IRS_NULL);
   ac_list_it_type it = m_ac_list.find(a_assembly_type);
@@ -2790,9 +3017,24 @@ irs::handle_t<irs::mxdata_assembly_t>
     result_assembly = IRS_NULL;
     result_assembly = it->second->make(ap_tstlan4, a_name);
   }
+  if (a_assembly_type == irst("modbus usb hid")) {
+    if (modbus_assembly_t* modbus_assembly =
+      dynamic_cast<modbus_assembly_t*>(result_assembly.get()))
+    {
+      if (a_modbus_hid_create_foo != NULL) {
+        modbus_assembly->set_hardwlof_create_foo(a_modbus_hid_create_foo);
+      }
+    }
+  }
   return result_assembly;
 }
 
+irs::mxdata_assembly_types_t* irs::mxdata_assembly_types()
+{
+  static mxdata_assembly_types_implementation_t
+	mxdata_assembly_types_implementation;
+  return &mxdata_assembly_types_implementation;
+}
 ///
 
 namespace irs {
@@ -2868,3 +3110,4 @@ irs::handle_t<irs::mxmultimeter_assembly_t>
   }
   return result_assembly;
 }
+

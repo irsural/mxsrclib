@@ -702,20 +702,63 @@ void irs::ini_file_t::load()
           );
         }
       }
-    }
+	}
+
     for (vector<form_t>::iterator form_it = m_forms.begin();
       form_it != m_forms.end(); form_it++)
-    {
-      form_it->control->Top = IniFile->ReadInteger(form_it->section.c_str(),
-        (form_it->name + irst("Top")).c_str(), form_it->control->Top);
-      form_it->control->Left = IniFile->ReadInteger(form_it->section.c_str(),
-        (form_it->name + irst("Left")).c_str(), form_it->control->Left);
-      form_it->control->Height = IniFile->ReadInteger(form_it->section.c_str(),
-        (form_it->name + irst("Height")).c_str(), form_it->control->Height);
-      form_it->control->Width = IniFile->ReadInteger(form_it->section.c_str(),
-        (form_it->name + irst("Width")).c_str(), form_it->control->Width);
+	{
+	  int top = IniFile->ReadInteger(form_it->section.c_str(),
+		(form_it->name + irst("Top")).c_str(), form_it->control->Top);
+
+	  int left = IniFile->ReadInteger(form_it->section.c_str(),
+		(form_it->name + irst("Left")).c_str(), form_it->control->Left);
+
+	  int height = IniFile->ReadInteger(form_it->section.c_str(),
+		(form_it->name + irst("Height")).c_str(), form_it->control->Height);
+
+	  int width = IniFile->ReadInteger(form_it->section.c_str(),
+		(form_it->name + irst("Width")).c_str(), form_it->control->Width);
+
+	  TRect bounded = bound_window_position(top, left, height, width);
+	  form_it->control->Top = bounded.Top;
+	  form_it->control->Left = bounded.Left;
+	  form_it->control->Height = bounded.Height();
+	  form_it->control->Width = bounded.Width();
+	}
+  }
+}
+
+TRect irs::ini_file_t::bound_window_position(int a_top, int a_left,
+  int a_height, int a_width)
+{
+  int min_left = std::numeric_limits<int>::max();
+  int max_left = std::numeric_limits<int>::min();
+  for (int i = 0; i < Screen->MonitorCount; ++i) {     
+	int max_monitor_left = Screen->Monitors[i]->Left + 
+	  Screen->Monitors[i]->Width - a_width;
+
+	min_left = std::min(Screen->Monitors[i]->Left, min_left);
+	max_left = std::max(max_monitor_left, max_left);
+  }
+  int bounded_left = irs::range(a_left, min_left, max_left);
+  int current_monitor = 0;
+  for (int i = 0; i < Screen->MonitorCount; ++i) {
+	TRect monitor_bounds = Screen->Monitors[i]->BoundsRect;
+	if (PtInRect(monitor_bounds, Point(bounded_left, 
+	  monitor_bounds.TopLeft().Y))) 
+	{
+	  current_monitor = i;
+	  break;
     }
   }
+  int min_top = Screen->Monitors[current_monitor]->Top;
+  int max_top = Screen->Monitors[current_monitor]->Top + 
+	Screen->Monitors[current_monitor]->Height - 
+	Screen->Monitors[current_monitor]->Height / 10;
+  int bounded_top = irs::range(a_top, min_top, max_top);	
+  
+  return TRect(bounded_left, bounded_top, bounded_left + a_width, 
+    bounded_top + a_height);
 }
 
 void irs::ini_file_t::save() const
