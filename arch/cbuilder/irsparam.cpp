@@ -37,7 +37,10 @@ irs::param_box_t::param_box_t(
   mp_cansel_btn(new TButton(mp_form.get())),
   mp_value_list_editor(new TValueListEditor(mp_form.get())),
   m_cur_param_row(0),
-  m_param_def_list()
+  m_param_def_list(),
+  m_button_list(),
+  m_param_box_base_map(),
+  m_combo_values()
 {
   #if (defined(__BORLANDC__) && (__BORLANDC__ >= IRS_CPP_BUILDER2010))
   m_ini_file.set_encoding(mp_encoding);
@@ -280,6 +283,8 @@ void irs::param_box_t::add_combo(const string_type& a_param_name,
   if (mp_value_list_editor->FindRow(Key, row_index)) {
     mp_value_list_editor->ItemProps[Key]->
       EditStyle = esPickList;
+
+//    mp_value_list_editor->OnSetEditText = on_set_edit_text;
     for(size_t list_index = 0; list_index < ap_param_values_list->size();
       list_index++)
     {
@@ -292,6 +297,22 @@ void irs::param_box_t::add_combo(const string_type& a_param_name,
     }
   }
 }
+
+void __fastcall irs::param_box_t::on_get_pick_list(TObject *Sender,
+  const System::UnicodeString KeyName, System::Classes::TStrings* Values)
+{
+  vector<string_type>::iterator it;
+  for (it = m_combo_values.begin(); it != m_combo_values.end(); ++it) {
+    Values->Add(it->c_str());
+  }
+}
+
+//void __fastcall irs::param_box_t::on_set_edit_text(TObject *Sender, int ACol,
+//  int ARow, const System::UnicodeString Value)
+//{
+//  irs::mlog() << Value.Length() << endl;
+//  irs::mlog() << ACol << " " << ARow << " " << Value.c_str() << endl;
+//}
 
 void irs::param_box_t::clear_combo(const string_type& a_param_name)
 {

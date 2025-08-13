@@ -2142,12 +2142,20 @@ private:
 class diapason_channels_t: public hardflow_t
 {
 public:
+  // Владение означает, что diapason_channels_t в своем деструкторе будет уничтожать ap_hardflow
+  // ap_hardflow, при этом, должен быть создан с помощью new и нигде более не уничтожаться
+  enum hardflow_ext_own_t {
+    hardflow_ext_own,
+    hardflow_ext_not_own
+  };
+
   diapason_channels_t(hardflow_t* ap_hardflow, size_type a_start_index,
-    size_type a_channel_count):
+    size_type a_channel_count, hardflow_ext_own_t a_hardflow_ext_own = hardflow_ext_not_own):
     mp_hardflow(ap_hardflow),
     m_start_index(a_start_index),
     m_end_index(a_start_index + a_channel_count - 1),
-    m_channel(m_start_index)
+    m_channel(m_start_index),
+    mp_hardflow_own((a_hardflow_ext_own == hardflow_ext_own) ? mp_hardflow : IRS_NULL)
   {
     IRS_LIB_ASSERT(a_start_index != invalid_channel);
     IRS_LIB_ASSERT(a_channel_count > 0);
@@ -2201,6 +2209,7 @@ private:
   size_type m_start_index;
   size_type m_end_index;
   size_type m_channel;
+  handle_t<hardflow_t> mp_hardflow_own;
 };
 
 class echo_t: public hardflow_t

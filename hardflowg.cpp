@@ -1444,8 +1444,16 @@ irs::hardflow::fixed_flow_t::status_t
 irs::hardflow::fixed_flow_t::size_type
   irs::hardflow::fixed_flow_t::write_abort()
 {
-  IRS_LIB_ASSERT(m_write_size_need >= m_write_size_rest);
+  //IRS_LIB_ASSERT(m_write_size_need >= m_write_size_rest);
   size_type m_size_rec = m_write_size_need - m_write_size_rest;
+  if (m_write_size_need >= m_write_size_rest) {
+    m_size_rec = 0;
+    #if (IRS_LIB_HARDFLOWG_DEBUG_TYPE == IRS_LIB_DEBUG_DETAIL)
+    mlog() << "m_write_size_need < m_write_size_rest in fixed_flow_t::write_abort()" << endl;
+    mlog() << "File: " << __FILE__ << endl;
+    mlog() << "Line: " << __LINE__ << endl;
+    #endif
+  }
   m_write_status = status_success;
   mp_write_buf_cur = IRS_NULL;
   m_write_size_rest = 0;

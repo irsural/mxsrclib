@@ -1041,7 +1041,6 @@ void irs::tstlan::view_t::controls_t::tick()
   }
 
   if (m_periodic_load_timer.check()) {
-    irs::mlog() << "load" << endl;
     mp_vars_ini_file->load();
   }
   

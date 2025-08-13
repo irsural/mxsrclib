@@ -114,3 +114,4 @@ inline bool param_box_base_t::read_bool(const char_t* a_param_name)
 } // namespace irs
 
 #endif // irsparamabsh
+
