@@ -14,7 +14,7 @@
 #include <mxdata.h>
 #include <measmul.h>
 #include <irsparamabs.h>
-#include <irsfs.h>
+#include <simple_ftp_client.h>
 
 #include <iptypes.h>
 #include <iphlpapi.h>
@@ -210,6 +210,7 @@ private:
   enum { error_list_max_size = 100 };
   error_string_list_type m_error_list;
   hardflow_create_foo_t mp_hardflow_create_foo;
+  handle_t<simple_ftp_client_t> mp_simple_ftp_client;
 
   #ifdef __BORLANDC__
   ip_collector_t* mp_ip_collector;
