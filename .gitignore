@@ -28,6 +28,7 @@ tmpprst.*
 ~$*.*
 ~W*.tmp
 /__history
+/__recovery
 /Desktop.ini
 *.orig
 *.ldb
