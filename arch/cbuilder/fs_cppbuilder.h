@@ -1,3 +1,7 @@
+//! \file
+//! \ingroup system_utils_group
+//! \brief Функции для работы с файловой системой для C++Builder
+
 #ifndef fs_cppbuilderH
 #define fs_cppbuilderH
 
