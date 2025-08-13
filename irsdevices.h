@@ -14,6 +14,7 @@
 #include <mxdata.h>
 #include <measmul.h>
 #include <irsparamabs.h>
+#include <irsfs.h>
 
 #include <iptypes.h>
 #include <iphlpapi.h>

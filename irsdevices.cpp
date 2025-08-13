@@ -17,6 +17,7 @@
 #include <niusbgpib.h>
 #include <niusbgpib_hardflow.h>
 #include <irsalg.h>
+#include <fs_cppbuilder.h>
 #ifdef __BORLANDC__
 #include <cbsysutils.h>
 #include <mxini.h>
@@ -807,9 +808,10 @@ namespace irs {
 class simple_ftp_client_t
 {
 public:
-  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, param_box_base_t* ap_param_box):
+  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
     mp_hardflow(ap_hardflow),
-    mp_param_box(ap_param_box),
+    mp_fs(ap_fs),
+//    mp_param_box(ap_param_box),
     m_status(st_start_wait),
     m_fixed_flow(mp_hardflow),
     m_packet(),
@@ -824,7 +826,8 @@ public:
     m_trash_data_timer(make_cnt_ms(100)),
     m_server_version(0),
     m_file_path(2000, '\0'),
-    m_data_offset_prev(0)
+    m_data_offset_prev(0),
+    m_start_read(false)
   {
     char value = 35;
     for (size_t i = 0; i < m_file_path.size(); i++) {
@@ -897,6 +900,14 @@ public:
   {
     return m_server_version;
   }
+  void start_read()
+  {
+    m_start_read = true;
+  }
+  bool is_done()
+  {
+    return !m_start_read;
+  }
   void tick()
   {
     m_fixed_flow.tick();
@@ -905,8 +916,7 @@ public:
 
     switch (m_status) {
       case st_start_wait: {
-        if (mp_param_box->read_bool(irst("Получить файл"))) {
-          mp_param_box->set_param(irst("Получить файл"), irst("false"));
+        if (m_start_read) {
           irs::mlog() << "Получить файл Запуск" << endl;
           m_status = st_read_version_command;
         }
@@ -1120,6 +1130,10 @@ public:
         }
         irs::mlog() << endl;
         #endif //IRS_LIB_DEBUG
+
+        // Сообщить о завершении всех операций функции is_done
+        m_start_read = false;
+
         m_status = st_start_wait;
       } break;
 
@@ -1309,7 +1323,8 @@ private:
   #pragma pack(pop)
 
   irs::hardflow_t *mp_hardflow;
-  irs::param_box_base_t* mp_param_box;
+  fs_t* mp_fs;
+//  irs::param_box_base_t* mp_param_box;
   status_t m_status;
   irs::hardflow::fixed_flow_t m_fixed_flow;
   packet_t m_packet;
@@ -1325,6 +1340,7 @@ private:
   irs_u32 m_server_version;
   irs_string_t m_file_path;
   size_t m_data_offset_prev;
+  bool m_start_read;
 };
 
 irs::handle_t<simple_ftp_client_t>& simple_ftp_client()
@@ -1339,7 +1355,8 @@ void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
 
-  simple_ftp_client().reset(new simple_ftp_client_t(mp_modbus_client_hardflow.get(), mp_param_box.get()));
+  simple_ftp_client().reset(new simple_ftp_client_t(mp_modbus_client_hardflow.get(),
+    fs_cppbuilder()));
 
   mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
   mp_tstlan4->connect(mp_modbus_client.get());
@@ -1364,6 +1381,10 @@ void irs::modbus_assembly_t::tick()
 {
   if (!simple_ftp_client().is_empty()) {
     simple_ftp_client()->tick();
+    if (mp_param_box->read_bool(irst("Получить файл"))) {
+      mp_param_box->set_param(irst("Получить файл"), irst("false"));
+      simple_ftp_client()->start_read();
+    }
   }
 
   if (!mp_modbus_client.is_empty()) {
