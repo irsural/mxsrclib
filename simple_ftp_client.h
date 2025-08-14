@@ -1,6 +1,6 @@
-п»ї//! \file
+//! \file
 //! \ingroup network_in_out_group
-//! \brief РљР»РёРµРЅС‚ РїСЂРѕС‚РѕРєРѕР»Р° Simple FTP 
+//! \brief Клиент протокола Simple FTP
 
 #ifndef SIMPLE_FTP_CLIENTH
 #define SIMPLE_FTP_CLIENTH
@@ -35,7 +35,7 @@ private:
     read_size_command = 2,
     read_command = 3,
     read_command_response = 4,
-    abort_command = 5,
+    abort_command = 5, // Не используется. Может быть заменена.
     error_command = 6,
     read_version_command = 7,
     file_path_response = 8,
@@ -111,7 +111,7 @@ private:
   bool m_is_checksum_error;
   irs_u8 m_packet_id_prev;
   bool m_is_packed_id_prev_exist;
-  size_t m_data_offset; // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° С‚РµРєСѓС‰СѓСЋ РїРѕР·РёС†РёСЋ РІ С„Р°Р№Р»Рµ
+  size_t m_data_offset; // Указатель на текущую позицию в файле
   vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
@@ -126,3 +126,4 @@ private:
 } // namespace irs
 
 #endif //SIMPLE_FTP_CLIENTH
+
