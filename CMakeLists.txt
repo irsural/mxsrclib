@@ -137,6 +137,8 @@ set(MXSRCLIB_SOURCES
         niusbgpib.cpp
         niusbgpib_hardflow.cpp
         timer.cpp
+        simple_ftp_server.cpp
+        simple_ftp_server.h
         arch/${MXSRCLIB_ARCH}/mxifa.cpp
         arch/${MXSRCLIB_ARCH}/counter.cpp
 )
