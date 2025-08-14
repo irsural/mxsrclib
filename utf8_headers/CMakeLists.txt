@@ -1,7 +1,6 @@
-include(FindIconv)
-if (NOT Iconv_FOUND)
-    message("Не найден iconv")
-endif ()
+if (NOT DEFINED ICONV_EXECUTABLE)
+        set(ICONV_EXECUTABLE "iconv")
+endif()
 
 file(GLOB ORIGIN_HEADERS_FILES_LIST "${MXSRCLIB_DIR}/*.h")
 set(CONVERTED_MXSRCLIB_HEADERS_DIR "${MXSRCLIB_DIR}/utf8_headers")
@@ -30,21 +29,21 @@ foreach (ORIGIN_HEADER_PATH ${ORIGIN_HEADERS_FILES_LIST})
     list(APPEND CONVERT_HEADER_PATH_LIST ${CONVERT_HEADER_PATH})
 
     # Команды конвертации
-    if (CYGWIN)
+    if (CMAKE_HOST_SYSTEM_NAME STREQUAL "CYGWIN" OR CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         add_custom_command(
                 OUTPUT "${CONVERT_HEADER_PATH}"
-                COMMAND rm -f "${CONVERT_HEADER_PATH}"
-                COMMAND iconv -f cp1251 -t utf-8 "${ORIGIN_HEADER_PATH}" >> "${CONVERT_HEADER_PATH}"
+                COMMAND ${CMAKE_COMMAND} -E rm -f "${CONVERT_HEADER_PATH}"
+                COMMAND ${ICONV_EXECUTABLE} -f cp1251 -t utf-8 "${ORIGIN_HEADER_PATH}" >> "${CONVERT_HEADER_PATH}"
                 DEPENDS ${ORIGIN_HEADER_PATH}
         )
-    elseif (UNIX)
+    elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         add_custom_command(
                 OUTPUT ${CONVERT_HEADER_PATH}
-                COMMAND iconv -f cp1251 -t utf-8 -o "${CONVERT_HEADER_PATH}" "${ORIGIN_HEADER_PATH}"
+                COMMAND ${ICONV_EXECUTABLE} -f cp1251 -t utf-8 -o "${CONVERT_HEADER_PATH}" "${ORIGIN_HEADER_PATH}"
                 DEPENDS ${ORIGIN_HEADER_PATH}
         )
     else ()
-        message(FATAL_ERROR "Неподдерживаемая платформа")
+        message(FATAL_ERROR "Неподдерживаемая платформа: ${CMAKE_HOST_SYSTEM_NAME}")
     endif ()
 endforeach ()
 
