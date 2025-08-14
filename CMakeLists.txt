@@ -115,6 +115,8 @@ set(MXSRCLIB_SOURCES
         irstime.cpp
         irstime.h
         irsfs.h
+        simple_ftp_server.cpp
+        simple_ftp_server.h
         arch/${MXSRCLIB_ARCH}/counter.cpp
         ${ARCH_SOURCES}
 )
