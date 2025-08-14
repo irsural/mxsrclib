@@ -35,7 +35,7 @@ private:
     read_size_command = 2,
     read_command = 3,
     read_command_response = 4,
-    abort_command = 5,
+    abort_command = 5, // Не используется. Может быть заменена.
     error_command = 6,
     read_version_command = 7,
     file_path_response = 8,
