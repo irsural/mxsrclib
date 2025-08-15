@@ -19,7 +19,6 @@ class simple_ftp_client_t
 {
 public:
   explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs);
-  void show_status() const;
   irs_u32 server_version() const;
   void start_read();
   bool is_done() const;
@@ -121,6 +120,8 @@ private:
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
+
+  void show_status() const;
 };
 
 } // namespace irs
