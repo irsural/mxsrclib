@@ -32,17 +32,11 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_file(),
   m_trash_data_timer(make_cnt_ms(100)),
   m_server_version(0),
-  m_file_path(2000, '\0'),
   m_data_offset_prev(0),
-  m_start_read(false)
+  m_start_read(false),
+  m_path_local(),
+  m_path_remote()
 {
-  char value = 35;
-  for (size_t i = 0; i < m_file_path.size(); i++) {
-    m_file_path[i] = value++;
-    if (static_cast<irs_u8>(value) >= 127) {
-      value = 35;
-    }
-  }
 }
 void simple_ftp_client_t::show_status() const
 {
@@ -100,6 +94,14 @@ bool simple_ftp_client_t::is_done() const
 {
   return !m_start_read;
 }
+void simple_ftp_client_t::path_local(const std::string& a_path)
+{
+  m_path_local = a_path;
+}
+void simple_ftp_client_t::path_remote(const std::string& a_path)
+{
+  m_path_remote = a_path;
+}
 void simple_ftp_client_t::tick()
 {
   m_fixed_flow.tick();
@@ -135,15 +137,15 @@ void simple_ftp_client_t::tick()
       }
     } break;
     case st_set_file_path_command: {
-      u32_to_net(m_file_path.size(), m_packet.data);
+      u32_to_net(m_path_remote.size(), m_packet.data);
       m_data_offset = 0;
-      const size_t remaining_size = m_file_path.size() - m_data_offset;
+      const size_t remaining_size = m_path_remote.size() - m_data_offset;
       const irs_u8 file_path_chunk_size = static_cast<irs_u8>(std::min<size_t>(
         packet_t::packet_data_max_size - sizeof(irs_u32), remaining_size));
       m_packet.data_size = file_path_chunk_size + sizeof(irs_u32);
       copy(
-          m_file_path.begin() + m_data_offset,
-          m_file_path.begin() + m_data_offset + file_path_chunk_size,
+          m_path_remote.begin() + m_data_offset,
+          m_path_remote.begin() + m_data_offset + file_path_chunk_size,
           m_packet.data + sizeof(irs_u32)
       );
       m_data_offset += file_path_chunk_size;
@@ -174,7 +176,7 @@ void simple_ftp_client_t::tick()
       if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
         !m_packet.data_size && (m_packet_id_prev == m_packet.packet_id))
       {
-        if (m_data_offset >= m_file_path.size()) {
+        if (m_data_offset >= m_path_remote.size()) {
           m_status = st_read_size_command;
         } else {
           is_send_packet_needed = true;
@@ -185,18 +187,18 @@ void simple_ftp_client_t::tick()
         m_data_offset = m_data_offset_prev;
       }
       if (is_send_packet_needed) {
-        size_t remaining_size = m_file_path.size() - m_data_offset;
+        size_t remaining_size = m_path_remote.size() - m_data_offset;
         m_packet.data_size = static_cast<irs_u8>(std::min<size_t>(
           packet_t::packet_data_max_size, remaining_size));
         copy(
-            m_file_path.begin() + m_data_offset,
-            m_file_path.begin() + m_data_offset + m_packet.data_size,
+            m_path_remote.begin() + m_data_offset,
+            m_path_remote.begin() + m_data_offset + m_packet.data_size,
             m_packet.data
         );
         m_data_offset_prev = m_data_offset;
         m_data_offset += m_packet.data_size;
         m_packet_id_prev = m_packet_id;
-        IRS_LIB_DBG_MSG("simple_ftp Передано " << m_data_offset << " из " << m_file_path.size());
+        IRS_LIB_DBG_MSG("simple_ftp Передано " << m_data_offset << " из " << m_path_remote.size());
 
         m_packet.command = file_path_response;
         m_status = st_write_packet;
