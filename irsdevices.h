@@ -173,6 +173,7 @@ public:
   virtual void enabled(bool a_enabled);
   virtual irs::mxdata_t* mxdata();
   virtual void tick();
+  std::string param_to_utf8(string_type a_param);
   virtual void show_options();
   virtual void tstlan4(tstlan4_base_t* ap_tstlan4);
   virtual status_t get_status();
@@ -220,6 +221,7 @@ private:
 
   static handle_t<mxdata_t> make_client(handle_t<hardflow_t> ap_hardflow,
     handle_t<param_box_base_t> ap_param_box);
+  void make_simple_ftp_client(handle_t<hardflow_t> ap_hardflow);
   handle_t<hardflow_t> make_hardflow();
   void try_create_modbus();
   void create_modbus();

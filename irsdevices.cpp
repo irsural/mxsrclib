@@ -384,6 +384,18 @@ irs::handle_t<irs::mxdata_t> irs::modbus_assembly_t::make_client(
       irst("Время обновления, мс")))
   );
 }
+void irs::modbus_assembly_t::make_simple_ftp_client(
+  handle_t<hardflow_t> ap_hardflow)
+{
+  mp_simple_ftp_client.reset();
+  mp_simple_ftp_client.reset(new simple_ftp_client_t(ap_hardflow.get(), fs_cppbuilder()));
+  mp_simple_ftp_client->path_remote(param_to_utf8(irst("Путь к файлу (папке) на устройстве")));
+  mp_simple_ftp_client->path_local(param_to_utf8(irst("Путь к локальному файлу")));
+  if (mp_param_box->read_bool(irst("Получить файл"))) {
+    mp_param_box->set_param(irst("Получить файл"), irst("false"));
+    mp_simple_ftp_client->start_read();
+  }
+}
 irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
 {
   handle_t<hardflow_t> hardflow_ret = IRS_NULL;
@@ -421,6 +433,7 @@ irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
         hardflow_ret.reset(mp_hardflow_create_foo(
           it->second.pid, it->second.vid));
       }
+      make_simple_ftp_client(hardflow_ret);
       #endif // IRS_WIN32
     } break;
   }
@@ -650,6 +663,8 @@ void irs::modbus_assembly_t::tune_param_box()
     update_param_box_devices_field();
     mp_param_box->add_edit(irst("Номер канала"), irst("1"));
     mp_param_box->add_bool(irst("Получить файл"), false);
+    mp_param_box->add_edit(irst("Путь к файлу (папке) на устройстве"), irst(""));
+    mp_param_box->add_edit(irst("Путь к локальному файлу"), irst(""));
   } else {
     vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
@@ -808,8 +823,6 @@ void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
   mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
-  mp_simple_ftp_client.reset(new simple_ftp_client_t(mp_modbus_client_hardflow.get(),
-    fs_cppbuilder()));
   mp_tstlan4->connect(mp_modbus_client.get());
   m_activated = true;
 }
@@ -817,8 +830,8 @@ void irs::modbus_assembly_t::create_modbus()
 void irs::modbus_assembly_t::destroy_modbus()
 {
   mp_tstlan4->connect(NULL);
-  mp_simple_ftp_client.reset();
   mp_modbus_client.reset();
+  mp_simple_ftp_client.reset();
   mp_modbus_client_hardflow.reset();
   m_activated = false;
 }
@@ -831,10 +844,6 @@ void irs::modbus_assembly_t::tick()
 {
   if (!mp_simple_ftp_client.is_empty()) {
     mp_simple_ftp_client->tick();
-    if (mp_param_box->read_bool(irst("Получить файл"))) {
-      mp_param_box->set_param(irst("Получить файл"), irst("false"));
-      mp_simple_ftp_client->start_read();
-    }
   }
 
   if (!mp_modbus_client.is_empty()) {
@@ -861,6 +870,12 @@ void irs::modbus_assembly_t::tick()
     }
   }
   #endif // __BORLANDC__
+}
+std::string irs::modbus_assembly_t::param_to_utf8(string_type a_param)
+{
+  string_type tstring = mp_param_box->get_param(a_param);
+  std::wstring param_wstring = std::wstring(tstring.begin(), tstring.end());
+  return wstring_to_utf8(param_wstring);
 }
 void irs::modbus_assembly_t::show_options()
 {

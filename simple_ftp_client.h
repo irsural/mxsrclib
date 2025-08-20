@@ -22,6 +22,8 @@ public:
   irs_u32 server_version() const;
   void start_read();
   bool is_done() const;
+  void path_local(const std::string& a_path);
+  void path_remote(const std::string& a_path);
   void tick();
 
 private:
@@ -114,9 +116,10 @@ private:
   vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
-  irs_string_t m_file_path;
   size_t m_data_offset_prev;
   bool m_start_read;
+  std::string m_path_local;
+  std::string m_path_remote;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
