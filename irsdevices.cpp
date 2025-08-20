@@ -875,7 +875,7 @@ std::string irs::modbus_assembly_t::param_to_utf8(string_type a_param)
 {
   string_type tstring = mp_param_box->get_param(a_param);
   std::wstring param_wstring = std::wstring(tstring.begin(), tstring.end());
-  return wstring_to_utf8(param_wstring);
+  return wstring_to_utf8(remove_quotes(param_wstring));
 }
 void irs::modbus_assembly_t::show_options()
 {
