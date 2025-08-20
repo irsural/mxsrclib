@@ -896,7 +896,7 @@ void irs::modbus_assembly_t::show_options()
   update_param_box_devices_field();
   if (mp_param_box->show() && m_enabled) {
     if (m_protocol == usb_hid_protocol) {
-	    mp_modbus_client_hardflow = make_hardflow();
+      mp_modbus_client_hardflow = make_hardflow();
     } else {
       mp_modbus_client_hardflow->set_param(irst("remote_address"),
         mp_param_box->get_param(irst("IP")));
