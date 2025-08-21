@@ -26,7 +26,9 @@ simple_ftp_server_t::simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs):
   m_packet_id_prev(0),
   m_oper_return(st_start_wait),
   m_is_read_time_inf(false),
-  m_file(2000),
+  mp_file(IRS_NULL),
+  m_is_file_opened(false),
+  m_file_size(0),
   m_data_offset(0), // Указатель на текущую позицию в файле
   m_check_ack_packet_id(0),
   m_is_checksum_error(false),
@@ -35,10 +37,11 @@ simple_ftp_server_t::simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs):
   m_file_path_size(0)
 {
   // IRS_LIB_DBG_MSG("simple_ftp Конструктор simple_ftp_server_t");
-  irs_u8 value = 0;
-  for (size_t i = 0; i < m_file.size(); i++) {
-    m_file[i] = value++;
-  }
+}
+
+simple_ftp_server_t::~simple_ftp_server_t()
+{
+  close_file();
 }
 
 void simple_ftp_server_t::show_status() const
@@ -84,6 +87,7 @@ void simple_ftp_server_t::tick()
       m_oper_return = st_command_processing;
       m_is_read_time_inf = true;
       m_data_offset = 0;
+      close_file();
     } break;
     case st_command_processing: {
       if (m_is_checksum_error) {
@@ -102,10 +106,7 @@ void simple_ftp_server_t::tick()
               m_status = st_write_packet;
               m_oper_return = st_start_wait;
             } else {
-              m_packet.command = error_command;
-              m_packet.data_size = 0;
-              m_status = st_write_packet;
-              m_oper_return = st_start_wait;
+              error_response();
             }
           } break;
           case set_file_path_command: {
@@ -130,36 +131,42 @@ void simple_ftp_server_t::tick()
               m_status = st_write_packet;
               m_oper_return = st_set_file_path_ack_wait;
             } else {
-              m_packet.command = error_command;
-              m_packet.data_size = 0;
-              m_status = st_write_packet;
-              m_oper_return = st_start_wait;
+              error_response();
             }
           } break;
           case read_size_command: {
-            if (!m_packet.data_size) {
+            bool is_ok = (m_packet.data_size == 0);
+            if (is_ok) {
               IRS_LIB_DBG_MSG("simple_ftp Команда чтения размера");
+              is_ok = open_file();
+            }
+            if (is_ok) {
+              is_ok = get_file_size(&m_file_size);
+            }
+            if (is_ok) {
               m_packet.data_size = 4;
-              irs_u32 size = m_file.size();
-              u32_to_net(size, m_packet.data);
-              m_status = st_write_packet;
-              m_oper_return = st_start_wait;
-            } else {
-              m_packet.command = error_command;
-              m_packet.data_size = 0;
+              u32_to_net(m_file_size, m_packet.data);
               m_status = st_write_packet;
               m_oper_return = st_start_wait;
             }
+            if (!is_ok) {
+              error_response();
+            }
           } break;
           case read_command: {
-            if (!m_packet.data_size) {
+            bool is_ok = (m_packet.data_size == 0);
+            if (is_ok) {
               IRS_LIB_DBG_MSG("simple_ftp Команда чтения данных");
+              is_ok = open_file();
+            }
+            if (is_ok) {
+              is_ok = get_file_size(&m_file_size);
+            }
+            if (is_ok) {
               m_status = st_read_processing;
-            } else {
-              m_packet.command = error_command;
-              m_packet.data_size = 0;
-              m_status = st_write_packet;
-              m_oper_return = st_start_wait;
+            }
+            if (!is_ok) {
+              error_response();
             }
           } break;
           default: {
@@ -239,18 +246,22 @@ void simple_ftp_server_t::tick()
     } break;
     case st_read_processing: {
       m_packet.command = read_command_response;
-      size_t remaining_size = m_file.size() - m_data_offset;
+      const size_t remaining_size = m_file_size - m_data_offset;
       m_packet.data_size = std::min<size_t>(packet_t::data_max_size, remaining_size);
-      memcpy(&m_packet.data[0], &m_file[m_data_offset], m_packet.data_size);
-      // irs::memcpyex(m_packet.data, &m_file[m_data_offset], m_packet.data_size);
+      fs_result_t fs_result = irs::fsr_success;
+      mp_fs->read(mp_file, m_packet.data, m_packet.data_size, &fs_result);
+      if (fs_result == irs::fsr_success) {
+        // Инкрементируем смещение для следующего пакета
+        m_data_offset += m_packet.data_size;
 
-      // Инкрементируем смещение для следующего пакета
-      m_data_offset += m_packet.data_size;
-
-      IRS_LIB_DBG_MSG("simple_ftp Отправка пакета");
-      m_check_ack_packet_id = m_packet_id;
-      m_status = st_write_packet;
-      m_oper_return = st_read_ack;
+        IRS_LIB_DBG_MSG("simple_ftp Отправка пакета");
+        m_check_ack_packet_id = m_packet_id;
+        m_status = st_write_packet;
+        m_oper_return = st_read_ack;
+      } else {
+        IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения файла: ");
+        error_response();
+      }
     } break;
     case st_read_ack: {
       IRS_LIB_DBG_MSG("simple_ftp Прием пакета");
@@ -268,7 +279,7 @@ void simple_ftp_server_t::tick()
           (m_packet.command == read_command_response) &&
           (m_packet.packet_id == m_check_ack_packet_id))
       {
-        if (m_data_offset >= m_file.size()) {
+        if (m_data_offset >= m_file_size) {
           // Если весь файл отправлен, переходим в состояние ожидания
           m_status = st_start_wait;
         } else {
@@ -409,6 +420,41 @@ void simple_ftp_server_t::u32_to_net(irs_u32 a_u32, irs_u8* ap_data)
   ap_data[1] = static_cast<irs_u8>((a_u32 >> 16) & 0xFF);
   ap_data[2] = static_cast<irs_u8>((a_u32 >> 8) & 0xFF);
   ap_data[3] = static_cast<irs_u8>(a_u32 & 0xFF);
+}
+
+bool simple_ftp_server_t::open_file()
+{
+  if (!m_is_file_opened) {
+    mp_file = mp_fs->open(m_file_path, fm_read);
+    m_is_file_opened = (mp_file != IRS_NULL);
+  }
+  return m_is_file_opened;
+}
+
+void simple_ftp_server_t::close_file()
+{
+  if (m_is_file_opened) {
+    fs_result_t fsr = mp_fs->close(mp_file);
+    if (fsr == fsr_success) {
+      mp_file = IRS_NULL;
+      m_is_file_opened = false;
+    }
+  }
+}
+
+bool simple_ftp_server_t::get_file_size(irs_u32* ap_file_size) const
+{
+  fs_result_t fs_result = irs::fsr_success;
+  *ap_file_size = static_cast<irs_u32>(mp_fs->get_file_size(mp_file, &fs_result));
+  return (fs_result == irs::fsr_success);
+}
+
+void simple_ftp_server_t::error_response()
+{
+  m_packet.command = error_command;
+  m_packet.data_size = 0;
+  m_status = st_write_packet;
+  m_oper_return = st_start_wait;
 }
 
 } // namespace irs
