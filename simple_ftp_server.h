@@ -19,6 +19,7 @@ class simple_ftp_server_t
 {
 public:
   explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs);
+  ~simple_ftp_server_t();
   void show_status() const;
   void tick();
 
@@ -102,13 +103,20 @@ private:
   irs_u8 m_packet_id_prev;
   status_t m_oper_return;
   bool m_is_read_time_inf;
-  vector<irs_u8> m_file;
+  fs_t::file_t* mp_file;
+  bool m_is_file_opened;
+  irs_u32 m_file_size;
   size_t m_data_offset; // ”казатель на текущую позицию в файле
   irs_u8 m_check_ack_packet_id;
   bool m_is_checksum_error;
   timer_t m_trash_data_timer;
   irs_string_t m_file_path;
   irs_u32 m_file_path_size;
+
+  bool open_file();
+  void close_file();
+  bool get_file_size(irs_u32* ap_file_size) const;
+  void error_response();
 };
 
 } // namespace irs
