@@ -251,14 +251,17 @@ void simple_ftp_client_t::tick()
       }
     } break;
     case st_read_processing: {
-//        static int read_cnt = 0;
-//        read_cnt++;
-//        IRS_LIB_DBG_MSG("simple_ftp read_cnt = " << read_cnt);
-//        if (read_cnt > 10) {
-//          read_cnt = 0;
-//          m_status = st_start_wait;
-//          break;
-//        }
+
+      #ifdef NOP
+      static int read_cnt = 0;
+      read_cnt++;
+      IRS_LIB_DBG_MSG("simple_ftp read_cnt = " << read_cnt);
+      if (read_cnt > 10) {
+        read_cnt = 0;
+        m_status = st_start_wait;
+        break;
+      }
+      #endif //NOP
 
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
         (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
