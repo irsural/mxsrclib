@@ -19,6 +19,7 @@ class simple_ftp_client_t
 {
 public:
   explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs);
+  ~simple_ftp_client_t();
   irs_u32 server_version() const;
   void start_read();
   bool is_done() const;
@@ -108,12 +109,13 @@ private:
   packet_t m_packet;
   irs_u8 m_packet_id;
   status_t m_oper_return;
+  fs_t::file_t* mp_file;
+  bool m_is_file_opened;
   irs_u32 m_file_size;
   bool m_is_checksum_error;
   irs_u8 m_packet_id_prev;
   bool m_is_packed_id_prev_exist;
   size_t m_data_offset; // ”казатель на текущую позицию в файле
-  vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
   size_t m_data_offset_prev;
@@ -125,6 +127,8 @@ private:
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
 
   void show_status() const;
+  bool open_file();
+  void close_file();
 };
 
 } // namespace irs

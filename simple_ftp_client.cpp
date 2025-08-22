@@ -5,10 +5,12 @@
 #include <irspch.h>
 #ifdef __BORLANDC__
 #pragma hdrstop
+#include <fs_cppbuilder.h>
 #endif // __BORLANDC__
 
 #include <irserror.h>
 #include <irsalg.h>
+#include <irstest.h>
 
 #include <simple_ftp_client.h>
 
@@ -24,12 +26,13 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_packet(),
   m_packet_id(0),
   m_oper_return(st_start_wait),
+  mp_file(IRS_NULL),
+  m_is_file_opened(false),
   m_file_size(0),
   m_is_checksum_error(false),
   m_packet_id_prev(0),
   m_is_packed_id_prev_exist(false),
   m_data_offset(0), // Указатель на текущую позицию в файле
-  m_file(),
   m_trash_data_timer(make_cnt_ms(100)),
   m_server_version(0),
   m_data_offset_prev(0),
@@ -37,6 +40,10 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_path_local(),
   m_path_remote()
 {
+}
+simple_ftp_client_t::~simple_ftp_client_t()
+{
+  close_file();
 }
 void simple_ftp_client_t::show_status() const
 {
@@ -110,6 +117,7 @@ void simple_ftp_client_t::tick()
 
   switch (m_status) {
     case st_start_wait: {
+      close_file();
       if (m_start_read) {
         irs::mlog() << "Получить файл Запуск" << endl;
         m_status = st_read_version_command;
@@ -229,10 +237,14 @@ void simple_ftp_client_t::tick()
       }
     } break;
     case st_read_command: {
-      m_packet.command = read_command;
-      m_packet.data_size = 0;
-      m_status = st_write_packet;
-      m_oper_return = st_read_command_wait;
+      if (open_file()) {
+        m_packet.command = read_command;
+        m_packet.data_size = 0;
+        m_status = st_write_packet;
+        m_oper_return = st_read_command_wait;
+      } else {
+        m_status = st_start_wait;
+      }
     } break;
     case st_read_command_wait: {
       IRS_LIB_DBG_MSG("simple_ftp Прием пакета");
@@ -269,8 +281,7 @@ void simple_ftp_client_t::tick()
         // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
         // иначе последний else будет некорректен
         if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
-          std::copy(m_packet.data, m_packet.data + m_packet.data_size,
-            std::back_inserter(m_file));
+          mp_fs->write(mp_file, m_packet.data, m_packet.data_size);
           m_data_offset += m_packet.data_size;
           m_packet.command = read_command_response;
           m_packet_id = m_packet.packet_id;
@@ -320,12 +331,11 @@ void simple_ftp_client_t::tick()
     } break;
     case st_show_data: {
       #ifdef IRS_LIB_DEBUG
-      size_t size = m_file.size();
-      irs::mlog() << "m_file.size() = " << size << endl;
-      for (size_t i = 0; i < size; i++) {
-        irs::mlog() << static_cast<int>(m_file[i]) << ' ';
-      }
-      irs::mlog() << endl;
+      #ifdef __BORLANDC__
+      std::wstring fn_wstr = utf8_to_wstring(m_path_local);
+      std::string fn_str = irs::convert_str_t<wchar_t, char>(fn_wstr.c_str()).get();
+      irs::mlog() << "Файл \"" << fn_str << "\" успешно прочитан" << endl;
+      #endif //__BORLANDC__
       #endif //IRS_LIB_DEBUG
 
       // Сообщить о завершении всех операций функции is_done
@@ -459,6 +469,26 @@ void simple_ftp_client_t::u32_to_net(irs_u32 a_u32, irs_u8* ap_data)
   ap_data[1] = static_cast<irs_u8>((a_u32 >> 16) & 0xFF);
   ap_data[2] = static_cast<irs_u8>((a_u32 >> 8) & 0xFF);
   ap_data[3] = static_cast<irs_u8>(a_u32 & 0xFF);
+}
+
+bool simple_ftp_client_t::open_file()
+{
+  if (!m_is_file_opened) {
+    mp_file = mp_fs->open(m_path_local, fm_write);
+    m_is_file_opened = (mp_file != IRS_NULL);
+  }
+  return m_is_file_opened;
+}
+
+void simple_ftp_client_t::close_file()
+{
+  if (m_is_file_opened) {
+    fs_result_t fsr = mp_fs->close(mp_file);
+    if (fsr == fsr_success) {
+      mp_file = IRS_NULL;
+      m_is_file_opened = false;
+    }
+  }
 }
 
 } // namespace irs
