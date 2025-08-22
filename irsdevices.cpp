@@ -843,7 +843,11 @@ irs::mxdata_t* irs::modbus_assembly_t::mxdata()
 void irs::modbus_assembly_t::tick()
 {
   if (!mp_simple_ftp_client.is_empty()) {
-    mp_simple_ftp_client->tick();
+    for (int i = 0; i < 10; i++) {
+      // Цикл для ускорения
+      mp_simple_ftp_client->tick();
+      mp_modbus_client_hardflow->tick();
+    }
   }
 
   if (!mp_modbus_client.is_empty()) {
