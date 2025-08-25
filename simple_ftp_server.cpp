@@ -36,7 +36,6 @@ simple_ftp_server_t::simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs):
   m_file_path(),
   m_file_path_size(0)
 {
-  // IRS_LIB_DBG_MSG("simple_ftp Конструктор simple_ftp_server_t");
 }
 
 simple_ftp_server_t::~simple_ftp_server_t()
@@ -79,7 +78,9 @@ void simple_ftp_server_t::tick()
 {
   m_fixed_flow.tick();
 
+#ifdef IRS_LIB_SIMPLE_FTP_SERVER_DEBUG_STATUS
   show_status();
+#endif //IRS_LIB_SIMPLE_FTP_SERVER_DEBUG_STATUS
 
   switch (m_status) {
     case st_start_wait: {
@@ -99,7 +100,7 @@ void simple_ftp_server_t::tick()
         switch (m_packet.command) {
           case read_version_command: {
             if (!m_packet.data_size) {
-              IRS_LIB_DBG_MSG("simple_ftp Команда чтения версии");
+              IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения версии");
               m_packet.data_size = 4;
               irs_u32 version = m_server_version;
               u32_to_net(version, m_packet.data);
@@ -113,7 +114,7 @@ void simple_ftp_server_t::tick()
             if ((m_packet.data_size >= sizeof(irs_u32)) &&
                 (m_packet.data_size <= packet_t::data_max_size))
             {
-              IRS_LIB_DBG_MSG("simple_ftp Команда записи пути к файлу");
+              IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда записи пути к файлу");
               m_data_offset = 0;
               m_file_path.clear();
               net_to_u32(m_packet.data, &m_file_path_size);
@@ -137,7 +138,7 @@ void simple_ftp_server_t::tick()
           case read_size_command: {
             bool is_ok = (m_packet.data_size == 0);
             if (is_ok) {
-              IRS_LIB_DBG_MSG("simple_ftp Команда чтения размера");
+              IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения размера");
               is_ok = open_file();
             }
             if (is_ok) {
@@ -156,7 +157,7 @@ void simple_ftp_server_t::tick()
           case read_command: {
             bool is_ok = (m_packet.data_size == 0);
             if (is_ok) {
-              IRS_LIB_DBG_MSG("simple_ftp Команда чтения данных");
+              IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения данных");
               is_ok = open_file();
             }
             if (is_ok) {
@@ -205,10 +206,10 @@ void simple_ftp_server_t::tick()
           m_packet.command = file_path_response;
           m_packet_id = m_packet.packet_id;
           m_packet_id_prev = m_packet.packet_id;
-          IRS_LIB_DBG_MSG(
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
             "simple_ftp m_file_path.size() = " << m_file_path.size() << " from " << m_file_path_size
           );
-          IRS_LIB_DBG_MSG("simple_ftp st_set_file_path_processing ok");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp st_set_file_path_processing ok");
         } else if (m_packet_id_prev == m_packet.packet_id) {
           // Сюда попадаем только если мы приняли ранее пакет успешно, а клиент получил
           // неудачное подтверждение. Это повтор пакета от клиента ранее принятого нами
@@ -216,22 +217,28 @@ void simple_ftp_server_t::tick()
           m_packet.command = file_path_response;
         } else {
           m_packet.command = error_command;
-          IRS_LIB_DBG_MSG("simple_ftp st_set_file_path_processing packet_id error");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp st_set_file_path_processing packet_id error"
+          );
         }
       } else {
         if (m_is_checksum_error) {
-          IRS_LIB_DBG_MSG("simple_ftp m_is_checksum_error");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp m_is_checksum_error");
         }
         if (m_packet.command != file_path_response) {
-          IRS_LIB_DBG_MSG("simple_ftp m_packet.command != file_path_response");
-          IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp m_packet.command != file_path_response");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp m_packet.command = " << (int)m_packet.command
+          );
         }
         if (!((m_packet.data_size > 0) && (m_packet.data_size <= packet_t::data_max_size))) {
-          IRS_LIB_DBG_MSG("simple_ftp Размер пакета не в допуске: " << (int)m_packet.data_size);
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp Размер пакета не в допуске: " << (int)m_packet.data_size
+          );
         }
 
         m_packet.command = error_command;
-        IRS_LIB_DBG_MSG("simple_ftp st_read_processing packet error");
+        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp st_read_processing packet error");
       }
 
       m_packet.data_size = 0;
@@ -239,9 +246,9 @@ void simple_ftp_server_t::tick()
       m_oper_return = st_set_file_path_ack_wait;
     } break;
     case st_show_file_path: {
-      IRS_LIB_DBG_MSG("simple_ftp Размер пути к файлу: " << m_file_path_size);
-      IRS_LIB_DBG_MSG("simple_ftp m_file_path.size() = " << m_file_path.size());
-      IRS_LIB_DBG_MSG("simple_ftp Путь к файлу: \"" << m_file_path << "\"");
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Размер пути к файлу: " << m_file_path_size);
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp m_file_path.size() = " << m_file_path.size());
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Путь к файлу: \"" << m_file_path << "\"");
       m_status = st_start_wait;
     } break;
     case st_read_processing: {
@@ -254,17 +261,17 @@ void simple_ftp_server_t::tick()
         // Инкрементируем смещение для следующего пакета
         m_data_offset += m_packet.data_size;
 
-        IRS_LIB_DBG_MSG("simple_ftp Отправка пакета");
+        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Отправка пакета");
         m_check_ack_packet_id = m_packet_id;
         m_status = st_write_packet;
         m_oper_return = st_read_ack;
       } else {
-        IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения файла: ");
+        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка чтения файла: ");
         error_response();
       }
     } break;
     case st_read_ack: {
-      IRS_LIB_DBG_MSG("simple_ftp Прием пакета");
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Прием пакета");
 
       m_status = st_read_header;
       m_oper_return = st_check_ack;
@@ -282,11 +289,12 @@ void simple_ftp_server_t::tick()
         if (m_data_offset >= m_file_size) {
           // Если весь файл отправлен, переходим в состояние ожидания
           m_status = st_start_wait;
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp The file was transferred in full");
         } else {
           m_status = st_read_processing;
         }
       } else {
-        IRS_LIB_DBG_MSG("simple_ftp Ошибка подтверждения. Повтор пакета.");
+        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка подтверждения. Повтор пакета.");
         m_data_offset -= m_packet.data_size;
         m_packet_id--;
         m_status = st_read_processing;
@@ -297,10 +305,14 @@ void simple_ftp_server_t::tick()
       m_packet.packet_id = m_packet_id;
       m_packet_id++;
 
-      IRS_LIB_DBG_MSG("simple_ftp Отправка");
-      IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
-      IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
-      IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Отправка");
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+        "simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id
+      );
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp m_packet.command = " << (int)m_packet.command);
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+        "simple_ftp m_packet.data_size = " << (int)m_packet.data_size
+      );
 
       size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
       m_packet.header_checksum =
@@ -321,7 +333,7 @@ void simple_ftp_server_t::tick()
           m_status = m_oper_return;
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
-          IRS_LIB_DBG_MSG("simple_ftp Ошибка записи пакета");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка записи пакета");
           m_status = st_start_wait;
         } break;
       }
@@ -337,10 +349,16 @@ void simple_ftp_server_t::tick()
       switch (status) {
         case irs::hardflow::fixed_flow_t::status_success: {
 
-          IRS_LIB_DBG_MSG("simple_ftp Прием");
-          IRS_LIB_DBG_MSG("simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id);
-          IRS_LIB_DBG_MSG("simple_ftp m_packet.command = " << (int)m_packet.command);
-          IRS_LIB_DBG_MSG("simple_ftp m_packet.data_size = " << (int)m_packet.data_size);
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Прием");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp m_packet.packet_id = " << (int)m_packet.packet_id
+          );
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp m_packet.command = " << (int)m_packet.command
+          );
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL(
+            "simple_ftp m_packet.data_size = " << (int)m_packet.data_size
+          );
 
           size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
           irs_u8 checksum_calculated = irs::crc8(
@@ -353,7 +371,7 @@ void simple_ftp_server_t::tick()
               m_status = m_oper_return;
             }
           } else {
-            IRS_LIB_DBG_MSG("simple_ftp Ошибка контрольной суммы заголовка");
+            IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка контрольной суммы заголовка");
 
             // Очистка недочитанных данных
             m_fixed_flow.read(
@@ -369,7 +387,7 @@ void simple_ftp_server_t::tick()
           if (m_is_read_time_inf) {
             m_status = st_read_header;
           } else {
-            IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения заголовка");
+            IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка чтения заголовка");
             m_status = st_start_wait;
           }
         } break;
@@ -394,13 +412,13 @@ void simple_ftp_server_t::tick()
           if (m_packet.data_checksum == checksum_calculated) {
             m_status = m_oper_return;
           } else {
-            IRS_LIB_DBG_MSG("simple_ftp Ошибка контрольной суммы данных");
+            IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка контрольной суммы данных");
             m_is_checksum_error = true;
             m_status = m_oper_return;
           }
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
-          IRS_LIB_DBG_MSG("simple_ftp Ошибка чтения данных");
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка чтения данных");
           m_status = st_start_wait;
         } break;
       }
