@@ -393,6 +393,7 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
   mp_simple_ftp_client->path_local(param_to_utf8(irst("Ïóòü ê ëîêàëüíîìó ôàéëó")));
   if (mp_param_box->read_bool(irst("Ïîëó÷èòü ôàéë"))) {
     mp_param_box->set_param(irst("Ïîëó÷èòü ôàéë"), irst("false"));
+    mp_param_box->save();
     mp_simple_ftp_client->start_read();
   }
 }
