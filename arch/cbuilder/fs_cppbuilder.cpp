@@ -123,16 +123,16 @@ fs_cppbuilder_t::file_t* fs_cppbuilder_t::open(const std::string& a_filename,
   std::string mode = "";
   switch (a_mode) {
     case (file_mode_t::fm_read): {
-      mode = "r";
+      mode = "rb";
     } break;
     case (file_mode_t::fm_write): {
-      mode = "w";
+      mode = "wb";
     } break;
     case (file_mode_t::fm_readwrite): {
-      mode = "w+";
+      mode = "w+b";
     } break;
     case (file_mode_t::fm_append): {
-      mode = "a+";
+      mode = "a+b";
     } break;
   }
   return _wfopen(utf8_to_wstring(a_filename).c_str(), utf8_to_wstring(mode).c_str());
