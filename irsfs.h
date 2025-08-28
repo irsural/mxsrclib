@@ -43,7 +43,13 @@ class dir_iterator_t
 public:
   virtual ~dir_iterator_t() {};
   virtual fs_result_t next_dir_item(file_info_t* file_info) = 0;
+  /// \brief Корректно прерывает чтение содержимого папки
+  /// \details После вызова break_iter вызвать next_dir_item уже нельзя. Для повторного чтения
+  ///   следует заново получить dir_iterator_t, используя fs_t::get_dir_iterator.
+  ///   break_iter можно вызывать, даже если содержимое папки прочитано полностью, для
+  ///   освобожденния ресурсов.
   virtual fs_result_t break_iter() = 0;
+
 };
 
 class fs_t
