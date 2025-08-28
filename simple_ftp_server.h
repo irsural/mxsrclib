@@ -57,6 +57,7 @@ private:
 
   enum {
     set_file_path_command = 1,
+    // При чтении размера также считывается признак - это размер папки или файла
     read_size_command = 2,
     read_command = 3,
     read_command_response = 4,
