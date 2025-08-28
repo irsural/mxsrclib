@@ -536,8 +536,10 @@ void simple_ftp_server_t::error_response()
 
 void simple_ftp_server_t::file_size_response()
 {
-  m_packet.data_size = sizeof(irs_u32);
+  m_packet.data_size = sizeof(irs_u32) + sizeof(irs_u8);
   u32_to_net(m_file_size, m_packet.data);
+  irs_u8& is_dir = m_packet.data[sizeof(irs_u32)];
+  is_dir = m_is_dir ? 1 : 0;
   m_status = st_write_packet;
   m_oper_return = st_start_wait;
 }
