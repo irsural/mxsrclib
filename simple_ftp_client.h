@@ -50,6 +50,7 @@ public:
   irs_u32 server_version() const;
   void start_read();
   bool is_done() const;
+  void start_read_version();
   void path_local(const std::string& a_path);
   void path_remote(const std::string& a_path);
   void tick();
@@ -71,6 +72,7 @@ private:
   };
 
   enum status_t {
+    st_start,
     st_start_wait,
     st_read_version_command,
     st_read_version_command_wait,
@@ -152,6 +154,7 @@ private:
   #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
   std::string m_path_local;
   std::string m_path_remote;
+  bool m_is_read_version;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);

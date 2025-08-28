@@ -25,7 +25,7 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_fixed_flow(mp_hardflow),
   m_packet(),
   m_packet_id(0),
-  m_oper_return(st_start_wait),
+  m_oper_return(st_start),
   mp_file(IRS_NULL),
   m_is_file_opened(false),
   m_file_size(0),
@@ -41,7 +41,8 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_measure_time(),
   #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
   m_path_local(),
-  m_path_remote()
+  m_path_remote(),
+  m_is_read_version(false)
 {
 }
 simple_ftp_client_t::~simple_ftp_client_t()
@@ -60,6 +61,7 @@ case status: { \
   if (m_status != status_prev) {
     status_prev = m_status;
     switch (m_status) {
+      IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_start);
       IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_start_wait);
       IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_version_command);
       IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_read_version_command_wait);
@@ -106,6 +108,10 @@ bool simple_ftp_client_t::is_done() const
 {
   return !m_start_read;
 }
+void simple_ftp_client_t::start_read_version()
+{
+  m_is_read_version = true;
+}
 void simple_ftp_client_t::path_local(const std::string& a_path)
 {
   m_path_local = a_path;
@@ -123,8 +129,11 @@ void simple_ftp_client_t::tick()
   #endif
 
   switch (m_status) {
-    case st_start_wait: {
+    case st_start: {
       close_file();
+      m_is_read_version = false;
+    } break;
+    case st_start_wait: {
       if (m_start_read) {
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
@@ -149,7 +158,11 @@ void simple_ftp_client_t::tick()
       {
         net_to_u32(m_packet.data, &m_server_version);
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_server_version = " << m_server_version);
-        m_status = st_set_file_path_command;
+        if (m_is_read_version) {
+          m_status = st_start;
+        } else {
+          m_status = st_set_file_path_command;
+        }
       } else {
         m_status = st_read_version_command;
       }
@@ -255,7 +268,7 @@ void simple_ftp_client_t::tick()
         m_status = st_write_packet;
         m_oper_return = st_read_command_wait;
       } else {
-        m_status = st_start_wait;
+        m_status = st_start;
       }
     } break;
     case st_read_command_wait: {
@@ -281,7 +294,7 @@ void simple_ftp_client_t::tick()
       IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp read_cnt = " << read_cnt);
       if (read_cnt > 10) {
         read_cnt = 0;
-        m_status = st_start_wait;
+        m_status = st_start;
         break;
       }
       #endif //NOP
@@ -364,7 +377,7 @@ void simple_ftp_client_t::tick()
       // Сообщить о завершении всех операций функции is_done
       m_start_read = false;
 
-      m_status = st_start_wait;
+      m_status = st_start;
     } break;
 
     case st_write_packet: {
@@ -399,7 +412,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка записи пакета");
-          m_status = st_start_wait;
+          m_status = st_start;
         } break;
       }
     } break;
@@ -447,7 +460,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка чтения заголовка");
-          m_status = st_start_wait;
+          m_status = st_start;
         } break;
       }
     } break;
@@ -477,7 +490,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка чтения данных");
-          m_status = st_start_wait;
+          m_status = st_start;
         } break;
       }
     } break;
