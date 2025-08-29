@@ -562,8 +562,8 @@ fs_result_t simple_ftp_server_t::dir_info_to_packet()
       if (fs_result == fsr_success) {
         file_info_sf_t file_info_sf;
         file_info_sf.is_dir = file_info.is_dir ? 1 : 0;
-        file_info_sf.size = file_info.size;
-        file_info_sf.name_size = file_info.name.size();
+        file_info_sf.size = static_cast<irs_u32>(file_info.size);
+        file_info_sf.name_size = static_cast<irs_u32>(file_info.name.size());
         if (sizeof(file_info_sf_t) + dir_info_size < packet_data_size) {
           memcpy(m_packet.data + dir_info_size, &file_info_sf, sizeof(file_info_sf_t));
           dir_info_size += sizeof(file_info_sf_t);
