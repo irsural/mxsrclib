@@ -18,6 +18,85 @@
 
 namespace irs {
 
+class dir_iterator_simple_ftp_t: public dir_iterator_t
+{
+public:
+  dir_iterator_simple_ftp_t(const irs_u8* ap_data, size_t a_size);
+  virtual ~dir_iterator_simple_ftp_t();
+  virtual fs_result_t next_dir_item(file_info_t* file_info);
+  virtual fs_result_t break_iter();
+private:
+  /// \brief Структура с информацией о файле или папке
+  /// \details sf в названии расшифровывается как Simple FTP
+  struct file_info_sf_t
+  {
+    irs_u8 is_dir;
+    irs_u32 size;
+    irs_u32 name_size;
+    char name[0];
+
+    file_info_sf_t():
+      is_dir(0),
+      size(0),
+      name_size(0)
+    {
+    }
+  };
+
+  const irs_u8* mp_data;
+  size_t m_size;
+  fs_t* mp_fs;
+  std::string m_dir_info_file_name;
+  vector<irs_u8> m_dir_info_buf;
+  size_t m_dir_info_pos;
+  fs_result_t m_result;
+};
+
+dir_iterator_simple_ftp_t::dir_iterator_simple_ftp_t(const irs_u8* ap_data, size_t a_size):
+  mp_data(ap_data),
+  m_size(a_size),
+  mp_fs(IRS_NULL),
+  m_dir_info_file_name(""),
+  m_dir_info_buf(),
+  m_dir_info_pos(0),
+  m_result(fsr_success)
+{
+}
+dir_iterator_simple_ftp_t::~dir_iterator_simple_ftp_t()
+{
+}
+fs_result_t dir_iterator_simple_ftp_t::next_dir_item(file_info_t* file_info)
+{
+  if (m_result != fsr_success) {
+    return m_result;
+  }
+  //m_dir_info_pos
+  if (m_size - m_dir_info_pos > sizeof(file_info_sf_t)) {
+    const file_info_sf_t& file_info_sf =
+      *reinterpret_cast<const file_info_sf_t*>(mp_data + m_dir_info_pos);
+    if (m_size - m_dir_info_pos - sizeof(file_info_sf_t) >= file_info_sf.name_size) {
+      file_info->is_dir = file_info_sf.is_dir ? true : false;
+      file_info->size = static_cast<size_t>(file_info_sf.size);
+      if (file_info_sf.name_size) {
+        file_info->name =
+          std::string(file_info_sf.name, file_info_sf.name + file_info_sf.name_size);
+        m_dir_info_pos += sizeof(file_info_sf_t) + file_info_sf.name_size;
+        return fsr_success;
+      } else {
+        return fsr_end_of_dir;
+      }
+    } else {
+      return fsr_end_of_dir;
+    }
+  } else {
+    return fsr_end_of_dir;
+  }
+}
+fs_result_t dir_iterator_simple_ftp_t::break_iter()
+{
+  return fsr_success;
+}
+
 simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   mp_hardflow(ap_hardflow),
   mp_fs(ap_fs),
@@ -42,7 +121,11 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
   m_path_local(),
   m_path_remote(),
-  m_is_read_version(false)
+  m_is_read_version(false),
+  m_is_read_dir_to_mem(false),
+  m_dir_info_buf(),
+  m_is_dir_info_buf_hold(false),
+  m_is_dir(false)
 {
 }
 simple_ftp_client_t::~simple_ftp_client_t()
@@ -104,12 +187,22 @@ void simple_ftp_client_t::start_read()
 {
   m_start_read = true;
 }
+void simple_ftp_client_t::start_read_dir()
+{
+  m_start_read = true;
+  m_is_read_dir_to_mem = true;
+}
+handle_t<dir_iterator_t> simple_ftp_client_t::get_dir_iterator()
+{
+  ;
+}
 bool simple_ftp_client_t::is_done() const
 {
   return !m_start_read;
 }
 void simple_ftp_client_t::start_read_version()
 {
+  m_start_read = true;
   m_is_read_version = true;
 }
 void simple_ftp_client_t::path_local(const std::string& a_path)
@@ -131,7 +224,9 @@ void simple_ftp_client_t::tick()
   switch (m_status) {
     case st_start: {
       close_file();
+      m_dir_info_buf.clear();
       m_is_read_version = false;
+      m_is_read_dir_to_mem = false;
     } break;
     case st_start_wait: {
       if (m_start_read) {
@@ -255,6 +350,8 @@ void simple_ftp_client_t::tick()
     case st_read_size_command_response: {
       if (!m_is_checksum_error && (m_packet.command == read_size_command) && m_packet.data_size) {
         net_to_u32(m_packet.data, &m_file_size);
+        irs_u8& is_dir = m_packet.data[sizeof(irs_u32)];
+        m_is_dir = is_dir ? true : false;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
         m_status = st_read_command;
       } else {
@@ -277,7 +374,7 @@ void simple_ftp_client_t::tick()
     } break;
     case st_read_command_response: {
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
-        (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
+        (m_packet.data_size <= packet_t::packet_data_max_size))
       {
         m_status = st_read_processing;
         m_is_packed_id_prev_exist = false;
@@ -300,12 +397,18 @@ void simple_ftp_client_t::tick()
       #endif //NOP
 
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
-        (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size))
+        (m_packet.data_size <= packet_t::packet_data_max_size))
       {
         // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
         // иначе последний else будет некорректен
         if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
-          mp_fs->write(mp_file, m_packet.data, m_packet.data_size);
+          if (m_is_dir) {
+            size_t size = m_dir_info_buf.size();
+            m_dir_info_buf.resize(size + m_packet.data_size);
+            memcpy(&m_dir_info_buf[size], m_packet.data, m_packet.data_size);
+          } else {
+            mp_fs->write(mp_file, m_packet.data, m_packet.data_size);
+          }
           m_data_offset += m_packet.data_size;
           m_packet.command = read_command_response;
           m_packet_id = m_packet.packet_id;
@@ -353,6 +456,10 @@ void simple_ftp_client_t::tick()
       // В отладочном коде переходим к отображению принятого файла
       if (m_data_offset >= m_file_size) {
         m_status = st_show_data;
+        if (m_is_dir) {
+          dir_info_to_txt_file();
+          m_is_dir_info_buf_hold = false;
+        }
       } else {
         m_status = st_read_header;
         m_oper_return = st_read_processing;
@@ -529,6 +636,45 @@ void simple_ftp_client_t::close_file()
     if (fsr == fsr_success) {
       mp_file = IRS_NULL;
       m_is_file_opened = false;
+    }
+  }
+}
+
+bool simple_ftp_client_t::write_file(const char* ap_data, size_t a_size, bool a_prev_ok)
+{
+  if (a_prev_ok) {
+    const irs_u8* data = reinterpret_cast<const irs_u8*>(ap_data);
+    fs_result_t fsr = mp_fs->write(mp_file, data, a_size);
+    return fsr == fsr_success;
+  } else {
+    return false;
+  }
+}
+
+bool simple_ftp_client_t::write_file_str(const char* ap_data, bool a_prev_ok)
+{
+  return write_file(ap_data, strlen(ap_data), a_prev_ok);
+}
+
+void simple_ftp_client_t::dir_info_to_txt_file()
+{
+  dir_iterator_simple_ftp_t dir_it(&m_dir_info_buf[0], m_dir_info_buf.size());
+  file_info_t file_info;
+  fs_result_t fs_result = fsr_success;
+  while ((fs_result = dir_it.next_dir_item(&file_info)) == fsr_success) {
+    std::string dir_or_file_s  = wstring_to_utf8(file_info.is_dir ? L"Папка" : L"Файл");
+    const char* dir_or_file = dir_or_file_s.c_str();
+    bool is_ok = write_file_str(dir_or_file);
+    is_ok = write_file_str(";", is_ok);
+    stringstream strm;
+    strm << file_info.size << wstring_to_utf8(L" байт");
+    is_ok = write_file_str(strm.str().c_str(), is_ok);
+    is_ok = write_file_str(";", is_ok);
+    is_ok = write_file_str(file_info.name.c_str(), is_ok);
+    is_ok = write_file_str("\r\n", is_ok);
+    if (!is_ok) {
+      IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Error convert dir info to txt");
+      return;
     }
   }
 }

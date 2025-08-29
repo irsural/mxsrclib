@@ -49,6 +49,9 @@ public:
   ~simple_ftp_client_t();
   irs_u32 server_version() const;
   void start_read();
+  void start_read_dir();
+  handle_t<dir_iterator_t> get_dir_iterator();
+//  void start_read_binary();
   bool is_done() const;
   void start_read_version();
   void path_local(const std::string& a_path);
@@ -62,6 +65,7 @@ private:
 
   enum {
     set_file_path_command = 1,
+    // При чтении размера также считывается признак - это размер папки или файла
     read_size_command = 2,
     read_command = 3,
     read_command_response = 4,
@@ -82,6 +86,7 @@ private:
     st_set_file_path_command_response,
     st_set_file_path_ack_wait,
     st_set_file_path_ack_read,
+    // При чтении размера также считывается признак - это размер папки или файла
     st_read_size_command,
     st_read_size_command_wait,
     st_read_size_command_response,
@@ -155,6 +160,11 @@ private:
   std::string m_path_local;
   std::string m_path_remote;
   bool m_is_read_version;
+  bool m_is_read_dir_to_mem;
+  /// @brief Буфер для временного хранения информации о прочитанном содержимом папки
+  vector<irs_u8> m_dir_info_buf;
+  bool m_is_dir_info_buf_hold;
+  bool m_is_dir;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
@@ -162,6 +172,9 @@ private:
   void show_status() const;
   bool open_file();
   void close_file();
+  bool write_file(const char* ap_data, size_t a_size, bool a_prev_ok = true);
+  bool write_file_str(const char* ap_data, bool a_prev_ok = true);
+  void dir_info_to_txt_file();
 };
 
 } // namespace irs
