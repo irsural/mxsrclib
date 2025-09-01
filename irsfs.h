@@ -49,7 +49,9 @@ public:
   ///   break_iter можно вызывать, даже если содержимое папки прочитано полностью, для
   ///   освобожденния ресурсов.
   virtual fs_result_t break_iter() = 0;
-
+  /// \brief Переводит указатель для next_dir_item на начало списка
+  /// \details Эта функция необязательная к реализации в потомках dir_iterator_t
+  virtual fs_result_t next_to_begin() { return fsr_error; }
 };
 
 class fs_t
