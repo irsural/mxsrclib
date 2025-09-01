@@ -112,7 +112,7 @@ private:
     typedef irs_u32 file_size_type;
 
     enum {
-      packet_data_max_size = 100,
+      data_max_size = 100,
       checksum_size = 2,
       ack_error_tag = 0xDE,
     };
@@ -122,7 +122,7 @@ private:
     irs_u8 data_size;
     irs_u8 header_checksum;
     irs_u8 data_checksum;
-    irs_u8 data[packet_data_max_size];
+    irs_u8 data[data_max_size];
 
     packet_t():
       command(0),

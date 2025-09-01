@@ -267,7 +267,7 @@ void simple_ftp_client_t::tick()
       m_data_offset = 0;
       const size_t remaining_size = m_path_remote.size() - m_data_offset;
       const irs_u8 file_path_chunk_size = static_cast<irs_u8>(std::min<size_t>(
-        packet_t::packet_data_max_size - sizeof(irs_u32), remaining_size));
+        packet_t::data_max_size - sizeof(irs_u32), remaining_size));
       m_packet.data_size = file_path_chunk_size + sizeof(irs_u32);
       copy(
           m_path_remote.begin() + m_data_offset,
@@ -316,7 +316,7 @@ void simple_ftp_client_t::tick()
       if (is_send_packet_needed) {
         size_t remaining_size = m_path_remote.size() - m_data_offset;
         m_packet.data_size = static_cast<irs_u8>(std::min<size_t>(
-          packet_t::packet_data_max_size, remaining_size));
+          packet_t::data_max_size, remaining_size));
         copy(
             m_path_remote.begin() + m_data_offset,
             m_path_remote.begin() + m_data_offset + m_packet.data_size,
@@ -374,7 +374,7 @@ void simple_ftp_client_t::tick()
     } break;
     case st_read_command_response: {
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
-        (m_packet.data_size <= packet_t::packet_data_max_size))
+        (m_packet.data_size <= packet_t::data_max_size))
       {
         m_status = st_read_processing;
         m_is_packed_id_prev_exist = false;
@@ -397,7 +397,7 @@ void simple_ftp_client_t::tick()
       #endif //NOP
 
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
-        (m_packet.data_size <= packet_t::packet_data_max_size))
+        (m_packet.data_size <= packet_t::data_max_size))
       {
         // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
         // иначе последний else будет некорректен
@@ -436,7 +436,7 @@ void simple_ftp_client_t::tick()
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL(
             "simple_ftp m_packet.command = " << (int)m_packet.command);
         }
-        if (!((m_packet.data_size > 0) && (m_packet.data_size <= packet_t::packet_data_max_size)))
+        if (!((m_packet.data_size > 0) && (m_packet.data_size <= packet_t::data_max_size)))
         {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Размер пакета не в допуске: " <<
             (int)m_packet.data_size);
@@ -499,7 +499,7 @@ void simple_ftp_client_t::tick()
       IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp m_packet.data_size = " <<
         (int)m_packet.data_size);
 
-      size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+      size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
       m_packet.header_checksum = crc8(reinterpret_cast<irs_u8*>(&m_packet), 0,
         header_size - packet_t::checksum_size);
       m_packet.data_checksum = 0;
@@ -525,7 +525,7 @@ void simple_ftp_client_t::tick()
     } break;
 
     case st_read_header: {
-      size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+      size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
       m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(&m_packet), header_size);
       m_status = st_read_header_wait;
     } break;
@@ -542,7 +542,7 @@ void simple_ftp_client_t::tick()
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp m_packet.data_size = " <<
             (int)m_packet.data_size);
 
-          size_t header_size = sizeof(packet_t) - packet_t::packet_data_max_size;
+          size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
           irs_u8 checksum_calculated = irs::crc8(
             reinterpret_cast<irs_u8*>(&m_packet), 0, header_size - packet_t::checksum_size
           );
@@ -557,7 +557,7 @@ void simple_ftp_client_t::tick()
 
             // Очистка недочитанных данных
             m_fixed_flow.read(
-              channel, reinterpret_cast<irs_u8*>(&m_packet.data), packet_t::packet_data_max_size
+              channel, reinterpret_cast<irs_u8*>(&m_packet.data), packet_t::data_max_size
             );
 
             m_is_checksum_error = true;
