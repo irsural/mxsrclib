@@ -379,7 +379,7 @@ void simple_ftp_server_t::tick()
       m_packet.data_checksum = 0;
       if (m_packet.data_size) {
         m_packet.data_checksum =
-          irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0, m_packet.data_size);
+          irs::crc16_table(reinterpret_cast<irs_u8*>(&m_packet.data), m_packet.data_size);
       }
       size_t packet_size = header_size + m_packet.data_size;
       m_fixed_flow.write(channel, reinterpret_cast<irs_u8*>(&m_packet), packet_size);
@@ -466,8 +466,8 @@ void simple_ftp_server_t::tick()
       irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
       switch (status) {
         case irs::hardflow::fixed_flow_t::status_success: {
-          irs_u8 checksum_calculated =
-            irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0, m_packet.data_size);
+          packet_t::data_crc_type checksum_calculated =
+            irs::crc16_table(reinterpret_cast<irs_u8*>(&m_packet.data), m_packet.data_size);
           if (m_packet.data_checksum == checksum_calculated) {
             m_status = m_oper_return;
           } else {
