@@ -21,7 +21,7 @@ namespace irs {
 class dir_iterator_simple_ftp_t: public dir_iterator_t
 {
 public:
-  dir_iterator_simple_ftp_t(const irs_u8* ap_data, size_t a_size);
+  dir_iterator_simple_ftp_t(const vector<irs_u8>& a_dir_info_buf);
   virtual ~dir_iterator_simple_ftp_t();
   virtual fs_result_t next_dir_item(file_info_t* file_info);
   virtual fs_result_t break_iter();
@@ -44,21 +44,13 @@ private:
     }
   };
 
-  const irs_u8* mp_data;
-  size_t m_size;
-  fs_t* mp_fs;
-  std::string m_dir_info_file_name;
   vector<irs_u8> m_dir_info_buf;
   size_t m_dir_info_pos;
   fs_result_t m_result;
 };
 
-dir_iterator_simple_ftp_t::dir_iterator_simple_ftp_t(const irs_u8* ap_data, size_t a_size):
-  mp_data(ap_data),
-  m_size(a_size),
-  mp_fs(IRS_NULL),
-  m_dir_info_file_name(""),
-  m_dir_info_buf(),
+dir_iterator_simple_ftp_t::dir_iterator_simple_ftp_t(const vector<irs_u8>& a_dir_info_buf):
+  m_dir_info_buf(a_dir_info_buf),
   m_dir_info_pos(0),
   m_result(fsr_success)
 {
@@ -71,11 +63,10 @@ fs_result_t dir_iterator_simple_ftp_t::next_dir_item(file_info_t* file_info)
   if (m_result != fsr_success) {
     return m_result;
   }
-  //m_dir_info_pos
-  if (m_size - m_dir_info_pos > sizeof(file_info_sf_t)) {
+  if (m_dir_info_buf.size() - m_dir_info_pos > sizeof(file_info_sf_t)) {
     const file_info_sf_t& file_info_sf =
-      *reinterpret_cast<const file_info_sf_t*>(mp_data + m_dir_info_pos);
-    if (m_size - m_dir_info_pos - sizeof(file_info_sf_t) >= file_info_sf.name_size) {
+      *reinterpret_cast<const file_info_sf_t*>(&m_dir_info_buf[m_dir_info_pos]);
+    if (m_dir_info_buf.size() - m_dir_info_pos - sizeof(file_info_sf_t) >= file_info_sf.name_size) {
       file_info->is_dir = file_info_sf.is_dir ? true : false;
       file_info->size = static_cast<size_t>(file_info_sf.size);
       if (file_info_sf.name_size) {
@@ -667,7 +658,7 @@ bool simple_ftp_client_t::write_file_str(const char* ap_data, bool a_prev_ok)
 
 void simple_ftp_client_t::dir_info_to_txt_file()
 {
-  dir_iterator_simple_ftp_t dir_it(&m_dir_info_buf[0], m_dir_info_buf.size());
+  dir_iterator_simple_ftp_t dir_it(m_dir_info_buf);
   file_info_t file_info;
   fs_result_t fs_result = fsr_success;
   while ((fs_result = dir_it.next_dir_item(&file_info)) == fsr_success) {
