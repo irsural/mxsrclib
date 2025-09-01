@@ -191,7 +191,7 @@ void simple_ftp_client_t::start_read_dir()
 }
 handle_t<dir_iterator_t> simple_ftp_client_t::get_dir_iterator()
 {
-  ;
+  return handle_t<dir_iterator_t>(new dir_iterator_simple_ftp_t(m_dir_info_buf));
 }
 bool simple_ftp_client_t::is_done() const
 {
