@@ -471,6 +471,9 @@ void simple_ftp_client_t::tick()
       #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
       double read_time = m_measure_time.get();
       mlog() << "Время чтения файла, с: " << read_time << endl;
+      if (read_time) {
+        mlog() << "Скорость чтения файла, байт/с: " << m_file_size/read_time << endl;
+      }
       #ifdef __BORLANDC__
       // Здесь используется функция utf8_to_wstring, доступная в mxsrclib только для C++ Builder
       std::wstring fn_wstr = utf8_to_wstring(m_path_local);
@@ -504,7 +507,7 @@ void simple_ftp_client_t::tick()
         header_size - packet_t::checksum_size);
       m_packet.data_checksum = 0;
       if (m_packet.data_size) {
-        m_packet.data_checksum = irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0,
+        m_packet.data_checksum = irs::crc16_table(reinterpret_cast<irs_u8*>(&m_packet.data),
           m_packet.data_size);
       }
       size_t packet_size = header_size + m_packet.data_size;
@@ -585,8 +588,8 @@ void simple_ftp_client_t::tick()
       irs::hardflow::fixed_flow_t::status_t status = m_fixed_flow.read_status();
       switch (status) {
         case irs::hardflow::fixed_flow_t::status_success: {
-          irs_u8 checksum_calculated =
-            irs::crc8(reinterpret_cast<irs_u8*>(&m_packet.data), 0, m_packet.data_size);
+          packet_t::data_crc_type checksum_calculated =
+            irs::crc16_table(reinterpret_cast<irs_u8*>(&m_packet.data), m_packet.data_size);
           if (m_packet.data_checksum == checksum_calculated) {
             m_status = m_oper_return;
           } else {

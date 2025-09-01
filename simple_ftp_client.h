@@ -109,19 +109,20 @@ private:
   #pragma pack(push, 1)
   struct packet_t
   {
-    typedef irs_u32 file_size_type;
+    typedef irs_u8 header_crc_type;
+    typedef irs_u16 data_crc_type;
 
     enum {
-      data_max_size = 100,
-      checksum_size = 2,
+      data_max_size = 1500,
+      checksum_size = sizeof(header_crc_type) + sizeof(data_crc_type),
       ack_error_tag = 0xDE,
     };
 
     irs_u8 command;
     irs_u8 packet_id;
-    irs_u8 data_size;
-    irs_u8 header_checksum;
-    irs_u8 data_checksum;
+    irs_u16 data_size;
+    header_crc_type header_checksum;
+    data_crc_type data_checksum;
     irs_u8 data[data_max_size];
 
     packet_t():
