@@ -25,6 +25,7 @@ public:
   virtual ~dir_iterator_simple_ftp_t();
   virtual fs_result_t next_dir_item(file_info_t* file_info);
   virtual fs_result_t break_iter();
+  virtual fs_result_t next_to_begin();
 private:
   /// \brief Структура с информацией о файле или папке
   /// \details sf в названии расшифровывается как Simple FTP
@@ -94,6 +95,11 @@ fs_result_t dir_iterator_simple_ftp_t::next_dir_item(file_info_t* file_info)
 }
 fs_result_t dir_iterator_simple_ftp_t::break_iter()
 {
+  return fsr_success;
+}
+fs_result_t dir_iterator_simple_ftp_t::next_to_begin()
+{
+  m_dir_info_pos = 0;
   return fsr_success;
 }
 
