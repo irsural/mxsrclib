@@ -47,7 +47,6 @@ class simple_ftp_server_t
 public:
   explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs);
   ~simple_ftp_server_t();
-  void show_status() const;
   void tick();
 
 private:
@@ -171,6 +170,7 @@ private:
   irs_string_t m_file_path;
   irs_u32 m_file_path_size;
 
+  void show_status() const;
   bool open_file();
   void close_file();
   bool get_file_size(irs_u32* ap_file_size, fs_result_t* ap_fs_result) const;
