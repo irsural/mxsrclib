@@ -150,17 +150,19 @@ void simple_ftp_server_t::tick()
             }
           } break;
           case read_size_command: {
+            IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения размера");
+            m_fs_result = fsr_success;
             bool is_ok = (m_packet.data_size == 0);
             m_is_file = false;
             if (is_ok) {
-              fs_result_t fs_result = irs::fsr_success;
+              fs_result_t fs_result = fsr_success;
               m_is_file = mp_fs->is_file_exists(m_file_path, &fs_result);
             }
             m_is_dir = !m_is_file;
             if (is_ok) {
-              IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения размера");
               if (m_is_file) {
                 is_ok = open_file();
+                m_fs_result = is_ok ? fsr_success : fsr_error;
               } else if (m_is_dir) {
                 m_file_size = 0;
                 mp_dir_iterator = mp_fs->get_dir_iterator(m_file_path);
@@ -171,26 +173,31 @@ void simple_ftp_server_t::tick()
             }
             if (m_is_file) {
               if (is_ok) {
-                is_ok = get_file_size(&m_file_size);
+                is_ok = get_file_size(&m_file_size, &m_fs_result);
               }
               if (is_ok) {
                 file_size_response();
               }
             }
             if (!is_ok) {
-              error_response();
+              error_response(m_fs_result);
             }
           } break;
           case read_command: {
             IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp Команда чтения данных");
+            m_fs_result = fsr_success;
             bool is_ok = (m_packet.data_size == 0);
             if (m_is_file) {
               if (is_ok) {
                 is_ok = open_file();
+                m_fs_result = is_ok ? fsr_success : fsr_error;
+                // Здесь файл может уже не существовать, но я это игнорирую, т. к. это уже
+                // проверено в команде read_size_command. Если файл не существует, то это
+                // будет передано клиенту как другая ошибка файловой системы (fsr_error).
               }
               if (is_ok) {
                 irs_u32 file_size = 0;
-                is_ok = get_file_size(&file_size);
+                is_ok = get_file_size(&file_size, &m_fs_result);
                 is_ok = is_ok && (file_size == m_file_size);
               }
             }
@@ -198,13 +205,12 @@ void simple_ftp_server_t::tick()
               mp_dir_iterator.reset();
               mp_dir_iterator = mp_fs->get_dir_iterator(m_file_path);
               m_fs_result = fsr_success;
-              // dir_info_size = 0;
             }
             if (is_ok) {
               m_status = st_read_processing;
             }
             if (!is_ok) {
-              error_response();
+              error_response(m_fs_result);
             }
           } break;
           default: {
@@ -290,8 +296,8 @@ void simple_ftp_server_t::tick()
     } break;
     case st_get_dir_size: {
       file_info_t file_info;
-      fs_result_t fs_result = mp_dir_iterator->next_dir_item(&file_info);
-      switch (fs_result) {
+      m_fs_result = mp_dir_iterator->next_dir_item(&file_info);
+      switch (m_fs_result) {
         case fsr_success: {
           m_file_size += sizeof(file_info_sf_t) + file_info.name.size();
         } break;
@@ -299,7 +305,7 @@ void simple_ftp_server_t::tick()
           file_size_response();
         } break;
         default: {
-          error_response();
+          error_response(m_fs_result);
         } break;
       }
     } break;
@@ -325,8 +331,10 @@ void simple_ftp_server_t::tick()
         m_status = st_write_packet;
         m_oper_return = st_read_ack;
       } else {
-        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка чтения файла: ");
-        error_response();
+        IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE(
+          "simple_ftp Ошибка чтения файла или информации о содержимом папки"
+        );
+        error_response(m_fs_result);
       }
     } break;
     case st_read_ack: {
@@ -353,10 +361,17 @@ void simple_ftp_server_t::tick()
           m_status = st_read_processing;
         }
       } else {
-        IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка подтверждения. Повтор пакета.");
-        m_data_offset -= m_packet.data_size;
-        m_packet_id--;
-        m_status = st_read_processing;
+        if (m_packet.command == path_not_exist_error_command ||
+            m_packet.command == other_fs_error_command)
+        {
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp File system error on the client");
+          m_status = st_start_wait;
+        } else {
+          IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Ошибка подтверждения. Повтор пакета.");
+          m_data_offset -= m_packet.data_size;
+          m_packet_id--;
+          m_status = st_read_processing;
+        }
       }
     } break;
 
@@ -512,23 +527,34 @@ void simple_ftp_server_t::close_file()
 {
   if (m_is_file_opened) {
     fs_result_t fsr = mp_fs->close(mp_file);
-    if (fsr == fsr_success) {
-      mp_file = IRS_NULL;
-      m_is_file_opened = false;
+    mp_file = IRS_NULL;
+    m_is_file_opened = false;
+    if (fsr != fsr_success) {
+      IRS_LIB_SIMP_FTP_SR_DBG_MSG_BASE("simple_ftp close file error");
     }
   }
 }
 
-bool simple_ftp_server_t::get_file_size(irs_u32* ap_file_size) const
+bool simple_ftp_server_t::get_file_size(irs_u32* ap_file_size, fs_result_t* ap_fs_result) const
 {
-  fs_result_t fs_result = irs::fsr_success;
-  *ap_file_size = static_cast<irs_u32>(mp_fs->get_file_size(mp_file, &fs_result));
-  return (fs_result == irs::fsr_success);
+  *ap_file_size = static_cast<irs_u32>(mp_fs->get_file_size(mp_file, ap_fs_result));
+  return (*ap_fs_result == irs::fsr_success);
 }
 
-void simple_ftp_server_t::error_response()
+void simple_ftp_server_t::error_response(fs_result_t a_fs_result)
 {
-  m_packet.command = error_command;
+  switch (a_fs_result) {
+    case fsr_success: {
+      m_packet.command = error_command;
+    } break;
+    case fsr_file_not_exists:
+    case fsr_dir_not_exists: {
+      m_packet.command = path_not_exist_error_command;
+    } break;
+    default: {
+      m_packet.command = other_fs_error_command;
+    } break;
+  }
   m_packet.data_size = 0;
   m_status = st_write_packet;
   m_oper_return = st_start_wait;

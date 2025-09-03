@@ -65,6 +65,8 @@ private:
     error_command = 6,
     read_version_command = 7,
     file_path_response = 8,
+    path_not_exist_error_command = 9,
+    other_fs_error_command = 10,
   };
 
   enum status_t {
@@ -171,8 +173,8 @@ private:
 
   bool open_file();
   void close_file();
-  bool get_file_size(irs_u32* ap_file_size) const;
-  void error_response();
+  bool get_file_size(irs_u32* ap_file_size, fs_result_t* ap_fs_result) const;
+  void error_response(fs_result_t a_fs_result = fsr_success);
   void file_size_response();
   fs_result_t dir_info_to_packet();
 };
