@@ -14,7 +14,8 @@ enum fs_result_t {
   fsr_error,
   fsr_file_exists,
   fsr_file_not_exists,
-  fsr_end_of_dir
+  fsr_end_of_dir,
+  fsr_dir_not_exists,
 };
 
 enum file_mode_t {
