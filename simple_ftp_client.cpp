@@ -122,7 +122,8 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_is_read_dir_to_mem(false),
   m_dir_info_buf(),
   m_is_dir_info_buf_hold(false),
-  m_is_dir(false)
+  m_is_dir(false),
+  m_last_error(sfe_no_error)
 {
 }
 simple_ftp_client_t::~simple_ftp_client_t()
@@ -197,6 +198,10 @@ bool simple_ftp_client_t::is_done() const
 {
   return !m_start_read;
 }
+sf_error_t simple_ftp_client_t::last_error() const
+{
+  return m_last_error;
+}
 void simple_ftp_client_t::start_read_version()
 {
   m_start_read = true;
@@ -222,12 +227,14 @@ void simple_ftp_client_t::tick()
     case st_start: {
       close_file();
       m_dir_info_buf.clear();
+      m_start_read = false;
       m_is_read_version = false;
       m_is_read_dir_to_mem = false;
+      m_status = st_start_wait;
     } break;
     case st_start_wait: {
       if (m_start_read) {
-        IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("Получить файл Запуск");
+        IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
         m_measure_time.start();
         #endif IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
@@ -352,7 +359,9 @@ void simple_ftp_client_t::tick()
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
         m_status = st_read_command;
       } else {
-        m_status = st_read_size_command;
+        if (!fs_error_handle(m_packet.command)) {
+          m_status = st_read_size_command;
+        }
       }
     } break;
     case st_read_command: {
@@ -362,6 +371,8 @@ void simple_ftp_client_t::tick()
         m_status = st_write_packet;
         m_oper_return = st_read_command_wait;
       } else {
+        m_last_error = sfe_local_fs_error;
+        IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp open local file error");
         m_status = st_start;
       }
     } break;
@@ -377,7 +388,9 @@ void simple_ftp_client_t::tick()
         m_is_packed_id_prev_exist = false;
         m_data_offset = 0;
       } else {
-        m_status = st_read_command;
+        if (!fs_error_handle(m_packet.command)) {
+          m_status = st_read_command;
+        }
       }
     } break;
     case st_read_processing: {
@@ -393,6 +406,7 @@ void simple_ftp_client_t::tick()
       }
       #endif //NOP
 
+      fs_result_t fsr = fsr_success;
       if (!m_is_checksum_error && (m_packet.command == read_command_response) &&
         (m_packet.data_size <= packet_t::data_max_size))
       {
@@ -404,14 +418,16 @@ void simple_ftp_client_t::tick()
             m_dir_info_buf.resize(size + m_packet.data_size);
             memcpy(&m_dir_info_buf[size], m_packet.data, m_packet.data_size);
           } else {
-            mp_fs->write(mp_file, m_packet.data, m_packet.data_size);
+            fsr = mp_fs->write(mp_file, m_packet.data, m_packet.data_size);
           }
-          m_data_offset += m_packet.data_size;
-          m_packet.command = read_command_response;
-          m_packet_id = m_packet.packet_id;
-          m_packet_id_prev = m_packet.packet_id;
-          m_is_packed_id_prev_exist = true;
-          IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp st_read_processing ok");
+          if (fsr == fsr_success) {
+            m_data_offset += m_packet.data_size;
+            m_packet.command = read_command_response;
+            m_packet_id = m_packet.packet_id;
+            m_packet_id_prev = m_packet.packet_id;
+            m_is_packed_id_prev_exist = true;
+            IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp st_read_processing ok");
+          }
         } else if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id)) {
           // Сюда попадаем только если мы приняли ранее пакет успешно, а сервер получил
           // неудачное подтверждение. Это повтор пакета от сервера ранее принятого нами
@@ -444,9 +460,18 @@ void simple_ftp_client_t::tick()
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp st_read_processing packet error");
       }
 
-      m_packet.data_size = 0;
-      m_status = st_write_packet;
-      m_oper_return = st_send_ack_wait;
+      if (!fs_error_handle(m_packet.command)) {
+        if (fsr == fsr_success) {
+          m_packet.data_size = 0;
+          m_status = st_write_packet;
+          m_oper_return = st_send_ack_wait;
+        } else {
+          m_last_error = sfe_local_fs_error;
+          m_packet.data_size = 0;
+          m_status = st_write_packet;
+          m_oper_return = st_start;
+        }
+      }
     } break;
     case st_send_ack_wait: {
       // Если весь файл принят, переходим в состояние ожидания
@@ -454,7 +479,13 @@ void simple_ftp_client_t::tick()
       if (m_data_offset >= m_file_size) {
         m_status = st_show_data;
         if (m_is_dir) {
-          dir_info_to_txt_file();
+          if (!dir_info_to_txt_file()) {
+            // В этот момент сервер уже все успешно отправил, поэтому мы ему не сообщаем об ошибке,
+            // а просто прекращаем операции и сообщаем пользователю этого класса об ошибке
+            // файловой системы
+            m_last_error = sfe_local_fs_error;
+            m_status = st_start;
+          }
           m_is_dir_info_buf_hold = false;
         }
       } else {
@@ -467,6 +498,7 @@ void simple_ftp_client_t::tick()
     case st_show_data: {
       #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
       double read_time = m_measure_time.get();
+      mlog() << "simple_ftp" << endl;
       mlog() << "Время чтения файла, с: " << read_time << endl;
       if (read_time) {
         mlog() << "Скорость чтения файла, байт/с: " << m_file_size/read_time << endl;
@@ -633,9 +665,10 @@ void simple_ftp_client_t::close_file()
 {
   if (m_is_file_opened) {
     fs_result_t fsr = mp_fs->close(mp_file);
-    if (fsr == fsr_success) {
-      mp_file = IRS_NULL;
-      m_is_file_opened = false;
+    mp_file = IRS_NULL;
+    m_is_file_opened = false;
+    if (fsr != fsr_success) {
+      IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp close local file error");
     }
   }
 }
@@ -656,7 +689,7 @@ bool simple_ftp_client_t::write_file_str(const char* ap_data, bool a_prev_ok)
   return write_file(ap_data, strlen(ap_data), a_prev_ok);
 }
 
-void simple_ftp_client_t::dir_info_to_txt_file()
+bool simple_ftp_client_t::dir_info_to_txt_file()
 {
   dir_iterator_simple_ftp_t dir_it(m_dir_info_buf);
   file_info_t file_info;
@@ -674,10 +707,31 @@ void simple_ftp_client_t::dir_info_to_txt_file()
     is_ok = write_file_str("\r\n", is_ok);
     if (!is_ok) {
       IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Error convert dir info to txt");
-      return;
+      return false;
     }
   }
+  return true;
 }
+
+bool simple_ftp_client_t::fs_error_handle(irs_u8 a_command)
+{
+  if (a_command == path_not_exist_error_command ||
+      a_command == other_fs_error_command)
+  {
+    if (a_command == path_not_exist_error_command) {
+      IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Путь не существует на сервере");
+      m_last_error = sfe_remote_path_not_exist_error;
+    } else {
+      IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Ошибка файловой системы на сервере");
+      m_last_error = sfe_remote_other_fs_error;
+    }
+    m_status = st_start;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 } // namespace irs
 

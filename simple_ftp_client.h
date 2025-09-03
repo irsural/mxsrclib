@@ -42,6 +42,13 @@
 
 namespace irs {
 
+enum sf_error_t {
+  sfe_no_error,
+  sfe_remote_path_not_exist_error,
+  sfe_remote_other_fs_error,
+  sfe_local_fs_error,
+};
+
 class simple_ftp_client_t
 {
 public:
@@ -53,6 +60,7 @@ public:
   handle_t<dir_iterator_t> get_dir_iterator();
 //  void start_read_binary();
   bool is_done() const;
+  sf_error_t last_error() const;
   void start_read_version();
   void path_local(const std::string& a_path);
   void path_remote(const std::string& a_path);
@@ -73,6 +81,8 @@ private:
     error_command = 6,
     read_version_command = 7,
     file_path_response = 8,
+    path_not_exist_error_command = 9,
+    other_fs_error_command = 10,
   };
 
   enum status_t {
@@ -166,6 +176,7 @@ private:
   vector<irs_u8> m_dir_info_buf;
   bool m_is_dir_info_buf_hold;
   bool m_is_dir;
+  sf_error_t m_last_error;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
@@ -175,7 +186,8 @@ private:
   void close_file();
   bool write_file(const char* ap_data, size_t a_size, bool a_prev_ok = true);
   bool write_file_str(const char* ap_data, bool a_prev_ok = true);
-  void dir_info_to_txt_file();
+  bool dir_info_to_txt_file();
+  bool fs_error_handle(irs_u8 a_command);
 };
 
 } // namespace irs
