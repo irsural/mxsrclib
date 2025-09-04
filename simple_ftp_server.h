@@ -48,6 +48,7 @@ public:
   explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs);
   ~simple_ftp_server_t();
   void tick();
+  bool is_transfer_performing() const;
 
 private:
   enum {
@@ -169,6 +170,7 @@ private:
   fs_result_t m_fs_result;
   irs_string_t m_file_path;
   irs_u32 m_file_path_size;
+  bool m_is_transfer_performing;
 
   void show_status() const;
   bool open_file();

@@ -39,7 +39,8 @@ simple_ftp_server_t::simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs):
   m_dir_info_buf(),
   m_fs_result(fsr_success),
   m_file_path(),
-  m_file_path_size(0)
+  m_file_path_size(0),
+  m_is_transfer_performing(false)
 {
   m_dir_info_buf.reserve(m_dir_info_buf_reserve);
 }
@@ -94,6 +95,7 @@ void simple_ftp_server_t::tick()
       m_status = st_read_header;
       m_oper_return = st_command_processing;
       m_is_read_time_inf = true;
+      m_is_transfer_performing = false;
       m_data_offset = 0;
       close_file();
       mp_dir_iterator.reset();
@@ -105,6 +107,7 @@ void simple_ftp_server_t::tick()
       memsetex(&m_packet, 1);
     } break;
     case st_command_processing: {
+      m_is_transfer_performing = true;
       if (m_is_checksum_error) {
         m_packet.command = error_command;
         m_packet.data_size = 0;
@@ -498,6 +501,11 @@ void simple_ftp_server_t::tick()
       }
     } break;
   }
+}
+
+bool simple_ftp_server_t::is_transfer_performing() const
+{
+  return m_is_transfer_performing;
 }
 
 void simple_ftp_server_t::net_to_u32(irs_u8* ap_data, irs_u32* ap_u32)
