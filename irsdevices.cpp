@@ -393,6 +393,7 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
   mp_simple_ftp_client->path_local(param_to_utf8(irst("Путь к локальному файлу")));
   if (mp_param_box->read_bool(irst("Получить файл"))) {
     mp_param_box->set_param(irst("Получить файл"), irst("false"));
+    m_is_progress_update_on = true;
     mp_param_box->save();
     mp_simple_ftp_client->start_read();
   }
@@ -639,7 +640,9 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_activated(false),
   m_activation_timer(irs::make_cnt_s(1)),
   mp_hardflow_create_foo(NULL),
-  mp_simple_ftp_client(NULL)
+  mp_simple_ftp_client(NULL),
+  progress_timer(irs::make_cnt_s(1)),
+  m_is_progress_update_on(false)
   #ifdef __BORLANDC__
   ,
   m_wait_response(false),
@@ -666,6 +669,7 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_bool(irst("Получить файл"), false);
     mp_param_box->add_edit(irst("Путь к файлу (папке) на устройстве"), irst(""));
     mp_param_box->add_edit(irst("Путь к локальному файлу"), irst(""));
+    mp_param_box->add_edit(irst("Прогресс Передача файла или папки"), irst(""));
   } else {
     vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
@@ -848,6 +852,28 @@ void irs::modbus_assembly_t::tick()
       // Цикл для ускорения
       mp_simple_ftp_client->tick();
       mp_modbus_client_hardflow->tick();
+    }
+    if (m_is_progress_update_on && progress_timer.check() &&
+      mp_simple_ftp_client->is_remote_size_received())
+    {
+      class space_separator : public std::numpunct<char_t> {
+      protected:
+        virtual char_t do_thousands_sep() const { return L' '; } // Задаем пробел как разделитель
+        virtual std::string do_grouping() const { return "\3"; } // Группировка по 3 цифры
+        virtual char_t do_decimal_point() const { return ','; }
+      };
+      stringstream_t progress_strm;
+      locale loc(locale(), dynamic_cast<numpunct<char_t>*>(new space_separator()));
+      progress_strm.imbue(loc);
+      irs_u32 progress = mp_simple_ftp_client->progress();
+      irs_u32 size = mp_simple_ftp_client->remote_size();
+      m_is_progress_update_on = (progress != size);
+      progress_strm << irst("Передано ") << progress << irst(" из ") << size << irst(" байт");
+      if (size != 0) {
+        progress_strm << irst("; ") << fixed << setprecision(2) <<
+          static_cast<double>(progress)/size*100 << irst(" %");
+      }
+      mp_param_box->set_param(irst("Прогресс Передача файла или папки"), progress_strm.str());
     }
   }
 

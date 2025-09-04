@@ -212,6 +212,8 @@ private:
   error_string_list_type m_error_list;
   hardflow_create_foo_t mp_hardflow_create_foo;
   handle_t<simple_ftp_client_t> mp_simple_ftp_client;
+  irs::loop_timer_t progress_timer;
+  bool m_is_progress_update_on;
 
   #ifdef __BORLANDC__
   ip_collector_t* mp_ip_collector;
