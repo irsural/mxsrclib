@@ -64,6 +64,9 @@ public:
   void start_read_version();
   void path_local(const std::string& a_path);
   void path_remote(const std::string& a_path);
+  irs_u32 remote_size() const;
+  bool is_remote_size_received() const;
+  irs_u32 progress() const;
   void tick();
 
 private:
@@ -157,6 +160,8 @@ private:
   fs_t::file_t* mp_file;
   bool m_is_file_opened;
   irs_u32 m_file_size;
+  bool m_is_remote_size_received;
+  irs_u32 m_progress;
   bool m_is_checksum_error;
   irs_u8 m_packet_id_prev;
   bool m_is_packed_id_prev_exist;

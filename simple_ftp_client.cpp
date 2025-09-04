@@ -105,6 +105,8 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   mp_file(IRS_NULL),
   m_is_file_opened(false),
   m_file_size(0),
+  m_is_remote_size_received(false),
+  m_progress(0),
   m_is_checksum_error(false),
   m_packet_id_prev(0),
   m_is_packed_id_prev_exist(false),
@@ -215,6 +217,18 @@ void simple_ftp_client_t::path_remote(const std::string& a_path)
 {
   m_path_remote = a_path;
 }
+irs_u32 simple_ftp_client_t::remote_size() const
+{
+  return m_file_size;
+}
+bool simple_ftp_client_t::is_remote_size_received() const
+{
+  return m_is_remote_size_received;
+}
+irs_u32 simple_ftp_client_t::progress() const
+{
+  return m_progress;
+}
 void simple_ftp_client_t::tick()
 {
   m_fixed_flow.tick();
@@ -234,6 +248,8 @@ void simple_ftp_client_t::tick()
     } break;
     case st_start_wait: {
       if (m_start_read) {
+        m_is_remote_size_received = false;
+        m_progress = true;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
         m_measure_time.start();
@@ -357,6 +373,7 @@ void simple_ftp_client_t::tick()
         irs_u8& is_dir = m_packet.data[sizeof(irs_u32)];
         m_is_dir = is_dir ? true : false;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
+        m_is_remote_size_received = true;
         m_status = st_read_command;
       } else {
         if (!fs_error_handle(m_packet.command)) {
@@ -422,6 +439,7 @@ void simple_ftp_client_t::tick()
           }
           if (fsr == fsr_success) {
             m_data_offset += m_packet.data_size;
+            m_progress = m_data_offset;
             m_packet.command = read_command_response;
             m_packet_id = m_packet.packet_id;
             m_packet_id_prev = m_packet.packet_id;
