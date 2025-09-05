@@ -393,7 +393,9 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
   mp_simple_ftp_client->path_local(param_to_utf8(irst("Путь к локальному файлу")));
   if (mp_param_box->read_bool(irst("Получить файл"))) {
     mp_param_box->set_param(irst("Получить файл"), irst("false"));
+    mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
     m_is_progress_update_on = true;
+    m_last_error_show = true;
     mp_param_box->save();
     mp_simple_ftp_client->start_read();
   }
@@ -642,7 +644,8 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_hardflow_create_foo(NULL),
   mp_simple_ftp_client(NULL),
   progress_timer(irs::make_cnt_s(1)),
-  m_is_progress_update_on(false)
+  m_is_progress_update_on(false),
+  m_last_error_show(false)
   #ifdef __BORLANDC__
   ,
   m_wait_response(false),
@@ -670,6 +673,7 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_edit(irst("Путь к файлу (папке) на устройстве"), irst(""));
     mp_param_box->add_edit(irst("Путь к локальному файлу"), irst(""));
     mp_param_box->add_edit(irst("Прогресс Передача файла или папки"), irst(""));
+    mp_param_box->add_edit(irst("Последняя ошибка Передача файла или папки"), irst(""));
   } else {
     vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
@@ -852,6 +856,25 @@ void irs::modbus_assembly_t::tick()
       // Цикл для ускорения
       mp_simple_ftp_client->tick();
       mp_modbus_client_hardflow->tick();
+    }
+    if (m_last_error_show && mp_simple_ftp_client->is_done()) {
+      m_last_error_show = false;
+      string_t last_error;
+      switch (mp_simple_ftp_client->last_error()) {
+        case sfe_no_error: {
+          last_error = irst("Ошибки отсутствуют");
+        } break;
+        case sfe_remote_path_not_exist_error: {
+          last_error = irst("Путь на удаленном устройстве не существует");
+        } break;
+        case sfe_remote_other_fs_error: {
+          last_error = irst("Ошибка файловой системы на удаленном устройстве");
+        } break;
+        case sfe_local_fs_error: {
+          last_error = irst("Ошибка локальной файловой системы");
+        } break;
+      }
+      mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), last_error);
     }
     if (m_is_progress_update_on && progress_timer.check() &&
       mp_simple_ftp_client->is_remote_size_received())
