@@ -45,16 +45,12 @@ namespace irs {
 class simple_ftp_server_t
 {
 public:
-  explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs);
+  explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs, size_t a_channel = 2);
   ~simple_ftp_server_t();
   void tick();
   bool is_transfer_performing() const;
 
 private:
-  enum {
-    channel = 2,
-  };
-
   enum {
     set_file_path_command = 1,
     // При чтении размера также считывается признак - это размер папки или файла
@@ -171,6 +167,7 @@ private:
   irs_string_t m_file_path;
   irs_u32 m_file_path_size;
   bool m_is_transfer_performing;
+  size_t m_channel;
 
   void show_status() const;
   bool open_file();
