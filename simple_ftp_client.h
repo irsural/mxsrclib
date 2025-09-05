@@ -52,7 +52,7 @@ enum sf_error_t {
 class simple_ftp_client_t
 {
 public:
-  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs);
+  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs, size_t a_channel = 2);
   ~simple_ftp_client_t();
   irs_u32 server_version() const;
   void start_read();
@@ -70,10 +70,6 @@ public:
   void tick();
 
 private:
-  enum {
-    channel = 2,
-  };
-
   enum {
     set_file_path_command = 1,
     // При чтении размера также считывается признак - это размер папки или файла
@@ -182,6 +178,7 @@ private:
   bool m_is_dir_info_buf_hold;
   bool m_is_dir;
   sf_error_t m_last_error;
+  size_t m_channel;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);

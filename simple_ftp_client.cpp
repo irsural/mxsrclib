@@ -94,7 +94,7 @@ fs_result_t dir_iterator_simple_ftp_t::next_to_begin()
   return fsr_success;
 }
 
-simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
+simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs, size_t a_channel):
   mp_hardflow(ap_hardflow),
   mp_fs(ap_fs),
   m_status(st_start_wait),
@@ -125,7 +125,8 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs):
   m_dir_info_buf(),
   m_is_dir_info_buf_hold(false),
   m_is_dir(false),
-  m_last_error(sfe_no_error)
+  m_last_error(sfe_no_error),
+  m_channel(a_channel)
 {
 }
 simple_ftp_client_t::~simple_ftp_client_t()
@@ -558,7 +559,7 @@ void simple_ftp_client_t::tick()
           m_packet.data_size);
       }
       size_t packet_size = header_size + m_packet.data_size;
-      m_fixed_flow.write(channel, reinterpret_cast<irs_u8*>(&m_packet), packet_size);
+      m_fixed_flow.write(m_channel, reinterpret_cast<irs_u8*>(&m_packet), packet_size);
       m_status = st_write_packet_wait;
     } break;
     case st_write_packet_wait: {
@@ -576,7 +577,7 @@ void simple_ftp_client_t::tick()
 
     case st_read_header: {
       size_t header_size = sizeof(packet_t) - packet_t::data_max_size;
-      m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(&m_packet), header_size);
+      m_fixed_flow.read(m_channel, reinterpret_cast<irs_u8*>(&m_packet), header_size);
       m_status = st_read_header_wait;
     } break;
     case st_read_header_wait: {
@@ -607,7 +608,7 @@ void simple_ftp_client_t::tick()
 
             // Очистка недочитанных данных
             m_fixed_flow.read(
-              channel, reinterpret_cast<irs_u8*>(&m_packet.data), packet_t::data_max_size
+              m_channel, reinterpret_cast<irs_u8*>(&m_packet.data), packet_t::data_max_size
             );
 
             m_is_checksum_error = true;
@@ -628,7 +629,7 @@ void simple_ftp_client_t::tick()
       }
     } break;
     case st_read_data: {
-      m_fixed_flow.read(channel, reinterpret_cast<irs_u8*>(m_packet.data), m_packet.data_size);
+      m_fixed_flow.read(m_channel, reinterpret_cast<irs_u8*>(m_packet.data), m_packet.data_size);
       m_status = st_read_data_wait;
     } break;
     case st_read_data_wait: {
