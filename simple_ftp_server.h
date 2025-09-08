@@ -48,6 +48,7 @@ public:
   explicit simple_ftp_server_t(hardflow_t* ap_hardflow, fs_t* ap_fs, size_t a_channel = 2);
   ~simple_ftp_server_t();
   void tick();
+  void abort();
   bool is_transfer_performing() const;
 
 private:
