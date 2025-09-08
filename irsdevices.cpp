@@ -391,14 +391,19 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
   mp_simple_ftp_client.reset(new simple_ftp_client_t(ap_hardflow.get(), fs_cppbuilder()));
   mp_simple_ftp_client->path_remote(param_to_utf8(irst("Путь к файлу (папке) на устройстве")));
   mp_simple_ftp_client->path_local(param_to_utf8(irst("Путь к локальному файлу")));
+  mp_param_box->set_param(irst("Прогресс Передача файла или папки"),
+    irst(""));
+  mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"),
+    irst("Начальное состояние"));
+  m_last_error_show = false;
   if (mp_param_box->read_bool(irst("Получить файл"))) {
     mp_param_box->set_param(irst("Получить файл"), irst("false"));
     mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
     m_is_progress_update_on = true;
     m_last_error_show = true;
-    mp_param_box->save();
     mp_simple_ftp_client->start_read();
   }
+  mp_param_box->save();
 }
 irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
 {
@@ -873,8 +878,12 @@ void irs::modbus_assembly_t::tick()
         case sfe_local_fs_error: {
           last_error = irst("Ошибка локальной файловой системы");
         } break;
+        case sfe_timeout_error: {
+          last_error = irst("Передача прервана по таймауту");
+        } break;
       }
       mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), last_error);
+      mp_param_box->save();
     }
     if (m_is_progress_update_on && progress_timer.check() &&
       mp_simple_ftp_client->is_remote_size_received())
@@ -897,6 +906,7 @@ void irs::modbus_assembly_t::tick()
           static_cast<double>(progress)/size*100 << irst(" %");
       }
       mp_param_box->set_param(irst("Прогресс Передача файла или папки"), progress_strm.str());
+      mp_param_box->save();
     }
   }
 
