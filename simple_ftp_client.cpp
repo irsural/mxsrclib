@@ -230,6 +230,11 @@ irs_u32 simple_ftp_client_t::progress() const
 {
   return m_progress;
 }
+void simple_ftp_client_t::abort()
+{
+  IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Команда прервать передачу");
+  m_status = st_start;
+}
 void simple_ftp_client_t::tick()
 {
   m_fixed_flow.tick();
@@ -570,6 +575,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка записи пакета");
+          m_last_error = sfe_timeout_error;
           m_status = st_start;
         } break;
       }
@@ -618,6 +624,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка чтения заголовка");
+          m_last_error = sfe_timeout_error;
           m_status = st_start;
         } break;
       }
@@ -648,6 +655,7 @@ void simple_ftp_client_t::tick()
         } break;
         case irs::hardflow::fixed_flow_t::status_error: {
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp Ошибка чтения данных");
+          m_last_error = sfe_timeout_error;
           m_status = st_start;
         } break;
       }

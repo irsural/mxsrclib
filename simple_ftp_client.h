@@ -47,6 +47,7 @@ enum sf_error_t {
   sfe_remote_path_not_exist_error,
   sfe_remote_other_fs_error,
   sfe_local_fs_error,
+  sfe_timeout_error,
 };
 
 class simple_ftp_client_t
@@ -67,6 +68,7 @@ public:
   irs_u32 remote_size() const;
   bool is_remote_size_received() const;
   irs_u32 progress() const;
+  void abort();
   void tick();
 
 private:
