@@ -513,6 +513,8 @@ void simple_ftp_client_t::tick()
         m_status = st_show_data;
         if (m_is_dir) {
           if (m_is_read_dir_to_mem) {
+            m_is_dir_info_buf_hold = true;
+          } else {
             if (!dir_info_to_txt_file()) {
               // В этот момент сервер уже все успешно отправил, поэтому мы ему не сообщаем об ошибке,
               // а просто прекращаем операции и сообщаем пользователю этого класса об ошибке
@@ -521,8 +523,6 @@ void simple_ftp_client_t::tick()
               m_status = st_start;
             }
             m_is_dir_info_buf_hold = false;
-          } else {
-            m_is_dir_info_buf_hold = true;
           }
         }
       } else {
