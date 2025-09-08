@@ -246,7 +246,9 @@ void simple_ftp_client_t::tick()
   switch (m_status) {
     case st_start: {
       close_file();
-      m_dir_info_buf.clear();
+      if (!m_is_dir_info_buf_hold) {
+        m_dir_info_buf.clear();
+      }
       m_start_read = false;
       m_is_read_version = false;
       m_is_read_dir_to_mem = false;
@@ -378,9 +380,15 @@ void simple_ftp_client_t::tick()
         net_to_u32(m_packet.data, &m_file_size);
         irs_u8& is_dir = m_packet.data[sizeof(irs_u32)];
         m_is_dir = is_dir ? true : false;
-        IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
-        m_is_remote_size_received = true;
-        m_status = st_read_command;
+        if (m_is_read_dir_to_mem && !m_is_dir) {
+          IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Error Path not directory");
+          m_last_error = sfe_remote_path_not_exist_error;
+          m_status = st_start;
+        } else {
+          IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
+          m_is_remote_size_received = true;
+          m_status = st_read_command;
+        }
       } else {
         if (!fs_error_handle(m_packet.command)) {
           m_status = st_read_size_command;
@@ -391,6 +399,7 @@ void simple_ftp_client_t::tick()
       if (open_file()) {
         m_packet.command = read_command;
         m_packet.data_size = 0;
+        m_dir_info_buf.clear();
         m_status = st_write_packet;
         m_oper_return = st_read_command_wait;
       } else {
@@ -503,14 +512,18 @@ void simple_ftp_client_t::tick()
       if (m_data_offset >= m_file_size) {
         m_status = st_show_data;
         if (m_is_dir) {
-          if (!dir_info_to_txt_file()) {
-            // В этот момент сервер уже все успешно отправил, поэтому мы ему не сообщаем об ошибке,
-            // а просто прекращаем операции и сообщаем пользователю этого класса об ошибке
-            // файловой системы
-            m_last_error = sfe_local_fs_error;
-            m_status = st_start;
+          if (m_is_read_dir_to_mem) {
+            if (!dir_info_to_txt_file()) {
+              // В этот момент сервер уже все успешно отправил, поэтому мы ему не сообщаем об ошибке,
+              // а просто прекращаем операции и сообщаем пользователю этого класса об ошибке
+              // файловой системы
+              m_last_error = sfe_local_fs_error;
+              m_status = st_start;
+            }
+            m_is_dir_info_buf_hold = false;
+          } else {
+            m_is_dir_info_buf_hold = true;
           }
-          m_is_dir_info_buf_hold = false;
         }
       } else {
         m_status = st_read_header;
