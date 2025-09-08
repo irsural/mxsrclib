@@ -504,6 +504,12 @@ void simple_ftp_server_t::tick()
   }
 }
 
+void simple_ftp_server_t::abort()
+{
+  IRS_LIB_SIMP_FTP_SR_DBG_MSG_DETAIL("simple_ftp Команда прервать передачу");
+  m_status = st_start_wait;
+}
+
 bool simple_ftp_server_t::is_transfer_performing() const
 {
   return m_is_transfer_performing;
