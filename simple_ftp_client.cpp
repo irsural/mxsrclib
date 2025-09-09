@@ -252,6 +252,7 @@ void simple_ftp_client_t::tick()
       m_start_read = false;
       m_is_read_version = false;
       m_is_read_dir_to_mem = false;
+      m_last_error = sfe_no_error;
       m_status = st_start_wait;
     } break;
     case st_start_wait: {
