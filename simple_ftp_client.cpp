@@ -257,7 +257,8 @@ void simple_ftp_client_t::tick()
     case st_start_wait: {
       if (m_start_read) {
         m_is_remote_size_received = false;
-        m_progress = true;
+        m_progress = 0;
+        m_is_checksum_error = false;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
         m_measure_time.start();
