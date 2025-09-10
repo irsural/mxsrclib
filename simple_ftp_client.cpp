@@ -546,14 +546,7 @@ void simple_ftp_client_t::tick()
       if (read_time) {
         mlog() << "Скорость чтения файла, байт/с: " << m_file_size/read_time << endl;
       }
-      #ifdef __BORLANDC__
-      // Здесь используется функция utf8_to_wstring, доступная в mxsrclib только для C++ Builder
-      std::wstring fn_wstr = utf8_to_wstring(m_path_local);
-      std::string fn_str = irs::convert_str_t<wchar_t, char>(fn_wstr.c_str()).get();
-      mlog() << sdatetime << "Файл \"" << fn_str << "\" успешно прочитан" << endl;
-      #else //__BORLANDC__
       mlog() << sdatetime << "Файл успешно прочитан" << endl;
-      #endif //__BORLANDC__
       #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
 
       // Сообщить о завершении всех операций функции is_done
