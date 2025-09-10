@@ -213,6 +213,10 @@ void simple_ftp_client_t::start_read_version()
 void simple_ftp_client_t::path_local(const std::string& a_path)
 {
   m_path_local = a_path;
+  
+//  std::wstring fn_wstr = utf8_to_wstring(m_path_local);
+//  std::string fn_str = irs::convert_str_t<wchar_t, char>(fn_wstr.c_str()).get();
+//  irs::mlog() << "simple_ftp_client_t::path_local(" << fn_str << ")" << endl;
 }
 void simple_ftp_client_t::path_remote(const std::string& a_path)
 {
