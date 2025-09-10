@@ -402,7 +402,7 @@ void simple_ftp_client_t::tick()
       }
     } break;
     case st_read_command: {
-      if (open_file()) {
+      if (m_is_read_dir_to_mem || open_file()) {
         m_packet.command = read_command;
         m_packet.data_size = 0;
         m_dir_info_buf.clear();
