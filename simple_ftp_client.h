@@ -59,7 +59,6 @@ public:
   void start_read();
   void start_read_dir();
   handle_t<dir_iterator_t> get_dir_iterator();
-//  void start_read_binary();
   bool is_done() const;
   sf_error_t last_error() const;
   void start_read_version();
