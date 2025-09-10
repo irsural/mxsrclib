@@ -256,7 +256,6 @@ void simple_ftp_client_t::tick()
       m_start_read = false;
       m_is_read_version = false;
       m_is_read_dir_to_mem = false;
-      m_last_error = sfe_no_error;
       m_status = st_start_wait;
     } break;
     case st_start_wait: {
@@ -264,6 +263,7 @@ void simple_ftp_client_t::tick()
         m_is_remote_size_received = false;
         m_progress = 0;
         m_is_checksum_error = false;
+        m_last_error = sfe_no_error;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
         m_measure_time.start();
