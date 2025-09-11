@@ -80,6 +80,26 @@ public:
   virtual fs_result_t unlink(const std::string& a_file_name) = 0;
 };
 
+// Удаляет кавычки с обоих концов строки (если они есть)
+// Предназначена для удаления кавычек из путей к файлам и папкам
+// В функциях fs_t в путях кавычки недопустимы
+template<typename string_type>
+string_type remove_quotes(const string_type& path)
+{
+  typedef typename string_type::value_type char_type;
+
+  if (path.size() >= 2) {
+    char_type quote1 = static_cast<char_type>('\"');
+    char_type quote2 = static_cast<char_type>('\'');
+
+    if ((path[0] == quote1 && path[path.size() - 1] == quote1) ||
+        (path[0] == quote2 && path[path.size() - 1] == quote2)) {
+      return path.substr(1, path.size() - 2);
+    }
+  }
+  return path;
+}
+
 } // namespace irs
 
 #endif // IRS_FS_H
