@@ -772,5 +772,198 @@ bool simple_ftp_client_t::fs_error_handle(irs_u8 a_command)
 }
 
 
+simple_ftp_client_utils_t::simple_ftp_client_utils_t(
+  handle_t<simple_ftp_client_t> ap_simple_ftp_client,
+  char ap_local_path_separator,
+  char ap_remote_path_separator
+):
+  mp_simple_ftp_client(ap_simple_ftp_client),
+  mp_local_path_separator(ap_local_path_separator),
+  mp_remote_path_separator(ap_remote_path_separator),
+  m_status(st_start_wait),
+  m_path_local(),
+  m_path_remote(),
+  m_last_error(sfe_no_error),
+  m_dir_size(0),
+  m_is_remote_size_received(false),
+  m_progress(0),
+  mp_dir_it(),
+  m_is_dir_utils(false),
+  m_is_file_readed(false),
+  m_start_read(false)
+{
+}
+void simple_ftp_client_utils_t::tick()
+{
+  mp_simple_ftp_client->tick();
+  switch (m_status) {
+    case st_start: {
+      m_start_read = false;
+      m_status = st_start_wait;
+    } break;
+    case st_start_wait: {
+      if (m_start_read) {
+        m_is_remote_size_received = false;
+        m_is_file_readed = false;
+        m_last_error = sfe_no_error;
+        mp_simple_ftp_client->start_read_dir();
+        m_status = st_get_dir_info;
+      }
+    } break;
+    case st_get_dir_info: {
+      if (mp_simple_ftp_client->is_done()) {
+        m_last_error = mp_simple_ftp_client->last_error();
+        if (m_last_error == sfe_no_error) {
+          mp_dir_it = mp_simple_ftp_client->get_dir_iterator();
+          m_progress = 0;
+          
+          file_info_t file_info;
+          m_dir_size = 0;
+          while (mp_dir_it->next_dir_item(&file_info) == fsr_success) {
+            if (!file_info.is_dir) {
+              m_dir_size += file_info.size;
+            }
+          }
+          mp_dir_it->next_to_begin();
+          m_is_remote_size_received = true;
+          
+          m_status = st_next_file;
+        } else {
+          m_status = st_start;
+        }
+      }
+    } break;
+    case st_next_file: {
+      file_info_t file_info;
+      bool is_file_finded = false;
+      while (mp_dir_it->next_dir_item(&file_info) == fsr_success) {
+        if (!file_info.is_dir) {
+          is_file_finded = true;
+
+          mp_simple_ftp_client->path_local(m_path_local + file_info.name);
+          mp_simple_ftp_client->path_remote(m_path_remote + file_info.name);
+          if (m_is_file_readed) {
+            m_progress += mp_simple_ftp_client->remote_size();
+          }
+          mp_simple_ftp_client->start_read();
+          break;
+        }
+      }
+      if (is_file_finded) {
+        m_status = st_get_file;
+      } else {
+        m_status = st_start;
+      }
+    } break;
+    case st_get_file: {
+      if (mp_simple_ftp_client->is_done()) {
+        sf_error_t last_error_cl = mp_simple_ftp_client->last_error();
+        switch (last_error_cl) {
+          case sfe_local_fs_error:
+          case sfe_timeout_error: {
+            m_last_error = last_error_cl;
+            m_status = st_start;
+          } break;
+          default: {
+            m_is_file_readed = true;
+            m_status = st_next_file;
+          } break;
+        }
+      }
+    } break;
+  }
+}
+void simple_ftp_client_utils_t::start_read_dir_files()
+{
+  m_start_read = true;
+  m_is_dir_utils = true;
+}
+bool simple_ftp_client_utils_t::is_done() const
+{
+  if (m_is_dir_utils) {
+    return !m_start_read;
+  } else {
+    return mp_simple_ftp_client->is_done();
+  }
+}
+void simple_ftp_client_utils_t::path_local(const std::string& a_path)
+{
+  mp_simple_ftp_client->path_local(a_path);
+  m_path_local = path_normalize(a_path, mp_local_path_separator);
+}
+void simple_ftp_client_utils_t::path_remote(const std::string& a_path)
+{
+  mp_simple_ftp_client->path_remote(a_path);
+  m_path_remote = path_normalize(a_path, mp_remote_path_separator);
+}
+sf_error_t simple_ftp_client_utils_t::last_error() const
+{
+  if (m_is_dir_utils) {
+    return m_last_error;
+  } else {
+    return mp_simple_ftp_client->last_error();
+  }
+}
+irs_u64 simple_ftp_client_utils_t::remote_size() const
+{
+  if (m_is_dir_utils) {
+    return m_dir_size;
+  } else {
+    return mp_simple_ftp_client->remote_size();
+  }
+}
+bool simple_ftp_client_utils_t::is_remote_size_received() const
+{
+  if (m_is_dir_utils) {
+    return m_is_remote_size_received;
+  } else {
+    return mp_simple_ftp_client->is_remote_size_received();
+  }
+}
+irs_u64 simple_ftp_client_utils_t::progress() const
+{
+  if (m_is_dir_utils) {
+    return m_progress + mp_simple_ftp_client->progress();
+  } else {
+    return mp_simple_ftp_client->progress();
+  }
+}
+std::string simple_ftp_client_utils_t::path_normalize(const std::string& a_path, char a_separator)
+{
+  if ((a_path.size() > 0) && (a_path[a_path.size() - 1] != a_separator)) {
+    return a_path + a_separator;
+  } else {
+    return a_path;
+  }
+}
+void simple_ftp_client_utils_t::abort()
+{
+  mp_simple_ftp_client->abort();
+  m_status = st_start;
+}
+
+irs_u32 simple_ftp_client_utils_t::server_version() const
+{
+  return mp_simple_ftp_client->server_version();
+}
+void simple_ftp_client_utils_t::start_read()
+{
+  m_is_dir_utils = false;
+  mp_simple_ftp_client->start_read();
+}
+void simple_ftp_client_utils_t::start_read_dir()
+{
+  m_is_dir_utils = false;
+  mp_simple_ftp_client->start_read_dir();
+}
+handle_t<dir_iterator_t> simple_ftp_client_utils_t::get_dir_iterator()
+{
+  return mp_simple_ftp_client->get_dir_iterator();
+}
+void simple_ftp_client_utils_t::start_read_version()
+{
+  mp_simple_ftp_client->start_read_version();
+}
+
 } // namespace irs
 

@@ -193,6 +193,54 @@ private:
   bool fs_error_handle(irs_u8 a_command);
 };
 
+class simple_ftp_client_utils_t
+{
+public:
+  simple_ftp_client_utils_t(handle_t<simple_ftp_client_t> ap_simple_ftp_client,
+    char ap_local_path_separator = '\\', char ap_remote_path_separator = '/');
+  void tick();
+  void start_read_dir_files();
+  bool is_done() const;
+  void path_local(const std::string& a_path);
+  void path_remote(const std::string& a_path);
+  sf_error_t last_error() const;
+  irs_u64 remote_size() const;
+  bool is_remote_size_received() const;
+  irs_u64 progress() const;
+  void abort();
+
+  irs_u32 server_version() const;
+  void start_read();
+  void start_read_dir();
+  handle_t<dir_iterator_t> get_dir_iterator();
+  void start_read_version();
+private:
+  enum status_t {
+    st_start,
+    st_start_wait,
+    st_get_dir_info,
+    st_next_file,
+    st_get_file,
+  };
+
+  handle_t<simple_ftp_client_t> mp_simple_ftp_client;
+  const char mp_local_path_separator;
+  const char mp_remote_path_separator;
+  status_t m_status;
+  std::string m_path_local;
+  std::string m_path_remote;
+  sf_error_t m_last_error;
+  irs_u64 m_dir_size;
+  bool m_is_remote_size_received;
+  irs_u32 m_progress;
+  handle_t<dir_iterator_t> mp_dir_it;
+  bool m_is_dir_utils;
+  bool m_is_file_readed;
+  bool m_start_read;
+
+  static std::string path_normalize(const std::string& a_path, char a_separator);
+};
+
 } // namespace irs
 
 #endif //SIMPLE_FTP_CLIENTH
