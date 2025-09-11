@@ -123,16 +123,16 @@ fs_cppbuilder_t::file_t* fs_cppbuilder_t::open(const std::string& a_filename,
   std::string mode = "";
   switch (a_mode) {
     case (file_mode_t::fm_read): {
-      mode = "r";
+      mode = "rb";
     } break;
     case (file_mode_t::fm_write): {
-      mode = "w";
+      mode = "wb";
     } break;
     case (file_mode_t::fm_readwrite): {
-      mode = "w+";
+      mode = "w+b";
     } break;
     case (file_mode_t::fm_append): {
-      mode = "a+";
+      mode = "a+b";
     } break;
   }
   return _wfopen(utf8_to_wstring(a_filename).c_str(), utf8_to_wstring(mode).c_str());
@@ -224,10 +224,22 @@ bool fs_cppbuilder_t::is_file_exists(const std::string& a_file_name, fs_result_t
   return false;
 }
 
-fs_result_t fs_cppbuilder_t::unlink(const std::string&)
+fs_result_t fs_cppbuilder_t::unlink(const std::string& a_file_name)
 {
-  IRS_LIB_ERROR(ec_standard, "Операция fs_cppbuilder_t::unlink не поддерживается");
-  return fs_result_t::fsr_error;
+  const wchar_t* file_name = utf8_to_wstring(a_file_name).c_str();
+
+  DWORD attributes = GetFileAttributesW(file_name);
+  if (attributes == INVALID_FILE_ATTRIBUTES) {
+    return fsr_error; // Путь не существует
+  }
+
+  if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+    // Это папка - удаляем как папку
+    return RemoveDirectoryW(file_name) ? irs::fsr_success : irs::fsr_error;
+  } else {
+    // Это файл - удаляем как файл
+    return DeleteFileW(file_name) ? irs::fsr_success : irs::fsr_error;
+  }
 }
 
 fs_result_t fs_cppbuilder_t::mkdir(const std::string&)

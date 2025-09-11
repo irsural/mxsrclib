@@ -387,14 +387,31 @@ irs::handle_t<irs::mxdata_t> irs::modbus_assembly_t::make_client(
 void irs::modbus_assembly_t::make_simple_ftp_client(
   handle_t<hardflow_t> ap_hardflow)
 {
-  mp_simple_ftp_client.reset();
-  mp_simple_ftp_client.reset(new simple_ftp_client_t(ap_hardflow.get(), fs_cppbuilder()));
-  mp_simple_ftp_client->path_remote(param_to_utf8(irst("Путь к файлу (папке) на устройстве")));
-  mp_simple_ftp_client->path_local(param_to_utf8(irst("Путь к локальному файлу")));
-  if (mp_param_box->read_bool(irst("Получить файл"))) {
-    mp_param_box->set_param(irst("Получить файл"), irst("false"));
-    mp_simple_ftp_client->start_read();
+  mp_simple_ftp_client_utils.reset();
+  mp_simple_ftp_client_utils.reset(new simple_ftp_client_utils_t(
+    new simple_ftp_client_t(ap_hardflow.get(), fs_cppbuilder())));
+
+  mp_simple_ftp_client_utils->path_remote(
+    param_to_utf8(irst("Путь к файлу (папке) на устройстве")));
+  mp_simple_ftp_client_utils->path_local(param_to_utf8(irst("Путь к локальному файлу (папке)")));
+
+  mp_param_box->set_param(irst("Прогресс Передача файла или папки"),
+    irst(""));
+  mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"),
+    irst("Начальное состояние"));
+  m_last_error_show = false;
+  if (mp_param_box->read_bool(irst("Запуск передачи"))) {
+    mp_param_box->set_param(irst("Запуск передачи"), irst("false"));
+    mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
+    m_is_progress_update_on = true;
+    m_last_error_show = true;
+    if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
+      mp_simple_ftp_client_utils->start_read_dir_files();
+    } else {
+      mp_simple_ftp_client_utils->start_read();
+    }
   }
+  mp_param_box->save();
 }
 irs::handle_t<irs::hardflow_t> irs::modbus_assembly_t::make_hardflow()
 {
@@ -630,7 +647,6 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_param_box(make_assembly_param_box(irst("MODBUS ") +
     protocol_name(a_protocol), m_conf_file_name)),
   m_usb_hid_device_path_map(),
-  //m_param_box_tune(this, mp_param_box.get(), a_protocol),
   mp_tstlan4(ap_tstlan4),
   m_enabled(false),
   mp_modbus_client_hardflow(NULL),
@@ -638,7 +654,10 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   m_activated(false),
   m_activation_timer(irs::make_cnt_s(1)),
   mp_hardflow_create_foo(NULL),
-  mp_simple_ftp_client(NULL)
+  mp_simple_ftp_client_utils(NULL),
+  progress_timer(irs::make_cnt_s(1)),
+  m_is_progress_update_on(false),
+  m_last_error_show(false)
   #ifdef __BORLANDC__
   ,
   m_wait_response(false),
@@ -662,9 +681,12 @@ void irs::modbus_assembly_t::tune_param_box()
     mp_param_box->add_combo(irst("Имя устройства"), &devices_items);
     update_param_box_devices_field();
     mp_param_box->add_edit(irst("Номер канала"), irst("1"));
-    mp_param_box->add_bool(irst("Получить файл"), false);
+    mp_param_box->add_bool(irst("Запуск передачи"), false);
+    mp_param_box->add_bool(irst("Получить все файлы в папке"), false);
     mp_param_box->add_edit(irst("Путь к файлу (папке) на устройстве"), irst(""));
-    mp_param_box->add_edit(irst("Путь к локальному файлу"), irst(""));
+    mp_param_box->add_edit(irst("Путь к локальному файлу (папке)"), irst(""));
+    mp_param_box->add_edit(irst("Прогресс Передача файла или папки"), irst(""));
+    mp_param_box->add_edit(irst("Последняя ошибка Передача файла или папки"), irst(""));
   } else {
     vector<string_type> devices_items;
     mp_param_box->add_edit(irst("IP"), irst("127.0.0.1"));
@@ -831,7 +853,7 @@ void irs::modbus_assembly_t::destroy_modbus()
 {
   mp_tstlan4->connect(NULL);
   mp_modbus_client.reset();
-  mp_simple_ftp_client.reset();
+  mp_simple_ftp_client_utils.reset();
   mp_modbus_client_hardflow.reset();
   m_activated = false;
 }
@@ -842,8 +864,61 @@ irs::mxdata_t* irs::modbus_assembly_t::mxdata()
 }
 void irs::modbus_assembly_t::tick()
 {
-  if (!mp_simple_ftp_client.is_empty()) {
-    mp_simple_ftp_client->tick();
+  if (!mp_simple_ftp_client_utils.is_empty()) {
+    for (int i = 0; i < 10; i++) {
+      // Цикл для ускорения
+      mp_simple_ftp_client_utils->tick();
+      mp_modbus_client_hardflow->tick();
+    }
+    if (m_last_error_show && mp_simple_ftp_client_utils->is_done()) {
+      m_last_error_show = false;
+      string_t last_error;
+      switch (mp_simple_ftp_client_utils->last_error()) {
+        case sfe_no_error: {
+          last_error = irst("Ошибки отсутствуют");
+        } break;
+        case sfe_remote_path_not_exist_error: {
+          last_error = irst("Путь на удаленном устройстве не существует");
+          if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
+            last_error += irst(" (Может есть такой файл, но нет такой папки)");
+          }
+        } break;
+        case sfe_remote_other_fs_error: {
+          last_error = irst("Ошибка файловой системы на удаленном устройстве");
+        } break;
+        case sfe_local_fs_error: {
+          last_error = irst("Ошибка локальной файловой системы");
+        } break;
+        case sfe_timeout_error: {
+          last_error = irst("Передача прервана по таймауту");
+        } break;
+      }
+      mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), last_error);
+      mp_param_box->save();
+    }
+    if (m_is_progress_update_on && progress_timer.check() &&
+      mp_simple_ftp_client_utils->is_remote_size_received())
+    {
+      class space_separator: public std::numpunct<char_t> {
+      protected:
+        virtual char_t do_thousands_sep() const { return L' '; } // Задаем пробел как разделитель
+        virtual std::string do_grouping() const { return "\3"; } // Группировка по 3 цифры
+        virtual char_t do_decimal_point() const { return ','; }
+      };
+      stringstream_t progress_strm;
+      locale loc(locale(), dynamic_cast<numpunct<char_t>*>(new space_separator()));
+      progress_strm.imbue(loc);
+      irs_u64 progress = mp_simple_ftp_client_utils->progress();
+      irs_u64 size = mp_simple_ftp_client_utils->remote_size();
+      m_is_progress_update_on = (progress != size);
+      progress_strm << irst("Передано ") << progress << irst(" из ") << size << irst(" байт");
+      if (size != 0) {
+        progress_strm << irst("; ") << fixed << setprecision(2) <<
+          static_cast<double>(progress)/size*100 << irst(" %");
+      }
+      mp_param_box->set_param(irst("Прогресс Передача файла или папки"), progress_strm.str());
+      mp_param_box->save();
+    }
   }
 
   if (!mp_modbus_client.is_empty()) {
@@ -874,7 +949,7 @@ void irs::modbus_assembly_t::tick()
 std::string irs::modbus_assembly_t::param_to_utf8(string_type a_param)
 {
   string_type tstring = mp_param_box->get_param(a_param);
-  std::wstring param_wstring = std::wstring(tstring.begin(), tstring.end());
+  std::wstring param_wstring = IRS_WIDE_FROM_TYPE_STR(tstring.c_str());
   return wstring_to_utf8(remove_quotes(param_wstring));
 }
 void irs::modbus_assembly_t::show_options()

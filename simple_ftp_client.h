@@ -13,26 +13,67 @@
 
 #include <irsfinal.h>
 
+#define IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG
+
+#ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG
+//#define IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_STATUS
+#define IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+//#define IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_DETAIL
+//#define IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_PROGRESS
+#endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG
+
+#ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE(msg) IRS_LIB_DBG_MSG(msg)
+#else //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE(msg)
+#endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+
+#ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_DETAIL
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL(msg) IRS_LIB_DBG_MSG(msg)
+#else //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_DETAIL
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL(msg)
+#endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_DETAIL
+
+#ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_PROGRESS
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_PROGRESS(msg) IRS_LIB_DBG_MSG(msg)
+#else //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_PROGRESS
+#define IRS_LIB_SIMP_FTP_CL_DBG_MSG_PROGRESS(msg)
+#endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_PROGRESS
+
 namespace irs {
+
+enum sf_error_t {
+  sfe_no_error,
+  sfe_remote_path_not_exist_error,
+  sfe_remote_other_fs_error,
+  sfe_local_fs_error,
+  sfe_timeout_error,
+};
 
 class simple_ftp_client_t
 {
 public:
-  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs);
+  explicit simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs, size_t a_channel = 2);
+  ~simple_ftp_client_t();
   irs_u32 server_version() const;
   void start_read();
+  void start_read_dir();
+  handle_t<dir_iterator_t> get_dir_iterator();
   bool is_done() const;
+  sf_error_t last_error() const;
+  void start_read_version();
   void path_local(const std::string& a_path);
   void path_remote(const std::string& a_path);
+  irs_u32 remote_size() const;
+  bool is_remote_size_received() const;
+  irs_u32 progress() const;
+  void abort();
   void tick();
 
 private:
   enum {
-    channel = 2,
-  };
-
-  enum {
     set_file_path_command = 1,
+    // При чтении размера также считывается признак - это размер папки или файла
     read_size_command = 2,
     read_command = 3,
     read_command_response = 4,
@@ -40,9 +81,12 @@ private:
     error_command = 6,
     read_version_command = 7,
     file_path_response = 8,
+    path_not_exist_error_command = 9,
+    other_fs_error_command = 10,
   };
 
   enum status_t {
+    st_start,
     st_start_wait,
     st_read_version_command,
     st_read_version_command_wait,
@@ -52,6 +96,7 @@ private:
     st_set_file_path_command_response,
     st_set_file_path_ack_wait,
     st_set_file_path_ack_read,
+    // При чтении размера также считывается признак - это размер папки или файла
     st_read_size_command,
     st_read_size_command_wait,
     st_read_size_command_response,
@@ -74,20 +119,21 @@ private:
   #pragma pack(push, 1)
   struct packet_t
   {
-    typedef irs_u32 file_size_type;
+    typedef irs_u8 header_crc_type;
+    typedef irs_u16 data_crc_type;
 
     enum {
-      packet_data_max_size = 100,
-      checksum_size = 2,
+      data_max_size = 1500,
+      checksum_size = sizeof(header_crc_type) + sizeof(data_crc_type),
       ack_error_tag = 0xDE,
     };
 
     irs_u8 command;
     irs_u8 packet_id;
-    irs_u8 data_size;
-    irs_u8 header_checksum;
-    irs_u8 data_checksum;
-    irs_u8 data[packet_data_max_size];
+    irs_u16 data_size;
+    header_crc_type header_checksum;
+    data_crc_type data_checksum;
+    irs_u8 data[data_max_size];
 
     packet_t():
       command(0),
@@ -108,23 +154,91 @@ private:
   packet_t m_packet;
   irs_u8 m_packet_id;
   status_t m_oper_return;
+  fs_t::file_t* mp_file;
+  bool m_is_file_opened;
   irs_u32 m_file_size;
+  bool m_is_remote_size_received;
+  irs_u32 m_progress;
   bool m_is_checksum_error;
   irs_u8 m_packet_id_prev;
   bool m_is_packed_id_prev_exist;
   size_t m_data_offset; // Указатель на текущую позицию в файле
-  vector<irs_u8> m_file;
   timer_t m_trash_data_timer;
   irs_u32 m_server_version;
   size_t m_data_offset_prev;
   bool m_start_read;
+  #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+  measure_time_t m_measure_time;
+  #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
   std::string m_path_local;
   std::string m_path_remote;
+  bool m_is_read_version;
+  bool m_is_read_dir_to_mem;
+  /// @brief Буфер для временного хранения информации о прочитанном содержимом папки
+  vector<irs_u8> m_dir_info_buf;
+  bool m_is_dir_info_buf_hold;
+  bool m_is_dir;
+  sf_error_t m_last_error;
+  size_t m_channel;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
 
   void show_status() const;
+  bool open_file();
+  void close_file();
+  bool write_file(const char* ap_data, size_t a_size, bool a_prev_ok = true);
+  bool write_file_str(const char* ap_data, bool a_prev_ok = true);
+  bool dir_info_to_txt_file();
+  bool fs_error_handle(irs_u8 a_command);
+};
+
+class simple_ftp_client_utils_t
+{
+public:
+  simple_ftp_client_utils_t(handle_t<simple_ftp_client_t> ap_simple_ftp_client,
+    char ap_local_path_separator = '\\', char ap_remote_path_separator = '/');
+  void tick();
+  void start_read_dir_files();
+  bool is_done() const;
+  void path_local(const std::string& a_path);
+  void path_remote(const std::string& a_path);
+  sf_error_t last_error() const;
+  irs_u64 remote_size() const;
+  bool is_remote_size_received() const;
+  irs_u64 progress() const;
+  void abort();
+
+  irs_u32 server_version() const;
+  void start_read();
+  void start_read_dir();
+  handle_t<dir_iterator_t> get_dir_iterator();
+  void start_read_version();
+private:
+  enum status_t {
+    st_start,
+    st_start_wait,
+    st_get_dir_info,
+    st_next_file,
+    st_get_file,
+  };
+
+  handle_t<simple_ftp_client_t> mp_simple_ftp_client;
+  const char mp_local_path_separator;
+  const char mp_remote_path_separator;
+  status_t m_status;
+  std::string m_path_local;
+  std::string m_path_remote;
+  sf_error_t m_last_error;
+  irs_u64 m_dir_size;
+  bool m_is_remote_size_received;
+  irs_u32 m_progress;
+  handle_t<dir_iterator_t> mp_dir_it;
+  bool m_is_dir_utils;
+  bool m_is_file_readed;
+  bool m_start_read;
+
+  static std::string path_normalize(const std::string& a_path, char a_separator);
 };
 
 } // namespace irs
