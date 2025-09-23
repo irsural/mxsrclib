@@ -285,7 +285,22 @@ inline ostream& operator<<(ostream& a_strm,
   irs::send_wsa_last_message_err(__FILE__,__LINE__)
 #endif // IRS_WIN32
 
+#define IRS_FS_LOG(msg) \
+{ \
+  irs::fslog() << irs::sdatetime << msg << std::endl; \
+  irs::fslog().flush(); \
+}
+
+#define IRS_FS_LOG_RAW(msg) \
+{ \
+  irs::fslog() << msg; \
+  irs::fslog().flush(); \
+}
+
 #ifdef IRS_LIB_DEBUG
+
+#define IRS_LIB_FS_MSG(msg) IRS_FS_LOG(msg)
+#define IRS_LIB_FS_RAW_MSG(msg) IRS_FS_LOG_RAW(msg)
 
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
@@ -311,6 +326,9 @@ inline ostream& operator<<(ostream& a_strm,
 #define IRS_LIB_SEND_WIN_WSA_LAST_ERROR() IRS_SEND_WIN_WSA_LAST_ERROR()
 
 #else // IRS_LIB_DEBUG
+
+#define IRS_LIB_FS_MSG(msg)
+#define IRS_LIB_FS_RAW_MSG(msg)
 
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
@@ -666,6 +684,8 @@ public:
 #endif // (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
 
 ostream& mlog();
+
+std::ostream& fslog();
 
 #ifndef __WATCOMC__
 // Библиотека Watcom C++ не поддерживает установку нового буфера через rdbuf

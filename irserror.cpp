@@ -389,6 +389,12 @@ ostream& irs::mlog()
 
 #endif // (__IAR_SYSTEMS_ICC__ >= 9) || defined(IRS_FULL_STDCPPLIB_SUPPORT)
 
+std::ostream& irs::fslog()
+{
+  static irs::zerobuf buf;
+  static std::ostream fslog_obj(&buf);
+  return fslog_obj;
+}
 
 namespace irs {
 
