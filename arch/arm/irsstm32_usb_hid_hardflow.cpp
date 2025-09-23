@@ -216,8 +216,10 @@ void irs::hardflow::arm::usb_hid_t::tick()
       buffers_iterator it = m_read_buffers.begin() + buf_index;
       if ((m_buffer_max_size - it->size()) >=
         static_cast<size_type>(packet->data_size)) {
-        size_type write_size = write_to_buffer(&(*it),
-          packet->data, packet->data_size);
+        #ifdef IRS_LIB_DEBUG
+        size_type write_size =
+        #endif
+        write_to_buffer(&(*it), packet->data, packet->data_size);
         IRS_LIB_ASSERT(write_size ==
           static_cast<size_type>(packet->data_size));
         prepare_buffer = true;
@@ -261,7 +263,10 @@ void irs::hardflow::arm::usb_hid_t::tick()
         m_write_buffers[m_write_buf_index].size(),
         m_data_max_size);
       m_write_packet.data_size = static_cast<size_field_type>(size);
-      const size_type read_count = read_from_buffer(
+      #ifdef IRS_LIB_DEBUG
+      const size_type read_count =
+      #endif
+      read_from_buffer(
         &m_write_buffers[m_write_buf_index],
         m_write_packet.data, size);
       IRS_LIB_ASSERT(read_count == size);
