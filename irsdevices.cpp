@@ -657,6 +657,7 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_simple_ftp_client_utils(NULL),
   progress_timer(irs::make_cnt_s(1)),
   m_is_progress_update_on(false),
+  m_reconnect_timer(irs::make_cnt_s(1)),
   m_last_error_show(false)
   #ifdef __BORLANDC__
   ,
@@ -844,9 +845,15 @@ void irs::modbus_assembly_t::try_create_modbus()
 void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
-  mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
-  mp_tstlan4->connect(mp_modbus_client.get());
-  m_activated = true;
+  bool error_state = (mp_modbus_client_hardflow->param(irst("error_state")) == irst("true"));
+  if (!error_state) {
+    mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
+    mp_tstlan4->connect(mp_modbus_client.get());
+    m_activated = true;
+  } else {
+    mp_simple_ftp_client_utils.reset();
+    mp_modbus_client_hardflow.reset();
+  }
 }
 
 void irs::modbus_assembly_t::destroy_modbus()
@@ -922,6 +929,19 @@ void irs::modbus_assembly_t::tick()
   }
 
   if (!mp_modbus_client.is_empty()) {
+    if (!mp_modbus_client->connected()) {
+      if (m_reconnect_timer.check()) {
+        try {
+          enabled(false);
+          update_usb_hid_device_path_map();
+          enabled(true);
+        } catch (...) {
+        }
+      }
+    }
+  }
+
+  if (!mp_modbus_client.is_empty()) {
     mp_modbus_client->tick();
     const string_type error_string =
       mp_modbus_client_hardflow->param(irst("error_string"));
@@ -932,6 +952,7 @@ void irs::modbus_assembly_t::tick()
   }
   if ((m_protocol == usb_hid_protocol) &&
       m_enabled && !m_activated && m_activation_timer.check()) {
+    update_usb_hid_device_path_map();
     try_create_modbus();
   }
 

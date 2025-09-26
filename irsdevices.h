@@ -214,6 +214,7 @@ private:
   handle_t<simple_ftp_client_utils_t> mp_simple_ftp_client_utils;
   irs::loop_timer_t progress_timer;
   bool m_is_progress_update_on;
+  loop_timer_t m_reconnect_timer;
   bool m_last_error_show;
 
   #ifdef __BORLANDC__
