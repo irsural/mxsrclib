@@ -299,10 +299,19 @@ inline ostream& operator<<(ostream& a_strm, char const IRS_ICCAVR_FLASH* ap_strg
     irs::fslog().flush(); \
   }
 
-#ifdef IRS_LIB_DEBUG
+#ifdef IRS_LIB_FS_DEBUG
 
 #define IRS_LIB_FS_MSG(msg) IRS_FS_LOG(msg)
 #define IRS_LIB_FS_RAW_MSG(msg) IRS_FS_LOG_RAW(msg)
+
+#else //IRS_LIB_FS_DEBUG
+
+#define IRS_LIB_FS_MSG(msg)
+#define IRS_LIB_FS_RAW_MSG(msg)
+
+#endif //IRS_LIB_FS_DEBUG
+
+#ifdef IRS_LIB_DEBUG
 
 #define IRS_LIB_ASSERT(assert_expr) IRS_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg) IRS_ASSERT_EX(assert_expr, msg)
@@ -326,9 +335,6 @@ inline ostream& operator<<(ostream& a_strm, char const IRS_ICCAVR_FLASH* ap_strg
 #define IRS_LIB_SEND_WIN_WSA_LAST_ERROR() IRS_SEND_WIN_WSA_LAST_ERROR()
 
 #else // IRS_LIB_DEBUG
-
-#define IRS_LIB_FS_MSG(msg)
-#define IRS_LIB_FS_RAW_MSG(msg)
 
 #define IRS_LIB_ASSERT(assert_expr)
 #define IRS_LIB_ASSERT_EX(assert_expr, msg)
