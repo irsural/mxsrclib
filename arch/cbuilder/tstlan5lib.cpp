@@ -1693,9 +1693,14 @@ irs::event_t* irs::tstlan::view_t::controls_t::inner_options_event()
 }
 void irs::tstlan::view_t::controls_t::save_conf()
 {
-  m_ini_file.save();
-//  mp_vars_ini_file->save();
-  mp_param_box->save();
+  try {
+    m_ini_file.save();
+  } catch (...) {
+  }
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
   save_grid_options();
 }
 void irs::tstlan::view_t::controls_t::load_conf()

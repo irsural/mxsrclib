@@ -193,7 +193,10 @@ irs::mxnet_assembly_t::mxnet_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::mxnet_assembly_t::~mxnet_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::mxnet_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -670,7 +673,10 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::modbus_assembly_t::~modbus_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 
 void irs::modbus_assembly_t::tune_param_box()
@@ -1185,7 +1191,10 @@ irs::agilent_3458a_mxmultimeter_t::agilent_3458a_mxmultimeter_t(
 }
 irs::agilent_3458a_mxmultimeter_t::~agilent_3458a_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_3458a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1315,7 +1324,10 @@ irs::agilent_3458a_assembly_t::agilent_3458a_assembly_t(
 }
 irs::agilent_3458a_assembly_t::~agilent_3458a_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_3458a_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1460,7 +1472,10 @@ irs::agilent_34420a_mxmultimeter_t::agilent_34420a_mxmultimeter_t(
 }
 irs::agilent_34420a_mxmultimeter_t::~agilent_34420a_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_34420a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1592,7 +1607,10 @@ irs::agilent_34420a_assembly_t::agilent_34420a_assembly_t(
 }
 irs::agilent_34420a_assembly_t::~agilent_34420a_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_34420a_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1732,7 +1750,10 @@ irs::v7_78_1_mxmultimeter_t::v7_78_1_mxmultimeter_t(
 }
 irs::v7_78_1_mxmultimeter_t::~v7_78_1_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::v7_78_1_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1860,7 +1881,10 @@ irs::v7_78_1_assembly_t::v7_78_1_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::v7_78_1_assembly_t::~v7_78_1_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::v7_78_1_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2018,7 +2042,10 @@ irs::keithley_2015_mxmultimeter_t::keithley_2015_mxmultimeter_t(
 }
 irs::keithley_2015_mxmultimeter_t::~keithley_2015_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::keithley_2015_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2148,7 +2175,10 @@ irs::keithley_2015_assembly_t::keithley_2015_assembly_t(
 }
 irs::keithley_2015_assembly_t::~keithley_2015_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::keithley_2015_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2293,7 +2323,10 @@ irs::ch3_85_3r_mxmultimeter_t::ch3_85_3r_mxmultimeter_t(
 }
 irs::ch3_85_3r_mxmultimeter_t::~ch3_85_3r_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ch3_85_3r_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2420,7 +2453,10 @@ irs::ch3_85_3r_assembly_t::ch3_85_3r_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::ch3_85_3r_assembly_t::~ch3_85_3r_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ch3_85_3r_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2564,7 +2600,10 @@ irs::ni_pxi_4071_assembly_t::ni_pxi_4071_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::ni_pxi_4071_assembly_t::~ni_pxi_4071_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ni_pxi_4071_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2732,7 +2771,10 @@ irs::termex_lt_300_assembly_t::termex_lt_300_assembly_t(
 }
 irs::termex_lt_300_assembly_t::~termex_lt_300_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::termex_lt_300_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2867,7 +2909,10 @@ irs::test_multimeter_mxmultimeter_t::test_multimeter_mxmultimeter_t(
 }
 irs::test_multimeter_mxmultimeter_t::~test_multimeter_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::test_multimeter_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2985,7 +3030,10 @@ irs::test_multimeter_assembly_t::test_multimeter_assembly_t(
 }
 irs::test_multimeter_assembly_t::~test_multimeter_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::test_multimeter_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
