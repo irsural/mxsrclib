@@ -852,7 +852,7 @@ void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
   bool error_state = (mp_modbus_client_hardflow->param(irst("error_state")) == irst("true"));
-  if (!error_state) {
+  if (!error_state || (m_protocol != usb_hid_protocol)) {
     mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
     mp_tstlan4->connect(mp_modbus_client.get());
     m_activated = true;
@@ -934,7 +934,7 @@ void irs::modbus_assembly_t::tick()
     }
   }
 
-  if (!mp_modbus_client.is_empty()) {
+  if (!mp_modbus_client.is_empty() && (m_protocol == usb_hid_protocol)) {
     if (!mp_modbus_client->connected()) {
       if (m_reconnect_timer.check()) {
         try {
