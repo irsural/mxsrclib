@@ -117,6 +117,8 @@ set(MXSRCLIB_SOURCES
         irsfs.h
         simple_ftp_server.cpp
         simple_ftp_server.h
+        irs_param_list.cpp
+        irs_param_list.h
         arch/${MXSRCLIB_ARCH}/counter.cpp
         ${ARCH_SOURCES}
 )
