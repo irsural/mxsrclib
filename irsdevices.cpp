@@ -937,11 +937,13 @@ void irs::modbus_assembly_t::tick()
   if (!mp_modbus_client.is_empty() && (m_protocol == usb_hid_protocol)) {
     if (!mp_modbus_client->connected()) {
       if (m_reconnect_timer.check()) {
-        try {
-          enabled(false);
-          update_usb_hid_device_path_map();
-          enabled(true);
-        } catch (...) {
+        if (mp_simple_ftp_client_utils.is_empty() || mp_simple_ftp_client_utils->is_done()) {
+          try {
+            enabled(false);
+            update_usb_hid_device_path_map();
+            enabled(true);
+          } catch (...) {
+          }
         }
       }
     }
