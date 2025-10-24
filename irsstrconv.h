@@ -62,10 +62,7 @@ inline std::basic_string<wcharT> cp1251_to_unicode(const std::string& a_str)
   wcharT* out_str_end = out_str + instr_size;
   wcharT* out_str_next = out_str;
 
-  #if defined(IRS_NO_EXCEPTIONS) && defined(IRS_LIB_DEBUG)
-  std::codecvt_base::result convert_result =
-  #endif
-  codecvt_wchar_cp1251.in(
+  std::codecvt_base::result convert_result = codecvt_wchar_cp1251.in(
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
   #ifdef IRS_NO_EXCEPTIONS
@@ -94,10 +91,7 @@ inline std::string unicode_to_cp1251(const std::basic_string<wcharT>& a_str)
   char* out_str_end = out_str + instr_size;
   char* out_str_next = out_str;
 
-  #if defined(IRS_NO_EXCEPTIONS) && defined(IRS_LIB_DEBUG)
-  std::codecvt_base::result convert_result =
-  #endif
-  codecvt_cp1251_wchar.in(
+  std::codecvt_base::result convert_result = codecvt_cp1251_wchar.in(
     state, in_str, in_str_end, in_str_next, out_str, out_str_end, out_str_next);
 
   #ifdef IRS_NO_EXCEPTIONS
