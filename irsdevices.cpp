@@ -884,6 +884,9 @@ void irs::modbus_assembly_t::tick()
       mp_modbus_client_hardflow->tick();
     }
     if (m_last_error_show && mp_simple_ftp_client_utils->is_done()) {
+      if (mp_simple_ftp_client_utils->last_error() != sfe_no_error) {
+        m_is_progress_update_on = false;
+      }
       m_last_error_show = false;
       string_t last_error;
       switch (mp_simple_ftp_client_utils->last_error()) {
