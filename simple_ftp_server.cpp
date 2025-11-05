@@ -245,7 +245,8 @@ void simple_ftp_server_t::tick()
       if (!m_is_checksum_error && (m_packet.command == file_path_response) &&
           (m_packet.data_size > 0) && (m_packet.data_size <= packet_t::data_max_size))
       {
-        if (m_packet_id_prev == m_packet.packet_id - 1) {
+        // static_cast здесь нужен для правильной работы циклического перехода packet_id
+        if (m_packet_id_prev == static_cast<irs_u8>(m_packet.packet_id - 1)) {
           std::copy(
             m_packet.data, m_packet.data + m_packet.data_size, std::back_inserter(m_file_path)
           );
