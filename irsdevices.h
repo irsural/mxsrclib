@@ -215,6 +215,7 @@ private:
   irs::loop_timer_t progress_timer;
   bool m_is_progress_update_on;
   loop_timer_t m_reconnect_timer;
+  timer_t m_simple_ftp_wait_start_timer;
   bool m_last_error_show;
 
   #ifdef __BORLANDC__
