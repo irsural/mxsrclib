@@ -463,7 +463,10 @@ void simple_ftp_client_t::tick()
       {
         // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
         // иначе последний else будет некорректен
-        if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
+        // static_cast здесь нужен для правильной работы циклического перехода packet_id
+        if (!m_is_packed_id_prev_exist ||
+          m_packet_id_prev == static_cast<irs_u8>(m_packet.packet_id - 1))
+        {
           if (m_is_dir) {
             size_t size = m_dir_info_buf.size();
             m_dir_info_buf.resize(size + m_packet.data_size);
