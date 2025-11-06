@@ -404,15 +404,7 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
     irst("Начальное состояние"));
   m_last_error_show = false;
   if (mp_param_box->read_bool(irst("Запуск передачи"))) {
-    mp_param_box->set_param(irst("Запуск передачи"), irst("false"));
-    mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
-    m_is_progress_update_on = true;
-    m_last_error_show = true;
-    if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
-      mp_simple_ftp_client_utils->start_read_dir_files();
-    } else {
-      mp_simple_ftp_client_utils->start_read();
-    }
+    m_simple_ftp_wait_start_timer.start();
   }
   mp_param_box->save();
 }
@@ -661,6 +653,7 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   progress_timer(irs::make_cnt_s(1)),
   m_is_progress_update_on(false),
   m_reconnect_timer(irs::make_cnt_s(1)),
+  m_simple_ftp_wait_start_timer(irs::make_cnt_s(1)),
   m_last_error_show(false)
   #ifdef __BORLANDC__
   ,
@@ -883,7 +876,26 @@ void irs::modbus_assembly_t::tick()
       mp_simple_ftp_client_utils->tick();
       mp_modbus_client_hardflow->tick();
     }
+    // Крашенинников М. В. 05.11.2025
+    // Отложенный запуск необходим когда включены фильтры таблицы сетевых перменных
+    // При этом возникает задержка более 2 с при нажатии кнопки OK в настройках MODBUS
+    if (m_simple_ftp_wait_start_timer.check()) {
+      if (mp_param_box->read_bool(irst("Запуск передачи"))) {
+        mp_param_box->set_param(irst("Запуск передачи"), irst("false"));
+        mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
+        m_is_progress_update_on = true;
+        m_last_error_show = true;
+        if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
+          mp_simple_ftp_client_utils->start_read_dir_files();
+        } else {
+          mp_simple_ftp_client_utils->start_read();
+        }
+      }
+    }
     if (m_last_error_show && mp_simple_ftp_client_utils->is_done()) {
+      if (mp_simple_ftp_client_utils->last_error() != sfe_no_error) {
+        m_is_progress_update_on = false;
+      }
       m_last_error_show = false;
       string_t last_error;
       switch (mp_simple_ftp_client_utils->last_error()) {
