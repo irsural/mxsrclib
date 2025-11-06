@@ -86,6 +86,7 @@ private:
   };
 
   enum status_t {
+    st_none,
     st_start,
     st_start_wait,
     st_read_version_command,
@@ -179,12 +180,13 @@ private:
   bool m_is_dir_info_buf_hold;
   bool m_is_dir;
   sf_error_t m_last_error;
+  status_t m_status_prev;
   size_t m_channel;
 
   static void net_to_u32(irs_u8* ap_data, irs_u32* ap_u32);
   static void u32_to_net(irs_u32 a_u32, irs_u8* ap_data);
 
-  void show_status() const;
+  void show_status();
   bool open_file();
   void close_file();
   bool write_file(const char* ap_data, size_t a_size, bool a_prev_ok = true);

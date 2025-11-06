@@ -606,8 +606,6 @@ irs::tstlan::view_t::controls_t::controls_t(
   m_minus_shift_time(0),
   m_refresh_table(true),
   m_is_lock(true),
-  val_prev(),
-  is_saved(false),
   m_chart_row(0),
   m_chart_names(),
   m_csv_names(),
@@ -1089,40 +1087,22 @@ void irs::tstlan::view_t::controls_t::tick()
       const int row_count = mp_controller->RecordCount;
       if (!m_is_lock) {
         mp_view->BeginUpdate();
-        val_prev.resize(row_count);
         for (int row = 0; row < row_count; row++) {
-          if (is_saved) {
-            String val_cur = var_to_bstr(row);
-            if (val_prev[row] != val_cur) {
-              mp_controller->Values[row][mp_value_column->Index] = val_cur;
+          String val_net = var_to_bstr(row);
+          Variant val_table_variant = mp_controller->Values[row][mp_value_column->Index];
+          String val_table = "";
+          try {
+            if (!val_table_variant.IsNull()) {
+              val_table =  val_table_variant;
             }
-            val_prev[row] = val_cur;
-          } else {
-            is_saved = true;
-            mp_controller->Values[row][mp_value_column->Index] =
-              var_to_bstr(row);
-            val_prev[row] = mp_controller->Values[row][mp_value_column->Index];
+          } catch (...) {
+          }
+          if (val_table != val_net) {
+            mp_controller->Values[row][mp_value_column->Index] = val_net;
           }
         }
         mp_view->EndUpdate();
       }
-      // Обработка столбца "Значение" при записи
-      /*if (is_edit_mode) {
-        int write_row = write_var_index;// + m_header_size;
-        const int row = mp_table_controller->FocusedRecordIndex;
-        const int col = mp_table_controller->FocusedItemIndex;
-        bool row_changed = (row != write_row);
-        bool col_changed = (col != m_value_col);
-        if (row_changed || col_changed) {
-          is_edit_mode = false;
-        }
-        if (is_write_var) {
-          is_write_var = false;
-          is_edit_mode = false;
-          bstr_to_var(write_var_index,
-            mp_controller->Values[write_row][mp_value_column->Index]);
-        }
-      }*/
 
       // Обработка столбца "Граф."
       if (m_refresh_chart_items) {
@@ -1713,9 +1693,14 @@ irs::event_t* irs::tstlan::view_t::controls_t::inner_options_event()
 }
 void irs::tstlan::view_t::controls_t::save_conf()
 {
-  m_ini_file.save();
-//  mp_vars_ini_file->save();
-  mp_param_box->save();
+  try {
+    m_ini_file.save();
+  } catch (...) {
+  }
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
   save_grid_options();
 }
 void irs::tstlan::view_t::controls_t::load_conf()

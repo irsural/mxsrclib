@@ -193,7 +193,10 @@ irs::mxnet_assembly_t::mxnet_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::mxnet_assembly_t::~mxnet_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::mxnet_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -401,15 +404,7 @@ void irs::modbus_assembly_t::make_simple_ftp_client(
     irst("Начальное состояние"));
   m_last_error_show = false;
   if (mp_param_box->read_bool(irst("Запуск передачи"))) {
-    mp_param_box->set_param(irst("Запуск передачи"), irst("false"));
-    mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
-    m_is_progress_update_on = true;
-    m_last_error_show = true;
-    if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
-      mp_simple_ftp_client_utils->start_read_dir_files();
-    } else {
-      mp_simple_ftp_client_utils->start_read();
-    }
+    m_simple_ftp_wait_start_timer.start();
   }
   mp_param_box->save();
 }
@@ -657,6 +652,8 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
   mp_simple_ftp_client_utils(NULL),
   progress_timer(irs::make_cnt_s(1)),
   m_is_progress_update_on(false),
+  m_reconnect_timer(irs::make_cnt_s(1)),
+  m_simple_ftp_wait_start_timer(irs::make_cnt_s(1)),
   m_last_error_show(false)
   #ifdef __BORLANDC__
   ,
@@ -669,7 +666,10 @@ irs::modbus_assembly_t::modbus_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::modbus_assembly_t::~modbus_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 
 void irs::modbus_assembly_t::tune_param_box()
@@ -844,9 +844,15 @@ void irs::modbus_assembly_t::try_create_modbus()
 void irs::modbus_assembly_t::create_modbus()
 {
   mp_modbus_client_hardflow = make_hardflow();
-  mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
-  mp_tstlan4->connect(mp_modbus_client.get());
-  m_activated = true;
+  bool error_state = (mp_modbus_client_hardflow->param(irst("error_state")) == irst("true"));
+  if (!error_state || (m_protocol != usb_hid_protocol)) {
+    mp_modbus_client = make_client(mp_modbus_client_hardflow, mp_param_box);
+    mp_tstlan4->connect(mp_modbus_client.get());
+    m_activated = true;
+  } else {
+    mp_simple_ftp_client_utils.reset();
+    mp_modbus_client_hardflow.reset();
+  }
 }
 
 void irs::modbus_assembly_t::destroy_modbus()
@@ -870,7 +876,26 @@ void irs::modbus_assembly_t::tick()
       mp_simple_ftp_client_utils->tick();
       mp_modbus_client_hardflow->tick();
     }
+    // Крашенинников М. В. 05.11.2025
+    // Отложенный запуск необходим когда включены фильтры таблицы сетевых перменных
+    // При этом возникает задержка более 2 с при нажатии кнопки OK в настройках MODBUS
+    if (m_simple_ftp_wait_start_timer.check()) {
+      if (mp_param_box->read_bool(irst("Запуск передачи"))) {
+        mp_param_box->set_param(irst("Запуск передачи"), irst("false"));
+        mp_param_box->set_param(irst("Последняя ошибка Передача файла или папки"), irst(""));
+        m_is_progress_update_on = true;
+        m_last_error_show = true;
+        if (mp_param_box->read_bool(irst("Получить все файлы в папке"))) {
+          mp_simple_ftp_client_utils->start_read_dir_files();
+        } else {
+          mp_simple_ftp_client_utils->start_read();
+        }
+      }
+    }
     if (m_last_error_show && mp_simple_ftp_client_utils->is_done()) {
+      if (mp_simple_ftp_client_utils->last_error() != sfe_no_error) {
+        m_is_progress_update_on = false;
+      }
       m_last_error_show = false;
       string_t last_error;
       switch (mp_simple_ftp_client_utils->last_error()) {
@@ -921,6 +946,21 @@ void irs::modbus_assembly_t::tick()
     }
   }
 
+  if (!mp_modbus_client.is_empty() && (m_protocol == usb_hid_protocol)) {
+    if (!mp_modbus_client->connected()) {
+      if (m_reconnect_timer.check()) {
+        if (mp_simple_ftp_client_utils.is_empty() || mp_simple_ftp_client_utils->is_done()) {
+          try {
+            enabled(false);
+            update_usb_hid_device_path_map();
+            enabled(true);
+          } catch (...) {
+          }
+        }
+      }
+    }
+  }
+
   if (!mp_modbus_client.is_empty()) {
     mp_modbus_client->tick();
     const string_type error_string =
@@ -932,6 +972,7 @@ void irs::modbus_assembly_t::tick()
   }
   if ((m_protocol == usb_hid_protocol) &&
       m_enabled && !m_activated && m_activation_timer.check()) {
+    update_usb_hid_device_path_map();
     try_create_modbus();
   }
 
@@ -1164,7 +1205,10 @@ irs::agilent_3458a_mxmultimeter_t::agilent_3458a_mxmultimeter_t(
 }
 irs::agilent_3458a_mxmultimeter_t::~agilent_3458a_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_3458a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1294,7 +1338,10 @@ irs::agilent_3458a_assembly_t::agilent_3458a_assembly_t(
 }
 irs::agilent_3458a_assembly_t::~agilent_3458a_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_3458a_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1439,7 +1486,10 @@ irs::agilent_34420a_mxmultimeter_t::agilent_34420a_mxmultimeter_t(
 }
 irs::agilent_34420a_mxmultimeter_t::~agilent_34420a_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_34420a_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1571,7 +1621,10 @@ irs::agilent_34420a_assembly_t::agilent_34420a_assembly_t(
 }
 irs::agilent_34420a_assembly_t::~agilent_34420a_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::agilent_34420a_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1711,7 +1764,10 @@ irs::v7_78_1_mxmultimeter_t::v7_78_1_mxmultimeter_t(
 }
 irs::v7_78_1_mxmultimeter_t::~v7_78_1_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::v7_78_1_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1839,7 +1895,10 @@ irs::v7_78_1_assembly_t::v7_78_1_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::v7_78_1_assembly_t::~v7_78_1_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::v7_78_1_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -1997,7 +2056,10 @@ irs::keithley_2015_mxmultimeter_t::keithley_2015_mxmultimeter_t(
 }
 irs::keithley_2015_mxmultimeter_t::~keithley_2015_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::keithley_2015_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2127,7 +2189,10 @@ irs::keithley_2015_assembly_t::keithley_2015_assembly_t(
 }
 irs::keithley_2015_assembly_t::~keithley_2015_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::keithley_2015_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2272,7 +2337,10 @@ irs::ch3_85_3r_mxmultimeter_t::ch3_85_3r_mxmultimeter_t(
 }
 irs::ch3_85_3r_mxmultimeter_t::~ch3_85_3r_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ch3_85_3r_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2399,7 +2467,10 @@ irs::ch3_85_3r_assembly_t::ch3_85_3r_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::ch3_85_3r_assembly_t::~ch3_85_3r_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ch3_85_3r_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2543,7 +2614,10 @@ irs::ni_pxi_4071_assembly_t::ni_pxi_4071_assembly_t(tstlan4_base_t* ap_tstlan4,
 }
 irs::ni_pxi_4071_assembly_t::~ni_pxi_4071_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::ni_pxi_4071_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2711,7 +2785,10 @@ irs::termex_lt_300_assembly_t::termex_lt_300_assembly_t(
 }
 irs::termex_lt_300_assembly_t::~termex_lt_300_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::termex_lt_300_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2846,7 +2923,10 @@ irs::test_multimeter_mxmultimeter_t::test_multimeter_mxmultimeter_t(
 }
 irs::test_multimeter_mxmultimeter_t::~test_multimeter_mxmultimeter_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::test_multimeter_mxmultimeter_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box
@@ -2964,7 +3044,10 @@ irs::test_multimeter_assembly_t::test_multimeter_assembly_t(
 }
 irs::test_multimeter_assembly_t::~test_multimeter_assembly_t()
 {
-  mp_param_box->save();
+  try {
+    mp_param_box->save();
+  } catch (...) {
+  }
 }
 irs::test_multimeter_assembly_t::param_box_tune_t::param_box_tune_t(
   param_box_base_t* ap_param_box

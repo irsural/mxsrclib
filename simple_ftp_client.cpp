@@ -126,24 +126,24 @@ simple_ftp_client_t::simple_ftp_client_t(hardflow_t *ap_hardflow, fs_t* ap_fs, s
   m_is_dir_info_buf_hold(false),
   m_is_dir(false),
   m_last_error(sfe_no_error),
+  m_status_prev(st_none),
   m_channel(a_channel)
 {
+  IRS_LIB_SIMP_FTP_CL_DBG_MSG_DETAIL("simple_ftp_client_t Конструктор");
 }
 simple_ftp_client_t::~simple_ftp_client_t()
 {
   close_file();
 }
-void simple_ftp_client_t::show_status() const
+void simple_ftp_client_t::show_status()
 {
-  static status_t status_prev = st_write_packet;
-
 #define IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(status) \
 case status: { \
   IRS_LIB_DBG_MSG(#status); \
 } break;
 
-  if (m_status != status_prev) {
-    status_prev = m_status;
+  if (m_status != m_status_prev) {
+    m_status_prev = m_status;
     switch (m_status) {
       IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_start);
       IRS_LIB_SIMPLE_FTP_CLN_SHOW_STATUS(st_start_wait);
@@ -266,8 +266,14 @@ void simple_ftp_client_t::tick()
         m_last_error = sfe_no_error;
         IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp Получить файл Запуск");
         #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+        #ifdef __BORLANDC__
+        irs::mlog() << AnsiString(utf8_to_wstring(m_path_remote).c_str()).c_str();
+        irs::mlog() << " ----> ";
+        irs::mlog() << AnsiString(utf8_to_wstring(m_path_local).c_str()).c_str();
+        irs::mlog() << endl;
+        #endif //__BORLANDC__
         m_measure_time.start();
-        #endif IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+        #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
         m_status = st_read_version_command;
       }
     } break;
@@ -391,6 +397,13 @@ void simple_ftp_client_t::tick()
           m_last_error = sfe_remote_path_not_exist_error;
           m_status = st_start;
         } else {
+          #ifdef IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
+          if (is_dir) {
+            IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("Получение информации о содержимом паки");
+          } else {
+            IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("Получение файла");
+          }
+          #endif //IRS_LIB_SIMPLE_FTP_CLIENT_DEBUG_BASE
           IRS_LIB_SIMP_FTP_CL_DBG_MSG_BASE("simple_ftp m_file_size = " << m_file_size);
           m_is_remote_size_received = true;
           m_status = st_read_command;
@@ -450,7 +463,10 @@ void simple_ftp_client_t::tick()
       {
         // m_is_packed_id_prev_exist, так просто, нельзя объединить под одним if, т. к.
         // иначе последний else будет некорректен
-        if (!m_is_packed_id_prev_exist || (m_packet_id_prev == m_packet.packet_id - 1)) {
+        // static_cast здесь нужен для правильной работы циклического перехода packet_id
+        if (!m_is_packed_id_prev_exist ||
+          m_packet_id_prev == static_cast<irs_u8>(m_packet.packet_id - 1))
+        {
           if (m_is_dir) {
             size_t size = m_dir_info_buf.size();
             m_dir_info_buf.resize(size + m_packet.data_size);
