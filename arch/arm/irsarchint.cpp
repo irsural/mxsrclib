@@ -650,7 +650,11 @@ typedef void( *intfunc )( void );
 
 #ifdef IRS_LM3Sx
 
+#if defined(__GNUC__)
+__attribute__((section(".periph_intvec")))
+#else
 #pragma location = ".periph_intvec"
+#endif
 __root const intfunc __int_vector_table[] =
 {
   irs_arm_gpio_porta_func,
@@ -763,7 +767,11 @@ __root const intfunc __int_vector_table[] =
 
 #elif defined(IRS_STM32_F2_F4_F7)
 
+#if defined(__GNUC__)
+__attribute__((section(".periph_intvec")))
+#else
 #pragma location = ".periph_intvec"
+#endif
 __root const intfunc __int_vector_table[] =
 {
   irs_arm_default_int_func,  // 0
